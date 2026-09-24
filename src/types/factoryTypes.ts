@@ -25,6 +25,7 @@ import {
   MatchUpStatusUnion,
   DrawTypeUnion,
   SeedingProfileUnion,
+  SeedingBasisUnion,
   MatchUpSchedule,
   TieFormat,
   Structure,
@@ -302,11 +303,43 @@ export type PolicySeedingProfile = SeedingProfile & {
  * Declared but deliberately NOT wired into {@link PolicyDefinitions}: narrowing that
  * index signature would be a consumer-build break, and is a separate decision.
  */
+/**
+ * An allowance for seeds ABOVE the count `seedsCountThresholds` yields — *additional* seeds, not
+ * a larger seed count.
+ *
+ * The distinction is the whole point. A governing body that protects a returning player does not
+ * raise a 128-draw from 32 seeds to 33; it adds a 33rd seed alongside the 32, so that no one is
+ * displaced from a seeding slot they earned. The factory's block positioning already gives that
+ * for free — `constructPower2Blocks` fills seed blocks in order, so extras consume the NEXT block
+ * and the blocks below it are untouched — which is why this is an allowance on the COUNT and
+ * nothing more.
+ *
+ * What this does NOT do, deliberately:
+ *
+ * - **It does not decide eligibility.** "The player's first eight events of the season" is a
+ *   counter across tournaments; the factory sees one `tournamentRecord`. Entitlement is determined
+ *   upstream and arrives here recorded, as a {@link SeedingBasisUnion} on the seed assignment.
+ * - **It does not vary by draw size.** A body needing different allowances per draw size expresses
+ *   that as separate policies, which is also how a body that permits none under one rule book and
+ *   some under another expresses THAT — a different policy, resolved through the normal hierarchy.
+ * - **It does not police the basis.** `bases` narrows what may CLAIM an additional seed and is
+ *   reported by `getAdditionalSeedsAllowance` so a client can build the right control. It is not a
+ *   write-time refusal: the count is the binding limit.
+ */
+export type AdditionalSeedsAllowance = {
+  /** How many seeds are permitted above the threshold count. */
+  maxCount: number;
+  /** Which bases may claim one. Omitted means any basis may. */
+  bases?: SeedingBasisUnion[];
+};
+
 export type SeedingPolicy = {
   seedsCountThresholds?: SeedsCountThreshold[];
   validSeedPositions?: { ignore?: boolean; strict?: boolean };
   /** The object form, or the legacy bare positioning string the readers still honour. */
   seedingProfile?: PolicySeedingProfile | SeedingProfileUnion;
+  /** Seeds permitted ABOVE the threshold count. See {@link AdditionalSeedsAllowance}. */
+  additionalSeeds?: AdditionalSeedsAllowance;
   containerByesIgnoreSeeding?: boolean;
   duplicateSeedNumbers?: boolean;
   drawSizeProgression?: boolean;

@@ -28,7 +28,21 @@ type GetSeedsCountArgs = {
   event?: Event;
 };
 
-export function getSeedsCount(params: GetSeedsCountArgs): ResultType & { seedsCount?: number } {
+/**
+ * The seed count the active SEEDING policy yields for a draw size and participant count, plus the
+ * allowance — if any — for seeds ABOVE that count.
+ *
+ * `additionalSeedsAllowed` is reported, never folded into `seedsCount`. A caller asking "how many
+ * seeds does this draw have" must not silently receive a number that includes protections nobody
+ * has claimed; the two are different questions and the callers that need the ceiling
+ * (`initializeStructureSeedAssignments`) add them deliberately.
+ *
+ * It is 0 when no threshold matched. An allowance is expressed relative to a count, so there is
+ * nothing to be additional TO.
+ */
+export function getSeedsCount(
+  params: GetSeedsCountArgs,
+): ResultType & { additionalSeedsAllowed?: number; seedsCount?: number } {
   let { drawSizeProgression = false, policyDefinitions, drawSize } = params ?? {};
   const { requireParticipantCount = true, tournamentRecord, drawDefinition, event } = params ?? {};
   const stack = 'getSeedsCount';
@@ -36,7 +50,13 @@ export function getSeedsCount(params: GetSeedsCountArgs): ResultType & { seedsCo
   const participantsCount = params?.participantsCount ?? params?.participantCount;
 
   if (!policyDefinitions) {
+    // `policyTypes` defaults to [] and getPolicyDefinitions returns only the types it is asked
+    // for — so omitting it returned `{ info: 'Policy not found' }` for EVERY call, and this
+    // function then failed with INVALID_POLICY_DEFINITION even where a seeding policy was
+    // attached. It is an engine method: a consumer asking a drawId how many seeds it gets was
+    // refused unless it also passed the policy it was asking about.
     const result = getPolicyDefinitions({
+      policyTypes: [POLICY_TYPE_SEEDING],
       tournamentRecord,
       drawDefinition,
       event,
@@ -89,5 +109,7 @@ export function getSeedsCount(params: GetSeedsCountArgs): ResultType & { seedsCo
       : seedsCount;
   }, 0);
 
-  return { seedsCount };
+  const additionalSeedsAllowed = seedsCount ? (policy.additionalSeeds?.maxCount ?? 0) : 0;
+
+  return { seedsCount, additionalSeedsAllowed };
 }

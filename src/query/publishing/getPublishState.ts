@@ -142,6 +142,16 @@ function buildTournamentPublishState({
   }
   publishState.tournament.status = { published: tournamentPublished, publishedEventIds };
 
+  // Information is listed alongside the other embargoes for reporting, but it is the one embargo that
+  // actually WITHHOLDS the tournament from a listing — see `getTournamentVisibleFrom`. The others are
+  // intent-only at tournament level: an embargoed order of play still leaves the tournament listed.
+  if (pubStatus?.info?.embargo) {
+    embargoes.push({
+      type: 'information',
+      embargo: pubStatus.info.embargo,
+      embargoActive: isEmbargoed(pubStatus.info),
+    });
+  }
   if (pubStatus?.orderOfPlay?.embargo) {
     embargoes.push({
       type: 'orderOfPlay',

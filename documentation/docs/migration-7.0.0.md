@@ -91,9 +91,7 @@ The only interface change is the error _code_ for this case, which moved from
 participant check rather than from the later score-modification guard. Match on behaviour rather
 than on that specific code.
 
-:::note This fix is scoped to that one outcome shape
-It does **not** mean every rejected mutation leaves the draw untouched. A direct `setMatchUpStatus`
-that fails part-way through a propagation cascade can still return an error over changed state.
+:::note Atomicity on error is opt-in
 Callers that need all-or-nothing should go through `executionQueue` with `rollbackOnError: true`,
 which snapshots and restores; that is what TMX and competition-factory-server do on every mutation.
 :::

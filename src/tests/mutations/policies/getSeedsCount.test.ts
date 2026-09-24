@@ -1,4 +1,7 @@
 import { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
+import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and fixtures
@@ -126,4 +129,21 @@ it('can accurately determine seedsCount from drawSize and participantsCount', ()
     drawSize: 128,
   }));
   expect(seedsCount).toEqual(4);
+});
+
+it('resolves the attached seeding policy when none is passed', () => {
+  // `getPolicyDefinitions` returns only the policyTypes it is ASKED for, and `policyTypes`
+  // defaults to []. getSeedsCount omitted it, so its self-resolution branch returned nothing and
+  // the function answered INVALID_POLICY_DEFINITION for every call that did not hand it the very
+  // policy it was being asked about — on an engine method whose whole purpose is to answer
+  // "how many seeds does THIS draw get".
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ policyDefinitions: POLICY_SEEDING_ITF, participantsCount: 32, seedsCount: 8, drawSize: 32 }],
+  });
+  tournamentEngine.setState(tournamentRecord);
+  const drawId = tournamentRecord.events?.[0]?.drawDefinitions?.[0]?.drawId;
+
+  const result: any = tournamentEngine.getSeedsCount({ participantsCount: 32, drawSize: 32, drawId });
+  expect(result.error).toBeUndefined();
+  expect(result.seedsCount).toEqual(8);
 });

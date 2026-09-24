@@ -8,7 +8,7 @@ import fs from 'fs-extra';
  * Capture { method, params } and paste into methods array
  */
 
-test.skip('can execute abitrary methods', () => {
+test.skip('can execute arbitrary methods', () => {
   const tournamentRecordJSON = fs.readFileSync('src/tests/harness/tournament.tods.json', 'utf-8');
   const tournamentRecord = JSON.parse(tournamentRecordJSON);
   let result = tournamentEngine.devContext(true).setState(tournamentRecord, false);

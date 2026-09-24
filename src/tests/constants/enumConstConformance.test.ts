@@ -4,6 +4,7 @@ import * as participantRolesConstants from '@Constants/participantRoles';
 import * as bookingTypeConstants from '@Constants/bookingTypeConstants';
 import * as entryStatusConstants from '@Constants/entryStatusConstants';
 import * as participantConstants from '@Constants/participantConstants';
+import * as seedingConstants from '@Constants/seedingConstants';
 
 // The exported OBJECTS — what consumers reach via factoryConstants, maintained by
 // hand and therefore able to lag the enum even when the namespace cannot.
@@ -14,6 +15,7 @@ import { weekdayConstants as weekdayObject } from '@Constants/weekdayConstants';
 import { surfaceConstants as surfaceObject } from '@Constants/surfaceConstants';
 import { participantConstants as participantObject } from '@Constants/participantConstants';
 import { participantRoles as participantRolesObject } from '@Constants/participantRoles';
+import { seedingBasisConstants as seedingBasisObject } from '@Constants/seedingConstants';
 import { genderConstants as genderObject } from '@Constants/genderConstants';
 import { eventConstants as eventObject } from '@Constants/eventConstants';
 import { tournamentConstants as tournamentObject, tournamentStatuses } from '@Constants/tournamentConstants';
@@ -98,6 +100,7 @@ const MIRRORS: {
     consts: participantRolesConstants,
     object: participantRolesObject,
   },
+  { name: 'SeedingBasis', enum: T.SeedingBasisEnum, consts: seedingConstants, object: seedingBasisObject },
 ];
 
 // ── Bucket coverage — every enum value backed by a const value in the bucket ──

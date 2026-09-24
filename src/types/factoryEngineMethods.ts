@@ -8,6 +8,7 @@ export type FactoryEngineMethod =
   | 'abandonTournamentMatchUps'
   | 'acceptChallenge'
   | 'activateFromSanctioning'
+  | 'addAdditionalSeed'
   | 'addAdHocMatchUps'
   | 'addCertification'
   | 'addCertificationRequirement'
@@ -247,6 +248,7 @@ export type FactoryEngineMethod =
   | 'generateTournamentRecord'
   | 'generateVirtualCourts'
   | 'generateVoluntaryConsolation'
+  | 'getAdditionalSeedsAllowance'
   | 'getAggregateTeamResults'
   | 'getAllDrawMatchUps'
   | 'getAllEventData'
@@ -435,6 +437,7 @@ export type FactoryEngineMethod =
   | 'getTournamentStructures'
   | 'getTournamentTimeItem'
   | 'getTournamentTimeZone'
+  | 'getTournamentVisibleFrom'
   | 'getValidGroupSizes'
   | 'getVenueData'
   | 'getVenuesAndCourts'
@@ -462,6 +465,8 @@ export type FactoryEngineMethod =
   | 'isLadder'
   | 'isScheduleLocked'
   | 'issueChallenge'
+  | 'isTournamentPublished'
+  | 'isTournamentVisible'
   | 'isValid'
   | 'isValidForQualifying'
   | 'isValidMatchUpFormat'
@@ -752,6 +757,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'abandonTournamentMatchUps',
   'acceptChallenge',
   'activateFromSanctioning',
+  'addAdditionalSeed',
   'addAdHocMatchUps',
   'addCertification',
   'addCertificationRequirement',
@@ -991,6 +997,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'generateTournamentRecord',
   'generateVirtualCourts',
   'generateVoluntaryConsolation',
+  'getAdditionalSeedsAllowance',
   'getAggregateTeamResults',
   'getAllDrawMatchUps',
   'getAllEventData',
@@ -1179,6 +1186,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getTournamentStructures',
   'getTournamentTimeItem',
   'getTournamentTimeZone',
+  'getTournamentVisibleFrom',
   'getValidGroupSizes',
   'getVenueData',
   'getVenuesAndCourts',
@@ -1206,6 +1214,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'isLadder',
   'isScheduleLocked',
   'issueChallenge',
+  'isTournamentPublished',
+  'isTournamentVisible',
   'isValid',
   'isValidForQualifying',
   'isValidMatchUpFormat',

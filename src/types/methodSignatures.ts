@@ -72,6 +72,7 @@ import type { getEligibleEvents, getParticipantEligibility } from '@Query/entrie
 import type { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
 import type { modifyParticipantsPaymentStatus } from '@Mutate/participants/modifyParticipantsPaymentStatus';
 import type { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
+import type { getTournamentVisibleFrom, isTournamentVisible } from '@Query/publishing/tournamentVisibility';
 import type { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
 import type { processCompetitionRound } from '@Mutate/drawDefinitions/competition/processCompetitionRound';
 import type { setDrawPositionPreferences } from '@Mutate/drawDefinitions/draft/setDrawPositionPreferences';
@@ -113,6 +114,7 @@ import type { getScheduledRoundsDetails } from '@Query/matchUps/scheduling/getSc
 import type { setStructureOrder } from '@Mutate/drawDefinitions/structureGovernor/setStructureOrder';
 import type { addSchedulingProfileRound } from '@Mutate/matchUps/schedule/addSchedulingProfileRound';
 import type { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
+import type { getAdditionalSeedsAllowance } from '@Query/drawDefinition/getAdditionalSeedsAllowance';
 import type { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 import type { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 import type { predictDrawCompetitiveBands } from '@Query/drawDefinition/predictDrawCompetitiveBands';
@@ -144,6 +146,7 @@ import type { getScenarioScheduleView } from '@Query/matchUps/scheduling/getScen
 import type { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 import type { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 import type { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
+import type { addAdditionalSeed } from '@Mutate/drawDefinitions/entryGovernor/addAdditionalSeed';
 import type { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
 import type { removeStructure } from '@Mutate/drawDefinitions/structureGovernor/removeStructure';
 import type { removeDelegatedOutcome } from '@Mutate/extensions/matchUps/removeDelegatedOutcome';
@@ -312,6 +315,7 @@ import type { getCompetitionFormat } from '@Query/hierarchical/getCompetitionFor
 import type { getCompetitionMatchUps } from '@Query/matchUps/getCompetitionMatchUps';
 import type { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import type { isEmbargoed, isVisiblyPublished } from '@Query/publishing/isEmbargoed';
+import type { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import type { getAggregateTeamResults } from '@Query/scales/getAggregateTeamResults';
 import type { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 import type { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
@@ -682,6 +686,7 @@ export interface MethodSignatures {
   abandonTournamentMatchUps: EngineMethod<typeof abandonTournamentMatchUps>;
   acceptChallenge: EngineMethod<typeof acceptChallenge>;
   activateFromSanctioning: EngineMethod<typeof activateFromSanctioning>;
+  addAdditionalSeed: EngineMethod<typeof addAdditionalSeed>;
   addAdHocMatchUps: EngineMethod<typeof addAdHocMatchUps>;
   addCertification: EngineMethod<typeof addCertification>;
   addCertificationRequirement: EngineMethod<typeof addCertificationRequirement>;
@@ -894,6 +899,7 @@ export interface MethodSignatures {
   generateTournamentRecord: EngineMethod<typeof generateTournamentRecord>;
   generateVirtualCourts: EngineMethod<typeof generateVirtualCourts>;
   generateVoluntaryConsolation: EngineMethod<typeof generateVoluntaryConsolation>;
+  getAdditionalSeedsAllowance: EngineMethod<typeof getAdditionalSeedsAllowance>;
   getAggregateTeamResults: EngineMethod<typeof getAggregateTeamResults>;
   getAllDrawMatchUps: EngineMethod<typeof getAllDrawMatchUps>;
   getAllEventData: EngineMethod<typeof getAllEventData>;
@@ -1074,6 +1080,7 @@ export interface MethodSignatures {
   getTournamentStructures: EngineMethod<typeof getTournamentStructures>;
   getTournamentTimeItem: EngineMethod<typeof getTournamentTimeItem>;
   getTournamentTimeZone: EngineMethod<typeof getTournamentTimeZone>;
+  getTournamentVisibleFrom: EngineMethod<typeof getTournamentVisibleFrom>;
   getValidGroupSizes: EngineMethod<typeof getValidGroupSizes>;
   getVenueData: EngineMethod<typeof getVenueData>;
   getVenuesAndCourts: EngineMethod<typeof getVenuesAndCourts>;
@@ -1096,6 +1103,8 @@ export interface MethodSignatures {
   isLadder: EngineMethod<typeof isLadder>;
   isScheduleLocked: EngineMethod<typeof isScheduleLocked>;
   issueChallenge: EngineMethod<typeof issueChallenge>;
+  isTournamentPublished: EngineMethod<typeof isTournamentPublished>;
+  isTournamentVisible: EngineMethod<typeof isTournamentVisible>;
   isValid: EngineMethod<typeof isValidMatchUpFormat>;
   isValidForQualifying: EngineMethod<typeof isValidForQualifying>;
   isValidMatchUpFormat: EngineMethod<typeof isValidMatchUpFormat>;

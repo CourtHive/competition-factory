@@ -257,7 +257,40 @@ export function completeDrawMatchUps(params): {
       [MAIN, PLAY_OFF],
     ).length === 2;
 
-  const structureIds = sortedStructures.map(({ structureId }) => structureId);
+  /**
+   * `structureIds` narrows completion to named structures. Omitted, every structure is completed,
+   * which is the long-standing behaviour and the default.
+   *
+   * Added for TMX's "Complete all matchUps" control, which is scoped to the STRUCTURE a director is
+   * looking at. TMX had its own loop for that, and that loop filtered incomplete matchUps as
+   * `!winningSide && matchUpStatus !== BYE` — so a DOUBLE_WALKOVER, which has no winningSide, was
+   * OVERWRITTEN with an ordinary result. This function already excludes double exits (see
+   * `isDoubleExit` below), so giving it the one thing it lacked lets that duplicate go away rather
+   * than be repaired.
+   *
+   * Filtered alongside the existing `stage` / `stageSequence` narrowing in the same loop, so the
+   * three compose: an unknown id simply matches nothing.
+   */
+  const requestedStructureIds = params.structureIds;
+  /**
+   * A requested id matches a top-level structure EITHER by its own id OR by one of its CHILD
+   * structure ids.
+   *
+   * Round-robin matchUps belong to the child groups, not to the CONTAINER, so a caller holding a
+   * group's id is holding the id of the thing it actually wants to complete. Matching only
+   * top-level ids made that silently complete NOTHING — measured: ROUND_ROBIN 16, container id ->
+   * 24 completed, the four child ids -> 0. A filter whose wrong answer is silence is the worst
+   * shape available, and TMX's own loop resolves containers to children exactly this way, so the
+   * first port of it would have hit this.
+   */
+  const structureIds = sortedStructures
+    .filter(
+      (structure) =>
+        !requestedStructureIds?.length ||
+        requestedStructureIds.includes(structure.structureId) ||
+        (structure.structures ?? []).some((child) => requestedStructureIds.includes(child.structureId)),
+    )
+    .map(({ structureId }) => structureId);
 
   // Multi-pass loop: after each pass, cross-structure advancement (via directParticipants)
   // may populate positions in downstream structures, making new matchUps ready to complete.

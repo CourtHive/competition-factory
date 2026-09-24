@@ -1,6 +1,6 @@
+import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
-import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
@@ -131,18 +131,17 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     return { error: INVALID_WINNING_SIDE };
   }
 
-  // DECISION: Set matchUp format before setting score/status
-  // WHY: Format affects score validation (e.g., number of sets, tiebreak rules)
-  // Must be set first to ensure score is validated against correct format
+  // DECISION: VALIDATE the matchUpFormat here; do not WRITE it here.
+  // WHY: this used to call `applyMatchUpFormat`, which persists the format onto the matchUp, before
+  // the outcome had been validated at all — so a refused outcome left the new format behind. A call
+  // that returns an error must change nothing (`ERROR_IMPLIES_NO_MUTATION`).
+  // The write is not lost by moving it: every outcome path funnels through `modifyMatchUpScore`,
+  // whose `applyScoreAndStatus` persists `matchUpFormat` once the outcome is accepted. Validation
+  // still has to happen up here, because score validation below is resolved against this format and
+  // an unrecognised one must be refused before any of it runs.
   if (matchUpFormat) {
-    const result = applyMatchUpFormat({
-      tournamentRecord,
-      drawDefinition,
-      matchUpFormat,
-      matchUpId,
-      event,
-    });
-    if (result.error) return result;
+    const check = checkMatchUpFormatApplication({ drawDefinition, matchUpFormat, matchUpId, event });
+    if (check.error) return check;
   }
 
   // DECISION: score strings are DERIVED from score.sets — never accepted from the caller

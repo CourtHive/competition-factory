@@ -96,6 +96,7 @@ module.exports = {
             'concepts/draw-positions',
             'concepts/draw-links',
             'concepts/draft-draws',
+            'concepts/additional-seeds',
             'concepts/seed-withdrawal-cascade',
             'concepts/exit-profiles',
             'concepts/exit-propagation',

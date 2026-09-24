@@ -150,6 +150,8 @@ describe('tournamentRow', () => {
       end_date: null,
       city: null,
       published: false,
+      // null is "visible now"; an unpublished tournament is withheld by `published`, not by a date
+      visible_from: null,
       origin_organisation_id: null,
       origin_tournament_id: null,
     });

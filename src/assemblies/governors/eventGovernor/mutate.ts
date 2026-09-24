@@ -8,6 +8,7 @@ export { modifyPairAssignment } from '@Mutate/drawDefinitions/modifyPairAssignme
 export { updateDrawIdsOrder } from '@Mutate/events/updateDrawIdsOrder';
 export { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 export { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';
+export { addAdditionalSeed } from '@Mutate/drawDefinitions/entryGovernor/addAdditionalSeed';
 export { assignSeedPositions } from '@Mutate/events/assignSeedPositions';
 export { attachFlightProfile } from '@Mutate/events/attachFlightProfile';
 export { removeScaleValues } from '@Mutate/entries/removeScaleValues';
