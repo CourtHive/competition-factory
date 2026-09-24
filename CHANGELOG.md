@@ -1,5 +1,30 @@
 # Changelog
 
+## [7.1.0](https://github.com/CourtHive/competition-factory/compare/v7.0.0...v7.1.0) (2026-09-24)
+
+
+### Features
+
+* **mocks:** anchor a generated schedule to a moment ([#4970](https://github.com/CourtHive/competition-factory/issues/4970)) ([59440cd](https://github.com/CourtHive/competition-factory/commit/59440cd723ddc68a2b73f89bd58ef040f635f3eb))
+* **mocks:** completeDrawMatchUps accepts structureIds ([#4971](https://github.com/CourtHive/competition-factory/issues/4971)) ([1da0c40](https://github.com/CourtHive/competition-factory/commit/1da0c40269243d67ed3878efd343af75dc34ca8b))
+* **publishing:** announce on a date — a read-time embargo for tournament information ([#4966](https://github.com/CourtHive/competition-factory/issues/4966)) ([059cff0](https://github.com/CourtHive/competition-factory/commit/059cff0fdc491d4544df3c74be27c485a574d064))
+* **seeding:** additional seeds as a policy allowance, with a recorded basis ([#4974](https://github.com/CourtHive/competition-factory/issues/4974)) ([f229ace](https://github.com/CourtHive/competition-factory/commit/f229aceb782357899efd1f680777127e71cb47b9))
+
+
+### Bug Fixes
+
+* **propagation:** the consolation reservation asks the authority, not a status list ([#4958](https://github.com/CourtHive/competition-factory/issues/4958)) ([44a37ad](https://github.com/CourtHive/competition-factory/commit/44a37adbf454ac55b672b6c44e0a061bc65054a1))
+* **scheduling:** a rejected outcome no longer keeps the schedule it carried ([#4965](https://github.com/CourtHive/competition-factory/issues/4965)) ([9263cf1](https://github.com/CourtHive/competition-factory/commit/9263cf10fd04946d076d480697cf39a4afb933ee))
+* **scheduling:** validTimeValue accepted any unreadable string and stored it as noon ([#4968](https://github.com/CourtHive/competition-factory/issues/4968)) ([d7f9db4](https://github.com/CourtHive/competition-factory/commit/d7f9db48fbef7a38b6026a7e90f342e028d3eb4c))
+* **scoring:** a rejected outcome no longer keeps the matchUpFormat it carried ([#4964](https://github.com/CourtHive/competition-factory/issues/4964)) ([5026155](https://github.com/CourtHive/competition-factory/commit/50261558175bcec3e455926561d20dc8df0f7c82))
+* **tests:** scenarioNowAnchor was a time bomb and it went off in CI ([#4973](https://github.com/CourtHive/competition-factory/issues/4973)) ([b141fe3](https://github.com/CourtHive/competition-factory/commit/b141fe32638315e6c164b532bb3d3066d73bb772))
+* **venues:** pinned courtIds were assigned in reverse ([#4969](https://github.com/CourtHive/competition-factory/issues/4969)) ([2104237](https://github.com/CourtHive/competition-factory/commit/21042370e7e26282a44454c2123bdfdcd146130d))
+
+
+### Documentation
+
+* the error-atomicity caveat named a cause that no longer reproduces ([#4963](https://github.com/CourtHive/competition-factory/issues/4963)) ([4d1c4ee](https://github.com/CourtHive/competition-factory/commit/4d1c4eedc6979b086e8d6307a5dd40b35034834a))
+
 ## [7.0.0](https://github.com/CourtHive/competition-factory/compare/v6.38.0...v7.0.0) (2026-09-22)
 
 
