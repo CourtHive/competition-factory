@@ -1,8 +1,8 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { addNotice } from '@Global/state/globalState';
 import { getTimeItem } from '@Query/base/timeItems';
-import { addTimeItem } from './addTimeItem';
 import { isISODateString } from '@Tools/dateTime';
+import { addTimeItem } from './addTimeItem';
 import { isString } from '@Tools/objects';
 
 // constants
