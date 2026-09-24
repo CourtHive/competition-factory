@@ -6,7 +6,7 @@ import { isAnyExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
-import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
@@ -68,6 +68,7 @@ export const DRAW_POSITIONS_NOT_SORTED = 'DRAW_POSITIONS_NOT_SORTED';
 export const EXIT_CODE_ON_WINNER_SIDE = 'EXIT_CODE_ON_WINNER_SIDE';
 export const EXIT_WITHOUT_LOSER = 'EXIT_WITHOUT_LOSER';
 export const PROPAGATED_EXIT_LOST = 'PROPAGATED_EXIT_LOST';
+export const STALLED_POSITION = 'STALLED_POSITION';
 
 // DEFERRED — STALE_EXIT_STATUS is intentionally NOT implemented.
 //
@@ -392,6 +393,83 @@ function getLostPropagatedExitInconsistency(matchUp: any): StructureInconsistenc
   };
 }
 
+/**
+ * STALLED_POSITION — a participant in a match that can never be played, in a draw that has stopped.
+ *
+ * ## Why every other rule here is blind to it
+ *
+ *  - `DRAW_POSITION_UNASSIGNED` opens `if (!matchUp.winningSide …) continue` — a stall has no
+ *    `winningSide`, so it is skipped.
+ *  - `BYE_ADVANCEMENT_MISSING` requires `byeSides.length === 1 && participantSides.length === 1` — a
+ *    stall is VACANT-versus-participant, not BYE-versus-participant, so it is skipped.
+ *
+ * Measured 2026-09-23: COMPASS 16/14, ONE `DOUBLE_WALKOVER` at `East|1|2`, play everything else —
+ * `Southwest|1|1` ends `(empty) vs <participant>` and `getDrawInconsistencies` returned
+ * `valid: true`. At 4 byes the same action strands THREE.
+ *
+ * ## TWO conditions, and the second was learned the hard way
+ *
+ * The shape "undecided, one participant, one vacant side" describes a stalled matchUp AND a
+ * legitimately PENDING one. Nothing about the matchUp separates them — the confusion that makes
+ * `PROPAGATED_EXIT_LOST` over-report.
+ *
+ * 1. **Nothing in the draw is playable.** If nothing is playable, nothing is pending.
+ * 2. **The draw has actually STARTED** — at least one matchUp decided.
+ *
+ * Condition 2 is not decoration. Without it this rule fired **94 times** across the suite on its
+ * first run, because a draw whose positions are not yet assigned ALSO has nothing playable. "Nothing
+ * playable" conflates *finished* with *not yet begun*, and a not-yet-begun draw is full of matchUps
+ * holding one participant against a seat their opponent has not been drawn into yet. The suite
+ * caught it; the first version of this docblock claimed condition 1 was sufficient.
+ *
+ * The cost is stated: this reports LATE and cannot warn a director mid-event. A per-position
+ * reachability rule could, and remains the better long-term answer — it needs its own oracle and its
+ * own falsification harness first.
+ */
+function getStalledPositionInconsistencies(
+  /** REPORTED over these — narrowed to one structure when the caller asked for one */
+  scoped: MatchUp[],
+  /**
+   * ASKED of these — always the WHOLE draw. Computing playability over `scoped` would make an audit
+   * of a finished EAST structure report stalls while WEST still had matches to play, and TMX's draw
+   * audit passes a `structureId`.
+   */
+  allDrawMatchUps: MatchUp[],
+  roundRobinGroupStructureIds: Set<string>,
+): StructureInconsistency[] {
+  const undecided = (matchUp: any) =>
+    !matchUp.winningSide && (!matchUp.matchUpStatus || matchUp.matchUpStatus === TO_BE_PLAYED);
+  const occupants = (matchUp: any) => (matchUp.sides ?? []).filter((side: any) => side?.participantId && !side?.bye);
+
+  const drawMatchUps = (allDrawMatchUps as any[]).filter((matchUp) => !matchUp.collectionId);
+  const anythingPlayable = drawMatchUps.some((matchUp) => undecided(matchUp) && occupants(matchUp).length === 2);
+  if (anythingPlayable) return [];
+
+  const hasStarted = drawMatchUps.some((matchUp) => matchUp.winningSide);
+  if (!hasStarted) return [];
+
+  const inconsistencies: StructureInconsistency[] = [];
+  for (const matchUp of scoped as any[]) {
+    // round-robin groups have no feeds: a vacant seat there is an entry problem, not a stall
+    if (roundRobinGroupStructureIds.has(matchUp.structureId)) continue;
+    if (!undecided(matchUp)) continue;
+    if ((matchUp.sides ?? []).some((side: any) => side?.bye)) continue;
+
+    const present = occupants(matchUp);
+    if (present.length !== 1) continue;
+
+    inconsistencies.push({
+      matchUpId: matchUp.matchUpId,
+      structureId: matchUp.structureId,
+      issueType: STALLED_POSITION,
+      message: `side ${present[0].sideNumber} holds a participant whose opponent can never arrive — no matchUp in the draw is playable`,
+      sideNumber: present[0].sideNumber,
+      matchUpStatus: matchUp.matchUpStatus,
+    });
+  }
+  return inconsistencies;
+}
+
 export function getStructureInconsistencies(
   params: GetStructureInconsistenciesArgs,
 ): ResultType & { valid?: boolean; inconsistencies?: Inconsistency[] } {
@@ -409,6 +487,10 @@ export function getStructureInconsistencies(
 
   const roundRobinGroupStructureIds = new Set<string>();
   collectRoundRobinGroupStructureIds(drawDefinition.structures, roundRobinGroupStructureIds);
+
+  inconsistencies.push(
+    ...getStalledPositionInconsistencies(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds),
+  );
 
   for (const matchUp of scoped) {
     const { winningSide, matchUpStatus, matchUpStatusCodes, sides, matchUpId, drawPositions } = matchUp;
