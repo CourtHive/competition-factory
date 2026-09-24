@@ -61,7 +61,7 @@ export function initializeStructureSeedAssignments({
     drawSize,
   })?.seedGroups;
 
-  const { seedsCount: maxSeedsCount } = getSeedsCount({
+  const { seedsCount: maxSeedsCount, additionalSeedsAllowed = 0 } = getSeedsCount({
     policyDefinitions: appliedPolicies,
     requireParticipantCount,
     drawSizeProgression,
@@ -69,8 +69,14 @@ export function initializeStructureSeedAssignments({
     drawSize,
   });
 
-  if (maxSeedsCount && appliedPolicies?.[POLICY_TYPE_SEEDING] && seedsCount > maxSeedsCount && enforcePolicyLimits) {
-    seedsCount = maxSeedsCount;
+  // The policy ceiling is the threshold count PLUS whatever the policy allows above it. A body
+  // that protects a returning player permits, say, 32 + 4 in a 128 draw; clamping to 32 would
+  // refuse the protection the policy exists to grant. `additionalSeedsAllowed` is 0 unless a
+  // policy declares it, so an unchanged policy clamps exactly where it always did.
+  const policyCeiling = maxSeedsCount ? maxSeedsCount + additionalSeedsAllowed : 0;
+
+  if (policyCeiling && appliedPolicies?.[POLICY_TYPE_SEEDING] && seedsCount > policyCeiling && enforcePolicyLimits) {
+    seedsCount = policyCeiling;
   }
 
   structure.seedLimit = seedsCount;

@@ -114,6 +114,7 @@ import type { getScheduledRoundsDetails } from '@Query/matchUps/scheduling/getSc
 import type { setStructureOrder } from '@Mutate/drawDefinitions/structureGovernor/setStructureOrder';
 import type { addSchedulingProfileRound } from '@Mutate/matchUps/schedule/addSchedulingProfileRound';
 import type { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
+import type { getAdditionalSeedsAllowance } from '@Query/drawDefinition/getAdditionalSeedsAllowance';
 import type { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 import type { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 import type { predictDrawCompetitiveBands } from '@Query/drawDefinition/predictDrawCompetitiveBands';
@@ -145,6 +146,7 @@ import type { getScenarioScheduleView } from '@Query/matchUps/scheduling/getScen
 import type { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 import type { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 import type { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
+import type { addAdditionalSeed } from '@Mutate/drawDefinitions/entryGovernor/addAdditionalSeed';
 import type { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
 import type { removeStructure } from '@Mutate/drawDefinitions/structureGovernor/removeStructure';
 import type { removeDelegatedOutcome } from '@Mutate/extensions/matchUps/removeDelegatedOutcome';
@@ -684,6 +686,7 @@ export interface MethodSignatures {
   abandonTournamentMatchUps: EngineMethod<typeof abandonTournamentMatchUps>;
   acceptChallenge: EngineMethod<typeof acceptChallenge>;
   activateFromSanctioning: EngineMethod<typeof activateFromSanctioning>;
+  addAdditionalSeed: EngineMethod<typeof addAdditionalSeed>;
   addAdHocMatchUps: EngineMethod<typeof addAdHocMatchUps>;
   addCertification: EngineMethod<typeof addCertification>;
   addCertificationRequirement: EngineMethod<typeof addCertificationRequirement>;
@@ -896,6 +899,7 @@ export interface MethodSignatures {
   generateTournamentRecord: EngineMethod<typeof generateTournamentRecord>;
   generateVirtualCourts: EngineMethod<typeof generateVirtualCourts>;
   generateVoluntaryConsolation: EngineMethod<typeof generateVoluntaryConsolation>;
+  getAdditionalSeedsAllowance: EngineMethod<typeof getAdditionalSeedsAllowance>;
   getAggregateTeamResults: EngineMethod<typeof getAggregateTeamResults>;
   getAllDrawMatchUps: EngineMethod<typeof getAllDrawMatchUps>;
   getAllEventData: EngineMethod<typeof getAllEventData>;

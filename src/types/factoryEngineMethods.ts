@@ -8,6 +8,7 @@ export type FactoryEngineMethod =
   | 'abandonTournamentMatchUps'
   | 'acceptChallenge'
   | 'activateFromSanctioning'
+  | 'addAdditionalSeed'
   | 'addAdHocMatchUps'
   | 'addCertification'
   | 'addCertificationRequirement'
@@ -247,6 +248,7 @@ export type FactoryEngineMethod =
   | 'generateTournamentRecord'
   | 'generateVirtualCourts'
   | 'generateVoluntaryConsolation'
+  | 'getAdditionalSeedsAllowance'
   | 'getAggregateTeamResults'
   | 'getAllDrawMatchUps'
   | 'getAllEventData'
@@ -755,6 +757,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'abandonTournamentMatchUps',
   'acceptChallenge',
   'activateFromSanctioning',
+  'addAdditionalSeed',
   'addAdHocMatchUps',
   'addCertification',
   'addCertificationRequirement',
@@ -994,6 +997,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'generateTournamentRecord',
   'generateVirtualCourts',
   'generateVoluntaryConsolation',
+  'getAdditionalSeedsAllowance',
   'getAggregateTeamResults',
   'getAllDrawMatchUps',
   'getAllEventData',

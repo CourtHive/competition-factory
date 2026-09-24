@@ -178,6 +178,10 @@ export const MISSING_SEEDCOUNT_THRESHOLDS = {
   message: 'Missing seedCountThresholds',
   code: 'ERR_MISSING_SEED_COUNT_THRESHOLD',
 };
+export const ADDITIONAL_SEEDS_EXHAUSTED = {
+  message: 'seeding policy allows no further additional seeds',
+  code: 'ERR_ADDITIONAL_SEEDS_EXHAUSTED',
+};
 export const INVALID_ACTION = {
   message: 'Invalid action',
   code: 'ERR_INVALID_ACTION',
@@ -1174,6 +1178,7 @@ export const errorConditionConstants = {
   SCHEDULED_MATCHUPS,
   SCORES_PRESENT,
   SEEDSCOUNT_GREATER_THAN_DRAW_SIZE,
+  ADDITIONAL_SEEDS_EXHAUSTED,
   STAGE_SEQUENCE_LIMIT,
   STRUCTURE_NOT_FOUND,
   TEAM_NOT_FOUND,

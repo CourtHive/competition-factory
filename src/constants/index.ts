@@ -27,6 +27,7 @@ export { dayStateConstants } from './dayStateConstants';
 export { availabilityConstants } from './dayStateConstants';
 export { resourceContants } from './resourceConstants';
 export { resultConstants } from './resultConstants';
+export { seedingBasisConstants, ADDITIONAL_SEED_BASES } from './seedingConstants';
 export { actionMethodConstants } from './actionMethodConstants';
 export { bookingTypeConstants } from './bookingTypeConstants';
 export { scaleConstants } from './scaleConstants';

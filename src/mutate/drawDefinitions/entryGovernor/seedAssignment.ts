@@ -8,7 +8,7 @@ import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, SeedingBasisUnion, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SeedingProfile } from '@Types/factoryTypes';
 import {
@@ -26,6 +26,8 @@ type AssignSeedArgs = {
   seedBlockInfo?: any;
   structureId: string;
   seedNumber: number;
+  /** Why the seed was awarded; see {@link SeedingBasisEnum}. Absent leaves any existing basis alone. */
+  seedingBasis?: SeedingBasisUnion;
   seedValue?: string | number;
   eventId?: string;
   event?: Event;
@@ -38,6 +40,7 @@ export function assignSeed({
   participantId,
   seedBlockInfo,
   structureId,
+  seedingBasis,
   seedNumber,
   seedValue,
   eventId,
@@ -89,7 +92,7 @@ export function assignSeed({
   }
 
   if (!seedNumbers.includes(seedNumber)) {
-    seedAssignments.push({ seedNumber, seedValue });
+    seedAssignments.push({ seedNumber, seedValue, seedingBasis });
   }
 
   let success;
@@ -102,6 +105,9 @@ export function assignSeed({
     if (assignment.seedNumber === seedNumber) {
       assignment.participantId = participantId;
       if (!seedingProfile?.groupSeedingThreshold && !flighted) assignment.seedValue = seedValue ?? seedNumber;
+      // An absent basis means "the ordinary one", which is also what an untouched assignment
+      // already says — so an omitted param must not erase a basis a prior call recorded.
+      if (seedingBasis) assignment.seedingBasis = seedingBasis;
       success = true;
     }
   });

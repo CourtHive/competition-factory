@@ -70,6 +70,11 @@ looks fine can be seeded by the wrong rules.
       minimumParticipantCount: number;
       seedsCount: number;
     }>;
+
+    additionalSeeds?: {
+      maxCount: number;
+      bases?: Array<'ORGANISER_DISCRETION' | 'PROTECTED_RANKING' | 'RANKING' | 'RATING'>;
+    };
   }
 }
 ```
@@ -729,6 +734,43 @@ const clubPolicy = {
 
 ---
 
+### `additionalSeeds`
+
+**Type:** `{ maxCount: number; bases?: SeedingBasisUnion[] }`
+**Default:** none — no seeds above the threshold count
+
+Seeds permitted **above** the count `seedsCountThresholds` yields, for bodies that award a seeding
+to a player whose ranking does not reach the seed count on its own — most commonly a protected or
+frozen ranking after a long absence.
+
+The distinction from simply raising `seedsCountThresholds` is the whole point. An additional seed
+is added **alongside** the existing seeds, so nobody is displaced from a seeding slot they earned.
+A 128-draw with 32 seeds becomes one with 32 seeds _plus one_.
+
+```javascript
+const protectedSeeding = policyComposer(POLICY_TYPE_SEEDING)
+  .extend(POLICY_SEEDING_ITF)
+  .set('policyName', 'PROTECTED RANKING SEEDING')
+  .set('additionalSeeds', { maxCount: 4, bases: ['PROTECTED_RANKING'] })
+  .build();
+```
+
+The effective ceiling becomes `thresholdSeedsCount + maxCount`. A `seedsCount` above the threshold
+is honoured up to that ceiling **with `enforcePolicyLimits` left at its default `true`**, and
+clamped above it. `drawSize` and the stage's entry count still cap the count either way.
+
+`bases` narrows what may _claim_ an additional seed and is reported by
+`getAdditionalSeedsAllowance` so a client can build the right control. It is not a write-time
+refusal — the count is the binding limit.
+
+The allowance is 0 whenever no threshold matched: it is expressed relative to a count, so there is
+nothing for an additional seed to be additional to.
+
+See [Additional Seeds](../concepts/additional-seeds.md) for `seedingBasis`, the
+`addAdditionalSeed` mutation, and what the factory deliberately leaves to the caller.
+
+---
+
 ## Built-in Seeding Policies
 
 The factory ships three pre-configured seeding policies. A federation whose rules differ from all three should **compose** a variant rather than hand-copy one — see [Composing a variant](#composing-a-variant).
@@ -951,6 +993,13 @@ Two things to know when a draw is generated with a deeper policy:
 - Passing an explicit `seedsCount` above the policy's maximum is clamped back down unless
   `enforcePolicyLimits: false` is also passed. `drawSize` and the stage's entry count still cap it
   either way. See [generateDrawDefinition](../governors/generation-governor.md).
+
+Deeper seeding and **additional** seeding are different things, and reaching for the wrong one is
+easy. Raising `seedsCountThresholds` gives the draw more seeds — the 9th-ranked entrant becomes a
+seed and takes a seeded position. [`additionalSeeds`](#additionalseeds) adds a seed _beside_ the
+existing ones so that no entrant loses a seeding they earned, which is what a protected-ranking
+rule requires. Use the thresholds to change how deeply a draw seeds; use the allowance to let a
+named few sit above that depth.
 
 `policyComposer` is immutable — `extend` never mutates the fixture you pass it — so one base composer
 can safely seed several federation variants. `.register({ name, version })` builds and records the
