@@ -1,9 +1,12 @@
+import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGrid';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { extractDate } from '@Tools/dateTime';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 
 // constants and types
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -104,12 +107,64 @@ export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: Appl
     for (const drawDefinition of event.drawDefinitions ?? []) drawMap[drawDefinition.drawId] = drawDefinition;
   }
 
+  /**
+   * A shift that crosses midnight must move the DATE as well as the time.
+   *
+   * `addMatchUpScheduledTime` keeps the date part of an ISO value only when the matchUp has none
+   * (`const keepDate = timeDate && !scheduledDate`, scheduledTime.ts:54) — and an auto-scheduled
+   * matchUp always has one. So passing it a full ISO stored the new TIME against the OLD DATE, and
+   * any midnight-crossing shift left the record disagreeing with itself by exactly 24 hours.
+   * Reproduced at 00:58 UTC: rows read `2026-09-23 | 00:58` where 00:58 belonged to 09-24.
+   *
+   * REFUSED, NOT CLAMPED, when the shift leaves the tournament's range.
+   * `addMatchUpScheduledDate` validates against start/end and refuses outside it, so the three
+   * options were clamp, widen, or refuse. Clamping invents a schedule the caller did not ask for
+   * and silently disagrees with `anchoredTo`; widening mutates the tournament's own dates as a side
+   * effect of a mock helper. Refusing says what happened and leaves the record consistent.
+   *
+   * Checked for EVERY matchUp BEFORE writing any of them, so a refusal cannot land on a half-shifted
+   * schedule.
+   */
+  const shifts = scheduled
+    .filter(({ matchUp }) => drawMap[matchUp.drawId])
+    .map(({ matchUp, instant }) => ({ matchUp, shifted: new Date(instant.getTime() + deltaMs) }));
+
+  const startBound = tournamentRecord?.startDate && new Date(extractDate(tournamentRecord.startDate) ?? '').getTime();
+  const endBound = tournamentRecord?.endDate && new Date(extractDate(tournamentRecord.endDate) ?? '').getTime();
+  if (startBound && endBound) {
+    const outside = shifts.find(({ shifted }) => {
+      const dayMs = new Date(isoMinute(shifted).split('T')[0]).getTime();
+      return dayMs < startBound || dayMs > endBound;
+    });
+    if (outside) {
+      return decorateResult({
+        result: { error: INVALID_DATE },
+        info: `anchoring would move a matchUp to ${isoMinute(outside.shifted).split('T')[0]}, outside the tournament's dates`,
+        stack: 'applyScenarioProfile',
+      });
+    }
+  }
+
   let shiftedCount = 0;
-  for (const { matchUp, instant } of scheduled) {
+  for (const { matchUp, shifted } of shifts) {
     const drawDefinition = drawMap[matchUp.drawId];
-    if (!drawDefinition) continue;
+    const isoShifted = isoMinute(shifted);
+    const targetDate = isoShifted.split('T')[0];
+
+    // the date first: the time write below reads the matchUp's CURRENT date to decide what to keep
+    if (targetDate !== String(matchUp.schedule?.scheduledDate ?? '').split('T')[0]) {
+      const dateResult = addMatchUpScheduledDate({
+        scheduledDate: targetDate,
+        matchUpId: matchUp.matchUpId,
+        disableNotice: true,
+        tournamentRecord,
+        drawDefinition,
+      });
+      if (dateResult?.error) return decorateResult({ result: dateResult, stack: 'applyScenarioProfile' });
+    }
+
     const result = addMatchUpScheduledTime({
-      scheduledTime: isoMinute(new Date(instant.getTime() + deltaMs)),
+      scheduledTime: isoShifted,
       matchUpId: matchUp.matchUpId,
       disableNotice: true,
       tournamentRecord,

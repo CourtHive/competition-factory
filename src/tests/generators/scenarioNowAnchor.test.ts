@@ -19,12 +19,17 @@ const today = new Date().toISOString().split('T')[0];
 // and `dev` goes red for reasons that have nothing to do with anchoring.
 const ANCHOR = `${today}T15:00`;
 
-function generate(scenarioProfile?: any) {
+function generate(
+  scenarioProfile?: any,
+  venueHours: { startTime: string; endTime: string } = { startTime: '08:00', endTime: '20:00' },
+  startDate: string = today,
+  endDate: string = today,
+) {
   return mocksEngine.generateTournamentRecord({
-    startDate: today,
-    endDate: today,
+    startDate,
+    endDate,
     drawProfiles: [{ drawId: DRAW, drawSize: 16, drawType: 'SINGLE_ELIMINATION' }],
-    venueProfiles: [{ venueId: VENUE, courtsCount: 6, startTime: '08:00', endTime: '20:00' }],
+    venueProfiles: [{ venueId: VENUE, courtsCount: 6, ...venueHours }],
     schedulingProfile: [
       {
         scheduleDate: today,
@@ -99,25 +104,42 @@ describe('scenarioProfile anchoring', () => {
     expect(times.filter((t) => t > anchorMs).length).toBeGreaterThan(0);
   });
 
-  // SKIPPED against a known, unfixed defect — not a flaky test.
-  //
-  // `applyScenarioProfile` shifts `scheduledTime` and never moves `scheduledDate`, because
-  // `addMatchUpScheduledTime` keeps the date part of an ISO value only when the matchUp has none
-  // (`scheduledTime.ts`: `const keepDate = timeDate && !scheduledDate;`) and an auto-scheduled
-  // matchUp always has one. So any shift that crosses a day boundary leaves the record's date and
-  // time disagreeing, by exactly 24 hours.
-  //
-  // `today` here is the UTC date, so this reproduces for the whole evening in any timezone west of
-  // UTC, and in CI for the hour after 00:00Z. It is what turned `dev` red at 2026-09-24T00:22Z
-  // having been green at 12:18Z the same day.
-  //
-  // Fixing it means deciding what anchoring should do when the shift leaves the tournament's date
-  // range, since `addMatchUpScheduledDate` validates against start/end and refuses outside it.
-  // That is a decision, not a patch. Written up in
-  // Mentat/in-flight/NOTE-2026-09-23-scenario-anchoring-drops-the-date-and-dev-ci-is-red.md
-  it.skip("anchor 'NOW' lands the schedule around the current clock", () => {
+  /**
+   * UN-SKIPPED. The defect this was parked against is fixed in `applyScenarioProfile`.
+   *
+   * It was `it.skip` because `addMatchUpScheduledTime` keeps the date part of an ISO value only
+   * when the matchUp has none (`scheduledTime.ts:54`, `const keepDate = timeDate && !scheduledDate`)
+   * and an auto-scheduled matchUp always has one — so any shift crossing a day boundary left the
+   * record's date and time disagreeing by exactly 24 hours. That is what turned `dev` red at
+   * 2026-09-24T00:22Z having been green at 12:18Z the same day.
+   *
+   * `applyScenarioProfile` now writes the DATE alongside the time, and REFUSES the whole profile —
+   * before writing any of it — when the shift would leave the tournament's range, rather than
+   * clamping or widening the tournament behind the caller's back.
+   *
+   * So this test now has to give the tournament room for the instant it names: before 01:00 the
+   * target is YESTERDAY, and a tournament spanning only today would (correctly) refuse.
+   */
+  it("anchor 'NOW' lands the schedule around the current clock", () => {
     const now = Date.now();
-    tournamentEngine.setState(generate({ anchor: 'NOW', minutesBeforeAnchor: 60 }).tournamentRecord);
+    const target = new Date(now - 60 * 60_000);
+    const pad = (value: number) => String(value).padStart(2, '0');
+    const rangeStart = `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`;
+
+    // The range must cover the WHOLE shifted schedule, not just its first matchUp: sixteen matchUps
+    // anchored an hour ago run forward, and late in the evening the tail crosses midnight. Measured
+    // in Pacific/Auckland at 22:29 local, where the un-widened version is (correctly) refused.
+    const tail = new Date(now + 24 * 60 * 60_000);
+    const rangeEnd = `${tail.getFullYear()}-${pad(tail.getMonth() + 1)}-${pad(tail.getDate())}`;
+    const generated = generate(
+      { anchor: 'NOW', minutesBeforeAnchor: 60 },
+      { startTime: '00:00', endTime: '23:59' },
+      rangeStart,
+      rangeEnd,
+    );
+    expect(generated.error).toBeUndefined();
+    tournamentEngine.setState(generated.tournamentRecord);
+
     const earliest = instants()[0];
     // within a minute of (now - 60m); isoMinute truncates seconds
     expect(Math.abs(earliest - (now - 60 * 60_000))).toBeLessThan(90_000);
