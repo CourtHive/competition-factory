@@ -11,14 +11,28 @@ import { expect, it, describe } from 'vitest';
 
 const DRAW = 'anchor-draw';
 const VENUE = 'anchor-venue';
-const today = new Date().toISOString().split('T')[0];
+/**
+ * LOCAL date, deliberately — not `toISOString()`, which is UTC.
+ *
+ * `instants()` rebuilds each matchUp's moment with `new Date(y, mo-1, d, h, mi)`, which is LOCAL,
+ * and the `NOW` test compares that against `Date.now()`. Deriving the date in UTC while reading it
+ * back in local time puts the two a day apart every evening west of UTC.
+ */
+const today = (() => {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+})();
 
-function generate(scenarioProfile?: any) {
+function generate(
+  scenarioProfile?: any,
+  venueHours: { startTime: string; endTime: string } = { startTime: '08:00', endTime: '20:00' },
+) {
   return mocksEngine.generateTournamentRecord({
     startDate: today,
     endDate: today,
     drawProfiles: [{ drawId: DRAW, drawSize: 16, drawType: 'SINGLE_ELIMINATION' }],
-    venueProfiles: [{ venueId: VENUE, courtsCount: 6, startTime: '08:00', endTime: '20:00' }],
+    venueProfiles: [{ venueId: VENUE, courtsCount: 6, ...venueHours }],
     schedulingProfile: [
       {
         scheduleDate: today,
@@ -63,12 +77,12 @@ describe('scenarioProfile anchoring', () => {
   });
 
   it('places the first matchUp the requested distance before the anchor', () => {
-    const anchor = '2026-09-23T15:00';
+    const anchor = `${today}T15:00`;
     const result = generate({ anchor, minutesBeforeAnchor: 120, assignCourts: true });
     tournamentEngine.setState(result.tournamentRecord);
 
     const earliest = instants()[0];
-    expect(earliest).toEqual(new Date('2026-09-23T13:00').getTime());
+    expect(earliest).toEqual(new Date(`${today}T13:00`).getTime());
     expect(result.scenarioResult?.shiftedCount).toBeGreaterThan(0);
   });
 
@@ -77,7 +91,7 @@ describe('scenarioProfile anchoring', () => {
     tournamentEngine.setState(before.tournamentRecord);
     const gapsBefore = instants().map((t, i, a) => (i ? t - a[i - 1] : 0));
 
-    const after = generate({ anchor: '2026-09-23T15:00', minutesBeforeAnchor: 90 });
+    const after = generate({ anchor: `${today}T15:00`, minutesBeforeAnchor: 90 });
     tournamentEngine.setState(after.tournamentRecord);
     const gapsAfter = instants().map((t, i, a) => (i ? t - a[i - 1] : 0));
 
@@ -85,7 +99,7 @@ describe('scenarioProfile anchoring', () => {
   });
 
   it('puts matchUps on BOTH sides of the anchor, which is what makes a now-strip demonstrable', () => {
-    const anchor = '2026-09-23T15:00';
+    const anchor = `${today}T15:00`;
     tournamentEngine.setState(generate({ anchor, minutesBeforeAnchor: 120 }).tournamentRecord);
     const anchorMs = new Date(anchor).getTime();
     const times = instants();
@@ -94,15 +108,32 @@ describe('scenarioProfile anchoring', () => {
   });
 
   it("anchor 'NOW' lands the schedule around the current clock", () => {
-    const now = Date.now();
-    tournamentEngine.setState(generate({ anchor: 'NOW', minutesBeforeAnchor: 60 }).tournamentRecord);
+    const now = new Date();
+    /**
+     * The offset must not cross midnight, and the venue must be open for it.
+     *
+     * `NOW` resolves to the current time of day ON THE SCHEDULED DATE, and this assertion compares
+     * an ABSOLUTE instant — so the two only agree while the target stays inside today. Both ways it
+     * could fail were measured against this checkpoint's CI, which ran at 00:51 UTC:
+     *  - a venue opening at 08:00 cannot host a matchUp an hour earlier -> `3573841 < 90000`;
+     *  - a fixed 60-minute offset lands on YESTERDAY before 01:00 -> `3582486 < 90000`, the
+     *    scheduler clamping to the start of the day.
+     * Capping the offset at minutes-since-midnight keeps the target on today's clock at any hour,
+     * which is what the test is actually about.
+     */
+    const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
+    const minutesBeforeAnchor = Math.min(60, minutesSinceMidnight);
+    if (!minutesBeforeAnchor) return; // exactly midnight: nothing to assert, and vanishingly rare
+
+    const generated = generate({ anchor: 'NOW', minutesBeforeAnchor }, { startTime: '00:00', endTime: '23:59' });
+    tournamentEngine.setState(generated.tournamentRecord);
     const earliest = instants()[0];
-    // within a minute of (now - 60m); isoMinute truncates seconds
-    expect(Math.abs(earliest - (now - 60 * 60_000))).toBeLessThan(90_000);
+    // within a minute of (now - offset); isoMinute truncates seconds
+    expect(Math.abs(earliest - (now.getTime() - minutesBeforeAnchor * 60_000))).toBeLessThan(90_000);
   });
 
   it('assignCourts puts matchUps on courts while keeping their times', () => {
-    const result = generate({ anchor: '2026-09-23T15:00', minutesBeforeAnchor: 120, assignCourts: true });
+    const result = generate({ anchor: `${today}T15:00`, minutesBeforeAnchor: 120, assignCourts: true });
     tournamentEngine.setState(result.tournamentRecord);
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const withBoth = matchUps.filter((m: any) => m.schedule?.courtId && m.schedule?.scheduledTime);
@@ -118,7 +149,7 @@ describe('scenarioProfile anchoring', () => {
     const result = mocksEngine.generateTournamentRecord({
       startDate: today,
       drawProfiles: [{ drawSize: 8 }],
-      scenarioProfile: { anchor: '2026-09-23T15:00' },
+      scenarioProfile: { anchor: `${today}T15:00` },
     });
     expect(result.error).toBeUndefined();
     expect(result.scenarioResult?.shiftedCount).toEqual(0);
