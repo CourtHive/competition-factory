@@ -129,6 +129,41 @@ draw size. That default is the entry count once BYEs are placed and the full dra
 anything is positioned, both of which are right. Pass it explicitly where a stage's entries are the
 truth and the board is not.
 
+## Where the basis surfaces
+
+The factory records the basis; three surfaces downstream read it. Worth knowing when deciding
+whether recording one is enough, because for most of the questions an additional seed provokes it
+is not the record that gets consulted.
+
+**The desk (TMX).** A participant in a draw view is offered _"Seed as additional"_ only where the
+allowance has room and they are not already seeded; choosing it asks for the basis from the list
+the policy named. Re-opening that participant afterwards reports _"Seeded on protected ranking"_
+and withdraws the action. The draw-generation form also offers the counts the allowance permits,
+labelled — `9 (+1 additional seed)` — rather than silently rounding a request down to the nearest
+power of two.
+
+**The printed draw sheet (pdf-factory).** The seedings table marks a non-ordinary basis with a
+footnote reference:
+
+```text
+Seed  Player              Nat.
+  8   H. Player           ESP
+  9 † I. Player           AUS
+
+† Additional seed — protected ranking
+```
+
+One marker per distinct basis, so two bases on one draw keep their identities. It is **not** marked
+on the entry line inside the bracket: the bracket answers _who plays whom_, the table answers _why
+these seeds_, and an entry line already carries name, nationality and an entry-status badge.
+
+Note that entering on a protected ranking and being **seeded** on one are orthogonal facts. A
+player may have either, both or neither, and `entryStatus` has no `PROTECTED_RANKING` member — the
+entry route and the seeding basis are different fields answering different questions.
+
+**Ordinary seeds are left unmarked**, everywhere. An absent basis means `RANKING`, so marking every
+seed would bury the one that is not ordinary — which is the only reason the mark exists.
+
 ## What the factory deliberately does not do
 
 - **It does not decide eligibility.** "The player's first eight events of the season" is a counter
