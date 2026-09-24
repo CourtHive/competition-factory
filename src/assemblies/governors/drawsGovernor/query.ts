@@ -29,6 +29,7 @@ export { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
 export { getSwissChart } from '@Query/drawDefinitions/swiss/getSwissChart';
 export { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 export { getDraftState } from '@Query/drawDefinition/draft/getDraftState';
+export { getAdditionalSeedsAllowance } from '@Query/drawDefinition/getAdditionalSeedsAllowance';
 export { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
 export { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
 export { checkValidEntries } from '@Validators/checkValidEntries';

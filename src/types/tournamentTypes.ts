@@ -1299,6 +1299,29 @@ export interface PositionAssignment {
   updatedAt?: Date | string;
 }
 
+/**
+ * WHY a seed exists — the ground on which it was awarded, as distinct from `seedValue`,
+ * which says only where it sits in the order.
+ *
+ * The distinction is load-bearing wherever a governing body permits seeds ABOVE the count its
+ * `seedsCountThresholds` allow (see `SeedingPolicy.additionalSeeds`). A seed awarded on a
+ * protected ranking is materially different from the seeds around it: it displaced nobody, it is
+ * usually bounded per season, and it is the one an appeal will ask about. Without a field for it
+ * the fact lives in an operator's head or in free-text `notes`, and a draw sheet, a results feed
+ * and an audit each have to guess.
+ *
+ * `RANKING` is the ordinary case and may be left undefined — an absent basis means "the usual
+ * one", not "unknown". Recording it explicitly is nonetheless supported, because a record that
+ * states its own basis survives a round trip through a consumer that knows nothing about seeding.
+ */
+export enum SeedingBasisEnum {
+  ORGANISER_DISCRETION = 'ORGANISER_DISCRETION',
+  PROTECTED_RANKING = 'PROTECTED_RANKING',
+  RANKING = 'RANKING',
+  RATING = 'RATING',
+}
+export type SeedingBasisUnion = `${SeedingBasisEnum}`;
+
 export interface SeedAssignment {
   createdAt?: Date | string;
   extensions?: Extension[];
@@ -1306,6 +1329,14 @@ export interface SeedAssignment {
   notes?: string;
   participantId?: string;
   seedNumber: number;
+  /**
+   * Why this seed was awarded. See {@link SeedingBasisEnum}. Absent means `RANKING`.
+   *
+   * First-class rather than an extension for the same reason `byeFromPropagation` is:
+   * `removeExtensions: true` is a supported option on getState/getTournament, so an extension
+   * marker is destroyed by a routine deep copy and its loss is silent.
+   */
+  seedingBasis?: SeedingBasisUnion;
   seedValue: number | string;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;

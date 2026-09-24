@@ -37,6 +37,7 @@ const MIRRORS = [
   { enumName: 'WeekdayEnum', out: 'src/constants/weekdayValues.ts' },
   { enumName: 'BookingTypeEnum', out: 'src/constants/bookingTypeValues.ts' },
   { enumName: 'ParticipantRoleEnum', out: 'src/constants/participantRoleValues.ts' },
+  { enumName: 'SeedingBasisEnum', out: 'src/constants/seedingBasisValues.ts' },
 ];
 
 // Parse a string enum's `MEMBER = 'value'` members, in declaration order.
