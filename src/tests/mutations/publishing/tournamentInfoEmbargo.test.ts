@@ -78,6 +78,36 @@ describe('information embargo — storage and validation', () => {
     expect('embargo' in status.info).toEqual(false);
   });
 
+  it('CLEARS a previous embargo when re-published without one — "announce now"', () => {
+    seedDrawless();
+    tournamentEngine.publishTournamentInfo({ embargo: FUTURE });
+    expect(getTournamentVisibleFrom({ tournamentRecord: record() })).toEqual(FUTURE);
+
+    tournamentEngine.publishTournamentInfo({});
+
+    // The write REPLACES `info` rather than merging into it, so omitting the embargo removes it.
+    // This is the whole of "announce now" for a caller — no separate mutation, no null sentinel —
+    // and TMX's publishing panel depends on it, which is why it is pinned here rather than left as
+    // an emergent property of how the object happens to be built.
+    const status: any = tournamentEngine.getTournamentPublishStatus({ tournamentRecord: record() });
+    expect('embargo' in status.info).toEqual(false);
+    expect(getTournamentVisibleFrom({ tournamentRecord: record() })).toEqual(null);
+    expect(isTournamentVisible({ tournamentRecord: record() })).toEqual(true);
+  });
+
+  it('keeps the event scope and the embargo independent of each other', () => {
+    const { eventIds } = seedDrawless();
+    tournamentEngine.publishTournamentInfo({ eventIds, embargo: FUTURE });
+
+    // Re-publishing to change the SCOPE alone also clears the embargo, for the same reason. Stated
+    // so the next reader does not assume a partial update: there is no partial update.
+    tournamentEngine.publishTournamentInfo({ eventIds });
+
+    const status: any = tournamentEngine.getTournamentPublishStatus({ tournamentRecord: record() });
+    expect(status.info.eventIds).toEqual(eventIds);
+    expect('embargo' in status.info).toEqual(false);
+  });
+
   it('reports the embargo among the publish state embargoes, with its active flag', () => {
     seedDrawless();
     tournamentEngine.publishTournamentInfo({ embargo: FUTURE });

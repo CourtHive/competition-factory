@@ -73,22 +73,6 @@ export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: Appl
   const anchorDate = anchor === 'NOW' ? new Date() : new Date(anchor);
   if (isNaN(anchorDate.getTime())) return { error: INVALID_VALUES };
 
-  // Courts first: the grid reads the schedule to order courts, and the shift below rewrites only
-  // scheduledTime, leaving courtId/courtOrder untouched. Doing it the other way round would order
-  // courts against times that are about to move.
-  if (assignCourts) {
-    const tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
-    const scheduleDates = [
-      ...new Set(
-        (allTournamentMatchUps({ tournamentRecord }).matchUps ?? [])
-          .map((m: any) => m.schedule?.scheduledDate)
-          .filter(Boolean)
-          .map((d: any) => String(d).split('T')[0]),
-      ),
-    ];
-    if (scheduleDates.length) scheduleProfileGrid({ tournamentRecords, scheduleDates } as any);
-  }
-
   const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
   const scheduled = matchUps
     .map((matchUp: any) => ({ matchUp, instant: scheduledInstant(matchUp) }))
@@ -171,6 +155,26 @@ export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: Appl
       drawDefinition,
     });
     if (!result?.error) shiftedCount += 1;
+  }
+
+  // Courts LAST, deliberately.
+  //
+  // The obvious order is courts-then-shift, so the grid orders courts against a settled schedule.
+  // That was the original order here and it was wrong: the shift then moves matchUps underneath the
+  // assignment, and a court closed for maintenance can end up holding a matchUp that was placed
+  // when it was somewhere else in the day. Assigning after the shift means the grid sees the final
+  // times and its closure check (punch list P33) applies to the times that will actually stand.
+  if (assignCourts) {
+    const tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
+    const scheduleDates = [
+      ...new Set(
+        (allTournamentMatchUps({ tournamentRecord }).matchUps ?? [])
+          .map((m: any) => m.schedule?.scheduledDate)
+          .filter(Boolean)
+          .map((d: any) => String(d).split('T')[0]),
+      ),
+    ];
+    if (scheduleDates.length) scheduleProfileGrid({ tournamentRecords, scheduleDates } as any);
   }
 
   return {
