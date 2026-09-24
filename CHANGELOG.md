@@ -1,5 +1,18 @@
 # Changelog
 
+## [7.1.1](https://github.com/CourtHive/competition-factory/compare/v7.1.0...v7.1.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* **docs:** take the image-size bump instead of waiving two HIGH advisories ([#4981](https://github.com/CourtHive/competition-factory/issues/4981)) ([94c20ea](https://github.com/CourtHive/competition-factory/commit/94c20ea08c36f13b06b5e451e36e2d78bc176ae3))
+* **scheduling:** a court closed for maintenance stops taking matchUps ([#4977](https://github.com/CourtHive/competition-factory/issues/4977)) ([fe8d4c2](https://github.com/CourtHive/competition-factory/commit/fe8d4c2b38b72a4c0628f7f7cc0c335de000984b))
+
+
+### Documentation
+
+* **seeding:** where the seeding basis actually surfaces ([#4975](https://github.com/CourtHive/competition-factory/issues/4975)) ([c9c3361](https://github.com/CourtHive/competition-factory/commit/c9c336154019c5da6f2d8033a4595beb0f0f31e7))
+
 ## [7.1.0](https://github.com/CourtHive/competition-factory/compare/v7.0.0...v7.1.0) (2026-09-24)
 
 
