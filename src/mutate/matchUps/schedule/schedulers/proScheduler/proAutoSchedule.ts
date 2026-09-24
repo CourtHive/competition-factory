@@ -5,6 +5,8 @@ import { competitionScheduleMatchUps } from '@Query/matchUps/competitionSchedule
 import { matchUpChronologicalSort } from '@Functions/sorters/matchUpChronologicalSort';
 import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { getGridBookings } from '@Query/venues/getGridBookings';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { isObject } from '@Tools/objects';
 
@@ -23,6 +25,72 @@ type ProAutoScheduleArgs = {
   scheduledDate: string;
   courtIds?: string[];
 };
+/** 'HH:MM' or an ISO datetime to minutes-since-midnight; undefined when unreadable. */
+function timeToMinutes(value?: string): number | undefined {
+  if (typeof value !== 'string' || !value) return undefined;
+  const time = value.includes('T') ? value.split('T')[1] : value;
+  const [hours, minutes] = time.split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return undefined;
+  return hours * 60 + minutes;
+}
+
+type ClosureWindow = { start: number; end: number };
+
+/**
+ * Courts closed for part of the day, keyed by courtId (punch list P33).
+ *
+ * `getGridBookings` splits a court's bookings into those keyed by `courtOrder` — a cell blocked by
+ * hand, already honoured through `isBlocked` — and those carrying only `startTime`/`endTime`. Only
+ * the first kind ever became a blocked cell, so a court closed for maintenance still took matchUps.
+ * TMX's own court-block UI writes the second kind, so this reached production, not just fixtures.
+ */
+function buildCourtClosures({ tournamentRecords, scheduledDate }): Record<string, ClosureWindow[]> {
+  const closures: Record<string, ClosureWindow[]> = {};
+  for (const court of getVenuesAndCourts({ tournamentRecords }).courts ?? []) {
+    const { timeBookings } = getGridBookings({ court, date: scheduledDate });
+    const windows: ClosureWindow[] = [];
+    for (const booking of timeBookings) {
+      const start = timeToMinutes(booking.startTime);
+      const end = timeToMinutes(booking.endTime);
+      if (start !== undefined && end !== undefined) windows.push({ start, end });
+    }
+    if (windows.length) closures[court.courtId] = windows;
+  }
+  return closures;
+}
+
+/**
+ * Whether a closure covers this matchUp's start.
+ *
+ * Scoped to matchUps that carry a `scheduledTime`: a pure order-based grid row has no clock time to
+ * overlap with, so a time window says nothing about it. Untimed matchUps pass through rather than
+ * having a time invented for them.
+ */
+function isClosedAt(windows: ClosureWindow[] | undefined, scheduledTime?: string): boolean {
+  if (!windows?.length) return false;
+  const startsAt = timeToMinutes(scheduledTime);
+  if (startsAt === undefined) return false;
+  return windows.some((window) => startsAt >= window.start && startsAt < window.end);
+}
+
+/**
+ * Index of the first court open at this matchUp's time, or -1 when every remaining court on the row
+ * is closed then. Non-mutating: the court is removed only once placement is agreed, so a matchUp
+ * that is deferred for some other reason does not consume a court.
+ *
+ * With no closures anywhere this is index 0 — the plain `shift()` the scheduler always did.
+ */
+function findOpenCourtIndex(
+  availableCourts: any[],
+  matchUp: any,
+  hasClosures: boolean,
+  courtClosures: Record<string, ClosureWindow[]>,
+): number {
+  if (!hasClosures) return 0;
+  const scheduledTime = matchUp?.schedule?.scheduledTime;
+  return availableCourts.findIndex((court: any) => !isClosedAt(courtClosures[court?.schedule?.courtId], scheduledTime));
+}
+
 export function proAutoSchedule({
   matchUpDailyLimits,
   minCourtGridRows = 10,
@@ -122,6 +190,9 @@ export function proAutoSchedule({
     }
   }
 
+  // Courts closed for part of the day (punch list P33). See `buildCourtClosures`.
+  const courtClosures = buildCourtClosures({ tournamentRecords, scheduledDate });
+  const hasClosures = Object.keys(courtClosures).length > 0;
   const scheduled: HydratedMatchUp[] = [];
   const previousRowMatchUpIds: string[] = [];
 
@@ -131,6 +202,9 @@ export function proAutoSchedule({
     while (matchUps.length && row.availableCourts.length) {
       const unscheduledMatchUpIds = matchUps.concat(unscheduledMatchUps).map((m) => m.matchUpId);
       const matchUp = matchUps.shift();
+      // A court closed at this matchUp's time is not a candidate. -1 means every remaining court on
+      // the row is closed then, which falls through to the ordinary deferral below.
+      const openCourtIndex = findOpenCourtIndex(row.availableCourts, matchUp, hasClosures, courtClosures);
       const verdict = evaluatePlacement({
         matchUp,
         row,
@@ -144,8 +218,8 @@ export function proAutoSchedule({
         matchUpPotentialParticipantIds,
       });
 
-      if (verdict.canPlace && matchUp) {
-        const court = row.availableCourts.shift();
+      if (verdict.canPlace && matchUp && openCourtIndex !== -1) {
+        const court = row.availableCourts.splice(openCourtIndex, 1)[0];
         matchUp.schedule ??= {};
         Object.assign(matchUp.schedule, court.schedule);
         Object.assign(court, matchUp);
