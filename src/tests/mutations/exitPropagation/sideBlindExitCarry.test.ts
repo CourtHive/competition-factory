@@ -155,6 +155,61 @@ describe('a produced exit carries when the opponent has already arrived', () => 
     expect(occupants(west21)).toHaveLength(0);
   });
 
+  /**
+   * ORDER INDEPENDENCE, which is the property this whole surface kept failing.
+   *
+   * Entering the exit FIRST and entering it LAST must reach the same draw. Asserted on the MATERIAL
+   * facts — status, winner, who occupies which side, and who advanced — rather than on a deep equality
+   * of the stored objects, because two REPRESENTATIONAL differences remain and neither is this fix's
+   * business:
+   *
+   *  - `matchUpStatusCodes` come back in object form down the cascade path and in string form down the
+   *    arrival path (`["WALKOVER"]`), so one draw can hold both shapes. Measured in CA's own TMX
+   *    export, where `East|2|1` carries objects and `West|2|1` carries a string.
+   *  - a lone drawPosition is `[3]` on one path and `[3, null]` on the other.
+   *
+   * Pinning those here would pin the inconsistency. They are recorded as separate findings; this test
+   * guards the behaviour.
+   */
+  it('reaches the same draw whether the exit is entered first or last', () => {
+    const material = (exitLast: boolean) => {
+      const drawId = `side-blind-order-${exitLast ? 'last' : 'first'}`;
+      setSubscriptions({});
+      mocksEngine.generateTournamentRecord({
+        drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId }],
+        nonRandom: 20223109,
+        setState: true,
+      });
+      const rest = () => {
+        for (const key of ['East|1|3', 'East|1|4']) score(drawId, key);
+        score(drawId, 'West|1|2');
+      };
+      if (exitLast) {
+        rest();
+        doubleWalkover(drawId, 'East|1|2');
+      } else {
+        doubleWalkover(drawId, 'East|1|2');
+        rest();
+      }
+      return ['West|1|1', 'West|2|1', 'West|3|1', 'Southwest|1|1'].map((key) => {
+        const matchUp = find(drawId, key);
+        return {
+          key,
+          matchUpStatus: matchUp.matchUpStatus,
+          winningSide: matchUp.winningSide ?? null,
+          occupants: occupants(matchUp).map((side: any) => `s${side.sideNumber}@dp${side.drawPosition}`),
+        };
+      });
+    };
+
+    const exitLast = material(true);
+    const exitFirst = material(false);
+    // control: the comparison must be over something non-trivial
+    expect(exitLast).toHaveLength(4);
+    expect(exitLast.some((row) => row.winningSide)).toEqual(true);
+    expect(exitFirst).toEqual(exitLast);
+  });
+
   it('leaves the draw internally consistent', () => {
     for (const order of ['exit-last', 'exit-first']) {
       const drawId = `side-blind-integrity-${order}`;
