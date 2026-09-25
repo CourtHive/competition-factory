@@ -6,7 +6,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { BYE, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OLYMPIC } from '@Constants/drawDefinitionConstants';
+import { COMPASS, OLYMPIC } from '@Constants/drawDefinitionConstants';
 
 /**
  * A produced exit must carry past a BYE-held loser target when the OPPONENT'S FEEDER IS STILL
@@ -135,19 +135,74 @@ describe('a produced exit carries past a BYE-held target when the opponent feede
    * sibling branch requires a truthy `winningSide`, which a carried exit never has. Dropping that
    * requirement alone was measured to change nothing, so the arrival path needs its own diagnosis.
    */
-  it.todo('awards the walkover to the arriving participant — West|2|1 winningSide 2');
+  it('awards the walkover to the arriving participant, and advances them', () => {
+    const drawId = 'carry-pending-award';
+    generate(drawId);
+    doubleWalkover(drawId);
+
+    // the carry has happened and is deliberately unresolved — nobody has arrived yet
+    const pending = find(drawId, 'West|2|1');
+    expect(pending.matchUpStatus).toEqual(WALKOVER);
+    expect(pending.winningSide).toBeUndefined();
+
+    playEast13(drawId);
+
+    // the arrival resolves it: the side that did NOT carry the exit wins
+    const settled = find(drawId, 'West|2|1');
+    expect(settled.matchUpStatus).toEqual(WALKOVER);
+    expect(settled.winningSide).toEqual(2);
+
+    // the winner is the participant who arrived, not the empty exiting side
+    const winnerId = (settled.sides ?? []).find((side: any) => side.sideNumber === settled.winningSide)?.participantId;
+    expect(winnerId).toBeDefined();
+
+    // NB: `West|2|1` is the FINAL of West in OLYMPIC 8 — there is no `West|3|1` to advance into, so
+    // onward advancement is asserted on COMPASS 16/14 below, which has the extra round.
+  });
 
   /**
-   * REMAINING GAP 2 — the other entry order is blocked by a different guard.
-   *
-   * With `East|1|3` played first, the participant is already at drawPosition 3 when the exit
-   * arrives, and `carryExitOnward`'s side-blind participant check
-   * (`doubleExitAdvancement.ts:1437`) refuses although the participant sits on the side OPPOSITE the
-   * arriving exit. That is the separately-tracked Step 2 defect; narrowing it is known to be
-   * insufficient on its own, and delegating to `conditionallyAdvanceDrawPosition` is the documented
-   * parity answer.
+   * The same resolution on a draw with a round AFTER the resolved matchUp, so the onward advancement
+   * is observable. COMPASS 16/14 is CA's own reproduction; here the exit is entered FIRST and the
+   * opponent arrives later, which is the gap-1 order.
    */
-  it.todo('reaches the same state with the opponent advanced FIRST');
+  it('COMPASS 16/14 — the resolved winner advances onward', () => {
+    const drawId = 'carry-pending-compass';
+    setSubscriptions({});
+    const generated: any = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId }],
+      nonRandom: 20223109,
+      setState: true,
+    });
+    expect(generated.drawIds).toContain(drawId);
+
+    const enter = (key: string, outcome: any) => {
+      const result: any = tournamentEngine.setMatchUpStatus({
+        matchUpId: find(drawId, key).matchUpId,
+        outcome,
+        drawId,
+      });
+      expect(result.error, key).toBeUndefined();
+    };
+
+    enter('East|1|2', { matchUpStatus: DOUBLE_WALKOVER });
+    for (const key of ['East|1|3', 'East|1|4']) {
+      enter(key, generateOutcomeFromScoreString({ scoreString: '6-3 6-3', winningSide: 1 }).outcome);
+    }
+    enter('West|1|2', generateOutcomeFromScoreString({ scoreString: '6-3 6-3', winningSide: 1 }).outcome);
+
+    const settled = find(drawId, 'West|2|1');
+    expect(settled.matchUpStatus).toEqual(WALKOVER);
+    expect(settled.winningSide).toBeDefined();
+    const winnerId = (settled.sides ?? []).find((side: any) => side.sideNumber === settled.winningSide)?.participantId;
+    expect(winnerId).toBeDefined();
+
+    const next = find(drawId, 'West|3|1');
+    expect((next.sides ?? []).map((side: any) => side.participantId)).toContain(winnerId);
+  });
+
+  // The reversed entry order — the opponent already in place when the exit arrives — was the
+  // separately-tracked side-blind guard at `doubleExitAdvancement.ts:1437`. It is fixed, and asserted
+  // in `sideBlindExitCarry.test.ts` rather than duplicated here.
 
   // A REGRESSION GUARD, NOT EVIDENCE OF THE FIX: this passed before the change too, because
   // `getDrawInconsistencies` reported the un-carried state as valid. It is here to catch the fix

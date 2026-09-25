@@ -263,7 +263,32 @@ export function assignMatchUpDrawPosition({
     !!initialRoundNumber &&
     matchUp.roundNumber > initialRoundNumber;
 
-  if (matchUp && positionAdded) {
+  /**
+   * A PENDING PROPAGATED EXIT MUST STILL BE RESOLVED WHEN THE POSITION WAS ALREADY REGISTERED.
+   *
+   * `applyPositionToMatchUp` is what awards the walkover to the arriving side, re-sides the carried
+   * codes onto the exiting side, and lets the winner advance. It ran only on `positionAdded` — the
+   * drawPosition being ADDED to this matchUp's `drawPositions`.
+   *
+   * In a fed structure the later round's drawPositions are frequently known already: measured on
+   * OLYMPIC 8/6, `West|2|1` carries `dps=[2,3]` from generation. So when `East|1|3`'s loser finally
+   * reaches `West` drawPosition 3, the position is not being added — it is merely being OCCUPIED —
+   * `positionAdded` is false, and the branch below emitted a notice and nothing else. The exit that
+   * `carryExitOnward` deliberately left unresolved was therefore never resolved by anybody, and
+   * `West|2|1` stayed `WALKOVER` with a participant and no winner.
+   *
+   * That state is worse than it looks: it is stuck AND invisible to `getStructureInconsistencies`,
+   * whose stall test requires `TO_BE_PLAYED`. CA, 2026-09-25, named the distinction it turns on — a
+   * position is *genuinely* active only when something was played there, as opposed to *advanced*
+   * active.
+   *
+   * `isPropagatedExit` already means "this matchUp holds a propagated exit AND a participant has
+   * arrived at this drawPosition", which is exactly the resolvable case, so no new predicate is
+   * needed. `slotNewlyOccupied` keeps it to an arrival that actually changed the occupant.
+   */
+  const resolvesPendingExit = !positionAdded && isPropagatedExit && slotNewlyOccupied;
+
+  if (matchUp && (positionAdded || resolvesPendingExit)) {
     applyPositionToMatchUp({
       updatedDrawPositions,
       holdsPropagatedExit,

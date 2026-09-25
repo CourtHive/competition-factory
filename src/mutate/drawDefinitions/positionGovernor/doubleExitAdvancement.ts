@@ -1452,8 +1452,34 @@ function carryExitOnward({
   });
   if (!arrivalSideNumber) return decorateResult({ result: { ...SUCCESS }, stack });
 
-  // somebody genuinely got there, or two exits have met: either way this is not ours to write
-  if (nextWinnerMatchUp.sides?.some((side) => side.participantId) || isAnyExit(nextWinnerMatchUp.matchUpStatus)) {
+  /**
+   * SOMEBODY GOT THERE FIRST — ON THE SIDE THE EXIT IS ARRIVING AT.
+   *
+   * This asked whether the target held ANY participant, and refused. It is the slot the exit is
+   * travelling TO that must be free; the other side routinely holds a participant who advanced from
+   * the previous round of the same structure and has nothing to do with this cascade. `arrivalSideNumber`
+   * is computed immediately above and was not consulted.
+   *
+   * Measured 2026-09-25 on CA's COMPASS 16/14 with the `DOUBLE_WALKOVER` entered LAST: `West|2|1`
+   * holds the `West|1|2` winner on drawPosition 3 (side 2) while the exit travels to drawPosition 2
+   * (side 1). The exit stopped at `West|1|1` and `West|2|1` stayed `TO_BE_PLAYED` forever. The same
+   * guard refused OLYMPIC 8/6 with the opponent advanced first, and refused every clear-and-re-enter
+   * sequence — one guard, three reported symptoms.
+   *
+   * `isAnyExit` is retained unchanged: two exits MEETING is a convergence, which
+   * `progressExitStatus` RULE 4 owns rather than this carrier.
+   */
+  const arrivingSideOccupied = !!nextWinnerMatchUp.sides?.some(
+    (side) => side?.sideNumber === arrivalSideNumber && side?.participantId,
+  );
+  if (arrivingSideOccupied || isAnyExit(nextWinnerMatchUp.matchUpStatus)) {
+    logAdvancement(stack, {
+      color: 'brightyellow',
+      decision: arrivingSideOccupied ? 'exit_not_carried_arriving_side_occupied' : 'exit_not_carried_convergence',
+      nextWinnerMatchUpId: nextWinnerMatchUp.matchUpId,
+      fromMatchUpId: fromMatchUp.matchUpId,
+      arrivalSideNumber,
+    });
     return decorateResult({ result: { ...SUCCESS }, stack });
   }
 
@@ -1479,6 +1505,18 @@ function carryExitOnward({
     });
     return decorateResult({ result: { ...SUCCESS }, stack });
   }
+
+  /**
+   * The opponent's side, but only when a REAL participant is already sitting on it.
+   *
+   * `undefined` when the slot is empty or holds a BYE, which keeps the pending case — the common one —
+   * exactly as it was: no winner, resolved later by the arrival. See the write below.
+   */
+  const opponentSideNumber = arrivalSideNumber === 1 ? 2 : 1;
+  const settledOpponentSide = nextWinnerMatchUp.sides?.find(
+    (side) => side?.sideNumber === opponentSideNumber && side?.participantId && !side?.bye,
+  );
+  const settledOpponentSideNumber = settledOpponentSide ? opponentSideNumber : undefined;
 
   // ACCUMULATE: the opponent's side can already carry an origin of its own.
   const provenance = {
@@ -1527,7 +1565,19 @@ function carryExitOnward({
     // A pending exit with no winningSide is a STATE, not an incomplete one: it resolves when the
     // opponent's match is played. Pre-computing the answer buys a checkmark a few clicks earlier
     // and re-introduces the one pattern this area moved away from.
-    winningSide: undefined,
+    //
+    // ONE EXCEPTION, added 2026-09-25: the opponent is ALREADY HERE.
+    //
+    // Everything above rests on an unstated precondition — that the opponent has not yet arrived, so
+    // an arrival is still coming to resolve this. When they are already in place there is no future
+    // arrival, and leaving it unresolved produces a `WALKOVER` holding a real participant with no
+    // winner: a matchUp that is still stuck AND invisible to `getStructureInconsistencies`, whose
+    // stall test requires `TO_BE_PLAYED`. Measured on CA's COMPASS 16/14 with the exit entered last.
+    //
+    // The side is not pre-computed here, it is READ OFF the occupied side — the same thing the
+    // arrival mechanism would have read — so the objection above does not apply. RULE 2: the side
+    // WITHOUT the exit wins. A BYE-held target is excluded, because a BYE is never won.
+    winningSide: !holdsBye ? settledOpponentSideNumber : undefined,
     matchUpStatus: holdsBye ? BYE : EXIT,
     removeScore: true,
     context: stack,
@@ -1538,6 +1588,39 @@ function carryExitOnward({
   // stamped AFTER the state write, for the reason progressExitStatus states: a write that blanks
   // the codes the provenance describes clears the provenance with them (#4816).
   mergeSideExitProvenance({ matchUp: noContextNextWinnerMatchUp, provenance });
+
+  /**
+   * An awarded winner must also be ADVANCED, or the walkover is a dead end.
+   *
+   * Only when the opponent was already in place — that is the one case this function awards a
+   * `winningSide` at all (see the write above). Without this the target reads `WALKOVER ws=2` and the
+   * participant never reaches the next round, which is the state CA reported: *"an advanced propagated
+   * WALKOVER … encountering a participant at WEST|2|1 SHOULD advance the encountered participant to
+   * WEST|3|1."*
+   *
+   * Same call shape as the sibling advancement earlier in this file, on freshly derived context
+   * because the write above changed the draw.
+   */
+  if (!holdsBye && settledOpponentSideNumber && settledOpponentSide?.drawPosition) {
+    logAdvancement(stack, {
+      color: 'brightcyan',
+      keyColors: { decision: 'brightgreen' },
+      decision: 'carried_exit_advances_settled_opponent',
+      nextWinnerMatchUpId: nextWinnerMatchUp.matchUpId,
+      drawPositionToAdvance: settledOpponentSide.drawPosition,
+      winningSide: settledOpponentSideNumber,
+    });
+    const advanced = advanceDrawPosition({
+      inContextDrawMatchUps: getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [],
+      drawPositionToAdvance: settledOpponentSide.drawPosition,
+      matchUpId: noContextNextWinnerMatchUp.matchUpId,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (advanced?.error) return decorateResult({ result: advanced, stack });
+  }
 
   if (!holdsBye) return decorateResult({ result: { ...SUCCESS }, stack });
 
