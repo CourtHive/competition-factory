@@ -1312,7 +1312,26 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
   return opponentFeeders.some((feeder) => {
     const holdsParticipant = feeder.sides?.some((side) => side.participantId);
     if (holdsParticipant) return true;
-    return !isAnyExit(feeder.matchUpStatus) && feeder.matchUpStatus !== BYE;
+    /**
+     * A `BYE` STATUS IS NOT A STATEMENT THAT THE FEEDER IS FINISHED.
+     *
+     * It says one of the feeder's positions is a draw BYE. The OTHER position can still be
+     * unassigned and awaiting its own arrival, and such a feeder does deliver — the BYE advances
+     * whoever lands there.
+     *
+     * CA, 2026-09-24, OLYMPIC 8/6: `West|2|1`'s opponent feeder `West|1|2` is `BYE` on drawPosition
+     * 4 with drawPosition 3 still empty, waiting for `East|1|3`'s loser. Reading its status alone
+     * said "no live opponent", so a `DOUBLE_WALKOVER` at `East|1|2` stamped the exit onto `West|1|1`
+     * and then stopped. `West|2|1` stayed `TO_BE_PLAYED` with no record, in both entry orders.
+     *
+     * This is the pending-versus-dead distinction that `directLoser.ts` gets wrong the same way
+     * (`if (!loserParticipantId) return SUCCESS`) and that `STALLED_POSITION` exists to name: an
+     * empty seat is only dead once nothing can reach it. Where the two are indistinguishable from
+     * here, prefer PENDING — carrying an exit records where it went and leaves a matchUp a director
+     * can see, while refusing leaves no trace at all.
+     */
+    if (feeder.matchUpStatus === BYE) return !!feeder.sides?.some((side) => side && !side.participantId && !side.bye);
+    return !isAnyExit(feeder.matchUpStatus);
   });
 }
 
