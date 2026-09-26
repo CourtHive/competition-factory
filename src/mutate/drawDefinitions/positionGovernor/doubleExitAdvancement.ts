@@ -1139,7 +1139,47 @@ function advanceByeAdvancedDrawPosition({
     const advancingParticipantId = inContextDrawMatchUps
       .find((candidate) => candidate.matchUpId === noContextNextWinnerMatchUp.matchUpId)
       ?.sides?.find((side) => side.drawPosition === nextDrawPositionToAdvance)?.participantId;
-    const winningSide = advancingParticipantId || !occupiedSide ? occupiedSide : 3 - occupiedSide;
+
+    /**
+     * WHICH SIDE THE EXIT ARRIVES ON IS A QUESTION ABOUT THE FEEDER, NOT ABOUT A DRAWPOSITION — P29.
+     *
+     * `occupiedSide` above is read off `nextWinnerMatchUpDrawPositions.find(Boolean)`, i.e. THE FIRST
+     * DRAWPOSITION ALREADY SITTING IN THE TARGET. That is only the exit's own slot while the target
+     * holds no other position — and a fed matchUp routinely does, because a feed link RESERVES its
+     * drawPosition before the participant arrives. When it does, the exit is attributed to the side
+     * that will be filled and the award goes to the side that can never be, which is the P29 shape:
+     * *a produced WALKOVER awarded to the side that carries the exit*, so the participant who does
+     * turn up loses a matchUp against nobody.
+     *
+     * Measured 2026-09-26 on `FEED_IN_CHAMPIONSHIP 16/16`, seeds 397-400 — `Consolation|4|1`
+     * DOUBLE_WALKOVER, `Consolation|5|1` BYE-held, target `Consolation|6|1` the consolation final:
+     *
+     *   drawPositions [1]      dp1 is RESERVED for the LOSER of Main r4 (a BOTTOM_UP feed link)
+     *   occupiedSide  1        read off dp1 -- the fed slot, not the exit's
+     *   awarded       ws 2     the side the dead Consolation|5|1 would have filled
+     *   then          the Main final is played, its loser arrives at dp1 / side 1, and LOSES
+     *
+     * `getExitArrivalSideNumber` answers the question structurally instead, of the FEEDER, and its
+     * docblock already states why the position-keyed reader cannot serve here. On a feed round it
+     * returns `draw-positions.md` rule 4 directly: a position fed from elsewhere is side 1, one that
+     * advanced from the prior round of the SAME structure is side 2. For the cell above that is 2 —
+     * the exit — so the winner is side 1, the fed slot, which is where the participant does arrive.
+     *
+     * RULE 2 is unchanged and so is CA's 2026-09-20 direction that the side yet to arrive wins while
+     * still empty: *"dp4's provenance was the double walkover propagated by the bye and it should not
+     * be the winning side; the winningSide should be 2, the side yet to arrive."* Only the
+     * identification of WHICH side carries the exit changes. The positional derivation is kept as the
+     * fallback for a target whose feeders cannot be resolved, so a structure this helper cannot read
+     * behaves exactly as before rather than silently losing its award.
+     */
+    const arrivalSideNumber = getExitArrivalSideNumber({
+      inContextDrawMatchUps,
+      nextWinnerMatchUp,
+      sourceMatchUp: targetMatchUp,
+    });
+
+    const exitSideNumber = arrivalSideNumber ?? occupiedSide;
+    const winningSide = advancingParticipantId || !exitSideNumber ? occupiedSide : 3 - exitSideNumber;
 
     /**
      * THE ORIGIN TRAVELS WITH THE EXIT, and until now it did not.
