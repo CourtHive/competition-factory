@@ -444,3 +444,78 @@ test.skipIf(!enabled)('oracle over the named COMPASS reproductions', () => {
     );
   }
 });
+
+/**
+ * THE TRANSIENT CLASS, measured per step rather than asserted.
+ *
+ * `crossStructureWinnerPositions.test.ts` asserts `inconsistencies === []` after EVERY submission, so
+ * a stall that exists mid-correction and clears at the next step fails it. One such case was already
+ * adjudicated as the programme's single genuine false positive — census 9100555, firing at step 5 of 6
+ * and cleared by step 6. Widening the rule surfaced a second, `DE window seed 9301605` at step 4 of 5,
+ * and "probably the same class" is not a measurement.
+ *
+ * So this replays both scenarios exactly as that file does and prints the finding count after every
+ * step. A count that returns to 0 by the final step is transient; one that persists is a real stall
+ * the correction never repaired.
+ */
+test.skipIf(!enabled)('the correction-sequence stalls, per step', () => {
+  const CASES = [
+    {
+      name: 'census 9100555 — unwinding a Backdraw double exit',
+      participantsCount: 6,
+      nonRandom: 9100555,
+      submissions: [
+        ['Main', 1, 2, { winningSide: 2 }],
+        ['Main', 2, 2, { matchUpStatus: 'DOUBLE_DEFAULT' }],
+        ['Main', 2, 1, { matchUpStatus: 'DEFAULTED', winningSide: 1 }],
+        ['Backdraw', 3, 1, { matchUpStatus: DOUBLE_WALKOVER }],
+        ['Main', 1, 3, { matchUpStatus: 'WALKOVER', winningSide: 2 }],
+        ['Backdraw', 3, 1, { winningSide: 1 }],
+      ],
+    },
+    {
+      name: 'DE window seed 9301605 — a flipped Main semifinal winner',
+      participantsCount: 4,
+      nonRandom: 9301605,
+      submissions: [
+        ['Main', 2, 1, { winningSide: 1 }],
+        ['Backdraw', 3, 1, { matchUpStatus: 'DOUBLE_DEFAULT' }],
+        ['Main', 2, 2, { winningSide: 2 }],
+        ['Main', 3, 1, { matchUpStatus: 'WALKOVER', winningSide: 1 }],
+        ['Main', 3, 1, { winningSide: 2 }],
+      ],
+    },
+  ];
+
+  for (const { name, participantsCount, nonRandom, submissions } of CASES) {
+    setSubscriptions({});
+    const drawId = 'cross-structure';
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawType: DOUBLE_ELIMINATION, drawSize: 8, participantsCount, drawId }],
+      setState: true,
+      nonRandom,
+    });
+
+    const lines: string[] = [];
+    for (const [index, submission] of submissions.entries()) {
+      const [structureName, roundNumber, roundPosition, outcome] = submission as [string, number, number, any];
+      const matchUps = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps ?? [];
+      const matchUp: any = matchUps.find(
+        (m: any) =>
+          m.structureName === structureName && m.roundNumber === roundNumber && m.roundPosition === roundPosition,
+      );
+      tournamentEngine.setMatchUpStatus({
+        matchUpId: matchUp.matchUpId,
+        propagateExitStatus: true,
+        outcome,
+        drawId,
+      });
+      const integrity: any = tournamentEngine.getDrawInconsistencies({ drawId });
+      const found = (integrity?.inconsistencies ?? []).filter((i: any) => i.issueType === STALLED_POSITION);
+      lines.push(
+        `  step ${index + 1} ${structureName}|${roundNumber}|${roundPosition} -> ${found.length} STALLED_POSITION`,
+      );
+    }
+    process.stdout.write(`\n${name}\n${lines.join('\n')}\n`);
+  }
+});
