@@ -302,6 +302,17 @@ function withdrawExitFromByeChain({
     return { ...SUCCESS };
   }
 
+  /**
+   * The drawPosition this matchUp ADVANCED, captured before the reset blanks it.
+   *
+   * `drawPositions` is positional — index 0 is side 1 — which is the canonical rule stated in
+   * `documentation/docs/concepts/draw-positions.md`.
+   */
+  const priorWinningSide = noContextTargetMatchUp.winningSide;
+  const advancedDrawPosition = priorWinningSide
+    ? (noContextTargetMatchUp.drawPositions ?? [])[priorWinningSide - 1]
+    : undefined;
+
   // `any` because `getUnwoundState` types `matchUpStatus` as a bare string while `modifyMatchUpScore`
   // takes the status union; `conditionallyRemoveDrawPosition` passes the same value through an
   // untyped spread and never meets the mismatch.
@@ -353,6 +364,41 @@ function withdrawExitFromByeChain({
   });
   const nextWinnerMatchUp = targetMatchUps?.winnerMatchUp;
   if (!nextWinnerMatchUp?.matchUpId) return { ...SUCCESS };
+
+  /**
+   * TAKE BACK WHAT THIS MATCHUP ADVANCED, or the withdrawal leaves somebody a round ahead of a
+   * result that no longer exists.
+   *
+   * The recursion below cannot do it: it opens on `carriesWithdrawnOrigin`, and the NEXT matchUp
+   * carries no provenance of its own — it merely HOLDS the participant this one advanced. So the walk
+   * stopped here, the winner was cleared, and the participant stayed in the later round.
+   *
+   * Measured on COMPASS 16/14 (CA, 2026-09-25): clearing `East|1|2` reset `West|2|1` correctly and
+   * left `West|3|1` holding `drawPositions: [3]` and its occupant, with `getDrawInconsistencies`
+   * still reporting `valid: true`. Clearing `West|2|1` DIRECTLY unwinds correctly, which is what
+   * localised the gap to this path.
+   *
+   * Same-structure only. Across a link the take-back must be resolved by IDENTITY rather than by
+   * drawPosition number — `removeLinkedWinner` exists for exactly that, and intersecting positions
+   * across a link is the defect its docblock records (census seed 9100555).
+   */
+  if (advancedDrawPosition && nextWinnerMatchUp.structureId === fromMatchUp.structureId) {
+    pushGlobalLog({
+      method: 'withdrawExitFromByeChain',
+      decision: 'take_back_advanced_winner',
+      nextWinnerMatchUpId: nextWinnerMatchUp.matchUpId,
+      advancedDrawPosition,
+      color: 'brightcyan',
+      keyColors,
+    });
+    removeDirectedWinner({
+      winningDrawPosition: advancedDrawPosition,
+      winnerMatchUp: nextWinnerMatchUp,
+      inContextDrawMatchUps,
+      drawDefinition,
+      matchUpsMap,
+    });
+  }
 
   return withdrawExitFromByeChain({
     fromMatchUp: nextWinnerMatchUp,
