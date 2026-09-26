@@ -425,6 +425,34 @@ function getLostPropagatedExitInconsistency(matchUp: any): StructureInconsistenc
  * The cost is stated: this reports LATE and cannot warn a director mid-event. A per-position
  * reachability rule could, and remains the better long-term answer — it needs its own oracle and its
  * own falsification harness first.
+ *
+ * ## `matchUpStatus` IS NOT CONSULTED, and that is the third condition — measured 2026-09-26
+ *
+ * This rule originally required the stalled matchUp to be `TO_BE_PLAYED`. That made it **quietable by
+ * a partial propagation fix**: a fix that stamps the carried exit onto the stalled matchUp changes
+ * nothing about the vacant seat, but the status is then `WALKOVER` and the old gate skipped it. The
+ * participant stayed exactly as stranded and the finding disappeared, which reads as progress.
+ *
+ * Measured over the 600 `exitPropagationMatrix` cells at their own seeds
+ * (`src/tests/query/stalledPositionOracle.test.ts`): with the status gate the detector saw **70
+ * cells**, while **93** were stalled — **23 cells reported nothing at all**, more than the 19 the
+ * count had apparently closed since the pre-fix measurement of 89. The hidden shapes were
+ * `WALKOVER` 18, `DEFAULTED` 17, `DOUBLE_WALKOVER` 1, `DOUBLE_DEFAULT` 1.
+ *
+ * The widening was falsified before it was taken, not after: the same 600 draws played to exhaustion
+ * with **no exit at all** produce **0** stalls under the status-blind rule — 600 cells played, 600
+ * terminal, zero findings. A draw completed by ordinary results cannot have stranded anybody, so any
+ * finding in that arm would be a false positive by construction. There are none.
+ *
+ * Note carefully that `playableShape` below still carries the narrow test. Playability and stalling
+ * are different questions: a `DOUBLE_WALKOVER` holding two participants is finished despite having no
+ * `winningSide`, so widening the PLAYABILITY test would report a completed draw as in progress and
+ * silence this rule everywhere.
+ *
+ * A `winningSide` still ends the enquiry here: somebody advanced out of that matchUp, so nobody is
+ * stranded in it. Whether the RIGHT side was awarded is a separate defect (punch-list **P29**) —
+ * measured at 4 of the same 600 cells, all `FEED_IN_CHAMPIONSHIP 16/16` `Consolation|6|1`, where the
+ * winner is the vacant seat and the lone occupant lost. That is not this rule's question.
  */
 function getStalledPositionInconsistencies(
   /** REPORTED over these — narrowed to one structure when the caller asked for one */
@@ -437,12 +465,17 @@ function getStalledPositionInconsistencies(
   allDrawMatchUps: MatchUp[],
   roundRobinGroupStructureIds: Set<string>,
 ): StructureInconsistency[] {
-  const undecided = (matchUp: any) =>
+  /**
+   * PLAYABILITY, which is a different question from being stalled and must stay narrow. A
+   * `DOUBLE_WALKOVER` holding two participants has no `winningSide` and is nonetheless finished, so
+   * widening this would report a completed draw as still in progress.
+   */
+  const playableShape = (matchUp: any) =>
     !matchUp.winningSide && (!matchUp.matchUpStatus || matchUp.matchUpStatus === TO_BE_PLAYED);
   const occupants = (matchUp: any) => (matchUp.sides ?? []).filter((side: any) => side?.participantId && !side?.bye);
 
   const drawMatchUps = (allDrawMatchUps as any[]).filter((matchUp) => !matchUp.collectionId);
-  const anythingPlayable = drawMatchUps.some((matchUp) => undecided(matchUp) && occupants(matchUp).length === 2);
+  const anythingPlayable = drawMatchUps.some((matchUp) => playableShape(matchUp) && occupants(matchUp).length === 2);
   if (anythingPlayable) return [];
 
   const hasStarted = drawMatchUps.some((matchUp) => matchUp.winningSide);
@@ -452,7 +485,8 @@ function getStalledPositionInconsistencies(
   for (const matchUp of scoped as any[]) {
     // round-robin groups have no feeds: a vacant seat there is an entry problem, not a stall
     if (roundRobinGroupStructureIds.has(matchUp.structureId)) continue;
-    if (!undecided(matchUp)) continue;
+    // NO `winningSide` is the whole test. Deliberately NOT gated on `matchUpStatus` -- see above.
+    if (matchUp.winningSide) continue;
     if ((matchUp.sides ?? []).some((side: any) => side?.bye)) continue;
 
     const present = occupants(matchUp);
@@ -462,7 +496,9 @@ function getStalledPositionInconsistencies(
       matchUpId: matchUp.matchUpId,
       structureId: matchUp.structureId,
       issueType: STALLED_POSITION,
-      message: `side ${present[0].sideNumber} holds a participant whose opponent can never arrive — no matchUp in the draw is playable`,
+      message:
+        `side ${present[0].sideNumber} holds a participant whose opponent can never arrive — ` +
+        `no matchUp in the draw is playable`,
       sideNumber: present[0].sideNumber,
       matchUpStatus: matchUp.matchUpStatus,
     });

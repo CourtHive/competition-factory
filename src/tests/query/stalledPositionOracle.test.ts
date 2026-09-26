@@ -317,10 +317,20 @@ function measureCell(cell: Cell, tally: Tally): void {
   const stalls = singles.filter((m) => !m.winningSide);
   const decidedSingles = singles.filter((m) => m.winningSide);
 
-  // the two definitions must agree on the subset they both claim to cover
-  const visible = stalls.filter((m) => detectorWouldSee(m));
-  if (visible.length !== reported.length) {
-    process.stdout.write(`\nDIVERGENCE ${key}: visible=${visible.length} reported=${reported.length}\n`);
+  /**
+   * THE AGREEMENT CHECK, and what it means depends on which gate the detector carries.
+   *
+   * With the status-blind gate (the widening of 2026-09-26) the detector should report EVERY stall
+   * this scan finds, so `reported` and `stalls` must be equal. With the original `TO_BE_PLAYED` gate
+   * it should report only `narrowVisible`, and the gap is `hidden`. Both are printed, so a run says
+   * which gate produced it rather than leaving the reader to infer it.
+   */
+  const narrowVisible = stalls.filter((m) => detectorWouldSee(m));
+  if (reported.length !== stalls.length && reported.length !== narrowVisible.length) {
+    process.stdout.write(
+      `\nDIVERGENCE ${key}: reported=${reported.length} stalls=${stalls.length} ` +
+        `narrowVisible=${narrowVisible.length}\n`,
+    );
   }
 
   recordStalls(cell, key, stalls, structureNameOf, tally);
