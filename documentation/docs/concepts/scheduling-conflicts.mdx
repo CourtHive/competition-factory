@@ -18,7 +18,7 @@ Conflicts are detected when a player's matches are scheduled too close together,
 
 A conflict occurs when:
 
-```
+```text
 Match 1 projected end time + recovery time > Match 2 scheduled start time
 ```
 
@@ -438,6 +438,13 @@ if (readiness.evaluated) {
 
 `overlap` and `recovery` never both fire for the same participant: being on court elsewhere already
 implies the recovery window is violated, so the stronger finding wins.
+
+Both findings look only **backwards**, and that is worth knowing before you build a UI on them. A
+participant's matchUp scheduled later the same day is not something they have to recover from, and it
+is not a window containing this start time either, so neither finding names it. The conflict between
+two placements is reported on the **later** of them: ask about that one and `overlap` or `recovery`
+will name the earlier. Grading only one matchUp of a pair therefore does not tell you the pair is
+sound — `getParticipants` conflict reporting, above, is what answers across a whole day.
 
 ### `getParticipantRest` — how long has each player actually had off?
 

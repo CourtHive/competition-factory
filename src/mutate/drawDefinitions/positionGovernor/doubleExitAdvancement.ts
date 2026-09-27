@@ -1,3 +1,4 @@
+import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
@@ -1139,7 +1140,71 @@ function advanceByeAdvancedDrawPosition({
     const advancingParticipantId = inContextDrawMatchUps
       .find((candidate) => candidate.matchUpId === noContextNextWinnerMatchUp.matchUpId)
       ?.sides?.find((side) => side.drawPosition === nextDrawPositionToAdvance)?.participantId;
-    const winningSide = advancingParticipantId || !occupiedSide ? occupiedSide : 3 - occupiedSide;
+
+    /**
+     * WHICH SIDE THE EXIT ARRIVES ON IS A QUESTION ABOUT THE FEEDER, NOT ABOUT A DRAWPOSITION — P29.
+     *
+     * `occupiedSide` above is read off `nextWinnerMatchUpDrawPositions.find(Boolean)`, i.e. THE FIRST
+     * DRAWPOSITION ALREADY SITTING IN THE TARGET. That is only the exit's own slot while the target
+     * holds no other position — and a fed matchUp routinely does, because a feed link RESERVES its
+     * drawPosition before the participant arrives. When it does, the exit is attributed to the side
+     * that will be filled and the award goes to the side that can never be, which is the P29 shape:
+     * *a produced WALKOVER awarded to the side that carries the exit*, so the participant who does
+     * turn up loses a matchUp against nobody.
+     *
+     * Measured 2026-09-26 on `FEED_IN_CHAMPIONSHIP 16/16`, seeds 397-400 — `Consolation|4|1`
+     * DOUBLE_WALKOVER, `Consolation|5|1` BYE-held, target `Consolation|6|1` the consolation final:
+     *
+     *   drawPositions [1]      dp1 is RESERVED for the LOSER of Main r4 (a BOTTOM_UP feed link)
+     *   occupiedSide  1        read off dp1 -- the fed slot, not the exit's
+     *   awarded       ws 2     the side the dead Consolation|5|1 would have filled
+     *   then          the Main final is played, its loser arrives at dp1 / side 1, and LOSES
+     *
+     * `getExitArrivalSideNumber` answers the question structurally instead, of the FEEDER, and its
+     * docblock already states why the position-keyed reader cannot serve here. On a feed round it
+     * returns `draw-positions.md` rule 4 directly: a position fed from elsewhere is side 1, one that
+     * advanced from the prior round of the SAME structure is side 2. For the cell above that is 2 —
+     * the exit — so the winner is side 1, the fed slot, which is where the participant does arrive.
+     *
+     * RULE 2 is unchanged and so is CA's 2026-09-20 direction that the side yet to arrive wins while
+     * still empty: *"dp4's provenance was the double walkover propagated by the bye and it should not
+     * be the winning side; the winningSide should be 2, the side yet to arrive."* Only the
+     * identification of WHICH side carries the exit changes. The positional derivation is kept as the
+     * fallback for a target whose feeders cannot be resolved, so a structure this helper cannot read
+     * behaves exactly as before rather than silently losing its award.
+     */
+    const arrivalSideNumber = getExitArrivalSideNumber({
+      inContextDrawMatchUps,
+      nextWinnerMatchUp,
+      sourceMatchUp: targetMatchUp,
+    });
+
+    /**
+     * `occupiedSide` STAYS THE GATE, because its emptiness is what carries the BYE refusal.
+     *
+     * `getExitWinningSide` returns `undefined` for a BYE drawPosition on purpose — *"A BYE draw
+     * position can never be the winning side"* — so `!occupiedSide` was never merely a null check: it
+     * is how this expression declines to award anything when the position advancing through is a BYE.
+     *
+     * #4988 replaced it with `!exitSideNumber`, where `exitSideNumber = arrivalSideNumber ??
+     * occupiedSide`. `arrivalSideNumber` is derived structurally and resolves even when the position is
+     * a BYE, so the guard stopped firing and the award landed on the BYE's own side. Measured:
+     * `BYE_WON` went from **0 to 13** in `src/tests/mutations/exitPropagation` with
+     * `doubleExitPropagateBye` on — *"matchUpStatus WALKOVER awards winningSide 2 to side 2, which is a
+     * BYE (drawPosition 7)"* at `Backdraw|3|2`, a matchUp holding a hole and a propagated BYE and no
+     * participant at all.
+     *
+     * CA, 2026-09-27: *"there can never be { winningSide } with a value in a matchUp with
+     * matchUpStatus: BYE. If two BYEs encounter each other then a BYE is produced for the next matchUp,
+     * rinse and repeat."*
+     *
+     * So the gate is restored and `arrivalSideNumber` is used only to choose WHICH side, once an award
+     * is owed at all. P29's correction is untouched: at `FEED_IN_CHAMPIONSHIP 16/16 Consolation|6|1`
+     * `occupiedSide` is 1 (a real fed position, not a BYE) and `arrivalSideNumber` is 2, so the winner
+     * is still side 1 — the slot the participant arrives into.
+     */
+    const winningSide =
+      advancingParticipantId || !occupiedSide ? occupiedSide : 3 - (arrivalSideNumber ?? occupiedSide);
 
     /**
      * THE ORIGIN TRAVELS WITH THE EXIT, and until now it did not.
@@ -1312,7 +1377,26 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
   return opponentFeeders.some((feeder) => {
     const holdsParticipant = feeder.sides?.some((side) => side.participantId);
     if (holdsParticipant) return true;
-    return !isAnyExit(feeder.matchUpStatus) && feeder.matchUpStatus !== BYE;
+    /**
+     * A `BYE` STATUS IS NOT A STATEMENT THAT THE FEEDER IS FINISHED.
+     *
+     * It says one of the feeder's positions is a draw BYE. The OTHER position can still be
+     * unassigned and awaiting its own arrival, and such a feeder does deliver — the BYE advances
+     * whoever lands there.
+     *
+     * CA, 2026-09-24, OLYMPIC 8/6: `West|2|1`'s opponent feeder `West|1|2` is `BYE` on drawPosition
+     * 4 with drawPosition 3 still empty, waiting for `East|1|3`'s loser. Reading its status alone
+     * said "no live opponent", so a `DOUBLE_WALKOVER` at `East|1|2` stamped the exit onto `West|1|1`
+     * and then stopped. `West|2|1` stayed `TO_BE_PLAYED` with no record, in both entry orders.
+     *
+     * This is the pending-versus-dead distinction that `directLoser.ts` gets wrong the same way
+     * (`if (!loserParticipantId) return SUCCESS`) and that `STALLED_POSITION` exists to name: an
+     * empty seat is only dead once nothing can reach it. Where the two are indistinguishable from
+     * here, prefer PENDING — carrying an exit records where it went and leaves a matchUp a director
+     * can see, while refusing leaves no trace at all.
+     */
+    if (feeder.matchUpStatus === BYE) return !!feeder.sides?.some((side) => side && !side.participantId && !side.bye);
+    return !isAnyExit(feeder.matchUpStatus);
   });
 }
 
@@ -1433,8 +1517,34 @@ function carryExitOnward({
   });
   if (!arrivalSideNumber) return decorateResult({ result: { ...SUCCESS }, stack });
 
-  // somebody genuinely got there, or two exits have met: either way this is not ours to write
-  if (nextWinnerMatchUp.sides?.some((side) => side.participantId) || isAnyExit(nextWinnerMatchUp.matchUpStatus)) {
+  /**
+   * SOMEBODY GOT THERE FIRST — ON THE SIDE THE EXIT IS ARRIVING AT.
+   *
+   * This asked whether the target held ANY participant, and refused. It is the slot the exit is
+   * travelling TO that must be free; the other side routinely holds a participant who advanced from
+   * the previous round of the same structure and has nothing to do with this cascade. `arrivalSideNumber`
+   * is computed immediately above and was not consulted.
+   *
+   * Measured 2026-09-25 on CA's COMPASS 16/14 with the `DOUBLE_WALKOVER` entered LAST: `West|2|1`
+   * holds the `West|1|2` winner on drawPosition 3 (side 2) while the exit travels to drawPosition 2
+   * (side 1). The exit stopped at `West|1|1` and `West|2|1` stayed `TO_BE_PLAYED` forever. The same
+   * guard refused OLYMPIC 8/6 with the opponent advanced first, and refused every clear-and-re-enter
+   * sequence — one guard, three reported symptoms.
+   *
+   * `isAnyExit` is retained unchanged: two exits MEETING is a convergence, which
+   * `progressExitStatus` RULE 4 owns rather than this carrier.
+   */
+  const arrivingSideOccupied = !!nextWinnerMatchUp.sides?.some(
+    (side) => side?.sideNumber === arrivalSideNumber && side?.participantId,
+  );
+  if (arrivingSideOccupied || isAnyExit(nextWinnerMatchUp.matchUpStatus)) {
+    logAdvancement(stack, {
+      color: 'brightyellow',
+      decision: arrivingSideOccupied ? 'exit_not_carried_arriving_side_occupied' : 'exit_not_carried_convergence',
+      nextWinnerMatchUpId: nextWinnerMatchUp.matchUpId,
+      fromMatchUpId: fromMatchUp.matchUpId,
+      arrivalSideNumber,
+    });
     return decorateResult({ result: { ...SUCCESS }, stack });
   }
 
@@ -1460,6 +1570,18 @@ function carryExitOnward({
     });
     return decorateResult({ result: { ...SUCCESS }, stack });
   }
+
+  /**
+   * The opponent's side, but only when a REAL participant is already sitting on it.
+   *
+   * `undefined` when the slot is empty or holds a BYE, which keeps the pending case — the common one —
+   * exactly as it was: no winner, resolved later by the arrival. See the write below.
+   */
+  const opponentSideNumber = arrivalSideNumber === 1 ? 2 : 1;
+  const settledOpponentSide = nextWinnerMatchUp.sides?.find(
+    (side) => side?.sideNumber === opponentSideNumber && side?.participantId && !side?.bye,
+  );
+  const settledOpponentSideNumber = settledOpponentSide ? opponentSideNumber : undefined;
 
   // ACCUMULATE: the opponent's side can already carry an origin of its own.
   const provenance = {
@@ -1508,7 +1630,19 @@ function carryExitOnward({
     // A pending exit with no winningSide is a STATE, not an incomplete one: it resolves when the
     // opponent's match is played. Pre-computing the answer buys a checkmark a few clicks earlier
     // and re-introduces the one pattern this area moved away from.
-    winningSide: undefined,
+    //
+    // ONE EXCEPTION, added 2026-09-25: the opponent is ALREADY HERE.
+    //
+    // Everything above rests on an unstated precondition — that the opponent has not yet arrived, so
+    // an arrival is still coming to resolve this. When they are already in place there is no future
+    // arrival, and leaving it unresolved produces a `WALKOVER` holding a real participant with no
+    // winner: a matchUp that is still stuck AND invisible to `getStructureInconsistencies`, whose
+    // stall test requires `TO_BE_PLAYED`. Measured on CA's COMPASS 16/14 with the exit entered last.
+    //
+    // The side is not pre-computed here, it is READ OFF the occupied side — the same thing the
+    // arrival mechanism would have read — so the objection above does not apply. RULE 2: the side
+    // WITHOUT the exit wins. A BYE-held target is excluded, because a BYE is never won.
+    winningSide: !holdsBye ? settledOpponentSideNumber : undefined,
     matchUpStatus: holdsBye ? BYE : EXIT,
     removeScore: true,
     context: stack,
@@ -1519,6 +1653,57 @@ function carryExitOnward({
   // stamped AFTER the state write, for the reason progressExitStatus states: a write that blanks
   // the codes the provenance describes clears the provenance with them (#4816).
   mergeSideExitProvenance({ matchUp: noContextNextWinnerMatchUp, provenance });
+
+  /**
+   * An awarded winner must also be ADVANCED, or the walkover is a dead end.
+   *
+   * Only when the opponent was already in place — that is the one case this function awards a
+   * `winningSide` at all (see the write above). Without this the target reads `WALKOVER ws=2` and the
+   * participant never reaches the next round, which is the state CA reported: *"an advanced propagated
+   * WALKOVER … encountering a participant at WEST|2|1 SHOULD advance the encountered participant to
+   * WEST|3|1."*
+   *
+   * Same call shape as the sibling advancement earlier in this file, on freshly derived context
+   * because the write above changed the draw.
+   */
+  if (!holdsBye && settledOpponentSideNumber && settledOpponentSide?.drawPosition) {
+    logAdvancement(stack, {
+      color: 'brightcyan',
+      keyColors: { decision: 'brightgreen' },
+      decision: 'carried_exit_advances_settled_opponent',
+      nextWinnerMatchUpId: nextWinnerMatchUp.matchUpId,
+      drawPositionToAdvance: settledOpponentSide.drawPosition,
+      winningSide: settledOpponentSideNumber,
+    });
+    const advanced = advanceDrawPosition({
+      inContextDrawMatchUps: getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [],
+      drawPositionToAdvance: settledOpponentSide.drawPosition,
+      matchUpId: noContextNextWinnerMatchUp.matchUpId,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (advanced?.error) return decorateResult({ result: advanced, stack });
+
+    /**
+     * P39 — and this site is REQUIRED, not belt-and-braces.
+     *
+     * The exit has just resolved against an opponent who was already in place, so this matchUp will
+     * never produce a loser and the first-round seat its loser link feeds can never be filled. The
+     * arrival path resolves the mirror-image case; hooking only there made the outcome depend on
+     * WHICH ORDER the two results were entered — `sideBlindExitCarry`'s order-independence test and
+     * `correctionDivergence` both went red on exactly that asymmetry.
+     */
+    const unfillable = propagateUnfillableLoserBye({
+      matchUpId: noContextNextWinnerMatchUp.matchUpId,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (unfillable?.error) return decorateResult({ result: unfillable, stack });
+  }
 
   if (!holdsBye) return decorateResult({ result: { ...SUCCESS }, stack });
 

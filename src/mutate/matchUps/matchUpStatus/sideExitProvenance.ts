@@ -232,6 +232,33 @@ export function clearSideExitProvenance(matchUp?: MatchUp): void {
 }
 
 /**
+ * The BYE CLAIM ledger alone, with every exit fact dropped.
+ *
+ * P41. `applyScoreAndStatus` blanks a matchUp via the `toBePlayed` fixture and rescues provenance only
+ * when `isAnyExit(matchUpStatus)`, which excludes BYE — so a BYE target lost its whole record, and what
+ * carried the facts through that call was the legacy `matchUpStatusCodes` array, which is not blanked.
+ *
+ * Rescuing the WHOLE record on a BYE is wrong, and that is measured rather than assumed: it keeps exit
+ * provenance a BYE must not hold, and produced `DO_UNDO_IDENTITY` on six FIRST_MATCH_LOSER_CONSOLATION
+ * property cells plus a fed round *gaining* an origin in `byeHeldCarryPendingFeeder`.
+ *
+ * What a BYE legitimately keeps is the CLAIM ledger — the same thing `clearResolvedSideExitProvenance`
+ * exempts BYE in order to protect, for the reason recorded there: without it "the BYE claim ledger is
+ * wiped by the next placement or score to touch the matchUp, and the unwind is blind again". An entry
+ * carrying ONLY `byeClaims` describes a BYE this cascade claims, not an exit, which is the same
+ * distinction `projectExitStatusCodes` draws.
+ */
+export function retainByeClaimsOnly(provenance?: SideExitProvenance): SideExitProvenance | undefined {
+  if (!provenance) return undefined;
+  const retained: SideExitProvenance = {};
+  for (const sideNumber of [1, 2] as const) {
+    const claims = provenance[sideNumber]?.byeClaims;
+    if (claims?.length) retained[sideNumber] = { byeClaims: [...claims] } as SideExitProvenanceEntry;
+  }
+  return Object.keys(retained).length ? retained : undefined;
+}
+
+/**
  * Clear provenance ONLY when the matchUp is no longer an exit.
  *
  * `clearSideExitProvenance` is unconditional, which is right where the caller has just collapsed the
@@ -604,6 +631,29 @@ export function projectExitStatusCodes(provenance?: SideExitProvenance): any[] {
 }
 
 /**
+ * Whether a `matchUpStatusCodes` element is the EXIT tenant — a projection of provenance, or the
+ * reserved slot that stands in for a side whose origin is not known yet.
+ *
+ * **P37's eviction needs one predicate, in one place.** The array has two tenants and the exit one is
+ * leaving: every site that used to rewrite the whole array now has to remove the exit elements and
+ * leave the policy vocabulary (`matchUpStatusCode`, and codes `updateMatchUpStatusCodes` wrapped as
+ * `{ code }`) untouched. Policy-code survival is a guarded property — see
+ * `productionStatusCodeSurvival.test.ts` — and a filter written inline at each site is how the two
+ * tenants got confused in the first place.
+ *
+ * A bare STRING reads as policy, i.e. it survives. Strings are ambiguous: the exit tenant was once
+ * written as a bare string by `applyPositionToMatchUp`. Measured over the exit-propagation and
+ * matchUpStatus suites (2026-09-27, 113 arrivals at that site): **no string ever reaches it, and no
+ * policy code either** — only the projected shape and its stub. So the ambiguity is theoretical, and
+ * where it is theoretical the conservative reading is the one that does not destroy a code.
+ */
+export function isProjectedExitCode(code: any): boolean {
+  if (!code || typeof code !== 'object') return false;
+  if (code.matchUpStatusCode || code.code) return false;
+  return !!(code.matchUpStatus || code.previousMatchUpStatus || code.sideNumber);
+}
+
+/**
  * Whether this matchUp's exit was PRODUCED by upstream propagation rather than played.
  *
  * **A PROVENANCE test, and the counterpart to `isExit`, which is a STATUS test.** CA asked for the
@@ -627,13 +677,6 @@ export function projectExitStatusCodes(provenance?: SideExitProvenance): any[] {
 export function isPropagatedExit({ matchUp }: { matchUp?: MatchUp }): boolean {
   return !!getSideExitProvenance({ matchUp });
 }
-
-/**
- * @deprecated Use {@link isPropagatedExit}. Retained for one release so an external caller that
- * reached for the old name is not broken silently; it has always been a re-export of the same
- * function, never a second implementation.
- */
-export const exitProducedByPropagation = isPropagatedExit;
 
 /**
  * Whether this matchUp's exit is WHOLLY produced by one named source.

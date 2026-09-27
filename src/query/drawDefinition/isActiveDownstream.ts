@@ -149,8 +149,32 @@ export function isActiveDownstream(params) {
   // cascade can deposit one on a natural (non-feed) round -- e.g. a COMPASS back draw,
   // where the exit advances through BYEs into a round that halves -- so this must not
   // be conditioned on feedRound.
-  const winnerSideResolved = !!winnerMatchUp?.sides?.find((s: any) => s?.sideNumber === winnerMatchUp.winningSide)
-    ?.participant;
+  /**
+   * GENUINELY ACTIVE, not merely ADVANCED ACTIVE.
+   *
+   * This asked only whether a participant OCCUPIES the winning side. That is true of a walkover the
+   * cascade itself produced and handed to whoever happened to be waiting — so a derived result blocked
+   * the unwind of the cascade that derived it.
+   *
+   * CA, 2026-09-25: *"an advanced propagated WALKOVER where there is no participant that walkedover …
+   * should be clearable"*, and on the mechanism: *"I don't think `{ allowChangePropagation: true }`
+   * should be relevant … not genuinely blocked by genuinely active (as opposed to advanced active)
+   * positions."* A flag is explicitly NOT the mechanism; the distinction is.
+   *
+   * This file already draws it and already states it — *"a status blocks only when it was earned at
+   * this matchUp, never when it was propagated into it"* — and applies it on the LOSER path via
+   * `isPropagatedExit` (`loserMatchUpExit`, above). The winner path did not: a presence test where its
+   * sibling used a provenance test.
+   *
+   * ⚠️ NOT SHIPPABLE ON ITS OWN — see `derivedDownstreamNotActive.test.ts`. Permitting the clear
+   * exposes an incomplete unwind: the carried walkover's status and codes are reset, but the onward
+   * advancement its winner made INSIDE the same structure is not taken back, leaving a participant in
+   * a later round having won nothing while `getDrawInconsistencies` still reports `valid: true`.
+   * `removeLinkedWinner` handles only ACROSS-link advancement (`if (!winnerTargetLink) return`).
+   */
+  const winnerSideResolved =
+    !!winnerMatchUp?.sides?.find((s: any) => s?.sideNumber === winnerMatchUp.winningSide)?.participant &&
+    !isPropagatedExit({ matchUp: winnerMatchUp });
 
   // if a winnerMatchUp contains a WALKOVER and its source matchUps have no winningSides it cannot be considered active
   // unless one of its downstream matchUps is active

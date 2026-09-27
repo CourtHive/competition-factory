@@ -855,16 +855,21 @@ const resetToTBP = (drawId, matchUpId) =>
     drawId,
   });
 
-// asserts the consolation exit + its downstream are untouched by a refused reset
-function expectResolvedExitUnchanged(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId, exitStatus) {
+/**
+ * After a PERMITTED reset, the DERIVED exit is unwound and nobody is left advanced beyond it.
+ *
+ * Replaces `expectResolvedExitUnchanged`, which asserted the opposite while the refusal stood and
+ * became unused once all four of its callers were inverted. The refusal is still correct when
+ * something downstream was genuinely PLAYED — that case lives in `derivedDownstreamNotActive.test.ts`
+ * rather than here.
+ */
+function expectResolvedExitUnwound(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId) {
   const exit = consolationMatchUp(exitMatchUpId);
-  expect(exit.matchUpStatus).toEqual(exitStatus);
-  expect(exit.sides.find((s) => s.sideNumber === exit.winningSide)?.participantId).toEqual(advPlayerId);
-  // pAdv is still advanced beyond the exit round (the resolved walkover it won still stands)
+  expect(exit.winningSide).toBeUndefined();
   const beyond = consolationMatchUps().filter(
     (m) => m.roundNumber > exit.roundNumber && m.sides?.some((s) => s.participantId === advPlayerId),
   );
-  expect(beyond.length).toBeGreaterThan(0);
+  expect(beyond.length).toEqual(0);
 }
 
 // Once a propagated exit has RESOLVED downstream in the consolation — a real participant
@@ -873,7 +878,7 @@ function expectResolvedExitUnchanged(consolationMatchUp, consolationMatchUps, ex
 // consolation matchUps are undone first. isActiveDownstream must see PAST the fed FMLC BYE
 // the exit advanced through (its short-circuit previously masked the resolved walkover).
 
-test('FMLC: resetting the fall-through source is BLOCKED while the consolation exit is resolved downstream', () => {
+test('FMLC: resetting the fall-through source is ALLOWED while the consolation exit is merely DERIVED', () => {
   setSubscriptions({});
   const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, advPlayerId } =
     buildAutoResolveCascade();
@@ -883,30 +888,29 @@ test('FMLC: resetting the fall-through source is BLOCKED while the consolation e
   expect(before.matchUpStatus).toEqual(WALKOVER);
   expect(before.sides.find((s) => s.sideNumber === before.winningSide)?.participantId).toEqual(advPlayerId);
 
-  // reset the completed main R2P1 (the fall-through source) → refused (active downstream)
+  // …but pAdv did not PLAY it — they fell through a walkover the cascade produced, which is
+  // ADVANCED active rather than genuinely active, so the source may be reset.
   const result = resetToTBP(drawId, mainMatchUp(2, 1).matchUpId);
-  expect(result.success).not.toEqual(true);
-  expect(result.error).toBeDefined();
+  expect(result.error).toBeUndefined();
 
-  expectResolvedExitUnchanged(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId, WALKOVER);
+  expectResolvedExitUnwound(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId);
+  expect(tournamentEngine.getDrawInconsistencies({ drawId }).inconsistencies).toEqual([]);
 });
 
-test('FMLC: resetting the propagated WALKOVER is BLOCKED while its consolation exit is resolved downstream', () => {
+test('FMLC: resetting the propagated WALKOVER is ALLOWED while its consolation exit is merely DERIVED', () => {
   setSubscriptions({});
-  const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, woPlayerId, advPlayerId } =
+  const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, advPlayerId } =
     buildAutoResolveCascade();
 
-  // reset the main WALKOVER (the exit source) → refused
+  // reset the main WALKOVER (the exit source)
   const result = resetToTBP(drawId, mainMatchUp(2, 2).matchUpId);
-  expect(result.success).not.toEqual(true);
-  expect(result.error).toBeDefined();
+  expect(result.error).toBeUndefined();
 
-  // the propagated exit + its exiting participant are untouched
-  expect(consolationMatchUps().some((m) => m.sides?.some((s) => s.participantId === woPlayerId))).toEqual(true);
-  expectResolvedExitUnchanged(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId, WALKOVER);
+  expectResolvedExitUnwound(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId);
+  expect(tournamentEngine.getDrawInconsistencies({ drawId }).inconsistencies).toEqual([]);
 });
 
-test('FMLC — DEFAULT: the active-downstream block generalizes across exit types', () => {
+test('FMLC — DEFAULT: the derived-downstream ALLOWANCE generalizes across exit types', () => {
   setSubscriptions({});
   const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, advPlayerId } =
     buildAutoResolveCascade({ exitStatus: DEFAULTED, exitCode: 'D1' });
@@ -915,10 +919,10 @@ test('FMLC — DEFAULT: the active-downstream block generalizes across exit type
   expect(consolationMatchUp(exitMatchUpId).matchUpStatus).toEqual(DEFAULTED);
 
   const result = resetToTBP(drawId, mainMatchUp(2, 2).matchUpId);
-  expect(result.success).not.toEqual(true);
-  expect(result.error).toBeDefined();
+  expect(result.error).toBeUndefined();
 
-  expectResolvedExitUnchanged(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId, DEFAULTED);
+  expectResolvedExitUnwound(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId);
+  expect(tournamentEngine.getDrawInconsistencies({ drawId }).inconsistencies).toEqual([]);
 });
 
 test('FMLC: resetting a source while its propagated exit is still PENDING is allowed and clears cleanly', () => {
@@ -1164,7 +1168,17 @@ test('COMPASS: a pending exit on a non-feed back-draw round does not block scori
   expect(resolved.sides.find((s) => s.sideNumber !== resolved.winningSide).participantId).toEqual(retiredParticipantId);
 });
 
-test('COMPASS: once the back-draw exit has RESOLVED, resetting the fall-through source is still blocked', () => {
+/**
+ * The COMPASS twin of the FMLC cases above: once the back-draw exit has RESOLVED, the fall-through
+ * source may still be reset AND re-scored, because the resolution is DERIVED.
+ *
+ * Asserted as "introduces no NEW inconsistency" rather than "the draw is clean", because this
+ * fixture is ALREADY dirty before either operation — it reports `EXIT_CODE_ON_WINNER_SIDE`, which is
+ * punch-list P29 (a produced WALKOVER awarded to the side that carries the exit) and is unrelated to
+ * this change. Measured before and after: the issue set is identical. Asserting `[]` here would fail
+ * for P29's reasons and hide what this test is actually about.
+ */
+test('COMPASS: once the back-draw exit has RESOLVED, the fall-through source may still be reset', () => {
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawId, drawSize: 16, participantsCount: 10, drawType: COMPASS, idPrefix: 'm' }],
@@ -1193,18 +1207,24 @@ test('COMPASS: once the back-draw exit has RESOLVED, resetting the fall-through 
   result = tournamentEngine.setMatchUpStatus({ matchUpId: feederMatchUp.matchUpId, outcome, drawId });
   expect(result.success).toEqual(true);
 
-  // the exit is now resolved downstream, so the source may no longer be cleared or flipped
+  // the exit downstream is DERIVED, so the source remains clearable and re-scorable
+  const issuesOf = () =>
+    (tournamentEngine.getDrawInconsistencies({ drawId }).inconsistencies ?? []).map((i) => i.issueType).sort();
+  const issuesBefore = issuesOf();
+
   result = tournamentEngine.setMatchUpStatus({
     outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: TO_BE_PLAYED },
     matchUpId: feederMatchUp.matchUpId,
     drawId,
   });
-  expect(result.success).not.toEqual(true);
+  expect(result.error).toBeUndefined();
+  expect(issuesOf()).toEqual(issuesBefore);
 
   result = tournamentEngine.setMatchUpStatus({
     matchUpId: feederMatchUp.matchUpId,
     outcome: { winningSide: 2 },
     drawId,
   });
-  expect(result.success).not.toEqual(true);
+  expect(result.error).toBeUndefined();
+  expect(issuesOf()).toEqual(issuesBefore);
 });

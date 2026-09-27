@@ -1,12 +1,12 @@
 import { isPropagatedExit as sharedIsPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getNativeSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
+import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { isAnyExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
-import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
@@ -68,6 +68,7 @@ export const DRAW_POSITIONS_NOT_SORTED = 'DRAW_POSITIONS_NOT_SORTED';
 export const EXIT_CODE_ON_WINNER_SIDE = 'EXIT_CODE_ON_WINNER_SIDE';
 export const EXIT_WITHOUT_LOSER = 'EXIT_WITHOUT_LOSER';
 export const PROPAGATED_EXIT_LOST = 'PROPAGATED_EXIT_LOST';
+export const STALLED_POSITION = 'STALLED_POSITION';
 
 // DEFERRED — STALE_EXIT_STATUS is intentionally NOT implemented.
 //
@@ -130,25 +131,6 @@ function codeString(code: any): string | undefined {
   const value = typeof code === 'string' ? code : code?.code;
   return value || undefined;
 }
-
-// An exit is "produced by propagation" when the cascade stamped provenance on it — the marker it
-// writes when a downstream slot resolves to a WALKOVER/DEFAULTED because an upstream double-exit
-// (or fed exit) delivered no participant. Such an exit legitimately has an empty losing slot and
-// must NOT be flagged as an orphan.
-//
-// POSITIONAL WRAPPER, deliberately. The shared predicate takes `{ matchUp }`; the detectors in this
-// file and in `getDrawInconsistencies` pass the matchUp positionally. An agent reported this as a
-// dead call with a mismatched signature; it is neither — it is re-exported and used at two live
-// sites, and it discriminates correctly. Verify before "fixing" it.
-export function isPropagatedExit(matchUp: any): boolean {
-  // One reader for both schemas: prefers `sideExitProvenance`, falls back to the provenance shape
-  // inside the legacy `matchUpStatusCodes`. Callers pass the matchUp, not the array, so the native
-  // field is consultable at all.
-  return sharedIsPropagatedExit({ matchUp });
-}
-
-/** @deprecated Use {@link isPropagatedExit}. */
-export const exitProducedByPropagation = isPropagatedExit;
 
 // A positionAssignment is "occupied" if it names a participant, a bye, or a (pending)
 // qualifier. An empty assignment referenced by a decided non-exit matchUp is a phantom.
@@ -392,6 +374,135 @@ function getLostPropagatedExitInconsistency(matchUp: any): StructureInconsistenc
   };
 }
 
+/**
+ * STALLED_POSITION — a participant in a match that can never be played, in a draw that has stopped.
+ *
+ * ## Why every other rule here is blind to it
+ *
+ *  - `DRAW_POSITION_UNASSIGNED` opens `if (!matchUp.winningSide …) continue` — a stall has no
+ *    `winningSide`, so it is skipped.
+ *  - `BYE_ADVANCEMENT_MISSING` requires `byeSides.length === 1 && participantSides.length === 1` — a
+ *    stall is VACANT-versus-participant, not BYE-versus-participant, so it is skipped.
+ *
+ * Measured 2026-09-23: COMPASS 16/14, ONE `DOUBLE_WALKOVER` at `East|1|2`, play everything else —
+ * `Southwest|1|1` ends `(empty) vs <participant>` and `getDrawInconsistencies` returned
+ * `valid: true`. At 4 byes the same action strands THREE.
+ *
+ * ## TWO conditions, and the second was learned the hard way
+ *
+ * The shape "undecided, one participant, one vacant side" describes a stalled matchUp AND a
+ * legitimately PENDING one. Nothing about the matchUp separates them — the confusion that makes
+ * `PROPAGATED_EXIT_LOST` over-report.
+ *
+ * 1. **Nothing in the draw is playable.** If nothing is playable, nothing is pending.
+ * 2. **The draw has actually STARTED** — at least one matchUp decided.
+ *
+ * Condition 2 is not decoration. Without it this rule fired **94 times** across the suite on its
+ * first run, because a draw whose positions are not yet assigned ALSO has nothing playable. "Nothing
+ * playable" conflates *finished* with *not yet begun*, and a not-yet-begun draw is full of matchUps
+ * holding one participant against a seat their opponent has not been drawn into yet. The suite
+ * caught it; the first version of this docblock claimed condition 1 was sufficient.
+ *
+ * The cost is stated: this reports LATE and cannot warn a director mid-event. A per-position
+ * reachability rule could, and remains the better long-term answer — it needs its own oracle and its
+ * own falsification harness first.
+ *
+ * ## `matchUpStatus` IS NOT CONSULTED, and that is the third condition — measured 2026-09-26
+ *
+ * This rule originally required the stalled matchUp to be `TO_BE_PLAYED`. That made it **quietable by
+ * a partial propagation fix**: a fix that stamps the carried exit onto the stalled matchUp changes
+ * nothing about the vacant seat, but the status is then `WALKOVER` and the old gate skipped it. The
+ * participant stayed exactly as stranded and the finding disappeared, which reads as progress.
+ *
+ * Measured over the 600 `exitPropagationMatrix` cells at their own seeds
+ * (`src/tests/query/stalledPositionOracle.test.ts`): with the status gate the detector saw **70
+ * cells**, while **93** were stalled — **23 cells reported nothing at all**, more than the 19 the
+ * count had apparently closed since the pre-fix measurement of 89. The hidden shapes were
+ * `WALKOVER` 18, `DEFAULTED` 17, `DOUBLE_WALKOVER` 1, `DOUBLE_DEFAULT` 1.
+ *
+ * The widening was falsified before it was taken, not after: the same 600 draws played to exhaustion
+ * with **no exit at all** produce **0** stalls under the status-blind rule — 600 cells played, 600
+ * terminal, zero findings. A draw completed by ordinary results cannot have stranded anybody, so any
+ * finding in that arm would be a false positive by construction. There are none.
+ *
+ * Note carefully that `playableShape` below still carries the narrow test. Playability and stalling
+ * are different questions: a `DOUBLE_WALKOVER` holding two participants is finished despite having no
+ * `winningSide`, so widening the PLAYABILITY test would report a completed draw as in progress and
+ * silence this rule everywhere.
+ *
+ * A `winningSide` still ends the enquiry here: somebody advanced out of that matchUp, so nobody is
+ * stranded in it. Whether the RIGHT side was awarded is a separate defect (punch-list **P29**) —
+ * measured at 4 of the same 600 cells, all `FEED_IN_CHAMPIONSHIP 16/16` `Consolation|6|1`, where the
+ * winner is the vacant seat and the lone occupant lost. That is not this rule's question.
+ */
+function getStalledPositionInconsistencies(
+  /** REPORTED over these — narrowed to one structure when the caller asked for one */
+  scoped: MatchUp[],
+  /**
+   * ASKED of these — always the WHOLE draw. Computing playability over `scoped` would make an audit
+   * of a finished EAST structure report stalls while WEST still had matches to play, and TMX's draw
+   * audit passes a `structureId`.
+   */
+  allDrawMatchUps: MatchUp[],
+  roundRobinGroupStructureIds: Set<string>,
+): StructureInconsistency[] {
+  /**
+   * PLAYABILITY, which is a different question from being stalled and must stay narrow. A
+   * `DOUBLE_WALKOVER` holding two participants has no `winningSide` and is nonetheless finished, so
+   * widening this would report a completed draw as still in progress.
+   */
+  const playableShape = (matchUp: any) =>
+    !matchUp.winningSide && (!matchUp.matchUpStatus || matchUp.matchUpStatus === TO_BE_PLAYED);
+  const occupants = (matchUp: any) => (matchUp.sides ?? []).filter((side: any) => side?.participantId && !side?.bye);
+
+  const drawMatchUps = (allDrawMatchUps as any[]).filter((matchUp) => !matchUp.collectionId);
+  const anythingPlayable = drawMatchUps.some((matchUp) => playableShape(matchUp) && occupants(matchUp).length === 2);
+  if (anythingPlayable) return [];
+
+  const hasStarted = drawMatchUps.some((matchUp) => matchUp.winningSide);
+  if (!hasStarted) return [];
+
+  const inconsistencies: StructureInconsistency[] = [];
+  for (const matchUp of scoped as any[]) {
+    // round-robin groups have no feeds: a vacant seat there is an entry problem, not a stall
+    if (roundRobinGroupStructureIds.has(matchUp.structureId)) continue;
+    // NO `winningSide` is the whole test. Deliberately NOT gated on `matchUpStatus` -- see above.
+    if (matchUp.winningSide) continue;
+    if ((matchUp.sides ?? []).some((side: any) => side?.bye)) continue;
+
+    const present = occupants(matchUp);
+    if (present.length !== 1) continue;
+
+    inconsistencies.push({
+      matchUpId: matchUp.matchUpId,
+      structureId: matchUp.structureId,
+      issueType: STALLED_POSITION,
+      /**
+       * THE FIRST ADVISORY CHECK IN THIS FILE, and the reason the rule can ship at all.
+       *
+       * A stranded participant is a real defect and worth telling a director about, and it is NOT a
+       * claim that the stored draw is structurally corrupt — the state is internally consistent, it
+       * is the propagation that fell short. Reporting it as an `error` made `valid` false on 93 of the
+       * 600 exit-propagation matrix cells, which is why this rule sat parked on a branch for days:
+       * every caller of `valid` went red at once, including the census oracle.
+       *
+       * As a `warning` it is still returned, routed, fingerprinted and rendered — TMX's audit prints
+       * every finding — while `valid` continues to mean "no error". See `hasErrorSeverity`.
+       *
+       * PROMOTE IT TO `error` WHEN THE POPULATION REACHES ZERO. The count is ratcheted by
+       * `src/tests/query/stalledPositionBudget.test.ts`, which may only ever be lowered.
+       */
+      severity: 'warning',
+      message:
+        `side ${present[0].sideNumber} holds a participant whose opponent can never arrive — ` +
+        `no matchUp in the draw is playable`,
+      sideNumber: present[0].sideNumber,
+      matchUpStatus: matchUp.matchUpStatus,
+    });
+  }
+  return inconsistencies;
+}
+
 export function getStructureInconsistencies(
   params: GetStructureInconsistenciesArgs,
 ): ResultType & { valid?: boolean; inconsistencies?: Inconsistency[] } {
@@ -409,6 +520,10 @@ export function getStructureInconsistencies(
 
   const roundRobinGroupStructureIds = new Set<string>();
   collectRoundRobinGroupStructureIds(drawDefinition.structures, roundRobinGroupStructureIds);
+
+  inconsistencies.push(
+    ...getStalledPositionInconsistencies(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds),
+  );
 
   for (const matchUp of scoped) {
     const { winningSide, matchUpStatus, matchUpStatusCodes, sides, matchUpId, drawPositions } = matchUp;
@@ -478,7 +593,7 @@ export function getStructureInconsistencies(
       loserSide?.drawPosition &&
       !loserSide.participantId &&
       !loserSide.bye &&
-      !isPropagatedExit(matchUp)
+      !sharedIsPropagatedExit({ matchUp })
     ) {
       inconsistencies.push({
         ...base,
@@ -492,5 +607,5 @@ export function getStructureInconsistencies(
   }
 
   const finalized = finalize(inconsistencies, { scope: 'STRUCTURE' });
-  return { ...SUCCESS, valid: finalized.length === 0, inconsistencies: finalized };
+  return { ...SUCCESS, valid: !hasErrorSeverity(finalized), inconsistencies: finalized };
 }
