@@ -361,9 +361,11 @@ test.each(scenarios)('Double Exit produces exit in consolation', (params) => {
       });
 
       if (check.losingSideMatchUpStatusCode) {
-        const losingSideMatchUpStatusCode = targetMatchUp.matchUpStatusCodes.find(
-          (side) => side.sideNumber !== targetMatchUp.winningSide,
-        ).previousMatchUpStatus;
+        // P37. The LOSING side's origin, read from the side-keyed record. This used to find the
+        // element of `matchUpStatusCodes` whose `sideNumber` was not the winner's — the same side,
+        // reached by scanning a positional array for a property instead of by indexing a key.
+        const losingSideNumber = 3 - targetMatchUp.winningSide;
+        const losingSideMatchUpStatusCode = targetMatchUp.sideExitProvenance?.[losingSideNumber]?.previousMatchUpStatus;
         expect(losingSideMatchUpStatusCode).toEqual(check.losingSideMatchUpStatusCode);
       }
     }

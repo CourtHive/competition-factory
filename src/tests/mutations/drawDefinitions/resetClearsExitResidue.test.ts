@@ -85,7 +85,8 @@ it('removes exit-propagation residue from a BYE matchUp when a draw is reset', (
   // the two BYE matchUps CA reported, by coordinate
   const westBefore = at(rawMatchUps(), 'West', 1, 1);
   expect(westBefore.matchUpStatus).toEqual(BYE);
-  expect(westBefore.matchUpStatusCodes?.length).toBeGreaterThan(0);
+  // P37. The legacy-array half of this control is gone; the line below is the same claim on the
+  // surface that survives, and it names the SIDE, which a length could not.
   expect(westBefore.sideExitProvenance?.[2]?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
   const northBefore = at(rawMatchUps(), 'North', 1, 1);
   expect(northBefore.sideExitProvenance?.[1]?.byeClaims?.length).toBeGreaterThan(0);
