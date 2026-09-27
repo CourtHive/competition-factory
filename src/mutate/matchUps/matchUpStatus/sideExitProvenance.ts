@@ -228,7 +228,31 @@ export function setSideExitProvenance({
  * removed.
  */
 export function clearSideExitProvenance(matchUp?: MatchUp): void {
-  if (matchUp) delete matchUp.sideExitProvenance;
+  if (!matchUp) return;
+  delete matchUp.sideExitProvenance;
+
+  /**
+   * P37, ASYMMETRY 2. The clear has to take the PROJECTION with it, or it does not hold.
+   *
+   * This used to delete the native field alone. `getSideExitProvenance` falls back to the provenance
+   * shape inside `matchUpStatusCodes`, so the very next reader RESURRECTED what was just deliberately
+   * cleared — and the writers' union is built with that fallback reader on purpose, so the resurrected
+   * entry propagated onward. A clear that any subsequent read can undo is not a clear.
+   *
+   * Only the EXIT tenant goes. `matchUpStatusCodes` also carries the scoring policy's vocabulary, which
+   * belongs to the match and has nothing to do with provenance; `withdrawFromMatchUp` blanks the array
+   * wholesale one call away and says it is "safe HERE and only here", which is true of the status but
+   * has always been careless about the policy codes. Filtering is strictly better than blanking and is
+   * why `isProjectedExitCode` exists.
+   */
+  const codes = matchUp.matchUpStatusCodes as any[] | undefined;
+  // Written ONLY when there is an exit element to remove. Assigning unconditionally turned `undefined`
+  // into `[]` and mutated matchUps that had nothing to clear, which surfaced as spurious
+  // `modifyMatchUpNotice` entries — `teamAdvancement.test.ts` §"does not propagate matchUpStatusCodes
+  // from SINGLE/DOUBLES to TEAM matchUps on DOUBLE_WALKOVER" compares the notice list exactly.
+  if (codes?.some((code: any) => isProjectedExitCode(code))) {
+    matchUp.matchUpStatusCodes = codes.filter((code: any) => !isProjectedExitCode(code));
+  }
 }
 
 /**
