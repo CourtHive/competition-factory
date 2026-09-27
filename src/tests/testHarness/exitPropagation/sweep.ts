@@ -159,7 +159,19 @@ export type Step = {
 
 const structuralKey = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
 
-export function prepareDraw(config: ScenarioConfig, drawId: string): boolean {
+/**
+ * `policyDefinitions` is OPTIONAL and nothing in the census passes it, so this cannot re-baseline a
+ * frozen window: with the argument omitted the generation call is byte-identical to what emitted every
+ * window in `Mentat/fixtures/exit-propagation-census/`.
+ *
+ * It exists so a POLICY can be measured over a frozen window through this same replay rather than
+ * through a reimplementation of it. Measured 2026-09-27: a hand-rolled replay that omitted `replay`'s
+ * relational phase reported 20 failing seeds where the census reports 23 — the three missing ones were
+ * all `MONOTONIC_DECISION`, which only that phase produces. For `doubleExitPropagateBye` in particular
+ * the omission would have hidden the damage rather than an unrelated slice of it, since P30 records the
+ * flip breaking `doubleExitUnwindRederives`.
+ */
+export function prepareDraw(config: ScenarioConfig, drawId: string, policyDefinitions?: any): boolean {
   const { drawIds } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
@@ -169,6 +181,7 @@ export function prepareDraw(config: ScenarioConfig, drawId: string): boolean {
         drawId,
       },
     ],
+    ...(policyDefinitions ? { policyDefinitions } : {}),
     nonRandom: config.seed,
     setState: true,
   });
@@ -218,8 +231,13 @@ export type Finding = PropertyFailure & {
  *
  * Returns null when the schedule is clean, which is what the shrinker tests against.
  */
-export function replay(config: ScenarioConfig, steps: Step[], drawId: string): PropertyFailure | null {
-  if (!prepareDraw(config, drawId)) return null;
+export function replay(
+  config: ScenarioConfig,
+  steps: Step[],
+  drawId: string,
+  policyDefinitions?: any,
+): PropertyFailure | null {
+  if (!prepareDraw(config, drawId, policyDefinitions)) return null;
 
   for (const step of steps) {
     const matchUps = getDrawMatchUps(drawId);
