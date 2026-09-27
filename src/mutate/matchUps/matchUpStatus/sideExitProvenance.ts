@@ -652,13 +652,6 @@ export function isPropagatedExit({ matchUp }: { matchUp?: MatchUp }): boolean {
 }
 
 /**
- * @deprecated Use {@link isPropagatedExit}. Retained for one release so an external caller that
- * reached for the old name is not broken silently; it has always been a re-export of the same
- * function, never a second implementation.
- */
-export const exitProducedByPropagation = isPropagatedExit;
-
-/**
  * Whether this matchUp's exit is WHOLLY produced by one named source.
  *
  * The question a guard on an undo has to ask. `isPropagatedExit` answers "was this derived
