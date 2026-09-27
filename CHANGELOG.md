@@ -1,5 +1,26 @@
 # Changelog
 
+## [7.2.0](https://github.com/CourtHive/competition-factory/compare/v7.1.1...v7.2.0) (2026-09-27)
+
+
+### Features
+
+* **integrity:** valid means no ERROR, so the stalled-position detector can ship ([#4990](https://github.com/CourtHive/competition-factory/issues/4990)) ([6c3625b](https://github.com/CourtHive/competition-factory/commit/6c3625b9e422986ae144cad5345abfd7b6c34c2c))
+
+
+### Bug Fixes
+
+* **propagation:** a BYE keeps its claim ledger through a score write ([#5001](https://github.com/CourtHive/competition-factory/issues/5001)) ([14fdbc1](https://github.com/CourtHive/competition-factory/commit/14fdbc1546ff19c46ece42bb64f407162bb8cfa9))
+* **propagation:** a carried exit's side comes from its feeder, not from a drawPosition ([#4988](https://github.com/CourtHive/competition-factory/issues/4988)) ([242050d](https://github.com/CourtHive/competition-factory/commit/242050df5f99a3c802c9b0f066f108aaaf561a09))
+* **propagation:** a derived downstream result must not block its own unwind ([#4987](https://github.com/CourtHive/competition-factory/issues/4987)) ([24b3e33](https://github.com/CourtHive/competition-factory/commit/24b3e33901b9b54293d5ca207a43e910ea248271))
+* **propagation:** a pending BYE feeder is not a dead one, so the exit carries ([#4983](https://github.com/CourtHive/competition-factory/issues/4983)) ([474fd39](https://github.com/CourtHive/competition-factory/commit/474fd3921e57be3e0cff9837046fe2a8d2c616c1))
+* **propagation:** a seat fed by a produced exit can never fill, so it resolves as a BYE ([#4991](https://github.com/CourtHive/competition-factory/issues/4991)) ([7a70d58](https://github.com/CourtHive/competition-factory/commit/7a70d58d0d29aed43ec3bfe851063d634da588dd))
+* **propagation:** restore the BYE refusal that [#4988](https://github.com/CourtHive/competition-factory/issues/4988) removed — a BYE is never awarded ([#4994](https://github.com/CourtHive/competition-factory/issues/4994)) ([111845c](https://github.com/CourtHive/competition-factory/commit/111845c416fac966aa4b7ba9b80ad59fd16dbf67))
+* **propagation:** the exit carries when the opponent is already there ([#4985](https://github.com/CourtHive/competition-factory/issues/4985)) ([41e2f55](https://github.com/CourtHive/competition-factory/commit/41e2f5501ce0914eda99dc8cac01db42fa34818a))
+* **propagation:** the placement path stops reading a carried exit out of matchUpStatusCodes ([#4996](https://github.com/CourtHive/competition-factory/issues/4996)) ([00ccb5d](https://github.com/CourtHive/competition-factory/commit/00ccb5d47b2cceeca84f3bb583c12d7170a94903))
+* **reset:** a reset takes the exit record with it, off BYE matchUps too ([#4984](https://github.com/CourtHive/competition-factory/issues/4984)) ([6b41adf](https://github.com/CourtHive/competition-factory/commit/6b41adfa6bcb8d90b43416397d2e2d6908536bde))
+* **scheduling:** getMatchUpReadiness charged recovery for a LATER matchUp ([#4993](https://github.com/CourtHive/competition-factory/issues/4993)) ([4adfe94](https://github.com/CourtHive/competition-factory/commit/4adfe94f4cf165849052143cc2682d70b8401976))
+
 ## [7.1.1](https://github.com/CourtHive/competition-factory/compare/v7.1.0...v7.1.1) (2026-09-24)
 
 
