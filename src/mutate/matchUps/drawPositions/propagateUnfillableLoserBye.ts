@@ -4,7 +4,7 @@ import {
   recordByeClaim,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { assignDrawPositionBye } from './assignDrawPositionBye';
+import { assignDrawPositionBye, assignFedDrawPositionBye } from './assignDrawPositionBye';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isExit } from '@Validators/isExit';
@@ -62,12 +62,16 @@ import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
  *  - `drawPositionPlacement.applyPositionToMatchUp` — a participant arrives and resolves the exit
  *  - `doubleExitAdvancement.carryExitOnward` — the exit arrives and the opponent is already in place
  *
- * ## Narrow on purpose
+ * ## SCOPE: the connected structure, at any round — and never the same structure
  *
- * Round 1 of a CONNECTED structure only, which is the shape CA named — *"feeding a first round
- * drawPosition in a connected structure"* — and the same shape the working BYE cascade handles. A fed
- * position in a later round goes through `assignFedDrawPositionBye` and is left alone; widening to it
- * is a separate measurement, not a free generalisation.
+ * CA, 2026-09-27, correcting an earlier round-1-only gate: *"it should be able to produce a BYE for feed
+ * rounds in connected structures as well."*
+ *
+ * The exclusion that remains is the SAME structure, and it is the distinction CA drew about
+ * `doubleExitPropagateBye`: when a double exit occurs, **a produced exit in its own structure ALWAYS
+ * follows**, and no BYE belongs there. `propagate` was never about that exit. A BYE is only ever the
+ * answer at the connected structure the loser would have travelled to — which is also why this function
+ * tests `loserMatchUp.structureId !== inContextMatchUp.structureId` rather than testing a round.
  *
  * ## THERE IS NO WITHDRAWAL, and that is measured rather than assumed
  *
@@ -132,12 +136,25 @@ export function propagateUnfillableLoserBye({
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
   const inContextMatchUp: any = inContextDrawMatchUps.find((candidate: any) => candidate.matchUpId === matchUpId);
   const {
+    targetLinks: { loserTargetLink },
     targetMatchUps: { loserMatchUp, loserTargetDrawPosition },
   } = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
 
-  if (!loserMatchUp || !loserTargetDrawPosition) return undefined;
-  // round 1 of a CONNECTED structure — the shape named above
-  if (loserMatchUp.roundNumber !== 1) return undefined;
+  if (!loserMatchUp || !loserTargetDrawPosition || !loserTargetLink) return undefined;
+
+  /**
+   * A CONNECTED structure, at ANY round — corrected by CA 2026-09-27.
+   *
+   * This was gated on `roundNumber === 1`. CA: *"it should be able to produce a BYE for feed rounds in
+   * connected structures as well."* A feed round's target is reached through `assignFedDrawPositionBye`,
+   * which is the same dispatch the ordinary BYE cascade makes, and which decides for itself whether the
+   * fed drawPosition's own initial round is the one being fed.
+   *
+   * What the structure test still excludes is the SAME structure, and that exclusion is the whole
+   * distinction CA drew about `doubleExitPropagateBye`: when a double exit occurs, a produced exit in its
+   * own structure ALWAYS follows, and no BYE belongs there. A BYE is only ever the answer at the
+   * connected structure the loser would have travelled to.
+   */
   if (loserMatchUp.structureId === inContextMatchUp?.structureId) return undefined;
 
   // the target seat must still be empty; anything already there is not this cascade's to overwrite
@@ -147,15 +164,35 @@ export function propagateUnfillableLoserBye({
   );
   if (targetAssignment?.participantId || targetAssignment?.bye) return undefined;
 
-  const result = assignDrawPositionBye({
-    structureId: loserMatchUp.structureId,
-    drawPosition: loserTargetDrawPosition,
-    byeFromPropagation: true,
-    tournamentRecord,
-    drawDefinition,
-    matchUpsMap,
-    event,
-  });
+  /**
+   * The SAME dispatch the ordinary BYE cascade makes in `advanceDrawPosition`: round 1 assigns directly,
+   * and any later round goes through `assignFedDrawPositionBye`, which assigns only when the fed
+   * drawPosition's own initial round is the one being fed. Reusing it rather than re-deriving the rule is
+   * what keeps the two paths from drifting — this propagation differs from that cascade only in what
+   * TRIGGERS it (a provenance-attested dead seat, rather than a BYE that lost), never in where the BYE
+   * may land.
+   */
+  const result =
+    loserMatchUp.roundNumber === 1
+      ? assignDrawPositionBye({
+          structureId: loserMatchUp.structureId,
+          drawPosition: loserTargetDrawPosition,
+          byeFromPropagation: true,
+          tournamentRecord,
+          drawDefinition,
+          matchUpsMap,
+          event,
+        })
+      : assignFedDrawPositionBye({
+          loserTargetDrawPosition,
+          byeFromPropagation: true,
+          loserTargetLink,
+          tournamentRecord,
+          drawDefinition,
+          loserMatchUp,
+          matchUpsMap,
+          event,
+        });
   if (result?.error) return result;
 
   /**
