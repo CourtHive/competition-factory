@@ -604,6 +604,29 @@ export function projectExitStatusCodes(provenance?: SideExitProvenance): any[] {
 }
 
 /**
+ * Whether a `matchUpStatusCodes` element is the EXIT tenant — a projection of provenance, or the
+ * reserved slot that stands in for a side whose origin is not known yet.
+ *
+ * **P37's eviction needs one predicate, in one place.** The array has two tenants and the exit one is
+ * leaving: every site that used to rewrite the whole array now has to remove the exit elements and
+ * leave the policy vocabulary (`matchUpStatusCode`, and codes `updateMatchUpStatusCodes` wrapped as
+ * `{ code }`) untouched. Policy-code survival is a guarded property — see
+ * `productionStatusCodeSurvival.test.ts` — and a filter written inline at each site is how the two
+ * tenants got confused in the first place.
+ *
+ * A bare STRING reads as policy, i.e. it survives. Strings are ambiguous: the exit tenant was once
+ * written as a bare string by `applyPositionToMatchUp`. Measured over the exit-propagation and
+ * matchUpStatus suites (2026-09-27, 113 arrivals at that site): **no string ever reaches it, and no
+ * policy code either** — only the projected shape and its stub. So the ambiguity is theoretical, and
+ * where it is theoretical the conservative reading is the one that does not destroy a code.
+ */
+export function isProjectedExitCode(code: any): boolean {
+  if (!code || typeof code !== 'object') return false;
+  if (code.matchUpStatusCode || code.code) return false;
+  return !!(code.matchUpStatus || code.previousMatchUpStatus || code.sideNumber);
+}
+
+/**
  * Whether this matchUp's exit was PRODUCED by upstream propagation rather than played.
  *
  * **A PROVENANCE test, and the counterpart to `isExit`, which is a STATUS test.** CA asked for the
