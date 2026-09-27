@@ -693,6 +693,24 @@ matchUps whose derived fields have drifted out of agreement. Returns `valid` plu
 inconsistencies after mutations), CI fixture sweeps, and operator-facing audits of a
 loaded tournament.
 
+:::info `valid` means "no ERROR", and a finding can be advisory
+
+Every inconsistency carries a `severity` of `error`, `warning` or `info`, and **`valid` is
+`true` when none of them is an `error`**. So `valid: true` with a non-empty
+`inconsistencies` array is a legitimate result: it says the draw is structurally sound and
+something advisory was nonetheless observed.
+
+Render `inconsistencies` rather than gating on `valid` if you want to show everything the
+audit found — which is what an operator-facing audit usually wants. Gate on `valid` when
+the question is specifically "is this draw sound enough to act on".
+
+The default severity is `error`, so a check is blocking unless it deliberately opts down.
+`STALLED_POSITION` — a participant facing a seat that can never be filled, reported once
+nothing in the draw is playable — is the first `warning`: the stored draw is internally
+consistent, so it is not an error, but somebody is stranded and a director should see it.
+
+:::
+
 ```js
 const { valid, inconsistencies } = engine.getStructureInconsistencies({
   drawId, // required — resolved to drawDefinition by the engine
