@@ -367,3 +367,59 @@ describe('recovery is owed only by a match already begun', () => {
     expect(analyze([earlier, target], 'target')[0]).toMatchObject({ kind: 'recovery', notBefore: '09:30' });
   });
 });
+
+/**
+ * Every case above grades a target with ONE neighbour: a later one the gate must
+ * now skip, or an earlier one it must still charge. A player's day is earlier
+ * match, this match, later match, so the reported arrangement is both at once —
+ * the target sits BETWEEN a neighbour that can owe recovery and one that cannot.
+ *
+ * The gate is an exit from the ITERATION. Rewritten as an exit from the PASS it
+ * would satisfy every case above and go silent on the earlier neighbour that
+ * genuinely owes, which is the worse direction to fail in: a suppressed true
+ * finding rather than the false one the gate removed.
+ *
+ * `Battle of Boca`, prod 2026-09-27, the second report off this defect. A 13:30
+ * singles quarterfinal read "needs recovery time — not before 16:30" off the
+ * player's 14:30 doubles, directly under a rest section correctly reading
+ * "1h 54m rested" from her 09:30 R16. Her opponent, in no doubles draw, drew no
+ * finding from an identical singles day — which is what identified the later
+ * matchUp as the source.
+ */
+describe('a target between an earlier and a later neighbour', () => {
+  const target = () => matchUp('target', [player('alice'), player('chen')], { scheduledTime: '13:30' });
+  /** Finished, and far enough back that its recovery has expired: 09:30 + 90 + 60 = 12:00. */
+  const spent = () =>
+    matchUp('earlier', [player('alice'), player('bob')], { scheduledTime: '09:30' }, { winningSide: 1 });
+  /** Finished, and recent enough to still owe: 12:30 + 90 + 60 = 15:00. */
+  const owing = () =>
+    matchUp('earlier', [player('alice'), player('bob')], { scheduledTime: '12:30' }, { winningSide: 1 });
+  /** Not played, and after the target — the neighbour the gate exists for. */
+  const later = () => {
+    const pair = {
+      participantId: 'pair-1',
+      participant: { participantId: 'pair-1', participantName: 'Alice/Stauber', individualParticipantIds: ['alice'] },
+    };
+    return matchUp('later', [pair, player('other')], { scheduledTime: '14:30' }, { matchUpType: 'DOUBLES' });
+  };
+
+  it('says nothing when the earlier neighbour is spent and the later one is only planned', () => {
+    expect(analyze([spent(), target(), later()], 'target')).toEqual([]);
+  });
+
+  it('still charges the earlier neighbour that owes, and names only it', () => {
+    const findings = analyze([owing(), target(), later()], 'target');
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ kind: 'recovery', notBefore: '15:00' });
+    expect(findings[0].matchUpIds).toEqual(['earlier']);
+  });
+
+  it('puts the clash on the later matchUp, where the target is the thing in the way', () => {
+    // 13:30 + 90 = 15:00, so the target's playing window contains the 14:30 start.
+    const findings = analyze([spent(), target(), later()], 'later');
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ kind: 'overlap' });
+    expect(findings[0].matchUpIds).toEqual(['target']);
+    expect(findings[0].participantIds).toEqual(['alice']);
+  });
+});
