@@ -1,5 +1,5 @@
 import { getStructureInconsistencies, isPropagatedExit } from '@Query/drawDefinition/getStructureInconsistencies';
-import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
+import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 
@@ -262,5 +262,5 @@ export function getDrawInconsistencies(
 
   const combined = [...structureInconsistencies, ...linkInconsistencies, ...progressionInconsistencies];
   const finalized = finalize(combined, { scope: 'DRAW', drawId });
-  return { ...SUCCESS, valid: finalized.length === 0, inconsistencies: finalized };
+  return { ...SUCCESS, valid: !hasErrorSeverity(finalized), inconsistencies: finalized };
 }

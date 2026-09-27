@@ -163,6 +163,13 @@ jobs:
       - name: verify:coverage
         run: pnpm verify:coverage
 
+      # The stalled-position RATCHET. Inert on `pnpm test` (it replays all 600 exit-propagation
+      # matrix cells, which costs about what exitPropagationMatrix itself costs), so this step is the
+      # only thing that runs it. Added in the same change as the test, deliberately: a budget nobody
+      # runs is worse than no budget.
+      - name: verify:stall-budget
+        run: pnpm verify:stall-budget
+
       - name: verify:server
         run: pnpm verify:server
 
