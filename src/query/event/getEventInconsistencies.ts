@@ -1,6 +1,6 @@
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { expectedParticipantType } from '@Query/event/participantTypeForEvent';
-import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
+import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { getParticipants } from '@Query/participants/getParticipants';
 
 // constants and types
@@ -99,5 +99,5 @@ export function getEventInconsistencies(
 
   const combined = [...drawInconsistencies, ...typeMismatches];
   const finalized = finalize(combined, { scope: 'EVENT', eventId });
-  return { ...SUCCESS, valid: finalized.length === 0, inconsistencies: finalized };
+  return { ...SUCCESS, valid: !hasErrorSeverity(finalized), inconsistencies: finalized };
 }

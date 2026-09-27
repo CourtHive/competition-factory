@@ -50,6 +50,29 @@ function fnv1a(input: string): string {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
+/**
+ * WHAT `valid` MEANS, in one place so the four layers cannot drift.
+ *
+ * `valid` is **"no ERROR-severity finding"**, not "no finding at all". Both readings agree for every
+ * check that shipped before 2026-09-27, because every one of them is an error and `finalize` defaults
+ * to `'error'` — so this is additive, and the polarity is deliberately fail-CLOSED: a new check is an
+ * error unless its author opts down.
+ *
+ * It exists because the severity field was carried and never consulted. The header above says results
+ * are stamped so a caller can *"route by severity"*, while both layers returned
+ * `valid: finalized.length === 0` — so an ADVISORY finding was indistinguishable from a corrupt draw,
+ * and any new advisory rule turned every `expect(valid).toEqual(true)` in the suite red. That is not a
+ * property of the rule; it is this line. `STALLED_POSITION` is the first check to use the tier: a
+ * stranded participant is a real defect worth reporting to a director, and it is not a claim that the
+ * stored draw is structurally corrupt.
+ *
+ * A `warning` therefore still appears in `inconsistencies` — it is reported, routed and rendered; it
+ * simply does not assert that the draw is invalid.
+ */
+export function hasErrorSeverity(inconsistencies: Inconsistency[] | undefined): boolean {
+  return (inconsistencies ?? []).some((inconsistency) => inconsistency.severity === 'error');
+}
+
 export function inconsistencyFingerprint(inc: Partial<Inconsistency>): string {
   const key = IDENTITY_FIELDS.map((field) => `${field}=${inc[field] ?? ''}`).join('|');
   return fnv1a(key);
