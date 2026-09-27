@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, TO_BE_PLAYED, BYE } from '@Constants/matchUpStatusConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -130,50 +130,74 @@ it('resolves the same seat at 12 participants, where four byes make the cascade 
 });
 
 /**
- * A RESERVATION THAT IS PLACED MUST ALSO BE WITHDRAWN.
+ * WHY THERE IS NO WITHDRAWAL, pinned as an ORDERING rather than argued.
  *
- * `propagateConsolationBye`'s own docblock records this as the defect that followed its reservation
- * feature: *"Correct when placed — and never revisited."* A BYE written because a seat could never fill
- * becomes wrong the moment the exit that killed the seat is taken back, and a BYE nobody withdraws is
- * worse than a seat nobody filled — the first is wrong data in the draw, the second is a visible gap.
+ * `propagateConsolationBye`'s docblock records the defect that follows a reservation nobody revisits —
+ * *"Correct when placed — and never revisited."* A withdrawal for this BYE was written and then found to
+ * be unreachable, so it was deleted rather than shipped: dead code that looks load-bearing is worse than
+ * none.
  *
- * So: place it, then clear the originating `DOUBLE_WALKOVER` and assert the seat is empty again. The
- * `byeFromPropagation` marker plus the `recordByeClaim` ledger entry are what let `removeDoubleExit`
- * recognise its own work; without the claim this assertion fails.
+ * The reason is an ordering, and this test is what holds it. Playing N steps and then attempting to
+ * clear the originating `DOUBLE_WALKOVER`, the REFUSAL arrives BEFORE the PLACEMENT:
+ *
+ *   steps 1..8   BYE not yet placed    clear PERMITTED
+ *   step  10     BYE not yet placed    clear REFUSED (ERR_INCOMPATIBLE_MATCHUP_STATUS)
+ *   steps 12+    BYE placed            clear REFUSED
+ *
+ * So there is no state in which a stale reservation can exist. Same conclusion
+ * `propagateConsolationBye` reaches for itself: *"Once a consolation result exists the correction is
+ * REFUSED outright ... so there is no stale reservation left to withdraw."*
+ *
+ * **If that refusal ever loosens, this test fails and a withdrawal becomes necessary.** That is the
+ * whole point of pinning it: the safety of omitting the withdrawal is a property of the refusal, not of
+ * the propagation, and nothing else would notice the refusal moving.
  */
-it('withdraws the propagated BYE when the originating double exit is cleared', () => {
-  const drawId = 'p39-withdraw';
-  setSubscriptions({});
-  const { drawIds } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId }],
-    nonRandom: 20223109,
-    setState: true,
-  });
-  expect(drawIds).toContain(drawId);
+it('is safe without a withdrawal, because the correction is refused before the BYE is ever placed', () => {
+  const played = (steps: number) => {
+    setSubscriptions({});
+    const drawId = `p39-window-${steps}`;
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId }],
+      nonRandom: 20223109,
+      setState: true,
+    });
+    const source: any = matchUpAt(drawId, 'East', 1, 2);
+    tournamentEngine.setMatchUpStatus({
+      outcome: { matchUpStatus: DOUBLE_WALKOVER },
+      matchUpId: source.matchUpId,
+      drawId,
+    });
 
-  const source: any = matchUpAt(drawId, 'East', 1, 2);
-  tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: DOUBLE_WALKOVER },
-    matchUpId: source.matchUpId,
-    drawId,
-  });
+    let taken = 0;
+    while (taken < steps) {
+      const next: any = (allMatchUps(drawId) as any[]).find((m) => playableShape(m) && occupantsOf(m).length === 2);
+      if (!next) break;
+      const result: any = tournamentEngine.setMatchUpStatus({
+        outcome: { winningSide: 1 },
+        matchUpId: next.matchUpId,
+        drawId,
+      });
+      if (result.error) break;
+      taken += 1;
+    }
 
-  // only far enough to place the reservation: West|1|2 is the arrival that resolves West|2|1
-  const westOneTwo: any = matchUpAt(drawId, 'West', 1, 2);
-  tournamentEngine.setMatchUpStatus({ outcome: { winningSide: 1 }, matchUpId: westOneTwo.matchUpId, drawId });
+    const byePlaced = assignmentAt(drawId, 'Southwest', 1)?.byeFromPropagation === true;
+    const cleared: any = tournamentEngine.setMatchUpStatus({
+      outcome: { matchUpStatus: TO_BE_PLAYED, winningSide: undefined, score: undefined },
+      matchUpId: source.matchUpId,
+      drawId,
+    });
+    return { byePlaced, clearRefused: !!cleared.error };
+  };
 
-  // CONTROL: the BYE must actually be there, or the withdrawal below asserts nothing
-  expect(assignmentAt(drawId, 'Southwest', 1)?.byeFromPropagation).toEqual(true);
+  // early: nothing placed yet, and the correction is still available — the CONTROL that proves this
+  // test can distinguish the two states at all
+  const early = played(4);
+  expect(early.byePlaced).toEqual(false);
+  expect(early.clearRefused).toEqual(false);
 
-  // now take the double walkover back
-  const cleared: any = tournamentEngine.setMatchUpStatus({
-    outcome: { matchUpStatus: 'TO_BE_PLAYED', winningSide: undefined, score: undefined },
-    matchUpId: source.matchUpId,
-    drawId,
-  });
-  expect(cleared.error).toBeUndefined();
-
-  const withdrawn = assignmentAt(drawId, 'Southwest', 1);
-  expect(withdrawn?.bye).toBeUndefined();
-  expect(withdrawn?.byeFromPropagation).toBeUndefined();
+  // by the time the BYE exists, the correction is already refused, so it can never go stale
+  const late = played(16);
+  expect(late.byePlaced).toEqual(true);
+  expect(late.clearRefused).toEqual(true);
 });

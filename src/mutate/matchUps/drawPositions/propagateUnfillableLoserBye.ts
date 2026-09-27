@@ -69,8 +69,30 @@ import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
  * position in a later round goes through `assignFedDrawPositionBye` and is left alone; widening to it
  * is a separate measurement, not a free generalisation.
  *
- * The claim is recorded so the unwind can find it: `removeDoubleExit` withdraws a propagated BYE by
- * consulting the ledger rather than the topology.
+ * ## THERE IS NO WITHDRAWAL, and that is measured rather than assumed
+ *
+ * `propagateConsolationBye`'s docblock records the defect that follows a reservation nobody revisits —
+ * *"Correct when placed — and never revisited."* So a withdrawal was written, and then found to be
+ * unreachable. Measured on CA's COMPASS 16/14 by playing N steps and then attempting to clear the
+ * originating `DOUBLE_WALKOVER`:
+ *
+ *   steps  1..8    BYE not yet placed    clear PERMITTED
+ *   steps  10      BYE not yet placed    clear REFUSED  ERR_INCOMPATIBLE_MATCHUP_STATUS
+ *   steps  12+     BYE placed            clear REFUSED
+ *
+ * **The refusal arrives BEFORE the placement.** By the time this seat is resolved to a BYE, the exit
+ * that caused it can no longer be corrected, so there is no state in which a stale reservation exists —
+ * the same conclusion `propagateConsolationBye` reaches for itself: *"Once a consolation result exists
+ * the correction is REFUSED outright ... so there is no stale reservation left to withdraw."*
+ *
+ * A withdrawal function was therefore DELETED rather than shipped, because dead code that looks
+ * load-bearing is worse than none. `consolationByeWithdrawalUnreachable` in
+ * `unfillableLoserTargetBye.test.ts` pins the ordering, so if that refusal ever loosens the test fires
+ * and tells the next reader that a withdrawal has become necessary.
+ *
+ * The claim IS still recorded: `removeDoubleExit`'s `byeClaimSurvives` consults the ledger whenever it
+ * visits a loser target, so the record makes this cascade's work visible to machinery that already
+ * exists, whether or not anything withdraws it today.
  */
 export function propagateUnfillableLoserBye({
   tournamentRecord,
