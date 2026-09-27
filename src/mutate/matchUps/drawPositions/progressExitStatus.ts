@@ -8,6 +8,8 @@ import {
   buildCarriedExitProvenance,
   collapseDoubleExitStatus,
   mergeSideExitProvenance,
+  getSideExitProvenance,
+  carriedExitStatus,
   exitOutcomeCode,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -151,7 +153,27 @@ export function progressExitStatus({
     // nothing to do with, and opened census seed 9303124 (DOUBLE_ELIMINATION 8/8) as an
     // `ERR_EXISTING_POSITION_ASSIGNMENT` returned over an already-mutated draw. Reading the right
     // object with the right predicate is the whole correction.
-    const opponentEmpty = participantsCount === 1 && statusCodes.length === 0;
+    /**
+     * P37. THE OPPONENT'S OWN EXIT, read from side-keyed provenance rather than from the LEGACY array's
+     * LENGTH.
+     *
+     * This was `statusCodes.length === 0` — "no exit code is recorded anywhere on this matchUp" — used as
+     * a proxy for "the opponent slot is empty or pending". It is the single gate that decides between
+     * RULE 2/3 and RULE 4 below, and RULE 4 is the only site that COLLAPSES a convergence.
+     *
+     * It is also the reason the exit tenant could not leave `matchUpStatusCodes`. Traced on
+     * `FIRST_MATCH_LOSER_CONSOLATION` 8/8 `nonRandom: 9000230` (the `doubleExitUnwindRederives` control
+     * route): with the projection removed, `statusCodes` is empty, `opponentEmpty` flips TRUE, RULE 2 is
+     * taken instead of RULE 4, `collapseDoubleExitStatus` is never called, and `Consolation|1|1` settles
+     * `DEFAULTED` where `DOUBLE_DEFAULT` belongs — with BOTH provenance entries present and correct the
+     * whole time. The facts were there; only this gate could not see them.
+     *
+     * Provenance answers the question the rule actually asks, and answers it PER SIDE, which an array
+     * length cannot: has the OPPONENT already exited? `carriedExitStatus` is the same reader RULE 4's own
+     * collapse and `deriveExitStateFromProvenance` use, so the two agree by construction.
+     */
+    const opponentProvenance = getSideExitProvenance({ matchUp: updatedLoserMatchUp })?.[opponentSideNumber];
+    const opponentEmpty = participantsCount === 1 && !carriedExitStatus(opponentProvenance);
     if (opponentEmpty || !isAnyExit(updatedLoserMatchUp.matchUpStatus)) {
       // RULE 2 — opponent slot empty/pending: WALKOVER, the side WITHOUT the exit
       //          (the empty side that will receive the eventual opponent) wins.
