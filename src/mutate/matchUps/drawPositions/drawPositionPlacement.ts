@@ -55,6 +55,7 @@ import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { propagateUnfillableLoserBye } from './propagateUnfillableLoserBye';
 import { assignDrawPositionBye } from './assignDrawPositionBye';
 import { getParticipantId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -379,6 +380,17 @@ export function assignMatchUpDrawPosition({
     event,
   });
   if (byeResult?.error) return byeResult;
+
+  // P39 — a loser target that can never be filled, because the side that would lose has exited.
+  // Must also run from `carryExitOnward`; see the module docblock on why one site is not enough.
+  const unfillableResult = propagateUnfillableLoserBye({
+    matchUpId: matchUp?.matchUpId,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
+  if (unfillableResult?.error) return unfillableResult;
 
   // `positionAssigned` is guaranteed true here — the false case returned at the top, where it is
   // decided.
