@@ -257,6 +257,27 @@ function freeAfter(matchUp: HydratedMatchUp, timing: SchedulingTiming): number |
   return finish === null ? null : finish + timing.recoveryMinutes;
 }
 
+/**
+ * The clock this matchUp occupied its participants FROM, in minutes. `null` when
+ * nothing dates it.
+ *
+ * `finishOf` reads the same three fields from the other end, in the same order of
+ * authority: the start it actually began at, else its planned start, else — for a
+ * matchUp carrying neither — its recorded finish, which is then the only evidence
+ * left that it happened at all.
+ *
+ * Reading `startTime` before `scheduledTime` is what keeps this from suppressing
+ * a real clash. A neighbour planned for 10:00 that in fact started at 09:00 was
+ * on court at 09:30, and answering 10:00 here would excuse it.
+ */
+function occupiedFrom(matchUp: HydratedMatchUp): number | null {
+  return (
+    parseClockMinutes(matchUp.schedule?.startTime) ??
+    parseClockMinutes(matchUp.schedule?.scheduledTime) ??
+    parseClockMinutes(matchUp.schedule?.endTime)
+  );
+}
+
 /** Why the target cannot be evaluated, or undefined when it can. */
 function skipReasonFor(target: HydratedMatchUp): ReadinessSkipReason | undefined {
   if (target.matchUpStatus === BYE) return 'bye';
@@ -386,6 +407,26 @@ function clashFindings(
       for (const clash of clashes) overlappedIds.add(clash.participantId);
       continue;
     }
+
+    // Recovery is time owed for a match ALREADY BEGUN, so a neighbour that starts
+    // after this one cannot owe it: it is not a prior match but a later one, and
+    // the target is the thing standing in ITS way. Without this gate the
+    // arithmetic below read a future match's projected finish as a floor for a
+    // matchUp hours earlier — a 09:30 singles reported "needs recovery time — not
+    // before 16:30" off a 14:30 doubles the player had not walked on court for.
+    // Reported on prod 2026-09-27 against the TMX copy of this analysis.
+    //
+    // Ordering was consulted ONLY by the overlap test above, whose job is the
+    // narrower question of whether the neighbour's window contains this start
+    // time. When the neighbour starts later that test fails, and every later
+    // neighbour fell through to here.
+    //
+    // `getParticipantRest` has always had this gate — it counts only matchUps
+    // finished or under way at its `asOf` — and names this query as where a
+    // not-yet-started neighbour belongs: as `overlap` or `dependency`, never as
+    // `recovery`.
+    const from = occupiedFrom(neighbour);
+    if (from !== null && from > startMinutes) continue;
 
     const free = freeAfter(neighbour, timing);
     if (free === null || free <= startMinutes) continue;

@@ -206,6 +206,67 @@ describe('getMatchUpReadiness — overlap outranks recovery for the same partici
   });
 });
 
+describe('getMatchUpReadiness — recovery looks backwards, never forwards', () => {
+  /**
+   * A participant's LATER matchUp is not a match they have to recover from. The
+   * ordering was only ever checked by the overlap test, so a neighbour scheduled
+   * after the target fell through to the recovery arithmetic and had its
+   * projected finish charged against a matchUp hours earlier — reported on prod
+   * 2026-09-27 as "needs recovery time — not before 16:30" on a 09:30 singles,
+   * off a 14:30 doubles the player had not walked on court for.
+   *
+   * Graded from both ends of one placement, because asserting only the silence
+   * would also pass with the recovery finding removed altogether.
+   */
+  function sharedParticipantPair() {
+    mocksEngine.generateTournamentRecord({
+      policyDefinitions: POLICY_SCHEDULING_DEFAULT,
+      drawProfiles: [
+        { drawSize: 4, drawType: SINGLE_ELIMINATION, eventName: 'Singles A', uniqueParticipants: false },
+        { drawSize: 4, drawType: SINGLE_ELIMINATION, eventName: 'Singles B', uniqueParticipants: false },
+      ],
+      endDate: '2026-09-15',
+      setState: true,
+      startDate,
+    });
+
+    const matchUps = tournamentEngine.allTournamentMatchUps({ inContext: true, nextMatchUps: true }).matchUps as any[];
+    const first = matchUps.find(
+      (matchUp) => matchUp.roundNumber === 1 && matchUp.sides?.every((side: any) => side.participantId),
+    );
+    const shared = first.sides[0].participantId;
+    const second = matchUps.find(
+      (matchUp) =>
+        matchUp.matchUpId !== first.matchUpId && matchUp.sides?.some((side: any) => side.participantId === shared),
+    );
+    // Without a genuinely shared player the fixture describes nothing.
+    expect(second).toBeDefined();
+
+    // 09:00 + 90 average = 10:30, so 11:00 is clear of the playing window and
+    // inside the 60 minutes of recovery that follow it.
+    schedule(first.matchUpId, first.drawId, '09:00');
+    schedule(second.matchUpId, second.drawId, '11:00');
+    return { first, second, shared };
+  }
+
+  it('reports recovery on the 11:00 matchUp for the 09:00 one', () => {
+    const { second, shared } = sharedParticipantPair();
+    const recovery = readinessFor(second.matchUpId).findings.find((finding: any) => finding.kind === 'recovery');
+    expect(recovery.participantIds).toContain(shared);
+    expect(recovery.notBefore).toEqual('11:30');
+  });
+
+  it('reports nothing on the 09:00 matchUp for the 11:00 one', () => {
+    const { first, shared } = sharedParticipantPair();
+    const readiness = readinessFor(first.matchUpId);
+    expect(readiness.evaluated).toEqual(true);
+    const recovery = readiness.findings.find((finding: any) => finding.kind === 'recovery');
+    // Before the direction gate this read `notBefore: '13:30'` — 11:00 plus the
+    // later matchUp's own average and recovery, charged to a match that precedes it.
+    expect(recovery?.participantIds ?? []).not.toContain(shared);
+  });
+});
+
 describe('getMatchUpReadiness — the engine method and its parameters', () => {
   it('is reachable through the engine', () => {
     const { matchUps } = seed({ drawSize: 4 });

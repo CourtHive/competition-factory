@@ -46,7 +46,7 @@ and 7.0.0 is the first opportunity to make it.
 + import { participantsRequiredMatchUpStatuses } from 'tods-competition-factory';
 ```
 
-### What to do
+### What to do — rename the import
 
 Rename the import. Nothing else changes — the value, the type and the semantics are identical. The
 constant lists the `matchUpStatus` values that require participants to be present on the matchUp,
@@ -180,7 +180,7 @@ Both now return an error — `ERR_MISSING_MATCHUP` and `ERR_MISSING_MATCHUPS`.
 distinguishes a matchUp from an arbitrary object. It does **not** require a hydrated matchUp —
 `matchUpStatus` and `winningSide` are both on the stored record.
 
-### Why this was worth breaking
+### Why this was worth breaking — a false boolean looks safe
 
 `checkMatchUpIsComplete` returns a **boolean that callers branch on**. There was no error to notice
 and no `undefined` to guard, and the wrong answer — `false`, "not complete" — is the one that looks
@@ -743,7 +743,7 @@ partially applied, so it is excluded in the same place. This is distinct from `s
 remains a weight because pairing teammates against each other is a _preference_, not an
 impossibility.
 
-### What to change
+### What to change — round robins over overlapping pairs
 
 Nothing, if your PAIR entries do not overlap. If they do, either stop generating a round robin over
 them — a round robin cannot express that field — or drive the event with AD_HOC rounds, which pair
@@ -794,7 +794,7 @@ work, where one person partners several others over an evening.
 The distinction is the whole design: a bracket commits to every possible meeting up front, so it is
 checked at entry; an AD_HOC draw commits to nothing, so it is checked at pairing.
 
-### What to change
+### What to change — bracketed draws from overlapping pairs
 
 Nothing for singles — two distinct individuals never share, and the same participant entered twice
 was already a `DUPLICATE_ENTRY`.
@@ -1165,7 +1165,7 @@ and a field could only be properly cleared through one of them. Storing `''` is 
 contract exists to prevent: readers are meant to see an absent field rather than a falsy one each of
 them has to special-case.
 
-### What to do
+### What to do — pass `''` to clear
 
 **If you called it with no `participantOtherName` in order to clear the field**, pass `''` instead.
 This is the change most likely to reach you, because the old call reads as harmless:
@@ -1187,7 +1187,7 @@ express it, deliberately. Read an absent `participantOtherName` as "none".
 
 **If you passed a non-string**, it is now ignored rather than stored. Nothing in the ecosystem did.
 
-### Why this was worth breaking
+### Why this was worth breaking — one definition of a clear request
 
 The two methods had drifted apart silently, and nothing failed as a result — which is what made it
 worth fixing rather than documenting. `isClearRequest` now lives in its own module and both methods
@@ -1356,7 +1356,7 @@ supplied means the source is returned unfiltered — and the public participants
 protection that depends on every public caller remembering a flag is one that gets missed once, and
 once is enough for a phone number.
 
-### What to do
+### What to do — read attribution through the history query
 
 Read attribution through `getParticipantPresenceHistory`, which a caller has to ask for by name and a
 server can gate on permissions:
@@ -1520,7 +1520,7 @@ _Shipped in `44042278e`, `eba5d813e`, `78b77d88c` and `d86e2f469` on the exit-pr
 always be advanced; a propagated exit encountering a BYE should be advanced. In both cases the BYE
 remains a BYE"_ — _"the `matchUpStatus: BYE` does not change."_
 
-### What changed
+### What changed — the BYE status is no longer overwritten
 
 When a double exit produced a `WALKOVER` (or `DEFAULTED`) and that exit was carried into a matchUp
 holding a draw BYE, the target's `matchUpStatus` was **overwritten** with the produced exit. It is
@@ -1540,7 +1540,7 @@ consolationR2P1.sideExitProvenance;
 only the label on the BYE-held matchUp is different. This was verified on the oldest test covering
 it, which has asserted the same onward `drawPosition` since v2.0.0-beta.7 and still does.
 
-### Who is affected
+### Who is affected — readers of `matchUpStatus` at a BYE
 
 Anyone who reads `matchUpStatus` at a BYE-held matchUp to decide _"did an exit reach here?"_. That
 question now has a better answer than it ever had via the status:
@@ -1569,7 +1569,7 @@ type says.
 
 _Shipped in `426384fe8` and `d86e2f469` on the exit-propagation branch._
 
-### What changed
+### What changed — no `winningSide` on a produced exit
 
 When a double exit propagated a `WALKOVER` (or `DEFAULTED`) into the next round, the produced exit
 was given a `winningSide` **computed from drawPosition ordering** — including on matchUps that held
@@ -1588,7 +1588,7 @@ producedWalkover.winningSide; // undefined
 **A pending exit with no `winningSide` is a state, not an incomplete one.** It resolves on its own
 when the opposing participant arrives from the other feeder, and that side is then awarded normally.
 
-### Who is affected
+### Who is affected — callers gating on `winningSide`
 
 Any UI or caller reading `winningSide` to decide whether a produced walkover is decided. A produced
 exit awaiting its opponent now returns `undefined`, so a naive `if (matchUp.winningSide)` renders
@@ -1619,7 +1619,7 @@ Like §19, these were committed as `fix(propagation):` with no `BREAKING CHANGE:
 
 _Shipped in `1d921a22b`; referenced by [#4942](https://github.com/CourtHive/competition-factory/pull/4942), which the commit itself predates._
 
-### What changed
+### What changed — a load-bearing re-score is refused
 
 Re-scoring a matchUp whose propagation is **load-bearing for a result that has already been
 decided** is now refused. Previously it was permitted, and it silently un-decided the dependent
@@ -1671,7 +1671,7 @@ winner advances) and a double exit (the produced exits are carried onward).
 
 _Shipped in [#4944](https://github.com/CourtHive/competition-factory/pull/4944)._
 
-### What changed
+### What changed — `resetDrawDefinition` and BYE advancement
 
 `resetDrawDefinition` used to clear every drawPosition a BYE had advanced, while leaving the BYE
 matchUps and the `positionAssignments` in place. The draw was then internally inconsistent: the
@@ -1724,7 +1724,7 @@ participant does) and a BYE facing a still-empty slot (nobody to advance yet).
 _This is the other half of [§20](#20-a-produced-exit-has-no-winningside-until-someone-arrives), and
 it corrects a regression §20 itself introduced._
 
-### What changed
+### What changed — the exit-recognition gate lost its field
 
 §20 stopped pre-computing a `winningSide` on a produced exit, which was right. But
 `drawPositionPlacement` recognised "this matchUp already holds a propagated exit" by testing
@@ -1768,7 +1768,7 @@ the erased state.
 A provenance record on a side that HOLDS a participant is NOT reported: that describes how the
 participant arrived, not an exit delivered into the matchUp.
 
-### Who is affected
+### Who is affected — exit targets and inconsistency gating
 
 Any caller rendering a produced exit's target, and any caller gating on `getDrawInconsistencies`.
 
@@ -1777,7 +1777,7 @@ Any caller rendering a produced exit's target, and any caller gating on `getDraw
 _Step one of finishing the `sideExitProvenance` migration. **No runtime behaviour changes here** —
 this types a published field that was `any[]` and documents what is actually in it._
 
-### What changed
+### What changed — `matchUpStatusCodes` is typed
 
 `MatchUp.matchUpStatusCodes` was declared `any[]`. It is now:
 
@@ -1801,7 +1801,7 @@ The array has **two tenants** and four element shapes:
    known. It is NOT an exit; reading it as one put a walkover badge on an empty chair (reported from
    TMX 2026-09-20).
 
-### Who is affected
+### Who is affected — TypeScript assignments to `matchUpStatusCodes`
 
 Anyone assigning to `matchUpStatusCodes` in TypeScript. `any[]` accepted anything; the union does
 not. If you are writing scoring reason codes, emit strings — that is tenant 1 and the shape
