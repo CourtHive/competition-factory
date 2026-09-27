@@ -232,6 +232,33 @@ export function clearSideExitProvenance(matchUp?: MatchUp): void {
 }
 
 /**
+ * The BYE CLAIM ledger alone, with every exit fact dropped.
+ *
+ * P41. `applyScoreAndStatus` blanks a matchUp via the `toBePlayed` fixture and rescues provenance only
+ * when `isAnyExit(matchUpStatus)`, which excludes BYE — so a BYE target lost its whole record, and what
+ * carried the facts through that call was the legacy `matchUpStatusCodes` array, which is not blanked.
+ *
+ * Rescuing the WHOLE record on a BYE is wrong, and that is measured rather than assumed: it keeps exit
+ * provenance a BYE must not hold, and produced `DO_UNDO_IDENTITY` on six FIRST_MATCH_LOSER_CONSOLATION
+ * property cells plus a fed round *gaining* an origin in `byeHeldCarryPendingFeeder`.
+ *
+ * What a BYE legitimately keeps is the CLAIM ledger — the same thing `clearResolvedSideExitProvenance`
+ * exempts BYE in order to protect, for the reason recorded there: without it "the BYE claim ledger is
+ * wiped by the next placement or score to touch the matchUp, and the unwind is blind again". An entry
+ * carrying ONLY `byeClaims` describes a BYE this cascade claims, not an exit, which is the same
+ * distinction `projectExitStatusCodes` draws.
+ */
+export function retainByeClaimsOnly(provenance?: SideExitProvenance): SideExitProvenance | undefined {
+  if (!provenance) return undefined;
+  const retained: SideExitProvenance = {};
+  for (const sideNumber of [1, 2] as const) {
+    const claims = provenance[sideNumber]?.byeClaims;
+    if (claims?.length) retained[sideNumber] = { byeClaims: [...claims] } as SideExitProvenanceEntry;
+  }
+  return Object.keys(retained).length ? retained : undefined;
+}
+
+/**
  * Clear provenance ONLY when the matchUp is no longer an exit.
  *
  * `clearSideExitProvenance` is unconditional, which is right where the caller has just collapsed the
