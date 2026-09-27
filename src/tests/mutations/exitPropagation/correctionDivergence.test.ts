@@ -53,14 +53,27 @@ import {
  * still rendered, because there a hole IS load-bearing and collapsing it would hide the very
  * side-derivation defects this sweep exists to catch.
  */
+/**
+ * ## Lowered 2026-09-27: 36 -> 28 severe, and the eight went to IDENTICAL
+ *
+ * `propagateUnfillableLoserBye` (punch-list **P39**) resolves a first-round seat as a BYE when the
+ * matchUp feeding it produced an exit and can never produce a loser. Eight cells that previously
+ * diverged visibly between the direct and corrected paths now agree **exactly** — `identical` 36 -> 44,
+ * `provenanceOnly` and `incomparable` unchanged — because the BYE is placed on both paths instead of
+ * only on the one where the arrival happened to come last.
+ *
+ * That is also how the fix was found to be incomplete: hooked on the arrival path alone it made the
+ * outcome depend on entry order, and this sweep plus `sideBlindExitCarry`'s order-independence test
+ * both said so. The propagation is called from every path that resolves a produced exit.
+ */
 const BASELINE = {
   cells: 192,
   /** both paths ran and the draws agree exactly — the only bucket that should ever grow */
-  identical: 36,
+  identical: 44,
   /** a stale `sideExitProvenance` entry only; status, winner and positions agree */
   provenanceOnly: 120,
   /** matchUpStatus, winningSide or drawPositions differ — user-visible */
-  severe: 36,
+  severe: 28,
   /** a step was refused in one path and not the other, so the cell was not an experiment */
   incomparable: 0,
 };

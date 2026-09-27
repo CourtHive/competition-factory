@@ -47,9 +47,17 @@ const enabled = process.env.STALL_BUDGET === '1';
  * History, so the direction is legible: the NARROW rule reported 70 cells / 143 findings on the same
  * tree, and the difference was never fewer stalls — it was 23 cells the `TO_BE_PLAYED` gate could not
  * see (`WALKOVER` 18, `DEFAULTED` 17, `DOUBLE_WALKOVER` 1, `DOUBLE_DEFAULT` 1).
+ *
+ * **LOWERED 2026-09-27: 93 -> 89 cells, 180 -> 176 findings.** `propagateUnfillableLoserBye`
+ * (punch-list **P39**) resolves a first-round seat as a BYE when the matchUp feeding it produced an
+ * exit and can never produce a loser, so four cells no longer strand anybody. The same change closed
+ * the last stranded participant in CA's original COMPASS report and moved eight `correctionDivergence`
+ * cells from `severe` to `identical`, while all four census arms — both frozen windows, both
+ * `allowChangePropagation` settings, 2,400 scenarios — reported IDENTICAL failing seeds and issue
+ * breakdowns before and after.
  */
-const BUDGET_CELLS = 93;
-const BUDGET_FINDINGS = 180;
+const BUDGET_CELLS = 89;
+const BUDGET_FINDINGS = 176;
 
 const occupantsOf = (matchUp: any) => (matchUp?.sides ?? []).filter((s: any) => s?.participantId && !s?.bye);
 const playableShape = (m: any) => !m.winningSide && (!m.matchUpStatus || m.matchUpStatus === 'TO_BE_PLAYED');

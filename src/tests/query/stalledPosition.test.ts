@@ -1,3 +1,4 @@
+import { MATRIX_CELLS, playMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -5,8 +6,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER, COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { COMPASS } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_WALKOVER, COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
  * `STALLED_POSITION` — a participant in a match that can never be played, in a draw that has stopped.
@@ -73,7 +74,20 @@ function compass(participantsCount: number) {
   return { at, playAllPlayable, stalls };
 }
 
-it('reports a participant stranded by a single double walkover', () => {
+/**
+ * COMPASS 16/14 NO LONGER STRANDS ANYBODY — and this test is now the regression guard for that.
+ *
+ * It was the rule's motivating case: `Southwest|1|1` ended `(empty) vs <participant>` and
+ * `getDrawInconsistencies` rated the draw `valid: true`. `propagateUnfillableLoserBye` (punch-list
+ * **P39**) resolves that seat as a BYE, because the matchUp feeding it produced an exit and can never
+ * produce a loser, so the detector correctly reports **nothing** here.
+ *
+ * Kept rather than deleted, and inverted rather than relaxed: a count that went 1 -> 0 because a defect
+ * was FIXED reads exactly like one that went 1 -> 0 because a detector was weakened, and the only way
+ * to tell them apart later is to assert the FIXED STATE. So the BYE is asserted by name, not just the
+ * absence of a finding. The detector's ability to fire is pinned separately, below.
+ */
+it('reports nothing on COMPASS 16/14, because the seat that stranded a player is now a BYE', () => {
   const { at, playAllPlayable, stalls } = compass(14);
 
   const source: any = at('East', 1, 2);
@@ -84,12 +98,15 @@ it('reports a participant stranded by a single double walkover', () => {
   });
   playAllPlayable();
 
-  const found = stalls();
-  expect(found.length).toEqual(1);
-  expect(found[0].issueType).toEqual(STALLED_POSITION);
-  // the stranded matchUp is the one holding exactly one participant
-  const stalled: any = at('Southwest', 1, 1);
-  expect(found[0].matchUpId).toEqual(stalled.matchUpId);
+  expect(stalls().length).toEqual(0);
+
+  // the fixed state, asserted positively — a weakened detector would also report zero
+  const southwest: any = at('Southwest', 1, 1);
+  expect(southwest.matchUpStatus).toEqual(BYE);
+  const drawDefinition: any = tournamentEngine.getEvent({ drawId: 'A' }).drawDefinition;
+  const structure = drawDefinition.structures?.find((s: any) => s.structureName === 'Southwest');
+  const assignment = (structure?.positionAssignments ?? []).find((a: any) => a.drawPosition === 1);
+  expect(assignment?.byeFromPropagation).toEqual(true);
 });
 
 /**
@@ -108,14 +125,14 @@ it('reports a participant stranded by a single double walkover', () => {
  *
  *   West|3|1        COMPLETED ws=1, 2 occupants     resolved
  *   West|2|1        WALKOVER  ws=2, 1 occupant      resolved -- #4985 awarded the carried exit
- *   Southwest|1|1   TO_BE_PLAYED, 1 occupant        STILL STRANDED -- punch-list P39
+ *   Southwest|1|1   BYE (byeFromPropagation)        resolved -- P39, 2026-09-27
  *
- * `Southwest|1|1` is P39: `propagateConsolationBye` is gated on `linkCondition === FIRST_MATCHUP`,
- * and COMPASS legitimately has no such link, so the BYE that would fill that seat is unreachable by
- * construction. When P39 lands this test should go to 0 and the `Southwest` row below becomes the
- * thing to update — deliberately, not by relaxing the count.
+ * **All three are now resolved, and the count is 0.** The last of them was P39: the seat is fed by a
+ * matchUp that produced an exit and can never produce a loser, so it resolves as a BYE. This test now
+ * asserts the FIXED STATE rather than a count, for the reason the test above states — a detector that
+ * was weakened would also report zero.
  */
-it('reports the one participant COMPASS 16/12 still strands, and names the two now resolved', () => {
+it('reports nothing on COMPASS 16/12 either, where the same seat is resolved', () => {
   const { at, playAllPlayable, stalls } = compass(12);
 
   const source: any = at('East', 1, 2);
@@ -126,16 +143,13 @@ it('reports the one participant COMPASS 16/12 still strands, and names the two n
   });
   playAllPlayable();
 
-  const found = stalls();
-  expect(found.length).toEqual(1);
+  expect(stalls().length).toEqual(0);
 
-  // the survivor, by name rather than by count
+  // the seat, asserted by name and by marker rather than by the absence of a finding
   const southwest: any = at('Southwest', 1, 1);
-  expect(found[0].matchUpId).toEqual(southwest.matchUpId);
-  expect(occupantsOf(southwest).length).toEqual(1);
-  expect(southwest.winningSide).toBeUndefined();
+  expect(southwest.matchUpStatus).toEqual(BYE);
 
-  // and the two that were resolved, each asserted separately so a regression names itself
+  // and the two that P34's arc resolved, each asserted separately so a regression names itself
   const westThree: any = at('West', 3, 1);
   expect(westThree.matchUpStatus).toEqual(COMPLETED);
   expect(westThree.winningSide).toEqual(1);
@@ -173,4 +187,44 @@ it('reports nothing on a draw that completes cleanly', () => {
   playAllPlayable();
 
   expect(stalls().length).toEqual(0);
+});
+
+/**
+ * THE DETECTOR MUST STILL BE ABLE TO FIRE, and after P39 nothing in the default suite proved it.
+ *
+ * Both COMPASS cases above now report zero, which is the right answer and leaves a hole: a rule that
+ * reports nothing anywhere is indistinguishable from a rule that has been switched off. The budget in
+ * `stalledPositionBudget.test.ts` does assert a non-empty population, but it is INERT on `pnpm test`
+ * and runs only under `pnpm verify` — so on an ordinary local run there would be no evidence at all.
+ *
+ * This is the other half of the pair the verification discipline asks for: one case where the rule is
+ * silent because the draw is sound, and one where it speaks because the draw is not.
+ *
+ * `DOUBLE_ELIMINATION 8/5` at the matrix's own seed 87 strands a participant at `Backdraw|2|2`, which
+ * ends `WALKOVER` holding one occupant — a shape P39 deliberately does NOT resolve, because the seat is
+ * in the SAME structure rather than a first-round seat in a connected one. It is also the discriminator
+ * the built artifact is verified against, so the two checks are about the same state.
+ */
+it('still fires where a stall remains — DOUBLE_ELIMINATION 8/5, matrix seed 87', () => {
+  const cell = MATRIX_CELLS.find(({ seed }) => seed === 87);
+  expect(cell?.drawType).toEqual(DOUBLE_ELIMINATION);
+  expect(cell?.participantsCount).toEqual(5);
+
+  const drawId = 'stalls-de-8-5';
+  expect(playMatrixCell(cell as any, drawId)).toEqual(true);
+
+  const drawDefinition: any = tournamentEngine.getEvent({ drawId }).drawDefinition;
+  const result: any = getDrawInconsistencies({ drawDefinition, drawId });
+  const found = (result.inconsistencies ?? []).filter((i: any) => i.issueType === STALLED_POSITION);
+
+  expect(found.length).toBeGreaterThan(0);
+  // advisory, never an error — the severity tier is what let this rule ship at all
+  expect(found.every((i: any) => i.severity === 'warning')).toEqual(true);
+  expect(result.valid).toEqual(true);
+
+  // and the stall carries an EXIT status, which only the status-blind rule can see
+  const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId }).matchUps ?? [];
+  const stalled: any = (matchUps as any[]).find((m) => m.matchUpId === found[0].matchUpId);
+  expect(stalled.matchUpStatus).toEqual(WALKOVER);
+  expect(stalled.winningSide).toBeUndefined();
 });

@@ -34,6 +34,7 @@ import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureD
 import {
   clearResolvedSideExitProvenance,
   isPropagatedExit as sharedIsPropagatedExit,
+  isProjectedExitCode,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
@@ -55,6 +56,7 @@ import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { propagateUnfillableLoserBye } from './propagateUnfillableLoserBye';
 import { assignDrawPositionBye } from './assignDrawPositionBye';
 import { getParticipantId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -380,6 +382,17 @@ export function assignMatchUpDrawPosition({
   });
   if (byeResult?.error) return byeResult;
 
+  // P39 — a loser target that can never be filled, because the side that would lose has exited.
+  // Must also run from `carryExitOnward`; see the module docblock on why one site is not enough.
+  const unfillableResult = propagateUnfillableLoserBye({
+    matchUpId: matchUp?.matchUpId,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
+  if (unfillableResult?.error) return unfillableResult;
+
   // `positionAssigned` is guaranteed true here — the false case returned at the top, where it is
   // decided.
   return { ...SUCCESS };
@@ -398,30 +411,31 @@ function resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, m
 }
 
 /**
- * The string value of a `matchUpStatusCodes` element, whatever shape it arrived in.
+ * The string value of a POLICY `matchUpStatusCodes` element.
  *
- * The array holds THREE shapes, which is the root problem:
- *   1. policy codes      `{ matchUpStatusCode, label, matchUpStatusCodeDisplay }` — the scoring
- *                        policy's vocabulary (see POLICY_SCORING_USTA)
- *   2. exit provenance   `{ matchUpStatus, previousMatchUpStatus, sideNumber }` — projected from
- *                        `sideExitProvenance` by `projectExitStatusCodes`
- *   3. wrapped codes     `{ code }` — written by updateMatchUpStatusCodes, which wraps any string
- *                        element before stamping `previousMatchUpStatus` onto it
+ * **P37 narrowed this from three shapes to one.** It used to end `?? code?.matchUpStatus`, which made
+ * it read the EXIT tenant too — the projection of `sideExitProvenance` — so the branch below re-sited
+ * a carried exit's status positionally in an array that is not where side identity lives.
  *
- * The previous read was `code?.code`, which resolves shape 3 correctly and shapes 1 and 2 to
- * `undefined`. Provenance is the shape this branch actually receives, so the carried code was
- * dropped and the branch assigned an empty array rather than re-siding anything.
+ * Measured at that branch over the exit-propagation and matchUpStatus suites (2026-09-27, 113
+ * arrivals): where the array held anything it was the projected shape, its status equalled provenance
+ * in 50 of 50, and in the other 63 the array was ALREADY EMPTY while provenance held the status. The
+ * re-siting was redundant where it ran and silently lossy where it did not.
  *
- * Measured 2026-09-11 over 120 randomized sweep scenarios: the branch below ran 275 times, 81 of
- * those with codes present, every one of them shape 2, and dropped the code in 81 of 81.
+ * What remains is a real job, and the reason this function was not deleted with the rest: the POLICY
+ * vocabulary (`POLICY_SCORING_USTA`'s `W1` and friends) belongs to the match, lands on the exiting
+ * side, and must still follow that side through the sort. `propagateExitStatus.test.ts` §"FMLC
+ * real-match fall-through" pins it, and deleting the re-siting outright left it reading `''`.
  *
- * Note this returns a STRING, so provenance (`previousMatchUpStatus`, `sideNumber`) is still
- * flattened away — the surrounding contract is `string[]`. Preserving it is what the per-side
- * provenance field is for; see Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
+ * Shapes read: a bare string, `{ matchUpStatusCode }` (the policy vocabulary), and `{ code }` (a
+ * string an earlier `updateMatchUpStatusCodes` wrapped). NOT the provenance shape — callers filter it
+ * out with {@link isProjectedExitCode} first, and this function no longer resolves it either, so the
+ * eviction holds even if a caller forgets.
  */
-function exitCodeString(code: any): string | undefined {
+function policyCodeString(code: any): string | undefined {
   if (typeof code === 'string') return code || undefined;
-  return code?.matchUpStatusCode ?? code?.code ?? code?.matchUpStatus ?? undefined;
+  if (isProjectedExitCode(code)) return undefined;
+  return code?.matchUpStatusCode ?? code?.code ?? undefined;
 }
 
 function applyPositionToMatchUp({
@@ -471,8 +485,21 @@ function applyPositionToMatchUp({
   // exit code must follow the EXITING participant to its new side (opposite the advancing
   // winner) — otherwise it mislabels the winner. Mirrors resolvePropagatedExitOnAdvance.
   if (advancedExitWinningSide && !isDoubleExitExit) {
+    // P37. The carried exit's SIDE is a fact about provenance, which is side-keyed and already holds
+    // it; the legacy array carried the same fact positionally and this branch used to re-site it
+    // there. Measured at this exact site over the exit-propagation and matchUpStatus suites
+    // (2026-09-27, 113 arrivals): where the array held a code it was the projected shape and its
+    // status equalled provenance in 50 of 50 — and in the other 63 the array was ALREADY EMPTY while
+    // provenance held the status. So the re-siting was redundant where it ran and silently lossy
+    // where it did not, which is the divergence class a projection exists to end.
+    //
+    // The exit tenant is therefore dropped rather than re-sided. Policy codes are the array's OTHER
+    // tenant and survive: see `isProjectedExitCode`.
     const exitSideNumber = advancedExitWinningSide === 1 ? 2 : 1;
-    const carriedCode = (matchUp.matchUpStatusCodes ?? []).map(exitCodeString).find(Boolean);
+    const carriedCode = (matchUp.matchUpStatusCodes ?? [])
+      .filter((code: any) => !isProjectedExitCode(code))
+      .map(policyCodeString)
+      .find(Boolean);
     const matchUpStatusCodes: string[] = [];
     if (carriedCode) {
       for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
