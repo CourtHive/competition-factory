@@ -198,7 +198,7 @@ importers:
         version: 2.1.1
       courthive-components:
         specifier: 5.0.0
-        version: 5.0.0(@tiptap/pm@3.31.3)(leaflet@1.9.4)(tods-competition-factory@7.0.0)
+        version: 5.0.0(@tiptap/pm@3.31.3)(leaflet@1.9.4)(tods-competition-factory@7.1.0)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -210,7 +210,7 @@ importers:
         version: 19.3.0(react@19.3.0)
       tods-competition-factory:
         specifier: ^7.0.0
-        version: 7.0.0
+        version: 7.1.0
 
 packages:
 
@@ -5462,8 +5462,8 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  tods-competition-factory@7.0.0:
-    resolution: {integrity: sha512-1k1ILdRt6lkKhADy43YLYSEx3DcEyJYiqPh1sU3cI00ccA4zKH6T8avByqEQrToxOjg34/KeKjg+/vSniEwgqg==}
+  tods-competition-factory@7.1.0:
+    resolution: {integrity: sha512-JoqFKAQrHLoEZYZ/vx6NlbBXH/oOJvAOvMVVgE2+YQU1WusFrQ+tiAyf02WME4pWCxAyPXRcLjV2yvncDMv2CA==}
     engines: {node: '>=22'}
 
   toidentifier@1.0.1:
@@ -9532,7 +9532,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@5.0.0(@tiptap/pm@3.31.3)(leaflet@1.9.4)(tods-competition-factory@7.0.0):
+  courthive-components@5.0.0(@tiptap/pm@3.31.3)(leaflet@1.9.4)(tods-competition-factory@7.1.0):
     dependencies:
       '@tiptap/core': 3.31.3(@tiptap/pm@3.31.3)
       '@tiptap/extension-color': 3.31.3(@tiptap/extension-text-style@3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3)))
@@ -9549,7 +9549,7 @@ snapshots:
       focus-trap: 8.2.2
       timepicker-ui: 4.4.0
       tippy.js: 6.3.7
-      tods-competition-factory: 7.0.0
+      tods-competition-factory: 7.1.0
       vanillajs-datepicker: 1.3.4
     optionalDependencies:
       leaflet: 1.9.4
@@ -12890,7 +12890,7 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  tods-competition-factory@7.0.0: {}
+  tods-competition-factory@7.1.0: {}
 
   toidentifier@1.0.1: {}
 
