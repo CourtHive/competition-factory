@@ -1,3 +1,4 @@
+import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
@@ -1684,6 +1685,24 @@ function carryExitOnward({
       matchUpsMap,
     });
     if (advanced?.error) return decorateResult({ result: advanced, stack });
+
+    /**
+     * P39 — and this site is REQUIRED, not belt-and-braces.
+     *
+     * The exit has just resolved against an opponent who was already in place, so this matchUp will
+     * never produce a loser and the first-round seat its loser link feeds can never be filled. The
+     * arrival path resolves the mirror-image case; hooking only there made the outcome depend on
+     * WHICH ORDER the two results were entered — `sideBlindExitCarry`'s order-independence test and
+     * `correctionDivergence` both went red on exactly that asymmetry.
+     */
+    const unfillable = propagateUnfillableLoserBye({
+      matchUpId: noContextNextWinnerMatchUp.matchUpId,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (unfillable?.error) return decorateResult({ result: unfillable, stack });
   }
 
   if (!holdsBye) return decorateResult({ result: { ...SUCCESS }, stack });

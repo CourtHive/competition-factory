@@ -1015,7 +1015,13 @@ type AssignFedDrawPositionByeType = {
   event?: Event;
 };
 
-function assignFedDrawPositionBye({
+/**
+ * Exported for `propagateUnfillableLoserBye`, which resolves an unfillable loser target in a CONNECTED
+ * structure and must dispatch exactly as the BYE cascade above does — round 1 straight to
+ * `assignDrawPositionBye`, any later round through here, where the fed position's own initial round is
+ * what decides. Two spellings of that dispatch is how the two paths would drift.
+ */
+export function assignFedDrawPositionBye({
   byeFromPropagation,
   loserTargetDrawPosition,
   preserveScheduling,
