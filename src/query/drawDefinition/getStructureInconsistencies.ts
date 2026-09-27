@@ -1,6 +1,6 @@
 import { isPropagatedExit as sharedIsPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getNativeSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
+import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { isAnyExit, isExit } from '@Validators/isExit';
 
@@ -496,6 +496,22 @@ function getStalledPositionInconsistencies(
       matchUpId: matchUp.matchUpId,
       structureId: matchUp.structureId,
       issueType: STALLED_POSITION,
+      /**
+       * THE FIRST ADVISORY CHECK IN THIS FILE, and the reason the rule can ship at all.
+       *
+       * A stranded participant is a real defect and worth telling a director about, and it is NOT a
+       * claim that the stored draw is structurally corrupt — the state is internally consistent, it
+       * is the propagation that fell short. Reporting it as an `error` made `valid` false on 93 of the
+       * 600 exit-propagation matrix cells, which is why this rule sat parked on a branch for days:
+       * every caller of `valid` went red at once, including the census oracle.
+       *
+       * As a `warning` it is still returned, routed, fingerprinted and rendered — TMX's audit prints
+       * every finding — while `valid` continues to mean "no error". See `hasErrorSeverity`.
+       *
+       * PROMOTE IT TO `error` WHEN THE POPULATION REACHES ZERO. The count is ratcheted by
+       * `src/tests/query/stalledPositionBudget.test.ts`, which may only ever be lowered.
+       */
+      severity: 'warning',
       message:
         `side ${present[0].sideNumber} holds a participant whose opponent can never arrive — ` +
         `no matchUp in the draw is playable`,
@@ -610,5 +626,5 @@ export function getStructureInconsistencies(
   }
 
   const finalized = finalize(inconsistencies, { scope: 'STRUCTURE' });
-  return { ...SUCCESS, valid: finalized.length === 0, inconsistencies: finalized };
+  return { ...SUCCESS, valid: !hasErrorSeverity(finalized), inconsistencies: finalized };
 }

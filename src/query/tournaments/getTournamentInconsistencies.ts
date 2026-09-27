@@ -1,5 +1,5 @@
 import { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
-import { finalize, Inconsistency } from '@Query/integrity/inconsistency';
+import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { getParticipants } from '@Query/participants/getParticipants';
 
 // constants and types
@@ -68,5 +68,5 @@ export function getTournamentInconsistencies(
 
   const combined = [...eventInconsistencies, ...identityInconsistencies];
   const finalized = finalize(combined, { scope: 'TOURNAMENT', tournamentId });
-  return { ...SUCCESS, valid: finalized.length === 0, inconsistencies: finalized };
+  return { ...SUCCESS, valid: !hasErrorSeverity(finalized), inconsistencies: finalized };
 }

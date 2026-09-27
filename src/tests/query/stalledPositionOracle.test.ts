@@ -1,6 +1,11 @@
+import {
+  MATRIX_CELLS,
+  cellLabel,
+  playMatrixCell,
+  type MatrixCell,
+} from '@Tests/testHarness/exitPropagation/matrixCells';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { getDrawDefinition } from '@Tests/testHarness/exitPropagation/transitions';
-import { nextPlayable, playForward, step } from '@Tests/testHarness/exitPropagation/driver';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -8,19 +13,8 @@ import { expect, test } from 'vitest';
 import fs from 'fs';
 
 // constants
-import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER, RETIRED } from '@Constants/matchUpStatusConstants';
-import {
-  MODIFIED_FEED_IN_CHAMPIONSHIP,
-  FIRST_MATCH_LOSER_CONSOLATION,
-  FIRST_ROUND_LOSER_CONSOLATION,
-  FEED_IN_CHAMPIONSHIP_TO_SF,
-  FEED_IN_CHAMPIONSHIP,
-  DOUBLE_ELIMINATION,
-  SINGLE_ELIMINATION,
-  CURTIS_CONSOLATION,
-  COMPASS,
-  OLYMPIC,
-} from '@Constants/drawDefinitionConstants';
+import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
  * ORACLE SCAN for `STALLED_POSITION`. INERT unless `STALLED_ORACLE=1`.
@@ -70,49 +64,11 @@ const outPath = process.env.OUT ?? '/tmp/stalledPositionOracle.jsonl';
 const STALLED_POSITION = 'STALLED_POSITION';
 const TO_BE_PLAYED_STATUS = 'TO_BE_PLAYED';
 
-const DRAW_TYPES = [
-  SINGLE_ELIMINATION,
-  DOUBLE_ELIMINATION,
-  FIRST_MATCH_LOSER_CONSOLATION,
-  FIRST_ROUND_LOSER_CONSOLATION,
-  MODIFIED_FEED_IN_CHAMPIONSHIP,
-  FEED_IN_CHAMPIONSHIP_TO_SF,
-  FEED_IN_CHAMPIONSHIP,
-  CURTIS_CONSOLATION,
-  COMPASS,
-  OLYMPIC,
-];
-const DRAW_SIZES = [8, 16];
-const REDUCTIONS = [0, 1, 3];
-const EXIT_STATUSES = [WALKOVER, DEFAULTED, RETIRED, DOUBLE_WALKOVER, DOUBLE_DEFAULT];
-
-const exitOutcome = (exitStatus: string) => {
-  if ([DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(exitStatus)) return { matchUpStatus: exitStatus };
-  if (exitStatus === RETIRED) {
-    return { matchUpStatus: RETIRED, winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }] } };
-  }
-  return { matchUpStatus: exitStatus, winningSide: 1 };
-};
-
-// composed exactly as exitPropagationMatrix.test.ts composes it, so seeds and labels correspond
-const MATRIX = DRAW_TYPES.flatMap((drawType) =>
-  DRAW_SIZES.flatMap((drawSize) =>
-    REDUCTIONS.flatMap((reduction) =>
-      EXIT_STATUSES.flatMap((exitStatus) =>
-        [true, false].map((propagateExitStatus) => ({
-          participantsCount: drawSize - reduction,
-          propagateExitStatus,
-          exitStatus,
-          drawSize,
-          drawType,
-        })),
-      ),
-    ),
-  ),
-).map((cell, index) => ({ ...cell, seed: index + 1 }));
-
-const label = (cell: (typeof MATRIX)[number]) =>
-  `matrix ${cell.drawType} ${cell.drawSize}/${cell.participantsCount} ${cell.exitStatus} propagate=${cell.propagateExitStatus}`;
+/**
+ * The 600 cells now come from `@Tests/testHarness/exitPropagation/matrixCells`, which this file used
+ * to compose inline. A second instrument needed the identical grid at identical seeds, and a third
+ * copy is how two sets of numbers quietly stop being about the same draws.
+ */
 
 const occupantsOf = (matchUp: any) => (matchUp?.sides ?? []).filter((s: any) => s?.participantId && !s?.bye);
 
@@ -144,7 +100,7 @@ const awardedToVacantSeat = (matchUp: any): boolean => {
   return occupants[0].sideNumber !== matchUp.winningSide;
 };
 
-type Cell = (typeof MATRIX)[number];
+type Cell = MatrixCell;
 
 type Tally = {
   cellsPlayed: number;
@@ -185,32 +141,6 @@ const bump = (counts: Record<string, number>, key: string) => {
 };
 
 const hasBye = (matchUp: any) => (matchUp.sides ?? []).some((side: any) => side?.bye);
-
-/** generate the cell's draw and drive it to exhaustion; false when the draw did not generate */
-function playCell(cell: Cell, drawId: string): boolean {
-  setSubscriptions({});
-  const { drawIds } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [
-      { drawId, drawType: cell.drawType, drawSize: cell.drawSize, participantsCount: cell.participantsCount },
-    ],
-    nonRandom: cell.seed,
-    setState: true,
-  });
-  if (!drawIds?.includes(drawId)) return false;
-
-  const outcome = exitOutcome(cell.exitStatus);
-  if (arm === 'exits') {
-    const target = nextPlayable(drawId);
-    if (target?.matchUpId) {
-      step({ propagateExitStatus: cell.propagateExitStatus, matchUpId: target.matchUpId, drawId, outcome });
-    }
-    playForward({ propagateExitStatus: cell.propagateExitStatus, exitOutcome: outcome, drawId });
-  } else {
-    // CONTROL — ordinary results only, so no exit ever enters the draw
-    playForward({ propagateExitStatus: cell.propagateExitStatus, exitOutcome: undefined, drawId });
-  }
-  return true;
-}
 
 function recordStalls(cell: Cell, key: string, stalls: any[], structureNameOf: (m: any) => any, tally: Tally): void {
   tally.oracleStalls += stalls.length;
@@ -291,9 +221,9 @@ function recordAwards(
 }
 
 function measureCell(cell: Cell, tally: Tally): void {
-  const key = label(cell);
+  const key = cellLabel(cell);
   const drawId = `oracle-${arm}-${key.replace(/[^\w]+/g, '-')}`;
-  if (!playCell(cell, drawId)) return;
+  if (!playMatrixCell(cell, drawId, arm === 'control' ? 'control' : 'exits')) return;
   tally.cellsPlayed += 1;
 
   const drawDefinition = getDrawDefinition(drawId);
@@ -342,7 +272,7 @@ test.skipIf(!enabled)(
   () => {
     fs.writeFileSync(outPath, '');
     const tally = emptyTally();
-    for (const cell of MATRIX) measureCell(cell, tally);
+    for (const cell of MATRIX_CELLS) measureCell(cell, tally);
 
     process.stdout.write(
       `\nARM=${arm} cellsPlayed=${tally.cellsPlayed} terminalCells=${tally.terminalCells}\n` +
