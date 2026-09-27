@@ -1179,8 +1179,32 @@ function advanceByeAdvancedDrawPosition({
       sourceMatchUp: targetMatchUp,
     });
 
-    const exitSideNumber = arrivalSideNumber ?? occupiedSide;
-    const winningSide = advancingParticipantId || !exitSideNumber ? occupiedSide : 3 - exitSideNumber;
+    /**
+     * `occupiedSide` STAYS THE GATE, because its emptiness is what carries the BYE refusal.
+     *
+     * `getExitWinningSide` returns `undefined` for a BYE drawPosition on purpose — *"A BYE draw
+     * position can never be the winning side"* — so `!occupiedSide` was never merely a null check: it
+     * is how this expression declines to award anything when the position advancing through is a BYE.
+     *
+     * #4988 replaced it with `!exitSideNumber`, where `exitSideNumber = arrivalSideNumber ??
+     * occupiedSide`. `arrivalSideNumber` is derived structurally and resolves even when the position is
+     * a BYE, so the guard stopped firing and the award landed on the BYE's own side. Measured:
+     * `BYE_WON` went from **0 to 13** in `src/tests/mutations/exitPropagation` with
+     * `doubleExitPropagateBye` on — *"matchUpStatus WALKOVER awards winningSide 2 to side 2, which is a
+     * BYE (drawPosition 7)"* at `Backdraw|3|2`, a matchUp holding a hole and a propagated BYE and no
+     * participant at all.
+     *
+     * CA, 2026-09-27: *"there can never be { winningSide } with a value in a matchUp with
+     * matchUpStatus: BYE. If two BYEs encounter each other then a BYE is produced for the next matchUp,
+     * rinse and repeat."*
+     *
+     * So the gate is restored and `arrivalSideNumber` is used only to choose WHICH side, once an award
+     * is owed at all. P29's correction is untouched: at `FEED_IN_CHAMPIONSHIP 16/16 Consolation|6|1`
+     * `occupiedSide` is 1 (a real fed position, not a BYE) and `arrivalSideNumber` is 2, so the winner
+     * is still side 1 — the slot the participant arrives into.
+     */
+    const winningSide =
+      advancingParticipantId || !occupiedSide ? occupiedSide : 3 - (arrivalSideNumber ?? occupiedSide);
 
     /**
      * THE ORIGIN TRAVELS WITH THE EXIT, and until now it did not.
