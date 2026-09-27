@@ -1,7 +1,10 @@
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
 import { modifyMatchUpNotice, updateInContextMatchUp } from '@Mutate/notifications/drawNotifications';
-import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  clearResolvedSideExitProvenance,
+  retainByeClaimsOnly,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -36,6 +39,7 @@ import {
   WALKOVER,
   IN_PROGRESS,
   INCOMPLETE,
+  BYE,
 } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -258,7 +262,20 @@ function applyScoreAndStatus({
     // (`isActiveDownstream`, `hasPropagatedExitDownstream`), which then refuse a mutation a director
     // is entitled to make. That is the load. Do not remove this on the strength of the parity test
     // passing.
-    const survivingProvenance = isAnyExit(matchUpStatus) ? matchUp.sideExitProvenance : undefined;
+    // P41. BYE IS RESCUED TOO, because the guard on the very next line already decided that question
+    // the other way. `clearResolvedSideExitProvenance` excludes BYE from clearing ON PURPOSE — CA's
+    // ruling that "a BYE is never won" and that "in both cases the BYE remains a BYE", applied to the
+    // record rather than the status — while `isAnyExit` excludes BYE, so this rescue destroyed exactly
+    // what that one protects. Two adjacent guards disagreeing about one status.
+    //
+    // It matters because the propagation writers reach here with `matchUpStatus: holdsBye ? BYE : EXIT`.
+    // On the BYE branch provenance was blanked and not rescued, and what carried the facts through the
+    // call was the LEGACY `matchUpStatusCodes` array, which this function does not blank — so
+    // `getSideExitProvenance`'s fallback resurrected them afterwards. That is why the array is not a
+    // projection of the record inside this one call: it IS the record. See punch-list P41.
+    const survivingProvenance = isAnyExit(matchUpStatus)
+      ? matchUp.sideExitProvenance
+      : retainByeClaimsOnly(matchUpStatus === BYE ? matchUp.sideExitProvenance : undefined);
     Object.assign(matchUp, { ...toBePlayed });
     if (survivingProvenance) matchUp.sideExitProvenance = survivingProvenance;
   } else if (score) {
