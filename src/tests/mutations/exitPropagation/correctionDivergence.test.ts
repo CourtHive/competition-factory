@@ -55,6 +55,24 @@ import {
  * side-derivation defects this sweep exists to catch.
  */
 /**
+ * ## `provenanceOnly` 120 -> 0 and `identical` 44 -> 164, 2026-09-28 — and it was the LAST ARRAY GATE
+ *
+ * `severe` is unchanged at 28. What moved is the whole `provenanceOnly` bucket: 120 cells where the
+ * corrected path left a STALE `sideExitProvenance` entry the direct path did not have, with status, winner
+ * and positions already agreeing.
+ *
+ * The cause was P37's last legacy-array decision read. `drawPositionPlacement` and
+ * `removeSubsequentRoundsParticipant` gated the NATIVE provenance write on `matchUp.matchUpStatusCodes`
+ * being truthy — and because every blanking site sets that field to `[]`, the gate admitted writes onto
+ * matchUps that had merely been touched by an earlier pass. Asking the native question instead
+ * (`participatesInExitCascade`: does it already hold provenance, or is it an exit or a BYE) admits only the
+ * matchUps where a late-learned origin belongs.
+ *
+ * So this bucket existing at all was a symptom of the array, not of the correction. **`provenanceOnly` is
+ * now zero and should stay there** — a cell landing in it again means a writer is stamping provenance
+ * somewhere the cascade does not reach, which is P19's failure mode.
+ */
+/**
  * ## Lowered 2026-09-27: 36 -> 28 severe, and the eight went to IDENTICAL
  *
  * `propagateUnfillableLoserBye` (punch-list **P39**) resolves a first-round seat as a BYE when the
@@ -70,9 +88,9 @@ import {
 const BASELINE = {
   cells: 192,
   /** both paths ran and the draws agree exactly — the only bucket that should ever grow */
-  identical: 44,
+  identical: 164,
   /** a stale `sideExitProvenance` entry only; status, winner and positions agree */
-  provenanceOnly: 120,
+  provenanceOnly: 0,
   /** matchUpStatus, winningSide or drawPositions differ — user-visible */
   severe: 28,
   /** a step was refused in one path and not the other, so the cell was not an experiment */

@@ -578,6 +578,45 @@ export function retainForeignProvenance(
 }
 
 /**
+ * Is this matchUp already part of the exit cascade, and so a place a late-learned origin belongs?
+ *
+ * **P37's last legacy-array decision read, converted.** Two sites — `drawPositionPlacement` and
+ * `removeSubsequentRoundsParticipant` — gated `recordSourceSideProvenance` on
+ * `matchUp.matchUpStatusCodes` being truthy. That is the LEGACY array deciding whether the NATIVE record
+ * gets written, the inversion class `MATCHUP_STATUS_CODES_PER_SIDE.md` names, and the last one standing.
+ *
+ * **What the array was standing in for.** Not "has codes" — the field is set to `[]` by every blanking
+ * site and by `attemptToSetMatchUpStatusBYE`, so truthiness meant *"some scoring or propagation write has
+ * already touched this matchUp"*. Measured over 30 sweep seeds, 854 matchUps: with the gate simply
+ * REMOVED, matchUps carrying `sideExitProvenance` went 162 → 202 and those on a matchUp that is neither an
+ * exit nor a BYE went 14 → 53. An ordinary advancement was getting an origin stamped on it, and
+ * `sideExitProvenance` is PRESENCE-read (**P19**: *"one bad writer silently flips every exclusion"*), so
+ * every rule exempting "a matchUp with provenance" began exempting matchUps that were simply played — 58
+ * test failures, 54 of them `transitionProperties` cells, none of them about codes.
+ *
+ * **The three native facts that carry the same meaning**, and each was measured:
+ *
+ * | condition | failures on the six affected files |
+ * |---|---|
+ * | no gate at all | 58 |
+ * | provenance OR exit/BYE status OR `isAnyExit(sourceMatchUpStatus)` | 19 — the source clause fires on a fresh target the array gate would not have |
+ * | **provenance OR exit/BYE status** | **1**, and that one is an IMPROVEMENT |
+ *
+ * The surviving difference is `correctionDivergence`'s baseline moving the right way:
+ * `provenanceOnly` **120 → 0** and `identical` **44 → 164**, with `severe` unchanged at 28. Those 120 cells
+ * were ones where the corrected path left a STALE provenance entry the direct path did not have — the
+ * array gate was permitting exactly the writes that produced them. So converting this read does not merely
+ * remove the last array dependence; it closes 120 cells of CA's re-score invariant.
+ *
+ * `BYE` is included deliberately: `attemptToSetMatchUpStatusBYE` writes `matchUpStatusCodes = []`, so a BYE
+ * matchUp passed the old gate, and CA's rule is that a BYE legitimately carries a claim ledger.
+ */
+export function participatesInExitCascade({ matchUp }: { matchUp?: MatchUp }): boolean {
+  if (getSideExitProvenance({ matchUp })) return true;
+  return isAnyExit(matchUp?.matchUpStatus) || matchUp?.matchUpStatus === BYE;
+}
+
+/**
  * Place `code` at `sideNumber`'s index, padding earlier slots with `''`.
  *
  * `matchUpStatusCodes` is POSITIONAL: index 0 is side 1. A code for side 2 must be `['', 'W1']` and
