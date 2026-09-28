@@ -699,7 +699,7 @@ test('FMLC: WO player advanced into a pre-seeded consolation slot fires a modify
 });
 
 test('FMLC: propagated WO cascades through a consolation BYE, then a later fall-through auto-resolves the pending walkover', () => {
-  // Reproduces the ClubSpark drawSize-32 scenario:
+  // Reproduces the reported drawSize-32 scenario:
   // - Two first-round BYE winners meet in main R2P2; a WALKOVER there feeds the
   //   loser into the consolation where it advances through a BYE to a later round,
   //   leaving a pending WALKOVER whose winning side is an empty feed slot.
