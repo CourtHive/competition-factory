@@ -344,6 +344,7 @@ export type FactoryEngineMethod =
   | 'getMatchUpsToSchedule'
   | 'getMatchUpType'
   | 'getMaxEntryPosition'
+  | 'getMaxSetScore'
   | 'getModifiedMatchUpFormatTiming'
   | 'getMutationLocks'
   | 'getOfficialAssignments'
@@ -1093,6 +1094,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getMatchUpsToSchedule',
   'getMatchUpType',
   'getMaxEntryPosition',
+  'getMaxSetScore',
   'getModifiedMatchUpFormatTiming',
   'getMutationLocks',
   'getOfficialAssignments',

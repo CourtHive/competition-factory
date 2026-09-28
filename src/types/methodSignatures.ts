@@ -72,6 +72,7 @@ import type { getEligibleEvents, getParticipantEligibility } from '@Query/entrie
 import type { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
 import type { modifyParticipantsPaymentStatus } from '@Mutate/participants/modifyParticipantsPaymentStatus';
 import type { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
+import type { getMaxSetScore, getSetComplement, getTiebreakComplement } from '@Query/matchUp/getComplement';
 import type { getTournamentVisibleFrom, isTournamentVisible } from '@Query/publishing/tournamentVisibility';
 import type { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
 import type { processCompetitionRound } from '@Mutate/drawDefinitions/competition/processCompetitionRound';
@@ -210,7 +211,6 @@ import type { promoteAlternate, promoteAlternates } from '@Mutate/entries/promot
 import type { updateParticipantResults } from '@Mutate/structures/updateParticipantResults';
 import type { bulkUpdatePublishedEventIds } from '@Query/event/bulkUpdatePublishedEventIds';
 import type { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
-import type { getSetComplement, getTiebreakComplement } from '@Query/matchUp/getComplement';
 import type { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 import type { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
 import type { seedWithdrawalCascade } from '@Mutate/drawDefinitions/seedWithdrawalCascade';
@@ -992,6 +992,7 @@ export interface MethodSignatures {
   getMatchUpsToSchedule: EngineMethod<typeof getMatchUpsToSchedule>;
   getMatchUpType: EngineMethod<typeof getMatchUpType>;
   getMaxEntryPosition: EngineMethod<typeof getMaxEntryPosition>;
+  getMaxSetScore: EngineMethod<typeof getMaxSetScore>;
   getModifiedMatchUpFormatTiming: EngineMethod<typeof getModifiedMatchUpFormatTiming>;
   getMutationLocks: EngineMethod<typeof getMutationLocks>;
   getOfficialAssignments: EngineMethod<typeof getOfficialAssignments>;
