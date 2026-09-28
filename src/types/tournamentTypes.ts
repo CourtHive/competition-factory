@@ -576,7 +576,7 @@ export interface Interleave {
  *
  * Was previously a union of `typeof` constants with no enum behind it, which left
  * consumers able to type against EventTypeUnion but unable to reference a member
- * at runtime — the outlier ClubSpark reported. Now enum-backed like the other 33
+ * at runtime — the outlier a consumer reported. Now enum-backed like the other 33
  * vocabularies, with the union derived from it.
  */
 export enum EventTypeEnum {

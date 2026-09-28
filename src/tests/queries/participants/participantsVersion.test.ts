@@ -60,7 +60,7 @@ describe('participantsVersion', () => {
 
   describe('getEventData integration', () => {
     it('ADDITIVE — omitting participantsVersion is byte-identical to today, apart from the new field', () => {
-      // The load-bearing guarantee. ClubSpark runs the existing pattern at scale for USTA and ITA;
+      // The load-bearing guarantee. The existing pattern runs at scale for USTA and ITA;
       // default output must not move. Asserted mechanically rather than promised in review.
       const {
         eventIds: [eventId],
