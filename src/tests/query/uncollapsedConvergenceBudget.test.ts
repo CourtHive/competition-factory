@@ -44,9 +44,19 @@ import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, DEFAULTED, WALKOVER } from '@Constants
  * So it is not reachable by ordinary play at all, and it is not reachable by the correction the existing
  * sweep performs. It needs a single exit RE-SCORED to a double, with a double already standing beside it.
  *
- * **That is a gap in `correctionDivergence`, not only a fact about P42.** That sweep corrects a double
- * exit down to a single and never the reverse, so this whole direction of re-score was unswept. This file
- * exists as much for the direction as for the count.
+ * **That was a gap in `correctionDivergence`, not only a fact about P42**, and it is now closed: that
+ * file has an UPGRADE arm sweeping this direction, measured at **52 severe divergences** — the same 52
+ * cells. The two files measure the same population from different angles and neither is redundant:
+ *
+ *  - `correctionDivergence`'s upgrade arm asserts the INVARIANT — the re-scored draw must match the one
+ *    that reached the same outcomes directly. That is the stronger claim, and it shows the divergence is
+ *    USER-VISIBLE: provenance is identical on both paths, but the re-scored `Consolation|1|1` reads
+ *    `WALKOVER ws=1` where the direct path reads `DOUBLE_WALKOVER ws=-`, so a matchUp nobody played
+ *    shows a winner and the exit that should propagate onward does not.
+ *  - this file asserts the RULE — that `UNCOLLAPSED_CONVERGENCE` actually reports that population, at
+ *    severity `warning`, without flipping `valid`.
+ *
+ * Fix one and both fall together. Lower both baselines.
  *
  * ## Why a ceiling rather than an exact expectation
  *

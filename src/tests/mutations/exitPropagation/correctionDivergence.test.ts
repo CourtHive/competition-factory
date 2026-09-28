@@ -2,6 +2,7 @@ import {
   resolveFirstRoundStructure,
   compareCorrection,
   correctionScenario,
+  type Step,
 } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
@@ -131,14 +132,55 @@ function firstRoundStructure(config: Parameters<typeof resolveFirstRoundStructur
   return structureCache.get(key);
 }
 
-function classify(cell: (typeof MATRIX)[number]): { bucket: Bucket; report?: string } {
+/**
+ * THE TWO DIRECTIONS A RE-SCORE CAN GO, and only one of them was ever swept.
+ *
+ * `DOWNGRADE` is what `correctionScenario` builds and what this file has always measured: two double
+ * exits, then the first CORRECTED DOWN to a single. `UPGRADE` is the reverse — a single exit, a double
+ * beside it, then the single RE-SCORED UP to a double — and it was **unswept across all eight draw
+ * types** until 2026-09-27. It is the direction the three `unwindRemovesDrawPosition` reproductions
+ * use, and the only one that reaches punch-list **P42**.
+ *
+ * Both directions end at the same pair of outcomes, so both are valid tests of CA's invariant: *how you
+ * got here must not change where you are.*
+ */
+type Direction = 'DOWNGRADE' | 'UPGRADE';
+
+function scenarioFor(
+  direction: Direction,
+  {
+    doubleExitStatus,
+    singleExitStatus,
+    structureName,
+  }: { doubleExitStatus: string; singleExitStatus: string; structureName?: string },
+): { direct: Step[]; corrected: Step[] } {
+  if (direction === 'DOWNGRADE') return correctionScenario({ doubleExitStatus, singleExitStatus, structureName });
+
+  const at = (roundPosition: number, outcome: any): Step => ({
+    structureName: structureName as string,
+    roundNumber: 1,
+    roundPosition,
+    outcome,
+  });
+  const asDouble = { matchUpStatus: doubleExitStatus };
+  const asSingle = { matchUpStatus: singleExitStatus, winningSide: 1 };
+  return {
+    direct: [at(1, asDouble), at(2, asDouble)],
+    corrected: [at(2, asSingle), at(1, asDouble), at(2, asDouble)],
+  };
+}
+
+function classify(
+  cell: (typeof MATRIX)[number],
+  direction: Direction = 'DOWNGRADE',
+): { bucket: Bucket; report?: string } {
   const { doubleExitStatus, singleExitStatus, ...config } = cell;
   const label = `${config.drawType} ${config.drawSize}/${config.participantsCount} ${doubleExitStatus} propagate=${config.propagateExitStatus}`;
 
   // COMPASS and OLYMPIC open in `East`, not `Main` — resolved per draw rather than assumed, and
   // CACHED: resolving builds a draw, and doing that per cell tripled the sweep's generation count
   const structureName = firstRoundStructure(config);
-  const { direct, corrected } = correctionScenario({ doubleExitStatus, singleExitStatus, structureName });
+  const { direct, corrected } = scenarioFor(direction, { doubleExitStatus, singleExitStatus, structureName });
   const { divergences, refusalMismatch } = compareCorrection({ config, direct, corrected });
 
   // a cell where one path was refused is NOT a divergence — the two draws did not run the same
@@ -190,4 +232,74 @@ it('a corrected double exit leaves the draw where the direct path leaves it', ()
   // 192 cells, each generating two draws and playing them out. It runs in ~10s alone and the
   // default 30s cap is not enough under full-suite contention — measured, it timed out there while
   // passing in isolation, which is the worst way for a gate to fail.
+}, 180_000);
+
+/**
+ * THE UNSWEPT DIRECTION — a single exit RE-SCORED UP to a double. **Punch-list P42.**
+ *
+ * Added 2026-09-27, and it found 52 severe divergences on its first run. Everything above sweeps the
+ * DOWNGRADE — correct a double exit down to a single — and reports 28 severe. The reverse had never
+ * been swept at all, and it is the direction that reaches the defect.
+ *
+ * **What diverges, and it is user-visible.** The provenance is IDENTICAL on both paths; only the status
+ * differs:
+ *
+ * ```text
+ * FIRST_MATCH_LOSER_CONSOLATION 8/8 DOUBLE_WALKOVER
+ *   Consolation|1|1  direct  [DOUBLE_WALKOVER ws=-]   prov 1:DW->WO, 2:DW->WO
+ *                   upgrade  [WALKOVER ws=1]          prov 1:DW->WO, 2:DW->WO
+ *   Consolation|2|1  direct  [BYE dp=1.4 prov 2:DW->WO]   upgrade  [BYE dp=1.3 prov -]
+ * ```
+ *
+ * So a matchUp nobody played shows a WINNER on the re-scored path, and the exit that should have
+ * propagated onward from it does not. `deriveExitStateFromProvenance` on that record returns
+ * `DOUBLE_WALKOVER` and no winner — the facts are present and correct on both paths, and only the
+ * status derivation disagrees. That is exactly what the `UNCOLLAPSED_CONVERGENCE` rule reports, and the
+ * 52 cells are the same 52: see `src/tests/query/uncollapsedConvergenceBudget.test.ts`, which measures
+ * the same population through the detector rather than through this comparison.
+ *
+ * **It is independent of `propagateExitStatus`** — both settings diverge — and systematic rather than
+ * seed-luck: 8 cells in each of six draw types, 4 in CURTIS_CONSOLATION, 0 in SINGLE_ELIMINATION, which
+ * has no second structure for two exits to converge in.
+ *
+ * **Do not attempt the fix from `doubleExitAdvancement`'s `existingExit` gate.** Measured the same day:
+ * asking provenance there takes the suite from 4 failures to 21, because it re-routes convergences on
+ * the DIRECT path too — which this sweep shows are already correct.
+ *
+ * **Lower these numbers when you fix it. Never raise them.**
+ */
+const UPGRADE_BASELINE = {
+  cells: 192,
+  identical: 140,
+  provenanceOnly: 0,
+  severe: 52,
+  incomparable: 0,
+};
+
+it('a single exit re-scored UP to a double leaves the draw where the direct path leaves it', () => {
+  setSubscriptions({});
+  const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
+  const reports: string[] = [];
+
+  for (const cell of MATRIX) {
+    const { bucket, report } = classify(cell, 'UPGRADE');
+    counts[bucket]++;
+    if (report) reports.push(report);
+  }
+
+  // the control: a sweep that measured nothing would satisfy every assertion below vacuously
+  expect(MATRIX.length).toEqual(UPGRADE_BASELINE.cells);
+
+  const report = counts.severe === UPGRADE_BASELINE.severe ? '' : `\n${reports.join('\n')}\n`;
+  expect(`severe=${counts.severe}${report}`).toEqual(`severe=${UPGRADE_BASELINE.severe}`);
+
+  expect({
+    provenanceOnly: counts.provenanceOnly,
+    incomparable: counts.incomparable,
+    identical: counts.identical,
+  }).toEqual({
+    provenanceOnly: UPGRADE_BASELINE.provenanceOnly,
+    incomparable: UPGRADE_BASELINE.incomparable,
+    identical: UPGRADE_BASELINE.identical,
+  });
 }, 180_000);
