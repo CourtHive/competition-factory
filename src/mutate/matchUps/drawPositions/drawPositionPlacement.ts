@@ -492,10 +492,29 @@ function applyPositionToMatchUp({
      * attribute what it cannot, so the gate was redundant — fails **58 tests across 5 files** (measured
      * 2026-09-27, together with the same removal in `removeSubsequentRoundsParticipant`):
      * `transitionProperties` loses 54 cells across nine draw types, plus `correctionDivergence`,
-     * `crossStructureWinnerPositions` and two census replays. So the truthy array is standing in for a
-     * real condition — most likely *"this matchUp was carrying propagation state"* — and the conversion
-     * needs that condition identified rather than the gate deleted. It is the last decision read on this
-     * surface and it wants its own change.
+     * `crossStructureWinnerPositions` and two census replays.
+     *
+     * **WHAT THE TRUTHY ARRAY STANDS IN FOR, measured 2026-09-28.** It means *"this matchUp is already
+     * part of the exit cascade"*. Over 30 sweep seeds, 854 matchUps, with both gates removed:
+     *
+     * | | gates in place | gates removed |
+     * |---|---|---|
+     * | matchUps carrying `sideExitProvenance` | 162 | **202** |
+     * | ...on a matchUp that is neither an exit nor a BYE | 14 | **53** |
+     * | matchUps that ARE an exit | 218 | **209** |
+     *
+     * Without the gate an ORDINARY advancement gets an origin stamped on it — provenance on non-exit
+     * matchUps almost QUADRUPLES — and `sideExitProvenance` is PRESENCE-read (punch-list **P19**: *"one
+     * bad writer silently flips every exclusion"*). Every rule that exempts "a matchUp with provenance"
+     * then exempts matchUps that were simply played, which is why the failures land in
+     * `transitionProperties` rather than in anything about codes. The exit count MOVING (218 → 209) says
+     * it is not surplus metadata either: the draws come out different.
+     *
+     * **So the conversion is not "delete the gate", it is "ask the question the gate is asking".** The
+     * replacement has to test cascade participation without reading the legacy array —
+     * `isAnyExit(matchUp.matchUpStatus)`, existing provenance, or the caller passing down that it is
+     * propagating. Each needs measuring against `transitionProperties`; none has been tried. This is the
+     * last decision read on this surface and it wants its own change.
      */
     recordSourceSideProvenance({
       inContextDrawMatchUps: refreshedMatchUps,
