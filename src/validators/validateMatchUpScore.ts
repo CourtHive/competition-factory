@@ -4,6 +4,7 @@
  * PROTOTYPE: This logic will be moved to tods-competition-factory
  * Currently implemented in TMX for testing and refinement before factory integration
  */
+import { getMaxSetScore } from '@Query/matchUp/getComplement';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
@@ -231,12 +232,35 @@ function validateTiebreakSet(
   return { isValid: true };
 }
 
+/**
+ * An unfinished set: forgive the games not yet played, refuse the games that cannot be played.
+ *
+ * `allowIncomplete` says nothing about a CEILING. A set to six with a tiebreak at six cannot reach
+ * eight games whether or not it has finished, so a score above the format's maximum is wrong at every
+ * stage — and a score-entry interface asking this question as the operator types needs to be told so.
+ *
+ * This used a slack of `setTo + 10`, which accepted a 9-4 in a set to six and a 6-4 in a set to four.
+ * The slack existed because the true ceiling was not computable here; `getMaxSetScore` computes it,
+ * and returns `undefined` exactly where no ceiling exists — a timed set, an advantage set, a match
+ * tiebreak. Where it has no opinion the old slack still applies, because an advantage set really can
+ * run to 24-22 and refusing that would be the worse error.
+ *
+ * `opponentScore` is deliberately NOT passed. It would tighten the ceiling to `setTo` for a side whose
+ * opponent is below `setTo` — true of a FINISHED set, since 7-3 is unreachable — but this function
+ * also sees a set mid-entry, where one cell holds a 7 and the other is still empty and reads as 0.
+ * Tightening there would fire an error at the moment the second value is being typed.
+ */
 function validateIncompleteSet(
   winnerScore: number,
   loserScore: number,
-  setTo: number | undefined,
+  setFormat: { setTo: number | undefined; tiebreakAt?: number; NoAD?: boolean; winBy?: number },
 ): { isValid: boolean; error?: string } {
-  if (setTo && (winnerScore > setTo + 10 || loserScore > setTo + 10)) {
+  const { NoAD, setTo, tiebreakAt, winBy } = setFormat;
+  if (!setTo) return { isValid: true };
+
+  const ceiling = getMaxSetScore({ NoAD, setTo, tiebreakAt, winBy }) ?? setTo + 10;
+
+  if (winnerScore > ceiling || loserScore > ceiling) {
     return {
       isValid: false,
       error: `Set score ${winnerScore}-${loserScore} exceeds expected range for ${setTo}-game sets`,
@@ -247,7 +271,7 @@ function validateIncompleteSet(
 
 function validateRegularSet(
   scores: { side1: number; side2: number; winner: number; loser: number; diff: number },
-  setFormat: { setTo: number | undefined; tiebreakAt: number | undefined; winBy?: number },
+  setFormat: { setTo: number | undefined; tiebreakAt: number | undefined; NoAD?: boolean; winBy?: number },
   allowIncomplete: boolean | undefined,
 ): { isValid: boolean; error?: string } {
   const { side1: side1Score, side2: side2Score, winner: winnerScore, loser: loserScore, diff: scoreDiff } = scores;
@@ -258,7 +282,7 @@ function validateRegularSet(
   }
 
   if (allowIncomplete) {
-    return validateIncompleteSet(winnerScore, loserScore, setTo);
+    return validateIncompleteSet(winnerScore, loserScore, setFormat);
   }
 
   if (setTo) {
@@ -349,7 +373,7 @@ export function validateSetScore(
 
   return validateRegularSet(
     { side1: side1Score, side2: side2Score, winner: winnerScore, loser: loserScore, diff: scoreDiff },
-    { setTo, tiebreakAt, winBy: setFormat.winBy },
+    { setTo, tiebreakAt, NoAD: setFormat.NoAD, winBy: setFormat.winBy },
     allowIncomplete,
   );
 }
