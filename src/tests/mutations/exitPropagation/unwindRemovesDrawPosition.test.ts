@@ -1,4 +1,3 @@
-import { UNCOLLAPSED_CONVERGENCE } from '@Query/drawDefinition/getStructureInconsistencies';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -124,13 +123,13 @@ it.each([
   // scenarios are clean on this oracle before the fix too; the falsifying assertion is the loop
   // above, which is RED on master at step 3 in all three cases.
   //
-  // **P37 narrowed "clean" to "no ERROR, and no finding but the one known warning."** Two of the three
-  // scenarios reach an `UNCOLLAPSED_CONVERGENCE` — provenance records an exit delivered into BOTH sides
-  // of a consolation matchUp (`drawPositions: [5, 6]`, both empty, two `DOUBLE_WALKOVER` origins from
-  // different sources) while the status is a single `WALKOVER` with `winningSide: 2`. It is
-  // **pre-existing**: measured identical on clean `dev` at the same coordinates, and previously
-  // reported under the wrong name, `EXIT_CODE_ON_WINNER_SIDE`, because the projection was masking the
-  // array it reads. Kept as two claims so a genuinely new finding still fails this.
+  // **P37/P42, and it is back to the strong form.** Evicting the exit tenant unmasked an
+  // `UNCOLLAPSED_CONVERGENCE` in two of these three scenarios — provenance recording an exit delivered
+  // into BOTH sides of a consolation matchUp (`drawPositions: [5, 6]`, both empty, two `DOUBLE_WALKOVER`
+  // origins from different sources) while the status was a single `WALKOVER` with `winningSide: 2`. It
+  // was pre-existing, measured identical on clean `dev`, and had been surfacing under the wrong name.
+  // For one commit this asserted the finding by name; the convergence reconciliation closes it.
+  // Kept as two claims so a `warning` cannot hide behind an error-free list.
   expect(errorIssues()).toEqual([]);
-  expect(issues().filter((issueType: string) => issueType !== UNCOLLAPSED_CONVERGENCE)).toEqual([]);
+  expect(issues()).toEqual([]);
 });
