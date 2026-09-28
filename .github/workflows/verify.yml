@@ -144,6 +144,17 @@ jobs:
       - name: verify:format
         run: pnpm verify:format
 
+      # P37's REGROWTH GUARD. `matchUpStatusCodes` carried the per-side provenance of a propagated exit
+      # as well as the scoring policy's vocabulary; the exit tenant is evicted and `sideExitProvenance`
+      # is the record. This fails when a NEW file in `src/` reaches for the array, so the destination is
+      # enforceable rather than aspirational.
+      #
+      # Enumerated HERE as well as in the `verify` chain deliberately: this workflow runs the steps
+      # individually rather than invoking `pnpm verify`, so a chain-only entry would be a gate that runs
+      # on every developer's machine and never once in CI.
+      - name: verify:exit-tenant
+        run: pnpm verify:exit-tenant
+
       # WIRED IN 2026-09-13, and the `fetch-depth: 0` above was already here FOR it — the checkout
       # comment names this gate by name. It was left out of CI because it read `(#PR)` from the
       # commit subject, which only exists after a squash-merge, so it could never pass on a PR
