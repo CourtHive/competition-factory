@@ -1,5 +1,5 @@
 import { isPropagatedExit as sharedIsPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { getNativeSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { isAnyExit, isExit } from '@Validators/isExit';
@@ -329,12 +329,13 @@ function getWinnerAdvancementInconsistency(
  * drawPosition is fed by a double exit that advances no one. The draw has stopped, and nothing
  * reported it.
  *
- * ## Why NATIVE provenance, and only native
+ * ## Provenance, and only provenance
  *
- * `getSideExitProvenance` falls back to the legacy `matchUpStatusCodes` array and can return stale
- * entries; `getNativeSideExitProvenance` answers the narrower question this check needs — did the
- * cascade actually stamp its own record here. Reading the fallback would turn every stale legacy
- * code into a reported defect.
+ * The question is whether the cascade actually stamped its own record here. `getSideExitProvenance`
+ * used to fall back to the legacy `matchUpStatusCodes` array and could return stale entries, which
+ * would have turned every stale legacy code into a reported defect — so this check read the
+ * fallback-free `getSideExitProvenance`. P37 removed the fallback and with it that second
+ * reader, so the one remaining reader answers exactly the question this check asks.
  *
  * ## What is deliberately NOT flagged
  *
@@ -347,7 +348,7 @@ function getLostPropagatedExitInconsistency(matchUp: any): StructureInconsistenc
   const { matchUpStatus, winningSide, matchUpId } = matchUp;
   if (winningSide || matchUpStatus === BYE || isAnyExit(matchUpStatus)) return undefined;
 
-  const provenance = getNativeSideExitProvenance({ matchUp });
+  const provenance = getSideExitProvenance({ matchUp });
   if (!provenance) return undefined;
 
   /**

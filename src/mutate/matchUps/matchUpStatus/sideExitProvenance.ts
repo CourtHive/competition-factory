@@ -460,64 +460,39 @@ export function byeClaimSurvives({
 }
 
 /**
- * Read provenance, preferring the native field and falling back to the legacy array.
+ * Read a matchUp's side-keyed exit provenance.
  *
- * The fallback exists so a record written before this field — or by a LEGACY-mode writer — still
- * answers. It reads only the provenance SHAPE out of `matchUpStatusCodes`; policy codes and
- * `{ code }` wrappers are not provenance and are ignored.
+ * **P37 REMOVED THE LEGACY FALLBACK.** This function used to prefer the native field and, when it was
+ * absent, DERIVE provenance from the provenance-shaped elements of `matchUpStatusCodes` — for records
+ * written before the native field existed, or by a `LEGACY`-mode writer.
  *
- * NATIVE WINS WHOLE, deliberately, and this was tried the other way. Merging per side looks
- * strictly more informative — it would recover a side the half-written native field omits — but at
- * the time it was measured the legacy array was BOTH order-dependent and self-inconsistent on the
- * consolation convergence path: one entry order stored `{ matchUpStatus: DEFAULTED,
- * previousMatchUpStatus: DOUBLE_WALKOVER }`, a walkover origin producing a default. Merging imported
- * that corruption into a field which was correct.
+ * CA settled it, 2026-09-27: *"we don't need to carry forward legacy equivalence at this point, and not
+ * supporting LEGACY for bugs we are closing with provenance should not be considered a breaking change.
+ * Any client that wants the resolutions should be moving to full NATIVE support."* So there is no
+ * hydration boundary to negotiate and no cutover to stage: the fallback goes.
  *
- * That corruption is gone at the source — `doubleExitAdvancement` now GENERATES the array from
- * provenance rather than hand-building it, so the two cannot disagree — but native-wins-whole
- * remains the right rule: a record written before the projection landed still carries the old shape,
- * and native is the only structure with an authoritative side key.
+ * Three reasons it was load-bearing, and why none of them survives:
+ *
+ *  - it carried an earlier arrival's origin into the accumulating union at the propagation write sites.
+ *    Those sites no longer WRITE the projection, so there is nothing in the array for it to find.
+ *  - it defeated an intentional clear. `clearSideExitProvenance` cleared the native field only, and the
+ *    very next read resurrected what had just been deliberately removed — the asymmetry that needed
+ *    `getNativeSideExitProvenance` to exist as a second reader at all.
+ *  - it answered *"is this matchUp an exit that came from somewhere"* for stored 6.x records. That is
+ *    now the consumer's problem and it is already handled where it matters: `courthive-components`
+ *    renders `sideExitProvenance` first and keeps its OWN `matchUpStatusCodes` fallback for records
+ *    written before the field.
+ *
+ * `getNativeSideExitProvenance` went with it. It existed ONLY to be the fallback-free reader — the two
+ * questions *"is this matchUp an exit that came from somewhere"* and *"did an origin survive THIS
+ * withdrawal"* needed different answers only because one reader consulted the array. With the array out
+ * of it there is one question and one reader, and keeping two names would advertise a distinction that
+ * no longer exists.
+ *
+ * `projectExitStatusCodes` went too. It was what WROTE the exit tenant into `matchUpStatusCodes`, and
+ * after the seven write sites moved to {@link deriveStatusCodes} it had no callers at all.
  */
 export function getSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideExitProvenance | undefined {
-  const native = matchUp?.sideExitProvenance;
-  if (native && Object.keys(native).length) return native;
-
-  const codes = matchUp?.matchUpStatusCodes;
-  if (!Array.isArray(codes)) return undefined;
-
-  const derived: SideExitProvenance = {};
-  codes.forEach((code: any, index: number) => {
-    if (!code || typeof code !== 'object' || !code.previousMatchUpStatus) return;
-    // legacy provenance is positional: index 0 is side 1. `sideNumber` is preferred when present.
-    const sideNumber = code.sideNumber ?? index + 1;
-    if (sideNumber !== 1 && sideNumber !== 2) return;
-    derived[sideNumber] = definedAttributes({
-      matchUpStatus: code.matchUpStatus,
-      previousMatchUpStatus: code.previousMatchUpStatus,
-      sourceMatchUpId: code.sourceMatchUpId,
-    }) as SideExitProvenanceEntry;
-  });
-
-  return Object.keys(derived).length ? derived : undefined;
-}
-
-/**
- * Read provenance from the NATIVE field ALONE.
- *
- * `getSideExitProvenance` falls back to `matchUpStatusCodes`, and that fallback is right for the
- * question *"is this matchUp an exit that came from somewhere"* — a record written before the native
- * field, or by a LEGACY-mode writer, still answers it.
- *
- * It is WRONG for the question an unwind asks: *"did an origin survive THIS withdrawal"*. The legacy
- * array is not rewritten when provenance is withdrawn (see `withdrawFromMatchUp` on why it must not
- * be), so after the native field is cleared the fallback still returns the provenance-shaped
- * elements it held — answering "an origin survived" for a matchUp that has none. Measured: that
- * defeated an earlier attempt at this fix outright.
- *
- * So the two questions get two readers rather than one reader with a flag, and a caller picks by
- * naming which question it is asking. Nothing else about the shared reader changes.
- */
-export function getNativeSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideExitProvenance | undefined {
   const native = matchUp?.sideExitProvenance;
   return native && Object.keys(native).length ? native : undefined;
 }
@@ -613,49 +588,6 @@ export function retainForeignProvenance(
 }
 
 /**
- * The legacy `matchUpStatusCodes` array, GENERATED from provenance.
- *
- * CA, 2026-09-11: *"I don't think we can reasonably build our propagation logic on LEGACY
- * matchUpStatusCodes… we shouldn't try."* The destination that follows from it is that propagation
- * reads and writes `sideExitProvenance` and the legacy array becomes a PROJECTION of it — not a
- * structure anyone parses to decide behaviour.
- *
- * Why a projection removes a whole class of defect rather than one instance of it. The propagation
- * writers used to build the two structures INDEPENDENTLY from whatever each site happened to have in
- * scope, so they could disagree, and did:
- *
- *  - `handleEmptyExitLoser` wrote `{ matchUpStatus: <the arriving exit>, previousMatchUpStatus: <the
- *    CONVERGED status of the target> }` at side 1 — a walkover origin recorded as producing a
- *    default in the mixed case, which is not a fact about either side.
- *  - the same site replaced the array wholesale while provenance ACCUMULATED, so the earlier
- *    arrival's entry survived in one structure and was overwritten in the other.
- *
- * Both are impossible once one structure is a function of the other. Order-invariance and internal
- * consistency are inherited rather than separately maintained.
- *
- * SHAPE. Positional, index 0 = side 1, and BOTH slots are always emitted once there is any
- * provenance at all — which is what the previous builder did and is not cosmetic. A side with no
- * origin yet gets a bare `{ sideNumber }`, and that stub is a RESERVED SLOT, not noise:
- * `updateMatchUpStatusCodes` is the site that learns a side's origin late, and it stamps by mapping
- * over the elements that already exist. Drop the stub and the origin it learns has nowhere to land —
- * measured, as two suite failures, when this projection first padded with `''` instead.
- *
- * `sourceMatchUpId` is deliberately NOT projected. CA decided 2026-09-09 not to add source identity
- * to `matchUpStatusCodes`, which ships on every matchUp; the identity lives in `sideExitProvenance`,
- * whose contents were ours to define from the start.
- */
-/**
- * The matchUp's `matchUpStatusCodes` with the EXIT tenant removed — i.e. the POLICY vocabulary alone.
- *
- * **P37's write-side eviction, in one place.** Every propagation write used to pass
- * `projectExitStatusCodes(provenance)` and so REPLACED the array with a projection of provenance,
- * destroying any policy code the match already carried. This retains the other tenant and stops
- * writing this one, which is the eviction.
- *
- * Paired with {@link isProjectedExitCode}, so the predicate that decides what leaves is the same one
- * `clearSideExitProvenance` uses to decide what a clear removes.
- */
-/**
  * Place `code` at `sideNumber`'s index, padding earlier slots with `''`.
  *
  * `matchUpStatusCodes` is POSITIONAL: index 0 is side 1. A code for side 2 must be `['', 'W1']` and
@@ -704,13 +636,14 @@ export function placeCodeAtSide(statusCodes: string[], sideNumber: number, code?
  * same fact — and `productionStatusCodeSurvival` guards its survival. The two tenants could not
  * collide per side while the projection replaced the array wholesale; they can now.
  *
- * NATIVE ONLY, deliberately. Both callers are asking *"which sides carry an exit right now"*, and
+ * READ AFTER THE CLEAR, and it now holds. Both callers ask *"which sides carry an exit right now"*, and
  * `removeDirectedParticipants` asks it immediately after clearing provenance for an exit it just
- * removed. That is the question `getNativeSideExitProvenance` exists for: the legacy fallback would
- * resurrect the cleared entry out of the array and re-stamp a code for an exit that is gone.
+ * removed. While `getSideExitProvenance` still fell back to the array, that read resurrected the
+ * cleared entry and re-stamped a code for an exit that was gone; the fallback is removed, so there is
+ * one reader and it answers the question asked.
  */
 export function deriveStatusCodes(matchUp?: MatchUp): string[] {
-  const provenance = getNativeSideExitProvenance({ matchUp });
+  const provenance = getSideExitProvenance({ matchUp });
   const codes: string[] = ((matchUp?.matchUpStatusCodes as any[]) ?? [])
     .filter((code: any) => !isProjectedExitCode(code))
     .map(exitOutcomeCode);
@@ -745,26 +678,6 @@ export function deriveStatusCodes(matchUp?: MatchUp): string[] {
 
 export function retainPolicyCodes(matchUp?: MatchUp): any[] {
   return ((matchUp?.matchUpStatusCodes as any[]) ?? []).filter((code: any) => !isProjectedExitCode(code));
-}
-
-export function projectExitStatusCodes(provenance?: SideExitProvenance): any[] {
-  // An entry that carries ONLY `byeClaims` describes a BYE this cascade claims, not an exit — and
-  // the legacy array is the projection of EXIT provenance. Testing mere presence emitted a pair of
-  // empty reserved slots (`[{sideNumber:1},{sideNumber:2}]`) onto matchUps that had none, which a
-  // clear then left behind: DO_UNDO_IDENTITY failed on six property cells and
-  // `byeMeetingAProducedExit` on the same residue.
-  const describesExit = (sideNumber: number) =>
-    !!(provenance?.[sideNumber]?.matchUpStatus ?? provenance?.[sideNumber]?.previousMatchUpStatus);
-  const hasProvenance = [1, 2].some(describesExit);
-  if (!hasProvenance) return [];
-
-  return [1, 2].map((sideNumber) =>
-    definedAttributes({
-      previousMatchUpStatus: provenance?.[sideNumber]?.previousMatchUpStatus,
-      matchUpStatus: provenance?.[sideNumber]?.matchUpStatus,
-      sideNumber,
-    }),
-  );
 }
 
 /**
