@@ -1,3 +1,4 @@
+import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
@@ -251,5 +252,15 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       }
     }
   }
+  // Everything has settled — removals, directions and exit propagation — which is the earliest point
+  // at which a carried exit's ORIGIN can be asked whether it still describes one. See
+  // `reconcileStaleExitOrigins` for the two corrections that pull the timing in opposite directions.
+  reconcileStaleExitOrigins({
+    matchUpsMap: result.context?.matchUpsMap,
+    drawDefinition: params.drawDefinition,
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+  });
+
   return decorateResult({ result, stack });
 }

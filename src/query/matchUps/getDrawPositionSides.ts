@@ -62,6 +62,42 @@ export function getDrawPositionSides({
   return sides.length ? sides : undefined;
 }
 
+/**
+ * The drawPosition held by a matchUp's WINNING side, or `undefined` when there is not one to name.
+ *
+ * `drawPositions[winningSide - 1]` is the idiom this replaces, and it is only sound while BOTH
+ * positions are present — which is when the ascending order binds side to position. Measured over
+ * the full suite 2026-09-28: the unguarded form in `withdrawFromMatchUp` was reached once with a
+ * COMPACTED single-position array, where index 0 is whichever position is present and not
+ * necessarily side 1's. Reading it there either releases a position belonging to the other side or
+ * silently releases nothing, and neither announces itself.
+ *
+ * So: with both present, index by order and point at the canonical statement. With one present, ask
+ * `getDrawPositionSides`, which resolves the side structurally through the round profile. A lone
+ * position on the LOSING side yields `undefined` — correctly, because the winning side is empty and
+ * has nobody advanced to take back.
+ */
+export function getWinningSideDrawPosition({
+  drawDefinition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition?: DrawDefinition;
+  structureId?: string;
+  matchUp?: MatchUp;
+}): number | undefined {
+  const winningSide = matchUp?.winningSide;
+  if (!winningSide) return undefined;
+
+  const drawPositions = matchUp?.drawPositions ?? [];
+  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending,
+  // and only while both are present. See the canonical statement in `getOrderedDrawPositions`.
+  if (drawPositions.filter(Boolean).length === 2) return drawPositions[winningSide - 1];
+
+  return getDrawPositionSides({ drawDefinition, structureId, matchUp })?.find((side) => side.sideNumber === winningSide)
+    ?.drawPosition;
+}
+
 /** Depth first: a round robin's matchUps belong to the GROUP, not its parent. */
 function findStructure(structures: any[], structureId: string): any {
   for (const structure of structures ?? []) {
