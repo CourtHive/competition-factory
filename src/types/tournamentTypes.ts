@@ -805,6 +805,39 @@ export interface MatchUp {
    * not reliably a side.
    */
   matchUpStatusCodes?: MatchUpStatusCodeElement[];
+  /**
+   * The scoring policy's reason code for a result the MATCH did not produce — `OA` abandoned, `OC`
+   * cancelled, `OI` incomplete. Nobody is attributed, because nobody won.
+   *
+   * These are the `nonDirectingMatchUpStatuses`, and components states the rule plainly: they *"resolve
+   * nobody… asking who won an abandoned match"* is the wrong question. So a match-level reason gets a
+   * match-level home, rather than an index in an array whose index means a side.
+   *
+   * Side-attributed reasons live in {@link MatchUp.sideStatusCodes}. The two are disjoint by status, and
+   * {@link MatchUp.matchUpStatusCodes} is the positional projection of both, kept for display.
+   */
+  matchUpStatusCode?: string;
+  /**
+   * The scoring policy's reason code per SIDE — `{ 2: 'DM' }` for "side 2 defaulted, misconduct".
+   *
+   * Keyed by `sideNumber`, never positional. A reason is side-attributed whenever a side did the thing:
+   * `DEFAULTED`, `WALKOVER`, `RETIRED`, and the `WITHDRAWN` label group, which is not a matchUpStatus at
+   * all but arrives as a walkover reason. A double exit attributes BOTH sides.
+   *
+   * **Why this exists.** The reason used to be readable only by indexing `matchUpStatusCodes`, where the
+   * index is the side — the assumption the exit tenant's eviction removed from everything else on this
+   * surface. It was also read at index 0 when carried into a connected structure, so a reason recorded
+   * against side 2 was silently dropped on the way.
+   *
+   * **Why not on `sideExitProvenance`.** Provenance says where a side CAME FROM, and only the cascade
+   * stamps it — `isPropagatedExit` is that presence, so widening it to played results would report every
+   * played exit as propagated. Three of the seven statuses with reason codes have no exit provenance to
+   * hang from in any case.
+   *
+   * A scalar per side: the policy models each status as a menu to choose from, the scoring dialog keeps a
+   * single reason, and no stored record has ever held two for one side.
+   */
+  sideStatusCodes?: Record<number, string>;
   matchUpType?: EventTypeUnion;
   notes?: string;
   orderOfFinish?: number;

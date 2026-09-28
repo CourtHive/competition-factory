@@ -1,3 +1,4 @@
+import { splitStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
 import { modifyMatchUpNotice, updateInContextMatchUp } from '@Mutate/notifications/drawNotifications';
@@ -285,6 +286,29 @@ function applyScoreAndStatus({
   if (matchUpStatus) matchUp.matchUpStatus = matchUpStatus;
   if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
   if (matchUpStatusCodes) matchUp.matchUpStatusCodes = matchUpStatusCodes;
+  /**
+   * THE POSITIONAL ARRAY IS READ ONCE, HERE, AND NEVER AGAIN.
+   *
+   * A client submits reason codes positionally — a scoring dialog emits `['', 'DM']` for "side 2,
+   * misconduct" — and that is the one place the shape is still the input contract. `splitStatusCodes`
+   * reads it at this boundary and stores the result where attribution is explicit:
+   * `sideStatusCodes` keyed by side, or `matchUpStatusCode` when the status attributes to nobody.
+   *
+   * Values are trusted, positions are not: the exiting side comes from `winningSide`, so `['DM']` with
+   * `winningSide: 1` records side 2 whatever index the client used. That is the defect this closes at the
+   * write, and `progressExitStatus` closes its twin at the carry.
+   */
+  if (matchUpStatusCodes) {
+    const { matchUpStatusCode, sideStatusCodes } = splitStatusCodes({
+      matchUpStatus: matchUpStatus ?? matchUp.matchUpStatus,
+      winningSide: winningSide ?? matchUp.winningSide,
+      matchUpStatusCodes: matchUpStatusCodes as any[],
+    });
+    if (matchUpStatusCode) matchUp.matchUpStatusCode = matchUpStatusCode;
+    else delete matchUp.matchUpStatusCode;
+    if (sideStatusCodes) matchUp.sideStatusCodes = sideStatusCodes;
+    else delete matchUp.sideStatusCodes;
+  }
   clearResolvedSideExitProvenance(matchUp);
   if (winningSide) matchUp.winningSide = winningSide;
   if (removeWinningSide) matchUp.winningSide = undefined;

@@ -231,6 +231,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       const progressResult = progressExitStatus({
         sourceMatchUpStatusCodes: result.context.sourceMatchUpStatusCodes,
         sourceMatchUpStatus: result.context.sourceMatchUpStatus,
+        sourceWinningSide: result.context.sourceWinningSide,
         loserParticipantId: result.context.loserParticipantId,
         sourceMatchUpId: result.context.sourceMatchUpId,
         propagateExitStatus,
