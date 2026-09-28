@@ -43,7 +43,9 @@ const NEEDLE = 'matchUpStatusCodes';
  * `POLICY` — the scoring policy's own vocabulary, which is the tenant that stays.
  * `WRITE` — writes the array, deriving what it writes from provenance or retaining the policy tenant.
  * `PLUMBING` — passes a caller-supplied value through; decides nothing.
- * `DECISION` — reads the array to decide behaviour. **This list must reach zero.**
+ * `DECISION` — reads the array to decide behaviour. **This list reached ZERO on 2026-09-28 and the check
+ * below now REFUSES to let it grow again**, which is what makes CA's destination enforceable rather than
+ * aspirational: *"we want to ultimately get away from dependance on any legacy arrays!"*
  */
 const ALLOWED = {
   // the tenant that stays: the policy's code vocabulary
@@ -77,10 +79,7 @@ const ALLOWED = {
   'mutate/tournaments/dehydrate.ts': 'PLUMBING — serialization key list',
 
   // reads the POLICY tenant, which is legitimately positional by side
-  'mutate/matchUps/drawPositions/drawPositionPlacement.ts':
-    'POLICY read + DECISION — the surviving array gate on a native write; see the site',
-  'mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant.ts':
-    'DECISION — the twin array gate; removing both costs 58 tests',
+  'mutate/matchUps/drawPositions/drawPositionPlacement.ts': 'POLICY read — re-sides the policy code',
   'mutate/matchUps/drawPositions/swapWinnerLoser.ts': 'POLICY read — re-sides the policy codes on a flip',
   'query/drawDefinition/getStructureInconsistencies.ts': 'POLICY read — EXIT_CODE_ON_WINNER_SIDE',
 };
@@ -156,8 +155,25 @@ if (stale.length) {
   process.exit(1);
 }
 
+/**
+ * THE RATCHET'S LAST TOOTH. No entry may be classified `DECISION`.
+ *
+ * The list reached zero on 2026-09-28, when `participatesInExitCascade` replaced the last two gates that
+ * asked the LEGACY array whether the NATIVE record should be written. A budget at zero asserts nothing, so
+ * this stops being a count and becomes a rule — the same promotion `UNCOLLAPSED_CONVERGENCE` got when its
+ * population emptied.
+ *
+ * If you genuinely need to read the array to decide something, this is the conversation to have first: the
+ * exit tenant is evicted and `sideExitProvenance` is the side-keyed record. Reclassifying an entry to get
+ * past this check re-opens a dependence that took P37, P41 and six refuted candidates to close.
+ */
 const decisions = Object.entries(ALLOWED).filter(([, reason]) => reason.includes('DECISION'));
-console.log(
-  `[verify:exit-tenant] OK — ${mentions.size} allowed file(s), ${decisions.length} still reading it to DECIDE`,
-);
-for (const [file, reason] of decisions) console.log(`  src/${file} — ${reason}`);
+if (decisions.length) {
+  console.error(`[verify:exit-tenant] ${decisions.length} allowlist entry(ies) read the array to DECIDE:`);
+  for (const [file, reason] of decisions) console.error(`  src/${file} — ${reason}`);
+  console.error('');
+  console.error('That count reached ZERO on 2026-09-28 and may not grow. Read `sideExitProvenance` instead.');
+  process.exit(1);
+}
+
+console.log(`[verify:exit-tenant] OK — ${mentions.size} allowed file(s), 0 reading it to DECIDE`);

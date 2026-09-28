@@ -34,6 +34,7 @@ import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureD
 import {
   clearResolvedSideExitProvenance,
   isPropagatedExit as sharedIsPropagatedExit,
+  participatesInExitCascade,
   isProjectedExitCode,
   policyCodeString,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
@@ -480,7 +481,7 @@ function applyPositionToMatchUp({
     }
     matchUp.matchUpStatusCodes = matchUpStatusCodes;
     clearResolvedSideExitProvenance(matchUp);
-  } else if (matchUp?.matchUpStatusCodes) {
+  } else if (participatesInExitCascade({ matchUp })) {
     /**
      * A LEGACY-ARRAY GATE ON A NATIVE WRITE — still here, and REMOVING IT IS MEASURED WRONG.
      *

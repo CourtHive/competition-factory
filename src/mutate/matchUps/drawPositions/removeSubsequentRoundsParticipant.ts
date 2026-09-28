@@ -1,3 +1,4 @@
+import { participatesInExitCascade } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { releaseLinkedWinnerAdvancement } from './releaseLinkedWinnerAdvancement';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -154,7 +155,7 @@ function removeDrawPosition({
   // twin site in `drawPositionPlacement`, where the pair of removals costs 58 tests across 5 files and the
   // measurement names what the truthy array stands in for ("this matchUp is already part of the exit
   // cascade"), why it matters (provenance is PRESENCE-read — P19), and what a replacement has to test.
-  if (matchUp.matchUpStatusCodes) {
+  if (participatesInExitCascade({ matchUp })) {
     recordSourceSideProvenance({
       inContextDrawMatchUps,
       sourceMatchUpStatus,
