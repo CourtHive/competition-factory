@@ -45,10 +45,22 @@ export function checkSetIsComplete({
       ((leadingSide === 1 && set.side1TiebreakScore > set.side2TiebreakScore) ||
         (leadingSide === 2 && set.side2TiebreakScore > set.side1TiebreakScore)));
 
+  // ── The margin honours an explicit `winBy`, which it previously ignored ──
+  //
+  // `NoAD` and a tiebreak both force a one-game margin, and both were already handled. What was not is a
+  // format that DECLARES its margin: `parse('SET1-S:5WB1')` emits `{setTo: 5, noTiebreak: true, winBy: 1}`,
+  // with no `NoAD`, so a 5-4 fell through to a two-game margin and came back INCOMPLETE — though
+  // first-to-five wins that set. `SET1-S:5NOAD` worked, which is what made the gap easy to miss: the two
+  // formats express the same rule under different keys and only one of them was read.
+  //
+  // The symptom reached further than this function. `getSetWinningSide` delegates here, so `analyzeSet`
+  // reported `winningSide: undefined` for the same 5-4 — one root cause, two wrong answers. Found while
+  // courthive-components was being moved off its hand-rolled copies of this logic (CA, 2026-09-27).
+  const declaredWinBy = setFormat.winBy;
   const winMargin =
     (!requiresTiebreak && setFormat.NoAD) || requiresTiebreak || (isTiebreakSet && setFormat.tiebreakFormat?.NoAD)
       ? 1
-      : 2;
+      : (declaredWinBy ?? 2);
   const hasWinMargin = scoreDiff >= winMargin;
   const validNormalSetScore = containsSetTo && (hasWinMargin || requiresTiebreak);
 
