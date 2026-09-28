@@ -201,16 +201,6 @@ export function mergeSideExitProvenance({
   if (!matchUp || !writeNativeEnabled()) return;
   if (!provenance || !Object.keys(provenance).length) return;
   matchUp.sideExitProvenance = { ...matchUp.sideExitProvenance, ...provenance };
-  if (process.env.P37M) {
-    const pv: any = matchUp.sideExitProvenance;
-    const delivered = [1, 2].filter((sn) =>
-      ['DOUBLE_WALKOVER', 'DOUBLE_DEFAULT'].includes(pv[sn]?.previousMatchUpStatus),
-    );
-    if (delivered.length === 2)
-      process.stdout.write(
-        `P37M merged2 mid=${matchUp.matchUpId?.slice(0, 8)} status=${matchUp.matchUpStatus} ws=${matchUp.winningSide} prov=${JSON.stringify(pv)}\n${new Error().stack?.split('\n').slice(2, 7).join('\n')}\n`,
-      );
-  }
 }
 
 /** Write provenance onto a matchUp, honouring the schema write mode. */

@@ -1,5 +1,5 @@
-import { exitOutcomeCode, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
+import { exitOutcomeCode, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

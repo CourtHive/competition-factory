@@ -1,18 +1,18 @@
-import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
+import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
+import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
+import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
-import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { findStructure } from '@Acquire/findStructure';
 import { overlap } from '@Tools/arrays';
 import {

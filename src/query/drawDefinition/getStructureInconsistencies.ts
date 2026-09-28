@@ -1,8 +1,10 @@
-import { isPropagatedExit as sharedIsPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  isPropagatedExit as sharedIsPropagatedExit,
+  getSideExitProvenance,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { isAnyExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
@@ -598,7 +600,7 @@ export function getStructureInconsistencies(
      */
     const provenance: any = (matchUp as any).sideExitProvenance ?? {};
     const deliveredSides = ([1, 2] as const).filter((sideNumber) =>
-      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(provenance[sideNumber]?.previousMatchUpStatus),
+      isDoubleExit(provenance[sideNumber]?.previousMatchUpStatus),
     ).length;
 
     /**

@@ -1,11 +1,11 @@
 import { includesMatchUpStatuses } from '@Mutate/drawDefinitions/matchUpGovernor/includesMatchUpStatuses';
+import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { removeSubsequentRoundsParticipant } from './removeSubsequentRoundsParticipant';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -23,8 +23,8 @@ import {
 // constants and types
 import { ErrorType, MISSING_DRAW_POSITIONS, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Event, Tournament } from '@Types/tournamentTypes';
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
