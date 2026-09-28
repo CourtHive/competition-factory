@@ -9,25 +9,15 @@ import {
   collapseDoubleExitStatus,
   mergeSideExitProvenance,
   getSideExitProvenance,
+  deriveStatusCodes,
   carriedExitStatus,
-  exitOutcomeCode,
+  placeCodeAtSide,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
 import { RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-
-// matchUpStatusCodes are position-dependent: index 0 maps to side 1, index 1 to
-// side 2. Place the carried code at the index of the participant's side, padding
-// leading positions with '' (so a participant on side 2 yields ['', 'W1'], never
-// ['W1'] which would mis-map to the opponent).
-function placeCodeAtSide(statusCodes: string[], sideNumber: number, code?: string) {
-  if (code === undefined) return;
-  const index = sideNumber - 1;
-  for (let i = 0; i < index; i++) statusCodes[i] ??= '';
-  statusCodes[index] = code;
-}
 
 // After a participant advances through a BYE, find the matchUp they advanced
 // into — the nearest later round in the same structure that now holds them — so
@@ -87,7 +77,25 @@ export function progressExitStatus({
   // Object-shaped codes are normalised to their OWN outcome code, not to a walkover.
   // This previously hardcoded OUTCOME_WALKOVER for every object, which relabelled DEFAULTED and BYE
   // provenance as walkovers and persisted the result (statusCodes is written back below).
-  const statusCodes: string[] = (updatedLoserMatchUp.matchUpStatusCodes ?? []).map(exitOutcomeCode);
+  /**
+   * THE ARRAY, DERIVED FROM PROVENANCE. See {@link deriveStatusCodes}, which is also
+   * `removeDirectedParticipants`' answer to the same question.
+   *
+   * **P37.** This was `(updatedLoserMatchUp.matchUpStatusCodes ?? []).map(exitOutcomeCode)` over an
+   * array that held the PROJECTION of provenance, so the bare exit outcome codes the array
+   * legitimately carries — `WO`, `DEF`, the `['WO', 'W1']` contract — existed only as a side effect of
+   * the projection being written. Evicting the exit tenant took them with it: measured as `['', 'W1']`
+   * where `['WO', 'W1']` belongs, five tests across two files.
+   *
+   * TRACED, not reasoned about, 2026-09-27, and the trace corrected the plan `P41` recorded. The
+   * missing value was NOT `sourceCode`'s. Instrumented on the four failing consolation cases,
+   * `sourceMatchUpStatusCodes` is `['W1']`, `['DM']`, `['D1']`, `['RJ']` — the SOURCE'S POLICY CODE,
+   * which belongs on the ARRIVING side and is still placed there below, unchanged. What went missing
+   * was side 1's own `'WO'`, and side 1's provenance held
+   * `{ matchUpStatus: WALKOVER, previousMatchUpStatus: DOUBLE_WALKOVER }` the whole time.
+   */
+  const statusCodes: string[] = deriveStatusCodes(updatedLoserMatchUp);
+  const targetProvenance = getSideExitProvenance({ matchUp: updatedLoserMatchUp });
   const loserParticipantSide = updatedLoserMatchUp.sides?.find((s) => s.participantId === loserParticipantId);
 
   let loserMatchUpStatus = carryOverMatchUpStatus;
@@ -172,7 +180,7 @@ export function progressExitStatus({
      * length cannot: has the OPPONENT already exited? `carriedExitStatus` is the same reader RULE 4's own
      * collapse and `deriveExitStateFromProvenance` use, so the two agree by construction.
      */
-    const opponentProvenance = getSideExitProvenance({ matchUp: updatedLoserMatchUp })?.[opponentSideNumber];
+    const opponentProvenance = targetProvenance?.[opponentSideNumber];
     const opponentEmpty = participantsCount === 1 && !carriedExitStatus(opponentProvenance);
     if (opponentEmpty || !isAnyExit(updatedLoserMatchUp.matchUpStatus)) {
       // RULE 2 — opponent slot empty/pending: WALKOVER, the side WITHOUT the exit

@@ -1,4 +1,4 @@
-import { updateMatchUpStatusCodes } from '@Mutate/drawDefinitions/matchUpGovernor/matchUpStatusCodes';
+import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { releaseLinkedWinnerAdvancement } from './releaseLinkedWinnerAdvancement';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
@@ -150,8 +150,12 @@ function removeDrawPosition({
   matchUp.winningSide = undefined;
   matchUp.score = undefined;
 
+  // A LEGACY-ARRAY GATE ON A NATIVE WRITE. Kept: removing it is measured wrong — see the long note at the
+  // twin site in `drawPositionPlacement`, where the pair of removals costs 58 tests across 5 files and the
+  // measurement names what the truthy array stands in for ("this matchUp is already part of the exit
+  // cascade"), why it matters (provenance is PRESENCE-read — P19), and what a replacement has to test.
   if (matchUp.matchUpStatusCodes) {
-    updateMatchUpStatusCodes({
+    recordSourceSideProvenance({
       inContextDrawMatchUps,
       sourceMatchUpStatus,
       sourceMatchUpId,

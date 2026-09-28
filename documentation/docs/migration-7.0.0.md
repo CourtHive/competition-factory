@@ -1807,11 +1807,44 @@ Anyone assigning to `matchUpStatusCodes` in TypeScript. `any[]` accepted anythin
 not. If you are writing scoring reason codes, emit strings — that is tenant 1 and the shape
 `modifyMatchUpScore` already documents.
 
-**If you read exit provenance out of this array, move to `sideExitProvenance`** before the tenant is
-evicted. It keys by `sideNumber` instead of using the array index as a side, fixes the element
-shape, and carries `sourceMatchUpId`.
+**If you read exit provenance out of this array, move to `sideExitProvenance`.** It keys by
+`sideNumber` instead of using the array index as a side, fixes the element shape, and carries
+`sourceMatchUpId`. This said _"before the tenant is evicted"_; the tenant HAS been evicted in 7.x —
+see the notice below.
 
 ### What this step does NOT do
+
+:::warning Superseded in 7.x — the eviction has happened, and not as described here
+
+**Every claim in the paragraph below is now false.** It is left in place because the plan changed
+deliberately rather than quietly, and a reader arriving at §24 needs to know which version they are
+looking at.
+
+- **The provenance tenant is no longer written.** The seven propagation write sites retain the policy
+  tenant instead of projecting provenance into the array, and `projectExitStatusCodes` is deleted.
+- **It did NOT land behind `schemaWriteMode`, and there is no `BRIDGE` period.** CA ruled on
+  2026-09-27: _"we don't need to carry forward legacy equivalence at this point, and not supporting
+  LEGACY for bugs we are closing with provenance should not be considered a breaking change. Any
+  client that wants the resolutions should be moving to full NATIVE support."_
+- **It is not being treated as breaking, so it is not waiting for 8.0.** The staged plan below —
+  add the field in 7.x, flip a default, drop the legacy write on a major — was written before that
+  ruling.
+- **The `statusCodes.length === 0` gate is gone.** It was the single reason the tenant could not
+  leave, and it is now `!carriedExitStatus(opponentProvenance)` — the same question asked of
+  provenance, per side ([#5005](https://github.com/CourtHive/competition-factory/pull/5005)).
+- **`getSideExitProvenance` no longer falls back to the array either.** A record carrying only the
+  legacy shape reads as having no provenance.
+
+**What this means for you.** If you read exit provenance out of `matchUpStatusCodes`, that data is no
+longer there — read `sideExitProvenance`, which keys by `sideNumber` and carries `sourceMatchUpId`.
+The array still carries tenant 1, the scoring policy's vocabulary, positionally by side
+(`['WO', 'W1']`), and that contract is unchanged. `courthive-components` already reads provenance
+first and keeps its own array fallback for records written by 6.x.
+
+A `verify:exit-tenant` gate now fails when a new site in the factory reaches for the array, so this
+does not drift back.
+
+:::
 
 The provenance tenant is still WRITTEN. Evicting it is a breaking change of its own and needs the
 engine to stop reading the array for its own decisions first — `progressExitStatus` RULE 2 branches

@@ -1,3 +1,4 @@
+import { UNCOLLAPSED_CONVERGENCE } from '@Query/drawDefinition/getStructureInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -52,5 +53,22 @@ it('flipping a Backdraw result leaves Main positionAssignments untouched', () =>
 
   expect(submit('Main|1|4', { matchUpStatus: DOUBLE_DEFAULT }).error).toBeUndefined();
   expect(submit('Main|1|3', { matchUpStatus: DOUBLE_WALKOVER }).error).toBeUndefined();
-  expect(tournamentEngine.getDrawInconsistencies({ drawId }).inconsistencies ?? []).toEqual([]);
+  /**
+   * THE ORACLE STAYS CLEAN OF ERRORS, and the one WARNING it reports is named.
+   *
+   * **P37.** This read `toEqual([])`. The draw reaches an `UNCOLLAPSED_CONVERGENCE` — provenance
+   * records an exit delivered into BOTH sides of one consolation matchUp while its status is a single
+   * `WALKOVER` — and that is **pre-existing**, measured identical on clean `dev` at the same
+   * coordinates. It was invisible until the exit tenant left `matchUpStatusCodes`, because the
+   * projection overwrote the array with objects that `codeString` ignores; before that it surfaced,
+   * wrongly named, as `EXIT_CODE_ON_WINNER_SIDE` at severity `error`.
+   *
+   * Asserted as two separate claims rather than one list so neither can hide the other: NO error, and
+   * NO finding other than the one known warning. A second defect appearing here still fails.
+   */
+  const result: any = tournamentEngine.getDrawInconsistencies({ drawId });
+  const found = result.inconsistencies ?? [];
+  expect(found.filter((issue: any) => issue.severity === 'error')).toEqual([]);
+  expect(found.map((issue: any) => issue.issueType)).toEqual([UNCOLLAPSED_CONVERGENCE]);
+  expect(result.valid).toEqual(true);
 });
