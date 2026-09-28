@@ -62,8 +62,16 @@ it('never persists a matchUpStatusCodes array containing a hole', () => {
   // it, so that version of this test passed against the unfixed tree and was vacuous. Measured on
   // the unfixed tree across the first 120 seeds of the window: 14 persisted hole arrays, including
   // the mixed shape `[null, ""]` which also evidences the index-0 read this replaced.
-  const seeds = [9000003, 9000056, 9000074];
+  //
+  // P37 widened the seed list. The original three — 9000003, 9000056, 9000074 — persist NO non-empty
+  // array once the exit tenant is evicted, because every array they produced was the PROJECTION, and
+  // the control below then failed rather than passing vacuously. Measured across the first
+  // sixty seeds of the window, the seeds that still persist one are 9000010, 9000013, 9000019,
+  // 9000029, 9000036, 9000057 and 9000060. The originals are KEPT so the hole property stays asserted
+  // over the scenarios it was found in.
+  const seeds = [9000003, 9000010, 9000019, 9000056, 9000060, 9000074];
   let arraysSeen = 0;
+  const persisted: any[] = [];
 
   for (const seed of seeds) {
     setSubscriptions({});
@@ -78,6 +86,7 @@ it('never persists a matchUpStatusCodes array containing a hole', () => {
         const codes = matchUp.matchUpStatusCodes;
         if (!Array.isArray(codes) || !codes.length) continue;
         arraysSeen += 1;
+        persisted.push({ seed, structureName: structure.structureName, codes });
         for (const [index, code] of codes.entries()) {
           expect(
             code === undefined || code === null,
@@ -90,4 +99,26 @@ it('never persists a matchUpStatusCodes array containing a hole', () => {
 
   // the control: a run producing no codes at all would pass vacuously
   expect(arraysSeen).toBeGreaterThan(0);
+
+  /**
+   * AND THE DESTINATION, PINNED AT THE DATA: every persisted element is a STRING.
+   *
+   * **P37.** `matchUpStatusCodes` has two tenants and the exit one is evicted, so what survives is the
+   * positional string contract — `['', 'WO']`, `['WO']`, `['', 'DEF']`, measured as the only shapes the
+   * sweep persists. An OBJECT element is a projection of `sideExitProvenance` regrowing in the array,
+   * which is the regression this whole workstream exists to prevent, and it is cheaper to catch here
+   * than in a consumer.
+   *
+   * Deliberately asserted over whatever the sweep persists rather than over a fixed expectation: a
+   * future write site that starts projecting again fails this without anyone having to remember to
+   * extend a list.
+   */
+  for (const { seed, structureName, codes } of persisted) {
+    for (const [index, code] of codes.entries()) {
+      expect(
+        typeof code,
+        `seed ${seed} ${structureName} codes[${index}] is not a string: ${JSON.stringify(codes)}`,
+      ).toEqual('string');
+    }
+  }
 });

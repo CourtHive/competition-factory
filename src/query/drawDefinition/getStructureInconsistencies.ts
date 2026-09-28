@@ -38,7 +38,14 @@ import { SUCCESS } from '@Constants/resultConstants';
 //    without the provenance being withdrawn with it. Like BYE_ADVANCEMENT_MISSING this
 //    cannot start from a winningSide (there is none), so it runs above that guard.
 //  - EXIT_CODE_ON_WINNER_SIDE: on a single WALKOVER/DEFAULTED, a status code sits on
-//    the winning side rather than the exiting (loser) side.
+//    the winning side rather than the exiting (loser) side. "Single" is asked of
+//    PROVENANCE, not of the status — see the check.
+//  - UNCOLLAPSED_CONVERGENCE: `sideExitProvenance` records an exit DELIVERED into BOTH
+//    sides, and the matchUp nevertheless carries a single-exit status. Two exits that
+//    meet are a double exit that nobody wins; this is the record and the status
+//    contradicting each other, with the status wrong. Severity `warning`: the stored
+//    draw is not structurally corrupt — both positions are typically empty and it
+//    renders — and the repair is the convergence-collapse work, not a read-time fix.
 //  - DRAW_POSITIONS_NOT_SORTED: a matchUp's drawPositions are not stored ascending
 //    (ignoring empty slots) — the sort invariant the rest of the engine relies on to
 //    derive sides, fed positions (Math.min), and rendering. ROUND-ROBIN GROUP structures
@@ -68,6 +75,7 @@ export const DRAW_POSITIONS_NOT_SORTED = 'DRAW_POSITIONS_NOT_SORTED';
 export const EXIT_CODE_ON_WINNER_SIDE = 'EXIT_CODE_ON_WINNER_SIDE';
 export const EXIT_WITHOUT_LOSER = 'EXIT_WITHOUT_LOSER';
 export const PROPAGATED_EXIT_LOST = 'PROPAGATED_EXIT_LOST';
+export const UNCOLLAPSED_CONVERGENCE = 'UNCOLLAPSED_CONVERGENCE';
 export const STALLED_POSITION = 'STALLED_POSITION';
 
 // DEFERRED — STALE_EXIT_STATUS is intentionally NOT implemented.
@@ -571,8 +579,57 @@ export function getStructureInconsistencies(
       });
     }
 
-    // EXIT_CODE_ON_WINNER_SIDE (single exit only — double exits carry codes on both sides)
-    if (singleExit && codeString(matchUpStatusCodes?.[winningSide - 1])) {
+    /**
+     * HOW MANY SIDES HAD AN EXIT *DELIVERED* — asked of provenance, per side.
+     *
+     * **P37.** `singleExit` is a STATUS test, and the two checks below both mean *"only ONE side
+     * exited"*. Those agree for a draw whose status matches its own record and part company for one
+     * whose does not, which is precisely the case the eviction made visible. Provenance answers the
+     * question directly, and the discriminator is `previousMatchUpStatus` being a DOUBLE exit —
+     * DELIVERED into this side — rather than a single exit or a `COMPLETED`, which records that this
+     * side's occupant ARRIVED having won one upstream. That distinction is stated in
+     * MATCHUP_STATUS_CODES_PER_SIDE.md, where conflating the two reported correct draws as defects at
+     * a measured 119 tests.
+     *
+     * This is NOT the widening this file's `codeString` docblock warns against. That warning is about
+     * reading provenance out of `matchUpStatusCodes`, which produced 717 false positives; the array is
+     * not consulted here at all.
+     */
+    const provenance: any = (matchUp as any).sideExitProvenance ?? {};
+    const deliveredSides = ([1, 2] as const).filter((sideNumber) =>
+      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(provenance[sideNumber]?.previousMatchUpStatus),
+    ).length;
+
+    /**
+     * UNCOLLAPSED_CONVERGENCE — two exits met and the matchUp did not become a double exit.
+     *
+     * **P37 raised this, and it is PRE-EXISTING — measured identical on clean `dev` at the same
+     * coordinates.** It was previously reported as `EXIT_CODE_ON_WINNER_SIDE`, which is the wrong
+     * name for it: on such a matchUp the winning side genuinely DOES carry a delivered exit, so the
+     * code is a faithful rendering of a corrupt status rather than a misplaced code. Evicting the exit
+     * tenant is what made it visible — the projection used to overwrite this array with objects, which
+     * `codeString` ignores — so the observation is KEPT here rather than lost to the narrowing above.
+     *
+     * Traced 2026-09-27 on `unwindRemovesDrawPosition` seed 9000036 (MODIFIED_FEED_IN_CHAMPIONSHIP
+     * 8/8): a consolation matchUp with `drawPositions: [5, 6]`, both slots empty, two DELIVERED
+     * `DOUBLE_WALKOVER` origins from different sources, settling as `WALKOVER` with `winningSide: 2`.
+     * `deriveExitStateFromProvenance` on that same record returns `DOUBLE_WALKOVER` and no winner.
+     *
+     * The producing gate is `doubleExitAdvancement`'s `existingExit`, whose `!drawPositions.length`
+     * half this matchUp fails. **Do not "fix" it by asking provenance there** — built and measured
+     * 2026-09-27, it takes the suite from 4 failures to 21. See that site's docblock.
+     */
+    if (isExit(matchUpStatus) && deliveredSides === 2) {
+      inconsistencies.push({
+        ...base,
+        severity: 'warning',
+        issueType: UNCOLLAPSED_CONVERGENCE,
+        message: 'provenance records an exit delivered into both sides, but the matchUp is a single exit',
+      });
+    }
+
+    // EXIT_CODE_ON_WINNER_SIDE (ONE exiting side only — a convergence carries codes on both sides)
+    if (singleExit && deliveredSides < 2 && codeString(matchUpStatusCodes?.[winningSide - 1])) {
       inconsistencies.push({
         ...base,
         issueType: EXIT_CODE_ON_WINNER_SIDE,

@@ -19,7 +19,7 @@ import {
   buildCarriedExitProvenance,
   recordByeClaim,
   collapseDoubleExitStatus,
-  projectExitStatusCodes,
+  retainPolicyCodes,
   buildSideExitProvenance,
   mergeSideExitProvenance,
   getSideExitProvenance,
@@ -461,7 +461,7 @@ function stampExitOnByeHeldLoserTarget({
   });
 
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: projectExitStatusCodes(provenance),
+    matchUpStatusCodes: retainPolicyCodes(noContextLoserMatchUp),
     appliedPolicies: params.appliedPolicies,
     matchUpId: loserMatchUp.matchUpId,
     matchUp: noContextLoserMatchUp,
@@ -545,7 +545,7 @@ function handleEmptyExitLoser({
     // produced status, and the write replaced an array whose other entry was still true. In the mixed
     // case that stored `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DOUBLE_WALKOVER }` — a
     // walkover origin producing a default — and it stored the opposite in the opposite entry order.
-    const matchUpStatusCodes = projectExitStatusCodes(provenance);
+    const matchUpStatusCodes = retainPolicyCodes(noContextLoserMatchUp);
 
     const result = modifyMatchUpScore({
       ...params,
@@ -736,7 +736,25 @@ function conditionallyAdvanceDrawPosition(params) {
       })) ||
     undefined;
 
-  // assign the WALKOVER status to targetMatchUp
+  /**
+   * ALREADY AN EXIT, AND NOT THE PROVENANCE FORM OF THE QUESTION — measured, 2026-09-27.
+   *
+   * This reads as a STATUS test standing in for a provenance question, which is the P3 defect class,
+   * and the obvious correction is to ask whether either side already carries a DELIVERED exit:
+   *
+   *     carriedExitStatus(prov?.[side]) && isDoubleExit(prov?.[side]?.previousMatchUpStatus)
+   *
+   * **Do not.** It was built and run under P37's eviction and took the suite from 4 failures to 21 —
+   * `exitPropagationMatrix` alone lost 13 cells across COMPASS and FIRST_ROUND_LOSER_CONSOLATION,
+   * plus three census replays. It re-routes convergences this rule has nothing to do with, which is
+   * the same result P41 records for the analogous stronger form of `progressExitStatus`' RULE 4 gate.
+   *
+   * The state this gate MISSES is real and is tracked separately: a target holding two DELIVERED
+   * double-walkover origins with `dps=[5, 6]` fails `!drawPositions.length`, so it settles as a single
+   * `WALKOVER` with a `winningSide` while its own provenance describes a convergence. That is
+   * pre-existing — measured identical on clean `dev` — and it wants the convergence PR and census arm
+   * P41 asks for, not a rider on the eviction.
+   */
   const existingExit = isExit(noContextTargetMatchUp.matchUpStatus) && !drawPositions.length;
 
   // Derived HERE, not at the top of the function, because this is where the other origin is known:
@@ -826,20 +844,8 @@ function conditionallyAdvanceDrawPosition(params) {
     sourceSideNumber,
   });
 
-  // Provenance ACCUMULATES — one side's origin can arrive before the other's — so the union of what
-  // the target already holds and what this write establishes is the record, and the legacy array is
-  // its projection. `getSideExitProvenance` rather than the raw field so the union still finds an
-  // earlier origin under LEGACY write mode, where nothing writes the native field.
-  const provenance = {
-    ...getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
-    ...newProvenance,
-  };
-
-  // A PROJECTION of provenance, replacing a second, independent derivation of the same facts. Where
-  // this write establishes no provenance at all — `sourceSideNumber` unknown, so neither structure
-  // can attribute anything — the array is blanked exactly as the previous builder blanked it, rather
-  // than re-projecting state this write knows nothing about.
-  const matchUpStatusCodes = newProvenance ? projectExitStatusCodes(provenance) : [];
+  // P37 MEASUREMENT: the projection is gone; the array keeps only the POLICY tenant.
+  const matchUpStatusCodes = retainPolicyCodes(noContextTargetMatchUp);
 
   logAdvancement(stack, {
     color: 'brightgreen',
@@ -1238,7 +1244,7 @@ function advanceByeAdvancedDrawPosition({
     };
 
     const result = modifyMatchUpScore({
-      matchUpStatusCodes: projectExitStatusCodes(provenance),
+      matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
       appliedPolicies: params.appliedPolicies,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       matchUp: noContextNextWinnerMatchUp,
@@ -1605,7 +1611,7 @@ function carryExitOnward({
   });
 
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: projectExitStatusCodes(provenance),
+    matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
     matchUpId: noContextNextWinnerMatchUp.matchUpId,
     appliedPolicies: params.appliedPolicies,
     matchUp: noContextNextWinnerMatchUp,

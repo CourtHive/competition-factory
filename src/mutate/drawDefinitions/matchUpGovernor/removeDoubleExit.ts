@@ -16,7 +16,7 @@ import {
   getNativeSideExitProvenance,
   deriveExitStateFromProvenance,
   retainForeignProvenance,
-  projectExitStatusCodes,
+  retainPolicyCodes,
   setSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -334,7 +334,7 @@ function withdrawExitFromByeChain({
   });
 
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: unwound.provenance ? projectExitStatusCodes(unwound.provenance) : [],
+    matchUpStatusCodes: retainPolicyCodes(noContextTargetMatchUp),
     removeWinningSide: unwound.winningSide === undefined,
     matchUpStatus: unwound.matchUpStatus,
     matchUpId: fromMatchUp.matchUpId,
@@ -609,7 +609,7 @@ export function conditionallyRemoveDrawPosition(params) {
   const removeScore = !pairedPreviousDoubleExit;
   result = modifyMatchUpScore({
     ...params,
-    matchUpStatusCodes: unwound.provenance ? projectExitStatusCodes(unwound.provenance) : [],
+    matchUpStatusCodes: retainPolicyCodes(noContextTargetMatchUp),
     removeWinningSide: unwound.winningSide === undefined,
     matchUpId: targetMatchUp.matchUpId,
     matchUp: noContextTargetMatchUp,
