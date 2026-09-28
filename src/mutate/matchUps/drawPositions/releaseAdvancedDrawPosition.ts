@@ -1,8 +1,11 @@
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
+import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
@@ -15,6 +18,7 @@ const RELEASABLE_STATUSES: (string | undefined)[] = [undefined, TO_BE_PLAYED, BY
 type ReleaseAdvancedDrawPositionArgs = {
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
+  withdrawingExit?: boolean;
   matchUpsMap?: MatchUpsMap;
   fromRoundNumber: number;
   drawPosition: number;
@@ -61,6 +65,7 @@ type ReleaseAdvancedDrawPositionArgs = {
 export function releaseAdvancedDrawPosition({
   tournamentRecord,
   fromRoundNumber,
+  withdrawingExit,
   drawDefinition,
   drawPosition,
   matchUpsMap,
@@ -84,6 +89,9 @@ export function releaseAdvancedDrawPosition({
     if (!matchUp.drawPositions?.includes(drawPosition)) continue;
     if (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus)) continue;
     if (advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp })) continue;
+    if (!withdrawingExit && advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp })) {
+      continue;
+    }
 
     // Removal, not substitution: mapping a position to `undefined` preserves ascending order.
     // Any writer that SUBSTITUTES must re-sort — see the canonical statement in
@@ -133,4 +141,49 @@ function advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp }): b
     (candidate.roundNumber as number) > (latest.roundNumber as number) ? candidate : latest,
   );
   return (feeder.drawPositions ?? []).some((position) => byeDrawPositions.has(position));
+}
+
+/**
+ * Did a PRODUCED EXIT advance this drawPosition, rather than anybody sitting in it?
+ *
+ * A double exit delivers an exit into one side of its loser target, and the target's OTHER seat wins
+ * it — before anyone has arrived there. That seat is advanced at once, so the advancement belongs to
+ * the produced exit and not to whoever later occupies the seat. Removing the occupant is therefore
+ * not a reason to take it back, for the same reason a BYE advancement is not: neither is a result of
+ * the match being undone.
+ *
+ * Measured 2026-09-28, FIRST_ROUND_LOSER_CONSOLATION 8/8 `nonRandom: 9000230`. With `Main|1|1` a
+ * DOUBLE_WALKOVER, scoring `Main|1|2` and then CLEARING it did not return the draw to where it was:
+ *
+ * ```text
+ * [D1]               Consolation|2|1  TO_BE_PLAYED dp=2
+ * [D1, S2, clear 2]  Consolation|2|1  TO_BE_PLAYED dp=-
+ * ```
+ *
+ * The feeder is identified exactly as `advancedByBye` identifies it. It advanced this position on
+ * its own account when it is a single exit whose WINNING side holds the position and whose other
+ * side carries a DELIVERED double exit — asked of provenance, not of the status alone, because a
+ * walkover a referee recorded awards its winner too and that one IS a result.
+ *
+ * `withdrawingExit` opts out: `applyWithdrawnExits` releases precisely this advancement, because
+ * there the produced exit itself is what is being taken back.
+ */
+function advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp }): boolean {
+  const roundNumber = matchUp.roundNumber as number;
+  const feeders = matchUps.filter(
+    (candidate) =>
+      candidate.roundNumber !== undefined &&
+      candidate.roundNumber < roundNumber &&
+      candidate.drawPositions?.includes(drawPosition),
+  );
+  if (!feeders.length) return false;
+
+  const feeder = feeders.reduce((latest, candidate) =>
+    (candidate.roundNumber as number) > (latest.roundNumber as number) ? candidate : latest,
+  );
+  if (!isExit(feeder.matchUpStatus) || !feeder.winningSide) return false;
+  if (getWinningSideDrawPosition({ drawDefinition, structureId, matchUp: feeder }) !== drawPosition) return false;
+
+  const provenance = getSideExitProvenance({ matchUp: feeder });
+  return isDoubleExit(provenance?.[3 - feeder.winningSide]?.previousMatchUpStatus);
 }

@@ -580,38 +580,68 @@ function handleEmptyExitLoser({
     //
     // The winner target is re-derived from FRESH in-context matchUps: the write above has just
     // changed this matchUp's status, and `positionTargets` reads that status.
-    const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-    const convergedTargets = positionTargets({
-      matchUpId: loserMatchUp.matchUpId,
-      inContextDrawMatchUps: refreshed,
+    const onward = advanceConvergedWinner({
+      convergedMatchUp: loserMatchUp,
       drawDefinition,
+      matchUpsMap,
+      DOUBLE_EXIT,
+      params,
+      stack,
     });
-    const convergedWinnerMatchUp = convergedTargets?.targetMatchUps?.winnerMatchUp;
-
-    if (convergedWinnerMatchUp) {
-      logAdvancement(stack, {
-        color: 'cyan',
-        decision: 'CONVERGED_advance_its_own_winner',
-        from: loserMatchUp.matchUpId,
-        to: convergedWinnerMatchUp.matchUpId,
-      });
-      const onward = conditionallyAdvanceDrawPosition({
-        ...params,
-        inContextDrawMatchUps: refreshed,
-        matchUpId: convergedWinnerMatchUp.matchUpId,
-        targetMatchUp: convergedWinnerMatchUp,
-        sourceMatchUp: inContextLoserMatchUp(refreshed, loserMatchUp.matchUpId) ?? loserMatchUp,
-        matchUpStatus: DOUBLE_EXIT,
-        drawDefinition,
-        matchUpsMap,
-      });
-      if (onward?.error) return onward;
-    }
+    if (onward?.error) return onward;
 
     return result;
   }
 
   return { ...SUCCESS };
+}
+
+/**
+ * A CONVERGENCE PRODUCES AN EXIT FOR ITS WINNER TARGET, and for nothing else.
+ *
+ * Two routes reach a convergence and they must leave the same draw. `handleEmptyExitLoser` is taken
+ * when the second exit arrives at a target nobody has ever sat in; `advanceFromTarget` is taken when
+ * it arrives on a RE-SCORE, at a target whose occupant this mutation has just removed. Both call
+ * this, so the onward step cannot differ between them.
+ *
+ * ONLY THE WINNER TARGET. The convergence's own LOSER link is deliberately not walked: whatever the
+ * link feeds was already resolved when the FIRST exit arrived — a seat that can never receive a
+ * loser is a BYE by then (`propagateUnfillableLoserBye`) — and the second exit changes nothing about
+ * it. Walking it anyway was measured 2026-09-28 on COMPASS and OLYMPIC 16/16: recursing into
+ * `doubleExitAdvancement` stamped a carried exit on `South|2|1` side 1, which is the seat the loser
+ * of `West|1|2` arrives into — a real participant marked as carrying an exit nobody delivered.
+ *
+ * The winner target is re-derived from FRESH in-context matchUps: the convergence's status changed a
+ * moment ago, and `positionTargets` reads that status.
+ */
+function advanceConvergedWinner({ convergedMatchUp, drawDefinition, matchUpsMap, DOUBLE_EXIT, params, stack }) {
+  const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+  const convergedTargets = positionTargets({
+    matchUpId: convergedMatchUp.matchUpId,
+    inContextDrawMatchUps: refreshed,
+    drawDefinition,
+  });
+  const convergedWinnerMatchUp = convergedTargets?.targetMatchUps?.winnerMatchUp;
+  if (!convergedWinnerMatchUp) return { ...SUCCESS };
+
+  logAdvancement(stack, {
+    color: 'cyan',
+    decision: 'CONVERGED_advance_its_own_winner',
+    from: convergedMatchUp.matchUpId,
+    to: convergedWinnerMatchUp.matchUpId,
+  });
+  return conditionallyAdvanceDrawPosition({
+    ...params,
+    // derived for the matchUp the exit ARRIVED in; it names a different seat in the next one
+    walkoverWinningSide: undefined,
+    inContextDrawMatchUps: refreshed,
+    matchUpId: convergedWinnerMatchUp.matchUpId,
+    targetMatchUp: convergedWinnerMatchUp,
+    sourceMatchUp: inContextLoserMatchUp(refreshed, convergedMatchUp.matchUpId) ?? convergedMatchUp,
+    matchUpStatus: DOUBLE_EXIT,
+    drawDefinition,
+    matchUpsMap,
+  });
 }
 
 /** the converged matchUp as the cascade now sees it — its status changed a moment ago */
@@ -919,11 +949,63 @@ function conditionallyAdvanceDrawPosition(params) {
    * P40 names as *"cross-structure re-advancement"*, and it is why that arm's baseline is not lowered
    * here.
    */
+  const merged = getSideExitProvenance({ matchUp: noContextTargetMatchUp });
+  const bothDelivered = ([1, 2] as const).every((sideNumber) =>
+    isDoubleExit(merged?.[sideNumber]?.previousMatchUpStatus),
+  );
+  /**
+   * A CONVERGENCE AWARDS NOBODY, so `advanceFromTarget` must not treat one of its seats as a winner.
+   *
+   * **Punch-list P42, the propagation half.** The reconciliation below corrects the STATUS of a
+   * convergence. It does not stop the advancement that runs immediately afterwards.
+   *
+   * `advanceFromTarget` picks its drawPosition as
+   * `targetMatchUpDrawPositions[walkoverWinningSide - 1]`, and `handleLoserMatchUp` derives
+   * `walkoverWinningSide` from where the arriving exit LANDED — `2 - drawPositions.indexOf(…)`. So
+   * the second delivered exit nominates the OTHER seat as a winner, and that seat is the one the
+   * FIRST exit was delivered into.
+   *
+   * TRACED, 2026-09-28, FIRST_ROUND_LOSER_CONSOLATION 8/8 `nonRandom: 9000230` — `Main|1|2` a single
+   * WALKOVER, `Main|1|1` a DOUBLE_WALKOVER, then `Main|1|2` RE-SCORED UP to a double:
+   *
+   * ```text
+   * step 2  exit -> Consolation dp 1;  walkoverWinningSide = 2;  dp 2 advances  (correct: the pending winner)
+   * step 3  exit -> Consolation dp 2;  walkoverWinningSide = 1;  dp 1 advances  (WRONG: dp 1 carries step 2's exit)
+   * ```
+   *
+   * The route ordinary play takes to the same convergence, `handleEmptyExitLoser`, never asks that
+   * question: it hands the convergence's winner target a produced exit and stops. So on a
+   * convergence this route now does exactly the same thing, through the same function
+   * (`advanceConvergedWinner`), rather than a second derivation of it.
+   *
+   * ## Why THIS discriminator and not `existingExit`
+   *
+   * `existingExit` is decided before the merge and its `!drawPositions.length` half is false on a
+   * first-round matchUp, whose seats exist structurally even while empty. Asking provenance THERE was
+   * built and refuted — 4 failures to 21, `exitPropagationMatrix` losing 13 cells. This asks the same
+   * question the reconciliation already asks, in the same place, AFTER the merge: both sides hold a
+   * DELIVERED double exit. On a first arrival only one side does, so it cannot fire there.
+   *
+   * ## This is one of TWO changes, and this one moves nothing alone
+   *
+   * `correctionDivergence`'s UPGRADE arm, severe cells of 192, each measured in isolation:
+   *
+   * | change | alone | together |
+   * |---|---|---|
+   * | this routing | 52 | |
+   * | `releaseAdvancedDrawPosition` keeps a seat a PRODUCED EXIT advanced | 24 | **0** |
+   *
+   * Alone this cannot help, because without the other change the re-scored path has already lost
+   * the advancement the convergence's exit travels with. The DOWNGRADE arm is 8 throughout.
+   *
+   * A THIRD change was built and removed: reading `advanceByeAdvancedDrawPosition`'s occupant from the
+   * positionAssignment rather than from hydrated matchUps closed 8 cells while this routing still
+   * recursed into `doubleExitAdvancement`. `advanceConvergedWinner` re-hydrates before it advances,
+   * which made that read fresh by construction — reverting the third change failed no test and left
+   * the sweep at zero, so it is not here.
+   */
+  const convergedAfterMerge = bothDelivered && !targetHoldsBye;
   {
-    const merged = getSideExitProvenance({ matchUp: noContextTargetMatchUp });
-    const bothDelivered = ([1, 2] as const).every((sideNumber) =>
-      isDoubleExit(merged?.[sideNumber]?.previousMatchUpStatus),
-    );
     const derived = bothDelivered ? deriveExitStateFromProvenance(merged) : undefined;
     if (derived && !targetHoldsBye && derived.matchUpStatus !== noContextTargetMatchUp.matchUpStatus) {
       const reconcile = modifyMatchUpScore({
@@ -942,6 +1024,7 @@ function conditionallyAdvanceDrawPosition(params) {
   return advanceFromTarget({
     pairedPreviousMatchUpIsDoubleExit,
     targetMatchUpDrawPositions,
+    convergedAfterMerge,
     noContextTargetMatchUp,
     inContextDrawMatchUps,
     walkoverWinningSide,
@@ -1029,6 +1112,7 @@ function inferSourceSideNumber({
 function advanceFromTarget({
   pairedPreviousMatchUpIsDoubleExit,
   targetMatchUpDrawPositions,
+  convergedAfterMerge,
   noContextTargetMatchUp,
   inContextDrawMatchUps,
   walkoverWinningSide,
@@ -1047,6 +1131,17 @@ function advanceFromTarget({
 }) {
   // when there is an existing 'Double Exit", the created "Exit" is replaced
   // with a "Double Exit" and move on to advancing from this position
+  if (convergedAfterMerge && !existingExit) {
+    return advanceConvergedWinner({
+      convergedMatchUp: targetMatchUp,
+      drawDefinition,
+      matchUpsMap,
+      DOUBLE_EXIT,
+      params,
+      stack,
+    });
+  }
+
   if (existingExit) {
     logAdvancement(stack, {
       color: 'brightred',
