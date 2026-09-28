@@ -157,18 +157,30 @@ export const getMaxSetScore = (params: MaxSetScoreArgs): number | undefined => {
 
   if (setTo === undefined) return undefined;
 
-  // An advantage set — no tiebreak, two-game margin — has no ceiling either.
+  // ── No tiebreak: whether a ceiling exists at all depends on the margin ──
+  //
+  // Measured against `getSetComplement` on the same formats, because the two must agree:
+  //
+  //   - `S:6` (advantage) — a 5 completes to a **7**, so the set runs on. 1968 Wimbledon reached
+  //     24-22. No ceiling.
+  //   - `S:6NOAD` — a 5 completes to a **6**: no-advantage scoring settles it at `setTo` with a
+  //     one-game margin, so `setTo` IS the ceiling.
+  //   - a declared `WB1` — the same, by the format saying so outright.
   const margin = winBy ?? 2;
-  if (!tiebreakAt && margin > 1) return undefined;
-
-  // First past the post.
-  if (!tiebreakAt) return setTo;
+  if (!tiebreakAt) return NoAD || margin === 1 ? setTo : undefined;
 
   // A tiebreak BELOW setTo settles the set before either side passes setTo.
   if (tiebreakAt < setTo) return setTo;
 
-  // A tiebreak AT setTo: the set can be tied there and taken by one more game.
-  const ceiling = NoAD ? setTo : setTo + 1;
+  // A tiebreak AT setTo: the set can be tied there and taken by one more game — `setTo + 1`, whatever
+  // else the format says.
+  //
+  // `NoAD` does NOT collapse this, and an earlier version of this function had it doing so: measured
+  // 2026-09-27, `SET3-S:6NOAD/TB7` returned 6, which would refuse every legitimate 7-6 under a format
+  // in wide use. On a set format `NoAD` is no-advantage GAME scoring — a game at deuce decided by one
+  // point — and says nothing about how the SET ends. `getSetComplement`, asked the neighbouring
+  // question about the same format, answers that a 6 completes to a 7; the two must not disagree.
+  const ceiling = setTo + 1;
 
   // `setTo + 1` is reachable only THROUGH the tiebreak, which needs the opponent on `setTo` too. A side
   // facing 3 cannot reach 7.

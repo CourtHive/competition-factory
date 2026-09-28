@@ -232,8 +232,27 @@ describe('getMaxSetScore', () => {
     expect(getMaxSetScore({ setTo: 5, tiebreakAt: 4 })).toBe(5);
   });
 
-  it('caps a no-ad tiebreak set at setTo, with no extra game', () => {
-    expect(getMaxSetScore({ setTo: 6, tiebreakAt: 6, NoAD: true })).toBe(6);
+  it('does NOT let NoAD collapse the ceiling when a tiebreak decides the set', () => {
+    // This asserted 6 when it was written, which was wrong, and `SET3-S:6NOAD/TB7` is a format in wide
+    // use: a ceiling of 6 refuses every legitimate 7-6 under it. On a set format `NoAD` is
+    // no-advantage GAME scoring — a game at deuce decided by one point — and says nothing about how
+    // the SET ends.
+    expect(getMaxSetScore({ setTo: 6, tiebreakAt: 6, NoAD: true })).toBe(7);
+
+    // The authority for that, rather than an opinion about it: the sibling function, asked the
+    // neighbouring question about the same format, says a 6 completes to a 7.
+    expect(getSetComplement({ lowValue: 6, setTo: 6, tiebreakAt: 6, NoAD: true, isSide1: true })).toEqual([6, 7]);
+  });
+
+  it('caps a NoAD set with NO tiebreak at setTo', () => {
+    // Without a tiebreak, no-advantage scoring settles the set at `setTo` with a one-game margin — and
+    // again the sibling is the authority: a 5 completes to a 6, not to a 7.
+    expect(getMaxSetScore({ setTo: 6, NoAD: true })).toBe(6);
+    expect(getSetComplement({ lowValue: 5, setTo: 6, NoAD: true, isSide1: true })).toEqual([5, 6]);
+
+    // Where the same format is an ADVANTAGE set the 5 completes to a 7, and there is no ceiling at all.
+    expect(getSetComplement({ lowValue: 5, setTo: 6, isSide1: true })).toEqual([5, 7]);
+    expect(getMaxSetScore({ setTo: 6 })).toBeUndefined();
   });
 
   it('caps a first-past-the-post set at setTo', () => {
