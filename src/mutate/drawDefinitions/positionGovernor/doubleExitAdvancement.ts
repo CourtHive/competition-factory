@@ -16,6 +16,7 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { overlap } from '@Tools/arrays';
 import {
+  deriveExitStateFromProvenance,
   buildCarriedExitProvenance,
   recordByeClaim,
   collapseDoubleExitStatus,
@@ -23,6 +24,7 @@ import {
   buildSideExitProvenance,
   mergeSideExitProvenance,
   getSideExitProvenance,
+  deriveStatusCodes,
   producedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -874,6 +876,68 @@ function conditionallyAdvanceDrawPosition(params) {
   // only its own side must not wipe an origin recorded earlier. CA, 2026-09-12: *"provenance is
   // provenance… where did the sides come from. One origin can arrive before the other."*
   mergeSideExitProvenance({ matchUp: noContextTargetMatchUp, provenance: newProvenance });
+
+  /**
+   * TWO DELIVERED EXITS ARE A DOUBLE EXIT — reconciled AFTER the merge, because that is when both are
+   * known.
+   *
+   * **Punch-list P42.** `existingExit` above decides whether this write produces a DOUBLE_EXIT or a
+   * single one, and it decides it BEFORE `newProvenance` is merged in. On a RE-SCORE that is too early:
+   * the target can already hold one side's delivered exit from an earlier propagation while this write
+   * delivers the other, and `existingExit`'s `!drawPositions.length` half is false because the target
+   * holds positions. So it settled as a single exit WITH a winningSide — a matchUp nobody played showing
+   * a winner — while its own provenance recorded an exit delivered into both sides.
+   *
+   * Measured before the fix: **52 of 192 cells** across seven draw types, independent of
+   * `propagateExitStatus`, and reported by `UNCOLLAPSED_CONVERGENCE` at every one. Zero on the 600-cell
+   * census, because ordinary play never reaches it — it needs a single exit RE-SCORED UP to a double,
+   * which is the direction `correctionDivergence` had never swept.
+   *
+   * ## Why AFTER the write rather than in the gate
+   *
+   * Changing `existingExit` to ask provenance was built and measured the same day: **4 failures to 21**,
+   * losing 13 `exitPropagationMatrix` cells and three census replays. It re-routes convergences on the
+   * DIRECT path too, and the sweep shows the direct path is already correct. This reconciliation cannot
+   * do that: it fires only where the status and the provenance already CONTRADICT each other, which on
+   * the direct path is never.
+   *
+   * ## Why BOTH sides must be DELIVERED
+   *
+   * The first version tested only that `deriveExitStateFromProvenance` disagreed with the status, and it
+   * over-fired: 52 findings became 58, with six NEW divergences in SINGLE_ELIMINATION where
+   * `Main|3|1` went `DEFAULTED` to `WALKOVER`. An entry whose `previousMatchUpStatus` is a single exit or
+   * a `COMPLETED` records that the side's occupant ARRIVED having won upstream, not that an exit was
+   * delivered into it — feeding those to the collapse applies the mixed-flavour rule to a convergence
+   * that is not one. `isDoubleExit` on `previousMatchUpStatus` is the same discriminator
+   * `deriveStatusCodes` and `UNCOLLAPSED_CONVERGENCE` use, so the three agree by construction.
+   *
+   * ## WHAT THIS DOES NOT FIX, and it is half the defect
+   *
+   * The status is corrected; the ONWARD PROPAGATION that should follow from it is not. The re-scored path
+   * still diverges from the direct one at the next round — `correctionDivergence`'s UPGRADE arm still
+   * reports **52 severe**, now on the consequence rather than the status. That is the same missing half
+   * P40 names as *"cross-structure re-advancement"*, and it is why that arm's baseline is not lowered
+   * here.
+   */
+  {
+    const merged = getSideExitProvenance({ matchUp: noContextTargetMatchUp });
+    const bothDelivered = ([1, 2] as const).every((sideNumber) =>
+      isDoubleExit(merged?.[sideNumber]?.previousMatchUpStatus),
+    );
+    const derived = bothDelivered ? deriveExitStateFromProvenance(merged) : undefined;
+    if (derived && !targetHoldsBye && derived.matchUpStatus !== noContextTargetMatchUp.matchUpStatus) {
+      const reconcile = modifyMatchUpScore({
+        ...params,
+        removeWinningSide: derived.winningSide === undefined,
+        winningSide: derived.winningSide,
+        matchUp: noContextTargetMatchUp,
+        matchUpStatus: derived.matchUpStatus,
+        matchUpStatusCodes: deriveStatusCodes(noContextTargetMatchUp),
+        context: `${stack}-reconcile`,
+      });
+      if (reconcile.error) return decorateResult({ result: reconcile, stack });
+    }
+  }
 
   return advanceFromTarget({
     pairedPreviousMatchUpIsDoubleExit,

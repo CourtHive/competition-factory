@@ -251,12 +251,24 @@ it('a corrected double exit leaves the draw where the direct path leaves it', ()
  *   Consolation|2|1  direct  [BYE dp=1.4 prov 2:DW->WO]   upgrade  [BYE dp=1.3 prov -]
  * ```
  *
- * So a matchUp nobody played shows a WINNER on the re-scored path, and the exit that should have
- * propagated onward from it does not. `deriveExitStateFromProvenance` on that record returns
- * `DOUBLE_WALKOVER` and no winner — the facts are present and correct on both paths, and only the
- * status derivation disagrees. That is exactly what the `UNCOLLAPSED_CONVERGENCE` rule reports, and the
- * 52 cells are the same 52: see `src/tests/query/uncollapsedConvergenceBudget.test.ts`, which measures
- * the same population through the detector rather than through this comparison.
+ * So a matchUp nobody played showed a WINNER on the re-scored path, and the exit that should have
+ * propagated onward from it did not. `deriveExitStateFromProvenance` on that record returns
+ * `DOUBLE_WALKOVER` and no winner — the facts are present and correct on both paths, and only the status
+ * derivation disagreed.
+ *
+ * ## HALF OF IT IS FIXED, and the count did not move
+ *
+ * The convergence reconciliation in `doubleExitAdvancement` closes the STATUS half: the re-scored matchUp
+ * is a double exit with no winner, exactly as the direct path leaves it, and the
+ * `UNCOLLAPSED_CONVERGENCE` population went from 52 to **zero** — measured on this matrix, on the
+ * 600-cell census, and on all three named reproductions — so that rule is now `error` severity and the
+ * ratchet that sized it is deleted.
+ *
+ * **These 52 cells still diverge**, now on the CONSEQUENCE rather than the status: `Consolation|2|1`
+ * differs, because the corrected status does not re-run the propagation that should follow from it. That
+ * is the missing half **P40** names as *"cross-structure re-advancement"*, and it is why this baseline is
+ * unchanged at 52. Fixing the status without the consequence is progress, not a fix, and this arm is what
+ * says so.
  *
  * **It is independent of `propagateExitStatus`** — both settings diverge — and systematic rather than
  * seed-luck: 8 cells in each of six draw types, 4 in CURTIS_CONSOLATION, 0 in SINGLE_ELIMINATION, which

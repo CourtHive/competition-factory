@@ -620,12 +620,24 @@ export function getStructureInconsistencies(
      *
      * The producing gate is `doubleExitAdvancement`'s `existingExit`, whose `!drawPositions.length`
      * half this matchUp fails. **Do not "fix" it by asking provenance there** — built and measured
-     * 2026-09-27, it takes the suite from 4 failures to 21. See that site's docblock.
+     * 2026-09-27, it takes the suite from 4 failures to 21. What works is reconciling AFTER the
+     * provenance merge, where both sides are known; see that site's docblock.
+     *
+     * **SEVERITY `error`, promoted 2026-09-27 once the population reached ZERO.** It shipped as a
+     * `warning` because 52 of 192 re-score cells hit it and `error` would have flipped `valid` to false
+     * for draws considered valid that day. The reconciliation closes all 52 — measured zero on the
+     * 600-cell census, on both directions of the correction sweep, and on all three named
+     * reproductions — so this is now a structural invariant and nothing should ever violate it. A
+     * matchUp cannot carry an exit delivered into both sides and be a single exit; if one appears, the
+     * draw IS wrong.
+     *
+     * The `uncollapsedConvergenceBudget` ratchet that sized it is deleted with this promotion, on its
+     * own instruction: a budget at zero asserts nothing, and the ordinary `valid` assertions across the
+     * suite are a stronger guard than a ceiling.
      */
     if (isExit(matchUpStatus) && deliveredSides === 2) {
       inconsistencies.push({
         ...base,
-        severity: 'warning',
         issueType: UNCOLLAPSED_CONVERGENCE,
         message: 'provenance records an exit delivered into both sides, but the matchUp is a single exit',
       });
