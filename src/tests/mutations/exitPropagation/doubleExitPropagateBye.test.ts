@@ -132,10 +132,11 @@ test('with the policy OFF the loser slot keeps the produced exit rather than bec
   // a propagated exit meeting a BYE is advanced, and the BYE remains a BYE.
   const fed = matchUps().find((m: any) => key(m) === 'Consolation|1|2');
   expect(fed?.matchUpStatus, 'the draw BYE beside the loser slot is untouched').toEqual(BYE);
-  expect((fed?.matchUpStatusCodes ?? []).find((c: any) => c?.sideNumber === 1)).toEqual({
+  // P37. Read from `sideExitProvenance`, which is keyed by side, rather than by hunting the legacy
+  // array for an element that carries a matching `sideNumber` property.
+  expect(fed?.sideExitProvenance?.[1]).toMatchObject({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 1,
   });
 
   // NOT a control any more, and deliberately asserted the other way round from what this test used

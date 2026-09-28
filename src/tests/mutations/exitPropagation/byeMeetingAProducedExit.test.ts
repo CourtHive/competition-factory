@@ -20,7 +20,7 @@ import { DOUBLE_WALKOVER, TO_BE_PLAYED, COMPLETED, WALKOVER, BYE } from '@Consta
  * Three things therefore hold at once, and they are independent:
  *
  *   1. the matchUp's `matchUpStatus` stays `BYE` — the produced exit never overwrites it;
- *   2. the arriving exit is recorded on ITS OWN side in `matchUpStatusCodes`;
+ *   2. the arriving exit is recorded on ITS OWN side in `sideExitProvenance`;
  *   3. the exit is carried onward, exactly as a participant would be.
  *
  * Both scenarios below are hand-drivable in TMX with ordinary scores — no policy, no
@@ -32,8 +32,31 @@ const at = (drawId: string, stage: string, roundNumber: number, roundPosition: n
     (m: any) => m.stage === stage && m.roundNumber === roundNumber && m.roundPosition === roundPosition,
   );
 
-const codeFor = (matchUp: any, sideNumber: number) =>
-  (matchUp?.matchUpStatusCodes ?? []).find((code: any) => code?.sideNumber === sideNumber);
+/**
+ * The EXIT FACTS a side carries, read from `sideExitProvenance` — the side-KEYED first-class record.
+ *
+ * **P37.** This was `codeFor`, which found the element of `matchUpStatusCodes` whose `sideNumber`
+ * matched. That array is the LEGACY surface and the exit tenant is leaving it, so reading the facts
+ * there pinned the projection rather than the behaviour. The facts asserted are identical: where the
+ * old helper proved the side by an element's `sideNumber` property, this one proves it by the KEY it
+ * reads, which is what "side-keyed" means.
+ *
+ * `sourceMatchUpId` is deliberately not returned. The array never carried it (CA, 2026-09-09), so
+ * including it would strengthen assertions that were written against the weaker record; the tests
+ * that care about origin identity assert `sideExitProvenance` directly.
+ *
+ * Returns `undefined` for a side with no origin. The array expressed that as a RESERVED SLOT —
+ * `{ sideNumber }` and nothing else — which provenance has no equivalent for, and CA ruled on
+ * 2026-09-27 that it needs none: *"I was under the impression that we were going to have provenance
+ * for these anyway"*. The stub is a legacy-array artifact; the absence of an entry is the claim. A
+ * side may still hold an entry carrying only `byeClaims`, which is a BYE this cascade claims and not
+ * an origin, so the test is for the exit facts rather than for the entry.
+ */
+const exitFor = (matchUp: any, sideNumber: number) => {
+  const entry: any = matchUp?.sideExitProvenance?.[sideNumber];
+  if (!entry?.previousMatchUpStatus && !entry?.matchUpStatus) return undefined;
+  return { previousMatchUpStatus: entry.previousMatchUpStatus, matchUpStatus: entry.matchUpStatus };
+};
 
 test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
   setSubscriptions({});
@@ -61,15 +84,13 @@ test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
   const convergence = at(drawId, 'CONSOLATION', 1, 1);
   expect(convergence.matchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(convergence.winningSide).toBeUndefined();
-  expect(codeFor(convergence, 1)).toEqual({
+  expect(exitFor(convergence, 1)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 1,
   });
-  expect(codeFor(convergence, 2)).toEqual({
+  expect(exitFor(convergence, 2)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 2,
   });
 
   // 1. the BYE is still a BYE — this is the assertion the rule is about
@@ -78,14 +99,13 @@ test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
 
   // 2. and it records the arriving exit on the side the exit arrived on. The fed position is
   //    sideNumber 1 (draw-positions.md rule 4), so the side advanced from CONSOLATION|1|1 is 2.
-  expect(codeFor(meetsTheBye, 2)).toEqual({
+  expect(exitFor(meetsTheBye, 2)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 2,
   });
 
   // the side that has NOT yet received the exit is still a reserved slot, not an origin
-  expect(codeFor(meetsTheBye, 1)).toEqual({ sideNumber: 1 });
+  expect(exitFor(meetsTheBye, 1)).toBeUndefined();
 
   // 3. and the exit is carried ONWARD through the BYE
   const onward = at(drawId, 'CONSOLATION', 3, 1);
@@ -98,12 +118,11 @@ test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
   // The comment that stood here said: *"the BYE-advance site writes `matchUpStatusCodes: []`
   // unconditionally … pinning the current value would freeze the defect. Assert it when the origin
   // is carried through."* It is carried through as of 2026-09-20, so this is that assertion.
-  expect(codeFor(onward, 1)).toEqual({
+  expect(exitFor(onward, 1)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 1,
   });
-  expect(codeFor(onward, 2)).toEqual({ sideNumber: 2 });
+  expect(exitFor(onward, 2)).toBeUndefined();
   // the origin is the CONSOLATION convergence that produced this exit, not the Main matchUp two
   // steps back: `sourceMatchUpId` names the immediate producer at every hop.
   expect(onward.sideExitProvenance?.[1]).toEqual({
@@ -209,11 +228,10 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
   // the BYE is untouched by the exit that arrived beside it
   expect(meetsTheBye.matchUpStatus).toEqual(BYE);
   // and BOTH origins are recorded: the BYE's own, and the exit's
-  expect(codeFor(meetsTheBye, 1)).toEqual({ previousMatchUpStatus: BYE, matchUpStatus: BYE, sideNumber: 1 });
-  expect(codeFor(meetsTheBye, 2)).toEqual({
+  expect(exitFor(meetsTheBye, 1)).toEqual({ previousMatchUpStatus: BYE, matchUpStatus: BYE });
+  expect(exitFor(meetsTheBye, 2)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 2,
   });
 
   // 3. AND THE EXIT IS CARRIED ONWARD, which is the part of the rule this scenario left undone.
@@ -236,13 +254,12 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
 
   // and the ORIGIN survives the hop through the BYE — it is the double walkover that produced the
   // exit, not the BYE it travelled through. Asserted per side, because the two are independent.
-  expect(codeFor(onward, 1)).toEqual({
+  expect(exitFor(onward, 1)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 1,
   });
   // the side still to be filled by the winner of match-2-2 is a reserved slot, not an origin
-  expect(codeFor(onward, 2)).toEqual({ sideNumber: 2 });
+  expect(exitFor(onward, 2)).toBeUndefined();
   expect(onward.sideExitProvenance?.[1]).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
@@ -265,10 +282,9 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
   const winningSide = (settled.sides ?? []).find((side: any) => side.sideNumber === settled.winningSide);
   expect(winningSide?.participantId).toBeTruthy();
   // the exit's own origin is untouched by the arrival
-  expect(codeFor(settled, 1)).toEqual({
+  expect(exitFor(settled, 1)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 1,
   });
 });
 
@@ -326,20 +342,18 @@ test('a BYE carries a produced exit onward, gives it back on undo, then carries 
   expect(applied.success).toEqual(true);
 
   expect(matchUp('rt-2-1').matchUpStatus).toEqual(BYE);
-  expect(codeFor(matchUp('rt-2-1'), 2)).toEqual({
+  expect(exitFor(matchUp('rt-2-1'), 2)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 2,
   });
   expect(matchUp('rt-3-1').matchUpStatus).toEqual(WALKOVER);
   // pending: no drawPosition has arrived, so no winningSide yet. The test above pins the
   // resolution; this one deliberately leaves the opponent unplayed so the undo is measured
   // against the carry alone.
   expect(matchUp('rt-3-1').winningSide).toBeUndefined();
-  expect(codeFor(matchUp('rt-3-1'), 1)).toEqual({
+  expect(exitFor(matchUp('rt-3-1'), 1)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 1,
   });
 
   // ---- 2. UNDO: clearing R1P2 takes the exit back out of BOTH matchUps ------------------------
@@ -352,12 +366,11 @@ test('a BYE carries a produced exit onward, gives it back on undo, then carries 
   // the BYE keeps its own origin and loses only the exit's — the two are independent facts and the
   // unwind must not take the wrong one
   expect(matchUp('rt-2-1').matchUpStatus).toEqual(BYE);
-  expect(codeFor(matchUp('rt-2-1'), 1)).toEqual({
+  expect(exitFor(matchUp('rt-2-1'), 1)).toEqual({
     previousMatchUpStatus: BYE,
     matchUpStatus: BYE,
-    sideNumber: 1,
   });
-  expect(codeFor(matchUp('rt-2-1'), 2)).toEqual({ sideNumber: 2 });
+  expect(exitFor(matchUp('rt-2-1'), 2)).toBeUndefined();
   expect(matchUp('rt-2-1').sideExitProvenance?.[2]).toBeUndefined();
 
   // and the matchUp the exit travelled ON to is returned whole. Asserted field by field rather than
@@ -453,24 +466,22 @@ test('a double exit records its loser slot in the consolation and the exit walks
   // slot that would have received `fl-1-2`'s loser. Nobody lost, so dp4 carries the produced exit.
   const loserSlot = matchUp('fl-c-1-1');
   expect(loserSlot.matchUpStatus).toEqual(BYE);
-  expect(codeFor(loserSlot, 2)).toEqual({
+  expect(exitFor(loserSlot, 2)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 2,
   });
   expect(loserSlot.sideExitProvenance?.[2]?.sourceMatchUpId).toEqual('fl-1-2');
   // dp3's side is a BYE the draw put there, not an origin this cascade established
-  expect(codeFor(loserSlot, 1)).toEqual({ sideNumber: 1 });
+  expect(exitFor(loserSlot, 1)).toBeUndefined();
 
   // ---- 2. the INTERMEDIATE hop is recorded, and is still a BYE ---------------------------------
   // `CONSOLATION|2|1` holds [1, 4]: dp1 is a draw BYE and dp4 is the position that advanced through
   // `CONSOLATION|1|1`. It is a feed round, so the advanced position is side 2 (draw-positions rule 4).
   const secondBye = matchUp('fl-c-2-1');
   expect(secondBye.matchUpStatus).toEqual(BYE);
-  expect(codeFor(secondBye, 2)).toEqual({
+  expect(exitFor(secondBye, 2)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 2,
   });
 
   // ---- 3. and the walkover comes to rest where a live opponent can still arrive ----------------
@@ -478,10 +489,9 @@ test('a double exit records its loser slot in the consolation and the exit walks
   expect(onward.matchUpStatus).toEqual(WALKOVER);
   // pending, for the same reason as the Main draw above: nobody has arrived on the other side
   expect(onward.winningSide).toBeUndefined();
-  expect(codeFor(onward, 1)).toEqual({
+  expect(exitFor(onward, 1)).toEqual({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 1,
   });
   // the ORIGIN survives both hops — it is the double walkover, not either BYE it passed through
   expect(onward.sideExitProvenance?.[1]?.sourceMatchUpId).toEqual('fl-1-2');
@@ -523,6 +533,6 @@ test('a double exit records its loser slot in the consolation and the exit walks
   expect(matchUp('fl-3-1').matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(matchUp('fl-3-1').winningSide).toBeUndefined();
   expect(matchUp('fl-2-1').matchUpStatus).toEqual(BYE);
-  expect(codeFor(matchUp('fl-2-1'), 1)).toEqual({ previousMatchUpStatus: BYE, matchUpStatus: BYE, sideNumber: 1 });
-  expect(codeFor(matchUp('fl-2-1'), 2)).toEqual({ sideNumber: 2 });
+  expect(exitFor(matchUp('fl-2-1'), 1)).toEqual({ previousMatchUpStatus: BYE, matchUpStatus: BYE });
+  expect(exitFor(matchUp('fl-2-1'), 2)).toBeUndefined();
 });

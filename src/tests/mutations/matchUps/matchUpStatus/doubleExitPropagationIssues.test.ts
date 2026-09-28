@@ -285,10 +285,15 @@ describe('Issue #3848: DOUBLE_WALKOVER propagation in FMLC consolation rounds', 
 
     // R2P2 status codes should reference the consolation R1 DOUBLE_WALKOVER
     // (not the main draw match), showing DOUBLE_WALKOVER as previousMatchUpStatus
-    const r2p2StatusCodes = consolR2P2?.matchUpStatusCodes;
-    expect(r2p2StatusCodes).toBeDefined();
-    const r2p2PreviousStatuses = r2p2StatusCodes?.map((sc) => sc.previousMatchUpStatus);
-    expect(r2p2PreviousStatuses).toContain(DOUBLE_WALKOVER);
+    // P37, and the assertion gets STRONGER for it. The claim the comment above makes is about
+    // IDENTITY — the exit came from the consolation R1 matchUp, not from the main-draw one — and the
+    // legacy array cannot express that: `sourceMatchUpId` is deliberately not projected into it (CA,
+    // 2026-09-09). So this could only ever check that a `DOUBLE_WALKOVER` appeared somewhere in the
+    // array, which is true of either source. Provenance names the producer, so the test now asserts
+    // the thing it was written to assert.
+    const r2p2Origin = consolR2P2?.sideExitProvenance?.[2];
+    expect(r2p2Origin?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
+    expect(r2p2Origin?.sourceMatchUpId).toEqual('i3848s-c-1-2');
   });
 });
 

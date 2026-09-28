@@ -115,7 +115,12 @@ describe('a produced exit carries past a BYE-held target when the opponent feede
     // THE FIX: the exit does not stop at the BYE
     const west21 = find(drawId, 'West|2|1');
     expect(west21.matchUpStatus).toEqual(WALKOVER);
-    expect(west21.matchUpStatusCodes?.length).toBeGreaterThan(0);
+    // P37. The claim was `matchUpStatusCodes?.length > 0` — "something records an exit here" — which
+    // is the LEGACY surface and cannot say WHICH side, or what the exit was. Provenance says both.
+    expect(west21.sideExitProvenance?.[1]).toMatchObject({
+      previousMatchUpStatus: DOUBLE_WALKOVER,
+      matchUpStatus: WALKOVER,
+    });
 
     // the exit survives the opponent's arrival rather than being reverted to TO_BE_PLAYED
     playEast13(drawId);
