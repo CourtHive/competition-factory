@@ -1,10 +1,18 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
+import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 
 // constants and types
-import { MatchUp, SideExitProvenance, SideExitProvenanceEntry, MatchUpStatusUnion } from '@Types/tournamentTypes';
+import { MappedMatchUps } from '@Types/factoryTypes';
+import {
+  DrawDefinition,
+  MatchUp,
+  SideExitProvenance,
+  SideExitProvenanceEntry,
+  MatchUpStatusUnion,
+} from '@Types/tournamentTypes';
 import {
   DOUBLE_WALKOVER,
   DOUBLE_DEFAULT,
@@ -904,6 +912,13 @@ export function exitOutcomeCode(element: any): string {
 export type WithdrawnExit = {
   /** the winner's drawPosition, which advanced out of the exit and must be released */
   winnerDrawPosition?: number;
+  /**
+   * Set when the matchUp RE-DERIVED from retained provenance rather than reverting to undecided: one
+   * of its two origins went away and the other is still true, so it is still an exit — of a different
+   * kind. Distinguishes a partial unwind from a full one, which the caller needs because only a
+   * partial one can still be producing an exit downstream.
+   */
+  rederived?: boolean;
   roundNumber?: number;
   structureId: string;
   matchUpId: string;
@@ -916,7 +931,12 @@ export type WithdrawnExit = {
  * whole per-matchUp decision. Returns the withdrawal record when the matchUp reverted to undecided,
  * and `undefined` when it either kept an exit from another source or had nothing to withdraw.
  */
-function withdrawFromMatchUp(matchUp: MatchUp, sources: Set<string>, structureId: string): WithdrawnExit | undefined {
+function withdrawFromMatchUp(
+  matchUp: MatchUp,
+  sources: Set<string>,
+  structureId: string,
+  drawDefinition?: DrawDefinition,
+): WithdrawnExit | undefined {
   const provenance = getSideExitProvenance({ matchUp });
   if (!provenance) return undefined;
 
@@ -943,6 +963,23 @@ function withdrawFromMatchUp(matchUp: MatchUp, sources: Set<string>, structureId
     // `sourceMatchUpStatus.test.ts` losing a `previousMatchUpStatus: TO_BE_PLAYED` element that no
     // withdrawal had touched.
     setSideExitProvenance({ provenance: retained, matchUp });
+    // STAGE 1 EXPERIMENT: re-derive, and report that the matchUp is no longer a double exit
+    const derived = deriveExitStateFromProvenance(retained);
+    if (derived && derived.matchUpStatus !== matchUp.matchUpStatus) {
+      const previousWinnerDrawPosition = matchUp.winningSide
+        ? matchUp.drawPositions?.[matchUp.winningSide - 1]
+        : undefined;
+      matchUp.matchUpStatus = derived.matchUpStatus as any;
+      if (derived.winningSide) matchUp.winningSide = derived.winningSide;
+      else delete matchUp.winningSide;
+      return {
+        winnerDrawPosition: previousWinnerDrawPosition,
+        roundNumber: matchUp.roundNumber,
+        matchUpId: matchUp.matchUpId,
+        rederived: true,
+        structureId,
+      };
+    }
     return undefined;
   }
 
@@ -951,11 +988,9 @@ function withdrawFromMatchUp(matchUp: MatchUp, sources: Set<string>, structureId
   // an exit at all, so no element of that array can still be describing one. It is the same blanking
   // `removeDirectedLoser` already performs one link away.
   //
-  // The winner's position is read BEFORE `winningSide` is deleted, because it is the index of the
-  // side that was about to advance out of an exit that is no longer happening.
-  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending.
-  // See the canonical statement in `getOrderedDrawPositions`.
-  const winnerDrawPosition = matchUp.winningSide ? matchUp.drawPositions?.[matchUp.winningSide - 1] : undefined;
+  // The winner's position is read BEFORE `winningSide` is deleted, because it names the side that was
+  // about to advance out of an exit that is no longer happening.
+  const winnerDrawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
   clearSideExitProvenance(matchUp);
   matchUp.matchUpStatusCodes = [];
   matchUp.matchUpStatus = TO_BE_PLAYED;
@@ -972,9 +1007,11 @@ function withdrawFromMatchUp(matchUp: MatchUp, sources: Set<string>, structureId
 export function withdrawProducedExits({
   mappedMatchUps,
   sourceMatchUpId,
+  drawDefinition,
 }: {
-  mappedMatchUps?: { [structureId: string]: { matchUps: MatchUp[] } };
+  mappedMatchUps?: MappedMatchUps;
   sourceMatchUpId?: string;
+  drawDefinition?: DrawDefinition;
 }): WithdrawnExit[] {
   if (!sourceMatchUpId || !mappedMatchUps) return [];
 
@@ -993,11 +1030,21 @@ export function withdrawProducedExits({
 
     for (const [structureId, structureMatchUps] of structureEntries) {
       for (const matchUp of structureMatchUps?.matchUps ?? []) {
-        const record = withdrawFromMatchUp(matchUp, sources, structureId);
+        const record = withdrawFromMatchUp(matchUp, sources, structureId, drawDefinition);
         if (!record) continue;
+        const { rederived } = record;
         withdrawn.push(record);
-        // whatever THIS matchUp produced is now sourceless too
-        frontier.push(record.matchUpId);
+        /**
+         * A matchUp that reverted to undecided produces no exit, so every carried exit it stamped is
+         * void and the cascade continues through it.
+         *
+         * A RE-DERIVED one is NOT decided here. It is still an exit — of a different kind — and whether
+         * it still PRODUCES one downstream turns on whether its new winning side is occupied, which is
+         * not yet settled at this point in the mutation. `reconcileAdvancedExits` asks that after the
+         * link-directed removals and continues the cascade from the ones that now deliver an
+         * advancement; the record carries `rederived` so it can find them.
+         */
+        if (!rederived) frontier.push(record.matchUpId);
       }
     }
   }

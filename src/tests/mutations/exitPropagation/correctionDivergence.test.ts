@@ -85,14 +85,31 @@ import {
  * outcome depend on entry order, and this sweep plus `sideBlindExitCarry`'s order-independence test
  * both said so. The propagation is called from every path that resolves a produced exit.
  */
+/**
+ * ## Lowered 2026-09-28: 28 -> 8 severe, and the twenty went straight to IDENTICAL
+ *
+ * `reconcileStaleExitOrigins` (punch-list **P40**) withdraws a carried exit whose ORIGIN has stopped
+ * being a double exit and now delivers a winner. Twenty cells diverged because the corrected path
+ * left that entry standing: the origin had re-derived to a single exit with a real participant in the
+ * winning seat, so what it sent downstream was an ADVANCEMENT, and the stale entry kept describing an
+ * exit. `identical` 164 -> 184, `provenanceOnly` and `incomparable` unchanged at zero.
+ *
+ * The timing is the whole of it, and this sweep is what proves the placement rather than the rule.
+ * Three earlier positions for the same decision were measured and each one traded one case for
+ * another — inside `withdrawProducedExits` on the presence of a re-derived winningSide, then on that
+ * winner's occupancy, then in a second pass after the link-directed removals. Only asking at the end
+ * of the mutation satisfies both `byeAdvancesIntoPendingDoubleExit` (the seat is EMPTIED later) and
+ * `crossStructureWinnerPositions` DE window 9301605 (the seat is FILLED later). The module's docblock
+ * carries both measurements.
+ */
 const BASELINE = {
   cells: 192,
   /** both paths ran and the draws agree exactly — the only bucket that should ever grow */
-  identical: 164,
+  identical: 184,
   /** a stale `sideExitProvenance` entry only; status, winner and positions agree */
   provenanceOnly: 0,
   /** matchUpStatus, winningSide or drawPositions differ — user-visible */
-  severe: 28,
+  severe: 8,
   /** a step was refused in one path and not the other, so the cell was not an experiment */
   incomparable: 0,
 };

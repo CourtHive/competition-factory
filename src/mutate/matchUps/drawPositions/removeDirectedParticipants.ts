@@ -135,6 +135,7 @@ export function removeDirectedParticipants(params): {
   const withdrawnExits = withdrawProducedExits({
     mappedMatchUps: matchUpsMap?.mappedMatchUps,
     sourceMatchUpId: matchUpId,
+    drawDefinition,
   });
   applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap, event });
 
