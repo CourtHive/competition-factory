@@ -681,6 +681,38 @@ export function retainPolicyCodes(matchUp?: MatchUp): any[] {
 }
 
 /**
+ * The string value of a POLICY `matchUpStatusCodes` element.
+ *
+ * **P37 narrowed this from three shapes to one.** It used to end `?? code?.matchUpStatus`, which made
+ * it read the EXIT tenant too — the projection of `sideExitProvenance` — so the branch below re-sited
+ * a carried exit's status positionally in an array that is not where side identity lives.
+ *
+ * Measured at that branch over the exit-propagation and matchUpStatus suites (2026-09-27, 113
+ * arrivals): where the array held anything it was the projected shape, its status equalled provenance
+ * in 50 of 50, and in the other 63 the array was ALREADY EMPTY while provenance held the status. The
+ * re-siting was redundant where it ran and silently lossy where it did not.
+ *
+ * MOVED HERE from `drawPositionPlacement`, where it was private, when `assignDrawPositionBye` — that
+ * site's twin — needed the same reader. Both re-side the policy code onto the exiting participant, and
+ * a second copy of this function is how the two tenants got confused to begin with.
+ *
+ * What remains is a real job, and the reason this function was not deleted with the rest: the POLICY
+ * vocabulary (`POLICY_SCORING_USTA`'s `W1` and friends) belongs to the match, lands on the exiting
+ * side, and must still follow that side through the sort. `propagateExitStatus.test.ts` §"FMLC
+ * real-match fall-through" pins it, and deleting the re-siting outright left it reading `''`.
+ *
+ * Shapes read: a bare string, `{ matchUpStatusCode }` (the policy vocabulary), and `{ code }` (a
+ * string an earlier `updateMatchUpStatusCodes` wrapped). NOT the provenance shape — callers filter it
+ * out with {@link isProjectedExitCode} first, and this function no longer resolves it either, so the
+ * eviction holds even if a caller forgets.
+ */
+export function policyCodeString(code: any): string | undefined {
+  if (typeof code === 'string') return code || undefined;
+  if (isProjectedExitCode(code)) return undefined;
+  return code?.matchUpStatusCode ?? code?.code ?? undefined;
+}
+
+/**
  * Whether a `matchUpStatusCodes` element is the EXIT tenant — a projection of provenance, or the
  * reserved slot that stands in for a side whose origin is not known yet.
  *

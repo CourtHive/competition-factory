@@ -1,3 +1,4 @@
+import { retainPolicyCodes, policyCodeString } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
@@ -960,19 +961,29 @@ function resolvePropagatedExitOnAdvance({
   const advancingSideNumber = advancingSide ?? drawPositions.indexOf(drawPositionToAdvance) + 1;
   const exitSideNumber = advancingSideNumber === 1 ? 2 : 1;
 
-  // Provenance already naming the exiting side means the codes are already sided by it — they are
-  // projected from provenance — so they stay as they are. Re-siding them here would place the first
-  // truthy element, which in the projected shape is side 1's EMPTY entry.
-  const provenanceSides = Object.keys(matchUp.sideExitProvenance ?? {}).map(Number);
-  const alreadySided = provenanceSides.length === 1 && provenanceSides[0] === exitSideNumber;
-  let matchUpStatusCodes: any[] = matchUp.matchUpStatusCodes ?? [];
-  if (!alreadySided) {
-    const existingCode = (matchUp.matchUpStatusCodes ?? []).find(Boolean);
-    matchUpStatusCodes = [];
-    if (existingCode) {
-      for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
-      matchUpStatusCodes[exitSideNumber - 1] = existingCode;
-    }
+  /**
+   * THE POLICY CODE FOLLOWS THE EXITING SIDE — and the exit tenant is not here to be re-sided.
+   *
+   * **P37.** This site is `applyPositionToMatchUp`'s twin and it never got that site's narrowing
+   * (#4996). Two things were wrong once the projection stopped being written:
+   *
+   *  - `find(Boolean)` took the first TRUTHY element, and a provenance-shaped element is an object, so
+   *    on a projected array it re-sided an OBJECT — which is why the guard below had to exist at all.
+   *  - the guard, `alreadySided`, skipped the re-siding whenever provenance named exactly the exiting
+   *    side, on the stated grounds that *"the codes are already sided by it — they are projected from
+   *    provenance"*. That is no longer true of anything in this array. Policy codes are NOT projected
+   *    from provenance, so on a matchUp whose provenance happened to name the exiting side the guard
+   *    left a policy code sitting on the wrong side.
+   *
+   * Filtering to the policy tenant removes both: there is no object to re-side, so no guard is needed,
+   * and the code that belongs to the exiting participant follows them. Same rule, same reader as
+   * `applyPositionToMatchUp`.
+   */
+  const matchUpStatusCodes: string[] = [];
+  const existingCode = retainPolicyCodes(matchUp).map(policyCodeString).find(Boolean);
+  if (existingCode) {
+    for (let i = 0; i < exitSideNumber - 1; i++) matchUpStatusCodes[i] = '';
+    matchUpStatusCodes[exitSideNumber - 1] = existingCode;
   }
 
   Object.assign(matchUp, {

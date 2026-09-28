@@ -29,12 +29,13 @@ import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/no
 import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
-import { updateMatchUpStatusCodes } from '@Mutate/drawDefinitions/matchUpGovernor/matchUpStatusCodes';
+import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import {
   clearResolvedSideExitProvenance,
   isPropagatedExit as sharedIsPropagatedExit,
   isProjectedExitCode,
+  policyCodeString,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
@@ -410,34 +411,6 @@ function resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, m
   );
 }
 
-/**
- * The string value of a POLICY `matchUpStatusCodes` element.
- *
- * **P37 narrowed this from three shapes to one.** It used to end `?? code?.matchUpStatus`, which made
- * it read the EXIT tenant too — the projection of `sideExitProvenance` — so the branch below re-sited
- * a carried exit's status positionally in an array that is not where side identity lives.
- *
- * Measured at that branch over the exit-propagation and matchUpStatus suites (2026-09-27, 113
- * arrivals): where the array held anything it was the projected shape, its status equalled provenance
- * in 50 of 50, and in the other 63 the array was ALREADY EMPTY while provenance held the status. The
- * re-siting was redundant where it ran and silently lossy where it did not.
- *
- * What remains is a real job, and the reason this function was not deleted with the rest: the POLICY
- * vocabulary (`POLICY_SCORING_USTA`'s `W1` and friends) belongs to the match, lands on the exiting
- * side, and must still follow that side through the sort. `propagateExitStatus.test.ts` §"FMLC
- * real-match fall-through" pins it, and deleting the re-siting outright left it reading `''`.
- *
- * Shapes read: a bare string, `{ matchUpStatusCode }` (the policy vocabulary), and `{ code }` (a
- * string an earlier `updateMatchUpStatusCodes` wrapped). NOT the provenance shape — callers filter it
- * out with {@link isProjectedExitCode} first, and this function no longer resolves it either, so the
- * eviction holds even if a caller forgets.
- */
-function policyCodeString(code: any): string | undefined {
-  if (typeof code === 'string') return code || undefined;
-  if (isProjectedExitCode(code)) return undefined;
-  return code?.matchUpStatusCode ?? code?.code ?? undefined;
-}
-
 function applyPositionToMatchUp({
   updatedDrawPositions,
   sourceMatchUpStatus,
@@ -508,7 +481,23 @@ function applyPositionToMatchUp({
     matchUp.matchUpStatusCodes = matchUpStatusCodes;
     clearResolvedSideExitProvenance(matchUp);
   } else if (matchUp?.matchUpStatusCodes) {
-    updateMatchUpStatusCodes({
+    /**
+     * A LEGACY-ARRAY GATE ON A NATIVE WRITE — still here, and REMOVING IT IS MEASURED WRONG.
+     *
+     * `MATCHUP_STATUS_CODES_PER_SIDE.md` lists this inversion class among its decision sites, and P37's
+     * destination is that no behaviour derives from `matchUpStatusCodes`. This one does: the array decides
+     * whether the late-learned origin is recorded natively.
+     *
+     * Calling `recordSourceSideProvenance` unconditionally instead — on the reasoning that it refuses to
+     * attribute what it cannot, so the gate was redundant — fails **58 tests across 5 files** (measured
+     * 2026-09-27, together with the same removal in `removeSubsequentRoundsParticipant`):
+     * `transitionProperties` loses 54 cells across nine draw types, plus `correctionDivergence`,
+     * `crossStructureWinnerPositions` and two census replays. So the truthy array is standing in for a
+     * real condition — most likely *"this matchUp was carrying propagation state"* — and the conversion
+     * needs that condition identified rather than the gate deleted. It is the last decision read on this
+     * surface and it wants its own change.
+     */
+    recordSourceSideProvenance({
       inContextDrawMatchUps: refreshedMatchUps,
       sourceMatchUpStatus,
       sourceMatchUpId,
@@ -856,7 +845,7 @@ function propagateConsolationBye({
  * narrower `releaseAdvancedDrawPosition` because it also rewrites `matchUpStatus`, `winningSide` and
  * the codes on what it releases — results recorded over a contest that never happened.
  *
- * `inContextDrawMatchUps` must be threaded through: `updateMatchUpStatusCodes` dereferences it
+ * `inContextDrawMatchUps` must be threaded through: `recordSourceSideProvenance` dereferences it
  * unguarded, and omitting it converts the refusal into a TypeError.
  */
 function yieldSquattingPropagatedBye({
