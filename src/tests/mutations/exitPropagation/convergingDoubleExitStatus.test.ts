@@ -121,4 +121,8 @@ it('never persists a matchUpStatusCodes array containing a hole', () => {
       ).toEqual('string');
     }
   }
-});
+  // AN EXPLICIT TIMEOUT, because widening the seed list made the default one too tight. Six sweep
+  // schedules take ~6s in isolation and the 30s default looks like ample headroom — but under
+  // `verify:coverage` with the full suite contending it timed out in CI while passing locally, which is
+  // the worst way for a gate to fail. `correctionDivergence` carries the same note for the same reason.
+}, 180_000);
