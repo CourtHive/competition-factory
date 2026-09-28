@@ -43,9 +43,13 @@ const NEEDLE = 'matchUpStatusCodes';
  * `POLICY` — the scoring policy's own vocabulary, which is the tenant that stays.
  * `WRITE` — writes the array, deriving what it writes from provenance or retaining the policy tenant.
  * `PLUMBING` — passes a caller-supplied value through; decides nothing.
- * `DECISION` — reads the array to decide behaviour. **This list reached ZERO on 2026-09-28 and the check
- * below now REFUSES to let it grow again**, which is what makes CA's destination enforceable rather than
- * aspirational: *"we want to ultimately get away from dependance on any legacy arrays!"*
+ * `BOUNDARY` — reads a client's positionally-submitted array ONCE, at the input edge, and converts it into
+ *   a keyed form nothing downstream has to index. This is the opposite of a dependence: it is what ENDS
+ *   one. There should be exactly one such site, and it is `sideStatusCodes.splitStatusCodes`.
+ * `DECISION` — engine behaviour derives from the array's contents or shape. **This list reached ZERO on
+ * 2026-09-28 and the check below now REFUSES to let it grow again**, which is what makes CA's destination
+ * enforceable rather than aspirational: *"we want to ultimately get away from dependance on any legacy
+ * arrays!"*
  */
 const ALLOWED = {
   // the tenant that stays: the policy's code vocabulary
@@ -53,6 +57,11 @@ const ALLOWED = {
   'fixtures/policies/POLICY_SCORING_USTA.ts': 'POLICY',
   'fixtures/scoring/outcomes/toBePlayed.ts': 'WRITE — the blanking fixture',
   'types/tournamentTypes.ts': 'POLICY — the published field and its element union',
+
+  // the INPUT BOUNDARY: the one place a client's positional submission is read, and the place that makes
+  // every downstream reader keyed rather than positional
+  'mutate/matchUps/matchUpStatus/sideStatusCodes.ts':
+    'BOUNDARY — splitStatusCodes reads the submitted array once and stores it keyed by attribution',
 
   // the named helpers: the one place that decides what the array holds
   'mutate/matchUps/matchUpStatus/sideExitProvenance.ts':

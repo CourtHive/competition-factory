@@ -699,7 +699,13 @@ export function deriveStatusCodes(matchUp?: MatchUp): string[] {
     // that the detector judges against happens later still. Measured: the three findings it was aimed
     // at all survived. The side has to come from provenance, which is what this loop does.
     if (!carried || !isDoubleExit(entry?.previousMatchUpStatus) || codes[sideNumber - 1]) continue;
-    placeCodeAtSide(codes, sideNumber, exitOutcomeCode({ matchUpStatus: carried }));
+    // THE REASON WINS OVER THE DERIVED OUTCOME CODE, because it already contains it: the policy's
+    // display for `DM` is `Def [cond]` and for `DQ` is `Def [dq]`, so emitting `DEF` as well would put
+    // two codes where the array has one slot per side. Where no reason was recorded, the outcome code
+    // is still the right thing to show. The reason is read from `sideStatusCodes` — side-KEYED — so this
+    // projection never consults the array it is building.
+    const reason = matchUp?.sideStatusCodes?.[sideNumber];
+    placeCodeAtSide(codes, sideNumber, reason ?? exitOutcomeCode({ matchUpStatus: carried }));
   }
 
   return codes;

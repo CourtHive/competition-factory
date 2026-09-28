@@ -1,3 +1,4 @@
+import { getSideStatusCode } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -39,6 +40,7 @@ export function progressExitStatus({
   propagateExitStatus,
   sourceMatchUpStatus,
   loserParticipantId,
+  sourceWinningSide,
   sourceMatchUpId,
   tournamentRecord,
   drawDefinition,
@@ -69,6 +71,7 @@ export function progressExitStatus({
   // (the participant has already been fed/advanced by directLoser at this point)
   const inContextMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps;
   const updatedLoserMatchUp = inContextMatchUps?.find((m) => m.matchUpId === loserMatchUp?.matchUpId);
+  const sourceMatchUp = inContextMatchUps?.find((m) => m.matchUpId === sourceMatchUpId);
 
   if (!updatedLoserMatchUp?.matchUpId) {
     return decorateResult({ result: { error: MISSING_MATCHUP }, stack });
@@ -100,6 +103,9 @@ export function progressExitStatus({
 
   let loserMatchUpStatus = carryOverMatchUpStatus;
   let winningSide: number | undefined = undefined;
+  // the side the carried exit arrives at, and the reason it brings — recorded after the state write
+  let carriedReasonSide: number | undefined = undefined;
+  let sourceCodeForSide: string | undefined = undefined;
   // CODES first-class: the side that EXITED, attributed to the matchUp whose result produced the
   // exit. Written alongside the legacy string codes, exactly as doubleExitAdvancement does — see
   // sideExitProvenance.ts on why the legacy write is not yet gated.
@@ -110,7 +116,34 @@ export function progressExitStatus({
     const opponentIsBye = updatedLoserMatchUp.sides?.find((s) => s.sideNumber === opponentSideNumber)?.bye;
     const participantsCount =
       updatedLoserMatchUp.sides?.reduce((count, s) => (s?.participantId ? count + 1 : count), 0) ?? 0;
-    const sourceCode = sourceMatchUpStatusCodes?.[0];
+    /**
+     * THE SOURCE'S REASON CODE, READ AT THE SIDE THAT EXITED — not at index 0.
+     *
+     * `matchUpStatusCodes` is positional by side, so the reason for the side that walked over sits at
+     * that side's index. This read was `sourceMatchUpStatusCodes?.[0]`, which is right only when the
+     * exiting side happens to be side 1. Measured 2026-09-28 on a `DEFAULTED` feeding a consolation that
+     * already held a double walkover, the same scenario twice with the reason recorded against whichever
+     * side exited:
+     *
+     *   side 1 exits, reason at index 0   source ['DM']      consolation ['WO','DM']   carried
+     *   side 2 exits, reason at index 1   source ['','DM']   consolation ['WO','']     DROPPED
+     *
+     * `sideExitProvenance` was byte-identical across both runs, so nothing was unknowable — the engine
+     * had the exiting side and read the wrong slot anyway.
+     *
+     * PREFERRED SOURCE: the source's own `sideStatusCodes`, keyed by side, which `modifyMatchUpScore`
+     * writes at the scoring boundary. The positional reads below it are the fallback for a record stored
+     * before that field existed — same side index first, then index 0 for a double exit, where both sides
+     * exited and the first slot is as good an answer as the second. `sourceWinningSide` is threaded
+     * through the context for this, having already been computed for `directLoser`.
+     */
+    const sourceExitingSide = sourceWinningSide ? 3 - sourceWinningSide : 1;
+    const sourceCode =
+      getSideStatusCode({ matchUp: sourceMatchUp, sideNumber: sourceExitingSide }) ??
+      sourceMatchUpStatusCodes?.[sourceExitingSide - 1] ??
+      sourceMatchUpStatusCodes?.[0];
+    carriedReasonSide = loserParticipantSide.sideNumber;
+    sourceCodeForSide = sourceCode;
 
     // RULE 1 — opponent is a BYE: the participant advances through it (the BYE
     // cascade has already moved them forward), so this matchUp stays a BYE and we
@@ -228,6 +261,19 @@ export function progressExitStatus({
     finalWinningSide: winningSide,
     finalStatusCodes: JSON.stringify(statusCodes),
   });
+
+  /**
+   * THE REASON RIDES WITH THE SIDE INTO THE CONNECTED STRUCTURE.
+   *
+   * `setMatchUpState` writes the positional array as the display projection; this records the same fact
+   * where it can be read without an index, on the side the exit actually arrived at. Merged rather than
+   * replaced: the other side may already carry its own reason from an earlier propagation, which is RULE
+   * 4's convergence.
+   */
+  if (carriedReasonSide && sourceCodeForSide) {
+    const existing = loserMatchUp.sideStatusCodes ?? {};
+    loserMatchUp.sideStatusCodes = { ...existing, [carriedReasonSide]: sourceCodeForSide };
+  }
 
   const result = setMatchUpState({
     matchUpStatus: loserMatchUpStatus,
