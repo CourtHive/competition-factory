@@ -2,6 +2,7 @@
  * Coverage tests for doubleExitAdvancement.ts
  * Targets uncovered lines: 81-149, 396-409, 429-476, 487-525
  */
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -26,6 +27,7 @@ describe('doubleExitAdvancement coverage', () => {
       tournamentRecord,
       drawIds: [id],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawId,
@@ -67,6 +69,7 @@ describe('doubleExitAdvancement coverage', () => {
     // This also triggers the pairedPreviousMatchUpIsDoubleExit branch (lines 487-525).
     const drawId = 'elim-cascade';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -101,6 +104,7 @@ describe('doubleExitAdvancement coverage', () => {
     // Tests lines 85-86 where DOUBLE_EXIT = DOUBLE_DEFAULT and EXIT = DEFAULTED.
     const drawId = 'dd-cascade';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -136,6 +140,7 @@ describe('doubleExitAdvancement coverage', () => {
     // gets a WALKOVER exit which exercises the bye-related branches.
     const drawId = 'fmlc-bye';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -192,6 +197,7 @@ describe('doubleExitAdvancement coverage', () => {
     // where DOUBLE_EXIT = DOUBLE_DEFAULT and EXIT = DEFAULTED
     const drawId = 'dd-fmlc-empty';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -226,6 +232,7 @@ describe('doubleExitAdvancement coverage', () => {
     // pairedPreviousMatchUpIsDoubleExit (lines 487-525) recursively.
     const drawId = 'quad-dwo';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -263,6 +270,7 @@ describe('doubleExitAdvancement coverage', () => {
       tournamentRecord,
       drawIds: [id],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawId,
@@ -313,6 +321,7 @@ describe('doubleExitAdvancement coverage', () => {
     // Three adjacent DWOs in FMLC create cascading effects in consolation structure
     const drawId = 'fmlc-three';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -348,6 +357,7 @@ describe('doubleExitAdvancement coverage', () => {
     // to ensure each branch is hit in sequence
     const drawId = 'seq';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {

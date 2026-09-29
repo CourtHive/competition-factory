@@ -1,4 +1,5 @@
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -51,6 +52,7 @@ describe('a propagated exit downstream does not make the source unclearable', ()
   const build = () => {
     setSubscriptions({});
     const generated: any = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId }],
       nonRandom: 20223109,
       setState: true,

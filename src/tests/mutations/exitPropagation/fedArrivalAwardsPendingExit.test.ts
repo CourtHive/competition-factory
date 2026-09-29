@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
@@ -25,6 +26,7 @@ it('awards a pending exit to the participant who arrives into its fed seat', () 
   setSubscriptions({});
   const drawId = 'fed-arrival';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: MODIFIED_FEED_IN_CHAMPIONSHIP, participantsCount: 5, drawSize: 8, drawId }],
     nonRandom: 268,
     setState: true,

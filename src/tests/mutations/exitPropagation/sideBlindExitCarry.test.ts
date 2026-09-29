@@ -1,4 +1,5 @@
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -84,6 +85,7 @@ describe('a produced exit carries when the opponent has already arrived', () => 
     const drawId = 'side-blind-compass';
     setSubscriptions({});
     const generated: any = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId }],
       nonRandom: 20223109,
       setState: true,
@@ -119,6 +121,7 @@ describe('a produced exit carries when the opponent has already arrived', () => 
     const drawId = 'side-blind-olympic';
     setSubscriptions({});
     const generated: any = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawType: OLYMPIC, drawSize: 8, participantsCount: 6 }],
       nonRandom: 1,
       setState: true,
@@ -142,6 +145,7 @@ describe('a produced exit carries when the opponent has already arrived', () => 
     const drawId = 'side-blind-olympic-pending';
     setSubscriptions({});
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawType: OLYMPIC, drawSize: 8, participantsCount: 6 }],
       nonRandom: 1,
       setState: true,
@@ -176,6 +180,7 @@ describe('a produced exit carries when the opponent has already arrived', () => 
       const drawId = `side-blind-order-${exitLast ? 'last' : 'first'}`;
       setSubscriptions({});
       mocksEngine.generateTournamentRecord({
+        policyDefinitions: PRODUCED_EXIT_POLICY,
         drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId }],
         nonRandom: 20223109,
         setState: true,
@@ -215,6 +220,7 @@ describe('a produced exit carries when the opponent has already arrived', () => 
       const drawId = `side-blind-integrity-${order}`;
       setSubscriptions({});
       mocksEngine.generateTournamentRecord({
+        policyDefinitions: PRODUCED_EXIT_POLICY,
         drawProfiles: [{ drawId, drawType: OLYMPIC, drawSize: 8, participantsCount: 6 }],
         nonRandom: 1,
         setState: true,

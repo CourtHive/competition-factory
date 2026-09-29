@@ -1,6 +1,7 @@
 import { getExitSides, isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { ORIGIN_ON_UNDECIDED_MATCHUP } from '@Query/drawDefinition/getStructureInconsistencies';
 import { MATRIX_CELLS, playMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -59,6 +60,7 @@ it('counts a side as carrying an exit only when its entry says so', () => {
 function generate(drawId: string) {
   setSubscriptions({});
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, idPrefix: 'origin', drawId }],
     nonRandom: 1,
   });

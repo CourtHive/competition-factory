@@ -73,9 +73,19 @@ const enabled = process.env.STALL_BUDGET === '1';
  * The first group is CA's rule of 2026-09-27 — *"if two BYEs encounter each other then a BYE is
  * produced for the next matchUp"* — which is `doubleExitPropagateBye`, punch-list **P30**, measured
  * unshippable as a default on the same day for 13 `BYE_WON` violations.
+ *
+ * **LOWERED 2026-09-29: 68 -> 4 cells, 141 -> 4 findings.** `doubleExitPropagateBye` is ON by default
+ * (CA: *"two BYEs meeting always produces a BYE"*). The family this file described above as needing
+ * a ruling got one, and 137 of its 141 findings were seats that are now BYEs.
+ *
+ * The four that remain are one shape: DOUBLE_ELIMINATION 16/16, the Main final decided by a produced
+ * exit, its winner alone in the Decider. CA ruled on that the same day — a decider that is not needed
+ * is a `DEAD_RUBBER` — and `reconcileDecider` applies it when the final is SCORED. Here the final is
+ * decided by an ARRIVAL, which does not pass through it. That is the whole of what stands between
+ * this budget and zero.
  */
-const BUDGET_CELLS = 68;
-const BUDGET_FINDINGS = 141;
+const BUDGET_CELLS = 4;
+const BUDGET_FINDINGS = 4;
 
 const occupantsOf = (matchUp: any) => (matchUp?.sides ?? []).filter((s: any) => s?.participantId && !s?.bye);
 const playableShape = (m: any) => !m.winningSide && (!m.matchUpStatus || m.matchUpStatus === 'TO_BE_PLAYED');

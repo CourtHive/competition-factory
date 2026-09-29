@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -43,6 +44,7 @@ const CASES = [
 it.each(CASES)('carries the reason code when $label', ({ winningSide, codes }) => {
   const drawId = `reason-side-${winningSide}`;
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix: 'matchUp' }],
     setState: true,
   });
@@ -105,6 +107,7 @@ it.each([
 ])('files a $status reason against the MATCH, not a side', ({ status, code }) => {
   const drawId = `match-level-${code}`;
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 8, idPrefix: 'mL' }],
     setState: true,
   });

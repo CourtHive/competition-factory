@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { removeAssignment } from '@Tests/mutations/drawDefinitions/testingUtilities';
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import POLICY_SCORING_USTA from '@Fixtures/policies/POLICY_SCORING_USTA';
@@ -64,6 +65,7 @@ test.for([
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
     setState: true,
   });
@@ -100,6 +102,7 @@ test(`it sets the correct status codes in a consolation match when a WO is propa
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
     setState: true,
   });
@@ -199,6 +202,7 @@ test.for([
     const idPrefix = 'matchUp';
     const drawId = 'drawId';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
       setState: true,
     });
@@ -244,6 +248,7 @@ test('can propagate a default to a consolation match with already the result of 
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
     setState: true,
   });
@@ -304,6 +309,7 @@ test('can propagate an exit status and progress the already existing opponent in
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
     setState: true,
   });
@@ -378,6 +384,7 @@ test('can propagate an exit status in a compass draw', () => {
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       // uuids are popped and therefore assigned in reverse order
       // in this instance the uuids are assigned to structureIds in the order they are generated
@@ -484,6 +491,7 @@ test('can automatically progress the winner in a feed in round that already had 
   const idPrefix = 'm';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       {
         drawId,
@@ -575,6 +583,7 @@ test('FMLC: propagated WO against a consolation BYE stays a BYE and the exit cas
   const idPrefix = 'm';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
     setState: true,
   });
@@ -651,6 +660,7 @@ test('FMLC: WO player advanced into a pre-seeded consolation slot fires a modify
   const idPrefix = 'm';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
     setState: true,
   });
@@ -709,6 +719,7 @@ test('FMLC: propagated WO cascades through a consolation BYE, then a later fall-
   //   keeps the position-aware code, and only the winner advances (no loser leak).
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix: 'm' }],
     setState: true,
   });
@@ -802,6 +813,7 @@ const structureMatchUpAt = (drawId, structureId, roundNumber, roundPosition) =>
 function buildAutoResolveCascade({ exitStatus = WALKOVER, exitCode = 'W1' } = {}) {
   const drawId = 'undoDrawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix: 'm' }],
     setState: true,
   });
@@ -929,6 +941,7 @@ test('FMLC: resetting a source while its propagated exit is still PENDING is all
   setSubscriptions({});
   const drawId = 'pendingUndo';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix: 'm' }],
     setState: true,
   });
@@ -986,6 +999,7 @@ test('FMLC: resetting a source while its propagated exit is still PENDING is all
 function consolationHasPropagatedExit({ suffix, policyDefinitions, propagateExitStatus }) {
   const drawId = `policyGate-${suffix}`;
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix: 'm' }],
     setState: true,
   });
@@ -1048,6 +1062,7 @@ test('FMLC real-match fall-through: winningSide and exit code follow the partici
   const drawId = 'realFallThrough';
   const matchUpFormat = 'SET1-S:8/TB7@7';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, matchUpFormat, idPrefix: 'm' }],
     setState: true,
   });
@@ -1112,6 +1127,7 @@ test('FMLC real-match fall-through: winningSide and exit code follow the partici
 test('COMPASS: a pending exit on a non-feed back-draw round does not block scoring the matchUp that feeds it', () => {
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 16, participantsCount: 10, drawType: COMPASS, idPrefix: 'm' }],
     setState: true,
   });
@@ -1181,6 +1197,7 @@ test('COMPASS: a pending exit on a non-feed back-draw round does not block scori
 test('COMPASS: once the back-draw exit has RESOLVED, the fall-through source may still be reset', () => {
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 16, participantsCount: 10, drawType: COMPASS, idPrefix: 'm' }],
     setState: true,
   });

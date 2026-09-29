@@ -40,7 +40,15 @@ const at = (structureName: string, roundPosition: number, outcome: any): Step =>
 function signatures(drawType: string, drawSize: number, steps: Step[], drawId: string) {
   setSubscriptions({});
   const { signature, refusals } = runPath(
-    { drawType, drawSize, participantsCount: drawSize, seed: SEED, propagateExitStatus: true },
+    {
+      // these are the shapes a double exit leaves when it produces an EXIT — see `PRODUCED_EXIT_POLICY`
+      doubleExitPropagateBye: false,
+      participantsCount: drawSize,
+      propagateExitStatus: true,
+      seed: SEED,
+      drawType,
+      drawSize,
+    },
     steps,
     drawId,
   );
@@ -62,7 +70,7 @@ it('a seat advanced by a produced exit survives the removal of whoever later sat
     );
 
     // CONTROL: the advancement under test exists — the produced exit advanced the seat beside it
-    expect(untouched['Consolation|2|1'], `${drawType}: the pending winner's seat advanced`).toMatch(/dp=[\d.]+/);
+    expect(untouched['Consolation|2|1'], `${drawType}: the pending winner's seat advanced`).toMatch(/dp=(BYE\.)?\d+/);
     expect(untouched['Consolation|1|1']).toMatch(/^WALKOVER ws=2 /);
 
     expect(scoredAndCleared, `${drawType}: a cleared result leaves no trace`).toEqual(untouched);

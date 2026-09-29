@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -27,6 +28,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 function compass() {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId: 'A' }],
     nonRandom: 20223109,
   });

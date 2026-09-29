@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test, describe } from 'vitest';
@@ -10,6 +11,7 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 describe('doubleExitAdvancement - uncovered branches', () => {
   test('DOUBLE_DEFAULT propagation in elimination draw', () => {
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -39,6 +41,7 @@ describe('doubleExitAdvancement - uncovered branches', () => {
 
   test('double exit with BYE participant - advances bye through consolation', () => {
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -70,6 +73,7 @@ describe('doubleExitAdvancement - uncovered branches', () => {
   test('consecutive double walkovers propagate through multiple rounds', () => {
     const drawId = 'cascade';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -102,6 +106,7 @@ describe('doubleExitAdvancement - uncovered branches', () => {
 
   test('double walkover with FMLC and doubleExitPropagateBye policy', () => {
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -136,6 +141,7 @@ describe('doubleExitAdvancement - uncovered branches', () => {
   test('DOUBLE_DEFAULT in FMLC generates DEFAULTED exits in consolation', () => {
     const drawId = 'dd-fmlc';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -170,6 +176,7 @@ describe('doubleExitAdvancement - uncovered branches', () => {
   test('replacing completed matchUp with DOUBLE_WALKOVER triggers doubleExitAdvancement', () => {
     const drawId = 'replace';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -216,6 +223,7 @@ describe('doubleExitAdvancement - uncovered branches', () => {
   test('existing empty exit in loser matchUp converts to DOUBLE_EXIT', () => {
     const drawId = 'empty-exit';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -256,6 +264,7 @@ describe('doubleExitAdvancement - uncovered branches', () => {
     // FMLC with enough rounds to produce a feed round
     const drawId = 'feed';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {
@@ -335,6 +344,7 @@ describe('doubleExitAdvancement - uncovered branches', () => {
   test('double walkover at R1P1 followed by completed at adjacent position', () => {
     const drawId = 'adj';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       setState: true,
       drawProfiles: [
         {

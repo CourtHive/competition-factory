@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -48,6 +49,7 @@ describe('Phase 1: Single Elimination exit status clearing', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawSize: 4 }],
     });
 
@@ -97,6 +99,7 @@ describe('Phase 1: Single Elimination exit status clearing', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawSize: 4 }],
     });
 
@@ -143,6 +146,7 @@ describe('Phase 1: Single Elimination exit status clearing', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawSize: 8,
@@ -194,6 +198,7 @@ describe('Phase 1: Single Elimination exit status clearing', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawSize: 8,
@@ -227,6 +232,7 @@ describe('Phase 1: Single Elimination exit status clearing', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawSize: 4,
@@ -274,6 +280,7 @@ describe('Phase 1: Single Elimination exit status clearing', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           policyDefinitions: {
@@ -333,6 +340,7 @@ describe('Phase 1: Single Elimination exit status clearing', () => {
 describe('Phase 2: FMLC cross-structure exit status clearing', () => {
   test('2.1 Clear DOUBLE_WALKOVER in Main R1 — consolation WALKOVER removed', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -378,6 +386,7 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -456,6 +465,7 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
   test('2.3 Clear one of two adjacent WOWOs — the surviving WOWO keeps its exit', () => {
     const drawId = 'fmlc23';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -530,6 +540,7 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
   test('2.4 Clear both adjacent WOWOs sequentially', () => {
     const drawId = 'fmlc24';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -604,6 +615,7 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -674,6 +686,7 @@ describe('Phase 2: FMLC cross-structure exit status clearing', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -737,6 +750,7 @@ describe('Phase 3: COMPASS multi-hop exit status clearing', () => {
   test('3.1 Clear DOUBLE_WALKOVER in East R1P1 (drawSize 8) — cascade to West and South', () => {
     const drawId = 'compass31';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawType: COMPASS, drawSize: 8, idPrefix: 'm' }],
       setState: true,
     });
@@ -784,6 +798,7 @@ describe('Phase 3: COMPASS multi-hop exit status clearing', () => {
   test('3.2 Blocked: clearing East DOUBLE_WALKOVER when West has active downstream', () => {
     const drawId = 'compass32';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawId,
@@ -854,6 +869,7 @@ describe('Phase 3: COMPASS multi-hop exit status clearing', () => {
     const drawId = 'compass33';
     const idPrefix = 'mu';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawId,
@@ -910,6 +926,7 @@ describe('Phase 3: COMPASS multi-hop exit status clearing', () => {
   test('3.4 Clear DOUBLE_WALKOVER in West — verify East results untouched', () => {
     const drawId = 'compass34';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawId,
@@ -964,6 +981,7 @@ describe('Phase 3: COMPASS multi-hop exit status clearing', () => {
   test('3.5 DOUBLE_DEFAULT in East R1P2 (drawSize 8) — BYE removal cascade to South', () => {
     const drawId = 'compass35';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawType: COMPASS, drawSize: 8, idPrefix: 'm' }],
       setState: true,
     });
@@ -1004,6 +1022,7 @@ describe('Phase 3: COMPASS multi-hop exit status clearing', () => {
   test('3.6 Two DOUBLE_WALKOVERs in East R1P1 and R1P2 — effects on East R2P1 and clear one', () => {
     const drawId = 'compass36';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawType: COMPASS, drawSize: 8, idPrefix: 'm' }],
       setState: true,
     });
@@ -1061,6 +1080,7 @@ describe('Phase 4: OLYMPIC, CURTIS, FRLC, DOUBLE_ELIMINATION exit status clearin
   test('4.1 OLYMPIC: Clear DOUBLE_WALKOVER in East R1P1 (drawSize 8) — West and South cascade', () => {
     const drawId = 'oly41';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawType: OLYMPIC, drawSize: 8, idPrefix: 'oly' }],
       setState: true,
     });
@@ -1097,6 +1117,7 @@ describe('Phase 4: OLYMPIC, CURTIS, FRLC, DOUBLE_ELIMINATION exit status clearin
   test('4.2 OLYMPIC: Clear DOUBLE_WALKOVER in East R2P1 (SF) — R3 cascade, North receives WALKOVER', () => {
     const drawId = 'oly42';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawId,
@@ -1157,6 +1178,7 @@ describe('Phase 4: OLYMPIC, CURTIS, FRLC, DOUBLE_ELIMINATION exit status clearin
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: CURTIS_CONSOLATION,
@@ -1199,6 +1221,7 @@ describe('Phase 4: OLYMPIC, CURTIS, FRLC, DOUBLE_ELIMINATION exit status clearin
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: CURTIS_CONSOLATION,
@@ -1266,6 +1289,7 @@ describe('Phase 4: OLYMPIC, CURTIS, FRLC, DOUBLE_ELIMINATION exit status clearin
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_ROUND_LOSER_CONSOLATION,
@@ -1311,6 +1335,7 @@ describe('Phase 4: OLYMPIC, CURTIS, FRLC, DOUBLE_ELIMINATION exit status clearin
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: DOUBLE_ELIMINATION,
@@ -1372,6 +1397,7 @@ describe('Phase 5: Edge cases', () => {
   test('5.1 Mixed exit types: DOUBLE_WALKOVER + DOUBLE_DEFAULT adjacent (FMLC)', () => {
     const drawId = 'edge51';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -1439,6 +1465,7 @@ describe('Phase 5: Edge cases', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawSize: 8 }],
     });
 
@@ -1496,6 +1523,7 @@ describe('Phase 5: Edge cases', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawSize: 8,
@@ -1566,6 +1594,7 @@ describe('Phase 5: Edge cases', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawSize: 16,
@@ -1616,6 +1645,7 @@ describe('Phase 5: Edge cases', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -1663,6 +1693,7 @@ describe('Phase 5: Edge cases', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawSize: 8,

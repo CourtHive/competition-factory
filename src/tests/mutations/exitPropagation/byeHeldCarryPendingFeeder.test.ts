@@ -1,4 +1,5 @@
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -51,6 +52,7 @@ describe('a produced exit carries past a BYE-held target when the opponent feede
   const generate = (drawId: string) => {
     setSubscriptions({});
     const result: any = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawType: OLYMPIC, drawSize: 8, participantsCount: 6 }],
       nonRandom: 1,
       setState: true,
@@ -174,6 +176,7 @@ describe('a produced exit carries past a BYE-held target when the opponent feede
     const drawId = 'carry-pending-compass';
     setSubscriptions({});
     const generated: any = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId }],
       nonRandom: 20223109,
       setState: true,
