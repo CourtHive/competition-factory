@@ -106,38 +106,43 @@ function sidesFor(profile: any, candidate: Candidate, drawPositions: any[], draw
 it.each([
   { drawType: FEED_IN_CHAMPIONSHIP_TO_SF, drawSize: 16, participantsCount: 16 },
   { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, participantsCount: 7 },
-])('$drawType: a leading hole never hides the surviving drawPosition', (profile) => {
-  const seedId = `hole-selection-seed-${profile.drawType}`;
-  const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ ...profile, drawId: seedId }],
-    completeAllMatchUps: true,
-    nonRandom: 1,
-  });
-  const candidates = twoPositionMatchUps(
-    tournamentRecord.events[0].drawDefinitions.find((draw: any) => draw.drawId === seedId),
-  );
+])(
+  '$drawType: a leading hole never hides the surviving drawPosition',
+  (profile) => {
+    const seedId = `hole-selection-seed-${profile.drawType}`;
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ ...profile, drawId: seedId }],
+      completeAllMatchUps: true,
+      nonRandom: 1,
+    });
+    const candidates = twoPositionMatchUps(
+      tournamentRecord.events[0].drawDefinitions.find((draw: any) => draw.drawId === seedId),
+    );
 
-  // control: a draw with no two-position matchUps beyond round 1 would make this vacuous
-  expect(candidates.length).toBeGreaterThan(0);
+    // control: a draw with no two-position matchUps beyond round 1 would make this vacuous
+    expect(candidates.length).toBeGreaterThan(0);
 
-  const offences: string[] = [];
-  let exercised = 0;
+    const offences: string[] = [];
+    let exercised = 0;
 
-  for (const candidate of candidates) {
-    const anchor = `${candidate.structureName}|${candidate.roundNumber}|${candidate.roundPosition}`;
-    const leading = sidesFor(profile, candidate, [undefined, candidate.drawPosition], `hs-lead-${anchor}`);
-    const trailing = sidesFor(profile, candidate, [candidate.drawPosition, undefined], `hs-trail-${anchor}`);
+    for (const candidate of candidates) {
+      const anchor = `${candidate.structureName}|${candidate.roundNumber}|${candidate.roundPosition}`;
+      const leading = sidesFor(profile, candidate, [undefined, candidate.drawPosition], `hs-lead-${anchor}`);
+      const trailing = sidesFor(profile, candidate, [candidate.drawPosition, undefined], `hs-trail-${anchor}`);
 
-    // the control that makes the assertion meaningful: the TRAILING-hole form resolves, so a
-    // failure below is about WHERE the hole is and not about the matchUp being unreadable
-    if (!trailing.some((drawPosition) => drawPosition === candidate.drawPosition)) continue;
-    exercised++;
+      // the control that makes the assertion meaningful: the TRAILING-hole form resolves, so a
+      // failure below is about WHERE the hole is and not about the matchUp being unreadable
+      if (!trailing.some((drawPosition) => drawPosition === candidate.drawPosition)) continue;
+      exercised++;
 
-    if (!leading.some((drawPosition) => drawPosition === candidate.drawPosition)) {
-      offences.push(`${anchor}: [undefined, ${candidate.drawPosition}] hydrated to sides ${JSON.stringify(leading)}`);
+      if (!leading.some((drawPosition) => drawPosition === candidate.drawPosition)) {
+        offences.push(`${anchor}: [undefined, ${candidate.drawPosition}] hydrated to sides ${JSON.stringify(leading)}`);
+      }
     }
-  }
 
-  expect(exercised).toBeGreaterThan(0);
-  expect(offences).toEqual([]);
-});
+    expect(exercised).toBeGreaterThan(0);
+    expect(offences).toEqual([]);
+    // a sweep of ~6s alone: the default 30s is lost to contention under verify:coverage in CI
+  },
+  180_000,
+);
