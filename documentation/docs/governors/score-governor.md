@@ -226,6 +226,39 @@ let result = scoreGovernor.generateScoreString({
 
 ---
 
+## getMaxSetScore
+
+Returns the largest games score a side can legally reach under a set format, or `undefined` where
+the format has no ceiling. Written for score-entry interfaces, which need to refuse a value that
+cannot become a legal score as it is typed.
+
+```js
+const maxScore = scoreGovernor.getMaxSetScore({
+  opponentScore, // optional - tightens the ceiling where the format has a tiebreak
+  tiebreakAt, // optional - games at which a tiebreak is played
+  tiebreakTo, // optional - target of a tiebreak-only set
+  setTo, // games required to win the set
+  winBy, // optional - game margin where there is no tiebreak; defaults to 2
+  timed, // optional - boolean; a timed set
+  NoAD, // optional - boolean; no-advantage
+});
+```
+
+| set format               | call                                            | result      |
+| ------------------------ | ----------------------------------------------- | ----------- |
+| `S:6/TB7`                | `{ setTo: 6, tiebreakAt: 6 }`                   | `7`         |
+| `S:6/TB7`, opponent on 3 | `{ setTo: 6, tiebreakAt: 6, opponentScore: 3 }` | `6`         |
+| `S:6/TB7@5`              | `{ setTo: 6, tiebreakAt: 5 }`                   | `6`         |
+| `S:6NOAD`                | `{ setTo: 6, NoAD: true }`                      | `6`         |
+| `S:6` (advantage set)    | `{ setTo: 6 }`                                  | `undefined` |
+| `S:TB10` (tiebreak-only) | `{ tiebreakTo: 10 }`                            | `undefined` |
+| timed set                | `{ timed: true }`                               | `undefined` |
+
+**`undefined` is an answer, not an error.** An advantage set, a tiebreak-only set and a timed set
+can each run past any number, so an interface that assumes a maximum will refuse legitimate scores.
+
+---
+
 ## getSetComplement
 
 Returns complementary sideScore given a `lowValue`, `tieBreakAt` and `setTo` details.
@@ -328,6 +361,62 @@ const format = scoreGovernor.parse({
 ```
 
 **Purpose:** Convert format code strings to structured format objects.
+
+---
+
+## retainScoreForFormat
+
+Returns which of the sets already entered survive a change of `matchUpFormat`, and which do not.
+It lets a scoring interface keep the work a format change did not touch instead of clearing the
+whole score.
+
+```js
+const { sets, discarded, reason, unchanged } = scoreGovernor.retainScoreForFormat({
+  previousMatchUpFormat, // optional - the format being moved FROM; pass it whenever it is known
+  matchUpFormat, // the format being moved TO
+  sets, // the sets entered so far, in set order
+});
+```
+
+| attribute   | value                                                                         |
+| ----------- | ----------------------------------------------------------------------------- |
+| `sets`      | the sets that survive, in order and untouched                                 |
+| `discarded` | the sets that do not, so a caller can say what is being lost                  |
+| `reason`    | why the first discarded set failed; present only when something was discarded |
+| `unchanged` | `true` when nothing was discarded                                             |
+
+The rule is applied to each set in order:
+
+1. A set past the new format's set count is discarded.
+2. A set whose format at that position has not changed is kept as it is, finished or part-entered.
+3. Any other set is kept only if it is a complete, legal set under the new format.
+
+Everything after the first discarded set is discarded with it. A set is kept or dropped whole, and
+nothing is ever rescaled: a 10-8 match tiebreak that becomes a `TB7` is discarded, not rewritten.
+
+```js
+const sets = [
+  { setNumber: 1, side1Score: 6, side2Score: 3 },
+  { setNumber: 2, side1Score: 4, side2Score: 6 },
+  { setNumber: 3, side1Score: 2, side2Score: 1 }, // part-entered
+];
+
+scoreGovernor.retainScoreForFormat({
+  previousMatchUpFormat: 'SET3-S:6/TB7',
+  matchUpFormat: 'SET3-S:6NOAD/TB7-F:TB10',
+  sets,
+});
+// {
+//   sets: [ set 1, set 2 ],
+//   discarded: [ set 3 ],
+//   reason: 'Tiebreak-only set winner must reach at least 10, got 2',
+//   unchanged: false,
+// }
+```
+
+Without `previousMatchUpFormat` rule 2 cannot apply, so every part-entered set is discarded.
+
+It does not decide whether to warn, ask or proceed; that is the caller's.
 
 ---
 

@@ -8,6 +8,7 @@ import { findStructure } from '@Acquire/findStructure';
 // constants and types
 import { DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 
 /**
  * A DECIDER IS PLAYED ONLY IF IT IS NEEDED, and says so when it is not.
@@ -33,16 +34,29 @@ import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
  *
  * ## It acts only when the FINAL's winner changes
  *
- * This runs at the end of every `setMatchUpStatus`, and returns at once unless the matchUp that was
- * just scored feeds a decider AND its `winningSide` is different from what it was. That is what
- * keeps the third clause of the rule true: clearing a DEAD_RUBBER and playing the decider is a
- * mutation of the DECIDER, which this never reacts to, so a result entered for fun stays.
+ * This runs at the end of every `setMatchUpStatus`, for each final whose `winningSide` is different
+ * from what it was before the mutation — see `getDeciderFinals`. That is what keeps the third clause
+ * of the rule true: clearing a DEAD_RUBBER and playing the decider is a mutation of the DECIDER,
+ * which this never reacts to, so a result entered for fun stays.
+ *
+ * ## The final need not be the matchUp that was scored
+ *
+ * A final can be decided by an ARRIVAL. When the Backdraw produces no champion its seat in the final
+ * holds a produced exit, and the final gets its `winningSide` when the Main champion arrives there —
+ * as a consequence of a result entered somewhere else. Asking only about the scored matchUp missed
+ * every one of those: the last four cells of `verify:stall-budget`, all DOUBLE_ELIMINATION 16/16,
+ * each a winner alone in a `TO_BE_PLAYED` decider. So the question is asked of the finals, by their
+ * state before and after, and not of the mutation.
  *
  * ## NEEDED is asked of the results, not of the draw type
  *
  * The decider is needed when the final's LOSER has lost only that once. Counting losses is the
  * definition of the format rather than a description of one bracket layout, so it holds for any
  * structure that feeds a matchUp from both sides of another.
+ *
+ * A final that was WON and has no loser — its other side was an exit — has nobody to send, so its
+ * decider is not needed either. The winner is seated there by the link, as both finalists are when
+ * the undefeated one wins, and the matchUp says `DEAD_RUBBER` for the same reason.
  *
  * ## Why `swapWinnerLoser` needed this and the ordinary path did not
  *
@@ -100,7 +114,7 @@ export function reconcileDecider({
           (side: any) => side.participantId === participantId && side.sideNumber !== matchUp.winningSide,
         ),
     ).length;
-  const needed = !loserId || lossesOutsideTheDecider(loserId) < 2;
+  const needed = !!loserId && lossesOutsideTheDecider(loserId) < 2;
   const matchUpStatus = winnerId && !needed ? DEAD_RUBBER : TO_BE_PLAYED;
 
   const holdsAResult = !!decider.winningSide || !!decider.score?.sets?.length;
@@ -117,6 +131,64 @@ export function reconcileDecider({
     matchUpStatus,
     event,
   });
+}
+
+/**
+ * The matchUps that feed a decider, with the `winningSide` each holds now.
+ *
+ * Read from the LINKS: a round whose winners and losers are both sent to the same other structure.
+ * A draw with no such pair of links returns nothing, which is every draw type but one, so the cost
+ * to `setMatchUpStatus` of asking is a scan of the links.
+ */
+export function getDeciderFinals(drawDefinition?: DrawDefinition): Map<string, number | undefined> {
+  const finals = new Map<string, number | undefined>();
+  const links: any[] = drawDefinition?.links ?? [];
+
+  for (const winnerLink of links.filter((link) => link.linkType === WINNER)) {
+    const { structureId, roundNumber } = winnerLink.source ?? {};
+    const targetStructureId = winnerLink.target?.structureId;
+    const feedsBoth = links.some(
+      (link) =>
+        link.linkType === LOSER &&
+        link.source?.structureId === structureId &&
+        link.source?.roundNumber === roundNumber &&
+        link.target?.structureId === targetStructureId,
+    );
+    if (!feedsBoth || targetStructureId === structureId) continue;
+
+    const { structure } = findStructure({ drawDefinition, structureId });
+    for (const matchUp of structure?.matchUps ?? []) {
+      if (matchUp.roundNumber === roundNumber) finals.set(matchUp.matchUpId, matchUp.winningSide);
+    }
+  }
+
+  return finals;
+}
+
+/** Settle the decider of every final whose winner is not what it was — see `reconcileDecider`. */
+export function reconcileDeciders({
+  tournamentRecord,
+  drawDefinition,
+  finalsBefore,
+  event,
+}: {
+  finalsBefore: Map<string, number | undefined>;
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  event?: Event;
+}): void {
+  if (!finalsBefore.size) return;
+
+  for (const [matchUpId, winningSide] of getDeciderFinals(drawDefinition)) {
+    if (winningSide === finalsBefore.get(matchUpId)) continue;
+    reconcileDecider({
+      winningSideBefore: finalsBefore.get(matchUpId),
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      event,
+    });
+  }
 }
 
 /**

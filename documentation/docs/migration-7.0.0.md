@@ -1772,59 +1772,41 @@ participant arrived, not an exit delivered into the matchUp.
 
 Any caller rendering a produced exit's target, and any caller gating on `getDrawInconsistencies`.
 
-## 24. [#4948](https://github.com/CourtHive/competition-factory/pull/4948) `matchUpStatusCodes` is typed, and its provenance tenant is deprecated
-
-_Step one of finishing the `sideExitProvenance` migration. **No runtime behaviour changes here** —
-this types a published field that was `any[]` and documents what is actually in it._
+## 24. [#4948](https://github.com/CourtHive/competition-factory/pull/4948) `matchUpStatusCodes` is typed, and carries scoring codes only
 
 ### What changed — `matchUpStatusCodes` is typed
 
-`MatchUp.matchUpStatusCodes` was declared `any[]`. It is now:
+`MatchUp.matchUpStatusCodes` was declared `any[]`. It is now typed, and what it holds is the scoring
+policy's vocabulary: one code per side, positionally.
 
-```ts
-export type MatchUpStatusCodeRecord = {
-  code?: string | number;
-  sideNumber?: number; // the array INDEX is not reliably the side
-  matchUpStatus?: MatchUpStatusUnion;
-  previousMatchUpStatus?: MatchUpStatusUnion;
-};
-export type MatchUpStatusCodeElement = string | number | MatchUpStatusCodeRecord;
+```js
+matchUp.matchUpStatusCodes; // ['', 'DM'] — side 2 defaulted, for misconduct
 ```
 
-The array has **two tenants** and four element shapes:
-
-1. a **reason code** the client submitted, as a bare string (`'OA'`) — the scoring policy's
-   vocabulary. Legitimate, and it stays.
-2. the same reason code **wrapped**, so the engine can stamp propagation context onto it.
-3. per-side exit **provenance**. **DEPRECATED — read `sideExitProvenance` instead.**
-4. a **reserved slot** — `{ sideNumber }` and nothing else, recording a side whose origin is not yet
-   known. It is NOT an exit; reading it as one put a walkover badge on an empty chair (reported from
-   TMX 2026-09-20).
+That positional contract is what a scoring dialog submits and what a client displays, and it has not
+moved.
 
 ### Who is affected — TypeScript assignments to `matchUpStatusCodes`
 
-Anyone assigning to `matchUpStatusCodes` in TypeScript. `any[]` accepted anything; the union does
-not. If you are writing scoring reason codes, emit strings — that is tenant 1 and the shape
-`modifyMatchUpScore` already documents.
+Anyone assigning to `matchUpStatusCodes` in TypeScript. `any[]` accepted anything; the typed array
+does not. Emit strings — the shape `modifyMatchUpScore` documents.
 
-**If you read exit provenance out of this array, read `sideExitProvenance` instead.** It keys by
-`sideNumber` rather than using the array index as a side, fixes the element shape, and carries
-`sourceMatchUpId`.
+### Where to read what the array used to be asked
 
-### What this step did not do — and what 7.x went on to do
+| question                                                                    | read                                                |
+| --------------------------------------------------------------------------- | --------------------------------------------------- |
+| which side exited, and what produced it                                     | `matchUp.sideExitProvenance`, keyed by `sideNumber` |
+| which reason code belongs to which side                                     | `matchUp.sideStatusCodes`, keyed by `sideNumber`    |
+| the reason for a result nobody won (`ABANDONED`, `CANCELLED`, `INCOMPLETE`) | `matchUp.matchUpStatusCode`                         |
+| what to display                                                             | `matchUp.matchUpStatusCodes`                        |
 
-This step was additive: the array was typed and the provenance tenant marked deprecated, but the
-tenant was still written.
+```js
+matchUp.sideExitProvenance;
+// { 2: { previousMatchUpStatus: 'DOUBLE_DEFAULT', matchUpStatus: 'DEFAULTED', sourceMatchUpId: '…' } }
 
-A later 7.x release evicted it. `matchUpStatusCodes` now carries the scoring policy's vocabulary
-alone, positionally by side (`['WO', 'W1']`), and that contract is unchanged. Exit provenance lives
-in `sideExitProvenance`, keyed by `sideNumber`. Nothing in the engine reads the array to decide
-behaviour, and a `verify:exit-tenant` check keeps it that way.
+matchUp.sideStatusCodes; // { 2: 'DM' }
+matchUp.matchUpStatusCode; // 'OA'
+```
 
-### A defect this typing surfaced
-
-`updateMatchUpStatusCodes` wrapped bare codes with `isString(code) || !isNaN(code)`, which is wrong
-at both edges: `isNaN(null)` is `false`, so a null element was wrapped (correct — `[null, null]` is a
-shape this array has genuinely been persisted with), while `isNaN(undefined)` is `true`, so an
-undefined element fell through and **threw** on the following `.sideNumber` read. It now asks
-whether the element is a record, which is what the union discriminates on.
+**Do not index `matchUpStatusCodes` to decide which side did something.** Its index is a display
+position. Nothing in the engine reads the array to decide behaviour.

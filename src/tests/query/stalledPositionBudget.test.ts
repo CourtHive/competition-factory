@@ -1,4 +1,5 @@
 import { MATRIX_CELLS, cellLabel, playMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
 import { getDrawDefinition } from '@Tests/testHarness/exitPropagation/transitions';
@@ -83,9 +84,28 @@ const enabled = process.env.STALL_BUDGET === '1';
  * is a `DEAD_RUBBER` — and `reconcileDecider` applies it when the final is SCORED. Here the final is
  * decided by an ARRIVAL, which does not pass through it. That is the whole of what stands between
  * this budget and zero.
+ *
+ * **LOWERED 2026-09-29: 4 -> 0 cells, 4 -> 0 findings.** The four were one shape: DOUBLE_ELIMINATION
+ * 16/16, the Main final decided by an ARRIVAL and its winner alone in a `TO_BE_PLAYED` Decider. The
+ * decider of such a final is a `DEAD_RUBBER` now (`reconcileDecider`), and a `DEAD_RUBBER` strands
+ * nobody. Pinned by `deciderReachedByArrival.test.ts`.
+ *
+ * ## IT IS AT ZERO AND THE RULE IS STILL A WARNING — the promotion is CA's call, not this file's
+ *
+ * The header says to promote the rule to `error` and delete this file at zero. The zero is of the
+ * DEFAULT policy. With `doubleExitPropagateBye: false` — which a consumer may set, and which 63
+ * tests name — the same matrix still strands people, and an `error` would turn `valid` false on
+ * every one of those draws. That is a change to what consumers see, so it is not taken here.
+ *
+ * Until it is ruled, this file is an EQUALITY at zero, and it carries its own proof that the
+ * detector can still fire: one cell played under the produced-exit policy, where a stall remains. A
+ * ceiling of zero over a detector that had been switched off would pass, and would say nothing.
  */
-const BUDGET_CELLS = 4;
-const BUDGET_FINDINGS = 4;
+const BUDGET_CELLS = 0;
+const BUDGET_FINDINGS = 0;
+
+/** DOUBLE_ELIMINATION 16/13: under the produced-exit policy four participants wait in one chain */
+const LIVENESS_SEED = 117;
 
 const occupantsOf = (matchUp: any) => (matchUp?.sides ?? []).filter((s: any) => s?.participantId && !s?.bye);
 const playableShape = (m: any) => !m.winningSide && (!m.matchUpStatus || m.matchUpStatus === 'TO_BE_PLAYED');
@@ -139,11 +159,18 @@ test.skipIf(!enabled)(
     expect(cellsWithStall.length, `cells with a stall (was ${BUDGET_CELLS})`).toBeLessThanOrEqual(BUDGET_CELLS);
     expect(findings, `total stalls (was ${BUDGET_FINDINGS})`).toBeLessThanOrEqual(BUDGET_FINDINGS);
 
-    // AND IT MUST STILL BITE. A budget with no population left is a gate asserting nothing, so it
-    // fails loudly and tells the next reader to promote the rule to `error` rather than sit at zero.
+    // AND IT MUST STILL BITE. The population is zero, so the proof that the detector is awake is a
+    // cell where a stall is known to remain: the same matrix, under the policy that produces exits.
+    const livenessCell = MATRIX_CELLS.find(({ seed }) => seed === LIVENESS_SEED);
+    expect(livenessCell).toBeDefined();
+    expect(playMatrixCell(livenessCell as any, 'budget-liveness', 'exits', PRODUCED_EXIT_POLICY)).toEqual(true);
+    const liveness: any = getDrawInconsistencies({
+      drawDefinition: getDrawDefinition('budget-liveness'),
+      drawId: 'budget-liveness',
+    });
     expect(
-      cellsWithStall.length,
-      'the stall population reached ZERO — promote STALLED_POSITION to severity error and delete this budget',
+      (liveness?.inconsistencies ?? []).filter((i: any) => i.issueType === STALLED_POSITION).length,
+      'the detector reported nothing where a stall is known to remain',
     ).toBeGreaterThan(0);
   },
   1_800_000,

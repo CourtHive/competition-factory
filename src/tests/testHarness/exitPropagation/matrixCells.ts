@@ -1,5 +1,5 @@
-import { nextPlayable, playForward, step } from './driver';
 import { setSubscriptions } from '@Global/state/globalState';
+import { nextPlayable, playForward, step } from './driver';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants
@@ -94,9 +94,15 @@ export const cellExitOutcome = (exitStatus: string): any => {
  * exhaustion with no exit cannot have stranded anybody, which is what makes it a falsification arm
  * rather than a second sample.
  */
-export function playMatrixCell(cell: MatrixCell, drawId: string, arm: 'exits' | 'control' = 'exits'): boolean {
+export function playMatrixCell(
+  cell: MatrixCell,
+  drawId: string,
+  arm: 'exits' | 'control' = 'exits',
+  policyDefinitions?: any,
+): boolean {
   setSubscriptions({});
   const { drawIds } = mocksEngine.generateTournamentRecord({
+    ...(policyDefinitions ? { policyDefinitions } : {}),
     drawProfiles: [
       { drawId, drawType: cell.drawType, drawSize: cell.drawSize, participantsCount: cell.participantsCount },
     ],
