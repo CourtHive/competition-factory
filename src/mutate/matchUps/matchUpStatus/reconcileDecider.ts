@@ -9,6 +9,8 @@ import { findStructure } from '@Acquire/findStructure';
 import { DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
+import { ResultType } from '@Types/factoryTypes';
 
 /**
  * A DECIDER IS PLAYED ONLY IF IT IS NEEDED, and says so when it is not.
@@ -79,21 +81,21 @@ export function reconcileDecider({
   winningSideBefore?: number;
   matchUpId?: string;
   event?: Event;
-}): void {
-  if (!drawDefinition || !matchUpId) return;
+}): ResultType {
+  if (!drawDefinition || !matchUpId) return { ...SUCCESS };
 
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
   const final: any = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
-  if (!final || final.collectionId || final.winningSide === winningSideBefore) return;
+  if (!final || final.collectionId || final.winningSide === winningSideBefore) return { ...SUCCESS };
 
   const { winnerMatchUp, loserMatchUp } =
     positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId })?.targetMatchUps ?? {};
   const feedsOneMatchUp = winnerMatchUp?.matchUpId && winnerMatchUp.matchUpId === loserMatchUp?.matchUpId;
-  if (!feedsOneMatchUp || winnerMatchUp.structureId === final.structureId) return;
+  if (!feedsOneMatchUp || winnerMatchUp.structureId === final.structureId) return { ...SUCCESS };
 
   const decider = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === winnerMatchUp.matchUpId);
-  if (!decider) return;
+  if (!decider) return { ...SUCCESS };
 
   const participantOn = (sideNumber?: number) =>
     (final.sides ?? []).find((side: any) => side.sideNumber === sideNumber)?.participantId;
@@ -118,9 +120,11 @@ export function reconcileDecider({
   const matchUpStatus = winnerId && !needed ? DEAD_RUBBER : TO_BE_PLAYED;
 
   const holdsAResult = !!decider.winningSide || !!decider.score?.sets?.length;
-  if (!holdsAResult && decider.matchUpStatus === matchUpStatus) return;
+  if (!holdsAResult && decider.matchUpStatus === matchUpStatus) return { ...SUCCESS };
 
-  modifyMatchUpScore({
+  // RETURNED, not dropped. This was a bare call and the function returned nothing, so a write that
+  // failed left the decider as it was and `setMatchUpStatus` reported success.
+  return modifyMatchUpScore({
     matchUpId: decider.matchUpId,
     removeWinningSide: true,
     context: 'reconcileDecider',
@@ -176,19 +180,22 @@ export function reconcileDeciders({
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   event?: Event;
-}): void {
-  if (!finalsBefore.size) return;
+}): ResultType {
+  if (!finalsBefore.size) return { ...SUCCESS };
 
   for (const [matchUpId, winningSide] of getDeciderFinals(drawDefinition)) {
     if (winningSide === finalsBefore.get(matchUpId)) continue;
-    reconcileDecider({
+    const result = reconcileDecider({
       winningSideBefore: finalsBefore.get(matchUpId),
       tournamentRecord,
       drawDefinition,
       matchUpId,
       event,
     });
+    if (result.error) return result;
   }
+
+  return { ...SUCCESS };
 }
 
 /**
