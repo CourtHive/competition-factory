@@ -3,6 +3,7 @@ import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/ap
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { reconcileDecider } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
@@ -187,6 +188,14 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     outcome.score = scoreObject;
   }
 
+  // read BEFORE the mutation: `reconcileDecider` acts only when this matchUp's winner has changed
+  const winningSideBefore = (drawDefinition?.structures ?? [])
+    .flatMap((structure: any) => [
+      ...(structure.matchUps ?? []),
+      ...(structure.structures ?? []).flatMap((child: any) => child.matchUps ?? []),
+    ])
+    .find((matchUp: any) => matchUp.matchUpId === matchUpId)?.winningSide;
+
   // DECISION: Delegate to setMatchUpState for core status/score setting logic
   // WHY: Separation of concerns - setMatchUpStatus handles API/validation/orchestration,
   // setMatchUpState handles actual state mutations and participant progression logic
@@ -261,6 +270,17 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     tournamentRecord: params.tournamentRecord,
     event: params.event,
   });
+
+  // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
+  if (!result.error) {
+    reconcileDecider({
+      tournamentRecord: params.tournamentRecord,
+      drawDefinition: params.drawDefinition,
+      event: params.event,
+      winningSideBefore,
+      matchUpId,
+    });
+  }
 
   return decorateResult({ result, stack });
 }

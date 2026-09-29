@@ -181,6 +181,9 @@ jobs:
       - name: verify:stall-budget
         run: pnpm verify:stall-budget
 
+      - name: verify:route-differential
+        run: pnpm verify:route-differential
+
       - name: verify:server
         run: pnpm verify:server
 
