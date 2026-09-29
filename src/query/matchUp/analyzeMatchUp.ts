@@ -10,6 +10,8 @@ export function analyzeMatchUp(params?): ResultType & {
   completedSetsHaveValidOutcomes?: boolean;
   validMatchUpWinningSide?: boolean;
   calculatedWinningSide?: number;
+  /** Both sides' points summed across the sets, for an AGGREGATE format only. */
+  aggregateScores?: number[];
   isLastSetWithValues?: boolean;
   validMatchUpOutcome?: boolean;
   sideTiebreakScores?: number[];
@@ -120,19 +122,34 @@ export function analyzeMatchUp(params?): ResultType & {
   // every one of them had not won either. Downstream that is not cosmetic — `courthive-components`
   // gates its Submit on this, so a decided bolt match could not be recorded unless it ended 5-4.
   //
-  // ── AGGREGATE formats are deliberately left alone, and left with NO opinion ──
-  //
-  // CA, 2026-09-29: *"Sets to win is not a consideration when the format is INTENNSE."* In an
-  // aggregate format (`SET9XA`, `HAL2A`) the match is decided by total points across the bolts, not by
-  // how many bolts each side took — so counting sets is the wrong question, and `>=` here would answer
-  // it confidently and wrongly. Measured: six bolts to one side while the other leads 132-78 on
-  // points. Nothing in this file sums points, so aggregate keeps returning `undefined` exactly as
-  // before: no opinion, which is honest, rather than the bolt-count winner, which is not.
-  const playsEverySet = exactly !== undefined && !aggregate;
+  const playsEverySet = exactly !== undefined;
   const reachedSetsToWin = playsEverySet ? maxSetsCount >= setsToWin : maxSetsCount === setsToWin;
 
-  const calculatedWinningSide =
-    (reachedSetsToWin && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) || undefined;
+  // ── An AGGREGATE format is decided on POINTS, and sets won are not the question ──
+  //
+  // CA, 2026-09-29: *"Sets to win is not a consideration when the format is INTENNSE ... INTENNSE
+  // requires all sets recorded to be included in the aggregate total; there is not a bestOf construct
+  // ... INTENNSE doesn't have games, so the aggregate is across all bolts."*
+  //
+  // Counting bolts would answer the wrong question confidently: measured on `SET2XA-S:T10`, a score
+  // with six bolts to side 1 has side 2 ahead **132-78** on points. So an aggregate format takes its
+  // own branch entirely, and the set counts above are not consulted for it.
+  //
+  // ── A tied aggregate is UNDECIDED, not a draw ──
+  //
+  // CA: *"if the aggregate across ALL played sets/bolts is a tied score, the decider must determine a
+  // winner ... it must be understood to be implicit when competitionFormat is INTENNSE that a sudden
+  // death point is the decider and that this needn't actually be in the matchUpFormat."*
+  //
+  // So `undefined` here means a decider is owed, not that the match ended level — and nothing about
+  // that decider needs modelling. When the sudden-death point is recorded the totals stop being equal
+  // and the winner falls out of the same sum. CA: *"The only case where `SET2XA-S:T10` never resolves
+  // a winner is if both sides score the same exact number of points."*
+  const aggregateScores = aggregate ? aggregateSideScores(sets, matchUpScoringFormat) : undefined;
+
+  const calculatedWinningSide = aggregate
+    ? aggregateWinningSide(aggregateScores)
+    : (reachedSetsToWin && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) || undefined;
 
   const validMatchUpWinningSide =
     winningSideSetsCount > losingSideSetsCount && matchUpWinningSide === calculatedWinningSide;
@@ -143,6 +160,7 @@ export function analyzeMatchUp(params?): ResultType & {
     completedSetsHaveValidOutcomes,
     validMatchUpWinningSide,
     calculatedWinningSide,
+    aggregateScores,
     matchUpScoringFormat,
     validMatchUpOutcome,
     isLastSetWithValues,
@@ -155,4 +173,45 @@ export function analyzeMatchUp(params?): ResultType & {
     isActiveSet,
     ...specifiedSetAnalysis,
   };
+}
+
+/** Whether a set carries any score at all, and is therefore one of the sets that were played. */
+function hasSetValues(set: any): boolean {
+  return [set?.side1Score, set?.side2Score, set?.side1TiebreakScore, set?.side2TiebreakScore].some(
+    (value) => value !== undefined && value !== null,
+  );
+}
+
+/**
+ * Both sides' points, summed across every set that was played.
+ *
+ * `undefined` where the format expects more sets than have been recorded. CA, 2026-09-29: *"INTENNSE
+ * requires all sets recorded to be included in the aggregate total"* — a running total taken before
+ * the last bolt is in would name a leader, and a leader is not a winner.
+ *
+ * Which fields carry the points is asked of `analyzeSet` rather than assumed, because it differs by
+ * set and it already applies the deciding-set rule. Measured: a timed bolt reports 22-21 in
+ * `sideGameScores`, while a tiebreak decider reports its point in `sideTiebreakScores` and 0-0 games,
+ * so reading the games alone would silently drop the one point that settles a tie.
+ */
+function aggregateSideScores(sets: any[] | undefined, matchUpScoringFormat: any): number[] | undefined {
+  const played = (sets ?? []).filter(hasSetValues);
+  const expected = matchUpScoringFormat?.exactly ?? matchUpScoringFormat?.bestOf;
+  if (expected !== undefined && played.length < expected) return undefined;
+  if (!played.length) return undefined;
+
+  return played.reduce(
+    (totals, setObject) => {
+      const { setFormat, sideGameScores, sideTiebreakScores } = analyzeSet({ setObject, matchUpScoringFormat });
+      const points = setFormat?.tiebreakSet ? sideTiebreakScores : sideGameScores;
+      return [totals[0] + (points?.[0] ?? 0), totals[1] + (points?.[1] ?? 0)];
+    },
+    [0, 0],
+  );
+}
+
+/** The side ahead on aggregate, or `undefined` while the totals are level and a decider is owed. */
+function aggregateWinningSide(totals?: number[]): number | undefined {
+  if (!totals || totals[0] === totals[1]) return undefined;
+  return totals[0] > totals[1] ? 1 : 2;
 }
