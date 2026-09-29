@@ -1,11 +1,13 @@
+import { setSubscriptions } from '@Global/state/globalState';
+import { isDoubleExit, isExit } from '@Validators/isExit';
+import tournamentEngine from '@Engines/syncEngine';
+import { expect, it } from 'vitest';
 import {
   resolveFirstRoundStructure,
   compareCorrection,
   correctionScenario,
   type Step,
 } from '@Tests/testHarness/exitPropagation/correctionDivergence';
-import { setSubscriptions } from '@Global/state/globalState';
-import { expect, it } from 'vitest';
 
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
@@ -181,7 +183,7 @@ function firstRoundStructure(config: Parameters<typeof resolveFirstRoundStructur
  * Both directions end at the same pair of outcomes, so both are valid tests of CA's invariant: *how you
  * got here must not change where you are.*
  */
-type Direction = 'DOWNGRADE' | 'UPGRADE';
+type Direction = 'DOWNGRADE' | 'UPGRADE' | 'ORDER';
 
 function scenarioFor(
   direction: Direction,
@@ -201,6 +203,10 @@ function scenarioFor(
   });
   const asDouble = { matchUpStatus: doubleExitStatus };
   const asSingle = { matchUpStatus: singleExitStatus, winningSide: 1 };
+  // no correction at all: the same two double exits, entered in the other order
+  if (direction === 'ORDER') {
+    return { direct: [at(1, asDouble), at(2, asDouble)], corrected: [at(2, asDouble), at(1, asDouble)] };
+  }
   return {
     direct: [at(1, asDouble), at(2, asDouble)],
     corrected: [at(2, asSingle), at(1, asDouble), at(2, asDouble)],
@@ -380,4 +386,60 @@ it('a single exit re-scored UP to a double leaves the draw where the direct path
     identical: UPGRADE_BASELINE.identical,
     severeCoordinates: UPGRADE_BASELINE.severeCoordinates,
   });
+}, 180_000);
+
+/**
+ * THE THIRD DIRECTION — no correction at all. **Punch-list P44.**
+ *
+ * Two double exits, entered `1 then 2` and `2 then 1`. Nothing is re-scored; this is ordinary play,
+ * and it is the arm neither of the two above could see because both enter in one fixed order.
+ *
+ * Measured 2026-09-28 before the fix: **52 of 192 cells, 64 coordinates, every one a drawPosition
+ * and nothing else.** A convergence's exit travelled WITH a drawPosition — the seat its first
+ * arrival had advanced as the pending winner — so which seat that was depended on which exit came
+ * first. It was not cosmetic: the position occupied a seat a real participant needed. Played to
+ * exhaustion across 56 draws, removing it took stranded participants 36 -> 12 and decided matchUps
+ * 704 -> 728, with 24 draws better, 32 unchanged and none worse.
+ *
+ * The same position is where the second assertion's defect came from. A target holding exactly one
+ * drawPosition reads its winner off that position, and when the position is the exit's own the
+ * award goes to the side CARRYING the exit: 24 of 192 cells, FIRST_ROUND_LOSER_CONSOLATION, COMPASS
+ * and OLYMPIC, always `ws=1 dp=2` with provenance on side 1.
+ *
+ * A convergence now hands its winner target a PENDING exit — the produced status, the origin on its
+ * side, no drawPosition and no winner — which is the state `Main|3|1` always held. Both counts are
+ * zero and both are invariants: **do not raise them.**
+ */
+it('two double exits leave the same draw whichever is entered first, and award no exit its own win', () => {
+  setSubscriptions({});
+  const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
+  const reports: string[] = [];
+  const carrierWins: string[] = [];
+
+  for (const cell of MATRIX) {
+    const { bucket, report } = classify(cell, 'ORDER');
+    counts[bucket]++;
+    if (report) reports.push(report);
+
+    // the engine still holds the draw `classify` played last
+    for (const matchUp of (tournamentEngine.allTournamentMatchUps().matchUps ?? []) as any[]) {
+      const winnersOrigin = matchUp.winningSide && matchUp.sideExitProvenance?.[matchUp.winningSide];
+      if (isExit(matchUp.matchUpStatus) && isDoubleExit(winnersOrigin?.previousMatchUpStatus)) {
+        carrierWins.push(
+          `${cell.drawType} ${cell.drawSize}/${cell.participantsCount} ${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition} ws=${matchUp.winningSide}`,
+        );
+      }
+    }
+  }
+
+  // the control: a sweep that measured nothing would satisfy every assertion below vacuously
+  expect(MATRIX.length).toEqual(192);
+  expect(counts.identical + counts.provenanceOnly + counts.severe + counts.incomparable).toEqual(192);
+
+  expect(`severe=${counts.severe}\n${reports.join('\n')}`.trim()).toEqual('severe=0');
+  expect({ provenanceOnly: counts.provenanceOnly, incomparable: counts.incomparable }).toEqual({
+    provenanceOnly: 0,
+    incomparable: 0,
+  });
+  expect(carrierWins, 'the side carrying a delivered exit is never the side awarded it').toEqual([]);
 }, 180_000);

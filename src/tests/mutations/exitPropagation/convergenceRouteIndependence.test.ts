@@ -1,5 +1,6 @@
 import { runPath, type Step } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import { setSubscriptions } from '@Global/state/globalState';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
@@ -94,7 +95,7 @@ it('a convergence reached by re-scoring matches the one reached directly', () =>
   expect(rescored).toEqual(direct);
 });
 
-it('an exit carried through a BYE on a re-score is awarded to the side yet to arrive', () => {
+it('an exit carried through a BYE is pending on both routes', () => {
   const direct = signatures(
     FIRST_MATCH_LOSER_CONSOLATION,
     8,
@@ -110,8 +111,8 @@ it('an exit carried through a BYE on a re-score is awarded to the side yet to ar
 
   // CONTROL: the hop under test is a BYE, and the exit went through it
   expect(direct['Consolation|2|1']).toMatch(/^BYE /);
-  // CA, 2026-09-20: the side carrying the exit does not win it; the side yet to arrive does
-  expect(direct['Consolation|3|1']).toMatch(/^WALKOVER ws=2 /);
+  // pending: the exit is recorded on its side and awards nobody until an opponent arrives
+  expect(direct['Consolation|3|1']).toMatch(/^WALKOVER ws=- dp=- prov=1:DOUBLE_WALKOVER->WALKOVER$/);
 
   expect(rescored['Consolation|3|1'], 'the occupant this mutation removed is not seen as advancing').toEqual(
     direct['Consolation|3|1'],
@@ -135,4 +136,46 @@ it('a convergence does not walk its own loser link, whose seat the first exit al
   // South|2|1 side 1 is the seat the loser of West|1|2 arrives into: nobody delivered an exit there
   expect(rescored['South|2|1']).toMatch(/^TO_BE_PLAYED .*prov=-$/);
   expect(rescored).toEqual(direct);
+});
+
+it('a pending exit is awarded when its opponent arrives, to the side that arrived', () => {
+  // P44. The convergence awards nobody and holds no seat; this is what makes that safe.
+  const drawId = 'arrival';
+  const before = signatures(
+    FIRST_ROUND_LOSER_CONSOLATION,
+    8,
+    [at('Main', 1, asDouble), at('Main', 2, asDouble)],
+    drawId,
+  );
+  // CONTROL: pending — the produced exit, its origin, and neither a seat nor a winner
+  expect(before['Consolation|2|1']).toEqual('WALKOVER ws=- dp=- prov=1:DOUBLE_WALKOVER->WALKOVER');
+
+  const find = (structureName: string, roundNumber: number, roundPosition: number): any =>
+    (tournamentEngine.allTournamentMatchUps().matchUps ?? []).find(
+      (matchUp: any) =>
+        matchUp.structureName === structureName &&
+        matchUp.roundNumber === roundNumber &&
+        matchUp.roundPosition === roundPosition,
+    );
+  const complete = (structureName: string, roundPosition: number) => {
+    const result: any = tournamentEngine.setMatchUpStatus({
+      outcome: { winningSide: 1, matchUpStatus: 'COMPLETED' },
+      matchUpId: find(structureName, 1, roundPosition).matchUpId,
+      drawId,
+    });
+    expect(result.success, `${structureName}|1|${roundPosition}`).toEqual(true);
+  };
+
+  // two ordinary results in Main send two losers into Consolation|1|2, and they play
+  complete('Main', 3);
+  complete('Main', 4);
+  complete('Consolation', 2);
+
+  const settled = find('Consolation', 2, 1);
+  expect(settled.matchUpStatus).toEqual(WALKOVER);
+  const winner = (settled.sides ?? []).find((side: any) => side.sideNumber === settled.winningSide);
+  expect(winner?.participantId, 'the award goes to somebody who is there').toBeTruthy();
+  // the winner's own entry records an ARRIVAL (they won upstream); the delivered exit is opposite
+  expect(settled.sideExitProvenance?.[settled.winningSide]?.previousMatchUpStatus).not.toEqual(DOUBLE_WALKOVER);
+  expect(settled.sideExitProvenance?.[3 - settled.winningSide]?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
 });

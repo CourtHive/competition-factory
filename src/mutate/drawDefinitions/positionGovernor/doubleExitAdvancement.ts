@@ -1,6 +1,7 @@
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
+import { releaseAdvancedDrawPosition } from '@Mutate/matchUps/drawPositions/releaseAdvancedDrawPosition';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -701,6 +702,47 @@ function conditionallyAdvanceDrawPosition(params) {
   // ensure targetMatchUp.drawPositions does not contain sourceMatchUp.drawPositions
   // this covers the case where a pre-existing advancement was made
   if (sameStructure && overlap(sourceDrawPositions, targetMatchUpDrawPositions)) {
+    /**
+     * A DOUBLE EXIT ADVANCES NOBODY, so a position of its own found downstream is taken back.
+     *
+     * **Punch-list P44.** The filter below has always known such a position can be here — *"this
+     * covers the case where a pre-existing advancement was made"* — and removed it from a LOCAL
+     * copy. The matchUp kept it, and `hasDrawPosition` and `walkoverWinningSide` further down are
+     * read from the matchUp. Two defects followed, measured 2026-09-28 on the 192-cell matrix:
+     *
+     *  - ORDER DEPENDENCE, 52 cells. The position is the seat the FIRST exit's arrival advanced as
+     *    the pending winner, so which seat it is depends on which double exit was entered first.
+     *  - THE EXIT AWARDED ITS OWN WIN, 24 cells. With exactly one position present the winner is
+     *    read off that position, and it is the exit's own: `ws=1 dp=2` with the origin on side 1.
+     *
+     * It was not cosmetic either. Played to exhaustion over 56 draws the position sat in a seat a
+     * real participant needed: stranded participants 36 -> 12, decided matchUps 704 -> 728, 24
+     * draws better, 32 unchanged, none worse.
+     *
+     * What the target holds instead is a PENDING exit — the produced status, the origin on its
+     * side, no position and no winner — which is what a later-round target (`Main|3|1`) always
+     * held. The award is made when an opponent arrives. CA, 2026-09-28: *"let's go with the
+     * change."*
+     *
+     * `withdrawingExit` because this IS the produced exit's own advancement being taken back, which
+     * is the one case `releaseAdvancedDrawPosition`'s produced-exit guard must not protect.
+     */
+    if (isDoubleExit(params.matchUpStatus)) {
+      for (const drawPosition of targetMatchUpDrawPositions.filter((position) =>
+        sourceDrawPositions.includes(position),
+      )) {
+        releaseAdvancedDrawPosition({
+          fromRoundNumber: targetMatchUp.roundNumber,
+          structureId: targetMatchUp.structureId,
+          withdrawingExit: true,
+          event: params.event,
+          tournamentRecord,
+          drawDefinition,
+          drawPosition,
+          matchUpsMap,
+        });
+      }
+    }
     targetMatchUpDrawPositions = targetMatchUpDrawPositions.filter(
       (drawPosition) => !sourceDrawPositions.includes(drawPosition),
     );
