@@ -1,11 +1,13 @@
 import { getDeciderFinals, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
+import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findPolicy } from '@Acquire/findPolicy';
@@ -265,6 +267,22 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     tournamentRecord: params.tournamentRecord,
     event: params.event,
   });
+
+  // an exit held where nobody can play it is sent on, now that the draw it is decided on is settled
+  if (!result.error) {
+    const { appliedPolicies } = getAppliedPolicies({
+      tournamentRecord: params.tournamentRecord,
+      drawDefinition: params.drawDefinition,
+      event: params.event,
+    });
+    const settled = settleHeldExits({
+      tournamentRecord: params.tournamentRecord,
+      drawDefinition: params.drawDefinition,
+      event: params.event,
+      appliedPolicies,
+    });
+    if (settled.error) return decorateResult({ result: settled, stack });
+  }
 
   // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
   if (!result.error) {

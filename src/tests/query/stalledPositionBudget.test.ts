@@ -104,8 +104,8 @@ const enabled = process.env.STALL_BUDGET === '1';
 const BUDGET_CELLS = 0;
 const BUDGET_FINDINGS = 0;
 
-/** DOUBLE_ELIMINATION 8/7: under the produced-exit policy `Backdraw|3|1` and `Main|4|1` both stall */
-const LIVENESS_SEED = 77;
+/** DOUBLE_ELIMINATION 16/13: under the produced-exit policy four participants wait in one chain */
+const LIVENESS_SEED = 117;
 
 const occupantsOf = (matchUp: any) => (matchUp?.sides ?? []).filter((s: any) => s?.participantId && !s?.bye);
 const playableShape = (m: any) => !m.winningSide && (!m.matchUpStatus || m.matchUpStatus === 'TO_BE_PLAYED');

@@ -15,23 +15,31 @@ import { ABANDONED, CANCELLED, DEAD_RUBBER } from '@Constants/matchUpStatusConst
  * that a matchup isn't ever going to be played (and any matchUps fed by the matchUp that won't be
  * played are also excluded)."*
  *
- * The draw is DOUBLE_ELIMINATION 8/7 at matrix seed 77 under the produced-exit policy, which ends
- * with two stalls in one chain:
+ * The draw is DOUBLE_ELIMINATION 16/13 at matrix seed 117 under the produced-exit policy, which
+ * ends with four stalls in one chain:
  *
- *   Backdraw|3|1  one participant, the other seat fed by a BYE matchUp that holds nobody
- *   Main|4|1      the Main champion, waiting on a Backdraw champion who cannot exist
+ *   Backdraw|4|2  one participant, waiting on a matchUp that holds two exits and nobody
+ *   Backdraw|5|1  one participant, waiting on the winner of `Backdraw|4|2`
+ *   Backdraw|6|1  one participant, waiting on the winner of `Backdraw|5|1`
+ *   Main|5|1      the Main champion, waiting on a Backdraw champion who cannot exist
  *
- * `Backdraw|3|1` feeds `Backdraw|4|1`, which feeds `Main|4|1` — so the second is two steps
- * downstream of the first, which is what lets one draw show both halves of the rule and show that
- * FED is followed all the way down.
+ * Each feeds the next, so the last is three steps downstream of the first. One draw shows both
+ * halves of the rule, and shows that FED is followed all the way down.
+ *
+ * (It used DOUBLE_ELIMINATION 8/7 at seed 77 until that draw stopped stalling: `settleHeldExits`.)
  */
 
 const STATUSES = [DEAD_RUBBER, CANCELLED, ABANDONED].map((matchUpStatus) => ({ matchUpStatus }));
 const DRAW_ID = 'never-to-be-played';
 
 const matchUps = (): any[] => tournamentEngine.allDrawMatchUps({ inContext: true, drawId: DRAW_ID }).matchUps ?? [];
-const at = (structureName: string, roundNumber: number) =>
-  matchUps().find((matchUp) => matchUp.structureName === structureName && matchUp.roundNumber === roundNumber);
+const at = (structureName: string, roundNumber: number, roundPosition: number) =>
+  matchUps().find(
+    (matchUp) =>
+      matchUp.structureName === structureName &&
+      matchUp.roundNumber === roundNumber &&
+      matchUp.roundPosition === roundPosition,
+  );
 
 function stalledAt(): string[] {
   const drawDefinition: any = tournamentEngine.getEvent({ drawId: DRAW_ID }).drawDefinition;
@@ -44,7 +52,7 @@ function stalledAt(): string[] {
 }
 
 function play() {
-  const cell = MATRIX_CELLS.find(({ seed }) => seed === 77);
+  const cell = MATRIX_CELLS.find(({ seed }) => seed === 117);
   expect(playMatrixCell(cell as any, DRAW_ID, 'exits', PRODUCED_EXIT_POLICY)).toEqual(true);
 }
 
@@ -58,28 +66,36 @@ function setStatus(matchUp: any, matchUpStatus: string) {
   expect(matchUps().find((m) => m.matchUpId === matchUp.matchUpId).matchUpStatus).toEqual(matchUpStatus);
 }
 
-// CONTROL: the stalls are there, and the chain between them is what the docblock says it is
-it('has two stalls in one chain before anything is declared', () => {
-  play();
-  expect(stalledAt()).toEqual(['Backdraw|3|1', 'Main|4|1']);
+const CHAIN = ['Backdraw|4|2', 'Backdraw|5|1', 'Backdraw|6|1', 'Main|5|1'];
 
-  const upstream = at('Backdraw', 3);
-  const between = matchUps().find((matchUp) => matchUp.matchUpId === upstream.winnerMatchUpId);
-  expect(between.structureName).toEqual('Backdraw');
-  expect(between.winnerMatchUpId).toEqual(at('Main', 4).matchUpId);
+// CONTROL: the stalls are there, and the chain between them is what the docblock says it is
+it('has four stalls in one chain before anything is declared', () => {
+  play();
+  expect(stalledAt()).toEqual(CHAIN);
+
+  expect(at('Backdraw', 4, 2).winnerMatchUpId).toEqual(at('Backdraw', 5, 1).matchUpId);
+  expect(at('Backdraw', 5, 1).winnerMatchUpId).toEqual(at('Backdraw', 6, 1).matchUpId);
+  expect(at('Backdraw', 6, 1).winnerMatchUpId).toEqual(at('Main', 5, 1).matchUpId);
 });
 
 it.each(STATUSES)('$matchUpStatus silences the stall in the matchUp that carries it', ({ matchUpStatus }) => {
   play();
-  setStatus(at('Main', 4), matchUpStatus);
+  setStatus(at('Main', 5, 1), matchUpStatus);
 
-  // and ONLY that one: the stall upstream of it is fed by nothing that was declared
-  expect(stalledAt()).toEqual(['Backdraw|3|1']);
+  // and ONLY that one: the stalls upstream of it are fed by nothing that was declared
+  expect(stalledAt()).toEqual(CHAIN.slice(0, 3));
 });
 
 it.each(STATUSES)('$matchUpStatus silences every stall in what the matchUp feeds', ({ matchUpStatus }) => {
   play();
-  setStatus(at('Backdraw', 3), matchUpStatus);
+  setStatus(at('Backdraw', 4, 2), matchUpStatus);
 
   expect(stalledAt()).toEqual([]);
+});
+
+it.each(STATUSES)('$matchUpStatus leaves the stalls UPSTREAM of the matchUp that carries it', ({ matchUpStatus }) => {
+  play();
+  setStatus(at('Backdraw', 5, 1), matchUpStatus);
+
+  expect(stalledAt()).toEqual(['Backdraw|4|2']);
 });
