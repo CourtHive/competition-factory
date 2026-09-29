@@ -8,7 +8,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { DOUBLE_WALKOVER, COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
-import { DOUBLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
+import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
  * `STALLED_POSITION` — a participant in a match that can never be played, in a draw that has stopped.
@@ -212,19 +212,24 @@ it('reports nothing on a draw that completes cleanly', () => {
  * produces a BYE for the seat its loser would have taken, and the BYE a cascade-made BYE matchUp owes
  * ITS loser's seat is placed too (`propagateUnfillableLoserBye`). Budget 68 -> 4.
  *
- * What is left is ONE shape, in four cells: DOUBLE_ELIMINATION 16/16, where the Main final is decided
- * by a produced exit and so has no loser, and the winner sits alone in the Decider. It is
- * `TO_BE_PLAYED`, so this case no longer shows the status-blindness the rule was widened for — there
- * is nothing left in the matrix that could. The adjudication in `stalledPositionAdjudication` still
- * pins that property against constructed draws.
+ * It then used `DOUBLE_ELIMINATION 16/16` at seed 97 — the winner of a final that had no loser, alone
+ * in the Decider. That decider is a `DEAD_RUBBER` now (`deciderReachedByArrival.test.ts`). Budget
+ * 4 -> 0.
+ *
+ * ## So the case is no longer in the DEFAULT matrix at all
+ *
+ * Under the default policy the 600 cells strand nobody. The rule still has work to do wherever
+ * `doubleExitPropagateBye` is turned off, so that is where this case lives: `COMPASS 16/16` at seed
+ * 511 under the produced-exit policy, `Southeast|1|1` ending `DOUBLE_WALKOVER` with one occupant.
+ * That status is the point — it is one the old `TO_BE_PLAYED` gate could not see.
  */
-it('still fires where a stall remains — DOUBLE_ELIMINATION 16/16, matrix seed 97', () => {
-  const cell = MATRIX_CELLS.find(({ seed }) => seed === 97);
-  expect(cell?.drawType).toEqual(DOUBLE_ELIMINATION);
+it('still fires where a stall remains — COMPASS 16/16, matrix seed 511, produced-exit policy', () => {
+  const cell = MATRIX_CELLS.find(({ seed }) => seed === 511);
+  expect(cell?.drawType).toEqual(COMPASS);
   expect(cell?.participantsCount).toEqual(16);
 
-  const drawId = 'stalls-de-16-16';
-  expect(playMatrixCell(cell as any, drawId)).toEqual(true);
+  const drawId = 'stalls-compass-16-16';
+  expect(playMatrixCell(cell as any, drawId, 'exits', PRODUCED_EXIT_POLICY)).toEqual(true);
 
   const drawDefinition: any = tournamentEngine.getEvent({ drawId }).drawDefinition;
   const result: any = getDrawInconsistencies({ drawDefinition, drawId });
@@ -235,9 +240,10 @@ it('still fires where a stall remains — DOUBLE_ELIMINATION 16/16, matrix seed 
   expect(found.every((i: any) => i.severity === 'warning')).toEqual(true);
   expect(result.valid).toEqual(true);
 
-  // the winner of a final that had no loser, alone in the decider that final feeds
+  // one occupant, no winner, and a status the narrow rule was blind to
   const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId }).matchUps ?? [];
   const stalled: any = (matchUps as any[]).find((m) => m.matchUpId === found[0].matchUpId);
-  expect(stalled.structureName).toEqual('Decider');
+  expect(occupantsOf(stalled).length).toEqual(1);
+  expect(stalled.matchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(stalled.winningSide).toBeUndefined();
 });

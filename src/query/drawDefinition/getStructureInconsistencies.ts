@@ -1,14 +1,14 @@
+import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import {
   isPropagatedExit as sharedIsPropagatedExit,
   getSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 
 // constants and types
+import { BYE, DEAD_RUBBER, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
-import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
@@ -539,6 +539,12 @@ function getStalledPositionInconsistencies(
     // NO `winningSide` is the whole test. Deliberately NOT gated on `matchUpStatus` -- see above.
     if (matchUp.winningSide) continue;
     if ((matchUp.sides ?? []).some((side: any) => side?.bye)) continue;
+    // THE ONE STATUS THAT IS CONSULTED. `DEAD_RUBBER` says the matchUp is not needed, which is the
+    // statement that nobody is waiting in it: the winner of a final that had no loser sits in the
+    // decider as the champion. It is not a status an exit carries, so stamping a carried exit onto
+    // a stalled matchUp -- what made the old `TO_BE_PLAYED` gate quietable -- cannot produce it.
+    // The engine writes it in `reconcileDecider` alone; a caller who sets it has said the same thing.
+    if (matchUp.matchUpStatus === DEAD_RUBBER) continue;
 
     const present = occupants(matchUp);
     if (present.length !== 1) continue;
