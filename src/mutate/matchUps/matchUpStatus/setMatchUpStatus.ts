@@ -47,10 +47,37 @@ type SetMatchUpStatusArgs = {
   event?: Event;
   outcome?: any;
 };
+/**
+ * Find the draw from a `drawId` when no `drawDefinition` was passed.
+ *
+ * A convenience for a direct caller: the engine always hands over a `drawDefinition`. It writes what
+ * it finds onto `params`, which is what the rest of `setMatchUpStatus` reads.
+ */
+function resolveDrawDefinition(params: SetMatchUpStatusArgs, tournamentRecords: any) {
+  // with nothing to find it BY there is nothing to look for, and the caller is told what is missing
+  if (params.drawDefinition || (!params.drawId && !params.eventId)) return undefined;
+
+  const tournamentRecord = params.tournamentRecord ?? (params.tournamentId && tournamentRecords[params.tournamentId]);
+  params.tournamentRecord ??= tournamentRecord;
+
+  const result = findEvent({
+    eventId: params.eventId,
+    drawId: params.drawId,
+    tournamentRecord,
+  });
+  if (result.error) return result;
+  if (result.drawDefinition) params.drawDefinition = result.drawDefinition;
+  params.event = result.event;
+
+  return undefined;
+}
+
 export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // DECISION: Validate required parameters before any processing
-  // WHY: Fail fast if essential data is missing - matchUpId and drawDefinition are mandatory
-  const paramsCheck = checkRequiredParameters(params, [{ [MATCHUP_ID]: true, [DRAW_DEFINITION]: true }]);
+  // WHY: Fail fast if essential data is missing. `matchUpId` is asked for here; `drawDefinition` is
+  // asked for BELOW, once the draw has had its chance to be found from a `drawId`. Asking for both
+  // here refused every caller the resolution exists to serve.
+  const paramsCheck = checkRequiredParameters(params, [{ [MATCHUP_ID]: true }]);
   if (paramsCheck.error) return paramsCheck;
 
   const stack = 'setMatchUpStatus';
@@ -58,22 +85,11 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // DECISION: Resolve tournament records to support multi-tournament operations
   // WHY: Enables setting matchUp status across multiple tournaments in a single operation
   const tournamentRecords = resolveTournamentRecords(params);
-  // DECISION: Auto-resolve drawDefinition if not provided
-  // WHY: Convenience - allows calling with just tournamentId/eventId/drawId instead of passing full objects
-  // This makes the API more flexible for different use cases
-  if (!params.drawDefinition) {
-    const tournamentRecord = params.tournamentRecord ?? (params.tournamentId && tournamentRecords[params.tournamentId]);
-    params.tournamentRecord ??= tournamentRecord;
+  const resolved = resolveDrawDefinition(params, tournamentRecords);
+  if (resolved?.error) return resolved;
 
-    const result = findEvent({
-      eventId: params.eventId,
-      drawId: params.drawId,
-      tournamentRecord,
-    });
-    if (result.error) return result;
-    if (result.drawDefinition) params.drawDefinition = result.drawDefinition;
-    params.event = result.event;
-  }
+  const drawCheck = checkRequiredParameters(params, [{ [DRAW_DEFINITION]: true }]);
+  if (drawCheck.error) return drawCheck;
 
   const {
     disableScoreValidation,
