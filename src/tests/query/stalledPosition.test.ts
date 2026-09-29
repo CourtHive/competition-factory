@@ -212,32 +212,44 @@ it('reports nothing on a draw that completes cleanly', () => {
  * produces a BYE for the seat its loser would have taken, and the BYE a cascade-made BYE matchUp owes
  * ITS loser's seat is placed too (`propagateUnfillableLoserBye`). Budget 68 -> 4.
  *
- * What is left is ONE shape, in four cells: DOUBLE_ELIMINATION 16/16, where the Main final is decided
- * by a produced exit and so has no loser, and the winner sits alone in the Decider. It is
- * `TO_BE_PLAYED`, so this case no longer shows the status-blindness the rule was widened for — there
- * is nothing left in the matrix that could. The adjudication in `stalledPositionAdjudication` still
- * pins that property against constructed draws.
+ * It then used `DOUBLE_ELIMINATION 16/16` at seed 97 — the winner of a final that had no loser, alone
+ * in the Decider. That decider is a `DEAD_RUBBER` now (`deciderReachedByArrival.test.ts`). Budget
+ * 4 -> 0.
+ *
+ * ## So the case is no longer in the DEFAULT matrix at all
+ *
+ * Under the default policy the 600 cells strand nobody. The rule still has work to do wherever
+ * `doubleExitPropagateBye` is turned off, so that is where this case lives: `DOUBLE_ELIMINATION 8/7`
+ * at seed 77 under the produced-exit policy. An exit meets a BYE in the Backdraw, the matchUp that
+ * results holds nobody, and the participant waiting one round on has no opponent coming.
+ *
+ * `COMPASS 16/16` at seed 511 was considered and NOT used. Its one finding is `Southeast|1|1`, a
+ * `DOUBLE_WALKOVER` whose lone occupant is on a side that itself carries an exit — somebody who
+ * walked over, not somebody waiting. Whether that is a stall at all is an open question, and a case
+ * that exists to prove the rule fires should not rest on it.
  */
-it('still fires where a stall remains — DOUBLE_ELIMINATION 16/16, matrix seed 97', () => {
-  const cell = MATRIX_CELLS.find(({ seed }) => seed === 97);
+it('still fires where a stall remains — DOUBLE_ELIMINATION 8/7, matrix seed 77, produced-exit policy', () => {
+  const cell = MATRIX_CELLS.find(({ seed }) => seed === 77);
   expect(cell?.drawType).toEqual(DOUBLE_ELIMINATION);
-  expect(cell?.participantsCount).toEqual(16);
+  expect(cell?.participantsCount).toEqual(7);
 
-  const drawId = 'stalls-de-16-16';
-  expect(playMatrixCell(cell as any, drawId)).toEqual(true);
+  const drawId = 'stalls-de-8-7';
+  expect(playMatrixCell(cell as any, drawId, 'exits', PRODUCED_EXIT_POLICY)).toEqual(true);
 
   const drawDefinition: any = tournamentEngine.getEvent({ drawId }).drawDefinition;
   const result: any = getDrawInconsistencies({ drawDefinition, drawId });
   const found = (result.inconsistencies ?? []).filter((i: any) => i.issueType === STALLED_POSITION);
 
-  expect(found.length).toBeGreaterThan(0);
+  expect(found.length).toEqual(2);
   // advisory, never an error — the severity tier is what let this rule ship at all
   expect(found.every((i: any) => i.severity === 'warning')).toEqual(true);
   expect(result.valid).toEqual(true);
 
-  // the winner of a final that had no loser, alone in the decider that final feeds
+  // each is one participant, no winner, in a matchUp nobody else can reach
   const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId }).matchUps ?? [];
-  const stalled: any = (matchUps as any[]).find((m) => m.matchUpId === found[0].matchUpId);
-  expect(stalled.structureName).toEqual('Decider');
-  expect(stalled.winningSide).toBeUndefined();
+  for (const finding of found) {
+    const stalled: any = (matchUps as any[]).find((m) => m.matchUpId === finding.matchUpId);
+    expect(occupantsOf(stalled).length).toEqual(1);
+    expect(stalled.winningSide).toBeUndefined();
+  }
 });
