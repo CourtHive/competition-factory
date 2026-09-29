@@ -79,6 +79,7 @@ export const EXIT_WITHOUT_LOSER = 'EXIT_WITHOUT_LOSER';
 export const PROPAGATED_EXIT_LOST = 'PROPAGATED_EXIT_LOST';
 export const UNCOLLAPSED_CONVERGENCE = 'UNCOLLAPSED_CONVERGENCE';
 export const STALLED_POSITION = 'STALLED_POSITION';
+export const ORIGIN_ON_UNDECIDED_MATCHUP = 'ORIGIN_ON_UNDECIDED_MATCHUP';
 
 // DEFERRED — STALE_EXIT_STATUS is intentionally NOT implemented.
 //
@@ -346,6 +347,57 @@ function getWinnerAdvancementInconsistency(
  * it, its exit was not silently dropped, and `EXIT_CODE_ON_WINNER_SIDE` / `EXIT_WITHOUT_LOSER`
  * already govern that shape.
  */
+/**
+ * ORIGIN_ON_UNDECIDED_MATCHUP — `sideExitProvenance` records where a side CAME FROM, on a matchUp
+ * that is neither an exit nor a BYE.
+ *
+ * **Punch-list P19, and what it turned out to need.** The entry was filed as a READER hazard:
+ * `isPropagatedExit` tests that the field is non-empty, *"so one bad writer silently flips every
+ * exclusion"*. Re-measured 2026-09-29 by re-creating the over-permissive writer that entry cites
+ * (both `participatesInExitCascade` gates forced open) under each reading:
+ *
+ * | reader | failures |
+ * |---|---|
+ * | PRESENCE — as it was | 64 |
+ * | CONTENT — asks the entry whether it carries an exit | 63 |
+ *
+ * So the reader was never the mechanism. 58 of those failures are one property,
+ * `DO_UNDO_IDENTITY`: the writer leaves a RECORD on an ordinary advancement and the undo does not
+ * take it back. Nothing is being fooled; the draw is simply carrying a fact about a matchUp it does
+ * not describe. And the entry it leaves is a genuine carried exit, so reading content instead of
+ * presence cannot tell it from a real one either — the matchUp's own status is what gives it away.
+ *
+ * That makes it a job for a detector rather than for a reader. An origin is a fact about how a side
+ * came to be in a CONTEST THAT HAS BEEN DECIDED WITHOUT BEING PLAYED: an exit, a double exit, or a
+ * BYE. On a matchUp that is still to be played, or was played, there is nothing for it to explain.
+ *
+ * A BYE claim ledger (`byeClaims` alone) is exempt. It records which double exits claim a BYE, is
+ * written at the point of the attempt, and carries no origin.
+ *
+ * **SEVERITY `error`, and the population is ZERO.** Measured over 1,440 draws played to exhaustion —
+ * 126,786 matchUp-states carrying provenance, sampled after every step — and over the full suite,
+ * which asserts `valid` throughout. A writer that stamps an origin where none belongs now fails
+ * every one of those assertions at once, instead of 58 tests about something else.
+ */
+function getStrayOriginInconsistency(matchUp: any): StructureInconsistency | undefined {
+  const { matchUpStatus, matchUpId, structureId } = matchUp;
+  if (isAnyExit(matchUpStatus) || matchUpStatus === BYE) return undefined;
+
+  const provenance = getSideExitProvenance({ matchUp });
+  const sideNumbers = ([1, 2] as const).filter((sideNumber) => {
+    const entry = provenance?.[sideNumber];
+    return !!(entry?.matchUpStatus || entry?.previousMatchUpStatus || entry?.sourceMatchUpId);
+  });
+  if (!sideNumbers.length) return undefined;
+
+  return {
+    message: `side ${sideNumbers.join(' and ')} records where it came from, but the matchUp is ${matchUpStatus} and is neither an exit nor a BYE`,
+    issueType: ORIGIN_ON_UNDECIDED_MATCHUP,
+    structureId,
+    matchUpId,
+  };
+}
+
 function getLostPropagatedExitInconsistency(matchUp: any): StructureInconsistency | undefined {
   const { matchUpStatus, winningSide, matchUpId } = matchUp;
   if (winningSide || matchUpStatus === BYE || isAnyExit(matchUpStatus)) return undefined;
@@ -555,6 +607,9 @@ export function getStructureInconsistencies(
         drawPositions,
       });
     }
+
+    const strayOrigin = getStrayOriginInconsistency(matchUp);
+    if (strayOrigin) inconsistencies.push(strayOrigin);
 
     const byeAdvancement = getByeAdvancementInconsistency(matchUp, matchUpById);
     if (byeAdvancement) inconsistencies.push(byeAdvancement);
