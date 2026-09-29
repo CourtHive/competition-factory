@@ -17,8 +17,8 @@ import { findEvent } from '@Acquire/findEvent';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
+import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { PolicyDefinitions } from '@Types/factoryTypes';
 
 /**
  * Sets either matchUpStatus or score and winningSide; values to be set are passed in outcome object.
@@ -70,6 +70,28 @@ function resolveDrawDefinition(params: SetMatchUpStatusArgs, tournamentRecords: 
   params.event = result.event;
 
   return undefined;
+}
+
+/**
+ * What is decided on the draw as it STANDS once the mutation has settled, rather than on the events
+ * that led there. Each returns its error; neither is allowed to fail quietly.
+ */
+function settleDraw({
+  finalsBefore,
+  params,
+}: {
+  finalsBefore: Map<string, number | undefined>;
+  params: SetMatchUpStatusArgs;
+}): ResultType {
+  const { tournamentRecord, drawDefinition, event } = params;
+
+  // an exit held where nobody can play it is sent on, now that the draw it is decided on is settled
+  const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
+  const settled = settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinition, event });
+  if (settled.error) return settled;
+
+  // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
+  return reconcileDeciders({ tournamentRecord, drawDefinition, finalsBefore, event });
 }
 
 export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
@@ -284,30 +306,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event: params.event,
   });
 
-  // an exit held where nobody can play it is sent on, now that the draw it is decided on is settled
   if (!result.error) {
-    const { appliedPolicies } = getAppliedPolicies({
-      tournamentRecord: params.tournamentRecord,
-      drawDefinition: params.drawDefinition,
-      event: params.event,
-    });
-    const settled = settleHeldExits({
-      tournamentRecord: params.tournamentRecord,
-      drawDefinition: params.drawDefinition,
-      event: params.event,
-      appliedPolicies,
-    });
+    const settled = settleDraw({ finalsBefore, params });
     if (settled.error) return decorateResult({ result: settled, stack });
-  }
-
-  // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
-  if (!result.error) {
-    reconcileDeciders({
-      tournamentRecord: params.tournamentRecord,
-      drawDefinition: params.drawDefinition,
-      event: params.event,
-      finalsBefore,
-    });
   }
 
   return decorateResult({ result, stack });

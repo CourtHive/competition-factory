@@ -130,8 +130,8 @@ describe('reconcileDecider leaves the decider alone unless a final that feeds on
     });
 
   it('does nothing without a draw or a matchUp', () => {
-    expect(reconcileDecider({})).toBeUndefined();
-    expect(reconcileDecider({ matchUpId: 'm' })).toBeUndefined();
+    expect(reconcileDecider({}).success).toEqual(true);
+    expect(reconcileDecider({ matchUpId: 'm' }).success).toEqual(true);
   });
 
   it('does nothing for a matchUp that feeds no decider', () => {
