@@ -110,8 +110,14 @@ test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
   // 3. and the exit is carried ONWARD through the BYE
   const onward = at(drawId, 'CONSOLATION', 3, 1);
   expect(onward.matchUpStatus).toEqual(WALKOVER);
-  // the side carrying the exit does not win it; the side yet to arrive does
-  expect(onward.winningSide).toEqual(2);
+  // PENDING, 2026-09-28 (CA: *"let's go with the change"*). The exit carries no drawPosition and
+  // awards nobody until somebody arrives — the same state every other produced exit holds, and the
+  // one the third test in this file pins end to end, arrival included. This read `winningSide: 2`
+  // while the exit travelled WITH the seat its first arrival had advanced: which seat that was
+  // depended on the ORDER the two double exits were entered in, and it occupied a position a real
+  // participant needed (punch-list P44).
+  expect(onward.winningSide).toBeUndefined();
+  expect((onward.drawPositions ?? []).filter(Boolean), 'the exit travels with no seat').toEqual([]);
 
   // AND NOW THE CODES, which this test deliberately left unpinned while they were `[]`.
   //
@@ -177,16 +183,15 @@ test('a produced exit advanced through a BYE carries its origin, so the draw hol
   }
 
   // CONTROL: the shape the rule is about must actually be present, or this asserts nothing. A
-  // single exit, a winningSide, and a losing side that holds a drawPosition but no participant.
+  // single produced exit that nobody played. Since 2026-09-28 it is PENDING — no winningSide and no
+  // drawPosition (punch-list P44) — so what distinguishes it from an orphan is the origin alone,
+  // which makes this assertion carry more of the weight than it did, not less.
   const produced = getDrawMatchUps(drawId).find(
     (m: any) => m.stage === 'CONSOLATION' && m.roundNumber === 3 && m.roundPosition === 1,
   );
   expect(produced?.matchUpStatus).toEqual(WALKOVER);
-  expect(produced?.winningSide).toEqual(2);
-  const losingSide = (produced?.sides ?? []).find((side: any) => side.sideNumber !== produced.winningSide);
-  expect(losingSide?.drawPosition, 'the losing side must hold a drawPosition').toBeTruthy();
-  expect(losingSide?.participantId, 'and no participant').toBeUndefined();
-  expect(losingSide?.bye, 'and it must not be a BYE, which the rule excludes separately').toBeFalsy();
+  expect(produced?.winningSide).toBeUndefined();
+  expect((produced?.sides ?? []).filter((side: any) => side.participantId)).toEqual([]);
 
   // the origin is what keeps it out of the orphan bucket
   expect(produced?.sideExitProvenance?.[1]?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
