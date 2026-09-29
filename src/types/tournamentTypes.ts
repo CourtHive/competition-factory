@@ -701,46 +701,26 @@ export interface ScheduleScenario {
 /**
  * Why an exit sits on one side of a matchUp, recorded per side.
  *
- * `matchUpStatusCodes` conflated unrelated things: the scoring policy's code vocabulary, propagation
- * provenance stamped per side, and codes wrapped as `{ code }`. The provenance moves here, where
  * `sideNumber` is a KEY rather than an array index, the element shape is fixed, and
  * `sourceMatchUpId` makes an entry attributable to the exit that produced it.
- *
- * See Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
  */
 /**
  * One element of `MatchUp.matchUpStatusCodes`.
  *
- * The array has TWO TENANTS and four element shapes, which is the conflation
- * `sideExitProvenance` exists to unwind. Declared here so consumers are handed a discriminable
- * union rather than `any[]` — the field was published as `any[]`, and a caller had no way to know
- * which of these it was holding.
+ * The engine persists STRINGS: the scoring policy's code for a side, at that side's position
+ * (`['', 'DM']`). That is the display contract.
  *
- *   1. a REASON CODE the client submitted, as a bare string (`'OA'`) — the scoring policy's
- *      vocabulary, defined by `POLICY_SCORING_USTA` and friends. This tenant is legitimate and
- *      stays.
- *   2. the same reason code WRAPPED, so the engine can stamp propagation context onto it.
- *   3. per-side exit PROVENANCE, projected from {@link SideExitProvenance}. **Deprecated tenant —
- *      read `sideExitProvenance` instead**, which keys by `sideNumber` rather than using the array
- *      index as a side, fixes the element shape, and carries `sourceMatchUpId`.
- *   4. a RESERVED SLOT — `{ sideNumber }` and nothing else — recording a side whose origin is not
- *      yet known. It is NOT an exit, and reading it as one put a walkover badge on an empty chair
- *      (reported from TMX 2026-09-20).
- *
- * See Mentat/planning/MATCHUP_STATUS_CODES_PER_SIDE.md.
+ * The record shape is accepted so that a tournament record stored by an earlier version still
+ * types. Nothing writes it and nothing reads it to decide behaviour.
  */
 export type MatchUpStatusCodeRecord = {
-  /** a reason code the engine wrapped in order to stamp context onto it */
   code?: string | number;
-  /** present on tenants 3 and 4; the array INDEX is not reliably the side */
   sideNumber?: number;
-  /** the status this side was given by an upstream exit */
   matchUpStatus?: MatchUpStatusUnion;
-  /** the upstream status that produced it */
   previousMatchUpStatus?: MatchUpStatusUnion;
 };
 
-/** A bare reason code (tenant 1) or any of the record shapes above. */
+/** A scoring policy code, or the record shape an earlier version stored. */
 export type MatchUpStatusCodeElement = string | number | MatchUpStatusCodeRecord;
 
 export type SideExitProvenanceEntry = {
@@ -797,12 +777,11 @@ export interface MatchUp {
   matchUpId: string;
   matchUpStatus?: MatchUpStatusUnion;
   /**
-   * Scoring reason codes AND (deprecated) projected exit provenance — see
-   * {@link MatchUpStatusCodeElement} for the four shapes and which tenant is which.
+   * The scoring policy's codes, one per side, positionally — the display contract.
    *
-   * For "which side exited, and what produced it", read {@link MatchUp.sideExitProvenance}. This
-   * array flattens `sideNumber` into an element that may or may not carry one, and its index is
-   * not reliably a side.
+   * Do not index it to decide which side did something. For "which side exited, and what produced
+   * it" read {@link MatchUp.sideExitProvenance}; for "which reason belongs to which side" read
+   * {@link MatchUp.sideStatusCodes}.
    */
   matchUpStatusCodes?: MatchUpStatusCodeElement[];
   /**

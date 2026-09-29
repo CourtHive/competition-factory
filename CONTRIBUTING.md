@@ -101,7 +101,7 @@ formatted on commit.
 
 ## Tests
 
-The suite is large (13,000+ tests) and a PR that changes behaviour is expected to carry a test.
+The suite is large (13,700+ tests) and a PR that changes behaviour is expected to carry a test.
 
 - Unit tests live **beside the code** as `*.test.ts`.
 - Broader integration and scenario suites live under `src/tests/`, organized by area.
