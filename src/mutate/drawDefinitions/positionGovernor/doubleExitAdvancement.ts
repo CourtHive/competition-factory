@@ -260,19 +260,42 @@ export function doubleExitAdvancement(params) {
     });
     if (result.error) return decorateResult({ result, stack });
 
-    // derived fresh: the write above changed the draw the next hop is decided on
-    const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-    const carried = carryExitOnward({
-      fromMatchUp: refreshed.find((m) => m.matchUpId === loserMatchUp.matchUpId) ?? loserMatchUp,
-      EXIT: producedExitStatus(params.matchUpStatus),
-      originMatchUpId: sourceMatchUp?.matchUpId,
-      inContextDrawMatchUps: refreshed,
-      drawDefinition,
-      matchUpsMap,
-      params,
-      stack,
-    });
-    if (carried.error) return decorateResult({ result: carried, stack });
+    /**
+     * AN EXIT THAT WAS NOT RECORDED HERE DOES NOT TRAVEL ON FROM HERE.
+     *
+     * The stamp above declines a target position that already holds a BYE — *"it is SETTLED, and the
+     * BYE is its record"* — and the carry ran regardless, so an exit was carried onward from a
+     * matchUp it had never been recorded on. When the loser target's own seat is the BYE, the loser
+     * who will never arrive is ALREADY represented, by that BYE, and the matchUp's other side is
+     * free to hold somebody real.
+     *
+     * Measured 2026-09-28 on MODIFIED_FEED_IN_CHAMPIONSHIP and CURTIS_CONSOLATION 16/16 with
+     * `Main|1|1` and `Main|1|2` both DOUBLE_WALKOVER. `Main|2|1` converges; its loser seat,
+     * Consolation drawPosition 4, has been a BYE since the first exit. The carry put an exit on
+     * `Consolation|3|2` side 2 — the side `Consolation|2|4`'s survivor advances into:
+     *
+     *     Consolation|3|2   WALKOVER ws=1   dp=3.11   both sides hold a PARTICIPANT
+     *     Consolation|4|1   TO_BE_PLAYED    dp=3.11   and both of them advanced out of it
+     *
+     * A played match was decided as a walkover against somebody who was there, the final filled
+     * from one semifinal, and the other semifinal's score was refused with
+     * `ERR_EXISTING_POSITION_ASSIGNMENT` after the mutation had written.
+     */
+    if (result.stamped) {
+      // derived fresh: the write above changed the draw the next hop is decided on
+      const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+      const carried = carryExitOnward({
+        fromMatchUp: refreshed.find((m) => m.matchUpId === loserMatchUp.matchUpId) ?? loserMatchUp,
+        EXIT: producedExitStatus(params.matchUpStatus),
+        originMatchUpId: sourceMatchUp?.matchUpId,
+        inContextDrawMatchUps: refreshed,
+        drawDefinition,
+        matchUpsMap,
+        params,
+        stack,
+      });
+      if (carried.error) return decorateResult({ result: carried, stack });
+    }
   }
   if (winnerMatchUp) {
     logAdvancement(stack, {
@@ -415,7 +438,7 @@ function stampExitOnByeHeldLoserTarget({
   matchUpsMap,
   params,
   stack,
-}) {
+}): { error?: any; success?: boolean; stamped?: boolean } {
   // THE TARGET POSITION MUST BE GENUINELY VACANT. A loser target drawPosition that already holds a
   // draw BYE is not an empty slot awaiting an arrival — it is SETTLED, and the BYE is its record.
   // Stamping an exit there says "this side came from a double walkover" about a side that came from
@@ -427,7 +450,7 @@ function stampExitOnByeHeldLoserTarget({
   const targetAssignment = positionAssignments?.find(
     (assignment: any) => assignment.drawPosition === loserTargetDrawPosition,
   );
-  if (targetAssignment?.bye || targetAssignment?.participantId) return { ...SUCCESS };
+  if (targetAssignment?.bye || targetAssignment?.participantId) return { ...SUCCESS, stamped: false };
 
   const drawPositions = loserMatchUp.drawPositions ?? [];
   const positionIndex = drawPositions.indexOf(loserTargetDrawPosition);
@@ -435,7 +458,7 @@ function stampExitOnByeHeldLoserTarget({
   // See the canonical statement in `getOrderedDrawPositions`.
   const exitingSideNumber = loserMatchUp.feedRound ? 1 : positionIndex + 1;
   if (positionIndex === -1 || (exitingSideNumber !== 1 && exitingSideNumber !== 2)) {
-    return { ...SUCCESS };
+    return { ...SUCCESS, stamped: false };
   }
 
   const noContextLoserMatchUp = matchUpsMap.drawMatchUps.find(
@@ -477,7 +500,7 @@ function stampExitOnByeHeldLoserTarget({
   if (result.error) return result;
 
   mergeSideExitProvenance({ matchUp: noContextLoserMatchUp, provenance });
-  return { ...SUCCESS };
+  return { ...SUCCESS, stamped: true };
 }
 
 function handleEmptyExitLoser({
