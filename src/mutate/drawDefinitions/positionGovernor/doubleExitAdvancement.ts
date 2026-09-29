@@ -14,6 +14,7 @@ import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { overlap } from '@Tools/arrays';
@@ -26,6 +27,7 @@ import {
   buildSideExitProvenance,
   mergeSideExitProvenance,
   getSideExitProvenance,
+  getExitSides,
   deriveStatusCodes,
   producedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
@@ -2061,4 +2063,216 @@ function advanceByeToLoserMatchUp(params) {
     loserMatchUp,
     event,
   });
+}
+
+/**
+ * AN EXIT HELD IN A MATCHUP THAT CAN PRODUCE NOBODY IS SENT ON — asked of the draw, once it settles.
+ *
+ * `carryExitOnward` walks an exit through every BYE it meets, and it was only ever launched by an
+ * exit ARRIVING. Each of its decisions is taken on the draw as it stands at that moment, and two of
+ * them go stale:
+ *
+ * - **The BYE comes second.** The exit arrives opposite an open seat and rests there, pending an
+ *   opponent. The seat is then given a BYE — the loser of a later double exit, or of a matchUp that
+ *   had none to send — and nothing launches the carry again.
+ * - **The opponent comes second.** The carry is refused because no opponent could arrive — *"the
+ *   `winningSide` written below is the side yet to arrive, and that claim is only true while
+ *   somebody still can"* — and then somebody does.
+ *
+ * TRACED 2026-09-29 with `doubleExitPropagateBye: false`, which is where exits are produced:
+ *
+ *     DOUBLE_ELIMINATION 8/7, seed 77      `Backdraw|2|2` holds an exit; its fed seat becomes a BYE
+ *     FIRST_MATCH_LOSER_CONSOLATION 8/5    `Consolation|2|1`, the same, the BYE placed by another path
+ *     FEED_IN_CHAMPIONSHIP 8/7, seed 377   refused at `Consolation|3|1`, whose opponent then arrived
+ *
+ * In each a participant waited on a matchUp holding a BYE and an exit. Of 137 stalls measured over
+ * the 600 matrix cells with the policy off, 69 were fed by a matchUp in that state and 58 more by
+ * one of those.
+ *
+ * CA, 2026-09-20: *"a propagated exit encountering a BYE should be advanced. In both cases the BYE
+ * remains a BYE."* And of these, 2026-09-29: *"repair should be done"*.
+ *
+ * So the question is asked of the STATE rather than of the events that led to it, which is the
+ * shape `reconcileDeciders` takes for the same reason. The carrier is unchanged and so is every
+ * refusal in it; this only asks it again.
+ *
+ * The exit travels as ITSELF — its own status and the origin it already carries.
+ */
+export function settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinition, event }: any) {
+  const stack = 'settleHeldExits';
+  // where a double exit produces a BYE there is no exit set down to wait, and nothing to settle
+  if (!drawDefinition || propagatesByeOnDoubleExit(appliedPolicies)) return { ...SUCCESS };
+
+  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  const carried = new Set<string>();
+
+  // each pass can make the next matchUp along a holder in its turn; a matchUp is carried from once
+  for (let pass = 0; pass < 16; pass++) {
+    const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+    let held: any;
+    for (const matchUp of inContextDrawMatchUps) {
+      if (carried.has(matchUp.matchUpId)) continue;
+      held = getHeldExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp });
+      if (held) break;
+    }
+    if (!held) break;
+    carried.add(held.holder.matchUpId);
+
+    const params = {
+      matchUpStatus: held.origin.previousMatchUpStatus ?? held.origin.matchUpStatus,
+      tournamentRecord,
+      appliedPolicies,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    };
+
+    const result = carryExitOnward({
+      originMatchUpId: held.origin.sourceMatchUpId,
+      EXIT: held.origin.matchUpStatus,
+      fromMatchUp: held.holder,
+      inContextDrawMatchUps,
+      drawDefinition,
+      matchUpsMap,
+      params,
+      stack,
+    });
+    if (result?.error) return decorateResult({ result, stack });
+  }
+
+  const crossed = crossLinksThroughByes({ tournamentRecord, drawDefinition, matchUpsMap, event, stack });
+  if (crossed.error) return decorateResult({ result: crossed, stack });
+
+  return { ...SUCCESS };
+}
+
+/**
+ * A PARTICIPANT ADVANCED THROUGH A BYE CROSSES THE WINNER LINK, as one who won a result does.
+ *
+ * The carrier advances a settled opponent with `advanceDrawPosition`, which walks through BYEs
+ * inside a structure and stops at its edge: it follows a winner target only when that target is in
+ * the SAME structure. `drawPositionPlacement` names the crossing — *"an advancement through a BYE
+ * or a pending exit is the same crossing, so it goes the same way"* — and makes it with
+ * `directWinner`, so this does too.
+ *
+ * TRACED 2026-09-29, DOUBLE_ELIMINATION 8/7 at seed 77 with the policy off: the held exit reached
+ * `Backdraw|3|1` and its occupant advanced into `Backdraw|4|1`, the Backdraw final, opposite a BYE.
+ * The Main final never received them and the Main champion waited there alone.
+ */
+function crossLinksThroughByes({ tournamentRecord, drawDefinition, matchUpsMap, event, stack }) {
+  for (let pass = 0; pass < 16; pass++) {
+    const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+    const crossing = inContextDrawMatchUps
+      .map((matchUp) => getByeCrossing({ inContextDrawMatchUps, drawDefinition, matchUp }))
+      .find(Boolean);
+    if (!crossing) break;
+
+    logAdvancement(stack, {
+      color: 'cyan',
+      decision: 'BYE_advancement_crosses_winner_link',
+      fromMatchUpId: crossing.matchUp.matchUpId,
+      winnerMatchUpId: crossing.winnerMatchUp.matchUpId,
+    });
+
+    const result = directWinner({
+      winnerMatchUpDrawPositionIndex: crossing.winnerMatchUpDrawPositionIndex,
+      winningDrawPosition: crossing.drawPosition,
+      winnerTargetLink: crossing.winnerTargetLink,
+      sourceMatchUpId: crossing.matchUp.matchUpId,
+      winnerMatchUp: crossing.winnerMatchUp,
+      projectedWinningSide: undefined,
+      sourceMatchUpStatus: undefined,
+      dualMatchUp: undefined,
+      inContextDrawMatchUps,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    });
+    if (result.error) return result;
+
+    // nothing moved: the same crossing would be found again, and asked again, for ever
+    const after = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+    const target = after.find((matchUp) => matchUp.matchUpId === crossing.winnerMatchUp.matchUpId);
+    if (!target?.sides?.some((side) => side.participantId === crossing.participantId)) break;
+  }
+
+  return { ...SUCCESS };
+}
+
+function getByeCrossing({ inContextDrawMatchUps, drawDefinition, matchUp }) {
+  if (matchUp.collectionId || !matchUp.winnerMatchUpId) return undefined;
+  const occupants = (matchUp.sides ?? []).filter((side) => side.participantId && !side.bye);
+  if (occupants.length !== 1 || !matchUpHoldsBye({ drawDefinition, matchUp })) return undefined;
+
+  const { targetMatchUps, targetLinks } = positionTargets({
+    matchUpId: matchUp.matchUpId,
+    inContextDrawMatchUps,
+    drawDefinition,
+  });
+  const winnerMatchUp = targetMatchUps?.winnerMatchUp;
+  const winnerTargetLink = targetLinks?.winnerTargetLink;
+  if (!winnerMatchUp || !winnerTargetLink || winnerMatchUp.structureId === matchUp.structureId) return undefined;
+  if (winnerMatchUp.winningSide) return undefined;
+
+  const [{ participantId, drawPosition }] = occupants;
+  // asked of the TARGET and not of its structure: in a double elimination they have played there before
+  if (winnerMatchUp.sides?.some((side) => side.participantId === participantId)) return undefined;
+
+  return {
+    winnerMatchUpDrawPositionIndex: targetMatchUps.winnerMatchUpDrawPositionIndex,
+    winnerTargetLink,
+    winnerMatchUp,
+    participantId,
+    drawPosition,
+    matchUp,
+  };
+}
+
+/**
+ * A matchUp holding a BYE, an exit and nobody else, whose winner target has not had that exit AND
+ * CAN BE SETTLED NOW.
+ *
+ * DELIVERED is read from the target: the side this matchUp feeds already records an origin, or
+ * somebody is sitting on it, or the target is decided. Any of those and there is nothing to send.
+ *
+ * SETTLED NOW is read from the target's OTHER side. It holds a participant, who wins; or a BYE, and
+ * the exit keeps walking. While that side is still open nothing is sent, because an exit set down
+ * to wait is exactly the state that goes stale. This runs again after the next mutation, when there
+ * may be something to decide.
+ *
+ * A target whose other side holds an EXIT is a convergence, and it is NOT settled here. It was
+ * built and measured on 2026-09-29: it closed four more cells and stopped twenty others from
+ * playing out, because an exit on a fed seat does not mean nobody can still arrive there.
+ */
+function getHeldExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp }) {
+  if (matchUp.collectionId || matchUp.winningSide || !matchUp.winnerMatchUpId) return undefined;
+  if (matchUp.sides?.some((side) => side.participantId)) return undefined;
+  if (!matchUpHoldsBye({ drawDefinition, matchUp })) return undefined;
+
+  const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUp.matchUpId);
+  const [exitSideNumber] = getExitSides({ matchUp: stored });
+  const origin = exitSideNumber ? getSideExitProvenance({ matchUp: stored })?.[exitSideNumber] : undefined;
+  if (!origin?.sourceMatchUpId || !isExit(origin.matchUpStatus)) return undefined;
+
+  const target = inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUp.winnerMatchUpId);
+  if (!target || target.winningSide) return undefined;
+
+  const arrivalSideNumber = getExitArrivalSideNumber({
+    nextWinnerMatchUp: target,
+    sourceMatchUp: matchUp,
+    inContextDrawMatchUps,
+  });
+  if (!arrivalSideNumber) return undefined;
+  if (target.sides?.some((side) => side.sideNumber === arrivalSideNumber && side.participantId)) return undefined;
+
+  const storedTarget = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === target.matchUpId);
+  const targetProvenance = getSideExitProvenance({ matchUp: storedTarget });
+  if (targetProvenance?.[arrivalSideNumber]) return undefined;
+
+  const opponentSide = target.sides?.find((side) => side.sideNumber === 3 - arrivalSideNumber);
+  const settledNow = !!opponentSide?.participantId || !!opponentSide?.bye;
+  if (!settledNow) return undefined;
+
+  return { holder: matchUp, origin };
 }

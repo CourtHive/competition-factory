@@ -219,28 +219,31 @@ it('reports nothing on a draw that completes cleanly', () => {
  * ## So the case is no longer in the DEFAULT matrix at all
  *
  * Under the default policy the 600 cells strand nobody. The rule still has work to do wherever
- * `doubleExitPropagateBye` is turned off, so that is where this case lives: `DOUBLE_ELIMINATION 8/7`
- * at seed 77 under the produced-exit policy. An exit meets a BYE in the Backdraw, the matchUp that
- * results holds nobody, and the participant waiting one round on has no opponent coming.
+ * `doubleExitPropagateBye` is turned off, so that is where this case lives: `DOUBLE_ELIMINATION
+ * 16/13` at seed 117 under the produced-exit policy, where two exits meet in the Backdraw and four
+ * participants wait in a chain behind them.
+ *
+ * (`DOUBLE_ELIMINATION 8/7` at seed 77 held this place for a day, until `settleHeldExits` sent its
+ * held exit on. The cell changes every time the one it names is fixed, which is the point of it.)
  *
  * `COMPASS 16/16` at seed 511 was considered and NOT used. Its one finding is `Southeast|1|1`, a
  * `DOUBLE_WALKOVER` whose lone occupant is on a side that itself carries an exit — somebody who
  * walked over, not somebody waiting. Whether that is a stall at all is an open question, and a case
  * that exists to prove the rule fires should not rest on it.
  */
-it('still fires where a stall remains — DOUBLE_ELIMINATION 8/7, matrix seed 77, produced-exit policy', () => {
-  const cell = MATRIX_CELLS.find(({ seed }) => seed === 77);
+it('still fires where a stall remains — DOUBLE_ELIMINATION 16/13, matrix seed 117, produced-exit policy', () => {
+  const cell = MATRIX_CELLS.find(({ seed }) => seed === 117);
   expect(cell?.drawType).toEqual(DOUBLE_ELIMINATION);
-  expect(cell?.participantsCount).toEqual(7);
+  expect(cell?.participantsCount).toEqual(13);
 
-  const drawId = 'stalls-de-8-7';
+  const drawId = 'stalls-de-16-13';
   expect(playMatrixCell(cell as any, drawId, 'exits', PRODUCED_EXIT_POLICY)).toEqual(true);
 
   const drawDefinition: any = tournamentEngine.getEvent({ drawId }).drawDefinition;
   const result: any = getDrawInconsistencies({ drawDefinition, drawId });
   const found = (result.inconsistencies ?? []).filter((i: any) => i.issueType === STALLED_POSITION);
 
-  expect(found.length).toEqual(2);
+  expect(found.length).toEqual(4);
   // advisory, never an error — the severity tier is what let this rule ship at all
   expect(found.every((i: any) => i.severity === 'warning')).toEqual(true);
   expect(result.valid).toEqual(true);
