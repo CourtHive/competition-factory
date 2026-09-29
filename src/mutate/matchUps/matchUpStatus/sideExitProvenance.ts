@@ -800,7 +800,37 @@ export function isProjectedExitCode(code: any): boolean {
  * ask — use {@link exitProducedBy}, which additionally requires every side to name that source.
  */
 export function isPropagatedExit({ matchUp }: { matchUp?: MatchUp }): boolean {
-  return !!getSideExitProvenance({ matchUp });
+  return getExitSides({ matchUp }).length > 0;
+}
+
+/**
+ * The sides of this matchUp that CARRY AN EXIT — read from what each entry says, not from its
+ * being there.
+ *
+ * **Punch-list P19.** `sideExitProvenance` holds three different facts under one key, and only one
+ * of them is an exit:
+ *
+ *  - a CARRIED EXIT — `matchUpStatus` is an exit status; the cascade delivered it to this side;
+ *  - an ARRIVAL — `matchUpStatus: COMPLETED` or `BYE`; this side's occupant got here by winning or
+ *    by advancing through a BYE, recorded because it is a real fact about a convergence;
+ *  - a BYE CLAIM LEDGER — `byeClaims` and nothing else; which double exits claim this BYE.
+ *
+ * Every reader that asked *"does this matchUp hold a propagated exit"* by testing that the field
+ * was non-empty therefore answered yes for all three. Measured 2026-09-29 over 1,440 draws played
+ * to exhaustion, every matchUp after every step: of 126,786 matchUp-states carrying provenance,
+ * **38,318 carry no exit at all** — 37,654 a claim ledger alone and 664 an arrival alone, every one
+ * of them on a `BYE`. The second group is the shape this entry recorded as having *"no reproduction
+ * on `dev`"* when it was filed; it has one now (COMPASS 16/16, three first-round double exits,
+ * `North|2|1`).
+ *
+ * A boolean derived from "is this field non-empty" cannot tell a legitimate record from an
+ * accidental one, so its correctness rests on every writer in the system forever. This asks the
+ * entry what it is.
+ */
+export function getExitSides({ matchUp }: { matchUp?: MatchUp }): number[] {
+  const provenance = getSideExitProvenance({ matchUp });
+  if (!provenance) return [];
+  return [1, 2].filter((sideNumber) => carriedExitStatus(provenance[sideNumber]) !== undefined);
 }
 
 /**

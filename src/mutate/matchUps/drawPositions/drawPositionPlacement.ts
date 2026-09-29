@@ -43,6 +43,7 @@ import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpS
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
+import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -209,31 +210,40 @@ export function assignMatchUpDrawPosition({
   matchUpStatus = resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, matchUp });
 
   /**
-   * Does this matchUp already CARRY a propagated exit, and is a PARTICIPANT arriving into it?
+   * Is an exit already STANDING on this matchUp, and is a PARTICIPANT arriving into it?
    *
-   * These are two questions, and one flag used to answer both.
+   * Two questions, and the names now say which is which. **Punch-list P3.**
    *
-   * `holdsPropagatedExit` is the matchUp's own state: it records an exit the cascade delivered.
-   * The test was `isExit(status) && winningSide`, and CA's Migration §20 ruling of 2026-09-20 —
-   * *a pending exit has no `winningSide` until a participant arrives* — removed the very field it
-   * keyed on, so from that day a PENDING propagated exit answered false and every path below was
-   * silently skipped for it. The provenance is the durable record; ask that instead.
+   * `holdsStandingExit` is a STATUS question with two ways of being true, and it was called
+   * `holdsPropagatedExit` while only one of them had anything to do with propagation:
    *
-   * `isPropagatedExit` is the narrower question the award and advancement paths actually need: is
+   *  - the cascade DELIVERED an exit here — asked of provenance, because a pending exit has no
+   *    `winningSide` until somebody arrives (CA, Migration §20, 2026-09-20);
+   *  - a director RECORDED one here, with a `winningSide`, before the opponent was known.
+   *
+   * The second is not a propagated exit and must not be dropped on the grounds that it is not one.
+   * Measured 2026-09-29: asking provenance alone fails exactly one test of 13,653 —
+   * `propagatedByeYieldsToArrivingLoser`, a chain of walkovers a director scores out of order —
+   * where `Main|2|2` is `WALKOVER ws=1` holding `[8, _]` and no provenance at all, and position 5
+   * arrives afterwards. Without the status half the standing walkover is overwritten and the final
+   * is refused `ERR_INVALID_MATCHUP_STATUS`. So the disjunct stays and the NAME goes: a predicate
+   * wearing the provenance name while doing a status job is what this entry was filed against.
+   *
+   * `participantArrivesAtExit` is the narrower question the award and advancement paths need: is
    * the drawPosition arriving here occupied by a participant? An EMPTY position arriving resolves
    * nothing — *"awarding against an empty slot asserts a winner over an opponent who does not
    * exist"*, CA 2026-09-20 — so it must not award a winningSide, must not rewrite the carried
    * codes, and must not advance anyone onward. It must still leave the exit's STATUS alone, which
-   * is what `holdsPropagatedExit` governs below.
+   * is what `holdsStandingExit` governs below.
    */
-  const holdsPropagatedExit = !!(
+  const holdsStandingExit = !!(
     isExit(matchUp?.matchUpStatus) &&
     (matchUp?.winningSide || sharedIsPropagatedExit({ matchUp }))
   );
   const arrivingParticipantId = positionAssignments?.find(
     (assignment) => assignment.drawPosition === drawPosition,
   )?.participantId;
-  const isPropagatedExit = holdsPropagatedExit && !!arrivingParticipantId;
+  const participantArrivesAtExit = holdsStandingExit && !!arrivingParticipantId;
 
   // A drawPosition slot can already be present in this matchUp's drawPositions
   // (e.g. pre-seeded by a consolation BYE feed) while the underlying
@@ -286,18 +296,18 @@ export function assignMatchUpDrawPosition({
    * position is *genuinely* active only when something was played there, as opposed to *advanced*
    * active.
    *
-   * `isPropagatedExit` already means "this matchUp holds a propagated exit AND a participant has
+   * `participantArrivesAtExit` already means "this matchUp holds a propagated exit AND a participant has
    * arrived at this drawPosition", which is exactly the resolvable case, so no new predicate is
    * needed. `slotNewlyOccupied` keeps it to an arrival that actually changed the occupant.
    */
-  const resolvesPendingExit = !positionAdded && isPropagatedExit && slotNewlyOccupied;
+  const resolvesPendingExit = !positionAdded && participantArrivesAtExit && slotNewlyOccupied;
 
   if (matchUp && (positionAdded || resolvesPendingExit)) {
     applyPositionToMatchUp({
       updatedDrawPositions,
-      holdsPropagatedExit,
+      holdsStandingExit,
       sourceMatchUpStatus,
-      isPropagatedExit,
+      participantArrivesAtExit,
       isDoubleExitExit,
       tournamentRecord,
       inContextMatchUp,
@@ -342,7 +352,7 @@ export function assignMatchUpDrawPosition({
     event,
     inContextDrawMatchUps: resolvedInContextDrawMatchUps,
     positionAssigned,
-    isPropagatedExit,
+    participantArrivesAtExit,
     tournamentRecord,
     inContextMatchUp,
     drawDefinition,
@@ -415,8 +425,8 @@ function resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, m
 function applyPositionToMatchUp({
   updatedDrawPositions,
   sourceMatchUpStatus,
-  holdsPropagatedExit,
-  isPropagatedExit,
+  holdsStandingExit,
+  participantArrivesAtExit,
   isDoubleExitExit,
   tournamentRecord,
   inContextMatchUp,
@@ -444,7 +454,7 @@ function applyPositionToMatchUp({
   // point at the exiting/loser side). Mirrors resolvePropagatedExitOnAdvance (BYE path).
   // `indexOf` as a side number — valid only because drawPositions are stored ascending.
   // See the canonical statement in `getOrderedDrawPositions`.
-  const advancedExitWinningSide = isPropagatedExit ? updatedDrawPositions.indexOf(drawPosition) + 1 : undefined;
+  const advancedExitWinningSide = participantArrivesAtExit ? updatedDrawPositions.indexOf(drawPosition) + 1 : undefined;
   const exitWinningSide =
     (isDoubleExitExit &&
       getExitWinningSide({
@@ -533,7 +543,7 @@ function applyPositionToMatchUp({
     // We keep the current status if it is already marked as WO. Deliberately the BROADER flag: an
     // empty drawPosition arriving delivers no participant and so gives no reason to change
     // anything, but it was clearing the exit outright (SIGNAL 1, census 2026-09-20).
-    matchUpStatus: holdsPropagatedExit ? matchUp?.matchUpStatus : matchUpStatus,
+    matchUpStatus: holdsStandingExit ? matchUp?.matchUpStatus : matchUpStatus,
   });
 
   modifyMatchUpNotice({
@@ -564,11 +574,36 @@ function applyPositionToMatchUp({
  *
  * Deliberately narrow: it reports true only when the winning drawPosition is KNOWN and differs, so a
  * pending exit that has no winningSide yet advances exactly as before.
+ *
+ * ## It does not fire, and until 2026-09-29 half the time it COULD not
+ *
+ * CA asked, 2026-09-13, whether this guard should ever fire once the upstream errors were resolved.
+ * Measured over the full suite with a file trace, because the reporter swallows output from passing
+ * files and a silent trace reads exactly like a dead path: **1,581 calls, 0 firings**, and forcing it
+ * to `false` changes no test.
+ *
+ * That zero was partly an accident. The winning position was read as
+ * `drawPositions[winningSide - 1]`, which is only sound while both positions are present, and **801
+ * of the 1,581 calls hold a LONE position**. With `winningSide: 2` and one position held that reads
+ * index 1, finds nothing, and the guard cannot fire whatever arrived. `getWinningSideDrawPosition`
+ * resolves the side structurally; with it the count is still 0 of 1,582, so the answer to CA's
+ * question is yes — but now it is an answer, where before it was a blind spot agreeing with one.
+ *
+ * Kept rather than deleted. It costs nothing, the hazard it names is real, and a guard that is able
+ * to fire and does not is evidence; one that is unable to is not.
  */
-function arrivesOnExitingSide(matchUp: any, drawPosition: number): boolean {
-  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending.
-  // See the canonical statement in `getOrderedDrawPositions`.
-  const winningDrawPosition = matchUp?.winningSide ? matchUp?.drawPositions?.[matchUp.winningSide - 1] : undefined;
+function arrivesOnExitingSide({
+  drawDefinition,
+  drawPosition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition?: DrawDefinition;
+  drawPosition: number;
+  structureId?: string;
+  matchUp: any;
+}): boolean {
+  const winningDrawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
   return !!winningDrawPosition && winningDrawPosition !== drawPosition;
 }
 
@@ -638,7 +673,7 @@ function advanceIntoWinnerMatchUp({
 function advanceDrawPosition(params) {
   const {
     positionAssigned,
-    isPropagatedExit,
+    participantArrivesAtExit,
     inContextMatchUp,
     matchUpStatus,
     winnerMatchUp,
@@ -663,9 +698,16 @@ function advanceDrawPosition(params) {
     return undefined;
   }
 
-  if (positionAssigned && isPropagatedExit) {
+  if (positionAssigned && participantArrivesAtExit) {
     // a participant arriving on the EXITING side of a pending propagated exit has not won it
-    return arrivesOnExitingSide(matchUp, drawPosition) ? undefined : advanceIntoWinnerMatchUp(params);
+    return arrivesOnExitingSide({
+      drawDefinition: params.drawDefinition,
+      structureId: structure?.structureId,
+      drawPosition,
+      matchUp,
+    })
+      ? undefined
+      : advanceIntoWinnerMatchUp(params);
   }
 
   if (inContextMatchUp && !inContextMatchUp.feedRound) {
