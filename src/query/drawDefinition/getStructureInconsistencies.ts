@@ -4,6 +4,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import {
   isPropagatedExit as sharedIsPropagatedExit,
   getSideExitProvenance,
+  getExitSides,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -596,6 +597,37 @@ function getStalledPositionInconsistencies(
 
     const present = occupants(matchUp);
     if (present.length !== 1) continue;
+
+    /**
+     * AN OCCUPANT WHO EXITED IS NOT WAITING FOR ANYBODY — CA, 2026-09-29.
+     *
+     * *"There is nothing to be done and it needs to be considered a valid end state."*
+     *
+     * The shape this rule looks for — one participant, no winner — cannot tell somebody who is owed
+     * an opponent from somebody who has withdrawn. The record can: a side that arrived carrying an
+     * exit says so in its provenance. COMPASS 16/16 at matrix seed 511, `doubleExitPropagateBye:
+     * false`:
+     *
+     *     East|1|7        Ellen Lovelace is walked over
+     *     West|1|4        and again
+     *     South|1|2       she arrives carrying that exit; her opponent wins by WALKOVER
+     *     Southeast|1|1   she arrives as that matchUp's loser, still carrying an exit, on side 2
+     *                     side 1 was owed the loser of `South|1|1`, a DOUBLE_WALKOVER: an exit, nobody
+     *
+     * `Southeast|1|1` is a `DOUBLE_WALKOVER` holding one person, both of its sides exited, and it is
+     * finished. Reporting her told a director that a player who had withdrawn three times was
+     * stranded.
+     *
+     * ## Why this does not reopen what status-blindness closed
+     *
+     * The `TO_BE_PLAYED` gate was quietable because it read the MATCHUP's status, which a partial
+     * propagation fix changes by stamping a carried exit onto a stalled matchUp — whoever is waiting
+     * there is still waiting. This reads the exit on the OCCUPANT'S OWN side. An exit stamped
+     * opposite somebody leaves their side without one, and they are still reported: that is the
+     * second case in `stalledPositionExitedOccupant.test.ts`, and the reason it is there.
+     */
+    const occupantSideNumber = present[0].sideNumber;
+    if (occupantSideNumber && getExitSides({ matchUp }).includes(occupantSideNumber)) continue;
 
     inconsistencies.push({
       matchUpId: matchUp.matchUpId,
