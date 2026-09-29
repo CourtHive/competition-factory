@@ -207,8 +207,40 @@ export function mergeSideExitProvenance({
   matchUp?: MatchUp;
 }): void {
   if (!matchUp || !writeNativeEnabled()) return;
-  if (!provenance || !Object.keys(provenance).length) return;
-  matchUp.sideExitProvenance = { ...matchUp.sideExitProvenance, ...provenance };
+  const admitted = admissibleOn(matchUp, provenance);
+  if (!admitted || !Object.keys(admitted).length) return;
+  matchUp.sideExitProvenance = { ...matchUp.sideExitProvenance, ...admitted };
+}
+
+/**
+ * What a BYE may record about how a side got there — and an ARRIVAL BY RESULT is not among it.
+ *
+ * **Punch-list P19.** CA, 2026-09-29: *"a BYE should not carry COMPLETED provenance"*, and of the
+ * other kind of arrival, agreeing that `BYE -> BYE` *"is legitimate and should stay"* — it records
+ * that a BYE arrived from a BYE, which is the rule that two BYEs meeting produce one.
+ *
+ * So on a BYE an entry is kept when it is a CARRIED EXIT, a BYE arriving through a BYE, or a claim
+ * ledger, and dropped when it says the side's occupant got there by winning. That participant
+ * advanced THROUGH the BYE; nothing was contested there for their arrival to explain.
+ *
+ * Traced 2026-09-29 on COMPASS 16/16 with three first-round double exits: `North|1|2` completes, its
+ * winner advances into `North|2|1` — already a BYE, holding `[2, _]` — and the placement recorded
+ * `{ COMPLETED, previousMatchUpStatus: COMPLETED }` against side 2. 664 matchUp-states across 1,440
+ * draws played to exhaustion. When this entry was filed the same shape was recorded as having *"no
+ * reproduction on `dev`"*.
+ *
+ * Decided HERE rather than at each caller because every writer merges through this function, and a
+ * rule enforced at one site cannot be missed by the next one that is added.
+ */
+function admissibleOn(matchUp: MatchUp, provenance?: SideExitProvenance): SideExitProvenance | undefined {
+  if (!provenance || matchUp.matchUpStatus !== BYE) return provenance;
+
+  const admitted: SideExitProvenance = {};
+  for (const [sideNumber, entry] of Object.entries(provenance)) {
+    const arrivedByResult = !!entry?.matchUpStatus && !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
+    if (!arrivedByResult) admitted[Number(sideNumber)] = entry;
+  }
+  return admitted;
 }
 
 /** Write provenance onto a matchUp, honouring the schema write mode. */

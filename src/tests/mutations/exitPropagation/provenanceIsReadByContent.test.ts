@@ -1,13 +1,21 @@
 import { getExitSides, isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { ORIGIN_ON_UNDECIDED_MATCHUP } from '@Query/drawDefinition/getStructureInconsistencies';
+import { MATRIX_CELLS, playMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER, TO_BE_PLAYED, COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
-import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, COMPASS } from '@Constants/drawDefinitionConstants';
+import {
+  DOUBLE_WALKOVER,
+  TO_BE_PLAYED,
+  COMPLETED,
+  WALKOVER,
+  BYE,
+  DOUBLE_DEFAULT,
+} from '@Constants/matchUpStatusConstants';
 
 /**
  * `sideExitProvenance` IS READ BY WHAT IT SAYS. **Punch-list P19.**
@@ -133,4 +141,88 @@ it('reports nothing for the origins the cascade itself records', () => {
   expect(new Set(carrying.map((matchUp: any) => matchUp.matchUpStatus)).size).toBeGreaterThan(1);
 
   expect(scan(drawId)).toEqual({ issueTypes: [], valid: true });
+});
+
+/**
+ * A BYE RECORDS NO ARRIVAL BY RESULT — and keeps the two things it may record.
+ *
+ * CA, 2026-09-29: *"a BYE should not carry COMPLETED provenance"*, and that `BYE -> BYE` *"is
+ * legitimate and should stay"*. The three cases below are the rule, its control, and the detector
+ * that would catch a writer which got round it.
+ */
+const arrivalsByResult = (matchUp: any) =>
+  Object.values(matchUp.sideExitProvenance ?? {}).filter((entry: any) => entry?.matchUpStatus === COMPLETED);
+
+it('does not record how a participant ARRIVED at a BYE they advanced through', () => {
+  setSubscriptions({});
+  const drawId = 'bye-arrival';
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawType: COMPASS, drawSize: 16, drawId }],
+    nonRandom: 9000230,
+    setState: true,
+  });
+  const allMatchUps = (): any[] => tournamentEngine.allTournamentMatchUps().matchUps ?? [];
+  const occupied = (matchUp: any) => (matchUp.sides ?? []).filter((side: any) => side.participantId).length;
+
+  // three double exits to begin with, then ordinary results to the end
+  let byesReachedByAWinner = 0;
+  for (let step = 0; step < 200; step++) {
+    const next = allMatchUps().find((matchUp) => matchUp.matchUpStatus === TO_BE_PLAYED && occupied(matchUp) === 2);
+    if (!next) break;
+    const result: any = tournamentEngine.setMatchUpStatus({
+      outcome: step < 3 ? { matchUpStatus: DOUBLE_DEFAULT } : { winningSide: 1 },
+      matchUpId: next.matchUpId,
+      drawId,
+    });
+    expect(result.success, `step ${step}`).toEqual(true);
+
+    for (const matchUp of allMatchUps().filter((candidate) => candidate.matchUpStatus === BYE)) {
+      if (occupied(matchUp) === 1) byesReachedByAWinner += 1;
+      expect(arrivalsByResult(matchUp), `step ${step}`).toEqual([]);
+    }
+  }
+
+  // CONTROL: participants did advance through BYEs, so the assertion above had something to refuse
+  expect(byesReachedByAWinner).toBeGreaterThan(0);
+  expect(scan(drawId).issueTypes).toEqual([]);
+});
+
+it('still records a BYE that arrived through a BYE', () => {
+  const cell = MATRIX_CELLS.find(({ seed }) => seed === 337) as any;
+  expect(playMatrixCell(cell, 'bye-through-bye')).toEqual(true);
+
+  const meeting = (tournamentEngine.allTournamentMatchUps().matchUps ?? []).find(
+    (matchUp: any) =>
+      matchUp.structureName === 'Consolation' && matchUp.roundNumber === 5 && matchUp.roundPosition === 1,
+  );
+  expect(meeting.matchUpStatus).toEqual(BYE);
+  expect(meeting.sideExitProvenance?.[2]).toMatchObject({ previousMatchUpStatus: BYE, matchUpStatus: BYE });
+  // and beside it, the exit the other side carries
+  expect(getExitSides({ matchUp: meeting })).toEqual([1]);
+});
+
+it('reports an arrival by result stamped on a BYE, and not a BYE that arrived through one', () => {
+  setSubscriptions({});
+  const drawId = 'stamped-bye';
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [
+      { drawType: FIRST_MATCH_LOSER_CONSOLATION, participantsCount: 7, idPrefix: 'origin', drawSize: 8, drawId },
+    ],
+    nonRandom: 1,
+    setState: true,
+  });
+  const bye = (tournamentEngine.allTournamentMatchUps().matchUps ?? []).find(
+    (matchUp: any) => matchUp.structureName === 'Main' && matchUp.matchUpStatus === BYE,
+  );
+  // CONTROL: there is a BYE to stamp, and the draw is clean before anything is stamped on it
+  expect(bye?.matchUpId).toBeDefined();
+  expect(scan(drawId)).toEqual({ issueTypes: [], valid: true });
+
+  stamp(drawId, bye.matchUpId, { 1: { matchUpStatus: BYE, previousMatchUpStatus: BYE, sourceMatchUpId: 'x' } });
+  expect(scan(drawId)).toEqual({ issueTypes: [], valid: true });
+
+  stamp(drawId, bye.matchUpId, {
+    1: { matchUpStatus: COMPLETED, previousMatchUpStatus: COMPLETED, sourceMatchUpId: 'x' },
+  });
+  expect(scan(drawId)).toEqual({ issueTypes: [ORIGIN_ON_UNDECIDED_MATCHUP], valid: false });
 });
