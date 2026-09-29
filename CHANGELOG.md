@@ -1,5 +1,45 @@
 # Changelog
 
+## [7.3.0](https://github.com/CourtHive/competition-factory/compare/v7.2.0...v7.3.0) (2026-09-29)
+
+
+### Features
+
+* **integrity:** an origin recorded where none belongs is an error, not a reader's problem ([#5023](https://github.com/CourtHive/competition-factory/issues/5023)) ([4b97974](https://github.com/CourtHive/competition-factory/commit/4b97974f0ae5aae3c41777115a40c7f36c14f357))
+* **propagation:** a double exit produces a BYE for the seat its loser would have taken ([#5029](https://github.com/CourtHive/competition-factory/issues/5029)) ([d7f9f5c](https://github.com/CourtHive/competition-factory/commit/d7f9f5cf37ee4b11bca6abfbeabdf738aad426bc))
+* **propagation:** a reason code belongs to a side, or to the match — never to an index ([#5016](https://github.com/CourtHive/competition-factory/issues/5016)) ([9ff1818](https://github.com/CourtHive/competition-factory/commit/9ff1818851bfd83a94e3c01e6ad791b49fe1f6ef))
+* **scoring:** getMaxSetScore, so score-entry interfaces need not hand-roll it ([#5007](https://github.com/CourtHive/competition-factory/issues/5007)) ([0d1b3c8](https://github.com/CourtHive/competition-factory/commit/0d1b3c8af5ccc19d51dba15c1e44271d5c86ef97))
+* **scoring:** retainScoreForFormat — what survives a change of matchUpFormat ([#5026](https://github.com/CourtHive/competition-factory/issues/5026)) ([5f2faa8](https://github.com/CourtHive/competition-factory/commit/5f2faa85dd444f2dcfafe0cf4c75b7f1d73cdcfd))
+
+
+### Bug Fixes
+
+* **draws:** a decider is played only if it is needed, and is a DEAD_RUBBER when it is not ([#5024](https://github.com/CourtHive/competition-factory/issues/5024)) ([4e57198](https://github.com/CourtHive/competition-factory/commit/4e5719855f1075b7f556a9874bd5a67cba76dc76))
+* **draws:** a final decided by an arrival settles its decider too ([#5031](https://github.com/CourtHive/competition-factory/issues/5031)) ([9494e41](https://github.com/CourtHive/competition-factory/commit/9494e41e1062517a2660b4433e6799daf13ee758))
+* **integrity:** a matchUp that will never be played strands nobody, nor does what it feeds ([9494e41](https://github.com/CourtHive/competition-factory/commit/9494e41e1062517a2660b4433e6799daf13ee758))
+* **integrity:** an occupant who exited is not waiting for anybody ([#5035](https://github.com/CourtHive/competition-factory/issues/5035)) ([443439f](https://github.com/CourtHive/competition-factory/commit/443439f8441a6e3224130628077909b0b02e7030))
+* **propagation:** a BYE records no arrival by result ([#5028](https://github.com/CourtHive/competition-factory/issues/5028)) ([2a728c6](https://github.com/CourtHive/competition-factory/commit/2a728c67da8cd550d434e57d12e7f1b7e6d6436b))
+* **propagation:** a carried exit's origin is asked once, when the draw has settled ([#5018](https://github.com/CourtHive/competition-factory/issues/5018)) ([0b5464e](https://github.com/CourtHive/competition-factory/commit/0b5464e1f2b73aecf41982d279b4cd76c7cccd55))
+* **propagation:** a convergence hands on a pending exit, not a seat of its own ([#5020](https://github.com/CourtHive/competition-factory/issues/5020)) ([8708951](https://github.com/CourtHive/competition-factory/commit/870895152cd600adcc986349f2632bd8d3cd9797))
+* **propagation:** a convergence is the same draw whichever route reached it ([#5019](https://github.com/CourtHive/competition-factory/issues/5019)) ([f2a15fe](https://github.com/CourtHive/competition-factory/commit/f2a15fe6c27d735ee30a51aac9a2665f72d49e8d))
+* **propagation:** a participant arriving into a fed seat wins the pending exit there ([#5025](https://github.com/CourtHive/competition-factory/issues/5025)) ([f4482e1](https://github.com/CourtHive/competition-factory/commit/f4482e19334309df1805cc98f9be4e617a1c5f2b))
+* **propagation:** an exit held where nobody can play it is sent on ([#5034](https://github.com/CourtHive/competition-factory/issues/5034)) ([dfec59f](https://github.com/CourtHive/competition-factory/commit/dfec59f6ab0d58edae5d15c7350b180ca2457e8f))
+* **propagation:** an exit that was not recorded here does not travel on from here ([#5021](https://github.com/CourtHive/competition-factory/issues/5021)) ([fda6f74](https://github.com/CourtHive/competition-factory/commit/fda6f7413a86b288da2373fe754d37a3441848a5))
+* **propagation:** the convergence gate asks provenance, not the legacy array's length ([#5005](https://github.com/CourtHive/competition-factory/issues/5005)) ([e877e9b](https://github.com/CourtHive/competition-factory/commit/e877e9b5ba6cb9efd8db522589ece8321eecf06f))
+* **propagation:** the exit tenant leaves matchUpStatusCodes ([#5011](https://github.com/CourtHive/competition-factory/issues/5011)) ([7ccbb9b](https://github.com/CourtHive/competition-factory/commit/7ccbb9b07e541a767b09a4d2a74542b2b7ef378b))
+* **propagation:** the last legacy-array gate asks provenance, and 120 stale-entry cells close ([#5014](https://github.com/CourtHive/competition-factory/issues/5014)) ([71b6363](https://github.com/CourtHive/competition-factory/commit/71b636361cc69e60cdc5ee666e0d266cfd9a7c98))
+* **propagation:** two delivered exits are a double exit, reconciled after the merge ([#5012](https://github.com/CourtHive/competition-factory/issues/5012)) ([d367736](https://github.com/CourtHive/competition-factory/commit/d367736547c51e5c7e6aed286ec0bb1daa455302))
+* **scoring:** a format that plays every set can pass setsToWin, and still won ([#5022](https://github.com/CourtHive/competition-factory/issues/5022)) ([785eb1c](https://github.com/CourtHive/competition-factory/commit/785eb1c1c75dde984a8371fbd9cde7bec8f49e27))
+* **scoring:** an aggregate format is decided on points, not on sets won ([#5027](https://github.com/CourtHive/competition-factory/issues/5027)) ([db3dcf4](https://github.com/CourtHive/competition-factory/commit/db3dcf43f9c95716cc8ef5e8a17b134d1e93292c))
+* **scoring:** an unfinished set is held to the format ceiling, not to a slack of ten ([#5013](https://github.com/CourtHive/competition-factory/issues/5013)) ([5bacd2f](https://github.com/CourtHive/competition-factory/commit/5bacd2fcf17e0d89bb48705cdff48442e9a486df))
+* **scoring:** checkSetIsComplete ignored a declared win margin (WB1) ([#5008](https://github.com/CourtHive/competition-factory/issues/5008)) ([ac335d0](https://github.com/CourtHive/competition-factory/commit/ac335d0f2964948970ac0ef534638be40a6cd020))
+
+
+### Documentation
+
+* **migration:** trim §24 to what is true now, and drop vendor platform names ([#5015](https://github.com/CourtHive/competition-factory/issues/5015)) ([952ac86](https://github.com/CourtHive/competition-factory/commit/952ac861edeb504b7945853dab4e6cdeb8808a0b))
+* what 7.3.0 holds, and nothing it no longer does ([#5036](https://github.com/CourtHive/competition-factory/issues/5036)) ([fe43ffb](https://github.com/CourtHive/competition-factory/commit/fe43ffbe4bdd4010f0d80db9032d27d53ad7ea31))
+
 ## [7.2.0](https://github.com/CourtHive/competition-factory/compare/v7.1.1...v7.2.0) (2026-09-27)
 
 
