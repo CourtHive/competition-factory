@@ -381,17 +381,24 @@ function getWinnerAdvancementInconsistency(
  */
 function getStrayOriginInconsistency(matchUp: any): StructureInconsistency | undefined {
   const { matchUpStatus, matchUpId, structureId } = matchUp;
-  if (isAnyExit(matchUpStatus) || matchUpStatus === BYE) return undefined;
+  if (isAnyExit(matchUpStatus)) return undefined;
 
+  // A BYE is decided without being played too, so it may record a carried exit, a BYE that arrived
+  // through a BYE, and a claim ledger. What it may not record is an arrival BY RESULT: a participant
+  // who got there by winning advanced THROUGH the BYE, and nothing was contested for that to explain.
+  const onBye = matchUpStatus === BYE;
   const provenance = getSideExitProvenance({ matchUp });
   const sideNumbers = ([1, 2] as const).filter((sideNumber) => {
     const entry = provenance?.[sideNumber];
-    return !!(entry?.matchUpStatus || entry?.previousMatchUpStatus || entry?.sourceMatchUpId);
+    if (!onBye) return !!(entry?.matchUpStatus || entry?.previousMatchUpStatus || entry?.sourceMatchUpId);
+    return !!entry?.matchUpStatus && !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
   });
   if (!sideNumbers.length) return undefined;
 
   return {
-    message: `side ${sideNumbers.join(' and ')} records where it came from, but the matchUp is ${matchUpStatus} and is neither an exit nor a BYE`,
+    message: onBye
+      ? `side ${sideNumbers.join(' and ')} records an arrival by result, on a BYE`
+      : `side ${sideNumbers.join(' and ')} records where it came from, but the matchUp is ${matchUpStatus} and is neither an exit nor a BYE`,
     issueType: ORIGIN_ON_UNDECIDED_MATCHUP,
     structureId,
     matchUpId,
