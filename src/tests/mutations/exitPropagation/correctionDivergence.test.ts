@@ -112,6 +112,8 @@ const BASELINE = {
   severe: 8,
   /** a step was refused in one path and not the other, so the cell was not an experiment */
   incomparable: 0,
+  /** COORDINATES, not cells: one severe cell can diverge at several, and a fix can close some of them */
+  severeCoordinates: 8,
 };
 
 const DRAW_TYPES = [
@@ -208,7 +210,7 @@ function scenarioFor(
 function classify(
   cell: (typeof MATRIX)[number],
   direction: Direction = 'DOWNGRADE',
-): { bucket: Bucket; report?: string } {
+): { bucket: Bucket; report?: string; coordinates?: number } {
   const { doubleExitStatus, singleExitStatus, ...config } = cell;
   const label = `${config.drawType} ${config.drawSize}/${config.participantsCount} ${doubleExitStatus} propagate=${config.propagateExitStatus}`;
 
@@ -234,7 +236,7 @@ function classify(
         `      ${d.coordinate}  direct[${withoutProvenance(d.direct)}]  corrected[${withoutProvenance(d.corrected)}]`,
     )
     .join('\n');
-  return { bucket: 'severe', report: `${label}\n${detail}` };
+  return { bucket: 'severe', report: `${label}\n${detail}`, coordinates: visible.length };
 }
 
 it('a corrected double exit leaves the draw where the direct path leaves it', () => {
@@ -242,9 +244,11 @@ it('a corrected double exit leaves the draw where the direct path leaves it', ()
   const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
   const reports: string[] = [];
 
+  let severeCoordinates = 0;
   for (const cell of MATRIX) {
-    const { bucket, report } = classify(cell);
+    const { bucket, report, coordinates } = classify(cell);
     counts[bucket]++;
+    severeCoordinates += coordinates ?? 0;
     if (report) reports.push(report);
   }
 
@@ -259,10 +263,12 @@ it('a corrected double exit leaves the draw where the direct path leaves it', ()
     provenanceOnly: counts.provenanceOnly,
     incomparable: counts.incomparable,
     identical: counts.identical,
+    severeCoordinates,
   }).toEqual({
     provenanceOnly: BASELINE.provenanceOnly,
     incomparable: BASELINE.incomparable,
     identical: BASELINE.identical,
+    severeCoordinates: BASELINE.severeCoordinates,
   });
   // 192 cells, each generating two draws and playing them out. It runs in ~10s alone and the
   // default 30s cap is not enough under full-suite contention — measured, it timed out there while
@@ -315,12 +321,33 @@ it('a corrected double exit leaves the draw where the direct path leaves it', ()
  *
  * **Lower these numbers when you fix it. Never raise them.**
  */
+/**
+ * ## Lowered 2026-09-28: 52 -> 0 severe. **This arm is CLOSED, and it took two changes.**
+ *
+ * Measured in isolation, because neither is sufficient and one of them moves nothing alone:
+ *
+ * | change | what it stopped | alone | together |
+ * |---|---|---|---|
+ * | a convergence reached on a re-score takes the route ordinary play takes | a seat carrying a delivered exit being advanced as a winner | 52 | |
+ * | `releaseAdvancedDrawPosition` keeps a seat a PRODUCED EXIT advanced | removing an occupant taking back an advancement that was never theirs | 24 | **0** |
+ *
+ * The second one is not a re-score defect at all. With `Main|1|1` a DOUBLE_WALKOVER, scoring
+ * `Main|1|2` and then CLEARING it did not return the draw to where it was — ordinary use, no double
+ * exit at the matchUp being corrected. It is pinned on its own in `convergenceRouteIndependence`.
+ *
+ * `severeCoordinates` is what made this findable: an earlier form of the first change took the
+ * coordinates 88 -> 72 while the cell count stayed at 52.
+ *
+ * **A baseline of zero is an invariant.** Any cell appearing here again is a regression, not a
+ * measurement; do not raise this.
+ */
 const UPGRADE_BASELINE = {
   cells: 192,
-  identical: 140,
+  identical: 192,
   provenanceOnly: 0,
-  severe: 52,
+  severe: 0,
   incomparable: 0,
+  severeCoordinates: 0,
 };
 
 it('a single exit re-scored UP to a double leaves the draw where the direct path leaves it', () => {
@@ -328,9 +355,11 @@ it('a single exit re-scored UP to a double leaves the draw where the direct path
   const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
   const reports: string[] = [];
 
+  let severeCoordinates = 0;
   for (const cell of MATRIX) {
-    const { bucket, report } = classify(cell, 'UPGRADE');
+    const { bucket, report, coordinates } = classify(cell, 'UPGRADE');
     counts[bucket]++;
+    severeCoordinates += coordinates ?? 0;
     if (report) reports.push(report);
   }
 
@@ -344,9 +373,11 @@ it('a single exit re-scored UP to a double leaves the draw where the direct path
     provenanceOnly: counts.provenanceOnly,
     incomparable: counts.incomparable,
     identical: counts.identical,
+    severeCoordinates,
   }).toEqual({
     provenanceOnly: UPGRADE_BASELINE.provenanceOnly,
     incomparable: UPGRADE_BASELINE.incomparable,
     identical: UPGRADE_BASELINE.identical,
+    severeCoordinates: UPGRADE_BASELINE.severeCoordinates,
   });
 }, 180_000);

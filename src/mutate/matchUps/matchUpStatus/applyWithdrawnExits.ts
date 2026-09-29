@@ -57,6 +57,7 @@ export function applyWithdrawnExits({
         fromRoundNumber: withdrawnExit.roundNumber + 1,
         drawPosition: withdrawnExit.winnerDrawPosition,
         structureId: withdrawnExit.structureId,
+        withdrawingExit: true,
         tournamentRecord,
         drawDefinition,
         matchUpsMap,
