@@ -34,7 +34,7 @@ import {
  * | sweep | flips | diverging |
  * |---|---|---|
  * | the four default draw types, 16/16 and 16/13 | 186 | 0 (3 refused) |
- * | DOUBLE_ELIMINATION, 16/16 and 16/13 | 56 | 2 |
+ * | DOUBLE_ELIMINATION, 16/16 and 16/13 | 56 | 2, then 0 — see below |
  * | five more draw types, 16/16 and 16/13 | 213 | 0 |
  * | the default four at 8/8 and 8/7 | 74 | 0 (1 refused) |
  * | the default four, a second seed, 16/16 and 16/11 | 169 | 0 (3 refused) |
@@ -42,16 +42,16 @@ import {
  * Disabling `swapWinnerLoser`'s own re-pointing brings the five back, so the zero is not the
  * instrument agreeing with itself.
  *
- * ## The two that remain are a DECISION, and they are allowed BY NAME
+ * ## The two that remained were the DECIDER, and they are closed
  *
- * Flipping DOUBLE_ELIMINATION's Main final leaves the Decider exactly as it was under Route A —
- * same occupants, same winner — while Route B re-places the pair by their links and replays the
- * result. Route A's behaviour is deliberate: `getDownstreamStructureIds` declines a target that
- * BOTH sides of the flipped matchUp feed, because *"exchanging two participants who are both
- * already there is a claim about their roles"*, and relabelling it opened census seed 9100424.
- * Whether a Decider should survive its own final being flipped is a ruling, not a measurement.
+ * Flipping DOUBLE_ELIMINATION's Main final left the Decider exactly as it was under Route A — same
+ * occupants, same winner — because `getDownstreamStructureIds` declines a target that BOTH sides of
+ * the flipped matchUp feed. They were allowed here by name until CA ruled, 2026-09-29: a decider
+ * that is not needed is a `DEAD_RUBBER`, and one that was played before its final changed is
+ * destroyed. `reconcileDecider` settles it by that rule on either route, so there is no allowance
+ * left and the DOUBLE_ELIMINATION row above now reads 0.
  *
- * Anything else that diverges fails this test, and so does a refusal from any route but A.
+ * Anything that diverges fails this test, and so does a refusal from any route but A.
  *
  *   ROUTE_DIFF=1 TZ=UTC OUT=/tmp/route-diff.jsonl \
  *     npx vitest run src/tests/mutations/exitPropagation/routeDifferential.test.ts \
@@ -172,21 +172,7 @@ test.skipIf(!enabled)(`route differential — seed ${seed}, drawSize ${drawSize}
 
   expect(flips).toBeGreaterThan(0);
 
-  // the control for the allowance below: it must describe divergences that actually occur, or it is
-  // a list of excuses for cells nobody checked
-  const finalRound = (drawType: string, participantsCount: number, structureName: string) =>
-    Math.max(
-      ...records
-        .filter((record) => record.drawType === drawType && record.participantsCount === participantsCount)
-        .filter((record) => record.coord.structureName === structureName)
-        .map((record) => record.coord.roundNumber),
-    );
-  const awaitingRuling = (record: FlipRecord) =>
-    record.drawType === DOUBLE_ELIMINATION &&
-    record.coord.structureName === 'Main' &&
-    record.coord.roundNumber === finalRound(record.drawType, record.participantsCount, 'Main');
-
-  const unexpected = records.filter((record) => record.diverges && !awaitingRuling(record));
+  const unexpected = records.filter((record) => record.diverges);
   expect(
     unexpected.map((record) => `${record.drawType}/${record.participantsCount} ${coordKey(record.coord)}`),
     'Route A and Route B must leave the same draw',

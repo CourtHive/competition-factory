@@ -4,6 +4,9 @@ import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
+// constants
+import { DEAD_RUBBER } from '@Constants/matchUpStatusConstants';
+
 /**
  * The two routes by which a decided matchUp's winner can be changed, and a structural comparison
  * of what each leaves behind.
@@ -161,6 +164,8 @@ export function playForward(drawId: string): Coord[] {
       .filter(
         (matchUp: any) =>
           !matchUp.winningSide &&
+          // a decider that is not needed holds two participants and is not waiting to be played
+          matchUp.matchUpStatus !== DEAD_RUBBER &&
           (matchUp.sides ?? []).filter((side: any) => side?.participantId).length === 2 &&
           matchUp.roundPosition,
       )
@@ -304,6 +309,11 @@ export function compareRoutes({
     later.map((coordinate) => [coordKey(coordinate), resultByPerson(drawId, coordinate)]),
   );
   const flippedResult = resultByPerson(drawId, coord);
+  const flipped0: any = findByCoord(drawId, coord);
+  const deciderId =
+    flipped0?.winnerMatchUpId && flipped0.winnerMatchUpId === flipped0.loserMatchUpId
+      ? flipped0.winnerMatchUpId
+      : undefined;
   const exchanged: [string | undefined, string | undefined] = [flippedResult.winnerId, flippedResult.loserId];
   // Cleared in REVERSE entry order: clearing a result the engine still considers to have an active
   // downstream is refused, so the unwind has to come back out the way it went in.
@@ -324,6 +334,11 @@ export function compareRoutes({
     // A coordinate that no longer names a playable matchUp is legitimately unplayable after the
     // flip — the flip changed who progresses there. Skipping it is correct, not a shortfall.
     if (!matchUp) continue;
+    // A DECIDER'S RESULT DOES NOT SURVIVE ITS FINAL BEING CHANGED — CA, 2026-09-29: *"it should be
+    // destroyed."* Re-entering it here would replay a match the ruling says was never owed, and
+    // report the engine's obedience as a divergence. Whether it is now to be played or a dead rubber
+    // is `reconcileDecider`'s to say, on both routes.
+    if (matchUp.matchUpId === deciderId) continue;
     const winningSide = replayedWinningSide(matchUp, originalResults.get(coordKey(coordinate)), exchanged);
     applyOutcome(matchUp.matchUpId, drawId, { winningSide });
   }
