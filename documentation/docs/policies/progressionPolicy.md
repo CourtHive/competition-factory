@@ -22,7 +22,7 @@ The **Progression Policy** (`POLICY_TYPE_PROGRESSION`) controls automated behavi
 {
   progression: {
     policyName?: string;                    // Optional policy identifier
-    doubleExitPropagateBye?: boolean;       // BYE instead of WALKOVER (default: false)
+    doubleExitPropagateBye?: boolean;       // a double exit produces a BYE, not an exit (default: true)
     autoPlaceQualifiers?: boolean;          // Auto-place qualifiers (default: false)
     autoReplaceQualifiers?: boolean;        // Replace if winningSide changes (default: false)
     autoRemoveQualifiers?: boolean;         // Remove if winningSide cleared (default: false)
@@ -32,7 +32,7 @@ The **Progression Policy** (`POLICY_TYPE_PROGRESSION`) controls automated behavi
 
 **Attributes:**
 
-- **doubleExitPropagateBye**: When `true`, a BYE propagates to loser position instead of producing a WALKOVER in double-exit structures. Significant for providers who don't award ranking points for first-round walkovers.
+- **doubleExitPropagateBye**: A double exit (`DOUBLE_WALKOVER`, `DOUBLE_DEFAULT`) removes both competitors, so nobody will arrive in the position its loser would have taken in a connected structure. When `true` — the default — that position becomes a BYE. When `false` it receives a produced `WALKOVER` or `DEFAULTED` instead. Set it to `false` if you award ranking points by `matchUpStatus` and need a first-round walkover told apart from a BYE.
 
 - **autoPlaceQualifiers**: When `true`, qualifiers are randomly assigned to qualifier positions in the main draw when qualifying completes.
 
@@ -51,7 +51,7 @@ const { POLICY_PROGRESSION_DEFAULT } = fixtures.policies;
 // Defaults:
 // {
 //   progression: {
-//     doubleExitPropagateBye: false,    // Produce walkovers (standard)
+//     doubleExitPropagateBye: true,     // A double exit produces a BYE
 //     autoPlaceQualifiers: false,       // Manual qualifier placement
 //     autoReplaceQualifiers: false,     // Manual replacement
 //     autoRemoveQualifiers: false       // Manual removal
@@ -63,45 +63,48 @@ const { POLICY_PROGRESSION_DEFAULT } = fixtures.policies;
 
 ## Double-Exit BYE Propagation
 
-### Standard Behavior (default: false)
+### BYE Propagation (default: true)
 
 ```js
-// When a participant withdraws before their first match in a double-exit structure:
-// Opponent gets a WALKOVER win → advances
-// Loser bracket receives a WALKOVER (may award ranking points)
-
-const standardPolicy = {
-  [POLICY_TYPE_PROGRESSION]: {
-    policyName: 'Standard Progression',
-    doubleExitPropagateBye: false, // Default
-  },
-};
-```
-
-### BYE Propagation (doubleExitPropagateBye: true)
-
-```js
-// When a participant withdraws before their first match:
-// Opponent gets a BYE → advances
-// Loser bracket receives a BYE (no ranking points)
+// When a first-round matchUp is a DOUBLE_WALKOVER or DOUBLE_DEFAULT:
+// neither competitor advances, and neither is a loser who can be fed into a connected structure
+// the position that loser would have taken becomes a BYE, and its opponent advances through it
 
 const byePropagationPolicy = {
   [POLICY_TYPE_PROGRESSION]: {
     policyName: 'BYE Propagation',
-    doubleExitPropagateBye: true, // BYE instead of WALKOVER
+    doubleExitPropagateBye: true, // Default
+  },
+};
+```
+
+Within the structure where the double exit happened nothing changes: the next matchUp still receives a
+produced `WALKOVER` or `DEFAULTED`, and whoever arrives opposite it is awarded it. The policy governs
+only the position in the CONNECTED structure.
+
+### Produced Exits (doubleExitPropagateBye: false)
+
+```js
+// When a first-round matchUp is a DOUBLE_WALKOVER or DOUBLE_DEFAULT:
+// the position its loser would have taken receives a produced WALKOVER or DEFAULTED instead of a BYE
+// (may award ranking points, depending on the provider's rules)
+
+const producedExitPolicy = {
+  [POLICY_TYPE_PROGRESSION]: {
+    policyName: 'Produced Exits',
+    doubleExitPropagateBye: false,
   },
 };
 
 tournamentEngine.attachPolicies({
-  policyDefinitions: byePropagationPolicy,
+  policyDefinitions: producedExitPolicy,
 });
 ```
 
-**Use Cases:**
+**When to turn it off:**
 
-- ITF events where first-round walkovers don't award ranking points
-- Tournaments wanting consistent BYE handling
-- Federations with specific walkover policies
+- You award ranking points by `matchUpStatus` and a produced walkover must count where a BYE would not
+- Your published results must show that a position was vacated by a walkover rather than by a BYE
 
 ---
 

@@ -1,5 +1,6 @@
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { exitOutcomeCode, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -126,6 +127,7 @@ it('carries a production code through propagation without relabelling it', () =>
   const idPrefix = 'matchUp';
   const drawId = 'production-codes';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
     setState: true,
   });

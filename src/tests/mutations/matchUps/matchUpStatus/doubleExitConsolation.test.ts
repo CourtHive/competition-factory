@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { printGlobalLog, pushGlobalLog } from '@Functions/global/globalLog';
 import { setDevContext, setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -298,6 +299,7 @@ test.each(scenarios)('Double Exit produces exit in consolation', (params) => {
   expect(result.success).toEqual(true);
 
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       {
         drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -440,6 +442,7 @@ test.each([FEED_IN_CHAMPIONSHIP, DOUBLE_ELIMINATION])(
   (drawType) => {
     const drawId = 'drawId';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawSize: 8, participantsCount: 8, drawType, idPrefix: 'm' }],
       setState: true,
     });

@@ -76,11 +76,16 @@ const participantCount = (matchUp: any) => (matchUp.sides ?? []).filter((side: a
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
 
 /** two first-round double exits in the given order, then every playable matchUp until none is left */
-function playOut({ drawType, drawSize, order, flavour }: (typeof CELLS)[number]) {
+function playOut({ drawType, drawSize, order, flavour }: (typeof CELLS)[number], doubleExitPropagateBye?: boolean) {
   setSubscriptions({});
   const drawId = 'plays-out';
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    policyDefinitions: { [POLICY_TYPE_PROGRESSION]: { propagateExitStatus: true } },
+    policyDefinitions: {
+      [POLICY_TYPE_PROGRESSION]: {
+        ...(doubleExitPropagateBye === undefined ? {} : { doubleExitPropagateBye }),
+        propagateExitStatus: true,
+      },
+    },
     drawProfiles: [{ drawType, drawSize, participantsCount: drawSize, drawId }],
     nonRandom: 9000230,
   });
@@ -146,27 +151,34 @@ function playOut({ drawType, drawSize, order, flavour }: (typeof CELLS)[number])
   };
 }
 
-it('plays every draw to the end after two first-round double exits', () => {
-  const findings: string[] = [];
-  let played = 0;
+it.each([
+  { label: 'a double exit produces a BYE (the default)', doubleExitPropagateBye: undefined },
+  { label: 'a double exit produces an EXIT', doubleExitPropagateBye: false },
+])(
+  'plays every draw to the end after two first-round double exits — $label',
+  ({ doubleExitPropagateBye }) => {
+    const findings: string[] = [];
+    let played = 0;
 
-  for (const cell of CELLS) {
-    const { played: count, ...outcome } = playOut(cell);
-    played += count;
-    for (const [kind, found] of Object.entries(outcome)) {
-      if (found.length) {
-        findings.push(`${cell.drawType} ${cell.drawSize} ${cell.order.join('>')} ${cell.flavour} ${kind}: ${found}`);
+    for (const cell of CELLS) {
+      const { played: count, ...outcome } = playOut(cell, doubleExitPropagateBye);
+      played += count;
+      for (const [kind, found] of Object.entries(outcome)) {
+        if (found.length) {
+          findings.push(`${cell.drawType} ${cell.drawSize} ${cell.order.join('>')} ${cell.flavour} ${kind}: ${found}`);
+        }
       }
     }
-  }
 
-  // CONTROL: the sweep ran, and it actually played matches — a loop that scored nothing would find
-  // nothing, and would report that as a clean result
-  expect(CELLS.length).toEqual(56);
-  expect(played).toBeGreaterThan(CELLS.length * 4);
+    // CONTROL: the sweep ran, and it actually played matches — a loop that scored nothing would find
+    // nothing, and would report that as a clean result
+    expect(CELLS.length).toEqual(56);
+    expect(played).toBeGreaterThan(CELLS.length * 4);
 
-  expect(findings).toEqual([]);
-}, 180_000);
+    expect(findings).toEqual([]);
+  },
+  180_000,
+);
 
 it('does not carry an exit on from a loser target whose own seat is already the BYE', () => {
   for (const drawType of [MODIFIED_FEED_IN_CHAMPIONSHIP, CURTIS_CONSOLATION]) {

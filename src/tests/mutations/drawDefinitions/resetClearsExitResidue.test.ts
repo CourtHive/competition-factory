@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -62,6 +63,7 @@ const at = (matchUps: any[], structureName: string, roundNumber: number, roundPo
 it('removes exit-propagation residue from a BYE matchUp when a draw is reset', () => {
   // CA's reproduction shape: two byes in a COMPASS 16, and a double exit in the first round
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId: DRAW_ID }],
     setState: true,
   });
@@ -118,6 +120,7 @@ it('keeps every BYE matchUp a BYE while clearing the residue', () => {
   // the companion half of the rule: the clear must not turn a BYE into TO_BE_PLAYED, which is what
   // routing BYE matchUps through `toBePlayed` would have done
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId: DRAW_ID }],
     setState: true,
   });

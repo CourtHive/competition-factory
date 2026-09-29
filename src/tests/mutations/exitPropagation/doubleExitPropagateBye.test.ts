@@ -67,7 +67,8 @@ const key = (m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}`
 function build(drawId: string, propagateBye: boolean) {
   setSubscriptions({});
   const policyDefinitions: any = { [POLICY_TYPE_SCORING]: { propagateExitStatus: true } };
-  if (propagateBye) policyDefinitions[POLICY_TYPE_PROGRESSION] = { doubleExitPropagateBye: true };
+  // stated both ways: the policy is ON by default, so OFF has to be said to be tested
+  policyDefinitions[POLICY_TYPE_PROGRESSION] = { doubleExitPropagateBye: !!propagateBye };
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ participantsCount: 6, drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP_TO_SF, drawId }],
     policyDefinitions,

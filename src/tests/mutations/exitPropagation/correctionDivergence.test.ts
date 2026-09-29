@@ -104,18 +104,30 @@ import {
  * `crossStructureWinnerPositions` DE window 9301605 (the seat is FILLED later). The module's docblock
  * carries both measurements.
  */
+/**
+ * ## Lowered 2026-09-29: 8 -> 0 severe. **This arm is CLOSED.**
+ *
+ * The eight were DOUBLE_ELIMINATION and MODIFIED_FEED_IN_CHAMPIONSHIP at 8/5, all one defect, and
+ * they had been here since the sweep was written: a seat whose OPPONENT is a BYE advances from
+ * generation, a double exit upstream makes that seat a propagated BYE, and correcting the double exit
+ * withdrew the BYE and took the seat's advancement with it. `releaseAdvancedDrawPosition` had
+ * carried the rule since 2026-09-21; `positionClear` has its own removal and had never been given it.
+ *
+ * With every arm at zero, under both policies, the three baselines assert one thing: a draw is where
+ * its results put it, whatever order they were entered in and however often they were corrected.
+ */
 const BASELINE = {
   cells: 192,
   /** both paths ran and the draws agree exactly — the only bucket that should ever grow */
-  identical: 184,
+  identical: 192,
   /** a stale `sideExitProvenance` entry only; status, winner and positions agree */
   provenanceOnly: 0,
   /** matchUpStatus, winningSide or drawPositions differ — user-visible */
-  severe: 8,
+  severe: 0,
   /** a step was refused in one path and not the other, so the cell was not an experiment */
   incomparable: 0,
   /** COORDINATES, not cells: one severe cell can diverge at several, and a fix can close some of them */
-  severeCoordinates: 8,
+  severeCoordinates: 0,
 };
 
 const DRAW_TYPES = [
@@ -161,6 +173,24 @@ const MATRIX = DRAW_TYPES.flatMap((drawType) =>
     ),
   ),
 );
+
+/**
+ * EVERY ARM IS SWEPT UNDER BOTH POLICIES.
+ *
+ * `doubleExitPropagateBye` decides what a double exit produces for the seat its loser would have
+ * taken: a BYE, which is the default since 2026-09-29, or an EXIT. Both are supported, and a provider
+ * who awards ranking points by matchUpStatus runs the second. A sweep under the default alone would
+ * leave that configuration guarded by named tests only — and `verify:coverage-headroom` said so
+ * before anybody reasoned it out: with the default flipped and the sweep following it, 26 statements
+ * of margin went, against a budget of 25, because the produced-exit paths had stopped being swept.
+ *
+ * The baselines are the SAME for both and are all zero. A policy is a choice between two correct
+ * behaviours, not between a correct one and a tolerated one.
+ */
+const POLICIES = [
+  { label: 'a double exit produces a BYE (the default)', doubleExitPropagateBye: undefined },
+  { label: 'a double exit produces an EXIT', doubleExitPropagateBye: false },
+];
 
 type Bucket = 'identical' | 'provenanceOnly' | 'severe' | 'incomparable';
 
@@ -216,13 +246,15 @@ function scenarioFor(
 function classify(
   cell: (typeof MATRIX)[number],
   direction: Direction = 'DOWNGRADE',
+  doubleExitPropagateBye?: boolean,
 ): { bucket: Bucket; report?: string; coordinates?: number } {
-  const { doubleExitStatus, singleExitStatus, ...config } = cell;
+  const { doubleExitStatus, singleExitStatus, ...matrixConfig } = cell;
+  const config = { ...matrixConfig, doubleExitPropagateBye };
   const label = `${config.drawType} ${config.drawSize}/${config.participantsCount} ${doubleExitStatus} propagate=${config.propagateExitStatus}`;
 
   // COMPASS and OLYMPIC open in `East`, not `Main` — resolved per draw rather than assumed, and
   // CACHED: resolving builds a draw, and doing that per cell tripled the sweep's generation count
-  const structureName = firstRoundStructure(config);
+  const structureName = firstRoundStructure(matrixConfig);
   const { direct, corrected } = scenarioFor(direction, { doubleExitStatus, singleExitStatus, structureName });
   const { divergences, refusalMismatch } = compareCorrection({ config, direct, corrected });
 
@@ -245,41 +277,45 @@ function classify(
   return { bucket: 'severe', report: `${label}\n${detail}`, coordinates: visible.length };
 }
 
-it('a corrected double exit leaves the draw where the direct path leaves it', () => {
-  setSubscriptions({});
-  const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
-  const reports: string[] = [];
+it.each(POLICIES)(
+  'a corrected double exit leaves the draw where the direct path leaves it — $label',
+  ({ doubleExitPropagateBye }) => {
+    setSubscriptions({});
+    const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
+    const reports: string[] = [];
 
-  let severeCoordinates = 0;
-  for (const cell of MATRIX) {
-    const { bucket, report, coordinates } = classify(cell);
-    counts[bucket]++;
-    severeCoordinates += coordinates ?? 0;
-    if (report) reports.push(report);
-  }
+    let severeCoordinates = 0;
+    for (const cell of MATRIX) {
+      const { bucket, report, coordinates } = classify(cell, 'DOWNGRADE', doubleExitPropagateBye);
+      counts[bucket]++;
+      severeCoordinates += coordinates ?? 0;
+      if (report) reports.push(report);
+    }
 
-  // the control: a sweep that measured nothing would satisfy every assertion below vacuously
-  expect(MATRIX.length).toEqual(BASELINE.cells);
+    // the control: a sweep that measured nothing would satisfy every assertion below vacuously
+    expect(MATRIX.length).toEqual(BASELINE.cells);
 
-  // reported as one comparison so a failure names the cells rather than just the number
-  const report = counts.severe === BASELINE.severe ? '' : `\n${reports.join('\n')}\n`;
-  expect(`severe=${counts.severe}${report}`).toEqual(`severe=${BASELINE.severe}`);
+    // reported as one comparison so a failure names the cells rather than just the number
+    const report = counts.severe === BASELINE.severe ? '' : `\n${reports.join('\n')}\n`;
+    expect(`severe=${counts.severe}${report}`).toEqual(`severe=${BASELINE.severe}`);
 
-  expect({
-    provenanceOnly: counts.provenanceOnly,
-    incomparable: counts.incomparable,
-    identical: counts.identical,
-    severeCoordinates,
-  }).toEqual({
-    provenanceOnly: BASELINE.provenanceOnly,
-    incomparable: BASELINE.incomparable,
-    identical: BASELINE.identical,
-    severeCoordinates: BASELINE.severeCoordinates,
-  });
-  // 192 cells, each generating two draws and playing them out. It runs in ~10s alone and the
-  // default 30s cap is not enough under full-suite contention — measured, it timed out there while
-  // passing in isolation, which is the worst way for a gate to fail.
-}, 180_000);
+    expect({
+      provenanceOnly: counts.provenanceOnly,
+      incomparable: counts.incomparable,
+      identical: counts.identical,
+      severeCoordinates,
+    }).toEqual({
+      provenanceOnly: BASELINE.provenanceOnly,
+      incomparable: BASELINE.incomparable,
+      identical: BASELINE.identical,
+      severeCoordinates: BASELINE.severeCoordinates,
+    });
+    // 192 cells, each generating two draws and playing them out. It runs in ~10s alone and the
+    // default 30s cap is not enough under full-suite contention — measured, it timed out there while
+    // passing in isolation, which is the worst way for a gate to fail.
+  },
+  180_000,
+);
 
 /**
  * THE UNSWEPT DIRECTION — a single exit RE-SCORED UP to a double. **Punch-list P42.**
@@ -356,37 +392,41 @@ const UPGRADE_BASELINE = {
   severeCoordinates: 0,
 };
 
-it('a single exit re-scored UP to a double leaves the draw where the direct path leaves it', () => {
-  setSubscriptions({});
-  const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
-  const reports: string[] = [];
+it.each(POLICIES)(
+  'a single exit re-scored UP to a double leaves the draw where the direct path leaves it — $label',
+  ({ doubleExitPropagateBye }) => {
+    setSubscriptions({});
+    const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
+    const reports: string[] = [];
 
-  let severeCoordinates = 0;
-  for (const cell of MATRIX) {
-    const { bucket, report, coordinates } = classify(cell, 'UPGRADE');
-    counts[bucket]++;
-    severeCoordinates += coordinates ?? 0;
-    if (report) reports.push(report);
-  }
+    let severeCoordinates = 0;
+    for (const cell of MATRIX) {
+      const { bucket, report, coordinates } = classify(cell, 'UPGRADE', doubleExitPropagateBye);
+      counts[bucket]++;
+      severeCoordinates += coordinates ?? 0;
+      if (report) reports.push(report);
+    }
 
-  // the control: a sweep that measured nothing would satisfy every assertion below vacuously
-  expect(MATRIX.length).toEqual(UPGRADE_BASELINE.cells);
+    // the control: a sweep that measured nothing would satisfy every assertion below vacuously
+    expect(MATRIX.length).toEqual(UPGRADE_BASELINE.cells);
 
-  const report = counts.severe === UPGRADE_BASELINE.severe ? '' : `\n${reports.join('\n')}\n`;
-  expect(`severe=${counts.severe}${report}`).toEqual(`severe=${UPGRADE_BASELINE.severe}`);
+    const report = counts.severe === UPGRADE_BASELINE.severe ? '' : `\n${reports.join('\n')}\n`;
+    expect(`severe=${counts.severe}${report}`).toEqual(`severe=${UPGRADE_BASELINE.severe}`);
 
-  expect({
-    provenanceOnly: counts.provenanceOnly,
-    incomparable: counts.incomparable,
-    identical: counts.identical,
-    severeCoordinates,
-  }).toEqual({
-    provenanceOnly: UPGRADE_BASELINE.provenanceOnly,
-    incomparable: UPGRADE_BASELINE.incomparable,
-    identical: UPGRADE_BASELINE.identical,
-    severeCoordinates: UPGRADE_BASELINE.severeCoordinates,
-  });
-}, 180_000);
+    expect({
+      provenanceOnly: counts.provenanceOnly,
+      incomparable: counts.incomparable,
+      identical: counts.identical,
+      severeCoordinates,
+    }).toEqual({
+      provenanceOnly: UPGRADE_BASELINE.provenanceOnly,
+      incomparable: UPGRADE_BASELINE.incomparable,
+      identical: UPGRADE_BASELINE.identical,
+      severeCoordinates: UPGRADE_BASELINE.severeCoordinates,
+    });
+  },
+  180_000,
+);
 
 /**
  * THE THIRD DIRECTION — no correction at all. **Punch-list P44.**
@@ -410,36 +450,40 @@ it('a single exit re-scored UP to a double leaves the draw where the direct path
  * side, no drawPosition and no winner — which is the state `Main|3|1` always held. Both counts are
  * zero and both are invariants: **do not raise them.**
  */
-it('two double exits leave the same draw whichever is entered first, and award no exit its own win', () => {
-  setSubscriptions({});
-  const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
-  const reports: string[] = [];
-  const carrierWins: string[] = [];
+it.each(POLICIES)(
+  'two double exits leave the same draw whichever is entered first, and award no exit its own win — $label',
+  ({ doubleExitPropagateBye }) => {
+    setSubscriptions({});
+    const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
+    const reports: string[] = [];
+    const carrierWins: string[] = [];
 
-  for (const cell of MATRIX) {
-    const { bucket, report } = classify(cell, 'ORDER');
-    counts[bucket]++;
-    if (report) reports.push(report);
+    for (const cell of MATRIX) {
+      const { bucket, report } = classify(cell, 'ORDER', doubleExitPropagateBye);
+      counts[bucket]++;
+      if (report) reports.push(report);
 
-    // the engine still holds the draw `classify` played last
-    for (const matchUp of (tournamentEngine.allTournamentMatchUps().matchUps ?? []) as any[]) {
-      const winnersOrigin = matchUp.winningSide && matchUp.sideExitProvenance?.[matchUp.winningSide];
-      if (isExit(matchUp.matchUpStatus) && isDoubleExit(winnersOrigin?.previousMatchUpStatus)) {
-        carrierWins.push(
-          `${cell.drawType} ${cell.drawSize}/${cell.participantsCount} ${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition} ws=${matchUp.winningSide}`,
-        );
+      // the engine still holds the draw `classify` played last
+      for (const matchUp of (tournamentEngine.allTournamentMatchUps().matchUps ?? []) as any[]) {
+        const winnersOrigin = matchUp.winningSide && matchUp.sideExitProvenance?.[matchUp.winningSide];
+        if (isExit(matchUp.matchUpStatus) && isDoubleExit(winnersOrigin?.previousMatchUpStatus)) {
+          carrierWins.push(
+            `${cell.drawType} ${cell.drawSize}/${cell.participantsCount} ${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition} ws=${matchUp.winningSide}`,
+          );
+        }
       }
     }
-  }
 
-  // the control: a sweep that measured nothing would satisfy every assertion below vacuously
-  expect(MATRIX.length).toEqual(192);
-  expect(counts.identical + counts.provenanceOnly + counts.severe + counts.incomparable).toEqual(192);
+    // the control: a sweep that measured nothing would satisfy every assertion below vacuously
+    expect(MATRIX.length).toEqual(192);
+    expect(counts.identical + counts.provenanceOnly + counts.severe + counts.incomparable).toEqual(192);
 
-  expect(`severe=${counts.severe}\n${reports.join('\n')}`.trim()).toEqual('severe=0');
-  expect({ provenanceOnly: counts.provenanceOnly, incomparable: counts.incomparable }).toEqual({
-    provenanceOnly: 0,
-    incomparable: 0,
-  });
-  expect(carrierWins, 'the side carrying a delivered exit is never the side awarded it').toEqual([]);
-}, 180_000);
+    expect(`severe=${counts.severe}\n${reports.join('\n')}`.trim()).toEqual('severe=0');
+    expect({ provenanceOnly: counts.provenanceOnly, incomparable: counts.incomparable }).toEqual({
+      provenanceOnly: 0,
+      incomparable: 0,
+    });
+    expect(carrierWins, 'the side carrying a delivered exit is never the side awarded it').toEqual([]);
+  },
+  180_000,
+);

@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -35,6 +36,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 const seed = {
   drawProfiles: [{ drawType: COMPASS, drawSize: 8, participantsCount: 7, drawId: 'A' }],
+  policyDefinitions: PRODUCED_EXIT_POLICY,
   nonRandom: 20220267,
 };
 

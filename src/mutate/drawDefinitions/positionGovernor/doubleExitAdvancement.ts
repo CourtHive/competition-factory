@@ -3,6 +3,7 @@ import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedP
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { releaseAdvancedDrawPosition } from '@Mutate/matchUps/drawPositions/releaseAdvancedDrawPosition';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
+import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
@@ -115,7 +116,7 @@ export function doubleExitAdvancement(params) {
    * wherever the slot is already settled.
    */
   const loserTargetStillOpen = !!(
-    appliedPolicies?.progression?.doubleExitPropagateBye &&
+    propagatesByeOnDoubleExit(appliedPolicies) &&
     loserMatchUp?.matchUpStatus === BYE &&
     loserTargetDrawPosition !== undefined &&
     !getPositionAssignments({
@@ -332,7 +333,7 @@ function handleLoserMatchUp({
   stack,
 }) {
   const { loserTargetLink } = targetLinks;
-  const propagateBye = appliedPolicies?.progression?.doubleExitPropagateBye;
+  const propagateBye = propagatesByeOnDoubleExit(appliedPolicies);
 
   /**
    * Does this target hold a RESERVED drawPosition for the arrival the double exit will never send?

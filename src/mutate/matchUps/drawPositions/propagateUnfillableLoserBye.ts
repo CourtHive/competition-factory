@@ -11,6 +11,7 @@ import { isExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 
 /**
@@ -119,19 +120,42 @@ export function propagateUnfillableLoserBye({
    * known to be a resolved produced exit with exactly one exited side.
    */
   const matchUp: any = matchUpsMap.drawMatchUps?.find((candidate: any) => candidate.matchUpId === matchUpId);
-  if (!matchUp?.winningSide || !isExit(matchUp.matchUpStatus)) return undefined;
-
-  const provenance = getSideExitProvenance({ matchUp }) ?? {};
-  const exitingSides = ([1, 2] as const).filter((sideNumber) => carriedExitStatus(provenance[sideNumber]));
 
   /**
-   * EXACTLY ONE side may carry an exit. Two is a convergence — nobody wins it and `progressExitStatus`
-   * RULE 4 owns that state — and zero means a referee recorded this exit directly, where the loser is
-   * a real person who did not appear and the loser link should carry them.
+   * A MATCHUP THE CASCADE MADE A BYE CANNOT PRODUCE A LOSER EITHER — 2026-09-29.
+   *
+   * A BYE matchUp has no loser by definition, and the ordinary BYE cascade gives its loser seat a BYE
+   * (`advanceDrawPosition`, *"a BYE is being placed in linked structure"*). That cascade runs when the
+   * BYE is ASSIGNED, which at generation is before anything has advanced. A BYE the cascade produces
+   * at runtime can land on a seat that has ALREADY advanced, and then nothing runs it.
+   *
+   * Traced on COMPASS 16/16 with `East|1|1` and `East|1|2` both DOUBLE_WALKOVER and a double exit
+   * producing a BYE: `West|2|1` holds `[2, _]` from the first exit, seat 2 becomes a BYE on the second,
+   * and the winner of `West|1|2` later arrives beside it. `Southwest|1|1`, which the loser of
+   * `West|2|1` feeds, kept an empty seat — and the participant who arrived opposite it waited for an
+   * opponent who could not exist. Four cells of `convergencePlaysOut`.
+   *
+   * Only a BYE the CASCADE placed. A structural BYE's loser seat was settled at generation, and
+   * re-deriving it here would be a second opinion about a draw nobody has touched.
    */
-  if (exitingSides.length !== 1) return undefined;
-  // and the exited side must be the side that LOST, or this matchUp's loser is a real participant
-  if (matchUp.winningSide === exitingSides[0]) return undefined;
+  if (matchUp?.matchUpStatus === BYE) {
+    if (!holdsPropagatedBye({ drawDefinition, matchUp })) return undefined;
+  } else {
+    if (!matchUp?.winningSide || !isExit(matchUp.matchUpStatus)) return undefined;
+
+    const provenance = getSideExitProvenance({ matchUp }) ?? {};
+    const exitingSides = ([1, 2] as const).filter((sideNumber) => carriedExitStatus(provenance[sideNumber]));
+
+    /**
+     * EXACTLY ONE side may carry an exit. Two is a convergence — nobody wins it and
+     * `progressExitStatus` RULE 4 owns that state — and zero means a referee recorded this exit
+     * directly, where the loser is a real person who did not appear and the loser link should carry
+     * them.
+     */
+    if (exitingSides.length !== 1) return undefined;
+    // and the exited side must be the side that LOST, or this matchUp's loser is a real participant
+    if (matchUp.winningSide === exitingSides[0]) return undefined;
+  }
 
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
   const inContextMatchUp: any = inContextDrawMatchUps.find((candidate: any) => candidate.matchUpId === matchUpId);
@@ -216,4 +240,19 @@ export function propagateUnfillableLoserBye({
   }
 
   return undefined;
+}
+
+/** Whether one of this matchUp's seats holds a BYE that the cascade, not the draw, put there. */
+function holdsPropagatedBye({ drawDefinition, matchUp }: { drawDefinition: DrawDefinition; matchUp: any }): boolean {
+  const structure = (drawDefinition.structures ?? []).find((candidate: any) =>
+    (candidate.matchUps ?? []).some((held: any) => held.matchUpId === matchUp.matchUpId),
+  );
+  if (!structure) return false;
+
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: structure.structureId });
+  return (matchUp.drawPositions ?? []).some((drawPosition: number) =>
+    positionAssignments?.some(
+      (assignment: any) => assignment.drawPosition === drawPosition && assignment.bye && assignment.byeFromPropagation,
+    ),
+  );
 }

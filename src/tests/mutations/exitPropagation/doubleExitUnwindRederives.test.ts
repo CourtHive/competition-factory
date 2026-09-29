@@ -1,4 +1,5 @@
 import { getDrawDefinition, getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -45,6 +46,7 @@ function run(label: string, steps: Step[]) {
   setSubscriptions({});
   const drawId = `unwind-rederive-${label}`;
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ participantsCount: 8, drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, drawId }],
     nonRandom: 9000230,
     setState: true,

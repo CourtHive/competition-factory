@@ -4,6 +4,7 @@ import {
   withdrawByeClaim,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
+import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -204,7 +205,7 @@ export function removeDoubleExit(params) {
       return decorateResult({ result: { ...SUCCESS }, stack });
     }
 
-    if (appliedPolicies?.progression?.doubleExitPropagateBye || byePropagatedToLoserMatchUp) {
+    if (propagatesByeOnDoubleExit(appliedPolicies) || byePropagatedToLoserMatchUp) {
       removeDirectedBye({
         drawPosition: loserTargetDrawPosition,
         targetLink: loserTargetLink,

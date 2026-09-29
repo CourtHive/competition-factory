@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { it, expect } from 'vitest';
@@ -14,6 +15,7 @@ import {
 
 it('will not allow winningSide change when active downstream', () => {
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       {
         drawType: COMPASS,
@@ -104,6 +106,7 @@ it('Does mark a downstream as active if we are trying to reset the score for one
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       // uuids are popped and therefore assigned in reverse order
       // in this instance the uuids are assigned to structureIds in the order they are generated
@@ -203,6 +206,7 @@ it('clearing the source of a PENDING propagated exit succeeds and withdraws the 
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       // uuids are popped and therefore assigned in reverse order
       // in this instance the uuids are assigned to structureIds in the order they are generated
@@ -269,6 +273,7 @@ it('clearing the source of a PENDING propagated exit withdraws the whole chain â
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       // uuids are popped and therefore assigned in reverse order
       // in this instance the uuids are assigned to structureIds in the order they are generated
@@ -334,6 +339,7 @@ it('Does NOT mark downstream as active if the consolation match has the result o
   const idPrefix = 'matchUp';
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       // uuids are popped and therefore assigned in reverse order
       // in this instance the uuids are assigned to structureIds in the order they are generated

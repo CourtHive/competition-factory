@@ -11,6 +11,7 @@
  *        the result of the second-round consolation match.
  */
 
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -41,6 +42,7 @@ describe('Issue #3847: Two DOUBLE_WALKOVERs feeding same consolation match', () 
   it('should produce DOUBLE_WALKOVER in consolation when both feeder main draw matches are DOUBLE_WALKOVER', () => {
     const drawId = 'issue3847';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -88,6 +90,7 @@ describe('Issue #3847: Two DOUBLE_WALKOVERs feeding same consolation match', () 
   it('should produce DOUBLE_WALKOVER when main draw DOUBLE_WALKOVERs are entered in reverse order', () => {
     const drawId = 'i3847r';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -140,6 +143,7 @@ describe('Issue #3848: DOUBLE_WALKOVER propagation in FMLC consolation rounds', 
   it('should correctly propagate WO status codes from consolation R1 to consolation R2', () => {
     const drawId = 'issue3848';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -207,6 +211,7 @@ describe('Issue #3848: DOUBLE_WALKOVER propagation in FMLC consolation rounds', 
   it('should correctly look up the consolation first-round match (not main draw match) for R2 propagation', () => {
     const drawId = 'i3848s';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -304,6 +309,7 @@ describe('Issue #3847 simplified: drawSize 8 FMLC', () => {
   it('should handle two adjacent DOUBLE_WALKOVERs feeding same consolation match (drawSize: 8)', () => {
     const drawId = 'simple8';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -341,6 +347,7 @@ describe('Issue #3847 simplified: drawSize 8 FMLC', () => {
   it('should handle DOUBLE_WALKOVER feeding consolation from all 4 main draw R1 matches', () => {
     const drawId = 'allDWO8';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,

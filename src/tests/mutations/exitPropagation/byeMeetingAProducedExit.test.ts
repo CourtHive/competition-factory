@@ -1,4 +1,5 @@
 import { getDrawMatchUps, clearOutcome } from '@Tests/testHarness/exitPropagation/transitions';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -62,6 +63,7 @@ test('a converged double exit reaches the BYE, and the BYE stays a BYE', () => {
   setSubscriptions({});
   const drawId = 'bye-meets-exit-fmlc';
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, idPrefix: 'fmlc', drawId }],
     nonRandom: 1,
   });
@@ -164,6 +166,7 @@ test('a produced exit advanced through a BYE carries its origin, so the draw hol
   setSubscriptions({});
   const drawId = 'bye-exit-not-an-orphan';
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, idPrefix: 'orph', drawId }],
     nonRandom: 1,
   });
@@ -205,6 +208,7 @@ test('a BYE that meets a produced exit keeps BOTH origins, and stays a BYE', () 
   setSubscriptions({});
   const drawId = 'bye-meets-exit-se';
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ participantsCount: 7, idPrefix: 'match', seedsCount: 1, drawSize: 8, drawId }],
     nonRandom: 1,
   });
@@ -312,6 +316,7 @@ test('a BYE carries a produced exit onward, gives it back on undo, then carries 
   setSubscriptions({});
   const drawId = 'bye-meets-exit-round-trip';
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ participantsCount: 7, idPrefix: 'rt', seedsCount: 1, drawSize: 8, drawId }],
     nonRandom: 1,
   });
@@ -431,6 +436,7 @@ test('a double exit records its loser slot in the consolation and the exit walks
   setSubscriptions({});
   const drawId = 'bye-meets-exit-fmlc-loser';
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       {
         drawType: FIRST_MATCH_LOSER_CONSOLATION,

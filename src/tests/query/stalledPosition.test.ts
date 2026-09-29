@@ -1,4 +1,5 @@
 import { MATRIX_CELLS, playMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -7,7 +8,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { DOUBLE_WALKOVER, COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
-import { COMPASS } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
  * `STALLED_POSITION` — a participant in a match that can never be played, in a draw that has stopped.
@@ -38,6 +39,7 @@ const occupantsOf = (matchUp: any) => (matchUp?.sides ?? []).filter((s: any) => 
 
 function compass(participantsCount: number) {
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount, drawId: 'A' }],
     nonRandom: 20223109,
     setState: true,
@@ -200,25 +202,28 @@ it('reports nothing on a draw that completes cleanly', () => {
  * This is the other half of the pair the verification discipline asks for: one case where the rule is
  * silent because the draw is sound, and one where it speaks because the draw is not.
  *
- * ## The cell changed 2026-09-29, because the one it named was FIXED
+ * ## The cell has changed twice, because each one it named was FIXED
  *
- * This used `DOUBLE_ELIMINATION 8/5` at matrix seed 87: `Backdraw|2|2` ending `WALKOVER` with one
- * occupant and no winner. That was not a stranded participant. They had ADVANCED — the award was
- * simply never written, because resolving a pending exit was gated on a rule that exists to avoid
- * duplicate notices and is never true of a fed seat. See `drawPositionPlacement`,
- * *"THE AWARD IS NOT A NOTICE"*. Closing it took the budget 89 -> 68 cells and removed every
- * single-exit stall from the matrix, this one included.
+ * It used `DOUBLE_ELIMINATION 8/5` at matrix seed 87 — `Backdraw|2|2` ending `WALKOVER` with one
+ * occupant and no winner. That was not a stranded participant: they had ADVANCED, and the award was
+ * never written (`drawPositionPlacement`, *"THE AWARD IS NOT A NOTICE"*). Budget 89 -> 68.
  *
- * `COMPASS 16/16` at matrix seed 511 is what is left that still carries an exit status, which is
- * the property this case exists to show: `Southeast|1|1` is a `DOUBLE_WALKOVER` holding one
- * occupant, and only the status-blind rule can see it.
+ * It then used `COMPASS 16/16` at seed 511. With `doubleExitPropagateBye` ON by default a double exit
+ * produces a BYE for the seat its loser would have taken, and the BYE a cascade-made BYE matchUp owes
+ * ITS loser's seat is placed too (`propagateUnfillableLoserBye`). Budget 68 -> 4.
+ *
+ * What is left is ONE shape, in four cells: DOUBLE_ELIMINATION 16/16, where the Main final is decided
+ * by a produced exit and so has no loser, and the winner sits alone in the Decider. It is
+ * `TO_BE_PLAYED`, so this case no longer shows the status-blindness the rule was widened for — there
+ * is nothing left in the matrix that could. The adjudication in `stalledPositionAdjudication` still
+ * pins that property against constructed draws.
  */
-it('still fires where a stall remains — COMPASS 16/16, matrix seed 511', () => {
-  const cell = MATRIX_CELLS.find(({ seed }) => seed === 511);
-  expect(cell?.drawType).toEqual(COMPASS);
+it('still fires where a stall remains — DOUBLE_ELIMINATION 16/16, matrix seed 97', () => {
+  const cell = MATRIX_CELLS.find(({ seed }) => seed === 97);
+  expect(cell?.drawType).toEqual(DOUBLE_ELIMINATION);
   expect(cell?.participantsCount).toEqual(16);
 
-  const drawId = 'stalls-compass-16-16';
+  const drawId = 'stalls-de-16-16';
   expect(playMatrixCell(cell as any, drawId)).toEqual(true);
 
   const drawDefinition: any = tournamentEngine.getEvent({ drawId }).drawDefinition;
@@ -230,9 +235,9 @@ it('still fires where a stall remains — COMPASS 16/16, matrix seed 511', () =>
   expect(found.every((i: any) => i.severity === 'warning')).toEqual(true);
   expect(result.valid).toEqual(true);
 
-  // and the stall carries an EXIT status, which only the status-blind rule can see
+  // the winner of a final that had no loser, alone in the decider that final feeds
   const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId }).matchUps ?? [];
   const stalled: any = (matchUps as any[]).find((m) => m.matchUpId === found[0].matchUpId);
-  expect(stalled.matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  expect(stalled.structureName).toEqual('Decider');
   expect(stalled.winningSide).toBeUndefined();
 });

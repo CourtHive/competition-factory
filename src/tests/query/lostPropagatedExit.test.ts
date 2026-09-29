@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -25,6 +26,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
 /** A COMPASS draw carrying a resolved propagated exit at `West|2|1`, plus a way to corrupt it. */
 function brokenDraw(mutate: (matchUp: any) => void) {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId: 'A' }],
     nonRandom: 20223109,
   });
@@ -96,6 +98,7 @@ it('CONTROL: does NOT report a provenance record on a side that HOLDS a particip
 
 it('CONTROL: does NOT report a legitimately PENDING exit that nobody has reached yet', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId: 'A' }],
     nonRandom: 20223109,
   });
