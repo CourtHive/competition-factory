@@ -7,7 +7,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { DOUBLE_WALKOVER, COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
-import { DOUBLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
+import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
  * `STALLED_POSITION` — a participant in a match that can never be played, in a draw that has stopped.
@@ -200,17 +200,25 @@ it('reports nothing on a draw that completes cleanly', () => {
  * This is the other half of the pair the verification discipline asks for: one case where the rule is
  * silent because the draw is sound, and one where it speaks because the draw is not.
  *
- * `DOUBLE_ELIMINATION 8/5` at the matrix's own seed 87 strands a participant at `Backdraw|2|2`, which
- * ends `WALKOVER` holding one occupant — a shape P39 deliberately does NOT resolve, because the seat is
- * in the SAME structure rather than a first-round seat in a connected one. It is also the discriminator
- * the built artifact is verified against, so the two checks are about the same state.
+ * ## The cell changed 2026-09-29, because the one it named was FIXED
+ *
+ * This used `DOUBLE_ELIMINATION 8/5` at matrix seed 87: `Backdraw|2|2` ending `WALKOVER` with one
+ * occupant and no winner. That was not a stranded participant. They had ADVANCED — the award was
+ * simply never written, because resolving a pending exit was gated on a rule that exists to avoid
+ * duplicate notices and is never true of a fed seat. See `drawPositionPlacement`,
+ * *"THE AWARD IS NOT A NOTICE"*. Closing it took the budget 89 -> 68 cells and removed every
+ * single-exit stall from the matrix, this one included.
+ *
+ * `COMPASS 16/16` at matrix seed 511 is what is left that still carries an exit status, which is
+ * the property this case exists to show: `Southeast|1|1` is a `DOUBLE_WALKOVER` holding one
+ * occupant, and only the status-blind rule can see it.
  */
-it('still fires where a stall remains — DOUBLE_ELIMINATION 8/5, matrix seed 87', () => {
-  const cell = MATRIX_CELLS.find(({ seed }) => seed === 87);
-  expect(cell?.drawType).toEqual(DOUBLE_ELIMINATION);
-  expect(cell?.participantsCount).toEqual(5);
+it('still fires where a stall remains — COMPASS 16/16, matrix seed 511', () => {
+  const cell = MATRIX_CELLS.find(({ seed }) => seed === 511);
+  expect(cell?.drawType).toEqual(COMPASS);
+  expect(cell?.participantsCount).toEqual(16);
 
-  const drawId = 'stalls-de-8-5';
+  const drawId = 'stalls-compass-16-16';
   expect(playMatrixCell(cell as any, drawId)).toEqual(true);
 
   const drawDefinition: any = tournamentEngine.getEvent({ drawId }).drawDefinition;
@@ -225,6 +233,6 @@ it('still fires where a stall remains — DOUBLE_ELIMINATION 8/5, matrix seed 87
   // and the stall carries an EXIT status, which only the status-blind rule can see
   const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId }).matchUps ?? [];
   const stalled: any = (matchUps as any[]).find((m) => m.matchUpId === found[0].matchUpId);
-  expect(stalled.matchUpStatus).toEqual(WALKOVER);
+  expect(stalled.matchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(stalled.winningSide).toBeUndefined();
 });
