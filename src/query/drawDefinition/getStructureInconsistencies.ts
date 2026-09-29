@@ -7,12 +7,20 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import { BYE, DEAD_RUBBER, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import {
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+  TO_BE_PLAYED,
+  DEAD_RUBBER,
+  CANCELLED,
+  ABANDONED,
+  BYE,
+} from '@Constants/matchUpStatusConstants';
 
 // A decided matchUp asserts three invariants that the FMLC propagated-exit bugs kept
 // violating (each is a distinct issueType so callers can filter):
@@ -445,6 +453,45 @@ function getLostPropagatedExitInconsistency(matchUp: any): StructureInconsistenc
 }
 
 /**
+ * THE STATUSES THAT SAY A MATCHUP WILL NEVER BE PLAYED — CA, 2026-09-29.
+ *
+ * *"DEAD_RUBBER, CANCELLED, ABANDONED should all silence stalls. All of those say that a matchup
+ * isn't ever going to be played (and any matchUps fed by the matchUp that won't be played are also
+ * excluded)."*
+ *
+ * These are the only statuses `STALLED_POSITION` consults, and they are a different kind of thing
+ * from the `TO_BE_PLAYED` gate it dropped. That gate could be quietened by a partial propagation fix
+ * stamping a carried exit onto a stalled matchUp. None of these is a status an exit carries: each is
+ * a statement, made by a person or by `reconcileDecider`, that nobody is expected here.
+ */
+const NEVER_TO_BE_PLAYED = new Set<string>([DEAD_RUBBER, CANCELLED, ABANDONED]);
+
+/**
+ * The matchUps that will never be played, and everything they feed.
+ *
+ * FED is followed through both `winnerMatchUpId` and `loserMatchUpId`, and all the way down: a
+ * matchUp waiting on one that will never be played cannot produce anybody either, so whoever waits
+ * on IT is waiting on the same decision.
+ */
+function getNeverToBePlayed(drawMatchUps: any[]): Set<string> {
+  const excluded = new Set<string>();
+  const matchUpById = new Map(drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  const pending = drawMatchUps.filter((matchUp) => NEVER_TO_BE_PLAYED.has(matchUp.matchUpStatus));
+
+  while (pending.length) {
+    const matchUp = pending.pop();
+    if (!matchUp || excluded.has(matchUp.matchUpId)) continue;
+    excluded.add(matchUp.matchUpId);
+    for (const targetId of [matchUp.winnerMatchUpId, matchUp.loserMatchUpId]) {
+      const target = targetId && matchUpById.get(targetId);
+      if (target) pending.push(target);
+    }
+  }
+
+  return excluded;
+}
+
+/**
  * STALLED_POSITION — a participant in a match that can never be played, in a draw that has stopped.
  *
  * ## Why every other rule here is blind to it
@@ -478,6 +525,9 @@ function getLostPropagatedExitInconsistency(matchUp: any): StructureInconsistenc
  * own falsification harness first.
  *
  * ## `matchUpStatus` IS NOT CONSULTED, and that is the third condition — measured 2026-09-26
+ *
+ * (With one exception, ruled 2026-09-29 and kept apart from this argument: a matchUp that will never
+ * be played, and what it feeds. See `NEVER_TO_BE_PLAYED`.)
  *
  * This rule originally required the stalled matchUp to be `TO_BE_PLAYED`. That made it **quietable by
  * a partial propagation fix**: a fix that stamps the carried exit onto the stalled matchUp changes
@@ -532,6 +582,8 @@ function getStalledPositionInconsistencies(
   const hasStarted = drawMatchUps.some((matchUp) => matchUp.winningSide);
   if (!hasStarted) return [];
 
+  const neverToBePlayed = getNeverToBePlayed(drawMatchUps);
+
   const inconsistencies: StructureInconsistency[] = [];
   for (const matchUp of scoped as any[]) {
     // round-robin groups have no feeds: a vacant seat there is an entry problem, not a stall
@@ -539,12 +591,8 @@ function getStalledPositionInconsistencies(
     // NO `winningSide` is the whole test. Deliberately NOT gated on `matchUpStatus` -- see above.
     if (matchUp.winningSide) continue;
     if ((matchUp.sides ?? []).some((side: any) => side?.bye)) continue;
-    // THE ONE STATUS THAT IS CONSULTED. `DEAD_RUBBER` says the matchUp is not needed, which is the
-    // statement that nobody is waiting in it: the winner of a final that had no loser sits in the
-    // decider as the champion. It is not a status an exit carries, so stamping a carried exit onto
-    // a stalled matchUp -- what made the old `TO_BE_PLAYED` gate quietable -- cannot produce it.
-    // The engine writes it in `reconcileDecider` alone; a caller who sets it has said the same thing.
-    if (matchUp.matchUpStatus === DEAD_RUBBER) continue;
+    // nobody is waiting in a matchUp that will never be played, or in one such a matchUp feeds
+    if (neverToBePlayed.has(matchUp.matchUpId)) continue;
 
     const present = occupants(matchUp);
     if (present.length !== 1) continue;

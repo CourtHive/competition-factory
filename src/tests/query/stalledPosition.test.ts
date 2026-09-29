@@ -8,7 +8,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { DOUBLE_WALKOVER, COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
-import { COMPASS } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
  * `STALLED_POSITION` — a participant in a match that can never be played, in a draw that has stopped.
@@ -219,31 +219,37 @@ it('reports nothing on a draw that completes cleanly', () => {
  * ## So the case is no longer in the DEFAULT matrix at all
  *
  * Under the default policy the 600 cells strand nobody. The rule still has work to do wherever
- * `doubleExitPropagateBye` is turned off, so that is where this case lives: `COMPASS 16/16` at seed
- * 511 under the produced-exit policy, `Southeast|1|1` ending `DOUBLE_WALKOVER` with one occupant.
- * That status is the point — it is one the old `TO_BE_PLAYED` gate could not see.
+ * `doubleExitPropagateBye` is turned off, so that is where this case lives: `DOUBLE_ELIMINATION 8/7`
+ * at seed 77 under the produced-exit policy. An exit meets a BYE in the Backdraw, the matchUp that
+ * results holds nobody, and the participant waiting one round on has no opponent coming.
+ *
+ * `COMPASS 16/16` at seed 511 was considered and NOT used. Its one finding is `Southeast|1|1`, a
+ * `DOUBLE_WALKOVER` whose lone occupant is on a side that itself carries an exit — somebody who
+ * walked over, not somebody waiting. Whether that is a stall at all is an open question, and a case
+ * that exists to prove the rule fires should not rest on it.
  */
-it('still fires where a stall remains — COMPASS 16/16, matrix seed 511, produced-exit policy', () => {
-  const cell = MATRIX_CELLS.find(({ seed }) => seed === 511);
-  expect(cell?.drawType).toEqual(COMPASS);
-  expect(cell?.participantsCount).toEqual(16);
+it('still fires where a stall remains — DOUBLE_ELIMINATION 8/7, matrix seed 77, produced-exit policy', () => {
+  const cell = MATRIX_CELLS.find(({ seed }) => seed === 77);
+  expect(cell?.drawType).toEqual(DOUBLE_ELIMINATION);
+  expect(cell?.participantsCount).toEqual(7);
 
-  const drawId = 'stalls-compass-16-16';
+  const drawId = 'stalls-de-8-7';
   expect(playMatrixCell(cell as any, drawId, 'exits', PRODUCED_EXIT_POLICY)).toEqual(true);
 
   const drawDefinition: any = tournamentEngine.getEvent({ drawId }).drawDefinition;
   const result: any = getDrawInconsistencies({ drawDefinition, drawId });
   const found = (result.inconsistencies ?? []).filter((i: any) => i.issueType === STALLED_POSITION);
 
-  expect(found.length).toBeGreaterThan(0);
+  expect(found.length).toEqual(2);
   // advisory, never an error — the severity tier is what let this rule ship at all
   expect(found.every((i: any) => i.severity === 'warning')).toEqual(true);
   expect(result.valid).toEqual(true);
 
-  // one occupant, no winner, and a status the narrow rule was blind to
+  // each is one participant, no winner, in a matchUp nobody else can reach
   const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId }).matchUps ?? [];
-  const stalled: any = (matchUps as any[]).find((m) => m.matchUpId === found[0].matchUpId);
-  expect(occupantsOf(stalled).length).toEqual(1);
-  expect(stalled.matchUpStatus).toEqual(DOUBLE_WALKOVER);
-  expect(stalled.winningSide).toBeUndefined();
+  for (const finding of found) {
+    const stalled: any = (matchUps as any[]).find((m) => m.matchUpId === finding.matchUpId);
+    expect(occupantsOf(stalled).length).toEqual(1);
+    expect(stalled.winningSide).toBeUndefined();
+  }
 });
