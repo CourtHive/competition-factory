@@ -97,10 +97,10 @@ the same one and only the survivor's claim should keep it.
 placed by draw generation or by hand. It replaced a topology inference (`feedRound || roundNumber === 1`)
 that could not tell the two apart and therefore over-cleared on unwind.
 
-**`matchUp.matchUpStatusCodes` is now typed.** It was published as `any[]` while holding four
-different element shapes across two unrelated tenants — scoring reason codes and propagation
-provenance. It is now a discriminable union, with the provenance tenant **deprecated** in favour of
-`sideExitProvenance`. See [§24](./migration-7.0.0.md#24-4948-matchupstatuscodes-is-typed-and-its-provenance-tenant-is-deprecated).
+**`matchUp.matchUpStatusCodes` is now typed.** It was published as `any[]`. It carries the scoring
+policy's codes, one per side, for display. Which side exited is read from `sideExitProvenance`, and
+which reason belongs to which side from `sideStatusCodes`. See
+[§24](./migration-7.0.0.md#24-4948-matchupstatuscodes-is-typed-and-carries-scoring-codes-only).
 
 Read **provenance**, not status, when the question is _"did an exit reach here?"_ — a `matchUpStatus`
 cannot tell you which side it belongs to, and a BYE-held matchUp keeps its `BYE` status by design.

@@ -84,6 +84,16 @@ const { analysis } = engine.analyzeMatchUp({
 });
 ```
 
+For an aggregate `matchUpFormat` (the match-level `A` modifier) the winner is the side with more
+points across every set, not the side that won more sets, and the totals are returned as
+`aggregateScores`. Every set the format plays must be recorded. Equal totals give no
+`calculatedWinningSide`: a decider is owed.
+
+```js
+// SET2XA-S:T10 with sets 22-21 and 15-19
+// aggregateScores: [37, 40], calculatedWinningSide: 2
+```
+
 ---
 
 ## applyLineUps

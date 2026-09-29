@@ -142,7 +142,7 @@ Full documentation with interactive examples: **[courthive.github.io/competition
 
 ## Testing
 
-**13,000+ tests** covering draw generation and exit propagation, scheduling, scoring, participants and entries, team competition, publishing and embargo, ranking points and ratings, officiating and sanctioning.
+**13,700+ tests** covering draw generation and exit propagation, scheduling, scoring, participants and entries, team competition, publishing and embargo, ranking points and ratings, officiating and sanctioning.
 
 Beyond conventional unit and integration tests, the suite includes relational property suites (do/undo, idempotence, monotonicity), agreement oracles, and an at-scale randomized sweep with delta-debugging for exit propagation — added because full branch coverage of a propagation guard proved compatible with hundreds of wrong answers.
 

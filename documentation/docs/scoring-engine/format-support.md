@@ -128,6 +128,9 @@ const engine = new ScoringEngine({ matchUpFormat: 'SET7XA-S:TB11' });
 // Play all 7 sets, winner determined by aggregate point total across all sets
 ```
 
+Sets won are not consulted. Every set must be recorded, and a tied total names no winner until a
+deciding point breaks it.
+
 ### Exactly N Sets
 
 The `X` modifier means exactly N sets are played (no early termination).

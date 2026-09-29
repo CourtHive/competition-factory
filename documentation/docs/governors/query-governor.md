@@ -709,6 +709,12 @@ The default severity is `error`, so a check is blocking unless it deliberately o
 nothing in the draw is playable — is the first `warning`: the stored draw is internally
 consistent, so it is not an error, but somebody is stranded and a director should see it.
 
+Three states are not reported, because nobody in them is waiting:
+
+- a matchUp that is `DEAD_RUBBER`, `CANCELLED` or `ABANDONED` — it will never be played;
+- any matchUp one of those feeds, all the way downstream;
+- a lone occupant whose own side carries an exit in `sideExitProvenance` — they withdrew.
+
 :::
 
 ```js
@@ -768,8 +774,8 @@ Checks (each a distinct `issueType`):
   over). Three legitimate empty-loser cases are excluded: a pending exit (the loser side
   holds the exit carrier); an exit whose losing slot was never fed because an upstream
   double-exit produced no advancer; and an exit the engine _produced_ by propagation into a
-  fed-but-empty slot (marked with a `previousMatchUpStatus` provenance code — e.g. a
-  consolation walkover fed a double-walkover void).
+  fed-but-empty slot (recorded on that side in `sideExitProvenance` — e.g. a consolation
+  walkover fed a double-walkover void).
 - `DRAW_POSITION_UNASSIGNED` — a decided, non-exit matchUp references a drawPosition whose
   stored `positionAssignment` holds no participant, bye or qualifier (a phantom position).
   Evaluated over **stored** structure state (`drawPositions` ↔ `positionAssignments`) rather
