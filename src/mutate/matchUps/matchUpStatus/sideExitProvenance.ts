@@ -1,10 +1,18 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
+import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { isAnyExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 
 // constants and types
-import { MatchUp, SideExitProvenance, SideExitProvenanceEntry, MatchUpStatusUnion } from '@Types/tournamentTypes';
+import { MappedMatchUps } from '@Types/factoryTypes';
+import {
+  DrawDefinition,
+  MatchUp,
+  SideExitProvenance,
+  SideExitProvenanceEntry,
+  MatchUpStatusUnion,
+} from '@Types/tournamentTypes';
 import {
   DOUBLE_WALKOVER,
   DOUBLE_DEFAULT,
@@ -199,8 +207,40 @@ export function mergeSideExitProvenance({
   matchUp?: MatchUp;
 }): void {
   if (!matchUp || !writeNativeEnabled()) return;
-  if (!provenance || !Object.keys(provenance).length) return;
-  matchUp.sideExitProvenance = { ...matchUp.sideExitProvenance, ...provenance };
+  const admitted = admissibleOn(matchUp, provenance);
+  if (!admitted || !Object.keys(admitted).length) return;
+  matchUp.sideExitProvenance = { ...matchUp.sideExitProvenance, ...admitted };
+}
+
+/**
+ * What a BYE may record about how a side got there — and an ARRIVAL BY RESULT is not among it.
+ *
+ * **Punch-list P19.** CA, 2026-09-29: *"a BYE should not carry COMPLETED provenance"*, and of the
+ * other kind of arrival, agreeing that `BYE -> BYE` *"is legitimate and should stay"* — it records
+ * that a BYE arrived from a BYE, which is the rule that two BYEs meeting produce one.
+ *
+ * So on a BYE an entry is kept when it is a CARRIED EXIT, a BYE arriving through a BYE, or a claim
+ * ledger, and dropped when it says the side's occupant got there by winning. That participant
+ * advanced THROUGH the BYE; nothing was contested there for their arrival to explain.
+ *
+ * Traced 2026-09-29 on COMPASS 16/16 with three first-round double exits: `North|1|2` completes, its
+ * winner advances into `North|2|1` — already a BYE, holding `[2, _]` — and the placement recorded
+ * `{ COMPLETED, previousMatchUpStatus: COMPLETED }` against side 2. 664 matchUp-states across 1,440
+ * draws played to exhaustion. When this entry was filed the same shape was recorded as having *"no
+ * reproduction on `dev`"*.
+ *
+ * Decided HERE rather than at each caller because every writer merges through this function, and a
+ * rule enforced at one site cannot be missed by the next one that is added.
+ */
+function admissibleOn(matchUp: MatchUp, provenance?: SideExitProvenance): SideExitProvenance | undefined {
+  if (!provenance || matchUp.matchUpStatus !== BYE) return provenance;
+
+  const admitted: SideExitProvenance = {};
+  for (const [sideNumber, entry] of Object.entries(provenance)) {
+    const arrivedByResult = !!entry?.matchUpStatus && !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
+    if (!arrivedByResult) admitted[Number(sideNumber)] = entry;
+  }
+  return admitted;
 }
 
 /** Write provenance onto a matchUp, honouring the schema write mode. */
@@ -228,7 +268,31 @@ export function setSideExitProvenance({
  * removed.
  */
 export function clearSideExitProvenance(matchUp?: MatchUp): void {
-  if (matchUp) delete matchUp.sideExitProvenance;
+  if (!matchUp) return;
+  delete matchUp.sideExitProvenance;
+
+  /**
+   * P37, ASYMMETRY 2. The clear has to take the PROJECTION with it, or it does not hold.
+   *
+   * This used to delete the native field alone. `getSideExitProvenance` falls back to the provenance
+   * shape inside `matchUpStatusCodes`, so the very next reader RESURRECTED what was just deliberately
+   * cleared — and the writers' union is built with that fallback reader on purpose, so the resurrected
+   * entry propagated onward. A clear that any subsequent read can undo is not a clear.
+   *
+   * Only the EXIT tenant goes. `matchUpStatusCodes` also carries the scoring policy's vocabulary, which
+   * belongs to the match and has nothing to do with provenance; `withdrawFromMatchUp` blanks the array
+   * wholesale one call away and says it is "safe HERE and only here", which is true of the status but
+   * has always been careless about the policy codes. Filtering is strictly better than blanking and is
+   * why `isProjectedExitCode` exists.
+   */
+  const codes = matchUp.matchUpStatusCodes as any[] | undefined;
+  // Written ONLY when there is an exit element to remove. Assigning unconditionally turned `undefined`
+  // into `[]` and mutated matchUps that had nothing to clear, which surfaced as spurious
+  // `modifyMatchUpNotice` entries — `teamAdvancement.test.ts` §"does not propagate matchUpStatusCodes
+  // from SINGLE/DOUBLES to TEAM matchUps on DOUBLE_WALKOVER" compares the notice list exactly.
+  if (codes?.some((code: any) => isProjectedExitCode(code))) {
+    matchUp.matchUpStatusCodes = codes.filter((code: any) => !isProjectedExitCode(code));
+  }
 }
 
 /**
@@ -426,64 +490,39 @@ export function byeClaimSurvives({
 }
 
 /**
- * Read provenance, preferring the native field and falling back to the legacy array.
+ * Read a matchUp's side-keyed exit provenance.
  *
- * The fallback exists so a record written before this field — or by a LEGACY-mode writer — still
- * answers. It reads only the provenance SHAPE out of `matchUpStatusCodes`; policy codes and
- * `{ code }` wrappers are not provenance and are ignored.
+ * **P37 REMOVED THE LEGACY FALLBACK.** This function used to prefer the native field and, when it was
+ * absent, DERIVE provenance from the provenance-shaped elements of `matchUpStatusCodes` — for records
+ * written before the native field existed, or by a `LEGACY`-mode writer.
  *
- * NATIVE WINS WHOLE, deliberately, and this was tried the other way. Merging per side looks
- * strictly more informative — it would recover a side the half-written native field omits — but at
- * the time it was measured the legacy array was BOTH order-dependent and self-inconsistent on the
- * consolation convergence path: one entry order stored `{ matchUpStatus: DEFAULTED,
- * previousMatchUpStatus: DOUBLE_WALKOVER }`, a walkover origin producing a default. Merging imported
- * that corruption into a field which was correct.
+ * CA settled it, 2026-09-27: *"we don't need to carry forward legacy equivalence at this point, and not
+ * supporting LEGACY for bugs we are closing with provenance should not be considered a breaking change.
+ * Any client that wants the resolutions should be moving to full NATIVE support."* So there is no
+ * hydration boundary to negotiate and no cutover to stage: the fallback goes.
  *
- * That corruption is gone at the source — `doubleExitAdvancement` now GENERATES the array from
- * provenance rather than hand-building it, so the two cannot disagree — but native-wins-whole
- * remains the right rule: a record written before the projection landed still carries the old shape,
- * and native is the only structure with an authoritative side key.
+ * Three reasons it was load-bearing, and why none of them survives:
+ *
+ *  - it carried an earlier arrival's origin into the accumulating union at the propagation write sites.
+ *    Those sites no longer WRITE the projection, so there is nothing in the array for it to find.
+ *  - it defeated an intentional clear. `clearSideExitProvenance` cleared the native field only, and the
+ *    very next read resurrected what had just been deliberately removed — the asymmetry that needed
+ *    `getNativeSideExitProvenance` to exist as a second reader at all.
+ *  - it answered *"is this matchUp an exit that came from somewhere"* for stored 6.x records. That is
+ *    now the consumer's problem and it is already handled where it matters: `courthive-components`
+ *    renders `sideExitProvenance` first and keeps its OWN `matchUpStatusCodes` fallback for records
+ *    written before the field.
+ *
+ * `getNativeSideExitProvenance` went with it. It existed ONLY to be the fallback-free reader — the two
+ * questions *"is this matchUp an exit that came from somewhere"* and *"did an origin survive THIS
+ * withdrawal"* needed different answers only because one reader consulted the array. With the array out
+ * of it there is one question and one reader, and keeping two names would advertise a distinction that
+ * no longer exists.
+ *
+ * `projectExitStatusCodes` went too. It was what WROTE the exit tenant into `matchUpStatusCodes`, and
+ * after the seven write sites moved to {@link deriveStatusCodes} it had no callers at all.
  */
 export function getSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideExitProvenance | undefined {
-  const native = matchUp?.sideExitProvenance;
-  if (native && Object.keys(native).length) return native;
-
-  const codes = matchUp?.matchUpStatusCodes;
-  if (!Array.isArray(codes)) return undefined;
-
-  const derived: SideExitProvenance = {};
-  codes.forEach((code: any, index: number) => {
-    if (!code || typeof code !== 'object' || !code.previousMatchUpStatus) return;
-    // legacy provenance is positional: index 0 is side 1. `sideNumber` is preferred when present.
-    const sideNumber = code.sideNumber ?? index + 1;
-    if (sideNumber !== 1 && sideNumber !== 2) return;
-    derived[sideNumber] = definedAttributes({
-      matchUpStatus: code.matchUpStatus,
-      previousMatchUpStatus: code.previousMatchUpStatus,
-      sourceMatchUpId: code.sourceMatchUpId,
-    }) as SideExitProvenanceEntry;
-  });
-
-  return Object.keys(derived).length ? derived : undefined;
-}
-
-/**
- * Read provenance from the NATIVE field ALONE.
- *
- * `getSideExitProvenance` falls back to `matchUpStatusCodes`, and that fallback is right for the
- * question *"is this matchUp an exit that came from somewhere"* — a record written before the native
- * field, or by a LEGACY-mode writer, still answers it.
- *
- * It is WRONG for the question an unwind asks: *"did an origin survive THIS withdrawal"*. The legacy
- * array is not rewritten when provenance is withdrawn (see `withdrawFromMatchUp` on why it must not
- * be), so after the native field is cleared the fallback still returns the provenance-shaped
- * elements it held — answering "an origin survived" for a matchUp that has none. Measured: that
- * defeated an earlier attempt at this fix outright.
- *
- * So the two questions get two readers rather than one reader with a flag, and a caller picks by
- * naming which question it is asking. Nothing else about the shared reader changes.
- */
-export function getNativeSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideExitProvenance | undefined {
   const native = matchUp?.sideExitProvenance;
   return native && Object.keys(native).length ? native : undefined;
 }
@@ -579,55 +618,173 @@ export function retainForeignProvenance(
 }
 
 /**
- * The legacy `matchUpStatusCodes` array, GENERATED from provenance.
+ * Is this matchUp already part of the exit cascade, and so a place a late-learned origin belongs?
  *
- * CA, 2026-09-11: *"I don't think we can reasonably build our propagation logic on LEGACY
- * matchUpStatusCodes… we shouldn't try."* The destination that follows from it is that propagation
- * reads and writes `sideExitProvenance` and the legacy array becomes a PROJECTION of it — not a
- * structure anyone parses to decide behaviour.
+ * **P37's last legacy-array decision read, converted.** Two sites — `drawPositionPlacement` and
+ * `removeSubsequentRoundsParticipant` — gated `recordSourceSideProvenance` on
+ * `matchUp.matchUpStatusCodes` being truthy. That is the LEGACY array deciding whether the NATIVE record
+ * gets written, the inversion class `MATCHUP_STATUS_CODES_PER_SIDE.md` names, and the last one standing.
  *
- * Why a projection removes a whole class of defect rather than one instance of it. The propagation
- * writers used to build the two structures INDEPENDENTLY from whatever each site happened to have in
- * scope, so they could disagree, and did:
+ * **What the array was standing in for.** Not "has codes" — the field is set to `[]` by every blanking
+ * site and by `attemptToSetMatchUpStatusBYE`, so truthiness meant *"some scoring or propagation write has
+ * already touched this matchUp"*. Measured over 30 sweep seeds, 854 matchUps: with the gate simply
+ * REMOVED, matchUps carrying `sideExitProvenance` went 162 → 202 and those on a matchUp that is neither an
+ * exit nor a BYE went 14 → 53. An ordinary advancement was getting an origin stamped on it, and
+ * `sideExitProvenance` is PRESENCE-read (**P19**: *"one bad writer silently flips every exclusion"*), so
+ * every rule exempting "a matchUp with provenance" began exempting matchUps that were simply played — 58
+ * test failures, 54 of them `transitionProperties` cells, none of them about codes.
  *
- *  - `handleEmptyExitLoser` wrote `{ matchUpStatus: <the arriving exit>, previousMatchUpStatus: <the
- *    CONVERGED status of the target> }` at side 1 — a walkover origin recorded as producing a
- *    default in the mixed case, which is not a fact about either side.
- *  - the same site replaced the array wholesale while provenance ACCUMULATED, so the earlier
- *    arrival's entry survived in one structure and was overwritten in the other.
+ * **The three native facts that carry the same meaning**, and each was measured:
  *
- * Both are impossible once one structure is a function of the other. Order-invariance and internal
- * consistency are inherited rather than separately maintained.
+ * | condition | failures on the six affected files |
+ * |---|---|
+ * | no gate at all | 58 |
+ * | provenance OR exit/BYE status OR `isAnyExit(sourceMatchUpStatus)` | 19 — the source clause fires on a fresh target the array gate would not have |
+ * | **provenance OR exit/BYE status** | **1**, and that one is an IMPROVEMENT |
  *
- * SHAPE. Positional, index 0 = side 1, and BOTH slots are always emitted once there is any
- * provenance at all — which is what the previous builder did and is not cosmetic. A side with no
- * origin yet gets a bare `{ sideNumber }`, and that stub is a RESERVED SLOT, not noise:
- * `updateMatchUpStatusCodes` is the site that learns a side's origin late, and it stamps by mapping
- * over the elements that already exist. Drop the stub and the origin it learns has nowhere to land —
- * measured, as two suite failures, when this projection first padded with `''` instead.
+ * The surviving difference is `correctionDivergence`'s baseline moving the right way:
+ * `provenanceOnly` **120 → 0** and `identical` **44 → 164**, with `severe` unchanged at 28. Those 120 cells
+ * were ones where the corrected path left a STALE provenance entry the direct path did not have — the
+ * array gate was permitting exactly the writes that produced them. So converting this read does not merely
+ * remove the last array dependence; it closes 120 cells of CA's re-score invariant.
  *
- * `sourceMatchUpId` is deliberately NOT projected. CA decided 2026-09-09 not to add source identity
- * to `matchUpStatusCodes`, which ships on every matchUp; the identity lives in `sideExitProvenance`,
- * whose contents were ours to define from the start.
+ * `BYE` is included deliberately: `attemptToSetMatchUpStatusBYE` writes `matchUpStatusCodes = []`, so a BYE
+ * matchUp passed the old gate, and CA's rule is that a BYE legitimately carries a claim ledger.
  */
-export function projectExitStatusCodes(provenance?: SideExitProvenance): any[] {
-  // An entry that carries ONLY `byeClaims` describes a BYE this cascade claims, not an exit — and
-  // the legacy array is the projection of EXIT provenance. Testing mere presence emitted a pair of
-  // empty reserved slots (`[{sideNumber:1},{sideNumber:2}]`) onto matchUps that had none, which a
-  // clear then left behind: DO_UNDO_IDENTITY failed on six property cells and
-  // `byeMeetingAProducedExit` on the same residue.
-  const describesExit = (sideNumber: number) =>
-    !!(provenance?.[sideNumber]?.matchUpStatus ?? provenance?.[sideNumber]?.previousMatchUpStatus);
-  const hasProvenance = [1, 2].some(describesExit);
-  if (!hasProvenance) return [];
+export function participatesInExitCascade({ matchUp }: { matchUp?: MatchUp }): boolean {
+  if (getSideExitProvenance({ matchUp })) return true;
+  return isAnyExit(matchUp?.matchUpStatus) || matchUp?.matchUpStatus === BYE;
+}
 
-  return [1, 2].map((sideNumber) =>
-    definedAttributes({
-      previousMatchUpStatus: provenance?.[sideNumber]?.previousMatchUpStatus,
-      matchUpStatus: provenance?.[sideNumber]?.matchUpStatus,
-      sideNumber,
-    }),
-  );
+/**
+ * Place `code` at `sideNumber`'s index, padding earlier slots with `''`.
+ *
+ * `matchUpStatusCodes` is POSITIONAL: index 0 is side 1. A code for side 2 must be `['', 'W1']` and
+ * never `['W1']`, which would mis-map to the opponent. Padding uses `??=` so an existing code is
+ * never overwritten by the padding itself.
+ *
+ * Lifted out of `progressExitStatus` when {@link deriveStatusCodes} gave a second site the same job.
+ */
+export function placeCodeAtSide(statusCodes: string[], sideNumber: number, code?: string): void {
+  if (code === undefined) return;
+  const index = sideNumber - 1;
+  for (let i = 0; i < index; i++) statusCodes[i] ??= '';
+  statusCodes[index] = code;
+}
+
+/**
+ * The `matchUpStatusCodes` a propagation write should store: the POLICY tenant retained, plus one
+ * exit OUTCOME code per side that CARRIES an exit, at that side's index.
+ *
+ * **P37. This is what replaces the projection.** `projectExitStatusCodes` wrote provenance-shaped
+ * OBJECTS into the array, which made the array a second copy of provenance and made every reader of
+ * it a reader of provenance. What the array is actually FOR is the positional string contract
+ * clients consume and `EXIT_CODE_ON_WINNER_SIDE` polices — `['WO', 'W1']`: the exiting side's outcome
+ * code, and the policy vocabulary that refines it.
+ *
+ * TWO SITES, ONE RULE. Both had their own answer and both were wrong in the same direction:
+ *
+ *  - `progressExitStatus` re-derived the outcome codes by mapping `exitOutcomeCode` over the array's
+ *    PROJECTED elements, so the strings existed only as a side effect of the projection being there.
+ *  - `removeDirectedParticipants` wrote the hardcoded pair `['WO', 'WO']` for a `DOUBLE_WALKOVER`
+ *    source and `[]` for anything else — positional, asymmetric (a `DOUBLE_DEFAULT` fell through to
+ *    `[]`), and blind to which side had actually exited. CA named it on 2026-09-11: *"a hardcoded
+ *    legacy string pair… this is propagation logic expressed in the legacy array."* Measured
+ *    2026-09-27, it is what `EXIT_CODE_ON_WINNER_SIDE` catches once the projection stops masking it:
+ *    `['WO', 'WO']` on a matchUp whose provenance records ONE exiting side, so the winner's slot
+ *    carried a walkover code.
+ *
+ * WHICH SIDE, AND WHETHER AT ALL, is provenance's answer and not a guess. `P41` proposed deriving the
+ * value from `sourceMatchUpStatus` and measured 2 `EXIT_CODE_ON_WINNER_SIDE` errors on census 9100583
+ * for it, because that puts a code on the ARRIVING side — sometimes the winner. A code belongs on a
+ * side iff `carriedExitStatus` says that side exited, which is the reader
+ * {@link deriveExitStateFromProvenance} and RULE 4's collapse already use, so the three agree by
+ * construction.
+ *
+ * A policy code already at a side WINS. `W1` is *which* walkover — the more specific statement of the
+ * same fact — and `productionStatusCodeSurvival` guards its survival. The two tenants could not
+ * collide per side while the projection replaced the array wholesale; they can now.
+ *
+ * READ AFTER THE CLEAR, and it now holds. Both callers ask *"which sides carry an exit right now"*, and
+ * `removeDirectedParticipants` asks it immediately after clearing provenance for an exit it just
+ * removed. While `getSideExitProvenance` still fell back to the array, that read resurrected the
+ * cleared entry and re-stamped a code for an exit that was gone; the fallback is removed, so there is
+ * one reader and it answers the question asked.
+ */
+export function deriveStatusCodes(matchUp?: MatchUp): string[] {
+  const provenance = getSideExitProvenance({ matchUp });
+  const codes: string[] = ((matchUp?.matchUpStatusCodes as any[]) ?? [])
+    .filter((code: any) => !isProjectedExitCode(code))
+    .map(exitOutcomeCode);
+
+  for (const sideNumber of [1, 2] as const) {
+    const entry = provenance?.[sideNumber];
+    const carried = carriedExitStatus(entry);
+    // DELIVERED, NOT MERELY ARRIVED. An entry whose `previousMatchUpStatus` is a DOUBLE exit records
+    // an exit the cascade DELIVERED into this side. An entry whose origin is a single exit or a
+    // COMPLETED records that this side's occupant ARRIVED HAVING WON one upstream — a fact about the
+    // convergence, and not an exit of theirs. The two are already named as provenance's two questions
+    // in MATCHUP_STATUS_CODES_PER_SIDE.md, where conflating them reported correct draws as defects at
+    // a measured 119 tests.
+    //
+    // A code for the second kind is a code on the WINNER's side, which is what
+    // `EXIT_CODE_ON_WINNER_SIDE` exists to catch: traced 2026-09-27 on a `DEFAULTED` at `Main|1|4`
+    // whose side 1 held a real participant and read `{ WALKOVER, previousMatchUpStatus: WALKOVER }` —
+    // they won a walkover upstream — while side 2 held the delivered `DOUBLE_DEFAULT`.
+    //
+    // A SECOND GUARD WAS TRIED AND REFUTED, 2026-09-27: skipping the side that equals
+    // `matchUp.winningSide` when the matchUp is a single exit — the write-side form of the rule
+    // `EXIT_CODE_ON_WINNER_SIDE` reads. It does not work, because `winningSide` is not settled at
+    // derivation time: `progressExitStatus` decides it BELOW this point, and the drawPositions re-sort
+    // that the detector judges against happens later still. Measured: the three findings it was aimed
+    // at all survived. The side has to come from provenance, which is what this loop does.
+    if (!carried || !isDoubleExit(entry?.previousMatchUpStatus) || codes[sideNumber - 1]) continue;
+    // THE REASON WINS OVER THE DERIVED OUTCOME CODE, because it already contains it: the policy's
+    // display for `DM` is `Def [cond]` and for `DQ` is `Def [dq]`, so emitting `DEF` as well would put
+    // two codes where the array has one slot per side. Where no reason was recorded, the outcome code
+    // is still the right thing to show. The reason is read from `sideStatusCodes` — side-KEYED — so this
+    // projection never consults the array it is building.
+    const reason = matchUp?.sideStatusCodes?.[sideNumber];
+    placeCodeAtSide(codes, sideNumber, reason ?? exitOutcomeCode({ matchUpStatus: carried }));
+  }
+
+  return codes;
+}
+
+export function retainPolicyCodes(matchUp?: MatchUp): any[] {
+  return ((matchUp?.matchUpStatusCodes as any[]) ?? []).filter((code: any) => !isProjectedExitCode(code));
+}
+
+/**
+ * The string value of a POLICY `matchUpStatusCodes` element.
+ *
+ * **P37 narrowed this from three shapes to one.** It used to end `?? code?.matchUpStatus`, which made
+ * it read the EXIT tenant too — the projection of `sideExitProvenance` — so the branch below re-sited
+ * a carried exit's status positionally in an array that is not where side identity lives.
+ *
+ * Measured at that branch over the exit-propagation and matchUpStatus suites (2026-09-27, 113
+ * arrivals): where the array held anything it was the projected shape, its status equalled provenance
+ * in 50 of 50, and in the other 63 the array was ALREADY EMPTY while provenance held the status. The
+ * re-siting was redundant where it ran and silently lossy where it did not.
+ *
+ * MOVED HERE from `drawPositionPlacement`, where it was private, when `assignDrawPositionBye` — that
+ * site's twin — needed the same reader. Both re-side the policy code onto the exiting participant, and
+ * a second copy of this function is how the two tenants got confused to begin with.
+ *
+ * What remains is a real job, and the reason this function was not deleted with the rest: the POLICY
+ * vocabulary (`POLICY_SCORING_USTA`'s `W1` and friends) belongs to the match, lands on the exiting
+ * side, and must still follow that side through the sort. `propagateExitStatus.test.ts` §"FMLC
+ * real-match fall-through" pins it, and deleting the re-siting outright left it reading `''`.
+ *
+ * Shapes read: a bare string, `{ matchUpStatusCode }` (the policy vocabulary), and `{ code }` (a
+ * string an earlier `updateMatchUpStatusCodes` wrapped). NOT the provenance shape — callers filter it
+ * out with {@link isProjectedExitCode} first, and this function no longer resolves it either, so the
+ * eviction holds even if a caller forgets.
+ */
+export function policyCodeString(code: any): string | undefined {
+  if (typeof code === 'string') return code || undefined;
+  if (isProjectedExitCode(code)) return undefined;
+  return code?.matchUpStatusCode ?? code?.code ?? undefined;
 }
 
 /**
@@ -675,7 +832,37 @@ export function isProjectedExitCode(code: any): boolean {
  * ask — use {@link exitProducedBy}, which additionally requires every side to name that source.
  */
 export function isPropagatedExit({ matchUp }: { matchUp?: MatchUp }): boolean {
-  return !!getSideExitProvenance({ matchUp });
+  return getExitSides({ matchUp }).length > 0;
+}
+
+/**
+ * The sides of this matchUp that CARRY AN EXIT — read from what each entry says, not from its
+ * being there.
+ *
+ * **Punch-list P19.** `sideExitProvenance` holds three different facts under one key, and only one
+ * of them is an exit:
+ *
+ *  - a CARRIED EXIT — `matchUpStatus` is an exit status; the cascade delivered it to this side;
+ *  - an ARRIVAL — `matchUpStatus: COMPLETED` or `BYE`; this side's occupant got here by winning or
+ *    by advancing through a BYE, recorded because it is a real fact about a convergence;
+ *  - a BYE CLAIM LEDGER — `byeClaims` and nothing else; which double exits claim this BYE.
+ *
+ * Every reader that asked *"does this matchUp hold a propagated exit"* by testing that the field
+ * was non-empty therefore answered yes for all three. Measured 2026-09-29 over 1,440 draws played
+ * to exhaustion, every matchUp after every step: of 126,786 matchUp-states carrying provenance,
+ * **38,318 carry no exit at all** — 37,654 a claim ledger alone and 664 an arrival alone, every one
+ * of them on a `BYE`. The second group is the shape this entry recorded as having *"no reproduction
+ * on `dev`"* when it was filed; it has one now (COMPASS 16/16, three first-round double exits,
+ * `North|2|1`).
+ *
+ * A boolean derived from "is this field non-empty" cannot tell a legitimate record from an
+ * accidental one, so its correctness rests on every writer in the system forever. This asks the
+ * entry what it is.
+ */
+export function getExitSides({ matchUp }: { matchUp?: MatchUp }): number[] {
+  const provenance = getSideExitProvenance({ matchUp });
+  if (!provenance) return [];
+  return [1, 2].filter((sideNumber) => carriedExitStatus(provenance[sideNumber]) !== undefined);
 }
 
 /**
@@ -787,6 +974,13 @@ export function exitOutcomeCode(element: any): string {
 export type WithdrawnExit = {
   /** the winner's drawPosition, which advanced out of the exit and must be released */
   winnerDrawPosition?: number;
+  /**
+   * Set when the matchUp RE-DERIVED from retained provenance rather than reverting to undecided: one
+   * of its two origins went away and the other is still true, so it is still an exit — of a different
+   * kind. Distinguishes a partial unwind from a full one, which the caller needs because only a
+   * partial one can still be producing an exit downstream.
+   */
+  rederived?: boolean;
   roundNumber?: number;
   structureId: string;
   matchUpId: string;
@@ -799,7 +993,12 @@ export type WithdrawnExit = {
  * whole per-matchUp decision. Returns the withdrawal record when the matchUp reverted to undecided,
  * and `undefined` when it either kept an exit from another source or had nothing to withdraw.
  */
-function withdrawFromMatchUp(matchUp: MatchUp, sources: Set<string>, structureId: string): WithdrawnExit | undefined {
+function withdrawFromMatchUp(
+  matchUp: MatchUp,
+  sources: Set<string>,
+  structureId: string,
+  drawDefinition?: DrawDefinition,
+): WithdrawnExit | undefined {
   const provenance = getSideExitProvenance({ matchUp });
   if (!provenance) return undefined;
 
@@ -826,6 +1025,23 @@ function withdrawFromMatchUp(matchUp: MatchUp, sources: Set<string>, structureId
     // `sourceMatchUpStatus.test.ts` losing a `previousMatchUpStatus: TO_BE_PLAYED` element that no
     // withdrawal had touched.
     setSideExitProvenance({ provenance: retained, matchUp });
+    // STAGE 1 EXPERIMENT: re-derive, and report that the matchUp is no longer a double exit
+    const derived = deriveExitStateFromProvenance(retained);
+    if (derived && derived.matchUpStatus !== matchUp.matchUpStatus) {
+      const previousWinnerDrawPosition = matchUp.winningSide
+        ? matchUp.drawPositions?.[matchUp.winningSide - 1]
+        : undefined;
+      matchUp.matchUpStatus = derived.matchUpStatus as any;
+      if (derived.winningSide) matchUp.winningSide = derived.winningSide;
+      else delete matchUp.winningSide;
+      return {
+        winnerDrawPosition: previousWinnerDrawPosition,
+        roundNumber: matchUp.roundNumber,
+        matchUpId: matchUp.matchUpId,
+        rederived: true,
+        structureId,
+      };
+    }
     return undefined;
   }
 
@@ -834,11 +1050,9 @@ function withdrawFromMatchUp(matchUp: MatchUp, sources: Set<string>, structureId
   // an exit at all, so no element of that array can still be describing one. It is the same blanking
   // `removeDirectedLoser` already performs one link away.
   //
-  // The winner's position is read BEFORE `winningSide` is deleted, because it is the index of the
-  // side that was about to advance out of an exit that is no longer happening.
-  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending.
-  // See the canonical statement in `getOrderedDrawPositions`.
-  const winnerDrawPosition = matchUp.winningSide ? matchUp.drawPositions?.[matchUp.winningSide - 1] : undefined;
+  // The winner's position is read BEFORE `winningSide` is deleted, because it names the side that was
+  // about to advance out of an exit that is no longer happening.
+  const winnerDrawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
   clearSideExitProvenance(matchUp);
   matchUp.matchUpStatusCodes = [];
   matchUp.matchUpStatus = TO_BE_PLAYED;
@@ -855,9 +1069,11 @@ function withdrawFromMatchUp(matchUp: MatchUp, sources: Set<string>, structureId
 export function withdrawProducedExits({
   mappedMatchUps,
   sourceMatchUpId,
+  drawDefinition,
 }: {
-  mappedMatchUps?: { [structureId: string]: { matchUps: MatchUp[] } };
+  mappedMatchUps?: MappedMatchUps;
   sourceMatchUpId?: string;
+  drawDefinition?: DrawDefinition;
 }): WithdrawnExit[] {
   if (!sourceMatchUpId || !mappedMatchUps) return [];
 
@@ -876,11 +1092,21 @@ export function withdrawProducedExits({
 
     for (const [structureId, structureMatchUps] of structureEntries) {
       for (const matchUp of structureMatchUps?.matchUps ?? []) {
-        const record = withdrawFromMatchUp(matchUp, sources, structureId);
+        const record = withdrawFromMatchUp(matchUp, sources, structureId, drawDefinition);
         if (!record) continue;
+        const { rederived } = record;
         withdrawn.push(record);
-        // whatever THIS matchUp produced is now sourceless too
-        frontier.push(record.matchUpId);
+        /**
+         * A matchUp that reverted to undecided produces no exit, so every carried exit it stamped is
+         * void and the cascade continues through it.
+         *
+         * A RE-DERIVED one is NOT decided here. It is still an exit — of a different kind — and whether
+         * it still PRODUCES one downstream turns on whether its new winning side is occupied, which is
+         * not yet settled at this point in the mutation. `reconcileAdvancedExits` asks that after the
+         * link-directed removals and continues the cascade from the ones that now deliver an
+         * advancement; the record carries `rederived` so it can find them.
+         */
+        if (!rederived) frontier.push(record.matchUpId);
       }
     }
   }

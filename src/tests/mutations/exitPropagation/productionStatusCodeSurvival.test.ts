@@ -1,5 +1,6 @@
+import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { exitOutcomeCode, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { updateMatchUpStatusCodes } from '@Mutate/drawDefinitions/matchUpGovernor/matchUpStatusCodes';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -17,7 +18,7 @@ import { OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
  * Every code in a deployed production vocabulary must survive every shape it can take.
  *
  * The array these travel in is polymorphic — a code can be a bare string, or wrapped as `{ code }`
- * by `updateMatchUpStatusCodes`, or sit beside propagation provenance. A coercion in
+ * by `recordSourceSideProvenance`, or sit beside propagation provenance. A coercion in
  * `progressExitStatus` used to rewrite every object element to `OUTCOME_WALKOVER`, so a code that
  * had been wrapped could come back out as a walkover.
  *
@@ -31,7 +32,7 @@ test.for(PRODUCTION_STATUS_CODES)('$category $code survives every element shape'
   // 1. a bare string passes through untouched
   expect(exitOutcomeCode(code)).toEqual(code);
 
-  // 2. wrapped by updateMatchUpStatusCodes — the shape that used to become 'WO'
+  // 2. wrapped by recordSourceSideProvenance — the shape that used to become 'WO'
   expect(exitOutcomeCode({ code })).toEqual(code);
 
   // 3. the policy vocabulary shape, carrying its display form
@@ -51,8 +52,8 @@ test.for(PRODUCTION_STATUS_CODES.filter(({ code }) => code !== OUTCOME_WALKOVER)
   },
 );
 
-it('survives the wrapper that updateMatchUpStatusCodes applies, for the whole vocabulary', () => {
-  // updateMatchUpStatusCodes wraps string elements as `{ code }` before stamping provenance.
+it('survives the wrapper that recordSourceSideProvenance applies, for the whole vocabulary', () => {
+  // recordSourceSideProvenance wraps string elements as `{ code }` before stamping provenance.
   // Drive the real function, not a hand-built shape, so the test tracks the wrapper if it changes.
   const sourceMatchUpId = 'source-1';
   const codes = PRODUCTION_STATUS_CODES.map(({ code }) => code);
@@ -61,7 +62,7 @@ it('survives the wrapper that updateMatchUpStatusCodes applies, for the whole vo
   const sourceMatchUp: any = { matchUpId: sourceMatchUpId, structureId: 's1', roundPosition: 1 };
   const pairedMatchUp: any = { matchUpId: 'paired-1', structureId: 's1', roundPosition: 2 };
 
-  updateMatchUpStatusCodes({
+  recordSourceSideProvenance({
     inContextDrawMatchUps: [sourceMatchUp, pairedMatchUp],
     matchUpsMap: { drawPositionsToMatchUps: {}, mappedMatchUps: {} } as any,
     sourceMatchUpStatus: DOUBLE_WALKOVER,
@@ -97,15 +98,20 @@ it('does not confuse a production code with exit provenance', () => {
   const codesOnly: any = { matchUpId: 'm', matchUpStatusCodes: PRODUCTION_STATUS_CODES.map(({ code }) => ({ code })) };
   expect(getSideExitProvenance({ matchUp: codesOnly })).toBeUndefined();
 
+  /**
+   * P37. This half read provenance OUT of a hybrid element — `{ code: 'DQ', previousMatchUpStatus:
+   * DOUBLE_WALKOVER, … }` — which the legacy fallback in `getSideExitProvenance` made possible. That
+   * fallback is removed, so provenance comes from the native field and the array is consulted for the
+   * CODE alone. Both halves of the original claim survive; they now come from the surface that owns each.
+   */
   const withProvenance: any = {
     matchUpId: 'm2',
-    matchUpStatusCodes: [
-      { code: 'DQ', previousMatchUpStatus: DOUBLE_WALKOVER, matchUpStatus: WALKOVER, sideNumber: 1 },
-    ],
+    sideExitProvenance: { 1: { previousMatchUpStatus: DOUBLE_WALKOVER, matchUpStatus: WALKOVER } },
+    matchUpStatusCodes: [{ code: 'DQ' }],
   };
   const provenance: any = getSideExitProvenance({ matchUp: withProvenance });
   expect(provenance[1].previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
-  // ...and the code is still recoverable from the same element
+  // ...and the production code is still recoverable from the array beside it
   expect(exitOutcomeCode(withProvenance.matchUpStatusCodes[0])).toEqual('DQ');
 });
 
@@ -121,6 +127,7 @@ it('carries a production code through propagation without relabelling it', () =>
   const idPrefix = 'matchUp';
   const drawId = 'production-codes';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawId, drawSize: 32, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix }],
     setState: true,
   });

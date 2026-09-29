@@ -67,7 +67,8 @@ const key = (m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}`
 function build(drawId: string, propagateBye: boolean) {
   setSubscriptions({});
   const policyDefinitions: any = { [POLICY_TYPE_SCORING]: { propagateExitStatus: true } };
-  if (propagateBye) policyDefinitions[POLICY_TYPE_PROGRESSION] = { doubleExitPropagateBye: true };
+  // stated both ways: the policy is ON by default, so OFF has to be said to be tested
+  policyDefinitions[POLICY_TYPE_PROGRESSION] = { doubleExitPropagateBye: !!propagateBye };
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ participantsCount: 6, drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP_TO_SF, drawId }],
     policyDefinitions,
@@ -132,10 +133,11 @@ test('with the policy OFF the loser slot keeps the produced exit rather than bec
   // a propagated exit meeting a BYE is advanced, and the BYE remains a BYE.
   const fed = matchUps().find((m: any) => key(m) === 'Consolation|1|2');
   expect(fed?.matchUpStatus, 'the draw BYE beside the loser slot is untouched').toEqual(BYE);
-  expect((fed?.matchUpStatusCodes ?? []).find((c: any) => c?.sideNumber === 1)).toEqual({
+  // P37. Read from `sideExitProvenance`, which is keyed by side, rather than by hunting the legacy
+  // array for an element that carries a matching `sideNumber` property.
+  expect(fed?.sideExitProvenance?.[1]).toMatchObject({
     previousMatchUpStatus: DOUBLE_WALKOVER,
     matchUpStatus: WALKOVER,
-    sideNumber: 1,
   });
 
   // NOT a control any more, and deliberately asserted the other way round from what this test used

@@ -220,9 +220,12 @@ describe('census reproductions — cross-structure advancement never refuses ove
       if (result.error) expect(hash(getDrawDefinition(drawId)), `${step} ${result.error.code}`).toEqual(before);
       const integrity: any = tournamentEngine.getDrawInconsistencies({ drawId });
       // ERRORS only, for the reason `hasErrorSeverity` documents: `STALLED_POSITION` is advisory, and
-      // this per-step assertion is about structural soundness. Two stalls DO occur here and both are
-      // tracked rather than dropped — census 9100555 is the transient inside a correction sequence,
-      // and DE window 9301605 is punch-list P40, a stall that persists to the last step.
+      // this per-step assertion is about structural soundness. One stall DOES occur here and it is
+      // tracked rather than dropped: census 9100555's transient inside a correction sequence. DE
+      // window 9301605 was the second, punch-list **P40**, and it is closed —
+      // `reconcileStaleExitOrigins` withdraws the carried exit whose origin stopped being a double
+      // exit, and `staleExitOriginReconciliation.test.ts` asserts that sequence reports NOTHING at any
+      // severity.
       expect(
         (integrity.inconsistencies ?? []).filter((i: any) => i.severity === 'error'),
         step,

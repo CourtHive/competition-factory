@@ -55,11 +55,27 @@ it('stamps per-side provenance on a matchUp fed by a double exit, attributed to 
   // the identity the unwind lacks in matchUpStatusCodes
   expect(doubleExitSide.sourceMatchUpId).toEqual(source.matchUpId);
 
-  // the legacy array is still written — 7.x is a pure addition
-  expect(Array.isArray(target.matchUpStatusCodes)).toEqual(true);
+  // P37. `expect(Array.isArray(target.matchUpStatusCodes)).toEqual(true)` stood here, pinning that
+  // the legacy array is still written beside the native field. That is the property being RETIRED —
+  // CA, 2026-09-27: *"we don't need to carry forward legacy equivalence at this point"* — so this
+  // test asserts the first-class record and says nothing about the array.
 });
 
-it('reads provenance from the legacy array when the native field is absent', () => {
+/**
+ * THE LEGACY DERIVATION IS GONE, AND THIS TEST NOW ASSERTS THAT.
+ *
+ * It read `reads provenance from the legacy array when the native field is absent` and pinned the
+ * fallback: provenance-shaped elements of `matchUpStatusCodes` derived a `SideExitProvenance`.
+ *
+ * P37 removed it, on CA's ruling of 2026-09-27: *"we don't need to carry forward legacy equivalence at
+ * this point, and not supporting LEGACY for bugs we are closing with provenance should not be considered
+ * a breaking change. Any client that wants the resolutions should be moving to full NATIVE support."*
+ *
+ * Inverted rather than deleted, because the direction is the claim worth keeping: a record carrying ONLY
+ * the legacy shape now reads as having no provenance, so nothing in the engine can derive behaviour from
+ * that array. Deleting the test would leave the removal unpinned and a fallback could grow back.
+ */
+it('does NOT derive provenance from the legacy array — the fallback is removed', () => {
   const legacyOnly: any = {
     matchUpId: 'm1',
     matchUpStatusCodes: [
@@ -68,10 +84,9 @@ it('reads provenance from the legacy array when the native field is absent', () 
     ],
   };
 
-  const provenance: any = getSideExitProvenance({ matchUp: legacyOnly });
-  expect(provenance[1].previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
-  expect(provenance[2].previousMatchUpStatus).toEqual(DOUBLE_DEFAULT);
-  expect(isPropagatedExit({ matchUp: legacyOnly })).toEqual(true);
+  expect(getSideExitProvenance({ matchUp: legacyOnly })).toBeUndefined();
+  // and the predicate built on it agrees: no provenance means the exit was PLAYED, not produced
+  expect(isPropagatedExit({ matchUp: legacyOnly })).toEqual(false);
 });
 
 it('ignores the policy and wrapped element shapes, which are not provenance', () => {
@@ -83,7 +98,7 @@ it('ignores the policy and wrapped element shapes, which are not provenance', ()
   expect(isPropagatedExit({ matchUp: notProvenance })).toEqual(false);
 });
 
-it('prefers the native field over the legacy array when both are present', () => {
+it('reads the native field, and the legacy array beside it changes nothing', () => {
   const both: any = {
     matchUpId: 'm3',
     sideExitProvenance: { 1: { previousMatchUpStatus: DOUBLE_DEFAULT, sourceMatchUpId: 'native-source' } },

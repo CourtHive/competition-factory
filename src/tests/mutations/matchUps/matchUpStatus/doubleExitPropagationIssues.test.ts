@@ -11,6 +11,7 @@
  *        the result of the second-round consolation match.
  */
 
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -41,6 +42,7 @@ describe('Issue #3847: Two DOUBLE_WALKOVERs feeding same consolation match', () 
   it('should produce DOUBLE_WALKOVER in consolation when both feeder main draw matches are DOUBLE_WALKOVER', () => {
     const drawId = 'issue3847';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -88,6 +90,7 @@ describe('Issue #3847: Two DOUBLE_WALKOVERs feeding same consolation match', () 
   it('should produce DOUBLE_WALKOVER when main draw DOUBLE_WALKOVERs are entered in reverse order', () => {
     const drawId = 'i3847r';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -140,6 +143,7 @@ describe('Issue #3848: DOUBLE_WALKOVER propagation in FMLC consolation rounds', 
   it('should correctly propagate WO status codes from consolation R1 to consolation R2', () => {
     const drawId = 'issue3848';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -207,6 +211,7 @@ describe('Issue #3848: DOUBLE_WALKOVER propagation in FMLC consolation rounds', 
   it('should correctly look up the consolation first-round match (not main draw match) for R2 propagation', () => {
     const drawId = 'i3848s';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -285,10 +290,15 @@ describe('Issue #3848: DOUBLE_WALKOVER propagation in FMLC consolation rounds', 
 
     // R2P2 status codes should reference the consolation R1 DOUBLE_WALKOVER
     // (not the main draw match), showing DOUBLE_WALKOVER as previousMatchUpStatus
-    const r2p2StatusCodes = consolR2P2?.matchUpStatusCodes;
-    expect(r2p2StatusCodes).toBeDefined();
-    const r2p2PreviousStatuses = r2p2StatusCodes?.map((sc) => sc.previousMatchUpStatus);
-    expect(r2p2PreviousStatuses).toContain(DOUBLE_WALKOVER);
+    // P37, and the assertion gets STRONGER for it. The claim the comment above makes is about
+    // IDENTITY — the exit came from the consolation R1 matchUp, not from the main-draw one — and the
+    // legacy array cannot express that: `sourceMatchUpId` is deliberately not projected into it (CA,
+    // 2026-09-09). So this could only ever check that a `DOUBLE_WALKOVER` appeared somewhere in the
+    // array, which is true of either source. Provenance names the producer, so the test now asserts
+    // the thing it was written to assert.
+    const r2p2Origin = consolR2P2?.sideExitProvenance?.[2];
+    expect(r2p2Origin?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
+    expect(r2p2Origin?.sourceMatchUpId).toEqual('i3848s-c-1-2');
   });
 });
 
@@ -299,6 +309,7 @@ describe('Issue #3847 simplified: drawSize 8 FMLC', () => {
   it('should handle two adjacent DOUBLE_WALKOVERs feeding same consolation match (drawSize: 8)', () => {
     const drawId = 'simple8';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -336,6 +347,7 @@ describe('Issue #3847 simplified: drawSize 8 FMLC', () => {
   it('should handle DOUBLE_WALKOVER feeding consolation from all 4 main draw R1 matches', () => {
     const drawId = 'allDWO8';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [
         {
           drawType: FIRST_MATCH_LOSER_CONSOLATION,

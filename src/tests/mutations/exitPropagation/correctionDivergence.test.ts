@@ -1,10 +1,13 @@
+import { setSubscriptions } from '@Global/state/globalState';
+import { isDoubleExit, isExit } from '@Validators/isExit';
+import tournamentEngine from '@Engines/syncEngine';
+import { expect, it } from 'vitest';
 import {
   resolveFirstRoundStructure,
   compareCorrection,
   correctionScenario,
+  type Step,
 } from '@Tests/testHarness/exitPropagation/correctionDivergence';
-import { setSubscriptions } from '@Global/state/globalState';
-import { expect, it } from 'vitest';
 
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
@@ -54,6 +57,24 @@ import {
  * side-derivation defects this sweep exists to catch.
  */
 /**
+ * ## `provenanceOnly` 120 -> 0 and `identical` 44 -> 164, 2026-09-28 — and it was the LAST ARRAY GATE
+ *
+ * `severe` is unchanged at 28. What moved is the whole `provenanceOnly` bucket: 120 cells where the
+ * corrected path left a STALE `sideExitProvenance` entry the direct path did not have, with status, winner
+ * and positions already agreeing.
+ *
+ * The cause was P37's last legacy-array decision read. `drawPositionPlacement` and
+ * `removeSubsequentRoundsParticipant` gated the NATIVE provenance write on `matchUp.matchUpStatusCodes`
+ * being truthy — and because every blanking site sets that field to `[]`, the gate admitted writes onto
+ * matchUps that had merely been touched by an earlier pass. Asking the native question instead
+ * (`participatesInExitCascade`: does it already hold provenance, or is it an exit or a BYE) admits only the
+ * matchUps where a late-learned origin belongs.
+ *
+ * So this bucket existing at all was a symptom of the array, not of the correction. **`provenanceOnly` is
+ * now zero and should stay there** — a cell landing in it again means a writer is stamping provenance
+ * somewhere the cascade does not reach, which is P19's failure mode.
+ */
+/**
  * ## Lowered 2026-09-27: 36 -> 28 severe, and the eight went to IDENTICAL
  *
  * `propagateUnfillableLoserBye` (punch-list **P39**) resolves a first-round seat as a BYE when the
@@ -66,16 +87,47 @@ import {
  * outcome depend on entry order, and this sweep plus `sideBlindExitCarry`'s order-independence test
  * both said so. The propagation is called from every path that resolves a produced exit.
  */
+/**
+ * ## Lowered 2026-09-28: 28 -> 8 severe, and the twenty went straight to IDENTICAL
+ *
+ * `reconcileStaleExitOrigins` (punch-list **P40**) withdraws a carried exit whose ORIGIN has stopped
+ * being a double exit and now delivers a winner. Twenty cells diverged because the corrected path
+ * left that entry standing: the origin had re-derived to a single exit with a real participant in the
+ * winning seat, so what it sent downstream was an ADVANCEMENT, and the stale entry kept describing an
+ * exit. `identical` 164 -> 184, `provenanceOnly` and `incomparable` unchanged at zero.
+ *
+ * The timing is the whole of it, and this sweep is what proves the placement rather than the rule.
+ * Three earlier positions for the same decision were measured and each one traded one case for
+ * another — inside `withdrawProducedExits` on the presence of a re-derived winningSide, then on that
+ * winner's occupancy, then in a second pass after the link-directed removals. Only asking at the end
+ * of the mutation satisfies both `byeAdvancesIntoPendingDoubleExit` (the seat is EMPTIED later) and
+ * `crossStructureWinnerPositions` DE window 9301605 (the seat is FILLED later). The module's docblock
+ * carries both measurements.
+ */
+/**
+ * ## Lowered 2026-09-29: 8 -> 0 severe. **This arm is CLOSED.**
+ *
+ * The eight were DOUBLE_ELIMINATION and MODIFIED_FEED_IN_CHAMPIONSHIP at 8/5, all one defect, and
+ * they had been here since the sweep was written: a seat whose OPPONENT is a BYE advances from
+ * generation, a double exit upstream makes that seat a propagated BYE, and correcting the double exit
+ * withdrew the BYE and took the seat's advancement with it. `releaseAdvancedDrawPosition` had
+ * carried the rule since 2026-09-21; `positionClear` has its own removal and had never been given it.
+ *
+ * With every arm at zero, under both policies, the three baselines assert one thing: a draw is where
+ * its results put it, whatever order they were entered in and however often they were corrected.
+ */
 const BASELINE = {
   cells: 192,
   /** both paths ran and the draws agree exactly — the only bucket that should ever grow */
-  identical: 44,
+  identical: 192,
   /** a stale `sideExitProvenance` entry only; status, winner and positions agree */
-  provenanceOnly: 120,
+  provenanceOnly: 0,
   /** matchUpStatus, winningSide or drawPositions differ — user-visible */
-  severe: 28,
+  severe: 0,
   /** a step was refused in one path and not the other, so the cell was not an experiment */
   incomparable: 0,
+  /** COORDINATES, not cells: one severe cell can diverge at several, and a fix can close some of them */
+  severeCoordinates: 0,
 };
 
 const DRAW_TYPES = [
@@ -122,6 +174,24 @@ const MATRIX = DRAW_TYPES.flatMap((drawType) =>
   ),
 );
 
+/**
+ * EVERY ARM IS SWEPT UNDER BOTH POLICIES.
+ *
+ * `doubleExitPropagateBye` decides what a double exit produces for the seat its loser would have
+ * taken: a BYE, which is the default since 2026-09-29, or an EXIT. Both are supported, and a provider
+ * who awards ranking points by matchUpStatus runs the second. A sweep under the default alone would
+ * leave that configuration guarded by named tests only — and `verify:coverage-headroom` said so
+ * before anybody reasoned it out: with the default flipped and the sweep following it, 26 statements
+ * of margin went, against a budget of 25, because the produced-exit paths had stopped being swept.
+ *
+ * The baselines are the SAME for both and are all zero. A policy is a choice between two correct
+ * behaviours, not between a correct one and a tolerated one.
+ */
+const POLICIES = [
+  { label: 'a double exit produces a BYE (the default)', doubleExitPropagateBye: undefined },
+  { label: 'a double exit produces an EXIT', doubleExitPropagateBye: false },
+];
+
 type Bucket = 'identical' | 'provenanceOnly' | 'severe' | 'incomparable';
 
 const structureCache = new Map<string, string | undefined>();
@@ -131,14 +201,61 @@ function firstRoundStructure(config: Parameters<typeof resolveFirstRoundStructur
   return structureCache.get(key);
 }
 
-function classify(cell: (typeof MATRIX)[number]): { bucket: Bucket; report?: string } {
-  const { doubleExitStatus, singleExitStatus, ...config } = cell;
+/**
+ * THE TWO DIRECTIONS A RE-SCORE CAN GO, and only one of them was ever swept.
+ *
+ * `DOWNGRADE` is what `correctionScenario` builds and what this file has always measured: two double
+ * exits, then the first CORRECTED DOWN to a single. `UPGRADE` is the reverse — a single exit, a double
+ * beside it, then the single RE-SCORED UP to a double — and it was **unswept across all eight draw
+ * types** until 2026-09-27. It is the direction the three `unwindRemovesDrawPosition` reproductions
+ * use, and the only one that reaches punch-list **P42**.
+ *
+ * Both directions end at the same pair of outcomes, so both are valid tests of CA's invariant: *how you
+ * got here must not change where you are.*
+ */
+type Direction = 'DOWNGRADE' | 'UPGRADE' | 'ORDER';
+
+function scenarioFor(
+  direction: Direction,
+  {
+    doubleExitStatus,
+    singleExitStatus,
+    structureName,
+  }: { doubleExitStatus: string; singleExitStatus: string; structureName?: string },
+): { direct: Step[]; corrected: Step[] } {
+  if (direction === 'DOWNGRADE') return correctionScenario({ doubleExitStatus, singleExitStatus, structureName });
+
+  const at = (roundPosition: number, outcome: any): Step => ({
+    structureName: structureName as string,
+    roundNumber: 1,
+    roundPosition,
+    outcome,
+  });
+  const asDouble = { matchUpStatus: doubleExitStatus };
+  const asSingle = { matchUpStatus: singleExitStatus, winningSide: 1 };
+  // no correction at all: the same two double exits, entered in the other order
+  if (direction === 'ORDER') {
+    return { direct: [at(1, asDouble), at(2, asDouble)], corrected: [at(2, asDouble), at(1, asDouble)] };
+  }
+  return {
+    direct: [at(1, asDouble), at(2, asDouble)],
+    corrected: [at(2, asSingle), at(1, asDouble), at(2, asDouble)],
+  };
+}
+
+function classify(
+  cell: (typeof MATRIX)[number],
+  direction: Direction = 'DOWNGRADE',
+  doubleExitPropagateBye?: boolean,
+): { bucket: Bucket; report?: string; coordinates?: number } {
+  const { doubleExitStatus, singleExitStatus, ...matrixConfig } = cell;
+  const config = { ...matrixConfig, doubleExitPropagateBye };
   const label = `${config.drawType} ${config.drawSize}/${config.participantsCount} ${doubleExitStatus} propagate=${config.propagateExitStatus}`;
 
   // COMPASS and OLYMPIC open in `East`, not `Main` — resolved per draw rather than assumed, and
   // CACHED: resolving builds a draw, and doing that per cell tripled the sweep's generation count
-  const structureName = firstRoundStructure(config);
-  const { direct, corrected } = correctionScenario({ doubleExitStatus, singleExitStatus, structureName });
+  const structureName = firstRoundStructure(matrixConfig);
+  const { direct, corrected } = scenarioFor(direction, { doubleExitStatus, singleExitStatus, structureName });
   const { divergences, refusalMismatch } = compareCorrection({ config, direct, corrected });
 
   // a cell where one path was refused is NOT a divergence — the two draws did not run the same
@@ -157,37 +274,216 @@ function classify(cell: (typeof MATRIX)[number]): { bucket: Bucket; report?: str
         `      ${d.coordinate}  direct[${withoutProvenance(d.direct)}]  corrected[${withoutProvenance(d.corrected)}]`,
     )
     .join('\n');
-  return { bucket: 'severe', report: `${label}\n${detail}` };
+  return { bucket: 'severe', report: `${label}\n${detail}`, coordinates: visible.length };
 }
 
-it('a corrected double exit leaves the draw where the direct path leaves it', () => {
-  setSubscriptions({});
-  const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
-  const reports: string[] = [];
+it.each(POLICIES)(
+  'a corrected double exit leaves the draw where the direct path leaves it — $label',
+  ({ doubleExitPropagateBye }) => {
+    setSubscriptions({});
+    const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
+    const reports: string[] = [];
 
-  for (const cell of MATRIX) {
-    const { bucket, report } = classify(cell);
-    counts[bucket]++;
-    if (report) reports.push(report);
-  }
+    let severeCoordinates = 0;
+    for (const cell of MATRIX) {
+      const { bucket, report, coordinates } = classify(cell, 'DOWNGRADE', doubleExitPropagateBye);
+      counts[bucket]++;
+      severeCoordinates += coordinates ?? 0;
+      if (report) reports.push(report);
+    }
 
-  // the control: a sweep that measured nothing would satisfy every assertion below vacuously
-  expect(MATRIX.length).toEqual(BASELINE.cells);
+    // the control: a sweep that measured nothing would satisfy every assertion below vacuously
+    expect(MATRIX.length).toEqual(BASELINE.cells);
 
-  // reported as one comparison so a failure names the cells rather than just the number
-  const report = counts.severe === BASELINE.severe ? '' : `\n${reports.join('\n')}\n`;
-  expect(`severe=${counts.severe}${report}`).toEqual(`severe=${BASELINE.severe}`);
+    // reported as one comparison so a failure names the cells rather than just the number
+    const report = counts.severe === BASELINE.severe ? '' : `\n${reports.join('\n')}\n`;
+    expect(`severe=${counts.severe}${report}`).toEqual(`severe=${BASELINE.severe}`);
 
-  expect({
-    provenanceOnly: counts.provenanceOnly,
-    incomparable: counts.incomparable,
-    identical: counts.identical,
-  }).toEqual({
-    provenanceOnly: BASELINE.provenanceOnly,
-    incomparable: BASELINE.incomparable,
-    identical: BASELINE.identical,
-  });
-  // 192 cells, each generating two draws and playing them out. It runs in ~10s alone and the
-  // default 30s cap is not enough under full-suite contention — measured, it timed out there while
-  // passing in isolation, which is the worst way for a gate to fail.
-}, 180_000);
+    expect({
+      provenanceOnly: counts.provenanceOnly,
+      incomparable: counts.incomparable,
+      identical: counts.identical,
+      severeCoordinates,
+    }).toEqual({
+      provenanceOnly: BASELINE.provenanceOnly,
+      incomparable: BASELINE.incomparable,
+      identical: BASELINE.identical,
+      severeCoordinates: BASELINE.severeCoordinates,
+    });
+    // 192 cells, each generating two draws and playing them out. It runs in ~10s alone and the
+    // default 30s cap is not enough under full-suite contention — measured, it timed out there while
+    // passing in isolation, which is the worst way for a gate to fail.
+  },
+  180_000,
+);
+
+/**
+ * THE UNSWEPT DIRECTION — a single exit RE-SCORED UP to a double. **Punch-list P42.**
+ *
+ * Added 2026-09-27, and it found 52 severe divergences on its first run. Everything above sweeps the
+ * DOWNGRADE — correct a double exit down to a single — and reports 28 severe. The reverse had never
+ * been swept at all, and it is the direction that reaches the defect.
+ *
+ * **What diverges, and it is user-visible.** The provenance is IDENTICAL on both paths; only the status
+ * differs:
+ *
+ * ```text
+ * FIRST_MATCH_LOSER_CONSOLATION 8/8 DOUBLE_WALKOVER
+ *   Consolation|1|1  direct  [DOUBLE_WALKOVER ws=-]   prov 1:DW->WO, 2:DW->WO
+ *                   upgrade  [WALKOVER ws=1]          prov 1:DW->WO, 2:DW->WO
+ *   Consolation|2|1  direct  [BYE dp=1.4 prov 2:DW->WO]   upgrade  [BYE dp=1.3 prov -]
+ * ```
+ *
+ * So a matchUp nobody played showed a WINNER on the re-scored path, and the exit that should have
+ * propagated onward from it did not. `deriveExitStateFromProvenance` on that record returns
+ * `DOUBLE_WALKOVER` and no winner — the facts are present and correct on both paths, and only the status
+ * derivation disagreed.
+ *
+ * ## HALF OF IT IS FIXED, and the count did not move
+ *
+ * The convergence reconciliation in `doubleExitAdvancement` closes the STATUS half: the re-scored matchUp
+ * is a double exit with no winner, exactly as the direct path leaves it, and the
+ * `UNCOLLAPSED_CONVERGENCE` population went from 52 to **zero** — measured on this matrix, on the
+ * 600-cell census, and on all three named reproductions — so that rule is now `error` severity and the
+ * ratchet that sized it is deleted.
+ *
+ * **These 52 cells still diverge**, now on the CONSEQUENCE rather than the status: `Consolation|2|1`
+ * differs, because the corrected status does not re-run the propagation that should follow from it. That
+ * is the missing half **P40** names as *"cross-structure re-advancement"*, and it is why this baseline is
+ * unchanged at 52. Fixing the status without the consequence is progress, not a fix, and this arm is what
+ * says so.
+ *
+ * **It is independent of `propagateExitStatus`** — both settings diverge — and systematic rather than
+ * seed-luck: 8 cells in each of six draw types, 4 in CURTIS_CONSOLATION, 0 in SINGLE_ELIMINATION, which
+ * has no second structure for two exits to converge in.
+ *
+ * **Do not attempt the fix from `doubleExitAdvancement`'s `existingExit` gate.** Measured the same day:
+ * asking provenance there takes the suite from 4 failures to 21, because it re-routes convergences on
+ * the DIRECT path too — which this sweep shows are already correct.
+ *
+ * **Lower these numbers when you fix it. Never raise them.**
+ */
+/**
+ * ## Lowered 2026-09-28: 52 -> 0 severe. **This arm is CLOSED, and it took two changes.**
+ *
+ * Measured in isolation, because neither is sufficient and one of them moves nothing alone:
+ *
+ * | change | what it stopped | alone | together |
+ * |---|---|---|---|
+ * | a convergence reached on a re-score takes the route ordinary play takes | a seat carrying a delivered exit being advanced as a winner | 52 | |
+ * | `releaseAdvancedDrawPosition` keeps a seat a PRODUCED EXIT advanced | removing an occupant taking back an advancement that was never theirs | 24 | **0** |
+ *
+ * The second one is not a re-score defect at all. With `Main|1|1` a DOUBLE_WALKOVER, scoring
+ * `Main|1|2` and then CLEARING it did not return the draw to where it was — ordinary use, no double
+ * exit at the matchUp being corrected. It is pinned on its own in `convergenceRouteIndependence`.
+ *
+ * `severeCoordinates` is what made this findable: an earlier form of the first change took the
+ * coordinates 88 -> 72 while the cell count stayed at 52.
+ *
+ * **A baseline of zero is an invariant.** Any cell appearing here again is a regression, not a
+ * measurement; do not raise this.
+ */
+const UPGRADE_BASELINE = {
+  cells: 192,
+  identical: 192,
+  provenanceOnly: 0,
+  severe: 0,
+  incomparable: 0,
+  severeCoordinates: 0,
+};
+
+it.each(POLICIES)(
+  'a single exit re-scored UP to a double leaves the draw where the direct path leaves it — $label',
+  ({ doubleExitPropagateBye }) => {
+    setSubscriptions({});
+    const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
+    const reports: string[] = [];
+
+    let severeCoordinates = 0;
+    for (const cell of MATRIX) {
+      const { bucket, report, coordinates } = classify(cell, 'UPGRADE', doubleExitPropagateBye);
+      counts[bucket]++;
+      severeCoordinates += coordinates ?? 0;
+      if (report) reports.push(report);
+    }
+
+    // the control: a sweep that measured nothing would satisfy every assertion below vacuously
+    expect(MATRIX.length).toEqual(UPGRADE_BASELINE.cells);
+
+    const report = counts.severe === UPGRADE_BASELINE.severe ? '' : `\n${reports.join('\n')}\n`;
+    expect(`severe=${counts.severe}${report}`).toEqual(`severe=${UPGRADE_BASELINE.severe}`);
+
+    expect({
+      provenanceOnly: counts.provenanceOnly,
+      incomparable: counts.incomparable,
+      identical: counts.identical,
+      severeCoordinates,
+    }).toEqual({
+      provenanceOnly: UPGRADE_BASELINE.provenanceOnly,
+      incomparable: UPGRADE_BASELINE.incomparable,
+      identical: UPGRADE_BASELINE.identical,
+      severeCoordinates: UPGRADE_BASELINE.severeCoordinates,
+    });
+  },
+  180_000,
+);
+
+/**
+ * THE THIRD DIRECTION — no correction at all. **Punch-list P44.**
+ *
+ * Two double exits, entered `1 then 2` and `2 then 1`. Nothing is re-scored; this is ordinary play,
+ * and it is the arm neither of the two above could see because both enter in one fixed order.
+ *
+ * Measured 2026-09-28 before the fix: **52 of 192 cells, 64 coordinates, every one a drawPosition
+ * and nothing else.** A convergence's exit travelled WITH a drawPosition — the seat its first
+ * arrival had advanced as the pending winner — so which seat that was depended on which exit came
+ * first. It was not cosmetic: the position occupied a seat a real participant needed. Played to
+ * exhaustion across 56 draws, removing it took stranded participants 36 -> 12 and decided matchUps
+ * 704 -> 728, with 24 draws better, 32 unchanged and none worse.
+ *
+ * The same position is where the second assertion's defect came from. A target holding exactly one
+ * drawPosition reads its winner off that position, and when the position is the exit's own the
+ * award goes to the side CARRYING the exit: 24 of 192 cells, FIRST_ROUND_LOSER_CONSOLATION, COMPASS
+ * and OLYMPIC, always `ws=1 dp=2` with provenance on side 1.
+ *
+ * A convergence now hands its winner target a PENDING exit — the produced status, the origin on its
+ * side, no drawPosition and no winner — which is the state `Main|3|1` always held. Both counts are
+ * zero and both are invariants: **do not raise them.**
+ */
+it.each(POLICIES)(
+  'two double exits leave the same draw whichever is entered first, and award no exit its own win — $label',
+  ({ doubleExitPropagateBye }) => {
+    setSubscriptions({});
+    const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, severe: 0, incomparable: 0 };
+    const reports: string[] = [];
+    const carrierWins: string[] = [];
+
+    for (const cell of MATRIX) {
+      const { bucket, report } = classify(cell, 'ORDER', doubleExitPropagateBye);
+      counts[bucket]++;
+      if (report) reports.push(report);
+
+      // the engine still holds the draw `classify` played last
+      for (const matchUp of (tournamentEngine.allTournamentMatchUps().matchUps ?? []) as any[]) {
+        const winnersOrigin = matchUp.winningSide && matchUp.sideExitProvenance?.[matchUp.winningSide];
+        if (isExit(matchUp.matchUpStatus) && isDoubleExit(winnersOrigin?.previousMatchUpStatus)) {
+          carrierWins.push(
+            `${cell.drawType} ${cell.drawSize}/${cell.participantsCount} ${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition} ws=${matchUp.winningSide}`,
+          );
+        }
+      }
+    }
+
+    // the control: a sweep that measured nothing would satisfy every assertion below vacuously
+    expect(MATRIX.length).toEqual(192);
+    expect(counts.identical + counts.provenanceOnly + counts.severe + counts.incomparable).toEqual(192);
+
+    expect(`severe=${counts.severe}\n${reports.join('\n')}`.trim()).toEqual('severe=0');
+    expect({ provenanceOnly: counts.provenanceOnly, incomparable: counts.incomparable }).toEqual({
+      provenanceOnly: 0,
+      incomparable: 0,
+    });
+    expect(carrierWins, 'the side carrying a delivered exit is never the side awarded it').toEqual([]);
+  },
+  180_000,
+);

@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { printGlobalLog, pushGlobalLog } from '@Functions/global/globalLog';
 import { setDevContext, setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -152,7 +153,12 @@ const scenarios = [
     // structure-level positionAssignment path, which previously emitted only a
     // modifyPositionAssignments notice — the per-matchUp modifyMatchUp notice for
     // each was missing, leaving a notice-driven consumer stale until a full reload.
-    modifiedMatchUpsCount: 10,
+    //
+    // 11 (was 10), 2026-09-29: the eleventh is `Consolation r1p1` — `WALKOVER ws=2` — announced when
+    // its participant ARRIVES. The position was there from generation, so the arrival took the
+    // branch that resolves nothing and notifies only for a LATER round; a first-round or fed seat
+    // being occupied was never announced at all. Same staleness as above, one matchUp further.
+    modifiedMatchUpsCount: 11,
     updates: [
       {
         matchUpStatus: DOUBLE_WALKOVER,
@@ -293,6 +299,7 @@ test.each(scenarios)('Double Exit produces exit in consolation', (params) => {
   expect(result.success).toEqual(true);
 
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       {
         drawType: FIRST_MATCH_LOSER_CONSOLATION,
@@ -361,9 +368,11 @@ test.each(scenarios)('Double Exit produces exit in consolation', (params) => {
       });
 
       if (check.losingSideMatchUpStatusCode) {
-        const losingSideMatchUpStatusCode = targetMatchUp.matchUpStatusCodes.find(
-          (side) => side.sideNumber !== targetMatchUp.winningSide,
-        ).previousMatchUpStatus;
+        // P37. The LOSING side's origin, read from the side-keyed record. This used to find the
+        // element of `matchUpStatusCodes` whose `sideNumber` was not the winner's — the same side,
+        // reached by scanning a positional array for a property instead of by indexing a key.
+        const losingSideNumber = 3 - targetMatchUp.winningSide;
+        const losingSideMatchUpStatusCode = targetMatchUp.sideExitProvenance?.[losingSideNumber]?.previousMatchUpStatus;
         expect(losingSideMatchUpStatusCode).toEqual(check.losingSideMatchUpStatusCode);
       }
     }
@@ -433,6 +442,7 @@ test.each([FEED_IN_CHAMPIONSHIP, DOUBLE_ELIMINATION])(
   (drawType) => {
     const drawId = 'drawId';
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawSize: 8, participantsCount: 8, drawType, idPrefix: 'm' }],
       setState: true,
     });

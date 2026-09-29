@@ -1,10 +1,19 @@
-import { compareRoutes, generateDraw, playForward } from '@Tests/testHarness/exitPropagation/routeComparison';
 import { expect, test } from 'vitest';
-import fs from 'fs';
+import path from 'node:path';
+import os from 'node:os';
+import fs from 'node:fs';
+import {
+  compareRoutes,
+  generateDraw,
+  playForward,
+  coordKey,
+  type Coord,
+} from '@Tests/testHarness/exitPropagation/routeComparison';
 
 // constants
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
+  DOUBLE_ELIMINATION,
   CURTIS_CONSOLATION,
   COMPASS,
   OLYMPIC,
@@ -12,7 +21,37 @@ import {
 
 /**
  * Route A vs Route B differential over every flip in a fully played draw. INERT unless
- * `ROUTE_DIFF=1`.
+ * `ROUTE_DIFF=1`, and wired into `pnpm verify` and `verify.yml` as `verify:route-differential`.
+ *
+ * ## It is a GATE now, and it asserts — 2026-09-29, punch-list P18
+ *
+ * Until then it wrote a file and asserted nothing about it, so it was run by whoever remembered to.
+ * The five divergences it had reported since 2026-09-17 were the INSTRUMENT: Route B re-entered
+ * every later result as `winningSide: 1`, and a flip can move the successor to the other side of the
+ * matchUp they advance into. See `replayedWinningSide` in `routeComparison`. Replaying the swap
+ * itself:
+ *
+ * | sweep | flips | diverging |
+ * |---|---|---|
+ * | the four default draw types, 16/16 and 16/13 | 186 | 0 (3 refused) |
+ * | DOUBLE_ELIMINATION, 16/16 and 16/13 | 56 | 2, then 0 — see below |
+ * | five more draw types, 16/16 and 16/13 | 213 | 0 |
+ * | the default four at 8/8 and 8/7 | 74 | 0 (1 refused) |
+ * | the default four, a second seed, 16/16 and 16/11 | 169 | 0 (3 refused) |
+ *
+ * Disabling `swapWinnerLoser`'s own re-pointing brings the five back, so the zero is not the
+ * instrument agreeing with itself.
+ *
+ * ## The two that remained were the DECIDER, and they are closed
+ *
+ * Flipping DOUBLE_ELIMINATION's Main final left the Decider exactly as it was under Route A — same
+ * occupants, same winner — because `getDownstreamStructureIds` declines a target that BOTH sides of
+ * the flipped matchUp feed. They were allowed here by name until CA ruled, 2026-09-29: a decider
+ * that is not needed is a `DEAD_RUBBER`, and one that was played before its final changed is
+ * destroyed. `reconcileDecider` settles it by that rule on either route, so there is no allowance
+ * left and the DOUBLE_ELIMINATION row above now reads 0.
+ *
+ * Anything that diverges fails this test, and so does a refusal from any route but A.
  *
  *   ROUTE_DIFF=1 TZ=UTC OUT=/tmp/route-diff.jsonl \
  *     npx vitest run src/tests/mutations/exitPropagation/routeDifferential.test.ts \
@@ -36,12 +75,14 @@ import {
  * ignores it and runs the entire suite.
  */
 
+type FlipRecord = { participantsCount: number; diverges: boolean; skipped?: string; drawType: string; coord: Coord };
+
 const enabled = process.env.ROUTE_DIFF === '1';
-const outPath = process.env.OUT ?? '/tmp/route-diff.jsonl';
+const outPath = process.env.OUT ?? path.join(os.tmpdir(), 'route-diff.jsonl');
 const drawSize = Number(process.env.DIFF_DRAW_SIZE ?? 16);
 const seed = Number(process.env.DIFF_SEED ?? 7001);
 
-const DEFAULT_DRAW_TYPES = [FIRST_MATCH_LOSER_CONSOLATION, CURTIS_CONSOLATION, COMPASS, OLYMPIC];
+const DEFAULT_DRAW_TYPES = [FIRST_MATCH_LOSER_CONSOLATION, CURTIS_CONSOLATION, COMPASS, OLYMPIC, DOUBLE_ELIMINATION];
 
 /**
  * `DIFF_DRAW_TYPES` overrides the default set — e.g. `DIFF_DRAW_TYPES=DOUBLE_ELIMINATION` to probe
@@ -65,6 +106,7 @@ test.skipIf(!enabled)(`route differential — seed ${seed}, drawSize ${drawSize}
   let diverging = 0;
   let skipped = 0;
   let flips = 0;
+  const records: FlipRecord[] = [];
 
   for (const participantsCount of PARTICIPANT_COUNTS) {
     for (const drawType of DRAW_TYPES) {
@@ -91,6 +133,13 @@ test.skipIf(!enabled)(`route differential — seed ${seed}, drawSize ${drawSize}
           seed,
         });
 
+        records.push({
+          diverges: !!differences?.length,
+          coord: playOrder[index],
+          skipped: skipReason,
+          participantsCount,
+          drawType,
+        });
         if (differences === null) {
           skipped++;
           byDrawType[bucket].skipped++;
@@ -122,6 +171,15 @@ test.skipIf(!enabled)(`route differential — seed ${seed}, drawSize ${drawSize}
   }
 
   expect(flips).toBeGreaterThan(0);
+
+  const unexpected = records.filter((record) => record.diverges);
+  expect(
+    unexpected.map((record) => `${record.drawType}/${record.participantsCount} ${coordKey(record.coord)}`),
+    'Route A and Route B must leave the same draw',
+  ).toEqual([]);
+
+  const refusals = records.filter((record) => record.skipped).map((record) => record.skipped);
+  expect([...new Set(refusals)].filter((reason) => reason !== 'A:refused')).toEqual([]);
 
   const summary = { kind: 'SUMMARY', flips, diverging, skipped, byDrawType };
   fs.appendFileSync(outPath, JSON.stringify(summary) + '\n');

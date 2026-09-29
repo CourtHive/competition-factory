@@ -1,3 +1,4 @@
+import { isProjectedExitCode } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -52,7 +53,12 @@ it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', (
   expect(finalMatchUp.roundNumber).toEqual(2);
   expect(finalMatchUp.winningSide).toEqual(1);
   expect(finalMatchUp.matchUpStatus).toEqual(WALKOVER);
-  expect(finalMatchUp.matchUpStatusCodes.filter((code) => !code.sideNumber)).toEqual([]);
+  // P37. The claim is that the scored matchUp's POLICY codes (`WD.WD`) did not ride downstream onto
+  // the propagated final — so it is stated against the policy tenant, which is what survives the
+  // exit tenant's eviction. It used to read `filter((code) => !code.sideNumber)`, i.e. "keep the
+  // elements that are not the projection", which spelled the same claim in terms of the projection's
+  // own shape and so broke the moment the projection stopped being written.
+  expect((finalMatchUp.matchUpStatusCodes ?? []).filter((code: any) => !isProjectedExitCode(code))).toEqual([]);
 
   // outcome copied from client payload
   outcome = {

@@ -55,9 +55,37 @@ const enabled = process.env.STALL_BUDGET === '1';
  * cells from `severe` to `identical`, while all four census arms — both frozen windows, both
  * `allowChangePropagation` settings, 2,400 scenarios — reported IDENTICAL failing seeds and issue
  * breakdowns before and after.
+ *
+ * **LOWERED 2026-09-29: 89 -> 68 cells, 176 -> 141 findings.** None of the 35 was a stranded
+ * participant. Each was somebody who had ADVANCED out of a pending exit without the exit being
+ * awarded: resolving it was gated on a condition about notices that is never true of a fed seat
+ * (`drawPositionPlacement`, *"THE AWARD IS NOT A NOTICE"*). They were every stall in the matrix
+ * carrying a single exit status.
+ *
+ * **What is left is ONE family, and it needs a ruling rather than a fix.** All 141 are
+ * `TO_BE_PLAYED` but two, and they trace to a BYE matchUp whose other seat will never be filled:
+ *
+ *   61  the vacant seat's feeder is a BYE holding no participant — it can produce nobody
+ *   44  the feeder is itself one of these stalls, one round up
+ *   12  no feeder inside the draw can be identified at all (DOUBLE_ELIMINATION `Main|4|1`)
+ *   24  assorted: a decided exit with no occupant, a Decider whose final was a walkover
+ *
+ * The first group is CA's rule of 2026-09-27 — *"if two BYEs encounter each other then a BYE is
+ * produced for the next matchUp"* — which is `doubleExitPropagateBye`, punch-list **P30**, measured
+ * unshippable as a default on the same day for 13 `BYE_WON` violations.
+ *
+ * **LOWERED 2026-09-29: 68 -> 4 cells, 141 -> 4 findings.** `doubleExitPropagateBye` is ON by default
+ * (CA: *"two BYEs meeting always produces a BYE"*). The family this file described above as needing
+ * a ruling got one, and 137 of its 141 findings were seats that are now BYEs.
+ *
+ * The four that remain are one shape: DOUBLE_ELIMINATION 16/16, the Main final decided by a produced
+ * exit, its winner alone in the Decider. CA ruled on that the same day — a decider that is not needed
+ * is a `DEAD_RUBBER` — and `reconcileDecider` applies it when the final is SCORED. Here the final is
+ * decided by an ARRIVAL, which does not pass through it. That is the whole of what stands between
+ * this budget and zero.
  */
-const BUDGET_CELLS = 89;
-const BUDGET_FINDINGS = 176;
+const BUDGET_CELLS = 4;
+const BUDGET_FINDINGS = 4;
 
 const occupantsOf = (matchUp: any) => (matchUp?.sides ?? []).filter((s: any) => s?.participantId && !s?.bye);
 const playableShape = (m: any) => !m.winningSide && (!m.matchUpStatus || m.matchUpStatus === 'TO_BE_PLAYED');

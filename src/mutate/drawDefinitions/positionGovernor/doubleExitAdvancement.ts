@@ -1,28 +1,32 @@
-import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
+import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
+import { releaseAdvancedDrawPosition } from '@Mutate/matchUps/drawPositions/releaseAdvancedDrawPosition';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
+import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
+import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
+import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
-import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { findStructure } from '@Acquire/findStructure';
 import { overlap } from '@Tools/arrays';
 import {
+  deriveExitStateFromProvenance,
   buildCarriedExitProvenance,
   recordByeClaim,
   collapseDoubleExitStatus,
-  projectExitStatusCodes,
+  retainPolicyCodes,
   buildSideExitProvenance,
   mergeSideExitProvenance,
   getSideExitProvenance,
+  deriveStatusCodes,
   producedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -112,7 +116,7 @@ export function doubleExitAdvancement(params) {
    * wherever the slot is already settled.
    */
   const loserTargetStillOpen = !!(
-    appliedPolicies?.progression?.doubleExitPropagateBye &&
+    propagatesByeOnDoubleExit(appliedPolicies) &&
     loserMatchUp?.matchUpStatus === BYE &&
     loserTargetDrawPosition !== undefined &&
     !getPositionAssignments({
@@ -257,19 +261,42 @@ export function doubleExitAdvancement(params) {
     });
     if (result.error) return decorateResult({ result, stack });
 
-    // derived fresh: the write above changed the draw the next hop is decided on
-    const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-    const carried = carryExitOnward({
-      fromMatchUp: refreshed.find((m) => m.matchUpId === loserMatchUp.matchUpId) ?? loserMatchUp,
-      EXIT: producedExitStatus(params.matchUpStatus),
-      originMatchUpId: sourceMatchUp?.matchUpId,
-      inContextDrawMatchUps: refreshed,
-      drawDefinition,
-      matchUpsMap,
-      params,
-      stack,
-    });
-    if (carried.error) return decorateResult({ result: carried, stack });
+    /**
+     * AN EXIT THAT WAS NOT RECORDED HERE DOES NOT TRAVEL ON FROM HERE.
+     *
+     * The stamp above declines a target position that already holds a BYE — *"it is SETTLED, and the
+     * BYE is its record"* — and the carry ran regardless, so an exit was carried onward from a
+     * matchUp it had never been recorded on. When the loser target's own seat is the BYE, the loser
+     * who will never arrive is ALREADY represented, by that BYE, and the matchUp's other side is
+     * free to hold somebody real.
+     *
+     * Measured 2026-09-28 on MODIFIED_FEED_IN_CHAMPIONSHIP and CURTIS_CONSOLATION 16/16 with
+     * `Main|1|1` and `Main|1|2` both DOUBLE_WALKOVER. `Main|2|1` converges; its loser seat,
+     * Consolation drawPosition 4, has been a BYE since the first exit. The carry put an exit on
+     * `Consolation|3|2` side 2 — the side `Consolation|2|4`'s survivor advances into:
+     *
+     *     Consolation|3|2   WALKOVER ws=1   dp=3.11   both sides hold a PARTICIPANT
+     *     Consolation|4|1   TO_BE_PLAYED    dp=3.11   and both of them advanced out of it
+     *
+     * A played match was decided as a walkover against somebody who was there, the final filled
+     * from one semifinal, and the other semifinal's score was refused with
+     * `ERR_EXISTING_POSITION_ASSIGNMENT` after the mutation had written.
+     */
+    if (result.stamped) {
+      // derived fresh: the write above changed the draw the next hop is decided on
+      const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+      const carried = carryExitOnward({
+        fromMatchUp: refreshed.find((m) => m.matchUpId === loserMatchUp.matchUpId) ?? loserMatchUp,
+        EXIT: producedExitStatus(params.matchUpStatus),
+        originMatchUpId: sourceMatchUp?.matchUpId,
+        inContextDrawMatchUps: refreshed,
+        drawDefinition,
+        matchUpsMap,
+        params,
+        stack,
+      });
+      if (carried.error) return decorateResult({ result: carried, stack });
+    }
   }
   if (winnerMatchUp) {
     logAdvancement(stack, {
@@ -306,7 +333,7 @@ function handleLoserMatchUp({
   stack,
 }) {
   const { loserTargetLink } = targetLinks;
-  const propagateBye = appliedPolicies?.progression?.doubleExitPropagateBye;
+  const propagateBye = propagatesByeOnDoubleExit(appliedPolicies);
 
   /**
    * Does this target hold a RESERVED drawPosition for the arrival the double exit will never send?
@@ -412,7 +439,7 @@ function stampExitOnByeHeldLoserTarget({
   matchUpsMap,
   params,
   stack,
-}) {
+}): { error?: any; success?: boolean; stamped?: boolean } {
   // THE TARGET POSITION MUST BE GENUINELY VACANT. A loser target drawPosition that already holds a
   // draw BYE is not an empty slot awaiting an arrival — it is SETTLED, and the BYE is its record.
   // Stamping an exit there says "this side came from a double walkover" about a side that came from
@@ -424,7 +451,7 @@ function stampExitOnByeHeldLoserTarget({
   const targetAssignment = positionAssignments?.find(
     (assignment: any) => assignment.drawPosition === loserTargetDrawPosition,
   );
-  if (targetAssignment?.bye || targetAssignment?.participantId) return { ...SUCCESS };
+  if (targetAssignment?.bye || targetAssignment?.participantId) return { ...SUCCESS, stamped: false };
 
   const drawPositions = loserMatchUp.drawPositions ?? [];
   const positionIndex = drawPositions.indexOf(loserTargetDrawPosition);
@@ -432,7 +459,7 @@ function stampExitOnByeHeldLoserTarget({
   // See the canonical statement in `getOrderedDrawPositions`.
   const exitingSideNumber = loserMatchUp.feedRound ? 1 : positionIndex + 1;
   if (positionIndex === -1 || (exitingSideNumber !== 1 && exitingSideNumber !== 2)) {
-    return { ...SUCCESS };
+    return { ...SUCCESS, stamped: false };
   }
 
   const noContextLoserMatchUp = matchUpsMap.drawMatchUps.find(
@@ -461,7 +488,7 @@ function stampExitOnByeHeldLoserTarget({
   });
 
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: projectExitStatusCodes(provenance),
+    matchUpStatusCodes: retainPolicyCodes(noContextLoserMatchUp),
     appliedPolicies: params.appliedPolicies,
     matchUpId: loserMatchUp.matchUpId,
     matchUp: noContextLoserMatchUp,
@@ -474,7 +501,7 @@ function stampExitOnByeHeldLoserTarget({
   if (result.error) return result;
 
   mergeSideExitProvenance({ matchUp: noContextLoserMatchUp, provenance });
-  return { ...SUCCESS };
+  return { ...SUCCESS, stamped: true };
 }
 
 function handleEmptyExitLoser({
@@ -545,7 +572,7 @@ function handleEmptyExitLoser({
     // produced status, and the write replaced an array whose other entry was still true. In the mixed
     // case that stored `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DOUBLE_WALKOVER }` — a
     // walkover origin producing a default — and it stored the opposite in the opposite entry order.
-    const matchUpStatusCodes = projectExitStatusCodes(provenance);
+    const matchUpStatusCodes = retainPolicyCodes(noContextLoserMatchUp);
 
     const result = modifyMatchUpScore({
       ...params,
@@ -578,38 +605,68 @@ function handleEmptyExitLoser({
     //
     // The winner target is re-derived from FRESH in-context matchUps: the write above has just
     // changed this matchUp's status, and `positionTargets` reads that status.
-    const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-    const convergedTargets = positionTargets({
-      matchUpId: loserMatchUp.matchUpId,
-      inContextDrawMatchUps: refreshed,
+    const onward = advanceConvergedWinner({
+      convergedMatchUp: loserMatchUp,
       drawDefinition,
+      matchUpsMap,
+      DOUBLE_EXIT,
+      params,
+      stack,
     });
-    const convergedWinnerMatchUp = convergedTargets?.targetMatchUps?.winnerMatchUp;
-
-    if (convergedWinnerMatchUp) {
-      logAdvancement(stack, {
-        color: 'cyan',
-        decision: 'CONVERGED_advance_its_own_winner',
-        from: loserMatchUp.matchUpId,
-        to: convergedWinnerMatchUp.matchUpId,
-      });
-      const onward = conditionallyAdvanceDrawPosition({
-        ...params,
-        inContextDrawMatchUps: refreshed,
-        matchUpId: convergedWinnerMatchUp.matchUpId,
-        targetMatchUp: convergedWinnerMatchUp,
-        sourceMatchUp: inContextLoserMatchUp(refreshed, loserMatchUp.matchUpId) ?? loserMatchUp,
-        matchUpStatus: DOUBLE_EXIT,
-        drawDefinition,
-        matchUpsMap,
-      });
-      if (onward?.error) return onward;
-    }
+    if (onward?.error) return onward;
 
     return result;
   }
 
   return { ...SUCCESS };
+}
+
+/**
+ * A CONVERGENCE PRODUCES AN EXIT FOR ITS WINNER TARGET, and for nothing else.
+ *
+ * Two routes reach a convergence and they must leave the same draw. `handleEmptyExitLoser` is taken
+ * when the second exit arrives at a target nobody has ever sat in; `advanceFromTarget` is taken when
+ * it arrives on a RE-SCORE, at a target whose occupant this mutation has just removed. Both call
+ * this, so the onward step cannot differ between them.
+ *
+ * ONLY THE WINNER TARGET. The convergence's own LOSER link is deliberately not walked: whatever the
+ * link feeds was already resolved when the FIRST exit arrived — a seat that can never receive a
+ * loser is a BYE by then (`propagateUnfillableLoserBye`) — and the second exit changes nothing about
+ * it. Walking it anyway was measured 2026-09-28 on COMPASS and OLYMPIC 16/16: recursing into
+ * `doubleExitAdvancement` stamped a carried exit on `South|2|1` side 1, which is the seat the loser
+ * of `West|1|2` arrives into — a real participant marked as carrying an exit nobody delivered.
+ *
+ * The winner target is re-derived from FRESH in-context matchUps: the convergence's status changed a
+ * moment ago, and `positionTargets` reads that status.
+ */
+function advanceConvergedWinner({ convergedMatchUp, drawDefinition, matchUpsMap, DOUBLE_EXIT, params, stack }) {
+  const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+  const convergedTargets = positionTargets({
+    matchUpId: convergedMatchUp.matchUpId,
+    inContextDrawMatchUps: refreshed,
+    drawDefinition,
+  });
+  const convergedWinnerMatchUp = convergedTargets?.targetMatchUps?.winnerMatchUp;
+  if (!convergedWinnerMatchUp) return { ...SUCCESS };
+
+  logAdvancement(stack, {
+    color: 'cyan',
+    decision: 'CONVERGED_advance_its_own_winner',
+    from: convergedMatchUp.matchUpId,
+    to: convergedWinnerMatchUp.matchUpId,
+  });
+  return conditionallyAdvanceDrawPosition({
+    ...params,
+    // derived for the matchUp the exit ARRIVED in; it names a different seat in the next one
+    walkoverWinningSide: undefined,
+    inContextDrawMatchUps: refreshed,
+    matchUpId: convergedWinnerMatchUp.matchUpId,
+    targetMatchUp: convergedWinnerMatchUp,
+    sourceMatchUp: inContextLoserMatchUp(refreshed, convergedMatchUp.matchUpId) ?? convergedMatchUp,
+    matchUpStatus: DOUBLE_EXIT,
+    drawDefinition,
+    matchUpsMap,
+  });
 }
 
 /** the converged matchUp as the cascade now sees it — its status changed a moment ago */
@@ -669,6 +726,47 @@ function conditionallyAdvanceDrawPosition(params) {
   // ensure targetMatchUp.drawPositions does not contain sourceMatchUp.drawPositions
   // this covers the case where a pre-existing advancement was made
   if (sameStructure && overlap(sourceDrawPositions, targetMatchUpDrawPositions)) {
+    /**
+     * A DOUBLE EXIT ADVANCES NOBODY, so a position of its own found downstream is taken back.
+     *
+     * **Punch-list P44.** The filter below has always known such a position can be here — *"this
+     * covers the case where a pre-existing advancement was made"* — and removed it from a LOCAL
+     * copy. The matchUp kept it, and `hasDrawPosition` and `walkoverWinningSide` further down are
+     * read from the matchUp. Two defects followed, measured 2026-09-28 on the 192-cell matrix:
+     *
+     *  - ORDER DEPENDENCE, 52 cells. The position is the seat the FIRST exit's arrival advanced as
+     *    the pending winner, so which seat it is depends on which double exit was entered first.
+     *  - THE EXIT AWARDED ITS OWN WIN, 24 cells. With exactly one position present the winner is
+     *    read off that position, and it is the exit's own: `ws=1 dp=2` with the origin on side 1.
+     *
+     * It was not cosmetic either. Played to exhaustion over 56 draws the position sat in a seat a
+     * real participant needed: stranded participants 36 -> 12, decided matchUps 704 -> 728, 24
+     * draws better, 32 unchanged, none worse.
+     *
+     * What the target holds instead is a PENDING exit — the produced status, the origin on its
+     * side, no position and no winner — which is what a later-round target (`Main|3|1`) always
+     * held. The award is made when an opponent arrives. CA, 2026-09-28: *"let's go with the
+     * change."*
+     *
+     * `withdrawingExit` because this IS the produced exit's own advancement being taken back, which
+     * is the one case `releaseAdvancedDrawPosition`'s produced-exit guard must not protect.
+     */
+    if (isDoubleExit(params.matchUpStatus)) {
+      for (const drawPosition of targetMatchUpDrawPositions.filter((position) =>
+        sourceDrawPositions.includes(position),
+      )) {
+        releaseAdvancedDrawPosition({
+          fromRoundNumber: targetMatchUp.roundNumber,
+          structureId: targetMatchUp.structureId,
+          withdrawingExit: true,
+          event: params.event,
+          tournamentRecord,
+          drawDefinition,
+          drawPosition,
+          matchUpsMap,
+        });
+      }
+    }
     targetMatchUpDrawPositions = targetMatchUpDrawPositions.filter(
       (drawPosition) => !sourceDrawPositions.includes(drawPosition),
     );
@@ -736,7 +834,25 @@ function conditionallyAdvanceDrawPosition(params) {
       })) ||
     undefined;
 
-  // assign the WALKOVER status to targetMatchUp
+  /**
+   * ALREADY AN EXIT, AND NOT THE PROVENANCE FORM OF THE QUESTION — measured, 2026-09-27.
+   *
+   * This reads as a STATUS test standing in for a provenance question, which is the P3 defect class,
+   * and the obvious correction is to ask whether either side already carries a DELIVERED exit:
+   *
+   *     carriedExitStatus(prov?.[side]) && isDoubleExit(prov?.[side]?.previousMatchUpStatus)
+   *
+   * **Do not.** It was built and run under P37's eviction and took the suite from 4 failures to 21 —
+   * `exitPropagationMatrix` alone lost 13 cells across COMPASS and FIRST_ROUND_LOSER_CONSOLATION,
+   * plus three census replays. It re-routes convergences this rule has nothing to do with, which is
+   * the same result P41 records for the analogous stronger form of `progressExitStatus`' RULE 4 gate.
+   *
+   * The state this gate MISSES is real and is tracked separately: a target holding two DELIVERED
+   * double-walkover origins with `dps=[5, 6]` fails `!drawPositions.length`, so it settles as a single
+   * `WALKOVER` with a `winningSide` while its own provenance describes a convergence. That is
+   * pre-existing — measured identical on clean `dev` — and it wants the convergence PR and census arm
+   * P41 asks for, not a rider on the eviction.
+   */
   const existingExit = isExit(noContextTargetMatchUp.matchUpStatus) && !drawPositions.length;
 
   // Derived HERE, not at the top of the function, because this is where the other origin is known:
@@ -826,20 +942,8 @@ function conditionallyAdvanceDrawPosition(params) {
     sourceSideNumber,
   });
 
-  // Provenance ACCUMULATES — one side's origin can arrive before the other's — so the union of what
-  // the target already holds and what this write establishes is the record, and the legacy array is
-  // its projection. `getSideExitProvenance` rather than the raw field so the union still finds an
-  // earlier origin under LEGACY write mode, where nothing writes the native field.
-  const provenance = {
-    ...getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
-    ...newProvenance,
-  };
-
-  // A PROJECTION of provenance, replacing a second, independent derivation of the same facts. Where
-  // this write establishes no provenance at all — `sourceSideNumber` unknown, so neither structure
-  // can attribute anything — the array is blanked exactly as the previous builder blanked it, rather
-  // than re-projecting state this write knows nothing about.
-  const matchUpStatusCodes = newProvenance ? projectExitStatusCodes(provenance) : [];
+  // P37 MEASUREMENT: the projection is gone; the array keeps only the POLICY tenant.
+  const matchUpStatusCodes = retainPolicyCodes(noContextTargetMatchUp);
 
   logAdvancement(stack, {
     color: 'brightgreen',
@@ -869,9 +973,124 @@ function conditionallyAdvanceDrawPosition(params) {
   // provenance… where did the sides come from. One origin can arrive before the other."*
   mergeSideExitProvenance({ matchUp: noContextTargetMatchUp, provenance: newProvenance });
 
+  /**
+   * TWO DELIVERED EXITS ARE A DOUBLE EXIT — reconciled AFTER the merge, because that is when both are
+   * known.
+   *
+   * **Punch-list P42.** `existingExit` above decides whether this write produces a DOUBLE_EXIT or a
+   * single one, and it decides it BEFORE `newProvenance` is merged in. On a RE-SCORE that is too early:
+   * the target can already hold one side's delivered exit from an earlier propagation while this write
+   * delivers the other, and `existingExit`'s `!drawPositions.length` half is false because the target
+   * holds positions. So it settled as a single exit WITH a winningSide — a matchUp nobody played showing
+   * a winner — while its own provenance recorded an exit delivered into both sides.
+   *
+   * Measured before the fix: **52 of 192 cells** across seven draw types, independent of
+   * `propagateExitStatus`, and reported by `UNCOLLAPSED_CONVERGENCE` at every one. Zero on the 600-cell
+   * census, because ordinary play never reaches it — it needs a single exit RE-SCORED UP to a double,
+   * which is the direction `correctionDivergence` had never swept.
+   *
+   * ## Why AFTER the write rather than in the gate
+   *
+   * Changing `existingExit` to ask provenance was built and measured the same day: **4 failures to 21**,
+   * losing 13 `exitPropagationMatrix` cells and three census replays. It re-routes convergences on the
+   * DIRECT path too, and the sweep shows the direct path is already correct. This reconciliation cannot
+   * do that: it fires only where the status and the provenance already CONTRADICT each other, which on
+   * the direct path is never.
+   *
+   * ## Why BOTH sides must be DELIVERED
+   *
+   * The first version tested only that `deriveExitStateFromProvenance` disagreed with the status, and it
+   * over-fired: 52 findings became 58, with six NEW divergences in SINGLE_ELIMINATION where
+   * `Main|3|1` went `DEFAULTED` to `WALKOVER`. An entry whose `previousMatchUpStatus` is a single exit or
+   * a `COMPLETED` records that the side's occupant ARRIVED having won upstream, not that an exit was
+   * delivered into it — feeding those to the collapse applies the mixed-flavour rule to a convergence
+   * that is not one. `isDoubleExit` on `previousMatchUpStatus` is the same discriminator
+   * `deriveStatusCodes` and `UNCOLLAPSED_CONVERGENCE` use, so the three agree by construction.
+   *
+   * ## WHAT THIS DOES NOT FIX, and it is half the defect
+   *
+   * The status is corrected; the ONWARD PROPAGATION that should follow from it is not. The re-scored path
+   * still diverges from the direct one at the next round — `correctionDivergence`'s UPGRADE arm still
+   * reports **52 severe**, now on the consequence rather than the status. That is the same missing half
+   * P40 names as *"cross-structure re-advancement"*, and it is why that arm's baseline is not lowered
+   * here.
+   */
+  const merged = getSideExitProvenance({ matchUp: noContextTargetMatchUp });
+  const bothDelivered = ([1, 2] as const).every((sideNumber) =>
+    isDoubleExit(merged?.[sideNumber]?.previousMatchUpStatus),
+  );
+  /**
+   * A CONVERGENCE AWARDS NOBODY, so `advanceFromTarget` must not treat one of its seats as a winner.
+   *
+   * **Punch-list P42, the propagation half.** The reconciliation below corrects the STATUS of a
+   * convergence. It does not stop the advancement that runs immediately afterwards.
+   *
+   * `advanceFromTarget` picks its drawPosition as
+   * `targetMatchUpDrawPositions[walkoverWinningSide - 1]`, and `handleLoserMatchUp` derives
+   * `walkoverWinningSide` from where the arriving exit LANDED — `2 - drawPositions.indexOf(…)`. So
+   * the second delivered exit nominates the OTHER seat as a winner, and that seat is the one the
+   * FIRST exit was delivered into.
+   *
+   * TRACED, 2026-09-28, FIRST_ROUND_LOSER_CONSOLATION 8/8 `nonRandom: 9000230` — `Main|1|2` a single
+   * WALKOVER, `Main|1|1` a DOUBLE_WALKOVER, then `Main|1|2` RE-SCORED UP to a double:
+   *
+   * ```text
+   * step 2  exit -> Consolation dp 1;  walkoverWinningSide = 2;  dp 2 advances  (correct: the pending winner)
+   * step 3  exit -> Consolation dp 2;  walkoverWinningSide = 1;  dp 1 advances  (WRONG: dp 1 carries step 2's exit)
+   * ```
+   *
+   * The route ordinary play takes to the same convergence, `handleEmptyExitLoser`, never asks that
+   * question: it hands the convergence's winner target a produced exit and stops. So on a
+   * convergence this route now does exactly the same thing, through the same function
+   * (`advanceConvergedWinner`), rather than a second derivation of it.
+   *
+   * ## Why THIS discriminator and not `existingExit`
+   *
+   * `existingExit` is decided before the merge and its `!drawPositions.length` half is false on a
+   * first-round matchUp, whose seats exist structurally even while empty. Asking provenance THERE was
+   * built and refuted — 4 failures to 21, `exitPropagationMatrix` losing 13 cells. This asks the same
+   * question the reconciliation already asks, in the same place, AFTER the merge: both sides hold a
+   * DELIVERED double exit. On a first arrival only one side does, so it cannot fire there.
+   *
+   * ## This is one of TWO changes, and this one moves nothing alone
+   *
+   * `correctionDivergence`'s UPGRADE arm, severe cells of 192, each measured in isolation:
+   *
+   * | change | alone | together |
+   * |---|---|---|
+   * | this routing | 52 | |
+   * | `releaseAdvancedDrawPosition` keeps a seat a PRODUCED EXIT advanced | 24 | **0** |
+   *
+   * Alone this cannot help, because without the other change the re-scored path has already lost
+   * the advancement the convergence's exit travels with. The DOWNGRADE arm is 8 throughout.
+   *
+   * A THIRD change was built and removed: reading `advanceByeAdvancedDrawPosition`'s occupant from the
+   * positionAssignment rather than from hydrated matchUps closed 8 cells while this routing still
+   * recursed into `doubleExitAdvancement`. `advanceConvergedWinner` re-hydrates before it advances,
+   * which made that read fresh by construction — reverting the third change failed no test and left
+   * the sweep at zero, so it is not here.
+   */
+  const convergedAfterMerge = bothDelivered && !targetHoldsBye;
+  {
+    const derived = bothDelivered ? deriveExitStateFromProvenance(merged) : undefined;
+    if (derived && !targetHoldsBye && derived.matchUpStatus !== noContextTargetMatchUp.matchUpStatus) {
+      const reconcile = modifyMatchUpScore({
+        ...params,
+        removeWinningSide: derived.winningSide === undefined,
+        winningSide: derived.winningSide,
+        matchUp: noContextTargetMatchUp,
+        matchUpStatus: derived.matchUpStatus,
+        matchUpStatusCodes: deriveStatusCodes(noContextTargetMatchUp),
+        context: `${stack}-reconcile`,
+      });
+      if (reconcile.error) return decorateResult({ result: reconcile, stack });
+    }
+  }
+
   return advanceFromTarget({
     pairedPreviousMatchUpIsDoubleExit,
     targetMatchUpDrawPositions,
+    convergedAfterMerge,
     noContextTargetMatchUp,
     inContextDrawMatchUps,
     walkoverWinningSide,
@@ -959,6 +1178,7 @@ function inferSourceSideNumber({
 function advanceFromTarget({
   pairedPreviousMatchUpIsDoubleExit,
   targetMatchUpDrawPositions,
+  convergedAfterMerge,
   noContextTargetMatchUp,
   inContextDrawMatchUps,
   walkoverWinningSide,
@@ -977,6 +1197,17 @@ function advanceFromTarget({
 }) {
   // when there is an existing 'Double Exit", the created "Exit" is replaced
   // with a "Double Exit" and move on to advancing from this position
+  if (convergedAfterMerge && !existingExit) {
+    return advanceConvergedWinner({
+      convergedMatchUp: targetMatchUp,
+      drawDefinition,
+      matchUpsMap,
+      DOUBLE_EXIT,
+      params,
+      stack,
+    });
+  }
+
   if (existingExit) {
     logAdvancement(stack, {
       color: 'brightred',
@@ -1238,7 +1469,7 @@ function advanceByeAdvancedDrawPosition({
     };
 
     const result = modifyMatchUpScore({
-      matchUpStatusCodes: projectExitStatusCodes(provenance),
+      matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
       appliedPolicies: params.appliedPolicies,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       matchUp: noContextNextWinnerMatchUp,
@@ -1605,7 +1836,7 @@ function carryExitOnward({
   });
 
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: projectExitStatusCodes(provenance),
+    matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
     matchUpId: noContextNextWinnerMatchUp.matchUpId,
     appliedPolicies: params.appliedPolicies,
     matchUp: noContextNextWinnerMatchUp,

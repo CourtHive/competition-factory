@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -23,6 +24,7 @@ const setup = () => {
   const drawId = 'bye-into-pending-double-exit';
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 16, participantsCount: 11, drawId }],
     nonRandom: 9000223,
     setState: true,
@@ -100,6 +102,7 @@ it('the exiting side arriving through a BYE leaves the walkover pending for the 
   const drawId = 'bye-exiting-side-arrives';
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: DOUBLE_ELIMINATION, drawSize: 8, participantsCount: 6, drawId }],
     nonRandom: 9303412,
     setState: true,

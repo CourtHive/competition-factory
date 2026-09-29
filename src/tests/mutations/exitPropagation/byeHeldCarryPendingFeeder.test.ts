@@ -1,4 +1,5 @@
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -51,6 +52,7 @@ describe('a produced exit carries past a BYE-held target when the opponent feede
   const generate = (drawId: string) => {
     setSubscriptions({});
     const result: any = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawId, drawType: OLYMPIC, drawSize: 8, participantsCount: 6 }],
       nonRandom: 1,
       setState: true,
@@ -115,7 +117,12 @@ describe('a produced exit carries past a BYE-held target when the opponent feede
     // THE FIX: the exit does not stop at the BYE
     const west21 = find(drawId, 'West|2|1');
     expect(west21.matchUpStatus).toEqual(WALKOVER);
-    expect(west21.matchUpStatusCodes?.length).toBeGreaterThan(0);
+    // P37. The claim was `matchUpStatusCodes?.length > 0` — "something records an exit here" — which
+    // is the LEGACY surface and cannot say WHICH side, or what the exit was. Provenance says both.
+    expect(west21.sideExitProvenance?.[1]).toMatchObject({
+      previousMatchUpStatus: DOUBLE_WALKOVER,
+      matchUpStatus: WALKOVER,
+    });
 
     // the exit survives the opponent's arrival rather than being reverted to TO_BE_PLAYED
     playEast13(drawId);
@@ -169,6 +176,7 @@ describe('a produced exit carries past a BYE-held target when the opponent feede
     const drawId = 'carry-pending-compass';
     setSubscriptions({});
     const generated: any = mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId }],
       nonRandom: 20223109,
       setState: true,

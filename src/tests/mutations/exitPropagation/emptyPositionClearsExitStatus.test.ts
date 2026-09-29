@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -35,6 +36,7 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 const seed = {
   drawProfiles: [{ drawType: COMPASS, drawSize: 8, participantsCount: 7, drawId: 'A' }],
+  policyDefinitions: PRODUCED_EXIT_POLICY,
   nonRandom: 20220267,
 };
 
@@ -93,7 +95,7 @@ it('an empty drawPosition arriving at West|2|1 leaves the produced exit exactly 
   // the exit's records SURVIVE, on the side that exited
   expect(target.sideExitProvenance?.[1]?.matchUpStatus).toEqual(DEFAULTED);
   expect(target.sideExitProvenance?.[1]?.previousMatchUpStatus).toEqual(DOUBLE_DEFAULT);
-  expect(target.matchUpStatusCodes?.[0]).toMatchObject({ previousMatchUpStatus: DOUBLE_DEFAULT, sideNumber: 1 });
+  // P37. The legacy array's positional restatement of the two lines above is gone.
 
   // ...and so does the status those records describe. Before the fix this read TO_BE_PLAYED: a
   // matchUp asserting that side 1 had already defaulted out of a contest still to be played.

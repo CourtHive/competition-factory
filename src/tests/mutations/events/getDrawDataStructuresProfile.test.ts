@@ -36,7 +36,7 @@ function completeAll(drawId: string) {
 
 describe('getDrawData structuresProfile', () => {
   it('is ADDITIVE — omitting structuresProfile is byte-identical to passing FULL', () => {
-    // ClubSpark runs the existing pattern at scale; default output must not move.
+    // The existing pattern runs at scale for national governing bodies; default output must not move.
     const drawId = seed({ drawSize: 16, drawType: SINGLE_ELIMINATION });
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 

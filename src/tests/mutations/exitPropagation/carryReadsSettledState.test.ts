@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -28,6 +29,7 @@ test('the carry decides on settled state, not the view it was handed', () => {
   setSubscriptions({});
   const drawId = 'carry-settled';
   mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [
       { participantsCount: 8, drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix: 'cs', drawId },
     ],

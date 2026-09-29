@@ -40,7 +40,7 @@ function completeAll() {
 
 describe('getEventData drawsProfile', () => {
   it('is ADDITIVE — omitting drawsProfile is byte-identical to passing FULL', () => {
-    // The load-bearing guarantee. ClubSpark runs the existing pattern at scale for USTA and ITA;
+    // The load-bearing guarantee. The existing pattern runs at scale for USTA and ITA;
     // default output must not move. Asserted mechanically rather than promised in review.
     const eventId = loadDraw({ drawSize: 16, drawType: COMPASS });
 

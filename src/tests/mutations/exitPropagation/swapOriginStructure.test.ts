@@ -52,5 +52,22 @@ it('flipping a Backdraw result leaves Main positionAssignments untouched', () =>
 
   expect(submit('Main|1|4', { matchUpStatus: DOUBLE_DEFAULT }).error).toBeUndefined();
   expect(submit('Main|1|3', { matchUpStatus: DOUBLE_WALKOVER }).error).toBeUndefined();
-  expect(tournamentEngine.getDrawInconsistencies({ drawId }).inconsistencies ?? []).toEqual([]);
+  /**
+   * THE ORACLE IS CLEAN — and it is back to asserting that, which it briefly could not.
+   *
+   * **P37/P42.** Evicting the exit tenant unmasked an `UNCOLLAPSED_CONVERGENCE` here: provenance
+   * recording an exit delivered into BOTH sides of a consolation matchUp while its status was a single
+   * `WALKOVER` with a winner. That was **pre-existing** — measured identical on clean `dev`, at the same
+   * coordinates — and had been surfacing under the wrong name, `EXIT_CODE_ON_WINNER_SIDE`, because the
+   * projection was overwriting the array the old rule read.
+   *
+   * For one commit this asserted the finding BY NAME rather than expecting none. The convergence
+   * reconciliation in `doubleExitAdvancement` closes it, so the stronger form is restored. Kept as two
+   * claims so a `warning` appearing here cannot hide behind an error-free list.
+   */
+  const result: any = tournamentEngine.getDrawInconsistencies({ drawId });
+  const found = result.inconsistencies ?? [];
+  expect(found.filter((issue: any) => issue.severity === 'error')).toEqual([]);
+  expect(found.map((issue: any) => issue.issueType)).toEqual([]);
+  expect(result.valid).toEqual(true);
 });

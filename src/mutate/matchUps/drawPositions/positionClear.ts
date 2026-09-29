@@ -1,9 +1,9 @@
+import { clearSideExitProvenance, retainByeClaimsOnly } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
-import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
@@ -153,6 +153,12 @@ export function drawPositionRemovals({
       structure,
     }).positionAssignments ?? [];
 
+  // read BEFORE the assignment is emptied: whether what is being withdrawn is a BYE the cascade put
+  // there, which decides below whether the seat's own advancement goes with it
+  const withdrawsPropagatedBye = positionAssignments.some(
+    (assignment: any) => assignment.drawPosition === drawPosition && assignment.bye && assignment.byeFromPropagation,
+  );
+
   const drawPositionCleared = positionAssignments.some((assignment) => {
     if (assignment.drawPosition === drawPosition) {
       delete assignment.participantId;
@@ -206,6 +212,7 @@ export function drawPositionRemovals({
     }
 
     removeSubsequentRoundsParticipant({
+      withdrawsPropagatedBye,
       inContextDrawMatchUps,
       targetDrawPosition,
       tournamentRecord,
@@ -216,6 +223,7 @@ export function drawPositionRemovals({
     });
 
     removeDrawPosition({
+      withdrawsPropagatedBye,
       inContextDrawMatchUps,
       positionAssignments,
       tournamentRecord,
@@ -232,6 +240,7 @@ export function drawPositionRemovals({
 }
 
 function removeSubsequentRoundsParticipant({
+  withdrawsPropagatedBye,
   inContextDrawMatchUps,
   targetDrawPosition,
   tournamentRecord,
@@ -269,6 +278,7 @@ function removeSubsequentRoundsParticipant({
   relevantMatchUps?.forEach((matchUp) =>
     removeDrawPosition({
       drawPosition: targetDrawPosition,
+      withdrawsPropagatedBye,
       targetMatchUp: matchUp,
       inContextDrawMatchUps,
       positionAssignments,
@@ -283,6 +293,7 @@ function removeSubsequentRoundsParticipant({
 
 type RemoveDrawPositionArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
+  withdrawsPropagatedBye?: boolean;
   positionAssignments: PositionAssignment[];
   targetMatchUp: HydratedMatchUp;
   tournamentRecord?: Tournament;
@@ -293,6 +304,7 @@ type RemoveDrawPositionArgs = {
   event?: Event;
 };
 function removeDrawPosition({
+  withdrawsPropagatedBye,
   inContextDrawMatchUps,
   positionAssignments,
   tournamentRecord,
@@ -316,7 +328,41 @@ function removeDrawPosition({
     matchUps,
   });
 
-  if (targetMatchUp.roundNumber && initialRoundNumber && targetMatchUp.roundNumber > initialRoundNumber) {
+  /**
+   * A SEAT THE DRAW ADVANCED BEFORE THE CASCADE ARRIVED KEEPS ITS ADVANCEMENT WHEN THE CASCADE LEAVES.
+   *
+   * A seat whose opponent is a BYE advances from generation, before anything is played. A double
+   * exit upstream can later make that seat a propagated BYE, and correcting the double exit
+   * withdraws it again. Withdrawing the BYE must not take the seat's advancement with it: that
+   * advancement never depended on the BYE, it depended on the OPPONENT's.
+   *
+   * Traced 2026-09-29 on MODIFIED_FEED_IN_CHAMPIONSHIP 8/5, `Main|1|2` a DOUBLE_WALKOVER then
+   * corrected to a WALKOVER:
+   *
+   *     generated          Consolation|3|1  [2, _]     seat 2's opponent, seat 5, is a BYE
+   *     double exit        Consolation|3|1  [1, 2]     seat 2 is now a propagated BYE
+   *     corrected          Consolation|3|1  (nothing)  seat 2's advancement went with the BYE
+   *
+   * These are the 8 cells `correctionDivergence`'s DOWNGRADE arm had reported since it was written
+   * — DOUBLE_ELIMINATION and MODIFIED_FEED_IN_CHAMPIONSHIP at 8/5 — and they do not depend on
+   * `doubleExitPropagateBye`. `releaseAdvancedDrawPosition` has carried the same rule since
+   * 2026-09-21 (*"a position advanced by a BYE is never released"*); this file has its own removal
+   * and had never been given it.
+   *
+   * Only when what is withdrawn is a BYE the cascade placed. Clearing a PARTICIPANT, or a BYE a
+   * director placed, removes the advancement exactly as before: a position action is followed by
+   * another that re-derives it, and leaving the old one behind would seat two positions in one slot.
+   */
+  const keepsByeAdvancement =
+    !!withdrawsPropagatedBye &&
+    advancedByOpponentsBye({ matchUps: matchUps ?? [], positionAssignments, targetMatchUp, drawPosition });
+
+  if (
+    !keepsByeAdvancement &&
+    targetMatchUp.roundNumber &&
+    initialRoundNumber &&
+    targetMatchUp.roundNumber > initialRoundNumber
+  ) {
     // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
     // Settled through `normalizeDrawPositions`, which keeps a hole beside a survivor and collapses
     // an all-holes result to `[]`.
@@ -527,7 +573,16 @@ function updateMatchUpStatusAfterRemoval({
   targetMatchUp.matchUpStatus = (matchUpContainsBye && BYE) || TO_BE_PLAYED;
   targetMatchUp.winningSide = undefined;
   if (targetMatchUp.matchUpStatusCodes?.length) targetMatchUp.matchUpStatusCodes = [];
+  // THE CLAIM LEDGER IS NOT PART OF WHAT IS BEING REMOVED. Clearing the origins is right — the exit
+  // they described is gone — but this took the BYE claim ledger with them, and a ledger can hold
+  // ANOTHER claimant's entry. Two double exits can each claim a BYE on one matchUp, on different
+  // sides; withdrawing one reached here and erased the other's, so the BYE it still owed stood with
+  // nobody recorded as owing it. Measured 2026-09-29 with `doubleExitPropagateBye` on: 52 of 192
+  // `correctionDivergence` DOWNGRADE cells. A claim leaves when its claimant withdraws it
+  // (`withdrawByeClaim`), never as a side effect of a position being cleared.
+  const retainedClaims = retainByeClaimsOnly(targetMatchUp.sideExitProvenance);
   clearSideExitProvenance(targetMatchUp);
+  if (retainedClaims) targetMatchUp.sideExitProvenance = retainedClaims;
 
   const removedDrawPosition = initialDrawPositions?.find(
     (position) => !targetMatchUp.drawPositions?.includes(position),
@@ -658,4 +713,42 @@ function consolationCleanup({
   }
 
   return { ...SUCCESS };
+}
+
+/**
+ * Did this drawPosition reach `targetMatchUp` because its OPPONENT in the feeding matchUp is a BYE?
+ *
+ * The feeder is the latest earlier round in the structure that holds the position — derived from
+ * round containment, as `releaseAdvancedDrawPosition.advancedByBye` derives it, because the raw
+ * matchUps mutated here carry no `winnerMatchUpId`. The BYE has to be on ANOTHER seat of that
+ * feeder: the position's own assignment has just been emptied and proves nothing either way.
+ */
+function advancedByOpponentsBye({
+  positionAssignments,
+  targetMatchUp,
+  drawPosition,
+  matchUps,
+}: {
+  positionAssignments: PositionAssignment[];
+  targetMatchUp: HydratedMatchUp;
+  drawPosition: number;
+  matchUps: any[];
+}): boolean {
+  const roundNumber = targetMatchUp.roundNumber ?? 0;
+  const feeders = matchUps.filter(
+    (candidate) =>
+      candidate.roundNumber !== undefined &&
+      candidate.roundNumber < roundNumber &&
+      candidate.drawPositions?.includes(drawPosition),
+  );
+  if (!feeders.length) return false;
+
+  const feeder = feeders.reduce((latest, candidate) =>
+    candidate.roundNumber > latest.roundNumber ? candidate : latest,
+  );
+  return (feeder.drawPositions ?? []).some(
+    (position: number) =>
+      position !== drawPosition &&
+      positionAssignments.some((assignment) => assignment.drawPosition === position && assignment.bye),
+  );
 }

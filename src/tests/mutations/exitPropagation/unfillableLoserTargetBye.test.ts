@@ -1,3 +1,4 @@
+import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -55,6 +56,7 @@ const assignmentAt = (drawId: string, structureName: string, drawPosition: numbe
 function compassPlayedOut(participantsCount: number, drawId: string) {
   setSubscriptions({});
   const { drawIds } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: PRODUCED_EXIT_POLICY,
     drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount, drawId }],
     nonRandom: 20223109,
     setState: true,
@@ -157,6 +159,7 @@ it('is safe without a withdrawal, because the correction is refused before the B
     setSubscriptions({});
     const drawId = `p39-window-${steps}`;
     mocksEngine.generateTournamentRecord({
+      policyDefinitions: PRODUCED_EXIT_POLICY,
       drawProfiles: [{ drawType: COMPASS, drawSize: 16, participantsCount: 14, drawId }],
       nonRandom: 20223109,
       setState: true,

@@ -1807,17 +1807,19 @@ Anyone assigning to `matchUpStatusCodes` in TypeScript. `any[]` accepted anythin
 not. If you are writing scoring reason codes, emit strings — that is tenant 1 and the shape
 `modifyMatchUpScore` already documents.
 
-**If you read exit provenance out of this array, move to `sideExitProvenance`** before the tenant is
-evicted. It keys by `sideNumber` instead of using the array index as a side, fixes the element
-shape, and carries `sourceMatchUpId`.
+**If you read exit provenance out of this array, read `sideExitProvenance` instead.** It keys by
+`sideNumber` rather than using the array index as a side, fixes the element shape, and carries
+`sourceMatchUpId`.
 
-### What this step does NOT do
+### What this step did not do — and what 7.x went on to do
 
-The provenance tenant is still WRITTEN. Evicting it is a breaking change of its own and needs the
-engine to stop reading the array for its own decisions first — `progressExitStatus` RULE 2 branches
-on `statusCodes.length === 0`, so the field is load-bearing input, not just an output surface.
-Measured: 24 write sites, 62 read sites. That step will land behind `schemaWriteMode`, with `BRIDGE`
-keeping both surfaces for consumers that have not yet migrated.
+This step was additive: the array was typed and the provenance tenant marked deprecated, but the
+tenant was still written.
+
+A later 7.x release evicted it. `matchUpStatusCodes` now carries the scoring policy's vocabulary
+alone, positionally by side (`['WO', 'W1']`), and that contract is unchanged. Exit provenance lives
+in `sideExitProvenance`, keyed by `sideNumber`. Nothing in the engine reads the array to decide
+behaviour, and a `verify:exit-tenant` check keeps it that way.
 
 ### A defect this typing surfaced
 

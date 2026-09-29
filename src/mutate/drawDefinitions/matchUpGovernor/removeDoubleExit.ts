@@ -4,6 +4,7 @@ import {
   withdrawByeClaim,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
+import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -13,10 +14,10 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit } from '@Validators/isExit';
 import {
-  getNativeSideExitProvenance,
+  getSideExitProvenance,
   deriveExitStateFromProvenance,
   retainForeignProvenance,
-  projectExitStatusCodes,
+  retainPolicyCodes,
   setSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -204,7 +205,7 @@ export function removeDoubleExit(params) {
       return decorateResult({ result: { ...SUCCESS }, stack });
     }
 
-    if (appliedPolicies?.progression?.doubleExitPropagateBye || byePropagatedToLoserMatchUp) {
+    if (propagatesByeOnDoubleExit(appliedPolicies) || byePropagatedToLoserMatchUp) {
       removeDirectedBye({
         drawPosition: loserTargetDrawPosition,
         targetLink: loserTargetLink,
@@ -260,7 +261,7 @@ export function removeDoubleExit(params) {
 
 /** Does this matchUp carry an origin written by one of the results being taken back? */
 function carriesWithdrawnOrigin(matchUp, withdrawnSourceIds: Set<string>): boolean {
-  const provenance = getNativeSideExitProvenance({ matchUp });
+  const provenance = getSideExitProvenance({ matchUp });
   if (!provenance) return false;
   return [1, 2].some((sideNumber) => {
     const sourceMatchUpId = provenance[sideNumber]?.sourceMatchUpId;
@@ -334,7 +335,7 @@ function withdrawExitFromByeChain({
   });
 
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: unwound.provenance ? projectExitStatusCodes(unwound.provenance) : [],
+    matchUpStatusCodes: retainPolicyCodes(noContextTargetMatchUp),
     removeWinningSide: unwound.winningSide === undefined,
     matchUpStatus: unwound.matchUpStatus,
     matchUpId: fromMatchUp.matchUpId,
@@ -586,7 +587,7 @@ export function conditionallyRemoveDrawPosition(params) {
    * it fails the test below and reaches `getUnwoundState` exactly as before.
    */
   const carriesSomethingOfThisCascade = carriesWithdrawnOrigin(noContextTargetMatchUp, withdrawnSourceIds);
-  const holdsProvenance = !!getNativeSideExitProvenance({ matchUp: noContextTargetMatchUp });
+  const holdsProvenance = !!getSideExitProvenance({ matchUp: noContextTargetMatchUp });
   if (holdsProvenance && !carriesSomethingOfThisCascade) {
     pushGlobalLog({
       method: stack,
@@ -609,7 +610,7 @@ export function conditionallyRemoveDrawPosition(params) {
   const removeScore = !pairedPreviousDoubleExit;
   result = modifyMatchUpScore({
     ...params,
-    matchUpStatusCodes: unwound.provenance ? projectExitStatusCodes(unwound.provenance) : [],
+    matchUpStatusCodes: retainPolicyCodes(noContextTargetMatchUp),
     removeWinningSide: unwound.winningSide === undefined,
     matchUpId: targetMatchUp.matchUpId,
     matchUp: noContextTargetMatchUp,
@@ -748,13 +749,13 @@ function getUnwoundState({
     return {
       matchUpStatus: BYE,
       provenance: retainForeignProvenance(
-        getNativeSideExitProvenance({ matchUp: noContextTargetMatchUp }),
+        getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
         withdrawnSourceIds,
       ),
     };
   }
   const retained = retainForeignProvenance(
-    getNativeSideExitProvenance({ matchUp: noContextTargetMatchUp }),
+    getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
     withdrawnSourceIds,
   );
   if (pairedPreviousDoubleExit) {
@@ -772,7 +773,7 @@ function getUnwoundState({
     return {
       matchUpStatus: BYE,
       provenance: retainForeignProvenance(
-        getNativeSideExitProvenance({ matchUp: noContextTargetMatchUp }),
+        getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
         withdrawnSourceIds,
       ),
     };

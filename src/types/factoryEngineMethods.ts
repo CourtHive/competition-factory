@@ -344,6 +344,7 @@ export type FactoryEngineMethod =
   | 'getMatchUpsToSchedule'
   | 'getMatchUpType'
   | 'getMaxEntryPosition'
+  | 'getMaxSetScore'
   | 'getModifiedMatchUpFormatTiming'
   | 'getMutationLocks'
   | 'getOfficialAssignments'
@@ -627,6 +628,7 @@ export type FactoryEngineMethod =
   | 'resolvePointValue'
   | 'resolveStatus'
   | 'resolveVenueId'
+  | 'retainScoreForFormat'
   | 'reverseScore'
   | 'reviewAmendment'
   | 'reviewApplication'
@@ -1093,6 +1095,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getMatchUpsToSchedule',
   'getMatchUpType',
   'getMaxEntryPosition',
+  'getMaxSetScore',
   'getModifiedMatchUpFormatTiming',
   'getMutationLocks',
   'getOfficialAssignments',
@@ -1376,6 +1379,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'resolvePointValue',
   'resolveStatus',
   'resolveVenueId',
+  'retainScoreForFormat',
   'reverseScore',
   'reviewAmendment',
   'reviewApplication',

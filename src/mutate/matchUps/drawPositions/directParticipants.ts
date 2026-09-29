@@ -203,6 +203,10 @@ function processDrawPositionDirecting({
       Object.assign(context, result.context, {
         sourceMatchUpStatusCodes: matchUpStatusCodes ?? [],
         sourceMatchUpStatus: sourceStatus,
+        // WHICH SIDE OF THE SOURCE EXITED, so `progressExitStatus` can read the source's REASON CODE at
+        // that side rather than at index 0. Already computed above for `directLoser`; it simply was not
+        // in the context, and its absence is why a reason recorded against side 2 was dropped.
+        sourceWinningSide: winningSide,
         sourceMatchUpId: matchUpId,
         loserMatchUp,
         matchUpsMap,

@@ -29,10 +29,18 @@ import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
 const DRAW_ID = 'unwind-removes-drawposition';
 
-function issues() {
+function findings() {
   const { drawDefinition } = tournamentEngine.getEvent({ drawId: DRAW_ID });
   const result: any = getDrawInconsistencies({ drawDefinition, drawId: DRAW_ID });
-  return (result?.inconsistencies ?? []).map((issue: any) => issue.issueType);
+  return result?.inconsistencies ?? [];
+}
+
+function issues() {
+  return findings().map((issue: any) => issue.issueType);
+}
+
+function errorIssues() {
+  return findings().filter((issue: any) => issue.severity === 'error');
 }
 
 function mainRoundOne(roundPosition: number) {
@@ -114,5 +122,14 @@ it.each([
   // legitimately advances a still-vacant drawPosition that is awaiting its arrival. These three
   // scenarios are clean on this oracle before the fix too; the falsifying assertion is the loop
   // above, which is RED on master at step 3 in all three cases.
+  //
+  // **P37/P42, and it is back to the strong form.** Evicting the exit tenant unmasked an
+  // `UNCOLLAPSED_CONVERGENCE` in two of these three scenarios — provenance recording an exit delivered
+  // into BOTH sides of a consolation matchUp (`drawPositions: [5, 6]`, both empty, two `DOUBLE_WALKOVER`
+  // origins from different sources) while the status was a single `WALKOVER` with `winningSide: 2`. It
+  // was pre-existing, measured identical on clean `dev`, and had been surfacing under the wrong name.
+  // For one commit this asserted the finding by name; the convergence reconciliation closes it.
+  // Kept as two claims so a `warning` cannot hide behind an error-free list.
+  expect(errorIssues()).toEqual([]);
   expect(issues()).toEqual([]);
 });
