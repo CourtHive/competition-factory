@@ -105,10 +105,34 @@ export function analyzeMatchUp(params?): ResultType & {
 
   const maxSetsCount = Math.max(...setsWinCounts);
   const maxSetsInstances = instanceCount(setsWinCounts)[maxSetsCount];
-  const { bestOf, exactly } = matchUpScoringFormat ?? {};
+  const { bestOf, exactly, aggregate } = matchUpScoringFormat ?? {};
   const setsToWin = Math.ceil((bestOf || exactly || 1) / 2);
+
+  // ── A format that plays EVERY set can pass `setsToWin`, and one that stops cannot ──
+  //
+  // A best-of ends the moment a side reaches `setsToWin`, so a count above it can only come from a
+  // malformed score and equality is the exact test.
+  //
+  // An `exactly` format plays all N sets whatever the running score, so the winner routinely exceeds
+  // it — and under equality the match then reported NO WINNER. Measured against `SET9X-S:T10`
+  // (`setsToWin` 5) on full nine-bolt scores: 5-4 resolved side 1, while **6-3, 7-2 and 9-0 all
+  // resolved `undefined`**. A side that took two thirds of the bolts had not won; a side that took
+  // every one of them had not won either. Downstream that is not cosmetic — `courthive-components`
+  // gates its Submit on this, so a decided bolt match could not be recorded unless it ended 5-4.
+  //
+  // ── AGGREGATE formats are deliberately left alone, and left with NO opinion ──
+  //
+  // CA, 2026-09-29: *"Sets to win is not a consideration when the format is INTENNSE."* In an
+  // aggregate format (`SET9XA`, `HAL2A`) the match is decided by total points across the bolts, not by
+  // how many bolts each side took — so counting sets is the wrong question, and `>=` here would answer
+  // it confidently and wrongly. Measured: six bolts to one side while the other leads 132-78 on
+  // points. Nothing in this file sums points, so aggregate keeps returning `undefined` exactly as
+  // before: no opinion, which is honest, rather than the bolt-count winner, which is not.
+  const playsEverySet = exactly !== undefined && !aggregate;
+  const reachedSetsToWin = playsEverySet ? maxSetsCount >= setsToWin : maxSetsCount === setsToWin;
+
   const calculatedWinningSide =
-    (maxSetsCount === setsToWin && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) || undefined;
+    (reachedSetsToWin && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) || undefined;
 
   const validMatchUpWinningSide =
     winningSideSetsCount > losingSideSetsCount && matchUpWinningSide === calculatedWinningSide;
