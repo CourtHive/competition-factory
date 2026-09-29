@@ -183,6 +183,74 @@ export function playForward(drawId: string): Coord[] {
   return order;
 }
 
+type ResultByPerson = { winnerId?: string; loserId?: string; winningSide?: number };
+
+function resultByPerson(drawId: string, coordinate: Coord): ResultByPerson {
+  const matchUp = findByCoord(drawId, coordinate);
+  const idOn = (sideNumber?: number) =>
+    (matchUp?.sides ?? []).find((side: any) => side?.sideNumber === sideNumber)?.participantId;
+  const winningSide = matchUp?.winningSide;
+  return { winnerId: idOn(winningSide), loserId: winningSide ? idOn(3 - winningSide) : undefined, winningSide };
+}
+
+/**
+ * Which side wins when a later result is RE-ENTERED after the flip.
+ *
+ * **The re-entry replays a PERSON, not a side number.** It entered `winningSide: 1` for every later
+ * matchUp, which is what `playForward` entered the first time — but a flip changes who advances, the
+ * successor carries a different drawPosition, and `drawPositions` are stored ascending, so the
+ * successor can land on the OTHER side of the matchUp they advance into. "Side 1 wins" then names the
+ * person who originally LOST.
+ *
+ * Measured 2026-09-29, the five divergences the differential had reported since 2026-09-17, all of
+ * them this and nothing else:
+ *
+ * ```text
+ * CURTIS_CONSOLATION/16, flip `Consolation 1|2|3`, downstream `Consolation 1|3|2`
+ *   before        dp=[3,4]  ws=1   dp3 beat dp4
+ *   Route A       dp=[4,9]  ws=2   dp9, who succeeds dp3, inherits the win       <- the swap contract
+ *   Route B       dp=[4,9]  ws=1   dp4, who LOST the match, is entered as winner <- this harness
+ * ```
+ *
+ * Two control flips in the same structure (`|2|2`, `|2|4`) leave the successor on the same side, and
+ * there the routes already agreed.
+ *
+ * ## The rule is the SWAP ITSELF, applied to every later result
+ *
+ * A winner change is a RELABEL (`swapWinnerLoserContract`): the two participants of the flipped
+ * matchUp exchange everything that followed from it. So whoever originally won a later matchUp is
+ * replaced, as its winner, by their counterpart under that exchange — and everybody else is their
+ * own counterpart.
+ *
+ * "The original winner still wins if they are still here" was this function's first form and it is
+ * WRONG wherever the two flipped participants meet each other downstream. DOUBLE_ELIMINATION is
+ * where that happens — the Main final, the Backdraw final and the Decider can all be the same pair.
+ *
+ * Only when neither the winner's counterpart nor the loser's is present is there nobody to follow,
+ * and the original side number is all that is left to go on.
+ */
+function replayedWinningSide(
+  matchUp: any,
+  original: ResultByPerson | undefined,
+  exchanged: [string | undefined, string | undefined],
+): number {
+  const counterpart = (participantId?: string) => {
+    if (participantId && participantId === exchanged[0]) return exchanged[1];
+    if (participantId && participantId === exchanged[1]) return exchanged[0];
+    return participantId;
+  };
+  const sideOf = (participantId?: string) =>
+    participantId
+      ? (matchUp.sides ?? []).find((side: any) => side?.participantId === participantId)?.sideNumber
+      : undefined;
+
+  const winnerSide = sideOf(counterpart(original?.winnerId));
+  if (winnerSide) return winnerSide;
+  const loserSide = sideOf(counterpart(original?.loserId));
+  if (loserSide) return 3 - loserSide;
+  return original?.winningSide ?? 1;
+}
+
 export type FlipComparison = {
   /** null when the flip is not comparable — see `skipped` for which side declined it. */
   differences: string[] | null;
@@ -230,6 +298,13 @@ export function compareRoutes({
   // ---- ROUTE B: clear everything entered after the target, flip, re-enter ----
   reset();
   const later = playOrder.slice(index + 1);
+  // WHO won and lost each later matchUp, captured before anything is cleared — the re-entry below
+  // replays PEOPLE, and a side number stops naming the same person once the flip has re-sorted them.
+  const originalResults = new Map(
+    later.map((coordinate) => [coordKey(coordinate), resultByPerson(drawId, coordinate)]),
+  );
+  const flippedResult = resultByPerson(drawId, coord);
+  const exchanged: [string | undefined, string | undefined] = [flippedResult.winnerId, flippedResult.loserId];
   // Cleared in REVERSE entry order: clearing a result the engine still considers to have an active
   // downstream is refused, so the unwind has to come back out the way it went in.
   for (const coordinate of later.slice().reverse()) {
@@ -249,7 +324,8 @@ export function compareRoutes({
     // A coordinate that no longer names a playable matchUp is legitimately unplayable after the
     // flip — the flip changed who progresses there. Skipping it is correct, not a shortfall.
     if (!matchUp) continue;
-    applyOutcome(matchUp.matchUpId, drawId, { winningSide: 1 });
+    const winningSide = replayedWinningSide(matchUp, originalResults.get(coordKey(coordinate)), exchanged);
+    applyOutcome(matchUp.matchUpId, drawId, { winningSide });
   }
 
   return { differences: diffProjections(projectionA, projectByCoordinate(drawId)) };
