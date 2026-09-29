@@ -628,6 +628,7 @@ export type FactoryEngineMethod =
   | 'resolvePointValue'
   | 'resolveStatus'
   | 'resolveVenueId'
+  | 'retainScoreForFormat'
   | 'reverseScore'
   | 'reviewAmendment'
   | 'reviewApplication'
@@ -1378,6 +1379,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'resolvePointValue',
   'resolveStatus',
   'resolveVenueId',
+  'retainScoreForFormat',
   'reverseScore',
   'reviewAmendment',
   'reviewApplication',

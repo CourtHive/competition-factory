@@ -384,6 +384,7 @@ import type { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import type { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import type { getHomeParticipantId } from '@Query/matchUp/getHomeParticipantId';
 import type { getMatchUpContextIds } from '@Query/matchUp/getMatchUpContextIds';
+import type { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
 import type { tournamentMatchUps } from '@Query/matchUps/getTournamentMatchUps';
 import type { queryOfficialRecord } from '@Query/officiating/getOfficialRecord';
 import type { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
@@ -1249,6 +1250,7 @@ export interface MethodSignatures {
   resolveDraftPositions: EngineMethod<typeof resolveDraftPositions>;
   resolveEntryFee: EngineMethod<typeof resolveEntryFee>;
   resolvePointValue: EngineMethod<typeof resolvePointValue>;
+  retainScoreForFormat: EngineMethod<typeof retainScoreForFormat>;
   reverseScore: EngineMethod<typeof reverseScore>;
   reviewAmendment: EngineMethod<typeof reviewAmendment>;
   reviewApplication: EngineMethod<typeof reviewApplication>;
