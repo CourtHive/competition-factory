@@ -300,7 +300,29 @@ export function assignMatchUpDrawPosition({
    * arrived at this drawPosition", which is exactly the resolvable case, so no new predicate is
    * needed. `slotNewlyOccupied` keeps it to an arrival that actually changed the occupant.
    */
-  const resolvesPendingExit = !positionAdded && participantArrivesAtExit && slotNewlyOccupied;
+  /**
+   * THE AWARD IS NOT A NOTICE, and it was being withheld by a rule about notices.
+   *
+   * This read `slotNewlyOccupied`, which additionally requires the matchUp to be in a LATER round
+   * than the one where the drawPosition first appears. That restriction exists for the notice in the
+   * `else` branch below — an initial-round placement is announced elsewhere and must not be announced
+   * twice. It has nothing to do with whether a pending exit is owed a winner.
+   *
+   * A FED position first appears in the very round it is fed into, so for a fed seat the condition is
+   * never true. The participant arrived, `advanceDrawPosition` moved them onward, and the matchUp
+   * they left kept its exit and no `winningSide` — reported by `STALLED_POSITION` as a participant
+   * whose opponent can never arrive, about somebody who was already in the next round.
+   *
+   * Traced 2026-09-29 on MODIFIED_FEED_IN_CHAMPIONSHIP 8/5, matrix seed 268:
+   *
+   *     Main|1|3 DOUBLE_WALKOVER   Consolation|2|2  WALKOVER ws=-  [2,5]   exit on side 2, pending
+   *     Main|2|1 played            Consolation|2|2  WALKOVER ws=-  s1: a participant arrives
+   *                                Consolation|3|1  BYE [1,2]      s2: and has already moved on
+   *
+   * `verify:stall-budget`: **89 -> 68 cells, 176 -> 141 findings.** The 35 that closed are every
+   * stall in the matrix that carried a single exit status.
+   */
+  const resolvesPendingExit = !positionAdded && participantArrivesAtExit && slotFilledByParticipant;
 
   if (matchUp && (positionAdded || resolvesPendingExit)) {
     applyPositionToMatchUp({

@@ -152,7 +152,12 @@ const scenarios = [
     // structure-level positionAssignment path, which previously emitted only a
     // modifyPositionAssignments notice — the per-matchUp modifyMatchUp notice for
     // each was missing, leaving a notice-driven consumer stale until a full reload.
-    modifiedMatchUpsCount: 10,
+    //
+    // 11 (was 10), 2026-09-29: the eleventh is `Consolation r1p1` — `WALKOVER ws=2` — announced when
+    // its participant ARRIVES. The position was there from generation, so the arrival took the
+    // branch that resolves nothing and notifies only for a LATER round; a first-round or fed seat
+    // being occupied was never announced at all. Same staleness as above, one matchUp further.
+    modifiedMatchUpsCount: 11,
     updates: [
       {
         matchUpStatus: DOUBLE_WALKOVER,
