@@ -1,11 +1,7 @@
+import { deepCorrectionScenario, compareCorrection } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import type { DivergenceConfig } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
-import {
-  deepCorrectionScenario,
-  compareCorrection,
-  runPath,
-} from '@Tests/testHarness/exitPropagation/correctionDivergence';
 
 // constants
 import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
@@ -138,8 +134,6 @@ function alternative(outcome: any): any {
 }
 
 const withoutProvenance = (signature: string) => signature.replace(/ prov=[^ ]*/, '');
-const renderRefusals = (refusals: { coordinate: string; code?: string }[]) =>
-  refusals.map((refusal) => `${refusal.coordinate}:${refusal.code ?? 'REFUSED'}`).join(',');
 
 type Bucket = 'identical' | 'provenanceOnly' | 'incomparable' | 'refused' | 'severe';
 
@@ -176,9 +170,14 @@ function classify(config: DivergenceConfig, cellExit: any): { bucket: Bucket; de
   const scenario = deepCorrectionScenario({ config, cellExit, alternative });
   if (!scenario) return undefined;
 
-  const { divergences } = compareCorrection({ config, direct: scenario.direct, corrected: scenario.corrected });
-  const direct = renderRefusals(runPath(config, scenario.direct, 'deep-direct').refusals);
-  const corrected = renderRefusals(runPath(config, scenario.corrected, 'deep-corrected').refusals);
+  // ONE run of each path. This ran both a second time to read their refusals — 5 draws per cell
+  // instead of 3 — and on the CI runner that was the difference between 34 minutes and the
+  // 600-second timeout (#5049 and #5050 both timed out at 608 s with the counts already printed).
+  const {
+    divergences,
+    directRefusals: direct,
+    correctedRefusals: corrected,
+  } = compareCorrection({ config, direct: scenario.direct, corrected: scenario.corrected });
   const { structureName, roundNumber, roundPosition } = scenario.mistake;
   const mistake = `${structureName}|${roundNumber}|${roundPosition}`;
   const rendered = divergences.map((d) => `${d.coordinate} [${d.direct}] vs [${d.corrected}]`).join('; ');
@@ -222,5 +221,7 @@ it.skipIf(!enabled)(
     expect(counts.provenanceOnly, 'provenance-only cells').toBeLessThanOrEqual(BASELINE.provenanceOnly);
     expect(counts.severe, `severe cells:\n${report}`).toBeLessThanOrEqual(BASELINE.severe);
   },
-  600_000,
+  // the sweep takes ~4 minutes locally and ran to 608 s on the CI runner before the double run above
+  // was removed; the ceiling is a guard against a hang, not a budget
+  1_200_000,
 );

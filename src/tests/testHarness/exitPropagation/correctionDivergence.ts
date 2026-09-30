@@ -213,7 +213,7 @@ export function compareCorrection({
   config: DivergenceConfig;
   direct: Step[];
   corrected: Step[];
-}): { divergences: Divergence[]; refusalMismatch?: string } {
+}): { divergences: Divergence[]; refusalMismatch?: string; directRefusals: string; correctedRefusals: string } {
   const a = runPath(config, direct, 'divergence-direct');
   const b = runPath(config, corrected, 'divergence-corrected');
 
@@ -234,8 +234,11 @@ export function compareCorrection({
   }
   divergences.sort((x, y) => x.coordinate.localeCompare(y.coordinate));
 
+  // the refusals are returned as rendered, so a caller that needs them does not run both paths again
   return {
     divergences,
+    directRefusals,
+    correctedRefusals,
     ...(directRefusals !== correctedRefusals
       ? { refusalMismatch: `direct[${directRefusals}] corrected[${correctedRefusals}]` }
       : {}),
