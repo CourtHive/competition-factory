@@ -72,13 +72,13 @@ import {
  *      remains is the same difference as shape 3: `[2, 4] ws=2` against `[null, 4] ws=1`, the same
  *      winner on a different seat number.
  *
- * Shapes 3 and 4 share a root. Seat 2's advancement into `Consolation|3|1` came from its opponent's
- * BYE at generation; clearing the walkover's loser from seat 2 withdraws it, and whatever arrives
- * next — the double exit's BYE, or its exit — is laid out from scratch. Keeping a BYE-advanced seat
- * on ANY clear closes all three cells and breaks 4 of `shuffleCompletion`'s byeLimit cases:
- * `assignDrawPositionBye` finds the seat already advanced, BYEs that matchUp, and skips the
- * advancement step that also feeds the loser link its BYE. Generation has no canonical seat for a
- * BYE meeting a BYE either (measured 2026-09-30: lower wins in some pairs, higher in others).
+ * Shapes 3 and 4 shared a root. Seat 2's advancement into `Consolation|3|1` came from its opponent's
+ * BYE at generation; clearing the walkover's loser from seat 2 withdrew it, and whatever arrived
+ * next — the double exit's BYE, or its exit — was laid out from scratch. **CLOSED** (P46, CA ruled
+ * 2026-10-01 on two tournament files that differed only in route: *"A is clearly correct"*): a
+ * BYE-advanced seat keeps its advancement through ANY clear, and `assignDrawPositionBye` completes
+ * the loser feed on a seat that is already advanced and alone — the step whose absence had broken
+ * 4 of `shuffleCompletion`'s byeLimit cases the first time the rule was tried. 3 → 0.
  */
 
 const DRAW_TYPES = [
@@ -107,7 +107,7 @@ const POLICIES: { label: string; doubleExitPropagateBye?: boolean }[] = [
 // five minutes over 960 cells: run by `pnpm verify` and CI, not by every `pnpm test`
 const enabled = process.env.DEEP_CORRECTIONS === '1';
 
-const BASELINE = { cells: 960, severe: 3, incomparable: 4, provenanceOnly: 0 };
+const BASELINE = { cells: 960, severe: 0, incomparable: 4, provenanceOnly: 0 };
 
 function alternative(outcome: any): any {
   switch (outcome?.matchUpStatus) {

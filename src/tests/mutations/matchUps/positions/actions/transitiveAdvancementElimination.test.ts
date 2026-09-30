@@ -59,12 +59,14 @@ it('can advance participants when double BYEs are created', () => {
   });
 
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs({ structureId }));
+  // seat 4 advanced over seat 3's BYE and KEEPS that advancement on becoming a BYE itself (P46);
+  // which of two BYE seats sits here is not information (CA, 2026-09-29)
   expect(filteredOrderedPairs).toEqual([
     [1, 2],
     [3, 4],
     [5, 6],
     [7, 8],
-    [1, 3],
+    [1, 4],
     [8],
     [1], // drawPosition 4 is now a BYE, advancing 1
   ]);
@@ -78,5 +80,5 @@ it('can advance participants when double BYEs are created', () => {
   });
   expect(result.success).toEqual(true);
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs({ structureId }));
-  expect(filteredOrderedPairs.filter((p) => p?.length)).toEqual([[1, 2], [3, 4], [5, 6], [7, 8], [3], [8]]);
+  expect(filteredOrderedPairs.filter((p) => p?.length)).toEqual([[1, 2], [3, 4], [5, 6], [7, 8], [4], [8]]);
 });

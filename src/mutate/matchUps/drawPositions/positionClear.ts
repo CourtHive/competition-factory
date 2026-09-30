@@ -158,12 +158,6 @@ export function drawPositionRemovals({
       structure,
     }).positionAssignments ?? [];
 
-  // read BEFORE the assignment is emptied: whether what is being withdrawn is a BYE the cascade put
-  // there, which decides below whether the seat's own advancement goes with it
-  const withdrawsPropagatedBye = positionAssignments.some(
-    (assignment: any) => assignment.drawPosition === drawPosition && assignment.bye && assignment.byeFromPropagation,
-  );
-
   const drawPositionCleared = positionAssignments.some((assignment) => {
     if (assignment.drawPosition === drawPosition) {
       delete assignment.participantId;
@@ -217,7 +211,6 @@ export function drawPositionRemovals({
     }
 
     removeSubsequentRoundsParticipant({
-      withdrawsPropagatedBye,
       inContextDrawMatchUps,
       targetDrawPosition,
       tournamentRecord,
@@ -228,7 +221,6 @@ export function drawPositionRemovals({
     });
 
     removeDrawPosition({
-      withdrawsPropagatedBye,
       inContextDrawMatchUps,
       positionAssignments,
       tournamentRecord,
@@ -245,7 +237,6 @@ export function drawPositionRemovals({
 }
 
 function removeSubsequentRoundsParticipant({
-  withdrawsPropagatedBye,
   inContextDrawMatchUps,
   targetDrawPosition,
   tournamentRecord,
@@ -283,7 +274,6 @@ function removeSubsequentRoundsParticipant({
   relevantMatchUps?.forEach((matchUp) =>
     removeDrawPosition({
       drawPosition: targetDrawPosition,
-      withdrawsPropagatedBye,
       targetMatchUp: matchUp,
       inContextDrawMatchUps,
       positionAssignments,
@@ -298,7 +288,6 @@ function removeSubsequentRoundsParticipant({
 
 type RemoveDrawPositionArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
-  withdrawsPropagatedBye?: boolean;
   positionAssignments: PositionAssignment[];
   targetMatchUp: HydratedMatchUp;
   tournamentRecord?: Tournament;
@@ -309,7 +298,6 @@ type RemoveDrawPositionArgs = {
   event?: Event;
 };
 function removeDrawPosition({
-  withdrawsPropagatedBye,
   inContextDrawMatchUps,
   positionAssignments,
   tournamentRecord,
@@ -354,13 +342,30 @@ function removeDrawPosition({
    * 2026-09-21 (*"a position advanced by a BYE is never released"*); this file has its own removal
    * and had never been given it.
    *
-   * Only when what is withdrawn is a BYE the cascade placed. Clearing a PARTICIPANT, or a BYE a
-   * director placed, removes the advancement exactly as before: a position action is followed by
-   * another that re-derives it, and leaving the old one behind would seat two positions in one slot.
+   * WHATEVER is withdrawn — a propagated BYE, a participant, a director's BYE. The first version of
+   * this rule (2026-09-29) kept the advancement only for a propagated BYE, on the theory that
+   * clearing a participant is followed by a position action that re-derives it. CA ruled otherwise
+   * on 2026-10-01 (P46), on two FIRST_MATCH_LOSER_CONSOLATION 8/5 files that differed only in route:
+   *
+   *     generated          Consolation|3|1  [2, _]     seat 2's opponent, seat 5, is a BYE
+   *     walkover entered   Consolation|3|1  [2, 4]     the loser arrives on seat 2, already advanced
+   *     corrected          Consolation|3|1  [4, 5]     this removal took seat 2 out; seat 5 advanced instead
+   *     entered directly   Consolation|3|1  [2, 4]     *"A is clearly correct"*
+   *
+   * The advancement never depended on the occupant, so the occupant leaving cannot take it. The
+   * generated draw is exactly this state — an advanced seat with nobody on it — and a participant
+   * arriving onto it later is the ordinary case, not a double seating. What made the narrower rule
+   * necessary was `assignDrawPositionBye`: on a seat that was already advanced and alone it found
+   * nothing to advance and skipped the loser feed, so a BYE placed on such a seat left the loser
+   * target empty (4 of `shuffleCompletion`'s 12 byeLimit cases). `assignByeToLoserTarget` closes
+   * that, and the rule can be what it says.
    */
-  const keepsByeAdvancement =
-    !!withdrawsPropagatedBye &&
-    advancedByOpponentsBye({ matchUps: matchUps ?? [], positionAssignments, targetMatchUp, drawPosition });
+  const keepsByeAdvancement = advancedByOpponentsBye({
+    matchUps: matchUps ?? [],
+    positionAssignments,
+    targetMatchUp,
+    drawPosition,
+  });
 
   if (
     !keepsByeAdvancement &&

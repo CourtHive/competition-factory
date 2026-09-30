@@ -75,14 +75,17 @@ it('supports transitive BYE removal in large structures', () => {
   });
 
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs());
+  // seat 8 was BYE-advanced from generation and seat 6 advanced over seat 5's BYE; each KEEPS its
+  // advancement on becoming a BYE itself (P46), so the seats that sit here are the ones that were
+  // already advanced, not the ones BYEd last.
   expect(filteredOrderedPairs).toEqual([
     [1, 2],
     [3, 4],
     [5, 6],
     [7, 8],
     [1], // drawPosition 1 is BYE-advanced
-    [5, 7], // drawPositions 5, 6, 7, 8 are BYEs and 5, 7 are BYE-advanced
-    [7], // drawPosition 7 is BYE-advanced
+    [6, 8], // drawPositions 5, 6, 7, 8 are BYEs and 6, 8 are BYE-advanced
+    [8], // drawPosition 8 is BYE-advanced
   ]);
 
   removeAssignment({
@@ -91,13 +94,16 @@ it('supports transitive BYE removal in large structures', () => {
     drawPosition: 8,
   });
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs());
+  // seat 8 is now EMPTY beside seat 7's BYE — the generated state of such a seat is advanced, and
+  // it stays advanced: through round 2 over seat 6's BYE, into the final, awaiting an occupant
   expect(filteredOrderedPairs.filter((p) => p?.length)).toEqual([
     [1, 2],
     [3, 4],
     [5, 6],
     [7, 8],
     [1], // drawPosition 1 is BYE-advanced
-    [5], // drawPositions 5, 6 are BYEs and 5 is BYE-advanced
+    [6, 8], // drawPositions 5, 6, 7 are BYEs; 6 and the emptied 8 are BYE-advanced
+    [8],
   ]);
 
   const participantId = originalPositionAssignments.find(({ drawPosition }) => drawPosition === 8).participantId;
@@ -116,7 +122,7 @@ it('supports transitive BYE removal in large structures', () => {
     [5, 6],
     [7, 8],
     [1], // drawPosition 1 is BYE-advanced
-    [5, 8], // drawPositions 5, 6 are BYEs and 5 is BYE-advanced
+    [6, 8], // drawPositions 5, 6 are BYEs and 6 is BYE-advanced
     [8],
   ]);
 
@@ -189,12 +195,15 @@ function swapTest({ swapPosition }) {
   });
 
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs());
+  // seat 4 advanced over seat 3's BYE and KEEPS that advancement on becoming a BYE itself; it is
+  // not torn down and seat 3 advanced in its place. Which of two BYE seats sits here is not
+  // information (CA, 2026-09-29), and a seat's advancement never depended on its occupant (P46).
   expect(filteredOrderedPairs).toEqual([
     [1, 2],
     [3, 4],
     [5, 6],
     [7, 8],
-    [1, 3],
+    [1, 4],
     [8],
     [1], // drawPosition 4 is now a BYE, advancing 1
   ]);
@@ -215,7 +224,7 @@ function swapTest({ swapPosition }) {
     roundNumber: 2,
     roundPosition: 1,
   });
-  expect(matchUp.drawPositions).toEqual([1, 3]);
+  expect(matchUp.drawPositions).toEqual([1, 4]);
 
   swapPositions({ drawPosition: 5, swapPosition, drawId, structureId });
 

@@ -1303,15 +1303,14 @@ describe('positionClear bye propagation', () => {
         });
         expect(result.success).toBe(true);
 
-        // verify participant removed from round 2
+        // verify participant removed from round 2. THE SEAT STAYS: it was advanced by its
+        // opponent's BYE at generation, and that advancement never depended on who sat on it
+        // (P46, CA 2026-10-01). What leaves is the participant, so the property is asserted on
+        // the sides, not on the seat number.
         const { matchUps: updated } = tournamentEngine.allTournamentMatchUps();
         const updatedR2 = updated.find((m) => m.matchUpId === r2MatchUp.matchUpId);
-        // The removal empties both of this matchUp's slots, so `drawPositions` settles to `[]` and
-        // `definedAttributes(…, ignoreEmptyArrays)` drops it during hydration — `?.includes(...)`
-        // therefore reads `undefined` rather than `false`. The PROPERTY is unchanged: the
-        // participant is no longer in round 2. Asserted directly, so it no longer depends on the
-        // container being present. See `drawPositionsHydrationContract.test.ts`.
-        expect(updatedR2.drawPositions ?? []).not.toContain(participantDP);
+        expect(updatedR2.drawPositions ?? []).toContain(participantDP);
+        expect((updatedR2.sides ?? []).some((side) => side.participantId)).toEqual(false);
         break;
       }
     }
