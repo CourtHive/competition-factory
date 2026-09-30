@@ -210,6 +210,40 @@ function parseSetScores(
   return { side1Score, side2Score, side1TiebreakScore, side2TiebreakScore };
 }
 
+/**
+ * The side that won the set on games must also hold the higher tiebreak points.
+ *
+ * ── A validator that read the pair side-blind ──
+ *
+ * Everything else in this file works from `winnerScore` / `loserScore`, the max and min of the games,
+ * so which SIDE held which never entered into it — and `validateExplicitTiebreakScore` reads the points
+ * the same way. A `7-6` whose set winner took 3 tiebreak points to the loser's 7 therefore passed:
+ * measured 2026-09-30, `validateSetScore` and `validateMatchUpScore` both answered valid, while
+ * `analyzeSet` given the winning side answered "winningSide tiebreak value is not high" and
+ * `checkSetIsComplete` answered false. The validators had skipped the one check the analysis makes.
+ *
+ * Found from `courthive-components`, whose score-entry card had to hand-check it: the card showed the
+ * lower points against the set winner and would have recorded the pair as typed.
+ *
+ * Only a contradiction is refused. A tied pair is left to `validateExplicitTiebreakScore`, which rejects
+ * it with the margin message; level games say nothing about who should hold the points.
+ */
+function validateTiebreakWinner(
+  side1Score: number,
+  side2Score: number,
+  side1TiebreakScore: number | undefined,
+  side2TiebreakScore: number | undefined,
+): { isValid: boolean; error?: string } | undefined {
+  if (side1TiebreakScore === undefined || side2TiebreakScore === undefined) return undefined;
+  if (side1Score === side2Score || side1TiebreakScore === side2TiebreakScore) return undefined;
+
+  const gamesWinner = side1Score > side2Score ? 1 : 2;
+  const pointsWinner = side1TiebreakScore > side2TiebreakScore ? 1 : 2;
+  if (gamesWinner === pointsWinner) return undefined;
+
+  return { isValid: false, error: `Set winner must win the tiebreak: side ${gamesWinner} won the set` };
+}
+
 function validateTiebreakSet(
   winnerScore: number,
   loserScore: number,
@@ -360,6 +394,9 @@ export function validateSetScore(
   const hasTiebreak = hasExplicitTiebreak || isImplicitTiebreak;
 
   if (hasTiebreak) {
+    const contradiction = validateTiebreakWinner(side1Score, side2Score, side1TiebreakScore, side2TiebreakScore);
+    if (contradiction) return contradiction;
+
     return validateTiebreakSet(
       winnerScore,
       loserScore,
