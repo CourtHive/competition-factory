@@ -1,5 +1,14 @@
 # Changelog
 
+## [7.3.1](https://github.com/CourtHive/competition-factory/compare/v7.3.0...v7.3.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **draws:** reconcileDecider returns the error of the write it makes ([a3c4a1c](https://github.com/CourtHive/competition-factory/commit/a3c4a1c990caa1ec3071f93d952188ddc98c5bf3))
+* **matchUps:** setMatchUpStatus finds the draw from a drawId, as it says it does ([a3c4a1c](https://github.com/CourtHive/competition-factory/commit/a3c4a1c990caa1ec3071f93d952188ddc98c5bf3))
+* **matchUps:** setMatchUpStatus resolves a drawId, and the decider write returns its error ([#5038](https://github.com/CourtHive/competition-factory/issues/5038)) ([a3c4a1c](https://github.com/CourtHive/competition-factory/commit/a3c4a1c990caa1ec3071f93d952188ddc98c5bf3))
+
 ## [7.3.0](https://github.com/CourtHive/competition-factory/compare/v7.2.0...v7.3.0) (2026-09-29)
 
 
