@@ -79,14 +79,17 @@ it('can remove transitive BYEs in consolation of FIC', () => {
     structureId: mainStructure.structureId,
   }));
 
+  // every seat is a BYE; which of each pair sits in the later rounds is the one that was already
+  // advanced when its partner became a BYE, and it keeps that advancement (P46) — not information
+  // (CA, 2026-09-29), but pinned so the convention does not drift silently
   expect(filteredOrderedPairs).toEqual([
     [1, 2],
     [3, 4],
     [5, 6],
     [7, 8],
-    [1, 3],
-    [6, 8],
-    [3, 6],
+    [2, 4],
+    [5, 7],
+    [4, 5],
   ]);
 
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs({
@@ -96,10 +99,10 @@ it('can remove transitive BYEs in consolation of FIC', () => {
   expect(filteredOrderedPairs).toEqual([
     [4, 5],
     [6, 7],
-    [2, 4],
-    [3, 7],
-    [2, 7],
-    [1, 7],
+    [2, 5],
+    [3, 6],
+    [2, 6],
+    [1, 6],
   ]);
 
   // STEP #3: check main structure has 0 participants and 8 BYEs
@@ -129,13 +132,14 @@ it('can remove transitive BYEs in consolation of FIC', () => {
     structureId: mainStructure.structureId,
   }));
 
+  // the two alternates meet in the final; the BYE seats beside them are the ones already advanced
   expect(filteredOrderedPairs).toEqual([
     [1, 2],
     [3, 4],
     [5, 6],
     [7, 8],
-    [1, 3],
-    [6, 7],
+    [2, 3],
+    [5, 7],
     [3, 7],
   ]);
 
@@ -147,10 +151,10 @@ it('can remove transitive BYEs in consolation of FIC', () => {
   expect(filteredOrderedPairs).toEqual([
     [4, 5],
     [6, 7],
-    [2, 4],
-    [3, 7],
-    [2, 7],
-    [1, 7],
+    [2, 5],
+    [3, 6],
+    [2, 6],
+    [1, 6],
   ]);
 
   // STEP #6: check main structure has 2 participants and 6 BYEs
@@ -176,12 +180,15 @@ it('can remove transitive BYEs in consolation of FIC', () => {
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs({
     structureId: mainStructure.structureId,
   }));
-  expect(filteredOrderedPairs).toEqual([[1, 2], [3, 4], [5, 6], [7, 8], [1], [6, 7], [7]]);
+  expect(filteredOrderedPairs).toEqual([[1, 2], [3, 4], [5, 6], [7, 8], [2], [5, 7], [7]]);
 
   ({ filteredOrderedPairs } = getOrderedDrawPositionPairs({
     structureId: consolationStructure.structureId,
   }));
-  expect(filteredOrderedPairs).toEqual([[4, 5], [6, 7], [2], [3, 7], [7], [1]]);
+  // consolation seat 5 (fed by Main 3-4's loser) lost its BYE with Main seat 4 and is EMPTY beside
+  // seat 4's BYE — the generated shape of such a seat is advanced, and it stays advanced (P46).
+  // Seat 2's advancement over seat 5 goes with the BYE: seat 5 is no longer one.
+  expect(filteredOrderedPairs).toEqual([[4, 5], [6, 7], [2, 5], [3, 6], [6], [1]]);
 });
 
 function replaceWithByes({ drawPositions, drawId, structureId }) {

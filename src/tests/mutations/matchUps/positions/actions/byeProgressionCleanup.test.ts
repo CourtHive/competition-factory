@@ -68,7 +68,9 @@ it('will remove BYEs fed into CONSOLATION', () => {
   });
   expect(result.success).toEqual(true);
 
-  expect(matchUpModifyNotices.length).toEqual(4);
+  // one fewer than before P46: seat 16's second-round entry is kept rather than removed and
+  // re-placed, so the second-round matchUp is notified once, not twice
+  expect(matchUpModifyNotices.length).toEqual(3);
 
   ({
     drawDefinition: {
@@ -92,7 +94,7 @@ it('will remove BYEs fed into CONSOLATION', () => {
     drawPosition,
     drawId,
   });
-  expect(matchUpModifyNotices.length).toEqual(7);
+  expect(matchUpModifyNotices.length).toEqual(6);
   expect(assignmentNotifications.flat().length).toEqual(4);
 
   ({
