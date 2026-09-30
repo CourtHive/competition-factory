@@ -29,7 +29,7 @@ export default defineConfig({
     // ordinary specs that run under this default. Legacy-shape storage specs opt back into LEGACY via
     // the `legacyMode()` helper; behavioral specs cover all modes via `writeModeMatrix`.
     // setSchemaWriteModeLegacy.ts is retained for the legacyMode() helper.
-    setupFiles: ['./src/tests/testHarness/setSchemaWriteModeNative.ts'],
+    setupFiles: ['./src/tests/testHarness/setSchemaWriteModeNative.ts', './src/tests/testHarness/seedMathRandom.ts'],
     coverage: {
       reporter: ['html', 'json-summary'],
       include: ['src/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
