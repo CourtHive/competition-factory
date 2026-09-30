@@ -218,12 +218,28 @@ describe('getMaxSetScore', () => {
     expect(getMaxSetScore({ setTo: 6, tiebreakAt: 6, opponentScore: 6 })).toBe(7);
   });
 
-  it('tightens to setTo when the opponent cannot have forced a tiebreak', () => {
-    // 7 is reachable only at six-all, so a side facing 3 tops out at 6. This is what lets an interface
-    // refuse an impossible PAIR as it is typed rather than validating it afterwards.
+  it('tightens to setTo when the opponent is too far back to reach it', () => {
+    // From 3 the set ends at 6-3 or 6-4, long before six-all, so a side facing 3 tops out at 6. This is
+    // what lets an interface refuse an impossible PAIR as it is typed rather than validating it
+    // afterwards.
     expect(getMaxSetScore({ setTo: 6, tiebreakAt: 6, opponentScore: 3 })).toBe(6);
     expect(getMaxSetScore({ setTo: 6, tiebreakAt: 6, opponentScore: 0 })).toBe(6);
-    expect(getMaxSetScore({ setTo: 6, tiebreakAt: 6, opponentScore: 5 })).toBe(6);
+    expect(getMaxSetScore({ setTo: 6, tiebreakAt: 6, opponentScore: 4 })).toBe(6);
+  });
+
+  it('allows setTo + 1 against an opponent on setTo - 1, because 7-5 needs no tiebreak', () => {
+    // This asserted 6, under a heading about tiebreaks that did not cover it. 7-5 is won OUTRIGHT: at
+    // 5-5 the set runs to 6-5 and then 7-5, and the tiebreak at six-all is never reached. A ceiling of
+    // 6 refuses one of the most common set scores in tennis.
+    expect(getMaxSetScore({ setTo: 6, tiebreakAt: 6, opponentScore: 5 })).toBe(7);
+
+    // The cross-check the function's own doc comment names. These two must agree, and at this one
+    // value they did not.
+    expect(getSetComplement({ lowValue: 5, setTo: 6, tiebreakAt: 6, isSide1: false })).toEqual([7, 5]);
+
+    // Not a special case for six: the rule is `setTo - 1`, whatever setTo is.
+    expect(getMaxSetScore({ setTo: 4, tiebreakAt: 4, opponentScore: 3 })).toBe(5);
+    expect(getMaxSetScore({ setTo: 4, tiebreakAt: 4, opponentScore: 2 })).toBe(4);
   });
 
   it('caps at setTo when the tiebreak comes BELOW setTo', () => {
