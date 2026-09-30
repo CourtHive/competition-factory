@@ -63,7 +63,9 @@ import {
  *      drawPosition after the correction that the direct path never advanced. TRACED: the double
  *      exit's BYE let the Backdraw's other finalist advance through `Backdraw|3|1` and `Backdraw|4|1`
  *      and across the winner link into the Main final; the correction withdrew the BYE and
- *      released the advancements inside the Backdraw, but not the one across the link.
+ *      released the advancements inside the Backdraw, but not the one across the link. **CLOSED**:
+ *      `positionClear`'s round walk follows the winner link (`releaseLinkedWinnerAdvancement`),
+ *      pinned in `correctionReleasesAdvancementAcrossLink.test.ts`. 5 → 3.
  *   3. FIRST_MATCH_LOSER_CONSOLATION 8/5, `Main|2|2` WALKOVER → DOUBLE_WALKOVER, default policy:
  *      `Consolation|3|1` holds the BYE and the participant on opposite sides. Which side is the BYE
  *      differs, and nothing else.
@@ -97,7 +99,7 @@ const POLICIES: { label: string; doubleExitPropagateBye?: boolean }[] = [
 // five minutes over 960 cells: run by `pnpm verify` and CI, not by every `pnpm test`
 const enabled = process.env.DEEP_CORRECTIONS === '1';
 
-const BASELINE = { cells: 960, severe: 5, incomparable: 4, provenanceOnly: 0 };
+const BASELINE = { cells: 960, severe: 3, incomparable: 4, provenanceOnly: 0 };
 
 function alternative(outcome: any): any {
   switch (outcome?.matchUpStatus) {

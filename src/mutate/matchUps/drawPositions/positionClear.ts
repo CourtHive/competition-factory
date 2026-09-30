@@ -2,6 +2,7 @@ import { clearSideExitProvenance, retainByeClaimsOnly } from '@Mutate/matchUps/m
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { releaseLinkedWinnerAdvancement } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -371,6 +372,21 @@ function removeDrawPosition({
         currentDrawPosition === drawPosition ? undefined : currentDrawPosition,
       ),
     );
+
+    // AND ACROSS THE LINK. This removal walked the rounds of one structure and stopped at its edge.
+    // Measured 2026-09-30 by `correctionDivergenceDeep` on DOUBLE_ELIMINATION 8/5: a double exit's
+    // BYE let the other Backdraw finalist advance through the Backdraw final and across the winner
+    // link into the Main final; correcting the double exit to a single took them out of the Backdraw
+    // final here and left them in the Main final, where the direct entry never had them.
+    releaseLinkedWinnerAdvancement({
+      roundNumber: targetMatchUp.roundNumber,
+      structureId: structure.structureId,
+      tournamentRecord,
+      drawDefinition,
+      drawPosition,
+      matchUpsMap,
+      event,
+    });
   }
 
   handleTeamPositionRemoval({

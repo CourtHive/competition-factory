@@ -25,13 +25,15 @@ type ReleaseLinkedWinnerAdvancementArgs = {
  * A drawPosition just left a matchUp that is the SOURCE round of a WINNER link — so whatever it
  * carried across that link comes back out of the target structure too.
  *
- * Every position release in the engine is structure-local: `removeSubsequentRoundsParticipant` and
- * `releaseAdvancedDrawPosition` walk the rounds of ONE structure. That is complete inside a
- * structure and incomplete at its edge. DOUBLE_ELIMINATION's Backdraw final feeds the Main final
+ * Every position release in the engine is structure-local: `removeSubsequentRoundsParticipant`,
+ * `releaseAdvancedDrawPosition` and `positionClear`'s own round walk each take a position out of
+ * the rounds of ONE structure. That is complete inside a structure and incomplete at its edge. DOUBLE_ELIMINATION's Backdraw final feeds the Main final
  * across a WINNER link, and a Backdraw finalist can reach the Main final without that final being
  * played — through a BYE, or a pending exit. Take them back out of the Backdraw final and, until
  * this, they stayed in the Main final, where the next Backdraw winner was refused
- * `ERR_EXISTING_POSITION_ASSIGNMENT` over a draw the source write had already changed.
+ * `ERR_EXISTING_POSITION_ASSIGNMENT` over a draw the source write had already changed. The same
+ * stranding through `positionClear` — a corrected double exit withdrawing the BYE that had carried
+ * the finalist across — was 2 of `correctionDivergenceDeep`'s first 9 severe cells (2026-09-30).
  *
  * ## Numbering
  *
