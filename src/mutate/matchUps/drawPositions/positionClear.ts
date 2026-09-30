@@ -1,4 +1,3 @@
-import { clearSideExitProvenance, retainByeClaimsOnly } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
@@ -16,6 +15,11 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
 import { overlap } from '@Tools/arrays';
+import {
+  deriveExitStateFromProvenance,
+  clearSideExitProvenance,
+  retainByeClaimsOnly,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { DrawDefinition, Event, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
@@ -596,13 +600,41 @@ function updateMatchUpStatusAfterRemoval({
   // nobody recorded as owing it. Measured 2026-09-29 with `doubleExitPropagateBye` on: 52 of 192
   // `correctionDivergence` DOWNGRADE cells. A claim leaves when its claimant withdraws it
   // (`withdrawByeClaim`), never as a side effect of a position being cleared.
-  const retainedClaims = retainByeClaimsOnly(targetMatchUp.sideExitProvenance);
-  clearSideExitProvenance(targetMatchUp);
-  if (retainedClaims) targetMatchUp.sideExitProvenance = retainedClaims;
-
+  //
+  // AND NEITHER IS THE OTHER SIDE'S ORIGIN. A carried exit on the side that is NOT being cleared
+  // describes an arrival from elsewhere — it did not come through the removed position and does
+  // not leave with it. Measured 2026-09-30 by `correctionDivergenceDeep` on
+  // FIRST_MATCH_LOSER_CONSOLATION 16/15 (8 cells): `Consolation|1|3`'s double exit had carried its
+  // WALKOVER onto `Consolation|2|3` side 2; unwinding `Main|2|3`'s double exit withdrew the BYE on
+  // side 1, reached here, and side 2's origin went with it. The direct entry keeps it.
   const removedDrawPosition = initialDrawPositions?.find(
     (position) => !targetMatchUp.drawPositions?.includes(position),
   );
+  // The side being cleared is the one `drawPosition` occupies in the array as it stood: on the
+  // position's initial round the seat stays in the array (only its assignment is emptied), so the
+  // position removed from the array is not the whole story. `indexOf` as a side number — valid
+  // only because drawPositions are stored ascending.
+  const clearedIndex = initialDrawPositions?.indexOf(drawPosition) ?? -1;
+  const clearedSideNumber = clearedIndex >= 0 ? clearedIndex + 1 : undefined;
+  const retained = retainProvenanceBesideRemoval(targetMatchUp.sideExitProvenance, clearedSideNumber);
+  clearSideExitProvenance(targetMatchUp);
+  if (retained) targetMatchUp.sideExitProvenance = retained;
+
+  /**
+   * AND THE STATUS SAYS WHAT SURVIVES. With no BYE left and the other side still carrying an exit,
+   * the matchUp is a PENDING exit, not TO_BE_PLAYED — the state a direct entry leaves. Measured
+   * 2026-09-30 on the census's seed 6341103 (MODIFIED_FEED_IN_CHAMPIONSHIP 8/6): a walkover loser
+   * held `Consolation|2|2` side 2 with their walkover; `Main|2|1`'s double exit was corrected to a
+   * single one, the unwind took the BYE off side 1 and left TO_BE_PLAYED, and the single exit's
+   * loser then arrived to no convergence — `WALKOVER ws=2`, the exit-carrying side winning, where
+   * the direct entry converges to DOUBLE_WALKOVER. Same derivation `removeDoubleExit` applies to
+   * what it retains; a BYE-held matchUp stays BYE, because a BYE is a fact about the draw.
+   */
+  const rederived = !matchUpContainsBye && retained ? deriveExitStateFromProvenance(retained) : undefined;
+  if (rederived) {
+    targetMatchUp.matchUpStatus = rederived.matchUpStatus;
+    targetMatchUp.winningSide = rederived.winningSide;
+  }
   const noChange =
     initialDrawPositions?.includes(drawPosition) &&
     initialMatchUpStatus === targetMatchUp.matchUpStatus &&
@@ -628,6 +660,24 @@ function updateMatchUpStatusAfterRemoval({
   }
 
   return matchUpContainsBye;
+}
+
+/**
+ * What survives a position's clear: every claim on either side, and the origin on the side that
+ * was NOT cleared. With no identifiable cleared side (the position was not in the array), only the
+ * claims survive — the behaviour this call had before the other side's origin was retained.
+ */
+function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: number) {
+  if (!provenance) return undefined;
+  if (!clearedSideNumber) return retainByeClaimsOnly(provenance);
+  const retained: any = {};
+  for (const sideNumber of [1, 2]) {
+    const entry = provenance[sideNumber];
+    if (!entry) continue;
+    if (sideNumber !== clearedSideNumber) retained[sideNumber] = { ...entry };
+    else if (entry.byeClaims?.length) retained[sideNumber] = { byeClaims: [...entry.byeClaims] };
+  }
+  return Object.keys(retained).length ? retained : undefined;
 }
 
 function handleLoserMatchUpRemoval({
