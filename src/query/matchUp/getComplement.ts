@@ -142,8 +142,9 @@ type MaxSetScoreArgs = {
  * past the post: `setTo`.
  *
  * `opponentScore` tightens it where the format allows a tiebreak: a side facing 3 cannot reach 7,
- * because 7 is only reachable through a tiebreak at `setTo`-all. This is what lets an interface refuse
- * an impossible pair as it is typed rather than validating it afterwards.
+ * because from 3 the set is over at 6-3 or 6-4 long before six-all. A side facing **5** can — 7-5 is
+ * won outright, without a tiebreak — so the cut is at `setTo - 1`, not at `setTo`. This is what lets
+ * an interface refuse an impossible pair as it is typed rather than validating it afterwards.
  */
 export const getMaxSetScore = (params: MaxSetScoreArgs): number | undefined => {
   const { NoAD, opponentScore, setTo, tiebreakAt, tiebreakTo, timed, winBy } = params;
@@ -182,9 +183,22 @@ export const getMaxSetScore = (params: MaxSetScoreArgs): number | undefined => {
   // question about the same format, answers that a 6 completes to a 7; the two must not disagree.
   const ceiling = setTo + 1;
 
-  // `setTo + 1` is reachable only THROUGH the tiebreak, which needs the opponent on `setTo` too. A side
-  // facing 3 cannot reach 7.
-  if (opponentScore !== undefined && opponentScore < setTo) return setTo;
+  // ── How far below `setTo` the opponent must be before `setTo + 1` is out of reach ──
+  //
+  // This read `opponentScore < setTo` and was WRONG at exactly one value. The comment it carried said
+  // *"`setTo + 1` is reachable only THROUGH the tiebreak, which needs the opponent on `setTo` too"* —
+  // true of a side facing 3, and false of a side facing 5. **7-5 never goes through a tiebreak.** At
+  // 5-5 the set runs to 6-5 and then 7-5, and the tiebreak at six-all is never reached. A ceiling of 6
+  // there refuses one of the most common set scores in tennis.
+  //
+  // `getSetComplement` said so all along, asked the neighbouring question about the same format:
+  // `{ lowValue: 5, setTo: 6, tiebreakAt: 6 }` answers **[7, 5]**. The doc comment above names that
+  // function as the cross-check the two must agree on, and at `opponentScore: 5` they did not.
+  //
+  // Found from `courthive-components`, which hand-rolls this and gets 5 right: its own branch for
+  // `oppScore === tiebreakAt - 1` returns `setTo + 1`. Adopting this function unchanged would have
+  // REGRESSED a 7-5 there, which is how the disagreement surfaced (CA, 2026-09-30).
+  if (opponentScore !== undefined && opponentScore < setTo - 1) return setTo;
 
   return ceiling;
 };
