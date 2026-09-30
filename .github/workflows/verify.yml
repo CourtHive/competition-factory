@@ -184,6 +184,9 @@ jobs:
       - name: verify:route-differential
         run: pnpm verify:route-differential
 
+      - name: verify:deep-corrections
+        run: pnpm verify:deep-corrections
+
       - name: verify:server
         run: pnpm verify:server
 

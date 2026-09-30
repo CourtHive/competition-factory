@@ -1,5 +1,7 @@
+import { nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { isAnyExit } from '@Validators/isExit';
 
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 
@@ -292,5 +294,114 @@ export function correctionScenario({
   return {
     direct: [at(second, asDouble), at(first, asSingle)],
     corrected: [at(first, asDouble), at(second, asDouble), at(first, asSingle)],
+  };
+}
+
+/**
+ * A correction taken DEEP in a draw, with play before it and unrelated play after it.
+ *
+ * `correctionScenario` above corrects one of two ADJACENT FIRST-ROUND matchUps, before anything else
+ * has been played. That is the shape every divergence of September 2026 was found in, and it is
+ * also the only shape the oracle had — a correction in round 3, in a consolation structure, or with
+ * a dozen unrelated results entered between the mistake and its correction, was never compared
+ * against the direct path (coverage assessment gap G6, 2026-09-30).
+ *
+ * This plays the matrix's own schedule forward — the first playable matchUp each step, the cell's
+ * exit on every third — for `prefixLength` steps, takes the LAST exit entered as the mistake, and
+ * corrects it to `alternative` at the end. The direct path enters `alternative` at that step. Steps
+ * after the mistake that lie in its CONE — the matchUps it feeds, all the way down — are dropped
+ * from both paths, because they legitimately depend on which outcome was entered; every other later
+ * step stays, which is what makes the correction deep rather than last.
+ *
+ * The prefix is generated with the SAME `generateTournamentRecord` call `runPath` makes, under the
+ * same policy, so that the replay walks the same draw. Generating it any other way (measured: with
+ * `propagateExitStatus` passed per call rather than as policy) refuses steps on replay that were
+ * accepted on generation, and every one of those reads as a divergence.
+ */
+export function deepCorrectionScenario({
+  config,
+  cellExit,
+  alternative,
+  prefixLength = 12,
+}: {
+  config: DivergenceConfig;
+  cellExit: any;
+  alternative: (outcome: any) => any;
+  prefixLength?: number;
+}): { direct: Step[]; corrected: Step[]; mistake: Step; intervening: number } | undefined {
+  const { drawType, drawSize, participantsCount, seed, propagateExitStatus = true, doubleExitPropagateBye } = config;
+  const drawId = 'deep-prefix';
+  const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawType, drawSize, participantsCount, drawId }],
+    policyDefinitions: {
+      [POLICY_TYPE_PROGRESSION]: {
+        ...(doubleExitPropagateBye === undefined ? {} : { doubleExitPropagateBye }),
+        propagateExitStatus,
+      },
+    },
+    nonRandom: seed,
+  });
+  if (!drawIds?.includes(drawId)) return undefined;
+  tournamentEngine.setState(tournamentRecord);
+
+  const played = {
+    winningSide: 1,
+    score: {
+      sets: [
+        { side1Score: 6, side2Score: 3, winningSide: 1 },
+        { side1Score: 6, side2Score: 3, winningSide: 1 },
+      ],
+    },
+  };
+  const steps: Step[] = [];
+  for (let taken = 0; taken < prefixLength; taken++) {
+    const target = nextPlayable(drawId);
+    if (!target) break;
+    const outcome = taken % 3 === 2 ? cellExit : played;
+    const result: any = tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId, outcome });
+    if (!result?.success) break;
+    steps.push({
+      structureName: String(target.structureName),
+      roundNumber: target.roundNumber,
+      roundPosition: target.roundPosition,
+      outcome,
+    });
+  }
+
+  const isExit = (outcome: any) => isAnyExit(outcome?.matchUpStatus);
+  const index = steps
+    .map((step, i) => (isExit(step.outcome) ? i : -1))
+    .filter((i) => i >= 0)
+    .at(-1);
+  if (index === undefined) return undefined;
+  const mistake = steps[index];
+  const other = alternative(mistake.outcome);
+  if (!other) return undefined;
+
+  // the cone: the mistake's matchUp and everything it feeds, on the draw as generated
+  const key = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
+  const stepKey = (step: Step) => `${step.structureName}|${step.roundNumber}|${step.roundPosition}`;
+  const all: any[] = (tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps ?? []) as any[];
+  const byId = new Map(all.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  const cone = new Set<string>([stepKey(mistake)]);
+  const queue = all.filter((matchUp) => key(matchUp) === stepKey(mistake));
+  while (queue.length) {
+    const matchUp = queue.pop();
+    for (const id of [matchUp.winnerMatchUpId, matchUp.loserMatchUpId]) {
+      const fed = id && byId.get(id);
+      if (fed && !cone.has(key(fed))) {
+        cone.add(key(fed));
+        queue.push(fed);
+      }
+    }
+  }
+
+  const kept = steps.filter((step, i) => i <= index || !cone.has(stepKey(step)));
+  const at = kept.indexOf(mistake);
+  return {
+    direct: kept.map((step, i) => (i === at ? { ...step, outcome: other } : step)),
+    corrected: [...kept, { ...mistake, outcome: other }],
+    intervening: kept.length - 1 - at,
+    mistake,
   };
 }

@@ -4,8 +4,15 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
-import { COMPLETED, DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import {
+  DOUBLE_WALKOVER,
+  TO_BE_PLAYED,
+  DEAD_RUBBER,
+  COMPLETED,
+  WALKOVER,
+  BYE,
+} from '@Constants/matchUpStatusConstants';
 
 /**
  * A DECIDER IS PLAYED ONLY IF IT IS NEEDED.
@@ -171,4 +178,27 @@ it('returns the decider to TO_BE_PLAYED when the final is cleared', () => {
   expect(final().winningSide).toBeUndefined();
   expect(decider().matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(occupants(decider()).filter(Boolean)).toEqual([]);
+});
+
+/**
+ * WHAT THE CASCADE PLACED IN THE DECIDER IS NOT OVERWRITTEN.
+ *
+ * A final corrected from a WALKOVER to a DOUBLE_WALKOVER sends nobody to the decider, and the
+ * cascade says so there: a BYE under the default policy, a produced exit with the policy off. The
+ * reconcile then saw a final whose winner had changed and wrote `TO_BE_PLAYED` over it. Found by
+ * `correctionDivergenceDeep` on 2026-09-30 in four cells: the direct entry of the DOUBLE_WALKOVER
+ * left the decider `BYE`, the correction left it `TO_BE_PLAYED`.
+ */
+it('keeps the BYE a double-exit final placed in the decider when the final is corrected to one', () => {
+  playToFinal(1);
+  score(final(), { matchUpStatus: WALKOVER, winningSide: 1 }, { allowChangePropagation: true });
+  // CONTROL: the walkover final settled the decider as a DEAD_RUBBER
+  expect(decider().matchUpStatus).toEqual(DEAD_RUBBER);
+
+  score(final(), { matchUpStatus: DOUBLE_WALKOVER, winningSide: undefined }, { allowChangePropagation: true });
+  expect(final().winningSide).toBeUndefined();
+
+  // the double exit placed a BYE in the decider, and it is still there and still says so
+  expect((decider().sides ?? []).some((side: any) => side.bye)).toEqual(true);
+  expect(decider().matchUpStatus).toEqual(BYE);
 });

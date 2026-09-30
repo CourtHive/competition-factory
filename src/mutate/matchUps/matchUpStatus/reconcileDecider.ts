@@ -4,9 +4,10 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
+import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
-import { DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { BYE, DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -121,6 +122,14 @@ export function reconcileDecider({
 
   const holdsAResult = !!decider.winningSide || !!decider.score?.sets?.length;
   if (!holdsAResult && decider.matchUpStatus === matchUpStatus) return { ...SUCCESS };
+
+  // WHAT THE CASCADE PLACED IS NOT OVERWRITTEN. A final that becomes a double exit sends the decider
+  // a BYE (the default policy) or a produced exit (the policy off), and that is the decider's whole
+  // record: nobody is coming from that final. Writing `TO_BE_PLAYED` over it said the opposite.
+  // Measured 2026-09-30 by `correctionDivergenceDeep`: a DOUBLE_ELIMINATION final corrected from a
+  // WALKOVER to a DOUBLE_WALKOVER left the decider `TO_BE_PLAYED` where the direct entry left it
+  // `BYE`, in four cells. A result is still destroyed, as the rule says; a placement stays.
+  if (!holdsAResult && (decider.matchUpStatus === BYE || isAnyExit(decider.matchUpStatus))) return { ...SUCCESS };
 
   // RETURNED, not dropped. This was a bare call and the function returned nothing, so a write that
   // failed left the decider as it was and `setMatchUpStatus` reported success.
