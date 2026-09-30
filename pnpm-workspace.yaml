@@ -49,6 +49,8 @@ verifyDepsBeforeRun: false
 #   API-stable across brace-expansion majors — so a single global override to the
 #   patched v5 line is safe and avoids the earlier major-scoped `>=` overrides
 #   silently floating (and deduping) onto the vulnerable 5.0.7. Dev tree only.
+#   Raised to 5.0.12 on 2026-09-30 for GHSA-6j4f-fj2g-mc7p and GHSA-qhr7-859c-m2p7 (both
+#   high, stack exhaustion on nested brace groups) and GHSA-q2hr-2g5m-vwhr (moderate).
 # - js-yaml: GHSA-pm4m-ph32-ghv5 (exponential parsing time in flow collections
 #   → DoS); patched 5.2.2. Only the v5 line is vulnerable (via markdownlint-cli2);
 #   3.x/4.x consumers are unaffected.
@@ -69,7 +71,7 @@ overrides:
   qs: '^6.15.2'
   form-data: '>=4.0.6'
   multer: '>=2.3.0' # GHSA-wc9g-mqfw-jrwm / -qfvm-cv95-jqjf / -535w-7cp7-47q4 (DoS x3); was >=2.2.0, which 2.2.0 itself satisfies
-  brace-expansion: '>=5.0.8'
+  brace-expansion: '>=5.0.12'
   js-yaml@4: '>=4.3.2' # GHSA-2883-xcg3-v3hh (CPU DoS on empty merge sources). The `@4` selector
   #                      scopes this to dependents that ask for 4.x — it is not a ceiling. The
   #                      floor is open, so those requests consolidate onto the 5.x already in
