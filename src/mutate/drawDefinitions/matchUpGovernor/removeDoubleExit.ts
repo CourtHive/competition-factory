@@ -1,18 +1,18 @@
-import {
-  withdrawByeClaimsFrom,
-  byeClaimSurvives,
-  withdrawByeClaim,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { chunkArray, intersection, overlap } from '@Tools/arrays';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
+import { intersection, overlap } from '@Tools/arrays';
 import { isDoubleExit } from '@Validators/isExit';
+import {
+  withdrawByeClaimsFrom,
+  byeClaimSurvives,
+  withdrawByeClaim,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   getSideExitProvenance,
   deriveExitStateFromProvenance,
@@ -22,7 +22,6 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
@@ -140,29 +139,19 @@ export function removeDoubleExit(params) {
   // matchUp the unwind never revisits at this coordinate
   withdrawByeClaimsFrom({ matchUps: matchUpsMap?.drawMatchUps, claimantMatchUpId: matchUpId });
 
-  const isFMLC = targetData?.targetLinks?.loserTargetLink?.linkCondition === FIRST_MATCHUP;
-
-  if (byePropagatedToLoserMatchUp && isFMLC) {
-    // determine whether the BYE has been propagated to the loserMatchUp by two double exits
-    const roundMatchUps = inContextDrawMatchUps.filter(
-      ({ roundNumber, structureId }) => structureId === matchUp.structureId && roundNumber === 1,
-    );
-    const roundPositions = roundMatchUps.map(({ roundPosition }) => roundPosition);
-    const pairedPositions = chunkArray(
-      roundPositions.toSorted((a, b) => a - b),
-      2,
-    ).find((chunk) => chunk.includes(matchUp.roundPosition));
-    const pairedMatchUpStatuses = roundMatchUps
-      .filter(({ roundPosition }) => pairedPositions.includes(roundPosition))
-      ?.map(({ matchUpStatus }) => matchUpStatus);
-    const pairedMatchUpIsDoubleExit = pairedMatchUpStatuses.every((matchUpStatus) =>
-      [DOUBLE_DEFAULT, DOUBLE_WALKOVER].includes(matchUpStatus),
-    );
-    if (pairedMatchUpIsDoubleExit) {
-      return decorateResult({ result: { ...SUCCESS }, stack });
-    }
-  }
-
+  /**
+   * THE FMLC "PAIRED ROUND-1 DOUBLE EXIT" TEST THAT STOOD HERE IS GONE. It asked whether the BYE on
+   * the loser target had been propagated by two double exits by pairing the source's roundPosition
+   * with the ROUND-1 matchUps of its structure — a topological proxy for the question the
+   * `byeClaims` ledger below answers by record. For a round-2 source it collected no matchUps at
+   * all, and `[].every(...)` is `true`, so it returned SUCCESS having withdrawn nothing.
+   *
+   * Measured 2026-09-30 by CA in TMX on FIRST_MATCH_LOSER_CONSOLATION 8/5: `Main|2|1` a
+   * DOUBLE_WALKOVER, its BYE propagated to Consolation drawPosition 1 and on into the consolation
+   * final; removing the double walkover left both in place. *"the BYE propagated to dp1 /
+   * CONSOLATION|2|1 should have been withdrawn as well as its advance to the consolation final and
+   * Marshall Yeats should have been left as the sole participant in a TO_BE_PLAYED matchUp."*
+   */
   if (loserMatchUp && (loserMatchUp.matchUpStatus !== BYE || byePropagatedToLoserMatchUp)) {
     const inContextLoserMatchUp = inContextDrawMatchUps.find(({ matchUpId }) => matchUpId === loserMatchUp.matchUpId);
     const { structure: loserStructure } = findStructure({
