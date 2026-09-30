@@ -1577,6 +1577,35 @@ function getExitArrivalSideNumber({ inContextDrawMatchUps, nextWinnerMatchUp, so
     return sourceMatchUp.structureId === nextWinnerMatchUp.structureId ? 2 : 1;
   }
 
+  /**
+   * THE SEAT IS ALREADY THERE — READ ITS SIDE, DO NOT PREDICT IT.
+   *
+   * A seat whose opponent is a draw BYE advances from generation, before anything is played, so the
+   * target can already hold the source feeder's seat when the exit sets out. Rule 3 of
+   * `draw-positions.md` then fixes the side — *"when both positions are present, side 1 is the LOWER
+   * drawPosition … even where fed positions meet advanced ones"* — and the roundPosition order below
+   * disagrees with it wherever fed seat numbers interleave with advanced ones.
+   *
+   * Measured 2026-09-30 by `correctionDivergenceDeep` on FIRST_MATCH_LOSER_CONSOLATION 8/5 with the
+   * BYE policy off, `Main|2|2` a DOUBLE_WALKOVER: its loser seat, Consolation 2, sits beside the BYE
+   * on seat 5 and was advanced into `Consolation|3|1` at generation, where it reads `[2, 4]` — seat 2
+   * on SIDE 1. `Consolation|2|2` is the second feeder by roundPosition, so this returned 2, found the
+   * `Consolation|2|1` winner sitting there and declined: *exit_not_carried_arriving_side_occupied*.
+   * The exit stopped on the BYE-held `Consolation|2|2` and the semifinal waited on nobody, for ever.
+   *
+   * Only when BOTH real positions are present. With one, the side a seat ends on still depends on
+   * the number the other arrives with, and the hydrated `sideNumber` of a lone position is not that
+   * answer; the feeder-order rule stays the fallback there, exactly as before.
+   */
+  const sourcePositions = (sourceMatchUp.drawPositions ?? []).filter(Boolean);
+  const targetPositions = (nextWinnerMatchUp.drawPositions ?? []).filter(Boolean);
+  if (targetPositions.length === 2) {
+    const seated = nextWinnerMatchUp.sides?.find(
+      (side) => side?.sideNumber && side.drawPosition && sourcePositions.includes(side.drawPosition),
+    );
+    if (seated) return seated.sideNumber;
+  }
+
   const feeders = inContextDrawMatchUps
     .filter(
       ({ winnerMatchUpId, loserMatchUpId }) =>

@@ -69,8 +69,20 @@ import {
  *   3. FIRST_MATCH_LOSER_CONSOLATION 8/5, `Main|2|2` WALKOVER → DOUBLE_WALKOVER, default policy:
  *      `Consolation|3|1` holds the BYE and the participant on opposite sides. Which side is the BYE
  *      differs, and nothing else.
- *   4. The same cell with the policy off, 2 cells: the direct path seats two participants in
- *      `Consolation|3|1`; the corrected path carries an exit there instead and one of them is gone.
+ *   4. The same cell with the policy off, 2 cells. TRACED: two things at once. The DIRECT path
+ *      stalled — the produced exit stopped on the BYE-held `Consolation|2|2` because
+ *      `getExitArrivalSideNumber` predicted side 2 from feeder order where the seat already sat on
+ *      side 1 (**CLOSED**: the seated side is read; `exitArrivesOnTheSeatedSide.test.ts`). What
+ *      remains is the same difference as shape 3: `[2, 4] ws=2` against `[null, 4] ws=1`, the same
+ *      winner on a different seat number.
+ *
+ * Shapes 3 and 4 share a root. Seat 2's advancement into `Consolation|3|1` came from its opponent's
+ * BYE at generation; clearing the walkover's loser from seat 2 withdraws it, and whatever arrives
+ * next — the double exit's BYE, or its exit — is laid out from scratch. Keeping a BYE-advanced seat
+ * on ANY clear closes all three cells and breaks 4 of `shuffleCompletion`'s byeLimit cases:
+ * `assignDrawPositionBye` finds the seat already advanced, BYEs that matchUp, and skips the
+ * advancement step that also feeds the loser link its BYE. Generation has no canonical seat for a
+ * BYE meeting a BYE either (measured 2026-09-30: lower wins in some pairs, higher in others).
  */
 
 const DRAW_TYPES = [
