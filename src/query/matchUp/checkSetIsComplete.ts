@@ -39,11 +39,12 @@ export function checkSetIsComplete({
     (side1Score >= setTo && side2Score >= setTo) ||
     (tiebreakAt && tiebreakAt < setTo && (side1Score === tiebreakAt || side2Score === tiebreakAt));
 
+  const leaderHoldsTiebreak =
+    (leadingSide === 1 && set.side1TiebreakScore > set.side2TiebreakScore) ||
+    (leadingSide === 2 && set.side2TiebreakScore > set.side1TiebreakScore);
+
   const tiebreakIsValid =
-    ignoreTiebreak ||
-    (requiresTiebreak &&
-      ((leadingSide === 1 && set.side1TiebreakScore > set.side2TiebreakScore) ||
-        (leadingSide === 2 && set.side2TiebreakScore > set.side1TiebreakScore)));
+    ignoreTiebreak || (requiresTiebreak && leaderHoldsTiebreak && tiebreakReachesTarget(set, setFormat, isTiebreakSet));
 
   // ── The margin honours an explicit `winBy`, which it previously ignored ──
   //
@@ -68,6 +69,35 @@ export function checkSetIsComplete({
     ((isTimedSet && hasScore) || validNormalSetScore || isTiebreakSet) &&
     (!requiresTiebreak || tiebreakIsValid)
   );
+}
+
+/**
+ * Whether a tiebreak has actually been WON: the leader's points reach the target, by the margin.
+ *
+ * ── Any lead used to be a win ──
+ *
+ * The only tiebreak question this function asked was whether the leading side held the higher points.
+ * Measured 2026-09-30: a `3-1` in a match tiebreak to ten was complete, so was a `10-9`, and so was a
+ * `7-6` decided by a `3-1` tiebreak. `getSetWinningSide` and `analyzeSet` delegate here, so all three
+ * carried a `winningSide` — while `validateSetScore` refused every one of them. The engine's two answers
+ * to "is this set over" had come apart, and a score-entry interface that asked the analysis was told a
+ * match tiebreak was won at three points.
+ *
+ * The rule is the validator's: the winner reaches `tiebreakTo`, by two unless the tiebreak is no-ad.
+ * Where the format names no target nothing can be checked and the lead alone still decides, which is the
+ * previous behaviour exactly. A target of ONE — the sudden-death point a `F:TB1` decider is — cannot be
+ * won by two, so the margin is capped at the target: `1-0` wins it.
+ */
+function tiebreakReachesTarget(set, setFormat, isTiebreakSet?: boolean): boolean {
+  const tiebreakFormat = isTiebreakSet ? setFormat?.tiebreakSet : setFormat?.tiebreakFormat;
+  const tiebreakTo = tiebreakFormat?.tiebreakTo;
+  if (typeof tiebreakTo !== 'number') return true;
+
+  const high = Math.max(set.side1TiebreakScore ?? 0, set.side2TiebreakScore ?? 0);
+  const low = Math.min(set.side1TiebreakScore ?? 0, set.side2TiebreakScore ?? 0);
+  const margin = tiebreakFormat?.NoAD ? 1 : Math.min(2, tiebreakTo);
+
+  return high >= tiebreakTo && high - low >= margin;
 }
 
 export function getLeadingSide({ set }) {
