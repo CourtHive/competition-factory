@@ -109,6 +109,26 @@ to regenerate it. `src/tests/corpus/oracleSources.test.ts` always records a smok
 oracle to a temp dir and requires each scenario to validate, read back and replay; the full write
 runs only with `CORPUS_ORACLES=1` and goes to `.corpus-out/oracles/`, ignored.
 
+## Coverage, and what "100%" means (C3)
+
+```bash
+pnpm corpus:verify     # fixtures + oracles + record, then coverage, then the ratchet
+pnpm corpus:coverage   # just the report over whatever is in .corpus-out
+```
+
+Coverage of the corpus is not statements. It is: **every core method has at least one scenario,
+and every error code a core method can refuse with has been observed as a step result.**
+`src/tests/testHarness/corpus/coverage.ts` reads every scenario the sources wrote and reports,
+per core method, its scenarios, steps, sources, the error codes observed, and the codes its own
+file declares (the constants it imports) but nothing has produced. Declared codes are read from the
+method's file only, so helper-originated refusals show as observed-but-undeclared; that under-count
+is reported, not hidden.
+
+`scripts/verify/corpus-coverage.mjs` ratchets the report against
+`scripts/verify/baseline/corpus-coverage.json`, the one corpus artifact git tracks: methods with a
+scenario may not fall to zero, and a method's observed codes may not shrink. Headroom to 100% is
+printed as the list of methods at zero and the codes never observed, not as a percentage.
+
 ## Known failures
 
 A scenario may carry `knownFailure: "<tracker ref>"`. It pins what the engine does today, not what
