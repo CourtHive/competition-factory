@@ -235,7 +235,8 @@ function handleStandardSet(
   // Get format details
   const setTo = activeSetFormat.setTo || 6;
   const tiebreakAt = (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-  const finalSetNoTiebreak = isDecidingSet && formatStructure.finalSetFormat?.noTiebreak;
+  // the ACTIVE format's say, deciding set or not — see `setHasTiebreak`
+  const noTiebreak = !setHasTiebreak(activeSetFormat);
 
   // Add point to winner
   if (winner === 0) {
@@ -264,7 +265,7 @@ function handleStandardSet(
   }
 
   // Check if in tiebreak
-  const isTiebreak = !finalSetNoTiebreak && side1Games === tiebreakAt && side2Games === tiebreakAt;
+  const isTiebreak = !noTiebreak && side1Games === tiebreakAt && side2Games === tiebreakAt;
 
   // Check if game is won
   let gameWon: number | undefined;
@@ -662,6 +663,20 @@ function checkStandardGameWon(
 }
 
 /**
+ * Whether the set this format describes is decided by a tiebreak at games-all.
+ *
+ * `parse` writes `noTiebreak: true` and no `tiebreakAt` for an advantage set (`S:6`, `F:6`, `S:5WB1`);
+ * a hand-built format carrying neither tiebreak field is read the same way. Every site below used to
+ * derive `tiebreakAt ?? setTo` and treat games-all as a tiebreak whatever the format said — measured
+ * 2026-10-02, the engine played a full TB7 at six-all in `SET1-S:6` and ended it 7-6(7-0) COMPLETED,
+ * a set `checkSetIsComplete` then called unfinished. Only the deciding set's `noTiebreak` was read.
+ */
+export function setHasTiebreak(setFormat?: SetFormatStructure): boolean {
+  if (!setFormat || setFormat.noTiebreak) return false;
+  return !!setFormat.tiebreakFormat || typeof setFormat.tiebreakAt === 'number';
+}
+
+/**
  * Check if a standard set is won
  */
 export function checkStandardSetWon(
@@ -673,7 +688,8 @@ export function checkStandardSetWon(
 ): number | undefined {
   const setTo = setFormat.setTo || 6;
   const tiebreakAt = (typeof setFormat.tiebreakAt === 'number' ? setFormat.tiebreakAt : undefined) ?? setTo;
-  const finalSetNoTiebreak = isDecidingSet && finalSetFormat?.noTiebreak;
+  const activeFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
+  const noTiebreak = !setHasTiebreak(activeFormat);
 
   // For setTo === 1, first to 1 game wins
   if (setTo === 1) {
@@ -683,11 +699,10 @@ export function checkStandardSetWon(
     return undefined;
   }
 
-  const activeFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
   const winBy = activeFormat.winBy || 2;
 
   // Check if tiebreak was played and won (e.g., 7-6 after tiebreak at 6-6)
-  if (!finalSetNoTiebreak && (side1Games === tiebreakAt + 1 || side2Games === tiebreakAt + 1)) {
+  if (!noTiebreak && (side1Games === tiebreakAt + 1 || side2Games === tiebreakAt + 1)) {
     return side1Games > side2Games ? 0 : 1;
   }
 
@@ -769,9 +784,9 @@ export function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStruct
   const tiebreakAt =
     (typeof formatStructure.setFormat?.tiebreakAt === 'number' ? formatStructure.setFormat.tiebreakAt : undefined) ??
     setTo;
-  const finalSetNoTiebreak = formatStructure.finalSetFormat?.noTiebreak;
+  const noTiebreak = formatStructure.finalSetFormat?.noTiebreak || !setHasTiebreak(formatStructure.setFormat);
 
-  const inTiebreak = !finalSetNoTiebreak && side1Games === tiebreakAt && side2Games === tiebreakAt;
+  const inTiebreak = !noTiebreak && side1Games === tiebreakAt && side2Games === tiebreakAt;
 
   if (inTiebreak) {
     const side1GameScores = currentSet?.side1GameScores ?? [];
