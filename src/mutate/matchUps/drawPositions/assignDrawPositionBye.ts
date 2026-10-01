@@ -16,6 +16,7 @@ import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { drawPositionFilled } from './drawPositionFilled';
+import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
 import { isExit } from '@Validators/isExit';
@@ -119,10 +120,6 @@ export function assignDrawPositionBye({
 
   matchUpsMap ??= getMatchUpsMap({ drawDefinition });
   const { positionAssignments } = getPositionAssignments({ structure });
-  const { activeDrawPositions } = getStructureDrawPositionProfiles({
-    drawDefinition,
-    structureId,
-  });
 
   const currentAssignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
 
@@ -170,8 +167,27 @@ export function assignDrawPositionBye({
   const isPropagationPlacement = byeFromPropagation ?? hasPropagatedStatus;
 
   // ################### Check error conditions ######################
-  const drawPositionIsActive = activeDrawPositions?.includes(drawPosition);
-  if (drawPositionIsActive && !isPropagationPlacement) {
+  // Whether the position is ACTIVE is asked only of a placement that could be refused for it. A
+  // propagation placement is never refused on those grounds, and the answer costs two hydrations of
+  // the draw (`getStructureDrawPositionProfiles`, and the `addGoesTo` inside its dependency map) —
+  // which this took on every BYE the cascade placed and then did not read. Measured 2026-10-01
+  // (`pipelineCost.test.ts`): 462 hydrations and 6,666 `positionTargets` calls over 2,026
+  // `setMatchUpStatus` calls, none of them consulted. Nothing between the top of this function and
+  // this line changes the draw, so a placement that IS asked gets the answer it got before.
+  //
+  // ONE THING THAT CALL DID WAS LOAD-BEARING, and it is kept — by name now rather than by accident.
+  // Its `addGoesTo` wrote `winnerMatchUpId` / `loserMatchUpId` onto the stored matchUps, so a draw
+  // STORED WITHOUT them had them from the first BYE a cascade placed, and the rest of the cascade
+  // reads them. Skipping the call outright took that away: a hundred matrix cells played on draws
+  // with the ids stripped ended in a different draw 14 times before, and 44 times after. A draw that
+  // stores its edges (`hasStoredGoesTo`, a walk of the stored matchUps) needs nothing; one that does
+  // not is given them here, as it was.
+  if (isPropagationPlacement) ensureGoesTo({ drawDefinition });
+
+  const drawPositionIsActive =
+    !isPropagationPlacement &&
+    getStructureDrawPositionProfiles({ drawDefinition, structureId }).activeDrawPositions?.includes(drawPosition);
+  if (drawPositionIsActive) {
     return { error: DRAW_POSITION_ACTIVE };
   }
 

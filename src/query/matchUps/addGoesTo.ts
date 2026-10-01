@@ -5,6 +5,7 @@ import { positionTargets } from '@Query/matchUp/positionTargets';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -91,4 +92,43 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
     });
 
   return { inContextDrawMatchUps, goesToMap };
+}
+
+/**
+ * Does the draw STORE the edges `addGoesTo` derives — `winnerMatchUpId` and `loserMatchUpId`?
+ *
+ * A draw the factory generated does: generation, playoff generation and `attachStructures` all write
+ * them. A record that came from somewhere else may not — an older record, or a file the factory did
+ * not produce — and the exit cascade reads the STORED ids (`hasPropagatedExitDownstream`,
+ * `getExitWinningSide`, `getHeldExit`), so on such a draw it decides differently. Measured
+ * 2026-10-01: the same hundred matrix cells played on draws with the ids stripped ended in a
+ * different draw 44 times when nothing restored them.
+ *
+ * This is the cheap question, asked of the stored matchUps alone, that says whether the expensive
+ * answer (`addGoesTo`: a hydration and a `positionTargets` per matchUp) is needed at all:
+ *
+ *  - an elimination structure with more than one round holds a matchUp with a `winnerMatchUpId`;
+ *  - a structure a LOSER link leaves holds a matchUp with a `loserMatchUpId`.
+ *
+ * It asks whether a structure has ANY, not whether it has all: a final has no winner target, and
+ * `removeStructure` deletes the ids that pointed into what it removed. `false` is the safe answer —
+ * it costs a derivation, never a wrong edge.
+ */
+export function hasStoredGoesTo({ drawDefinition }: { drawDefinition: DrawDefinition }): boolean {
+  const loserSources = new Set(
+    (drawDefinition.links ?? []).filter((link) => link.linkType === LOSER).map((link) => link.source?.structureId),
+  );
+
+  return (drawDefinition.structures ?? []).every((structure) => {
+    const matchUps = structure.matchUps ?? [];
+    if (loserSources.has(structure.structureId) && !matchUps.some((matchUp) => matchUp.loserMatchUpId)) return false;
+    if (structure.finishingPosition === WIN_RATIO || structure.structures) return true;
+    const rounds = new Set(matchUps.map((matchUp) => matchUp.roundNumber));
+    return rounds.size < 2 || matchUps.some((matchUp) => matchUp.winnerMatchUpId);
+  });
+}
+
+/** Give a draw that does not store its edges the edges; a draw that does is left alone. */
+export function ensureGoesTo({ drawDefinition }: { drawDefinition: DrawDefinition }) {
+  if (!hasStoredGoesTo({ drawDefinition })) addGoesTo({ drawDefinition });
 }

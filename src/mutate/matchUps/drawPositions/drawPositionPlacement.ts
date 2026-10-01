@@ -462,13 +462,25 @@ function applyPositionToMatchUp({
   stack,
   event,
 }) {
-  // necessary to refresh inContextDrawMatchUps after mutation
-  const refreshedMatchUps =
-    getAllDrawMatchUps({
-      inContext: true,
-      drawDefinition,
-      matchUpsMap,
-    }).matchUps ?? [];
+  /**
+   * necessary to refresh inContextDrawMatchUps after mutation — AND ONLY WHERE THE VIEW IS READ.
+   *
+   * Two things below read it: `getExitWinningSide`, for a double exit's exit, and
+   * `recordSourceSideProvenance`, for a matchUp already in the exit cascade. An ordinary placement —
+   * a winner advancing into a matchUp nobody has exited from — reads neither, and this hydrated the
+   * whole draw for it regardless. Measured 2026-10-01 (`pipelineCost.test.ts`, 2,026
+   * `setMatchUpStatus` calls over seventeen draw types): 1,596 hydrations from this line, 12.5% of
+   * everything the pipeline spent, of which 59 were read.
+   *
+   * Derived at most once, and at the point of the first read. Nothing between this line and either
+   * read changes the draw, so the view is the one that was taken here before — it is only not taken
+   * when nobody asks.
+   */
+  let refreshed: HydratedMatchUp[] | undefined;
+  const refreshedMatchUps = () => {
+    refreshed ??= getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
+    return refreshed;
+  };
   // A participant advancing into a PENDING propagated exit fills its empty WINNER slot
   // (progressExitStatus set winningSide to the empty side). drawPositions is then
   // re-sorted, so the winning side is the side the advancing participant now occupies
@@ -480,7 +492,7 @@ function applyPositionToMatchUp({
   const exitWinningSide =
     (isDoubleExitExit &&
       getExitWinningSide({
-        inContextDrawMatchUps: refreshedMatchUps,
+        inContextDrawMatchUps: refreshedMatchUps(),
         drawPosition,
         matchUpId,
       })) ||
@@ -550,7 +562,7 @@ function applyPositionToMatchUp({
      * last decision read on this surface and it wants its own change.
      */
     recordSourceSideProvenance({
-      inContextDrawMatchUps: refreshedMatchUps,
+      inContextDrawMatchUps: refreshedMatchUps(),
       sourceMatchUpStatus,
       sourceMatchUpId,
       matchUpsMap,
