@@ -1,4 +1,11 @@
-import type { DrawDefinition, Event, MatchUpStatusUnion, Score, Tournament } from '@Types/tournamentTypes';
+import type {
+  DrawDefinition,
+  Event,
+  MatchUpStatusCodeElement,
+  MatchUpStatusUnion,
+  Score,
+  Tournament,
+} from '@Types/tournamentTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import type { PolicyDefinitions } from '@Types/factoryTypes';
 
@@ -30,8 +37,8 @@ export type OutcomeScore = Score;
 export type OutcomeRequest = {
   matchUpId?: string;
   matchUpStatus?: MatchUpStatusUnion;
-  // the positional status-code array a client sends is split at the WRITE (§ 4 rule 3) and is not
-  // read by any refusal, so it arrives with S2b, allowlisted at `scripts/verify/exitTenant.mjs`
+  /** the positional array a client sends; read by no refusal, split at the write (§ 4 rule 3) */
+  matchUpStatusCodes?: MatchUpStatusCodeElement[];
   winningSide?: number;
   score?: OutcomeScore;
   matchUpFormat?: string;
@@ -60,12 +67,19 @@ export type OutcomeView = {
   matchUpTieId?: string;
   existing: {
     matchUpStatus?: MatchUpStatusUnion;
+    matchUpStatusCodes?: MatchUpStatusCodeElement[];
     winningSide?: number;
     score?: OutcomeScore;
+    /** the existing score carries a value (a set with games, or a tiebreak, or points) */
+    scoreHasValue: boolean;
+    /** `schedule.scoredTime` is present */
+    scoredTime: boolean;
     roundPosition?: number;
     collectionId?: string;
     /** the matchUp's own format, resolved up the hierarchy when it has none */
     matchUpFormat?: string;
+    /** the format stored ON the matchUp, unresolved: what a write keeps (§ 4) */
+    ownMatchUpFormat?: string;
     /** the existing score, under the resolved format, is a valid win */
     validWinningScore: boolean;
   };
@@ -94,6 +108,55 @@ export type OutcomeView = {
   };
   /** a TEAM dual under `enableAutoCalc`: the winner its lines project */
   dualProjection?: { projectedWinningSide?: number };
+  /** § 5 rule 1: where direction sends a winner, and who is on each side now */
+  targets: {
+    winnerMatchUpId?: string;
+    loserMatchUpId?: string;
+    /** a lucky draw's pre-feed round: nobody advances from it */
+    luckyPreFeed: boolean;
+    sideParticipantIds: { 1?: string; 2?: string };
+  };
+  /** § 3: facts the routes ask */
+  draw: {
+    isAdHoc: boolean;
+    /** a dual in a round-robin container (§ 3 `team round robin`) */
+    teamRoundRobin: boolean;
+    /** the matchUp's drawPositions include a BYE assignment (§ 3 `BYE`) */
+    includesBye: boolean;
+    /** a line whose last set format is timed: the score survives a status that would otherwise remove it */
+    timedTie: boolean;
+  };
+};
+
+/** § 3: the one route a call takes once the refusals have passed */
+export type Route =
+  | 'swap' // allowChangePropagation with a different winner: swapWinnerLoser (write deferred to S2c)
+  | 'winner' // attemptToSetWinningSide: write the result, then direct
+  | 'line-score' // a line of a dual that is being rescored: write the score, the dual recomputes
+  | 'remove-directed' // a score or status without a winner over a decided matchUp: take the direction back
+  | 'noop' // already in the requested double exit
+  | 'only-score' // a winner exists and the status is directing: write the score
+  | 'completed-to-double-exit' // remove the directed participants, then advance the double exit (deferred)
+  | 'existing-winner-removed' // a winner exists, the status is not directing: take the direction back
+  | 'clear' // a non-directing status: clear the score
+  | 'bye' // the BYE path
+  | 'double-exit' // clear the score, then advance the double exit (the advance is deferred)
+  | 'team-round-robin' // a dual in a round-robin container: write the score
+  | 'propagating' // propagateExitStatus: write the score
+  | 'clear-score' // nothing else matched: the score is removed
+  | 'apply-values' // downstream is active: write the values without re-directing
+  | 'refused'; // § 3's own refusals: unrecognized, notDirecting, fallthrough (deferred to the apply)
+
+/** § 4: what the matchUp itself holds once the write has landed */
+export type MatchUpWrite = {
+  matchUpStatus?: MatchUpStatusUnion;
+  winningSide?: number;
+  scoreStringSide1?: string;
+  scoreStringSide2?: string;
+  sets?: unknown[];
+  matchUpFormat?: string;
+  matchUpStatusCodes?: MatchUpStatusCodeElement[];
+  scoredTime: boolean;
 };
 
 export type BuildViewArgs = {
@@ -102,4 +165,9 @@ export type BuildViewArgs = {
   policyDefinitions?: PolicyDefinitions;
   event?: Event;
   request: OutcomeRequest;
+};
+
+/** § 5 rule 1: what direction must have done once the route has written */
+export type DirectionPlan = {
+  winner?: { matchUpId: string; participantId: string };
 };

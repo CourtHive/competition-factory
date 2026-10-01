@@ -236,6 +236,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // the default, this is a no-op. See `src/mutate/matchUps/outcome/`.
   const v2 = decideOutcomeV2({
     request: {
+      matchUpStatusCodes: outcome?.matchUpStatusCodes,
       matchUpStatus: outcome?.matchUpStatus,
       winningSide: outcome?.winningSide,
       score: outcome?.score,

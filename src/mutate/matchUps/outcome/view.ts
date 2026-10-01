@@ -13,8 +13,11 @@ import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -53,6 +56,12 @@ function exitAwardable(positionAssignments: any[], inContextMatchUp: any, winnin
   return !!(assignment.participantId || assignment.qualifier);
 }
 
+/** a lucky draw's round with an odd number of matchUps feeds nobody forward (`checkIsPreFeedRound`) */
+function luckyPreFeed(drawDefinition: any, matchUp: any, structure: any): boolean {
+  if (!isLuckyBasedDraw(drawDefinition?.drawType) || !matchUp.roundNumber || !structure?.matchUps) return false;
+  return structure.matchUps.filter((m: any) => m.roundNumber === matchUp.roundNumber).length % 2 !== 0;
+}
+
 function resolveFormat(request: OutcomeRequest, matchUp: any, structure: any, drawDefinition: any, event: any) {
   return (
     request.matchUpFormat ??
@@ -71,10 +80,12 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     drawType: drawDefinition?.drawType,
     found: false,
     isTeam: false,
-    existing: { validWinningScore: false },
+    existing: { validWinningScore: false, scoreHasValue: false, scoredTime: false },
     propagatedExitStands: false,
     activeDownstream: false,
     participants: { required: false, count: 0, exitAwardable: false, requireForScoring: true },
+    draw: { isAdHoc: false, teamRoundRobin: false, includesBye: false, timedTie: false },
+    targets: { luckyPreFeed: false, sideParticipantIds: {} },
   };
   if (!drawDefinition || !request.matchUpId) return empty;
 
@@ -215,11 +226,15 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     matchUpTieId,
     existing: {
       matchUpStatus: matchUp.matchUpStatus,
+      matchUpStatusCodes: matchUp.matchUpStatusCodes,
       winningSide: matchUp.winningSide,
       score: matchUp.score,
+      scoreHasValue: !!checkScoreHasValue({ score: matchUp.score }),
+      scoredTime: !!matchUp.schedule?.scoredTime,
       roundPosition: matchUp.roundPosition,
       collectionId: matchUp.collectionId,
       matchUpFormat: storedFormat,
+      ownMatchUpFormat: matchUp.matchUpFormat,
       validWinningScore: !LIVE_OR_UNSET.has(matchUp.matchUpStatus) && validWinningScore,
     },
     impliedWinningSide,
@@ -234,5 +249,22 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     feedEligibilityBlockedBy: feed?.sourceRoundMatchUpId,
     line,
     dualProjection,
+    targets: {
+      winnerMatchUpId: targetData?.targetMatchUps?.winnerMatchUp?.matchUpId,
+      loserMatchUpId: targetData?.targetMatchUps?.loserMatchUp?.matchUpId,
+      luckyPreFeed: luckyPreFeed(drawDefinition, matchUp, structure),
+      sideParticipantIds: {
+        1: inContextMatchUp?.sides?.find((side) => side.sideNumber === 1)?.participantId,
+        2: inContextMatchUp?.sides?.find((side) => side.sideNumber === 2)?.participantId,
+      },
+    },
+    draw: {
+      isAdHoc: !!isAdHoc({ structure }),
+      teamRoundRobin: !!(matchUp.tieMatchUps && !matchUp.roundPosition && inContextMatchUp?.containerStructureId),
+      includesBye: !!matchUp.drawPositions?.some((position) =>
+        allAssignments.some((assignment) => assignment.bye && assignment.drawPosition === position),
+      ),
+      timedTie: !!(inContextMatchUp?.collectionId && lastSetFormatIsTimed({ ...inContextMatchUp })),
+    },
   };
 }
