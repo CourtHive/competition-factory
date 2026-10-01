@@ -33,7 +33,18 @@ export function replayAsReader(scenario: any): Mismatch[] {
 export function replayThroughEngine(scenario: any): Mismatch[] {
   const mismatches: Mismatch[] = [];
   setRandomSource(scenario.seed);
-  setClock(scenario.clock);
+  let base = Date.parse(scenario.clock);
+  let ticks = 0;
+  const tickMs = typeof scenario.clockTickMs === 'number' ? scenario.clockTickMs : 0;
+  // a fixed clock is a ticking clock with a zero tick; a step with its own base restarts there
+  setClock(() => new Date(base + ticks++ * tickMs));
+  const restore = (step: any) => {
+    if (typeof step.seed === 'number') setRandomSource(step.seed);
+    if (step.clockAt) {
+      base = Date.parse(step.clockAt);
+      ticks = 0;
+    }
+  };
   try {
     tournamentEngine.reset();
     tournamentEngine.setState(scenario.initial.record);
@@ -41,6 +52,7 @@ export function replayThroughEngine(scenario: any): Mismatch[] {
     if (initialHash !== scenario.initial.hash)
       mismatches.push({ step: -1, expected: scenario.initial.hash, actual: initialHash });
     scenario.steps.forEach((step: any, index: number) => {
+      restore(step);
       const outcome: any = tournamentEngine.executionQueue([step.directive]);
       const result = outcome?.error ? { error: outcome.error.code ?? String(outcome.error) } : { success: true };
       const hash = canonicalHash(canonicalObject(tournamentEngine.getTournament().tournamentRecord));

@@ -228,6 +228,35 @@ export function setDevContext(value?: DevContextType) {
   globalState.devContext = value;
 }
 
+/**
+ * An observer of every engine method execution, process-wide. `executeFunction` (the common path
+ * for direct calls, `executionQueue` directives and the async engine) reports `before` with the
+ * caller's params and `after` with the result. Nothing in production sets it; the golden corpus
+ * recorder does, to harvest the test suite into scenarios. An observer may call engine queries
+ * from the `after` phase; it must guard its own re-entrancy, because those calls are observed too.
+ * `setInvokeObserver()` with no argument removes it.
+ */
+export type InvokeEvent = {
+  phase: 'before' | 'after';
+  methodName: string;
+  engineType: string;
+  params?: any;
+  result?: any;
+};
+export type InvokeObserver = (event: InvokeEvent) => void;
+
+let invokeObserver: InvokeObserver | undefined;
+
+export function setInvokeObserver(observer?: InvokeObserver): { success?: boolean; error?: ErrorType } {
+  if (observer !== undefined && typeof observer !== 'function') return { error: INVALID_VALUES };
+  invokeObserver = observer;
+  return { ...SUCCESS };
+}
+
+export function getInvokeObserver(): InvokeObserver | undefined {
+  return invokeObserver;
+}
+
 export function setSchemaWriteMode(mode?: SchemaWriteMode): {
   success?: boolean;
   error?: ErrorType;

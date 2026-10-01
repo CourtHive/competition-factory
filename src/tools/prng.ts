@@ -3,16 +3,26 @@ import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export type RandomFunction = () => number;
+export type SeededRandom = RandomFunction & { seed?: number; state?: () => number };
 
 // mulberry32: a fast, simple seeded 32-bit PRNG with good distribution
-export function createSeededRandom(seed: number): RandomFunction {
+export function createSeededRandom(seed: number): SeededRandom {
   let state = Math.trunc(seed);
-  return () => {
+  const rng = () => {
     state = Math.trunc(state + 0x6d2b79f5);
     let t = Math.imul(state ^ (state >>> 15), 1 | state);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  // The seed rides along so a recorded directive can be written back as `nonRandom: <seed>`
+  // after engineInvoke has turned it into this function. `state()` is the generator's current
+  // internal state: mulberry32's next value depends on nothing else, so
+  // `createSeededRandom(state())` continues this exact stream. The corpus recorder uses it to
+  // record a seed for the mutations that follow without disturbing the stream a test is using.
+  const tagged = rng as SeededRandom;
+  tagged.seed = Math.trunc(seed);
+  tagged.state = () => state;
+  return tagged;
 }
 
 /**
