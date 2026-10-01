@@ -978,9 +978,10 @@ Score validation asks two questions of `score.sets`, under the matchUp's effecti
 2. **Completeness** — every set is one the format could actually produce:
    - every set **before the last** is a finished, legal set;
    - the **last** set is finished too when the outcome claims completion (`COMPLETED`, or
-     a `winningSide` with no `matchUpStatus`), or when the set itself names a winner;
+     a `winningSide` with no `matchUpStatus`);
    - otherwise (`RETIRED`, `DEFAULTED`, `IN_PROGRESS`, `SUSPENDED` …) the last set may be
-     unfinished, but never past the format's ceiling.
+     unfinished, but never past the format's ceiling. This holds even when the set carries
+     a `winningSide`, as `parseScoreString` gives one to the side leading an unfinished set.
 
 Under `SET3-S:6/TB7` this refuses `3-7 6-4 6-4` (a 7-3 set does not exist with a tiebreak
 at six) and `4-2 2-6 2-6` (the first set never finished), both of which were previously

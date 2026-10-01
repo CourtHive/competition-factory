@@ -26,9 +26,12 @@ type ScoreCompletenessArgs = {
  *
  * - Every set before the last is a FINISHED, legal set: a later set cannot start until it ends.
  * - The last set is finished too when the outcome claims completion — `COMPLETED`, or a `winningSide`
- *   with no status — or when the set itself names a winner.
+ *   with no status.
  * - Otherwise the last set may be unfinished (RETIRED, DEFAULTED, IN_PROGRESS, SUSPENDED, ABANDONED …),
- *   though never past the format's ceiling.
+ *   though never past the format's ceiling — EVEN IF it names a winner. `parseScoreString` gives every
+ *   set to the side ahead in it, so a retirement typed as `6-3 2-1` arrives with set 2 "won" by side 1;
+ *   TMX builds free-text outcomes that way, and holding that set to finished refused every such
+ *   retirement (measured 2026-10-02, the authored retirement scenario).
  *
  * Each set is asked of `validateSetScore`, the same answer the score-entry dialog gates its Submit on.
  * No format, no opinion: a record that declares no format is not checked here.
@@ -51,7 +54,7 @@ export function checkScoreCompleteness({ matchUpFormat, matchUpStatus, winningSi
     const set = sets[index];
     const setNumber = set?.setNumber ?? index + 1;
     const isLastSet = index === sets.length - 1;
-    const mustBeFinished = !isLastSet || claimsCompletion || !!set?.winningSide;
+    const mustBeFinished = !isLastSet || claimsCompletion;
     const isDecidingSet = !!maxSetNumber && setNumber === maxSetNumber;
 
     const { isValid, error } = validateSetScore(set, matchUpFormat, isDecidingSet, !mustBeFinished);

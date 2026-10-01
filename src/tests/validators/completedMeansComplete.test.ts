@@ -227,6 +227,15 @@ describe('an irregular or live score may leave only its LAST set unfinished', ()
     expect(result.info).toMatch(/^Set 1: /);
   });
 
+  it('RETIRED at 6-3 2-1 as parseScoreString builds it — set 2 "won" by the side ahead — is recorded', () => {
+    const sets = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-3 2-1', winningSide: 1 }).outcome.score
+      .sets;
+    expect(sets[1].winningSide, 'the parser stamps the leader').toEqual(1);
+    const { result, matchUp } = record({ score: { sets }, winningSide: 1, matchUpStatus: RETIRED });
+    expect(result.success).toBe(true);
+    expect(matchUp.matchUpStatus).toEqual(RETIRED);
+  });
+
   // the bounds check refuses this before completeness is asked; pinned so a looser last set cannot creep in
   it('an unfinished last set is still refused past the ceiling: IN_PROGRESS at 6-4 9-4', () => {
     const { result } = record({
