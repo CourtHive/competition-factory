@@ -1,3 +1,4 @@
+import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
 import { analyzeScore } from '@Query/matchUp/analyzeScore';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
 import { isConvertableInteger } from '@Tools/math';
@@ -93,6 +94,11 @@ export function validateScore({
         info: 'score is invalid for matchUpFormat or winningSide does not match calculated winningSide',
       };
     }
+
+    // Bounds are not completeness: a set must also be one the format can FINISH — see `scoreCompleteness`.
+    // `disableScoreValidation` on `setMatchUpStatus` skips this call, and with it this rule.
+    const { isComplete, info } = checkScoreCompleteness({ matchUpFormat, matchUpStatus, winningSide, sets });
+    if (!isComplete) return { error: INVALID_SCORE, info };
   }
 
   return { valid: true };
