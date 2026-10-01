@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { MISSING_PARTICIPANT_IDS, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
@@ -108,4 +108,44 @@ it('handles mixed valid and invalid participantIds', () => {
   // At least one succeeded
   expect(result.success).toEqual(true);
   expect(result.destroyedCount).toEqual(1);
+});
+
+/**
+ * A refusal is ONE ErrorType. Until 2026-10-01 an all-invalid batch returned `{ error: [...] }`,
+ * an array: no `code` for a client to switch on, and the golden corpus recorder, which validates
+ * every recorded result against the corpus schema, was what found it. The failures are kept, in
+ * `context.errors`, on refusal and on partial success alike.
+ */
+it('refuses with one error that carries a code, and every failure in context', () => {
+  const doublesId = 'doublesId';
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    participantsProfile: { participantType: PAIR, participantsCount: 4 },
+    eventProfiles: [{ eventType: DOUBLES, eventId: doublesId }],
+  });
+  tournamentEngine.setState(tournamentRecord);
+  const pairParticipantIds = tournamentRecord.participants
+    .filter((p) => p.participantType === PAIR)
+    .map((p) => p.participantId);
+  expect(tournamentEngine.addEventEntries({ participantIds: pairParticipantIds, eventId: doublesId }).success).toEqual(
+    true,
+  );
+
+  const refused = tournamentEngine.destroyPairEntries({ participantIds: ['nope-1', 'nope-2'], eventId: doublesId });
+  expect(refused.success).toBeUndefined();
+  expect(Array.isArray(refused.error)).toEqual(false);
+  expect(refused.error.code).toMatch(/^ERR_[A-Z0-9_]+$/);
+  expect(refused.context.errors).toHaveLength(2);
+  expect(refused.context.errors[0]).toEqual(refused.error);
+
+  const mixed = tournamentEngine.destroyPairEntries({
+    participantIds: [pairParticipantIds[0], 'nope-3'],
+    eventId: doublesId,
+  });
+  expect(mixed.success).toEqual(true);
+  expect(mixed.destroyedCount).toEqual(1);
+  expect(mixed.context.errors).toHaveLength(1);
+
+  expect(tournamentEngine.destroyPairEntries({ participantIds: [], eventId: doublesId }).error).toEqual(
+    MISSING_PARTICIPANT_IDS,
+  );
 });
