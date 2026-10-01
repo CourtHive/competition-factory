@@ -55,18 +55,25 @@ export function directLoser(params): ResultType {
     structureId: sourceStructureId,
     drawDefinition,
   });
-  const { matchUps: sourceMatchUps } = getAllStructureMatchUps({
-    afterRecoveryTimes: false,
-    inContext: true,
-    drawDefinition,
-    structure,
-    event,
-  });
-
   // BYEs and WALKOVERs (and unscored DEFAULTED) are not counted as wins — see getDrawPositionWinCount,
   // shared with the read-only feed-eligibility integrity check so the two never diverge.
-  const loserDrawPositionWins = getDrawPositionWinCount({ sourceMatchUps, drawPosition: loserDrawPosition });
-  const validForConsolation = loserLinkCondition === FIRST_MATCHUP && loserDrawPositionWins === 0;
+  //
+  // The count is the ONLY reader of the source structure in context, and it is read for a
+  // FIRST_MATCHUP link alone. The structure used to be hydrated for every loser link — measured
+  // 2026-10-01 (`pipelineCost.test.ts`): 755 hydrations over 2,026 `setMatchUpStatus` calls, 3% of
+  // everything the pipeline spent, most of them for links with no such condition.
+  const loserDrawPositionWins = () =>
+    getDrawPositionWinCount({
+      sourceMatchUps: getAllStructureMatchUps({
+        afterRecoveryTimes: false,
+        inContext: true,
+        drawDefinition,
+        structure,
+        event,
+      }).matchUps,
+      drawPosition: loserDrawPosition,
+    });
+  const validForConsolation = loserLinkCondition === FIRST_MATCHUP && loserDrawPositionWins() === 0;
 
   const { positionAssignments: sourcePositionAssignments } = structureAssignedDrawPositions({
     structureId: sourceStructureId,
