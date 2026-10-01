@@ -282,8 +282,11 @@ describe('ScoringEngine - Match Completion', () => {
     // Add points
     points.forEach((winner) => engine.addPoint({ winner: winner as 0 | 1 }));
 
-    // Match may not be complete with simple 10-8 pattern
-    // The points need to follow proper tennis scoring
-    expect(engine.getPointCount()).toBe(18);
+    // The first ten points win the tiebreak 10-0 and complete the match. The eight that follow
+    // arrive after completion and are ignored: a finished match takes no more points (addPoint
+    // guards this since 2026-10-01; before, they were counted, and this test asserted 18).
+    expect(engine.isComplete()).toBe(true);
+    expect(engine.getWinner()).toBe(1);
+    expect(engine.getPointCount()).toBe(10);
   });
 });

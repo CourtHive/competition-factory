@@ -137,3 +137,20 @@ describe('addPoint', () => {
     expect(point.timestamp).toBe('2026-01-20T00:00:00.000Z');
   });
 });
+
+describe('a completed match takes no more points', () => {
+  test('ignores a point after completion: no new set, no history entry, same state', () => {
+    let matchUp = createMatchUp({ matchUpFormat: 'SET1-S:TB10' });
+    for (let i = 0; i < 10; i++) matchUp = addPoint(matchUp, { winner: 0 });
+    expect(matchUp.matchUpStatus).toEqual('COMPLETED');
+    expect(matchUp.winningSide).toEqual(1);
+    const before = JSON.stringify(matchUp);
+    const pointsBefore = matchUp.history?.points.length;
+
+    const after = addPoint(matchUp, { winner: 1 });
+    expect(after).toBe(matchUp);
+    expect(JSON.stringify(after)).toEqual(before);
+    expect(after.history?.points.length).toEqual(pointsBefore);
+    expect(after.score.sets).toHaveLength(1);
+  });
+});

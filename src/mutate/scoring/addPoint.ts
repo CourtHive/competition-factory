@@ -66,6 +66,12 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   }
 
   if (winner === undefined || winner === null) return matchUp;
+  // A finished match takes no more points. Measured 2026-10-01 by the golden corpus's scoring
+  // source: without this, a point after a completed 6-4 6-0 opened a THIRD set with a game in it,
+  // in all 72 recorded streams. The point is ignored, not refused: this function returns the
+  // matchUp it was given, as it does for an undecidable winner, and the engine's event detection
+  // (which compares completeness before and after) sees no change.
+  if (matchUp.matchUpStatus === 'COMPLETED') return matchUp;
   const newMatchUp = matchUp;
 
   // Initialize history if not present
