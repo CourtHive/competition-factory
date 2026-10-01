@@ -1,6 +1,7 @@
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
 import { findVenue } from '@Query/venues/findVenue';
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
@@ -15,7 +16,6 @@ import {
   MISSING_VALUE,
   MUTATION_LOCK_EXISTS,
 } from '@Constants/errorConditionConstants';
-import { nowIso } from '@Tools/clock';
 
 type AddMutationLockArgs = {
   tournamentRecord: Tournament;

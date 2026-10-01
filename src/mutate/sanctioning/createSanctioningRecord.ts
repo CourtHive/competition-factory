@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -8,7 +9,6 @@ import { SUCCESS } from '@Constants/resultConstants';
 // types
 import type { SanctioningRecord, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
 import type { TierClassification } from '@Types/tournamentTypes';
-import { nowIso } from '@Tools/clock';
 
 type CreateSanctioningRecordArgs = {
   sanctioningId?: string;

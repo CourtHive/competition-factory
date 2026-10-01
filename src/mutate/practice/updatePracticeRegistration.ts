@@ -3,6 +3,7 @@ import { detectParticipantConflicts, ConflictReport } from './detectConflicts';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { findPracticeBooking } from './findPracticeBooking';
 import { addNotice } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { COURT_ID, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
@@ -21,7 +22,6 @@ import {
   PracticeRegistrationStatusUnion,
   Tournament,
 } from '@Types/tournamentTypes';
-import { nowIso } from '@Tools/clock';
 
 type Updates = {
   startTime?: string;

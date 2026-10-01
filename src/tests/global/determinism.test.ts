@@ -119,6 +119,10 @@ it('the clock accepts an instant, a function, or nothing, and refuses junk', () 
   expect(nowIso()).toEqual('2026-10-03T00:00:00.000Z');
   expect(nowIso()).toEqual('2026-10-03T00:00:01.000Z');
 
+  // a configured clock FUNCTION that returns junk falls back to the wall clock rather than throwing
+  expect(setClock(() => 'junk' as any).success).toEqual(true);
+  expect(Math.abs(now().getTime() - Date.now())).toBeLessThan(5_000);
+
   expect(setClock('not a date').error).toEqual(INVALID_DATE);
   expect(setClock({} as any).error).toEqual(INVALID_VALUES);
 

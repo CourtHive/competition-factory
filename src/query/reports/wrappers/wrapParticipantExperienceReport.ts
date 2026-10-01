@@ -1,12 +1,12 @@
 import { buildRecoveryTimeline, MS_PER_MINUTE, TimelineAppearance } from '@Query/reports/recoveryTimeline';
 import { INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
 import { isValidIANATimeZone } from '@Tools/timeZone';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { PARTICIPANT_EXPERIENCE_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
-import { nowIso } from '@Tools/clock';
 
 type WrapArgs = {
   tournamentRecord: Tournament;

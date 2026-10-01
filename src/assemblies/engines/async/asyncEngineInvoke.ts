@@ -7,10 +7,10 @@ import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { isFunction, isObject, isString } from '@Tools/objects';
 import { getMethods } from '@Global/state/syncGlobalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { nowMs } from '@Tools/clock';
 
 // constants
 import { INVALID_VALUES, METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { nowMs } from '@Tools/clock';
 
 export async function asyncEngineInvoke(engine: { [key: string]: any }, args: any) {
   if (!isObject(args)) return { error: INVALID_VALUES, message: 'args must be an object' };

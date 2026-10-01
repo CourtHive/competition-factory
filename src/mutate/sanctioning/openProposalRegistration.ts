@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -8,7 +9,6 @@ import { SUCCESS } from '@Constants/resultConstants';
 // types
 import type { RegistrationProfile } from '@Types/tournamentTypes';
 import type { SanctioningRecord } from '@Types/sanctioningTypes';
-import { nowIso } from '@Tools/clock';
 
 type OpenProposalRegistrationArgs = {
   sanctioningRecord: SanctioningRecord;

@@ -5,11 +5,11 @@ import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { nowMs } from '@Tools/clock';
 
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
-import { nowMs } from '@Tools/clock';
 
 export async function asyncExecutionQueue(engine: FactoryEngine, directives: Directives, rollbackOnError?: boolean) {
   if (!Array.isArray(directives)) return { error: INVALID_VALUES, message: 'directives must be an array' };

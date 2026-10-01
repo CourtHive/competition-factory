@@ -2,10 +2,10 @@
 import { CONFLICT_DECLARATION_NOT_FOUND, MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
-import { nowIso } from '@Tools/clock';
 
 type RemoveConflictDeclarationArgs = {
   officialRecord: OfficialRecord;

@@ -1,10 +1,10 @@
 import { getVenuesReport } from '@Query/venues/venuesReport';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { VENUE_UTILIZATION_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
-import { nowIso } from '@Tools/clock';
 
 export function wrapVenuesReport({
   tournamentRecord,

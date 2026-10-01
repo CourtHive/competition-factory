@@ -16,13 +16,13 @@ import { generateVenues } from '@Mutate/venues/generateVenues';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addEvent } from '@Mutate/events/addEvent';
 import { randomMember } from '@Tools/arrays';
+import { now } from '@Tools/clock';
 
 // constants and fixtures
 import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { ParticipantsProfile, PolicyDefinitions } from '@Types/factoryTypes';
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { SUCCESS } from '@Constants/resultConstants';
-import { now } from '@Tools/clock';
 
 // SELECTED WITH `randomMember`, NEVER `randomPop`. `randomPop` SPLICES, and this array is a
 // module-level constant — so popping from it permanently consumed one name per call and, after the

@@ -1,4 +1,5 @@
 import { validateStatusTransition } from '@Validators/sanctioning/validateStatusTransition';
+import { nowIso } from '@Tools/clock';
 
 // constants
 import { MISSING_SANCTIONING_RECORD, INVALID_STATUS_TRANSITION } from '@Constants/sanctioningConstants';
@@ -12,7 +13,6 @@ import type {
   StatusTransition,
   TransitionGuard,
 } from '@Types/sanctioningTypes';
-import { nowIso } from '@Tools/clock';
 
 type TransitionStatusArgs = {
   sanctioningRecord: SanctioningRecord;

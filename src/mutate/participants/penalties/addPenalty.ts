@@ -3,6 +3,7 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { addExtension } from '@Mutate/extensions/addExtension';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
@@ -11,7 +12,6 @@ import { TOURNAMENT_RECORD, PENALTY_TYPE } from '@Constants/attributeConstants';
 import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { nowIso } from '@Tools/clock';
 
 type AddPenaltyArgs = {
   refereeParticipantId?: string;

@@ -21,6 +21,7 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { resolvePointValue } from './resolvePointValue';
 import { inferServeSide } from './serveSideCalculator';
 import { isObject } from '@Tools/objects';
+import { nowIso } from '@Tools/clock';
 import type {
   MatchUp,
   AddPointOptions,
@@ -32,7 +33,6 @@ import type {
 
 // constants
 import { RALLY } from '@Constants/matchUpFormatConstants';
-import { nowIso } from '@Tools/clock';
 
 /**
  * Config for addPoint — optional multiplier support

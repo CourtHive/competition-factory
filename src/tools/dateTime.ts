@@ -14,6 +14,7 @@
 
 import { dateValidation, timeValidation, validDateString } from '@Validators/regex';
 import { isDateObject, zeroPad, isDate } from '@Tools/dateTimeInternals';
+import { now } from '@Tools/clock';
 import {
   dateStringDaysChange,
   generateDateRange,
@@ -45,7 +46,6 @@ import {
   tidyTime,
   HHMMSS,
 } from '@Tools/plainTime';
-import { now } from '@Tools/clock';
 
 export {
   dayMinutesToTimeString,

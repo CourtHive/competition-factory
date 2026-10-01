@@ -1,10 +1,10 @@
 import { MISSING_SANCTIONING_RECORD, CONDITION_NOT_FOUND } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { SanctioningRecord } from '@Types/sanctioningTypes';
-import { nowIso } from '@Tools/clock';
 
 type MeetConditionArgs = {
   sanctioningRecord: SanctioningRecord;

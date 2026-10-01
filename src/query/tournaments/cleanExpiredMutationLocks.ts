@@ -1,5 +1,6 @@
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
@@ -7,7 +8,6 @@ import { MUTATION_LOCKS } from '@Constants/extensionConstants';
 import { MutationLocksValue } from '@Types/mutationLockTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
-import { nowIso } from '@Tools/clock';
 
 type CleanExpiredArgs = {
   tournamentRecord: Tournament;

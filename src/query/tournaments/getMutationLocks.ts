@@ -1,4 +1,5 @@
 import { findExtension } from '@Acquire/findExtension';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { MutationLock, MutationLockScope, MutationLocksValue } from '@Types/mutationLockTypes';
@@ -6,7 +7,6 @@ import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionC
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
-import { nowIso } from '@Tools/clock';
 
 type MutationLockEntry = MutationLock & {
   drawId?: string;

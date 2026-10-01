@@ -1,10 +1,10 @@
 // Constants
 import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
-import { nowIso } from '@Tools/clock';
 
 type GetOfficialEligibilityArgs = {
   officialRecord: OfficialRecord;

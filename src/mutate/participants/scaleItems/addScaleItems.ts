@@ -8,6 +8,7 @@ import { addNotice, getTopics } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isValidDateString } from '@Tools/dateTime';
 import { findEvent } from '@Acquire/findEvent';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { ADD_SCALE_ITEMS, AUDIT, MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
@@ -27,7 +28,6 @@ import {
   PARTICIPANT_NOT_FOUND,
   VALUE_UNCHANGED,
 } from '@Constants/errorConditionConstants';
-import { nowIso } from '@Tools/clock';
 
 type SetParticipantScaleItemArgs = {
   tournamentRecord: Tournament;

@@ -1,11 +1,11 @@
 import { dateStringDaysChange, extractDate, isValidDateString, zeroPad } from '@Tools/dateTime';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isNumeric } from '@Tools/math';
+import { now } from '@Tools/clock';
 
 // constants and types
 import { INVALID_CATEGORY, INVALID_DATE } from '@Constants/errorConditionConstants';
 import { Category } from '@Types/tournamentTypes';
-import { now } from '@Tools/clock';
 
 const typeMatch = (arr, type) => arr.filter(Boolean).every((i) => typeof i === type);
 const allNumeric = (arr) => arr.filter(Boolean).every(isNumeric);

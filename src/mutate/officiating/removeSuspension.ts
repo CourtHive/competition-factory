@@ -2,10 +2,10 @@
 import { MISSING_OFFICIAL_RECORD, SUSPENSION_NOT_FOUND } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
-import { nowIso } from '@Tools/clock';
 
 type RemoveSuspensionArgs = {
   officialRecord: OfficialRecord;

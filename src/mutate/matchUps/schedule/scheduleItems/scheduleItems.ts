@@ -22,6 +22,7 @@ import { dateValidation, validTimeString } from '@Validators/regex';
 import { isConvertableInteger } from '@Tools/math';
 import { ensureInt } from '@Tools/ensureInt';
 import { isString } from '@Tools/objects';
+import { now } from '@Tools/clock';
 import {
   convertTime,
   dateStringDaysChange,
@@ -71,7 +72,6 @@ import {
   COURT_ORDER,
   COURT_ANNOTATION,
 } from '@Constants/timeItemConstants';
-import { now } from '@Tools/clock';
 
 /**
  * Court identities from an `allocatedCourts` value, in the bare-string form the

@@ -16,13 +16,13 @@ import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { nowMs } from '@Tools/clock';
 
 // constants and types
 import { PersonRequests, TournamentRecords } from '@Types/factoryTypes';
 import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TOTAL } from '@Constants/scheduleConstants';
-import { nowMs } from '@Tools/clock';
 
 // NOTE: non-Garman scheduling
 

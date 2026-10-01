@@ -1,4 +1,5 @@
 import { transitionStatus } from './transitionStatus';
+import { nowIso } from '@Tools/clock';
 
 // Constants
 import { MISSING_SANCTIONING_RECORD, CONDITIONALLY_APPROVED } from '@Constants/sanctioningConstants';
@@ -7,7 +8,6 @@ import { UUID } from '@Tools/UUID';
 
 // types
 import type { SanctioningRecord, Condition } from '@Types/sanctioningTypes';
-import { nowIso } from '@Tools/clock';
 
 type ConditionallyApproveArgs = {
   sanctioningRecord: SanctioningRecord;

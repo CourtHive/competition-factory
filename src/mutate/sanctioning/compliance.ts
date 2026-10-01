@@ -1,3 +1,4 @@
+import { nowIso, now as clockNow } from '@Tools/clock';
 import { transitionStatus } from './transitionStatus';
 
 // constants
@@ -13,7 +14,6 @@ import {
 
 // types
 import type { SanctioningRecord } from '@Types/sanctioningTypes';
-import { nowIso, now as clockNow } from '@Tools/clock';
 
 const MISSING_ITEM_ID = 'Missing itemId';
 

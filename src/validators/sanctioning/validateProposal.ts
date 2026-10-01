@@ -1,6 +1,7 @@
 import { sumAgainstBound, describeAmount } from '@Query/sanctioning/comparePrizeMoney';
 import { isDisciplineAllowed } from '@Helpers/coercedDiscipline';
 import { coercedGender } from '@Helpers/coercedGender';
+import { now as clockNow } from '@Tools/clock';
 
 // constants
 import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctioningConstants';
@@ -15,7 +16,6 @@ import {
   PersonnelRole,
   PersonReference,
 } from '@Types/sanctioningTypes';
-import { now as clockNow } from '@Tools/clock';
 
 export type ValidationIssue = {
   field: string;

@@ -5,6 +5,7 @@ import { generatePersons } from '@Generators/mocks/generatePersons';
 import { extractDate, formatDate } from '@Tools/dateTime';
 import { nameMocks } from '@Generators/mocks/nameMocks';
 import { findExtension } from '@Acquire/findExtension';
+import { nowIso, now } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -15,7 +16,6 @@ import { FEMALE, MALE, OTHER } from '@Constants/genderConstants';
 import { coercedGender } from '@Helpers/coercedGender';
 import { SUCCESS } from '@Constants/resultConstants';
 import { isGendered } from '@Validators/isGendered';
-import { nowIso, now } from '@Tools/clock';
 
 export function anonymizeTournamentRecord({
   keepExtensions = [],

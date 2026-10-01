@@ -4,12 +4,12 @@ import { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGr
 import { decorateResult } from '@Functions/global/decorateResult';
 import { extractDate } from '@Tools/dateTime';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { now } from '@Tools/clock';
 
 // constants and types
 import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { now } from '@Tools/clock';
 
 /**
  * Anchors a generated schedule to a moment, so an example stays demonstrable whenever it is run.

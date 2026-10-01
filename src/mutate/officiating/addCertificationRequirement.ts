@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -7,7 +8,6 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord, CertificationRequirement, RequirementItem } from '@Types/officiatingTypes';
-import { nowIso } from '@Tools/clock';
 
 type AddCertificationRequirementArgs = {
   officialRecord: OfficialRecord;

@@ -2,6 +2,7 @@ import { getCourtDateAvailability } from '@Query/venues/getCourtDateAvailability
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
 import { findCourt } from '@Query/venues/findCourt';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { INVALID_VALUES, COURT_NOT_FOUND, EXISTING_MATCHUPS } from '@Constants/errorConditionConstants';
@@ -9,7 +10,6 @@ import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
-import { nowIso } from '@Tools/clock';
 
 type AddCourtGridBookingArgs = {
   tournamentRecord: Tournament;

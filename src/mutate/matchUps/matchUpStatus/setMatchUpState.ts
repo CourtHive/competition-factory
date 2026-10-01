@@ -28,6 +28,7 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
+import { nowIso } from '@Tools/clock';
 
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
@@ -70,7 +71,6 @@ import {
   validMatchUpStatuses,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import { nowIso } from '@Tools/clock';
 
 // Reverting a validated-COMPLETED matchUp to one of these "still live / paused"
 // statuses (without providing a new outcome) would silently strip its result and

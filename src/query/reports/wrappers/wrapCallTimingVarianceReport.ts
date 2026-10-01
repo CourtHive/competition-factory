@@ -1,10 +1,10 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { CALL_TIMING_VARIANCE_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
-import { nowIso } from '@Tools/clock';
 
 type WrapArgs = {
   tournamentRecord: Tournament;

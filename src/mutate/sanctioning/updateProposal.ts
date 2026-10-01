@@ -2,10 +2,10 @@
 import { EDITABLE_STATUSES, PROPOSAL_NOT_EDITABLE, MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { SanctioningRecord, TournamentProposal } from '@Types/sanctioningTypes';
-import { nowIso } from '@Tools/clock';
 
 type UpdateProposalArgs = {
   sanctioningRecord: SanctioningRecord;

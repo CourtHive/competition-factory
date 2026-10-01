@@ -2,12 +2,12 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice } from '@Global/state/globalState';
 import { findVenue } from '@Query/venues/findVenue';
+import { nowIso } from '@Tools/clock';
 
 // constants
 import { ErrorType, MISSING_VALUE, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { nowIso } from '@Tools/clock';
 
 /**
  * Upsert a `UnifiedVenueID` entry into a venue's `venueOtherIds[]` array — the

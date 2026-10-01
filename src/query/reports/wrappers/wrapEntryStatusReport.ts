@@ -1,10 +1,10 @@
 import { getEntryStatusReports } from '@Query/entries/entryStatusReport';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { ENTRY_STATUS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
-import { nowIso } from '@Tools/clock';
 
 export function wrapEntryStatusReport({
   tournamentRecord,

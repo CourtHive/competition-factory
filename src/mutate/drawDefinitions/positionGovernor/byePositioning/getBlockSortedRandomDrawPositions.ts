@@ -1,6 +1,6 @@
 import { chunkArray, shuffleArray } from '@Tools/arrays';
-import { isOdd } from '@Tools/math';
 import { randomSource } from '@Tools/prng';
+import { isOdd } from '@Tools/math';
 
 /*
   seedBlocks for 32 seeds in a draw of 128 are as follows:

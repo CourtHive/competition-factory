@@ -1,12 +1,12 @@
 import { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { SEEDING_PERFORMANCE_REPORT } from '@Constants/reportConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
-import { nowIso } from '@Tools/clock';
 
 function getPerformanceLabel(finishMin: number, seedValue: number): string {
   if (!finishMin || !seedValue) return '';

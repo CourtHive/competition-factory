@@ -1,5 +1,6 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
@@ -7,7 +8,6 @@ import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { PARTICIPANT_RESULTS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
-import { nowIso } from '@Tools/clock';
 
 export function wrapParticipantResultsReport({
   tournamentRecord,

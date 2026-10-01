@@ -4,11 +4,11 @@
   https://stackoverflow.com/questions/105034/how-to-create-guid-uuid?rq=1
 */
 
+import { randomSource } from '@Tools/prng';
 import { generateRange } from './arrays';
 
 // constants
 import { INSUFFICIENT_UUIDS } from '@Constants/errorConditionConstants';
-import { randomSource } from '@Tools/prng';
 
 type TakeUUIDArgs = {
   /**

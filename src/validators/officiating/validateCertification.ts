@@ -1,6 +1,7 @@
 // Constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 import {
   MISSING_OFFICIAL_RECORD,
   CERTIFICATION_NOT_FOUND,
@@ -9,7 +10,6 @@ import {
 
 // types
 import type { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
-import { nowIso } from '@Tools/clock';
 
 type ValidateCertificationArgs = {
   officialRecord: OfficialRecord;

@@ -6,6 +6,7 @@ import { latestPresenceState } from '@Acquire/presenceAttestations';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { getTopics } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import {
@@ -20,7 +21,6 @@ import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import type { Attribution } from '@Types/presenceTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
-import { nowIso } from '@Tools/clock';
 
 /**
  * Record arrival at — or departure from — the TOURNAMENT. Distinct from per-matchUp check-in, which is

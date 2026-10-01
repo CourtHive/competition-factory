@@ -3,6 +3,7 @@ import { createTournamentRecord } from '@Generators/tournamentRecords/createTour
 import { methodImporter } from '@Assemblies/engines/parts/methodImporter';
 import { processResult } from '@Assemblies/engines/parts/processResult';
 import { factoryVersion } from '@Functions/global/factoryVersion';
+import { setRandomSource } from '@Tools/prng';
 import {
   getState,
   getTournament,
@@ -29,7 +30,6 @@ import {
 // constants and types
 import { SUCCESS } from '@Constants/resultConstants';
 import { FactoryEngine } from '@Types/factoryTypes';
-import { setRandomSource } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 
 export function engineStart(engine: FactoryEngine, engineInvoke: any): void {

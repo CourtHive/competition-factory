@@ -2,10 +2,10 @@
 import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord, EvaluationPolicy } from '@Types/officiatingTypes';
-import { nowIso } from '@Tools/clock';
 
 type AddEvaluationPolicyArgs = {
   officialRecord: OfficialRecord;

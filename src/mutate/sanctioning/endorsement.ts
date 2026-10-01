@@ -2,10 +2,10 @@
 import { MISSING_SANCTIONING_RECORD, MISSING_ENDORSEMENT } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { SanctioningRecord, PersonReference, Endorsement } from '@Types/sanctioningTypes';
-import { nowIso } from '@Tools/clock';
 
 // Sync the convenience `endorsement` field with the first entry in the `endorsements` array
 function syncEndorsement(record: SanctioningRecord) {

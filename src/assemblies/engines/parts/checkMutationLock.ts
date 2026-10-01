@@ -2,12 +2,12 @@ import { methodScopeMap } from '@Constants/mutationLockScopeMap';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
 import { findVenue } from '@Query/venues/findVenue';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { MutationLock, MutationLocksValue } from '@Types/mutationLockTypes';
 import { MUTATION_LOCKED } from '@Constants/errorConditionConstants';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
-import { nowIso } from '@Tools/clock';
 
 // Returns an error result if the method is blocked by a mutation lock, or undefined if allowed.
 export function checkMutationLock(

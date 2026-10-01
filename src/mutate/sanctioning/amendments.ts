@@ -1,3 +1,4 @@
+import { nowIso, now as clockNow } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -20,7 +21,6 @@ import type {
   AmendmentSeverity,
   AmendmentRules,
 } from '@Types/sanctioningTypes';
-import { nowIso, now as clockNow } from '@Tools/clock';
 
 // ---------------------------------------------------------------------------
 // Propose Amendment

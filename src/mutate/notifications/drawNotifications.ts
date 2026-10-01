@@ -4,6 +4,7 @@ import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
 import { addNotice, deleteNotice } from '@Global/state/globalState';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { nowMs } from '@Tools/clock';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
@@ -21,7 +22,6 @@ import {
   MODIFY_SEED_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
-import { nowMs } from '@Tools/clock';
 
 function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };

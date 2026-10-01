@@ -3,6 +3,7 @@ import { detectParticipantConflicts, ConflictReport } from './detectConflicts';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { findPracticeBooking } from './findPracticeBooking';
 import { addNotice } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
@@ -17,7 +18,6 @@ import {
   INVALID_VALUES,
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { nowIso } from '@Tools/clock';
 
 type AddPracticeRegistrationArgs = {
   tournamentRecord: Tournament;

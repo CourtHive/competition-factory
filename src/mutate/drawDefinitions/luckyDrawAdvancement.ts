@@ -6,6 +6,7 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { findStructure } from '@Acquire/findStructure';
+import { randomSource } from '@Tools/prng';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
@@ -13,7 +14,6 @@ import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import { randomSource } from '@Tools/prng';
 
 type LuckyDrawAdvancementArgs = {
   tournamentRecord?: Tournament;

@@ -1,6 +1,7 @@
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { findPracticeBooking } from './findPracticeBooking';
 import { addNotice } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { INVALID_VALUES, REGISTRATION_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -9,7 +10,6 @@ import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
-import { nowIso } from '@Tools/clock';
 
 type RemovePracticeRegistrationArgs = {
   tournamentRecord: Tournament;

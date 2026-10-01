@@ -1,10 +1,10 @@
 import { getUTCdateString, dateStringDaysChange } from '@Tools/dateTime';
 import { validTimeString } from '@Validators/regex';
+import { nowMs } from '@Tools/clock';
 
 // constants
 import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME, END_DATE, SCHEDULED_DATE } from '@Constants/timeItemConstants';
 import { MISSING_MATCHUP, MISSING_TIME_ITEMS } from '@Constants/errorConditionConstants';
-import { nowMs } from '@Tools/clock';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 

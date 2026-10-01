@@ -1,5 +1,6 @@
 import { conflictInputsFrom } from '@Query/officiating/conflictEvaluationInputs';
 import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -19,7 +20,6 @@ import type {
   OfficialAssignment,
   OfficialRecord,
 } from '@Types/officiatingTypes';
-import { nowIso } from '@Tools/clock';
 
 type AssignOfficialArgs = ConflictEvaluationInputs & {
   officialRecord: OfficialRecord;

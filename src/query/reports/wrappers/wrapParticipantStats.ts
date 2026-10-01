@@ -1,10 +1,10 @@
 import { getParticipantStats } from '@Query/participant/getParticipantStats';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { PARTICIPANT_STATS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
-import { nowIso } from '@Tools/clock';
 
 export function wrapParticipantStats({
   tournamentRecord,

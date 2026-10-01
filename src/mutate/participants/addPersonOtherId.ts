@@ -2,13 +2,13 @@ import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotif
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getTopics } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 
 // constants
 import { INVALID_VALUES, MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { nowIso } from '@Tools/clock';
 
 /**
  * Upsert a `UnifiedPersonID` entry into the participant's

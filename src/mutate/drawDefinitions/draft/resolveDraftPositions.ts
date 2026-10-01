@@ -4,13 +4,13 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
+import { randomSource } from '@Tools/prng';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { DRAFT_STATE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { randomSource } from '@Tools/prng';
 import { nowIso } from '@Tools/clock';
 
 type ResolveDraftPositionsArgs = {

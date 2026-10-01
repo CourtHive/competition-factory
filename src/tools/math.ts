@@ -1,7 +1,7 @@
+import { randomSource } from '@Tools/prng';
 import { ensureInt } from './ensureInt';
 import { numericSort } from './sorting';
 import { isString } from './objects';
-import { randomSource } from '@Tools/prng';
 
 export function isPowerOf2(n?) {
   if (Number.isNaN(Number(n))) return false;

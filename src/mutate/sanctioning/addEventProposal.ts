@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -12,7 +13,6 @@ import {
 
 // types
 import type { SanctioningRecord, EventProposal } from '@Types/sanctioningTypes';
-import { nowIso } from '@Tools/clock';
 
 type AddEventProposalArgs = {
   sanctioningRecord: SanctioningRecord;

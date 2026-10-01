@@ -25,6 +25,7 @@ import { getEpisodes } from '@Query/scoring/getEpisodes';
 import { isComplete } from '@Query/scoring/isComplete';
 import { getWinner } from '@Query/scoring/getWinner';
 import { getScore } from '@Query/scoring/getScore';
+import { nowIso } from '@Tools/clock';
 import {
   addPoint,
   deriveServer,
@@ -50,7 +51,6 @@ import type {
   FormatStructure,
   Episode,
 } from '@Types/scoring/types';
-import { nowIso } from '@Tools/clock';
 
 // competitionFormat types (mirrored from factory for standalone use)
 export interface TimerProfile {

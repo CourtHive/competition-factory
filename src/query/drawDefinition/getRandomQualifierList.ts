@@ -3,12 +3,12 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { decorateResult } from '@Functions/global/decorateResult';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { generateRange } from '@Tools/arrays';
+import { randomSource } from '@Tools/prng';
 
 // constants
 import { MISSING_MAIN_STRUCTURE } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION } from '@Constants/attributeConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
-import { randomSource } from '@Tools/prng';
 
 interface GetRandomQualifierListParams {
   drawDefinition: DrawDefinition;

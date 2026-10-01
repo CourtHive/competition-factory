@@ -1,6 +1,7 @@
 // Constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 import {
   MISSING_OFFICIAL_RECORD,
   EVALUATION_NOT_FOUND,
@@ -10,7 +11,6 @@ import {
 
 // types
 import type { OfficialRecord, OfficialEvaluation, EvaluationScore } from '@Types/officiatingTypes';
-import { nowIso } from '@Tools/clock';
 
 type ModifyEvaluationArgs = {
   officialRecord: OfficialRecord;

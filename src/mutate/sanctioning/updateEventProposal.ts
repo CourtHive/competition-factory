@@ -1,6 +1,7 @@
 // Constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 import {
   EDITABLE_STATUSES,
   MISSING_SANCTIONING_RECORD,
@@ -10,7 +11,6 @@ import {
 
 // types
 import type { SanctioningRecord, EventProposal } from '@Types/sanctioningTypes';
-import { nowIso } from '@Tools/clock';
 
 type UpdateEventProposalArgs = {
   sanctioningRecord: SanctioningRecord;

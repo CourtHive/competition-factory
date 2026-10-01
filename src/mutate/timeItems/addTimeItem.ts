@@ -8,6 +8,7 @@ import { getTimeItemValues } from './getTimeItemValues';
 import { getTimeItem } from '@Query/base/timeItems';
 import { isValidDateString } from '@Tools/dateTime';
 import { isObject, isString } from '@Tools/objects';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { DrawDefinition, Event, TimeItem, Tournament } from '@Types/tournamentTypes';
@@ -27,7 +28,6 @@ import {
   MISSING_VALUE,
   UNSUPPORTED_IN_LEGACY_MODE,
 } from '@Constants/errorConditionConstants';
-import { nowIso } from '@Tools/clock';
 
 type AddTimeItemArgs = {
   tournamentRecord?: Tournament;

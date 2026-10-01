@@ -15,6 +15,7 @@ import { addParticipant } from './addParticipant';
 import { countries } from '@Fixtures/countryData';
 import { coercedSex } from '@Helpers/coercedSex';
 import { isString } from '@Tools/objects';
+import { now } from '@Tools/clock';
 
 // constants
 import { GROUP, INDIVIDUAL, PAIR, participantTypes } from '@Constants/participantConstants';
@@ -27,7 +28,6 @@ import {
   INVALID_DATE,
   INVALID_PARTICIPANT_IDS,
 } from '@Constants/errorConditionConstants';
-import { now } from '@Tools/clock';
 
 export function modifyParticipant(params) {
   const {

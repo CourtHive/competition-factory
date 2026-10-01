@@ -4,11 +4,11 @@
  * Pure function that creates a matchUp with TODS-compliant structure
  */
 
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // Import necessary types
 import type { MatchUp, CreateMatchUpOptions, Side, Score } from '@Types/scoring/types';
-import { nowIso } from '@Tools/clock';
 
 /**
  * Create a new matchUp

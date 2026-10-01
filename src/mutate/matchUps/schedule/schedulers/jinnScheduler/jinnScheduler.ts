@@ -14,11 +14,11 @@ import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { nowMs } from '@Tools/clock';
 
 // constants
 import { SUCCESS } from '@Constants/resultConstants';
 import { TOTAL } from '@Constants/scheduleConstants';
-import { nowMs } from '@Tools/clock';
 
 export function jinnScheduler({
   schedulingProfileModifications,
