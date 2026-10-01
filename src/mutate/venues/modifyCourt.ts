@@ -61,7 +61,7 @@ export function courtModification({
   if (!modifications || typeof modifications !== 'object') return { error: INVALID_OBJECT };
 
   const result = findCourt({ tournamentRecord, courtId });
-  if (result.error) return result;
+  if (result.error) return { error: result.error };
 
   const { venue, court } = result;
 
