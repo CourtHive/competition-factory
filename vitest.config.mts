@@ -33,6 +33,7 @@ export default defineConfig({
       './src/tests/testHarness/setSchemaWriteModeNative.ts',
       './src/tests/testHarness/seedMathRandom.ts',
       './src/tests/testHarness/corpusRecord.ts',
+      './src/tests/testHarness/setOutcomePipeline.ts',
     ],
     coverage: {
       reporter: ['html', 'json-summary'],

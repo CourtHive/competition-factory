@@ -351,6 +351,7 @@ export type FactoryEngineMethod =
   | 'getOfficialCertifications'
   | 'getOfficialConflicts'
   | 'getOfficialEligibility'
+  | 'getOutcomePipeline'
   | 'getPairedParticipant'
   | 'getParticipantEligibility'
   | 'getParticipantEventDetails'
@@ -521,6 +522,7 @@ export type FactoryEngineMethod =
   | 'once'
   | 'openProposalRegistration'
   | 'orderCollectionDefinitions'
+  | 'outcomePipeline'
   | 'overlappingRange'
   | 'parse'
   | 'parseCSV'
@@ -1104,6 +1106,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getOfficialCertifications',
   'getOfficialConflicts',
   'getOfficialEligibility',
+  'getOutcomePipeline',
   'getPairedParticipant',
   'getParticipantEligibility',
   'getParticipantEventDetails',
@@ -1274,6 +1277,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'once',
   'openProposalRegistration',
   'orderCollectionDefinitions',
+  'outcomePipeline',
   'overlappingRange',
   'parse',
   'parseCSV',
