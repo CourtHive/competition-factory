@@ -474,9 +474,9 @@ function resolveMatchUpAndContext({ tournamentRecord, drawDefinition, matchUpId,
 
   if ((matchUp.winningSide || winningSide) && matchUpStatus === BYE) {
     return {
-      context: 'Cannot have Bye with winningSide',
+      info: 'Cannot have Bye with winningSide',
       error: INCOMPATIBLE_MATCHUP_STATUS,
-      matchUpStatus,
+      context: { matchUpStatus },
     };
   }
 
@@ -517,10 +517,9 @@ function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpS
 
     if (winningSide && winningSide === matchUp.winningSide && matchUpStatus && !directingMatchUpStatus) {
       return {
-        context: 'winningSide must include directing matchUpStatus',
+        info: 'winningSide must include directing matchUpStatus',
+        context: { directingMatchUpStatus, matchUpStatus },
         error: INCOMPATIBLE_MATCHUP_STATUS,
-        directingMatchUpStatus,
-        matchUpStatus,
       };
     }
   }

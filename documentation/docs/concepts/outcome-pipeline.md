@@ -44,15 +44,20 @@ effective format. A caller's strings are discarded. `score.sets` is the single s
 | `propagateRetirementAsExit` | param `??` policy `??` **false**     | wins, from either source    |
 
 The third is `??` because turning retirement propagation OFF is the point of the setting; a retiree
-is out of a match, not out of the event, unless the policy says so. **UNPINNED**: no corpus scenario
-yet sets a flag explicitly against a policy that says the opposite.
+is out of a match, not out of the event, unless the policy says so. **Pinned** by two authored
+scenarios (`authored/outcome-pipeline/flags-*`): with a scoring policy that says `true`, an explicit
+`propagateRetirementAsExit: false` leaves the consolation untouched, and an explicit
+`propagateExitStatus: false` is overridden, the consolation receives the walkover. The second is the
+measured behaviour, not an endorsement of it; see § 9, question 4.
 
 **A `matchUpFormat` on the call is validated before anything runs and persisted only once the outcome
 is accepted.** It used to be written first, so a refused outcome left a new format behind.
 
 ## 2. The refusals, in the order they are checked
 
-A refused call returns one `ErrorType` with a `code` and changes nothing (§ 6). The checks run in
+A refused call returns one `ErrorType` with a `code` and changes nothing (§ 6); its `context`, when
+present, is an object, and a sentence for a person goes in `info` (two row-9 refusals returned the
+sentence AS `context` until the authored scenarios refused to record them, 2026-10-01). The checks run in
 this order; the first that fails is the answer.
 
 | #   | code                                       | condition                                                                                                                                                                                                                                                                                                                                                                                                                                | where                                                                                                                  |
@@ -203,13 +208,14 @@ in every mode.
 
 ## 8. What the corpus pins
 
-|                                   |                                                                                                                                                                                   |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setMatchUpStatus` steps recorded | 50,559 (recorded tests, matrix, census, route flips, fixtures)                                                                                                                    |
-| refusal codes observed            | 18 (§ 2), none declared in the entry file                                                                                                                                         |
-| `setMatchUpState`                 | exported as an engine method, eleven declared codes, **no caller** in the corpus: an internal that leaked onto the surface. **OPEN**: remove it from the governor, or document it |
-| `bulkMatchUpStatusUpdate`         | 1 step; its two declared codes unobserved. **UNPINNED**                                                                                                                           |
-| real-record do/undo               | 7 of 11 probed fixtures restore the draw projection; 4 do not (§ 4)                                                                                                               |
+|                                   |                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setMatchUpStatus` steps recorded | 50,559 (recorded tests, matrix, census, route flips, fixtures)                                                                                                                                                                                                                                                                                                  |
+| refusal codes observed            | 18 (§ 2), none declared in the entry file                                                                                                                                                                                                                                                                                                                       |
+| `setMatchUpState`                 | exported as an engine method, eleven declared codes, **no caller** in the corpus: an internal that leaked onto the surface. **OPEN**: remove it from the governor, or document it                                                                                                                                                                               |
+| `bulkMatchUpStatusUpdate`         | 1 recorded step; its two declared codes pinned by `authored/outcome-pipeline/bulk-update-refusals`: `ERR_MISSING_VALUE` for no `outcomes`, `ERR_MISSING_TOURNAMENT` for an unknown `tournamentId`                                                                                                                                                               |
+| real-record do/undo               | 7 of 11 probed fixtures restore the draw projection; 4 do not (§ 4)                                                                                                                                                                                                                                                                                             |
+| authored scenarios                | 7 (`pnpm corpus:authored`), one per rule above that the recorded sources did not reach: the flag precedence (§ 1), rows 5, 9, 10 and 14 of § 2 with every condition of row 9, the swap (§ 3), the double-exit no-op (§ 6), the bulk refusals. Each asserts the result code of every step and, where a flag's effect is the claim, the state the patches rebuild |
 
 ## 9. Open questions
 
