@@ -6,6 +6,7 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
+import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
@@ -231,6 +232,32 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // read BEFORE the mutation: `reconcileDeciders` acts only on a final whose winner has changed
   const finalsBefore = getDeciderFinals(drawDefinition);
 
+  // The v2 pipeline decides the refusals (§ 2) before v1 runs. Under `v2` its refusal is the answer
+  // and v1 is not asked; under `differential` v1 runs as well and the two must agree. Under `v1`,
+  // the default, this is a no-op. See `src/mutate/matchUps/outcome/`.
+  const v2 = decideOutcomeV2({
+    request: {
+      matchUpStatus: outcome?.matchUpStatus,
+      winningSide: outcome?.winningSide,
+      score: outcome?.score,
+      matchUpFormat,
+      matchUpId,
+      flags: {
+        allowChangePropagation,
+        propagateExitStatus,
+        propagateRetirementAsExit,
+        disableScoreValidation,
+        disableAutoCalc,
+        enableAutoCalc,
+      },
+    },
+    policyDefinitions,
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+  if (v2.refused) return decorateResult({ result: v2.refused, stack });
+
   // DECISION: Delegate to setMatchUpState for core status/score setting logic
   // WHY: Separation of concerns - setMatchUpStatus handles API/validation/orchestration,
   // setMatchUpState handles actual state mutations and participant progression logic
@@ -310,6 +337,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     const settled = settleDraw({ finalsBefore, params });
     if (settled.error) return decorateResult({ result: settled, stack });
   }
+
+  v2.compare?.(result);
 
   return decorateResult({ result, stack });
 }

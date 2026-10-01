@@ -58,13 +58,18 @@ is accepted.** It used to be written first, so a refused outcome left a new form
 A refused call returns one `ErrorType` with a `code` and changes nothing (§ 6); its `context`, when
 present, is an object, and a sentence for a person goes in `info` (two row-9 refusals returned the
 sentence AS `context` until the authored scenarios refused to record them, 2026-10-01). The checks run in
-this order; the first that fails is the answer.
+this order; the first that fails is the answer. **Two corrections from S2a (2026-10-01), measured by
+running v2 differentially against v1:** the TEAM clause of row 5 (`AWAITING_RESULT`) is asked after
+row 10, and the participants clause of row 6 (§ 2.1) after row 11; and row 9's second condition
+judges the stored score under the **stored** format while its third judges the incoming score under
+the format the call would apply, so a call that carries a new `matchUpFormat` can be refused under
+the old one.
 
 | #   | code                                       | condition                                                                                                                                                                                                                                                                                                                                                                                                                                | where                                                                                                                  |
 | --- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | 1   | `ERR_MISSING_MATCHUP_ID`                   | no `matchUpId`                                                                                                                                                                                                                                                                                                                                                                                                                           | `setMatchUpStatus`                                                                                                     |
 | 2   | `ERR_MISSING_DRAWDEF`                      | no draw could be resolved from `drawId` / `drawDefinition`                                                                                                                                                                                                                                                                                                                                                                               | `setMatchUpStatus`                                                                                                     |
-| 3   | `ERR_INVALID_WINNING_SIDE`                 | `winningSide` present and not 1 or 2                                                                                                                                                                                                                                                                                                                                                                                                     | `setMatchUpStatus`                                                                                                     |
+| 3   | `ERR_INVALID_WINNING_SIDE`                 | a truthy `winningSide` that is not 1 or 2; **0 passes as absent** (v1 tests truthiness, a test pins it, v2 matches)                                                                                                                                                                                                                                                                                                                      | `setMatchUpStatus`                                                                                                     |
 | 4   | `ERR_UNRECOGNIZED_MATCHUP_FORMAT`          | the call's `matchUpFormat` does not parse                                                                                                                                                                                                                                                                                                                                                                                                | `checkMatchUpFormatApplication`                                                                                        |
 | 5   | `ERR_INVALID_VALUES`                       | `matchUpStatus` is one of CANCELLED, INCOMPLETE, ABANDONED, TO_BE_PLAYED with a `winningSide`; or a TEAM dual with AWAITING_RESULT                                                                                                                                                                                                                                                                                                       | `validateMatchUpStateInputs`, `setMatchUpState`                                                                        |
 | 6   | `ERR_INVALID_MATCHUP_STATUS`               | `matchUpStatus` is not a known status; or a directing outcome on a matchUp without two participants (§ 2.1); or no route accepts it (§ 3)                                                                                                                                                                                                                                                                                                | `validateMatchUpStateInputs`, `checkParticipants`, `attemptToSetMatchUpStatus`                                         |
@@ -205,6 +210,16 @@ In NATIVE mode (the default since 5.0.0) `scoredTime` is written on `matchUp.sch
 here touches `timeItems`. In LEGACY and BRIDGE modes the pipeline is unchanged; the schedule
 attributes it stamps follow `setFirstClassOrTimeItem`. The result, status and codes are first-class
 in every mode.
+
+## 7.1 Two implementations (S2)
+
+`src/mutate/matchUps/outcome/` is the clean-room re-implementation of this page, written from it and
+from the corpus. S2a (2026-10-01) re-implements § 2 as one pure function, `refuseOutcome(request,
+view)`, over a read-only view of the draw; routing is `engine.outcomePipeline('v1' | 'v2' |
+'differential')`, v1 by default. Under `differential` v2 decides, v1 runs, and a disagreement throws
+`OutcomePipelineDivergence` naming the matchUp and both answers; a refusal v1 raises from a write
+or from a § 3 route (rows 16 to 19, `ERR_UNRECOGNIZED_MATCHUP_STATUS`, § 3's fallthrough) is
+deferred to S2b, not a divergence. `OUTCOME_PIPELINE=differential vitest run` is the gate.
 
 ## 8. What the corpus pins
 

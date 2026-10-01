@@ -17,6 +17,8 @@ import {
   getDevContext,
   setSchemaWriteMode,
   getSchemaWriteMode,
+  setOutcomePipeline,
+  getOutcomePipeline,
   setSaveDrawDeletions,
   getSaveDrawDeletions,
   setAuditAuthorityServer,
@@ -56,6 +58,11 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
     return processResult(engine, result);
   };
   engine.getSchemaWriteMode = () => getSchemaWriteMode();
+  engine.outcomePipeline = (mode) => {
+    const result = setOutcomePipeline(mode);
+    return processResult(engine, result);
+  };
+  engine.getOutcomePipeline = () => getOutcomePipeline();
   engine.saveDrawDeletions = (flag) => {
     const result = setSaveDrawDeletions(flag);
     return processResult(engine, result);
