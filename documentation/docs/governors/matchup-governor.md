@@ -908,7 +908,10 @@ engine.setMatchUpFormat({
 
 ## setMatchUpState
 
-Sets the state of a matchUp (status, score, winningSide).
+**Deprecated on the engine surface since 7.5.0; removed at the next major.** This is the internal
+state writer behind [`setMatchUpStatus`](#setmatchupstatus). Called directly it skips the scoring
+policy's say over the propagation flags, score-string derivation, format validation and the
+exit-propagation cascade, so the draw may not agree with the result. Use `setMatchUpStatus`.
 
 ```js
 engine.setMatchUpState({
