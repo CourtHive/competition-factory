@@ -93,12 +93,13 @@ export function positionSeedBlocks({
         seedPositions.push(...(result.seedPositions ?? []));
       }
       if (result.error) {
-        errors.push({ seedPositionError: result.error });
+        errors.push(result.error);
       }
     }
   });
 
-  if (errors.length) return { error: errors };
+  // one ErrorType, never an array (see destroyPairEntries); every block's failure is in context
+  if (errors.length) return { error: errors[0], context: { seedPositionErrors: errors } };
   return { ...SUCCESS, seedPositions };
 }
 

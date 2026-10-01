@@ -1,7 +1,12 @@
 import { destroyGroupEntry } from './destroyGroupEntry';
 
 // constants and types
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import {
+  ErrorType,
+  MISSING_PARTICIPANT_IDS,
+  MISSING_TOURNAMENT_RECORD,
+  PARTICIPANT_ENTRY_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 import { DrawDefinition, Tournament, Event } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -45,9 +50,10 @@ export function destroyPairEntries(params) {
   if (!params.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   const { participantIds, ...rest } = params;
+  if (!Array.isArray(participantIds) || !participantIds.length) return { error: MISSING_PARTICIPANT_IDS };
 
   let destroyedCount = 0;
-  const errors: any[] = [];
+  const errors: ErrorType[] = [];
 
   for (const participantId of participantIds) {
     const result = destroyGroupEntry({ participantId, ...rest });
@@ -55,5 +61,10 @@ export function destroyPairEntries(params) {
     if (result.error) errors.push(result.error);
   }
 
-  return destroyedCount ? { destroyedCount, ...SUCCESS } : { error: errors };
+  // A refusal is ONE error, never an array: `ResultType.error` is an `ErrorType`, and every
+  // consumer (rollback, a client switching on `error.code`, the golden corpus) reads it as one.
+  // The first failure is the error; every failure is in `context.errors`, on refusal and on a
+  // partial success alike, so a mixed batch no longer swallows what it could not destroy.
+  if (!destroyedCount) return { error: errors[0] ?? PARTICIPANT_ENTRY_NOT_FOUND, context: { errors } };
+  return { destroyedCount, ...SUCCESS, ...(errors.length ? { context: { errors } } : {}) };
 }
