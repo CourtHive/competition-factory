@@ -1,3 +1,4 @@
+import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getDeciderFinals, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
@@ -10,14 +11,16 @@ import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import { PolicyDefinitions, ResultType, ResultWarning } from '@Types/factoryTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
-import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
+import { SCHEDULE_PRESERVED_ON_EXIT } from '@Constants/scheduleConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
 /**
@@ -230,12 +233,21 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   // read BEFORE the mutation: `reconcileDeciders` acts only on a final whose winner has changed
   const finalsBefore = getDeciderFinals(drawDefinition);
+  // ONE map for the whole call. `setMatchUpState` builds this itself unless handed one; building it
+  // here instead lets the before-snapshot and the warning below read the same flat array the
+  // cascade writes through, so neither walks the draw again. Its matchUps are the live objects.
+  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  // which matchUps already could never be played, so the warning names only what THIS call left so
+  const neverPlayedBefore = new Set(
+    matchUpsMap.drawMatchUps.filter((matchUp) => matchUpWillNeverBePlayed({ matchUp })).map((m) => m.matchUpId),
+  );
 
   // DECISION: Delegate to setMatchUpState for core status/score setting logic
   // WHY: Separation of concerns - setMatchUpStatus handles API/validation/orchestration,
   // setMatchUpState handles actual state mutations and participant progression logic
   const result = setMatchUpState({
     matchUpStatusCodes: outcome?.matchUpStatusCodes,
+    matchUpsMap,
     matchUpStatus: outcome?.matchUpStatus,
     winningSide: outcome?.winningSide,
     allowChangePropagation,
@@ -309,7 +321,44 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   if (!result.error) {
     const settled = settleDraw({ finalsBefore, params });
     if (settled.error) return decorateResult({ result: settled, stack });
+    const warnings = schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore });
+    if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
   }
 
   return decorateResult({ result, stack });
+}
+
+/**
+ * A WARNING IN THE SUCCESS PAYLOAD: this call left a BYE or a produced exit holding a court or a time.
+ *
+ * Read off the call's own `matchUpsMap` — no walk of the draw beyond the one the cascade already made.
+ *
+ * The draw state is right — the placement is PRESERVED, by the rule `byeScheduling.ts` states, so a
+ * director mid-swap does not lose their plan — and the read side flags the slot
+ * (`CONFLICT_BYE_SCHEDULED`, `CONFLICT_EXIT_SCHEDULED`). What the read side cannot do is tell the
+ * client that just made the mutation, at the moment it can offer "release these slots?". This does.
+ * Additive and state-free: `executionQueue` passes it through like any other result field, and
+ * nothing here snapshots or restores. CA, 2026-10-01: *"for recoverability we have to keep the
+ * schedules, or perhaps they should imply another notification in the success payload (warning)
+ * that clients can respond to"* — both.
+ *
+ * Only matchUps that became unplayable IN THIS CALL are named: a BYE that held a court before the
+ * call was reported when it was placed, and repeating it on every later score would be noise.
+ */
+function schedulePreservedWarnings({
+  neverPlayedBefore,
+  matchUps,
+}: {
+  neverPlayedBefore: Set<string>;
+  matchUps: MatchUp[];
+}): ResultWarning[] {
+  const matchUpIds = matchUps
+    .filter(
+      (matchUp) =>
+        !neverPlayedBefore.has(matchUp.matchUpId) &&
+        matchUpWillNeverBePlayed({ matchUp }) &&
+        matchUpHoldsScheduling({ matchUp }),
+    )
+    .map((matchUp) => matchUp.matchUpId);
+  return matchUpIds.length ? [{ code: SCHEDULE_PRESERVED_ON_EXIT, matchUpIds }] : [];
 }

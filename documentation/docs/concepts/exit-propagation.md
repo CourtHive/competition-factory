@@ -248,6 +248,16 @@ that produced walkover has been **played on**, a line of the dual is refused wit
 `CANNOT_CHANGE_OUTCOME`, exactly as a direct re-score of the dual is: a played result is never
 reset by a score entered elsewhere.
 
+### An exit never discards a placement, and says when it kept one
+
+A BYE or a produced exit that lands on a scheduled matchUp keeps that matchUp's court, order and
+times — the rule the [schedule governor](/docs/governors/schedule-governor#assigning-a-bye-preserves-scheduling)
+states for BYEs, applied to produced exits since 7.4.1. The read side flags both
+(`CONFLICT_BYE_SCHEDULED`, `CONFLICT_EXIT_SCHEDULED`), and the `setMatchUpStatus` call that left
+them returns `warnings: [{ code: 'SCHEDULE_PRESERVED_ON_EXIT', matchUpIds }]` so the client can
+offer to release the slots. Enforced over the drawSize-8 matrix cells with every matchUp scheduled
+first: no slot moves under any cascade.
+
 ### Nothing to do is success, not failure
 
 Several situations look like a failure to place a participant but are simply an absence of one. The

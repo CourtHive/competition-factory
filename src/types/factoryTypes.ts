@@ -911,8 +911,15 @@ export type DrawMaticArgs = {
   event: Event;
 };
 
+/** a success that still has something to say — the draw is right, and the client may want to act */
+export type ResultWarning = {
+  code: string;
+  matchUpIds?: string[];
+};
+
 export type ResultType = {
   context?: { [key: string]: any };
+  warnings?: ResultWarning[];
   stack?: string | string[];
   errors?: string[];
   error?: ErrorType;

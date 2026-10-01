@@ -1,3 +1,4 @@
+import { matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { generateRange, instanceCount, unique } from '@Tools/arrays';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
@@ -21,6 +22,7 @@ import {
   CONFLICT_POTENTIAL_PARTICIPANTS,
   CONFLICT_COURT_DOUBLE_BOOKING,
   CONFLICT_BYE_SCHEDULED,
+  CONFLICT_EXIT_SCHEDULED,
   CONFLICT_POSITION_LINK,
 } from '@Constants/scheduleConstants';
 
@@ -293,6 +295,14 @@ export function proConflicts({
       // double-booking or participant conflict on the same matchUp still wins.
       if (mappedMatchUps[matchUpId].matchUpStatus === BYE && mappedMatchUps[matchUpId].schedule?.courtId) {
         annotate(matchUpId, SCHEDULE_WARNING, CONFLICT_BYE_SCHEDULED, []);
+      } else if (
+        mappedMatchUps[matchUpId].schedule?.courtId &&
+        matchUpWillNeverBePlayed({ matchUp: mappedMatchUps[matchUpId] })
+      ) {
+        // the same slot, taken by an exit the cascade produced: preserved for the same reason, and
+        // shown for the same reason — a court nobody will play on reads as free otherwise. A code of
+        // its own, so a client can offer "release" against a walkover and "re-seat" against a BYE.
+        annotate(matchUpId, SCHEDULE_WARNING, CONFLICT_EXIT_SCHEDULED, []);
       }
 
       if (participantConflicts[matchUpId]?.[SCHEDULE_WARNING]) {

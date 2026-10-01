@@ -35,9 +35,9 @@ import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatus
 // constants and types
 import { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
@@ -81,6 +81,8 @@ const REVERT_GUARDED_STATUSES = new Set([IN_PROGRESS, SUSPENDED]);
 
 type SetMatchUpStateArgs = {
   tournamentRecords?: { [key: string]: Tournament };
+  /** a caller that already built the draw's matchUp map hands it over rather than having it rebuilt */
+  matchUpsMap?: MatchUpsMap;
   policyDefinitions?: PolicyDefinitions;
   appliedPolicies?: PolicyDefinitions;
   matchUpStatus?: MatchUpStatusUnion;
@@ -134,6 +136,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   if (validationError) return validationError;
 
   const resolved = resolveMatchUpAndContext({
+    matchUpsMap: params.matchUpsMap,
     tournamentRecord,
     drawDefinition,
     matchUpId,
@@ -456,8 +459,24 @@ function validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide
   return undefined;
 }
 
-function resolveMatchUpAndContext({ tournamentRecord, drawDefinition, matchUpId, event, matchUpStatus, winningSide }) {
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+function resolveMatchUpAndContext({
+  tournamentRecord,
+  drawDefinition,
+  matchUpId,
+  event,
+  matchUpStatus,
+  winningSide,
+  matchUpsMap: suppliedMap,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  matchUpStatus?: string;
+  winningSide?: number;
+  matchUpId: string;
+  event?: Event;
+}) {
+  const matchUpsMap = suppliedMap ?? getMatchUpsMap({ drawDefinition });
   const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
     nextMatchUps: true,
     tournamentRecord,
