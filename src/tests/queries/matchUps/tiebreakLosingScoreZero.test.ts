@@ -10,9 +10,10 @@ import { describe, expect, it } from 'vitest';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 /**
- * A tiebreak to love is a tiebreak.
+ * A losing tiebreak score of 0 is a score. The tiebreak is still played to 7 (or 10); the side that
+ * lost it simply won no points, which is what 7-6(0) records.
  *
- * `analyzeSet` tested a tiebreak score with `!score`, so a 0 read as MISSING and every 7-6(0) — the
+ * `analyzeSet` tested a tiebreak score with `!score`, so the loser's 0 read as MISSING and every 7-6(0) — the
  * engine's own output when a tiebreak is swept — was an invalid set to the analysis while the validators,
  * the ScoringEngine and key-value entry all accepted it. `analyzeMatchUp` followed, and
  * `setMatchUpState`'s guard against reverting a COMPLETED matchUp to a live status asks
@@ -28,7 +29,7 @@ const tb = (s1: number, s2: number, t1: number, t2: number, setNumber = 1) => ({
   winningSide: s1 > s2 ? 1 : 2,
 });
 
-describe('a tiebreak to love is a valid set', () => {
+describe('a set whose tiebreak loser scored 0 points is a valid set', () => {
   it('7-6(0) and 6-7(0) are valid set outcomes; a tiebreak the winner LOST is still not', () => {
     const matchUpScoringFormat = parse(FORMAT);
     expect(analyzeSet({ setObject: tb(7, 6, 7, 0), matchUpScoringFormat }).isValidSetOutcome).toBe(true);
@@ -64,7 +65,7 @@ describe('a tiebreak to love is a valid set', () => {
   });
 });
 
-describe('the revert guard no longer fails open on a tiebreak to love', () => {
+describe('the revert guard no longer fails open when a tiebreak loser scored 0 points', () => {
   it('a COMPLETED 7-6(0) 7-6(0) cannot be reverted to IN_PROGRESS without a new outcome', () => {
     const {
       tournamentRecord,
