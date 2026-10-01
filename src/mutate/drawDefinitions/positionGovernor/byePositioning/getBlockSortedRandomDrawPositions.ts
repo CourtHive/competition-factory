@@ -1,4 +1,5 @@
 import { chunkArray, shuffleArray } from '@Tools/arrays';
+import { randomSource } from '@Tools/prng';
 import { isOdd } from '@Tools/math';
 
 /*
@@ -58,7 +59,7 @@ export function getBlockSortedRandomDrawPositions({
   byesToPlace: number;
   random?: () => number;
 }) {
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   const drawPositions: number[] = [];
 
   validSeedBlocks.forEach((seedBlock) => processSeedBlock(seedBlock, byesToPlace, drawPositions, strictOrder, rng));

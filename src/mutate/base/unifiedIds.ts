@@ -1,4 +1,5 @@
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { nowIso } from '@Tools/clock';
 
 /**
  * Shared write-side mechanics for the `Unified*ID` family — the arrays that record an
@@ -104,7 +105,7 @@ export function upsertUnifiedId({
       ...Object.fromEntries(supplied),
       ...(uniqueOrganisationName ? { uniqueOrganisationName } : {}),
       ...(isOrigin ? { isOrigin: true } : {}),
-      createdAt: new Date().toISOString(),
+      createdAt: nowIso(),
     });
     return { changed: true };
   }
@@ -117,7 +118,7 @@ export function upsertUnifiedId({
   for (const [attribute, value] of supplied) existing[attribute] = value;
   if (nameChanges) existing.uniqueOrganisationName = uniqueOrganisationName;
   if (originChanges) existing.isOrigin = true;
-  existing.updatedAt = new Date().toISOString();
+  existing.updatedAt = nowIso();
 
   return { changed: true };
 }

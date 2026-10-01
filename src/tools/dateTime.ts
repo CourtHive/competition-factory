@@ -14,6 +14,7 @@
 
 import { dateValidation, timeValidation, validDateString } from '@Validators/regex';
 import { isDateObject, zeroPad, isDate } from '@Tools/dateTimeInternals';
+import { now } from '@Tools/clock';
 import {
   dateStringDaysChange,
   generateDateRange,
@@ -97,19 +98,19 @@ export function DateHHMM(date): string {
 }
 
 export const getUTCdateString = (date?): string => {
-  const dateDate = isDate(date) || isISODateString(date) ? new Date(date) : new Date();
+  const dateDate = isDate(date) || isISODateString(date) ? new Date(date) : now();
   const monthNumber = dateDate.getUTCMonth() + 1;
   const utcMonth = monthNumber < 10 ? `0${monthNumber}` : `${monthNumber}`;
   return `${dateDate.getUTCFullYear()}-${zeroPad(utcMonth)}-${zeroPad(dateDate.getUTCDate())}`;
 };
 
 export function timeUTC(date?) {
-  const dateDate = isDate(date) || isISODateString(date) ? new Date(date) : new Date();
+  const dateDate = isDate(date) || isISODateString(date) ? new Date(date) : now();
   return Date.UTC(dateDate.getFullYear(), dateDate.getMonth(), dateDate.getDate());
 }
 
 export function offsetDate(date): Date {
-  const targetTime = date ? new Date(date) : new Date();
+  const targetTime = date ? new Date(date) : now();
   const tzDifference = targetTime.getTimezoneOffset();
   return new Date(targetTime.getTime() - tzDifference * 60 * 1000);
 }

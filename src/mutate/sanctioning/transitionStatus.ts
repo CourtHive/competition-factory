@@ -1,4 +1,5 @@
 import { validateStatusTransition } from '@Validators/sanctioning/validateStatusTransition';
+import { nowIso } from '@Tools/clock';
 
 // constants
 import { MISSING_SANCTIONING_RECORD, INVALID_STATUS_TRANSITION } from '@Constants/sanctioningConstants';
@@ -45,7 +46,7 @@ export function transitionStatus({
     if (guardResult.error) return guardResult;
   }
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const transition: StatusTransition = {
     fromStatus: sanctioningRecord.status,

@@ -2,6 +2,7 @@
 import { MISSING_OFFICIAL_RECORD, SUSPENSION_NOT_FOUND } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
@@ -19,7 +20,7 @@ export function removeSuspension({ officialRecord, suspensionId }: RemoveSuspens
   if (index === -1) return { error: SUSPENSION_NOT_FOUND, context: { suspensionId } };
 
   officialRecord.suspensions.splice(index, 1);
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS };
 }

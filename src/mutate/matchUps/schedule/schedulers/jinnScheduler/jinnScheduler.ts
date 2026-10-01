@@ -14,6 +14,7 @@ import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { nowMs } from '@Tools/clock';
 
 // constants
 import { SUCCESS } from '@Constants/resultConstants';
@@ -155,7 +156,7 @@ export function jinnScheduler({
   const scheduledDates = dateSchedulingProfiles.map(({ scheduleDate }) => scheduleDate);
 
   const autoSchedulingAudit = {
-    timeStamp: Date.now(),
+    timeStamp: nowMs(),
     overLimitMatchUpIds,
     scheduledMatchUpIds,
     schedulingProfile,

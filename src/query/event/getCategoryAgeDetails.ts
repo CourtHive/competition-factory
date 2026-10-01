@@ -1,6 +1,7 @@
 import { dateStringDaysChange, extractDate, isValidDateString, zeroPad } from '@Tools/dateTime';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isNumeric } from '@Tools/math';
+import { now } from '@Tools/clock';
 
 // constants and types
 import { INVALID_CATEGORY, INVALID_DATE } from '@Constants/errorConditionConstants';
@@ -32,7 +33,7 @@ export function getCategoryAgeDetails(params: ParseArgs) {
 
   if (!isValidCategory) return { error: INVALID_CATEGORY };
 
-  const consideredDate = params.consideredDate ?? extractDate(new Date().toLocaleDateString('sv'));
+  const consideredDate = params.consideredDate ?? extractDate(now().toLocaleDateString('sv'));
   if (!consideredDate || !isValidDateString(consideredDate)) return { error: INVALID_DATE };
 
   const [consideredYear] = consideredDate

@@ -1,4 +1,5 @@
 import { findExtension } from '@Acquire/findExtension';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { MutationLock, MutationLockScope, MutationLocksValue } from '@Types/mutationLockTypes';
@@ -27,7 +28,7 @@ export function getMutationLocks(params: GetMutationLocksArgs): {
 
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
-  const now = new Date().toISOString();
+  const now = nowIso();
   const result: MutationLockEntry[] = [];
 
   // Helper to extract active locks from an element

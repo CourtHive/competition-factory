@@ -1,6 +1,7 @@
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { findPracticeBooking } from './findPracticeBooking';
 import { addNotice } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { INVALID_VALUES, REGISTRATION_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -47,7 +48,7 @@ export function removePracticeRegistration(params: RemovePracticeRegistrationArg
   if (index < 0) return { error: REGISTRATION_NOT_FOUND };
 
   booking.registrations!.splice(index, 1);
-  booking.updatedAt = occurredAt ?? new Date().toISOString();
+  booking.updatedAt = occurredAt ?? nowIso();
 
   if (!disableNotice && venue) {
     addNotice({

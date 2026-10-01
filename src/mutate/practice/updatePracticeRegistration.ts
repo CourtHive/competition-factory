@@ -3,6 +3,7 @@ import { detectParticipantConflicts, ConflictReport } from './detectConflicts';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { findPracticeBooking } from './findPracticeBooking';
 import { addNotice } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { COURT_ID, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
@@ -60,7 +61,7 @@ type UpdatePracticeRegistrationResult = ResultType & {
 export function updatePracticeRegistration(params: UpdatePracticeRegistrationArgs): UpdatePracticeRegistrationResult {
   const { tournamentRecord, courtId, date, bookingId, registrationId, updates, disableNotice, occurredAt } = params;
 
-  const stampedAt = occurredAt ?? new Date().toISOString();
+  const stampedAt = occurredAt ?? nowIso();
 
   const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
   if (paramsCheck.error) return paramsCheck;

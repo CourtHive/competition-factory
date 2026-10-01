@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -22,7 +23,7 @@ export function createOfficialRecord({
 }: CreateOfficialRecordArgs): { error?: any; officialRecord?: OfficialRecord; success?: boolean } {
   if (!personId) return { error: INVALID_VALUES, context: { message: 'Missing personId' } } as any;
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const officialRecord: OfficialRecord = {
     officialRecordId: officialRecordId || UUID(),

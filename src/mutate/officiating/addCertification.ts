@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -41,7 +42,7 @@ export function addCertification({
   if (!certificationFamily)
     return { error: INVALID_VALUES, context: { message: 'Missing certificationFamily' } } as any;
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const certification: OfficialCertification = {
     certificationId: certificationId || UUID(),

@@ -21,6 +21,7 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { resolvePointValue } from './resolvePointValue';
 import { inferServeSide } from './serveSideCalculator';
 import { isObject } from '@Tools/objects';
+import { nowIso } from '@Tools/clock';
 import type {
   MatchUp,
   AddPointOptions,
@@ -119,7 +120,7 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
     server,
     serverSideNumber: server === undefined ? undefined : ((server + 1) as 1 | 2),
     serverParticipantId: options.serverParticipantId,
-    timestamp: timestamp || new Date().toISOString(),
+    timestamp: timestamp || nowIso(),
   };
 
   if (derivedCode) {
@@ -566,7 +567,7 @@ export function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatS
     if (totals[0] !== totals[1]) {
       matchUp.matchUpStatus = 'COMPLETED';
       matchUp.winningSide = totals[0] > totals[1] ? 1 : 2;
-      matchUp.endTime = new Date().toISOString();
+      matchUp.endTime = nowIso();
     }
     // If tied, match continues (conditional tiebreak set may be added)
     return;
@@ -585,7 +586,7 @@ export function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatS
   const matchWinner = setsWon[0] >= setsToWin ? 0 : 1;
   matchUp.matchUpStatus = 'COMPLETED';
   matchUp.winningSide = matchWinner + 1;
-  matchUp.endTime = new Date().toISOString();
+  matchUp.endTime = nowIso();
 }
 
 /**

@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -30,11 +31,11 @@ export function addReviewNote({ sanctioningRecord, note, reviewerId, reviewerNam
     reviewerId,
     reviewerName,
     note,
-    createdAt: new Date().toISOString(),
+    createdAt: nowIso(),
   };
   sanctioningRecord.reviewNotes.push(reviewNote);
 
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS, noteId: reviewNote.noteId };

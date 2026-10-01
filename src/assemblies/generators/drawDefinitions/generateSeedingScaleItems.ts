@@ -2,6 +2,7 @@ import { ErrorType, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { ScaleAttributes } from '@Types/factoryTypes';
 import { SEEDING } from '@Constants/scaleConstants';
 import { Entry } from '@Types/tournamentTypes';
+import { nowIso } from '@Tools/clock';
 
 type ScaleItemsWithParticipantId = {
   participantId: string;
@@ -33,7 +34,7 @@ export function generateSeedingScaleItems({
   );
 
   scaleName = scaleName || scaleAttributes.scaleName;
-  const scaleDate = new Date().toISOString();
+  const scaleDate = nowIso();
 
   const scaleItemsWithParticipantIds = stageEntries.map(({ participantId }) => {
     const scaleItem = {

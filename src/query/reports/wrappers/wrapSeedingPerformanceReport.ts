@@ -1,5 +1,6 @@
 import { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { SEEDING_PERFORMANCE_REPORT } from '@Constants/reportConstants';
@@ -87,7 +88,7 @@ export function wrapSeedingPerformanceReport({
 
   return {
     reportId: SEEDING_PERFORMANCE_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
   };

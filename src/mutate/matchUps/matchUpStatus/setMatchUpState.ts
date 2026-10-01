@@ -28,6 +28,7 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
+import { nowIso } from '@Tools/clock';
 
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
@@ -661,7 +662,7 @@ function applyScoredTime({ matchUp }) {
 
   if (isScored) {
     if (!matchUp.schedule) matchUp.schedule = {};
-    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = new Date().toISOString();
+    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = nowIso();
   } else if (matchUp.schedule?.scoredTime) {
     delete matchUp.schedule.scoredTime;
   }

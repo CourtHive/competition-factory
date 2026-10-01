@@ -1,4 +1,5 @@
 import { transitionStatus } from './transitionStatus';
+import { nowIso } from '@Tools/clock';
 
 // Constants
 import { MISSING_SANCTIONING_RECORD, CONDITIONALLY_APPROVED } from '@Constants/sanctioningConstants';
@@ -30,7 +31,7 @@ export function conditionallyApprove({ sanctioningRecord, conditions, approvedBy
   });
   if (result.error) return result;
 
-  const now = new Date().toISOString();
+  const now = nowIso();
   sanctioningRecord.conditions ??= [];
   for (const c of conditions) {
     const condition: Condition = {

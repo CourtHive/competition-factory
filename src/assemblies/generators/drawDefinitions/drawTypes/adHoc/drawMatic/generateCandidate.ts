@@ -1,5 +1,6 @@
 import { chunkArray, randomPop, shuffleArray } from '@Tools/arrays';
 import { stringSort } from '@Functions/sorters/stringSort';
+import { randomSource } from '@Tools/prng';
 
 type GenerateCandidateArgs = {
   // participantId -> individualParticipantIds; when absent each participant occupies only itself
@@ -21,7 +22,7 @@ export function generateCandidate({
   deltaObjects,
   random,
 }: GenerateCandidateArgs) {
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   const pairingValueMap = Object.assign({}, ...valueSortedPairings.map((rm) => ({ [rm.pairing]: rm.value })));
 
   const actors = Object.keys(pairingValues);
@@ -165,7 +166,7 @@ function roundCandidate({
   actorsCount,
   random,
 }: RoundCandiateArgs) {
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
 
   // A round occupies people, not entries. A PAIR or TEAM sharing an individual with an entrant already
   // in the round would put that person in two matchUps at once, so each participant occupies its

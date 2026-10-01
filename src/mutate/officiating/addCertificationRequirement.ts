@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -67,7 +68,7 @@ export function addCertificationRequirement({
   };
 
   officialRecord.certificationRequirements.push(certificationRequirement);
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS, certificationRequirement };
 }

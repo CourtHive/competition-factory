@@ -1,4 +1,5 @@
 import { getVenuesReport } from '@Query/venues/venuesReport';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { VENUE_UTILIZATION_REPORT } from '@Constants/reportConstants';
@@ -44,7 +45,7 @@ export function wrapVenuesReport({
 
   return {
     reportId: VENUE_UTILIZATION_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
   };

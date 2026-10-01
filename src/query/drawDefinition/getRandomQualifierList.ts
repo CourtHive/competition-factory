@@ -3,6 +3,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { decorateResult } from '@Functions/global/decorateResult';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { generateRange } from '@Tools/arrays';
+import { randomSource } from '@Tools/prng';
 
 // constants
 import { MISSING_MAIN_STRUCTURE } from '@Constants/errorConditionConstants';
@@ -31,6 +32,6 @@ export const getRandomQualifierList = ({ drawDefinition, random }: GetRandomQual
     qualifierPositions: { drawPosition: number; qualifier: boolean }[];
   } = structureAssignedDrawPositions({ structure: mainStructure });
 
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   return generateRange(0, qualifierPositions.length).sort(() => rng() - 0.5);
 };

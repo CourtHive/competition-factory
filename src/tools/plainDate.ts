@@ -17,6 +17,7 @@
 
 import { dateValidation, validDateString } from '@Validators/regex';
 import { isDate } from '@Tools/dateTimeInternals';
+import { now } from '@Tools/clock';
 
 // matches valid ISO date string
 const re =
@@ -126,7 +127,7 @@ export function dateStringDaysChange(dateString, daysChange): string | undefined
   return extractDate(date.toISOString());
 }
 
-export function weekdays(date: any = new Date(), firstDayOfWeek = 0): string[] {
+export function weekdays(date: any = now(), firstDayOfWeek = 0): string[] {
   if (!isDate(date)) return [];
   const dates = [0, 1, 2, 3, 4, 5, 6].map((i) => dayOfWeek(date, i + firstDayOfWeek));
   return dates;
@@ -149,7 +150,7 @@ export function sameDay(date1, date2) {
 }
 
 export function isDateInPast(dateString: string): boolean {
-  return new Date(dateString) < new Date();
+  return new Date(dateString) < now();
 }
 
 export function localizeDate(submittedDate, dateLocalization, locale): string | undefined {

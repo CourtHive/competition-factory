@@ -2,6 +2,7 @@
 import { MISSING_SANCTIONING_RECORD, MISSING_ENDORSEMENT } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { SanctioningRecord, PersonReference, Endorsement } from '@Types/sanctioningTypes';
@@ -65,7 +66,7 @@ export function requestEndorsement({
   }
 
   syncEndorsement(sanctioningRecord);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS };
@@ -94,12 +95,12 @@ export function endorseApplication({
   if (!endorsement) return { error: MISSING_ENDORSEMENT };
 
   endorsement.status = 'ENDORSED';
-  endorsement.endorsedAt = new Date().toISOString();
+  endorsement.endorsedAt = nowIso();
   if (endorserNotes) endorsement.endorserNotes = endorserNotes;
   if (conditions) endorsement.conditions = conditions;
 
   syncEndorsement(sanctioningRecord);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS };
@@ -122,11 +123,11 @@ export function declineEndorsement({ sanctioningRecord, endorserId, declineReaso
   if (!endorsement) return { error: MISSING_ENDORSEMENT };
 
   endorsement.status = 'DECLINED';
-  endorsement.declinedAt = new Date().toISOString();
+  endorsement.declinedAt = nowIso();
   if (declineReason) endorsement.declineReason = declineReason;
 
   syncEndorsement(sanctioningRecord);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS };

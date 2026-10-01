@@ -2,6 +2,7 @@ import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotif
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getTopics } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 
 // constants
 import { MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -61,13 +62,13 @@ export function addParticipantOtherId({
     if (existing.participantId === otherParticipantId) return { ...SUCCESS }; // idempotent no-op
     existing.participantId = otherParticipantId;
     if (uniqueOrganisationName) existing.uniqueOrganisationName = uniqueOrganisationName;
-    existing.updatedAt = new Date().toISOString();
+    existing.updatedAt = nowIso();
   } else {
     participant.participantOtherIds.push({
       organisationId,
       participantId: otherParticipantId,
       ...(uniqueOrganisationName ? { uniqueOrganisationName } : {}),
-      createdAt: new Date().toISOString(),
+      createdAt: nowIso(),
     });
   }
 

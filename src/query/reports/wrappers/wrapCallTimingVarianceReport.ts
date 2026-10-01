@@ -1,4 +1,5 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { CALL_TIMING_VARIANCE_REPORT } from '@Constants/reportConstants';
@@ -207,7 +208,7 @@ export function wrapCallTimingVarianceReport({
 
   return {
     reportId: CALL_TIMING_VARIANCE_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
     summary,

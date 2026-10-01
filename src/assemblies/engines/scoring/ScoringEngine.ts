@@ -25,6 +25,7 @@ import { getEpisodes } from '@Query/scoring/getEpisodes';
 import { isComplete } from '@Query/scoring/isComplete';
 import { getWinner } from '@Query/scoring/getWinner';
 import { getScore } from '@Query/scoring/getScore';
+import { nowIso } from '@Tools/clock';
 import {
   addPoint,
   deriveServer,
@@ -295,7 +296,7 @@ export class ScoringEngine {
         result: options.result,
         penaltyType: options.penaltyType,
       },
-      timestamp: options.timestamp || new Date().toISOString(),
+      timestamp: options.timestamp || nowIso(),
       pointIndex,
     });
 
@@ -351,7 +352,7 @@ export class ScoringEngine {
     this.state.history!.entries!.push({
       type: 'set',
       data: { ...options, winningSide },
-      timestamp: options.timestamp || new Date().toISOString(),
+      timestamp: options.timestamp || nowIso(),
     });
 
     this.redoStack = [];
@@ -374,7 +375,7 @@ export class ScoringEngine {
     this.state.history!.entries!.push({
       type: 'game',
       data: options,
-      timestamp: options.timestamp || new Date().toISOString(),
+      timestamp: options.timestamp || nowIso(),
     });
 
     this.redoStack = [];
@@ -397,7 +398,7 @@ export class ScoringEngine {
     this.state.history!.entries!.push({
       type: 'endSegment',
       data: { setNumber: currentSetIndex + 1, ...options },
-      timestamp: options?.timestamp || new Date().toISOString(),
+      timestamp: options?.timestamp || nowIso(),
     });
   }
 
@@ -421,7 +422,7 @@ export class ScoringEngine {
     this.state.history!.entries!.push({
       type: 'setInitialScore',
       data: options,
-      timestamp: new Date().toISOString(),
+      timestamp: nowIso(),
     });
 
     // Mark as in-progress
@@ -690,7 +691,7 @@ export class ScoringEngine {
     this.state.history!.entries!.push({
       type: 'setServer',
       data: { side },
-      timestamp: new Date().toISOString(),
+      timestamp: nowIso(),
     });
 
     // Clear redo stack (new branch)
@@ -866,7 +867,7 @@ export class ScoringEngine {
     this.state.history!.entries!.push({
       type: 'substitution',
       data: subEvent,
-      timestamp: options.timestamp || new Date().toISOString(),
+      timestamp: options.timestamp || nowIso(),
     });
 
     this.redoStack = [];

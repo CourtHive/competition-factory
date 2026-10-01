@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // types
@@ -31,7 +32,7 @@ export function buildAttestation({
   state,
   notes,
 }: BuildAttestationArgs): PresenceAttestation {
-  const now = new Date().toISOString();
+  const now = nowIso();
   const attestation: PresenceAttestation = {
     attestationId: attestationId ?? UUID(),
     occurredAt: occurredAt ?? now,

@@ -22,6 +22,7 @@ import { dateValidation, validTimeString } from '@Validators/regex';
 import { isConvertableInteger } from '@Tools/math';
 import { ensureInt } from '@Tools/ensureInt';
 import { isString } from '@Tools/objects';
+import { now } from '@Tools/clock';
 import {
   convertTime,
   dateStringDaysChange,
@@ -88,7 +89,7 @@ function allocatedCourtIds(value: any): string[] | undefined {
 
 function timeDate(value, scheduledDate) {
   const time = validTimeString.test(value) ? value : extractTime(value);
-  const date = extractDate(value) || extractDate(scheduledDate) || formatDate(new Date());
+  const date = extractDate(value) || extractDate(scheduledDate) || formatDate(now());
 
   // doesn't matter if this is invalid due to undefined time because this is used for sorting only
   return new Date(`${date}T${time}`).getTime();

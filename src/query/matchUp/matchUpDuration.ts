@@ -1,5 +1,6 @@
 import { getUTCdateString, dateStringDaysChange } from '@Tools/dateTime';
 import { validTimeString } from '@Validators/regex';
+import { nowMs } from '@Tools/clock';
 
 // constants
 import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME, END_DATE, SCHEDULED_DATE } from '@Constants/timeItemConstants';
@@ -83,7 +84,7 @@ export function matchUpDuration({ matchUp }) {
   );
 
   if ([START_TIME, RESUME_TIME].includes(elapsed.lastType)) {
-    const interval = new Date().getTime() - timeDate(elapsed.lastValue, elapsed.lastType).getTime();
+    const interval = nowMs() - timeDate(elapsed.lastValue, elapsed.lastType).getTime();
     elapsed.milliseconds += interval;
   }
 

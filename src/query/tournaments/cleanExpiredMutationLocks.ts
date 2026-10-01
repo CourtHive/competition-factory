@@ -1,5 +1,6 @@
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
@@ -21,7 +22,7 @@ export function cleanExpiredMutationLocks(params: CleanExpiredArgs): {
 
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
-  const now = new Date().toISOString();
+  const now = nowIso();
   let removedCount = 0;
 
   const cleanElement = (element: any) => {

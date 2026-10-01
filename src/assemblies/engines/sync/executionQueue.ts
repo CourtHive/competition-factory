@@ -10,6 +10,7 @@ import { createSeededRandom } from '@Tools/prng';
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
+import { nowMs } from '@Tools/clock';
 
 export function executionQueue(engine: FactoryEngine, directives: Directives, rollbackOnError?: boolean) {
   if (!Array.isArray(directives)) return { error: INVALID_VALUES, message: 'directives must be an array' };
@@ -51,7 +52,7 @@ export function executionQueue(engine: FactoryEngine, directives: Directives, ro
     }
     results.push({ ...result, methodName });
   }
-  const timeStamp = Date.now();
+  const timeStamp = nowMs(); // reaches the record via the factory extension
 
   const mutationStatus = getMutationStatus({ timeStamp });
   notifySubscribers({ directives, mutationStatus, timeStamp });

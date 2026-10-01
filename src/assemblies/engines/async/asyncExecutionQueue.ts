@@ -5,6 +5,7 @@ import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { nowMs } from '@Tools/clock';
 
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -42,7 +43,7 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
     }
     results.push({ ...result, methodName });
   }
-  const timeStamp = Date.now();
+  const timeStamp = nowMs(); // reaches the record via the factory extension
 
   const mutationStatus = getMutationStatus({ timeStamp });
   await notifySubscribersAsync({ directives, mutationStatus, timeStamp });

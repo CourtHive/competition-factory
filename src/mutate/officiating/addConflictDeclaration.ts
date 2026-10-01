@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -47,7 +48,7 @@ export function addConflictDeclaration({
     } as any;
   }
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const declaration: OfficialConflictDeclaration = {
     declarationId: declarationId || UUID(),

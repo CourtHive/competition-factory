@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -48,7 +49,7 @@ export function addEvaluation({
   if (typeof overallRating !== 'number' || overallRating < 0)
     return { error: INVALID_VALUES, context: { message: 'overallRating must be a non-negative number' } } as any;
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const evaluation: OfficialEvaluation = {
     evaluationId: evaluationId || UUID(),

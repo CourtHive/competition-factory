@@ -8,6 +8,7 @@ import { addNotice, getTopics } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isValidDateString } from '@Tools/dateTime';
 import { findEvent } from '@Acquire/findEvent';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { ADD_SCALE_ITEMS, AUDIT, MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
@@ -163,7 +164,7 @@ export function addParticipantScaleItem({ removePriorValues, participant, scaleI
   //
   // Distinct from `scaleItem.scaleDate`, which is the date the rating APPLIES
   // to; `createdAt` is when it was recorded.
-  const createdAt = scaleItem.createdAt ?? new Date().toISOString();
+  const createdAt = scaleItem.createdAt ?? nowIso();
   participant.timeItems ??= [];
 
   const { scaleItem: existingScaleItem } = participantScaleItem({

@@ -6,6 +6,7 @@ import { latestPresenceState } from '@Acquire/presenceAttestations';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { getTopics } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import {
@@ -69,7 +70,7 @@ export function modifyParticipantsSignInStatus({
   const modifiedParticipants: Participant[] = [];
   // One instant for the whole batch: a bulk sign-in is a single operator action, and letting each
   // entry take its own clock reading would order them arbitrarily within the same second.
-  const batchOccurredAt = occurredAt ?? new Date().toISOString();
+  const batchOccurredAt = occurredAt ?? nowIso();
 
   for (const participant of participants) {
     const { participantId } = participant;

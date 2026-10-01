@@ -1,5 +1,6 @@
 import { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
@@ -52,7 +53,7 @@ export function wrapCompetitivenessReport({
 
   return {
     reportId: COMPETITIVENESS_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
   };

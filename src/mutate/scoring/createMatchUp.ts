@@ -4,6 +4,7 @@
  * Pure function that creates a matchUp with TODS-compliant structure
  */
 
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // Import necessary types
@@ -46,7 +47,7 @@ export function createMatchUp(options: CreateMatchUpOptions): MatchUp {
     matchUpType: type,
     sides,
     score,
-    createdAt: occurredAt ?? new Date().toISOString(),
+    createdAt: occurredAt ?? nowIso(),
   };
 
   return matchUp;

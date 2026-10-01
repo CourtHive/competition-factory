@@ -6,6 +6,7 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { findStructure } from '@Acquire/findStructure';
+import { randomSource } from '@Tools/prng';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
@@ -393,7 +394,7 @@ function placeLuckyLosers({
   winners: any[];
   random?: () => number;
 }) {
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   const numMatchUps = nextRoundMatchUps.length;
   const winnerIds = new Set(winners.map((w) => w.participantId));
 

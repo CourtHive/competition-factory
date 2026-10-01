@@ -1,6 +1,7 @@
 import { sumAgainstBound, describeAmount } from '@Query/sanctioning/comparePrizeMoney';
 import { isDisciplineAllowed } from '@Helpers/coercedDiscipline';
 import { coercedGender } from '@Helpers/coercedGender';
+import { now as clockNow } from '@Tools/clock';
 
 // constants
 import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctioningConstants';
@@ -69,7 +70,7 @@ export function validateProposal({ proposal, sanctioningPolicy, sanctioningTier 
   if (sanctioningPolicy.minimumLeadWeeks || tier?.minimumLeadWeeks) {
     const minWeeks = tier?.minimumLeadWeeks ?? sanctioningPolicy.minimumLeadWeeks ?? 0;
     const startDate = new Date(proposal.proposedStartDate);
-    const now = new Date();
+    const now = clockNow();
     const weeksUntil = (startDate.getTime() - now.getTime()) / (7 * 24 * 60 * 60 * 1000);
     if (weeksUntil < minWeeks) {
       issues.push({

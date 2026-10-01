@@ -1,3 +1,4 @@
+import { randomSource } from '@Tools/prng';
 import { ensureInt } from './ensureInt';
 import { numericSort } from './sorting';
 import { isString } from './objects';
@@ -58,7 +59,7 @@ export function randomInt(min, max, random?: () => number) {
   min = Math.ceil(min);
   max = Math.floor(max);
 
-  return Math.floor((random ?? Math.random)() * (max - min + 1)) + min;
+  return Math.floor((random ?? randomSource())() * (max - min + 1)) + min;
 }
 
 // does accept e.e. '1.0'
@@ -69,7 +70,7 @@ export function isConvertableInteger(n) {
 
 // produces an approximated normal distribution between 0 and max
 export function weightedRandom(max = 1, weight = 3, round = true, random?: () => number) {
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   let num = 0;
   for (let i = 0; i < weight; i++) {
     num += rng() * (max / weight);
@@ -92,7 +93,7 @@ export function skewedDistribution(
   significantDecimals = 2,
   random?: () => number,
 ) {
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   const u = 1 - rng();
 
   const v = 1 - rng();
