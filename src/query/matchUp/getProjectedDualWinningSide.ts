@@ -6,6 +6,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 // constants types and fixtures
 import { DrawDefinition, Event, MatchUp, Structure, TieFormat } from '@Types/tournamentTypes';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -38,10 +39,21 @@ export function getProjectedDualWinningSide({
     if (tieMatchUp.matchUpId === matchUp.matchUpId) {
       tieMatchUp.winningSide = winningSide;
       tieMatchUp.score = score;
-      if (!checkScoreHasValue({ score }) && !matchUpStatus) {
+      /**
+       * THE PROJECTION MIRRORS THE WRITE. A line entered as a bare `{ winningSide }` — no score, no
+       * status — is recorded COMPLETED with that winner (`applyMatchUpValues`: `winningSide && COMPLETED`),
+       * and `updateTieMatchUpScore` then counts it. This read the same outcome as a CLEAR, projected the
+       * dual undecided, and `directParticipants` — gated on the projected winner changing — never
+       * advanced the dual's winner: COMPLETED 2-0 with nobody in the next round, WINNER_NOT_ADVANCED on
+       * every one of the TEAM matrix's 240 line-level cells on first contact (2026-10-01). Only an
+       * outcome with NO winner and no score and no status is a clear.
+       */
+      if (!winningSide && !checkScoreHasValue({ score }) && !matchUpStatus) {
         Object.assign(tieMatchUp, { ...toBePlayed });
       } else if (matchUpStatus) {
         tieMatchUp.matchUpStatus = matchUpStatus;
+      } else if (winningSide) {
+        tieMatchUp.matchUpStatus = COMPLETED;
       }
     }
   }
