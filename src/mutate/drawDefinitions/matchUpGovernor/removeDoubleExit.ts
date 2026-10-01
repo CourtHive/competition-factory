@@ -90,12 +90,16 @@ export function removeDoubleExit(params) {
       keyColors,
       stage,
     });
-    conditionallyRemoveDrawPosition({
+    // and its result is READ: a failed write on the winner target used to be walked past, the
+    // loser target visited anyway, and the caller told the unwind succeeded
+    // (`cascadeWriteErrorsReachTheCaller.test.ts`, 2026-10-01)
+    const winnerResult = conditionallyRemoveDrawPosition({
       ...params,
       targetMatchUp: winnerMatchUp,
       sourceMatchUp: matchUp,
       iteration,
     });
+    if (winnerResult?.error) return decorateResult({ result: winnerResult, stack });
   }
 
   // Did this cascade place the BYE that is sitting on the loserMatchUp?
