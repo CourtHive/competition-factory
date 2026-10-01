@@ -44,8 +44,15 @@ was. A consumer re-checks it by replaying the step pair the property describes.
 > "DO_UNDO_IDENTITY — applying an outcome and then clearing it must restore the prior draw."
 
 The residue detector: a cascade that writes N matchUps forward and unwinds N-1 of them leaves a
-draw that passes every single-state check. The canonical hash of the draw before the outcome and
-after the clear must be equal.
+draw that passes every single-state check. Compared on the harness's projection of the DRAW
+(`projectDraw` in `transitions.ts`) with the volatile keys stripped, quoting its own list:
+
+> "Keys whose values change on every write and carry no semantics for these properties."
+> `['updatedAt', 'createdAt', 'timeStamp', 'timestamp']`
+
+So the whole-record canonical hash is NOT the test: a clock stamp moves it on every write, and
+that is noise, not residue. A consumer evaluating this property re-implements the projection:
+the draw definition, keys sorted, those four keys removed at every depth.
 
 ### `IDEMPOTENT_REAPPLY`
 

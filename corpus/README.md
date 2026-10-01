@@ -81,6 +81,19 @@ scenarios with the first error each. The run is opt-in and leaves the ordinary s
 a handful of tests that use fake timers or assert on wall-clock expiry fail under recording, and
 their scenarios are simply not produced.
 
+## The real-record fixtures as sources (C2c)
+
+```bash
+pnpm corpus:fixtures          # .corpus-out/fixtures/fixtures.jsonl, one scenario per fixture
+```
+
+`src/tests/testHarness/corpus/fixtureSources.ts` turns each of the sixteen `*.tods.json` records
+under `src/tests/testHarness/` into a scenario whose initial state is the record itself, with one
+authored probe: score the first playable matchUp, then clear it. When the clear restores the initial
+hash the scenario records `DO_UNDO_IDENTITY`. These are records real tournaments produced, with
+shapes mocks never emit; a reader that parses all sixteen has parsed the wild. The harness tests
+that already drive these fixtures are harvested by the recorder and are not repeated here.
+
 ## Known failures
 
 A scenario may carry `knownFailure: "<tracker ref>"`. It pins what the engine does today, not what
