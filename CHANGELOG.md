@@ -1,5 +1,26 @@
 # Changelog
 
+## [7.4.0](https://github.com/CourtHive/competition-factory/compare/v7.3.1...v7.4.0) (2026-10-01)
+
+
+### Features
+
+* **codes:** publish tournament.schema.json at a package subpath ([#5056](https://github.com/CourtHive/competition-factory/issues/5056)) ([c68fadd](https://github.com/CourtHive/competition-factory/commit/c68fadda888ebbad04673babece1b6de3ba37153))
+
+
+### Bug Fixes
+
+* **codes:** the schema declares matchUp.schedule, the shape 5.0.0 made canonical ([#5052](https://github.com/CourtHive/competition-factory/issues/5052)) ([a29e613](https://github.com/CourtHive/competition-factory/commit/a29e613467b76ff032203b772a4fe091b60590a1))
+* **deps:** brace-expansion moves to 5.0.12 for two high advisories ([#5044](https://github.com/CourtHive/competition-factory/issues/5044)) ([1cc4823](https://github.com/CourtHive/competition-factory/commit/1cc482359218374831878b89c67b3349c24c2355))
+* **deps:** update tods-competition-factory to 7.3.1 in the documentation site ([#5041](https://github.com/CourtHive/competition-factory/issues/5041)) ([0571ff0](https://github.com/CourtHive/competition-factory/commit/0571ff0c7d2064d24ad5169891a254bb3ed33a17))
+* **draws:** a corrected final keeps the decider its double exit placed; a deep-correction oracle ([#5047](https://github.com/CourtHive/competition-factory/issues/5047)) ([f77192f](https://github.com/CourtHive/competition-factory/commit/f77192f6e7ecbc5cef22600d73a3c669c5dab41b))
+* **draws:** a seat advanced by its opponent's BYE keeps that advancement when its occupant leaves ([#5053](https://github.com/CourtHive/competition-factory/issues/5053)) ([990cea6](https://github.com/CourtHive/competition-factory/commit/990cea6eb74d6f80a9cf2b5c4932eb98aed95f53))
+* **draws:** clearing a second-round double exit in an FMLC withdraws the BYE it propagated ([#5051](https://github.com/CourtHive/competition-factory/issues/5051)) ([ce2e360](https://github.com/CourtHive/competition-factory/commit/ce2e360b0b2f850f54eae2986ba5912e25460371))
+* **draws:** two of the deep oracle's baseline shapes — a cross-link release and a seated-side arrival ([#5050](https://github.com/CourtHive/competition-factory/issues/5050)) ([5508771](https://github.com/CourtHive/competition-factory/commit/550877177b109a6369039c6d7034f6334141840d))
+* **scoring:** a side facing 5 can still reach 7, because 7-5 needs no tiebreak ([#5043](https://github.com/CourtHive/competition-factory/issues/5043)) ([1e0915e](https://github.com/CourtHive/competition-factory/commit/1e0915ef6cf6a2ade63f928d296828459a8024a8))
+* **scoring:** a tiebreak is won at its target, and the set winner must win it ([#5049](https://github.com/CourtHive/competition-factory/issues/5049)) ([c853fb2](https://github.com/CourtHive/competition-factory/commit/c853fb212ceca6f5bff35cfea725bb271ee718d8))
+* **team:** scoring a line of a double-walkover dual unwinds the double exit, or is refused ([#5054](https://github.com/CourtHive/competition-factory/issues/5054)) ([b5161e3](https://github.com/CourtHive/competition-factory/commit/b5161e3e8cdb1394170725968b8fc4d6282035eb))
+
 ## [7.3.1](https://github.com/CourtHive/competition-factory/compare/v7.3.0...v7.3.1) (2026-09-29)
 
 
