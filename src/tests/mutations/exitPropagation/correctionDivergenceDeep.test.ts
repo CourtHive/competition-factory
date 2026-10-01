@@ -1,3 +1,4 @@
+import { MATRIX_EXTENSION_DRAW_TYPES, isUnpopulatedLuckyDraw } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { deepCorrectionScenario, compareCorrection } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import type { DivergenceConfig } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -44,6 +45,12 @@ import {
  * - **refused** — the correction alone is refused (`CANNOT_CHANGE_*`): a load-bearing outcome, by
  *   CA's rule of 2026-09-21. None on the first run: nothing in the cone is played after the mistake.
  * - **severe** — status, winner or positions differ. THE RATCHET.
+ *
+ * ## The draw-type extension — 2026-10-01
+ *
+ * The seven types the 600-cell matrix never exercised (`matrixCells.ts`, `MATRIX_EXTENSION_DRAW_TYPES`)
+ * run here too, from their own seed base so the 960 kept their draws. Measured on first contact:
+ * 640 identical, 0 severe, 0 provenance-only; 1,600 cells in ~4.5 minutes locally.
  *
  * ## The baseline, and what each of its cells is — measured 2026-09-30
  *
@@ -104,10 +111,11 @@ const POLICIES: { label: string; doubleExitPropagateBye?: boolean }[] = [
   { label: 'EXIT', doubleExitPropagateBye: false },
 ];
 
-// five minutes over 960 cells: run by `pnpm verify` and CI, not by every `pnpm test`
+// five minutes over 1,600 cells: run by `pnpm verify` and CI, not by every `pnpm test`
 const enabled = process.env.DEEP_CORRECTIONS === '1';
 
-const BASELINE = { cells: 960, severe: 0, incomparable: 4, provenanceOnly: 0 };
+// 960 baseline cells + 672 extension cells - 32 unpopulated lucky draws
+const BASELINE = { cells: 1600, severe: 0, incomparable: 4, provenanceOnly: 0 };
 
 function alternative(outcome: any): any {
   switch (outcome?.matchUpStatus) {
@@ -137,18 +145,32 @@ const withoutProvenance = (signature: string) => signature.replace(/ prov=[^ ]*/
 
 type Bucket = 'identical' | 'provenanceOnly' | 'incomparable' | 'refused' | 'severe';
 
-/** Every cell of the sweep, each with its own seed. */
+/**
+ * Every cell of the sweep, each with its own seed.
+ *
+ * The 960 keep the seeds they were baselined with; the draw-type extension (G1/G12, 2026-10-01)
+ * is composed the same way from its own base, so adding it moved nobody. A LUCKY_DRAW three seats
+ * short is skipped here for the reason `matrixCells.ts` gives: `mocksEngine` places nobody in it.
+ */
 function cells(): { config: DivergenceConfig; cellExit: any; label: string }[] {
+  return [...composeCells(DRAW_TYPES, 7000000), ...composeCells(MATRIX_EXTENSION_DRAW_TYPES, 7100000)];
+}
+
+function composeCells(
+  drawTypes: string[],
+  seedBase: number,
+): { config: DivergenceConfig; cellExit: any; label: string }[] {
   const out: { config: DivergenceConfig; cellExit: any; label: string }[] = [];
-  let seed = 7000000;
+  let seed = seedBase;
   for (const policy of POLICIES)
-    for (const drawType of DRAW_TYPES)
+    for (const drawType of drawTypes)
       for (const drawSize of [8, 16])
         for (const reduction of [0, 1, 3])
           for (const cellExit of EXITS)
             for (const propagateExitStatus of [true, false]) {
               seed += 1;
               const participantsCount = drawSize - reduction;
+              if (isUnpopulatedLuckyDraw({ drawType, drawSize, participantsCount })) continue;
               out.push({
                 config: {
                   doubleExitPropagateBye: policy.doubleExitPropagateBye,
