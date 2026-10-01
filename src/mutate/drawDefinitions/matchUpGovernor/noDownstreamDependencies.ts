@@ -8,6 +8,7 @@ import { checkConnectedStructures } from './checkConnectedStructures';
 import { attemptToSetWinningSide } from './attemptToSetWinningSide';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { attemptToModifyScore } from './attemptToModifyScore';
+import { unwindDualDoubleExit } from './unwindDualDoubleExit';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { removeDoubleExit } from './removeDoubleExit';
@@ -56,6 +57,13 @@ export function noDownstreamDependencies(params) {
     const result = removeDoubleExit(params);
     if (result.error) return decorateResult({ result, stack });
   }
+
+  // the same cleanup for the DUAL this tieMatchUp belongs to, whichever branch below the line takes:
+  // a line with a winner goes through `attemptToSetWinningSide` and `directParticipants`, one without
+  // through `scoreModification`, and both end in `updateTieMatchUpScore` writing the dual's status
+  // without ever passing through this function for the dual itself
+  const dualUnwound = unwindDualDoubleExit(params);
+  if (dualUnwound.error) return decorateResult({ result: dualUnwound, stack });
 
   // `=== DOUBLE_WALKOVER` meant "is the incoming status a double exit", and the line directly above
   // asks the same question correctly with `[DOUBLE_WALKOVER, DOUBLE_DEFAULT]` — the file

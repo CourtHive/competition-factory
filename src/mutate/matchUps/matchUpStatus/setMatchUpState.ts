@@ -1,14 +1,12 @@
-import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
+import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
-import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
-
-import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
@@ -30,6 +28,8 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
+
+import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
 // constants and types
 import { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
@@ -592,6 +592,27 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
    * produced exits are carried onward). Anything else has sent nothing.
    */
   const hasPropagated = !!matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus);
+
+  /**
+   * A LINE OF A DUAL THAT HOLDS A DOUBLE EXIT, WITH THE DUAL'S DOWNSTREAM ACTIVE, IS REFUSED — as a
+   * direct re-score of that dual is.
+   *
+   * `hasPropagated` reads the LINE, which has sent nothing, so every line took the no-downstream
+   * branch however active the dual's downstream was. Scoring it then recomputed the dual out of its
+   * double exit, and the unwind that follows (`unwindDualDoubleExit`) would take back a produced
+   * walkover whose winner has already PLAYED the next round — measured 2026-10-01 on a TEAM
+   * SINGLE_ELIMINATION 8: the final, COMPLETED 2-0, reset to TO_BE_PLAYED with one team left in it.
+   * The dual's own re-score is refused in exactly this state by `winningSideWithDownstreamDependencies`;
+   * its lines get the same answer.
+   */
+  if (params.isCollectionMatchUp && isDoubleExit(params.dualMatchUp?.matchUpStatus) && activeDownstream) {
+    return decorateResult({
+      result: { error: CANNOT_CHANGE_OUTCOME },
+      info: 'the dual holds a double exit whose produced result has been played on',
+      context: { dualMatchUpId: params.dualMatchUp.matchUpId, dualMatchUpStatus: params.dualMatchUp.matchUpStatus },
+      stack,
+    });
+  }
 
   let result;
   if (!activeDownstream || !hasPropagated) {
