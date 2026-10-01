@@ -161,13 +161,16 @@ TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `s
 5. **The schedule the call carried is applied after the outcome is accepted**, and was validated
    before it, so a refusal cannot land on a draw this call has just changed.
 
-**OPEN (found by the corpus on real records, 2026-10-02):** rule 1 means a clear **normalises rather
-than restores**. On a record whose matchUp had no `matchUpStatus` and no `score`, a score-then-clear
-leaves `matchUpStatus: "TO_BE_PLAYED"` and an explicit score object; measured on 4 of 11 probed
-fixtures, with `DO_UNDO_IDENTITY` (on the harness's volatility-stripped projection) holding on the
-other 7. And a clear erases a matchUp-level `matchUpFormat`, because the fixture carries
-`matchUpFormat: undefined`. Whether a clear should restore absence, and whether it should keep the
-format, are decisions this spec does not make.
+**Decided 2026-10-01 (CA), found by the corpus on real records:** rule 1 means a clear
+**normalises rather than restores**. On a record whose matchUp had no `matchUpStatus` and no
+`score`, a score-then-clear leaves `matchUpStatus: "TO_BE_PLAYED"` and an explicit score object;
+measured on 4 of 11 probed fixtures. That stays: TO_BE_PLAYED and an empty score object are the
+canonical cleared state, and a reader never sees an undefined status. **A clear keeps a
+matchUp-level `matchUpFormat`**: the format is a property of the match, not of its result. The
+blank fixture still carries `matchUpFormat: undefined`, because it is the unwound-matchUp shape, and
+`applyScoreAndStatus` now carries the existing format across it the way it carries exit provenance;
+a call that brings a new format still writes the new one. Pinned by
+`clearKeepsMatchUpFormat.test.ts`.
 
 ## 5. The side effects, in order
 
@@ -240,7 +243,7 @@ deferred to S2b, not a divergence. `OUTCOME_PIPELINE=differential vitest run` is
 
 1. A clear **keeps normalising**: TO_BE_PLAYED and an empty score object are the canonical cleared
    state. It **keeps a matchUp-level `matchUpFormat`**: the format is a property of the match, not of
-   its result. (§ 4; the format fix is its own PR.)
+   its result. (§ 4; landed.)
 2. Where `ERR_FORCED` comes from on this path is still untraced. (§ 2, row 19)
 3. `setMatchUpState` **leaves the governor**; its internal callers keep it. (§ 8; its own PR)
 4. The flags: **the policy governs, both ways.** (§ 1, landed with this revision)
