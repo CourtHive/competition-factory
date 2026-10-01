@@ -81,6 +81,21 @@ scenarios with the first error each. The run is opt-in and leaves the ordinary s
 a handful of tests that use fake timers or assert on wall-clock expiry fail under recording, and
 their scenarios are simply not produced.
 
+## The oracles as sources (C2b)
+
+```bash
+pnpm corpus:oracles                        # matrix, stall-budget policy arm, census, route flips
+SEED_COUNT=50 CORPUS_FLIPS=3 pnpm corpus:oracles
+```
+
+`src/tests/testHarness/corpus/oracleSources.ts` runs each existing oracle unchanged under the
+recorder and names what it did: `oracle/matrix/<cell>`, `oracle/stall-budget/<cell>`,
+`oracle/census/<drawType>-<size>/seed-<n>`, `oracle/route/<drawType>-<n>/play-forward` and
+`…/flip-<i>` (a flip replays twice, so it arrives as parts). Each scenario's `source.ref` says how
+to regenerate it. `src/tests/corpus/oracleSources.test.ts` always records a smoke slice of every
+oracle to a temp dir and requires each scenario to validate, read back and replay; the full write
+runs only with `CORPUS_ORACLES=1` and goes to `.corpus-out/oracles/`, ignored.
+
 ## Known failures
 
 A scenario may carry `knownFailure: "<tracker ref>"`. It pins what the engine does today, not what
