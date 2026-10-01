@@ -1,0 +1,648 @@
+{
+  "coreMethods": 120,
+  "methodsWithSteps": 100,
+  "observedDeclaredCodes": 144,
+  "declaredCodes": 308,
+  "methods": {
+    "abandonTournamentMatchUps": {
+      "steps": 8,
+      "observedCodes": []
+    },
+    "addAdHocMatchUps": {
+      "steps": 62,
+      "observedCodes": ["ERR_EXISTING_MATCHUP_ID", "ERR_MISSING_DRAWDEF"]
+    },
+    "addDrawDefinitionTimeItem": {
+      "steps": 4,
+      "observedCodes": ["ERR_INVALID_TIME_ITEMS", "ERR_MISSING_TIME_ITEM"]
+    },
+    "addDrawEntries": {
+      "steps": 25,
+      "observedCodes": [
+        "ERR_MISSING_ENTRIES",
+        "ERR_MISSING_PARTICIPANT_IDS",
+        "ERR_NOT_FOUND_EVENT",
+        "ERR_SHARED_INDIVIDUAL_PARTICIPANT"
+      ]
+    },
+    "addDrawOtherId": {
+      "steps": 17,
+      "observedCodes": ["ERR_INVALID_VALUES", "ERR_MISSING_VALUE"]
+    },
+    "addEventEntries": {
+      "steps": 370,
+      "observedCodes": [
+        "ERR_INVALID_PARTICIPANT_IDS",
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_PARTICIPANT_IDS",
+        "ERR_NOT_FOUND_EVENT"
+      ]
+    },
+    "addEventEntryPairs": {
+      "steps": 46,
+      "observedCodes": ["ERR_INVALID_EVENT_TYPE", "ERR_INVALID_PARTICIPANT_IDS", "ERR_MISSING_EVENT_ID"]
+    },
+    "addFinishingRounds": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "addLinkedConsolationStructure": {
+      "steps": 6,
+      "observedCodes": ["ERR_MISSING_DRAWDEF", "ERR_MISSING_STRUCTURE"]
+    },
+    "addPlayoffStructures": {
+      "steps": 38,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "addPoint": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "addQualifyingStructure": {
+      "steps": 7,
+      "observedCodes": ["ERR_MISSING_DRAWDEF", "ERR_MISSING_STRUCTURE_ID"]
+    },
+    "addVoluntaryConsolationStructure": {
+      "steps": 1,
+      "observedCodes": []
+    },
+    "adHocPositionSwap": {
+      "steps": 5,
+      "observedCodes": ["ERR_INVALID_PARTICIPANT_IDS", "ERR_INVALID_STRUCTURE"]
+    },
+    "alternateDrawPositionAssignment": {
+      "steps": 19,
+      "observedCodes": []
+    },
+    "applyLineUps": {
+      "steps": 8,
+      "observedCodes": ["ABORT_UNCHANGED", "ERR_INVALID_MATCHUP", "ERR_INVALID_VALUES"]
+    },
+    "assignDrawPosition": {
+      "steps": 124,
+      "observedCodes": [
+        "ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT",
+        "ERR_EXISTING_POSITION_ASSIGNMENT",
+        "ERR_INVALID_DRAW_POSITION",
+        "ERR_MISSING_DRAW_POSITION",
+        "ERR_MISSING_STRUCTURE_ID"
+      ]
+    },
+    "assignDrawPositionBye": {
+      "steps": 87,
+      "observedCodes": [
+        "ERR_ACTIVE_DRAW_POSITION",
+        "ERR_EXISTING_POSITION_ASSIGNMENT",
+        "ERR_LUCKY_DRAW_BYE_LIMIT",
+        "ERR_MATCHUP_HAS_SCHEDULING"
+      ]
+    },
+    "assignMatchUpSideParticipant": {
+      "steps": 27,
+      "observedCodes": [
+        "ERR_EXISTING_ROUND_PARTICIPANT",
+        "ERR_INVALID_DRAW_TYPE",
+        "ERR_INVALID_PARTICIPANT_ID",
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_MATCHUP_ID",
+        "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+        "ERR_UNCHANGED_CANNOT_REMOVE_PARTICIPANTS"
+      ]
+    },
+    "assignTieMatchUpParticipantId": {
+      "steps": 791,
+      "observedCodes": [
+        "ERR_INVALID_PARTICIPANT",
+        "ERR_INVALID_PARTICIPANT_TYPE",
+        "ERR_INVALID_SIDE_NUMBER",
+        "ERR_MISSING_DRAW_ID",
+        "ERR_MISSING_PARTICIPANT_ID",
+        "ERR_NOT_FOUND_MATCHUP",
+        "ERR_NOT_FOUND_PARTICIPANT",
+        "ERR_NOT_FOUND_TEAM"
+      ]
+    },
+    "attachConsolationStructures": {
+      "steps": 6,
+      "observedCodes": []
+    },
+    "attachPlayoffStructures": {
+      "steps": 17,
+      "observedCodes": ["ERR_EXISTING_STRUCTURE"]
+    },
+    "attachQualifyingStructure": {
+      "steps": 5,
+      "observedCodes": [
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_LINK_TARGET",
+        "ERR_MISSING_STRUCTURE",
+        "ERR_NOT_FOUND_STRUCTURE"
+      ]
+    },
+    "attachStructures": {
+      "steps": 3,
+      "observedCodes": ["ERR_INVALID_STRUCTURE"]
+    },
+    "automatedPlayoffPositioning": {
+      "steps": 22,
+      "observedCodes": ["ERR_INCOMPLETE_STRUCTURE"]
+    },
+    "automatedPositioning": {
+      "steps": 17,
+      "observedCodes": []
+    },
+    "autoSeeding": {
+      "steps": 5,
+      "observedCodes": []
+    },
+    "bulkMatchUpStatusUpdate": {
+      "steps": 1,
+      "observedCodes": []
+    },
+    "calculatePointsTo": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "checkInParticipant": {
+      "steps": 45,
+      "observedCodes": [
+        "ERR_INVALID_ATTESTATION_SUBJECT",
+        "ERR_INVALID_ATTRIBUTION",
+        "ERR_INVALID_PARTICIPANT_ID",
+        "ERR_UNSUPPORTED_IN_LEGACY_MODE"
+      ]
+    },
+    "checkOutParticipant": {
+      "steps": 16,
+      "observedCodes": [
+        "ERR_INVALID_ACTION",
+        "ERR_INVALID_ATTESTATION_SUBJECT",
+        "ERR_INVALID_PARTICIPANT_ID",
+        "ERR_MISSING_MATCHUP_ID",
+        "ERR_MISSING_PARTICIPANT_ID",
+        "ERR_UNCHANGED_PARTICIPANT_NOT_CHECKED_IN"
+      ]
+    },
+    "createMatchUp": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "deleteAdHocMatchUps": {
+      "steps": 15,
+      "observedCodes": ["ERR_SCORES_PRESENT"]
+    },
+    "destroyPairEntries": {
+      "steps": 3,
+      "observedCodes": []
+    },
+    "destroyPairEntry": {
+      "steps": 7,
+      "observedCodes": [
+        "ERR_INVALID_PARTICIPANT_TYPE",
+        "ERR_MISSING_EVENT_ID",
+        "ERR_MISSING_PARTICIPANT_ID",
+        "ERR_NOT_FOUND_PARTICIPANT"
+      ]
+    },
+    "disableTieAutoCalc": {
+      "steps": 2,
+      "observedCodes": []
+    },
+    "drawMatic": {
+      "steps": 66,
+      "observedCodes": ["ERR_INVALID_DRAWDEF", "ERR_INVALID_VALUES", "ERR_MISSING_PARTICIPANT_IDS"]
+    },
+    "enableTieAutoCalc": {
+      "steps": 5,
+      "observedCodes": []
+    },
+    "findMatchUp": {
+      "steps": 150,
+      "observedCodes": []
+    },
+    "generateAdHocMatchUps": {
+      "steps": 21,
+      "observedCodes": [
+        "ERR_INVALID_STRUCTURE",
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_DRAWDEF",
+        "ERR_SHARED_INDIVIDUAL_PARTICIPANT"
+      ]
+    },
+    "generateAdHocRounds": {
+      "steps": 3,
+      "observedCodes": ["ERR_SHARED_INDIVIDUAL_PARTICIPANT"]
+    },
+    "generateAndPopulatePlayoffStructures": {
+      "steps": 37,
+      "observedCodes": ["ERR_INVALID_VALUES", "ERR_MISSING_VALUE", "ERR_NOT_FOUND_STRUCTURE"]
+    },
+    "generateConsolationStructure": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "generateCourts": {
+      "steps": 1,
+      "observedCodes": []
+    },
+    "generateDrawDefinition": {
+      "steps": 392,
+      "observedCodes": [
+        "ERR_INVALID_DRAW_SIZE",
+        "ERR_INVALID_TIE_FORMAT",
+        "ERR_INVALID_VALUES",
+        "ERR_SHARED_INDIVIDUAL_PARTICIPANT",
+        "ERR_UNRECOGNIZED_DRAW_TYPE"
+      ]
+    },
+    "generateDrawMaticRound": {
+      "steps": 12,
+      "observedCodes": []
+    },
+    "generateDrawStructuresAndLinks": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "generateDrawTypeAndModifyDrawDefinition": {
+      "steps": 3,
+      "observedCodes": []
+    },
+    "generateFlightProfile": {
+      "steps": 20,
+      "observedCodes": ["ERR_EXISTING_FLIGHT_PROFILE"]
+    },
+    "generateLineUps": {
+      "steps": 252,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "generateQualifyingStructure": {
+      "steps": 18,
+      "observedCodes": ["ERR_INVALID_VALUES", "ERR_MISSING_DRAW_SIZE", "ERR_NOT_FOUND_STRUCTURE"]
+    },
+    "generateSeedingScaleItems": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "generateStatCrew": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "generateSwissRound": {
+      "steps": 17,
+      "observedCodes": ["ERR_SHARED_INDIVIDUAL_PARTICIPANT"]
+    },
+    "generateVoluntaryConsolation": {
+      "steps": 15,
+      "observedCodes": ["ERR_EXISTING_STRUCTURE", "ERR_INVALID_DRAW_SIZE"]
+    },
+    "inferServeSide": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "initializeDraft": {
+      "steps": 47,
+      "observedCodes": ["ERR_EXISTING_DRAFT", "ERR_INVALID_VALUES", "ERR_NO_VALID_ATTRIBUTES"]
+    },
+    "isAggregateFormat": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "isValid": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "isValidMatchUpFormat": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "luckyDrawAdvancement": {
+      "steps": 32,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "luckyLoserDrawPositionAssignment": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "modifyDrawDefinition": {
+      "steps": 10,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "modifyDrawName": {
+      "steps": 6,
+      "observedCodes": ["ERR_MISSING_DRAWDEF"]
+    },
+    "modifyEntriesStatus": {
+      "steps": 64,
+      "observedCodes": [
+        "ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT",
+        "ERR_INVALID_ENTRY_STATUS",
+        "ERR_INVALID_ENTRY_STATUS_IN_EVENT",
+        "ERR_INVALID_PARTICIPANT_ID",
+        "ERR_INVALID_STAGE",
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_EVENT_ID",
+        "ERR_MISSING_VALUE"
+      ]
+    },
+    "modifyEventEntries": {
+      "steps": 12,
+      "observedCodes": ["ERR_INVALID_PARTICIPANT_IDS", "ERR_MISSING_EVENT_ID"]
+    },
+    "modifySeedAssignment": {
+      "steps": 3,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "parse": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "promoteAlternate": {
+      "steps": 15,
+      "observedCodes": [
+        "ERR_INVALID_ENTRY_STATUS",
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_EVENT_ID",
+        "ERR_NOT_FOUND_PARTICIPANT_ENTRY",
+        "ERR_NOT_FOUND_PARTICIPANT_IN_STAGE",
+        "ERR_UNCHANGED_PARTICIPANT_NOT_ENTERED"
+      ]
+    },
+    "promoteAlternates": {
+      "steps": 3,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "pruneDrawDefinition": {
+      "steps": 6,
+      "observedCodes": []
+    },
+    "qualifierDrawPositionAssignment": {
+      "steps": 9,
+      "observedCodes": []
+    },
+    "qualifierProgression": {
+      "steps": 21,
+      "observedCodes": ["ERR_MISSING_QUALIFIED_PARTICIPANTS", "ERR_UNCHANGED_NO_DRAW_POSITIONS_FOR_QUALIFIERS"]
+    },
+    "remapDrawDefinitionMatchUpIds": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "removeDelegatedOutcome": {
+      "steps": 4,
+      "observedCodes": ["ERR_MISSING_MATCHUP_ID", "ERR_NOT_FOUND_MATCHUP"]
+    },
+    "removeDrawEntries": {
+      "steps": 5,
+      "observedCodes": [
+        "ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT",
+        "ERR_MISSING_DRAW_ID",
+        "ERR_MISSING_PARTICIPANT_IDS"
+      ]
+    },
+    "removeDrawPositionAssignment": {
+      "steps": 510,
+      "observedCodes": ["ERR_ACTIVE_DRAW_POSITION", "ERR_MISSING_DRAW_POSITION"]
+    },
+    "removeEventEntries": {
+      "steps": 6,
+      "observedCodes": ["ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT", "ERR_INVALID_PARTICIPANT_ID"]
+    },
+    "removeMatchUpSideParticipant": {
+      "steps": 1,
+      "observedCodes": []
+    },
+    "removeRoundMatchUps": {
+      "steps": 7,
+      "observedCodes": ["ERR_MISSING_DRAWDEF", "ERR_MISSING_STRUCTURE_ID", "ERR_MISSING_VALUE"]
+    },
+    "removeSeededParticipant": {
+      "steps": 2,
+      "observedCodes": []
+    },
+    "removeStageEntries": {
+      "steps": 1,
+      "observedCodes": []
+    },
+    "removeStructure": {
+      "steps": 31,
+      "observedCodes": ["ERR_CANNOT_REMOVE_MAIN_STRUCTURE", "ERR_SCORES_PRESENT"]
+    },
+    "removeTieMatchUpParticipantId": {
+      "steps": 70,
+      "observedCodes": [
+        "ERR_EXISTING_OUTCOME",
+        "ERR_MISSING_PARTICIPANT_ID",
+        "ERR_NOT_FOUND_MATCHUP",
+        "ERR_NOT_FOUND_PARTICIPANT"
+      ]
+    },
+    "renameStructures": {
+      "steps": 8,
+      "observedCodes": ["ERR_INVALID_VALUES", "ERR_MISSING_VALUE"]
+    },
+    "replaceTieMatchUpParticipantId": {
+      "steps": 6,
+      "observedCodes": [
+        "ERR_INVALID_PARTICIPANT_TYPE",
+        "ERR_MISSING_DRAW_ID",
+        "ERR_MISSING_PARTICIPANT_ID",
+        "ERR_NOT_FOUND_PARTICIPANT"
+      ]
+    },
+    "resetAdHocMatchUps": {
+      "steps": 14,
+      "observedCodes": [
+        "ERR_INVALID_STRUCTURE",
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_DRAWDEF",
+        "ERR_NOT_FOUND_STRUCTURE",
+        "MOCK_ERROR"
+      ]
+    },
+    "resetDrawDefinition": {
+      "steps": 34,
+      "observedCodes": ["ERR_MISSING_DRAWDEF"]
+    },
+    "resetMatchUpLineUps": {
+      "steps": 8,
+      "observedCodes": []
+    },
+    "resetQualifyingStructure": {
+      "steps": 1,
+      "observedCodes": []
+    },
+    "resetScorecard": {
+      "steps": 13,
+      "observedCodes": [
+        "ERR_INVALID_MATCHUP",
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_DRAWDEF",
+        "ERR_MISSING_MATCHUP_ID",
+        "ERR_NOT_FOUND_MATCHUP",
+        "ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE"
+      ]
+    },
+    "resetTieFormat": {
+      "steps": 8,
+      "observedCodes": ["ERR_INVALID_MATCHUP", "ERR_MISSING_MATCHUP_ID"]
+    },
+    "resetVoluntaryConsolationStructure": {
+      "steps": 6,
+      "observedCodes": []
+    },
+    "resolveDraftPositions": {
+      "steps": 21,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "resolvePointValue": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "roundRobinGroups": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "seedWithdrawalCascade": {
+      "steps": 8,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "setDelegatedOutcome": {
+      "steps": 11,
+      "observedCodes": ["ERR_INVALID_VALUES", "ERR_MISSING_MATCHUP", "ERR_MISSING_VALUE", "ERR_NOT_FOUND_MATCHUP"]
+    },
+    "setDrawOtherIds": {
+      "steps": 5,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "setDrawParticipantRepresentativeIds": {
+      "steps": 5,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "setDrawPositionPreferences": {
+      "steps": 117,
+      "observedCodes": ["ERR_INVALID_DRAW_POSITION", "ERR_INVALID_PARTICIPANT_ID", "ERR_INVALID_VALUES"]
+    },
+    "setEntryPosition": {
+      "steps": 2,
+      "observedCodes": ["ERR_MISSING_PARTICIPANT_ID"]
+    },
+    "setEntryPositions": {
+      "steps": 6,
+      "observedCodes": ["ERR_INVALID_VALUES"]
+    },
+    "setMatchUpFormat": {
+      "steps": 36,
+      "observedCodes": [
+        "ERR_INVALID_EVENT_TYPE",
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_DRAWDEF",
+        "ERR_UNRECOGNIZED_MATCHUP_FORMAT"
+      ]
+    },
+    "setMatchUpState": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "setMatchUpStatus": {
+      "steps": 50559,
+      "observedCodes": [
+        "ERR_ACTIVE_DRAW_POSITION",
+        "ERR_CANNOT_CHANGE_FEED_ELIGIBILITY",
+        "ERR_FORCED",
+        "ERR_INCOMPATIBLE_MATCHUP_STATUS",
+        "ERR_INVALID_MATCHUP_STATUS",
+        "ERR_INVALID_SCORE",
+        "ERR_INVALID_TIME",
+        "ERR_INVALID_VALUES",
+        "ERR_INVALID_WINNING_SIDE",
+        "ERR_MATCHUP_STATUS_OUT_OF_SCOPE",
+        "ERR_MISSING_DRAWDEF",
+        "ERR_MISSING_MATCHUP_ID",
+        "ERR_MUTATION_LOCKED",
+        "ERR_NOT_FOUND_MATCHUP",
+        "ERR_PROPAGATED_EXITS_DOWNSTREAM",
+        "ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME",
+        "ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE",
+        "ERR_UNRECOGNIZED_MATCHUP_FORMAT"
+      ]
+    },
+    "setOrderOfFinish": {
+      "steps": 23,
+      "observedCodes": ["ERR_INVALID_MATCHUP_STATUS", "ERR_INVALID_VALUES"]
+    },
+    "setPositionAssignments": {
+      "steps": 8,
+      "observedCodes": []
+    },
+    "setStructureOrder": {
+      "steps": 2,
+      "observedCodes": []
+    },
+    "setSubOrder": {
+      "steps": 15,
+      "observedCodes": ["ERR_MISSING_DRAW_POSITION", "ERR_MISSING_STRUCTURE_ID"]
+    },
+    "shiftAdHocRounds": {
+      "steps": 30,
+      "observedCodes": [
+        "ERR_INVALID_STRUCTURE",
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_DRAWDEF",
+        "ERR_MISSING_MATCHUPS",
+        "ERR_MISSING_STRUCTURE_ID"
+      ]
+    },
+    "stringify": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "substituteParticipant": {
+      "steps": 12,
+      "observedCodes": [
+        "ERR_INVALID_MATCHUP",
+        "ERR_INVALID_PARTICIPANT_ID",
+        "ERR_MISSING_PARTICIPANT_ID",
+        "ERR_NOT_FOUND_MATCHUP"
+      ]
+    },
+    "swapAdHocRounds": {
+      "steps": 15,
+      "observedCodes": [
+        "ERR_INVALID_STRUCTURE",
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_DRAWDEF",
+        "ERR_MISSING_MATCHUPS",
+        "ERR_MISSING_STRUCTURE_ID"
+      ]
+    },
+    "swapDrawPositionAssignments": {
+      "steps": 20,
+      "observedCodes": [
+        "ERR_INVALID_VALUES",
+        "ERR_MISSING_DRAWDEF",
+        "ERR_MISSING_STRUCTURE_ID",
+        "ERR_NOT_FOUND_STRUCTURE"
+      ]
+    },
+    "toggleParticipantCheckInState": {
+      "steps": 21,
+      "observedCodes": ["ERR_MISSING_PARTICIPANT_ID", "ERR_NOT_FOUND_MATCHUP"]
+    },
+    "updateParticipantResults": {
+      "steps": 4,
+      "observedCodes": ["ERR_MISSING_STRUCTURE_ID", "ERR_NOT_FOUND_STRUCTURE"]
+    },
+    "updateTeamLineUp": {
+      "steps": 0,
+      "observedCodes": []
+    },
+    "updateTieMatchUpScore": {
+      "steps": 3,
+      "observedCodes": []
+    },
+    "withdrawParticipantAtDrawPosition": {
+      "steps": 1,
+      "observedCodes": []
+    }
+  }
+}
