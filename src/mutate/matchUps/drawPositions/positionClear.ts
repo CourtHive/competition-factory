@@ -1,7 +1,7 @@
-import { clearSideExitProvenance, retainByeClaimsOnly } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { releaseLinkedWinnerAdvancement } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -15,6 +15,11 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
 import { overlap } from '@Tools/arrays';
+import {
+  deriveExitStateFromProvenance,
+  clearSideExitProvenance,
+  retainByeClaimsOnly,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { DrawDefinition, Event, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
@@ -153,12 +158,6 @@ export function drawPositionRemovals({
       structure,
     }).positionAssignments ?? [];
 
-  // read BEFORE the assignment is emptied: whether what is being withdrawn is a BYE the cascade put
-  // there, which decides below whether the seat's own advancement goes with it
-  const withdrawsPropagatedBye = positionAssignments.some(
-    (assignment: any) => assignment.drawPosition === drawPosition && assignment.bye && assignment.byeFromPropagation,
-  );
-
   const drawPositionCleared = positionAssignments.some((assignment) => {
     if (assignment.drawPosition === drawPosition) {
       delete assignment.participantId;
@@ -212,7 +211,6 @@ export function drawPositionRemovals({
     }
 
     removeSubsequentRoundsParticipant({
-      withdrawsPropagatedBye,
       inContextDrawMatchUps,
       targetDrawPosition,
       tournamentRecord,
@@ -223,7 +221,6 @@ export function drawPositionRemovals({
     });
 
     removeDrawPosition({
-      withdrawsPropagatedBye,
       inContextDrawMatchUps,
       positionAssignments,
       tournamentRecord,
@@ -240,7 +237,6 @@ export function drawPositionRemovals({
 }
 
 function removeSubsequentRoundsParticipant({
-  withdrawsPropagatedBye,
   inContextDrawMatchUps,
   targetDrawPosition,
   tournamentRecord,
@@ -278,7 +274,6 @@ function removeSubsequentRoundsParticipant({
   relevantMatchUps?.forEach((matchUp) =>
     removeDrawPosition({
       drawPosition: targetDrawPosition,
-      withdrawsPropagatedBye,
       targetMatchUp: matchUp,
       inContextDrawMatchUps,
       positionAssignments,
@@ -293,7 +288,6 @@ function removeSubsequentRoundsParticipant({
 
 type RemoveDrawPositionArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
-  withdrawsPropagatedBye?: boolean;
   positionAssignments: PositionAssignment[];
   targetMatchUp: HydratedMatchUp;
   tournamentRecord?: Tournament;
@@ -304,7 +298,6 @@ type RemoveDrawPositionArgs = {
   event?: Event;
 };
 function removeDrawPosition({
-  withdrawsPropagatedBye,
   inContextDrawMatchUps,
   positionAssignments,
   tournamentRecord,
@@ -349,13 +342,30 @@ function removeDrawPosition({
    * 2026-09-21 (*"a position advanced by a BYE is never released"*); this file has its own removal
    * and had never been given it.
    *
-   * Only when what is withdrawn is a BYE the cascade placed. Clearing a PARTICIPANT, or a BYE a
-   * director placed, removes the advancement exactly as before: a position action is followed by
-   * another that re-derives it, and leaving the old one behind would seat two positions in one slot.
+   * WHATEVER is withdrawn — a propagated BYE, a participant, a director's BYE. The first version of
+   * this rule (2026-09-29) kept the advancement only for a propagated BYE, on the theory that
+   * clearing a participant is followed by a position action that re-derives it. CA ruled otherwise
+   * on 2026-10-01 (P46), on two FIRST_MATCH_LOSER_CONSOLATION 8/5 files that differed only in route:
+   *
+   *     generated          Consolation|3|1  [2, _]     seat 2's opponent, seat 5, is a BYE
+   *     walkover entered   Consolation|3|1  [2, 4]     the loser arrives on seat 2, already advanced
+   *     corrected          Consolation|3|1  [4, 5]     this removal took seat 2 out; seat 5 advanced instead
+   *     entered directly   Consolation|3|1  [2, 4]     *"A is clearly correct"*
+   *
+   * The advancement never depended on the occupant, so the occupant leaving cannot take it. The
+   * generated draw is exactly this state — an advanced seat with nobody on it — and a participant
+   * arriving onto it later is the ordinary case, not a double seating. What made the narrower rule
+   * necessary was `assignDrawPositionBye`: on a seat that was already advanced and alone it found
+   * nothing to advance and skipped the loser feed, so a BYE placed on such a seat left the loser
+   * target empty (4 of `shuffleCompletion`'s 12 byeLimit cases). `assignByeToLoserTarget` closes
+   * that, and the rule can be what it says.
    */
-  const keepsByeAdvancement =
-    !!withdrawsPropagatedBye &&
-    advancedByOpponentsBye({ matchUps: matchUps ?? [], positionAssignments, targetMatchUp, drawPosition });
+  const keepsByeAdvancement = advancedByOpponentsBye({
+    matchUps: matchUps ?? [],
+    positionAssignments,
+    targetMatchUp,
+    drawPosition,
+  });
 
   if (
     !keepsByeAdvancement &&
@@ -371,6 +381,21 @@ function removeDrawPosition({
         currentDrawPosition === drawPosition ? undefined : currentDrawPosition,
       ),
     );
+
+    // AND ACROSS THE LINK. This removal walked the rounds of one structure and stopped at its edge.
+    // Measured 2026-09-30 by `correctionDivergenceDeep` on DOUBLE_ELIMINATION 8/5: a double exit's
+    // BYE let the other Backdraw finalist advance through the Backdraw final and across the winner
+    // link into the Main final; correcting the double exit to a single took them out of the Backdraw
+    // final here and left them in the Main final, where the direct entry never had them.
+    releaseLinkedWinnerAdvancement({
+      roundNumber: targetMatchUp.roundNumber,
+      structureId: structure.structureId,
+      tournamentRecord,
+      drawDefinition,
+      drawPosition,
+      matchUpsMap,
+      event,
+    });
   }
 
   handleTeamPositionRemoval({
@@ -580,13 +605,41 @@ function updateMatchUpStatusAfterRemoval({
   // nobody recorded as owing it. Measured 2026-09-29 with `doubleExitPropagateBye` on: 52 of 192
   // `correctionDivergence` DOWNGRADE cells. A claim leaves when its claimant withdraws it
   // (`withdrawByeClaim`), never as a side effect of a position being cleared.
-  const retainedClaims = retainByeClaimsOnly(targetMatchUp.sideExitProvenance);
-  clearSideExitProvenance(targetMatchUp);
-  if (retainedClaims) targetMatchUp.sideExitProvenance = retainedClaims;
-
+  //
+  // AND NEITHER IS THE OTHER SIDE'S ORIGIN. A carried exit on the side that is NOT being cleared
+  // describes an arrival from elsewhere — it did not come through the removed position and does
+  // not leave with it. Measured 2026-09-30 by `correctionDivergenceDeep` on
+  // FIRST_MATCH_LOSER_CONSOLATION 16/15 (8 cells): `Consolation|1|3`'s double exit had carried its
+  // WALKOVER onto `Consolation|2|3` side 2; unwinding `Main|2|3`'s double exit withdrew the BYE on
+  // side 1, reached here, and side 2's origin went with it. The direct entry keeps it.
   const removedDrawPosition = initialDrawPositions?.find(
     (position) => !targetMatchUp.drawPositions?.includes(position),
   );
+  // The side being cleared is the one `drawPosition` occupies in the array as it stood: on the
+  // position's initial round the seat stays in the array (only its assignment is emptied), so the
+  // position removed from the array is not the whole story. `indexOf` as a side number — valid
+  // only because drawPositions are stored ascending.
+  const clearedIndex = initialDrawPositions?.indexOf(drawPosition) ?? -1;
+  const clearedSideNumber = clearedIndex >= 0 ? clearedIndex + 1 : undefined;
+  const retained = retainProvenanceBesideRemoval(targetMatchUp.sideExitProvenance, clearedSideNumber);
+  clearSideExitProvenance(targetMatchUp);
+  if (retained) targetMatchUp.sideExitProvenance = retained;
+
+  /**
+   * AND THE STATUS SAYS WHAT SURVIVES. With no BYE left and the other side still carrying an exit,
+   * the matchUp is a PENDING exit, not TO_BE_PLAYED — the state a direct entry leaves. Measured
+   * 2026-09-30 on the census's seed 6341103 (MODIFIED_FEED_IN_CHAMPIONSHIP 8/6): a walkover loser
+   * held `Consolation|2|2` side 2 with their walkover; `Main|2|1`'s double exit was corrected to a
+   * single one, the unwind took the BYE off side 1 and left TO_BE_PLAYED, and the single exit's
+   * loser then arrived to no convergence — `WALKOVER ws=2`, the exit-carrying side winning, where
+   * the direct entry converges to DOUBLE_WALKOVER. Same derivation `removeDoubleExit` applies to
+   * what it retains; a BYE-held matchUp stays BYE, because a BYE is a fact about the draw.
+   */
+  const rederived = !matchUpContainsBye && retained ? deriveExitStateFromProvenance(retained) : undefined;
+  if (rederived) {
+    targetMatchUp.matchUpStatus = rederived.matchUpStatus;
+    targetMatchUp.winningSide = rederived.winningSide;
+  }
   const noChange =
     initialDrawPositions?.includes(drawPosition) &&
     initialMatchUpStatus === targetMatchUp.matchUpStatus &&
@@ -612,6 +665,24 @@ function updateMatchUpStatusAfterRemoval({
   }
 
   return matchUpContainsBye;
+}
+
+/**
+ * What survives a position's clear: every claim on either side, and the origin on the side that
+ * was NOT cleared. With no identifiable cleared side (the position was not in the array), only the
+ * claims survive — the behaviour this call had before the other side's origin was retained.
+ */
+function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: number) {
+  if (!provenance) return undefined;
+  if (!clearedSideNumber) return retainByeClaimsOnly(provenance);
+  const retained: any = {};
+  for (const sideNumber of [1, 2]) {
+    const entry = provenance[sideNumber];
+    if (!entry) continue;
+    if (sideNumber !== clearedSideNumber) retained[sideNumber] = { ...entry };
+    else if (entry.byeClaims?.length) retained[sideNumber] = { byeClaims: [...entry.byeClaims] };
+  }
+  return Object.keys(retained).length ? retained : undefined;
 }
 
 function handleLoserMatchUpRemoval({

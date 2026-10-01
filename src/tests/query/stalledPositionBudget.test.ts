@@ -1,10 +1,15 @@
-import { MATRIX_CELLS, cellLabel, playMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
 import { getDrawDefinition } from '@Tests/testHarness/exitPropagation/transitions';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
+import {
+  MATRIX_EXTENSION_CELLS,
+  MATRIX_CELLS,
+  playMatrixCell,
+  cellLabel,
+} from '@Tests/testHarness/exitPropagation/matrixCells';
 
 /**
  * THE STALL BUDGET — a ratchet, not a pass/fail.
@@ -118,7 +123,9 @@ test.skipIf(!enabled)(
     let findings = 0;
     const cellsWithStall: string[] = [];
 
-    for (const cell of MATRIX_CELLS) {
+    // the 600, then the 400 of the draw-type extension (G1/G12, 2026-10-01) — one budget, one
+    // walk, because a stall is a stall whichever list the cell came from
+    for (const cell of [...MATRIX_CELLS, ...MATRIX_EXTENSION_CELLS]) {
       const key = cellLabel(cell);
       const drawId = `budget-${cell.seed}`;
       if (!playMatrixCell(cell, drawId)) continue;
@@ -152,8 +159,8 @@ test.skipIf(!enabled)(
 
     // CONTROLS first: a scan that generated nothing, or never reached a terminal state, also reports
     // zero stalls and would satisfy every ceiling below.
-    expect(cellsPlayed).toEqual(MATRIX_CELLS.length);
-    expect(terminalCells).toEqual(MATRIX_CELLS.length);
+    expect(cellsPlayed).toEqual(MATRIX_CELLS.length + MATRIX_EXTENSION_CELLS.length);
+    expect(terminalCells).toEqual(MATRIX_CELLS.length + MATRIX_EXTENSION_CELLS.length);
 
     // THE RATCHET. Lower these when the population shrinks; never raise them.
     expect(cellsWithStall.length, `cells with a stall (was ${BUDGET_CELLS})`).toBeLessThanOrEqual(BUDGET_CELLS);

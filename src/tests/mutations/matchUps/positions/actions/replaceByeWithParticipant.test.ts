@@ -147,7 +147,9 @@ it('can replace BYE with ALTERNATE to Final in drawSize: 8 when 7 BYEs', () => {
   finalMatchUp = matchUps.find(({ finishingRound }) => finishingRound === 1);
   expect(finalMatchUp.matchUpStatus).toEqual(BYE);
 
-  expect(finalMatchUp.drawPositions).toEqual([1, 7]);
+  // seat 8 advanced to the final over the BYEs at 7 and 5-6 and KEEPS that advancement on becoming
+  // a BYE itself (P46); it is not torn down and seat 7 advanced in its place
+  expect(finalMatchUp.drawPositions).toEqual([1, 8]);
 
   const result = replaceWithAlternate({ drawId, structureId, drawPosition: 7 });
   expect(result.success).toEqual(true);

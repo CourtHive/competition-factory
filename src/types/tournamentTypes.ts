@@ -2602,6 +2602,9 @@ export interface Court {
   surfaceType?: string;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
+  // Written by addCourt on every court (the parent venue's id). Declared so the type and
+  // tournament.schema.json agree with the records the engine actually writes.
+  venueId?: string;
 }
 
 export interface Availability {

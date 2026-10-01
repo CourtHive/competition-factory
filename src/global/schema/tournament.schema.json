@@ -1241,6 +1241,9 @@
         "roundPosition": {
           "type": "number"
         },
+        "schedule": {
+          "$ref": "#/definitions/MatchUpSchedule"
+        },
         "score": {
           "$ref": "#/definitions/Score"
         },
@@ -1285,6 +1288,117 @@
         }
       },
       "required": ["matchUpId"],
+      "additionalProperties": false
+    },
+    "MatchUpSchedule": {
+      "type": "object",
+      "description": "CODES first-class schedule attributes on a matchUp, the canonical written shape since 5.0.0. Each field here was historically a timeItem of the corresponding itemType (SCHEDULED_DATE, ASSIGN_COURT, ...). START_TIME / STOP_TIME / RESUME_TIME / END_TIME / END_DATE remain timeItems because matchUpDuration() walks the ordered history.",
+      "$comment": "CLOSED, and lists only what the engine WRITES into the record. The TypeScript MatchUpSchedule carries an index signature for hydration-time outputs (startTime, endTime, endDate, courtName, venueName, isoDateString, milliseconds, scheduleConflict, the recovery-time fields); those are never written into a stored record, so they are deliberately absent here. A field added to setFirstClassOrTimeItem's attribute set, or written directly onto matchUp.schedule, must be added here or schemaValidation.test.ts fails on a scheduled record.",
+      "properties": {
+        "allocatedCourts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AllocatedCourt"
+          }
+        },
+        "calledAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp captured when the matchUp is deliberately called to court. Distinct from scheduledTime (plan) and the START_TIME timeItem (actual start)."
+        },
+        "courtAnnotation": {
+          "type": "string"
+        },
+        "courtId": {
+          "type": "string"
+        },
+        "courtOrder": {
+          "type": "integer"
+        },
+        "homeParticipantId": {
+          "type": "string"
+        },
+        "lock": {
+          "$ref": "#/definitions/ScheduleLock"
+        },
+        "official": {
+          "type": "string",
+          "description": "participantId of the assigned official"
+        },
+        "scheduledDate": {
+          "type": "string",
+          "anyOf": [
+            {
+              "format": "date-time"
+            },
+            {
+              "format": "date"
+            }
+          ]
+        },
+        "scheduledTime": {
+          "type": "string"
+        },
+        "scorekeeper": {
+          "type": "string",
+          "description": "participantId of the nominated scorekeeper"
+        },
+        "scoredTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp auto-captured the first time a matchUp receives a meaningful score or winningSide; cleared when the score is removed."
+        },
+        "timekeeper": {
+          "type": "string",
+          "description": "participantId of the assigned timekeeper"
+        },
+        "timeModifiers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "venueId": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ScheduleLock": {
+      "type": "object",
+      "description": "A director's declaration that a matchUp's placement is deliberate and must not be moved by bulk or automated scheduling. Presence of the object is the lock; `attributes` narrows it to specific placement fields (absent means the whole placement).",
+      "properties": {
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["allocatedCourts", "courtId", "courtOrder", "scheduledDate", "scheduledTime", "venueId"]
+          }
+        },
+        "lockedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lockedBy": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AllocatedCourt": {
+      "type": "object",
+      "properties": {
+        "courtId": {
+          "type": "string"
+        },
+        "venueId": {
+          "type": "string"
+        }
+      },
+      "required": ["courtId"],
       "additionalProperties": false
     },
     "IndoorOutdoorEnum": {
@@ -4114,6 +4228,10 @@
         },
         "floodlit": {
           "type": "boolean"
+        },
+        "venueId": {
+          "type": "string",
+          "description": "The venue this court belongs to. Written by addCourt on every court; declared here so a real record validates."
         }
       },
       "required": ["courtId"],

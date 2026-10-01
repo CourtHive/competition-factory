@@ -2,6 +2,10 @@ import { Court, MatchUp, Participant, Side, Venue } from './tournamentTypes';
 
 export type HydratedCourt = {
   [key: string]: any;
+  // Always present on a hydrated court: getInContextCourt attaches the parent venue's id, and
+  // addCourt writes it on every stored court. Declared as REQUIRED here so callers can pass it
+  // where a string is expected; the stored `Court.venueId` stays optional.
+  venueId: string;
 } & Court;
 
 export type HydratedVenue = {

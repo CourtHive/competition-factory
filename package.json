@@ -48,7 +48,8 @@
         "types": "./dist/tods-competition-factory.d.cts",
         "default": "./dist/index.js"
       }
-    }
+    },
+    "./schema/tournament.schema.json": "./dist/schema/tournament.schema.json"
   },
   "types": "dist/tods-competition-factory.d.ts",
   "sideEffects": false,
@@ -124,7 +125,7 @@
     "docs:publish": "cd documentation && GIT_USER=CourtHive USE_SSH=true pnpm docpub",
     "shakeable": "node scripts/verify/shakeable.mjs",
     "check-types": "tsc --noEmit",
-    "verify": "pnpm verify:generated && pnpm verify:lockfile && pnpm verify:types && pnpm verify:lint && pnpm verify:format && pnpm verify:exit-tenant && pnpm verify:migration-coverage && pnpm verify:attr-audit && pnpm verify:coverage && pnpm verify:coverage-headroom && pnpm verify:stall-budget && pnpm verify:route-differential && pnpm verify:server && pnpm verify:audit && pnpm verify:build && pnpm verify:publint && pnpm verify:runtime && pnpm verify:shakeable && pnpm verify:bundle-size && pnpm verify:surface && pnpm verify:docs-imports && pnpm verify:docs-methods && pnpm verify:pack",
+    "verify": "pnpm verify:generated && pnpm verify:lockfile && pnpm verify:types && pnpm verify:lint && pnpm verify:format && pnpm verify:exit-tenant && pnpm verify:migration-coverage && pnpm verify:attr-audit && pnpm verify:coverage && pnpm verify:coverage-headroom && pnpm verify:stall-budget && pnpm verify:route-differential && pnpm verify:deep-corrections && pnpm verify:server && pnpm verify:audit && pnpm verify:build && pnpm verify:publint && pnpm verify:runtime && pnpm verify:shakeable && pnpm verify:bundle-size && pnpm verify:surface && pnpm verify:docs-imports && pnpm verify:docs-methods && pnpm verify:pack",
     "verify:all": "pnpm verify && pnpm verify:ecosystem",
     "check:governors": "node scripts/verify/governorRegistry.mjs",
     "check:request-shapes": "node scripts/verify/requestShapes.mjs",
@@ -141,6 +142,7 @@
     "verify:coverage-headroom": "node scripts/verify/coverage-headroom.mjs",
     "verify:stall-budget": "STALL_BUDGET=1 TZ=UTC vitest run src/tests/query/stalledPositionBudget.test.ts",
     "verify:route-differential": "ROUTE_DIFF=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/routeDifferential.test.ts",
+    "verify:deep-corrections": "DEEP_CORRECTIONS=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/correctionDivergenceDeep.test.ts",
     "verify:server": "vitest run --config vitest.server.config.mts",
     "verify:shakeable": "node scripts/verify/shakeable.mjs",
     "verify:build": "rimraf dist && rollup --config && node postbuild.mjs",

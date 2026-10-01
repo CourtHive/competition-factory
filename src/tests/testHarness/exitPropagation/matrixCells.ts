@@ -1,3 +1,4 @@
+import { checkIntegrity, type PropertyFailure } from './transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import { nextPlayable, playForward, step } from './driver';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -8,13 +9,20 @@ import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
+  FEED_IN_CHAMPIONSHIP_TO_R16,
+  FEED_IN_CHAMPIONSHIP_TO_QF,
   FEED_IN_CHAMPIONSHIP_TO_SF,
+  ROUND_ROBIN_WITH_PLAYOFF,
   FEED_IN_CHAMPIONSHIP,
   DOUBLE_ELIMINATION,
   SINGLE_ELIMINATION,
   CURTIS_CONSOLATION,
+  ROUND_ROBIN,
+  LUCKY_DRAW,
   COMPASS,
+  FEED_IN,
   OLYMPIC,
+  PLAYOFF,
 } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -56,21 +64,62 @@ export type MatrixCell = {
   seed: number;
 };
 
-export const MATRIX_CELLS: MatrixCell[] = MATRIX_DRAW_TYPES.flatMap((drawType) =>
-  MATRIX_DRAW_SIZES.flatMap((drawSize) =>
-    MATRIX_REDUCTIONS.flatMap((reduction) =>
-      MATRIX_EXIT_STATUSES.flatMap((exitStatus) =>
-        [true, false].map((propagateExitStatus) => ({
-          participantsCount: drawSize - reduction,
-          propagateExitStatus,
-          exitStatus,
-          drawSize,
-          drawType,
-        })),
+const composeCells = (drawTypes: string[]): Omit<MatrixCell, 'seed'>[] =>
+  drawTypes.flatMap((drawType) =>
+    MATRIX_DRAW_SIZES.flatMap((drawSize) =>
+      MATRIX_REDUCTIONS.flatMap((reduction) =>
+        MATRIX_EXIT_STATUSES.flatMap((exitStatus) =>
+          [true, false].map((propagateExitStatus) => ({
+            participantsCount: drawSize - reduction,
+            propagateExitStatus,
+            exitStatus,
+            drawSize,
+            drawType,
+          })),
+        ),
       ),
     ),
-  ),
-).map((cell, index) => ({ ...cell, seed: index + 1 }));
+  );
+
+export const MATRIX_CELLS: MatrixCell[] = composeCells(MATRIX_DRAW_TYPES).map((cell, index) => ({
+  ...cell,
+  seed: index + 1,
+}));
+
+/**
+ * THE EXTENSION: the draw types the 600 never exercised, measured 2026-10-01 (assessment G1, G12).
+ *
+ * Every one of these passed every matrix property and the integrity check on first contact, and the
+ * deep-correction oracle read 640 identical / 0 severe over them. So this arm adds no known defect;
+ * it exists so that the container branch of `doubleExitAdvancement` (round robin returns at once),
+ * the playoff a round-robin group's exit decides, the two FIC variants, and the lucky-draw placement
+ * branches are EXECUTED by the gate rather than assumed.
+ *
+ * A SEPARATE SEED RANGE, deliberately. The 600 are the baseline every census number was taken
+ * against; appending types to that list would have kept their seeds, but the deep oracle's seeds run
+ * policy-outermost and would have shifted. Starting at 100001 keeps every existing cell's draw.
+ *
+ * `LUCKY_DRAW` at reduction 3 is EXCLUDED, not quarantined: a lucky draw three seats short generates
+ * with only its BYE placed and no participant at all (`mocksEngine`, measured 8/5 and 16/13 at seed
+ * 1), so there is nothing to play. That is a mocks limitation to record, not a propagation cell.
+ */
+export const MATRIX_EXTENSION_DRAW_TYPES = [
+  ROUND_ROBIN,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  FEED_IN_CHAMPIONSHIP_TO_QF,
+  FEED_IN_CHAMPIONSHIP_TO_R16,
+  LUCKY_DRAW,
+  FEED_IN,
+  PLAYOFF,
+];
+export const MATRIX_EXTENSION_SEED_BASE = 100000;
+
+export const isUnpopulatedLuckyDraw = (cell: { drawType: string; drawSize: number; participantsCount: number }) =>
+  cell.drawType === LUCKY_DRAW && cell.drawSize - cell.participantsCount === 3;
+
+export const MATRIX_EXTENSION_CELLS: MatrixCell[] = composeCells(MATRIX_EXTENSION_DRAW_TYPES)
+  .map((cell, index) => ({ ...cell, seed: MATRIX_EXTENSION_SEED_BASE + index + 1 }))
+  .filter((cell) => !isUnpopulatedLuckyDraw(cell));
 
 /** the cell's name, in the same form `exitPropagationMatrix` names its tests */
 export const cellLabel = (cell: MatrixCell): string =>
@@ -94,6 +143,38 @@ export const cellExitOutcome = (exitStatus: string): any => {
  * exhaustion with no exit cannot have stranded anybody, which is what makes it a falsification arm
  * rather than a second sample.
  */
+/**
+ * The matrix test's per-cell body, returning the failures rather than asserting: the exit on the
+ * first playable matchUp, `playForward`, then `checkIntegrity`. `undefined` when the draw did not
+ * generate or nothing was playable — a caller must not count either as a played cell.
+ */
+export function runMatrixCell(cell: MatrixCell, drawId: string): PropertyFailure[] | undefined {
+  setSubscriptions({});
+  const { drawIds } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [
+      { drawId, drawType: cell.drawType, drawSize: cell.drawSize, participantsCount: cell.participantsCount },
+    ],
+    nonRandom: cell.seed,
+    setState: true,
+  });
+  if (!drawIds?.includes(drawId)) return undefined;
+
+  const target = nextPlayable(drawId);
+  if (!target?.matchUpId) return undefined;
+
+  const outcome = cellExitOutcome(cell.exitStatus);
+  const failures = [
+    ...step({ propagateExitStatus: cell.propagateExitStatus, matchUpId: target.matchUpId, drawId, outcome }),
+  ];
+  if (!failures.length) {
+    failures.push(
+      ...playForward({ propagateExitStatus: cell.propagateExitStatus, exitOutcome: outcome, drawId }).failures,
+    );
+  }
+  if (!failures.length) failures.push(...checkIntegrity(drawId, target.matchUpId));
+  return failures;
+}
+
 export function playMatrixCell(
   cell: MatrixCell,
   drawId: string,

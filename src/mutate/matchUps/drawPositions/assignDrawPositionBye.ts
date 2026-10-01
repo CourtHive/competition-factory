@@ -353,6 +353,26 @@ export function assignDrawPositionBye({
       matchUpsMap,
     });
     if (result.error) return result;
+  } else if (
+    matchUp &&
+    roundNumber &&
+    roundNumber > (getInitialRoundNumber({ drawPosition, matchUps }).initialRoundNumber ?? 0)
+  ) {
+    // THE SEAT IS ALREADY ADVANCED AND ALONE. It reached this matchUp over its opponent's draw BYE
+    // before anything was played, and it is a BYE itself now, so this matchUp will never produce a
+    // loser — the loser target is owed a BYE, exactly as when `advanceWinner` carries a BYE into a
+    // partnerless matchUp. See `assignByeToLoserTarget`.
+    const result = assignByeToLoserTarget({
+      byeFromPropagation,
+      inContextDrawMatchUps,
+      preserveScheduling,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      matchUp,
+      event,
+    });
+    if (result?.error) return result;
   }
 
   modifyPositionAssignmentsNotice({
@@ -816,15 +836,6 @@ function advanceWinner({
     drawDefinition,
   });
 
-  const {
-    targetLinks: { loserTargetLink },
-    targetMatchUps: { loserMatchUp, loserTargetDrawPosition },
-  } = positionTargets({
-    matchUpId: winnerMatchUp.matchUpId,
-    inContextDrawMatchUps,
-    drawDefinition,
-  });
-
   if (pairedDrawPositionIsBye || drawPositionIsBye) {
     const advancingDrawPosition = pairedDrawPositionIsBye ? drawPositionToAdvance : pairedDrawPosition;
 
@@ -838,37 +849,82 @@ function advanceWinner({
         drawDefinition,
         matchUpsMap,
       });
-    } else if (drawPositionIsBye && loserTargetLink && loserMatchUp) {
-      if (loserMatchUp.feedRound) {
-        assignFedDrawPositionBye({
-          byeFromPropagation,
-          loserTargetDrawPosition,
-          preserveScheduling,
-          tournamentRecord,
-          loserTargetLink,
-          drawDefinition,
-          loserMatchUp,
-          matchUpsMap,
-        });
-      } else {
-        const sourceStructureRoundPosition = winnerMatchUp.roundPosition;
-        // loser drawPosition in target structure is determined bye even/odd
-        const targetDrawPositionIndex = 1 - (sourceStructureRoundPosition % 2);
-        const targetDrawPosition = loserMatchUp.drawPositions[targetDrawPositionIndex];
-
-        const result = assignDrawPositionBye({
-          byeFromPropagation,
-          structureId: loserTargetLink.target.structureId,
-          drawPosition: targetDrawPosition,
-          preserveScheduling,
-          tournamentRecord,
-          drawDefinition,
-          event,
-        });
-        if (result.error) return result;
-      }
+    } else if (drawPositionIsBye) {
+      const result = assignByeToLoserTarget({
+        matchUp: winnerMatchUp,
+        byeFromPropagation,
+        inContextDrawMatchUps,
+        preserveScheduling,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+        event,
+      });
+      if (result?.error) return result;
     }
   }
+}
+
+/**
+ * A BYE sits ALONE in `matchUp`, so whoever the loser link expects from it will never come: the
+ * loser target gets a BYE now, whether or not the other side has arrived.
+ *
+ * This is the step `advanceWinner` takes when it advances a BYE into a matchUp with no partner yet.
+ * `assignDrawPositionBye` needs the same step for a seat that is ALREADY in that matchUp — advanced
+ * from generation over its opponent's draw BYE — and is now being made a BYE where it sits: its
+ * furthest advancement is the matchUp itself, there is nothing to advance, and without this the
+ * loser target stayed empty. Measured 2026-09-30 on `shuffleCompletion`'s byeLimit stress, 4 of 12
+ * cases, once `positionClear` kept a BYE-advanced seat through a clear: `Consolation|2|4` of a
+ * FIRST_MATCH_LOSER_CONSOLATION 16 read TO_BE_PLAYED against a Main matchUp whose loser was a BYE,
+ * and the draw could not complete.
+ */
+function assignByeToLoserTarget({
+  byeFromPropagation,
+  inContextDrawMatchUps,
+  preserveScheduling,
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  matchUp,
+  event,
+}) {
+  const {
+    targetLinks: { loserTargetLink },
+    targetMatchUps: { loserMatchUp, loserTargetDrawPosition },
+  } = positionTargets({
+    matchUpId: matchUp.matchUpId,
+    inContextDrawMatchUps,
+    drawDefinition,
+  });
+  if (!loserTargetLink || !loserMatchUp) return { ...SUCCESS };
+
+  if (loserMatchUp.feedRound) {
+    return assignFedDrawPositionBye({
+      byeFromPropagation,
+      loserTargetDrawPosition,
+      preserveScheduling,
+      tournamentRecord,
+      loserTargetLink,
+      drawDefinition,
+      loserMatchUp,
+      matchUpsMap,
+    });
+  }
+
+  const sourceStructureRoundPosition = matchUp.roundPosition;
+  // loser drawPosition in target structure is determined bye even/odd
+  const targetDrawPositionIndex = 1 - (sourceStructureRoundPosition % 2);
+  const targetDrawPosition = loserMatchUp.drawPositions[targetDrawPositionIndex];
+
+  return assignDrawPositionBye({
+    byeFromPropagation,
+    structureId: loserTargetLink.target.structureId,
+    drawPosition: targetDrawPosition,
+    preserveScheduling,
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
 }
 
 /**
