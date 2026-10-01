@@ -168,9 +168,14 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
     }
   }
 
-  modifyMatchUpScore({
+  // THE DUAL'S WRITE CAN FAIL, AND THE CALLER HEARS OF IT. This call's result was discarded, so a
+  // failed write of the dual's status left every line scored and the dual unchanged while the
+  // caller reported success. Fault injection (`cascadeWriteErrorsReachTheCaller.test.ts`) is the
+  // only known way to make it fail; the context names the site so the injection can find it.
+  const written = modifyMatchUpScore({
     appliedPolicies: params.appliedPolicies,
     matchUpStatus: newMatchUpStatus,
+    context: 'updateTieMatchUpScore',
     score: scoreObject,
     removeWinningSide,
     tournamentRecord,
@@ -181,6 +186,7 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
     matchUp,
     event,
   });
+  if (written.error) return written;
 
   return {
     ...SUCCESS,

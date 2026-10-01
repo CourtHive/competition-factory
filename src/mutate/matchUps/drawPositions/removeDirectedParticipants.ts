@@ -65,6 +65,9 @@ export function removeDirectedParticipants(params): {
   const result = modifyMatchUpScore({
     ...params,
     matchUpStatus: matchUpStatus || TO_BE_PLAYED,
+    // named, so a failure here can be injected and traced; the spread carried whatever context the
+    // caller had, which for a winner change was none
+    context: 'removeDirectedParticipants',
     removeWinningSide: true,
   });
   if (result.error) return result;

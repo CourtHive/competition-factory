@@ -58,6 +58,8 @@ export function directParticipants(params): ResultType {
       matchUpsMap,
       event,
     });
+    // the dual's write can fail; the line's result is then that failure, not success
+    if (tieMatchUpResult?.error) return decorateResult({ result: tieMatchUpResult, stack });
     annotate = tieMatchUpResult && { tieMatchUpResult };
     const matchUpTie = inContextDrawMatchUps.find(({ matchUpId }) => matchUpId === matchUpTieId);
     drawPositions = matchUpTie?.drawPositions;

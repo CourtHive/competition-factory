@@ -163,7 +163,7 @@ function scoreModification(params) {
   // recalculate dualMatchUp score if isCollectionMatchUp
   if (params.isCollectionMatchUp) {
     const { matchUpTieId, drawDefinition, event, matchUpsMap } = params;
-    const { removeWinningSide } = updateTieMatchUpScore({
+    const tieResult = updateTieMatchUpScore({
       tournamentRecord: params.tournamentRecord,
       appliedPolicies: params.appliedPolicies,
       matchUpId: matchUpTieId,
@@ -171,8 +171,11 @@ function scoreModification(params) {
       matchUpsMap,
       event,
     });
+    // the dual's write can fail; the line's result is then that failure, not success
+    if (tieResult.error) return decorateResult({ result: tieResult, stack });
 
-    if (removeWinningSide) pushGlobalLog({ method: 'noDownstreamDependencies', action: 'remove winningSide' });
+    if (tieResult.removeWinningSide)
+      pushGlobalLog({ method: 'noDownstreamDependencies', action: 'remove winningSide' });
   }
 
   return decorateResult({ result, stack });
