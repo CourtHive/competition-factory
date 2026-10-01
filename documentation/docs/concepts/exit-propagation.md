@@ -149,7 +149,7 @@ tournament records.
 
 ## Guarantees
 
-These hold as of 7.0.0 and are enforced by the
+These hold as of 7.0.0 (the last two as of 7.4.0) and are enforced by the
 [exit-propagation harness](/docs/testing/exit-propagation-harness).
 
 ### Re-applying the same double exit does nothing
@@ -212,6 +212,41 @@ A `DOUBLE_WALKOVER` produces a `WALKOVER` in the matchUp it feeds; a `DOUBLE_DEF
 `DEFAULTED`. A mixed convergence is a `DOUBLE_WALKOVER` by the rule above, so it produces a
 `WALKOVER` — and that walkover is not attributable to any one upstream participant, which is the
 point of choosing the weaker label.
+
+### A correction lands where the direct entry lands
+
+Enter the wrong outcome, then correct it, and the draw is the one you would have had by entering
+the right outcome first — status, winner and seats alike, in every matchUp the mistake could have
+touched. Enforced since 7.4.0 by the deep-correction oracle: 1,600 cells across seventeen draw
+types, each playing a twelve-step prefix with exits planted along the way, then taking the deepest
+exit back and comparing the two routes. The baseline is **zero severe divergences**; the only
+cells it does not compare are the four where the engine refuses the correct outcome outright, and
+those are recorded rather than counted.
+
+Three rules fell out of making this hold, each a defect that only the order of entry exposed:
+
+- **A seat advanced by its opponent's BYE keeps that advancement when its occupant leaves.** A fed
+  seat beside a draw BYE is advanced from generation, before anybody sits on it. The advancement
+  never depended on the occupant, so clearing the occupant — a corrected walkover, a position
+  action — leaves the seat where it was; it is not torn down and the BYE's seat advanced in its
+  place. (This is also why a BYE placed on a seat that is already advanced and alone now feeds
+  the loser link its BYE.)
+- **Clearing a double exit withdraws the BYE it propagated, all the way.** Removing a
+  `DOUBLE_WALKOVER` takes back the BYE it placed on the consolation seat, the BYE's advancement
+  into later rounds, and the `byeFromPropagation` marker — whether the double exit was in the
+  first round or a later one.
+- **A produced exit arrives on the side its seat already holds.** Where fed seat numbers
+  interleave with advanced ones, feeder order predicts the wrong side; when the target already
+  holds both seats, the seat's own side is read.
+
+### A team dual's double exit is unwound by its lines, or protected from them
+
+In a TEAM event a dual that holds a `DOUBLE_WALKOVER` has propagated like any other. Scoring one of
+its lines (tieMatchUps) afterwards takes the dual out of the double exit — so the produced walkover
+is withdrawn first, and a team that had been awarded it is taken back out of the next round. Once
+that produced walkover has been **played on**, a line of the dual is refused with
+`CANNOT_CHANGE_OUTCOME`, exactly as a direct re-score of the dual is: a played result is never
+reset by a score entered elsewhere.
 
 ### Nothing to do is success, not failure
 
