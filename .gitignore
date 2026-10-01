@@ -58,3 +58,6 @@ dist
 
 # Pipeline
 .eslintcache
+
+# golden corpus harvest output (never committed; see corpus/README.md)
+.corpus-out/

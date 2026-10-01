@@ -42,6 +42,11 @@
           "format": "date-time",
           "description": "The instant the engine's clock was fixed to while the scenario was written (engine.setClock). A replay sets the same instant; a reader ignores it."
         },
+        "clockTickMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "When present, the engine's clock advanced by this many milliseconds on every read within a step, starting at that step's `clockAt` (or at `clock` for a scenario without per-step bases). Absent means the clock was fixed. A replay must tick the same way."
+        },
         "tags": {
           "type": "array",
           "items": {
@@ -137,6 +142,16 @@
         "coordinates": {
           "$ref": "#/definitions/Coordinates"
         },
+        "clockAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Where the engine's clock stood as this directive began; with `clockTickMs`, the base the clock ticks from for this step. A replay sets the clock here before running it, so reads the test made between steps need not be repeated."
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The random stream's state as this directive began (mulberry32: the state is the seed that continues it). A replay sets the source here before running it."
+        },
         "result": {
           "$ref": "#/definitions/Result"
         },
@@ -171,7 +186,7 @@
     },
     "Coordinates": {
       "type": "object",
-      "description": "Structural address of the matchUp a directive targets, for a port whose ids differ: which structure, which round, which position.",
+      "description": "Structural address of the matchUp a directive targets, for a port whose ids differ: which structure, which round, which position. roundPosition is absent for matchUps that have none (ad hoc rounds, round robin groups).",
       "properties": {
         "eventIndex": {
           "type": "integer",
@@ -193,7 +208,7 @@
           "minimum": 1
         }
       },
-      "required": ["structureName", "roundNumber", "roundPosition"],
+      "required": ["structureName", "roundNumber"],
       "additionalProperties": false
     },
     "Result": {

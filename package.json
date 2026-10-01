@@ -108,6 +108,7 @@
     "tuic": "vitest --ui --coverage.enabled",
     "tui": "vitest --ui",
     "coverage": "vitest run --coverage",
+    "corpus:record": "CORPUS_RECORD=1 TZ=UTC vitest run",
     "coverage:badges": "vitest run --coverage --coverage.thresholds.statements=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.lines=0 && istanbul-badges-readme",
     "cov": "vitest run --coverage --config ./src/tests/vitest.noThreshold.config.ts",
     "format": "prettier --write \"src/**/*.{ts,mts,cts,js,mjs,cjs,json}\" \"documentation/**/*.{md,mdx,ts,tsx,js,jsx,mjs,cjs,css,json}\"",

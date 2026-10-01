@@ -1,6 +1,6 @@
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
-import { deleteNotices, getTournamentRecords } from '@Global/state/globalState';
+import { deleteNotices, getInvokeObserver, getTournamentRecords } from '@Global/state/globalState';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
@@ -50,6 +50,8 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
       timeStamp,
     });
   if (notify || !result?.success || params?.doNotNotify) deleteNotices();
+
+  getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
 
   return result;
 }

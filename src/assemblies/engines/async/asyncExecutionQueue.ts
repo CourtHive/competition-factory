@@ -1,4 +1,4 @@
-import { deleteNotices, getTournamentRecords, getMethods } from '@Global/state/globalState';
+import { deleteNotices, getInvokeObserver, getMethods, getTournamentRecords } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
@@ -36,6 +36,7 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
     }
 
     const result = executeFunction(engine, methods[methodName], params, methodName, 'async');
+    getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
 
     if (result?.error) {
       if (snapshot) setState(snapshot);

@@ -52,6 +52,35 @@ Worked example: expected step 3 writes `winnerMatchUpId: "7c1e…"` on the match
 successor at `MAIN / round 2 / position 1` has id `m-0005`. The map contains `"7c1e…" → "m-0005"`,
 the expected state is rewritten, and the hashes agree.
 
+## Harvesting the test suite (C2a)
+
+```bash
+pnpm corpus:record                 # CORPUS_RECORD=1 TZ=UTC vitest run
+CORPUS_OUT=/somewhere pnpm corpus:record
+```
+
+With `CORPUS_RECORD=1`, a setup file (`src/tests/testHarness/corpusRecord.ts`) installs the
+recorder (`src/tests/testHarness/corpus/recorder.ts`) for the whole run. It listens to every engine
+call through `globalState.setInvokeObserver`, the one hook every method execution reports to:
+`before` with the caller's params, `after` with the result, once the engine's own post-processing
+has run. Only **core methods** are recorded: the `mutate` and `generate` exports of the scoring,
+matchUp, draws and entries governors, plus the generation and matchUpFormat governors, derived from
+those modules at runtime (`coreMethods.ts`). Queries are never recorded.
+
+For each test, the first core call captures the single tournament record in state as the initial
+state; every core call after that is a step. Each step also records where the engine's clock and
+random stream stood as the call began, so a replay restores both and need not repeat the reads a
+test made in between. The clock ticks one millisecond per read from the real present, so
+comparisons with the wall clock stay true and successive stamps stay distinct. A test that moves on
+to a different record set yields several scenarios (`…/part-N`); a test with zero or several
+records at its first core call is skipped and counted with the reason.
+
+Output is **never committed**: one JSONL file per test file under `.corpus-out/` (ignored), plus
+`_summary.jsonl` with per-file counts of tests, scenarios, steps, bytes, skips and schema-invalid
+scenarios with the first error each. The run is opt-in and leaves the ordinary suite untouched;
+a handful of tests that use fake timers or assert on wall-clock expiry fail under recording, and
+their scenarios are simply not produced.
+
 ## Known failures
 
 A scenario may carry `knownFailure: "<tracker ref>"`. It pins what the engine does today, not what
