@@ -230,6 +230,10 @@
         },
         "context": {
           "type": "object"
+        },
+        "value": {
+          "$comment": "OPEN by necessity: the return value of a query or pure method (the matchUpFormat grammar's parse, stringify, isValid), in canonical form. Absent means the method returned undefined. A mutation's result never carries a value; its effect is the patch.",
+          "description": "Return value of a query or pure method, canonical."
         }
       },
       "required": ["success"],
@@ -281,7 +285,7 @@
     },
     "PropertyName": {
       "type": "string",
-      "enum": ["DO_UNDO_IDENTITY", "IDEMPOTENT_REAPPLY", "MONOTONIC_DECISION"]
+      "enum": ["DO_UNDO_IDENTITY", "IDEMPOTENT_REAPPLY", "MONOTONIC_DECISION", "GRAMMAR_ROUND_TRIP"]
     }
   }
 }

@@ -109,6 +109,20 @@ to regenerate it. `src/tests/corpus/oracleSources.test.ts` always records a smok
 oracle to a temp dir and requires each scenario to validate, read back and replay; the full write
 runs only with `CORPUS_ORACLES=1` and goes to `.corpus-out/oracles/`, ignored.
 
+## The grammar as a direct source (C4a)
+
+```bash
+pnpm corpus:grammar        # .corpus-out/grammar/grammar.jsonl
+```
+
+`parse`, `stringify`, `isValidMatchUpFormat` and `isAggregateFormat` are pure, and tests call them
+directly, so the harvest never saw them. `src/tests/testHarness/corpus/grammarSource.ts` writes
+them as directives with the **return value recorded** (`SuccessResult.value`; absent means
+`undefined`) for every fixture format, every format the harvest contains, and an authored list of
+edge and invalid codes: four steps per code. `GRAMMAR_ROUND_TRIP` is recorded when
+`stringify(parse(code)) === code`. A port's grammar is checked by recomputing the values; the
+reader path is trivial here, the patches are empty.
+
 ## Coverage, and what "100%" means (C3)
 
 ```bash
