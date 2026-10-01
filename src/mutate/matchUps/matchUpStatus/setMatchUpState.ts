@@ -24,6 +24,7 @@ import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { validateScore } from '@Validators/validateScore';
+import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit } from '@Validators/isExit';
@@ -478,13 +479,35 @@ function resolveMatchUpAndContext({
 }) {
   const matchUpsMap = suppliedMap ?? getMatchUpsMap({ drawDefinition });
   const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
-    nextMatchUps: true,
     tournamentRecord,
     inContext: true,
     drawDefinition,
     matchUpsMap,
     event,
   });
+
+  /**
+   * THE DRAW'S EDGES ARE STORED BEFORE ANYTHING IS DECIDED ON THEM.
+   *
+   * This view used to be taken with `nextMatchUps: true`, on the understanding that it supplied
+   * `winnerMatchUpId` / `loserMatchUpId` for a draw stored without them. It supplied them to THIS
+   * view only, and the cascade's decisions do not read this view for them: `hasPropagatedExitDownstream`
+   * reads the stored matchUps, and `getExitWinningSide`, `getHeldExit` and `getExitArrivalSideNumber`
+   * read views taken later, which carry what is stored and nothing else. Measured 2026-10-01 over a
+   * hundred matrix cells played on draws with the ids stripped: 14 ended in a different draw with
+   * the flag on — the draws were only ever repaired when a cascade happened to place a BYE.
+   *
+   * So the edges are written, once, here: 0 of the hundred differ. A draw that stores its edges —
+   * every draw the factory generates — pays a walk of its structures and no write. The flag also
+   * computed `winnerTo`, `loserTo` and `potentialParticipants` for every matchUp, a `positionTargets`
+   * each, which nothing a `setMatchUpStatus` reaches reads: 89,071 -> 20,459 calls in the census.
+   *
+   * THE WRITE PRECEDES VALIDATION, deliberately. A call that is then refused has still stored the
+   * missing edges — CA: a mutation is acceptable under an error response when it is specifically the
+   * addition of missing winner and loser matchUpIds. They are derived from the draw's own links and
+   * are what it would have stored had the factory generated it.
+   */
+  if (inContextDrawMatchUps) ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
 
   const matchUp = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
   const inContextMatchUp = inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
