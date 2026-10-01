@@ -7,6 +7,37 @@ import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 
 export function isActiveDownstream(params) {
+  return activeBelow(params, new Map());
+}
+
+/**
+ * A MATCHUP REACHED DOWN TWO PATHS IS ASKED ONCE.
+ *
+ * The walk below follows a matchUp's winner target and its loser target, and in a draw whose
+ * structures re-join — DOUBLE_ELIMINATION's final, COMPASS's later directions — the same matchUp is
+ * reached down both, and everything below it was walked again each time. Measured 2026-10-01
+ * (`pipelineCost.test.ts`): 9,384 recursive calls of `positionTargets` from here, 4% of everything
+ * `setMatchUpStatus` spent.
+ *
+ * A matchUp's answer depends on two things only: WHICH matchUp it is — its targets are derived from
+ * the one view the whole walk shares — and the condition of the link it was reached through, which
+ * the FIRST_MATCHUP BYE test reads. So the answer is kept for one walk, keyed on both, and never
+ * beyond it: the next call takes a new view and a new map.
+ */
+function visit({ matchUpId, relevantLink, targetData, inContextDrawMatchUps, drawDefinition, seen }: any): boolean {
+  const key = `${matchUpId}|${relevantLink?.linkCondition ?? ''}`;
+  if (seen.has(key)) return seen.get(key);
+
+  const resolvedTargetData = targetData ?? positionTargets({ matchUpId, inContextDrawMatchUps, drawDefinition });
+  const active = !!activeBelow(
+    { targetData: resolvedTargetData, inContextDrawMatchUps, drawDefinition, relevantLink },
+    seen,
+  );
+  seen.set(key, active);
+  return active;
+}
+
+function activeBelow(params, seen: Map<string, boolean>) {
   // relevantLink is passed in iterative calls (see below)
   const { inContextDrawMatchUps, targetData, drawDefinition, relevantLink } = params;
 
@@ -192,30 +223,28 @@ export function isActiveDownstream(params) {
     return true;
   }
 
-  const winnerTargetData =
-    winnerMatchUp &&
-    positionTargets({
-      matchUpId: winnerMatchUp.matchUpId,
-      inContextDrawMatchUps,
-      drawDefinition,
-    });
-
+  // the loser's targets are already in hand — the checks above read them. The walk is a pure read,
+  // so an active loser branch answers the question and the winner branch is not walked at all; the
+  // winner's targets are otherwise derived only if that matchUp has not been answered in this walk.
   const loserActive =
     loserTargetData &&
-    isActiveDownstream({
+    visit({
       relevantLink: targetLinks?.loserTargetLink,
+      matchUpId: loserMatchUp.matchUpId,
       targetData: loserTargetData,
       inContextDrawMatchUps,
       drawDefinition,
+      seen,
     });
+  if (loserActive) return true;
 
-  const winnerActive =
-    winnerTargetData &&
-    isActiveDownstream({
-      targetData: winnerTargetData,
+  return (
+    !!winnerMatchUp &&
+    visit({
+      matchUpId: winnerMatchUp.matchUpId,
       inContextDrawMatchUps,
       drawDefinition,
-    });
-
-  return !!(winnerActive || loserActive);
+      seen,
+    })
+  );
 }
