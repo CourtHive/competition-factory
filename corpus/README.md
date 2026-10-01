@@ -123,6 +123,20 @@ edge and invalid codes: four steps per code. `GRAMMAR_ROUND_TRIP` is recorded wh
 `stringify(parse(code)) === code`. A port's grammar is checked by recomputing the values; the
 reader path is trivial here, the patches are empty.
 
+## The scoring engine as a direct source (C4b)
+
+```bash
+pnpm corpus:scoring        # .corpus-out/scoring/scoring.jsonl
+```
+
+`createMatchUp` and `addPoint` are pure, point-by-point, and act on a scoring matchUp rather than
+a tournament record. `src/tests/testHarness/corpus/scoringSource.ts` writes seeded point streams
+(fair, side-1-heavy, side-2-heavy; three seeds) through eight formats, recording at every point
+the engine's observable as the step's value: sets, score strings, winning side, completeness. The
+last step carries the whole matchUp once. One point is added after the match ends and recorded as
+it is. A port replays by chaining the values. `calculatePointsTo` and `inferServeSide` take internal
+format structures and are not corpus directives.
+
 ## Coverage, and what "100%" means (C3)
 
 ```bash
