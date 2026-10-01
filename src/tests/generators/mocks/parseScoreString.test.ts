@@ -130,11 +130,12 @@ it('can parse tiebreaks with finalSetFormat different from main format', () => {
   expect(sets[1].side1TiebreakScore).toEqual(4);
   expect(sets[1].side2TiebreakScore).toEqual(7);
 
-  // Set 3: TB10 (tiebreak-only)
-  expect(sets[2].side1Score).toEqual(11);
-  expect(sets[2].side2Score).toEqual(9);
-  expect(sets[2].side1TiebreakScore).toEqual(undefined);
-  expect(sets[2].side2TiebreakScore).toEqual(undefined);
+  // Set 3: TB10 (tiebreak-only) — its points are tiebreak points, with or without the format (G3)
+  expect(sets[2].side1Score).toEqual(undefined);
+  expect(sets[2].side2Score).toEqual(undefined);
+  expect(sets[2].side1TiebreakScore).toEqual(11);
+  expect(sets[2].side2TiebreakScore).toEqual(9);
+  expect(sets[2].tiebreakSet).toBe(true);
 });
 
 it('uses default TB7 when no matchUpFormat provided', () => {
@@ -173,9 +174,10 @@ describe('TB1 NoAD support', () => {
     expect(result[1].NoAD).toBeUndefined();
     expect(result[1].tiebreakSet).toBeUndefined();
 
-    // Final set is TB1 (tiebreak-only)
-    expect(result[2].side1Score).toEqual(1);
-    expect(result[2].side2Score).toEqual(0);
+    // Final set is TB1 (tiebreak-only): the point is a tiebreak point, not a game
+    expect(result[2].side1TiebreakScore).toEqual(1);
+    expect(result[2].side2TiebreakScore).toEqual(0);
+    expect(result[2].side1Score).toBeUndefined();
     expect(result[2].NoAD).toBe(true);
     expect(result[2].tiebreakSet).toBe(true);
   });
@@ -188,8 +190,8 @@ describe('TB1 NoAD support', () => {
     expect(result.length).toEqual(3);
 
     // Final set should have NoAD=true
-    expect(result[2].side1Score).toEqual(1);
-    expect(result[2].side2Score).toEqual(0);
+    expect(result[2].side1TiebreakScore).toEqual(1);
+    expect(result[2].side2TiebreakScore).toEqual(0);
     expect(result[2].NoAD).toBe(true);
     expect(result[2].tiebreakSet).toBe(true);
   });
@@ -202,8 +204,8 @@ describe('TB1 NoAD support', () => {
     expect(result.length).toEqual(3);
 
     // TB7 should have tiebreakSet=true but NoAD should be undefined
-    expect(result[0].side1Score).toEqual(7);
-    expect(result[0].side2Score).toEqual(5);
+    expect(result[0].side1TiebreakScore).toEqual(7);
+    expect(result[0].side2TiebreakScore).toEqual(5);
     expect(result[0].tiebreakSet).toBe(true);
     expect(result[0].NoAD).toBeUndefined();
   });
@@ -216,8 +218,8 @@ describe('TB1 NoAD support', () => {
     expect(result.length).toEqual(3);
 
     // TB10 should have tiebreakSet=true but NoAD should be undefined
-    expect(result[0].side1Score).toEqual(10);
-    expect(result[0].side2Score).toEqual(8);
+    expect(result[0].side1TiebreakScore).toEqual(10);
+    expect(result[0].side2TiebreakScore).toEqual(8);
     expect(result[0].tiebreakSet).toBe(true);
     expect(result[0].NoAD).toBeUndefined();
   });
