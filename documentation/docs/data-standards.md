@@ -163,7 +163,7 @@ All factory operations preserve CODES compliance, ensuring that tournament recor
 
 ### The JSON Schema
 
-`src/global/schema/tournament.schema.json` is the **third declaration of CODES**, after the TypeScript types and these docs. It is held in the repository and exercised by the test suite; it is not part of the published package, whose surface is `dist`.
+`src/global/schema/tournament.schema.json` is the **third declaration of CODES**, after the TypeScript types and these docs. It is exercised by the test suite and published with the package at `tods-competition-factory/schema/tournament.schema.json`, so a consumer that validates records reads the declaration the factory enforces rather than a copy.
 
 Because it is a third declaration it can drift from the other two, and drift here is consequential in both directions: a closed definition turns a CODES field added to the types but not mirrored in the schema into a loud validation failure, while an open one hides it.
 

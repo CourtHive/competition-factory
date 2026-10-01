@@ -48,7 +48,8 @@
         "types": "./dist/tods-competition-factory.d.cts",
         "default": "./dist/index.js"
       }
-    }
+    },
+    "./schema/tournament.schema.json": "./dist/schema/tournament.schema.json"
   },
   "types": "dist/tods-competition-factory.d.ts",
   "sideEffects": false,

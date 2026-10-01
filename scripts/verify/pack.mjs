@@ -82,7 +82,7 @@ if (tscOutput.trim()) {
 log('runtime require() smoke…');
 try {
   run(
-    "node -e \"const f = require('tods-competition-factory'); if (!f.tournamentEngine || !f.syncEngine || !f.mocksEngine) { console.error('missing exports'); process.exit(1); }\"",
+    "node -e \"const f = require('tods-competition-factory'); if (!f.tournamentEngine || !f.syncEngine || !f.mocksEngine) { console.error('missing exports'); process.exit(1); } const schema = require('tods-competition-factory/schema/tournament.schema.json'); if (!schema?.definitions?.MatchUpSchedule) { console.error('schema subpath did not publish, or lacks MatchUpSchedule'); process.exit(1); }\"",
     {
       cwd: fixture,
     },
