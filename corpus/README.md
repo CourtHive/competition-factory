@@ -137,6 +137,19 @@ last step carries the whole matchUp once. One point is added after the match end
 it is. A port replays by chaining the values. `calculatePointsTo` and `inferServeSide` take internal
 format structures and are not corpus directives.
 
+## Authored scenarios for the spec (C4c)
+
+```bash
+pnpm corpus:authored       # .corpus-out/authored/authored.jsonl
+```
+
+`src/tests/testHarness/corpus/authoredSources.ts` holds one short scenario per rule the
+outcome-pipeline spec marks UNPINNED or states as a guarantee, each naming the spec section it
+pins. The test asserts the result code of every step: the scenario is the pin, the assertion is the
+claim, and an engine that answers differently fails the test as a finding. A `?` expectation is a
+rule the page leaves open; what the engine does is recorded and printed for the page's next
+revision.
+
 ## Coverage, and what "100%" means (C3)
 
 ```bash
