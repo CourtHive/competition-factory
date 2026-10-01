@@ -21,6 +21,8 @@ it('properly interprets tallyPolicies', () => {
       eventType: SINGLES,
       participantsCount: 4,
       drawType: ROUND_ROBIN,
+      // one result is decided by a match tiebreak, which the default SET3-S:6/TB7 has no position for
+      matchUpFormat: 'SET3-S:6/TB7-F:TB10',
       outcomes: [
         {
           drawPositions: [1, 2],
