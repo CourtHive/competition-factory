@@ -36,20 +36,26 @@ function validateTiebreakOnlySet(
     };
   }
 
-  // NoAD tiebreaks require win by 1, regular tiebreaks require win by 2
-  const requiredWinBy = NoAD ? 1 : 2;
+  // ── The margin cannot exceed the target ──
+  //
+  // A no-ad tiebreak is won by one; an ordinary one by two — EXCEPT where the target itself is one. A
+  // `F:TB1` decider is the sudden-death point an aggregate timed format settles a tie with, and `1-0` is
+  // the only score it can have; measured 2026-09-30, this refused it with "must be won by at least 2
+  // points" while `checkSetIsComplete` (since #5049) accepted it. The cap below is the same one it uses,
+  // so the validator and the analysis agree about the one set that can only ever be won by one.
+  const requiredWinBy = NoAD ? 1 : Math.min(2, tiebreakSetTo);
 
   if (scoreDiff < requiredWinBy) {
     return {
       isValid: false,
       error: NoAD
         ? `Tiebreak-only set (NoAD) must be won by at least 1 point, got ${winnerScore}-${loserScore}`
-        : `Tiebreak-only set must be won by at least 2 points, got ${winnerScore}-${loserScore}`,
+        : `Tiebreak-only set must be won by at least ${requiredWinBy} point${requiredWinBy === 1 ? '' : 's'}, got ${winnerScore}-${loserScore}`,
     };
   }
 
-  // For NoAD tiebreaks, winner just needs to reach tiebreakTo
-  if (NoAD) {
+  // Won by one — no-ad, or a target of one — the winner just needs to reach tiebreakTo.
+  if (requiredWinBy === 1) {
     return { isValid: true };
   }
 
