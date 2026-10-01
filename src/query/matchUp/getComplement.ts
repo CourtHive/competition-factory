@@ -10,7 +10,7 @@ type SetComplementArgs = {
 };
 
 export const getSetComplement = (params: SetComplementArgs): number[] | false => {
-  const { isSide1, lowValue, setTo, tiebreakAt, NoAD, winBy } = params;
+  const { isSide1, lowValue, setTo, tiebreakAt, winBy } = params;
   if (lowValue === undefined) return false;
   let valueAsNumber = ensureInt(lowValue);
 
@@ -26,14 +26,10 @@ export const getSetComplement = (params: SetComplementArgs): number[] | false =>
   let calculatedValue;
   // WB1 on a no-tiebreak set: first side to setTo wins; complement is always setTo
   // (e.g. TYPTI WB1 → 0–5, 4–5).
+  // `NoAD` had a branch here that completed a 5 to a 6 — no-advantage GAMES read as a one-game SET
+  // margin. Removed 2026-10-01: the set margin is two or the declared `winBy`, whatever the games do.
   if (!tiebreakAt && winBy === 1) {
     calculatedValue = setTo;
-  } else if (NoAD && !tiebreakAt) {
-    if (valueAsNumber > setTo) {
-      calculatedValue = setTo;
-    } else {
-      calculatedValue = valueAsNumber < setTo ? setTo : setTo - 1;
-    }
   } else {
     calculatedValue =
       (valueAsNumber + 1 < setTo && setTo) ||
@@ -147,7 +143,7 @@ type MaxSetScoreArgs = {
  * an interface refuse an impossible pair as it is typed rather than validating it afterwards.
  */
 export const getMaxSetScore = (params: MaxSetScoreArgs): number | undefined => {
-  const { NoAD, opponentScore, setTo, tiebreakAt, tiebreakTo, timed, winBy } = params;
+  const { opponentScore, setTo, tiebreakAt, tiebreakTo, timed, winBy } = params;
 
   // No ceiling: the clock decides, not the games.
   if (timed) return undefined;
@@ -164,11 +160,11 @@ export const getMaxSetScore = (params: MaxSetScoreArgs): number | undefined => {
   //
   //   - `S:6` (advantage) — a 5 completes to a **7**, so the set runs on. 1968 Wimbledon reached
   //     24-22. No ceiling.
-  //   - `S:6NOAD` — a 5 completes to a **6**: no-advantage scoring settles it at `setTo` with a
-  //     one-game margin, so `setTo` IS the ceiling.
-  //   - a declared `WB1` — the same, by the format saying so outright.
+  //   - `S:6NOAD` — the SAME: no-advantage games change nothing about the set's margin, so a 5
+  //     completes to a 7 and the set runs on. This returned `setTo` for it until 2026-10-01.
+  //   - a declared `WB1` — first past the post, so `setTo` IS the ceiling.
   const margin = winBy ?? 2;
-  if (!tiebreakAt) return NoAD || margin === 1 ? setTo : undefined;
+  if (!tiebreakAt) return margin === 1 ? setTo : undefined;
 
   // A tiebreak BELOW setTo settles the set before either side passes setTo.
   if (tiebreakAt < setTo) return setTo;

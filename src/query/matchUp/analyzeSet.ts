@@ -175,7 +175,7 @@ function checkValidStandardSetOutcome({ setObject, setFormat, sideGameScores, si
   const validGameScores = sideGameScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length === 2;
   if (!validGameScores) return { result: false, error: INVALID_GAME_SCORES };
 
-  const { setTo, tiebreakAt, tiebreakFormat, NoAD } = setFormat ?? {};
+  const { setTo, tiebreakAt, tiebreakFormat, winBy } = setFormat ?? {};
   const meetsSetTo = !!(setTo && sideGameScores?.find((gameScore) => gameScore >= setTo));
   if (!meetsSetTo) return { result: false, error: INVALID_GAME_SCORES };
 
@@ -211,7 +211,9 @@ function checkValidStandardSetOutcome({ setObject, setFormat, sideGameScores, si
 
   const hasTiebreakCondition = tiebreakAt && sideGameScores.filter((gameScore) => gameScore >= tiebreakAt).length === 2;
 
-  const minimumGamesWinMargin = NoAD ? 1 : 2;
+  // Two games, or the margin the format DECLARES (`WB1`). `NoAD` is a games property and read this as a
+  // one-game set margin until 2026-10-01 — see `checkSetIsComplete` for the ruling.
+  const minimumGamesWinMargin = winBy ?? 2;
   const losingSideGameScoreAtSetToThreshold = losingSideGameScore >= setTo - 1;
   const invalidWinningScore =
     gamesDifference &&
