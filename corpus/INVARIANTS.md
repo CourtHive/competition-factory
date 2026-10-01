@@ -68,3 +68,11 @@ application must not be refused for a reason the first was not.
 A matchUp holding a participant or a winner before the step still holds it after, unless the step
 targeted that matchUp. Placeholder decisions (a pending propagated exit with no participant) are
 not REAL for this purpose; see the harness comment for the 2026-09-21 reclassification.
+
+### `GRAMMAR_ROUND_TRIP`
+
+For a matchUpFormat code `c`: `stringify(parse(c)) === c`. The code is canonical: parsing it and
+printing it back yields the same bytes. A valid code that does not round-trip is not wrong, it is
+non-canonical (a redundant modifier the printer drops), and the scenario records what `stringify`
+produced instead. Defined here, not in the exit-propagation harness, because the grammar has no
+draw; `src/tests/testHarness/corpus/grammarSource.ts` is the authority.
