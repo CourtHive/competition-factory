@@ -1,11 +1,11 @@
-import { getOutcomePipeline } from '@Global/state/globalState';
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
-import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { getOutcomePipeline } from '@Global/state/globalState';
+import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { observeWrite, planWrite } from './write';
 import { planDirection } from './direction';
-import { buildOutcomeView } from './view';
 import { refuseOutcome } from './refusals';
+import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
 
 // constants and types
@@ -79,7 +79,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
         event: args.event,
       });
       const target = matchUps?.[0];
-      const arrived = !!target?.sides?.some((side: any) => side?.participantId === direction.winner?.participantId);
+      const arrived = !!target?.sides?.some((side) => side?.participantId === direction.winner?.participantId);
       if (!arrived)
         throw new OutcomePipelineDivergence({
           matchUpId: args.request.matchUpId,

@@ -6,25 +6,26 @@ import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventTyp
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
-import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isObject } from '@Tools/objects';
 
 // constants and types
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
-import type { HydratedMatchUp } from '@Types/hydrated';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
+import type { DrawDefinition, Event, MatchUp, PositionAssignment, Structure } from '@Types/tournamentTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 
 /**
@@ -44,25 +45,35 @@ import { TEAM } from '@Constants/matchUpTypes';
 const LIVE_OR_UNSET = new Set<string | undefined>([undefined, TO_BE_PLAYED]);
 
 /** § 2.1, as the spec states it: may an exit with one participant be awarded to the empty side? */
-function exitAwardable(positionAssignments: any[], inContextMatchUp: any, winningSide?: number): boolean {
-  const winnerSide = (inContextMatchUp?.sides ?? []).find((side: any) => side?.sideNumber === winningSide);
+function exitAwardable(
+  positionAssignments: PositionAssignment[],
+  inContextMatchUp: HydratedMatchUp | undefined,
+  winningSide?: number,
+): boolean {
+  const winnerSide = (inContextMatchUp?.sides ?? []).find((side) => side?.sideNumber === winningSide);
   if (winnerSide?.participantId) return false;
   if (winnerSide?.qualifier) return true;
   if (winnerSide?.bye) return false;
   if (winnerSide?.drawPosition === undefined) return true;
-  const assignment = positionAssignments.find((entry: any) => entry.drawPosition === winnerSide.drawPosition);
+  const assignment = positionAssignments.find((entry) => entry.drawPosition === winnerSide.drawPosition);
   if (!assignment) return true;
   if (assignment.bye) return false;
   return !!(assignment.participantId || assignment.qualifier);
 }
 
 /** a lucky draw's round with an odd number of matchUps feeds nobody forward (`checkIsPreFeedRound`) */
-function luckyPreFeed(drawDefinition: any, matchUp: any, structure: any): boolean {
+function luckyPreFeed(drawDefinition: DrawDefinition, matchUp: MatchUp, structure?: Structure): boolean {
   if (!isLuckyBasedDraw(drawDefinition?.drawType) || !matchUp.roundNumber || !structure?.matchUps) return false;
-  return structure.matchUps.filter((m: any) => m.roundNumber === matchUp.roundNumber).length % 2 !== 0;
+  return structure.matchUps.filter((m) => m.roundNumber === matchUp.roundNumber).length % 2 !== 0;
 }
 
-function resolveFormat(request: OutcomeRequest, matchUp: any, structure: any, drawDefinition: any, event: any) {
+function resolveFormat(
+  request: OutcomeRequest,
+  matchUp: MatchUp,
+  structure: Structure | undefined,
+  drawDefinition: DrawDefinition,
+  event: Event | undefined,
+): string | undefined {
   return (
     request.matchUpFormat ??
     matchUp?.matchUpFormat ??

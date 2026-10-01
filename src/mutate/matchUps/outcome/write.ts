@@ -4,7 +4,7 @@ import { dualWinningSideChange } from './route';
 
 // constants and types
 import type { MatchUpWrite, OutcomeRequest, OutcomeView, Route } from './types';
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import type { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   ABANDONED,
   AWAITING_RESULT,
@@ -182,7 +182,7 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
 }
 
 /** the fields of the matchUp v1 wrote, in the plan's shape, for the comparison */
-export function observeWrite(matchUp: any): MatchUpWrite {
+export function observeWrite(matchUp: MatchUp): MatchUpWrite {
   return {
     matchUpStatus: matchUp.matchUpStatus,
     winningSide: matchUp.winningSide,
