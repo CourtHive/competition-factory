@@ -46,22 +46,21 @@ export function checkSetIsComplete({
   const tiebreakIsValid =
     ignoreTiebreak || (requiresTiebreak && leaderHoldsTiebreak && tiebreakReachesTarget(set, setFormat, isTiebreakSet));
 
-  // ── The margin honours an explicit `winBy`, which it previously ignored ──
+  // ── The margin is two games, a declared `winBy`, or one through a tiebreak — never `NoAD` ──
   //
-  // `NoAD` and a tiebreak both force a one-game margin, and both were already handled. What was not is a
-  // format that DECLARES its margin: `parse('SET1-S:5WB1')` emits `{setTo: 5, noTiebreak: true, winBy: 1}`,
-  // with no `NoAD`, so a 5-4 fell through to a two-game margin and came back INCOMPLETE — though
-  // first-to-five wins that set. `SET1-S:5NOAD` worked, which is what made the gap easy to miss: the two
-  // formats express the same rule under different keys and only one of them was read.
+  // `NoAD` on a set format is no-advantage GAME scoring: a game at deuce decided by one point. It says
+  // nothing about how the SET ends, which under `S:6NOAD/TB7` is still two clear games or the tiebreak at
+  // six-all — the ITF's own short sets and the USTA "Standard Doubles" format both read that way, and a
+  // one-game SET margin is a different token, `WB1` (`parse('SET1-S:5WB1')` emits `winBy: 1`; TYPTI).
+  // This function read `NoAD` as that margin, so a `6-5` under `SET3-S:6NOAD/TB7-F:TB10` came back
+  // COMPLETE, and `getSetWinningSide` and `analyzeSet`, which delegate here, named a winner for it.
+  // Settled by CA 2026-10-01; the grammar and sources are in
+  // `Mentat/statuses/2026-10-01-noad-at-three-levels-and-the-one-game-set.md`.
   //
-  // The symptom reached further than this function. `getSetWinningSide` delegates here, so `analyzeSet`
-  // reported `winningSide: undefined` for the same 5-4 — one root cause, two wrong answers. Found while
-  // courthive-components was being moved off its hand-rolled copies of this logic (CA, 2026-09-27).
+  // `winBy` itself was previously ignored: a 5-4 under `SET1-S:5WB1` fell through to a two-game margin
+  // and came back INCOMPLETE, though first-to-five wins that set (CA, 2026-09-27).
   const declaredWinBy = setFormat.winBy;
-  const winMargin =
-    (!requiresTiebreak && setFormat.NoAD) || requiresTiebreak || (isTiebreakSet && setFormat.tiebreakFormat?.NoAD)
-      ? 1
-      : (declaredWinBy ?? 2);
+  const winMargin = requiresTiebreak || (isTiebreakSet && setFormat.tiebreakFormat?.NoAD) ? 1 : (declaredWinBy ?? 2);
   const hasWinMargin = scoreDiff >= winMargin;
   const validNormalSetScore = containsSetTo && (hasWinMargin || requiresTiebreak);
 

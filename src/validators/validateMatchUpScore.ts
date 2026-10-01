@@ -117,13 +117,17 @@ function validateExplicitTiebreakScore(
       error: `Tiebreak winner must reach ${tbTo} points, got ${tbWinnerScore}`,
     };
   }
-  if (tbDiff < 2) {
+  // A no-ad tiebreak is won by one at the target — the ITF's short-set tiebreak (first to five, deciding
+  // point at four-all), Fast4's, World TeamTennis's nine-pointer. This demanded two from every tiebreak
+  // and refused all of them, including the mocks' own 5-4 under `TB5NOAD@5` (measured 2026-10-01).
+  const requiredWinBy = tiebreakFormat.NoAD ? 1 : 2;
+  if (tbDiff < requiredWinBy) {
     return {
       isValid: false,
-      error: `Tiebreak must be won by 2 points, got ${tbWinnerScore}-${tbLoserScore}`,
+      error: `Tiebreak must be won by ${requiredWinBy} point${requiredWinBy === 1 ? '' : 's'}, got ${tbWinnerScore}-${tbLoserScore}`,
     };
   }
-  if (tbLoserScore >= tbTo - 1 && tbDiff > 2) {
+  if (tbLoserScore >= tbTo - 1 && tbDiff > requiredWinBy) {
     return {
       isValid: false,
       error: `Tiebreak score ${tbWinnerScore}-${tbLoserScore} is invalid`,

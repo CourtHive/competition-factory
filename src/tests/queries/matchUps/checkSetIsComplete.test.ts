@@ -1,6 +1,6 @@
 import { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
-import { analyzeSet } from '@Query/matchUp/analyzeSet';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { analyzeSet } from '@Query/matchUp/analyzeSet';
 import { describe, expect, it } from 'vitest';
 
 it('properly determines when sets are complete', () => {
@@ -15,6 +15,8 @@ it('properly determines when sets are complete', () => {
   let result = checkSetIsComplete(params);
   expect(result).toEqual(false);
 
+  // `NOAD` is no-advantage GAMES; it does not shorten the set. A 4-3 in a set to four needs its tiebreak
+  // or a fifth game, exactly as without it (settled 2026-10-01 — see `noAdIsGamesOnly.test.ts`).
   matchUpFormat = 'SET3-S:4NOAD-F:TB7';
   params = {
     matchUpFormat,
@@ -24,18 +26,22 @@ it('properly determines when sets are complete', () => {
     },
   };
   result = checkSetIsComplete(params);
-  expect(result).toEqual(true);
+  expect(result).toEqual(false);
+
+  // The one-game margin is a declared `WB1`.
+  expect(checkSetIsComplete({ matchUpFormat: 'SET3-S:4WB1-F:TB7', set: { side1Score: 4, side2Score: 3 } })).toBe(true);
 });
 
 /**
  * A declared win margin — `WB1` — was ignored.
  *
- * `NoAD` and a tiebreak both force a one-game margin and were already handled. A format that DECLARES its
- * margin was not: `parse('SET1-S:5WB1')` emits `{setTo: 5, noTiebreak: true, winBy: 1}` with no `NoAD`, so
- * a 5-4 fell through to a two-game margin and came back incomplete — though first-to-five wins that set.
+ * A tiebreak forces a one-game margin and was already handled. A format that DECLARES its margin was not:
+ * `parse('SET1-S:5WB1')` emits `{setTo: 5, noTiebreak: true, winBy: 1}`, so a 5-4 fell through to a
+ * two-game margin and came back incomplete — though first-to-five wins that set.
  *
- * `SET1-S:5NOAD` worked throughout, which is what made this easy to miss: the two formats express the same
- * rule under different keys, and only one of them was being read.
+ * This comment used to say `SET1-S:5NOAD` "expresses the same rule under a different key". It does not:
+ * `NOAD` is no-advantage GAMES and leaves the set margin at two (settled 2026-10-01, see
+ * `noAdIsGamesOnly.test.ts`). `WB1` is the only token for a one-game set margin.
  *
  * Found 2026-09-27 while courthive-components was moved off its hand-rolled copies of this logic, which
  * disagreed with the engine here and were right.
@@ -63,11 +69,12 @@ describe('a declared win margin (WB1)', () => {
     expect(checkSetIsComplete({ matchUpFormat: 'SET3-S:6/TB7', set: { side1Score: 6, side2Score: 4 } })).toBe(true);
   });
 
-  it('agrees with NOAD, which expresses the same rule under a different key', () => {
+  it('does NOT agree with NOAD, which is a games rule and leaves the set margin at two', () => {
     const wb1 = checkSetIsComplete({ matchUpFormat: 'SET1-S:5WB1', set: { side1Score: 5, side2Score: 4 } });
     const noad = checkSetIsComplete({ matchUpFormat: 'SET1-S:5NOAD', set: { side1Score: 5, side2Score: 4 } });
 
-    expect(wb1).toBe(noad);
+    expect(wb1).toBe(true);
+    expect(noad).toBe(false);
   });
 });
 
