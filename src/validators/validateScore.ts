@@ -75,7 +75,7 @@ export function validateScore({
         return { error: INVALID_VALUES, info: 'non-numeric values' };
       }
 
-      if (winningSide && ![1, 2].includes(winningSide))
+      if (winningSide != null && ![1, 2].includes(winningSide))
         return { error: INVALID_VALUES, info: 'winningSide must be 1 or 2' };
     }
 
