@@ -142,31 +142,18 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event,
   });
 
-  // DECISION: Determine if winningSide changes should propagate to downstream matchUps
-  // WHY: Some tournaments allow changing winners (e.g., after appeals), others don't
-  // Priority: explicit param > policy setting > undefined (default behavior)
-  const allowChangePropagation =
-    (params.allowChangePropagation !== undefined && params.allowChangePropagation) ||
-    (policy?.allowChangePropagation !== undefined && policy.allowChangePropagation) ||
-    undefined;
-
-  // DECISION: whether an exit status (WALKOVER/DEFAULTED) propagates into the consolation
-  // WHY: gated by the scoring policy so a provider can default it on/off; an explicit
-  // params.propagateExitStatus === true always overrides the policy (same precedence as
-  // allowChangePropagation — an explicit boolean false defers to the policy)
-  const propagateExitStatus =
-    (params.propagateExitStatus !== undefined && params.propagateExitStatus) ||
-    (policy?.propagateExitStatus !== undefined && policy.propagateExitStatus) ||
-    undefined;
-
-  // DECISION: whether a RETIREMENT is one of the exits that propagates.
-  // WHY: a rules question rather than an engineering one — see POLICY_SCORING_DEFAULT. Precedence
-  // differs deliberately from the pair above: those use `x || y || undefined`, which cannot express
-  // an explicit `false` (it falls through to the next source). Turning retirement propagation OFF is
-  // the whole point of this setting, so an explicit `false` from either params or policy must win.
-  // Absent both, it defaults to FALSE: a retiree is out of a MATCH, not out of the EVENT, unless the
-  // governing policy says so.
-  const propagateRetirementAsExit = params.propagateRetirementAsExit ?? policy?.propagateRetirementAsExit ?? false;
+  // THE POLICY GOVERNS, both ways (CA, 2026-10-01). An applied scoring policy that SPEAKS on a flag,
+  // true or false, wins over anything on the call; the call decides only where the policy is silent.
+  // "If a governance policy is someone who retires can no longer continue playing, a tournament
+  // director under that policy shouldn't be able to allow a participant to continue in the draw."
+  // Before this, params won (`propagateRetirementAsExit`) or a truthy param won (`||`, the other
+  // two), so a caller could override its federation's rule. The same rule for all three:
+  // `policy ?? param ?? default`. `POLICY_SCORING_DEFAULT` is SILENT on all three, so a provider
+  // that attaches it leaves the decision to the call; a provider that forbids sets `false`.
+  const allowChangePropagation = policy?.allowChangePropagation ?? params.allowChangePropagation ?? undefined;
+  const propagateExitStatus = policy?.propagateExitStatus ?? params.propagateExitStatus ?? undefined;
+  // absent both, FALSE: a retiree is out of a MATCH, not out of the EVENT, unless the policy says so
+  const propagateRetirementAsExit = policy?.propagateRetirementAsExit ?? params.propagateRetirementAsExit ?? false;
 
   const { outcome, setTBlast } = params;
 
