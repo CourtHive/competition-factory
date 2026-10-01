@@ -13,6 +13,10 @@ export const CONFLICT_POSITION_LINK = 'positionLinkConflict';
 // deliberate while a director swaps participants around — but a slot that cannot
 // be played on is worth surfacing, so it is annotated at WARNING severity.
 export const CONFLICT_BYE_SCHEDULED = 'byeScheduledOnCourt';
+// a matchUp the exit cascade decided - a produced WALKOVER or DEFAULTED - holding a court it can never use
+export const CONFLICT_EXIT_SCHEDULED = 'exitScheduledOnCourt';
+// the mutation payload's warning: a BYE or a produced exit left holding a court or a time
+export const SCHEDULE_PRESERVED_ON_EXIT = 'SCHEDULE_PRESERVED_ON_EXIT';
 export const SCHEDULE_ISSUE_IDS = 'ISSUE_IDS';
 export const SCHEDULE_CONFLICT = 'CONFLICT';
 export const SCHEDULE_WARNING = 'WARNING';
@@ -39,6 +43,8 @@ export const scheduleConstants = {
   CONFLICT_COURT_DOUBLE_BOOKING,
   CONFLICT_POSITION_LINK,
   CONFLICT_BYE_SCHEDULED,
+  CONFLICT_EXIT_SCHEDULED,
+  SCHEDULE_PRESERVED_ON_EXIT,
   SCHEDULE_ISSUE_IDS,
   SCHEDULE_CONFLICT,
   SCHEDULE_WARNING,
