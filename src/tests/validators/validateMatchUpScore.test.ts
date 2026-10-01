@@ -562,19 +562,22 @@ describe('validateMatchUpScore - Final Set Variations', () => {
     expect(result.isValid).toBe(true);
   });
 
-  it('should reject best of 5 with 13-11 final set (exceeds setTo+1)', () => {
+  it('accepts best of 5 with a 13-11 final set under a tiebreak at twelve-all, and refuses 14-12', () => {
+    // This pinned 13-11 as INVALID, with a note that the validator "doesn't parse final set format
+    // variations (no tiebreak at 12)". It does now: the tiebreak is played at twelve-all, so 13-11 is a
+    // set won by two before it and 14-12 is not a score (`tiebreakAtRules`, 2026-10-02).
     const format = 'SET5-S:6/TB7-F:6/TB7@12';
     const sets = [
       { side1Score: 6, side2Score: 4, winningSide: 1 },
       { side1Score: 4, side2Score: 6, winningSide: 2 },
       { side1Score: 6, side2Score: 3, winningSide: 1 },
       { side1Score: 3, side2Score: 6, winningSide: 2 },
-      { side1Score: 13, side2Score: 11, winningSide: 1 }, // Exceeds setTo+1 limit
+      { side1Score: 13, side2Score: 11, winningSide: 1 },
     ];
-    const result = validateMatchUpScore(sets, format);
-    // NOTE: Current implementation validates against setTo+1 limit
-    // Doesn't parse final set format variations (no tiebreak at 12)
-    expect(result.isValid).toBe(false);
+    expect(validateMatchUpScore(sets, format).isValid).toBe(true);
+
+    const pastTheTiebreak = [...sets.slice(0, 4), { side1Score: 14, side2Score: 12, winningSide: 1 }];
+    expect(validateMatchUpScore(pastTheTiebreak, format).isValid).toBe(false);
   });
 
   it('should accept Australian Open 2019 format (SET5-S:6/TB7-F:6/TB10)', () => {

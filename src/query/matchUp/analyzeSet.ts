@@ -1,3 +1,4 @@
+import { tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
 import { getSetWinningSide } from './getSetWinningSide';
 
 // constants
@@ -285,7 +286,8 @@ function validateTiebreakCondition({
       };
     }
 
-    const maxGameScore = tiebreakAt < setTo ? setTo : setTo + 1;
+    // the tiebreak winner's games: 7 for `@6`, 6 for `@5`, 13 for `@12` — see `tiebreakAtRules`
+    const maxGameScore = tiebreakSetGames({ setTo, tiebreakAt })?.winner ?? setTo + 1;
     if (winningSideGameScore > maxGameScore) {
       return {
         result: false,
@@ -319,11 +321,12 @@ function validateTiebreakCondition({
   // This refused it as "(2)" (measured 2026-10-02, with or without `NOAD`), while `getSetWinningSide`
   // named the winner — one set, two answers. Only where the tiebreak sits AT `setTo`: under `@5` a 7-5
   // is impossible, because five-all is already the tiebreak.
+  // Without the tiebreak condition the games must be a set won by the margin with the loser still
+  // below the tiebreak games: 7-5 under `@6`, 12-10 and 13-11 under `@12`, never 7-3 or 8-3.
   const losingSideGameScore = sideGameScores[losingSideIndex];
-  const wonOutrightFromAllButOne =
-    tiebreakAt === setTo && winningSideGameScore === setTo + 1 && losingSideGameScore === setTo - 1;
   const hasTiebreakGameScore = winningSideGameScore > setTo;
-  if (hasTiebreakGameScore && !hasTiebreakCondition && !wonOutrightFromAllButOne) {
+  const wonByTheMargin = wonWithoutTiebreak(winningSideGameScore, losingSideGameScore, { setTo, tiebreakAt });
+  if (hasTiebreakGameScore && !hasTiebreakCondition && !wonByTheMargin) {
     return {
       result: false,
       error: { message: 'invalid winning game scoreString (2)' },

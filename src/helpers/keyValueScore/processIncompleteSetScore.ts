@@ -1,3 +1,4 @@
+import { tiebreakSetGames, isTiebreakGamesScore } from '@Query/matchUp/tiebreakAtRules';
 import { getWinningSide } from './winningSide';
 import { ensureInt } from '@Tools/ensureInt';
 
@@ -59,28 +60,19 @@ function checkValidSide2Score({ analysis, set = {}, value }: CheckValidSide2Scor
     return { validSide2Score: validSide2, requiresTiebreak: false };
   }
 
-  if (tiebreakAt && tiebreakAt < setTo) {
-    if (side1Score === tiebreakAt) {
-      validSide2Score = value <= setTo;
-    } else {
-      validSide2Score = value <= tiebreakAt;
-    }
-  } else if (side1Score === setTo || side1Score === setTo - 1) {
-    // no-advantage games do not shorten the set: the same pairs are valid with or without `NoAD`
-    validSide2Score = value <= setTo + 1;
-  } else if (side1Score === setTo + 1) {
-    validSide2Score = value === setTo || value === setTo - 1;
-  } else {
-    validSide2Score = value <= setTo;
-  }
+  // A pair is a score the format can reach when the lower side is at most the tiebreak games and the
+  // higher side at most what that lower side allows: the tiebreak winner's games once the lower side
+  // has reached the tiebreak, otherwise first to setTo or two clear games. Wherever the format puts
+  // its tiebreak — `@5`, `@6`, `@12` — the same rule (2026-10-02, validator debate G1).
+  const format = { setTo, tiebreakAt: tiebreakAt ?? setTo, winBy };
+  const games = tiebreakSetGames(format)!;
+  const low = Math.min(side1Score, value);
+  const high = Math.max(side1Score, value);
+  const highest = low >= games.loser ? games.winner : Math.max(setTo, low + (winBy ?? 2));
+  validSide2Score = low <= games.loser && high <= highest;
 
   if (validSide2Score) {
-    if (tiebreakAt && tiebreakAt < setTo) {
-      requiresTiebreak =
-        (side1Score === setTo && value === tiebreakAt) || (side1Score === tiebreakAt && value === setTo);
-    } else {
-      requiresTiebreak = side1Score >= setTo && value >= setTo && side1Score !== value;
-    }
+    requiresTiebreak = isTiebreakGamesScore(high, low, format);
   }
 
   return { validSide2Score, requiresTiebreak };

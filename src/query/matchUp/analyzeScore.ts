@@ -1,4 +1,5 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
+import { tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { instanceCount } from '@Tools/arrays';
 
@@ -78,7 +79,11 @@ function validateSet(
 
   if (!setValues.setTo) return true;
 
-  const excessiveSetScore = !setValues.noTiebreak && maxSetScore > setValues.setTo + 1;
+  // The ceiling is the tiebreak winner's games wherever the format puts its tiebreak: 6 for `@5`, 7 for
+  // `@6`, 13 for `@12`. `setTo + 1` accepted a 7-5 under `@5` (five-all is the tiebreak) and refused a
+  // 12-10 under `@12` (validator debate V8 and G1, 2026-10-02).
+  const ceiling = tiebreakSetCeiling(setValues) ?? setValues.setTo + 1;
+  const excessiveSetScore = !setValues.noTiebreak && maxSetScore > ceiling;
   return !excessiveSetScore;
 }
 
