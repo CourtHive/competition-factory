@@ -277,8 +277,14 @@ function applyScoreAndStatus({
     const survivingProvenance = isAnyExit(matchUpStatus)
       ? matchUp.sideExitProvenance
       : retainByeClaimsOnly(matchUpStatus === BYE ? matchUp.sideExitProvenance : undefined);
+    // A matchUp-level `matchUpFormat` SURVIVES the blank (CA, 2026-10-01): the format is a property
+    // of the match, not of its result. The fixture carries `matchUpFormat: undefined` because it is
+    // the unwound-matchUp shape, and until this line a clear erased a format a director had set on
+    // one match. Measured by the corpus on real records before it was decided.
+    const survivingFormat = matchUp.matchUpFormat;
     Object.assign(matchUp, { ...toBePlayed });
     if (survivingProvenance) matchUp.sideExitProvenance = survivingProvenance;
+    if (survivingFormat) matchUp.matchUpFormat = survivingFormat;
   } else if (score) {
     matchUp.score = score;
   }
