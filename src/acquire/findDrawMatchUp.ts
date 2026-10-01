@@ -81,6 +81,13 @@ export function findDrawMatchUp(params: FindDrawMatchUpArgs): {
     if (!structureHoldsMatchUp({ structureId: structure.structureId, matchUpsMap, matchUpId })) continue;
 
     const { matchUps } = getAllStructureMatchUps({
+      // IN CONTEXT, ONLY THIS MATCHUP IS HYDRATED. The structure's profiles — rounds, feeds, source
+      // ranges — still come from all of its matchUps, which is everything a single matchUp's context
+      // is derived from; what is skipped is the per-matchUp copy and hydration of every OTHER one.
+      // Measured 2026-10-01 (`pipelineCost.test.ts`): the two in-context lookups a TEAM line score
+      // makes were 11% of everything the pipeline spent, each hydrating a whole structure to read
+      // one dual. `findDrawMatchUpInContext.test.ts` asserts the result is unchanged.
+      hydrateMatchUpId: inContext ? matchUpId : undefined,
       tournamentParticipants,
       participantsProfile,
       afterRecoveryTimes,
