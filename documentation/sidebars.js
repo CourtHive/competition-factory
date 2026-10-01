@@ -99,6 +99,7 @@ module.exports = {
             'concepts/additional-seeds',
             'concepts/seed-withdrawal-cascade',
             'concepts/exit-profiles',
+            'concepts/outcome-pipeline',
             'concepts/exit-propagation',
             'concepts/finishing-positions',
             'concepts/actions',
