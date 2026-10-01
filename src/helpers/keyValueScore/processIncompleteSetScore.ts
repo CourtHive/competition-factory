@@ -46,10 +46,18 @@ type CheckValidSide2ScoreArgs = {
 function checkValidSide2Score({ analysis, set = {}, value }: CheckValidSide2ScoreArgs) {
   const setFormat =
     (analysis.isDecidingSet && analysis.matchUpScoringFormat.finalSetFormat) || analysis.matchUpScoringFormat.setFormat;
-  const { tiebreakAt, setTo } = setFormat;
+  const { tiebreakAt, setTo, tiebreakFormat, noTiebreak, winBy } = setFormat;
   const { side1Score } = set;
 
   let validSide2Score, requiresTiebreak;
+
+  // an advantage set: any score the set could still be at, or could have ended at, and never a tiebreak
+  const formatHasTiebreak = !noTiebreak && !!(tiebreakFormat || typeof tiebreakAt === 'number');
+  if (!formatHasTiebreak) {
+    const margin = winBy ?? 2;
+    const validSide2 = value <= Math.max(side1Score, setTo - 1) + margin;
+    return { validSide2Score: validSide2, requiresTiebreak: false };
+  }
 
   if (tiebreakAt && tiebreakAt < setTo) {
     if (side1Score === tiebreakAt) {

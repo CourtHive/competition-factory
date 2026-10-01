@@ -37,12 +37,14 @@ it('handles set scoring with NoAD when incomplete score', () => {
   ({ matchUp } = scoreMatchUp({ value: 'backspace', matchUp }));
   expect(matchUp.scoreString.trim()).toEqual(`7-`);
   expect(matchUp.score.sets[0].winningSide).toBeUndefined();
-  // a 6 against a 7 is six-all decided by a tiebreak, whose points are now wanted
+  // `SET3-S:6NOAD` has no tiebreak: a 6 against a 7 is a set still being played, and nothing opens.
+  // This pinned "7-6(" for one day (#5076), before the engine learned to read `noTiebreak` here.
   ({ matchUp } = scoreMatchUp({ value: '6', matchUp }));
-  expect(matchUp.scoreString.trim()).toEqual(`7-6(`);
+  expect(matchUp.scoreString.trim()).toEqual(`7-6`);
   expect(matchUp.score.sets[0].winningSide).toBeUndefined();
+  // a digit typed against an unfinished advantage set has nowhere to go
   ({ matchUp } = scoreMatchUp({ value: '2', matchUp }));
-  expect(matchUp.scoreString.trim()).toEqual(`7-6(2`);
+  expect(matchUp.scoreString.trim()).toEqual(`7-6`);
   expect(matchUp.score.sets[0].winningSide).toBeUndefined();
 });
 

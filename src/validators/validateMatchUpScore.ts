@@ -400,7 +400,16 @@ export function validateSetScore(
   }
 
   const hasExplicitTiebreak = side1TiebreakScore !== undefined || side2TiebreakScore !== undefined;
-  const isImplicitTiebreak = setTo && winnerScore === setTo + 1 && loserScore === setTo;
+  // Only a format that HAS a tiebreak can have played one. This read a 7-6 as an implicit tiebreak and
+  // then skipped every tiebreak check because the format carried no `tiebreakAt` — so `7-6(5)` was a
+  // valid set in `SET1-S:6`, an advantage set, and `retainScoreForFormat` kept it across a change of
+  // format (measured 2026-10-02). `parse` writes `noTiebreak` for such a set; a hand-built format with
+  // neither tiebreak field reads the same way.
+  const formatHasTiebreak = !setFormat.noTiebreak && !!(tiebreakFormat || typeof tiebreakAt === 'number');
+  if (hasExplicitTiebreak && !formatHasTiebreak) {
+    return { isValid: false, error: 'Tiebreak scores recorded for a set whose format has no tiebreak' };
+  }
+  const isImplicitTiebreak = formatHasTiebreak && setTo && winnerScore === setTo + 1 && loserScore === setTo;
   const hasTiebreak = hasExplicitTiebreak || isImplicitTiebreak;
 
   if (hasTiebreak) {

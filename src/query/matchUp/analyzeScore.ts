@@ -52,6 +52,18 @@ function validateSet(
   const { finalSetFormat, setFormat } = matchUpScoringFormat;
   const setValues = isFinalSet ? finalSetFormat || setFormat : setFormat;
 
+  // An advantage set has no tiebreak to record and is won by two clear games (or its declared `winBy`).
+  // This accepted tiebreak points and a one-game margin in `SET1-S:6` — measured 2026-10-02, the
+  // mutation path recorded `7-6(5)` there — because the only tiebreak check ran with an undefined
+  // tiebreak format and passed. `parse` writes `noTiebreak`; the same reading as `validateSetScore`.
+  const formatHasTiebreak =
+    !setValues?.noTiebreak && !!(setValues?.tiebreakFormat || typeof setValues?.tiebreakAt === 'number');
+  if (!formatHasTiebreak && setValues?.setTo && !setValues.timed) {
+    if (hasTiebreak !== undefined && hasTiebreak !== null) return false;
+    const margin = Math.abs((side1Score ?? 0) - (side2Score ?? 0));
+    if (setWinningSide && margin < (setValues.winBy ?? 2)) return false;
+  }
+
   if (hasTiebreak) {
     const isValidTiebreak = validateTiebreak(
       setValues?.tiebreakFormat,

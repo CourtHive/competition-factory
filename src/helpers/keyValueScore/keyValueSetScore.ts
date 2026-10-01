@@ -3,11 +3,15 @@ import { getWinningSide } from './winningSide';
 import { SPACE_CHARACTER, SET_TIEBREAK_BRACKETS, SCORE_JOINER } from './constants';
 
 export function keyValueSetScore({ analysis, lowSide, scoreString, value }) {
-  const { setTo, tiebreakAt } = analysis?.setFormat ?? {};
-  const needsTiebreak = value === parseInt(tiebreakAt || setTo);
+  const { setTo, tiebreakAt, tiebreakFormat, noTiebreak, winBy } = analysis?.setFormat ?? {};
+  // an advantage set never opens a tiebreak and is won by two clear games (or its declared `winBy`);
+  // this opened "7-6(" for a low 6 in `SET1-S:6` and completed a 4 to a 6 under `S:5WB1` (2026-10-02)
+  const formatHasTiebreak = !noTiebreak && !!(tiebreakFormat || typeof tiebreakAt === 'number');
+  const margin = winBy ?? 2;
+  const needsTiebreak = formatHasTiebreak && value === parseInt(tiebreakAt || setTo);
 
   if (tiebreakAt && tiebreakAt < setTo && value > tiebreakAt) return { scoreString };
-  if (value > setTo) return { scoreString };
+  if (formatHasTiebreak && value > setTo) return { scoreString };
 
   const highValue = getHighSetValue();
   const setScores = [value, highValue];
@@ -29,8 +33,9 @@ export function keyValueSetScore({ analysis, lowSide, scoreString, value }) {
 
   function getHighSetValue() {
     if (needsTiebreak) return value + 1;
+    if (!formatHasTiebreak && value >= setTo - 1) return value + margin;
     if (value + 1 === setTo) {
-      return value + 2;
+      return value + margin;
     }
     return setTo;
   }
