@@ -77,15 +77,30 @@ export function positionParticipantAction(params) {
     return successNotice({ appliedPolicies, removedParticipantId });
   }
 
-  const result = clearDrawPosition({
-    inContextDrawMatchUps,
-    tournamentRecord,
-    drawDefinition,
-    drawPosition,
-    structureId,
-    matchUpsMap,
-    event,
-  });
+  /**
+   * A BARE QUALIFIER PLACEHOLDER IS NOT CLEARED BEFORE THE QUALIFIER IS PLACED.
+   *
+   * The clear exists to withdraw what the seat holds — a BYE, or a participant the branch above
+   * did not catch. A seat marked `qualifier` and holding nobody has nothing to withdraw, and
+   * clearing it anyway walked `positionClear` over the seat's matchUp, which collapses a matchUp
+   * to TO_BE_PLAYED: an exit a director had recorded there — a WALKOVER awarded to the qualifier
+   * still to come, the case `exitAwardable` admits by name — was wiped by the arrival of the very
+   * qualifier it was awarded to, who then sat in a TO_BE_PLAYED first round instead of advancing.
+   * Placing the qualifier first and recording the walkover second kept it. Measured 2026-10-01
+   * (assessment G3); `qualifierArrivesIntoStandingExit.test.ts`.
+   */
+  const placeholderOnly = !!positionAssignment && !positionAssignment.bye && !positionAssignment.participantId;
+  const result = placeholderOnly
+    ? { ...SUCCESS, participantId: undefined }
+    : clearDrawPosition({
+        inContextDrawMatchUps,
+        tournamentRecord,
+        drawDefinition,
+        drawPosition,
+        structureId,
+        matchUpsMap,
+        event,
+      });
   if (result.error) return decorateResult({ result, stack });
   const removedParticipantId = result.participantId;
 
