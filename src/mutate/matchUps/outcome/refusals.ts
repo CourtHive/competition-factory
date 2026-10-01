@@ -71,8 +71,8 @@ const isClear = (request: OutcomeRequest): boolean =>
 function refuseCall(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
   if (!request.matchUpId) return refuse(1, MISSING_MATCHUP_ID);
   if (!view.hasDrawDefinition) return refuse(2, MISSING_DRAW_DEFINITION);
-  // a `winningSide` of 0 passes as absent: v1 tests truthiness, and the corpus pins that (spec row 3, corrected)
-  if (request.winningSide && ![1, 2].includes(request.winningSide)) return refuse(3, INVALID_WINNING_SIDE);
+  // a winningSide is 1 or 2, or absent; 0 is refused (CA, 2026-10-01)
+  if (request.winningSide != null && ![1, 2].includes(request.winningSide)) return refuse(3, INVALID_WINNING_SIDE);
   if (!view.formatRecognized) return refuse(4, UNRECOGNIZED_MATCHUP_FORMAT);
   return undefined;
 }

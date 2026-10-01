@@ -30,22 +30,22 @@ describe('setMatchUpStatus branch coverage', () => {
 
   // ─── INVALID_WINNING_SIDE branches ───────────────────────────────────
 
-  test('winningSide of 0 is falsy so bypasses winningSide validation (no error)', () => {
+  // CA, 2026-10-01: "there should never be { winningSide: 0 }". It used to pass as absent, because the
+  // check tested truthiness; this test pinned that. A side is 1 or 2, or there is no winner.
+  test('a winningSide of 0 is refused, never read as absent', () => {
     const drawId = 'drawId';
     mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawId, drawSize: 4, idPrefix: 'm' }],
       setState: true,
     });
 
-    // winningSide 0 is falsy, so `outcome?.winningSide && ...` short-circuits
     const result = tournamentEngine.setMatchUpStatus({
       outcome: { winningSide: 0 },
       matchUpId: 'm-1-1',
       drawId,
     });
-    // 0 is falsy — the check `outcome?.winningSide && ![1,2].includes(...)` is skipped
-    expect(result.error).toBeUndefined();
-    expect(result.success).toEqual(true);
+    expect(result.error).toEqual(INVALID_WINNING_SIDE);
+    expect(tournamentEngine.findMatchUp({ drawId, matchUpId: 'm-1-1' }).matchUp.winningSide).toBeUndefined();
   });
 
   test('returns INVALID_WINNING_SIDE for winningSide of 3', () => {

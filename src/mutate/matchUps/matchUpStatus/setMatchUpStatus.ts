@@ -160,7 +160,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // DECISION: Validate winningSide is 1 or 2 (or undefined)
   // WHY: winningSide represents which side won - only 1 (side 1) or 2 (side 2) are valid
   // Catching invalid values here prevents downstream errors
-  if (outcome?.winningSide && ![1, 2].includes(outcome.winningSide)) {
+  // a winningSide is 1 or 2, or it is absent: 0 is refused, never read as absent (CA, 2026-10-01)
+  if (outcome?.winningSide != null && ![1, 2].includes(outcome.winningSide)) {
     return { error: INVALID_WINNING_SIDE };
   }
 
