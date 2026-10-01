@@ -1,3 +1,4 @@
+import { reachedTiebreak } from '@Query/matchUp/tiebreakAtRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
@@ -39,11 +40,13 @@ export function checkSetIsComplete({
   // "tiebreak now" regardless, so an 8-6 came back INCOMPLETE (measured 2026-10-02, with or without
   // `NOAD`). `parse` writes `noTiebreak: true` and no `tiebreakAt` for such a set; a hand-built format
   // with neither field is read the same way, as the advantage set it declares.
+  // The tiebreak is played where the FORMAT says — `@5` below `setTo`, `@12` above it — not at `setTo`.
+  // This asked "both at setTo" and "either at a tiebreakAt below setTo", which has no answer for a
+  // tiebreak above `setTo`: under `@12` a 7-6 was "tiebreak now" and a 13-12 "too many games"
+  // (2026-10-02, validator debate G1). One question, from `tiebreakAtRules`.
   const formatHasTiebreak = !!(setFormat.tiebreakFormat || setFormat.tiebreakAt);
   const requiresTiebreak =
-    isTiebreakSet ||
-    (formatHasTiebreak && side1Score >= setTo && side2Score >= setTo) ||
-    (tiebreakAt && tiebreakAt < setTo && (side1Score === tiebreakAt || side2Score === tiebreakAt));
+    isTiebreakSet || (formatHasTiebreak && reachedTiebreak(side1Score, side2Score, { setTo, tiebreakAt }));
 
   const leaderHoldsTiebreak =
     (leadingSide === 1 && set.side1TiebreakScore > set.side2TiebreakScore) ||

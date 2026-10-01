@@ -4,6 +4,7 @@
  * PROTOTYPE: This logic will be moved to tods-competition-factory
  * Currently implemented in TMX for testing and refinement before factory integration
  */
+import { tiebreakSetGames, isTiebreakGamesScore, tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
 import { getMaxSetScore } from '@Query/matchUp/getComplement';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
@@ -83,8 +84,10 @@ function validateTiebreakSetGames(
   setTo: number,
   tiebreakAt: number,
 ): { isValid: boolean; error?: string } {
-  const expectedWinnerScore = tiebreakAt === setTo ? setTo + 1 : setTo;
-  const expectedLoserScore = tiebreakAt;
+  // 7-6 for `@6`, 6-5 for `@5`, 13-12 for `@12` — see `tiebreakAtRules`
+  const games = tiebreakSetGames({ setTo, tiebreakAt });
+  const expectedWinnerScore = games?.winner ?? setTo + 1;
+  const expectedLoserScore = games?.loser ?? tiebreakAt;
 
   if (winnerScore !== expectedWinnerScore) {
     return {
@@ -174,7 +177,7 @@ function validateRegularSetCompletion(
     };
   }
 
-  const isTiebreakWon = tiebreakAt && winnerScore === setTo && loserScore === tiebreakAt && scoreDiff === 1;
+  const isTiebreakWon = !!tiebreakAt && isTiebreakGamesScore(winnerScore, loserScore, { setTo, tiebreakAt });
 
   if (scoreDiff < winBy && !isTiebreakWon) {
     return {
@@ -190,7 +193,7 @@ function validateRegularSetCompletion(
         error: `When tied at ${tiebreakAt}-${tiebreakAt}, must play tiebreak. Use format like ${tiebreakAt + 1}-${tiebreakAt}(5)`,
       };
     }
-    const maxWinnerScore = tiebreakAt === setTo ? setTo + 1 : setTo;
+    const maxWinnerScore = tiebreakSetCeiling({ setTo, tiebreakAt }) ?? setTo + 1;
     if (winnerScore > maxWinnerScore) {
       return {
         isValid: false,
