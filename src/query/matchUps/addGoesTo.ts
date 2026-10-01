@@ -123,12 +123,20 @@ export function hasStoredGoesTo({ drawDefinition }: { drawDefinition: DrawDefini
     const matchUps = structure.matchUps ?? [];
     if (loserSources.has(structure.structureId) && !matchUps.some((matchUp) => matchUp.loserMatchUpId)) return false;
     if (structure.finishingPosition === WIN_RATIO || structure.structures) return true;
-    const rounds = new Set(matchUps.map((matchUp) => matchUp.roundNumber));
-    return rounds.size < 2 || matchUps.some((matchUp) => matchUp.winnerMatchUpId);
+    // the ordinary answer is found on the first matchUp looked at; the rounds are counted only for
+    // a structure that holds no winner edge at all, to tell a single round from a missing edge
+    if (matchUps.some((matchUp) => matchUp.winnerMatchUpId)) return true;
+    return new Set(matchUps.map((matchUp) => matchUp.roundNumber)).size < 2;
   });
 }
 
-/** Give a draw that does not store its edges the edges; a draw that does is left alone. */
-export function ensureGoesTo({ drawDefinition }: { drawDefinition: DrawDefinition }) {
-  if (!hasStoredGoesTo({ drawDefinition })) addGoesTo({ drawDefinition });
+/**
+ * Give a draw that does not store its edges the edges; a draw that does is left alone.
+ *
+ * A caller that already holds the draw in context hands the view over with its map. `addGoesTo`
+ * then writes the edges onto that view as well as onto the stored matchUps, and hydrates nothing:
+ * the repair costs a `positionTargets` per matchUp, once, and the draw stores its edges from then on.
+ */
+export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }: AddGoesToArgs) {
+  if (!hasStoredGoesTo({ drawDefinition })) addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
 }
