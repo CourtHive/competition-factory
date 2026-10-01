@@ -1,10 +1,13 @@
 import { checkIntegrity, type PropertyFailure } from './transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import { nextPlayable, playForward, step } from './driver';
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants
 import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER, RETIRED } from '@Constants/matchUpStatusConstants';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { TEAM } from '@Constants/eventConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -62,6 +65,11 @@ export type MatrixCell = {
   drawSize: number;
   drawType: string;
   seed: number;
+  /** TEAM cells: the event type and tieFormat the draw is generated with */
+  tieFormatName?: string;
+  eventType?: string;
+  /** TEAM cells: attach lineups before play, so the driver scores LINES as well as duals */
+  lineUps?: boolean;
 };
 
 const composeCells = (drawTypes: string[]): Omit<MatrixCell, 'seed'>[] =>
@@ -117,13 +125,48 @@ export const MATRIX_EXTENSION_SEED_BASE = 100000;
 export const isUnpopulatedLuckyDraw = (cell: { drawType: string; drawSize: number; participantsCount: number }) =>
   cell.drawType === LUCKY_DRAW && cell.drawSize - cell.participantsCount === 3;
 
+/**
+ * THE TEAM ARM (assessment G2). Four draw types as TEAM events with a DOMINANT_DUO tieFormat, in
+ * two arms from their own seed ranges:
+ *
+ *  - DUAL-level: no lineups, so the driver sees only the duals and every exit — single or double —
+ *    is entered on a dual. Measured 2026-10-01: 72 of 72 probe cells clean before this arm existed.
+ *  - LINE-level: lineups attached, so the driver scores the LINES and the duals auto-complete; the
+ *    periodic exit lands on a line or a dual, whichever is next. This is the arm that exercises
+ *    `updateTieMatchUpScore` and the dual's auto-calc under exits — the surface the matrix never
+ *    executed, where scoring a line of a double-walkover dual used to leave the double exit's
+ *    produced walkover standing (#5054).
+ */
+export const TEAM_MATRIX_DRAW_TYPES = [SINGLE_ELIMINATION, DOUBLE_ELIMINATION, FIRST_MATCH_LOSER_CONSOLATION, COMPASS];
+export const TEAM_DUAL_SEED_BASE = 200000;
+export const TEAM_LINE_SEED_BASE = 300000;
+
+const teamCell = (cell: Omit<MatrixCell, 'seed'>, lineUps: boolean): Omit<MatrixCell, 'seed'> => ({
+  ...cell,
+  tieFormatName: DOMINANT_DUO,
+  eventType: TEAM,
+  lineUps,
+});
+
+export const TEAM_DUAL_CELLS: MatrixCell[] = composeCells(TEAM_MATRIX_DRAW_TYPES).map((cell, index) => ({
+  ...teamCell(cell, false),
+  seed: TEAM_DUAL_SEED_BASE + index + 1,
+}));
+
+export const TEAM_LINE_CELLS: MatrixCell[] = composeCells(TEAM_MATRIX_DRAW_TYPES).map((cell, index) => ({
+  ...teamCell(cell, true),
+  seed: TEAM_LINE_SEED_BASE + index + 1,
+}));
+
 export const MATRIX_EXTENSION_CELLS: MatrixCell[] = composeCells(MATRIX_EXTENSION_DRAW_TYPES)
   .map((cell, index) => ({ ...cell, seed: MATRIX_EXTENSION_SEED_BASE + index + 1 }))
   .filter((cell) => !isUnpopulatedLuckyDraw(cell));
 
 /** the cell's name, in the same form `exitPropagationMatrix` names its tests */
-export const cellLabel = (cell: MatrixCell): string =>
-  `matrix ${cell.drawType} ${cell.drawSize}/${cell.participantsCount} ${cell.exitStatus} propagate=${cell.propagateExitStatus}`;
+export const cellLabel = (cell: MatrixCell): string => {
+  const arm = cell.eventType ? [cell.eventType, cell.lineUps ? '+lines' : '', ' '].join('') : '';
+  return `matrix ${arm}${cell.drawType} ${cell.drawSize}/${cell.participantsCount} ${cell.exitStatus} propagate=${cell.propagateExitStatus}`;
+};
 
 /** the outcome the matrix injects for a cell's exit status */
 export const cellExitOutcome = (exitStatus: string): any => {
@@ -148,16 +191,38 @@ export const cellExitOutcome = (exitStatus: string): any => {
  * first playable matchUp, `playForward`, then `checkIntegrity`. `undefined` when the draw did not
  * generate or nothing was playable — a caller must not count either as a played cell.
  */
-export function runMatrixCell(cell: MatrixCell, drawId: string): PropertyFailure[] | undefined {
+/**
+ * Generate a cell's draw into engine state. TEAM cells carry their event type and tieFormat, and
+ * `lineUps` attaches generated lineups so every dual's lines hold participants — without them the
+ * driver sees only the duals, which is the dual-level arm; with them it scores lines too.
+ */
+function generateCell(cell: MatrixCell, drawId: string, policyDefinitions?: any): boolean {
   setSubscriptions({});
   const { drawIds } = mocksEngine.generateTournamentRecord({
+    ...(policyDefinitions ? { policyDefinitions } : {}),
     drawProfiles: [
-      { drawId, drawType: cell.drawType, drawSize: cell.drawSize, participantsCount: cell.participantsCount },
+      {
+        ...(cell.tieFormatName ? { tieFormatName: cell.tieFormatName } : {}),
+        ...(cell.eventType ? { eventType: cell.eventType } : {}),
+        participantsCount: cell.participantsCount,
+        drawType: cell.drawType,
+        drawSize: cell.drawSize,
+        drawId,
+      },
     ],
     nonRandom: cell.seed,
     setState: true,
   });
-  if (!drawIds?.includes(drawId)) return undefined;
+  if (!drawIds?.includes(drawId)) return false;
+  if (cell.lineUps) {
+    const result: any = tournamentEngine.generateLineUps({ useDefaultEventRanking: true, attach: true, drawId });
+    if (!result?.success) return false;
+  }
+  return true;
+}
+
+export function runMatrixCell(cell: MatrixCell, drawId: string): PropertyFailure[] | undefined {
+  if (!generateCell(cell, drawId)) return undefined;
 
   const target = nextPlayable(drawId);
   if (!target?.matchUpId) return undefined;
@@ -181,16 +246,7 @@ export function playMatrixCell(
   arm: 'exits' | 'control' = 'exits',
   policyDefinitions?: any,
 ): boolean {
-  setSubscriptions({});
-  const { drawIds } = mocksEngine.generateTournamentRecord({
-    ...(policyDefinitions ? { policyDefinitions } : {}),
-    drawProfiles: [
-      { drawId, drawType: cell.drawType, drawSize: cell.drawSize, participantsCount: cell.participantsCount },
-    ],
-    nonRandom: cell.seed,
-    setState: true,
-  });
-  if (!drawIds?.includes(drawId)) return false;
+  if (!generateCell(cell, drawId, policyDefinitions)) return false;
 
   const outcome = cellExitOutcome(cell.exitStatus);
   if (arm === 'control') {

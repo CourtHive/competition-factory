@@ -279,10 +279,17 @@ function placeLoser({
       drawDefinition,
       event,
     });
-    return decorateResult({
+    const placed = decorateResult({
       result: decorateResult({ result: byeResult, stack: 'assignLoserPositionBye' }),
       stack: innerStack,
     });
+    if (placed.error) return placed;
+    // THE LOSER WAS NOT PLACED — a BYE was. Nothing of theirs travels to the seat: not their seed,
+    // and not their lineUp. Returned as an early return so the caller does not propagate either.
+    // Measured 2026-10-01 on the TEAM arm of the exit-propagation matrix: the withheld loser's lineUp
+    // landed on the consolation's BYE side, its lines hydrated with players on both sides, and the
+    // driver scored them — BYE_WON on 42 of 60 FIRST_MATCH_LOSER_CONSOLATION cells.
+    return { earlyReturn: placed };
   }
 
   if (isFirstRoundValidDrawPosition) {
