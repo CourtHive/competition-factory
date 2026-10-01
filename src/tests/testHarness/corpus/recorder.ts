@@ -35,6 +35,15 @@ import {
  */
 const INVARIANTS = ['PARTICIPANT_DUPLICATED_IN_STRUCTURE', 'BYE_POSITION_WITH_PARTICIPANT'];
 
+export type TestIdentity = {
+  file: string;
+  name: string;
+  seed: number;
+  ordinal: number;
+  scenarioId?: string;
+  source?: { kind: string; ref: string };
+};
+
 type Step = {
   directive: any;
   coordinates?: any;
@@ -141,7 +150,7 @@ export class CorpusRecorder {
   private closed: any[] = [];
   private readonly previous: ReturnType<typeof getInvokeObserver>;
   private inObserver = false;
-  private test?: { file: string; name: string; seed: number; ordinal: number };
+  private test?: TestIdentity;
   private open?: Open;
   private skipReason?: string;
   private pending?: { directive: any; coordinates?: any; clockAt: string; seed?: number };
@@ -159,7 +168,11 @@ export class CorpusRecorder {
     setClock();
   }
 
-  beginTest(test: { file: string; name: string; seed: number; ordinal: number }) {
+  /**
+   * `scenarioId` and `source` override the recorded-test defaults, for a caller that drives an
+   * oracle under the recorder (`oracleSources.ts`) and names its scenarios by cell or seed.
+   */
+  beginTest(test: TestIdentity) {
     this.test = test;
     this.open = undefined;
     this.closed = [];
@@ -344,22 +357,21 @@ export class CorpusRecorder {
     return false;
   }
 
-  private assemble(
-    test: { file: string; name: string; seed: number; ordinal: number },
-    open: Open,
-    scenarioOrdinal: number,
-  ) {
+  private assemble(test: TestIdentity, open: Open, scenarioOrdinal: number) {
+    const part = scenarioOrdinal > 1 ? `/part-${scenarioOrdinal}` : '';
     return {
       corpusVersion: 1,
       factoryVersion: factoryVersion(),
       schemaWriteMode: getSchemaWriteMode(),
       canonicalization: 'RFC8785',
-      scenarioId: scenarioIdFor(test.file, test.name, test.ordinal, scenarioOrdinal),
-      source: { kind: 'recorded-test', ref: `${test.file}::${test.name}` },
+      scenarioId: test.scenarioId
+        ? `${test.scenarioId}${part}`
+        : scenarioIdFor(test.file, test.name, test.ordinal, scenarioOrdinal),
+      source: test.source ?? { kind: 'recorded-test', ref: `${test.file}::${test.name}` },
       seed: open.seed ?? test.seed,
       clock: open.steps[0]?.clockAt ?? new Date(this.stepBase).toISOString(),
       clockTickMs: 1,
-      tags: open.seed === undefined ? ['recorded', 'unseeded'] : ['recorded'],
+      tags: [test.source ? test.source.kind : 'recorded', ...(open.seed === undefined ? ['unseeded'] : [])],
       initial: open.initial,
       steps: open.steps,
       invariants: [...open.invariantsHeld],
