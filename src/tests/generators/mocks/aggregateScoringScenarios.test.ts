@@ -38,9 +38,9 @@ describe('parseScoreString - Aggregate scoring with timed sets', () => {
     expect(sets[0].side2Score).toBe(11);
     expect(sets[1].side1Score).toBe(11);
     expect(sets[1].side2Score).toBe(10);
-    // Final set is TB1 (tiebreak-only)
-    expect(sets[2].side1Score).toBe(1);
-    expect(sets[2].side2Score).toBe(0);
+    // Final set is TB1 (tiebreak-only): its point is a tiebreak point
+    expect(sets[2].side1TiebreakScore).toBe(1);
+    expect(sets[2].side2TiebreakScore).toBe(0);
     // TB1 should have NoAD=true and tiebreakSet=true
     if (sets[2].NoAD) {
       expect(sets[2].NoAD).toBe(true);

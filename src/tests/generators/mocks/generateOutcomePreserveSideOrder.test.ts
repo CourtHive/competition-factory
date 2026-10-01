@@ -132,8 +132,8 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
 
       // Bracket notation at start triggers side-order preservation
       // Note: For tiebreak-only format, these are tiebreak scores, not regular scores
-      expect(outcome.score.sets[0].side1Score).toBe(5);
-      expect(outcome.score.sets[0].side2Score).toBe(10);
+      expect(outcome.score.sets[0].side1TiebreakScore).toBe(5);
+      expect(outcome.score.sets[0].side2TiebreakScore).toBe(10);
       expect(outcome.winningSide).toBe(2);
     });
   });

@@ -1,4 +1,5 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
+import { formatForSet, readTiebreakSet } from '@Query/matchUp/tiebreakSetShape';
 import { generateScoreString } from '@Generators/matchUps/generateScoreString';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -8,12 +9,22 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
-function inferWinningSideFromAggregate(neutralParsedSets) {
+// An aggregate is the points of EVERY set, and a tiebreak-only decider's point is one of them (CA,
+// 2026-09-29: "INTENNSE requires all sets recorded to be included in the aggregate total"). This read
+// the game fields alone, which counted that point only while the parser put it there (G3, 2026-10-02).
+function inferWinningSideFromAggregate(neutralParsedSets, matchUpFormat?: string) {
+  const parsedFormat = matchUpFormat ? parse(matchUpFormat) : undefined;
+  const isNumber = (value: unknown): value is number => typeof value === 'number' && !Number.isNaN(value);
   const aggregateTotals = neutralParsedSets.reduce(
     (totals: any, set: any) => {
-      if (set.side1Score !== undefined || set.side2Score !== undefined) {
-        totals.side1 += set.side1Score ?? 0;
-        totals.side2 += set.side2Score ?? 0;
+      const { isTiebreakSet, sideGameScores, sideTiebreakScores } = readTiebreakSet(
+        set,
+        formatForSet(parsedFormat, set?.setNumber),
+      );
+      const [side1, side2] = isTiebreakSet ? sideTiebreakScores : sideGameScores;
+      if (isNumber(side1) || isNumber(side2)) {
+        totals.side1 += isNumber(side1) ? side1 : 0;
+        totals.side2 += isNumber(side2) ? side2 : 0;
       }
       return totals;
     },
@@ -47,7 +58,7 @@ function inferWinningSide(winningSide, matchUpFormat, neutralParsedSets) {
   const parsedFormat = parse(matchUpFormat);
 
   return isAggregateFormat(parsedFormat)
-    ? inferWinningSideFromAggregate(neutralParsedSets)
+    ? inferWinningSideFromAggregate(neutralParsedSets, matchUpFormat)
     : inferWinningSideFromSets(neutralParsedSets);
 }
 
