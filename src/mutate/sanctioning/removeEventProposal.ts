@@ -10,6 +10,7 @@ import {
 
 // types
 import type { SanctioningRecord } from '@Types/sanctioningTypes';
+import { nowIso } from '@Tools/clock';
 
 type RemoveEventProposalArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -28,7 +29,7 @@ export function removeEventProposal({ sanctioningRecord, eventProposalId }: Remo
   if (index < 0) return { error: EVENT_PROPOSAL_NOT_FOUND, context: { eventProposalId } };
 
   sanctioningRecord.proposal.events.splice(index, 1);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS };

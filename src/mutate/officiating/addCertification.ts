@@ -7,6 +7,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type AddCertificationArgs = {
   officialRecord: OfficialRecord;
@@ -41,7 +42,7 @@ export function addCertification({
   if (!certificationFamily)
     return { error: INVALID_VALUES, context: { message: 'Missing certificationFamily' } } as any;
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const certification: OfficialCertification = {
     certificationId: certificationId || UUID(),

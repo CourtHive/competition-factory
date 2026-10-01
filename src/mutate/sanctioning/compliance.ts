@@ -13,6 +13,7 @@ import {
 
 // types
 import type { SanctioningRecord } from '@Types/sanctioningTypes';
+import { nowIso, now as clockNow } from '@Tools/clock';
 
 const MISSING_ITEM_ID = 'Missing itemId';
 
@@ -60,11 +61,11 @@ export function submitComplianceItem({ sanctioningRecord, itemId, value }: Submi
   }
 
   item.status = 'SUBMITTED';
-  item.submittedAt = new Date().toISOString();
+  item.submittedAt = nowIso();
   if (value !== undefined) item.value = value;
 
   updateComplianceStatus(sanctioningRecord);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS };
@@ -88,10 +89,10 @@ export function verifyComplianceItem({ sanctioningRecord, itemId }: VerifyCompli
   if (!item) return { error: INVALID_VALUES, context: { message: `Item not found: ${itemId}` } };
 
   item.status = 'VERIFIED';
-  item.verifiedAt = new Date().toISOString();
+  item.verifiedAt = nowIso();
 
   updateComplianceStatus(sanctioningRecord);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   const allVerified = sanctioningRecord.compliance.items
@@ -126,7 +127,7 @@ export function waiveComplianceItem({ sanctioningRecord, itemId, reason }: Waive
   }
 
   updateComplianceStatus(sanctioningRecord);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS };
@@ -195,7 +196,7 @@ export function checkComplianceDeadlines({ sanctioningRecord, asOfDate }: CheckC
   if (!sanctioningRecord) return { error: MISSING_SANCTIONING_RECORD };
   if (!sanctioningRecord.compliance) return { error: COMPLIANCE_NOT_APPLICABLE };
 
-  const now = asOfDate ? new Date(asOfDate) : new Date();
+  const now = asOfDate ? new Date(asOfDate) : clockNow();
   let overdueCount = 0;
 
   for (const item of sanctioningRecord.compliance.items) {
@@ -210,7 +211,7 @@ export function checkComplianceDeadlines({ sanctioningRecord, asOfDate }: CheckC
 
   if (overdueCount > 0) {
     updateComplianceStatus(sanctioningRecord);
-    sanctioningRecord.updatedAt = new Date().toISOString();
+    sanctioningRecord.updatedAt = nowIso();
     sanctioningRecord.version += 1;
   }
 

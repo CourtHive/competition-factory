@@ -21,11 +21,12 @@ import {
   MODIFY_SEED_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
+import { nowMs } from '@Tools/clock';
 
 function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  let timeStamp = Date.now();
+  let timeStamp = nowMs();
   if (drawDefinition.updatedAt && timeStamp === new Date(drawDefinition.updatedAt).getTime()) timeStamp += 1;
   const updatedAt = new Date(timeStamp).toISOString();
 
@@ -50,7 +51,7 @@ function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) 
  */
 function stampMatchUpUpdatedAt(matchUp?: MatchUp | null) {
   if (!matchUp) return;
-  let timeStamp = Date.now();
+  let timeStamp = nowMs();
   const previous = matchUp.updatedAt;
   if (previous) {
     const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous.getTime();

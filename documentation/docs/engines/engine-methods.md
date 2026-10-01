@@ -800,3 +800,33 @@ const version = engine.version();
 ```
 
 ---
+
+## setRandomSource
+
+Makes a run reproducible. Every place the engine draws randomness (ids from `UUID`, BYE and qualifier placement, draw positions, lucky-draw advancement, draft resolution, drawMatic pairings, the mocks' scores) reads from one process-wide source. A call's own `random` parameter (what `nonRandom: <seed>` on a directive supplies) still wins; the configured source is the fallback; `Math.random` is the default.
+
+Pass a seed (a finite number) or a `() => number`. No argument restores `Math.random`. Process-wide, like `schemaWriteMode`: a run configuration, not request state.
+
+```js
+engine.setRandomSource(7); // seeded mulberry32
+engine.setRandomSource(() => 0.5); // any function
+engine.setRandomSource(); // back to Math.random
+```
+
+Two generations of a mocks tournament under the same seed are byte-identical, ids included. This is what the golden corpus relies on to regenerate itself.
+
+---
+
+## setClock
+
+Fixes the engine's notion of "now" for every timestamp a mutation writes into a record: `schedule.scoredTime` on a first score, `timeItem.createdAt`, `extension.createdAt`, a draft's `resolvedAt`, a point's `timestamp`, a mutation lock's `lockedAt`. Timing and notification timestamps that never reach a stored record are not affected.
+
+Pass an ISO string, epoch milliseconds, a `Date`, or a function returning any of those. No argument restores the wall clock. An unparseable instant is refused with `INVALID_DATE`.
+
+```js
+engine.setClock('2026-10-01T12:00:00.000Z'); // frozen
+engine.setClock(() => new Date()); // explicit wall clock
+engine.setClock(); // default
+```
+
+---

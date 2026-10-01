@@ -5,6 +5,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type RemoveSuspensionArgs = {
   officialRecord: OfficialRecord;
@@ -19,7 +20,7 @@ export function removeSuspension({ officialRecord, suspensionId }: RemoveSuspens
   if (index === -1) return { error: SUSPENSION_NOT_FOUND, context: { suspensionId } };
 
   officialRecord.suspensions.splice(index, 1);
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS };
 }

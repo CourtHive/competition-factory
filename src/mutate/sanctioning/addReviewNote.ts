@@ -7,6 +7,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { SanctioningRecord, ReviewNote } from '@Types/sanctioningTypes';
+import { nowIso } from '@Tools/clock';
 
 type AddReviewNoteArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -30,11 +31,11 @@ export function addReviewNote({ sanctioningRecord, note, reviewerId, reviewerNam
     reviewerId,
     reviewerName,
     note,
-    createdAt: new Date().toISOString(),
+    createdAt: nowIso(),
   };
   sanctioningRecord.reviewNotes.push(reviewNote);
 
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS, noteId: reviewNote.noteId };

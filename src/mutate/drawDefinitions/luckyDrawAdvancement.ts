@@ -13,6 +13,7 @@ import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
+import { randomSource } from '@Tools/prng';
 
 type LuckyDrawAdvancementArgs = {
   tournamentRecord?: Tournament;
@@ -393,7 +394,7 @@ function placeLuckyLosers({
   winners: any[];
   random?: () => number;
 }) {
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   const numMatchUps = nextRoundMatchUps.length;
   const winnerIds = new Set(winners.map((w) => w.participantId));
 

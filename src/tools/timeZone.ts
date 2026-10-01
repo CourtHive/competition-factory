@@ -14,6 +14,7 @@
 import { INVALID_TIME_ZONE, INVALID_DATE, INVALID_TIME } from '@Constants/errorConditionConstants';
 import { zonedWallClockToMs, offsetMinutesAt, zonedParts, isZone } from '@Tools/zonedDateTime';
 import { isValidEmbargoDate } from '@Tools/dateTime';
+import { now } from '@Tools/clock';
 
 type ZoneError = { error: typeof INVALID_TIME_ZONE | typeof INVALID_DATE | typeof INVALID_TIME };
 
@@ -29,7 +30,7 @@ export function isValidIANATimeZone(timeZone: string): boolean {
  * when the zone was omitted — the same call answering differently on two servers.
  */
 export function getTimeZoneOffsetMinutes(timeZone: string, date?: Date): number | undefined {
-  return offsetMinutesAt((date ?? new Date()).getTime(), timeZone);
+  return offsetMinutesAt((date ?? now()).getTime(), timeZone);
 }
 
 /** Venue-local `YYYY-MM-DD` + `HH:MM` → UTC ISO instant. */

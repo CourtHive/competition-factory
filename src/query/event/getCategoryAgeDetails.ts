@@ -5,6 +5,7 @@ import { isNumeric } from '@Tools/math';
 // constants and types
 import { INVALID_CATEGORY, INVALID_DATE } from '@Constants/errorConditionConstants';
 import { Category } from '@Types/tournamentTypes';
+import { now } from '@Tools/clock';
 
 const typeMatch = (arr, type) => arr.filter(Boolean).every((i) => typeof i === type);
 const allNumeric = (arr) => arr.filter(Boolean).every(isNumeric);
@@ -32,7 +33,7 @@ export function getCategoryAgeDetails(params: ParseArgs) {
 
   if (!isValidCategory) return { error: INVALID_CATEGORY };
 
-  const consideredDate = params.consideredDate ?? extractDate(new Date().toLocaleDateString('sv'));
+  const consideredDate = params.consideredDate ?? extractDate(now().toLocaleDateString('sv'));
   if (!consideredDate || !isValidDateString(consideredDate)) return { error: INVALID_DATE };
 
   const [consideredYear] = consideredDate

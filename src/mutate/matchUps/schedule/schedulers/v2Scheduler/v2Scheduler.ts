@@ -22,6 +22,7 @@ import { PersonRequests, TournamentRecords } from '@Types/factoryTypes';
 import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TOTAL } from '@Constants/scheduleConstants';
+import { nowMs } from '@Tools/clock';
 
 // NOTE: non-Garman scheduling
 
@@ -756,7 +757,7 @@ export function v2Scheduler({
   const scheduledDates = (dateSchedulingProfiles ?? []).map(({ scheduleDate }) => scheduleDate);
 
   const autoSchedulingAudit = {
-    timeStamp: Date.now(),
+    timeStamp: nowMs(),
     overLimitMatchUpIds,
     scheduledMatchUpIds,
     schedulingProfile,

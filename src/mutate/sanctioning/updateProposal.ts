@@ -5,6 +5,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { SanctioningRecord, TournamentProposal } from '@Types/sanctioningTypes';
+import { nowIso } from '@Tools/clock';
 
 type UpdateProposalArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -24,7 +25,7 @@ export function updateProposal({ sanctioningRecord, updates }: UpdateProposalArg
   const { events, ...safeUpdates } = updates;
 
   Object.assign(sanctioningRecord.proposal, safeUpdates);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS };

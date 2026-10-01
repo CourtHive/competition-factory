@@ -10,6 +10,8 @@ import { INVALID_VALUES, MISSING_DRAW_DEFINITION, NOT_FOUND } from '@Constants/e
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { DRAFT_STATE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { randomSource } from '@Tools/prng';
+import { nowIso } from '@Tools/clock';
 
 type ResolveDraftPositionsArgs = {
   tournamentRecord?: Tournament;
@@ -142,7 +144,7 @@ function resolveTier({ draftState, tier, tierIndex, workingAssignments, allResol
       .filter((a) => !a.participantId && !a.bye && !a.qualifier)
       .map((a) => a.drawPosition);
 
-    const rng = random ?? Math.random;
+    const rng = random ?? randomSource();
     const shuffled = [...unassigned].sort(() => rng() - 0.5);
     for (let i = 0; i < participantsWithoutPreferences.length && i < shuffled.length; i++) {
       const dp = shuffled[i];
@@ -196,7 +198,7 @@ function applyResolutions({
   const allResolved = draftState.tiers.every((t: any) => t.resolved);
   if (allResolved) {
     draftState.status = 'COMPLETED';
-    draftState.resolvedAt = new Date().toISOString();
+    draftState.resolvedAt = nowIso();
     draftState.transparencyReport = transparencyReport;
   }
 

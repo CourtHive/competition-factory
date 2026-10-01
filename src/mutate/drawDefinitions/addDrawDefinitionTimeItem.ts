@@ -3,6 +3,7 @@ import { addDrawNotice } from '@Mutate/notifications/drawNotifications';
 // constants
 import { DRAW_DEFINITION_NOT_FOUND, INVALID_TIME_ITEM, MISSING_TIME_ITEM } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 export function addDrawDefinitionTimeItem({ drawDefinition, timeItem }) {
   if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
@@ -21,7 +22,7 @@ export function addDrawDefinitionTimeItem({ drawDefinition, timeItem }) {
   // over it — same convention as `addTimeItem`. timeItem `createdAt` is an
   // ordering key, so an entry recorded at a venue and synced later must keep its
   // own time. Inert when nothing is supplied.
-  timeItem.createdAt ??= new Date().toISOString();
+  timeItem.createdAt ??= nowIso();
   drawDefinition.timeItems.push(timeItem);
 
   addDrawNotice({ drawDefinition });

@@ -10,6 +10,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants
 import { INVALID_VALUES, METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { nowMs } from '@Tools/clock';
 
 export async function asyncEngineInvoke(engine: { [key: string]: any }, args: any) {
   if (!isObject(args)) return { error: INVALID_VALUES, message: 'args must be an object' };
@@ -37,7 +38,7 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
 
   if (result?.error && snapshot) setState(snapshot);
 
-  const timeStamp = Date.now();
+  const timeStamp = nowMs(); // reaches the record via the factory extension
   const mutationStatus = getMutationStatus({ timeStamp });
 
   const notify = result?.success && params?.delayNotify !== true && params?.doNotNotify !== true;

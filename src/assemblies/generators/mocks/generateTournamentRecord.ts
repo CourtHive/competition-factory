@@ -22,6 +22,7 @@ import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants
 import { ParticipantsProfile, PolicyDefinitions } from '@Types/factoryTypes';
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { SUCCESS } from '@Constants/resultConstants';
+import { now } from '@Tools/clock';
 
 // SELECTED WITH `randomMember`, NEVER `randomPop`. `randomPop` SPLICES, and this array is a
 // module-level constant — so popping from it permanently consumed one name per call and, after the
@@ -282,7 +283,7 @@ function resolveDates(startDate, endDate) {
   let resolvedEnd = endDate;
 
   if (!resolvedStart) {
-    const tournamentDate = new Date();
+    const tournamentDate = now();
     resolvedStart = formatDate(resolvedEnd ?? tournamentDate);
     resolvedEnd = formatDate(tournamentDate.setDate(tournamentDate.getDate() + 7));
   }

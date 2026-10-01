@@ -20,6 +20,7 @@ import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import type { Attribution } from '@Types/presenceTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
+import { nowIso } from '@Tools/clock';
 
 /**
  * Record arrival at — or departure from — the TOURNAMENT. Distinct from per-matchUp check-in, which is
@@ -69,7 +70,7 @@ export function modifyParticipantsSignInStatus({
   const modifiedParticipants: Participant[] = [];
   // One instant for the whole batch: a bulk sign-in is a single operator action, and letting each
   // entry take its own clock reading would order them arbitrarily within the same second.
-  const batchOccurredAt = occurredAt ?? new Date().toISOString();
+  const batchOccurredAt = occurredAt ?? nowIso();
 
   for (const participant of participants) {
     const { participantId } = participant;

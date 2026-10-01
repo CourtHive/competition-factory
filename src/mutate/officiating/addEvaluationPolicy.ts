@@ -5,6 +5,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord, EvaluationPolicy } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type AddEvaluationPolicyArgs = {
   officialRecord: OfficialRecord;
@@ -23,7 +24,7 @@ export function addEvaluationPolicy({ officialRecord, evaluationPolicy }: AddEva
     return { error: INVALID_VALUES, context: { message: 'Policy must include at least one section' } } as any;
 
   officialRecord.evaluationPolicies.push(evaluationPolicy);
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS, evaluationPolicy };
 }

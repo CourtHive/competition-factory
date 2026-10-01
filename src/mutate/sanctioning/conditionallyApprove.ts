@@ -7,6 +7,7 @@ import { UUID } from '@Tools/UUID';
 
 // types
 import type { SanctioningRecord, Condition } from '@Types/sanctioningTypes';
+import { nowIso } from '@Tools/clock';
 
 type ConditionallyApproveArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -30,7 +31,7 @@ export function conditionallyApprove({ sanctioningRecord, conditions, approvedBy
   });
   if (result.error) return result;
 
-  const now = new Date().toISOString();
+  const now = nowIso();
   sanctioningRecord.conditions ??= [];
   for (const c of conditions) {
     const condition: Condition = {

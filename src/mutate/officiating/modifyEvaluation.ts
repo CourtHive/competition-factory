@@ -10,6 +10,7 @@ import {
 
 // types
 import type { OfficialRecord, OfficialEvaluation, EvaluationScore } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type ModifyEvaluationArgs = {
   officialRecord: OfficialRecord;
@@ -54,7 +55,7 @@ export function modifyEvaluation({ officialRecord, evaluationId, updates }: Modi
   if (updates.policyName !== undefined) evaluation.policyName = updates.policyName;
   if (updates.extensions !== undefined) evaluation.extensions = updates.extensions;
 
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS, evaluation };
 }

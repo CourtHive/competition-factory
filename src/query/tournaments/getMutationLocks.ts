@@ -6,6 +6,7 @@ import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionC
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
+import { nowIso } from '@Tools/clock';
 
 type MutationLockEntry = MutationLock & {
   drawId?: string;
@@ -27,7 +28,7 @@ export function getMutationLocks(params: GetMutationLocksArgs): {
 
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
-  const now = new Date().toISOString();
+  const now = nowIso();
   const result: MutationLockEntry[] = [];
 
   // Helper to extract active locks from an element

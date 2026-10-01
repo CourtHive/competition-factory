@@ -642,6 +642,7 @@ export type FactoryEngineMethod =
   | 'schemaWriteMode'
   | 'ScoringEngine'
   | 'seedWithdrawalCascade'
+  | 'setClock'
   | 'setDelegatedOutcome'
   | 'setDrawOtherIds'
   | 'setDrawParticipantRepresentativeIds'
@@ -664,6 +665,7 @@ export type FactoryEngineMethod =
   | 'setParticipantScaleItems'
   | 'setPositionAssignments'
   | 'setPracticeDefaultCapacity'
+  | 'setRandomSource'
   | 'setRegistrationProfile'
   | 'setSchedulingProfile'
   | 'setState'
@@ -1393,6 +1395,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'schemaWriteMode',
   'ScoringEngine',
   'seedWithdrawalCascade',
+  'setClock',
   'setDelegatedOutcome',
   'setDrawOtherIds',
   'setDrawParticipantRepresentativeIds',
@@ -1415,6 +1418,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setParticipantScaleItems',
   'setPositionAssignments',
   'setPracticeDefaultCapacity',
+  'setRandomSource',
   'setRegistrationProfile',
   'setSchedulingProfile',
   'setState',

@@ -4,6 +4,7 @@ import { getEntryStatusReports } from '@Query/entries/entryStatusReport';
 import { ENTRY_STATUS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
+import { nowIso } from '@Tools/clock';
 
 export function wrapEntryStatusReport({
   tournamentRecord,
@@ -55,7 +56,7 @@ export function wrapEntryStatusReport({
 
   return {
     reportId: ENTRY_STATUS_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
     summary: result.tournamentEntryReport ?? {},

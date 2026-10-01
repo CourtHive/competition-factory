@@ -71,6 +71,7 @@ import {
   COURT_ORDER,
   COURT_ANNOTATION,
 } from '@Constants/timeItemConstants';
+import { now } from '@Tools/clock';
 
 /**
  * Court identities from an `allocatedCourts` value, in the bare-string form the
@@ -88,7 +89,7 @@ function allocatedCourtIds(value: any): string[] | undefined {
 
 function timeDate(value, scheduledDate) {
   const time = validTimeString.test(value) ? value : extractTime(value);
-  const date = extractDate(value) || extractDate(scheduledDate) || formatDate(new Date());
+  const date = extractDate(value) || extractDate(scheduledDate) || formatDate(now());
 
   // doesn't matter if this is invalid due to undefined time because this is used for sorting only
   return new Date(`${date}T${time}`).getTime();

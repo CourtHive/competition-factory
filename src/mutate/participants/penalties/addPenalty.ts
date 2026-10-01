@@ -11,6 +11,7 @@ import { TOURNAMENT_RECORD, PENALTY_TYPE } from '@Constants/attributeConstants';
 import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 type AddPenaltyArgs = {
   refereeParticipantId?: string;
@@ -95,7 +96,7 @@ function penaltyAdd({
   // keeps the two coherent for a penalty captured courtside and synced later.
   // Falls back to now when the caller supplied neither, so existing callers are
   // unaffected. This is the field a governing body reads on appeal.
-  const createdAt = occurredAt ?? issuedAt ?? new Date().toISOString();
+  const createdAt = occurredAt ?? issuedAt ?? nowIso();
   const penaltyItem: Penalty = Object.assign(penaltyTemplate({ penaltyId }), {
     refereeParticipantId,
     penaltyCode,

@@ -6,6 +6,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type CreateOfficialRecordArgs = {
   officialRecordId?: string;
@@ -22,7 +23,7 @@ export function createOfficialRecord({
 }: CreateOfficialRecordArgs): { error?: any; officialRecord?: OfficialRecord; success?: boolean } {
   if (!personId) return { error: INVALID_VALUES, context: { message: 'Missing personId' } } as any;
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const officialRecord: OfficialRecord = {
     officialRecordId: officialRecordId || UUID(),

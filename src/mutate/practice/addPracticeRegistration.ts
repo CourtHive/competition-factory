@@ -17,6 +17,7 @@ import {
   INVALID_VALUES,
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
+import { nowIso } from '@Tools/clock';
 
 type AddPracticeRegistrationArgs = {
   tournamentRecord: Tournament;
@@ -66,7 +67,7 @@ export function addPracticeRegistration(params: AddPracticeRegistrationArgs): Ad
     occurredAt,
   } = params;
 
-  const stampedAt = occurredAt ?? new Date().toISOString();
+  const stampedAt = occurredAt ?? nowIso();
 
   const paramsCheck = requireParams({ tournamentRecord, courtId, participantId }, [
     TOURNAMENT_RECORD,

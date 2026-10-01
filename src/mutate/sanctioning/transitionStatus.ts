@@ -12,6 +12,7 @@ import type {
   StatusTransition,
   TransitionGuard,
 } from '@Types/sanctioningTypes';
+import { nowIso } from '@Tools/clock';
 
 type TransitionStatusArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -45,7 +46,7 @@ export function transitionStatus({
     if (guardResult.error) return guardResult;
   }
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const transition: StatusTransition = {
     fromStatus: sanctioningRecord.status,

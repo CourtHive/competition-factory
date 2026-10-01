@@ -8,6 +8,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 // types
 import { TournamentRecords } from '@Types/factoryTypes';
 import { Extension } from '@Types/tournamentTypes';
+import { nowIso } from '@Tools/clock';
 
 type AddExtensionArgs = {
   tournamentRecords?: TournamentRecords;
@@ -58,7 +59,7 @@ export function addExtension(params?: AddExtensionArgs): {
     // Honour a `createdAt` already on the caller's extension rather than
     // stamping over it — same convention as `addTimeItem`. Inert when nothing is
     // supplied; `creationTime: false` still means "add no createdAt at all".
-    params.extension.createdAt ??= new Date().toISOString();
+    params.extension.createdAt ??= nowIso();
   }
 
   // ── Invariant: AT MOST ONE extension per `name`, per element ──

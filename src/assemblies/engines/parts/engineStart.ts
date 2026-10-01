@@ -29,6 +29,8 @@ import {
 // constants and types
 import { SUCCESS } from '@Constants/resultConstants';
 import { FactoryEngine } from '@Types/factoryTypes';
+import { setRandomSource } from '@Tools/prng';
+import { setClock } from '@Tools/clock';
 
 export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
   engine.importMethods = (methods, collections, depth, global) =>
@@ -64,6 +66,16 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
     return processResult(engine, result);
   };
   engine.getAuditAuthorityServer = () => getAuditAuthorityServer();
+  // Determinism hooks (golden corpus C1b). Process-wide, like schemaWriteMode: a run
+  // configuration, not request state. No argument restores the default.
+  engine.setRandomSource = (source) => {
+    const result = setRandomSource(source);
+    return processResult(engine, result);
+  };
+  engine.setClock = (clock) => {
+    const result = setClock(clock);
+    return processResult(engine, result);
+  };
   engine.newTournamentRecord = (params = {}) => {
     const result = createTournamentRecord(params);
     const tournamentId = result.tournamentId;

@@ -2,6 +2,7 @@ import { UUID } from '@Tools/UUID';
 
 // types
 import type { Attribution, PresenceAttestation, PresenceStateUnion } from '@Types/presenceTypes';
+import { nowIso } from '@Tools/clock';
 
 type BuildAttestationArgs = {
   /** caller-supplied so a mutation replayed after a disconnected sync is recognisable as the same fact */
@@ -31,7 +32,7 @@ export function buildAttestation({
   state,
   notes,
 }: BuildAttestationArgs): PresenceAttestation {
-  const now = new Date().toISOString();
+  const now = nowIso();
   const attestation: PresenceAttestation = {
     attestationId: attestationId ?? UUID(),
     occurredAt: occurredAt ?? now,

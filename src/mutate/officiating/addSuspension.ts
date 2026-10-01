@@ -6,6 +6,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord, OfficialSuspension } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type AddSuspensionArgs = {
   officialRecord: OfficialRecord;
@@ -42,7 +43,7 @@ export function addSuspension({
   };
 
   officialRecord.suspensions.push(suspension);
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS, suspension };
 }

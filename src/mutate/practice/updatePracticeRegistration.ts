@@ -21,6 +21,7 @@ import {
   PracticeRegistrationStatusUnion,
   Tournament,
 } from '@Types/tournamentTypes';
+import { nowIso } from '@Tools/clock';
 
 type Updates = {
   startTime?: string;
@@ -60,7 +61,7 @@ type UpdatePracticeRegistrationResult = ResultType & {
 export function updatePracticeRegistration(params: UpdatePracticeRegistrationArgs): UpdatePracticeRegistrationResult {
   const { tournamentRecord, courtId, date, bookingId, registrationId, updates, disableNotice, occurredAt } = params;
 
-  const stampedAt = occurredAt ?? new Date().toISOString();
+  const stampedAt = occurredAt ?? nowIso();
 
   const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
   if (paramsCheck.error) return paramsCheck;

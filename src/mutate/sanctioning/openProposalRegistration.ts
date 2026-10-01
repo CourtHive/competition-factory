@@ -8,6 +8,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 // types
 import type { RegistrationProfile } from '@Types/tournamentTypes';
 import type { SanctioningRecord } from '@Types/sanctioningTypes';
+import { nowIso } from '@Tools/clock';
 
 type OpenProposalRegistrationArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -43,7 +44,7 @@ export function openProposalRegistration({
   }
 
   const { proposal } = sanctioningRecord;
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   proposal.tournamentId = tournamentId ?? proposal.tournamentId ?? UUID();
 

@@ -5,6 +5,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type RemoveCertificationArgs = {
   officialRecord: OfficialRecord;
@@ -19,7 +20,7 @@ export function removeCertification({ officialRecord, certificationId }: RemoveC
   if (index === -1) return { error: CERTIFICATION_NOT_FOUND, context: { certificationId } };
 
   officialRecord.certifications.splice(index, 1);
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS };
 }

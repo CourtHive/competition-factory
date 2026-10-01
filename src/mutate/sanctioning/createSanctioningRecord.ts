@@ -8,6 +8,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 // types
 import type { SanctioningRecord, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
 import type { TierClassification } from '@Types/tournamentTypes';
+import { nowIso } from '@Tools/clock';
 
 type CreateSanctioningRecordArgs = {
   sanctioningId?: string;
@@ -42,7 +43,7 @@ export function createSanctioningRecord({
   if (!Array.isArray(proposal.events) || proposal.events.length === 0)
     return { error: INVALID_VALUES, context: { message: 'Proposal must include at least one event' } } as any;
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const sanctioningRecord: SanctioningRecord = {
     sanctioningId: sanctioningId || UUID(),

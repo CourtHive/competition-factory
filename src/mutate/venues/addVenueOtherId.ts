@@ -7,6 +7,7 @@ import { findVenue } from '@Query/venues/findVenue';
 import { ErrorType, MISSING_VALUE, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 /**
  * Upsert a `UnifiedVenueID` entry into a venue's `venueOtherIds[]` array — the
@@ -102,13 +103,13 @@ function venueOtherIdAdd({
     }
     existing.venueId = otherVenueId;
     if (uniqueOrganisationName !== undefined) existing.uniqueOrganisationName = uniqueOrganisationName;
-    existing.updatedAt = occurredAt ?? new Date().toISOString();
+    existing.updatedAt = occurredAt ?? nowIso();
   } else {
     venue.venueOtherIds.push({
       ...(uniqueOrganisationName !== undefined ? { uniqueOrganisationName } : {}),
       organisationId,
       venueId: otherVenueId,
-      createdAt: occurredAt ?? new Date().toISOString(),
+      createdAt: occurredAt ?? nowIso(),
     });
   }
 

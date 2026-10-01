@@ -8,6 +8,7 @@ import { INVALID_VALUES, MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 /**
  * Upsert a `UnifiedPersonID` entry into the participant's
@@ -75,12 +76,12 @@ export function addPersonOtherId({
       return { ...SUCCESS };
     }
     existing.personId = personId;
-    existing.updatedAt = occurredAt ?? new Date().toISOString();
+    existing.updatedAt = occurredAt ?? nowIso();
   } else {
     person.personOtherIds.push({
       organisationId,
       personId,
-      createdAt: occurredAt ?? new Date().toISOString(),
+      createdAt: occurredAt ?? nowIso(),
     });
   }
 

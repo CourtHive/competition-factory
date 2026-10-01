@@ -19,6 +19,7 @@ import type {
   OfficialAssignment,
   OfficialRecord,
 } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type AssignOfficialArgs = ConflictEvaluationInputs & {
   officialRecord: OfficialRecord;
@@ -75,7 +76,7 @@ export function assignOfficial(params: AssignOfficialArgs): {
   }
 
   const conflicts = conflictResult.conflicts ?? [];
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const assignment: OfficialAssignment = {
     assignmentId: assignmentId || UUID(),

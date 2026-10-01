@@ -5,6 +5,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type RemoveEvaluationArgs = {
   officialRecord: OfficialRecord;
@@ -19,7 +20,7 @@ export function removeEvaluation({ officialRecord, evaluationId }: RemoveEvaluat
   if (index === -1) return { error: EVALUATION_NOT_FOUND, context: { evaluationId } };
 
   officialRecord.evaluations.splice(index, 1);
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS };
 }

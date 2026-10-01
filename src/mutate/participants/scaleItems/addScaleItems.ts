@@ -27,6 +27,7 @@ import {
   PARTICIPANT_NOT_FOUND,
   VALUE_UNCHANGED,
 } from '@Constants/errorConditionConstants';
+import { nowIso } from '@Tools/clock';
 
 type SetParticipantScaleItemArgs = {
   tournamentRecord: Tournament;
@@ -163,7 +164,7 @@ export function addParticipantScaleItem({ removePriorValues, participant, scaleI
   //
   // Distinct from `scaleItem.scaleDate`, which is the date the rating APPLIES
   // to; `createdAt` is when it was recorded.
-  const createdAt = scaleItem.createdAt ?? new Date().toISOString();
+  const createdAt = scaleItem.createdAt ?? nowIso();
   participant.timeItems ??= [];
 
   const { scaleItem: existingScaleItem } = participantScaleItem({

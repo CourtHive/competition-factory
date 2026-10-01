@@ -18,6 +18,7 @@ import { getMatchUpId } from '@Functions/global/extractors';
 // constants
 import { SUCCESS } from '@Constants/resultConstants';
 import { TOTAL } from '@Constants/scheduleConstants';
+import { nowMs } from '@Tools/clock';
 
 export function jinnScheduler({
   schedulingProfileModifications,
@@ -155,7 +156,7 @@ export function jinnScheduler({
   const scheduledDates = dateSchedulingProfiles.map(({ scheduleDate }) => scheduleDate);
 
   const autoSchedulingAudit = {
-    timeStamp: Date.now(),
+    timeStamp: nowMs(),
     overLimitMatchUpIds,
     scheduledMatchUpIds,
     schedulingProfile,

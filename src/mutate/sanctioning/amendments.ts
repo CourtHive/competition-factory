@@ -20,6 +20,7 @@ import type {
   AmendmentSeverity,
   AmendmentRules,
 } from '@Types/sanctioningTypes';
+import { nowIso, now as clockNow } from '@Tools/clock';
 
 // ---------------------------------------------------------------------------
 // Propose Amendment
@@ -60,7 +61,7 @@ export function proposeAmendment({
   // Classify severity
   const severity = classifySeverity(changes, rules);
 
-  const now = new Date().toISOString();
+  const now = nowIso();
   const amendment: Amendment = {
     // Caller-supplied id wins — see addReviewNote for why this is not cosmetic.
     amendmentId: amendmentId ?? UUID(),
@@ -114,7 +115,7 @@ export function reviewAmendment({ sanctioningRecord, amendmentId, approved, revi
     return { error: INVALID_VALUES, context: { message: `Amendment is ${amendment.status}, not PROPOSED` } };
   }
 
-  const now = new Date().toISOString();
+  const now = nowIso();
   amendment.resolvedAt = now;
   if (reviewerNotes) amendment.reviewerNotes = reviewerNotes;
 
@@ -158,7 +159,7 @@ function checkTimeline(
   if (!rules) return { blocked: false };
 
   const startDate = new Date(record.proposal.proposedStartDate);
-  const now = new Date();
+  const now = clockNow();
   const weeksUntil = (startDate.getTime() - now.getTime()) / (7 * 24 * 60 * 60 * 1000);
 
   if (rules.noChangeWindowWeeks && weeksUntil < rules.noChangeWindowWeeks) {

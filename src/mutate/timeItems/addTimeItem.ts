@@ -27,6 +27,7 @@ import {
   MISSING_VALUE,
   UNSUPPORTED_IN_LEGACY_MODE,
 } from '@Constants/errorConditionConstants';
+import { nowIso } from '@Tools/clock';
 
 type AddTimeItemArgs = {
   tournamentRecord?: Tournament;
@@ -80,7 +81,7 @@ export function addTimeItem(params: AddTimeItemArgs) {
     // the same principle as minting ids at the origin.
     //
     // `creationTime: false` still means "do not add a createdAt at all".
-    timeItem.createdAt ??= new Date().toISOString();
+    timeItem.createdAt ??= nowIso();
   }
 
   if (removePriorValues) element.timeItems = element.timeItems.filter(({ itemType }) => timeItem.itemType !== itemType);

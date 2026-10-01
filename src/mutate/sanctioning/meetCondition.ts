@@ -4,6 +4,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { SanctioningRecord } from '@Types/sanctioningTypes';
+import { nowIso } from '@Tools/clock';
 
 type MeetConditionArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -19,10 +20,10 @@ export function meetCondition({ sanctioningRecord, conditionId, metNotes }: Meet
   if (!condition) return { error: CONDITION_NOT_FOUND, context: { conditionId } };
 
   condition.met = true;
-  condition.metAt = new Date().toISOString();
+  condition.metAt = nowIso();
   if (metNotes) condition.metNotes = metNotes;
 
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   const allMet = sanctioningRecord.conditions?.every((c) => c.met) ?? false;

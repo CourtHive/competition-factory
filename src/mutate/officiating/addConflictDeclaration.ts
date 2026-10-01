@@ -7,6 +7,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialConflictDeclaration, OfficialRecord } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type AddConflictDeclarationArgs = {
   officialRecord: OfficialRecord;
@@ -47,7 +48,7 @@ export function addConflictDeclaration({
     } as any;
   }
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const declaration: OfficialConflictDeclaration = {
     declarationId: declarationId || UUID(),

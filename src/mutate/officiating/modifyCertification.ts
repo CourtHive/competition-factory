@@ -5,6 +5,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type ModifyCertificationArgs = {
   officialRecord: OfficialRecord;
@@ -35,7 +36,7 @@ export function modifyCertification({ officialRecord, certificationId, updates }
   if (updates.notes !== undefined) certification.notes = updates.notes;
   if (updates.extensions !== undefined) certification.extensions = updates.extensions;
 
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS, certification };
 }

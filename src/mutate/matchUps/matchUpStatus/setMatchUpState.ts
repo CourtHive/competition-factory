@@ -70,6 +70,7 @@ import {
   validMatchUpStatuses,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
+import { nowIso } from '@Tools/clock';
 
 // Reverting a validated-COMPLETED matchUp to one of these "still live / paused"
 // statuses (without providing a new outcome) would silently strip its result and
@@ -661,7 +662,7 @@ function applyScoredTime({ matchUp }) {
 
   if (isScored) {
     if (!matchUp.schedule) matchUp.schedule = {};
-    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = new Date().toISOString();
+    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = nowIso();
   } else if (matchUp.schedule?.scoredTime) {
     delete matchUp.schedule.scoredTime;
   }

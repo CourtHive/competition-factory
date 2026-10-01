@@ -9,6 +9,7 @@ import {
 
 // types
 import type { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type ValidateCertificationArgs = {
   officialRecord: OfficialRecord;
@@ -30,7 +31,7 @@ export function validateCertification({ officialRecord, certificationId, asOfDat
   if (!certification) return { error: CERTIFICATION_NOT_FOUND, context: { certificationId } } as any;
 
   const reasons: string[] = [];
-  const checkDate = asOfDate ?? new Date().toISOString().split('T')[0];
+  const checkDate = asOfDate ?? nowIso().split('T')[0];
 
   if (certification.status !== 'ACTIVE') {
     reasons.push(`Certification status is ${certification.status}`);

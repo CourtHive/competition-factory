@@ -11,6 +11,7 @@ import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
+import { nowIso } from '@Tools/clock';
 
 type ModifyParticipantsPaymentStatusArgs = {
   tournamentRecord: any;
@@ -46,7 +47,7 @@ export function modifyParticipantsPaymentStatus({
   if (invalidParticipantIds.length) return { error: INVALID_VALUES, context: { invalidParticipantIds } };
 
   const modifiedParticipants: Participant[] = [];
-  const createdAt = occurredAt ?? new Date().toISOString();
+  const createdAt = occurredAt ?? nowIso();
   for (const participant of participants) {
     const { participantId } = participant;
     if (participantIds.includes(participantId)) {

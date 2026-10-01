@@ -15,6 +15,7 @@ import {
   PersonnelRole,
   PersonReference,
 } from '@Types/sanctioningTypes';
+import { now as clockNow } from '@Tools/clock';
 
 export type ValidationIssue = {
   field: string;
@@ -69,7 +70,7 @@ export function validateProposal({ proposal, sanctioningPolicy, sanctioningTier 
   if (sanctioningPolicy.minimumLeadWeeks || tier?.minimumLeadWeeks) {
     const minWeeks = tier?.minimumLeadWeeks ?? sanctioningPolicy.minimumLeadWeeks ?? 0;
     const startDate = new Date(proposal.proposedStartDate);
-    const now = new Date();
+    const now = clockNow();
     const weeksUntil = (startDate.getTime() - now.getTime()) / (7 * 24 * 60 * 60 * 1000);
     if (weeksUntil < minWeeks) {
       issues.push({

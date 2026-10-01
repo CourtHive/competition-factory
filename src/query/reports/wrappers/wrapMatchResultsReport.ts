@@ -5,6 +5,7 @@ import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MATCH_RESULTS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
+import { nowIso } from '@Tools/clock';
 
 export function wrapMatchResultsReport({
   tournamentRecord,
@@ -57,7 +58,7 @@ export function wrapMatchResultsReport({
 
   return {
     reportId: MATCH_RESULTS_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
   };

@@ -8,6 +8,7 @@ import { UUID } from '@Tools/UUID';
 
 // Import necessary types
 import type { MatchUp, CreateMatchUpOptions, Side, Score } from '@Types/scoring/types';
+import { nowIso } from '@Tools/clock';
 
 /**
  * Create a new matchUp
@@ -46,7 +47,7 @@ export function createMatchUp(options: CreateMatchUpOptions): MatchUp {
     matchUpType: type,
     sides,
     score,
-    createdAt: occurredAt ?? new Date().toISOString(),
+    createdAt: occurredAt ?? nowIso(),
   };
 
   return matchUp;

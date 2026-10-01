@@ -9,6 +9,7 @@ import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
+import { nowIso } from '@Tools/clock';
 
 type RemovePracticeRegistrationArgs = {
   tournamentRecord: Tournament;
@@ -47,7 +48,7 @@ export function removePracticeRegistration(params: RemovePracticeRegistrationArg
   if (index < 0) return { error: REGISTRATION_NOT_FOUND };
 
   booking.registrations!.splice(index, 1);
-  booking.updatedAt = occurredAt ?? new Date().toISOString();
+  booking.updatedAt = occurredAt ?? nowIso();
 
   if (!disableNotice && venue) {
     addNotice({

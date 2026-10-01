@@ -27,6 +27,7 @@ import {
   INVALID_DATE,
   INVALID_PARTICIPANT_IDS,
 } from '@Constants/errorConditionConstants';
+import { now } from '@Tools/clock';
 
 export function modifyParticipant(params) {
   const {
@@ -268,7 +269,7 @@ function updatePerson({ updateParticipantName, existingParticipant, newValues, p
   } else if (birthDate) {
     if (!isValidDateString(birthDate)) return { error: INVALID_DATE };
     const birthYear = new Date(birthDate).getFullYear();
-    if (new Date(birthDate) > new Date() || birthYear < 1900) {
+    if (new Date(birthDate) > now() || birthYear < 1900) {
       return { error: INVALID_DATE, info: 'birthDate must be a past date' };
     }
     newPersonValues.birthDate = birthDate;

@@ -10,6 +10,7 @@ import {
 
 // types
 import type { SanctioningRecord, EventProposal } from '@Types/sanctioningTypes';
+import { nowIso } from '@Tools/clock';
 
 type UpdateEventProposalArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -34,7 +35,7 @@ export function updateEventProposal({ sanctioningRecord, eventProposalId, update
   const { eventProposalId: _ignored, ...safeUpdates } = updates;
   Object.assign(event, safeUpdates);
 
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS };

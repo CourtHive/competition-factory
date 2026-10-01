@@ -9,6 +9,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
+import { nowMs } from '@Tools/clock';
 
 export async function asyncExecutionQueue(engine: FactoryEngine, directives: Directives, rollbackOnError?: boolean) {
   if (!Array.isArray(directives)) return { error: INVALID_VALUES, message: 'directives must be an array' };
@@ -42,7 +43,7 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
     }
     results.push({ ...result, methodName });
   }
-  const timeStamp = Date.now();
+  const timeStamp = nowMs(); // reaches the record via the factory extension
 
   const mutationStatus = getMutationStatus({ timeStamp });
   await notifySubscribersAsync({ directives, mutationStatus, timeStamp });

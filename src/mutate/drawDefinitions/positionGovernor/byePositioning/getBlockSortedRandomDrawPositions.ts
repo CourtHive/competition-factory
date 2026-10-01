@@ -1,5 +1,6 @@
 import { chunkArray, shuffleArray } from '@Tools/arrays';
 import { isOdd } from '@Tools/math';
+import { randomSource } from '@Tools/prng';
 
 /*
   seedBlocks for 32 seeds in a draw of 128 are as follows:
@@ -58,7 +59,7 @@ export function getBlockSortedRandomDrawPositions({
   byesToPlace: number;
   random?: () => number;
 }) {
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   const drawPositions: number[] = [];
 
   validSeedBlocks.forEach((seedBlock) => processSeedBlock(seedBlock, byesToPlace, drawPositions, strictOrder, rng));

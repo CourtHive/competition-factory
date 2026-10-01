@@ -9,6 +9,7 @@ import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
+import { nowIso } from '@Tools/clock';
 
 type AddCourtGridBookingArgs = {
   tournamentRecord: Tournament;
@@ -137,7 +138,7 @@ export function addCourtGridBooking(params: AddCourtGridBookingArgs): ResultType
     rowCount,
     bookingType,
     notes,
-    createdAt: occurredAt ?? new Date().toISOString(),
+    createdAt: occurredAt ?? nowIso(),
   };
 
   targetCourtDate.bookings ??= [];

@@ -11,6 +11,7 @@
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 type TransitionEntity = {
   status: string;
@@ -74,7 +75,7 @@ export function transitionRecordStatus({
     if (pre?.error) return pre;
   }
 
-  const now = new Date().toISOString();
+  const now = nowIso();
   entity.statusHistory ??= [];
   entity.statusHistory.push({ fromStatus: entity.status, toStatus, transitionedAt: now, transitionedBy, reason });
   entity.status = toStatus;

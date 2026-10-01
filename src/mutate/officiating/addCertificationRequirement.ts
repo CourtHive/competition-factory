@@ -7,6 +7,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord, CertificationRequirement, RequirementItem } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type AddCertificationRequirementArgs = {
   officialRecord: OfficialRecord;
@@ -67,7 +68,7 @@ export function addCertificationRequirement({
   };
 
   officialRecord.certificationRequirements.push(certificationRequirement);
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS, certificationRequirement };
 }

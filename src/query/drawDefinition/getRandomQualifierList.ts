@@ -8,6 +8,7 @@ import { generateRange } from '@Tools/arrays';
 import { MISSING_MAIN_STRUCTURE } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION } from '@Constants/attributeConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
+import { randomSource } from '@Tools/prng';
 
 interface GetRandomQualifierListParams {
   drawDefinition: DrawDefinition;
@@ -31,6 +32,6 @@ export const getRandomQualifierList = ({ drawDefinition, random }: GetRandomQual
     qualifierPositions: { drawPosition: number; qualifier: boolean }[];
   } = structureAssignedDrawPositions({ structure: mainStructure });
 
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   return generateRange(0, qualifierPositions.length).sort(() => rng() - 0.5);
 };

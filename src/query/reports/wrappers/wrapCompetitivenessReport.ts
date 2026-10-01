@@ -6,6 +6,7 @@ import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { COMPETITIVENESS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
+import { nowIso } from '@Tools/clock';
 
 export function wrapCompetitivenessReport({
   tournamentRecord,
@@ -52,7 +53,7 @@ export function wrapCompetitivenessReport({
 
   return {
     reportId: COMPETITIVENESS_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
   };

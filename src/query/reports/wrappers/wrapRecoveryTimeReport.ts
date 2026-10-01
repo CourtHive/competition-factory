@@ -6,6 +6,7 @@ import { isValidIANATimeZone } from '@Tools/timeZone';
 import { PARTICIPANT_RECOVERY_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
+import { nowIso } from '@Tools/clock';
 
 type WrapArgs = {
   tournamentRecord: Tournament;
@@ -171,7 +172,7 @@ export function wrapRecoveryTimeReport({ tournamentRecord, parameters }: WrapArg
 
   return {
     reportId: PARTICIPANT_RECOVERY_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
     summary: {

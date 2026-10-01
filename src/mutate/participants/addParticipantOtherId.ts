@@ -8,6 +8,7 @@ import { MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionC
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 /**
  * Upsert a `UnifiedParticipantID` entry into the participant's
@@ -61,13 +62,13 @@ export function addParticipantOtherId({
     if (existing.participantId === otherParticipantId) return { ...SUCCESS }; // idempotent no-op
     existing.participantId = otherParticipantId;
     if (uniqueOrganisationName) existing.uniqueOrganisationName = uniqueOrganisationName;
-    existing.updatedAt = new Date().toISOString();
+    existing.updatedAt = nowIso();
   } else {
     participant.participantOtherIds.push({
       organisationId,
       participantId: otherParticipantId,
       ...(uniqueOrganisationName ? { uniqueOrganisationName } : {}),
-      createdAt: new Date().toISOString(),
+      createdAt: nowIso(),
     });
   }
 

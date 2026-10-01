@@ -7,6 +7,7 @@ import { findVenue } from '@Query/venues/findVenue';
 import { MutationLock, MutationLocksValue } from '@Types/mutationLockTypes';
 import { MUTATION_LOCKED } from '@Constants/errorConditionConstants';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
+import { nowIso } from '@Tools/clock';
 
 // Returns an error result if the method is blocked by a mutation lock, or undefined if allowed.
 export function checkMutationLock(
@@ -25,7 +26,7 @@ export function checkMutationLock(
   if (!scope) return undefined; // unmapped methods are never locked
 
   const lockToken = params.lockToken;
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   // Build the hierarchy of elements to check (most specific first)
   const elements: { element: any; label: string }[] = [];

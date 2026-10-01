@@ -12,6 +12,7 @@ import {
 
 // types
 import type { SanctioningRecord, EventProposal } from '@Types/sanctioningTypes';
+import { nowIso } from '@Tools/clock';
 
 type AddEventProposalArgs = {
   sanctioningRecord: SanctioningRecord;
@@ -34,7 +35,7 @@ export function addEventProposal({ sanctioningRecord, eventProposal }: AddEventP
   };
 
   sanctioningRecord.proposal.events.push(newEvent);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS, eventProposalId: newEvent.eventProposalId };

@@ -5,6 +5,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
+import { nowIso } from '@Tools/clock';
 
 type RemoveConflictDeclarationArgs = {
   officialRecord: OfficialRecord;
@@ -21,7 +22,7 @@ export function removeConflictDeclaration({ officialRecord, declarationId }: Rem
 
   declarations.splice(index, 1);
   officialRecord.conflictDeclarations = declarations;
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS };
 }
