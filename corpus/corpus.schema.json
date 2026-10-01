@@ -37,6 +37,11 @@
           "type": "integer",
           "minimum": 0
         },
+        "clock": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The instant the engine's clock was fixed to while the scenario was written (engine.setClock). A replay sets the same instant; a reader ignores it."
+        },
         "tags": {
           "type": "array",
           "items": {

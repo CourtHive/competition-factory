@@ -31,6 +31,7 @@ function scenario(overrides: Record<string, unknown> = {}) {
     scenarioId: 'scoring/fmlc-16/seed-9000017',
     source: { kind: 'census', ref: 'SEED_START=9000017 SEED_COUNT=1' },
     seed: 9000017,
+    clock: '2026-10-01T12:00:00.000Z',
     tags: ['scoring', 'exit-propagation'],
     initial: { record: { tournamentId: 't1' }, hash: HASH },
     steps: [
@@ -110,6 +111,7 @@ describe('corpus.schema.json', () => {
     expect(validate(scenario({ canonicalization: 'none' }))).toEqual(false);
     expect(validate(scenario({ corpusVersion: 2 }))).toEqual(false);
     expect(validate(scenario({ schemaWriteMode: 'dual' }))).toEqual(false);
+    expect(validate(scenario({ clock: 'yesterday' }))).toEqual(false);
   });
 
   it('refuses a patch op outside RFC 6902 or a path that is not an RFC 6901 pointer', () => {
@@ -124,6 +126,8 @@ describe('corpus.schema.json', () => {
   it('a scenario is itself canonicalisable, so a corpus file can be hashed and diffed', () => {
     const text = canonicalJson(scenario());
     expect(JSON.parse(text)).toEqual(scenario());
-    expect(text.startsWith('{"canonicalization":"RFC8785","corpusVersion":1')).toEqual(true);
+    expect(
+      text.startsWith('{"canonicalization":"RFC8785","clock":"2026-10-01T12:00:00.000Z","corpusVersion":1'),
+    ).toEqual(true);
   });
 });

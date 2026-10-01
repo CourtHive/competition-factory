@@ -14,6 +14,11 @@ directives and compares. Plan and rationale: `Mentat/planning/CORPUS_SPEC_AND_PO
 | `*.jsonl.gz`         | scenarios, one per line, by source (not yet written: C1c builds the writer).                   |
 | `MANIFEST.txt`       | `scenarioId  hash-of-final-state` per line, plain text, so a PR diff names what moved (C3).    |
 
+The writer and both replayers live under `src/tests/testHarness/corpus/` (`writeScenario.ts`,
+`replayScenario.ts`, `applyPatch.ts`, `hash.ts`): harness code, because hashing needs node's crypto
+and the published bundle stays browser-safe. `src/tests/corpus/scenarioRoundTrip.test.ts` is the
+proof that one scenario round-trips both ways and is byte-identical when written twice.
+
 ## Canonical form
 
 Every hash and every patch is computed over the **RFC 8785** (JCS) text of the state:
