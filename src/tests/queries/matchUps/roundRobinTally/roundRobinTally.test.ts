@@ -117,7 +117,9 @@ it('calculate participantResult values are present for all drawPositions', () =>
           roundNumber: 3,
           structureOrder: 1,
           scoreString: '6-2 3-6 [10-3]',
-          matchUpFormat: FORMAT_STANDARD,
+          // a match tiebreak decides the third set, so the format has to say so: under FORMAT_STANDARD
+          // the third set is a normal set and [10-3] was never a legal score for it
+          matchUpFormat: 'SET3-S:6/TB7-F:TB10',
           winningSide: 2,
         },
       ],
@@ -212,6 +214,11 @@ it('properly calculates short sets', () => {
 });
 
 const shortSets3rdTB = 'SET3-S:4/TB7-F:TB7';
+// Sets to four decided at THREE all. The walkover and default tests below score `4-3` in six places, which
+// under `shortSets3rdTB` (tiebreak at 4-4, two clear games) is not a score that format can produce. Under
+// `@3` every one of their results is legal, with no score or expectation changed — measured 2026-10-01
+// against `validateMatchUpScore`. The ordering test keeps `shortSets3rdTB`: its `5-4(2)` and `5-3` need 4-4.
+const shortSetsTiebreakAt3 = 'SET3-S:4/TB7@3-F:TB7';
 
 it('properly orders round robin participants; drawSize: 5, SET3-S:4/TB7-F:TB7', () => {
   const drawProfiles = [
@@ -642,7 +649,7 @@ it('properly handles walkovers in calculating participant positions', () => {
       drawSize: 5,
       eventType: SINGLES,
       participantsCount: 5,
-      matchUpFormat: shortSets3rdTB,
+      matchUpFormat: shortSetsTiebreakAt3,
       drawType: ROUND_ROBIN,
       structureOptions: { groupSize: 5 },
       outcomes: [
@@ -745,7 +752,7 @@ it('properly handles DEFAULTS in calculating participant positions', () => {
       drawSize: 5,
       eventType: SINGLES,
       participantsCount: 5,
-      matchUpFormat: shortSets3rdTB,
+      matchUpFormat: shortSetsTiebreakAt3,
       drawType: ROUND_ROBIN,
       structureOptions: { groupSize: 5 },
       outcomes: [

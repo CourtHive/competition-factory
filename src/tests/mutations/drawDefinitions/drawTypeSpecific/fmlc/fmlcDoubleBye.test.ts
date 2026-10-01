@@ -166,7 +166,7 @@ it('can remove 2nd round MAIN draw result when no participant went to consolatio
         {
           roundNumber: 1,
           roundPosition: 5,
-          scoreString: '6-1 6-5',
+          scoreString: '6-1 6-4',
           winningSide: 1,
         },
         {
