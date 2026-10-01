@@ -78,8 +78,6 @@ import {
 // un-advance the draw — the class of bug behind stranded LIVE-with-score matches.
 const REVERT_GUARDED_STATUSES = new Set([IN_PROGRESS, SUSPENDED]);
 
-// NOTE: Internal method for setting matchUpStatus or score and winningSide, not to be confused with setMatchUpStatus
-
 type SetMatchUpStateArgs = {
   tournamentRecords?: { [key: string]: Tournament };
   /** a caller that already built the draw's matchUp map hands it over rather than having it rebuilt */
@@ -113,6 +111,15 @@ type SetMatchUpStateArgs = {
   score?: any;
 };
 
+/**
+ * @deprecated on the engine surface since 7.5.0; removed at the next major. This is the INTERNAL
+ * state writer behind `setMatchUpStatus`: it skips the policy resolution of the three propagation
+ * flags, the score-string derivation, the format validation and the exit-propagation cascade that
+ * the public entry performs, so a consumer calling it directly gets a result the draw may not
+ * agree with. The golden corpus found no caller outside this repository (outcome-pipeline spec
+ * § 8). Internal callers (`resetAdHocMatchUps`, `removeCollectionDefinition`) keep importing it;
+ * consumers call `setMatchUpStatus`.
+ */
 export function setMatchUpState(params: SetMatchUpStateArgs): any {
   const stack = 'setMatchUpStatus';
 
