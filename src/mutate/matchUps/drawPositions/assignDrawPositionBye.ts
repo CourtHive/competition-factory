@@ -119,10 +119,6 @@ export function assignDrawPositionBye({
 
   matchUpsMap ??= getMatchUpsMap({ drawDefinition });
   const { positionAssignments } = getPositionAssignments({ structure });
-  const { activeDrawPositions } = getStructureDrawPositionProfiles({
-    drawDefinition,
-    structureId,
-  });
 
   const currentAssignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
 
@@ -170,8 +166,17 @@ export function assignDrawPositionBye({
   const isPropagationPlacement = byeFromPropagation ?? hasPropagatedStatus;
 
   // ################### Check error conditions ######################
-  const drawPositionIsActive = activeDrawPositions?.includes(drawPosition);
-  if (drawPositionIsActive && !isPropagationPlacement) {
+  // Whether the position is ACTIVE is asked only of a placement that could be refused for it. A
+  // propagation placement is never refused on those grounds, and the answer costs two hydrations of
+  // the draw (`getStructureDrawPositionProfiles`, and the `addGoesTo` inside its dependency map) —
+  // which this took on every BYE the cascade placed and then did not read. Measured 2026-10-01
+  // (`pipelineCost.test.ts`): 462 hydrations and 6,666 `positionTargets` calls over 2,026
+  // `setMatchUpStatus` calls, none of them consulted. Nothing between the top of this function and
+  // this line changes the draw, so a placement that IS asked gets the answer it got before.
+  const drawPositionIsActive =
+    !isPropagationPlacement &&
+    getStructureDrawPositionProfiles({ drawDefinition, structureId }).activeDrawPositions?.includes(drawPosition);
+  if (drawPositionIsActive) {
     return { error: DRAW_POSITION_ACTIVE };
   }
 
