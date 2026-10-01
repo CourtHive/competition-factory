@@ -34,9 +34,15 @@ export function checkSetIsComplete({
   const scoreDiff = Math.abs(side1Score - side2Score);
   const containsSetTo = side1Score >= setTo || side2Score >= setTo;
 
+  // Only a format that HAS a tiebreak can require one. An advantage set (`S:6`, no `/TB`) runs on past
+  // six-all by two clear games — 1968 Wimbledon reached 24-22 — and this read both sides at `setTo` as
+  // "tiebreak now" regardless, so an 8-6 came back INCOMPLETE (measured 2026-10-02, with or without
+  // `NOAD`). `parse` writes `noTiebreak: true` and no `tiebreakAt` for such a set; a hand-built format
+  // with neither field is read the same way, as the advantage set it declares.
+  const formatHasTiebreak = !!(setFormat.tiebreakFormat || setFormat.tiebreakAt);
   const requiresTiebreak =
     isTiebreakSet ||
-    (side1Score >= setTo && side2Score >= setTo) ||
+    (formatHasTiebreak && side1Score >= setTo && side2Score >= setTo) ||
     (tiebreakAt && tiebreakAt < setTo && (side1Score === tiebreakAt || side2Score === tiebreakAt));
 
   const leaderHoldsTiebreak =

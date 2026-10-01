@@ -314,8 +314,16 @@ function validateTiebreakCondition({
     }
   }
 
+  // A winner past `setTo` without six-all is a tiebreak-set shape with no tiebreak — EXCEPT the one score
+  // that reaches `setTo + 1` outright: 7-5, from five-all, where the tiebreak at six-all is never reached.
+  // This refused it as "(2)" (measured 2026-10-02, with or without `NOAD`), while `getSetWinningSide`
+  // named the winner — one set, two answers. Only where the tiebreak sits AT `setTo`: under `@5` a 7-5
+  // is impossible, because five-all is already the tiebreak.
+  const losingSideGameScore = sideGameScores[losingSideIndex];
+  const wonOutrightFromAllButOne =
+    tiebreakAt === setTo && winningSideGameScore === setTo + 1 && losingSideGameScore === setTo - 1;
   const hasTiebreakGameScore = winningSideGameScore > setTo;
-  if (hasTiebreakGameScore && !hasTiebreakCondition) {
+  if (hasTiebreakGameScore && !hasTiebreakCondition && !wonOutrightFromAllButOne) {
     return {
       result: false,
       error: { message: 'invalid winning game scoreString (2)' },
