@@ -35,20 +35,24 @@ a `schedule` to apply once accepted, `notes`, and the flags below.
 and `scoreStringSide1` / `scoreStringSide2` are regenerated from the sets under the matchUp's
 effective format. A caller's strings are discarded. `score.sets` is the single source of truth.
 
-**Three flags, three precedence rules**, and they differ on purpose:
+**Three flags, one precedence rule: the policy governs, both ways** (CA, 2026-10-01).
 
-| flag                        | precedence                           | an explicit `false`         |
-| --------------------------- | ------------------------------------ | --------------------------- |
-| `allowChangePropagation`    | param `\|\|` policy `\|\|` undefined | falls through to the policy |
-| `propagateExitStatus`       | param `\|\|` policy `\|\|` undefined | falls through to the policy |
-| `propagateRetirementAsExit` | param `??` policy `??` **false**     | wins, from either source    |
+| flag                        | precedence                       | absent both |
+| --------------------------- | -------------------------------- | ----------- |
+| `allowChangePropagation`    | policy `??` param `??` undefined | not allowed |
+| `propagateExitStatus`       | policy `??` param `??` undefined | no          |
+| `propagateRetirementAsExit` | policy `??` param `??` **false** | no          |
 
-The third is `??` because turning retirement propagation OFF is the point of the setting; a retiree
-is out of a match, not out of the event, unless the policy says so. **Pinned** by two authored
-scenarios (`authored/outcome-pipeline/flags-*`): with a scoring policy that says `true`, an explicit
-`propagateRetirementAsExit: false` leaves the consolation untouched, and an explicit
-`propagateExitStatus: false` is overridden, the consolation receives the walkover. The second is the
-measured behaviour, not an endorsement of it; see § 9, question 4.
+An applied scoring policy that **speaks** on a flag, `true` or `false`, wins over anything on the
+call; the call decides only where the policy is **silent**. So under a policy that propagates
+retirement as an exit, a tournament director passing `false` is overruled, and under a policy that
+forbids it, a director passing `true` is overruled too: _"if a governance policy is someone who
+retires can no longer continue playing, a tournament director under that policy shouldn't be able to
+allow a participant to continue in the draw."_ `POLICY_SCORING_DEFAULT` is silent on all three, so a
+provider that attaches it leaves the decision to the call. Until 2026-10-01 the call won on
+`propagateRetirementAsExit` and a truthy call won on the other two (`||`), so a caller could
+override its federation's rule; the three authored scenarios `authored/outcome-pipeline/flags-*`
+pin the new contract from both directions.
 
 **A `matchUpFormat` on the call is validated before anything runs and persisted only once the outcome
 is accepted.** It used to be written first, so a refused outcome left a new format behind.
@@ -232,14 +236,14 @@ deferred to S2b, not a divergence. `OUTCOME_PIPELINE=differential vitest run` is
 | real-record do/undo               | 7 of 11 probed fixtures restore the draw projection; 4 do not (§ 4)                                                                                                                                                                                                                                                                                             |
 | authored scenarios                | 7 (`pnpm corpus:authored`), one per rule above that the recorded sources did not reach: the flag precedence (§ 1), rows 5, 9, 10 and 14 of § 2 with every condition of row 9, the swap (§ 3), the double-exit no-op (§ 6), the bulk refusals. Each asserts the result code of every step and, where a flag's effect is the claim, the state the patches rebuild |
 
-## 9. Open questions
+## 9. Open questions — decided 2026-10-01 (CA)
 
-1. Should a clear restore **absence** (no status, no score) rather than write TO_BE_PLAYED and an
-   empty score object? And should it keep a matchUp-level `matchUpFormat`? (§ 4)
-2. Where does `ERR_FORCED` come from on this path? (§ 2, row 19)
-3. Should `setMatchUpState` be an engine method at all? (§ 8)
-4. The flags' precedence rules differ (`||` vs `??`); is that the intended contract for all three,
-   or should `allowChangePropagation` and `propagateExitStatus` also honour an explicit `false`? (§ 1)
+1. A clear **keeps normalising**: TO_BE_PLAYED and an empty score object are the canonical cleared
+   state. It **keeps a matchUp-level `matchUpFormat`**: the format is a property of the match, not of
+   its result. (§ 4; the format fix is its own PR.)
+2. Where `ERR_FORCED` comes from on this path is still untraced. (§ 2, row 19)
+3. `setMatchUpState` **leaves the governor**; its internal callers keep it. (§ 8; its own PR)
+4. The flags: **the policy governs, both ways.** (§ 1, landed with this revision)
 
 ## Related
 

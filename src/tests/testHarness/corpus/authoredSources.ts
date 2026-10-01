@@ -91,44 +91,62 @@ const sms = (m: any, outcome: any, extra: Record<string, unknown> = {}): Directi
 export function authoredScenarios(): Authored[] {
   const out: Authored[] = [];
 
-  // § 1 flags: an explicit `propagateRetirementAsExit: false` beats a policy that says true (??)
+  // § 1 flags: the policy governs, both ways (CA, 2026-10-01)
   {
     const { tournamentRecord, at } = generate(
       { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
       { propagateExitStatus: true, propagateRetirementAsExit: true },
     );
     out.push({
-      scenarioId: 'authored/outcome-pipeline/flags-retirement-explicit-false-beats-policy',
-      ref: 'spec § 1: propagateRetirementAsExit uses ??, an explicit false wins over the policy',
+      scenarioId: 'authored/outcome-pipeline/flags-policy-true-binds-a-false-call',
+      ref: 'spec § 1: a policy that propagates retirement as an exit overrules a call that says false',
       initialRecord: tournamentRecord,
       directives: [
-        sms(at(MAIN, 1, 1), { ...win('6-3 2-1', 1), matchUpStatus: RETIRED }, { propagateRetirementAsExit: false }),
+        sms(
+          at(MAIN, 1, 1),
+          { ...win('6-3 2-1', 1), matchUpStatus: RETIRED },
+          { propagateRetirementAsExit: false, propagateExitStatus: false },
+        ),
       ],
       expected: ['ok'],
       finalState: (record) =>
         claim(
-          matchUpAt(record, CONSOLATION, 1, 1)?.matchUpStatus === TO_BE_PLAYED,
-          'the retirement did not propagate: consolation R1 P1 is still TO_BE_PLAYED',
+          matchUpAt(record, CONSOLATION, 1, 1)?.matchUpStatus === WALKOVER,
+          'the policy won: the retirement carried into the consolation as a WALKOVER',
         ),
     });
   }
-
-  // § 1 flags: an explicit `propagateExitStatus: false` DEFERS to a policy that says true (||)
   {
     const { tournamentRecord, at } = generate(
       { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
-      { propagateExitStatus: true },
+      { propagateExitStatus: false },
     );
     out.push({
-      scenarioId: 'authored/outcome-pipeline/flags-exit-explicit-false-defers-to-policy',
-      ref: 'spec § 1 and OPEN 4: propagateExitStatus uses ||, an explicit false falls through to the policy',
+      scenarioId: 'authored/outcome-pipeline/flags-policy-false-binds-a-true-call',
+      ref: 'spec § 1: a policy that forbids exit propagation overrules a call that says true',
       initialRecord: tournamentRecord,
-      directives: [sms(at(MAIN, 1, 1), { matchUpStatus: WALKOVER, winningSide: 1 }, { propagateExitStatus: false })],
+      directives: [sms(at(MAIN, 1, 1), { matchUpStatus: WALKOVER, winningSide: 1 }, { propagateExitStatus: true })],
+      expected: ['ok'],
+      finalState: (record) =>
+        claim(
+          matchUpAt(record, CONSOLATION, 1, 1)?.matchUpStatus === TO_BE_PLAYED,
+          'the policy won: the consolation is untouched',
+        ),
+    });
+  }
+  {
+    // the DEFAULT policy is silent on the flags, so the call decides
+    const { tournamentRecord, at } = generate({ drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION }, {});
+    out.push({
+      scenarioId: 'authored/outcome-pipeline/flags-silent-policy-leaves-it-to-the-call',
+      ref: 'spec § 1: POLICY_SCORING_DEFAULT says nothing on the flags; the call propagates',
+      initialRecord: tournamentRecord,
+      directives: [sms(at(MAIN, 1, 1), { matchUpStatus: WALKOVER, winningSide: 1 }, { propagateExitStatus: true })],
       expected: ['ok'],
       finalState: (record) =>
         claim(
           matchUpAt(record, CONSOLATION, 1, 1)?.matchUpStatus === WALKOVER,
-          'the policy won over the explicit false: consolation R1 P1 is a WALKOVER',
+          'the call decided: the consolation holds the produced WALKOVER',
         ),
     });
   }
