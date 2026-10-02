@@ -295,6 +295,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
           }
         : undefined,
       loserMatchUpRoundNumber: targetData?.targetMatchUps?.loserMatchUp?.roundNumber,
+      loserStructureId: targetData?.targetMatchUps?.loserMatchUp?.structureId,
+      loserMatchUpDrawPositions: (targetData?.targetMatchUps?.loserMatchUp?.drawPositions ?? []).filter(
+        (position): position is number => typeof position === 'number',
+      ),
       priorWins: priorWins(inContextDrawMatchUps, inContextMatchUp),
     },
     draw: {

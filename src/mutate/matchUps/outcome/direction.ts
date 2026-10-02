@@ -39,5 +39,10 @@ function planLoser(view: OutcomeView, loserSide: 1 | 2): DirectionPlan['loser'] 
   if (!matchUpId || !participantId || !view.targets.loserLink) return undefined;
   const fedFMLC = view.targets.loserLink.linkCondition === FIRST_MATCHUP && view.targets.loserMatchUpRoundNumber === 2;
   const arrives = fedFMLC ? view.targets.priorWins[loserSide] === 0 : true;
-  return { matchUpId, participantId, arrives };
+  // kept out of an FMLC feed, the loser's place is taken by a propagated BYE on the feed's lower position
+  const positions = view.targets.loserMatchUpDrawPositions ?? [];
+  const structureId = view.targets.loserStructureId;
+  const bye =
+    !arrives && positions.length && structureId ? { structureId, drawPosition: Math.min(...positions) } : undefined;
+  return { matchUpId, participantId, arrives, ...(bye ? { bye } : {}) };
 }

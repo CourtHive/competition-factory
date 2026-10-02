@@ -3,6 +3,7 @@ import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides
 import { clearOutcome } from '../exitPropagation/transitions';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { setRandomSource } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 import fs from 'fs';
 import path from 'path';
@@ -71,6 +72,9 @@ function generate(drawProfile: any, policy?: any) {
   // the starting record is built on the corpus clock, so its timestamps, and so its hash, reproduce:
   // a committed manifest of these hashes is only a signal if a rerun cannot move them
   setClock(CLOCK);
+  // and from its own seed: one shared random sequence made every scenario's ids depend on how many
+  // scenarios were generated before it, so adding one moved the hashes of all that followed
+  setRandomSource(SEED);
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     ...(policy
       ? { policyDefinitions: { [POLICY_TYPE_SCORING]: { ...POLICY_SCORING_DEFAULT[POLICY_TYPE_SCORING], ...policy } } }
@@ -80,6 +84,7 @@ function generate(drawProfile: any, policy?: any) {
     endDate: '2026-10-03',
   });
   setClock();
+  setRandomSource();
   tournamentEngine.reset();
   tournamentEngine.setState(tournamentRecord);
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
@@ -251,6 +256,30 @@ export function authoredScenarios(): Authored[] {
         sms(m2, clearOutcome), // row 10: clearing m2 would leave the propagated exit standing
       ],
       expected: ['ok', 'ok', 'ok', 'ok', 'ERR_INCOMPATIBLE_MATCHUP_STATUS', 'ERR_PROPAGATED_EXITS_DOWNSTREAM'],
+    });
+  }
+
+  // § 5 rule 1: a first-match-loser feed takes a loser only on their first match; a second-round
+  // loser who won in round 1 is kept out, and a propagated BYE takes the fed position
+  {
+    const { tournamentRecord, at } = generate({ drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION });
+    out.push({
+      scenarioId: 'authored/outcome-pipeline/fmlc-second-round-loser-kept-out',
+      ref: 'spec § 5 rule 1: FIRST_MATCHUP feeds take a loser only on their first match; otherwise a propagated BYE',
+      initialRecord: tournamentRecord,
+      directives: [
+        sms(at(MAIN, 1, 1), win('6-1 6-1', 1)),
+        sms(at(MAIN, 1, 2), win('6-1 6-1', 1)),
+        sms(at(MAIN, 2, 1), win('6-2 6-2', 2)), // the round-1 winner of R1 P1 loses in round 2
+      ],
+      expected: ['ok', 'ok', 'ok'],
+      finalState: (record) => {
+        const fed = matchUpAt(record, CONSOLATION, 2, 1);
+        const consolation = record.events[0].drawDefinitions[0].structures.find((s: any) => s.stage === CONSOLATION);
+        const lowest = Math.min(...(fed?.drawPositions ?? []).filter(Boolean));
+        const assignment = consolation?.positionAssignments?.find((a: any) => a.drawPosition === lowest);
+        return claim(!!assignment?.bye, 'the fed position of consolation R2 P1 holds a BYE, not the kept-out loser');
+      },
     });
   }
 
