@@ -11,6 +11,7 @@ import {
   CANCELLED,
   COMPLETED,
   completedMatchUpStatuses,
+  DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
   IN_PROGRESS,
   INCOMPLETE,
@@ -114,7 +115,6 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
     // `line-score`: a line rescored under a decided dual. v1 first takes the dual's direction back,
     // which rewrites the line, then writes the score; measured 2026-10-01 to leave IN_PROGRESS where
     // this plan said TO_BE_PLAYED or COMPLETED. The dual cascade is S2c's, so this route is too.
-    case 'completed-to-double-exit':
     case 'refused':
     case 'line-score':
       return undefined;
@@ -165,6 +165,16 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
       };
     case 'double-exit':
       return applyScoreAndStatus({ ...asIs, removeScore: true }, request, view);
+    // a decided matchUp turned into a double exit: what it directed is taken back (the winner goes),
+    // then the double exit is written and advanced as a fresh one
+    // FINDING, 2026-10-02: a completed matchUp turned into a DOUBLE_DEFAULT ends with no score in two
+    // SHAPES, `score` undefined (201 of 214 measured) or the blank strings (13); a DOUBLE_WALKOVER is
+    // always blanked. Both hold no result, so the plan asserts that and leaves the shape open.
+    case 'completed-to-double-exit':
+      return {
+        ...applyScoreAndStatus({ ...asIs, removeWinningSide: true, removeScore: true }, request, view),
+        ...(matchUpStatus === DOUBLE_DEFAULT ? { scoreShapeOpen: true } : {}),
+      };
     case 'clear-score':
       return applyScoreAndStatus({ ...asIs, removeScore: true }, request, view);
     case 'apply-values': {

@@ -74,7 +74,11 @@ export function compareWrites(plan: MatchUpWrite, actual: MatchUpWrite): { agree
   const listKeys = new Set<keyof MatchUpWrite>(['sets', 'matchUpStatusCodes']);
   const norm = (w: MatchUpWrite, k: keyof MatchUpWrite) =>
     listKeys.has(k) ? ((w[k] as unknown[] | undefined) ?? []) : w[k];
-  const diffs = keys.filter((k) => !same(norm(plan, k), norm(actual, k)));
+  const shapeKeys = new Set<keyof MatchUpWrite>(['scoreStringSide1', 'scoreStringSide2', 'sets']);
+  const compared = plan.scoreShapeOpen ? keys.filter((k) => !shapeKeys.has(k)) : keys;
+  const diffs = compared.filter((k) => !same(norm(plan, k), norm(actual, k)));
+  // with the shape open, the score must still hold no result: no sets with games in them
+  if (plan.scoreShapeOpen && ((actual.sets as unknown[] | undefined) ?? []).length) diffs.push('sets');
   if (!diffs.length) return { agree: true, v1: 'as planned', v2: 'as planned' };
   const show = (w: MatchUpWrite) => JSON.stringify(Object.fromEntries(diffs.map((k) => [k, w[k]])));
   return { agree: false, v1: show(actual), v2: show(plan) };
