@@ -34,6 +34,7 @@ export default defineConfig({
       './src/tests/testHarness/seedMathRandom.ts',
       './src/tests/testHarness/corpusRecord.ts',
       './src/tests/testHarness/setOutcomePipeline.ts',
+      './src/tests/testHarness/differentialTally.ts',
     ],
     coverage: {
       reporter: ['html', 'json-summary'],

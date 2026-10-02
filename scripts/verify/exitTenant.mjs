@@ -84,6 +84,13 @@ const ALLOWED = {
   'mutate/matchUps/drawPositions/directParticipants.ts': 'PLUMBING — sourceMatchUpStatusCodes',
   'mutate/matchUps/matchUpStatus/setMatchUpState.ts': 'PLUMBING — the param type',
   'mutate/matchUps/matchUpStatus/setMatchUpStatus.ts': 'PLUMBING — outcome passthrough',
+  'mutate/matchUps/outcome/differential.ts':
+    'PLUMBING — compares the array v1 wrote with the array the plan carries, by value, never by position',
+  'mutate/matchUps/outcome/view.ts':
+    'PLUMBING — carries the existing array into the plan of the next write; decides nothing on it',
+  'mutate/matchUps/outcome/types.ts': 'PLUMBING — the v2 request carries the submitted array to the write',
+  'mutate/matchUps/outcome/write.ts':
+    'WRITE — plans the write as modifyMatchUpScore performs it; the split is at the write (S2b)',
   'mutate/matchUps/score/modifyMatchUpScore.ts': 'PLUMBING — writes what its caller passed',
   'mutate/tournaments/dehydrate.ts': 'PLUMBING — serialization key list',
 

@@ -1,7 +1,10 @@
-import type { Refusal } from './types';
+import type { MatchUpWrite, Refusal } from './types';
 import {
   DRAW_POSITION_ACTIVE,
   INVALID_MATCHUP_STATUS,
+  INVALID_MATCHUP_STATUS_BYE,
+  MISSING_ASSIGNMENTS,
+  MISSING_DRAW_POSITIONS,
   INVALID_TIME,
   MUTATION_LOCKED,
   UNRECOGNIZED_MATCHUP_STATUS,
@@ -22,6 +25,9 @@ export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   'ERR_FORCED', // § 2 row 19: observed by the corpus, no constant declares it (spec OPEN 2)
   UNRECOGNIZED_MATCHUP_STATUS.code,
   INVALID_MATCHUP_STATUS.code,
+  INVALID_MATCHUP_STATUS_BYE.code,
+  MISSING_ASSIGNMENTS.code,
+  MISSING_DRAW_POSITIONS.code,
 ]);
 
 export class OutcomePipelineDivergence extends Error {
@@ -46,4 +52,50 @@ export function compareDecisions(v2: Refusal | undefined, v1Code: string | undef
   if (!v2Code && v1Code && APPLY_STAGE_CODES.has(v1Code))
     return { agree: true, deferred: v1Code, v1: v1Code, v2: 'ok' };
   return { agree: false, v1: v1Code ?? 'ok', v2: v2Code ?? 'ok' };
+}
+
+const same = (a: unknown, b: unknown): boolean => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+/**
+ * S2b: the planned write against the matchUp v1 wrote. Sets and codes are compared by value, with
+ * `undefined` and `[]` both read as "none".
+ */
+export function compareWrites(plan: MatchUpWrite, actual: MatchUpWrite): { agree: boolean; v1: string; v2: string } {
+  const keys: (keyof MatchUpWrite)[] = [
+    'matchUpStatus',
+    'winningSide',
+    'scoreStringSide1',
+    'scoreStringSide2',
+    'sets',
+    'matchUpFormat',
+    'matchUpStatusCodes',
+    'scoredTime',
+  ];
+  const listKeys = new Set<keyof MatchUpWrite>(['sets', 'matchUpStatusCodes']);
+  const norm = (w: MatchUpWrite, k: keyof MatchUpWrite) =>
+    listKeys.has(k) ? ((w[k] as unknown[] | undefined) ?? []) : w[k];
+  const diffs = keys.filter((k) => !same(norm(plan, k), norm(actual, k)));
+  if (!diffs.length) return { agree: true, v1: 'as planned', v2: 'as planned' };
+  const show = (w: MatchUpWrite) => JSON.stringify(Object.fromEntries(diffs.map((k) => [k, w[k]])));
+  return { agree: false, v1: show(actual), v2: show(plan) };
+}
+
+/**
+ * What the differential mode actually compared, by route. A green differential run that compared
+ * nothing is not evidence of anything, so the gate reads this and refuses an empty tally. Module
+ * state on purpose: it counts across every engine call in a process and is reset by the caller.
+ */
+const tally: Record<string, { compared: number; deferred: number }> = {};
+
+export function differentialTally(route: string, outcome: 'compared' | 'deferred'): void {
+  tally[route] ??= { compared: 0, deferred: 0 };
+  tally[route][outcome] += 1;
+}
+
+export function getDifferentialTally(): Record<string, { compared: number; deferred: number }> {
+  return structuredClone(tally);
+}
+
+export function resetDifferentialTally(): void {
+  for (const key of Object.keys(tally)) delete tally[key];
 }

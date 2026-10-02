@@ -1,4 +1,23 @@
 export { buildOutcomeView } from './view';
 export { refuseOutcome } from './refusals';
-export { compareDecisions, OutcomePipelineDivergence, APPLY_STAGE_CODES } from './differential';
-export type { OutcomeFlags, OutcomeRequest, OutcomeScore, OutcomeView, Refusal } from './types';
+export { chooseRoute } from './route';
+export { planDirection } from './direction';
+export { planWrite, observeWrite } from './write';
+export {
+  APPLY_STAGE_CODES,
+  compareDecisions,
+  compareWrites,
+  getDifferentialTally,
+  OutcomePipelineDivergence,
+  resetDifferentialTally,
+} from './differential';
+export type {
+  DirectionPlan,
+  MatchUpWrite,
+  OutcomeFlags,
+  OutcomeRequest,
+  OutcomeScore,
+  OutcomeView,
+  Refusal,
+  Route,
+} from './types';
