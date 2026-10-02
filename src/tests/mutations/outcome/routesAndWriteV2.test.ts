@@ -53,6 +53,8 @@ it('every accepted authored step is planned, written as planned, and its winner 
   expect(compared('team-autocalc')).toBeGreaterThan(0);
   // ...and its projected winner is directed onward like any other winner
   expect(compared('team-autocalc:direction')).toBeGreaterThan(0);
+  // a line whose projection decides its dual: the dual's winner is written and directed onward
+  expect(compared('winner:dual-direction')).toBeGreaterThan(0);
   // a final whose undefeated loser makes the decider needed (authored: decider-needed)
   expect(compared('winner:decider-needed')).toBeGreaterThan(0);
   // the held-exit invariant is asked after every accepted call
