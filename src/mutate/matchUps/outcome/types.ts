@@ -115,6 +115,13 @@ export type OutcomeView = {
     /** a lucky draw's pre-feed round: nobody advances from it */
     luckyPreFeed: boolean;
     sideParticipantIds: { 1?: string; 2?: string };
+    sideDrawPositions: { 1?: number; 2?: number };
+    /** the loser link, when there is one: its condition and the round it feeds */
+    loserLink?: { linkCondition?: string; targetRoundNumber?: number };
+    /** the loserMatchUp's round in its own structure (an FMLC feed lands in round 2) */
+    loserMatchUpRoundNumber?: number;
+    /** wins each side's drawPosition holds in this structure, this matchUp left out */
+    priorWins: { 1: number; 2: number };
   };
   /** § 3: facts the routes ask */
   draw: {
@@ -170,4 +177,6 @@ export type BuildViewArgs = {
 /** § 5 rule 1: what direction must have done once the route has written */
 export type DirectionPlan = {
   winner?: { matchUpId: string; participantId: string };
+  /** S2c: the loser stands in `matchUpId` (`arrives`), or must not (a first-match-loser feed with prior wins) */
+  loser?: { matchUpId: string; participantId: string; arrives: boolean };
 };

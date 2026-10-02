@@ -68,8 +68,25 @@ export function decideOutcomeV2(args: BuildViewArgs): {
         });
       differentialTally(route, 'compared');
 
-      // § 5 rule 1: the winner stands in the matchUp direction names
+      // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
       if (!direction) return differentialTally(`${route}:direction`, 'deferred');
+      if (direction.loser) {
+        const { matchUps } = getAllDrawMatchUps({
+          matchUpFilters: { matchUpIds: [direction.loser.matchUpId] },
+          tournamentRecord: args.tournamentRecord,
+          drawDefinition: args.drawDefinition,
+          inContext: true,
+          event: args.event,
+        });
+        const present = !!matchUps?.[0]?.sides?.some((side) => side?.participantId === direction.loser?.participantId);
+        if (present !== direction.loser.arrives)
+          throw new OutcomePipelineDivergence({
+            matchUpId: args.request.matchUpId,
+            v1: `loser ${direction.loser.participantId} ${present ? 'is' : 'is not'} in ${direction.loser.matchUpId}`,
+            v2: `planned the loser ${direction.loser.arrives ? 'into' : 'out of'} ${direction.loser.matchUpId}`,
+          });
+        differentialTally(`${route}:loser-${direction.loser.arrives ? 'in' : 'out'}`, 'compared');
+      }
       if (!direction.winner) return differentialTally(`${route}:direction`, 'compared');
       const { matchUps } = getAllDrawMatchUps({
         matchUpFilters: { matchUpIds: [direction.winner.matchUpId] },
