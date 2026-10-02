@@ -992,6 +992,17 @@ e.g. `Set 1: …`, and the matchUp is left unchanged. A score with no resolvable
 **To record a score the format cannot produce** — an import, a migration, a correction to
 history, an abandoned line — pass `disableScoreValidation: true`. It skips both questions.
 
+Three tiebreak records are settled (CA, 2026-10-02):
+
+- **`7-6` with no tiebreak points is a finished set.** It is recorded, and `validateScore` names
+  the set in a `TIEBREAK_POINTS_NOT_RECORDED` warning. Score entry still asks for the points: the
+  completeness check used while typing does not call a bare `7-6` finished.
+- **A match tiebreak recorded as `1-0` in its game fields** is a finished set whose points were not
+  kept. `1-0` in the tiebreak-point fields is refused, except under `TB1`.
+- **Impossible tiebreak points are refused**, such as `7-6(10-7)` with a tiebreak to seven. An
+  ingestion pipeline can call `scoreGovernor.repairScore` first, which drops such points and keeps
+  `7-6`.
+
 ### Score strings are derived, never trusted
 
 `score.sets` is the source of truth. `scoreStringSide1` / `scoreStringSide2` are

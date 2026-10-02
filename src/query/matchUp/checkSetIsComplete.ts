@@ -31,6 +31,8 @@ export function checkSetIsComplete({
   // A tiebreak-only set's points are read from wherever they are, so a set that carried them in its game
   // fields (a format-aware parse) is the same set as one that carries them beside the 1-0 marker
   const reading = readTiebreakSet(set, setFormat);
+  // the 1-0 marker alone records a finished tiebreak set (CA, V11)
+  if (reading.isMarker) return true;
   isTiebreakSet ??= reading.isTiebreakSet;
   set = withPointsInTiebreakFields(set, setFormat);
   const { side1Score, side2Score } = set;

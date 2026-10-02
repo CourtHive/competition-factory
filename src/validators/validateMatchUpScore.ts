@@ -5,6 +5,7 @@
  * Currently implemented in TMX for testing and refinement before factory integration
  */
 import { tiebreakSetGames, isTiebreakGamesScore, tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
+import { isTiebreakMarker } from '@Query/matchUp/tiebreakSetShape';
 import { getMaxSetScore } from '@Query/matchUp/getComplement';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { setPlayedAfterDecision } from './setCount';
@@ -340,6 +341,39 @@ function validateRegularSet(
   return { isValid: true };
 }
 
+/** A timed set: a completed one needs a score, and a tied points-based one its tiebreak. */
+function validateTimedSet(set: any, setFormat: any, allowIncomplete?: boolean): { isValid: boolean; error?: string } {
+  // For timed sets, just validate that scores exist if set is complete
+  if (!allowIncomplete) {
+    const side1Score = set.side1Score ?? 0;
+    const side2Score = set.side2Score ?? 0;
+
+    // At least one side should have a score for completed timed set
+    if (side1Score === 0 && side2Score === 0) {
+      return { isValid: false, error: 'Timed set requires at least one side to have scored' };
+    }
+
+    // For points-based (not aggregate), tied scores need tiebreak if format specifies
+    if (setFormat.based === 'P' && side1Score === side2Score && side1Score > 0 && setFormat.tiebreakFormat) {
+      const hasTiebreak = set.side1TiebreakScore !== undefined || set.side2TiebreakScore !== undefined;
+      if (!hasTiebreak) {
+        return { isValid: false, error: 'Tied timed set requires tiebreak' };
+      }
+    }
+    // For aggregate (match-level A), tied individual sets are fine - winner determined by total aggregate
+  }
+  return { isValid: true };
+}
+
+/** The 1-0 marker must name the same winner as the set, where the set names one. */
+function validateTiebreakMarker(set: any): { isValid: boolean; error?: string } {
+  const markerWinner = set.side1Score === 1 ? 1 : 2;
+  if (set.winningSide !== undefined && set.winningSide !== markerWinner) {
+    return { isValid: false, error: 'Tiebreak set marker contradicts the set winner' };
+  }
+  return { isValid: true };
+}
+
 /**
  * Validate a single set score against matchUpFormat rules
  */
@@ -358,33 +392,15 @@ export function validateSetScore(
   if (!setFormat) return { isValid: true };
 
   // Handle timed sets (based: 'P'/'G' or timed: true)
-  if (setFormat.timed) {
-    // For timed sets, just validate that scores exist if set is complete
-    if (!allowIncomplete) {
-      const side1Score = set.side1Score ?? 0;
-      const side2Score = set.side2Score ?? 0;
-
-      // At least one side should have a score for completed timed set
-      if (side1Score === 0 && side2Score === 0) {
-        return { isValid: false, error: 'Timed set requires at least one side to have scored' };
-      }
-
-      // For points-based (not aggregate), tied scores need tiebreak if format specifies
-      if (setFormat.based === 'P' && side1Score === side2Score && side1Score > 0 && setFormat.tiebreakFormat) {
-        const hasTiebreak = set.side1TiebreakScore !== undefined || set.side2TiebreakScore !== undefined;
-        if (!hasTiebreak) {
-          return { isValid: false, error: 'Tied timed set requires tiebreak' };
-        }
-      }
-      // For aggregate (match-level A), tied individual sets are fine - winner determined by total aggregate
-    }
-    return { isValid: true };
-  }
+  if (setFormat.timed) return validateTimedSet(set, setFormat, allowIncomplete);
 
   const { setTo, tiebreakAt, tiebreakFormat, tiebreakSet } = setFormat;
 
   const tiebreakSetTo = tiebreakSet?.tiebreakTo;
   const isTiebreakOnlyFormat = !!tiebreakSetTo && !setTo;
+
+  // The 1-0 marker alone records a finished tiebreak set whose points were not kept (CA, V11)
+  if (isTiebreakOnlyFormat && isTiebreakMarker(set, setFormat)) return validateTiebreakMarker(set);
 
   const hasTiebreakScores = set.side1TiebreakScore !== undefined && set.side2TiebreakScore !== undefined;
   const { side1Score, side2Score, side1TiebreakScore, side2TiebreakScore } = parseSetScores(

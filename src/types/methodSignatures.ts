@@ -512,6 +512,7 @@ import type { getAwardProfile } from '@Query/scales/getAwardProfile';
 import type { pbpValidator } from '@Validators/scoring/pbpValidator';
 import type { validateCategory } from '@Validators/validateCategory';
 import type { validateLineUp } from '@Validators/validateTeamLineUp';
+import type { repairScore } from '@Helpers/scoreRepair/repairScore';
 import type { addExtension } from '@Mutate/extensions/addExtension';
 import type { issueChallenge } from '@Mutate/ladder/issueChallenge';
 import type { publishEvent } from '@Mutate/publishing/publishEvent';
@@ -1236,6 +1237,7 @@ export interface MethodSignatures {
   removeTournamentExtension: EngineMethod<typeof removeTournamentExtension>;
   renameStructures: EngineMethod<typeof renameStructures>;
   reorderUpcomingMatchUps: EngineMethod<typeof reorderUpcomingMatchUps>;
+  repairScore: EngineMethod<typeof repairScore>;
   replaceTieMatchUpParticipantId: EngineMethod<typeof replaceTieMatchUpParticipantId>;
   requestEndorsement: EngineMethod<typeof requestEndorsement>;
   requestModification: EngineMethod<typeof requestModification>;

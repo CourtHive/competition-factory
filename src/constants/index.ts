@@ -32,6 +32,7 @@ export { actionMethodConstants } from './actionMethodConstants';
 export { bookingTypeConstants } from './bookingTypeConstants';
 export { scaleConstants } from './scaleConstants';
 export { scheduleConstants } from './scheduleConstants';
+export { scoreWarningConstants } from './scoreWarningConstants';
 export { sortingConstants } from './sortingConstants';
 export { surfaceConstants } from './surfaceConstants';
 export { swissConstants } from './swissConstants';

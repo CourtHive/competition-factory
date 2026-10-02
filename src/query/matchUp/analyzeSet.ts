@@ -1,6 +1,6 @@
-import { isTiebreakWon, tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
+import { isTiebreakGamesScore, isTiebreakWon, tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
+import { isTiebreakMarker, readTiebreakSet } from './tiebreakSetShape';
 import { getSetWinningSide } from './getSetWinningSide';
-import { readTiebreakSet } from './tiebreakSetShape';
 
 // constants
 import {
@@ -272,6 +272,15 @@ function validateTiebreakCondition({
         error: { message: 'invalid winning game scoreString (5)' },
       };
     }
+    // A 7-6 with NO tiebreak points recorded is a finished set (CA, 2026-10-02, ruling V11: "so prevalent"
+    // — 4.6% of ITA's completed tiebreak sets). One side's points without the other's is still refused.
+    const noTiebreakPoints = sideTiebreakScores?.every((s) => s === undefined || s === null);
+    if (
+      noTiebreakPoints &&
+      isTiebreakGamesScore(winningSideGameScore, sideGameScores[losingSideIndex], { setTo, tiebreakAt })
+    ) {
+      return undefined;
+    }
     if (!validTiebreakScores) {
       return {
         result: false,
@@ -360,6 +369,14 @@ function checkValidTiebreakSetOutcome({ setObject, setFormat, sideTiebreakScores
 
   const { tiebreakSet } = setFormat ?? {};
   const { NoAD, tiebreakTo } = tiebreakSet ?? {};
+
+  // The 1-0 marker alone: a finished tiebreak set whose points were not kept (CA, V11)
+  if (isTiebreakMarker(setObject, setFormat)) {
+    const markerWinner = setObject.side1Score === 1 ? 1 : 2;
+    return setObject.winningSide === markerWinner
+      ? { result: true }
+      : { result: false, error: { message: 'tiebreak set marker contradicts the set winner' } };
+  }
 
   const validTiebreakScores = sideTiebreakScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length === 2;
   if (!validTiebreakScores) {

@@ -612,6 +612,7 @@ export type FactoryEngineMethod =
   | 'removeUnlinkedTournamentRecords'
   | 'renameStructures'
   | 'reorderUpcomingMatchUps'
+  | 'repairScore'
   | 'replaceTieMatchUpParticipantId'
   | 'requestEndorsement'
   | 'requestModification'
@@ -1367,6 +1368,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'removeUnlinkedTournamentRecords',
   'renameStructures',
   'reorderUpcomingMatchUps',
+  'repairScore',
   'replaceTieMatchUpParticipantId',
   'requestEndorsement',
   'requestModification',

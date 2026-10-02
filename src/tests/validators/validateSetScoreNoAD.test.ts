@@ -37,17 +37,16 @@ describe('validateSetScore - NoAD property from parseScoreString', () => {
       expect(result.isValid).toBe(true);
     });
 
-    it('should reject 1-0 for TB10 when set.NoAD is not set (score too low)', () => {
+    // CA, 2026-10-02 (ruling V11): "only accept 1-0 as completed if it's in games". In the GAME fields under a
+    // target above one, 1-0 is the marker of a tiebreak set won with its points unrecorded; in the tiebreak
+    // FIELDS it is points, and a tiebreak to ten does not end 1-0. This pinned the game-field 1-0 as too low.
+    it('accepts 1-0 in the GAME fields for TB10 as the marker, and refuses 1-0 in the tiebreak fields', () => {
       const format = 'SET3-S:TB10'; // Regular TB10, not TB1
-      const set = {
-        side1Score: 1,
-        side2Score: 0,
-        setNumber: 1,
-        tiebreakSet: true,
-        // NoAD is undefined
-      };
+      const marker = { side1Score: 1, side2Score: 0, setNumber: 1, tiebreakSet: true };
+      expect(validateSetScore(marker, format, false, false).isValid).toBe(true);
 
-      const result = validateSetScore(set, format, false, false);
+      const points = { side1TiebreakScore: 1, side2TiebreakScore: 0, setNumber: 1, tiebreakSet: true };
+      const result = validateSetScore(points, format, false, false);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain('must reach at least 10');
     });

@@ -915,6 +915,7 @@ export type DrawMaticArgs = {
 export type ResultWarning = {
   code: string;
   matchUpIds?: string[];
+  setNumbers?: number[];
 };
 
 export type ResultType = {
