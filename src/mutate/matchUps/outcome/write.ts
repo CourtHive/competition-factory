@@ -167,14 +167,16 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
       return applyScoreAndStatus({ ...asIs, removeScore: true }, request, view);
     // a decided matchUp turned into a double exit: what it directed is taken back (the winner goes),
     // then the double exit is written and advanced as a fresh one
-    // FINDING, 2026-10-02: a completed matchUp turned into a DOUBLE_DEFAULT ends with no score in two
-    // SHAPES, `score` undefined (201 of 214 measured) or the blank strings (13); a DOUBLE_WALKOVER is
-    // always blanked. Both hold no result, so the plan asserts that and leaves the shape open.
+    // CA, 2026-10-02: a DOUBLE_DEFAULT KEEPS the score the matchUp had, finished or not, unless the call
+    // brings one: both players can be defaulted after the last ball, and the score is the record of
+    // what was played. A DOUBLE_WALKOVER says the match was not played, so it blanks the score; one
+    // entered over a completed result is the director's to correct.
     case 'completed-to-double-exit':
-      return {
-        ...applyScoreAndStatus({ ...asIs, removeWinningSide: true, removeScore: true }, request, view),
-        ...(matchUpStatus === DOUBLE_DEFAULT ? { scoreShapeOpen: true } : {}),
-      };
+      return applyScoreAndStatus(
+        { ...asIs, removeWinningSide: true, removeScore: matchUpStatus !== DOUBLE_DEFAULT },
+        request,
+        view,
+      );
     case 'clear-score':
       return applyScoreAndStatus({ ...asIs, removeScore: true }, request, view);
     case 'apply-values': {

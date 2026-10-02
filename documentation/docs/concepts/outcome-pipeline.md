@@ -172,6 +172,14 @@ blank fixture still carries `matchUpFormat: undefined`, because it is the unwoun
 a call that brings a new format still writes the new one. Pinned by
 `clearKeepsMatchUpFormat.test.ts`.
 
+**A double exit entered over a completed result** (CA, 2026-10-02). A `DOUBLE_DEFAULT` keeps the score
+the matchUp had, finished or not, unless the call brings one: both players can be defaulted after
+the last ball (post-match misconduct at the net, for example), and the score is the record of what
+was played. The reason belongs in a penalty, `addPenalty` with each player's `participantId` and the
+`matchUpId`. A `DOUBLE_WALKOVER` says the match was not played, so it blanks the score; one entered
+over a completed result is taken at its word, and correcting a mistaken one is the director's re-entry.
+Neither has a winner. Pinned by `authored/outcome-pipeline/double-exit-over-a-completed-result`.
+
 ## 5. The side effects, in order
 
 After the write, and only on success:

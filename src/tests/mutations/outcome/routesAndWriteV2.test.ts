@@ -47,6 +47,8 @@ it('every accepted authored step is planned, written as planned, and its winner 
   expect(compared('double-exit:produced-pending')).toBeGreaterThan(0);
   // two double exits meeting on one matchUp converge into a double exit (authored: double-exits-converge)
   expect(compared('double-exit:converged')).toBeGreaterThan(0);
+  // a double exit over a completed result: the double default keeps the score, the double walkover blanks it
+  expect(compared('completed-to-double-exit')).toBeGreaterThan(0);
   expect(compared('double-exit') + compared('noop')).toBeGreaterThan(0);
   // the swap (allowChangePropagation with a new winner): written in place, and both paths exchanged
   expect(compared('swap')).toBeGreaterThan(0);
