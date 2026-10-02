@@ -10,7 +10,12 @@ import path from 'path';
 
 // constants
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
-import { FIRST_MATCH_LOSER_CONSOLATION, CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
+import {
+  FIRST_MATCH_LOSER_CONSOLATION,
+  DOUBLE_ELIMINATION,
+  CONSOLATION,
+  MAIN,
+} from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import {
   BYE,
@@ -350,6 +355,52 @@ export function authoredScenarios(): Authored[] {
             'R1 P2 has its score blanked',
           ),
         ];
+      },
+    });
+  }
+
+  // spec § 5 effect 5: a final feeding a decider. When the final's loser had not lost before (the main
+  // draw's undefeated winner losing to the backdraw winner), the decider is NEEDED and stands TO_BE_PLAYED.
+  // The draw is played forward step by step, every step recorded as a directive; the final is won by
+  // whichever finalist already holds a loss.
+  {
+    const { tournamentRecord } = generate({ drawSize: 8, drawType: DOUBLE_ELIMINATION });
+    const directives: Directive[] = [];
+    let deciderId: string | undefined;
+    for (let guard = 0; guard < 40; guard++) {
+      const { matchUps } = tournamentEngine.allTournamentMatchUps();
+      const losses = (participantId?: string) =>
+        matchUps.filter(
+          (m: any) =>
+            m.winningSide &&
+            m.sides?.some((side: any) => side.participantId === participantId && side.sideNumber !== m.winningSide),
+        ).length;
+      const final = matchUps.find((m: any) => m.winnerMatchUpId && m.winnerMatchUpId === m.loserMatchUpId);
+      deciderId = final?.winnerMatchUpId;
+      const ready = matchUps.find(
+        (m: any) => m.readyToScore && !m.winningSide && m.matchUpId !== deciderId && m.matchUpStatus !== BYE,
+      );
+      if (!ready) break;
+      const isFinal = ready.matchUpId === final?.matchUpId;
+      const sideWithALoss = ready.sides?.find((side: any) => losses(side.participantId) > 0)?.sideNumber;
+      const directive = sms(ready, win('6-3 6-3', isFinal && sideWithALoss ? sideWithALoss : 1));
+      directives.push(directive);
+      tournamentEngine.executionQueue([directive]);
+    }
+    out.push({
+      scenarioId: 'authored/outcome-pipeline/decider-needed',
+      ref: "spec § 5 effect 5: the final's loser had not lost before, so the decider is needed and stands TO_BE_PLAYED",
+      initialRecord: tournamentRecord,
+      directives,
+      expected: directives.map(() => 'ok'),
+      finalState: (record) => {
+        let decider: any;
+        for (const structure of record.events[0].drawDefinitions[0].structures)
+          decider ??= structure.matchUps?.find((m: any) => m.matchUpId === deciderId);
+        return claim(
+          !!decider && decider.matchUpStatus === TO_BE_PLAYED && !decider.winningSide,
+          'the decider is needed: TO_BE_PLAYED, no result',
+        );
       },
     });
   }

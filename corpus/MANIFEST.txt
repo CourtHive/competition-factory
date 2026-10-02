@@ -2,6 +2,7 @@
 # scenarioId  steps  finalHash   (sources: authored, grammar, scoring)
 authored/outcome-pipeline/bulk-update-refusals  3  sha256:131016335f36bc0143fb7bf945b70f7e7911b8f92f0479a33bf1bf2d7d205a7b
 authored/outcome-pipeline/clear-blocked-by-propagated-exit  6  sha256:ad36bf0510a739490624d24d799bc43b51026ae2476ea6acaeec4fb4a6044952
+authored/outcome-pipeline/decider-needed  14  sha256:86736d8e63ae5ea612345c2cbc993200075758d5f5c69dd373719728b1d7a835
 authored/outcome-pipeline/double-exit-idempotent  2  sha256:fb5d8e180a2f893a777e50f337c5f5516a677afb53228069102f64b7dc95c57a
 authored/outcome-pipeline/double-exit-over-a-completed-result  4  sha256:0adeb403aed7ecffd6f4138775f0fbfee3d5ee01408c7274ff451545717cd458
 authored/outcome-pipeline/double-exits-converge  4  sha256:4866c7bf60adde23c62775f2269ea4a74c3750296a7c8d99add4ed4c4d537aaa
