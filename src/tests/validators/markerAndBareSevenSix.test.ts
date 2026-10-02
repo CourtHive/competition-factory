@@ -108,7 +108,23 @@ describe('V11: a 7-6 with no tiebreak points is a finished set, accepted with a 
       outcome: { score: { sets: [bare(1), bare(2)] }, winningSide: 1, matchUpStatus: COMPLETED },
     });
     expect(result.success).toBe(true);
+    expect(result.warnings).toContainEqual({ code: TIEBREAK_POINTS_NOT_RECORDED, setNumbers: [1, 2] });
     expect(tournamentEngine.findMatchUp({ drawId, matchUpId }).matchUp.matchUpStatus).toEqual(COMPLETED);
+
+    // a score with its points says nothing
+    const { drawId: d2, matchUpId: m2 } = setUp();
+    const withPoints = { ...bare(1), side1TiebreakScore: 7, side2TiebreakScore: 3 };
+    const clean: any = tournamentEngine.setMatchUpStatus({
+      drawId: d2,
+      matchUpId: m2,
+      outcome: {
+        score: { sets: [withPoints, { ...withPoints, setNumber: 2 }] },
+        winningSide: 1,
+        matchUpStatus: COMPLETED,
+      },
+    });
+    expect(clean.success).toBe(true);
+    expect(clean.warnings ?? []).toEqual([]);
   });
 
   it('validateScore accepts it and warns, naming each set that lacks points; a set with points is not named', () => {

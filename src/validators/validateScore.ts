@@ -10,8 +10,8 @@ import { unique } from '@Tools/arrays';
 // constants and types
 import { INVALID_SCORE, INVALID_VALUES, MISSING_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 import { TIEBREAK_POINTS_NOT_RECORDED } from '@Constants/scoreWarningConstants';
+import { ResultType, ResultWarning } from '@Types/factoryTypes';
 import type { Score } from '@Types/tournamentTypes';
-import { ResultType } from '@Types/factoryTypes';
 
 type validateScoreTypes = {
   existingMatchUpStatus?: string;
@@ -44,10 +44,15 @@ const hasSetValues = (set: any) =>
     (value) => value !== undefined && value !== null,
   );
 
-function acceptedWithWarnings(sets: any[], matchUpFormat?: string): ResultType & { valid?: boolean } {
+/** The warning for sets decided by their tiebreak with no points recorded, or none (ruling V11). */
+export function tiebreakPointsWarnings(sets: any[] = [], matchUpFormat?: string): ResultWarning[] {
   const setNumbers = setsDecidedByTiebreakWithoutPoints(sets, matchUpFormat);
-  if (!setNumbers.length) return { valid: true };
-  return { valid: true, warnings: [{ code: TIEBREAK_POINTS_NOT_RECORDED, setNumbers }] };
+  return setNumbers.length ? [{ code: TIEBREAK_POINTS_NOT_RECORDED, setNumbers }] : [];
+}
+
+function acceptedWithWarnings(sets: any[], matchUpFormat?: string): ResultType & { valid?: boolean } {
+  const warnings = tiebreakPointsWarnings(sets, matchUpFormat);
+  return warnings.length ? { valid: true, warnings } : { valid: true };
 }
 
 /** The shape of one set: numeric pairs on both sides or neither, point scores in pairs, a side for a winner. */
