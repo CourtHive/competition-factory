@@ -176,8 +176,14 @@ jobs:
       - name: verify:attr-audit
         run: pnpm verify:attr-audit
 
+      # On the path to a release (a PR into master, or a push to master) coverage runs the WHOLE suite
+      # under OUTCOME_PIPELINE=differential: every call runs v1 and the v2 outcome pipeline, v2 is
+      # measured where it executes, and a divergence between them fails the job. Into dev, v2 is
+      # excluded from coverage instead (vitest.config.mts), so building it spends no margin.
       - name: verify:coverage
         run: pnpm verify:coverage
+        env:
+          OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
 
       # The stalled-position RATCHET. Inert on `pnpm test` (it replays all 600 exit-propagation
       # matrix cells, which costs about what exitPropagationMatrix itself costs), so this step is the

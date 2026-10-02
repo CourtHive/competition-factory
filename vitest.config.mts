@@ -63,6 +63,11 @@ export default defineConfig({
         'src/assemblies/governors/**',
         'src/assemblies/tools/**',
         'src/fixtures/data/**',
+        // The v2 outcome pipeline runs only under OUTCOME_PIPELINE=differential (or v2). On the default
+        // run it is barely executed, so counting it would make every v2 PR spend coverage margin it
+        // cannot earn. CA, 2026-10-02: measure it where it runs, on the path to a release. `verify.yml`
+        // sets the differential mode for PRs into master and pushes to master, which lifts this.
+        ...(process.env.OUTCOME_PIPELINE === 'differential' ? [] : ['src/mutate/matchUps/outcome/**']),
       ],
       provider: 'v8',
       // Two-tier coverage gates:
