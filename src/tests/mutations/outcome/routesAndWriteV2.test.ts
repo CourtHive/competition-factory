@@ -41,6 +41,8 @@ it('every accepted authored step is planned, written as planned, and its winner 
   // a loser with a prior win is kept out of the FMLC feed and a propagated BYE takes the place
   expect(compared('winner:loser-out')).toBeGreaterThan(0);
   expect(compared('winner:loser-out-bye')).toEqual(compared('winner:loser-out'));
+  // with propagation on, the loser carries the exit into the target, which the side opposite wins
+  expect(compared('winner:loser-exit')).toBeGreaterThan(0);
   expect(compared('double-exit') + compared('noop')).toBeGreaterThan(0);
   // the swap is S2c's: planned as deferred, never silently compared
   expect(tally.swap?.compared ?? 0).toEqual(0);
