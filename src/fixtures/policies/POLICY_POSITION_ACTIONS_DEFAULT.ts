@@ -25,7 +25,7 @@ export const POLICY_POSITION_ACTIONS_DEFAULT = {
 
     // positionActions will be completely disabled for any structures matching { stages: [], stageSequences: [] }
     // disabledStructures: [] => no structures are disabled
-    disbledStructures: [],
+    disabledStructures: [],
 
     // enables entries in other flights to be accessed as alternates
     otherFlightEntries: false,
