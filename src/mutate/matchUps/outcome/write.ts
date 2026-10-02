@@ -112,12 +112,17 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
   const { matchUpStatus, winningSide, matchUpStatusCodes, score } = request;
   const asIs: WriteArgs = { matchUpStatus, winningSide, matchUpStatusCodes, score };
   switch (route) {
-    // `line-score`: a line rescored under a decided dual. v1 first takes the dual's direction back,
-    // which rewrites the line, then writes the score; measured 2026-10-01 to leave IN_PROGRESS where
-    // this plan said TO_BE_PLAYED or COMPLETED. The dual cascade is S2c's, so this route is too.
     case 'refused':
-    case 'line-score':
       return undefined;
+    // a line re-scored under a decided dual whose decision it undoes: the dual's direction is taken
+    // back, then the line is written with the call's score and winner, COMPLETED when the call names a
+    // winner and no status (the v1 fix that came with this plan: it had ended IN_PROGRESS with a winner)
+    case 'line-score':
+      return applyScoreAndStatus(
+        { ...asIs, matchUpStatus: matchUpStatus ?? (winningSide ? COMPLETED : undefined) },
+        request,
+        view,
+      );
     case 'noop':
       return applyScoreAndStatus({}, request, view);
     case 'winner':

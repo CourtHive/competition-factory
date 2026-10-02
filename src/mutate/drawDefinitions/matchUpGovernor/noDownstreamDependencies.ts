@@ -20,6 +20,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 import {
   ABANDONED,
   CANCELLED,
+  COMPLETED,
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
   INCOMPLETE,
@@ -158,7 +159,13 @@ function scoreModification(params) {
     if (result.error) return result;
   }
 
-  const result = modifyMatchUpScore({ ...params, context: stack });
+  // A line written with a winner and no status is COMPLETED, as on every other route. Without this, a line
+  // re-scored under a decided dual whose decision it undoes ended IN_PROGRESS WITH A WINNER: the removal
+  // above writes it TO_BE_PLAYED with the new score, which the in-progress rule turns into IN_PROGRESS,
+  // and this write added the winner without a status. Found by the v2 outcome pipeline's differential
+  // mode, 2026-10-02; pinned by `lineWithAWinnerIsCompleted.test.ts`.
+  const matchUpStatus = params.matchUpStatus ?? (params.winningSide ? COMPLETED : undefined);
+  const result = modifyMatchUpScore({ ...params, matchUpStatus, context: stack });
 
   // recalculate dualMatchUp score if isCollectionMatchUp
   if (params.isCollectionMatchUp) {
