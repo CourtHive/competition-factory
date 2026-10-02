@@ -14,6 +14,9 @@
  *
  * `[]` is therefore the settled form, and it means what it says: this matchUp holds no drawPosition.
  *
+ * A TRAILING hole is trimmed for the same reason: it holds side 2 open beside a survivor already on
+ * side 1, which side 1 does by itself. `[5, undefined]` is stored as `[5]`.
+ *
  * ## The consumer-visible consequence, stated here because it is not obvious at the call sites
  *
  * `addMatchUpContext` hydrates through `definedAttributes(obj, undefined, true)`, whose third
@@ -31,5 +34,11 @@
  * `documentation/docs/concepts/draw-positions.md`. Keep the two in step.
  */
 export function normalizeDrawPositions(drawPositions: (number | undefined)[]): number[] {
-  return (drawPositions.some(Boolean) ? drawPositions : []) as number[];
+  if (!drawPositions.some(Boolean)) return [];
+  // a TRAILING hole holds no side open: `[5, undefined]` and `[5]` resolve side 1 alike under every
+  // positional reader, and the hole is stored as `null`, which tournament.schema.json rejects (CA,
+  // 2026-10-02: trim it). A LEADING hole stays: it is what puts the survivor on side 2.
+  const trimmed = [...drawPositions];
+  while (trimmed.length && !trimmed[trimmed.length - 1]) trimmed.pop();
+  return trimmed as number[];
 }

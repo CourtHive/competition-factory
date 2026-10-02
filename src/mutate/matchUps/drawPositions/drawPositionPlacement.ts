@@ -60,6 +60,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { propagateUnfillableLoserBye } from './propagateUnfillableLoserBye';
+import { normalizeDrawPositions } from './normalizeDrawPositions';
 import { assignDrawPositionBye } from './assignDrawPositionBye';
 import { getParticipantId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -572,7 +573,7 @@ function applyPositionToMatchUp({
 
   // only in the case of "Double Exit" produced "Exit" can a winningSide be assigned at the same time as a position
   Object.assign(matchUp, {
-    drawPositions: updatedDrawPositions,
+    drawPositions: normalizeDrawPositions(updatedDrawPositions),
     winningSide: exitWinningSide,
     // We keep the current status if it is already marked as WO. Deliberately the BROADER flag: an
     // empty drawPosition arriving delivers no participant and so gives no reason to change

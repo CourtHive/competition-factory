@@ -821,7 +821,7 @@ function advanceWinner({
     matchUpStatus,
     score: undefined,
     winningSide: undefined,
-    drawPositions,
+    drawPositions: normalizeDrawPositions(drawPositions),
   });
 
   // The cascade carries the operator's decision rather than re-opening the question
@@ -1063,7 +1063,7 @@ function resolvePropagatedExitOnAdvance({
     winningSide: advancingSideNumber,
     matchUpStatusCodes,
     score: undefined,
-    drawPositions,
+    drawPositions: normalizeDrawPositions(drawPositions),
   });
 
   modifyMatchUpNotice({

@@ -74,7 +74,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
     drawDefinition,
     structureId,
   });
-  expect(matchUp.drawPositions).toMatchObject([1, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([1]);
   assignDrawPosition({
     drawPosition: unassignedPositions?.[0].drawPosition,
     participantId: participantIds[0],
@@ -87,7 +87,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions).toMatchObject([1, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([1]);
 
   verifyStructure({
     expectedPositionsAssignedCount: 2,
@@ -115,7 +115,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions).toMatchObject([8, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([8]);
   assignDrawPosition({
     drawPosition: unassignedPositions?.[7].drawPosition,
     participantId: participantIds[1],
@@ -128,7 +128,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions).toMatchObject([8, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([8]);
 
   ({ matchUp } = findMatchUpByRoundNumberAndPosition({
     roundPosition: 1,
@@ -339,7 +339,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions).toMatchObject([1, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([1]);
 
   verifyStructure({
     expectedPositionsAssignedCount: 2,
@@ -381,7 +381,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions).toMatchObject([8, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([8]);
 });
 
 it('can change a FMLC first round matchUp winner and update consolation', () => {

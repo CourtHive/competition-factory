@@ -189,12 +189,12 @@ half of its condition for admitting a double exit's BYE into the target structur
 The engine spells the same occupancy several ways, depending on which writer last touched the
 matchUp:
 
-| spelling                            | written by                                                                                          |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `[5]`                               | `removeSubsequentRoundsParticipant` (compacts), `buildFeedRound`                                    |
-| `[5, undefined]` / `[undefined, 5]` | `releaseAdvancedDrawPosition`, `positionClear`, `swapWinnerLoser`                                   |
-| `[]`                                | `buildRound`, `resetDrawDefinition`, `luckyDrawAdvancement`, and any removal that empties a matchUp |
-| absent                              | `pruneDrawDefinition`                                                                               |
+| spelling         | written by                                                                                          |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| `[5]`            | `removeSubsequentRoundsParticipant` (compacts), `buildFeedRound`                                    |
+| `[undefined, 5]` | `releaseAdvancedDrawPosition`, `positionClear`, `swapWinnerLoser`, BYE advancement                  |
+| `[]`             | `buildRound`, `resetDrawDefinition`, `luckyDrawAdvancement`, and any removal that empties a matchUp |
+| absent           | `pruneDrawDefinition`                                                                               |
 
 **All of them must hydrate identically.** A consumer reads `sides` and has no idea which writer ran.
 This is enforced by `drawPositionsRepresentationIndependence.test.ts`, which asserts that every
@@ -218,6 +218,13 @@ An array of nothing **but** holes carries none: there is no survivor for it to h
 beside. `[undefined]` and `[undefined, undefined]` are therefore normalised to `[]`, through
 `normalizeDrawPositions`, which every removal and substitution writer routes through.
 `drawPositionsNormalizationBypass.test.ts` fails on any writer that does not.
+
+A **trailing** hole carries none either: `[5, undefined]` holds side 2 open beside a survivor already
+on side 1, which `[5]` says by itself. Since 2026-10-02 it is trimmed on the way in, by the same
+helper, and the placement and BYE-advancement writers route through it too. This matters beyond
+tidiness: a stored hole serialises as `null`, which `tournament.schema.json` rejects, so every draw
+with a BYE used to fail validation. Records stored before then may still hold `[5, null]`; read them
+by the rules above and they resolve the same. A leading hole, `[undefined, 5]`, is kept.
 
 ## 7. `[]` is published as an ABSENT key, and that is the ordinary case
 
