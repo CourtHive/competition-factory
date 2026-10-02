@@ -35,7 +35,24 @@ export function formatForSet(matchUpScoringFormat: any, setNumber?: number) {
 
 type SideValues = [number | undefined, number | undefined];
 
+/**
+ * The 1-0 MARKER on its own: a tiebreak-only set whose game fields hold `1-0` (or `0-1`) and which carries
+ * no tiebreak points. CA, 2026-10-02 (ruling V11): *"if a tiebreak set is required to complete the matchUp
+ * and there is 1-0 in games that is acceptable"* — the points were not recorded, the winner was. A `1-0`
+ * in the tiebreak FIELDS is points, and under a target above one it is no finished tiebreak; under `TB1`
+ * the target is one, so `1-0` there is the points and never the marker.
+ */
+export function isTiebreakMarker(set: any, setFormat?: any): boolean {
+  const tiebreakTo = setFormat?.tiebreakSet?.tiebreakTo;
+  if (typeof tiebreakTo !== 'number' || tiebreakTo <= 1) return false;
+  if (isNumber(set?.side1TiebreakScore) || isNumber(set?.side2TiebreakScore)) return false;
+  const [a, b] = [set?.side1Score, set?.side2Score];
+  return (a === 1 && b === 0) || (a === 0 && b === 1);
+}
+
 export type TiebreakSetReading = {
+  /** The set holds the 1-0 marker and no points — see `isTiebreakMarker`. */
+  isMarker?: boolean;
   /** The set is a tiebreak-only set, by the format's say, the hydration marker, or its own fields. */
   isTiebreakSet: boolean;
   /** The tiebreak points — read from the game fields when a (b)-shaped set carries them there. */
@@ -66,6 +83,11 @@ export function readTiebreakSet(set: any, setFormat?: any): TiebreakSetReading {
     (hasTiebreakScores && !hasGameScores) ||
     !!(setFormat?.tiebreakSet && (hasTiebreakScores || hasGameScores));
 
+  // The marker is not points: it says who won and nothing about the score
+  if (isTiebreakMarker(set, setFormat)) {
+    return { isTiebreakSet: true, isMarker: true, sideTiebreakScores: [undefined, undefined], sideGameScores };
+  }
+
   const pointsInGameFields = isTiebreakSet && hasGameScores && !hasTiebreakScores;
   if (pointsInGameFields) {
     return { isTiebreakSet, sideTiebreakScores: sideGameScores, sideGameScores: [undefined, undefined] };
@@ -79,7 +101,8 @@ export function readTiebreakSet(set: any, setFormat?: any): TiebreakSetReading {
  * so a caller can test identity to know whether anything changed.
  */
 export function withPointsInTiebreakFields<T extends Record<string, any>>(set: T, setFormat?: any): T {
-  const { isTiebreakSet, sideTiebreakScores } = readTiebreakSet(set, setFormat);
+  const { isTiebreakSet, isMarker, sideTiebreakScores } = readTiebreakSet(set, setFormat);
+  if (isMarker) return set;
   const pointsInGameFields = isTiebreakSet && !isNumber(set?.side1TiebreakScore) && !isNumber(set?.side2TiebreakScore);
   if (!pointsInGameFields) return set;
 

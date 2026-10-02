@@ -1,11 +1,15 @@
 import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
+import { isTiebreakGamesScore } from '@Query/matchUp/tiebreakAtRules';
+import { formatForSet } from '@Query/matchUp/tiebreakSetShape';
 import { analyzeScore } from '@Query/matchUp/analyzeScore';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
 import { isConvertableInteger } from '@Tools/math';
 import { unique } from '@Tools/arrays';
 
 // constants and types
 import { INVALID_SCORE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { TIEBREAK_POINTS_NOT_RECORDED } from '@Constants/scoreWarningConstants';
 import type { Score } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -16,6 +20,30 @@ type validateScoreTypes = {
   winningSide?: number;
   score: Score;
 };
+
+/** The sets whose games are a tiebreak result — 7-6 under `@6` — and which carry no tiebreak points. */
+function setsDecidedByTiebreakWithoutPoints(sets: any[], matchUpFormat?: string): number[] {
+  const parsed = matchUpFormat ? parse(matchUpFormat) : undefined;
+  if (!parsed) return [];
+  return sets
+    .map((set, index) => {
+      const setFormat = formatForSet(parsed, set?.setNumber ?? index + 1);
+      const { setTo, tiebreakAt } = setFormat ?? {};
+      const hasPoints = [set?.side1TiebreakScore, set?.side2TiebreakScore].some((v) => v !== undefined && v !== null);
+      const [a, b] = [set?.side1Score, set?.side2Score];
+      if (hasPoints || typeof a !== 'number' || typeof b !== 'number' || typeof tiebreakAt !== 'number')
+        return undefined;
+      const decidedByTiebreak = isTiebreakGamesScore(Math.max(a, b), Math.min(a, b), { setTo, tiebreakAt });
+      return decidedByTiebreak ? (set?.setNumber ?? index + 1) : undefined;
+    })
+    .filter((setNumber): setNumber is number => typeof setNumber === 'number');
+}
+
+function acceptedWithWarnings(sets: any[], matchUpFormat?: string): ResultType & { valid?: boolean } {
+  const setNumbers = setsDecidedByTiebreakWithoutPoints(sets, matchUpFormat);
+  if (!setNumbers.length) return { valid: true };
+  return { valid: true, warnings: [{ code: TIEBREAK_POINTS_NOT_RECORDED, setNumbers }] };
+}
 
 export function validateScore({
   existingMatchUpStatus,
@@ -99,6 +127,9 @@ export function validateScore({
     // `disableScoreValidation` on `setMatchUpStatus` skips this call, and with it this rule.
     const { isComplete, info } = checkScoreCompleteness({ matchUpFormat, matchUpStatus, winningSide, sets });
     if (!isComplete) return { error: INVALID_SCORE, info };
+
+    // Accepted, but worth saying: a set decided by its tiebreak with no tiebreak points (ruling V11)
+    return acceptedWithWarnings(sets, matchUpFormat);
   }
 
   return { valid: true };
