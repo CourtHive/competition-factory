@@ -125,7 +125,8 @@ function processDrawPositionDirecting({
 }): ResultType {
   // Bound by side, never by index: with one position present the array is compacted (`getSideDrawPosition`).
   const winningSideNumber = projectedWinningSide || winningSide;
-  const positioned = { ...(targetData.matchUp ?? matchUp), drawPositions };
+  // the hydrated source (the dual, for a line) where positionTargets found one; its `sides` bind the positions
+  const positioned = { ...matchUp, ...targetData.matchUp, drawPositions };
   const sidePosition = (sideNumber: number) =>
     getSideDrawPosition({ drawDefinition, structureId: structure?.structureId, matchUp: positioned, sideNumber });
   const winningDrawPosition = sidePosition(winningSideNumber);
