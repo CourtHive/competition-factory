@@ -1,3 +1,4 @@
+import { MATRIX_EXTENSION_CELLS, runMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { getDifferentialTally, resetDifferentialTally } from '@Mutate/matchUps/outcome';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
@@ -5,12 +6,18 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
+import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
-import { BYE, COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
+import {
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FEED_IN_CHAMPIONSHIP_TO_R16,
+  CONSOLATION,
+  MAIN,
+} from '@Constants/drawDefinitionConstants';
 
 /**
- * S2c: a carried exit that meets a BYE (exit-propagation RULE 1), planned by v2 and compared with v1.
+ * S2c: an exit that meets a BYE, carried (exit-propagation RULE 1) or produced by a double exit, planned by
+ * v2 and compared with v1.
  *
  * Not a corpus scenario: every draw with a BYE stores a trailing hole in a second-round `drawPositions`
  * (`[1, undefined]`, serialised `[1, null]`), which fails tournament.schema.json, so the corpus cannot
@@ -89,4 +96,25 @@ it('a completed result relabelled as a WALKOVER carries nothing to the loser alr
   expect(at(CONSOLATION, 1, 2).matchUpStatus).toEqual(TO_BE_PLAYED);
   // v2 plans the same and marks the call, so the open question stays visible
   expect(tally('winner:relabel-exit').deferred).toEqual(1);
+});
+
+it('sends an exit a double exit produced on past a BYE, and v2 compares it', () => {
+  // the extension matrix's FEED_IN_CHAMPIONSHIP_TO_R16 16/15 DOUBLE_WALKOVER cell, where a produced exit
+  // meets a BYE at Consolation 2/1; no small draw reaches this shape in its first two rounds
+  const cell = MATRIX_EXTENSION_CELLS.find(
+    (candidate) =>
+      candidate.drawType === FEED_IN_CHAMPIONSHIP_TO_R16 &&
+      candidate.participantsCount === 15 &&
+      candidate.exitStatus === DOUBLE_WALKOVER &&
+      candidate.propagateExitStatus,
+  );
+  expect(cell).toBeDefined();
+  setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
+  resetDifferentialTally();
+  expect(runMatrixCell(cell as any, 'produced-past-a-bye')).toBeDefined();
+
+  const compared = Object.entries(getDifferentialTally())
+    .filter(([key]) => key.includes(':produced-past-bye-'))
+    .reduce((sum, [, count]) => sum + count.compared, 0);
+  expect(compared).toBeGreaterThan(0);
 });

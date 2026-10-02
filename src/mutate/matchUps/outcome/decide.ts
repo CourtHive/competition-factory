@@ -6,7 +6,7 @@ import { getOutcomePipeline } from '@Global/state/globalState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
-import { isExit } from '@Validators/isExit';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { refuseOutcome } from './refusals';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
@@ -217,23 +217,12 @@ function checkCarriedPastBye({
       `planned the holder a BYE with no winner, the exit sent on past it`,
     );
   const loserId = holder.sides?.find((side) => side?.sideNumber === loserSide)?.participantId;
-  const inContextDrawMatchUps = getAllDrawMatchUps({
-    tournamentRecord: args.tournamentRecord,
-    drawDefinition: args.drawDefinition,
-    inContext: true,
-    event: args.event,
-  }).matchUps;
-  const onwardId = positionTargets({
-    drawDefinition: args.drawDefinition,
-    matchUpId: holder.matchUpId,
-    inContextMatchUp: holder,
-    inContextDrawMatchUps,
-  }).targetMatchUps?.winnerMatchUp?.matchUpId;
-  if (!onwardId) return differentialTally(`${route}:loser-exit-past-bye-final`, 'compared');
-  const onward = standing(args, onwardId);
+  const onward = onwardMatchUp(args, holder);
+  if (!onward) return differentialTally(`${route}:loser-exit-past-bye-final`, 'compared');
+  const onwardId = onward.matchUpId;
   const onwardSide = onward?.sides?.find((side) => side?.participantId === loserId)?.sideNumber;
   if (!onwardSide) diverge(args, `loser ${loserId} not in ${onwardId}`, `planned the loser on past the BYE into it`);
-  const other = onward?.sides?.find((side) => side?.sideNumber !== onwardSide);
+  const other = onward?.sides?.find((side) => side?.sideNumber === 3 - (onwardSide ?? 0));
   if (other?.bye) return differentialTally(`${route}:loser-exit-past-bye-again`, 'deferred');
   const standingExit = onward?.sideExitProvenance?.[other?.sideNumber ?? 0]?.matchUpStatus;
   if (standingExit) return checkPastByeConvergence({ args, route, exit, standingExit, onward, loserId });
@@ -275,6 +264,80 @@ function checkPastByeConvergence({
   );
 }
 
+/** the matchUp a holder's winner goes on to, read from the draw's links rather than from who is in it */
+function onwardMatchUp(args: BuildViewArgs, holder: HydratedMatchUp): HydratedMatchUp | undefined {
+  if (!args.drawDefinition) return undefined;
+  const inContextDrawMatchUps = getAllDrawMatchUps({
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    inContext: true,
+    event: args.event,
+  }).matchUps;
+  const onwardId = positionTargets({
+    drawDefinition: args.drawDefinition,
+    matchUpId: holder.matchUpId,
+    inContextMatchUp: holder,
+    inContextDrawMatchUps,
+  }).targetMatchUps?.winnerMatchUp?.matchUpId;
+  return onwardId ? standing(args, onwardId) : undefined;
+}
+
+/**
+ * A produced exit that meets a BYE (CA 2026-09-29, `heldExitIsSentOn.test.ts`): the holder stays a BYE
+ * with no winner and the exit is sent on, keeping its flavour, to the holder's winner matchUp. There it
+ * is a produced exit like any other: awarded to an opponent already in place, pending (no winningSide)
+ * while the other side is empty, converged with an exit standing there. Deferred: a second BYE onward,
+ * and the shape v1 writes against the pending rule, an award to a fed slot nobody has reached yet
+ * (`produced-past-bye-awarded-unarrived`, Mentat TASKS S2c).
+ */
+function checkProducedPastBye({
+  args,
+  route,
+  produced,
+  holder,
+}: CheckArgs & { produced: NonNullable<DirectionPlan['produced']>; holder?: HydratedMatchUp }) {
+  if (!holder) return differentialTally(`${route}:produced-past-bye`, 'deferred');
+  if (holder.matchUpStatus !== BYE || holder.winningSide)
+    diverge(
+      args,
+      `${holder.matchUpId} is ${holder.matchUpStatus} won by side ${holder.winningSide}`,
+      `planned the holder a BYE with no winner, the produced exit sent on past it`,
+    );
+  const onward = onwardMatchUp(args, holder);
+  if (!onward) return differentialTally(`${route}:produced-past-bye-final`, 'compared');
+  const provenance = onward.sideExitProvenance ?? {};
+  // the side the produced exit landed on: its provenance names the double exit that produced it (a
+  // participant's own entry can name an exit too, the walkover they WON on the way here)
+  const exitSide = [1, 2].find(
+    (side) =>
+      provenance[side]?.matchUpStatus === produced.matchUpStatus &&
+      isDoubleExit(provenance[side]?.previousMatchUpStatus),
+  );
+  if (!exitSide)
+    diverge(
+      args,
+      `${onward.matchUpId} holds no ${produced.matchUpStatus}`,
+      `planned the produced exit sent on into it`,
+    );
+  // by number: an in-context side not yet reached can be an empty object with no sideNumber at all
+  const other = onward.sides?.find((side) => side?.sideNumber === 3 - (exitSide ?? 0));
+  if (other?.bye) return differentialTally(`${route}:produced-past-bye-again`, 'deferred');
+  const standingExit = provenance[other?.sideNumber ?? 0]?.matchUpStatus;
+  const expectedStatus =
+    standingExit && standingExit !== BYE ? convergence([produced.matchUpStatus, standingExit]) : produced.matchUpStatus;
+  const expectedWinner =
+    expectedStatus === produced.matchUpStatus && other?.participantId ? other.sideNumber : undefined;
+  if (onward.matchUpStatus === expectedStatus && onward.winningSide === expectedWinner)
+    return differentialTally(`${route}:produced-past-bye-${expectedWinner ? 'awarded' : 'pending'}`, 'compared');
+  if (!expectedWinner && onward.winningSide === other?.sideNumber && other?.drawPosition && !other?.participantId)
+    return differentialTally(`${route}:produced-past-bye-awarded-unarrived`, 'deferred');
+  diverge(
+    args,
+    `${onward.matchUpId} is ${onward.matchUpStatus} won by side ${onward.winningSide}`,
+    `planned ${expectedStatus} won by side ${expectedWinner ?? 'none (pending)'}, the produced exit sent on`,
+  );
+}
+
 function checkProducedExit({
   args,
   route,
@@ -282,8 +345,7 @@ function checkProducedExit({
 }: CheckArgs & { produced: NonNullable<DirectionPlan['produced']> }) {
   const target = standing(args, produced.matchUpId);
   const opponent = target?.sides?.find((side) => side?.sideNumber === produced.winningSide);
-  // a BYE on the other side sends the produced exit on past it: the cascade's, not checked here
-  if (opponent?.bye) return differentialTally(`${route}:produced`, 'deferred');
+  if (opponent?.bye) return checkProducedPastBye({ args, route, produced, holder: target });
   // CA, 2026-09-20: a produced exit holds NO winningSide until the opponent arrives; the exception
   // (2026-09-25) is an opponent already in place, whose side the winner is read off
   const expectedWinner = opponent?.participantId ? produced.winningSide : undefined;
