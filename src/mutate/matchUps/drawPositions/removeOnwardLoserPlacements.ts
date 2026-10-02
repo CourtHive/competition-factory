@@ -1,5 +1,6 @@
-import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
@@ -26,19 +27,51 @@ type RemoveOnwardLoserPlacementsArgs = {
  * Is this placement INERT for the participant holding it?
  *
  * Inert means nothing they did is recorded here: every matchUp holding the position is undecided,
- * or records an exit whose provenance shows THEIR side was carried in rather than earned.
+ * or records an exit whose provenance shows THEIR side was carried in rather than earned, or an exit
+ * they WIN only because the OTHER side's exit was carried in.
+ *
+ * The third is the second seen from across the matchUp. A carried exit's `winningSide` belongs to the
+ * exit, not to whoever sits opposite it. It is the shape `withdrawProducedExits` leaves behind, and it
+ * runs FIRST (see `removeDirectedParticipants`): a convergence of two carried exits loses this
+ * participant's provenance and re-derives as a WALKOVER the participant "wins" against the exit that
+ * remains. Census seed 9000352 (OLYMPIC 16), three steps: two East walkovers carried their losers
+ * through West into the same South matchUp, and clearing one left that loser in South as the
+ * unadvanced winner of the other's walkover (WINNER_NOT_ADVANCED).
  */
-function placementIsInert({ structureMatchUps, drawPosition }: { structureMatchUps: any[]; drawPosition: number }) {
+function placementIsInert({
+  structureMatchUps,
+  drawDefinition,
+  drawPosition,
+  structureId,
+}: {
+  drawDefinition: DrawDefinition;
+  structureMatchUps: any[];
+  drawPosition: number;
+  structureId: string;
+}) {
   return structureMatchUps
     .filter((matchUp) => matchUp.drawPositions?.includes(drawPosition))
     .every((matchUp) => {
       if (!matchUp.winningSide && UNDECIDED_STATUSES.has(matchUp.matchUpStatus)) return true;
       if (!isAnyExit(matchUp.matchUpStatus)) return false;
-      // `indexOf` as a side number — valid only because drawPositions are stored ascending.
-      // See the canonical statement in `getOrderedDrawPositions`.
-      const sideNumber = (matchUp.drawPositions ?? []).indexOf(drawPosition) + 1;
-      return !!getSideExitProvenance({ matchUp })?.[sideNumber];
+      const sideNumber = getDrawPositionSideNumber({ drawDefinition, structureId, matchUp, drawPosition });
+      if (!sideNumber) return false;
+      const provenance = getSideExitProvenance({ matchUp });
+      if (provenance?.[sideNumber]) return true;
+      const opposingSide = 3 - sideNumber;
+      return matchUp.winningSide === sideNumber && !!carriedExitStatus(provenance?.[opposingSide]);
     });
+}
+
+/** The side a drawPosition holds — by order with both present, structurally with one (never by index). */
+function getDrawPositionSideNumber({ drawDefinition, structureId, matchUp, drawPosition }: any): number | undefined {
+  const drawPositions = matchUp.drawPositions ?? [];
+  // `indexOf` as a side number — valid only because drawPositions are stored ascending, and only while
+  // both are present. See the canonical statement in `getOrderedDrawPositions`.
+  if (drawPositions.filter(Boolean).length === 2) return drawPositions.indexOf(drawPosition) + 1;
+  return getDrawPositionSides({ drawDefinition, structureId, matchUp })?.find(
+    (side) => side.drawPosition === drawPosition,
+  )?.sideNumber;
 }
 
 /** Empty the participant's inert assignments in one structure, and release the positions they held. */
@@ -56,7 +89,9 @@ function releaseInertPlacements({
   const clearedDrawPositions: number[] = [];
   for (const assignment of positionAssignments ?? []) {
     if (assignment.participantId !== participantId) continue;
-    if (!placementIsInert({ structureMatchUps, drawPosition: assignment.drawPosition })) continue;
+    const drawPosition = assignment.drawPosition;
+    if (!placementIsInert({ structureMatchUps, drawDefinition, drawPosition, structureId: targetStructureId }))
+      continue;
     delete assignment.participantId;
     clearedDrawPositions.push(assignment.drawPosition);
   }
