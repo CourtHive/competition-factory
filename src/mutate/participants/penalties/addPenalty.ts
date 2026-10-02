@@ -3,6 +3,7 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { addExtension } from '@Mutate/extensions/addExtension';
+import { normalizePenaltyType } from './normalizePenaltyType';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
@@ -100,7 +101,7 @@ function penaltyAdd({
   const penaltyItem: Penalty = Object.assign(penaltyTemplate({ penaltyId }), {
     refereeParticipantId,
     penaltyCode,
-    penaltyType,
+    penaltyType: normalizePenaltyType(penaltyType),
     matchUpId,
     createdAt,
     issuedAt,

@@ -1,5 +1,6 @@
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import { normalizePenaltyType } from './normalizePenaltyType';
 
 import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
 import { TOURNAMENT_RECORD, PENALTY_ID } from '@Constants/attributeConstants';
@@ -62,7 +63,10 @@ function penaltyModify({ tournamentRecord, modifications, penaltyId }: ModifyPen
       if (penalty.penaltyId === penaltyId) {
         participantModified = true;
         validModificationAttributes.forEach((attribute) =>
-          Object.assign(penalty, { [attribute]: modifications[attribute] }),
+          Object.assign(penalty, {
+            [attribute]:
+              attribute === 'penaltyType' ? normalizePenaltyType(modifications[attribute]) : modifications[attribute],
+          }),
         );
 
         updatedPenalty ??= penalty;
