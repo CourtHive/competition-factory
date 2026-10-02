@@ -29,7 +29,6 @@ export function planDirection(request: OutcomeRequest, view: OutcomeView, route:
   if (route === 'swap') return planSwap(request, view);
   if (route !== 'winner') return undefined;
   if (view.line || view.matchUpTieId || view.draw.isAdHoc || view.targets.luckyPreFeed) return undefined;
-  if (view.isTeam && request.flags.enableAutoCalc) return undefined;
   const winningSide = request.winningSide;
   if (winningSide !== 1 && winningSide !== 2) return undefined;
   const participantId = view.targets.sideParticipantIds[winningSide];

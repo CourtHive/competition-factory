@@ -84,6 +84,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       if (direction.loser) checkLoser({ args, route, loser: direction.loser });
       if (direction.winner) checkWinner({ args, route, winner: direction.winner });
       differentialTally(`${route}:direction`, 'compared');
+      if (planned !== args.request) differentialTally('team-autocalc:direction', 'compared');
     },
   };
 }
