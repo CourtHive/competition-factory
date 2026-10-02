@@ -117,11 +117,15 @@ function calculateStandardWinner(
   maxSetsInstances: number,
   setsWinCounts: number[],
   matchUpFormat?: string,
+  playsEverySet?: boolean,
 ): number | undefined {
+  // A best-of stops the moment a side reaches `setsToWin`, so equality is the exact test. An `exactly`
+  // format plays every set whatever the running score, so its winner routinely passes `setsToWin` — and
+  // under equality a 3-0 sweep of `SET3X-S:T10` had NO winner and the engine refused it, while
+  // `analyzeMatchUp` named side 1 (validator debate V9, re-measured 2026-10-02).
+  const reachedSetsToWin = playsEverySet ? maxSetsCount >= setsToWin : maxSetsCount === setsToWin;
   return (
-    ((!matchUpFormat || maxSetsCount === setsToWin) &&
-      maxSetsInstances === 1 &&
-      setsWinCounts.indexOf(maxSetsCount) + 1) ||
+    ((!matchUpFormat || reachedSetsToWin) && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) ||
     undefined
   );
 }
@@ -190,7 +194,7 @@ export function analyzeScore({
   const calculatedWinningSide =
     isAggregateScoring && sets.length > 0
       ? calculateAggregateWinner(sets)
-      : calculateStandardWinner(maxSetsCount, setsToWin, maxSetsInstances, setsWinCounts, matchUpFormat);
+      : calculateStandardWinner(maxSetsCount, setsToWin, maxSetsInstances, setsWinCounts, matchUpFormat, !!exactly);
 
   const valid = !!(
     validSets &&
