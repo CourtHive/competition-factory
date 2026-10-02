@@ -1,7 +1,16 @@
-import { isDoubleExit, isExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
-import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import {
+  BYE,
+  DEAD_RUBBER,
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
+  RETIRED,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 
 import type { DirectionPlan, OutcomeRequest, OutcomeView, Route } from './types';
@@ -26,9 +35,11 @@ export function planDirection(request: OutcomeRequest, view: OutcomeView, route:
   const participantId = view.targets.sideParticipantIds[winningSide];
   const matchUpId = view.targets.winnerMatchUpId;
   const loser = planLoser(request, view, winningSide === 1 ? 2 : 1);
-  if (!matchUpId) return loser ? { loser } : {};
-  if (!participantId) return isExit(request.matchUpStatus) ? { ...(loser ? { loser } : {}) } : undefined;
-  return { winner: { matchUpId, participantId }, ...(loser ? { loser } : {}) };
+  const decider = planDecider(view, winningSide);
+  const settled = decider ? { decider } : {};
+  if (!matchUpId) return loser ? { loser, ...settled } : settled;
+  if (!participantId) return isExit(request.matchUpStatus) ? { ...(loser ? { loser } : {}), ...settled } : undefined;
+  return { winner: { matchUpId, participantId }, ...(loser ? { loser } : {}), ...settled };
 }
 
 /**
@@ -132,4 +143,23 @@ function planSwap(request: OutcomeRequest, view: OutcomeView): DirectionPlan | u
   if (!plan?.loser) return plan;
   const { exit: _exit, converged: _converged, ...loser } = plan.loser;
   return { ...plan, loser };
+}
+
+/**
+ * S2c, decider settlement (spec § 5 effect 5, `reconcileDeciders`). A final whose winner and loser
+ * both go to one matchUp in ANOTHER structure feeds a decider. Once the final's winner changes, the
+ * decider is needed only if the final's loser has lost just that once (no loss before it, the
+ * decider left out): needed, it stands TO_BE_PLAYED; not needed, it is a DEAD_RUBBER; any result it
+ * held is cleared either way. A decider holding no result and standing as a BYE or an exit is left.
+ */
+function planDecider(view: OutcomeView, winningSide: 1 | 2): DirectionPlan['decider'] {
+  const { winnerMatchUpId, loserMatchUpId, winner, source, sideParticipantIds, priorLosses } = view.targets;
+  if (!winnerMatchUpId || winnerMatchUpId !== loserMatchUpId || !winner) return undefined;
+  if (winner.structureId === source.structureId) return undefined;
+  if (winningSide === view.existing.winningSide) return undefined; // the final's winner did not change
+  const loserSide = winningSide === 1 ? 2 : 1;
+  if (!sideParticipantIds[winningSide] || !sideParticipantIds[loserSide]) return undefined;
+  if (!winner.holdsResult && (winner.matchUpStatus === BYE || isAnyExit(winner.matchUpStatus))) return undefined;
+  const needed = priorLosses[loserSide] === 0;
+  return { matchUpId: winnerMatchUpId, matchUpStatus: needed ? TO_BE_PLAYED : DEAD_RUBBER };
 }

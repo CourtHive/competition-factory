@@ -136,6 +136,8 @@ export type OutcomeView = {
       carriesExit: boolean;
       /** the exit statuses already carried in, one per side that holds one */
       carriedStatuses: string[];
+      /** a winner or a set with games: what a decider must lose when it is reset */
+      holdsResult: boolean;
     };
     /** this matchUp's own place, and the matchUp counts of its round and the next, in its structure */
     source: {
@@ -148,6 +150,8 @@ export type OutcomeView = {
     loserMatchUpDrawPositions?: number[];
     /** wins each side's drawPosition holds in this structure, this matchUp left out */
     priorWins: { 1: number; 2: number };
+    /** losses each side's participant holds in the draw, this matchUp and its winnerMatchUp left out */
+    priorLosses: { 1: number; 2: number };
   };
   /** § 3: facts the routes ask */
   draw: {
@@ -208,6 +212,8 @@ export type DirectionPlan = {
   /** S2c: the exit a double exit produces in the matchUp it feeds, in its own structure; `winningSide` is
    * the side it is awarded to once that side is occupied (pending, and unawarded, until then) */
   produced?: { matchUpId: string; matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 };
+  /** S2c: a final's decider, settled once the final's winner changes (spec § 5 effect 5) */
+  decider?: { matchUpId: string; matchUpStatus: MatchUpStatusUnion };
   /** S2c: the double exit a produced exit makes where an exit already stands, with no winner */
   converged?: { matchUpId: string; matchUpStatus: MatchUpStatusUnion };
   /** S2c: the loser stands in `matchUpId` (`arrives`), or must not (a first-match-loser feed with prior wins) */
