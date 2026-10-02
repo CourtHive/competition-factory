@@ -295,7 +295,15 @@ function validateTiebreakCondition({
       };
     }
 
-    if (!winningSideTiebreakScore || !losingSideTiebreakScore || winningSideTiebreakScore < losingSideTiebreakScore) {
+    // `typeof`, not truthiness: a losing tiebreak score of 0 is a score, and `!0` read it as MISSING, so every
+    // 7-6(0) was an invalid set here while the validators, the engine and key-value entry all accept
+    // it — and `setMatchUpState`'s revert guard, which asks `validMatchUpOutcome`, failed open on it
+    // (validator debate V1, 2026-10-02).
+    if (
+      typeof winningSideTiebreakScore !== 'number' ||
+      typeof losingSideTiebreakScore !== 'number' ||
+      winningSideTiebreakScore < losingSideTiebreakScore
+    ) {
       return {
         result: false,
         error: { message: 'winningSide tiebreak value is not high' },
@@ -372,7 +380,13 @@ function checkValidTiebreakSetOutcome({ setObject, setFormat, sideTiebreakScores
   const winningSideTiebreakScore = sideTiebreakScores[winningSideIndex];
   const losingSideTiebreakScore = sideTiebreakScores[losingSideIndex];
 
-  if (!winningSideTiebreakScore || !losingSideTiebreakScore || winningSideTiebreakScore < losingSideTiebreakScore) {
+  // `typeof`, not truthiness — a [10-0] is a tiebreak set: the loser's 0 is a score
+  // (see the same read in validateTiebreakCondition)
+  if (
+    typeof winningSideTiebreakScore !== 'number' ||
+    typeof losingSideTiebreakScore !== 'number' ||
+    winningSideTiebreakScore < losingSideTiebreakScore
+  ) {
     return {
       result: false,
       error: { message: 'winningSide tiebreak value is not high' },
