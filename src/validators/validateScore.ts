@@ -8,7 +8,7 @@ import { isConvertableInteger } from '@Tools/math';
 import { unique } from '@Tools/arrays';
 
 // constants and types
-import { INVALID_SCORE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { INVALID_SCORE, INVALID_VALUES, MISSING_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 import { TIEBREAK_POINTS_NOT_RECORDED } from '@Constants/scoreWarningConstants';
 import type { Score } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
@@ -38,6 +38,11 @@ function setsDecidedByTiebreakWithoutPoints(sets: any[], matchUpFormat?: string)
     })
     .filter((setNumber): setNumber is number => typeof setNumber === 'number');
 }
+
+const hasSetValues = (set: any) =>
+  [set?.side1Score, set?.side2Score, set?.side1TiebreakScore, set?.side2TiebreakScore].some(
+    (value) => value !== undefined && value !== null,
+  );
 
 function acceptedWithWarnings(sets: any[], matchUpFormat?: string): ResultType & { valid?: boolean } {
   const setNumbers = setsDecidedByTiebreakWithoutPoints(sets, matchUpFormat);
@@ -106,6 +111,19 @@ export function validateScore({
 
       if (winningSide != null && ![1, 2].includes(winningSide))
         return { error: INVALID_VALUES, info: 'winningSide must be 1 or 2' };
+    }
+
+    // ── No format, no score (CA, 2026-10-02, ruling X1) ──
+    //
+    // Every check below is a question about the format: whether a set is finished, how many sets the
+    // match plays, where its tiebreak is. Without one each of them answered "valid", so a score recorded
+    // against no format was never checked at all. A write that means to record such a score — an import,
+    // a migration — passes `disableScoreValidation`, which skips this call.
+    if (!matchUpFormat && sets.some(hasSetValues)) {
+      return {
+        error: MISSING_MATCHUP_FORMAT,
+        info: 'a score cannot be validated without a matchUpFormat on the matchUp, its structure, draw or event',
+      };
     }
 
     const { valid: isValidScore } = analyzeScore({
