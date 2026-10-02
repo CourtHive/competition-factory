@@ -3,6 +3,7 @@ import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides
 import { clearOutcome } from '../exitPropagation/transitions';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { setClock } from '@Tools/clock';
 import fs from 'fs';
 import path from 'path';
 
@@ -67,6 +68,9 @@ const win = (scoreString = '6-1 6-1', winningSide = 1) =>
   mocksEngine.generateOutcomeFromScoreString({ scoreString, winningSide }).outcome;
 
 function generate(drawProfile: any, policy?: any) {
+  // the starting record is built on the corpus clock, so its timestamps, and so its hash, reproduce:
+  // a committed manifest of these hashes is only a signal if a rerun cannot move them
+  setClock(CLOCK);
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     ...(policy
       ? { policyDefinitions: { [POLICY_TYPE_SCORING]: { ...POLICY_SCORING_DEFAULT[POLICY_TYPE_SCORING], ...policy } } }
@@ -75,6 +79,7 @@ function generate(drawProfile: any, policy?: any) {
     startDate: '2026-10-01',
     endDate: '2026-10-03',
   });
+  setClock();
   tournamentEngine.reset();
   tournamentEngine.setState(tournamentRecord);
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
