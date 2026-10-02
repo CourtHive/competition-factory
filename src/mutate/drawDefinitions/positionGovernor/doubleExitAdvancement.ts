@@ -1470,16 +1470,29 @@ function advanceByeAdvancedDrawPosition({
       }),
     };
 
+    /**
+     * AN EXIT MEETING A BYE LEAVES A BYE, NOT AN EXIT LABEL — CA, 2026-10-02, confirming 2026-09-20:
+     * *"a propagated exit encountering a BYE should be advanced. In both cases the BYE remains a BYE."*
+     *
+     * When the position advancing out of this matchUp is itself a BYE and nobody is here, the BYE is
+     * what moves on, carrying the exit with it. Writing EXIT here left a matchUp labelled WALKOVER
+     * with a BYE on one side and nobody on the other: 26 draws of the exit-propagation suite ended in
+     * that shape (19 FIRST_MATCH_LOSER_CONSOLATION, 7 DOUBLE_ELIMINATION), each with the exit already
+     * carried onward. `carryExitOnward` writes BYE in the same situation; this branch predates it.
+     * The provenance below is still stamped, so the exit's origin stays on record, and the advance
+     * that follows is unchanged.
+     */
+    const byeAdvances = !advancingParticipantId && matchUpHoldsBye({ drawDefinition, matchUp: nextWinnerMatchUp });
     const result = modifyMatchUpScore({
       matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
       appliedPolicies: params.appliedPolicies,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       matchUp: noContextNextWinnerMatchUp,
-      matchUpStatus: EXIT,
+      matchUpStatus: byeAdvances ? BYE : EXIT,
+      winningSide: byeAdvances ? undefined : winningSide,
       removeScore: true,
       context: stack,
       drawDefinition,
-      winningSide,
     });
     if (result.error) return decorateResult({ result, stack });
 
