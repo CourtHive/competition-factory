@@ -207,6 +207,25 @@ function activeBelow(params, seen: Map<string, boolean>) {
     !!winnerMatchUp?.sides?.find((s: any) => s?.sideNumber === winnerMatchUp.winningSide)?.participant &&
     !isPropagatedExit({ matchUp: winnerMatchUp });
 
+  /**
+   * An exit RECORDED at the winnerMatchUp is a result against this source's winner, whatever the other
+   * side holds.
+   *
+   * The NOTE above reasons that an exit with an unoccupied side can only be a pending propagated one,
+   * because `checkParticipants` wants two participants. With `propagateExitStatus` it does not: a TD
+   * may award a walkover to a side still waiting on its feed (G3, `exitAwardable`). That exit names
+   * THIS source's winner as the one who walked over, yet `winnerDrawPositionsCount === 2` passed it as
+   * inactive, so the source's winner could be flipped under it. Census seed 9000477 (COMPASS 32/29),
+   * three steps: `East|1|3` decided, `East|2|2` WALKOVER to the vacant side, `East|1|3` flipped —
+   * accepted, and the walkover recorded against one player was then held by the other, while the
+   * first stayed in North as its loser (WINNER_NOT_ADVANCED). Provenance is what tells the recorded
+   * exit from the produced one; with both positions present `winnerSideResolved` already says so.
+   */
+  const recordedWinnerExit =
+    !!winnerMatchUp?.winningSide &&
+    isExit(winnerMatchUp.matchUpStatus) &&
+    !isPropagatedExit({ matchUp: winnerMatchUp });
+
   // if a winnerMatchUp contains a WALKOVER and its source matchUps have no winningSides it cannot be considered active
   // unless one of its downstream matchUps is active
   if (contestedDoubleExit(loserMatchUp) || contestedDoubleExit(winnerMatchUp)) {
@@ -216,6 +235,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
   if (
     !isLoserMatchUpWalkoverWithOnePlayer &&
     ((loserMatchUp?.winningSide && !loserMatchUpExit) ||
+      recordedWinnerExit ||
       (winnerMatchUp?.winningSide &&
         winnerDrawPositionsCount === 2 &&
         (!isExit(winnerMatchUp?.matchUpStatus) || winnerSideResolved)))
