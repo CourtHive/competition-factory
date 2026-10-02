@@ -114,7 +114,6 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
     // `line-score`: a line rescored under a decided dual. v1 first takes the dual's direction back,
     // which rewrites the line, then writes the score; measured 2026-10-01 to leave IN_PROGRESS where
     // this plan said TO_BE_PLAYED or COMPLETED. The dual cascade is S2c's, so this route is too.
-    case 'swap':
     case 'completed-to-double-exit':
     case 'refused':
     case 'line-score':
@@ -123,6 +122,9 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
       return applyScoreAndStatus({}, request, view);
     case 'winner':
       return applyScoreAndStatus(winnerWrite(request, view), request, view);
+    // the swap re-scores in place: `swapWinnerLoser` exchanges the two paths downstream, then writes
+    // the call's result through the same write point as every other route
+    case 'swap':
     case 'only-score':
     case 'team-round-robin':
     case 'propagating':

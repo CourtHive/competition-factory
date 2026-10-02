@@ -46,8 +46,9 @@ it('every accepted authored step is planned, written as planned, and its winner 
   // a double exit produces an exit in the matchUp it feeds, pending (no winner) until someone arrives
   expect(compared('double-exit:produced-pending')).toBeGreaterThan(0);
   expect(compared('double-exit') + compared('noop')).toBeGreaterThan(0);
-  // the swap is S2c's: planned as deferred, never silently compared
-  expect(tally.swap?.compared ?? 0).toEqual(0);
+  // the swap (allowChangePropagation with a new winner): written in place, and both paths exchanged
+  expect(compared('swap')).toBeGreaterThan(0);
+  expect(compared('swap:direction')).toEqual(compared('swap'));
 });
 
 it('a divergence names the matchUp and both writes', () => {

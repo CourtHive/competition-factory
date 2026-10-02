@@ -17,6 +17,7 @@ import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
  */
 export function planDirection(request: OutcomeRequest, view: OutcomeView, route: Route): DirectionPlan | undefined {
   if (route === 'double-exit') return planProducedExit(request, view);
+  if (route === 'swap') return planSwap(request, view);
   if (route !== 'winner') return undefined;
   if (view.line || view.matchUpTieId || view.draw.isAdHoc || view.targets.luckyPreFeed) return undefined;
   if (view.isTeam && request.flags.enableAutoCalc) return undefined;
@@ -118,4 +119,17 @@ function planProducedExit(request: OutcomeRequest, view: OutcomeView): Direction
   if (standing.length)
     return { converged: { matchUpId: winnerMatchUpId, matchUpStatus: convergence([flavour, ...standing]) } };
   return { produced: { matchUpId: winnerMatchUpId, matchUpStatus: flavour, winningSide: fedSide === 1 ? 2 : 1 } };
+}
+
+/**
+ * S2c: the swap (spec § 3, `allowChangePropagation` with a different winner). The two participants
+ * exchange paths downstream, so the new winner stands where direction sends a winner and the new
+ * loser where the loser link sends one: the winner's and loser's plans, applied to the new result.
+ * Exit carrying is left out: a swap that also changes an exit is not modelled.
+ */
+function planSwap(request: OutcomeRequest, view: OutcomeView): DirectionPlan | undefined {
+  const plan = planDirection(request, view, 'winner');
+  if (!plan?.loser) return plan;
+  const { exit: _exit, converged: _converged, ...loser } = plan.loser;
+  return { ...plan, loser };
 }
