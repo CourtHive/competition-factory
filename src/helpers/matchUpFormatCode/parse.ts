@@ -299,7 +299,9 @@ function buildParsedFormat({
   const timed = (setFormat && setFormat.timed) || (finalSetFormat && finalSetFormat.timed);
 
   if (matchRoot === SET) {
-    const validSetsCount = (bestOf && bestOf < 6) || (timed && exactly);
+    // Any best-of count is a format: best of seven is table tennis's, best of nine is played too. This
+    // capped it below six (CA, 2026-10-02: "I don't see why best of 7 or 9 would be rejected").
+    const validSetsCount = (bestOf && bestOf >= 1) || (timed && exactly);
     if (!validSetsCount) return undefined;
   }
 
