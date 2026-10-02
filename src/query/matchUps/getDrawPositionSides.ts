@@ -98,6 +98,45 @@ export function getWinningSideDrawPosition({
     ?.drawPosition;
 }
 
+/**
+ * The drawPosition a HYDRATED matchUp holds on `sideNumber`, or `undefined` when that side holds none.
+ *
+ * The directing pair, `removeDirectedParticipants` and `processDrawPositionDirecting`, read
+ * `drawPositions[winningSide - 1]` and `drawPositions[1 - (winningSide - 1)]`. While only one position
+ * is present the array is compacted, so index 0 is whichever position is there. An exit awarded to a
+ * VACANT side 1 against an occupant on side 2 then named that occupant the winner's position and the
+ * loser's position `undefined`, and the loser was never fed on. Census seed 9000522 (COMPASS 16/11),
+ * one step: `East|2|3` WALKOVER to side 1, the occupant on side 2 arrived through a BYE, and the
+ * draw reported DROPPED_PROGRESSION.
+ *
+ * With both present the ascending order binds side to position (see `getOrderedDrawPositions`). With
+ * one present, `sides` already carries the binding; failing that, `getDrawPositionSides` resolves it
+ * through the round profile. Never by index.
+ */
+export function getSideDrawPosition({
+  drawDefinition,
+  structureId,
+  sideNumber,
+  matchUp,
+}: {
+  drawDefinition?: DrawDefinition;
+  structureId?: string;
+  sideNumber?: number;
+  matchUp?: any;
+}): number | undefined {
+  if (!sideNumber) return undefined;
+  const drawPositions = matchUp?.drawPositions ?? [];
+  if (drawPositions.filter(Boolean).length === 2) return drawPositions[sideNumber - 1];
+  if (!drawPositions.some(Boolean)) return undefined;
+
+  // `sides` binds only once hydration has placed the position on one of them
+  const sides = matchUp?.sides?.filter((side: any) => side?.drawPosition);
+  if (sides?.length) return sides.find((side: any) => side.sideNumber === sideNumber)?.drawPosition;
+
+  return getDrawPositionSides({ drawDefinition, structureId, matchUp })?.find((side) => side.sideNumber === sideNumber)
+    ?.drawPosition;
+}
+
 /** Depth first: a round robin's matchUps belong to the GROUP, not its parent. */
 function findStructure(structures: any[], structureId: string): any {
   for (const structure of structures ?? []) {
