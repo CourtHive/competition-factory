@@ -213,5 +213,10 @@ test('can recognize when set format does not match expected format', () => {
   };
   const analysis = analyzeSet({ setObject, matchUpScoringFormat });
   expect(analysis.isValidSet).toEqual(false);
-  expect(analysis.isValidSetOutcome).toEqual(false);
+  // The set is invalid because a best of three has no set 5. Its score is not: where the format says a
+  // set is a tiebreak, a pair in the game fields is tiebreak points, and 12-10 is a tiebreak to ten won
+  // by two (2026-10-02). This asserted an invalid OUTCOME while the game fields read as a regular set.
+  expect(analysis.isValidSetNumber).toEqual(false);
+  expect(analysis.isTiebreakSet).toEqual(true);
+  expect(analysis.isValidSetOutcome).toEqual(true);
 });
