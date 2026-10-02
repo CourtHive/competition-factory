@@ -6,6 +6,7 @@ import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinn
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
+import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
@@ -163,20 +164,23 @@ function luckyPreFeed(drawDefinition: DrawDefinition, matchUp: MatchUp, structur
   return structure.matchUps.filter((m) => m.roundNumber === matchUp.roundNumber).length % 2 !== 0;
 }
 
+// a TEAM line's format is its collection's, which only the hydrated matchUp carries — see `resolveScoringFormat`
 function resolveFormat(
   request: OutcomeRequest,
   matchUp: MatchUp,
   structure: Structure | undefined,
   drawDefinition: DrawDefinition,
   event: Event | undefined,
+  inContextMatchUp?: HydratedMatchUp,
 ): string | undefined {
-  return (
-    request.matchUpFormat ??
-    matchUp?.matchUpFormat ??
-    structure?.matchUpFormat ??
-    drawDefinition?.matchUpFormat ??
-    event?.matchUpFormat
-  );
+  return resolveScoringFormat({
+    incoming: request.matchUpFormat,
+    inContextMatchUp,
+    drawDefinition,
+    structure,
+    matchUp,
+    event,
+  });
 }
 
 export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
@@ -223,8 +227,15 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const matchUpTieId = inContextMatchUp?.matchUpTieId;
   // the STORED result is judged under the STORED format; what the call would decide, under the
   // format the call would apply (row 9's second and third conditions resolve differently)
-  const storedFormat = resolveFormat({ flags: request.flags }, matchUp, structure, drawDefinition, event);
-  const incomingFormat = resolveFormat(request, matchUp, structure, drawDefinition, event);
+  const storedFormat = resolveFormat(
+    { flags: request.flags },
+    matchUp,
+    structure,
+    drawDefinition,
+    event,
+    inContextMatchUp,
+  );
+  const incomingFormat = resolveFormat(request, matchUp, structure, drawDefinition, event, inContextMatchUp);
 
   const validWinningScore =
     matchUp.matchUpStatus === COMPLETED &&

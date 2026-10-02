@@ -10,6 +10,7 @@ import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpSc
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
+import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -166,6 +167,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   } = resolved;
 
   const revertError = checkCompletedRevertGuard({
+    inContextMatchUp,
     matchUp,
     matchUpStatus,
     winningSide,
@@ -178,6 +180,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
 
   const impliedCompletionError = checkImpliedCompletionGuard({
     incomingMatchUpFormat: params.matchUpFormat,
+    inContextMatchUp,
     matchUpStatus,
     winningSide,
     score,
@@ -249,12 +252,15 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     // format onto the matchUp before delegating here, so `matchUp.matchUpFormat` was already the
     // incoming one. That write is gone (it survived a refused outcome), so the precedence that was
     // implicit has to be stated.
-    const matchUpFormat =
-      params.matchUpFormat ??
-      matchUp.matchUpFormat ??
-      structure?.matchUpFormat ??
-      drawDefinition?.matchUpFormat ??
-      event?.matchUpFormat;
+    // a TEAM line's format is its collection's — see `resolveScoringFormat`
+    const matchUpFormat = resolveScoringFormat({
+      incoming: params.matchUpFormat,
+      inContextMatchUp,
+      drawDefinition,
+      structure,
+      matchUp,
+      event,
+    });
 
     const result = validateScore({
       existingMatchUpStatus: matchUp.matchUpStatus,
@@ -367,13 +373,21 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
 // allowed. RETIRED/DEFAULTED (irregular endings whose scores do not validate as a
 // completed outcome) stay reversible. To reopen a completed match, submit a new
 // outcome or clear the result first (removeWinningSide / TO_BE_PLAYED).
-function checkCompletedRevertGuard({ matchUp, matchUpStatus, winningSide, score, structure, drawDefinition, event }) {
+function checkCompletedRevertGuard({
+  inContextMatchUp,
+  drawDefinition,
+  matchUpStatus,
+  winningSide,
+  structure,
+  matchUp,
+  score,
+  event,
+}: any) {
   if (!matchUpStatus || !REVERT_GUARDED_STATUSES.has(matchUpStatus)) return undefined;
   if (winningSide || checkScoreHasValue({ score })) return undefined;
   if (matchUp?.matchUpStatus !== COMPLETED || !matchUp?.winningSide) return undefined;
 
-  const matchUpFormat =
-    matchUp.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition?.matchUpFormat ?? event?.matchUpFormat;
+  const matchUpFormat = resolveScoringFormat({ matchUp, inContextMatchUp, structure, drawDefinition, event });
   const { validMatchUpOutcome } = analyzeMatchUp({ matchUp, matchUpFormat });
   if (!validMatchUpOutcome) return undefined;
 
@@ -393,6 +407,7 @@ function checkCompletedRevertGuard({ matchUp, matchUpStatus, winningSide, score,
 // (e.g. a single set won in a best-of-3) remain valid with IN_PROGRESS.
 function checkImpliedCompletionGuard({
   incomingMatchUpFormat,
+  inContextMatchUp,
   matchUpStatus,
   winningSide,
   score,
@@ -418,12 +433,14 @@ function checkImpliedCompletionGuard({
   // score decisive?" is a question about the format it is being recorded under, not the one the
   // matchUp currently carries. `checkCompletedRevertGuard` deliberately does NOT do this: it
   // analyzes the EXISTING result, which must be judged under the format it was recorded under.
-  const matchUpFormat =
-    incomingMatchUpFormat ??
-    matchUp?.matchUpFormat ??
-    structure?.matchUpFormat ??
-    drawDefinition?.matchUpFormat ??
-    event?.matchUpFormat;
+  const matchUpFormat = resolveScoringFormat({
+    incoming: incomingMatchUpFormat,
+    inContextMatchUp,
+    drawDefinition,
+    structure,
+    matchUp,
+    event,
+  });
   if (!matchUpFormat) return undefined;
 
   const { calculatedWinningSide } = analyzeMatchUp({ matchUp: { score, matchUpFormat }, matchUpFormat });
