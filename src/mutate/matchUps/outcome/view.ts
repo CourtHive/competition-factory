@@ -1,15 +1,15 @@
+import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
-import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -20,13 +20,14 @@ import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import { isExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
 
 // constants and types
+import type { DrawDefinition, Event, MatchUp, PositionAssignment, Structure } from '@Types/tournamentTypes';
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
-import type { DrawDefinition, Event, MatchUp, PositionAssignment, Structure } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 
@@ -63,11 +64,36 @@ function exitAwardable(
   return !!(assignment.participantId || assignment.qualifier);
 }
 
-function carriesExit(matchUp?: HydratedMatchUp): boolean {
-  return Object.values(getSideExitProvenance({ matchUp }) ?? {}).some((entry) => !!carriedExitStatus(entry));
+/**
+ * The exit statuses carried into a matchUp from ELSEWHERE: an entry this matchUp produced is unwound
+ * before it is re-entered (a re-scored double exit makes a single exit, not a convergence), so it is
+ * not something a new exit converges with.
+ */
+function carriedStatuses(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): string[] {
+  return Object.values(getSideExitProvenance({ matchUp }) ?? {})
+    .filter((entry) => entry?.sourceMatchUpId !== sourceMatchUpId)
+    .map((entry) => carriedExitStatus(entry))
+    .filter((status): status is string => !!status);
 }
 
-function winnerTarget(winnerMatchUp?: HydratedMatchUp): OutcomeView['targets']['winner'] {
+/** an exit standing on a matchUp, other than one this matchUp produced itself */
+function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): string[] {
+  const carried = carriedStatuses(matchUp, sourceMatchUpId);
+  if (carried.length) return carried;
+  // the status is this matchUp's own product when an exit entry came from it: judged on EXIT entries
+  // only, since a BYE claim on the other side is not an exit (seed 6341103: a BYE claim on side 1 and
+  // this matchUp's earlier DEFAULTED on side 2 made `exitProducedBy`, which wants every entry, false)
+  const own = Object.values(getSideExitProvenance({ matchUp }) ?? {}).some(
+    (entry) => entry?.sourceMatchUpId === sourceMatchUpId && !!carriedExitStatus(entry),
+  );
+  return isExit(matchUp?.matchUpStatus) && !own ? [matchUp?.matchUpStatus as string] : [];
+}
+
+function carriesExit(matchUp?: HydratedMatchUp): boolean {
+  return carriedStatuses(matchUp).length > 0;
+}
+
+function winnerTarget(winnerMatchUp?: HydratedMatchUp, sourceMatchUpId?: string): OutcomeView['targets']['winner'] {
   if (!winnerMatchUp) return undefined;
   return {
     structureId: winnerMatchUp.structureId,
@@ -75,6 +101,7 @@ function winnerTarget(winnerMatchUp?: HydratedMatchUp): OutcomeView['targets']['
     roundPosition: winnerMatchUp.roundPosition,
     matchUpStatus: winnerMatchUp.matchUpStatus,
     carriesExit: carriesExit(winnerMatchUp),
+    carriedStatuses: standingExits(winnerMatchUp, sourceMatchUpId),
   };
 }
 
@@ -149,6 +176,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       sideDrawPositions: {},
       priorWins: { 1: 0, 2: 0 },
       loserMatchUpCarriesExit: false,
+      loserMatchUpCarriedStatuses: [],
       source: { roundMatchUpCount: 0, nextRoundMatchUpCount: 0 },
     },
   };
@@ -335,11 +363,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpRoundNumber: targetData?.targetMatchUps?.loserMatchUp?.roundNumber,
       loserStructureId: targetData?.targetMatchUps?.loserMatchUp?.structureId,
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
-      winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp),
+      winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId),
       source: sourcePlace(inContextDrawMatchUps, inContextMatchUp),
-      loserMatchUpCarriesExit: Object.values(
-        getSideExitProvenance({ matchUp: targetData?.targetMatchUps?.loserMatchUp }) ?? {},
-      ).some((entry) => !!carriedExitStatus(entry)),
+      loserMatchUpCarriesExit: carriesExit(targetData?.targetMatchUps?.loserMatchUp),
+      loserMatchUpCarriedStatuses: standingExits(targetData?.targetMatchUps?.loserMatchUp, request.matchUpId),
       loserMatchUpDrawPositions: (targetData?.targetMatchUps?.loserMatchUp?.drawPositions ?? []).filter(
         (position): position is number => typeof position === 'number',
       ),

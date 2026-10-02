@@ -126,6 +126,7 @@ export type OutcomeView = {
     loserMatchUpStatus?: MatchUpStatusUnion;
     /** a side of the loserMatchUp already carries an exit in: a second one there makes a double exit */
     loserMatchUpCarriesExit: boolean;
+    loserMatchUpCarriedStatuses: string[];
     /** the winnerMatchUp, for what a double exit produces there (S2c) */
     winner?: {
       structureId?: string;
@@ -133,6 +134,8 @@ export type OutcomeView = {
       roundPosition?: number;
       matchUpStatus?: MatchUpStatusUnion;
       carriesExit: boolean;
+      /** the exit statuses already carried in, one per side that holds one */
+      carriedStatuses: string[];
     };
     /** this matchUp's own place, and the matchUp counts of its round and the next, in its structure */
     source: {
@@ -203,6 +206,8 @@ export type DirectionPlan = {
   /** S2c: the exit a double exit produces in the matchUp it feeds, in its own structure; `winningSide` is
    * the side it is awarded to once that side is occupied (pending, and unawarded, until then) */
   produced?: { matchUpId: string; matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 };
+  /** S2c: the double exit a produced exit makes where an exit already stands, with no winner */
+  converged?: { matchUpId: string; matchUpStatus: MatchUpStatusUnion };
   /** S2c: the loser stands in `matchUpId` (`arrives`), or must not (a first-match-loser feed with prior wins) */
   loser?: {
     matchUpId: string;
@@ -212,5 +217,7 @@ export type DirectionPlan = {
     bye?: { structureId: string; drawPosition: number };
     /** S2c: the exit the loser carries into the target, which the side opposite them wins */
     exit?: MatchUpStatusUnion;
+    /** S2c: the double exit the carried exit makes where an exit already stands */
+    converged?: MatchUpStatusUnion;
   };
 };
