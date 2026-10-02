@@ -85,10 +85,18 @@ function carriedExit(request: OutcomeRequest, view: OutcomeView) {
   const propagating = flags.propagateRetirementAsExit ? [RETIRED, WALKOVER, DEFAULTED] : [WALKOVER, DEFAULTED];
   if (!propagating.includes(matchUpStatus as string)) return undefined;
   if (isDoubleExit(view.targets.loserMatchUpStatus)) return undefined; // a third arrival: not modelled
+  // a RELABEL, the winner unchanged (a COMPLETED result re-entered as a WALKOVER): v1 re-labels the result
+  // and carries nothing to a loser already directed; whether it should is open (Mentat TASKS, S2c)
+  if (isRelabel(request, view)) return undefined;
   // a final's winner and loser both go to its decider; whether the decider is played, and so what it
   // holds, is settled after the cascade (spec § 5 effect 5, `reconcileDeciders`), not by the carry
   if (view.targets.loserMatchUpId && view.targets.loserMatchUpId === view.targets.winnerMatchUpId) return undefined;
   return isExit(matchUpStatus) && matchUpStatus !== RETIRED ? matchUpStatus : WALKOVER;
+}
+
+/** the call keeps the winner the matchUp already has */
+export function isRelabel(request: OutcomeRequest, view: OutcomeView): boolean {
+  return !!view.existing.winningSide && view.existing.winningSide === request.winningSide;
 }
 
 /** exit-propagation § convergence: both sides defaults make a DOUBLE_DEFAULT, anything else a DOUBLE_WALKOVER */
