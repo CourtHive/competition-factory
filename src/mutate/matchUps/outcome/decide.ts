@@ -15,8 +15,9 @@ import {
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
-import type { BuildViewArgs, Refusal } from './types';
+import type { BuildViewArgs, DirectionPlan, Refusal } from './types';
 import type { ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * The routing point. Under `v1` nothing is built and nothing is decided. Under `v2` a refusal is
@@ -71,54 +72,85 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
       // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
       if (!direction) return differentialTally(`${route}:direction`, 'deferred');
-      if (direction.loser) {
-        const { matchUps } = getAllDrawMatchUps({
-          matchUpFilters: { matchUpIds: [direction.loser.matchUpId] },
-          tournamentRecord: args.tournamentRecord,
-          drawDefinition: args.drawDefinition,
-          inContext: true,
-          event: args.event,
-        });
-        const present = !!matchUps?.[0]?.sides?.some((side) => side?.participantId === direction.loser?.participantId);
-        if (present !== direction.loser.arrives)
-          throw new OutcomePipelineDivergence({
-            matchUpId: args.request.matchUpId,
-            v1: `loser ${direction.loser.participantId} ${present ? 'is' : 'is not'} in ${direction.loser.matchUpId}`,
-            v2: `planned the loser ${direction.loser.arrives ? 'into' : 'out of'} ${direction.loser.matchUpId}`,
-          });
-        differentialTally(`${route}:loser-${direction.loser.arrives ? 'in' : 'out'}`, 'compared');
-        const bye = direction.loser.bye;
-        if (bye) {
-          const { structure } = findStructure({ drawDefinition: args.drawDefinition, structureId: bye.structureId });
-          const held = !!structure?.positionAssignments?.find((a) => a.drawPosition === bye.drawPosition)?.bye;
-          if (!held)
-            throw new OutcomePipelineDivergence({
-              matchUpId: args.request.matchUpId,
-              v1: `no BYE at drawPosition ${bye.drawPosition} of ${bye.structureId}`,
-              v2: `planned a propagated BYE there for the kept-out loser`,
-            });
-          differentialTally(`${route}:loser-out-bye`, 'compared');
-        }
-      }
-      if (!direction.winner) return differentialTally(`${route}:direction`, 'compared');
-      const { matchUps } = getAllDrawMatchUps({
-        matchUpFilters: { matchUpIds: [direction.winner.matchUpId] },
-        tournamentRecord: args.tournamentRecord,
-        drawDefinition: args.drawDefinition,
-        inContext: true,
-        event: args.event,
-      });
-      const target = matchUps?.[0];
-      const arrived = !!target?.sides?.some((side) => side?.participantId === direction.winner?.participantId);
-      if (!arrived)
-        throw new OutcomePipelineDivergence({
-          matchUpId: args.request.matchUpId,
-          v1: `winner ${direction.winner.participantId} not in ${direction.winner.matchUpId}`,
-          v2: `planned the winner into ${direction.winner.matchUpId}`,
-        });
+      if (direction.loser) checkLoser({ args, route, loser: direction.loser });
+      if (direction.winner) checkWinner({ args, route, winner: direction.winner });
       differentialTally(`${route}:direction`, 'compared');
     },
   };
+}
+
+type CheckArgs = { args: BuildViewArgs; route: string };
+
+/** one matchUp of the draw as it stands after v1 ran, in context */
+function standing(args: BuildViewArgs, matchUpId: string) {
+  return getAllDrawMatchUps({
+    matchUpFilters: { matchUpIds: [matchUpId] },
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    inContext: true,
+    event: args.event,
+  }).matchUps?.[0];
+}
+
+function diverge(args: BuildViewArgs, v1: string, v2: string): never {
+  throw new OutcomePipelineDivergence({ matchUpId: args.request.matchUpId, v1, v2 });
+}
+
+function checkWinner({ args, winner }: CheckArgs & { winner: NonNullable<DirectionPlan['winner']> }) {
+  const target = standing(args, winner.matchUpId);
+  if (!target?.sides?.some((side) => side?.participantId === winner.participantId))
+    diverge(
+      args,
+      `winner ${winner.participantId} not in ${winner.matchUpId}`,
+      `planned the winner into ${winner.matchUpId}`,
+    );
+}
+
+function checkLoser({ args, route, loser }: CheckArgs & { loser: NonNullable<DirectionPlan['loser']> }) {
+  const target = standing(args, loser.matchUpId);
+  const loserSide = target?.sides?.find((side) => side?.participantId === loser.participantId)?.sideNumber;
+  const present = !!loserSide;
+  if (present !== loser.arrives)
+    diverge(
+      args,
+      `loser ${loser.participantId} ${present ? 'is' : 'is not'} in ${loser.matchUpId}`,
+      `planned the loser ${loser.arrives ? 'into' : 'out of'} ${loser.matchUpId}`,
+    );
+  differentialTally(`${route}:loser-${loser.arrives ? 'in' : 'out'}`, 'compared');
+  if (loser.exit && present) checkCarriedExit({ args, route, exit: loser.exit, target, loserSide });
+  if (loser.bye) checkPropagatedBye({ args, route, bye: loser.bye });
+}
+
+function checkCarriedExit({
+  args,
+  route,
+  exit,
+  target,
+  loserSide,
+}: CheckArgs & { exit: string; target?: HydratedMatchUp; loserSide?: number }) {
+  const opponent = target?.sides?.find((side) => side?.sideNumber !== loserSide);
+  // past a BYE the exit moves on to the loser's next matchUp: the cascade's, not checked here
+  if (opponent?.bye) return differentialTally(`${route}:loser-exit`, 'deferred');
+  const expectedWinner = loserSide === 1 ? 2 : 1;
+  if (target?.matchUpStatus !== exit || target?.winningSide !== expectedWinner)
+    diverge(
+      args,
+      `${target?.matchUpId} is ${target?.matchUpStatus} won by side ${target?.winningSide}`,
+      `planned ${exit} won by side ${expectedWinner}, the side opposite the loser`,
+    );
+  differentialTally(`${route}:loser-exit`, 'compared');
+}
+
+function checkPropagatedBye({ args, route, bye }: CheckArgs & { bye: { structureId: string; drawPosition: number } }) {
+  if (!args.drawDefinition) return;
+  const { structure } = findStructure({ drawDefinition: args.drawDefinition, structureId: bye.structureId });
+  if (!structure?.positionAssignments?.find((assignment) => assignment.drawPosition === bye.drawPosition)?.bye)
+    diverge(
+      args,
+      `no BYE at drawPosition ${bye.drawPosition} of ${bye.structureId}`,
+      'planned a propagated BYE there for the kept-out loser',
+    );
+  differentialTally(`${route}:loser-out-bye`, 'compared');
 }
 
 function toResult(refusal: Refusal): ResultType {

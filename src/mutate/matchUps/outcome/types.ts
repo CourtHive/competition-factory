@@ -122,6 +122,10 @@ export type OutcomeView = {
     loserMatchUpRoundNumber?: number;
     /** the loserMatchUp's structure and drawPositions: where a kept-out loser's BYE lands */
     loserStructureId?: string;
+    /** the loserMatchUp's status before this call: an exit already there makes a double exit (deferred) */
+    loserMatchUpStatus?: MatchUpStatusUnion;
+    /** a side of the loserMatchUp already carries an exit in: a second one there makes a double exit */
+    loserMatchUpCarriesExit: boolean;
     loserMatchUpDrawPositions?: number[];
     /** wins each side's drawPosition holds in this structure, this matchUp left out */
     priorWins: { 1: number; 2: number };
@@ -187,5 +191,7 @@ export type DirectionPlan = {
     arrives: boolean;
     /** when the loser is kept out of an FMLC feed: the propagated BYE that takes their place */
     bye?: { structureId: string; drawPosition: number };
+    /** S2c: the exit the loser carries into the target, which the side opposite them wins */
+    exit?: MatchUpStatusUnion;
   };
 };

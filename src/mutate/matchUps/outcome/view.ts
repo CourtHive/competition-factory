@@ -1,5 +1,6 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
+import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -112,7 +113,13 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     activeDownstream: false,
     participants: { required: false, count: 0, exitAwardable: false, requireForScoring: true },
     draw: { isAdHoc: false, teamRoundRobin: false, includesBye: false, timedTie: false },
-    targets: { luckyPreFeed: false, sideParticipantIds: {}, sideDrawPositions: {}, priorWins: { 1: 0, 2: 0 } },
+    targets: {
+      luckyPreFeed: false,
+      sideParticipantIds: {},
+      sideDrawPositions: {},
+      priorWins: { 1: 0, 2: 0 },
+      loserMatchUpCarriesExit: false,
+    },
   };
   if (!drawDefinition || !request.matchUpId) return empty;
 
@@ -296,6 +303,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         : undefined,
       loserMatchUpRoundNumber: targetData?.targetMatchUps?.loserMatchUp?.roundNumber,
       loserStructureId: targetData?.targetMatchUps?.loserMatchUp?.structureId,
+      loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
+      loserMatchUpCarriesExit: Object.values(
+        getSideExitProvenance({ matchUp: targetData?.targetMatchUps?.loserMatchUp }) ?? {},
+      ).some((entry) => !!carriedExitStatus(entry)),
       loserMatchUpDrawPositions: (targetData?.targetMatchUps?.loserMatchUp?.drawPositions ?? []).filter(
         (position): position is number => typeof position === 'number',
       ),
