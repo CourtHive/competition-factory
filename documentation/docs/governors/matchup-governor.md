@@ -944,7 +944,7 @@ engine.setMatchUpStatus({
   outcome, // optional — score/status/winningSide object
 
   matchUpFormat, // optional — set matchUpFormat before applying score (validated against)
-  disableScoreValidation, // optional boolean — skip score validation
+  disableScoreValidation, // optional boolean — skip score validation, including the completeness rule below
   allowChangePropagation, // optional boolean — allow winner/loser swap to propagate through structures
   propagateExitStatus, // optional boolean — propagate exit status (WALKOVER, etc.) to consolation matchUps
   disableAutoCalc, // optional boolean — applies only to TEAM matchUps
@@ -967,6 +967,30 @@ engine.setMatchUpStatus({
   },
 });
 ```
+
+### A completed score must be complete
+
+Score validation asks two questions of `score.sets`, under the matchUp's effective
+`matchUpFormat`:
+
+1. **Bounds** — no set exceeds what the format allows, and the `winningSide` named is the
+   one the set counts produce.
+2. **Completeness** — every set is one the format could actually produce:
+   - every set **before the last** is a finished, legal set;
+   - the **last** set is finished too when the outcome claims completion (`COMPLETED`, or
+     a `winningSide` with no `matchUpStatus`);
+   - otherwise (`RETIRED`, `DEFAULTED`, `IN_PROGRESS`, `SUSPENDED` …) the last set may be
+     unfinished, but never past the format's ceiling. This holds even when the set carries
+     a `winningSide`, as `parseScoreString` gives one to the side leading an unfinished set.
+
+Under `SET3-S:6/TB7` this refuses `3-7 6-4 6-4` (a 7-3 set does not exist with a tiebreak
+at six) and `4-2 2-6 2-6` (the first set never finished), both of which were previously
+recorded as `COMPLETED`. A refusal returns `INVALID_SCORE` with an `info` naming the set,
+e.g. `Set 1: …`, and the matchUp is left unchanged. A score with no resolvable
+`matchUpFormat` is not checked for completeness.
+
+**To record a score the format cannot produce** — an import, a migration, a correction to
+history, an abandoned line — pass `disableScoreValidation: true`. It skips both questions.
 
 ### Score strings are derived, never trusted
 
