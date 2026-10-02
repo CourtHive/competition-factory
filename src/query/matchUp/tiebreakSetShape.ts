@@ -6,6 +6,7 @@
  *
  *   (a) `{ side1TiebreakScore: 10, side2TiebreakScore: 8 }`                — mocks, a format-less parse
  *   (b) `{ side1Score: 10, side2Score: 8, tiebreakSet: true }`             — a parse WITH the format
+ *       — and the same pair with no marker, read as (b) wherever the format says the set is a tiebreak
  *   (c) `{ side1Score: 1, side2Score: 0, side1TiebreakScore: 10, side2TiebreakScore: 8 }`
  *                                                                           — the point engine, every hydrated read
  *
@@ -56,8 +57,14 @@ export function readTiebreakSet(set: any, setFormat?: any): TiebreakSetReading {
   const hasGameScores = sideGameScores.some(isNumber);
   const hasTiebreakScores = sideTiebreakScores.some(isNumber);
 
+  // Where the FORMAT says the set is a tiebreak, any score in it is tiebreak points — including a pair in
+  // the game fields with no marker, the shape the slam adapter and the US Open capture store a decider
+  // in. Requiring tiebreak scores here left that shape a regular set to the analysis and let hydration
+  // overwrite its points with the 1-0 marker (residual (b), 2026-10-02).
   const isTiebreakSet =
-    !!set?.tiebreakSet || (hasTiebreakScores && !hasGameScores) || !!(setFormat?.tiebreakSet && hasTiebreakScores);
+    !!set?.tiebreakSet ||
+    (hasTiebreakScores && !hasGameScores) ||
+    !!(setFormat?.tiebreakSet && (hasTiebreakScores || hasGameScores));
 
   const pointsInGameFields = isTiebreakSet && hasGameScores && !hasTiebreakScores;
   if (pointsInGameFields) {
