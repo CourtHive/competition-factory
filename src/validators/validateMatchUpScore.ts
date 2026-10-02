@@ -7,6 +7,7 @@
 import { tiebreakSetGames, isTiebreakGamesScore, tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
 import { getMaxSetScore } from '@Query/matchUp/getComplement';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { setPlayedAfterDecision } from './setCount';
 
 // constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
@@ -488,6 +489,11 @@ export function validateMatchUpScore(
       };
     }
   }
+
+  // No set after the one that decided a best-of match, and no more sets than it plays (X2) — the same
+  // answer the engine gives, so a dialog gating Submit here does not offer what the engine refuses
+  const afterDecision = setPlayedAfterDecision(sets, matchUpFormat);
+  if (afterDecision) return { isValid: false, error: afterDecision };
 
   return { isValid: true };
 }

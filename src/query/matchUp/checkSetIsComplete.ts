@@ -1,5 +1,5 @@
 import { readTiebreakSet, withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
-import { reachedTiebreak } from '@Query/matchUp/tiebreakAtRules';
+import { isTiebreakWon, reachedTiebreak } from '@Query/matchUp/tiebreakAtRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
@@ -109,9 +109,9 @@ function tiebreakReachesTarget(set, setFormat, isTiebreakSet?: boolean): boolean
 
   const high = Math.max(set.side1TiebreakScore ?? 0, set.side2TiebreakScore ?? 0);
   const low = Math.min(set.side1TiebreakScore ?? 0, set.side2TiebreakScore ?? 0);
-  const margin = tiebreakFormat?.NoAD ? 1 : Math.min(2, tiebreakTo);
 
-  return high >= tiebreakTo && high - low >= margin;
+  // Past the target only by exactly the margin, and a no-ad tiebreak never past it (V7)
+  return isTiebreakWon(high, low, tiebreakFormat);
 }
 
 export function getLeadingSide({ set }) {
