@@ -59,6 +59,12 @@ type GetAllStructureMatchUps = {
   afterRecoveryTimes?: boolean;
   useParticipantMap?: boolean;
   usePublishState?: boolean;
+  /**
+   * Hydrate ONLY the matchUp with this id (or the dual it is a line of) — the structure-level
+   * profiles are still taken from every matchUp in the structure. For a caller that wants one
+   * matchUp in context; see `findDrawMatchUp`. The other matchUps are not returned.
+   */
+  hydrateMatchUpId?: string;
   exitProfiles?: ExitProfiles;
   matchUpsMap?: MatchUpsMap;
   structure?: Structure;
@@ -200,6 +206,14 @@ export function getAllStructureMatchUps(params: GetAllStructureMatchUps) {
   }
 
   if (inContext) {
+    if (params.hydrateMatchUpId) {
+      const matchUpId = params.hydrateMatchUpId;
+      matchUps = matchUps.filter(
+        (matchUp) =>
+          matchUp.matchUpId === matchUpId ||
+          matchUp.tieMatchUps?.some((tieMatchUp) => tieMatchUp.matchUpId === matchUpId),
+      );
+    }
     matchUps = hydrateMatchUpsInContext({
       positionAssignments,
       initialRoundOfPlay,
