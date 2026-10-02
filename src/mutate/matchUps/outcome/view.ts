@@ -325,14 +325,18 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   let dualProjection: OutcomeView['dualProjection'];
   if (isTeam && request.flags.enableAutoCalc) {
     // v1 hands the generator the raw matchUp; the same input keeps the projection identical
-    const { winningSide } = generateTieMatchUpScore({
+    const { winningSide, scoreStringSide1, scoreStringSide2, set } = generateTieMatchUpScore({
       matchUp: matchUp as HydratedMatchUp,
       drawDefinition,
       matchUpsMap,
       structure,
       event,
     });
-    dualProjection = { projectedWinningSide: winningSide };
+    dualProjection = {
+      projectedWinningSide: winningSide,
+      // the score v1 writes in place of the call's: `handleTeamAutoCalc` builds it from the same projection
+      score: { scoreStringSide1, scoreStringSide2, sets: set ? [set] : [] },
+    };
   }
 
   return {

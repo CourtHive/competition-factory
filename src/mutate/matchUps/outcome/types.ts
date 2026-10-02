@@ -107,7 +107,7 @@ export type OutcomeView = {
     autoCalcDisabled: boolean;
   };
   /** a TEAM dual under `enableAutoCalc`: the winner its lines project */
-  dualProjection?: { projectedWinningSide?: number };
+  dualProjection?: { projectedWinningSide?: number; score?: OutcomeScore };
   /** § 5 rule 1: where direction sends a winner, and who is on each side now */
   targets: {
     winnerMatchUpId?: string;

@@ -17,6 +17,7 @@ import {
   MAIN,
 } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { TEAM } from '@Constants/eventConstants';
 import {
   BYE,
   CANCELLED,
@@ -400,6 +401,36 @@ export function authoredScenarios(): Authored[] {
         return claim(
           !!decider && decider.matchUpStatus === TO_BE_PLAYED && !decider.winningSide,
           'the decider is needed: TO_BE_PLAYED, no result',
+        );
+      },
+    });
+  }
+
+  // spec § 1 and § 3, TEAM auto-calc: a dual overridden by hand (`disableAutoCalc`, a winner its lines do not
+  // give) and then handed back to its lines (`enableAutoCalc`) takes the winner and score its lines project.
+  // No test exercised `enableAutoCalc` through setMatchUpStatus until this scenario.
+  {
+    const { tournamentRecord, matchUps } = generate(
+      { drawSize: 4, eventType: TEAM },
+      { requireParticipantsForScoring: false },
+    );
+    const dual = matchUps.find((m: any) => m.matchUpType === TEAM && m.roundNumber === 1 && m.roundPosition === 1);
+    const lines = (dual?.tieMatchUps ?? []).slice(0, 2);
+    out.push({
+      scenarioId: 'authored/outcome-pipeline/team-dual-auto-calc-restored',
+      ref: 'spec § 1 and § 3: enableAutoCalc hands a hand-set dual back to the result its lines project',
+      initialRecord: tournamentRecord,
+      directives: [
+        ...lines.map((line: any) => sms(line, win('6-1 6-1', 1))),
+        sms(dual, { ...win('6-0', 2) }, { disableAutoCalc: true }),
+        sms(dual, {}, { enableAutoCalc: true }),
+      ],
+      expected: [...lines.map(() => 'ok'), 'ok', 'ok'],
+      finalState: (record) => {
+        const stored = matchUpAt(record, MAIN, 1, 1);
+        return claim(
+          stored?.winningSide !== 2,
+          'the dual no longer holds the hand-set winner (side 2) its lines do not give',
         );
       },
     });

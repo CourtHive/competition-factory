@@ -10,7 +10,7 @@ import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
 
 // constants and types
-import type { BuildViewArgs, DirectionPlan, Refusal } from './types';
+import type { BuildViewArgs, DirectionPlan, OutcomeRequest, OutcomeView, Refusal } from './types';
 import { DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ResultType } from '@Types/factoryTypes';
@@ -40,9 +40,12 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};
 
   // S2b: the route and the write on this matchUp, planned BEFORE v1 runs, checked against it after
-  const route = refusal ? undefined : chooseRoute(args.request, view);
-  const plan = route ? planWrite(args.request, view, route) : undefined;
-  const direction = route ? planDirection(args.request, view, route) : undefined;
+  // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
+  // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
+  const planned = autoCalculated(args.request, view);
+  const route = refusal ? undefined : chooseRoute(planned, view);
+  const plan = route ? planWrite(planned, view, route) : undefined;
+  const direction = route ? planDirection(planned, view, route) : undefined;
 
   return {
     compare: (v1Result) => {
@@ -71,6 +74,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
           v2: `planned ${written.v2} on route ${route}`,
         });
       differentialTally(route, 'compared');
+      if (planned !== args.request) differentialTally('team-autocalc', 'compared');
 
       // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
       if (!direction) return differentialTally(`${route}:direction`, 'deferred');
@@ -250,6 +254,11 @@ function checkPropagatedBye({ args, route, bye }: CheckArgs & { bye: { structure
       'planned a propagated BYE there for the kept-out loser',
     );
   differentialTally(`${route}:loser-out-bye`, 'compared');
+}
+
+function autoCalculated(request: OutcomeRequest, view: OutcomeView): OutcomeRequest {
+  if (!view.isTeam || !request.flags.enableAutoCalc || !view.dualProjection) return request;
+  return { ...request, winningSide: view.dualProjection.projectedWinningSide, score: view.dualProjection.score };
 }
 
 function toResult(refusal: Refusal): ResultType {
