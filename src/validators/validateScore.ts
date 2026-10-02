@@ -8,7 +8,7 @@ import { isConvertableInteger } from '@Tools/math';
 import { unique } from '@Tools/arrays';
 
 // constants and types
-import { INVALID_SCORE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { INVALID_SCORE, INVALID_VALUES, MISSING_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 import { TIEBREAK_POINTS_NOT_RECORDED } from '@Constants/scoreWarningConstants';
 import type { Score } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
@@ -39,10 +39,60 @@ function setsDecidedByTiebreakWithoutPoints(sets: any[], matchUpFormat?: string)
     .filter((setNumber): setNumber is number => typeof setNumber === 'number');
 }
 
+const hasSetValues = (set: any) =>
+  [set?.side1Score, set?.side2Score, set?.side1TiebreakScore, set?.side2TiebreakScore].some(
+    (value) => value !== undefined && value !== null,
+  );
+
 function acceptedWithWarnings(sets: any[], matchUpFormat?: string): ResultType & { valid?: boolean } {
   const setNumbers = setsDecidedByTiebreakWithoutPoints(sets, matchUpFormat);
   if (!setNumbers.length) return { valid: true };
   return { valid: true, warnings: [{ code: TIEBREAK_POINTS_NOT_RECORDED, setNumbers }] };
+}
+
+/** The shape of one set: numeric pairs on both sides or neither, point scores in pairs, a side for a winner. */
+function checkSetValues(set: any): ResultType | undefined {
+  const {
+    side1Score,
+    side2Score,
+    side1TiebreakScore,
+    side2TiebreakScore,
+    side1PointScore,
+    side2PointScore,
+    winningSide,
+    setNumber,
+  } = set;
+
+  // ensure that if one side has a numeric value then both sides should have a numeric value
+  const numericValuePairs = [
+    [side1Score, side2Score],
+    [side1TiebreakScore, side2TiebreakScore],
+  ]
+    .filter((pair) => pair.some((value: any) => ![undefined, null].includes(value)))
+    .every((pair) => pair.every((numericValue) => isConvertableInteger(numericValue)));
+
+  if (!numericValuePairs) {
+    return { error: INVALID_VALUES, info: 'non-numeric values' };
+  }
+
+  // point scores can be numeric (points-based formats) or string (tennis game scores: "AD", "40")
+  const pointScorePair = [side1PointScore, side2PointScore];
+  const hasPointScore = pointScorePair.some((v: any) => v !== undefined && v !== null);
+  if (hasPointScore && !pointScorePair.every((v: any) => v !== undefined && v !== null)) {
+    return { error: INVALID_VALUES, info: 'both sides must have point scores if one does' };
+  }
+
+  const numericValues = [setNumber, winningSide]
+    .filter((value: any) => ![undefined, null].includes(value))
+    .every((numericValue) => isConvertableInteger(numericValue));
+
+  if (!numericValues) {
+    return { error: INVALID_VALUES, info: 'non-numeric values' };
+  }
+
+  if (winningSide != null && ![1, 2].includes(winningSide))
+    return { error: INVALID_VALUES, info: 'winningSide must be 1 or 2' };
+  return undefined;
 }
 
 export function validateScore({
@@ -66,46 +116,21 @@ export function validateScore({
       return { error: INVALID_VALUES, info: 'setNumbers not unique' };
 
     for (const set of sets) {
-      const {
-        side1Score,
-        side2Score,
-        side1TiebreakScore,
-        side2TiebreakScore,
-        side1PointScore,
-        side2PointScore,
-        winningSide,
-        setNumber,
-      } = set;
+      const setError = checkSetValues(set);
+      if (setError) return setError;
+    }
 
-      // ensure that if one side has a numeric value then both sides should have a numeric value
-      const numericValuePairs = [
-        [side1Score, side2Score],
-        [side1TiebreakScore, side2TiebreakScore],
-      ]
-        .filter((pair) => pair.some((value: any) => ![undefined, null].includes(value)))
-        .every((pair) => pair.every((numericValue) => isConvertableInteger(numericValue)));
-
-      if (!numericValuePairs) {
-        return { error: INVALID_VALUES, info: 'non-numeric values' };
-      }
-
-      // point scores can be numeric (points-based formats) or string (tennis game scores: "AD", "40")
-      const pointScorePair = [side1PointScore, side2PointScore];
-      const hasPointScore = pointScorePair.some((v: any) => v !== undefined && v !== null);
-      if (hasPointScore && !pointScorePair.every((v: any) => v !== undefined && v !== null)) {
-        return { error: INVALID_VALUES, info: 'both sides must have point scores if one does' };
-      }
-
-      const numericValues = [setNumber, winningSide]
-        .filter((value: any) => ![undefined, null].includes(value))
-        .every((numericValue) => isConvertableInteger(numericValue));
-
-      if (!numericValues) {
-        return { error: INVALID_VALUES, info: 'non-numeric values' };
-      }
-
-      if (winningSide != null && ![1, 2].includes(winningSide))
-        return { error: INVALID_VALUES, info: 'winningSide must be 1 or 2' };
+    // ── No format, no score (CA, 2026-10-02, ruling X1) ──
+    //
+    // Every check below is a question about the format: whether a set is finished, how many sets the
+    // match plays, where its tiebreak is. Without one each of them answered "valid", so a score recorded
+    // against no format was never checked at all. A write that means to record such a score — an import,
+    // a migration — passes `disableScoreValidation`, which skips this call.
+    if (!matchUpFormat && sets.some(hasSetValues)) {
+      return {
+        error: MISSING_MATCHUP_FORMAT,
+        info: 'a score cannot be validated without a matchUpFormat on the matchUp, its structure, draw or event',
+      };
     }
 
     const { valid: isValidScore } = analyzeScore({

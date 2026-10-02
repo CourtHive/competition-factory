@@ -16,6 +16,11 @@ import { LINEUPS } from '@Constants/extensionConstants';
 import { TEAM } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
+const STRAIGHT_SETS = [
+  { setNumber: 1, side1Score: 6, side2Score: 2, winningSide: 1 },
+  { setNumber: 2, side1Score: 6, side2Score: 1, winningSide: 1 },
+];
+
 const scenario = {
   drawType: COMPASS,
   singlesCount: 3,
@@ -53,7 +58,8 @@ it('can propagate and remove lineUps', () => {
     .forEach((dualMatchUp) => assignParticipants({ dualMatchUp }));
 
   const scoringOutcome: any = {
-    score: { sets: [{ side1Score: 2, side2Score: 1, winningSide: 1 }] },
+    // lines play SET3-S:6/TB7 (singles) or SET3-S:6NOAD/TB7-F:TB10 (doubles): a straight-sets win
+    score: { sets: STRAIGHT_SETS },
     winningSide,
   };
   const clearingOutcome = {
@@ -258,7 +264,8 @@ it('can propagate COMPASS lineUps properly', () => {
     .forEach((dualMatchUp) => assignParticipants({ dualMatchUp }));
 
   const outcome = {
-    score: { sets: [{ side1Score: 2, side2Score: 1, winningSide: 1 }] },
+    // lines play SET3-S:6/TB7 (singles) or SET3-S:6NOAD/TB7-F:TB10 (doubles): a straight-sets win
+    score: { sets: STRAIGHT_SETS },
     winningSide: 1,
   };
 
@@ -341,7 +348,8 @@ it('will attach lineUps on score entry', () => {
   }).matchUps;
 
   const outcome = {
-    score: { sets: [{ side1Score: 6, side2Score: 1, winningSide: 1 }] },
+    // tieMatchUps[0] is a best-of-three line: a straight-sets win, not one set
+    score: { sets: STRAIGHT_SETS },
     winningSide: 1,
   };
   for (const dualMatchUp of teamMatchUps) {

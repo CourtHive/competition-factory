@@ -50,6 +50,14 @@ test('changing scores after playoffs generated in team round robin with playoffs
     scoreString: '6-1 6-1',
     winningSide: 1,
   });
+  // DOMINANT_DUO plays its doubles as one eight-game set (SET1-S:8/TB7)
+  const doublesOutcome = (winningSide: number) =>
+    mocksEngine.generateOutcomeFromScoreString({
+      matchUpFormat: 'SET1-S:8/TB7',
+      matchUpStatus: COMPLETED,
+      scoreString: '8-1',
+      winningSide,
+    }).outcome;
 
   mainStageMatchUps.forEach((dualMatchUp) => {
     const singlesMatchUps = dualMatchUp.tieMatchUps.filter(({ matchUpType }) => matchUpType === SINGLES);
@@ -66,8 +74,8 @@ test('changing scores after playoffs generated in team round robin with playoffs
     doublesMatchUps.forEach((doublesMatchUp) => {
       const { matchUpId } = doublesMatchUp;
       const result = tournamentEngine.setMatchUpStatus({
+        outcome: doublesOutcome(1),
         matchUpId,
-        outcome,
         drawId,
       });
       expect(result.success).toEqual(true);
@@ -104,7 +112,7 @@ test('changing scores after playoffs generated in team round robin with playoffs
 
   result = tournamentEngine.setMatchUpStatus({
     matchUpId: doublesMatchUp.matchUpId,
-    outcome,
+    outcome: doublesOutcome(2),
     drawId,
   });
 

@@ -34,15 +34,18 @@ import { TEAM } from '@Constants/eventConstants';
  * the end state is route-independent rather than merely "not the corrupt shape".
  */
 
-const played = {
+// DOMINANT_DUO plays its doubles as one eight-game set (SET1-S:8/TB7) and its singles best of three
+const played = (line: any) => ({
   score: {
-    sets: [
-      { side1Score: 6, side2Score: 3, winningSide: 1 },
-      { side1Score: 6, side2Score: 3, winningSide: 1 },
-    ],
+    sets: line.matchUpFormat?.startsWith('SET1-S:8')
+      ? [{ side1Score: 8, side2Score: 3, winningSide: 1 }]
+      : [
+          { side1Score: 6, side2Score: 3, winningSide: 1 },
+          { side1Score: 6, side2Score: 3, winningSide: 1 },
+        ],
   },
   winningSide: 1,
-};
+});
 
 const all = (drawId: string): any[] => tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps ?? [];
 const dual = (drawId: string, roundNumber: number, roundPosition: number) =>
@@ -52,7 +55,7 @@ const teams = (matchUp: any) => (matchUp.sides ?? []).map((side: any) => side.pa
 function scoreLines(drawId: string, dualMatchUp: any, count: number) {
   const lines = all(drawId).filter((m) => m.matchUpTieId === dualMatchUp.matchUpId && !m.winningSide);
   for (const line of lines.slice(0, count)) {
-    const result: any = tournamentEngine.setMatchUpStatus({ matchUpId: line.matchUpId, drawId, outcome: played });
+    const result: any = tournamentEngine.setMatchUpStatus({ matchUpId: line.matchUpId, drawId, outcome: played(line) });
     expect(result.success).toEqual(true);
   }
 }
@@ -151,7 +154,7 @@ it('refuses a line of a double-walkover dual once its produced walkover has been
   expect(dual(drawId, 2, 1).matchUpStatus).toEqual(WALKOVER);
 
   const [line] = all(drawId).filter((m) => m.matchUpTieId === dual(drawId, 1, 2).matchUpId);
-  result = tournamentEngine.setMatchUpStatus({ matchUpId: line.matchUpId, drawId, outcome: played });
+  result = tournamentEngine.setMatchUpStatus({ matchUpId: line.matchUpId, drawId, outcome: played(line) });
   expect(result.error?.code).toEqual('ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME');
 
   // nothing was written: the dual, the walkover and the played final all stand

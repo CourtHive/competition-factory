@@ -7,6 +7,7 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
+import { DOUBLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
 import {
   CANNOT_MODIFY_TIEFORMAT,
@@ -16,6 +17,20 @@ import {
 } from '@Constants/errorConditionConstants';
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
+
+// COLLEGE_D3 plays its doubles as one eight-game pro set (SET1-S:8/TB7@7) and its singles best of three
+const lineOutcome = (tieMatchUp: any) => ({
+  winningSide: 1,
+  score: {
+    sets:
+      tieMatchUp.matchUpType === DOUBLES
+        ? [{ setNumber: 1, side1Score: 8, side2Score: 3, winningSide: 1 }]
+        : [
+            { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1 },
+            { setNumber: 2, side1Score: 6, side2Score: 4, winningSide: 1 },
+          ],
+  },
+});
 
 describe('updateTieFormat coverage', () => {
   it('returns MISSING_DRAW_DEFINITION when no target is provided', () => {
@@ -73,19 +88,9 @@ describe('updateTieFormat coverage', () => {
     const teamMatchUp = matchUps[0];
     const tieMatchUpId = teamMatchUp.tieMatchUps[0].matchUpId;
 
-    const outcome = {
-      winningSide: 1,
-      score: {
-        sets: [
-          { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1 },
-          { setNumber: 2, side1Score: 6, side2Score: 4, winningSide: 1 },
-        ],
-      },
-    };
-
     let result = tournamentEngine.setMatchUpStatus({
+      outcome: lineOutcome(teamMatchUp.tieMatchUps[0]),
       matchUpId: tieMatchUpId,
-      outcome,
       drawId,
     });
     expect(result.success).toEqual(true);
@@ -127,21 +132,12 @@ describe('updateTieFormat coverage', () => {
     }).matchUps;
 
     const teamMatchUp = matchUps[0];
-    const outcome = {
-      winningSide: 1,
-      score: {
-        sets: [
-          { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1 },
-          { setNumber: 2, side1Score: 6, side2Score: 4, winningSide: 1 },
-        ],
-      },
-    };
 
     // Score all tieMatchUps so none are TO_BE_PLAYED
     for (const tieMatchUp of teamMatchUp.tieMatchUps) {
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: tieMatchUp.matchUpId,
-        outcome,
+        outcome: lineOutcome(tieMatchUp),
         drawId,
       });
       expect(result.success).toEqual(true);
@@ -258,19 +254,9 @@ describe('updateTieFormat coverage', () => {
     const teamMatchUp = matchUps[0];
     const tieMatchUpId = teamMatchUp.tieMatchUps[0].matchUpId;
 
-    const outcome = {
-      winningSide: 1,
-      score: {
-        sets: [
-          { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1 },
-          { setNumber: 2, side1Score: 6, side2Score: 4, winningSide: 1 },
-        ],
-      },
-    };
-
     let result = tournamentEngine.setMatchUpStatus({
+      outcome: lineOutcome(teamMatchUp.tieMatchUps[0]),
       matchUpId: tieMatchUpId,
-      outcome,
       drawId,
     });
     expect(result.success).toEqual(true);
