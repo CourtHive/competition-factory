@@ -11,7 +11,7 @@ import { chooseRoute } from './route';
 
 // constants and types
 import type { BuildViewArgs, DirectionPlan, Refusal } from './types';
-import { DEAD_RUBBER } from '@Constants/matchUpStatusConstants';
+import { DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ResultType } from '@Types/factoryTypes';
 import {
@@ -54,6 +54,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
           v2: comparison.v2,
         });
       if (refusal || v1Result?.error) return differentialTally('refusal', refusal ? 'compared' : 'deferred');
+      checkNoExitBesideBye({ args, route: route ?? 'none' });
       if (!route || !plan || !args.drawDefinition) return differentialTally(route ?? 'none', 'deferred');
 
       const { matchUp } = findDrawMatchUp({
@@ -167,6 +168,42 @@ function checkProducedExit({
     );
   differentialTally(`${route}:produced-${expectedWinner ? 'awarded' : 'pending'}`, 'compared');
 }
+
+/**
+ * An invariant, asked after every accepted call (CA, 2026-10-02; fixed in v1 by #5118): an exit that
+ * meets a BYE leaves a BYE behind. No matchUp may end labelled WALKOVER or DEFAULTED with a BYE on one
+ * side and nobody on the other; the exit has always moved on from such a matchUp, and the label is a
+ * defect wherever it comes from. Checked across the whole draw, not only what this call planned.
+ */
+function checkNoExitBesideBye({ args, route }: CheckArgs) {
+  const matchUps =
+    getAllDrawMatchUps({
+      tournamentRecord: args.tournamentRecord,
+      drawDefinition: args.drawDefinition,
+      inContext: true,
+      event: args.event,
+    }).matchUps ?? [];
+  const offenders = matchUps.filter(
+    (m) =>
+      isExitLabel(m.matchUpStatus) &&
+      !!m.winnerMatchUpId &&
+      !m.collectionId &&
+      !!m.sides?.some((side) => side?.bye) &&
+      !m.sides?.some((side) => side?.participantId),
+  );
+  if (offenders.length)
+    diverge(
+      args,
+      `left ${offenders.map(describeHolder).join(', ')} beside a BYE`,
+      'no exit label beside a BYE with nobody in it (it should read BYE)',
+    );
+  differentialTally(`${route}:invariant-exit-beside-bye`, 'compared');
+}
+
+const isExitLabel = (status?: string) => status === WALKOVER || status === DEFAULTED;
+
+const describeHolder = (m: HydratedMatchUp) =>
+  [m.structureName, m.roundNumber, m.roundPosition].join('|') + ' ' + m.matchUpStatus;
 
 /** spec § 5 effect 5: the decider stands TO_BE_PLAYED when needed and a DEAD_RUBBER when not, with no result */
 function checkDecider({

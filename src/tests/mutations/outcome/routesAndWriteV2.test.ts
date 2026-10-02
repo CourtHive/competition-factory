@@ -51,6 +51,8 @@ it('every accepted authored step is planned, written as planned, and its winner 
   expect(compared('completed-to-double-exit')).toBeGreaterThan(0);
   // a final whose undefeated loser makes the decider needed (authored: decider-needed)
   expect(compared('winner:decider-needed')).toBeGreaterThan(0);
+  // the held-exit invariant is asked after every accepted call
+  expect(compared('winner:invariant-exit-beside-bye')).toBeGreaterThan(0);
   expect(compared('double-exit') + compared('noop')).toBeGreaterThan(0);
   // the swap (allowChangePropagation with a new winner): written in place, and both paths exchanged
   expect(compared('swap')).toBeGreaterThan(0);
