@@ -150,6 +150,19 @@ claim, and an engine that answers differently fails the test as a finding. A `?`
 rule the page leaves open; what the engine does is recorded and printed for the page's next
 revision.
 
+## The hash manifest (committed)
+
+```bash
+pnpm corpus:manifest          # regenerate corpus/MANIFEST.txt from the three reproducible sources
+pnpm verify:corpus-manifest   # the merge gate: fails when a hash moved and the manifest did not
+```
+
+The scenarios stay out of git; their hashes do not. `corpus/MANIFEST.txt` holds one line per
+authored, grammar and scoring scenario: id, step count, the hash after the last step. Those three
+sources reproduce bit for bit (the authored starting records are built on the corpus clock for
+exactly this). A behaviour change moves a hash, the gate names every scenario that moved, and the
+fix is either the engine or a deliberate regeneration committed with the change.
+
 ## Coverage, and what "100%" means (C3)
 
 ```bash

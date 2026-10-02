@@ -155,6 +155,11 @@ jobs:
       - name: verify:exit-tenant
         run: pnpm verify:exit-tenant
 
+      # the golden corpus hash manifest: a behaviour change moves a hash, and a moved hash needs
+      # a deliberate `pnpm corpus:manifest` in the same PR (CA, 2026-10-01)
+      - name: verify:corpus-manifest
+        run: pnpm verify:corpus-manifest
+
       # WIRED IN 2026-09-13, and the `fetch-depth: 0` above was already here FOR it — the checkout
       # comment names this gate by name. It was left out of CI because it read `(#PR)` from the
       # commit subject, which only exists after a squash-merge, so it could never pass on a PR
