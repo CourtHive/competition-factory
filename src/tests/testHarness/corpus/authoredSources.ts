@@ -15,6 +15,7 @@ import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import {
   BYE,
   CANCELLED,
+  DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
   IN_PROGRESS,
   RETIRED,
@@ -279,6 +280,38 @@ export function authoredScenarios(): Authored[] {
         const lowest = Math.min(...(fed?.drawPositions ?? []).filter(Boolean));
         const assignment = consolation?.positionAssignments?.find((a: any) => a.drawPosition === lowest);
         return claim(!!assignment?.bye, 'the fed position of consolation R2 P1 holds a BYE, not the kept-out loser');
+      },
+    });
+  }
+
+  // exit-propagation § convergence: two double exits feeding one matchUp make a double exit there,
+  // its flavour from both origins and no winner (defaults on both sides: DOUBLE_DEFAULT; else DOUBLE_WALKOVER)
+  {
+    const { tournamentRecord, at } = generate({ drawSize: 8 });
+    out.push({
+      scenarioId: 'authored/outcome-pipeline/double-exits-converge',
+      ref: 'exit-propagation § convergence: both defaults make a DOUBLE_DEFAULT, a mixture a DOUBLE_WALKOVER',
+      initialRecord: tournamentRecord,
+      directives: [
+        sms(at(MAIN, 1, 1), { matchUpStatus: DOUBLE_DEFAULT }),
+        sms(at(MAIN, 1, 2), { matchUpStatus: DOUBLE_DEFAULT }), // two defaults converge on R2 P1
+        sms(at(MAIN, 1, 3), { matchUpStatus: DOUBLE_DEFAULT }),
+        sms(at(MAIN, 1, 4), { matchUpStatus: DOUBLE_WALKOVER }), // a default and a walkover converge on R2 P2
+      ],
+      expected: ['ok', 'ok', 'ok', 'ok'],
+      finalState: (record) => {
+        const both = matchUpAt(record, MAIN, 2, 1);
+        const mixed = matchUpAt(record, MAIN, 2, 2);
+        return [
+          ...claim(
+            both?.matchUpStatus === DOUBLE_DEFAULT && !both?.winningSide,
+            'R2 P1 is a DOUBLE_DEFAULT with no winner',
+          ),
+          ...claim(
+            mixed?.matchUpStatus === DOUBLE_WALKOVER && !mixed?.winningSide,
+            'R2 P2 is a DOUBLE_WALKOVER with no winner',
+          ),
+        ];
       },
     });
   }

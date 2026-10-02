@@ -3,6 +3,7 @@
 authored/outcome-pipeline/bulk-update-refusals  3  sha256:131016335f36bc0143fb7bf945b70f7e7911b8f92f0479a33bf1bf2d7d205a7b
 authored/outcome-pipeline/clear-blocked-by-propagated-exit  6  sha256:ad36bf0510a739490624d24d799bc43b51026ae2476ea6acaeec4fb4a6044952
 authored/outcome-pipeline/double-exit-idempotent  2  sha256:fb5d8e180a2f893a777e50f337c5f5516a677afb53228069102f64b7dc95c57a
+authored/outcome-pipeline/double-exits-converge  4  sha256:4866c7bf60adde23c62775f2269ea4a74c3750296a7c8d99add4ed4c4d537aaa
 authored/outcome-pipeline/flags-policy-false-binds-a-true-call  1  sha256:542132c143aa85eeae19002b16bb2ebaa5ff51088fe4450cff5c0c9821a94fb3
 authored/outcome-pipeline/flags-policy-true-binds-a-false-call  1  sha256:4b3ed7ebca0046e71de184ba0e811441c736374a78bbdcdc438be0bdeafc275e
 authored/outcome-pipeline/flags-silent-policy-leaves-it-to-the-call  1  sha256:2058fac502b5d9179ce3c4d2ade5c4aa0b3af04478b7ecfb7fc1f4b21b20998f
