@@ -7,12 +7,14 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
-import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
+import { tiebreakPointsWarnings } from '@Validators/validateScore';
+import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
 
@@ -23,6 +25,7 @@ import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { SCHEDULE_PRESERVED_ON_EXIT } from '@Constants/scheduleConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { TEAM } from '@Constants/matchUpTypes';
 
 /**
  * Sets either matchUpStatus or score and winningSide; values to be set are passed in outcome object.
@@ -337,13 +340,28 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   if (!result.error) {
     const settled = settleDraw({ finalsBefore, params });
     if (settled.error) return decorateResult({ result: settled, stack });
-    const warnings = schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore });
+    const warnings = [
+      ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
+      ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
+    ];
     if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
   }
 
   v2.compare?.(result);
 
   return decorateResult({ result, stack });
+}
+
+/**
+ * A WARNING IN THE SUCCESS PAYLOAD: the score was recorded, and a set in it was decided by its tiebreak
+ * with no tiebreak points (`7-6` alone) — accepted because results feeds record it so often (CA,
+ * 2026-10-02, ruling V11). Read off the RECORDED matchUp in context, so the format is the one the score
+ * was validated against — a TEAM line's comes from its collection — and a dual's tally is never asked.
+ */
+function recordedScoreWarnings({ drawDefinition, matchUpId, event }: any): ResultWarning[] {
+  const { matchUp } = findDrawMatchUp({ drawDefinition, matchUpId, event, inContext: true });
+  if (!matchUp || matchUp.matchUpType === TEAM) return [];
+  return tiebreakPointsWarnings(matchUp.score?.sets, matchUp.matchUpFormat);
 }
 
 /**
