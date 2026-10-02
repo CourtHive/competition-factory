@@ -2,6 +2,7 @@ import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDive
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getOutcomePipeline } from '@Global/state/globalState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
 import { planDirection } from './direction';
 import { refuseOutcome } from './refusals';
@@ -86,6 +87,18 @@ export function decideOutcomeV2(args: BuildViewArgs): {
             v2: `planned the loser ${direction.loser.arrives ? 'into' : 'out of'} ${direction.loser.matchUpId}`,
           });
         differentialTally(`${route}:loser-${direction.loser.arrives ? 'in' : 'out'}`, 'compared');
+        const bye = direction.loser.bye;
+        if (bye) {
+          const { structure } = findStructure({ drawDefinition: args.drawDefinition, structureId: bye.structureId });
+          const held = !!structure?.positionAssignments?.find((a) => a.drawPosition === bye.drawPosition)?.bye;
+          if (!held)
+            throw new OutcomePipelineDivergence({
+              matchUpId: args.request.matchUpId,
+              v1: `no BYE at drawPosition ${bye.drawPosition} of ${bye.structureId}`,
+              v2: `planned a propagated BYE there for the kept-out loser`,
+            });
+          differentialTally(`${route}:loser-out-bye`, 'compared');
+        }
       }
       if (!direction.winner) return differentialTally(`${route}:direction`, 'compared');
       const { matchUps } = getAllDrawMatchUps({

@@ -24,7 +24,7 @@ it('every authored scenario writes, replays both ways, and the engine answers as
   outDir = process.env.CORPUS_OUT ?? fs.mkdtempSync(path.join(tmpdir(), 'corpus-authored-'));
   const { written, failed } = recordAuthored({ outDir });
   expect(failed).toEqual([]);
-  expect(written.length).toBeGreaterThanOrEqual(8);
+  expect(written.length).toBeGreaterThanOrEqual(9);
 
   const unpinned: string[] = [];
   for (const { scenario, expected, finalState } of written) {

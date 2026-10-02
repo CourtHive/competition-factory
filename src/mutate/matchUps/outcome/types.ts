@@ -120,6 +120,9 @@ export type OutcomeView = {
     loserLink?: { linkCondition?: string; targetRoundNumber?: number };
     /** the loserMatchUp's round in its own structure (an FMLC feed lands in round 2) */
     loserMatchUpRoundNumber?: number;
+    /** the loserMatchUp's structure and drawPositions: where a kept-out loser's BYE lands */
+    loserStructureId?: string;
+    loserMatchUpDrawPositions?: number[];
     /** wins each side's drawPosition holds in this structure, this matchUp left out */
     priorWins: { 1: number; 2: number };
   };
@@ -178,5 +181,11 @@ export type BuildViewArgs = {
 export type DirectionPlan = {
   winner?: { matchUpId: string; participantId: string };
   /** S2c: the loser stands in `matchUpId` (`arrives`), or must not (a first-match-loser feed with prior wins) */
-  loser?: { matchUpId: string; participantId: string; arrives: boolean };
+  loser?: {
+    matchUpId: string;
+    participantId: string;
+    arrives: boolean;
+    /** when the loser is kept out of an FMLC feed: the propagated BYE that takes their place */
+    bye?: { structureId: string; drawPosition: number };
+  };
 };
