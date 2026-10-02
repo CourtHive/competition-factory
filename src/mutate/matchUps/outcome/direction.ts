@@ -85,9 +85,11 @@ function carriedExit(request: OutcomeRequest, view: OutcomeView) {
   const propagating = flags.propagateRetirementAsExit ? [RETIRED, WALKOVER, DEFAULTED] : [WALKOVER, DEFAULTED];
   if (!propagating.includes(matchUpStatus as string)) return undefined;
   if (isDoubleExit(view.targets.loserMatchUpStatus)) return undefined; // a third arrival: not modelled
-  // a RELABEL, the winner unchanged (a COMPLETED result re-entered as a WALKOVER): v1 re-labels the result
-  // and carries nothing to a loser already directed; whether it should is open (Mentat TASKS, S2c)
-  if (isRelabel(request, view)) return undefined;
+  // a RELABEL, the winner unchanged (a COMPLETED result re-entered as a WALKOVER): the exit is carried to the
+  // loser already directed, except where their next matchUp has a result of its own (CA, 2026-10-02).
+  // Past a BYE the loser's next matchUp is the holder's onward one, which the view does not read: not planned
+  if (isRelabel(request, view) && (view.targets.loserMatchUpHasResult || view.targets.loserMatchUpStatus === BYE))
+    return undefined;
   // a final's winner and loser both go to its decider; whether the decider is played, and so what it
   // holds, is settled after the cascade (spec § 5 effect 5, `reconcileDeciders`), not by the carry
   if (view.targets.loserMatchUpId && view.targets.loserMatchUpId === view.targets.winnerMatchUpId) return undefined;
