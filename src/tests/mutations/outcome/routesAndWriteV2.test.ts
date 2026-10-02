@@ -36,6 +36,8 @@ it('every accepted authored step is planned, written as planned, and its winner 
   expect(compared('refusal')).toBeGreaterThan(0);
   expect(compared('winner')).toBeGreaterThan(0);
   expect(compared('winner:direction')).toBeGreaterThan(0);
+  // S2c: the loser's destination, from the same authored draws (FMLC feeds among them)
+  expect(compared('winner:loser-in')).toBeGreaterThan(0);
   expect(compared('double-exit') + compared('noop')).toBeGreaterThan(0);
   // the swap is S2c's: planned as deferred, never silently compared
   expect(tally.swap?.compared ?? 0).toEqual(0);

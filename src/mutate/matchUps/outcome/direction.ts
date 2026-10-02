@@ -1,6 +1,8 @@
 import { isExit } from '@Validators/isExit';
 
 // constants and types
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+
 import type { DirectionPlan, OutcomeRequest, OutcomeView, Route } from './types';
 
 /**
@@ -19,7 +21,23 @@ export function planDirection(request: OutcomeRequest, view: OutcomeView, route:
   if (winningSide !== 1 && winningSide !== 2) return undefined;
   const participantId = view.targets.sideParticipantIds[winningSide];
   const matchUpId = view.targets.winnerMatchUpId;
-  if (!matchUpId) return {};
-  if (!participantId) return isExit(request.matchUpStatus) ? {} : undefined;
-  return { winner: { matchUpId, participantId } };
+  const loser = planLoser(view, winningSide === 1 ? 2 : 1);
+  if (!matchUpId) return loser ? { loser } : {};
+  if (!participantId) return isExit(request.matchUpStatus) ? { ...(loser ? { loser } : {}) } : undefined;
+  return { winner: { matchUpId, participantId }, ...(loser ? { loser } : {}) };
+}
+
+/**
+ * S2c, the loser's half (§ 5 rule 1). A first-match-loser feed (the link's condition FIRST_MATCHUP,
+ * landing in the target's round 2) takes the loser only if this was their first match: no wins in
+ * the source structure besides this one. Every other loser link takes the loser. Planned only when
+ * the loser has a participant; what the target holds when they do not arrive (a BYE) is S2c's next.
+ */
+function planLoser(view: OutcomeView, loserSide: 1 | 2): DirectionPlan['loser'] {
+  const matchUpId = view.targets.loserMatchUpId;
+  const participantId = view.targets.sideParticipantIds[loserSide];
+  if (!matchUpId || !participantId || !view.targets.loserLink) return undefined;
+  const fedFMLC = view.targets.loserLink.linkCondition === FIRST_MATCHUP && view.targets.loserMatchUpRoundNumber === 2;
+  const arrives = fedFMLC ? view.targets.priorWins[loserSide] === 0 : true;
+  return { matchUpId, participantId, arrives };
 }

@@ -8,6 +8,7 @@ import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -61,6 +62,21 @@ function exitAwardable(
   return !!(assignment.participantId || assignment.qualifier);
 }
 
+/** the wins each side's drawPosition holds in this matchUp's structure, the matchUp itself left out */
+function priorWins(
+  inContextDrawMatchUps: HydratedMatchUp[],
+  inContextMatchUp?: HydratedMatchUp,
+): { 1: number; 2: number } {
+  const sourceMatchUps = inContextDrawMatchUps.filter(
+    (m) => m.structureId === inContextMatchUp?.structureId && m.matchUpId !== inContextMatchUp?.matchUpId,
+  );
+  const wins = (sideNumber: number) => {
+    const drawPosition = inContextMatchUp?.sides?.find((side) => side.sideNumber === sideNumber)?.drawPosition;
+    return drawPosition ? getDrawPositionWinCount({ sourceMatchUps, drawPosition }) : 0;
+  };
+  return { 1: wins(1), 2: wins(2) };
+}
+
 /** a lucky draw's round with an odd number of matchUps feeds nobody forward (`checkIsPreFeedRound`) */
 function luckyPreFeed(drawDefinition: DrawDefinition, matchUp: MatchUp, structure?: Structure): boolean {
   if (!isLuckyBasedDraw(drawDefinition?.drawType) || !matchUp.roundNumber || !structure?.matchUps) return false;
@@ -96,7 +112,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     activeDownstream: false,
     participants: { required: false, count: 0, exitAwardable: false, requireForScoring: true },
     draw: { isAdHoc: false, teamRoundRobin: false, includesBye: false, timedTie: false },
-    targets: { luckyPreFeed: false, sideParticipantIds: {} },
+    targets: { luckyPreFeed: false, sideParticipantIds: {}, sideDrawPositions: {}, priorWins: { 1: 0, 2: 0 } },
   };
   if (!drawDefinition || !request.matchUpId) return empty;
 
@@ -268,6 +284,18 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         1: inContextMatchUp?.sides?.find((side) => side.sideNumber === 1)?.participantId,
         2: inContextMatchUp?.sides?.find((side) => side.sideNumber === 2)?.participantId,
       },
+      sideDrawPositions: {
+        1: inContextMatchUp?.sides?.find((side) => side.sideNumber === 1)?.drawPosition,
+        2: inContextMatchUp?.sides?.find((side) => side.sideNumber === 2)?.drawPosition,
+      },
+      loserLink: targetData?.targetLinks?.loserTargetLink
+        ? {
+            linkCondition: targetData.targetLinks.loserTargetLink.linkCondition,
+            targetRoundNumber: targetData.targetLinks.loserTargetLink.target?.roundNumber,
+          }
+        : undefined,
+      loserMatchUpRoundNumber: targetData?.targetMatchUps?.loserMatchUp?.roundNumber,
+      priorWins: priorWins(inContextDrawMatchUps, inContextMatchUp),
     },
     draw: {
       isAdHoc: !!isAdHoc({ structure }),
