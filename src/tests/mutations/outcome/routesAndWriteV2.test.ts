@@ -43,6 +43,8 @@ it('every accepted authored step is planned, written as planned, and its winner 
   expect(compared('winner:loser-out-bye')).toEqual(compared('winner:loser-out'));
   // with propagation on, the loser carries the exit into the target, which the side opposite wins
   expect(compared('winner:loser-exit')).toBeGreaterThan(0);
+  // a double exit produces an exit in the matchUp it feeds, pending (no winner) until someone arrives
+  expect(compared('double-exit:produced-pending')).toBeGreaterThan(0);
   expect(compared('double-exit') + compared('noop')).toBeGreaterThan(0);
   // the swap is S2c's: planned as deferred, never silently compared
   expect(tally.swap?.compared ?? 0).toEqual(0);

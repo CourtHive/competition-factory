@@ -126,6 +126,22 @@ export type OutcomeView = {
     loserMatchUpStatus?: MatchUpStatusUnion;
     /** a side of the loserMatchUp already carries an exit in: a second one there makes a double exit */
     loserMatchUpCarriesExit: boolean;
+    /** the winnerMatchUp, for what a double exit produces there (S2c) */
+    winner?: {
+      structureId?: string;
+      roundNumber?: number;
+      roundPosition?: number;
+      matchUpStatus?: MatchUpStatusUnion;
+      carriesExit: boolean;
+    };
+    /** this matchUp's own place, and the matchUp counts of its round and the next, in its structure */
+    source: {
+      structureId?: string;
+      roundNumber?: number;
+      roundPosition?: number;
+      roundMatchUpCount: number;
+      nextRoundMatchUpCount: number;
+    };
     loserMatchUpDrawPositions?: number[];
     /** wins each side's drawPosition holds in this structure, this matchUp left out */
     priorWins: { 1: number; 2: number };
@@ -184,6 +200,9 @@ export type BuildViewArgs = {
 /** § 5 rule 1: what direction must have done once the route has written */
 export type DirectionPlan = {
   winner?: { matchUpId: string; participantId: string };
+  /** S2c: the exit a double exit produces in the matchUp it feeds, in its own structure; `winningSide` is
+   * the side it is awarded to once that side is occupied (pending, and unawarded, until then) */
+  produced?: { matchUpId: string; matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 };
   /** S2c: the loser stands in `matchUpId` (`arrives`), or must not (a first-match-loser feed with prior wins) */
   loser?: {
     matchUpId: string;

@@ -72,6 +72,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
       // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
       if (!direction) return differentialTally(`${route}:direction`, 'deferred');
+      if (direction.produced) checkProducedExit({ args, route, produced: direction.produced });
       if (direction.loser) checkLoser({ args, route, loser: direction.loser });
       if (direction.winner) checkWinner({ args, route, winner: direction.winner });
       differentialTally(`${route}:direction`, 'compared');
@@ -139,6 +140,27 @@ function checkCarriedExit({
       `planned ${exit} won by side ${expectedWinner}, the side opposite the loser`,
     );
   differentialTally(`${route}:loser-exit`, 'compared');
+}
+
+function checkProducedExit({
+  args,
+  route,
+  produced,
+}: CheckArgs & { produced: NonNullable<DirectionPlan['produced']> }) {
+  const target = standing(args, produced.matchUpId);
+  const opponent = target?.sides?.find((side) => side?.sideNumber === produced.winningSide);
+  // a BYE on the other side sends the produced exit on past it: the cascade's, not checked here
+  if (opponent?.bye) return differentialTally(`${route}:produced`, 'deferred');
+  // CA, 2026-09-20: a produced exit holds NO winningSide until the opponent arrives; the exception
+  // (2026-09-25) is an opponent already in place, whose side the winner is read off
+  const expectedWinner = opponent?.participantId ? produced.winningSide : undefined;
+  if (target?.matchUpStatus !== produced.matchUpStatus || target?.winningSide !== expectedWinner)
+    diverge(
+      args,
+      `${produced.matchUpId} is ${target?.matchUpStatus} won by side ${target?.winningSide}`,
+      `planned the produced ${produced.matchUpStatus} won by side ${expectedWinner ?? 'none (pending)'}`,
+    );
+  differentialTally(`${route}:produced-${expectedWinner ? 'awarded' : 'pending'}`, 'compared');
 }
 
 function checkPropagatedBye({ args, route, bye }: CheckArgs & { bye: { structureId: string; drawPosition: number } }) {
