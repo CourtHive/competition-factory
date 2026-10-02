@@ -63,8 +63,8 @@ it('can generate outcome for TB10 format [11-13]', () => {
   const { outcome } = generateOutcomeFromScoreString(values);
   expect(outcome.score.sets).toBeDefined();
   expect(outcome.score.sets.length).toEqual(1);
-  expect(outcome.score.sets[0].side1Score).toEqual(11);
-  expect(outcome.score.sets[0].side2Score).toEqual(13);
+  expect(outcome.score.sets[0].side1TiebreakScore).toEqual(11);
+  expect(outcome.score.sets[0].side2TiebreakScore).toEqual(13);
   expect(outcome.score.sets[0].winningSide).toEqual(2);
   expect(outcome.winningSide).toEqual(2);
   // matchUpStatus is only set if provided in params
@@ -77,8 +77,8 @@ it('can generate outcome for TB10 format [12-10]', () => {
     winningSide: 1,
   };
   const { outcome } = generateOutcomeFromScoreString(values);
-  expect(outcome.score.sets[0].side1Score).toEqual(12);
-  expect(outcome.score.sets[0].side2Score).toEqual(10);
+  expect(outcome.score.sets[0].side1TiebreakScore).toEqual(12);
+  expect(outcome.score.sets[0].side2TiebreakScore).toEqual(10);
   expect(outcome.score.sets[0].winningSide).toEqual(1);
   expect(outcome.winningSide).toEqual(1);
 });
@@ -90,8 +90,8 @@ it('can generate outcome for TB10 extended [33-35]', () => {
     winningSide: 2,
   };
   const { outcome } = generateOutcomeFromScoreString(values);
-  expect(outcome.score.sets[0].side1Score).toEqual(33);
-  expect(outcome.score.sets[0].side2Score).toEqual(35);
+  expect(outcome.score.sets[0].side1TiebreakScore).toEqual(33);
+  expect(outcome.score.sets[0].side2TiebreakScore).toEqual(35);
   expect(outcome.score.sets[0].winningSide).toEqual(2);
   expect(outcome.winningSide).toEqual(2);
 });
@@ -103,8 +103,8 @@ it('can generate outcome for TB7 format [7-9]', () => {
     winningSide: 2,
   };
   const { outcome } = generateOutcomeFromScoreString(values);
-  expect(outcome.score.sets[0].side1Score).toEqual(7);
-  expect(outcome.score.sets[0].side2Score).toEqual(9);
+  expect(outcome.score.sets[0].side1TiebreakScore).toEqual(7);
+  expect(outcome.score.sets[0].side2TiebreakScore).toEqual(9);
   expect(outcome.score.sets[0].winningSide).toEqual(2);
 });
 
@@ -115,8 +115,8 @@ it('can generate outcome for TB12 format [12-14]', () => {
     winningSide: 2,
   };
   const { outcome } = generateOutcomeFromScoreString(values);
-  expect(outcome.score.sets[0].side1Score).toEqual(12);
-  expect(outcome.score.sets[0].side2Score).toEqual(14);
+  expect(outcome.score.sets[0].side1TiebreakScore).toEqual(12);
+  expect(outcome.score.sets[0].side2TiebreakScore).toEqual(14);
   expect(outcome.score.sets[0].winningSide).toEqual(2);
 });
 
@@ -128,11 +128,11 @@ it('can generate outcome for best of 3 TB10 format', () => {
   };
   const { outcome } = generateOutcomeFromScoreString(values);
   expect(outcome.score.sets.length).toEqual(2);
-  expect(outcome.score.sets[0].side1Score).toEqual(11);
-  expect(outcome.score.sets[0].side2Score).toEqual(13);
+  expect(outcome.score.sets[0].side1TiebreakScore).toEqual(11);
+  expect(outcome.score.sets[0].side2TiebreakScore).toEqual(13);
   expect(outcome.score.sets[0].winningSide).toEqual(2);
-  expect(outcome.score.sets[1].side1Score).toEqual(10);
-  expect(outcome.score.sets[1].side2Score).toEqual(12);
+  expect(outcome.score.sets[1].side1TiebreakScore).toEqual(10);
+  expect(outcome.score.sets[1].side2TiebreakScore).toEqual(12);
   expect(outcome.score.sets[1].winningSide).toEqual(2);
   expect(outcome.winningSide).toEqual(2);
 });
@@ -144,8 +144,8 @@ it('can handle TB10 format without winningSide (should infer from score)', () =>
     // No winningSide provided - should infer from score
   };
   const { outcome } = generateOutcomeFromScoreString(values);
-  expect(outcome.score.sets[0].side1Score).toEqual(11);
-  expect(outcome.score.sets[0].side2Score).toEqual(13);
+  expect(outcome.score.sets[0].side1TiebreakScore).toEqual(11);
+  expect(outcome.score.sets[0].side2TiebreakScore).toEqual(13);
   // Factory should infer winningSide from score
   expect(outcome.score.sets[0].winningSide).toEqual(2);
   expect(outcome.winningSide).toEqual(2);
@@ -163,8 +163,8 @@ it('should handle invalid TB10 scores gracefully', () => {
   if (error) {
     expect(error).toBeDefined();
   } else if (outcome?.score?.sets?.[0]) {
-    expect(outcome.score.sets[0].side1Score).toEqual(3);
-    expect(outcome.score.sets[0].side2Score).toEqual(6);
+    expect(outcome.score.sets[0].side1TiebreakScore).toEqual(3);
+    expect(outcome.score.sets[0].side2TiebreakScore).toEqual(6);
   } else {
     // No outcome and no error - also acceptable
     expect(outcome).toBeDefined();

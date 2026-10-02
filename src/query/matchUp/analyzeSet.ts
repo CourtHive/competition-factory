@@ -1,5 +1,6 @@
 import { tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
 import { getSetWinningSide } from './getSetWinningSide';
+import { readTiebreakSet } from './tiebreakSetShape';
 
 // constants
 import {
@@ -24,21 +25,19 @@ export function analyzeSet(params) {
 
   const isValidSetNumber = !!(setNumber && maxSetNumber && setNumber <= maxSetNumber);
 
-  const scores = extractScores(setObject);
-  const { sideGameScores, sidePointScores, sideTiebreakScores } = scores;
+  // One reading of where the points are, whatever shape the set arrived in — see `tiebreakSetShape`
+  const scores = extractScores(setObject, setFormat);
+  const { sideGameScores, sidePointScores, sideTiebreakScores, isTiebreakSet } = scores;
   const sideGameScoresCount = sideGameScores.filter((sideScore) => sideScore !== undefined).length;
   const sidePointScoresCount = sidePointScores.filter((sideScore) => sideScore !== undefined).length;
   const sideTiebreakScoresCount = sideTiebreakScores.filter((tiebreakScore) => tiebreakScore !== undefined).length;
 
-  const gameScoresCount = sideGameScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length;
-  const tiebreakScoresCount = sideTiebreakScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length;
-
   const { tiebreakAt } = setFormat ?? {};
-  const hasTiebreakCondition = tiebreakAt && sideGameScores.filter((gameScore) => gameScore >= tiebreakAt).length === 2;
+  const hasTiebreakCondition =
+    tiebreakAt &&
+    sideGameScores.filter((gameScore) => typeof gameScore === 'number' && gameScore >= tiebreakAt).length === 2;
 
   const leadingSide = determineLeadingSide(hasTiebreakCondition, sideGameScores);
-
-  const isTiebreakSet = !!(tiebreakScoresCount && !gameScoresCount);
 
   const isCompletedSet = !!setObject?.winningSide;
   const { error: standardSetError, result: isValidStandardSetOutcome } = checkValidStandardSetOutcome({
@@ -112,11 +111,17 @@ export function analyzeSet(params) {
   return analysis;
 }
 
-function extractScores(setObject) {
+// A tiebreak-only set was "tiebreak scores and no game scores" here, which is ONE of the three shapes it
+// arrives in: the point engine and every hydrated read carry the 1-0 marker beside the points, and a
+// format-aware parse put the points in the game fields. Both were invalid sets to this analysis, and
+// `setMatchUpState`'s revert guard, which asks `analyzeMatchUp`, failed open on them (G3, 2026-10-02).
+function extractScores(setObject, setFormat) {
+  const { isTiebreakSet, sideGameScores, sideTiebreakScores } = readTiebreakSet(setObject, setFormat);
   return {
-    sideGameScores: [setObject?.side1Score, setObject?.side2Score],
     sidePointScores: [setObject?.side1PointScore, setObject?.side2PointScore],
-    sideTiebreakScores: [setObject?.side1TiebreakScore, setObject?.side2TiebreakScore],
+    sideTiebreakScores,
+    sideGameScores,
+    isTiebreakSet,
   };
 }
 

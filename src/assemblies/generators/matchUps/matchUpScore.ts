@@ -1,10 +1,18 @@
+import { formatForSet, withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
 import { generateScoreString } from './generateScoreString';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 export function matchUpScore(params) {
   const { matchUpFormat, matchUpStatus, winningSide, score, setTBlast } = params;
   if (!score) return { sets: [] };
 
-  const sets = score.sets ?? [];
+  // The write path canonicalises a tiebreak-only set: its points live in the tiebreak fields. A set that
+  // arrived with them in the game fields was stored that way, printed `[10-8]` here, and then hydrated to
+  // `1-0` with the points gone (G3, 2026-10-02). The format is parsed only when there are sets to read.
+  const parsedFormat = score.sets?.length && matchUpFormat ? parse(matchUpFormat) : undefined;
+  const sets = (score.sets ?? []).map((set) =>
+    withPointsInTiebreakFields(set, formatForSet(parsedFormat, set?.setNumber)),
+  );
 
   let scoreStringSide1 = generateScoreString({
     winnerFirst: false,
