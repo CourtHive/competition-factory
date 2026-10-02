@@ -1,4 +1,5 @@
 import { conditionallyDisableLinkPositioning } from './positionGovernor/conditionallyDisableLinkPositioning';
+import { carryEmptiedSeatsPastByes } from '@Mutate/matchUps/drawPositions/carryEmptiedSeatsPastByes';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { addPositionActionTelemetry } from './positionGovernor/addPositionActionTelemetry';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
@@ -94,6 +95,10 @@ export function removeDrawPositionAssignment(params): ResultType & { participant
     });
     if (result.error) return decorateResult({ result, stack });
   }
+
+  // P47: an emptied seat now facing a BYE is carried on as generation would carry it
+  const carried = carryEmptiedSeatsPastByes({ tournamentRecord, drawDefinition, event });
+  if (carried.error) return decorateResult({ result: carried, stack });
 
   const { structure } = findStructure({ drawDefinition, structureId });
   conditionallyDisableLinkPositioning({
