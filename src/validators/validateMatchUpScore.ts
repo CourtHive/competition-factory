@@ -9,7 +9,7 @@ import { getMaxSetScore } from '@Query/matchUp/getComplement';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
-import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
  * Helper functions to reduce cognitive complexity
@@ -453,8 +453,20 @@ export function validateMatchUpScore(
   const bestOfMatch = matchUpFormat?.match(/SET(\d+)/)?.[1];
   const bestOfSets = bestOfMatch ? Number.parseInt(bestOfMatch) : 3;
 
-  // Check if this is an irregular ending (allows incomplete scores)
-  const isIrregularEnding = [RETIRED, WALKOVER, DEFAULTED].includes(matchUpStatus || '');
+  // ── Only the LAST set may be unfinished ──
+  //
+  // An irregular ending allowed EVERY set to be unfinished, so `4-2 6-3 1-0` RETIRED was valid here
+  // while the engine — which since the completeness rule asks every set before the last to be finished —
+  // refuses it. Score-entry dialogs gate Submit on this function, so the operator saw a live button and
+  // then a refusal. Play only moves to the next set once the previous one ends, so the rule is the
+  // engine's: every set before the last is finished; the last may be open unless the match is COMPLETED.
+  //
+  // With NO status the old reading stands for the last set — open while it names no winner — because a
+  // dialog asks this as the operator types. A status other than COMPLETED (RETIRED, DEFAULTED,
+  // IN_PROGRESS, SUSPENDED …) leaves the last set open even when it names one: `parseScoreString` gives
+  // every set to the side ahead in it, so a typed `6-3 2-1` retirement arrives with set 2 "won".
+  const matchInProgress = matchUpStatus === undefined;
+  const lastSetMayBeOpen = !matchInProgress && matchUpStatus !== COMPLETED;
 
   // Validate each set against matchUpFormat
   for (let i = 0; i < sets.length; i++) {
@@ -462,13 +474,10 @@ export function validateMatchUpScore(
 
     // Check if this specific set is the deciding set (last possible set in the match)
     const isDecidingSet = i + 1 === bestOfSets;
+    const isLastSet = i === sets.length - 1;
 
-    // Allow incomplete scores when:
-    // 1. matchUpStatus is undefined AND set has no winningSide (in progress, not claiming completion)
-    // 2. matchUpStatus is an irregular ending (RETIRED, WALKOVER, DEFAULTED)
     const setHasWinner = set.winningSide !== undefined;
-    const matchInProgress = matchUpStatus === undefined;
-    const allowIncomplete = isIrregularEnding || (matchInProgress && !setHasWinner);
+    const allowIncomplete = isLastSet && (lastSetMayBeOpen || (matchInProgress && !setHasWinner));
 
     const setValidation = validateSetScore(set, matchUpFormat, isDecidingSet, allowIncomplete);
 

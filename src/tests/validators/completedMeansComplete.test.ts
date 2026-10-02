@@ -1,10 +1,12 @@
+import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
+import { parseScoreString } from '@Tools/parseScoreString';
 import { validateScore } from '@Validators/validateScore';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { COMPLETED, IN_PROGRESS, RETIRED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, IN_PROGRESS, RETIRED, SUSPENDED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { INVALID_SCORE } from '@Constants/errorConditionConstants';
 
 /**
@@ -285,5 +287,40 @@ describe('the opt-out, and where the rule has no opinion', () => {
     expect(
       validateScore({ score: { sets }, winningSide: 1, matchUpStatus: COMPLETED, matchUpFormat: FORMAT }).error,
     ).toEqual(INVALID_SCORE);
+  });
+});
+
+/**
+ * The public validator that score-entry dialogs gate Submit on gives the engine's answer.
+ *
+ * `validateMatchUpScore` let an irregular ending leave EVERY set unfinished, so the dialog TMX opens
+ * enabled Submit for `4-2 6-3 1-0` RETIRED and the engine then refused it. Sets here are built the way
+ * those dialogs build them — `parseScoreString`, which gives every set to the side ahead in it.
+ */
+describe('validateMatchUpScore agrees with the engine: only the last set may be open', () => {
+  const parsed = (scoreString: string) => parseScoreString({ scoreString, matchUpFormat: FORMAT });
+
+  it('RETIRED at 4-2 6-3 1-0 is invalid, naming set 1; RETIRED at 6-3 2-1 is valid', () => {
+    const refused = validateMatchUpScore(parsed('4-2 6-3 1-0'), FORMAT, RETIRED);
+    expect(refused.isValid).toBe(false);
+    expect(refused.error).toMatch(/^Set 1: /);
+    expect(validateMatchUpScore(parsed('6-3 2-1'), FORMAT, RETIRED).isValid).toBe(true);
+  });
+
+  it('IN_PROGRESS and SUSPENDED leave the last set open, and only the last', () => {
+    for (const status of [IN_PROGRESS, SUSPENDED]) {
+      expect(validateMatchUpScore(parsed('6-4 3-2'), FORMAT, status).isValid, status).toBe(true);
+      expect(validateMatchUpScore(parsed('4-2 3-2'), FORMAT, status).isValid, status).toBe(false);
+    }
+  });
+
+  it('COMPLETED leaves no set open; no status keeps a winnerless last set open as the operator types', () => {
+    expect(validateMatchUpScore(parsed('6-4 3-2'), FORMAT, COMPLETED).isValid).toBe(false);
+    expect(validateMatchUpScore(parsed('6-4 6-3'), FORMAT, COMPLETED).isValid).toBe(true);
+    const typing = [
+      { setNumber: 1, side1Score: 6, side2Score: 4, winningSide: 1 },
+      { setNumber: 2, side1Score: 3, side2Score: 2 },
+    ];
+    expect(validateMatchUpScore(typing, FORMAT).isValid).toBe(true);
   });
 });
