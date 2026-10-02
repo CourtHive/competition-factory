@@ -191,7 +191,10 @@ After the write, and only on success:
    loser is fed to; a double exit produces exits downstream. The rules are on
    [exit propagation](./exit-propagation.md) and are not repeated here. `progressExitStatus` iterates
    through up to **ten levels** of consolation (COMPASS feeds consolation into consolation); a
-   failsafe, not a limit anyone has reached.
+   failsafe, not a limit anyone has reached. A **relabel** carries nothing: a call that keeps the
+   winner the matchUp already has (a COMPLETED result re-entered as a WALKOVER) changes the status
+   alone, and the loser already directed keeps their next matchUp as it stands. Whether a relabel
+   should carry the exit is an open question (2026-10-02).
 3. **Round robin tally** is recomputed when the matchUp is in a group (`updateTallyIfNeeded`).
 4. **Stale exit origins are reconciled** once removals, directions and propagation have all settled:
    a carried exit whose origin no longer describes an exit is corrected.
