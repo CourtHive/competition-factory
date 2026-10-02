@@ -1,7 +1,7 @@
 import { isAnyExit, isExit } from '@Validators/isExit';
 
 // constants and types
-import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DEFAULTED, DOUBLE_DEFAULT, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 
 import type { DirectionPlan, OutcomeRequest, OutcomeView, Route } from './types';
@@ -15,6 +15,7 @@ import type { DirectionPlan, OutcomeRequest, OutcomeView, Route } from './types'
  * send). The loser's half is entangled with exit propagation and is planned with it (S2c).
  */
 export function planDirection(request: OutcomeRequest, view: OutcomeView, route: Route): DirectionPlan | undefined {
+  if (route === 'double-exit') return planProducedExit(request, view);
   if (route !== 'winner') return undefined;
   if (view.line || view.matchUpTieId || view.draw.isAdHoc || view.targets.luckyPreFeed) return undefined;
   if (view.isTeam && request.flags.enableAutoCalc) return undefined;
@@ -67,4 +68,38 @@ function carriedExit(request: OutcomeRequest, view: OutcomeView) {
   // holds, is settled after the cascade (spec § 5 effect 5, `reconcileDeciders`), not by the carry
   if (view.targets.loserMatchUpId && view.targets.loserMatchUpId === view.targets.winnerMatchUpId) return undefined;
   return isExit(matchUpStatus) && matchUpStatus !== RETIRED ? matchUpStatus : WALKOVER;
+}
+
+/**
+ * S2c (exit-propagation § "What a double exit produces downstream keeps its flavour"): in its own
+ * structure a double exit ALWAYS produces an exit in the matchUp it feeds (CA, 2026-09-27; the
+ * `doubleExitPropagateBye` policy governs only the connected structure). A DOUBLE_WALKOVER produces
+ * a WALKOVER, a DOUBLE_DEFAULT a DEFAULTED, awarded to the side the double exit does not feed: at once
+ * when that side is occupied, and otherwise when someone arrives there (CA, 2026-09-20 and 09-25).
+ *
+ * Which side it feeds is read from the structure, planned only where that is unambiguous: the next
+ * round in the same structure holds half as many matchUps (no feed round), so roundPosition n feeds
+ * side 1 when odd and side 2 when even. Deferred: a target already an exit or carrying one (a
+ * convergence, which makes a double exit), a decider, a dual's line.
+ */
+function planProducedExit(request: OutcomeRequest, view: OutcomeView): DirectionPlan | undefined {
+  const { winner, source, winnerMatchUpId } = view.targets;
+  if (!winner || !winnerMatchUpId || view.line || view.matchUpTieId || view.isTeam) return undefined;
+  if (isAnyExit(winner.matchUpStatus) || winner.carriesExit) return undefined;
+  if (winnerMatchUpId === view.targets.loserMatchUpId) return undefined;
+  const plainNextRound =
+    winner.structureId === source.structureId &&
+    !!source.roundNumber &&
+    winner.roundNumber === source.roundNumber + 1 &&
+    source.nextRoundMatchUpCount * 2 === source.roundMatchUpCount &&
+    winner.roundPosition === Math.ceil((source.roundPosition ?? 0) / 2);
+  if (!plainNextRound || !source.roundPosition) return undefined;
+  const fedSide = source.roundPosition % 2 === 1 ? 1 : 2;
+  return {
+    produced: {
+      matchUpId: winnerMatchUpId,
+      matchUpStatus: request.matchUpStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER,
+      winningSide: fedSide === 1 ? 2 : 1,
+    },
+  };
 }

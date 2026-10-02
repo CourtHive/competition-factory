@@ -63,6 +63,36 @@ function exitAwardable(
   return !!(assignment.participantId || assignment.qualifier);
 }
 
+function carriesExit(matchUp?: HydratedMatchUp): boolean {
+  return Object.values(getSideExitProvenance({ matchUp }) ?? {}).some((entry) => !!carriedExitStatus(entry));
+}
+
+function winnerTarget(winnerMatchUp?: HydratedMatchUp): OutcomeView['targets']['winner'] {
+  if (!winnerMatchUp) return undefined;
+  return {
+    structureId: winnerMatchUp.structureId,
+    roundNumber: winnerMatchUp.roundNumber,
+    roundPosition: winnerMatchUp.roundPosition,
+    matchUpStatus: winnerMatchUp.matchUpStatus,
+    carriesExit: carriesExit(winnerMatchUp),
+  };
+}
+
+/** this matchUp's round and position, and how many matchUps its round and the next hold in its structure */
+function sourcePlace(inContextDrawMatchUps: HydratedMatchUp[], inContextMatchUp?: HydratedMatchUp) {
+  const inStructure = inContextDrawMatchUps.filter(
+    (m) => m.structureId === inContextMatchUp?.structureId && !m.collectionId,
+  );
+  const round = inContextMatchUp?.roundNumber;
+  return {
+    structureId: inContextMatchUp?.structureId,
+    roundNumber: round,
+    roundPosition: inContextMatchUp?.roundPosition,
+    roundMatchUpCount: round ? inStructure.filter((m) => m.roundNumber === round).length : 0,
+    nextRoundMatchUpCount: round ? inStructure.filter((m) => m.roundNumber === round + 1).length : 0,
+  };
+}
+
 /** the wins each side's drawPosition holds in this matchUp's structure, the matchUp itself left out */
 function priorWins(
   inContextDrawMatchUps: HydratedMatchUp[],
@@ -119,6 +149,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       sideDrawPositions: {},
       priorWins: { 1: 0, 2: 0 },
       loserMatchUpCarriesExit: false,
+      source: { roundMatchUpCount: 0, nextRoundMatchUpCount: 0 },
     },
   };
   if (!drawDefinition || !request.matchUpId) return empty;
@@ -304,6 +335,8 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpRoundNumber: targetData?.targetMatchUps?.loserMatchUp?.roundNumber,
       loserStructureId: targetData?.targetMatchUps?.loserMatchUp?.structureId,
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
+      winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp),
+      source: sourcePlace(inContextDrawMatchUps, inContextMatchUp),
       loserMatchUpCarriesExit: Object.values(
         getSideExitProvenance({ matchUp: targetData?.targetMatchUps?.loserMatchUp }) ?? {},
       ).some((entry) => !!carriedExitStatus(entry)),

@@ -19,36 +19,52 @@ _path_ a participant took between structures rather than the _status_ that trave
 
 ## The pending propagated exit
 
-The shape most likely to surprise a consumer is a matchUp that is an exit, carries a `winningSide`,
-and has **no participant on that winning side**.
+Two pending shapes exist, and they differ in whether a `winningSide` is recorded before anyone arrives.
 
-That is not corruption. When a double exit occurs, the matchUp it feeds cannot yet be resolved: the
-opponent has not arrived from the earlier round. The engine records the outcome that is already
-known — the exit — and points `winningSide` at the still-empty slot that will receive whoever falls
-through. When that participant arrives, the exit resolves onto them automatically.
+**A carried exit.** With `propagateExitStatus` on, a `WALKOVER` or `DEFAULTED` follows the loser into
+the matchUp they are fed to. The exiting participant is present; their opponent may not be. The engine
+records the exit and points `winningSide` at the opponent's side, **even when that side is still
+empty**: the outcome is already known, and whoever arrives there wins it.
 
 ```js
-// A pending propagated exit
+// A carried exit, opponent not yet arrived
 {
   matchUpStatus: 'WALKOVER',
   winningSide: 1,                 // side 1 is an empty feed slot
   sides: [
     { sideNumber: 1 },            // no participantId yet
-    { sideNumber: 2, participantId: '...' },
+    { sideNumber: 2, participantId: '...' },  // the participant who carried the exit in
   ],
+}
+```
+
+**A produced exit.** A double exit sends nobody forward, so the matchUp it feeds receives a produced
+`WALKOVER` (or `DEFAULTED`) with **no `winningSide`** while the opponent has not arrived. The award is
+made when they do. CA, 2026-09-20: _"that is unnecessary if the winningSide will display the
+checkmark once a participant arrives... so, you don't need to keep it."_ The one exception is an
+opponent who is already in place: the winner is then read off their side at once, because no arrival
+is still coming to resolve it.
+
+```js
+// A produced exit, opponent not yet arrived
+{
+  matchUpStatus: 'WALKOVER',
+  winningSide: undefined,         // awarded when a participant arrives
+  sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
 }
 ```
 
 Two consequences worth knowing:
 
-- **A `winningSide` does not imply a winner is present.** Code that reads `winningSide` and
-  dereferences the participant on that side must tolerate its absence. `isActiveMatchUp` and
-  `isActiveDownstream` both distinguish a pending exit from a resolved one for this reason.
+- **A `winningSide` does not imply a winner is present**, and an exit does not imply a
+  `winningSide`. Code that reads `winningSide` and dereferences the participant on that side must
+  tolerate both. `isActiveMatchUp` and `isActiveDownstream` distinguish a pending exit from a resolved
+  one for this reason.
 - **The matchUp is not finished.** It is waiting, and it will change again without any further
   action from the caller.
 
-A _scored_ exit always has a participant on its winning side, so an exit whose winning side is
-unoccupied can only be a pending propagated one.
+Both shapes are measured by the outcome pipeline's differential mode on every exit the suite enters
+(`src/mutate/matchUps/outcome/`).
 
 ## `propagateExitStatus`
 
