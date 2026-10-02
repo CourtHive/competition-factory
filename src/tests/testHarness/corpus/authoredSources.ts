@@ -415,7 +415,8 @@ export function authoredScenarios(): Authored[] {
       { requireParticipantsForScoring: false },
     );
     const dual = matchUps.find((m: any) => m.matchUpType === TEAM && m.roundNumber === 1 && m.roundPosition === 1);
-    const lines = (dual?.tieMatchUps ?? []).slice(0, 2);
+    // every line won by side 1, so the projection decides the dual and its winner is directed onward
+    const lines = dual?.tieMatchUps ?? [];
     out.push({
       scenarioId: 'authored/outcome-pipeline/team-dual-auto-calc-restored',
       ref: 'spec § 1 and § 3: enableAutoCalc hands a hand-set dual back to the result its lines project',
@@ -429,8 +430,8 @@ export function authoredScenarios(): Authored[] {
       finalState: (record) => {
         const stored = matchUpAt(record, MAIN, 1, 1);
         return claim(
-          stored?.winningSide !== 2,
-          'the dual no longer holds the hand-set winner (side 2) its lines do not give',
+          stored?.winningSide === 1,
+          'the dual holds the winner its lines give (side 1), not the hand-set side 2',
         );
       },
     });

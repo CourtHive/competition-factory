@@ -46,6 +46,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const route = refusal ? undefined : chooseRoute(planned, view);
   const plan = route ? planWrite(planned, view, route) : undefined;
   const direction = route ? planDirection(planned, view, route) : undefined;
+  const dual = route ? planDual(args, view) : undefined;
 
   return {
     compare: (v1Result) => {
@@ -77,18 +78,57 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       if (planned !== args.request) differentialTally('team-autocalc', 'compared');
 
       // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
+      if (dual) checkDual({ args, route, dual });
       if (!direction) return differentialTally(`${route}:direction`, 'deferred');
-      if (direction.produced) checkProducedExit({ args, route, produced: direction.produced });
-      if (direction.converged) checkConverged({ args, route, ...direction.converged });
-      if (direction.decider) checkDecider({ args, route, ...direction.decider });
-      if (direction.loser) checkLoser({ args, route, loser: direction.loser });
-      if (direction.winner) checkWinner({ args, route, winner: direction.winner });
+      checkDirection({ args, route, direction });
       differentialTally(`${route}:direction`, 'compared');
+      if (planned !== args.request) differentialTally('team-autocalc:direction', 'compared');
     },
   };
 }
 
 type CheckArgs = { args: BuildViewArgs; route: string };
+type DualPlan = { matchUpId: string; winningSide: 1 | 2; direction?: DirectionPlan };
+
+/**
+ * A line whose projection decides its dual: v1 writes the projected winner onto the dual and directs
+ * it as any winner is directed. The dual's direction is planned from a view of the dual, before v1 runs.
+ * Not planned when the dual is overridden by hand (`disableAutoCalc`) or the projection decides nothing.
+ */
+function planDual(args: BuildViewArgs, view: OutcomeView): DualPlan | undefined {
+  const line = view.line;
+  const winningSide = line?.projectedWinningSide;
+  if (!line || line.autoCalcDisabled || (winningSide !== 1 && winningSide !== 2)) return undefined;
+  const request: OutcomeRequest = {
+    flags: { ...args.request.flags, enableAutoCalc: false },
+    matchUpId: line.dualMatchUpId,
+    winningSide,
+  };
+  const dualView = buildOutcomeView({ ...args, request });
+  return { matchUpId: line.dualMatchUpId, winningSide, direction: planDirection(request, dualView, 'winner') };
+}
+
+function checkDual({ args, route, dual }: CheckArgs & { dual: DualPlan }) {
+  const stored = standing(args, dual.matchUpId);
+  if (stored?.winningSide !== dual.winningSide)
+    diverge(
+      args,
+      `dual ${dual.matchUpId} winningSide ${stored?.winningSide}`,
+      `planned the dual's projected winningSide ${dual.winningSide}`,
+    );
+  differentialTally(`${route}:dual`, 'compared');
+  if (!dual.direction) return differentialTally(`${route}:dual-direction`, 'deferred');
+  checkDirection({ args, route: `${route}:dual`, direction: dual.direction });
+  differentialTally(`${route}:dual-direction`, 'compared');
+}
+
+function checkDirection({ args, route, direction }: CheckArgs & { direction: DirectionPlan }) {
+  if (direction.produced) checkProducedExit({ args, route, produced: direction.produced });
+  if (direction.converged) checkConverged({ args, route, ...direction.converged });
+  if (direction.decider) checkDecider({ args, route, ...direction.decider });
+  if (direction.loser) checkLoser({ args, route, loser: direction.loser });
+  if (direction.winner) checkWinner({ args, route, winner: direction.winner });
+}
 
 /** one matchUp of the draw as it stands after v1 ran, in context */
 function standing(args: BuildViewArgs, matchUpId: string) {
