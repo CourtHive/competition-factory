@@ -25,7 +25,11 @@ afterEach(() => {
 
 it('writes every grammar input as a scenario that validates, reads back and recomputes', () => {
   outDir = process.env.CORPUS_OUT ?? fs.mkdtempSync(path.join(tmpdir(), 'corpus-grammar-'));
-  const harvest = process.env.CORPUS_OUT ? path.dirname(process.env.CORPUS_OUT) : undefined;
+  // The harvest (every format the recorded corpus holds) is OPT-IN: it depends on whatever recording
+  // sits in `.corpus-out`, so the hash manifest built from this source moved with the contents of a
+  // worktree. `corpus:verify` asks for it; `corpus:grammar`, which the manifest gate runs, does not.
+  const harvest =
+    process.env.CORPUS_OUT && process.env.CORPUS_GRAMMAR_HARVEST ? path.dirname(process.env.CORPUS_OUT) : undefined;
   const inputs = grammarInputs(harvest);
   expect(inputs.length).toBeGreaterThanOrEqual(22 + EDGE_CODES.length - 6); // overlaps between the lists
   const scenarios = recordGrammar({ outDir, harvestDir: harvest });
