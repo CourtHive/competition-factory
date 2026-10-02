@@ -49,6 +49,8 @@ it('every accepted authored step is planned, written as planned, and its winner 
   expect(compared('double-exit:converged')).toBeGreaterThan(0);
   // a double exit over a completed result: the double default keeps the score, the double walkover blanks it
   expect(compared('completed-to-double-exit')).toBeGreaterThan(0);
+  // TEAM auto-calc: a dual handed back to its lines takes their projected winner and score (authored scenario)
+  expect(compared('team-autocalc')).toBeGreaterThan(0);
   // a final whose undefeated loser makes the decider needed (authored: decider-needed)
   expect(compared('winner:decider-needed')).toBeGreaterThan(0);
   // the held-exit invariant is asked after every accepted call

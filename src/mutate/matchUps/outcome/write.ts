@@ -108,7 +108,6 @@ function removalRemovesScore(request: OutcomeRequest, view: OutcomeView): boolea
 }
 
 export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Route): MatchUpWrite | undefined {
-  if (view.isTeam && request.flags.enableAutoCalc) return undefined; // auto-calc rewrites the request first
   const { matchUpStatus, winningSide, matchUpStatusCodes, score } = request;
   const asIs: WriteArgs = { matchUpStatus, winningSide, matchUpStatusCodes, score };
   switch (route) {
