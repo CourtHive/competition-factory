@@ -1,34 +1,15 @@
-import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isString } from '@Tools/objects';
 
-// Strip only timed-basis G suffix (T10G -> T10), not -G: section keys
-function normalizeTimedBasisG(s: string): string {
-  return s.replaceAll(/T(\d+)G(?=\/TB|@|-|$)/g, 'T$1');
-}
-
+/**
+ * Whether a matchUpFormat code is well-formed. `parse` refuses exactly what this refuses (CA, 2026-10-02),
+ * so this is that question asked of `parse` — see its comment for what well-formed means.
+ *
+ * This compared the code with a parse-then-stringify round trip, keeping a redundant `@N` only where a
+ * regex found one — and the regex knew only one-digit `@` and no `NOAD`, so `SET3-S:6NOAD/TB7@6`,
+ * `SET3-S:12/TB7@12` and three-digit tiebreaks were refused though well-formed (validator debate G3).
+ */
 export function isValidMatchUpFormat({ matchUpFormat }: { matchUpFormat: string }): boolean {
   if (!isString(matchUpFormat) || matchUpFormat === '') return false;
-  const parsedFormat = parse(matchUpFormat);
-
-  const setParts = /-S:(\d+)\/TB(\d{1,2})@?(\d?)/.exec(matchUpFormat);
-  const setsTo = setParts?.[1];
-  const tiebreakTo = setParts?.[2];
-  const tiebreakAt = setParts?.[3];
-
-  const finalSetParts = /-F:(\d+)\/TB(\d{1,2})@?(\d?)/.exec(matchUpFormat);
-  const finalSetTo = finalSetParts?.[1];
-  const finalSetTiebreakTo = finalSetParts?.[2];
-  const finalTiebreakAt = finalSetParts?.[3];
-
-  const preserveRedundant = !!(
-    (setParts && tiebreakTo && setsTo === tiebreakAt) ||
-    (finalSetParts && finalSetTiebreakTo && finalSetTo === finalTiebreakAt)
-  );
-
-  const stringified = stringify(parsedFormat, preserveRedundant);
-
-  // matchUpFormat is valid if parsing and then stringifying returns the original format
-  // normalizeTimedBasisG strips only timed-basis G suffix (e.g. T10G -> T10), not -G: section keys
-  return stringified === normalizeTimedBasisG(matchUpFormat);
+  return !!parse(matchUpFormat);
 }

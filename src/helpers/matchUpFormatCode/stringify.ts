@@ -48,6 +48,10 @@ function getSetFormat(matchUpFormatObject, preserveRedundant?: boolean) {
   const exactly = getNumber(matchUpFormatObject.exactly) || undefined;
   const setLimit = bestOfValue || exactly;
 
+  // Never emit a code `parse` refuses (validator debate G8): a SET match plays best of five at most, and
+  // `X` (exactly) is for timed sets. This emitted `SET7-S:6/TB7` and `SET3X-S:6/TB7`, neither parseable.
+  if (!emitsParseableSetCount(matchUpFormatObject, setLimit, exactly)) return undefined;
+
   if (matchUpFormatObject.setFormat?.timed && matchUpFormatObject.simplified && setLimit === 1) {
     return timedSetFormat(matchUpFormatObject.setFormat);
   }
@@ -69,7 +73,10 @@ function getSetFormat(matchUpFormatObject, preserveRedundant?: boolean) {
       `F:${finalSetCountValue}`) ||
     '';
 
-  const gameCode = matchUpFormatObject.gameFormat ? `G:${stringifyGameFormat(matchUpFormatObject.gameFormat)}` : '';
+  const gameFormatValue = matchUpFormatObject.gameFormat && stringifyGameFormat(matchUpFormatObject.gameFormat);
+  // a game format it cannot write is not written as `G:undefined` (validator debate G8)
+  if (matchUpFormatObject.gameFormat && !gameFormatValue) return undefined;
+  const gameCode = gameFormatValue ? `G:${gameFormatValue}` : '';
 
   const matchUpConstraintCode = matchUpFormatObject.matchUpConstraint?.timed
     ? `M:T${matchUpFormatObject.matchUpConstraint.minutes}`
@@ -81,6 +88,13 @@ function getSetFormat(matchUpFormatObject, preserveRedundant?: boolean) {
     return [setLimitCode, setCode, gameCode, finalSetCode, matchUpConstraintCode].filter(Boolean).join('-');
   }
   return undefined;
+}
+
+function emitsParseableSetCount(matchUpFormatObject, setLimit?: number, exactly?: number): boolean {
+  if ((matchUpFormatObject.matchRoot || SET) !== SET) return true;
+  const timed = matchUpFormatObject.setFormat?.timed || matchUpFormatObject.finalSetFormat?.timed;
+  if (exactly && exactly !== 1 && !timed) return false;
+  return !!((setLimit && setLimit < 6) || (timed && exactly));
 }
 
 function stringifySet(setObject, preserveRedundant) {
