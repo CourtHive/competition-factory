@@ -316,6 +316,44 @@ export function authoredScenarios(): Authored[] {
     });
   }
 
+  // CA, 2026-10-02: a double exit entered over a completed result. A DOUBLE_DEFAULT keeps the score (both
+  // players can be defaulted after the last ball, and the score records what was played); a
+  // DOUBLE_WALKOVER says the match was not played and blanks it. Neither has a winner.
+  {
+    const { tournamentRecord, at } = generate({ drawSize: 8 });
+    out.push({
+      scenarioId: 'authored/outcome-pipeline/double-exit-over-a-completed-result',
+      ref: 'CA 2026-10-02: a DOUBLE_DEFAULT keeps the played score, a DOUBLE_WALKOVER blanks it',
+      initialRecord: tournamentRecord,
+      directives: [
+        sms(at(MAIN, 1, 1), win('6-1 6-1', 1)),
+        sms(at(MAIN, 1, 1), { matchUpStatus: DOUBLE_DEFAULT }),
+        sms(at(MAIN, 1, 2), win('6-2 6-2', 1)),
+        sms(at(MAIN, 1, 2), { matchUpStatus: DOUBLE_WALKOVER }),
+      ],
+      expected: ['ok', 'ok', 'ok', 'ok'],
+      finalState: (record) => {
+        const defaulted = matchUpAt(record, MAIN, 1, 1);
+        const walkedOver = matchUpAt(record, MAIN, 1, 2);
+        return [
+          ...claim(
+            defaulted?.matchUpStatus === DOUBLE_DEFAULT && !defaulted?.winningSide,
+            'R1 P1 is a DOUBLE_DEFAULT with no winner',
+          ),
+          ...claim(defaulted?.score?.scoreStringSide1 === '6-1 6-1', 'R1 P1 keeps the score that was played'),
+          ...claim(
+            walkedOver?.matchUpStatus === DOUBLE_WALKOVER && !walkedOver?.winningSide,
+            'R1 P2 is a DOUBLE_WALKOVER with no winner',
+          ),
+          ...claim(
+            !walkedOver?.score?.scoreStringSide1 && !walkedOver?.score?.sets?.length,
+            'R1 P2 has its score blanked',
+          ),
+        ];
+      },
+    });
+  }
+
   // § 8 UNPINNED: bulkMatchUpStatusUpdate's two declared refusals
   {
     const { tournamentRecord, at } = generate({ drawSize: 4 });

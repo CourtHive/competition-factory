@@ -194,8 +194,6 @@ export type MatchUpWrite = {
   matchUpFormat?: string;
   matchUpStatusCodes?: MatchUpStatusCodeElement[];
   scoredTime: boolean;
-  /** the score's SHAPE is not predicted (only that it holds no result): see `completed-to-double-exit` */
-  scoreShapeOpen?: boolean;
 };
 
 export type BuildViewArgs = {
