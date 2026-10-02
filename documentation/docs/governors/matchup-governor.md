@@ -986,8 +986,9 @@ Score validation asks two questions of `score.sets`, under the matchUp's effecti
 Under `SET3-S:6/TB7` this refuses `3-7 6-4 6-4` (a 7-3 set does not exist with a tiebreak
 at six) and `4-2 2-6 2-6` (the first set never finished), both of which were previously
 recorded as `COMPLETED`. A refusal returns `INVALID_SCORE` with an `info` naming the set,
-e.g. `Set 1: …`, and the matchUp is left unchanged. A score with no resolvable
-`matchUpFormat` is not checked for completeness.
+e.g. `Set 1: …`, and the matchUp is left unchanged. A score with no resolvable `matchUpFormat` is refused with `ERR_MISSING_MATCHUP_FORMAT`
+(CA, 2026-10-02): every rule above is a question about the format. A TEAM line's format is its
+collection definition's, and is resolved from there.
 
 **To record a score the format cannot produce** — an import, a migration, a correction to
 history, an abandoned line — pass `disableScoreValidation: true`. It skips both questions.
