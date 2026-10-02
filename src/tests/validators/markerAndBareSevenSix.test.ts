@@ -1,6 +1,7 @@
 import { validateMatchUpScore, validateSetScore } from '@Validators/validateMatchUpScore';
 import { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
 import { repairScore } from '@Helpers/scoreRepair/repairScore';
+import { validateScore } from '@Validators/validateScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -108,6 +109,25 @@ describe('V11: a 7-6 with no tiebreak points is a finished set, accepted with a 
     });
     expect(result.success).toBe(true);
     expect(tournamentEngine.findMatchUp({ drawId, matchUpId }).matchUp.matchUpStatus).toEqual(COMPLETED);
+  });
+
+  it('validateScore accepts it and warns, naming each set that lacks points; a set with points is not named', () => {
+    const withPoints = {
+      setNumber: 2,
+      side1Score: 7,
+      side2Score: 6,
+      side1TiebreakScore: 7,
+      side2TiebreakScore: 4,
+      winningSide: 1,
+    };
+    const result: any = validateScore({
+      score: { sets: [bare(1), withPoints] },
+      matchUpStatus: COMPLETED,
+      matchUpFormat: FORMAT,
+      winningSide: 1,
+    });
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toEqual([{ code: TIEBREAK_POINTS_NOT_RECORDED, setNumbers: [1] }]);
   });
 
   it('live entry is still asked for the points: the completeness check does not call a bare 7-6 finished', () => {
