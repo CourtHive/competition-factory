@@ -10,14 +10,15 @@ import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
 
 // constants and types
+import type { BuildViewArgs, DirectionPlan, Refusal } from './types';
+import { DEAD_RUBBER } from '@Constants/matchUpStatusConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
+import type { ResultType } from '@Types/factoryTypes';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
-import type { BuildViewArgs, DirectionPlan, Refusal } from './types';
-import type { ResultType } from '@Types/factoryTypes';
-import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * The routing point. Under `v1` nothing is built and nothing is decided. Under `v2` a refusal is
@@ -74,6 +75,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       if (!direction) return differentialTally(`${route}:direction`, 'deferred');
       if (direction.produced) checkProducedExit({ args, route, produced: direction.produced });
       if (direction.converged) checkConverged({ args, route, ...direction.converged });
+      if (direction.decider) checkDecider({ args, route, ...direction.decider });
       if (direction.loser) checkLoser({ args, route, loser: direction.loser });
       if (direction.winner) checkWinner({ args, route, winner: direction.winner });
       differentialTally(`${route}:direction`, 'compared');
@@ -164,6 +166,23 @@ function checkProducedExit({
       `planned the produced ${produced.matchUpStatus} won by side ${expectedWinner ?? 'none (pending)'}`,
     );
   differentialTally(`${route}:produced-${expectedWinner ? 'awarded' : 'pending'}`, 'compared');
+}
+
+/** spec § 5 effect 5: the decider stands TO_BE_PLAYED when needed and a DEAD_RUBBER when not, with no result */
+function checkDecider({
+  args,
+  route,
+  matchUpId,
+  matchUpStatus,
+}: CheckArgs & { matchUpId: string; matchUpStatus: string }) {
+  const target = standing(args, matchUpId);
+  if (target?.matchUpStatus !== matchUpStatus || target?.winningSide)
+    diverge(
+      args,
+      `decider ${matchUpId} is ${target?.matchUpStatus} won by side ${target?.winningSide}`,
+      `planned the decider ${matchUpStatus} with no result`,
+    );
+  differentialTally(`${route}:decider-${matchUpStatus === DEAD_RUBBER ? 'dead' : 'needed'}`, 'compared');
 }
 
 /** exit-propagation § convergence: two exits on one matchUp make a double exit, with no winner */

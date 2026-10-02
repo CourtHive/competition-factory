@@ -102,6 +102,7 @@ function winnerTarget(winnerMatchUp?: HydratedMatchUp, sourceMatchUpId?: string)
     matchUpStatus: winnerMatchUp.matchUpStatus,
     carriesExit: carriesExit(winnerMatchUp),
     carriedStatuses: standingExits(winnerMatchUp, sourceMatchUpId),
+    holdsResult: !!winnerMatchUp.winningSide || !!winnerMatchUp.score?.sets?.length,
   };
 }
 
@@ -118,6 +119,27 @@ function sourcePlace(inContextDrawMatchUps: HydratedMatchUp[], inContextMatchUp?
     roundMatchUpCount: round ? inStructure.filter((m) => m.roundNumber === round).length : 0,
     nextRoundMatchUpCount: round ? inStructure.filter((m) => m.roundNumber === round + 1).length : 0,
   };
+}
+
+/** the losses each side's participant holds across the draw, this matchUp and `excludeMatchUpId` left out */
+function priorLosses(
+  inContextDrawMatchUps: HydratedMatchUp[],
+  inContextMatchUp?: HydratedMatchUp,
+  excludeMatchUpId?: string,
+): { 1: number; 2: number } {
+  const losses = (sideNumber: number) => {
+    const participantId = inContextMatchUp?.sides?.find((side) => side.sideNumber === sideNumber)?.participantId;
+    if (!participantId) return 0;
+    return inContextDrawMatchUps.filter(
+      (m) =>
+        m.matchUpId !== inContextMatchUp?.matchUpId &&
+        m.matchUpId !== excludeMatchUpId &&
+        !m.collectionId &&
+        !!m.winningSide &&
+        (m.sides ?? []).some((side) => side.participantId === participantId && side.sideNumber !== m.winningSide),
+    ).length;
+  };
+  return { 1: losses(1), 2: losses(2) };
 }
 
 /** the wins each side's drawPosition holds in this matchUp's structure, the matchUp itself left out */
@@ -175,6 +197,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       sideParticipantIds: {},
       sideDrawPositions: {},
       priorWins: { 1: 0, 2: 0 },
+      priorLosses: { 1: 0, 2: 0 },
       loserMatchUpCarriesExit: false,
       loserMatchUpCarriedStatuses: [],
       source: { roundMatchUpCount: 0, nextRoundMatchUpCount: 0 },
@@ -371,6 +394,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         (position): position is number => typeof position === 'number',
       ),
       priorWins: priorWins(inContextDrawMatchUps, inContextMatchUp),
+      priorLosses: priorLosses(
+        inContextDrawMatchUps,
+        inContextMatchUp,
+        targetData?.targetMatchUps?.winnerMatchUp?.matchUpId,
+      ),
     },
     draw: {
       isAdHoc: !!isAdHoc({ structure }),
