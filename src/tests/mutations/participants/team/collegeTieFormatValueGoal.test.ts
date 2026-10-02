@@ -41,8 +41,11 @@ function playDual({ tieFormat, side1Wins }: { tieFormat: any; side1Wins: number 
 
   for (const line of tie.tieMatchUps) {
     const winningSide = winners.has(line.matchUpId) ? 1 : 2;
+    // each line is scored in its collection's format: a one-set doubles line is 6-1, a singles line 6-1 6-1
+    const { matchUpFormat } = tieFormat.collectionDefinitions.find((c: any) => c.collectionId === line.collectionId);
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
-      scoreString: '6-1 6-1',
+      scoreString: matchUpFormat.startsWith('SET1') ? '6-1' : '6-1 6-1',
+      matchUpFormat,
       matchUpStatus: COMPLETED,
       winningSide,
     });

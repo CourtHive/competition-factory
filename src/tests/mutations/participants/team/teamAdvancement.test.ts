@@ -385,20 +385,11 @@ test('properly removes advanced team at 9-0 in USTA_GOLD', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  let outcome = {
-    winningSide: 1,
-    score: {
-      scoreStringSide1: '8-1',
-      scoreStringSide2: '1-8',
-      sets: [
-        {
-          setNumber: 1,
-          side1Score: 8,
-          side2Score: 1,
-          winningSide: 1,
-        },
-      ],
-    },
+  // USTA_GOLD_TEAM_CHALLENGE plays its singles SET3-S:6/TB7 and its doubles SET1-S:8/TB7@7
+  const lineOutcome = (matchUpId: string, winningSide: number) => {
+    const { matchUpFormat } = getMatchUp(matchUpId, true);
+    const scoreString = matchUpFormat.startsWith('SET1-S:8') ? '8-1' : '6-1 6-1';
+    return mocksEngine.generateOutcomeFromScoreString({ matchUpFormat, scoreString, winningSide }).outcome;
   };
 
   let { matchUps: firstRoundDualMatchUps } = tournamentEngine.allTournamentMatchUps({
@@ -413,8 +404,8 @@ test('properly removes advanced team at 9-0 in USTA_GOLD', () => {
     dualMatchUp.tieMatchUps.slice(0, 9).forEach((matchUp) => {
       const { matchUpId } = matchUp;
       const result = tournamentEngine.setMatchUpStatus({
+        outcome: lineOutcome(matchUpId, 1),
         matchUpId,
-        outcome,
         drawId,
       });
       expect(result.success).toEqual(true);
@@ -452,22 +443,7 @@ test('properly removes advanced team at 9-0 in USTA_GOLD', () => {
 
   const matchUpId = firstRoundDualMatchUps[0].tieMatchUps[0].matchUpId;
 
-  outcome = {
-    winningSide: 2,
-    score: {
-      scoreStringSide1: '1-8',
-      scoreStringSide2: '8-1',
-      sets: [
-        {
-          setNumber: 1,
-          side1Score: 1,
-          side2Score: 8,
-          winningSide: 2,
-        },
-      ],
-    },
-  };
-
+  const outcome = lineOutcome(matchUpId, 2);
   const result = tournamentEngine.setMatchUpStatus({
     matchUpId,
     outcome,
@@ -490,7 +466,8 @@ test('properly removes advanced team at 9-0 in USTA_GOLD', () => {
   expect(secondRoundFirst.drawPositions.filter(Boolean)).toEqual([3]);
 
   const changedMatchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
-  expect(changedMatchUp.score.scoreStringSide1).toEqual('1-8');
+  // tieMatchUps[0] is a Male Singles line (SET3-S:6/TB7), so its reversal is 1-6 1-6, not 1-8
+  expect(changedMatchUp.score.scoreStringSide1).toEqual('1-6 1-6');
 });
 
 test('properly removes lineUps when team drawPositions are swapped', () => {
@@ -794,18 +771,15 @@ it('can set score of TEAM matchUps', () => {
 
   const singlesMatchUps = targetMatchUp.tieMatchUps.filter(({ matchUpType }) => matchUpType === SINGLES);
 
+  // the default tieFormat plays its singles SET3-S:6/TB7
   const outcome = {
     winningSide: 1,
     score: {
-      scoreStringSide1: '2-1',
-      scoreStringSide2: '1-2',
+      scoreStringSide1: '6-2 6-1',
+      scoreStringSide2: '2-6 1-6',
       sets: [
-        {
-          setNumber: 1,
-          side1Score: 2,
-          side2Score: 1,
-          winningSide: 1,
-        },
+        { setNumber: 1, side1Score: 6, side2Score: 2, winningSide: 1 },
+        { setNumber: 2, side1Score: 6, side2Score: 1, winningSide: 1 },
       ],
     },
   };

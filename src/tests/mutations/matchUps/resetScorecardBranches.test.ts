@@ -280,21 +280,26 @@ describe('resetScorecard branch coverage', () => {
     });
     expect(firstRoundMatchUps.length).toEqual(2);
 
-    const outcome = {
+    // COLLEGE_D3 plays its doubles as one eight-game pro set (SET1-S:8/TB7@7), its singles best of three
+    const lineOutcome = ({ matchUpType }) => ({
       winningSide: 1,
       score: {
-        scoreStringSide1: '6-1',
-        scoreStringSide2: '1-6',
-        sets: [{ setNumber: 1, side1Score: 6, side2Score: 1, winningSide: 1 }],
+        sets:
+          matchUpType === DOUBLES
+            ? [{ setNumber: 1, side1Score: 8, side2Score: 1, winningSide: 1 }]
+            : [
+                { setNumber: 1, side1Score: 6, side2Score: 1, winningSide: 1 },
+                { setNumber: 2, side1Score: 6, side2Score: 1, winningSide: 1 },
+              ],
       },
-    };
+    });
 
     // Complete BOTH first-round team matchUps (5 wins each for COLLEGE_D3 valueGoal=5)
     for (const teamMatchUp of firstRoundMatchUps) {
       for (const tieMatchUp of teamMatchUp.tieMatchUps.slice(0, 5)) {
         const result = tournamentEngine.setMatchUpStatus({
           matchUpId: tieMatchUp.matchUpId,
-          outcome,
+          outcome: lineOutcome(tieMatchUp),
           drawId,
         });
         expect(result.success).toEqual(true);
@@ -310,7 +315,7 @@ describe('resetScorecard branch coverage', () => {
     for (const tieMatchUp of secondRoundMatchUps[0].tieMatchUps.slice(0, 5)) {
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: tieMatchUp.matchUpId,
-        outcome,
+        outcome: lineOutcome(tieMatchUp),
         drawId,
       });
       expect(result.success).toEqual(true);

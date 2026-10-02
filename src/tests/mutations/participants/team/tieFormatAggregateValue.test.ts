@@ -319,16 +319,17 @@ test.each(scenarios)(
   },
 );
 
+// the Mixed Doubles line plays SET1-S:8/TB7: one eight-game set, so 8-5 (7-5 is an unfinished set)
 // prettier-ignore
 const outcomeScenarios = [
   {
     expectation: { 
-      scores: ['7-5', '6-3 6-3', '2-6 2-6'],
+      scores: ['8-5', '6-3 6-3', '2-6 2-6'],
     },
     outcomes: [
       {
         score: {
-          sets: [ { setNumber: 1, side1Score: 7, side2Score: 5, winningSide: 1, }, ],
+          sets: [ { setNumber: 1, side1Score: 8, side2Score: 5, winningSide: 1, }, ],
         },
         winningSide: 1,
       },
@@ -353,14 +354,14 @@ const outcomeScenarios = [
   },
   {
     expectation: { 
-      scores: ['7-5', '6-3 3-6 [10-2]', '2-6 2-6'],
+      scores: ['8-5', '6-3 3-6 [10-2]', '2-6 2-6'],
     },
     winCriteria: { aggregateValue: true },
     outcomes: [
       {
         score: {
           sets: [
-            { setNumber: 1, side1Score: 7, side2Score: 5, winningSide: 1, },
+            { setNumber: 1, side1Score: 8, side2Score: 5, winningSide: 1, },
           ],
         },
         winningSide: 1,

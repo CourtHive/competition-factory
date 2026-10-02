@@ -20,6 +20,7 @@ import { BYE, RETIRED, COMPLETED, TO_BE_PLAYED, DEFAULTED, SUSPENDED } from '@Co
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
 import { EntryStatusUnion, StageTypeUnion } from '@Types/tournamentTypes';
+import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -395,6 +396,8 @@ it('can change a FMLC first round matchUp winner and update consolation', () => 
   });
   const { mainStructureId, consolationStructureId } = genResult;
   const { drawDefinition } = genResult;
+  // the hand-built draw carries no format; its scores are standard best-of-three sets
+  drawDefinition.matchUpFormat = FORMAT_STANDARD;
 
   let result, error, success;
   let matchUp, matchUpId, matchUpStatus, sides, score;

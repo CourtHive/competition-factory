@@ -44,6 +44,13 @@ test('groupValue can be used in tieFormats and lineUps can be applied after scor
     scoreString: '6-1 6-1',
     winningSide: 1,
   });
+  // USTA_BREWER_CUP plays its doubles as one eight-game set (SET1-S:8/TB7)
+  const { outcome: doublesOutcome } = mocksEngine.generateOutcomeFromScoreString({
+    matchUpFormat: 'SET1-S:8/TB7',
+    matchUpStatus: COMPLETED,
+    scoreString: '8-1',
+    winningSide: 1,
+  });
   const singlesMatchUpId = singlesMatchUps[0].matchUpId;
   let result = tournamentEngine.setMatchUpStatus({
     matchUpId: singlesMatchUpId,
@@ -60,7 +67,7 @@ test('groupValue can be used in tieFormats and lineUps can be applied after scor
   const doublesMatchUpId = doublesMatchUps[0].matchUpId;
   result = tournamentEngine.setMatchUpStatus({
     matchUpId: doublesMatchUpId,
-    outcome,
+    outcome: doublesOutcome,
     drawId,
   });
   expect(result.success).toEqual(true);
@@ -76,8 +83,8 @@ test('groupValue can be used in tieFormats and lineUps can be applied after scor
     .filter(({ roundNumber }) => roundNumber === 1)
     .forEach(({ matchUpId }) => {
       result = tournamentEngine.setMatchUpStatus({
+        outcome: doublesOutcome,
         matchUpId,
-        outcome,
         drawId,
       });
       expect(result.success).toEqual(true);

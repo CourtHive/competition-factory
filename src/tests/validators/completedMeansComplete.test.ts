@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { COMPLETED, IN_PROGRESS, RETIRED, SUSPENDED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { INVALID_SCORE } from '@Constants/errorConditionConstants';
+import { INVALID_SCORE, MISSING_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 
 /**
  * A COMPLETED score must be complete.
@@ -274,7 +274,7 @@ describe('the opt-out, and where the rule has no opinion', () => {
     expect(matchUp.matchUpStatus).toEqual(COMPLETED);
   });
 
-  it('a score with no format is not checked for completeness', () => {
+  it('a score with no format is refused; with the format it is INVALID_SCORE', () => {
     const sets = toSets(
       [
         [3, 7],
@@ -283,7 +283,10 @@ describe('the opt-out, and where the rule has no opinion', () => {
       ],
       [2, 1, 1],
     );
-    expect(validateScore({ score: { sets }, winningSide: 1, matchUpStatus: COMPLETED }).valid).toBe(true);
+    // ruling X1 (2026-10-02): no matchUpFormat, no score
+    expect(validateScore({ score: { sets }, winningSide: 1, matchUpStatus: COMPLETED }).error).toEqual(
+      MISSING_MATCHUP_FORMAT,
+    );
     expect(
       validateScore({ score: { sets }, winningSide: 1, matchUpStatus: COMPLETED, matchUpFormat: FORMAT }).error,
     ).toEqual(INVALID_SCORE);

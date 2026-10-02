@@ -401,6 +401,7 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
 // validateScore — string point score handling
 // ──────────────────────────────────────────────────────────────────────────────
 
+// ruling X1 (2026-10-02): no matchUpFormat, no score — each case below gives the format it is scored under
 describe('validateScore with point scores', () => {
   test('accepts string point scores without rejecting as non-numeric', () => {
     const score: Score = {
@@ -417,7 +418,7 @@ describe('validateScore with point scores', () => {
       ],
     };
 
-    const result = validateScore({ score });
+    const result = validateScore({ score, matchUpFormat: 'SET3-S:6/TB7' });
     expect(result.valid).toBe(true);
     expect(result.error).toBeUndefined();
   });
@@ -437,7 +438,7 @@ describe('validateScore with point scores', () => {
       ],
     };
 
-    const result = validateScore({ score });
+    const result = validateScore({ score, matchUpFormat: 'SET3-S:6/TB7' });
     expect(result.valid).toBe(true);
   });
 
@@ -491,7 +492,7 @@ describe('validateScore with point scores', () => {
       ],
     };
 
-    const result = validateScore({ score, winningSide: 1 });
+    const result = validateScore({ score, winningSide: 1, matchUpFormat: 'SET1-S:6/TB7' });
     expect(result.valid).toBe(true);
   });
 });

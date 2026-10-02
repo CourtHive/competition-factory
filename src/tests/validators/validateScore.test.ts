@@ -4,23 +4,25 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { it, test, expect } from 'vitest';
 
 // fixtures and types
+import { MISSING_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { Score } from '@Types/tournamentTypes';
 
+// ruling X1 (2026-10-02): no matchUpFormat, no score
 // prettier-ignore
 const scenarios = [
   { score: { sets: [], scoreStringSide1: '', scoreStringSide2: '' }, valid: true },
   { score: { sets: [], scoreStringSide1: {}, scoreStringSide2: '' }, valid: false },
   { score: { sets: [], scoreStringSide1: '', scoreStringSide2: {} }, valid: false },
   { score: { sets: '', scoreStringSide1: '', scoreStringSide2: '' }, valid: false },
-  { score: { sets: [{ side1Score: 5, side2Score: 4 }], scoreStringSide1: '5-4', scoreStringSide2: '4-5' }, valid: true },
-  { score: { sets: [{ side1Score: 4, side2Score: 5 }], scoreStringSide1: '4-5', scoreStringSide2: '5-4' }, valid: true },
-  { score: { sets: [{ side1Score: 9, side2Score: 5 }], scoreStringSide1: '9-5', scoreStringSide2: '5-9' }, valid: true },
+  { score: { sets: [{ side1Score: 5, side2Score: 4 }], scoreStringSide1: '5-4', scoreStringSide2: '4-5' }, valid: false, error: MISSING_MATCHUP_FORMAT },
+  { score: { sets: [{ side1Score: 4, side2Score: 5 }], scoreStringSide1: '4-5', scoreStringSide2: '5-4' }, valid: false, error: MISSING_MATCHUP_FORMAT },
+  { score: { sets: [{ side1Score: 9, side2Score: 5 }], scoreStringSide1: '9-5', scoreStringSide2: '5-9' }, valid: false, error: MISSING_MATCHUP_FORMAT },
   { score: { sets: [{ side1Score: 9, side2Score: 5 }], scoreStringSide1: '9-5', scoreStringSide2: '5-9' }, valid: false, matchUpFormat: FORMAT_STANDARD },
   { score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 2 }], scoreStringSide1: '', scoreStringSide2: '' }, valid: false },
   { score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1 }], scoreStringSide1: '', scoreStringSide2: '' }, valid: false },
   { score: { sets: [{ side1Score: 6, winningSide: 1 }], scoreStringSide1: '', scoreStringSide2: '' }, winningSide: 1, valid: false },
-  { score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1 }], scoreStringSide1: '', scoreStringSide2: '' }, winningSide: 1, valid: true },
+  { score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1 }], scoreStringSide1: '', scoreStringSide2: '' }, winningSide: 1, valid: true, matchUpFormat: 'SET1-S:6/TB7' },
   { score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1 }], scoreStringSide1: '', scoreStringSide2: '' }, winningSide: 2, valid: false },
 ];
 
@@ -36,6 +38,7 @@ test.each(scenarios)(
       expect(result.valid).toEqual(true);
     } else {
       expect(result.error).not.toBeUndefined();
+      if (scenario.error) expect(result.error).toEqual(scenario.error);
     }
   },
 );

@@ -17,15 +17,18 @@ import { TEAM } from '@Constants/eventConstants';
  * `teamMatrix.test.ts` keeps the surface executed; this file says WHICH rule each cell was failing.
  */
 
-const played = {
+// DOMINANT_DUO plays its doubles as one eight-game set (SET1-S:8/TB7) and its singles best of three
+const played = (line: any) => ({
   score: {
-    sets: [
-      { side1Score: 6, side2Score: 3, winningSide: 1 },
-      { side1Score: 6, side2Score: 3, winningSide: 1 },
-    ],
+    sets: line.matchUpFormat?.startsWith('SET1-S:8')
+      ? [{ side1Score: 8, side2Score: 3, winningSide: 1 }]
+      : [
+          { side1Score: 6, side2Score: 3, winningSide: 1 },
+          { side1Score: 6, side2Score: 3, winningSide: 1 },
+        ],
   },
   winningSide: 1,
-};
+});
 
 const all = (drawId: string): any[] => tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps ?? [];
 const dual = (drawId: string, structureName: string, roundNumber: number, roundPosition: number) =>
@@ -51,9 +54,13 @@ function generate(drawId: string, drawType: string, seed: number) {
   expect(lineUps.success).toEqual(true);
 }
 
-function scoreLines(drawId: string, dualMatchUp: any, count: number, outcome: any = played) {
+function scoreLines(drawId: string, dualMatchUp: any, count: number, outcome?: any) {
   for (const line of linesOf(drawId, dualMatchUp).slice(0, count)) {
-    const result: any = tournamentEngine.setMatchUpStatus({ matchUpId: line.matchUpId, drawId, outcome });
+    const result: any = tournamentEngine.setMatchUpStatus({
+      outcome: outcome ?? played(line),
+      matchUpId: line.matchUpId,
+      drawId,
+    });
     expect(result.success).toEqual(true);
   }
 }

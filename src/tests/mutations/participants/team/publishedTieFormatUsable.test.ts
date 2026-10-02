@@ -71,7 +71,8 @@ function scoreDual(drawId: string, side1Wins: number) {
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       winningSide: winners.has(line.matchUpId) ? 1 : 2,
       matchUpStatus: COMPLETED,
-      scoreString: '6-1 6-1',
+      // USTA_COLLEGE: doubles are one eight-game pro set (SET1-S:8/TB7@7), singles best of three
+      scoreString: line.matchUpType === DOUBLES ? '8-1' : '6-1 6-1',
     });
     tournamentEngine.setMatchUpStatus({ matchUpId: line.matchUpId, drawId, outcome });
   }
