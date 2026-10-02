@@ -73,6 +73,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
       if (!direction) return differentialTally(`${route}:direction`, 'deferred');
       if (direction.produced) checkProducedExit({ args, route, produced: direction.produced });
+      if (direction.converged) checkConverged({ args, route, ...direction.converged });
       if (direction.loser) checkLoser({ args, route, loser: direction.loser });
       if (direction.winner) checkWinner({ args, route, winner: direction.winner });
       differentialTally(`${route}:direction`, 'compared');
@@ -119,6 +120,8 @@ function checkLoser({ args, route, loser }: CheckArgs & { loser: NonNullable<Dir
     );
   differentialTally(`${route}:loser-${loser.arrives ? 'in' : 'out'}`, 'compared');
   if (loser.exit && present) checkCarriedExit({ args, route, exit: loser.exit, target, loserSide });
+  if (loser.converged && present)
+    checkConverged({ args, route, matchUpId: loser.matchUpId, matchUpStatus: loser.converged });
   if (loser.bye) checkPropagatedBye({ args, route, bye: loser.bye });
 }
 
@@ -161,6 +164,24 @@ function checkProducedExit({
       `planned the produced ${produced.matchUpStatus} won by side ${expectedWinner ?? 'none (pending)'}`,
     );
   differentialTally(`${route}:produced-${expectedWinner ? 'awarded' : 'pending'}`, 'compared');
+}
+
+/** exit-propagation § convergence: two exits on one matchUp make a double exit, with no winner */
+function checkConverged({
+  args,
+  route,
+  matchUpId,
+  matchUpStatus,
+}: CheckArgs & { matchUpId: string; matchUpStatus: string }) {
+  const target = standing(args, matchUpId);
+  if (target?.sides?.some((side) => side?.bye)) return differentialTally(`${route}:converged`, 'deferred');
+  if (target?.matchUpStatus !== matchUpStatus || target?.winningSide)
+    diverge(
+      args,
+      `${matchUpId} is ${target?.matchUpStatus} won by side ${target?.winningSide}`,
+      `planned the convergence ${matchUpStatus} with no winner`,
+    );
+  differentialTally(`${route}:converged`, 'compared');
 }
 
 function checkPropagatedBye({ args, route, bye }: CheckArgs & { bye: { structureId: string; drawPosition: number } }) {

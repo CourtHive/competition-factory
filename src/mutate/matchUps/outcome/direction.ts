@@ -1,10 +1,11 @@
-import { isAnyExit, isExit } from '@Validators/isExit';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
-import { DEFAULTED, DOUBLE_DEFAULT, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 
 import type { DirectionPlan, OutcomeRequest, OutcomeView, Route } from './types';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
 /**
  * The outcome pipeline, v2: direction (§ 5 rule 1), the winner's half.
@@ -46,8 +47,19 @@ function planLoser(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2)
   const structureId = view.targets.loserStructureId;
   const bye =
     !arrives && positions.length && structureId ? { structureId, drawPosition: Math.min(...positions) } : undefined;
-  const exit = arrives ? carriedExit(request, view) : undefined;
-  return { matchUpId, participantId, arrives, ...(bye ? { bye } : {}), ...(exit ? { exit } : {}) };
+  const carried = arrives ? carriedExit(request, view) : undefined;
+  // the carried exit meets one already there (its status, or carried in on the other side): they converge
+  const standing = view.targets.loserMatchUpCarriedStatuses; // this matchUp's own product excluded
+  const exit = carried && standing.length ? undefined : carried;
+  const converged = carried && standing.length ? convergence([carried, ...standing]) : undefined;
+  return {
+    matchUpId,
+    participantId,
+    arrives,
+    ...(bye ? { bye } : {}),
+    ...(exit ? { exit } : {}),
+    ...(converged ? { converged } : {}),
+  };
 }
 
 /**
@@ -61,13 +73,18 @@ function carriedExit(request: OutcomeRequest, view: OutcomeView) {
   if (!flags.propagateExitStatus || !matchUpStatus) return undefined;
   const propagating = flags.propagateRetirementAsExit ? [RETIRED, WALKOVER, DEFAULTED] : [WALKOVER, DEFAULTED];
   if (!propagating.includes(matchUpStatus as string)) return undefined;
-  // an exit already there, or already carried in on the other side, makes a double exit: the cascade's
-  // next piece (measured 2026-10-02: a carried WALKOVER on side 2 of a TO_BE_PLAYED target)
-  if (isAnyExit(view.targets.loserMatchUpStatus) || view.targets.loserMatchUpCarriesExit) return undefined;
+  if (isDoubleExit(view.targets.loserMatchUpStatus)) return undefined; // a third arrival: not modelled
   // a final's winner and loser both go to its decider; whether the decider is played, and so what it
   // holds, is settled after the cascade (spec § 5 effect 5, `reconcileDeciders`), not by the carry
   if (view.targets.loserMatchUpId && view.targets.loserMatchUpId === view.targets.winnerMatchUpId) return undefined;
   return isExit(matchUpStatus) && matchUpStatus !== RETIRED ? matchUpStatus : WALKOVER;
+}
+
+/** exit-propagation § convergence: both sides defaults make a DOUBLE_DEFAULT, anything else a DOUBLE_WALKOVER */
+export function convergence(statuses: string[]): MatchUpStatusUnion {
+  return statuses.every((status) => status === DEFAULTED || status === DOUBLE_DEFAULT)
+    ? DOUBLE_DEFAULT
+    : DOUBLE_WALKOVER;
 }
 
 /**
@@ -85,7 +102,7 @@ function carriedExit(request: OutcomeRequest, view: OutcomeView) {
 function planProducedExit(request: OutcomeRequest, view: OutcomeView): DirectionPlan | undefined {
   const { winner, source, winnerMatchUpId } = view.targets;
   if (!winner || !winnerMatchUpId || view.line || view.matchUpTieId || view.isTeam) return undefined;
-  if (isAnyExit(winner.matchUpStatus) || winner.carriesExit) return undefined;
+  if (isDoubleExit(winner.matchUpStatus)) return undefined; // a third arrival: not modelled
   if (winnerMatchUpId === view.targets.loserMatchUpId) return undefined;
   const plainNextRound =
     winner.structureId === source.structureId &&
@@ -95,11 +112,10 @@ function planProducedExit(request: OutcomeRequest, view: OutcomeView): Direction
     winner.roundPosition === Math.ceil((source.roundPosition ?? 0) / 2);
   if (!plainNextRound || !source.roundPosition) return undefined;
   const fedSide = source.roundPosition % 2 === 1 ? 1 : 2;
-  return {
-    produced: {
-      matchUpId: winnerMatchUpId,
-      matchUpStatus: request.matchUpStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER,
-      winningSide: fedSide === 1 ? 2 : 1,
-    },
-  };
+  const flavour = request.matchUpStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
+  // an exit already standing there, or carried in on the other side: the two converge
+  const standing = winner.carriedStatuses; // exits standing there, this matchUp's own product excluded
+  if (standing.length)
+    return { converged: { matchUpId: winnerMatchUpId, matchUpStatus: convergence([flavour, ...standing]) } };
+  return { produced: { matchUpId: winnerMatchUpId, matchUpStatus: flavour, winningSide: fedSide === 1 ? 2 : 1 } };
 }
