@@ -60,3 +60,27 @@ export function wonWithoutTiebreak(winnerScore: number, loserScore: number, form
 export function tiebreakSetCeiling(format: TiebreakAtFormat): number | undefined {
   return tiebreakSetGames(format)?.winner;
 }
+
+/**
+ * Whether a tiebreak has been WON, and legally: the winner reaches `tiebreakTo` by the margin, and goes
+ * past it only by exactly the margin — a tiebreak ends the moment the margin is reached, so `10-7` in a
+ * tiebreak to seven is unreachable. A no-ad tiebreak is won by one AT the target and never goes past it.
+ * The margin is capped at the target, so a `TB1` sudden-death point is won `1-0`.
+ *
+ * This is `validateMatchUpScore`'s rule. The analysis (`checkSetIsComplete`, `analyzeSet`) asked only
+ * "the target, by the margin", so `7-6(10-8)` under `TB7NOAD` and `7-6(10-7)` under `TB7` were complete,
+ * valid sets to it while both validators refused them (validator debate V7, re-measured 2026-10-02).
+ * With no target in the format, the lead alone decides — the previous behaviour.
+ */
+export function isTiebreakWon(
+  winnerPoints: number,
+  loserPoints: number,
+  tiebreak?: { tiebreakTo?: number; NoAD?: boolean },
+): boolean {
+  const { tiebreakTo, NoAD } = tiebreak ?? {};
+  if (typeof tiebreakTo !== 'number') return winnerPoints > loserPoints;
+  const margin = NoAD ? 1 : Math.min(2, tiebreakTo);
+  if (winnerPoints < tiebreakTo || winnerPoints - loserPoints < margin) return false;
+  if (winnerPoints === tiebreakTo) return true;
+  return !NoAD && winnerPoints - loserPoints === margin;
+}

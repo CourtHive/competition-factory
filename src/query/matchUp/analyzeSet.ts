@@ -1,4 +1,4 @@
-import { tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
+import { isTiebreakWon, tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
 import { getSetWinningSide } from './getSetWinningSide';
 import { readTiebreakSet } from './tiebreakSetShape';
 
@@ -315,13 +315,8 @@ function validateTiebreakCondition({
       };
     }
 
-    const minimumTiebreakWinMargin = tiebreakNoAD ? 1 : 2;
-    const tiebreakDifference = winningSideTiebreakScore - losingSideTiebreakScore;
-    const losingSideGameScoreAtTiebreakToThreshold = losingSideTiebreakScore >= tiebreakTo - 1;
-    const invalidTiebreakScore =
-      tiebreakDifference && losingSideGameScoreAtTiebreakToThreshold && tiebreakDifference < minimumTiebreakWinMargin;
-
-    if (invalidTiebreakScore) {
+    // Won by the margin, and never past the target by more than it — see `isTiebreakWon` (V7)
+    if (!isTiebreakWon(winningSideTiebreakScore, losingSideTiebreakScore, { tiebreakTo, NoAD: tiebreakNoAD })) {
       return {
         result: false,
         error: { message: 'invalid tiebreak scores (3)' },
@@ -398,13 +393,9 @@ function checkValidTiebreakSetOutcome({ setObject, setFormat, sideTiebreakScores
     };
   }
 
-  const minimumTiebreakWinMargin = NoAD ? 1 : 2;
-  const tiebreakDifference = winningSideTiebreakScore - losingSideTiebreakScore;
-  const losingSideGameScoreAtTiebreakToThreshold = losingSideTiebreakScore >= tiebreakTo - 1;
-  const invalidTiebreakScore =
-    tiebreakDifference && losingSideGameScoreAtTiebreakToThreshold && tiebreakDifference < minimumTiebreakWinMargin;
-
-  if (invalidTiebreakScore) {
+  // Won by the margin, and never past the target by more than it — see `isTiebreakWon` (V7). The margin
+  // is capped at the target, so a `TB1` decider's `1-0` is a won set here too.
+  if (!isTiebreakWon(winningSideTiebreakScore, losingSideTiebreakScore, { tiebreakTo, NoAD })) {
     return { result: false, error: { message: 'invalid tiebreak scores (3)' } };
   }
 

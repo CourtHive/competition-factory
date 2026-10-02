@@ -1,4 +1,5 @@
 import { validateSetScore } from '@Validators/validateMatchUpScore';
+import { setPlayedAfterDecision } from '@Validators/setCount';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
@@ -60,6 +61,10 @@ export function checkScoreCompleteness({ matchUpFormat, matchUpStatus, winningSi
     const { isValid, error } = validateSetScore(set, matchUpFormat, isDecidingSet, !mustBeFinished);
     if (!isValid) return { isComplete: false, info: `Set ${setNumber}: ${error}` };
   }
+
+  // No set after the one that decided a best-of match, and no more sets than it plays (X2)
+  const afterDecision = setPlayedAfterDecision(sets, matchUpFormat);
+  if (afterDecision) return { isComplete: false, info: afterDecision };
 
   return { isComplete: true };
 }
