@@ -1,5 +1,109 @@
 # Changelog
 
+## [7.4.0](https://github.com/CourtHive/competition-factory/compare/v7.3.1...v7.4.0) (2026-10-01)
+
+
+### Features
+
+* **codes:** publish tournament.schema.json at a package subpath ([#5056](https://github.com/CourtHive/competition-factory/issues/5056)) ([c68fadd](https://github.com/CourtHive/competition-factory/commit/c68fadda888ebbad04673babece1b6de3ba37153))
+
+
+### Bug Fixes
+
+* **codes:** the schema declares matchUp.schedule, the shape 5.0.0 made canonical ([#5052](https://github.com/CourtHive/competition-factory/issues/5052)) ([a29e613](https://github.com/CourtHive/competition-factory/commit/a29e613467b76ff032203b772a4fe091b60590a1))
+* **deps:** brace-expansion moves to 5.0.12 for two high advisories ([#5044](https://github.com/CourtHive/competition-factory/issues/5044)) ([1cc4823](https://github.com/CourtHive/competition-factory/commit/1cc482359218374831878b89c67b3349c24c2355))
+* **deps:** update tods-competition-factory to 7.3.1 in the documentation site ([#5041](https://github.com/CourtHive/competition-factory/issues/5041)) ([0571ff0](https://github.com/CourtHive/competition-factory/commit/0571ff0c7d2064d24ad5169891a254bb3ed33a17))
+* **draws:** a corrected final keeps the decider its double exit placed; a deep-correction oracle ([#5047](https://github.com/CourtHive/competition-factory/issues/5047)) ([f77192f](https://github.com/CourtHive/competition-factory/commit/f77192f6e7ecbc5cef22600d73a3c669c5dab41b))
+* **draws:** a seat advanced by its opponent's BYE keeps that advancement when its occupant leaves ([#5053](https://github.com/CourtHive/competition-factory/issues/5053)) ([990cea6](https://github.com/CourtHive/competition-factory/commit/990cea6eb74d6f80a9cf2b5c4932eb98aed95f53))
+* **draws:** clearing a second-round double exit in an FMLC withdraws the BYE it propagated ([#5051](https://github.com/CourtHive/competition-factory/issues/5051)) ([ce2e360](https://github.com/CourtHive/competition-factory/commit/ce2e360b0b2f850f54eae2986ba5912e25460371))
+* **draws:** two of the deep oracle's baseline shapes — a cross-link release and a seated-side arrival ([#5050](https://github.com/CourtHive/competition-factory/issues/5050)) ([5508771](https://github.com/CourtHive/competition-factory/commit/550877177b109a6369039c6d7034f6334141840d))
+* **scoring:** a side facing 5 can still reach 7, because 7-5 needs no tiebreak ([#5043](https://github.com/CourtHive/competition-factory/issues/5043)) ([1e0915e](https://github.com/CourtHive/competition-factory/commit/1e0915ef6cf6a2ade63f928d296828459a8024a8))
+* **scoring:** a tiebreak is won at its target, and the set winner must win it ([#5049](https://github.com/CourtHive/competition-factory/issues/5049)) ([c853fb2](https://github.com/CourtHive/competition-factory/commit/c853fb212ceca6f5bff35cfea725bb271ee718d8))
+* **team:** scoring a line of a double-walkover dual unwinds the double exit, or is refused ([#5054](https://github.com/CourtHive/competition-factory/issues/5054)) ([b5161e3](https://github.com/CourtHive/competition-factory/commit/b5161e3e8cdb1394170725968b8fc4d6282035eb))
+
+## [7.3.1](https://github.com/CourtHive/competition-factory/compare/v7.3.0...v7.3.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **draws:** reconcileDecider returns the error of the write it makes ([a3c4a1c](https://github.com/CourtHive/competition-factory/commit/a3c4a1c990caa1ec3071f93d952188ddc98c5bf3))
+* **matchUps:** setMatchUpStatus finds the draw from a drawId, as it says it does ([a3c4a1c](https://github.com/CourtHive/competition-factory/commit/a3c4a1c990caa1ec3071f93d952188ddc98c5bf3))
+* **matchUps:** setMatchUpStatus resolves a drawId, and the decider write returns its error ([#5038](https://github.com/CourtHive/competition-factory/issues/5038)) ([a3c4a1c](https://github.com/CourtHive/competition-factory/commit/a3c4a1c990caa1ec3071f93d952188ddc98c5bf3))
+
+## [7.3.0](https://github.com/CourtHive/competition-factory/compare/v7.2.0...v7.3.0) (2026-09-29)
+
+
+### Features
+
+* **integrity:** an origin recorded where none belongs is an error, not a reader's problem ([#5023](https://github.com/CourtHive/competition-factory/issues/5023)) ([4b97974](https://github.com/CourtHive/competition-factory/commit/4b97974f0ae5aae3c41777115a40c7f36c14f357))
+* **propagation:** a double exit produces a BYE for the seat its loser would have taken ([#5029](https://github.com/CourtHive/competition-factory/issues/5029)) ([d7f9f5c](https://github.com/CourtHive/competition-factory/commit/d7f9f5cf37ee4b11bca6abfbeabdf738aad426bc))
+* **propagation:** a reason code belongs to a side, or to the match — never to an index ([#5016](https://github.com/CourtHive/competition-factory/issues/5016)) ([9ff1818](https://github.com/CourtHive/competition-factory/commit/9ff1818851bfd83a94e3c01e6ad791b49fe1f6ef))
+* **scoring:** getMaxSetScore, so score-entry interfaces need not hand-roll it ([#5007](https://github.com/CourtHive/competition-factory/issues/5007)) ([0d1b3c8](https://github.com/CourtHive/competition-factory/commit/0d1b3c8af5ccc19d51dba15c1e44271d5c86ef97))
+* **scoring:** retainScoreForFormat — what survives a change of matchUpFormat ([#5026](https://github.com/CourtHive/competition-factory/issues/5026)) ([5f2faa8](https://github.com/CourtHive/competition-factory/commit/5f2faa85dd444f2dcfafe0cf4c75b7f1d73cdcfd))
+
+
+### Bug Fixes
+
+* **draws:** a decider is played only if it is needed, and is a DEAD_RUBBER when it is not ([#5024](https://github.com/CourtHive/competition-factory/issues/5024)) ([4e57198](https://github.com/CourtHive/competition-factory/commit/4e5719855f1075b7f556a9874bd5a67cba76dc76))
+* **draws:** a final decided by an arrival settles its decider too ([#5031](https://github.com/CourtHive/competition-factory/issues/5031)) ([9494e41](https://github.com/CourtHive/competition-factory/commit/9494e41e1062517a2660b4433e6799daf13ee758))
+* **integrity:** a matchUp that will never be played strands nobody, nor does what it feeds ([9494e41](https://github.com/CourtHive/competition-factory/commit/9494e41e1062517a2660b4433e6799daf13ee758))
+* **integrity:** an occupant who exited is not waiting for anybody ([#5035](https://github.com/CourtHive/competition-factory/issues/5035)) ([443439f](https://github.com/CourtHive/competition-factory/commit/443439f8441a6e3224130628077909b0b02e7030))
+* **propagation:** a BYE records no arrival by result ([#5028](https://github.com/CourtHive/competition-factory/issues/5028)) ([2a728c6](https://github.com/CourtHive/competition-factory/commit/2a728c67da8cd550d434e57d12e7f1b7e6d6436b))
+* **propagation:** a carried exit's origin is asked once, when the draw has settled ([#5018](https://github.com/CourtHive/competition-factory/issues/5018)) ([0b5464e](https://github.com/CourtHive/competition-factory/commit/0b5464e1f2b73aecf41982d279b4cd76c7cccd55))
+* **propagation:** a convergence hands on a pending exit, not a seat of its own ([#5020](https://github.com/CourtHive/competition-factory/issues/5020)) ([8708951](https://github.com/CourtHive/competition-factory/commit/870895152cd600adcc986349f2632bd8d3cd9797))
+* **propagation:** a convergence is the same draw whichever route reached it ([#5019](https://github.com/CourtHive/competition-factory/issues/5019)) ([f2a15fe](https://github.com/CourtHive/competition-factory/commit/f2a15fe6c27d735ee30a51aac9a2665f72d49e8d))
+* **propagation:** a participant arriving into a fed seat wins the pending exit there ([#5025](https://github.com/CourtHive/competition-factory/issues/5025)) ([f4482e1](https://github.com/CourtHive/competition-factory/commit/f4482e19334309df1805cc98f9be4e617a1c5f2b))
+* **propagation:** an exit held where nobody can play it is sent on ([#5034](https://github.com/CourtHive/competition-factory/issues/5034)) ([dfec59f](https://github.com/CourtHive/competition-factory/commit/dfec59f6ab0d58edae5d15c7350b180ca2457e8f))
+* **propagation:** an exit that was not recorded here does not travel on from here ([#5021](https://github.com/CourtHive/competition-factory/issues/5021)) ([fda6f74](https://github.com/CourtHive/competition-factory/commit/fda6f7413a86b288da2373fe754d37a3441848a5))
+* **propagation:** the convergence gate asks provenance, not the legacy array's length ([#5005](https://github.com/CourtHive/competition-factory/issues/5005)) ([e877e9b](https://github.com/CourtHive/competition-factory/commit/e877e9b5ba6cb9efd8db522589ece8321eecf06f))
+* **propagation:** the exit tenant leaves matchUpStatusCodes ([#5011](https://github.com/CourtHive/competition-factory/issues/5011)) ([7ccbb9b](https://github.com/CourtHive/competition-factory/commit/7ccbb9b07e541a767b09a4d2a74542b2b7ef378b))
+* **propagation:** the last legacy-array gate asks provenance, and 120 stale-entry cells close ([#5014](https://github.com/CourtHive/competition-factory/issues/5014)) ([71b6363](https://github.com/CourtHive/competition-factory/commit/71b636361cc69e60cdc5ee666e0d266cfd9a7c98))
+* **propagation:** two delivered exits are a double exit, reconciled after the merge ([#5012](https://github.com/CourtHive/competition-factory/issues/5012)) ([d367736](https://github.com/CourtHive/competition-factory/commit/d367736547c51e5c7e6aed286ec0bb1daa455302))
+* **scoring:** a format that plays every set can pass setsToWin, and still won ([#5022](https://github.com/CourtHive/competition-factory/issues/5022)) ([785eb1c](https://github.com/CourtHive/competition-factory/commit/785eb1c1c75dde984a8371fbd9cde7bec8f49e27))
+* **scoring:** an aggregate format is decided on points, not on sets won ([#5027](https://github.com/CourtHive/competition-factory/issues/5027)) ([db3dcf4](https://github.com/CourtHive/competition-factory/commit/db3dcf43f9c95716cc8ef5e8a17b134d1e93292c))
+* **scoring:** an unfinished set is held to the format ceiling, not to a slack of ten ([#5013](https://github.com/CourtHive/competition-factory/issues/5013)) ([5bacd2f](https://github.com/CourtHive/competition-factory/commit/5bacd2fcf17e0d89bb48705cdff48442e9a486df))
+* **scoring:** checkSetIsComplete ignored a declared win margin (WB1) ([#5008](https://github.com/CourtHive/competition-factory/issues/5008)) ([ac335d0](https://github.com/CourtHive/competition-factory/commit/ac335d0f2964948970ac0ef534638be40a6cd020))
+
+
+### Documentation
+
+* **migration:** trim §24 to what is true now, and drop vendor platform names ([#5015](https://github.com/CourtHive/competition-factory/issues/5015)) ([952ac86](https://github.com/CourtHive/competition-factory/commit/952ac861edeb504b7945853dab4e6cdeb8808a0b))
+* what 7.3.0 holds, and nothing it no longer does ([#5036](https://github.com/CourtHive/competition-factory/issues/5036)) ([fe43ffb](https://github.com/CourtHive/competition-factory/commit/fe43ffbe4bdd4010f0d80db9032d27d53ad7ea31))
+
+## [7.2.0](https://github.com/CourtHive/competition-factory/compare/v7.1.1...v7.2.0) (2026-09-27)
+
+
+### Features
+
+* **integrity:** valid means no ERROR, so the stalled-position detector can ship ([#4990](https://github.com/CourtHive/competition-factory/issues/4990)) ([6c3625b](https://github.com/CourtHive/competition-factory/commit/6c3625b9e422986ae144cad5345abfd7b6c34c2c))
+
+
+### Bug Fixes
+
+* **propagation:** a BYE keeps its claim ledger through a score write ([#5001](https://github.com/CourtHive/competition-factory/issues/5001)) ([14fdbc1](https://github.com/CourtHive/competition-factory/commit/14fdbc1546ff19c46ece42bb64f407162bb8cfa9))
+* **propagation:** a carried exit's side comes from its feeder, not from a drawPosition ([#4988](https://github.com/CourtHive/competition-factory/issues/4988)) ([242050d](https://github.com/CourtHive/competition-factory/commit/242050df5f99a3c802c9b0f066f108aaaf561a09))
+* **propagation:** a derived downstream result must not block its own unwind ([#4987](https://github.com/CourtHive/competition-factory/issues/4987)) ([24b3e33](https://github.com/CourtHive/competition-factory/commit/24b3e33901b9b54293d5ca207a43e910ea248271))
+* **propagation:** a pending BYE feeder is not a dead one, so the exit carries ([#4983](https://github.com/CourtHive/competition-factory/issues/4983)) ([474fd39](https://github.com/CourtHive/competition-factory/commit/474fd3921e57be3e0cff9837046fe2a8d2c616c1))
+* **propagation:** a seat fed by a produced exit can never fill, so it resolves as a BYE ([#4991](https://github.com/CourtHive/competition-factory/issues/4991)) ([7a70d58](https://github.com/CourtHive/competition-factory/commit/7a70d58d0d29aed43ec3bfe851063d634da588dd))
+* **propagation:** restore the BYE refusal that [#4988](https://github.com/CourtHive/competition-factory/issues/4988) removed — a BYE is never awarded ([#4994](https://github.com/CourtHive/competition-factory/issues/4994)) ([111845c](https://github.com/CourtHive/competition-factory/commit/111845c416fac966aa4b7ba9b80ad59fd16dbf67))
+* **propagation:** the exit carries when the opponent is already there ([#4985](https://github.com/CourtHive/competition-factory/issues/4985)) ([41e2f55](https://github.com/CourtHive/competition-factory/commit/41e2f5501ce0914eda99dc8cac01db42fa34818a))
+* **propagation:** the placement path stops reading a carried exit out of matchUpStatusCodes ([#4996](https://github.com/CourtHive/competition-factory/issues/4996)) ([00ccb5d](https://github.com/CourtHive/competition-factory/commit/00ccb5d47b2cceeca84f3bb583c12d7170a94903))
+* **reset:** a reset takes the exit record with it, off BYE matchUps too ([#4984](https://github.com/CourtHive/competition-factory/issues/4984)) ([6b41adf](https://github.com/CourtHive/competition-factory/commit/6b41adfa6bcb8d90b43416397d2e2d6908536bde))
+* **scheduling:** getMatchUpReadiness charged recovery for a LATER matchUp ([#4993](https://github.com/CourtHive/competition-factory/issues/4993)) ([4adfe94](https://github.com/CourtHive/competition-factory/commit/4adfe94f4cf165849052143cc2682d70b8401976))
+
+## [7.1.1](https://github.com/CourtHive/competition-factory/compare/v7.1.0...v7.1.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* **docs:** take the image-size bump instead of waiving two HIGH advisories ([#4981](https://github.com/CourtHive/competition-factory/issues/4981)) ([94c20ea](https://github.com/CourtHive/competition-factory/commit/94c20ea08c36f13b06b5e451e36e2d78bc176ae3))
+* **scheduling:** a court closed for maintenance stops taking matchUps ([#4977](https://github.com/CourtHive/competition-factory/issues/4977)) ([fe8d4c2](https://github.com/CourtHive/competition-factory/commit/fe8d4c2b38b72a4c0628f7f7cc0c335de000984b))
+
+
+### Documentation
+
+* **seeding:** where the seeding basis actually surfaces ([#4975](https://github.com/CourtHive/competition-factory/issues/4975)) ([c9c3361](https://github.com/CourtHive/competition-factory/commit/c9c336154019c5da6f2d8033a4595beb0f0f31e7))
+
 ## [7.1.0](https://github.com/CourtHive/competition-factory/compare/v7.0.0...v7.1.0) (2026-09-24)
 
 
