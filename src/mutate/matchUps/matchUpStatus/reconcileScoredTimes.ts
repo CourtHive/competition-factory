@@ -41,10 +41,10 @@ export function reconcileScoredTimes({
 }: {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
-  matchUps?: MatchUp[];
+  matchUps: MatchUp[];
   event?: Event;
 }): void {
-  for (const matchUp of matchUps ?? []) {
+  for (const matchUp of matchUps) {
     if (!matchUp?.schedule?.scoredTime || matchUpIsScored(matchUp)) continue;
     delete matchUp.schedule.scoredTime;
     modifyMatchUpNotice({
