@@ -21,7 +21,7 @@ import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { isExit } from '@Validators/isExit';
+import { isAnyExit, isExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -159,6 +159,17 @@ function priorWins(
 }
 
 /** a lucky draw's round with an odd number of matchUps feeds nobody forward (`checkIsPreFeedRound`) */
+/** a result of its own: what a relabel's carry may not overwrite (CA, 2026-10-02) */
+function hasResult(matchUp?: HydratedMatchUp): boolean {
+  if (!matchUp) return false;
+  return (
+    !!checkScoreHasValue({ score: matchUp.score }) ||
+    !!matchUp.winningSide ||
+    matchUp.matchUpStatus === COMPLETED ||
+    isAnyExit(matchUp.matchUpStatus)
+  );
+}
+
 function luckyPreFeed(drawDefinition: DrawDefinition, matchUp: MatchUp, structure?: Structure): boolean {
   if (!isLuckyBasedDraw(drawDefinition?.drawType) || !matchUp.roundNumber || !structure?.matchUps) return false;
   return structure.matchUps.filter((m) => m.roundNumber === matchUp.roundNumber).length % 2 !== 0;
@@ -202,6 +213,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       sideDrawPositions: {},
       priorWins: { 1: 0, 2: 0 },
       priorLosses: { 1: 0, 2: 0 },
+      loserMatchUpHasResult: false,
       loserMatchUpCarriesExit: false,
       loserMatchUpCarriedStatuses: [],
       source: { roundMatchUpCount: 0, nextRoundMatchUpCount: 0 },
@@ -401,6 +413,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpRoundNumber: targetData?.targetMatchUps?.loserMatchUp?.roundNumber,
       loserStructureId: targetData?.targetMatchUps?.loserMatchUp?.structureId,
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
+      loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),
       winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId),
       source: sourcePlace(inContextDrawMatchUps, inContextMatchUp),
       loserMatchUpCarriesExit: carriesExit(targetData?.targetMatchUps?.loserMatchUp),

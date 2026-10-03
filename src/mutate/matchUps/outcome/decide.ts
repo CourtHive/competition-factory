@@ -82,7 +82,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
       if (dual) checkDual({ args, route, dual });
       if (route === 'winner' && isExit(planned.matchUpStatus) && isRelabel(planned, view))
-        differentialTally('winner:relabel-exit', 'deferred');
+        differentialTally('winner:relabel-exit', direction?.loser?.exit ? 'compared' : 'deferred');
       if (!direction) return differentialTally(`${route}:direction`, 'deferred');
       checkDirection({ args, route, direction });
       differentialTally(`${route}:direction`, 'compared');

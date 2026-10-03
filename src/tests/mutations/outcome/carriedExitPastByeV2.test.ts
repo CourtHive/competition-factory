@@ -71,7 +71,7 @@ it('sends a carried exit on past a BYE: the holder stays a BYE and the next roun
   expect(tally('winner:loser-exit-past-bye').compared).toEqual(1);
 });
 
-it('a completed result relabelled as a WALKOVER carries nothing to the loser already directed (pending CA)', () => {
+it('a completed result relabelled as a WALKOVER carries the exit to the loser already directed (CA, 2026-10-02)', () => {
   setup();
   const matchUpId = at(MAIN, 1, 3).matchUpId;
   let result: any = tournamentEngine.setMatchUpStatus({
@@ -92,10 +92,11 @@ it('a completed result relabelled as a WALKOVER carries nothing to the loser alr
   });
   expect(result.success).toEqual(true);
   expect(at(MAIN, 1, 3).matchUpStatus).toEqual(WALKOVER);
-  // v1 today: the consolation matchUp the loser was already fed into is untouched
-  expect(at(CONSOLATION, 1, 2).matchUpStatus).toEqual(TO_BE_PLAYED);
-  // v2 plans the same and marks the call, so the open question stays visible
-  expect(tally('winner:relabel-exit').deferred).toEqual(1);
+  // the consolation matchUp the loser was already fed into now holds the exit they carry
+  expect(at(CONSOLATION, 1, 2).matchUpStatus).toEqual(WALKOVER);
+  // and v2 planned the carry and compared it
+  expect(tally('winner:relabel-exit').compared).toEqual(1);
+  expect(tally('winner:loser-exit').compared).toBeGreaterThan(0);
 });
 
 it('sends an exit a double exit produced on past a BYE, and v2 compares it', () => {

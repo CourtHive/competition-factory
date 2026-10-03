@@ -4,6 +4,7 @@ import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/ma
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
+import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
@@ -897,7 +898,16 @@ function resolveTieMatchUpContext({
 function winningSideWithDownstreamDependencies(params) {
   const { matchUp, winningSide, matchUpTieId, dualWinningSideChange } = params;
   if (winningSide === matchUp.winningSide || (matchUpTieId && !dualWinningSideChange)) {
-    return applyMatchUpValues(params);
+    const relabel = !!winningSide && winningSide === matchUp.winningSide && !params.isCollectionMatchUp;
+    const result = applyMatchUpValues(params);
+    if (result.error || !relabel) return result;
+    // a RELABEL with the winner already played on: nothing here directs the loser, so the exit it now
+    // carries (or no longer carries) is settled on its own (CA, 2026-10-02)
+    const { context } = relabelWithoutDirection({
+      matchUpId: params.matchUpId ?? matchUp.matchUpId,
+      ...params,
+    });
+    return context ? { ...result, context: { ...((result as any).context ?? {}), ...context } } : result;
   } else {
     // A double exit has no `winningSide` to change — it is the OUTCOME being changed, and naming
     // the missing field would contradict what the TD is looking at.

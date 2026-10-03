@@ -2,6 +2,7 @@ import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpS
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { relabelLoserExit } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
@@ -118,6 +119,19 @@ export function directLoser(params): ResultType {
   const validExitToPropagate = propagateExitStatus && propagatingExits.includes(sourceMatchUpStatus || '');
 
   if (loserAlreadyDirected) {
+    // a RELABEL (the winner unchanged): carry an exit that is now one, or withdraw one that no longer is
+    const { carry } = relabelLoserExit({
+      sourceMatchUpId: params.sourceMatchUpId,
+      validExitToPropagate,
+      propagateExitStatus,
+      loserParticipantId,
+      targetStructureId: loserTargetLink.target.structureId,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    });
+    if (carry) return { ...SUCCESS, stack, context: { ...context, progressExitStatus: true } };
     return { ...SUCCESS, stack };
   }
 

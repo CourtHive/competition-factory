@@ -124,6 +124,8 @@ export type OutcomeView = {
     loserStructureId?: string;
     /** the loserMatchUp's status before this call: an exit already there makes a double exit (deferred) */
     loserMatchUpStatus?: MatchUpStatusUnion;
+    /** the loserMatchUp has a result of its own (a score, a winner, COMPLETED or an exit): a relabel carries nothing there */
+    loserMatchUpHasResult: boolean;
     /** a side of the loserMatchUp already carries an exit in: a second one there makes a double exit */
     loserMatchUpCarriesExit: boolean;
     loserMatchUpCarriedStatuses: string[];
