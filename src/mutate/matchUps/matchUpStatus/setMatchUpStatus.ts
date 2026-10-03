@@ -3,6 +3,7 @@ import { getDeciderFinals, reconcileDeciders } from '@Mutate/matchUps/matchUpSta
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
+import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
@@ -332,6 +333,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // `reconcileStaleExitOrigins` for the two corrections that pull the timing in opposite directions.
   reconcileStaleExitOrigins({
     matchUpsMap: result.context?.matchUpsMap,
+    drawDefinition: params.drawDefinition,
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+  });
+  // and once settled, no matchUp left without a result keeps the `scoredTime` a cascade stamped on it
+  reconcileScoredTimes({
+    matchUps: matchUpsMap.drawMatchUps,
     drawDefinition: params.drawDefinition,
     tournamentRecord: params.tournamentRecord,
     event: params.event,

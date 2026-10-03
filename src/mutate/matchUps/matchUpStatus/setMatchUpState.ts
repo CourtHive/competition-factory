@@ -7,6 +7,7 @@ import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligib
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
@@ -62,7 +63,6 @@ import {
   BYE,
   CANCELLED,
   COMPLETED,
-  completedMatchUpStatuses,
   DEFAULTED,
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
@@ -721,12 +721,7 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
 // for when the match actually finished (TD-behavior analytics) when no explicit
 // END_TIME timeItem is recorded; an actual endTime supersedes it at read time.
 function applyScoredTime({ matchUp }) {
-  const isScored =
-    !!matchUp.winningSide ||
-    checkScoreHasValue({ score: matchUp.score }) ||
-    (matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus));
-
-  if (isScored) {
+  if (matchUpIsScored(matchUp)) {
     if (!matchUp.schedule) matchUp.schedule = {};
     if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = nowIso();
   } else if (matchUp.schedule?.scoredTime) {
