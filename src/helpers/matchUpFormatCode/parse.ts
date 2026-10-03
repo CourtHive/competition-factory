@@ -429,6 +429,7 @@ function parseTiebreakDetails(formatstring: string): TiebreakFormat | false {
   const tiebreakTo = getNumber(tiebreakToString);
 
   if (!tiebreakTo || !validNoAD) return false;
+  if (typeof modifier === 'string' && !isModifierName(modifier)) return false;
 
   const result: TiebreakFormat = { tiebreakTo };
 
@@ -482,6 +483,7 @@ function parseTimedSet(formatstring: string): SetFormat | undefined {
   const validModifier = [undefined, 'P', 'G', ''].includes(legacyModifier);
   if (legacyModifier && !validModifier) {
     const modifier = /^(\d+)([PGA])?(?:\/TB\d+)?(@)([A-Za-z]+)$/.exec(timestring)?.[4];
+    if (modifier && !isModifierName(modifier)) return undefined;
     if (modifier) {
       setFormat.modifier = modifier;
       return setFormat;
@@ -501,6 +503,16 @@ function parseMatchUpConstraint(value: string): { timed: boolean; minutes: numbe
   const minutes = getNumber(match[1]);
   if (!minutes) return undefined;
   return { timed: true, minutes };
+}
+
+/**
+ * A modifier is a name, and `NOAD` is not part of one. `NOAD` is written BEFORE the modifier
+ * (`TB11NOAD@RALLY`); after it, `TB11@RALLYNOAD` was read as a modifier named `RALLYNOAD`. The engine
+ * switches rally scoring on for `modifier === 'RALLY'` only, so that format was silently scored side-out
+ * AND won by two — both of its meanings lost — while parse and isValid accepted it (validator debate G8).
+ */
+function isModifierName(modifier: string): boolean {
+  return !modifier.includes('NOAD');
 }
 
 function isNoAD(formatstring) {
