@@ -59,9 +59,17 @@ describe('parseScoreString — a bracketed tiebreak', () => {
     expect(sets[2]).toEqual({ side1TiebreakScore: 10, side2TiebreakScore: 8, winningSide: 1, setNumber: 3 });
   });
 
-  it('is recorded as the SET score when the format says the deciding set is a tiebreak', () => {
+  // Until 2026-10-02 the format moved the points into the GAME fields — the one shape hydration then
+  // rewrote to 1-0 with the points gone, and the analysis refused outright. See `tiebreakSetShape`.
+  it('is recorded as tiebreak points, marked a tiebreak set, when the format says the deciding set is one', () => {
     const sets: any = parseScoreString({ scoreString: '6-3 3-6 [10-8]', matchUpFormat: 'SET3-S:6/TB7-F:TB10' });
-    expect(sets[2]).toEqual({ side1Score: 10, side2Score: 8, winningSide: 1, setNumber: 3, tiebreakSet: true });
+    expect(sets[2]).toEqual({
+      side1TiebreakScore: 10,
+      side2TiebreakScore: 8,
+      tiebreakSet: true,
+      winningSide: 1,
+      setNumber: 3,
+    });
   });
 });
 

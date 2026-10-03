@@ -1,6 +1,7 @@
 import { attemptToModifyScore } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToModifyScore';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -58,6 +59,8 @@ export function directParticipants(params): ResultType {
       matchUpsMap,
       event,
     });
+    // the dual's write can fail; the line's result is then that failure, not success
+    if (tieMatchUpResult?.error) return decorateResult({ result: tieMatchUpResult, stack });
     annotate = tieMatchUpResult && { tieMatchUpResult };
     const matchUpTie = inContextDrawMatchUps.find(({ matchUpId }) => matchUpId === matchUpTieId);
     drawPositions = matchUpTie?.drawPositions;
@@ -120,13 +123,14 @@ function processDrawPositionDirecting({
   stack,
   event,
 }): ResultType {
-  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending.
-  // See the canonical statement in `getOrderedDrawPositions`.
-  const winningIndex = projectedWinningSide ? projectedWinningSide - 1 : winningSide - 1;
-  const losingIndex = 1 - winningIndex;
-
-  const winningDrawPosition = drawPositions[winningIndex];
-  const loserDrawPosition = drawPositions[losingIndex];
+  // Bound by side, never by index: with one position present the array is compacted (`getSideDrawPosition`).
+  const winningSideNumber = projectedWinningSide || winningSide;
+  // the hydrated source (the dual, for a line) where positionTargets found one; its `sides` bind the positions
+  const positioned = { ...matchUp, ...targetData.matchUp, drawPositions };
+  const sidePosition = (sideNumber: number) =>
+    getSideDrawPosition({ drawDefinition, structureId: structure?.structureId, matchUp: positioned, sideNumber });
+  const winningDrawPosition = sidePosition(winningSideNumber);
+  const loserDrawPosition = sidePosition(3 - winningSideNumber);
   const context = {};
 
   const {

@@ -1,6 +1,6 @@
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
-import { deleteNotices, getTournamentRecords } from '@Global/state/globalState';
+import { deleteNotices, getInvokeObserver, getTournamentRecords } from '@Global/state/globalState';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
@@ -11,6 +11,7 @@ import { createSeededRandom } from '@Tools/prng';
 
 // constants
 import { INVALID_VALUES, METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { nowMs } from '@Tools/clock';
 
 export function engineInvoke(engine: { [key: string]: any }, args: any) {
   if (!isObject(args)) return { error: INVALID_VALUES, message: 'args must be an object' };
@@ -49,7 +50,7 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
 
   if (result?.error && snapshot) setState(snapshot);
 
-  const timeStamp = Date.now();
+  const timeStamp = nowMs(); // reaches the record via the factory extension
   const mutationStatus = getMutationStatus({ timeStamp });
 
   const notify = result?.success && params?.delayNotify !== true && params?.doNotNotify !== true;
@@ -60,6 +61,8 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
       timeStamp,
     });
   if (notify || !result?.success || params?.doNotNotify) deleteNotices();
+
+  getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'sync', params, result });
 
   return result;
 }

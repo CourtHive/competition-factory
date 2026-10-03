@@ -8,6 +8,7 @@ import { getTimeItemValues } from './getTimeItemValues';
 import { getTimeItem } from '@Query/base/timeItems';
 import { isValidDateString } from '@Tools/dateTime';
 import { isObject, isString } from '@Tools/objects';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { DrawDefinition, Event, TimeItem, Tournament } from '@Types/tournamentTypes';
@@ -80,7 +81,7 @@ export function addTimeItem(params: AddTimeItemArgs) {
     // the same principle as minting ids at the origin.
     //
     // `creationTime: false` still means "do not add a createdAt at all".
-    timeItem.createdAt ??= new Date().toISOString();
+    timeItem.createdAt ??= nowIso();
   }
 
   if (removePriorValues) element.timeItems = element.timeItems.filter(({ itemType }) => timeItem.itemType !== itemType);

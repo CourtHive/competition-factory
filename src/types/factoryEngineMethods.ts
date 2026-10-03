@@ -351,6 +351,7 @@ export type FactoryEngineMethod =
   | 'getOfficialCertifications'
   | 'getOfficialConflicts'
   | 'getOfficialEligibility'
+  | 'getOutcomePipeline'
   | 'getPairedParticipant'
   | 'getParticipantEligibility'
   | 'getParticipantEventDetails'
@@ -521,6 +522,7 @@ export type FactoryEngineMethod =
   | 'once'
   | 'openProposalRegistration'
   | 'orderCollectionDefinitions'
+  | 'outcomePipeline'
   | 'overlappingRange'
   | 'parse'
   | 'parseCSV'
@@ -610,6 +612,7 @@ export type FactoryEngineMethod =
   | 'removeUnlinkedTournamentRecords'
   | 'renameStructures'
   | 'reorderUpcomingMatchUps'
+  | 'repairScore'
   | 'replaceTieMatchUpParticipantId'
   | 'requestEndorsement'
   | 'requestModification'
@@ -642,6 +645,7 @@ export type FactoryEngineMethod =
   | 'schemaWriteMode'
   | 'ScoringEngine'
   | 'seedWithdrawalCascade'
+  | 'setClock'
   | 'setDelegatedOutcome'
   | 'setDrawOtherIds'
   | 'setDrawParticipantRepresentativeIds'
@@ -664,6 +668,7 @@ export type FactoryEngineMethod =
   | 'setParticipantScaleItems'
   | 'setPositionAssignments'
   | 'setPracticeDefaultCapacity'
+  | 'setRandomSource'
   | 'setRegistrationProfile'
   | 'setSchedulingProfile'
   | 'setState'
@@ -1102,6 +1107,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getOfficialCertifications',
   'getOfficialConflicts',
   'getOfficialEligibility',
+  'getOutcomePipeline',
   'getPairedParticipant',
   'getParticipantEligibility',
   'getParticipantEventDetails',
@@ -1272,6 +1278,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'once',
   'openProposalRegistration',
   'orderCollectionDefinitions',
+  'outcomePipeline',
   'overlappingRange',
   'parse',
   'parseCSV',
@@ -1361,6 +1368,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'removeUnlinkedTournamentRecords',
   'renameStructures',
   'reorderUpcomingMatchUps',
+  'repairScore',
   'replaceTieMatchUpParticipantId',
   'requestEndorsement',
   'requestModification',
@@ -1393,6 +1401,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'schemaWriteMode',
   'ScoringEngine',
   'seedWithdrawalCascade',
+  'setClock',
   'setDelegatedOutcome',
   'setDrawOtherIds',
   'setDrawParticipantRepresentativeIds',
@@ -1415,6 +1424,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setParticipantScaleItems',
   'setPositionAssignments',
   'setPracticeDefaultCapacity',
+  'setRandomSource',
   'setRegistrationProfile',
   'setSchedulingProfile',
   'setState',

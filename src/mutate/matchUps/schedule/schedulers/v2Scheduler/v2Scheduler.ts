@@ -16,6 +16,7 @@ import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { nowMs } from '@Tools/clock';
 
 // constants and types
 import { PersonRequests, TournamentRecords } from '@Types/factoryTypes';
@@ -756,7 +757,7 @@ export function v2Scheduler({
   const scheduledDates = (dateSchedulingProfiles ?? []).map(({ scheduleDate }) => scheduleDate);
 
   const autoSchedulingAudit = {
-    timeStamp: Date.now(),
+    timeStamp: nowMs(),
     overLimitMatchUpIds,
     scheduledMatchUpIds,
     schedulingProfile,

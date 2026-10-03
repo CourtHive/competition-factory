@@ -27,15 +27,10 @@ function determineWinningSide(score1: number, score2: number): number | undefine
   return (score1 > score2 && 1) || (score1 < score2 && 2) || undefined;
 }
 
-function parseTiebreakOnlySet(bracketedScores: number[], isTiebreakOnlyFormat: boolean): Partial<ParsedSetString> {
-  if (isTiebreakOnlyFormat) {
-    return {
-      side1Score: bracketedScores[0],
-      side2Score: bracketedScores[1],
-      winningSide: determineWinningSide(bracketedScores[0], bracketedScores[1]),
-    };
-  }
-
+// A tiebreak-only set's points are tiebreak points whether or not the format is known: with it, this
+// put them in the GAME fields, the one shape hydration then rewrote to `1-0` with the points gone and
+// the analysis refused outright (G3, 2026-10-02). The format now adds only the `tiebreakSet` marker.
+function parseTiebreakOnlySet(bracketedScores: number[]): Partial<ParsedSetString> {
   return {
     side1TiebreakScore: bracketedScores[0],
     side2TiebreakScore: bracketedScores[1],
@@ -161,7 +156,7 @@ export function parseScoreString({ tiebreakTo = 7, scoreString = '', matchUpForm
 
     if (isTiebreakOnlySet) {
       const bracketedScores = bracketed[1].split('-').map((score) => Number.parseInt(score));
-      result = parseTiebreakOnlySet(bracketedScores, isTiebreakOnlyFormat);
+      result = parseTiebreakOnlySet(bracketedScores);
     } else {
       result = parseRegularSet(set, tiebreak, bracketed, setNumber);
     }

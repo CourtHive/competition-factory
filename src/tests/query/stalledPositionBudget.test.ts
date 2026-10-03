@@ -182,3 +182,68 @@ test.skipIf(!enabled)(
   },
   1_800_000,
 );
+
+/**
+ * THE SECOND BUDGET — the same 1,000 cells under `doubleExitPropagateBye: false`.
+ *
+ * The default policy is at zero and gated above. This one is not at zero, and until it is the rule
+ * cannot be promoted from `warning` to `error`: TMX and the ranking-point consumers run with the
+ * policy off, and an `error` would turn `valid` false on every one of these draws. It was measured by
+ * hand (38 cells over the original 600 on 2026-09-29) and guarded by nothing, so it could only be
+ * re-measured, never held. Same ratchet: **lower only**.
+ *
+ * MEASURED 2026-10-02 on `dev` `645cd41dcf`: **11 cells, 17 findings**, every one a 16/13 draw with
+ * a double exit, in four shapes —
+ *
+ *   DOUBLE_ELIMINATION 16/13   2 cells, 8 findings   Backdraw|4|2, |5|1, |6|1 and Main|5|1
+ *   FIRST_MATCH_LOSER_CONSOLATION 16/13   3 cells   Consolation|4|1
+ *   COMPASS 16/13              3 cells               West|3|1
+ *   PLAYOFF 16/13 (extension)  3 cells               9-16|3|1
+ *
+ * The known family is two held exits meeting at one target, a convergence `settleHeldExits` declines
+ * (see `getHeldExit`); settling it was tried and taken out on 2026-09-29.
+ */
+const BUDGET_CELLS_POLICY_OFF = 11;
+const BUDGET_FINDINGS_POLICY_OFF = 17;
+
+test.skipIf(!enabled)(
+  'with doubleExitPropagateBye off, the stalled-position population is within its own budget',
+  () => {
+    let cellsPlayed = 0;
+    let findings = 0;
+    const cellsWithStall: string[] = [];
+
+    for (const cell of [...MATRIX_CELLS, ...MATRIX_EXTENSION_CELLS]) {
+      const drawId = `budget-off-${cell.seed}`;
+      if (!playMatrixCell(cell, drawId, 'exits', PRODUCED_EXIT_POLICY)) continue;
+      cellsPlayed += 1;
+
+      const integrity: any = getDrawInconsistencies({ drawDefinition: getDrawDefinition(drawId), drawId });
+      const stalls = (integrity?.inconsistencies ?? []).filter((i: any) => i.issueType === STALLED_POSITION);
+      if (!stalls.length) continue;
+      findings += stalls.length;
+      cellsWithStall.push(cellLabel(cell));
+      expect(
+        stalls.every((i: any) => i.severity === 'warning'),
+        cellLabel(cell),
+      ).toEqual(true);
+    }
+
+    process.stdout.write(
+      `\nstall budget (policy off): cells=${cellsWithStall.length}/${BUDGET_CELLS_POLICY_OFF} ` +
+        `findings=${findings}/${BUDGET_FINDINGS_POLICY_OFF} (cellsPlayed=${cellsPlayed})\n`,
+    );
+
+    // a scan that generated nothing also reports zero stalls
+    expect(cellsPlayed).toEqual(MATRIX_CELLS.length + MATRIX_EXTENSION_CELLS.length);
+
+    // THE RATCHET. Lower these when the population shrinks; never raise them.
+    expect(cellsWithStall.length, `cells with a stall (was ${BUDGET_CELLS_POLICY_OFF})`).toBeLessThanOrEqual(
+      BUDGET_CELLS_POLICY_OFF,
+    );
+    expect(findings, `total stalls (was ${BUDGET_FINDINGS_POLICY_OFF})`).toBeLessThanOrEqual(
+      BUDGET_FINDINGS_POLICY_OFF,
+    );
+  },
+  1_800_000,
+);

@@ -1,4 +1,4 @@
-import { deleteNotices, getTournamentRecords, getMethods } from '@Global/state/globalState';
+import { deleteNotices, getInvokeObserver, getMethods, getTournamentRecords } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
@@ -10,6 +10,7 @@ import { createSeededRandom } from '@Tools/prng';
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
+import { nowMs } from '@Tools/clock';
 
 export function executionQueue(engine: FactoryEngine, directives: Directives, rollbackOnError?: boolean) {
   if (!Array.isArray(directives)) return { error: INVALID_VALUES, message: 'directives must be an array' };
@@ -44,6 +45,7 @@ export function executionQueue(engine: FactoryEngine, directives: Directives, ro
     }
 
     const result = executeFunction(engine, methods[methodName], params, methodName, 'sync');
+    getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'sync', params, result });
 
     if (result?.error) {
       if (snapshot) setState(snapshot);
@@ -51,7 +53,7 @@ export function executionQueue(engine: FactoryEngine, directives: Directives, ro
     }
     results.push({ ...result, methodName });
   }
-  const timeStamp = Date.now();
+  const timeStamp = nowMs(); // reaches the record via the factory extension
 
   const mutationStatus = getMutationStatus({ timeStamp });
   notifySubscribers({ directives, mutationStatus, timeStamp });

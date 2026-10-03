@@ -266,13 +266,14 @@ it('can modify collectionDefinitions for a tieFormat on a structure', () => {
   }).matchUps;
   expect(matchUps[0].tieFormat.winCriteria.aggregateValue).toEqual(true);
 
+  // an in-progress doubles line: COLLEGE_D3 doubles play SET1-S:8/TB7@7, which cannot reach 10-12
   const outcome = {
     score: {
       sets: [
         {
           setNumber: 1,
-          side1Score: 10,
-          side2Score: 12,
+          side1Score: 3,
+          side2Score: 5,
         },
       ],
     },

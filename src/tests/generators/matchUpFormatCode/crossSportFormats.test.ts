@@ -749,12 +749,16 @@ describe('Non-SET root high segment counts', () => {
     expectRoundTrip('RND10A-S:T3'); // boxing 10 rounds
   });
 
-  it('SET root still rejects bestOf > 5 for non-timed formats', () => {
-    const parsed = matchUpFormatCode.parse('SET7-S:TB11');
-    expect(parsed).toBeUndefined();
-
-    const parsed2 = matchUpFormatCode.parse('SET6-S:6/TB7');
-    expect(parsed2).toBeUndefined();
+  // CA, 2026-10-02: "I don't see why best of 7 or 9 would be rejected" — the SET root capped best-of below six
+  it('SET root accepts any best-of count: best of seven, nine and six parse and round-trip', () => {
+    expect(matchUpFormatCode.parse('SET7-S:TB11')).toEqual({
+      bestOf: 7,
+      setFormat: { tiebreakSet: { tiebreakTo: 11 } },
+    });
+    for (const code of ['SET7-S:TB11', 'SET9-S:6/TB7', 'SET7-S:6/TB7-F:TB10', 'SET6-S:6/TB7']) {
+      expect(matchUpFormatCode.isValidMatchUpFormat({ matchUpFormat: code }), code).toBe(true);
+      expect(matchUpFormatCode.stringify(matchUpFormatCode.parse(code)), code).toEqual(code);
+    }
   });
 
   it('SET root allows large exactly counts for timed formats', () => {

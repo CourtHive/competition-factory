@@ -1,6 +1,7 @@
 import { buildRecoveryTimeline, localParts, MS_PER_MINUTE, TimelineAppearance } from '@Query/reports/recoveryTimeline';
 import { INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
 import { isValidIANATimeZone } from '@Tools/timeZone';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { PARTICIPANT_RECOVERY_REPORT } from '@Constants/reportConstants';
@@ -171,7 +172,7 @@ export function wrapRecoveryTimeReport({ tournamentRecord, parameters }: WrapArg
 
   return {
     reportId: PARTICIPANT_RECOVERY_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
     summary: {

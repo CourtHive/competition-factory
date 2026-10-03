@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -43,7 +44,7 @@ export function openProposalRegistration({
   }
 
   const { proposal } = sanctioningRecord;
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   proposal.tournamentId = tournamentId ?? proposal.tournamentId ?? UUID();
 

@@ -2,6 +2,7 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice } from '@Global/state/globalState';
 import { findVenue } from '@Query/venues/findVenue';
+import { nowIso } from '@Tools/clock';
 
 // constants
 import { ErrorType, MISSING_VALUE, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -102,13 +103,13 @@ function venueOtherIdAdd({
     }
     existing.venueId = otherVenueId;
     if (uniqueOrganisationName !== undefined) existing.uniqueOrganisationName = uniqueOrganisationName;
-    existing.updatedAt = occurredAt ?? new Date().toISOString();
+    existing.updatedAt = occurredAt ?? nowIso();
   } else {
     venue.venueOtherIds.push({
       ...(uniqueOrganisationName !== undefined ? { uniqueOrganisationName } : {}),
       organisationId,
       venueId: otherVenueId,
-      createdAt: occurredAt ?? new Date().toISOString(),
+      createdAt: occurredAt ?? nowIso(),
     });
   }
 

@@ -1,0 +1,291 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://courthive.com/codes/corpus.schema.json",
+  "title": "CODES golden corpus scenario",
+  "$comment": "CONVENTION, as for tournament.schema.json: every object definition states additionalProperties explicitly and the default is false. The corpus is the specification of the engine, so its envelope is closed on purpose: a field nobody declared is a field no port will implement. The one open value is a patch op's `value`, which is a CODES fragment and is validated against tournament.schema.json by the writer, not here. corpusSchemaConvention.test.ts enforces this.",
+  "description": "One scenario: an initial CODES tournament record, a sequence of engine directives, and after each directive the result the engine returned and the state it left, as an RFC 6902 patch against the previous canonical state plus a SHA-256 of the whole canonical state. Canonical means RFC 8785. A consumer replays the directives through its own implementation and compares hashes after id-normalisation (README.md).",
+  "$ref": "#/definitions/Scenario",
+  "definitions": {
+    "Scenario": {
+      "type": "object",
+      "properties": {
+        "corpusVersion": {
+          "const": 1
+        },
+        "factoryVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$",
+          "description": "The tods-competition-factory version that produced this scenario."
+        },
+        "schemaWriteMode": {
+          "type": "string",
+          "enum": ["native", "bridge", "legacy"],
+          "description": "The write mode the engine was in. Records are native unless a scenario says otherwise."
+        },
+        "canonicalization": {
+          "const": "RFC8785"
+        },
+        "scenarioId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)*$",
+          "description": "Stable, path-like, lowercase: `<area>/<shape>/<seed-or-name>`, e.g. scoring/fmlc-16/seed-9000017."
+        },
+        "source": {
+          "$ref": "#/definitions/Source"
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "clock": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The instant the engine's clock was fixed to while the scenario was written (engine.setClock). A replay sets the same instant; a reader ignores it."
+        },
+        "clockTickMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "When present, the engine's clock advanced by this many milliseconds on every read within a step, starting at that step's `clockAt` (or at `clock` for a scenario without per-step bases). Absent means the clock was fixed. A replay must tick the same way."
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "uniqueItems": true
+        },
+        "knownFailure": {
+          "type": "string",
+          "description": "Present when the scenario pins behaviour the engine is KNOWN to get wrong. The value is the tracker reference. A port is not graded against a known failure; a fix is a corpus update, not a drift."
+        },
+        "initial": {
+          "$ref": "#/definitions/State"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Step"
+          }
+        },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/InvariantName"
+          },
+          "uniqueItems": true,
+          "description": "Every invariant that must hold on the state after EVERY step. Names are defined in INVARIANTS.md."
+        },
+        "properties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PropertyName"
+          },
+          "uniqueItems": true,
+          "description": "Relational properties the scenario was checked against. Names are defined in INVARIANTS.md."
+        }
+      },
+      "required": [
+        "corpusVersion",
+        "factoryVersion",
+        "schemaWriteMode",
+        "canonicalization",
+        "scenarioId",
+        "source",
+        "initial",
+        "steps",
+        "invariants",
+        "properties"
+      ],
+      "additionalProperties": false
+    },
+    "Source": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["census", "matrix", "route-differential", "stall-budget", "fixture", "recorded-test", "authored"]
+        },
+        "ref": {
+          "type": "string",
+          "description": "What to run or read to regenerate: a seed and config, a matrix cell name, a fixture filename, a test path and title."
+        }
+      },
+      "required": ["kind", "ref"],
+      "additionalProperties": false
+    },
+    "State": {
+      "type": "object",
+      "properties": {
+        "record": {
+          "type": "object",
+          "description": "A CODES tournamentRecord in canonical key order. Validated against tournament.schema.json by the writer; this schema only requires an object."
+        },
+        "hash": {
+          "$ref": "#/definitions/Hash"
+        }
+      },
+      "required": ["record", "hash"],
+      "additionalProperties": false
+    },
+    "Hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "SHA-256 over the RFC 8785 canonical text of the state, hex, lowercase."
+    },
+    "Step": {
+      "type": "object",
+      "properties": {
+        "directive": {
+          "$ref": "#/definitions/Directive"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/Coordinates"
+        },
+        "clockAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Where the engine's clock stood as this directive began; with `clockTickMs`, the base the clock ticks from for this step. A replay sets the clock here before running it, so reads the test made between steps need not be repeated."
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The random stream's state as this directive began (mulberry32: the state is the seed that continues it). A replay sets the source here before running it."
+        },
+        "result": {
+          "$ref": "#/definitions/Result"
+        },
+        "patch": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PatchOp"
+          },
+          "description": "RFC 6902 operations from the previous canonical state to this one. Empty when a directive was refused and changed nothing."
+        },
+        "hash": {
+          "$ref": "#/definitions/Hash"
+        }
+      },
+      "required": ["directive", "result", "patch", "hash"],
+      "additionalProperties": false
+    },
+    "Directive": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9]*$"
+        },
+        "params": {
+          "type": "object",
+          "description": "The params the engine consumed, ids included. A port that generates its own ids resolves them through `coordinates`."
+        }
+      },
+      "required": ["method", "params"],
+      "additionalProperties": false
+    },
+    "Coordinates": {
+      "type": "object",
+      "description": "Structural address of the matchUp a directive targets, for a port whose ids differ: which structure, which round, which position. roundPosition is absent for matchUps that have none (ad hoc rounds, round robin groups).",
+      "properties": {
+        "eventIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "drawIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "structureName": {
+          "type": "string"
+        },
+        "roundNumber": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "roundPosition": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": ["structureName", "roundNumber"],
+      "additionalProperties": false
+    },
+    "Result": {
+      "description": "What the engine returned, reduced to what a port can reproduce: exactly one of a success or a refusal, plus the context keys the corpus pins.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/SuccessResult"
+        },
+        {
+          "$ref": "#/definitions/ErrorResult"
+        }
+      ]
+    },
+    "SuccessResult": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "const": true
+        },
+        "context": {
+          "type": "object"
+        },
+        "value": {
+          "$comment": "OPEN by necessity: the return value of a query or pure method (the matchUpFormat grammar's parse, stringify, isValid), in canonical form. Absent means the method returned undefined. A mutation's result never carries a value; its effect is the patch.",
+          "description": "Return value of a query or pure method, canonical."
+        }
+      },
+      "required": ["success"],
+      "additionalProperties": false
+    },
+    "ErrorResult": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "description": "An error code from errorConditionConstants, e.g. MATCHUP_NOT_FOUND."
+        },
+        "context": {
+          "type": "object"
+        }
+      },
+      "required": ["error"],
+      "additionalProperties": false
+    },
+    "PatchOp": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "type": "string",
+          "enum": ["add", "remove", "replace", "move", "copy", "test"]
+        },
+        "path": {
+          "$ref": "#/definitions/JsonPointer"
+        },
+        "from": {
+          "$ref": "#/definitions/JsonPointer"
+        },
+        "value": {
+          "$comment": "OPEN by necessity: a CODES fragment of any shape. Validated by the writer against tournament.schema.json where the path lands on a declared definition."
+        }
+      },
+      "required": ["op", "path"],
+      "additionalProperties": false
+    },
+    "JsonPointer": {
+      "type": "string",
+      "pattern": "^(/([^/~]|~0|~1)*)*$",
+      "description": "RFC 6901."
+    },
+    "InvariantName": {
+      "type": "string",
+      "enum": ["PARTICIPANT_DUPLICATED_IN_STRUCTURE", "BYE_POSITION_WITH_PARTICIPANT"]
+    },
+    "PropertyName": {
+      "type": "string",
+      "enum": ["DO_UNDO_IDENTITY", "IDEMPOTENT_REAPPLY", "MONOTONIC_DECISION", "GRAMMAR_ROUND_TRIP"]
+    }
+  }
+}

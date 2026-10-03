@@ -1,6 +1,7 @@
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { getCompetitionPublishedDrawDetails } from './getCompetitionPublishedDrawDetails';
 import { scheduledSortedMatchUps } from '@Functions/sorters/scheduledSortedMatchUps';
+import { matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { courtGridRows } from '@Assemblies/generators/scheduling/courtGridRows';
 import { isEmbargoed, isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
@@ -13,7 +14,7 @@ import { isConvertableInteger } from '@Tools/math';
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { MatchUpFilters, PolicyDefinitions, TournamentRecords } from '@Types/factoryTypes';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Venue } from '@Types/tournamentTypes';
@@ -148,11 +149,19 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
   //
   // Opt-in, and narrowed to court-holders: a date/time-only BYE occupies no grid cell,
   // and publishing surfaces (`usePublishState`) must not start emitting byes.
-  if (courtByeMatchUps && byeMatchUps?.length) {
+  if (courtByeMatchUps) {
     const scheduledDate = params.matchUpFilters?.scheduledDate;
+    const onDate = (matchUp: any) =>
+      matchUp.schedule?.courtId && (!scheduledDate || matchUp.schedule?.scheduledDate === scheduledDate);
+    // and the exits the cascade produced that hold a court — decided, never played, the same
+    // invisible occupant a BYE is (CA, 2026-10-01); they sit in the completed bucket by status
+    const producedExits = (completedMatchUps ?? []).filter(
+      (matchUp) => matchUp.matchUpStatus !== BYE && matchUpWillNeverBePlayed({ matchUp }),
+    );
+    const already = new Set(relevantMatchUps.map((matchUp) => matchUp.matchUpId));
     relevantMatchUps = relevantMatchUps.concat(
-      byeMatchUps.filter(
-        (matchUp) => matchUp.schedule?.courtId && (!scheduledDate || matchUp.schedule?.scheduledDate === scheduledDate),
+      [...(byeMatchUps ?? []), ...producedExits].filter(
+        (matchUp) => onDate(matchUp) && !already.has(matchUp.matchUpId),
       ),
     );
   }

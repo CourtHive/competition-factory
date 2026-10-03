@@ -4,11 +4,14 @@
  * PROTOTYPE: This logic will be moved to tods-competition-factory
  * Currently implemented in TMX for testing and refinement before factory integration
  */
+import { tiebreakSetGames, isTiebreakGamesScore, tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
+import { isTiebreakMarker } from '@Query/matchUp/tiebreakSetShape';
 import { getMaxSetScore } from '@Query/matchUp/getComplement';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { setPlayedAfterDecision } from './setCount';
 
 // constants
-import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
  * Helper functions to reduce cognitive complexity
@@ -36,20 +39,26 @@ function validateTiebreakOnlySet(
     };
   }
 
-  // NoAD tiebreaks require win by 1, regular tiebreaks require win by 2
-  const requiredWinBy = NoAD ? 1 : 2;
+  // ── The margin cannot exceed the target ──
+  //
+  // A no-ad tiebreak is won by one; an ordinary one by two — EXCEPT where the target itself is one. A
+  // `F:TB1` decider is the sudden-death point an aggregate timed format settles a tie with, and `1-0` is
+  // the only score it can have; measured 2026-09-30, this refused it with "must be won by at least 2
+  // points" while `checkSetIsComplete` (since #5049) accepted it. The cap below is the same one it uses,
+  // so the validator and the analysis agree about the one set that can only ever be won by one.
+  const requiredWinBy = NoAD ? 1 : Math.min(2, tiebreakSetTo);
 
   if (scoreDiff < requiredWinBy) {
     return {
       isValid: false,
       error: NoAD
         ? `Tiebreak-only set (NoAD) must be won by at least 1 point, got ${winnerScore}-${loserScore}`
-        : `Tiebreak-only set must be won by at least 2 points, got ${winnerScore}-${loserScore}`,
+        : `Tiebreak-only set must be won by at least ${requiredWinBy} point${requiredWinBy === 1 ? '' : 's'}, got ${winnerScore}-${loserScore}`,
     };
   }
 
-  // For NoAD tiebreaks, winner just needs to reach tiebreakTo
-  if (NoAD) {
+  // Won by one — no-ad, or a target of one — the winner just needs to reach tiebreakTo.
+  if (requiredWinBy === 1) {
     return { isValid: true };
   }
 
@@ -77,8 +86,10 @@ function validateTiebreakSetGames(
   setTo: number,
   tiebreakAt: number,
 ): { isValid: boolean; error?: string } {
-  const expectedWinnerScore = tiebreakAt === setTo ? setTo + 1 : setTo;
-  const expectedLoserScore = tiebreakAt;
+  // 7-6 for `@6`, 6-5 for `@5`, 13-12 for `@12` — see `tiebreakAtRules`
+  const games = tiebreakSetGames({ setTo, tiebreakAt });
+  const expectedWinnerScore = games?.winner ?? setTo + 1;
+  const expectedLoserScore = games?.loser ?? tiebreakAt;
 
   if (winnerScore !== expectedWinnerScore) {
     return {
@@ -111,13 +122,17 @@ function validateExplicitTiebreakScore(
       error: `Tiebreak winner must reach ${tbTo} points, got ${tbWinnerScore}`,
     };
   }
-  if (tbDiff < 2) {
+  // A no-ad tiebreak is won by one at the target — the ITF's short-set tiebreak (first to five, deciding
+  // point at four-all), Fast4's, World TeamTennis's nine-pointer. This demanded two from every tiebreak
+  // and refused all of them, including the mocks' own 5-4 under `TB5NOAD@5` (measured 2026-10-01).
+  const requiredWinBy = tiebreakFormat.NoAD ? 1 : 2;
+  if (tbDiff < requiredWinBy) {
     return {
       isValid: false,
-      error: `Tiebreak must be won by 2 points, got ${tbWinnerScore}-${tbLoserScore}`,
+      error: `Tiebreak must be won by ${requiredWinBy} point${requiredWinBy === 1 ? '' : 's'}, got ${tbWinnerScore}-${tbLoserScore}`,
     };
   }
-  if (tbLoserScore >= tbTo - 1 && tbDiff > 2) {
+  if (tbLoserScore >= tbTo - 1 && tbDiff > requiredWinBy) {
     return {
       isValid: false,
       error: `Tiebreak score ${tbWinnerScore}-${tbLoserScore} is invalid`,
@@ -164,7 +179,7 @@ function validateRegularSetCompletion(
     };
   }
 
-  const isTiebreakWon = tiebreakAt && winnerScore === setTo && loserScore === tiebreakAt && scoreDiff === 1;
+  const isTiebreakWon = !!tiebreakAt && isTiebreakGamesScore(winnerScore, loserScore, { setTo, tiebreakAt });
 
   if (scoreDiff < winBy && !isTiebreakWon) {
     return {
@@ -180,7 +195,7 @@ function validateRegularSetCompletion(
         error: `When tied at ${tiebreakAt}-${tiebreakAt}, must play tiebreak. Use format like ${tiebreakAt + 1}-${tiebreakAt}(5)`,
       };
     }
-    const maxWinnerScore = tiebreakAt === setTo ? setTo + 1 : setTo;
+    const maxWinnerScore = tiebreakSetCeiling({ setTo, tiebreakAt }) ?? setTo + 1;
     if (winnerScore > maxWinnerScore) {
       return {
         isValid: false,
@@ -326,6 +341,39 @@ function validateRegularSet(
   return { isValid: true };
 }
 
+/** A timed set: a completed one needs a score, and a tied points-based one its tiebreak. */
+function validateTimedSet(set: any, setFormat: any, allowIncomplete?: boolean): { isValid: boolean; error?: string } {
+  // For timed sets, just validate that scores exist if set is complete
+  if (!allowIncomplete) {
+    const side1Score = set.side1Score ?? 0;
+    const side2Score = set.side2Score ?? 0;
+
+    // At least one side should have a score for completed timed set
+    if (side1Score === 0 && side2Score === 0) {
+      return { isValid: false, error: 'Timed set requires at least one side to have scored' };
+    }
+
+    // For points-based (not aggregate), tied scores need tiebreak if format specifies
+    if (setFormat.based === 'P' && side1Score === side2Score && side1Score > 0 && setFormat.tiebreakFormat) {
+      const hasTiebreak = set.side1TiebreakScore !== undefined || set.side2TiebreakScore !== undefined;
+      if (!hasTiebreak) {
+        return { isValid: false, error: 'Tied timed set requires tiebreak' };
+      }
+    }
+    // For aggregate (match-level A), tied individual sets are fine - winner determined by total aggregate
+  }
+  return { isValid: true };
+}
+
+/** The 1-0 marker must name the same winner as the set, where the set names one. */
+function validateTiebreakMarker(set: any): { isValid: boolean; error?: string } {
+  const markerWinner = set.side1Score === 1 ? 1 : 2;
+  if (set.winningSide !== undefined && set.winningSide !== markerWinner) {
+    return { isValid: false, error: 'Tiebreak set marker contradicts the set winner' };
+  }
+  return { isValid: true };
+}
+
 /**
  * Validate a single set score against matchUpFormat rules
  */
@@ -344,33 +392,15 @@ export function validateSetScore(
   if (!setFormat) return { isValid: true };
 
   // Handle timed sets (based: 'P'/'G' or timed: true)
-  if (setFormat.timed) {
-    // For timed sets, just validate that scores exist if set is complete
-    if (!allowIncomplete) {
-      const side1Score = set.side1Score ?? 0;
-      const side2Score = set.side2Score ?? 0;
-
-      // At least one side should have a score for completed timed set
-      if (side1Score === 0 && side2Score === 0) {
-        return { isValid: false, error: 'Timed set requires at least one side to have scored' };
-      }
-
-      // For points-based (not aggregate), tied scores need tiebreak if format specifies
-      if (setFormat.based === 'P' && side1Score === side2Score && side1Score > 0 && setFormat.tiebreakFormat) {
-        const hasTiebreak = set.side1TiebreakScore !== undefined || set.side2TiebreakScore !== undefined;
-        if (!hasTiebreak) {
-          return { isValid: false, error: 'Tied timed set requires tiebreak' };
-        }
-      }
-      // For aggregate (match-level A), tied individual sets are fine - winner determined by total aggregate
-    }
-    return { isValid: true };
-  }
+  if (setFormat.timed) return validateTimedSet(set, setFormat, allowIncomplete);
 
   const { setTo, tiebreakAt, tiebreakFormat, tiebreakSet } = setFormat;
 
   const tiebreakSetTo = tiebreakSet?.tiebreakTo;
   const isTiebreakOnlyFormat = !!tiebreakSetTo && !setTo;
+
+  // The 1-0 marker alone records a finished tiebreak set whose points were not kept (CA, V11)
+  if (isTiebreakOnlyFormat && isTiebreakMarker(set, setFormat)) return validateTiebreakMarker(set);
 
   const hasTiebreakScores = set.side1TiebreakScore !== undefined && set.side2TiebreakScore !== undefined;
   const { side1Score, side2Score, side1TiebreakScore, side2TiebreakScore } = parseSetScores(
@@ -390,7 +420,16 @@ export function validateSetScore(
   }
 
   const hasExplicitTiebreak = side1TiebreakScore !== undefined || side2TiebreakScore !== undefined;
-  const isImplicitTiebreak = setTo && winnerScore === setTo + 1 && loserScore === setTo;
+  // Only a format that HAS a tiebreak can have played one. This read a 7-6 as an implicit tiebreak and
+  // then skipped every tiebreak check because the format carried no `tiebreakAt` — so `7-6(5)` was a
+  // valid set in `SET1-S:6`, an advantage set, and `retainScoreForFormat` kept it across a change of
+  // format (measured 2026-10-02). `parse` writes `noTiebreak` for such a set; a hand-built format with
+  // neither tiebreak field reads the same way.
+  const formatHasTiebreak = !setFormat.noTiebreak && !!(tiebreakFormat || typeof tiebreakAt === 'number');
+  if (hasExplicitTiebreak && !formatHasTiebreak) {
+    return { isValid: false, error: 'Tiebreak scores recorded for a set whose format has no tiebreak' };
+  }
+  const isImplicitTiebreak = formatHasTiebreak && setTo && winnerScore === setTo + 1 && loserScore === setTo;
   const hasTiebreak = hasExplicitTiebreak || isImplicitTiebreak;
 
   if (hasTiebreak) {
@@ -431,8 +470,20 @@ export function validateMatchUpScore(
   const bestOfMatch = matchUpFormat?.match(/SET(\d+)/)?.[1];
   const bestOfSets = bestOfMatch ? Number.parseInt(bestOfMatch) : 3;
 
-  // Check if this is an irregular ending (allows incomplete scores)
-  const isIrregularEnding = [RETIRED, WALKOVER, DEFAULTED].includes(matchUpStatus || '');
+  // ── Only the LAST set may be unfinished ──
+  //
+  // An irregular ending allowed EVERY set to be unfinished, so `4-2 6-3 1-0` RETIRED was valid here
+  // while the engine — which since the completeness rule asks every set before the last to be finished —
+  // refuses it. Score-entry dialogs gate Submit on this function, so the operator saw a live button and
+  // then a refusal. Play only moves to the next set once the previous one ends, so the rule is the
+  // engine's: every set before the last is finished; the last may be open unless the match is COMPLETED.
+  //
+  // With NO status the old reading stands for the last set — open while it names no winner — because a
+  // dialog asks this as the operator types. A status other than COMPLETED (RETIRED, DEFAULTED,
+  // IN_PROGRESS, SUSPENDED …) leaves the last set open even when it names one: `parseScoreString` gives
+  // every set to the side ahead in it, so a typed `6-3 2-1` retirement arrives with set 2 "won".
+  const matchInProgress = matchUpStatus === undefined;
+  const lastSetMayBeOpen = !matchInProgress && matchUpStatus !== COMPLETED;
 
   // Validate each set against matchUpFormat
   for (let i = 0; i < sets.length; i++) {
@@ -440,13 +491,10 @@ export function validateMatchUpScore(
 
     // Check if this specific set is the deciding set (last possible set in the match)
     const isDecidingSet = i + 1 === bestOfSets;
+    const isLastSet = i === sets.length - 1;
 
-    // Allow incomplete scores when:
-    // 1. matchUpStatus is undefined AND set has no winningSide (in progress, not claiming completion)
-    // 2. matchUpStatus is an irregular ending (RETIRED, WALKOVER, DEFAULTED)
     const setHasWinner = set.winningSide !== undefined;
-    const matchInProgress = matchUpStatus === undefined;
-    const allowIncomplete = isIrregularEnding || (matchInProgress && !setHasWinner);
+    const allowIncomplete = isLastSet && (lastSetMayBeOpen || (matchInProgress && !setHasWinner));
 
     const setValidation = validateSetScore(set, matchUpFormat, isDecidingSet, allowIncomplete);
 
@@ -457,6 +505,11 @@ export function validateMatchUpScore(
       };
     }
   }
+
+  // No set after the one that decided a best-of match, and no more sets than it plays (X2) — the same
+  // answer the engine gives, so a dialog gating Submit here does not offer what the engine refuses
+  const afterDecision = setPlayedAfterDecision(sets, matchUpFormat);
+  if (afterDecision) return { isValid: false, error: afterDecision };
 
   return { isValid: true };
 }

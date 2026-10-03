@@ -55,20 +55,11 @@ test('can clear TEAM matchUp "scorecards"', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const outcome = {
-    winningSide: 1,
-    score: {
-      scoreStringSide1: '8-1',
-      scoreStringSide2: '1-8',
-      sets: [
-        {
-          setNumber: 1,
-          side1Score: 8,
-          side2Score: 1,
-          winningSide: 1,
-        },
-      ],
-    },
+  // USTA_GOLD_TEAM_CHALLENGE plays its singles SET3-S:6/TB7 and its doubles SET1-S:8/TB7@7
+  const lineOutcome = (matchUpId: string) => {
+    const { matchUpFormat } = tournamentEngine.findMatchUp({ matchUpId, inContext: true }).matchUp;
+    const scoreString = matchUpFormat.startsWith('SET1-S:8') ? '8-1' : '6-1 6-1';
+    return mocksEngine.generateOutcomeFromScoreString({ matchUpFormat, scoreString, winningSide: 1 }).outcome;
   };
 
   let { matchUps: firstRoundDualMatchUps } = tournamentEngine.allTournamentMatchUps({
@@ -86,8 +77,8 @@ test('can clear TEAM matchUp "scorecards"', () => {
     dualMatchUp.tieMatchUps.slice(0, 9).forEach((matchUp) => {
       const { matchUpId } = matchUp;
       const result = tournamentEngine.setMatchUpStatus({
+        outcome: lineOutcome(matchUpId),
         matchUpId,
-        outcome,
         drawId,
       });
       expect(result.success).toEqual(true);

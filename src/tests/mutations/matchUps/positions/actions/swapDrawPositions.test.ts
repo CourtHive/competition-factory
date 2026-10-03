@@ -194,7 +194,7 @@ it('can SWAP assignment.bye with assignment.participantId', () => {
 
   let { matchUps } = tournamentEngine.allTournamentMatchUps();
   let finalMatchUp = matchUps.find(({ roundNumber, roundPosition }) => roundNumber === 2 && roundPosition === 1);
-  expect(finalMatchUp.drawPositions).toEqual([1, undefined]);
+  expect(finalMatchUp.drawPositions).toEqual([1]);
 
   const drawPosition = 4;
   let result = tournamentEngine.positionActions({
@@ -246,7 +246,7 @@ it('can SWAP assignment.bye with assignment.participantId', () => {
 
   ({ matchUps } = tournamentEngine.allTournamentMatchUps());
   finalMatchUp = matchUps.find(({ roundNumber, roundPosition }) => roundNumber === 2 && roundPosition === 1);
-  expect(finalMatchUp.drawPositions).toEqual([3, undefined]);
+  expect(finalMatchUp.drawPositions).toEqual([3]);
 });
 
 it('can SWAP assigned participantIds', () => {

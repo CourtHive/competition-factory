@@ -35,11 +35,20 @@ function hash(text: string): number {
 // name has run in this file. Still deterministic: the fourth row is always the fourth row.
 const runsByName = new Map<string, number>();
 
+let current: { name: string; ordinal: number; seed: number } | undefined;
+
+/** The seed and identity of the test currently running, for the corpus recorder. */
+export function currentTestSeed() {
+  return current;
+}
+
 beforeEach(() => {
   const { testPath, currentTestName } = expect.getState();
   // relative to the repo, so the seed is the same on every machine and in CI
   const name = `${relative(process.cwd(), testPath ?? '')}::${currentTestName ?? ''}`;
   const ordinal = (runsByName.get(name) ?? 0) + 1;
   runsByName.set(name, ordinal);
-  Math.random = createSeededRandom(hash(`${name}#${ordinal}`));
+  const seed = hash(`${name}#${ordinal}`);
+  current = { name, ordinal, seed };
+  Math.random = createSeededRandom(seed);
 });

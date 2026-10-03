@@ -75,7 +75,7 @@ function play({ drawId, correct, doubleExitPropagateBye }: any) {
   tournamentEngine.setState(tournamentRecord);
 
   // CONTROL: the arrangement under test — seat 2's opponent is a BYE, so seat 2 is advanced from generation
-  expect(findByKey(drawId, 'Consolation|3|1').drawPositions).toEqual([2, undefined]);
+  expect(findByKey(drawId, 'Consolation|3|1').drawPositions).toEqual([2]);
 
   const steps: [string, any][] = [
     ['Main|1|2', played],

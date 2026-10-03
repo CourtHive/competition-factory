@@ -4,6 +4,7 @@ import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipa
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
 import { getCollectionAssignment } from './getCollectionAssignment';
 import { getOrderedDrawPositions } from './getOrderedDrawPositions';
 import { getMatchUpType } from '@Query/matchUp/getMatchUpType';
@@ -454,6 +455,9 @@ function annotateScoreSets(matchUpWithContext, matchUpFormat) {
       const isTimed = currentSetFormat?.timed;
 
       if (isTiebreakOnly) {
+        // A set that carried its points in the game fields loses them to the 1-0 marker below unless
+        // they move first — measured 2026-10-02: a `[10-8]` read back as `1-0` with no points anywhere
+        set = withPointsInTiebreakFields(set, currentSetFormat);
         set.tiebreakSet = true;
         if ([1, 2].includes(set.winningSide)) {
           set.side1Score = set.winningSide === 1 ? 1 : 0;

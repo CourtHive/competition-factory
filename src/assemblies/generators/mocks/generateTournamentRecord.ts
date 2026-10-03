@@ -16,6 +16,7 @@ import { generateVenues } from '@Mutate/venues/generateVenues';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addEvent } from '@Mutate/events/addEvent';
 import { randomMember } from '@Tools/arrays';
+import { now } from '@Tools/clock';
 
 // constants and fixtures
 import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -282,7 +283,7 @@ function resolveDates(startDate, endDate) {
   let resolvedEnd = endDate;
 
   if (!resolvedStart) {
-    const tournamentDate = new Date();
+    const tournamentDate = now();
     resolvedStart = formatDate(resolvedEnd ?? tournamentDate);
     resolvedEnd = formatDate(tournamentDate.setDate(tournamentDate.getDate() + 7));
   }

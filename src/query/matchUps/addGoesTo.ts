@@ -5,6 +5,7 @@ import { positionTargets } from '@Query/matchUp/positionTargets';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -91,4 +92,51 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
     });
 
   return { inContextDrawMatchUps, goesToMap };
+}
+
+/**
+ * Does the draw STORE the edges `addGoesTo` derives — `winnerMatchUpId` and `loserMatchUpId`?
+ *
+ * A draw the factory generated does: generation, playoff generation and `attachStructures` all write
+ * them. A record that came from somewhere else may not — an older record, or a file the factory did
+ * not produce — and the exit cascade reads the STORED ids (`hasPropagatedExitDownstream`,
+ * `getExitWinningSide`, `getHeldExit`), so on such a draw it decides differently. Measured
+ * 2026-10-01: the same hundred matrix cells played on draws with the ids stripped ended in a
+ * different draw 44 times when nothing restored them.
+ *
+ * This is the cheap question, asked of the stored matchUps alone, that says whether the expensive
+ * answer (`addGoesTo`: a hydration and a `positionTargets` per matchUp) is needed at all:
+ *
+ *  - an elimination structure with more than one round holds a matchUp with a `winnerMatchUpId`;
+ *  - a structure a LOSER link leaves holds a matchUp with a `loserMatchUpId`.
+ *
+ * It asks whether a structure has ANY, not whether it has all: a final has no winner target, and
+ * `removeStructure` deletes the ids that pointed into what it removed. `false` is the safe answer —
+ * it costs a derivation, never a wrong edge.
+ */
+export function hasStoredGoesTo({ drawDefinition }: { drawDefinition: DrawDefinition }): boolean {
+  const loserSources = new Set(
+    (drawDefinition.links ?? []).filter((link) => link.linkType === LOSER).map((link) => link.source?.structureId),
+  );
+
+  return (drawDefinition.structures ?? []).every((structure) => {
+    const matchUps = structure.matchUps ?? [];
+    if (loserSources.has(structure.structureId) && !matchUps.some((matchUp) => matchUp.loserMatchUpId)) return false;
+    if (structure.finishingPosition === WIN_RATIO || structure.structures) return true;
+    // the ordinary answer is found on the first matchUp looked at; the rounds are counted only for
+    // a structure that holds no winner edge at all, to tell a single round from a missing edge
+    if (matchUps.some((matchUp) => matchUp.winnerMatchUpId)) return true;
+    return new Set(matchUps.map((matchUp) => matchUp.roundNumber)).size < 2;
+  });
+}
+
+/**
+ * Give a draw that does not store its edges the edges; a draw that does is left alone.
+ *
+ * A caller that already holds the draw in context hands the view over with its map. `addGoesTo`
+ * then writes the edges onto that view as well as onto the stored matchUps, and hydrates nothing:
+ * the repair costs a `positionTargets` per matchUp, once, and the draw stores its edges from then on.
+ */
+export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }: AddGoesToArgs) {
+  if (!hasStoredGoesTo({ drawDefinition })) addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
 }

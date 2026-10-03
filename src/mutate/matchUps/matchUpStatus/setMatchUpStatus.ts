@@ -1,3 +1,4 @@
+import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getDeciderFinals, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
@@ -9,16 +10,22 @@ import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState'
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
+import { tiebreakPointsWarnings } from '@Validators/validateScore';
+import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import { PolicyDefinitions, ResultType, ResultWarning } from '@Types/factoryTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
-import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
+import { SCHEDULE_PRESERVED_ON_EXIT } from '@Constants/scheduleConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { TEAM } from '@Constants/matchUpTypes';
 
 /**
  * Sets either matchUpStatus or score and winningSide; values to be set are passed in outcome object.
@@ -138,38 +145,26 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event,
   });
 
-  // DECISION: Determine if winningSide changes should propagate to downstream matchUps
-  // WHY: Some tournaments allow changing winners (e.g., after appeals), others don't
-  // Priority: explicit param > policy setting > undefined (default behavior)
-  const allowChangePropagation =
-    (params.allowChangePropagation !== undefined && params.allowChangePropagation) ||
-    (policy?.allowChangePropagation !== undefined && policy.allowChangePropagation) ||
-    undefined;
-
-  // DECISION: whether an exit status (WALKOVER/DEFAULTED) propagates into the consolation
-  // WHY: gated by the scoring policy so a provider can default it on/off; an explicit
-  // params.propagateExitStatus === true always overrides the policy (same precedence as
-  // allowChangePropagation — an explicit boolean false defers to the policy)
-  const propagateExitStatus =
-    (params.propagateExitStatus !== undefined && params.propagateExitStatus) ||
-    (policy?.propagateExitStatus !== undefined && policy.propagateExitStatus) ||
-    undefined;
-
-  // DECISION: whether a RETIREMENT is one of the exits that propagates.
-  // WHY: a rules question rather than an engineering one — see POLICY_SCORING_DEFAULT. Precedence
-  // differs deliberately from the pair above: those use `x || y || undefined`, which cannot express
-  // an explicit `false` (it falls through to the next source). Turning retirement propagation OFF is
-  // the whole point of this setting, so an explicit `false` from either params or policy must win.
-  // Absent both, it defaults to FALSE: a retiree is out of a MATCH, not out of the EVENT, unless the
-  // governing policy says so.
-  const propagateRetirementAsExit = params.propagateRetirementAsExit ?? policy?.propagateRetirementAsExit ?? false;
+  // THE POLICY GOVERNS, both ways (CA, 2026-10-01). An applied scoring policy that SPEAKS on a flag,
+  // true or false, wins over anything on the call; the call decides only where the policy is silent.
+  // "If a governance policy is someone who retires can no longer continue playing, a tournament
+  // director under that policy shouldn't be able to allow a participant to continue in the draw."
+  // Before this, params won (`propagateRetirementAsExit`) or a truthy param won (`||`, the other
+  // two), so a caller could override its federation's rule. The same rule for all three:
+  // `policy ?? param ?? default`. `POLICY_SCORING_DEFAULT` is SILENT on all three, so a provider
+  // that attaches it leaves the decision to the call; a provider that forbids sets `false`.
+  const allowChangePropagation = policy?.allowChangePropagation ?? params.allowChangePropagation ?? undefined;
+  const propagateExitStatus = policy?.propagateExitStatus ?? params.propagateExitStatus ?? undefined;
+  // absent both, FALSE: a retiree is out of a MATCH, not out of the EVENT, unless the policy says so
+  const propagateRetirementAsExit = policy?.propagateRetirementAsExit ?? params.propagateRetirementAsExit ?? false;
 
   const { outcome, setTBlast } = params;
 
   // DECISION: Validate winningSide is 1 or 2 (or undefined)
   // WHY: winningSide represents which side won - only 1 (side 1) or 2 (side 2) are valid
   // Catching invalid values here prevents downstream errors
-  if (outcome?.winningSide && ![1, 2].includes(outcome.winningSide)) {
+  // a winningSide is 1 or 2, or it is absent: 0 is refused, never read as absent (CA, 2026-10-01)
+  if (outcome?.winningSide != null && ![1, 2].includes(outcome.winningSide)) {
     return { error: INVALID_WINNING_SIDE };
   }
 
@@ -230,12 +225,48 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   // read BEFORE the mutation: `reconcileDeciders` acts only on a final whose winner has changed
   const finalsBefore = getDeciderFinals(drawDefinition);
+  // ONE map for the whole call. `setMatchUpState` builds this itself unless handed one; building it
+  // here instead lets the before-snapshot and the warning below read the same flat array the
+  // cascade writes through, so neither walks the draw again. Its matchUps are the live objects.
+  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  // which matchUps already could never be played, so the warning names only what THIS call left so
+  const neverPlayedBefore = new Set(
+    matchUpsMap.drawMatchUps.filter((matchUp) => matchUpWillNeverBePlayed({ matchUp })).map((m) => m.matchUpId),
+  );
+
+  // The v2 pipeline decides the refusals (§ 2) before v1 runs. Under `v2` its refusal is the answer
+  // and v1 is not asked; under `differential` v1 runs as well and the two must agree. Under `v1`,
+  // the default, this is a no-op. See `src/mutate/matchUps/outcome/`.
+  const v2 = decideOutcomeV2({
+    request: {
+      matchUpStatusCodes: outcome?.matchUpStatusCodes,
+      matchUpStatus: outcome?.matchUpStatus,
+      winningSide: outcome?.winningSide,
+      score: outcome?.score,
+      matchUpFormat,
+      matchUpId,
+      flags: {
+        allowChangePropagation,
+        propagateExitStatus,
+        propagateRetirementAsExit,
+        disableScoreValidation,
+        disableAutoCalc,
+        enableAutoCalc,
+      },
+    },
+    policyDefinitions,
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+  if (v2.refused) return decorateResult({ result: v2.refused, stack });
 
   // DECISION: Delegate to setMatchUpState for core status/score setting logic
   // WHY: Separation of concerns - setMatchUpStatus handles API/validation/orchestration,
   // setMatchUpState handles actual state mutations and participant progression logic
   const result = setMatchUpState({
     matchUpStatusCodes: outcome?.matchUpStatusCodes,
+    matchUpsMap,
     matchUpStatus: outcome?.matchUpStatus,
     winningSide: outcome?.winningSide,
     allowChangePropagation,
@@ -309,7 +340,61 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   if (!result.error) {
     const settled = settleDraw({ finalsBefore, params });
     if (settled.error) return decorateResult({ result: settled, stack });
+    const warnings = [
+      ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
+      ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
+    ];
+    if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
   }
 
+  v2.compare?.(result);
+
   return decorateResult({ result, stack });
+}
+
+/**
+ * A WARNING IN THE SUCCESS PAYLOAD: the score was recorded, and a set in it was decided by its tiebreak
+ * with no tiebreak points (`7-6` alone) — accepted because results feeds record it so often (CA,
+ * 2026-10-02, ruling V11). Read off the RECORDED matchUp in context, so the format is the one the score
+ * was validated against — a TEAM line's comes from its collection — and a dual's tally is never asked.
+ */
+function recordedScoreWarnings({ drawDefinition, matchUpId, event }: any): ResultWarning[] {
+  const { matchUp } = findDrawMatchUp({ drawDefinition, matchUpId, event, inContext: true });
+  if (!matchUp || matchUp.matchUpType === TEAM) return [];
+  return tiebreakPointsWarnings(matchUp.score?.sets, matchUp.matchUpFormat);
+}
+
+/**
+ * A WARNING IN THE SUCCESS PAYLOAD: this call left a BYE or a produced exit holding a court or a time.
+ *
+ * Read off the call's own `matchUpsMap` — no walk of the draw beyond the one the cascade already made.
+ *
+ * The draw state is right — the placement is PRESERVED, by the rule `byeScheduling.ts` states, so a
+ * director mid-swap does not lose their plan — and the read side flags the slot
+ * (`CONFLICT_BYE_SCHEDULED`, `CONFLICT_EXIT_SCHEDULED`). What the read side cannot do is tell the
+ * client that just made the mutation, at the moment it can offer "release these slots?". This does.
+ * Additive and state-free: `executionQueue` passes it through like any other result field, and
+ * nothing here snapshots or restores. CA, 2026-10-01: *"for recoverability we have to keep the
+ * schedules, or perhaps they should imply another notification in the success payload (warning)
+ * that clients can respond to"* — both.
+ *
+ * Only matchUps that became unplayable IN THIS CALL are named: a BYE that held a court before the
+ * call was reported when it was placed, and repeating it on every later score would be noise.
+ */
+function schedulePreservedWarnings({
+  neverPlayedBefore,
+  matchUps,
+}: {
+  neverPlayedBefore: Set<string>;
+  matchUps: MatchUp[];
+}): ResultWarning[] {
+  const matchUpIds = matchUps
+    .filter(
+      (matchUp) =>
+        !neverPlayedBefore.has(matchUp.matchUpId) &&
+        matchUpWillNeverBePlayed({ matchUp }) &&
+        matchUpHoldsScheduling({ matchUp }),
+    )
+    .map((matchUp) => matchUp.matchUpId);
+  return matchUpIds.length ? [{ code: SCHEDULE_PRESERVED_ON_EXIT, matchUpIds }] : [];
 }

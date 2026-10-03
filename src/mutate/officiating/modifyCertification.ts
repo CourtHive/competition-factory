@@ -2,6 +2,7 @@
 import { MISSING_OFFICIAL_RECORD, CERTIFICATION_NOT_FOUND } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
@@ -35,7 +36,7 @@ export function modifyCertification({ officialRecord, certificationId, updates }
   if (updates.notes !== undefined) certification.notes = updates.notes;
   if (updates.extensions !== undefined) certification.extensions = updates.extensions;
 
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS, certification };
 }

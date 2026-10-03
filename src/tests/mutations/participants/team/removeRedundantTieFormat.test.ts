@@ -22,18 +22,15 @@ it('will remove redundant tieFormat on matchUp with no results', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
+  // the default tieFormat plays every line best of three (SET3-S:6/TB7, SET3-S:6NOAD/TB7-F:TB10)
   const outcome = {
     winningSide: 1,
     score: {
-      scoreStringSide1: '8-1',
-      scoreStringSide2: '1-8',
+      scoreStringSide1: '6-1 6-1',
+      scoreStringSide2: '1-6 1-6',
       sets: [
-        {
-          setNumber: 1,
-          side1Score: 8,
-          side2Score: 1,
-          winningSide: 1,
-        },
+        { setNumber: 1, side1Score: 6, side2Score: 1, winningSide: 1 },
+        { setNumber: 2, side1Score: 6, side2Score: 1, winningSide: 1 },
       ],
     },
   };

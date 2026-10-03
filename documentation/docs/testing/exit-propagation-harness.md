@@ -13,15 +13,23 @@ It exists because the pipeline's failure mode is not the one coverage measures.
 five draw types. Every path ran; the predicate was wrong. Coverage measures whether code ran, not
 whether the result was right.
 
-## The five suites
+## The suites
 
-| Suite                            | What it does                                                                                                                                                                              |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `exitPropagationMatrix.test.ts`  | 600 cells: draw type × drawSize × participantsCount × exit status × `propagateExitStatus`. Plants an exit through the real mutation path, then drives the draw forward deterministically. |
-| `transitionProperties.test.ts`   | do/undo identity, idempotence, monotonicity — properties of a _mutation_, not of a state.                                                                                                 |
-| `derivationAgreement.test.ts`    | asserts that `matchUpActions` and `setMatchUpStatus` agree about what is permitted.                                                                                                       |
-| `doubleExitStatusParity.test.ts` | runs the same draw and schedule twice, once per double-exit status, and asserts the results are identical after renaming the vocabulary. See the caution below for what it cannot see.    |
-| `entryOrderInvariance.test.ts`   | applies the same pair of double exits in both orders across eight draw types and asserts the record is identical — the property the renaming oracle above is structurally blind to.       |
+| Suite                                    | What it does                                                                                                                                                                                                                                                         |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `exitPropagationMatrix.test.ts`          | 600 cells: ten draw types × drawSize × participantsCount × exit status × `propagateExitStatus`. Plants an exit through the real mutation path, then drives the draw forward deterministically.                                                                       |
+| `exitPropagationMatrixExtension.test.ts` | the same body over the seven draw types the 600 never exercised — round robin (with and without playoff), the FIC `TO_QF`/`TO_R16` variants, lucky draw, feed-in, playoff — 400 cells from a separate seed range. Added in 7.4.0; clean on first contact.            |
+| `correctionDivergence.test.ts`           | 192 cells: a first-round mistake corrected, against the direct entry of the right outcome.                                                                                                                                                                           |
+| `correctionDivergenceDeep.test.ts`       | 1,600 cells: the mistake is the deepest exit of a twelve-step prefix. Buckets each cell as identical / provenance-only / incomparable / refused / severe and ratchets the counts; the baseline is severe 0. Runs under `pnpm verify` (`DEEP_CORRECTIONS=1`), ~5 min. |
+| `stalledPositionBudget.test.ts`          | replays all 1,000 matrix cells and counts `STALLED_POSITION` findings against a budget that only falls. Currently 0.                                                                                                                                                 |
+| `routeDifferential.test.ts`              | the same outcome entered with and without `allowChangePropagation`, compared.                                                                                                                                                                                        |
+| `transitionProperties.test.ts`           | do/undo identity, idempotence, monotonicity — properties of a _mutation_, not of a state.                                                                                                                                                                            |
+| `derivationAgreement.test.ts`            | asserts that `matchUpActions` and `setMatchUpStatus` agree about what is permitted.                                                                                                                                                                                  |
+| `doubleExitStatusParity.test.ts`         | runs the same draw and schedule twice, once per double-exit status, and asserts the results are identical after renaming the vocabulary. See the caution below for what it cannot see.                                                                               |
+| `entryOrderInvariance.test.ts`           | applies the same pair of double exits in both orders across eight draw types and asserts the record is identical — the property the renaming oracle above is structurally blind to.                                                                                  |
+
+Every cell in the matrices is a separate parameterised test, which is why the suite's test count
+moves by hundreds when a draw type is added.
 
 Helpers live in `src/tests/testHarness/exitPropagation/`, which is excluded from coverage as test
 infrastructure.

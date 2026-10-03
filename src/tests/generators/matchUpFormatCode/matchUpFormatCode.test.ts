@@ -221,7 +221,7 @@ const invalidFormats = [
   'SET3-S:6/TB7@',
   'SET5-S:6/T9-F:6',
   'SET-S:6/TB7-F:6',
-  'SET35-S:6/TB7-F:TB10',
+  // 'SET35-S:6/TB7-F:TB10' was here: any best-of count is a format (CA, 2026-10-02), so it parses now
   'SET5-S:6/TB7-X:6/TB10',
   'SET5-S:5NOAD/TB9NOD@4',
   'SET5-S:5NAD/TB9NOAD@4',

@@ -160,7 +160,7 @@ function swapTest({ swapPosition }) {
 
   let { matchUps } = tournamentEngine.allTournamentMatchUps();
   const finalMatchUp = matchUps.find(({ roundNumber, roundPosition }) => roundNumber === 2 && roundPosition === 1);
-  expect(finalMatchUp.drawPositions).toEqual([1, undefined]);
+  expect(finalMatchUp.drawPositions).toEqual([1]);
   let { filteredOrderedPairs } = getOrderedDrawPositionPairs();
   expect(filteredOrderedPairs.filter((p) => p?.length)).toEqual([
     [1, 2],

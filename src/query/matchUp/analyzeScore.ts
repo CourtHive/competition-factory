@@ -1,4 +1,5 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
+import { tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { instanceCount } from '@Tools/arrays';
 
@@ -52,6 +53,18 @@ function validateSet(
   const { finalSetFormat, setFormat } = matchUpScoringFormat;
   const setValues = isFinalSet ? finalSetFormat || setFormat : setFormat;
 
+  // An advantage set has no tiebreak to record and is won by two clear games (or its declared `winBy`).
+  // This accepted tiebreak points and a one-game margin in `SET1-S:6` — measured 2026-10-02, the
+  // mutation path recorded `7-6(5)` there — because the only tiebreak check ran with an undefined
+  // tiebreak format and passed. `parse` writes `noTiebreak`; the same reading as `validateSetScore`.
+  const formatHasTiebreak =
+    !setValues?.noTiebreak && !!(setValues?.tiebreakFormat || typeof setValues?.tiebreakAt === 'number');
+  if (!formatHasTiebreak && setValues?.setTo && !setValues.timed) {
+    if (hasTiebreak !== undefined && hasTiebreak !== null) return false;
+    const margin = Math.abs((side1Score ?? 0) - (side2Score ?? 0));
+    if (setWinningSide && margin < (setValues.winBy ?? 2)) return false;
+  }
+
   if (hasTiebreak) {
     const isValidTiebreak = validateTiebreak(
       setValues?.tiebreakFormat,
@@ -66,7 +79,11 @@ function validateSet(
 
   if (!setValues.setTo) return true;
 
-  const excessiveSetScore = !setValues.noTiebreak && maxSetScore > setValues.setTo + 1;
+  // The ceiling is the tiebreak winner's games wherever the format puts its tiebreak: 6 for `@5`, 7 for
+  // `@6`, 13 for `@12`. `setTo + 1` accepted a 7-5 under `@5` (five-all is the tiebreak) and refused a
+  // 12-10 under `@12` (validator debate V8 and G1, 2026-10-02).
+  const ceiling = tiebreakSetCeiling(setValues) ?? setValues.setTo + 1;
+  const excessiveSetScore = !setValues.noTiebreak && maxSetScore > ceiling;
   return !excessiveSetScore;
 }
 
@@ -100,11 +117,15 @@ function calculateStandardWinner(
   maxSetsInstances: number,
   setsWinCounts: number[],
   matchUpFormat?: string,
+  playsEverySet?: boolean,
 ): number | undefined {
+  // A best-of stops the moment a side reaches `setsToWin`, so equality is the exact test. An `exactly`
+  // format plays every set whatever the running score, so its winner routinely passes `setsToWin` — and
+  // under equality a 3-0 sweep of `SET3X-S:T10` had NO winner and the engine refused it, while
+  // `analyzeMatchUp` named side 1 (validator debate V9, re-measured 2026-10-02).
+  const reachedSetsToWin = playsEverySet ? maxSetsCount >= setsToWin : maxSetsCount === setsToWin;
   return (
-    ((!matchUpFormat || maxSetsCount === setsToWin) &&
-      maxSetsInstances === 1 &&
-      setsWinCounts.indexOf(maxSetsCount) + 1) ||
+    ((!matchUpFormat || reachedSetsToWin) && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) ||
     undefined
   );
 }
@@ -173,7 +194,7 @@ export function analyzeScore({
   const calculatedWinningSide =
     isAggregateScoring && sets.length > 0
       ? calculateAggregateWinner(sets)
-      : calculateStandardWinner(maxSetsCount, setsToWin, maxSetsInstances, setsWinCounts, matchUpFormat);
+      : calculateStandardWinner(maxSetsCount, setsToWin, maxSetsInstances, setsWinCounts, matchUpFormat, !!exactly);
 
   const valid = !!(
     validSets &&

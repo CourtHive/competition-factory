@@ -155,6 +155,11 @@ jobs:
       - name: verify:exit-tenant
         run: pnpm verify:exit-tenant
 
+      # the golden corpus hash manifest: a behaviour change moves a hash, and a moved hash needs
+      # a deliberate `pnpm corpus:manifest` in the same PR (CA, 2026-10-01)
+      - name: verify:corpus-manifest
+        run: pnpm verify:corpus-manifest
+
       # WIRED IN 2026-09-13, and the `fetch-depth: 0` above was already here FOR it — the checkout
       # comment names this gate by name. It was left out of CI because it read `(#PR)` from the
       # commit subject, which only exists after a squash-merge, so it could never pass on a PR
@@ -171,8 +176,14 @@ jobs:
       - name: verify:attr-audit
         run: pnpm verify:attr-audit
 
+      # On the path to a release (a PR into master, or a push to master) coverage runs the WHOLE suite
+      # under OUTCOME_PIPELINE=differential: every call runs v1 and the v2 outcome pipeline, v2 is
+      # measured where it executes, and a divergence between them fails the job. Into dev, v2 is
+      # excluded from coverage instead (vitest.config.mts), so building it spends no margin.
       - name: verify:coverage
         run: pnpm verify:coverage
+        env:
+          OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
 
       # The stalled-position RATCHET. Inert on `pnpm test` (it replays all 600 exit-propagation
       # matrix cells, which costs about what exitPropagationMatrix itself costs), so this step is the

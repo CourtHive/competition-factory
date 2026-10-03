@@ -7,6 +7,37 @@ import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 
 export function isActiveDownstream(params) {
+  return activeBelow(params, new Map());
+}
+
+/**
+ * A MATCHUP REACHED DOWN TWO PATHS IS ASKED ONCE.
+ *
+ * The walk below follows a matchUp's winner target and its loser target, and in a draw whose
+ * structures re-join — DOUBLE_ELIMINATION's final, COMPASS's later directions — the same matchUp is
+ * reached down both, and everything below it was walked again each time. Measured 2026-10-01
+ * (`pipelineCost.test.ts`): 9,384 recursive calls of `positionTargets` from here, 4% of everything
+ * `setMatchUpStatus` spent.
+ *
+ * A matchUp's answer depends on two things only: WHICH matchUp it is — its targets are derived from
+ * the one view the whole walk shares — and the condition of the link it was reached through, which
+ * the FIRST_MATCHUP BYE test reads. So the answer is kept for one walk, keyed on both, and never
+ * beyond it: the next call takes a new view and a new map.
+ */
+function visit({ matchUpId, relevantLink, targetData, inContextDrawMatchUps, drawDefinition, seen }: any): boolean {
+  const key = `${matchUpId}|${relevantLink?.linkCondition ?? ''}`;
+  if (seen.has(key)) return seen.get(key);
+
+  const resolvedTargetData = targetData ?? positionTargets({ matchUpId, inContextDrawMatchUps, drawDefinition });
+  const active = !!activeBelow(
+    { targetData: resolvedTargetData, inContextDrawMatchUps, drawDefinition, relevantLink },
+    seen,
+  );
+  seen.set(key, active);
+  return active;
+}
+
+function activeBelow(params, seen: Map<string, boolean>) {
   // relevantLink is passed in iterative calls (see below)
   const { inContextDrawMatchUps, targetData, drawDefinition, relevantLink } = params;
 
@@ -176,6 +207,25 @@ export function isActiveDownstream(params) {
     !!winnerMatchUp?.sides?.find((s: any) => s?.sideNumber === winnerMatchUp.winningSide)?.participant &&
     !isPropagatedExit({ matchUp: winnerMatchUp });
 
+  /**
+   * An exit RECORDED at the winnerMatchUp is a result against this source's winner, whatever the other
+   * side holds.
+   *
+   * The NOTE above reasons that an exit with an unoccupied side can only be a pending propagated one,
+   * because `checkParticipants` wants two participants. With `propagateExitStatus` it does not: a TD
+   * may award a walkover to a side still waiting on its feed (G3, `exitAwardable`). That exit names
+   * THIS source's winner as the one who walked over, yet `winnerDrawPositionsCount === 2` passed it as
+   * inactive, so the source's winner could be flipped under it. Census seed 9000477 (COMPASS 32/29),
+   * three steps: `East|1|3` decided, `East|2|2` WALKOVER to the vacant side, `East|1|3` flipped —
+   * accepted, and the walkover recorded against one player was then held by the other, while the
+   * first stayed in North as its loser (WINNER_NOT_ADVANCED). Provenance is what tells the recorded
+   * exit from the produced one; with both positions present `winnerSideResolved` already says so.
+   */
+  const recordedWinnerExit =
+    !!winnerMatchUp?.winningSide &&
+    isExit(winnerMatchUp.matchUpStatus) &&
+    !isPropagatedExit({ matchUp: winnerMatchUp });
+
   // if a winnerMatchUp contains a WALKOVER and its source matchUps have no winningSides it cannot be considered active
   // unless one of its downstream matchUps is active
   if (contestedDoubleExit(loserMatchUp) || contestedDoubleExit(winnerMatchUp)) {
@@ -185,6 +235,7 @@ export function isActiveDownstream(params) {
   if (
     !isLoserMatchUpWalkoverWithOnePlayer &&
     ((loserMatchUp?.winningSide && !loserMatchUpExit) ||
+      recordedWinnerExit ||
       (winnerMatchUp?.winningSide &&
         winnerDrawPositionsCount === 2 &&
         (!isExit(winnerMatchUp?.matchUpStatus) || winnerSideResolved)))
@@ -192,30 +243,28 @@ export function isActiveDownstream(params) {
     return true;
   }
 
-  const winnerTargetData =
-    winnerMatchUp &&
-    positionTargets({
-      matchUpId: winnerMatchUp.matchUpId,
-      inContextDrawMatchUps,
-      drawDefinition,
-    });
-
+  // the loser's targets are already in hand — the checks above read them. The walk is a pure read,
+  // so an active loser branch answers the question and the winner branch is not walked at all; the
+  // winner's targets are otherwise derived only if that matchUp has not been answered in this walk.
   const loserActive =
     loserTargetData &&
-    isActiveDownstream({
+    visit({
       relevantLink: targetLinks?.loserTargetLink,
+      matchUpId: loserMatchUp.matchUpId,
       targetData: loserTargetData,
       inContextDrawMatchUps,
       drawDefinition,
+      seen,
     });
+  if (loserActive) return true;
 
-  const winnerActive =
-    winnerTargetData &&
-    isActiveDownstream({
-      targetData: winnerTargetData,
+  return (
+    !!winnerMatchUp &&
+    visit({
+      matchUpId: winnerMatchUp.matchUpId,
       inContextDrawMatchUps,
       drawDefinition,
-    });
-
-  return !!(winnerActive || loserActive);
+      seen,
+    })
+  );
 }

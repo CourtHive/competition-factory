@@ -1,6 +1,7 @@
 // Constants
 import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
@@ -28,7 +29,7 @@ export function getOfficialEligibility({
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
 
   const reasons: string[] = [];
-  const checkDate = asOfDate ?? new Date().toISOString().split('T')[0];
+  const checkDate = asOfDate ?? nowIso().split('T')[0];
 
   // Check for active suspensions
   const activeSuspensions = officialRecord.suspensions.filter((s) => {

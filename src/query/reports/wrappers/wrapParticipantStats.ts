@@ -1,4 +1,5 @@
 import { getParticipantStats } from '@Query/participant/getParticipantStats';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { PARTICIPANT_STATS_REPORT } from '@Constants/reportConstants';
@@ -45,7 +46,7 @@ export function wrapParticipantStats({
 
   return {
     reportId: PARTICIPANT_STATS_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
     summary: {

@@ -1,5 +1,6 @@
 import { conflictInputsFrom } from '@Query/officiating/conflictEvaluationInputs';
 import { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -75,7 +76,7 @@ export function assignOfficial(params: AssignOfficialArgs): {
   }
 
   const conflicts = conflictResult.conflicts ?? [];
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const assignment: OfficialAssignment = {
     assignmentId: assignmentId || UUID(),

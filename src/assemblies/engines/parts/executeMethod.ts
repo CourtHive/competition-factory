@@ -4,6 +4,7 @@ import { paramsMiddleware } from './paramsMiddleware';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getDevContext,
+  getInvokeObserver,
   getTournamentId,
   getTournamentRecord,
   getTournamentRecords,
@@ -40,23 +41,28 @@ export function executeFunction(
 
   // ENSURE that logged params are not mutated by middleware
   const paramsToLog = params ? makeDeepCopy(params, undefined, true) : undefined;
+  // `before` is reported here, on the one path every call takes. `after` is reported by the
+  // engine entry points (engineInvoke, executionQueue, their async twins) once their own
+  // post-processing has run, because that post-processing writes into the record too (the
+  // factory extension's timeStamp): an observer that captured state here would attribute that
+  // write to the NEXT call.
+  getInvokeObserver()?.({ phase: 'before', methodName, engineType, params: paramsToLog });
+
+  const result = resolve({ method, params, methodName, tournamentRecords, tournamentRecord });
+  const elapsed = Date.now() - start;
+  engineLogging({ result, methodName, elapsed, params: paramsToLog, engineType, dryRun: options?.dryRun });
+
+  return result;
+}
+
+function resolve({ method, params, methodName, tournamentRecords, tournamentRecord }) {
   const augmentedParams = params ? paramsMiddleware(tournamentRecords, params) : undefined;
   if (augmentedParams?.error) return augmentedParams;
 
   const lockError = checkMutationLock(methodName, augmentedParams, tournamentRecord);
   if (lockError) return lockError;
 
-  const result = invoke({
-    params: augmentedParams,
-    tournamentRecords,
-    tournamentRecord,
-    methodName,
-    method,
-  });
-  const elapsed = Date.now() - start;
-  engineLogging({ result, methodName, elapsed, params: paramsToLog, engineType, dryRun: options?.dryRun });
-
-  return result;
+  return invoke({ params: augmentedParams, tournamentRecords, tournamentRecord, methodName, method });
 }
 
 function invoke({ tournamentRecords, tournamentRecord, params, methodName, method }) {

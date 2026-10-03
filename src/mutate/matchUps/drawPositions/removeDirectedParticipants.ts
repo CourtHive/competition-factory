@@ -8,6 +8,7 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
@@ -65,6 +66,9 @@ export function removeDirectedParticipants(params): {
   const result = modifyMatchUpScore({
     ...params,
     matchUpStatus: matchUpStatus || TO_BE_PLAYED,
+    // named, so a failure here can be injected and traced; the spread carried whatever context the
+    // caller had, which for a winner change was none
+    context: 'removeDirectedParticipants',
     removeWinningSide: true,
   });
   if (result.error) return result;
@@ -95,12 +99,16 @@ export function removeDirectedParticipants(params): {
 
   const { positionAssignments } = structureAssignedDrawPositions({ structure });
 
-  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending.
-  // See the canonical statement in `getOrderedDrawPositions`.
-  const winningIndex = winningSide - 1;
-  const losingIndex = 1 - winningIndex;
-  const winningDrawPosition = drawPositions[winningIndex];
-  const loserDrawPosition = drawPositions[losingIndex];
+  // Bound by side, never by index: with one position present the array is compacted (`getSideDrawPosition`).
+  const sidePosition = (sideNumber: number) =>
+    getSideDrawPosition({
+      drawDefinition,
+      structureId: structure?.structureId,
+      matchUp: targetData.matchUp,
+      sideNumber,
+    });
+  const winningDrawPosition = sidePosition(winningSide);
+  const loserDrawPosition = sidePosition(3 - winningSide);
 
   // use reduce for single pass resolution of both
   const { winnerParticipantId, loserParticipantId } =
@@ -218,7 +226,7 @@ type RemvoveDirectedWinnerArgs = {
   winnerParticipantId?: string;
   drawDefinition: DrawDefinition;
   sourceMatchUpStatus?: string;
-  winningDrawPosition: number;
+  winningDrawPosition?: number;
   winnerTargetLink?: DrawLink;
   matchUpsMap?: MatchUpsMap;
   sourceMatchUpId?: string;

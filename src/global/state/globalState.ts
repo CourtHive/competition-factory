@@ -4,6 +4,7 @@ import { intersection } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
 
 // constants and types
+import { OUTCOME_PIPELINE_V1, OutcomePipelineMode, outcomePipelineModes } from '@Constants/outcomePipelineConstants';
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode, schemaWriteModes } from '@Constants/schemaWriteModeConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -58,6 +59,7 @@ type GlobalStateTypes = {
   deepCopyAttributes: DeepCopyType;
   devContext?: DevContextType; // devContext is used to control logging
   schemaWriteMode: SchemaWriteMode; // controls extension vs first-class write behavior
+  outcomePipeline: OutcomePipelineMode; // which outcome pipeline decides: v1, v2, or both (differential)
   saveDrawDeletions: boolean; // opt-in: persist drawDeletions audit on the record
   auditAuthorityServer: boolean; // true on server engines — suppresses local audit writes
   timers: timersType; // timers are used to track elapsed time for methods
@@ -85,6 +87,7 @@ const globalState: GlobalStateTypes = {
   },
   globalMethods: [],
   schemaWriteMode: NATIVE,
+  outcomePipeline: OUTCOME_PIPELINE_V1,
   saveDrawDeletions: false,
   auditAuthorityServer: false,
   deepCopy: true,
@@ -228,6 +231,35 @@ export function setDevContext(value?: DevContextType) {
   globalState.devContext = value;
 }
 
+/**
+ * An observer of every engine method execution, process-wide. `executeFunction` (the common path
+ * for direct calls, `executionQueue` directives and the async engine) reports `before` with the
+ * caller's params and `after` with the result. Nothing in production sets it; the golden corpus
+ * recorder does, to harvest the test suite into scenarios. An observer may call engine queries
+ * from the `after` phase; it must guard its own re-entrancy, because those calls are observed too.
+ * `setInvokeObserver()` with no argument removes it.
+ */
+export type InvokeEvent = {
+  phase: 'before' | 'after';
+  methodName: string;
+  engineType: string;
+  params?: any;
+  result?: any;
+};
+export type InvokeObserver = (event: InvokeEvent) => void;
+
+let invokeObserver: InvokeObserver | undefined;
+
+export function setInvokeObserver(observer?: InvokeObserver): { success?: boolean; error?: ErrorType } {
+  if (observer !== undefined && typeof observer !== 'function') return { error: INVALID_VALUES };
+  invokeObserver = observer;
+  return { ...SUCCESS };
+}
+
+export function getInvokeObserver(): InvokeObserver | undefined {
+  return invokeObserver;
+}
+
 export function setSchemaWriteMode(mode?: SchemaWriteMode): {
   success?: boolean;
   error?: ErrorType;
@@ -243,6 +275,20 @@ export function setSchemaWriteMode(mode?: SchemaWriteMode): {
 
 export function getSchemaWriteMode(): SchemaWriteMode {
   return globalState.schemaWriteMode;
+}
+
+export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: boolean; error?: ErrorType } {
+  if (mode === undefined) {
+    globalState.outcomePipeline = OUTCOME_PIPELINE_V1;
+    return { ...SUCCESS };
+  }
+  if (!outcomePipelineModes.includes(mode)) return { error: INVALID_VALUES };
+  globalState.outcomePipeline = mode;
+  return { ...SUCCESS };
+}
+
+export function getOutcomePipeline(): OutcomePipelineMode {
+  return globalState.outcomePipeline;
 }
 
 export function writeNativeEnabled(): boolean {

@@ -2,6 +2,7 @@
 import { CONFLICT_DECLARATION_NOT_FOUND, MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
@@ -21,7 +22,7 @@ export function removeConflictDeclaration({ officialRecord, declarationId }: Rem
 
   declarations.splice(index, 1);
   officialRecord.conflictDeclarations = declarations;
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS };
 }

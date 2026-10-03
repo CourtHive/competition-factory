@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -42,7 +43,7 @@ export function createSanctioningRecord({
   if (!Array.isArray(proposal.events) || proposal.events.length === 0)
     return { error: INVALID_VALUES, context: { message: 'Proposal must include at least one event' } } as any;
 
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   const sanctioningRecord: SanctioningRecord = {
     sanctioningId: sanctioningId || UUID(),

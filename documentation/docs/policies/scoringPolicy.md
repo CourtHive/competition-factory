@@ -571,11 +571,14 @@ const propagationPolicy = {
   },
 };
 
-// Resolution precedence (mirrors allowChangePropagation):
-//   setMatchUpStatus({ ..., propagateExitStatus: true })  → always propagates (override)
-//   otherwise the scoring policy's propagateExitStatus is used
-//   POLICY_SCORING_DEFAULT: false   POLICY_SCORING_USTA: true
-// An explicit params boolean `false` defers to the policy (it does not force-off).
+// Resolution precedence, the same for allowChangePropagation, propagateExitStatus and
+// propagateRetirementAsExit (the policy governs, both ways — CA, 2026-10-01):
+//   a policy that SPEAKS (true or false) wins over anything on the call
+//   a policy that is SILENT leaves it to setMatchUpStatus({ ..., propagateExitStatus })
+//   absent both: undefined (no propagation); propagateRetirementAsExit: false
+//   POLICY_SCORING_DEFAULT: silent on all three   POLICY_SCORING_USTA: both exit flags true
+// So a director cannot pass `false` under a policy that says `true`, nor `true` under one that
+// says `false`; a provider that wants the call to decide leaves the key out of its policy.
 ```
 
 ---

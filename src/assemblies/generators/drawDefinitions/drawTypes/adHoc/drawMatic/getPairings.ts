@@ -1,6 +1,7 @@
 import { getParticipantPairingValues } from './getParticipantPairingValues';
 import { generateCandidate } from './generateCandidate';
 import { getSideRatings } from './getSideRatings';
+import { randomSource } from '@Tools/prng';
 
 export function getPairings(params) {
   const {
@@ -31,7 +32,7 @@ export function getPairings(params) {
 
     const salting = (typeof salted === 'number' && salted) || 0.5;
 
-    const rng = params.random ?? Math.random;
+    const rng = params.random ?? randomSource();
     const salt = (salted && (Math.round(rng()) ? salting : salting * -1)) || 0;
     const ratingsDifference = Math.abs(ratings[0] - ratings[1]) + salt;
     const pairingDelta = Math.abs(ratings[0] - ratings[1]);

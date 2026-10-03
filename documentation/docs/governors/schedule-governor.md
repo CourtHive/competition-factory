@@ -1622,6 +1622,34 @@ deleting the director's placement — is the fix.
 Byes holding only a date/time occupy no cell and are not included; the WARNING tracks court
 occupancy specifically.
 
+### A produced exit holding a court is treated the same way
+
+An exit the cascade produces — a `WALKOVER` or `DEFAULTED` stamped onto a side by an upstream double
+exit, with nobody arriving to contest it — will never be played either, and its placement is
+preserved for the same reason. Since 7.4.1 it is shown the same way: `courtByeMatchUps: true`
+includes a court-holding produced exit beside the byes, and `proConflicts` annotates it
+`CONFLICT_EXIT_SCHEDULED` at `SCHEDULE_WARNING` — a code of its own, so a client can offer
+"release" against a walkover and "re-seat" against a BYE. A walkover a director recorded between
+two participants is not in this set: that is the director's own act.
+
+### The mutation that preserved a placement says so
+
+`setMatchUpStatus` returns, on success, a `warnings` array when the call left a BYE or a produced
+exit holding a court or a time:
+
+```js
+{
+  success: true,
+  warnings: [{ code: 'SCHEDULE_PRESERVED_ON_EXIT', matchUpIds: ['...', '...'] }],
+}
+```
+
+The draw is right — the placement was preserved — but the client that just made the mutation is the
+one that can offer "release these slots?", which maps to the same `preserveScheduling: false` the
+operator's BYE action takes. The read-side flags above tell a scheduler view; the payload tells the
+scorer. Only matchUps that became unplayable in that call are named, so a BYE reported when it was
+placed is not repeated on every later score. `executionQueue` passes the field through unchanged.
+
 ---
 
 ## setMatchUpCalledAt

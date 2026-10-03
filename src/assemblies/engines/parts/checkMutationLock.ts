@@ -2,6 +2,7 @@ import { methodScopeMap } from '@Constants/mutationLockScopeMap';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
 import { findVenue } from '@Query/venues/findVenue';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { MutationLock, MutationLocksValue } from '@Types/mutationLockTypes';
@@ -25,7 +26,7 @@ export function checkMutationLock(
   if (!scope) return undefined; // unmapped methods are never locked
 
   const lockToken = params.lockToken;
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   // Build the hierarchy of elements to check (most specific first)
   const elements: { element: any; label: string }[] = [];

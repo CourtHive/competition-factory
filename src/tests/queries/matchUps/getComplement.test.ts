@@ -260,13 +260,13 @@ describe('getMaxSetScore', () => {
     expect(getSetComplement({ lowValue: 6, setTo: 6, tiebreakAt: 6, NoAD: true, isSide1: true })).toEqual([6, 7]);
   });
 
-  it('caps a NoAD set with NO tiebreak at setTo', () => {
-    // Without a tiebreak, no-advantage scoring settles the set at `setTo` with a one-game margin — and
-    // again the sibling is the authority: a 5 completes to a 6, not to a 7.
-    expect(getMaxSetScore({ setTo: 6, NoAD: true })).toBe(6);
-    expect(getSetComplement({ lowValue: 5, setTo: 6, NoAD: true, isSide1: true })).toEqual([5, 6]);
+  it('a NoAD set with NO tiebreak has no ceiling, exactly like the advantage set it is', () => {
+    // `NoAD` is no-advantage GAMES. It does not settle the set at `setTo`: a 5 completes to a 7 and the
+    // set runs on, with no ceiling — the same answer as without the token. This pinned 6 and [5, 6]
+    // until 2026-10-01; the one-game set margin is `WB1`, pinned above.
+    expect(getMaxSetScore({ setTo: 6, NoAD: true })).toBeUndefined();
+    expect(getSetComplement({ lowValue: 5, setTo: 6, NoAD: true, isSide1: true })).toEqual([5, 7]);
 
-    // Where the same format is an ADVANTAGE set the 5 completes to a 7, and there is no ceiling at all.
     expect(getSetComplement({ lowValue: 5, setTo: 6, isSide1: true })).toEqual([5, 7]);
     expect(getMaxSetScore({ setTo: 6 })).toBeUndefined();
   });

@@ -1,6 +1,6 @@
 {
   "name": "documentation",
-  "packageManager": "pnpm@12.6.0",
+  "packageManager": "pnpm@12.7.0",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -21,11 +21,11 @@
     "@mdx-js/react": "^3.1.1",
     "@types/react": "19.3.0",
     "clsx": "2.1.1",
-    "courthive-components": "6.0.1",
+    "courthive-components": "6.1.0",
     "leaflet": "^1.9.4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "tods-competition-factory": "7.3.1"
+    "tods-competition-factory": "7.4.0"
   },
   "browserslist": {
     "production": [

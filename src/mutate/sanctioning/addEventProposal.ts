@@ -1,3 +1,4 @@
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -34,7 +35,7 @@ export function addEventProposal({ sanctioningRecord, eventProposal }: AddEventP
   };
 
   sanctioningRecord.proposal.events.push(newEvent);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS, eventProposalId: newEvent.eventProposalId };

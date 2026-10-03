@@ -364,6 +364,29 @@ const format = scoreGovernor.parse({
 
 ---
 
+## repairScore
+
+The **ingestion** fallback for a score a results feed recorded impossibly. Never use it for a live
+entry: a person entering a score is held to it.
+
+```js
+const { score, warnings } = scoreGovernor.repairScore({
+  matchUpFormat, // required - the format the score is played to
+  score, // required - { sets }
+});
+```
+
+It makes one repair. A set whose games are a tiebreak result (`7-6` under `@6`) but whose tiebreak
+points no tiebreak can end on (`7-6(10-7)` with a tiebreak to seven) loses those points and keeps
+`7-6`. A `7-6` with no points is a recordable set, so this keeps everything the feed knew for certain:
+who won the set, and that it went to a tiebreak.
+
+Anything else is returned untouched, for `setMatchUpStatus` to refuse. Each repaired set is named in a
+warning, `{ code: 'INVALID_TIEBREAK_POINTS_DROPPED', setNumbers }` (`scoreWarningConstants`). The
+caller then writes the returned score as usual.
+
+---
+
 ## retainScoreForFormat
 
 Returns which of the sets already entered survive a change of `matchUpFormat`, and which do not.
@@ -460,6 +483,12 @@ const { valid, errors } = scoreGovernor.validateScore({
 ```
 
 **Purpose:** Comprehensive score validation for data integrity.
+
+A valid score can carry `warnings`. A set decided by its tiebreak and recorded on games alone (`7-6`
+with no tiebreak points) is valid, and is named in `{ code: 'TIEBREAK_POINTS_NOT_RECORDED',
+setNumbers }`. A tiebreak-only set (a match tiebreak) recorded as `1-0` in its GAME fields with no
+points is valid too: it is the marker of a set won with its points unrecorded. A `1-0` in the
+tiebreak-point fields is points, and is refused unless the tiebreak is played to one (`TB1`).
 
 ---
 

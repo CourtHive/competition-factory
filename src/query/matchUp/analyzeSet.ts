@@ -1,3 +1,5 @@
+import { isTiebreakGamesScore, isTiebreakWon, tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
+import { isTiebreakMarker, readTiebreakSet } from './tiebreakSetShape';
 import { getSetWinningSide } from './getSetWinningSide';
 
 // constants
@@ -23,21 +25,19 @@ export function analyzeSet(params) {
 
   const isValidSetNumber = !!(setNumber && maxSetNumber && setNumber <= maxSetNumber);
 
-  const scores = extractScores(setObject);
-  const { sideGameScores, sidePointScores, sideTiebreakScores } = scores;
+  // One reading of where the points are, whatever shape the set arrived in — see `tiebreakSetShape`
+  const scores = extractScores(setObject, setFormat);
+  const { sideGameScores, sidePointScores, sideTiebreakScores, isTiebreakSet } = scores;
   const sideGameScoresCount = sideGameScores.filter((sideScore) => sideScore !== undefined).length;
   const sidePointScoresCount = sidePointScores.filter((sideScore) => sideScore !== undefined).length;
   const sideTiebreakScoresCount = sideTiebreakScores.filter((tiebreakScore) => tiebreakScore !== undefined).length;
 
-  const gameScoresCount = sideGameScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length;
-  const tiebreakScoresCount = sideTiebreakScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length;
-
   const { tiebreakAt } = setFormat ?? {};
-  const hasTiebreakCondition = tiebreakAt && sideGameScores.filter((gameScore) => gameScore >= tiebreakAt).length === 2;
+  const hasTiebreakCondition =
+    tiebreakAt &&
+    sideGameScores.filter((gameScore) => typeof gameScore === 'number' && gameScore >= tiebreakAt).length === 2;
 
   const leadingSide = determineLeadingSide(hasTiebreakCondition, sideGameScores);
-
-  const isTiebreakSet = !!(tiebreakScoresCount && !gameScoresCount);
 
   const isCompletedSet = !!setObject?.winningSide;
   const { error: standardSetError, result: isValidStandardSetOutcome } = checkValidStandardSetOutcome({
@@ -111,11 +111,17 @@ export function analyzeSet(params) {
   return analysis;
 }
 
-function extractScores(setObject) {
+// A tiebreak-only set was "tiebreak scores and no game scores" here, which is ONE of the three shapes it
+// arrives in: the point engine and every hydrated read carry the 1-0 marker beside the points, and a
+// format-aware parse put the points in the game fields. Both were invalid sets to this analysis, and
+// `setMatchUpState`'s revert guard, which asks `analyzeMatchUp`, failed open on them (G3, 2026-10-02).
+function extractScores(setObject, setFormat) {
+  const { isTiebreakSet, sideGameScores, sideTiebreakScores } = readTiebreakSet(setObject, setFormat);
   return {
-    sideGameScores: [setObject?.side1Score, setObject?.side2Score],
     sidePointScores: [setObject?.side1PointScore, setObject?.side2PointScore],
-    sideTiebreakScores: [setObject?.side1TiebreakScore, setObject?.side2TiebreakScore],
+    sideTiebreakScores,
+    sideGameScores,
+    isTiebreakSet,
   };
 }
 
@@ -175,7 +181,7 @@ function checkValidStandardSetOutcome({ setObject, setFormat, sideGameScores, si
   const validGameScores = sideGameScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length === 2;
   if (!validGameScores) return { result: false, error: INVALID_GAME_SCORES };
 
-  const { setTo, tiebreakAt, tiebreakFormat, NoAD } = setFormat ?? {};
+  const { setTo, tiebreakAt, tiebreakFormat, winBy } = setFormat ?? {};
   const meetsSetTo = !!(setTo && sideGameScores?.find((gameScore) => gameScore >= setTo));
   if (!meetsSetTo) return { result: false, error: INVALID_GAME_SCORES };
 
@@ -211,7 +217,9 @@ function checkValidStandardSetOutcome({ setObject, setFormat, sideGameScores, si
 
   const hasTiebreakCondition = tiebreakAt && sideGameScores.filter((gameScore) => gameScore >= tiebreakAt).length === 2;
 
-  const minimumGamesWinMargin = NoAD ? 1 : 2;
+  // Two games, or the margin the format DECLARES (`WB1`). `NoAD` is a games property and read this as a
+  // one-game set margin until 2026-10-01 — see `checkSetIsComplete` for the ruling.
+  const minimumGamesWinMargin = winBy ?? 2;
   const losingSideGameScoreAtSetToThreshold = losingSideGameScore >= setTo - 1;
   const invalidWinningScore =
     gamesDifference &&
@@ -264,6 +272,15 @@ function validateTiebreakCondition({
         error: { message: 'invalid winning game scoreString (5)' },
       };
     }
+    // A 7-6 with NO tiebreak points recorded is a finished set (CA, 2026-10-02, ruling V11: "so prevalent"
+    // — 4.6% of ITA's completed tiebreak sets). One side's points without the other's is still refused.
+    const noTiebreakPoints = sideTiebreakScores?.every((s) => s === undefined || s === null);
+    if (
+      noTiebreakPoints &&
+      isTiebreakGamesScore(winningSideGameScore, sideGameScores[losingSideIndex], { setTo, tiebreakAt })
+    ) {
+      return undefined;
+    }
     if (!validTiebreakScores) {
       return {
         result: false,
@@ -283,7 +300,8 @@ function validateTiebreakCondition({
       };
     }
 
-    const maxGameScore = tiebreakAt < setTo ? setTo : setTo + 1;
+    // the tiebreak winner's games: 7 for `@6`, 6 for `@5`, 13 for `@12` — see `tiebreakAtRules`
+    const maxGameScore = tiebreakSetGames({ setTo, tiebreakAt })?.winner ?? setTo + 1;
     if (winningSideGameScore > maxGameScore) {
       return {
         result: false,
@@ -291,20 +309,23 @@ function validateTiebreakCondition({
       };
     }
 
-    if (!winningSideTiebreakScore || !losingSideTiebreakScore || winningSideTiebreakScore < losingSideTiebreakScore) {
+    // `typeof`, not truthiness: a losing tiebreak score of 0 is a score, and `!0` read it as MISSING, so every
+    // 7-6(0) was an invalid set here while the validators, the engine and key-value entry all accept
+    // it — and `setMatchUpState`'s revert guard, which asks `validMatchUpOutcome`, failed open on it
+    // (validator debate V1, 2026-10-02).
+    if (
+      typeof winningSideTiebreakScore !== 'number' ||
+      typeof losingSideTiebreakScore !== 'number' ||
+      winningSideTiebreakScore < losingSideTiebreakScore
+    ) {
       return {
         result: false,
         error: { message: 'winningSide tiebreak value is not high' },
       };
     }
 
-    const minimumTiebreakWinMargin = tiebreakNoAD ? 1 : 2;
-    const tiebreakDifference = winningSideTiebreakScore - losingSideTiebreakScore;
-    const losingSideGameScoreAtTiebreakToThreshold = losingSideTiebreakScore >= tiebreakTo - 1;
-    const invalidTiebreakScore =
-      tiebreakDifference && losingSideGameScoreAtTiebreakToThreshold && tiebreakDifference < minimumTiebreakWinMargin;
-
-    if (invalidTiebreakScore) {
+    // Won by the margin, and never past the target by more than it — see `isTiebreakWon` (V7)
+    if (!isTiebreakWon(winningSideTiebreakScore, losingSideTiebreakScore, { tiebreakTo, NoAD: tiebreakNoAD })) {
       return {
         result: false,
         error: { message: 'invalid tiebreak scores (3)' },
@@ -312,8 +333,17 @@ function validateTiebreakCondition({
     }
   }
 
+  // A winner past `setTo` without six-all is a tiebreak-set shape with no tiebreak — EXCEPT the one score
+  // that reaches `setTo + 1` outright: 7-5, from five-all, where the tiebreak at six-all is never reached.
+  // This refused it as "(2)" (measured 2026-10-02, with or without `NOAD`), while `getSetWinningSide`
+  // named the winner — one set, two answers. Only where the tiebreak sits AT `setTo`: under `@5` a 7-5
+  // is impossible, because five-all is already the tiebreak.
+  // Without the tiebreak condition the games must be a set won by the margin with the loser still
+  // below the tiebreak games: 7-5 under `@6`, 12-10 and 13-11 under `@12`, never 7-3 or 8-3.
+  const losingSideGameScore = sideGameScores[losingSideIndex];
   const hasTiebreakGameScore = winningSideGameScore > setTo;
-  if (hasTiebreakGameScore && !hasTiebreakCondition) {
+  const wonByTheMargin = wonWithoutTiebreak(winningSideGameScore, losingSideGameScore, { setTo, tiebreakAt });
+  if (hasTiebreakGameScore && !hasTiebreakCondition && !wonByTheMargin) {
     return {
       result: false,
       error: { message: 'invalid winning game scoreString (2)' },
@@ -340,6 +370,14 @@ function checkValidTiebreakSetOutcome({ setObject, setFormat, sideTiebreakScores
   const { tiebreakSet } = setFormat ?? {};
   const { NoAD, tiebreakTo } = tiebreakSet ?? {};
 
+  // The 1-0 marker alone: a finished tiebreak set whose points were not kept (CA, V11)
+  if (isTiebreakMarker(setObject, setFormat)) {
+    const markerWinner = setObject.side1Score === 1 ? 1 : 2;
+    return setObject.winningSide === markerWinner
+      ? { result: true }
+      : { result: false, error: { message: 'tiebreak set marker contradicts the set winner' } };
+  }
+
   const validTiebreakScores = sideTiebreakScores?.filter((s) => typeof s === 'number' && !Number.isNaN(s)).length === 2;
   if (!validTiebreakScores) {
     return { result: false, error: { message: 'invalid tiebreak scores (1)' } };
@@ -359,20 +397,22 @@ function checkValidTiebreakSetOutcome({ setObject, setFormat, sideTiebreakScores
   const winningSideTiebreakScore = sideTiebreakScores[winningSideIndex];
   const losingSideTiebreakScore = sideTiebreakScores[losingSideIndex];
 
-  if (!winningSideTiebreakScore || !losingSideTiebreakScore || winningSideTiebreakScore < losingSideTiebreakScore) {
+  // `typeof`, not truthiness — a [10-0] is a tiebreak set: the loser's 0 is a score
+  // (see the same read in validateTiebreakCondition)
+  if (
+    typeof winningSideTiebreakScore !== 'number' ||
+    typeof losingSideTiebreakScore !== 'number' ||
+    winningSideTiebreakScore < losingSideTiebreakScore
+  ) {
     return {
       result: false,
       error: { message: 'winningSide tiebreak value is not high' },
     };
   }
 
-  const minimumTiebreakWinMargin = NoAD ? 1 : 2;
-  const tiebreakDifference = winningSideTiebreakScore - losingSideTiebreakScore;
-  const losingSideGameScoreAtTiebreakToThreshold = losingSideTiebreakScore >= tiebreakTo - 1;
-  const invalidTiebreakScore =
-    tiebreakDifference && losingSideGameScoreAtTiebreakToThreshold && tiebreakDifference < minimumTiebreakWinMargin;
-
-  if (invalidTiebreakScore) {
+  // Won by the margin, and never past the target by more than it — see `isTiebreakWon` (V7). The margin
+  // is capped at the target, so a `TB1` decider's `1-0` is a won set here too.
+  if (!isTiebreakWon(winningSideTiebreakScore, losingSideTiebreakScore, { tiebreakTo, NoAD })) {
     return { result: false, error: { message: 'invalid tiebreak scores (3)' } };
   }
 

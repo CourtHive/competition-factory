@@ -60,6 +60,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { propagateUnfillableLoserBye } from './propagateUnfillableLoserBye';
+import { normalizeDrawPositions } from './normalizeDrawPositions';
 import { assignDrawPositionBye } from './assignDrawPositionBye';
 import { getParticipantId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -462,13 +463,25 @@ function applyPositionToMatchUp({
   stack,
   event,
 }) {
-  // necessary to refresh inContextDrawMatchUps after mutation
-  const refreshedMatchUps =
-    getAllDrawMatchUps({
-      inContext: true,
-      drawDefinition,
-      matchUpsMap,
-    }).matchUps ?? [];
+  /**
+   * necessary to refresh inContextDrawMatchUps after mutation — AND ONLY WHERE THE VIEW IS READ.
+   *
+   * Two things below read it: `getExitWinningSide`, for a double exit's exit, and
+   * `recordSourceSideProvenance`, for a matchUp already in the exit cascade. An ordinary placement —
+   * a winner advancing into a matchUp nobody has exited from — reads neither, and this hydrated the
+   * whole draw for it regardless. Measured 2026-10-01 (`pipelineCost.test.ts`, 2,026
+   * `setMatchUpStatus` calls over seventeen draw types): 1,596 hydrations from this line, 12.5% of
+   * everything the pipeline spent, of which 59 were read.
+   *
+   * Derived at most once, and at the point of the first read. Nothing between this line and either
+   * read changes the draw, so the view is the one that was taken here before — it is only not taken
+   * when nobody asks.
+   */
+  let refreshed: HydratedMatchUp[] | undefined;
+  const refreshedMatchUps = () => {
+    refreshed ??= getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
+    return refreshed;
+  };
   // A participant advancing into a PENDING propagated exit fills its empty WINNER slot
   // (progressExitStatus set winningSide to the empty side). drawPositions is then
   // re-sorted, so the winning side is the side the advancing participant now occupies
@@ -480,7 +493,7 @@ function applyPositionToMatchUp({
   const exitWinningSide =
     (isDoubleExitExit &&
       getExitWinningSide({
-        inContextDrawMatchUps: refreshedMatchUps,
+        inContextDrawMatchUps: refreshedMatchUps(),
         drawPosition,
         matchUpId,
       })) ||
@@ -550,7 +563,7 @@ function applyPositionToMatchUp({
      * last decision read on this surface and it wants its own change.
      */
     recordSourceSideProvenance({
-      inContextDrawMatchUps: refreshedMatchUps,
+      inContextDrawMatchUps: refreshedMatchUps(),
       sourceMatchUpStatus,
       sourceMatchUpId,
       matchUpsMap,
@@ -560,7 +573,7 @@ function applyPositionToMatchUp({
 
   // only in the case of "Double Exit" produced "Exit" can a winningSide be assigned at the same time as a position
   Object.assign(matchUp, {
-    drawPositions: updatedDrawPositions,
+    drawPositions: normalizeDrawPositions(updatedDrawPositions),
     winningSide: exitWinningSide,
     // We keep the current status if it is already marked as WO. Deliberately the BROADER flag: an
     // empty drawPosition arriving delivers no participant and so gives no reason to change
@@ -1175,7 +1188,17 @@ function propagateLineUp({
 
   const source = dualMatchUp.roundPosition;
   const target = winnerMatchUp.roundPosition;
-  const targetSideNumber = (source === target && source !== 1) || Math.floor(source / 2) === target ? 2 : 1;
+  /**
+   * ON A FEED ROUND THE ADVANCING TEAM IS SIDE 2 — `draw-positions.md` rule 4: a fed position is side
+   * 1, one that advanced from the prior round of this structure is side 2 — and roundPosition
+   * arithmetic cannot know that. `Consolation|1|1` → `Consolation|2|1` of a FIRST_MATCH_LOSER_CONSOLATION
+   * is rp 1 → rp 1, which the formula below reads as side 1; the fed seat then arrived on side 1
+   * holding the advancing team's lineUp, and every line of that dual hydrated with one player on both
+   * sides (measured 2026-10-01, TEAM matrix line arm: BYE_WON on 56 of 60 FMLC cells). DOUBLE_ELIMINATION's
+   * Main final is a feed round for side ordering too (rule 4a), and takes the same answer.
+   */
+  const advancedByPosition = (source === target && source !== 1) || Math.floor(source / 2) === target;
+  const targetSideNumber = winnerMatchUp.feedRound || advancedByPosition ? 2 : 1;
 
   const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === winnerMatchUp.matchUpId);
 

@@ -1,6 +1,7 @@
 // Constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 import {
   EDITABLE_STATUSES,
   MISSING_SANCTIONING_RECORD,
@@ -34,7 +35,7 @@ export function updateEventProposal({ sanctioningRecord, eventProposalId, update
   const { eventProposalId: _ignored, ...safeUpdates } = updates;
   Object.assign(event, safeUpdates);
 
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS };

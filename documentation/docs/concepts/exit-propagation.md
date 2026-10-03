@@ -19,36 +19,52 @@ _path_ a participant took between structures rather than the _status_ that trave
 
 ## The pending propagated exit
 
-The shape most likely to surprise a consumer is a matchUp that is an exit, carries a `winningSide`,
-and has **no participant on that winning side**.
+Two pending shapes exist, and they differ in whether a `winningSide` is recorded before anyone arrives.
 
-That is not corruption. When a double exit occurs, the matchUp it feeds cannot yet be resolved: the
-opponent has not arrived from the earlier round. The engine records the outcome that is already
-known — the exit — and points `winningSide` at the still-empty slot that will receive whoever falls
-through. When that participant arrives, the exit resolves onto them automatically.
+**A carried exit.** With `propagateExitStatus` on, a `WALKOVER` or `DEFAULTED` follows the loser into
+the matchUp they are fed to. The exiting participant is present; their opponent may not be. The engine
+records the exit and points `winningSide` at the opponent's side, **even when that side is still
+empty**: the outcome is already known, and whoever arrives there wins it.
 
 ```js
-// A pending propagated exit
+// A carried exit, opponent not yet arrived
 {
   matchUpStatus: 'WALKOVER',
   winningSide: 1,                 // side 1 is an empty feed slot
   sides: [
     { sideNumber: 1 },            // no participantId yet
-    { sideNumber: 2, participantId: '...' },
+    { sideNumber: 2, participantId: '...' },  // the participant who carried the exit in
   ],
+}
+```
+
+**A produced exit.** A double exit sends nobody forward, so the matchUp it feeds receives a produced
+`WALKOVER` (or `DEFAULTED`) with **no `winningSide`** while the opponent has not arrived. The award is
+made when they do. CA, 2026-09-20: _"that is unnecessary if the winningSide will display the
+checkmark once a participant arrives... so, you don't need to keep it."_ The one exception is an
+opponent who is already in place: the winner is then read off their side at once, because no arrival
+is still coming to resolve it.
+
+```js
+// A produced exit, opponent not yet arrived
+{
+  matchUpStatus: 'WALKOVER',
+  winningSide: undefined,         // awarded when a participant arrives
+  sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
 }
 ```
 
 Two consequences worth knowing:
 
-- **A `winningSide` does not imply a winner is present.** Code that reads `winningSide` and
-  dereferences the participant on that side must tolerate its absence. `isActiveMatchUp` and
-  `isActiveDownstream` both distinguish a pending exit from a resolved one for this reason.
+- **A `winningSide` does not imply a winner is present**, and an exit does not imply a
+  `winningSide`. Code that reads `winningSide` and dereferences the participant on that side must
+  tolerate both. `isActiveMatchUp` and `isActiveDownstream` distinguish a pending exit from a resolved
+  one for this reason.
 - **The matchUp is not finished.** It is waiting, and it will change again without any further
   action from the caller.
 
-A _scored_ exit always has a participant on its winning side, so an exit whose winning side is
-unoccupied can only be a pending propagated one.
+Both shapes are measured by the outcome pipeline's differential mode on every exit the suite enters
+(`src/mutate/matchUps/outcome/`).
 
 ## `propagateExitStatus`
 
@@ -149,7 +165,7 @@ tournament records.
 
 ## Guarantees
 
-These hold as of 7.0.0 and are enforced by the
+These hold as of 7.0.0 (the last two as of 7.4.0) and are enforced by the
 [exit-propagation harness](/docs/testing/exit-propagation-harness).
 
 ### Re-applying the same double exit does nothing
@@ -212,6 +228,51 @@ A `DOUBLE_WALKOVER` produces a `WALKOVER` in the matchUp it feeds; a `DOUBLE_DEF
 `DEFAULTED`. A mixed convergence is a `DOUBLE_WALKOVER` by the rule above, so it produces a
 `WALKOVER` — and that walkover is not attributable to any one upstream participant, which is the
 point of choosing the weaker label.
+
+### A correction lands where the direct entry lands
+
+Enter the wrong outcome, then correct it, and the draw is the one you would have had by entering
+the right outcome first — status, winner and seats alike, in every matchUp the mistake could have
+touched. Enforced since 7.4.0 by the deep-correction oracle: 1,600 cells across seventeen draw
+types, each playing a twelve-step prefix with exits planted along the way, then taking the deepest
+exit back and comparing the two routes. The baseline is **zero severe divergences**; the only
+cells it does not compare are the four where the engine refuses the correct outcome outright, and
+those are recorded rather than counted.
+
+Three rules fell out of making this hold, each a defect that only the order of entry exposed:
+
+- **A seat advanced by its opponent's BYE keeps that advancement when its occupant leaves.** A fed
+  seat beside a draw BYE is advanced from generation, before anybody sits on it. The advancement
+  never depended on the occupant, so clearing the occupant — a corrected walkover, a position
+  action — leaves the seat where it was; it is not torn down and the BYE's seat advanced in its
+  place. (This is also why a BYE placed on a seat that is already advanced and alone now feeds
+  the loser link its BYE.)
+- **Clearing a double exit withdraws the BYE it propagated, all the way.** Removing a
+  `DOUBLE_WALKOVER` takes back the BYE it placed on the consolation seat, the BYE's advancement
+  into later rounds, and the `byeFromPropagation` marker — whether the double exit was in the
+  first round or a later one.
+- **A produced exit arrives on the side its seat already holds.** Where fed seat numbers
+  interleave with advanced ones, feeder order predicts the wrong side; when the target already
+  holds both seats, the seat's own side is read.
+
+### A team dual's double exit is unwound by its lines, or protected from them
+
+In a TEAM event a dual that holds a `DOUBLE_WALKOVER` has propagated like any other. Scoring one of
+its lines (tieMatchUps) afterwards takes the dual out of the double exit — so the produced walkover
+is withdrawn first, and a team that had been awarded it is taken back out of the next round. Once
+that produced walkover has been **played on**, a line of the dual is refused with
+`CANNOT_CHANGE_OUTCOME`, exactly as a direct re-score of the dual is: a played result is never
+reset by a score entered elsewhere.
+
+### An exit never discards a placement, and says when it kept one
+
+A BYE or a produced exit that lands on a scheduled matchUp keeps that matchUp's court, order and
+times — the rule the [schedule governor](/docs/governors/schedule-governor#assigning-a-bye-preserves-scheduling)
+states for BYEs, applied to produced exits since 7.4.1. The read side flags both
+(`CONFLICT_BYE_SCHEDULED`, `CONFLICT_EXIT_SCHEDULED`), and the `setMatchUpStatus` call that left
+them returns `warnings: [{ code: 'SCHEDULE_PRESERVED_ON_EXIT', matchUpIds }]` so the client can
+offer to release the slots. Enforced over the drawSize-8 matrix cells with every matchUp scheduled
+first: no slot moves under any cascade.
 
 ### Nothing to do is success, not failure
 

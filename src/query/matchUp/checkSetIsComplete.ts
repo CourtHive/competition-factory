@@ -1,3 +1,5 @@
+import { readTiebreakSet, withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
+import { isTiebreakWon, reachedTiebreak } from '@Query/matchUp/tiebreakAtRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
@@ -26,6 +28,13 @@ export function checkSetIsComplete({
   matchUpScoringFormat = matchUpScoringFormat || (matchUpFormat && parse(matchUpFormat));
 
   const setFormat = (isDecidingSet && matchUpScoringFormat.finalSetFormat) || (matchUpScoringFormat?.setFormat ?? {});
+  // A tiebreak-only set's points are read from wherever they are, so a set that carried them in its game
+  // fields (a format-aware parse) is the same set as one that carries them beside the 1-0 marker
+  const reading = readTiebreakSet(set, setFormat);
+  // the 1-0 marker alone records a finished tiebreak set (CA, V11)
+  if (reading.isMarker) return true;
+  isTiebreakSet ??= reading.isTiebreakSet;
+  set = withPointsInTiebreakFields(set, setFormat);
   const { side1Score, side2Score } = set;
   const { setTo, tiebreakAt } = setFormat;
   const hasScore = side1Score || side2Score;
@@ -34,10 +43,18 @@ export function checkSetIsComplete({
   const scoreDiff = Math.abs(side1Score - side2Score);
   const containsSetTo = side1Score >= setTo || side2Score >= setTo;
 
+  // Only a format that HAS a tiebreak can require one. An advantage set (`S:6`, no `/TB`) runs on past
+  // six-all by two clear games — 1968 Wimbledon reached 24-22 — and this read both sides at `setTo` as
+  // "tiebreak now" regardless, so an 8-6 came back INCOMPLETE (measured 2026-10-02, with or without
+  // `NOAD`). `parse` writes `noTiebreak: true` and no `tiebreakAt` for such a set; a hand-built format
+  // with neither field is read the same way, as the advantage set it declares.
+  // The tiebreak is played where the FORMAT says — `@5` below `setTo`, `@12` above it — not at `setTo`.
+  // This asked "both at setTo" and "either at a tiebreakAt below setTo", which has no answer for a
+  // tiebreak above `setTo`: under `@12` a 7-6 was "tiebreak now" and a 13-12 "too many games"
+  // (2026-10-02, validator debate G1). One question, from `tiebreakAtRules`.
+  const formatHasTiebreak = !!(setFormat.tiebreakFormat || setFormat.tiebreakAt);
   const requiresTiebreak =
-    isTiebreakSet ||
-    (side1Score >= setTo && side2Score >= setTo) ||
-    (tiebreakAt && tiebreakAt < setTo && (side1Score === tiebreakAt || side2Score === tiebreakAt));
+    isTiebreakSet || (formatHasTiebreak && reachedTiebreak(side1Score, side2Score, { setTo, tiebreakAt }));
 
   const leaderHoldsTiebreak =
     (leadingSide === 1 && set.side1TiebreakScore > set.side2TiebreakScore) ||
@@ -46,22 +63,21 @@ export function checkSetIsComplete({
   const tiebreakIsValid =
     ignoreTiebreak || (requiresTiebreak && leaderHoldsTiebreak && tiebreakReachesTarget(set, setFormat, isTiebreakSet));
 
-  // ── The margin honours an explicit `winBy`, which it previously ignored ──
+  // ── The margin is two games, a declared `winBy`, or one through a tiebreak — never `NoAD` ──
   //
-  // `NoAD` and a tiebreak both force a one-game margin, and both were already handled. What was not is a
-  // format that DECLARES its margin: `parse('SET1-S:5WB1')` emits `{setTo: 5, noTiebreak: true, winBy: 1}`,
-  // with no `NoAD`, so a 5-4 fell through to a two-game margin and came back INCOMPLETE — though
-  // first-to-five wins that set. `SET1-S:5NOAD` worked, which is what made the gap easy to miss: the two
-  // formats express the same rule under different keys and only one of them was read.
+  // `NoAD` on a set format is no-advantage GAME scoring: a game at deuce decided by one point. It says
+  // nothing about how the SET ends, which under `S:6NOAD/TB7` is still two clear games or the tiebreak at
+  // six-all — the ITF's own short sets and the USTA "Standard Doubles" format both read that way, and a
+  // one-game SET margin is a different token, `WB1` (`parse('SET1-S:5WB1')` emits `winBy: 1`; TYPTI).
+  // This function read `NoAD` as that margin, so a `6-5` under `SET3-S:6NOAD/TB7-F:TB10` came back
+  // COMPLETE, and `getSetWinningSide` and `analyzeSet`, which delegate here, named a winner for it.
+  // Settled by CA 2026-10-01; the grammar and sources are in
+  // `Mentat/statuses/2026-10-01-noad-at-three-levels-and-the-one-game-set.md`.
   //
-  // The symptom reached further than this function. `getSetWinningSide` delegates here, so `analyzeSet`
-  // reported `winningSide: undefined` for the same 5-4 — one root cause, two wrong answers. Found while
-  // courthive-components was being moved off its hand-rolled copies of this logic (CA, 2026-09-27).
+  // `winBy` itself was previously ignored: a 5-4 under `SET1-S:5WB1` fell through to a two-game margin
+  // and came back INCOMPLETE, though first-to-five wins that set (CA, 2026-09-27).
   const declaredWinBy = setFormat.winBy;
-  const winMargin =
-    (!requiresTiebreak && setFormat.NoAD) || requiresTiebreak || (isTiebreakSet && setFormat.tiebreakFormat?.NoAD)
-      ? 1
-      : (declaredWinBy ?? 2);
+  const winMargin = requiresTiebreak || (isTiebreakSet && setFormat.tiebreakFormat?.NoAD) ? 1 : (declaredWinBy ?? 2);
   const hasWinMargin = scoreDiff >= winMargin;
   const validNormalSetScore = containsSetTo && (hasWinMargin || requiresTiebreak);
 
@@ -95,9 +111,9 @@ function tiebreakReachesTarget(set, setFormat, isTiebreakSet?: boolean): boolean
 
   const high = Math.max(set.side1TiebreakScore ?? 0, set.side2TiebreakScore ?? 0);
   const low = Math.min(set.side1TiebreakScore ?? 0, set.side2TiebreakScore ?? 0);
-  const margin = tiebreakFormat?.NoAD ? 1 : Math.min(2, tiebreakTo);
 
-  return high >= tiebreakTo && high - low >= margin;
+  // Past the target only by exactly the margin, and a no-ad tiebreak never past it (V7)
+  return isTiebreakWon(high, low, tiebreakFormat);
 }
 
 export function getLeadingSide({ set }) {

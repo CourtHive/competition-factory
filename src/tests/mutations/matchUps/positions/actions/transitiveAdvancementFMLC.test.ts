@@ -184,7 +184,7 @@ it('can advance participants when double BYEs are created removing 5-6', () => {
   const finalMatchUp = structureMatchUps.find(
     ({ roundNumber, roundPosition }) => roundNumber === 2 && roundPosition === 1,
   );
-  expect(finalMatchUp.drawPositions).toEqual([1, undefined]);
+  expect(finalMatchUp.drawPositions).toEqual([1]);
   expect(filteredOrderedPairs.filter((p) => p?.length)).toEqual([
     [1, 2],
     [3, 4],

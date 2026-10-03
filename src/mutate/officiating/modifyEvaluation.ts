@@ -1,6 +1,7 @@
 // Constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 import {
   MISSING_OFFICIAL_RECORD,
   EVALUATION_NOT_FOUND,
@@ -54,7 +55,7 @@ export function modifyEvaluation({ officialRecord, evaluationId, updates }: Modi
   if (updates.policyName !== undefined) evaluation.policyName = updates.policyName;
   if (updates.extensions !== undefined) evaluation.extensions = updates.extensions;
 
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS, evaluation };
 }

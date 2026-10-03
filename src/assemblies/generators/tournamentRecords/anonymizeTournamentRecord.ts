@@ -5,6 +5,7 @@ import { generatePersons } from '@Generators/mocks/generatePersons';
 import { extractDate, formatDate } from '@Tools/dateTime';
 import { nameMocks } from '@Generators/mocks/nameMocks';
 import { findExtension } from '@Acquire/findExtension';
+import { nowIso, now } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -99,8 +100,8 @@ function anonymizeTournamentHeader({
   idMap[tournamentRecord.tournamentId] = newTournamentId;
   tournamentRecord.tournamentId = newTournamentId;
 
-  tournamentRecord.createdAt = new Date().toISOString();
-  tournamentRecord.tournamentName = tournamentName || `Anonymized: ${formatDate(new Date())}`;
+  tournamentRecord.createdAt = nowIso();
+  tournamentRecord.tournamentName = tournamentName || `Anonymized: ${formatDate(now())}`;
   tournamentRecord.isMock = true;
 
   // Caller passes a mock provider when multi-tournament anonymization pipelines
@@ -288,7 +289,7 @@ function anonymizeIndividualPersons({
   personIds,
   idMap,
 }) {
-  const consideredDate = tournamentRecord.startDate || formatDate(new Date());
+  const consideredDate = tournamentRecord.startDate || formatDate(now());
 
   const individualParticipants = (tournamentRecord.participants ?? []).filter(
     ({ participantType }) => participantType === INDIVIDUAL,

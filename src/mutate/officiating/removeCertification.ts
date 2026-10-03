@@ -2,6 +2,7 @@
 import { MISSING_OFFICIAL_RECORD, CERTIFICATION_NOT_FOUND } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
@@ -19,7 +20,7 @@ export function removeCertification({ officialRecord, certificationId }: RemoveC
   if (index === -1) return { error: CERTIFICATION_NOT_FOUND, context: { certificationId } };
 
   officialRecord.certifications.splice(index, 1);
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS };
 }

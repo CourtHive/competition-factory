@@ -1,4 +1,5 @@
 import { getStructureReports } from '@Query/structure/structureReport';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { STRUCTURE_REPORT } from '@Constants/reportConstants';
@@ -82,7 +83,7 @@ export function wrapStructureReport({
 
   return {
     reportId: STRUCTURE_REPORT,
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     columns,
     rows,
     summary: {

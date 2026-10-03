@@ -4,6 +4,7 @@
   https://stackoverflow.com/questions/105034/how-to-create-guid-uuid?rq=1
 */
 
+import { randomSource } from '@Tools/prng';
 import { generateRange } from './arrays';
 
 // constants
@@ -53,7 +54,7 @@ export function UUIDS(count = 1, pre?, random?: () => number) {
 }
 
 export function UUID(pre?, random?: () => number) {
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   const lut: string[] = [];
 
   for (let i = 0; i < 256; i++) {

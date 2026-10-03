@@ -1,6 +1,7 @@
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
 import { findVenue } from '@Query/venues/findVenue';
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
@@ -60,7 +61,7 @@ export function addMutationLock(params: AddMutationLockArgs): {
   // Read existing locks on this element
   const { extension } = findExtension({ element, name: MUTATION_LOCKS });
   const locksValue: MutationLocksValue = extension?.value ?? { locks: [] };
-  const now = new Date().toISOString();
+  const now = nowIso();
 
   // Filter out expired locks
   locksValue.locks = locksValue.locks.filter((lock) => lock.expiresAt === null || lock.expiresAt > now);

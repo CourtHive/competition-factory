@@ -10,6 +10,7 @@ import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpSc
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
+import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -24,19 +25,21 @@ import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { validateScore } from '@Validators/validateScore';
+import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
+import { nowIso } from '@Tools/clock';
 
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
 // constants and types
 import { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
@@ -76,10 +79,10 @@ import {
 // un-advance the draw — the class of bug behind stranded LIVE-with-score matches.
 const REVERT_GUARDED_STATUSES = new Set([IN_PROGRESS, SUSPENDED]);
 
-// NOTE: Internal method for setting matchUpStatus or score and winningSide, not to be confused with setMatchUpStatus
-
 type SetMatchUpStateArgs = {
   tournamentRecords?: { [key: string]: Tournament };
+  /** a caller that already built the draw's matchUp map hands it over rather than having it rebuilt */
+  matchUpsMap?: MatchUpsMap;
   policyDefinitions?: PolicyDefinitions;
   appliedPolicies?: PolicyDefinitions;
   matchUpStatus?: MatchUpStatusUnion;
@@ -109,6 +112,15 @@ type SetMatchUpStateArgs = {
   score?: any;
 };
 
+/**
+ * @deprecated on the engine surface since 7.5.0; removed at the next major. This is the INTERNAL
+ * state writer behind `setMatchUpStatus`: it skips the policy resolution of the three propagation
+ * flags, the score-string derivation, the format validation and the exit-propagation cascade that
+ * the public entry performs, so a consumer calling it directly gets a result the draw may not
+ * agree with. The golden corpus found no caller outside this repository (outcome-pipeline spec
+ * § 8). Internal callers (`resetAdHocMatchUps`, `removeCollectionDefinition`) keep importing it;
+ * consumers call `setMatchUpStatus`.
+ */
 export function setMatchUpState(params: SetMatchUpStateArgs): any {
   const stack = 'setMatchUpStatus';
 
@@ -133,6 +145,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   if (validationError) return validationError;
 
   const resolved = resolveMatchUpAndContext({
+    matchUpsMap: params.matchUpsMap,
     tournamentRecord,
     drawDefinition,
     matchUpId,
@@ -154,6 +167,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   } = resolved;
 
   const revertError = checkCompletedRevertGuard({
+    inContextMatchUp,
     matchUp,
     matchUpStatus,
     winningSide,
@@ -166,6 +180,7 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
 
   const impliedCompletionError = checkImpliedCompletionGuard({
     incomingMatchUpFormat: params.matchUpFormat,
+    inContextMatchUp,
     matchUpStatus,
     winningSide,
     score,
@@ -237,12 +252,15 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     // format onto the matchUp before delegating here, so `matchUp.matchUpFormat` was already the
     // incoming one. That write is gone (it survived a refused outcome), so the precedence that was
     // implicit has to be stated.
-    const matchUpFormat =
-      params.matchUpFormat ??
-      matchUp.matchUpFormat ??
-      structure?.matchUpFormat ??
-      drawDefinition?.matchUpFormat ??
-      event?.matchUpFormat;
+    // a TEAM line's format is its collection's — see `resolveScoringFormat`
+    const matchUpFormat = resolveScoringFormat({
+      incoming: params.matchUpFormat,
+      inContextMatchUp,
+      drawDefinition,
+      structure,
+      matchUp,
+      event,
+    });
 
     const result = validateScore({
       existingMatchUpStatus: matchUp.matchUpStatus,
@@ -355,13 +373,21 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
 // allowed. RETIRED/DEFAULTED (irregular endings whose scores do not validate as a
 // completed outcome) stay reversible. To reopen a completed match, submit a new
 // outcome or clear the result first (removeWinningSide / TO_BE_PLAYED).
-function checkCompletedRevertGuard({ matchUp, matchUpStatus, winningSide, score, structure, drawDefinition, event }) {
+function checkCompletedRevertGuard({
+  inContextMatchUp,
+  drawDefinition,
+  matchUpStatus,
+  winningSide,
+  structure,
+  matchUp,
+  score,
+  event,
+}: any) {
   if (!matchUpStatus || !REVERT_GUARDED_STATUSES.has(matchUpStatus)) return undefined;
   if (winningSide || checkScoreHasValue({ score })) return undefined;
   if (matchUp?.matchUpStatus !== COMPLETED || !matchUp?.winningSide) return undefined;
 
-  const matchUpFormat =
-    matchUp.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition?.matchUpFormat ?? event?.matchUpFormat;
+  const matchUpFormat = resolveScoringFormat({ matchUp, inContextMatchUp, structure, drawDefinition, event });
   const { validMatchUpOutcome } = analyzeMatchUp({ matchUp, matchUpFormat });
   if (!validMatchUpOutcome) return undefined;
 
@@ -381,6 +407,7 @@ function checkCompletedRevertGuard({ matchUp, matchUpStatus, winningSide, score,
 // (e.g. a single set won in a best-of-3) remain valid with IN_PROGRESS.
 function checkImpliedCompletionGuard({
   incomingMatchUpFormat,
+  inContextMatchUp,
   matchUpStatus,
   winningSide,
   score,
@@ -406,12 +433,14 @@ function checkImpliedCompletionGuard({
   // score decisive?" is a question about the format it is being recorded under, not the one the
   // matchUp currently carries. `checkCompletedRevertGuard` deliberately does NOT do this: it
   // analyzes the EXISTING result, which must be judged under the format it was recorded under.
-  const matchUpFormat =
-    incomingMatchUpFormat ??
-    matchUp?.matchUpFormat ??
-    structure?.matchUpFormat ??
-    drawDefinition?.matchUpFormat ??
-    event?.matchUpFormat;
+  const matchUpFormat = resolveScoringFormat({
+    incoming: incomingMatchUpFormat,
+    inContextMatchUp,
+    drawDefinition,
+    structure,
+    matchUp,
+    event,
+  });
   if (!matchUpFormat) return undefined;
 
   const { calculatedWinningSide } = analyzeMatchUp({ matchUp: { score, matchUpFormat }, matchUpFormat });
@@ -455,16 +484,54 @@ function validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide
   return undefined;
 }
 
-function resolveMatchUpAndContext({ tournamentRecord, drawDefinition, matchUpId, event, matchUpStatus, winningSide }) {
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+function resolveMatchUpAndContext({
+  tournamentRecord,
+  drawDefinition,
+  matchUpId,
+  event,
+  matchUpStatus,
+  winningSide,
+  matchUpsMap: suppliedMap,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  matchUpStatus?: string;
+  winningSide?: number;
+  matchUpId: string;
+  event?: Event;
+}) {
+  const matchUpsMap = suppliedMap ?? getMatchUpsMap({ drawDefinition });
   const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
-    nextMatchUps: true,
     tournamentRecord,
     inContext: true,
     drawDefinition,
     matchUpsMap,
     event,
   });
+
+  /**
+   * THE DRAW'S EDGES ARE STORED BEFORE ANYTHING IS DECIDED ON THEM.
+   *
+   * This view used to be taken with `nextMatchUps: true`, on the understanding that it supplied
+   * `winnerMatchUpId` / `loserMatchUpId` for a draw stored without them. It supplied them to THIS
+   * view only, and the cascade's decisions do not read this view for them: `hasPropagatedExitDownstream`
+   * reads the stored matchUps, and `getExitWinningSide`, `getHeldExit` and `getExitArrivalSideNumber`
+   * read views taken later, which carry what is stored and nothing else. Measured 2026-10-01 over a
+   * hundred matrix cells played on draws with the ids stripped: 14 ended in a different draw with
+   * the flag on — the draws were only ever repaired when a cascade happened to place a BYE.
+   *
+   * So the edges are written, once, here: 0 of the hundred differ. A draw that stores its edges —
+   * every draw the factory generates — pays a walk of its structures and no write. The flag also
+   * computed `winnerTo`, `loserTo` and `potentialParticipants` for every matchUp, a `positionTargets`
+   * each, which nothing a `setMatchUpStatus` reaches reads: 89,071 -> 20,459 calls in the census.
+   *
+   * THE WRITE PRECEDES VALIDATION, deliberately. A call that is then refused has still stored the
+   * missing edges — CA: a mutation is acceptable under an error response when it is specifically the
+   * addition of missing winner and loser matchUpIds. They are derived from the draw's own links and
+   * are what it would have stored had the factory generated it.
+   */
+  if (inContextDrawMatchUps) ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
 
   const matchUp = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
   const inContextMatchUp = inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
@@ -473,9 +540,9 @@ function resolveMatchUpAndContext({ tournamentRecord, drawDefinition, matchUpId,
 
   if ((matchUp.winningSide || winningSide) && matchUpStatus === BYE) {
     return {
-      context: 'Cannot have Bye with winningSide',
+      info: 'Cannot have Bye with winningSide',
       error: INCOMPATIBLE_MATCHUP_STATUS,
-      matchUpStatus,
+      context: { matchUpStatus },
     };
   }
 
@@ -516,10 +583,9 @@ function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpS
 
     if (winningSide && winningSide === matchUp.winningSide && matchUpStatus && !directingMatchUpStatus) {
       return {
-        context: 'winningSide must include directing matchUpStatus',
+        info: 'winningSide must include directing matchUpStatus',
+        context: { directingMatchUpStatus, matchUpStatus },
         error: INCOMPATIBLE_MATCHUP_STATUS,
-        directingMatchUpStatus,
-        matchUpStatus,
       };
     }
   }
@@ -661,7 +727,7 @@ function applyScoredTime({ matchUp }) {
 
   if (isScored) {
     if (!matchUp.schedule) matchUp.schedule = {};
-    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = new Date().toISOString();
+    if (!matchUp.schedule.scoredTime) matchUp.schedule.scoredTime = nowIso();
   } else if (matchUp.schedule?.scoredTime) {
     delete matchUp.schedule.scoredTime;
   }

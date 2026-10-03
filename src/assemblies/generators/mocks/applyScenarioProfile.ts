@@ -4,6 +4,7 @@ import { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGr
 import { decorateResult } from '@Functions/global/decorateResult';
 import { extractDate } from '@Tools/dateTime';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { now } from '@Tools/clock';
 
 // constants and types
 import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -70,7 +71,7 @@ export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: Appl
 
   if (typeof minutesBeforeAnchor !== 'number' || !isFinite(minutesBeforeAnchor)) return { error: INVALID_VALUES };
 
-  const anchorDate = anchor === 'NOW' ? new Date() : new Date(anchor);
+  const anchorDate = anchor === 'NOW' ? now() : new Date(anchor);
   if (isNaN(anchorDate.getTime())) return { error: INVALID_VALUES };
 
   const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];

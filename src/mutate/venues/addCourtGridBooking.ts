@@ -2,6 +2,7 @@ import { getCourtDateAvailability } from '@Query/venues/getCourtDateAvailability
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
 import { findCourt } from '@Query/venues/findCourt';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { INVALID_VALUES, COURT_NOT_FOUND, EXISTING_MATCHUPS } from '@Constants/errorConditionConstants';
@@ -137,7 +138,7 @@ export function addCourtGridBooking(params: AddCourtGridBookingArgs): ResultType
     rowCount,
     bookingType,
     notes,
-    createdAt: occurredAt ?? new Date().toISOString(),
+    createdAt: occurredAt ?? nowIso(),
   };
 
   targetCourtDate.bookings ??= [];

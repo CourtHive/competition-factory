@@ -20,6 +20,7 @@ import { BYE, RETIRED, COMPLETED, TO_BE_PLAYED, DEFAULTED, SUSPENDED } from '@Co
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
 import { EntryStatusUnion, StageTypeUnion } from '@Types/tournamentTypes';
+import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -73,7 +74,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
     drawDefinition,
     structureId,
   });
-  expect(matchUp.drawPositions).toMatchObject([1, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([1]);
   assignDrawPosition({
     drawPosition: unassignedPositions?.[0].drawPosition,
     participantId: participantIds[0],
@@ -86,7 +87,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions).toMatchObject([1, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([1]);
 
   verifyStructure({
     expectedPositionsAssignedCount: 2,
@@ -114,7 +115,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions).toMatchObject([8, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([8]);
   assignDrawPosition({
     drawPosition: unassignedPositions?.[7].drawPosition,
     participantId: participantIds[1],
@@ -127,7 +128,7 @@ it('advances paired drawPositions when BYE is assigned first', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions).toMatchObject([8, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([8]);
 
   ({ matchUp } = findMatchUpByRoundNumberAndPosition({
     roundPosition: 1,
@@ -338,7 +339,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions).toMatchObject([1, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([1]);
 
   verifyStructure({
     expectedPositionsAssignedCount: 2,
@@ -380,7 +381,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions).toMatchObject([8, undefined]);
+  expect(matchUp.drawPositions).toMatchObject([8]);
 });
 
 it('can change a FMLC first round matchUp winner and update consolation', () => {
@@ -395,6 +396,8 @@ it('can change a FMLC first round matchUp winner and update consolation', () => 
   });
   const { mainStructureId, consolationStructureId } = genResult;
   const { drawDefinition } = genResult;
+  // the hand-built draw carries no format; its scores are standard best-of-three sets
+  drawDefinition.matchUpFormat = FORMAT_STANDARD;
 
   let result, error, success;
   let matchUp, matchUpId, matchUpStatus, sides, score;

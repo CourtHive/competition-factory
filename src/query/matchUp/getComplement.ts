@@ -1,3 +1,4 @@
+import { tiebreakSetGames } from '@Query/matchUp/tiebreakAtRules';
 import { ensureInt } from '@Tools/ensureInt';
 
 type SetComplementArgs = {
@@ -10,7 +11,7 @@ type SetComplementArgs = {
 };
 
 export const getSetComplement = (params: SetComplementArgs): number[] | false => {
-  const { isSide1, lowValue, setTo, tiebreakAt, NoAD, winBy } = params;
+  const { isSide1, lowValue, setTo, tiebreakAt, winBy } = params;
   if (lowValue === undefined) return false;
   let valueAsNumber = ensureInt(lowValue);
 
@@ -19,27 +20,25 @@ export const getSetComplement = (params: SetComplementArgs): number[] | false =>
     valueAsNumber = Number.parseInt(valueAsNumber.toString().slice(0, 2));
   }
 
-  if (tiebreakAt && tiebreakAt < setTo && valueAsNumber > tiebreakAt) {
-    valueAsNumber = tiebreakAt;
+  // a low value cannot exceed the tiebreak games, wherever the format puts them
+  const tiebreakGames = tiebreakSetGames({ setTo, tiebreakAt, winBy });
+  if (tiebreakGames && valueAsNumber > tiebreakGames.loser) {
+    valueAsNumber = tiebreakGames.loser;
   }
 
   let calculatedValue;
   // WB1 on a no-tiebreak set: first side to setTo wins; complement is always setTo
   // (e.g. TYPTI WB1 → 0–5, 4–5).
+  // `NoAD` had a branch here that completed a 5 to a 6 — no-advantage GAMES read as a one-game SET
+  // margin. Removed 2026-10-01: the set margin is two or the declared `winBy`, whatever the games do.
   if (!tiebreakAt && winBy === 1) {
     calculatedValue = setTo;
-  } else if (NoAD && !tiebreakAt) {
-    if (valueAsNumber > setTo) {
-      calculatedValue = setTo;
-    } else {
-      calculatedValue = valueAsNumber < setTo ? setTo : setTo - 1;
-    }
+  } else if (tiebreakGames) {
+    // at the tiebreak games the set is decided by the tiebreak; below them, by two clear games or
+    // first to setTo: 5 → 7 and 4 → 6 under `@6`, 11 → 13 and 8 → 10 under `@12`, 5 → 6 under `@5`
+    calculatedValue = valueAsNumber >= tiebreakGames.loser ? tiebreakGames.winner : Math.max(setTo, valueAsNumber + 2);
   } else {
-    calculatedValue =
-      (valueAsNumber + 1 < setTo && setTo) ||
-      (tiebreakAt && tiebreakAt < setTo && valueAsNumber === tiebreakAt && setTo) ||
-      (!tiebreakAt && valueAsNumber + 2) ||
-      setTo + 1;
+    calculatedValue = (valueAsNumber + 1 < setTo && setTo) || valueAsNumber + 2;
   }
 
   const side1Result = isSide1 ? valueAsNumber : calculatedValue;
@@ -147,7 +146,7 @@ type MaxSetScoreArgs = {
  * an interface refuse an impossible pair as it is typed rather than validating it afterwards.
  */
 export const getMaxSetScore = (params: MaxSetScoreArgs): number | undefined => {
-  const { NoAD, opponentScore, setTo, tiebreakAt, tiebreakTo, timed, winBy } = params;
+  const { opponentScore, setTo, tiebreakAt, tiebreakTo, timed, winBy } = params;
 
   // No ceiling: the clock decides, not the games.
   if (timed) return undefined;
@@ -164,13 +163,14 @@ export const getMaxSetScore = (params: MaxSetScoreArgs): number | undefined => {
   //
   //   - `S:6` (advantage) — a 5 completes to a **7**, so the set runs on. 1968 Wimbledon reached
   //     24-22. No ceiling.
-  //   - `S:6NOAD` — a 5 completes to a **6**: no-advantage scoring settles it at `setTo` with a
-  //     one-game margin, so `setTo` IS the ceiling.
-  //   - a declared `WB1` — the same, by the format saying so outright.
+  //   - `S:6NOAD` — the SAME: no-advantage games change nothing about the set's margin, so a 5
+  //     completes to a 7 and the set runs on. This returned `setTo` for it until 2026-10-01.
+  //   - a declared `WB1` — first past the post, so `setTo` IS the ceiling.
   const margin = winBy ?? 2;
-  if (!tiebreakAt) return NoAD || margin === 1 ? setTo : undefined;
+  if (!tiebreakAt) return margin === 1 ? setTo : undefined;
 
-  // A tiebreak BELOW setTo settles the set before either side passes setTo.
+  // The tiebreak winner's games are the ceiling: setTo for a tiebreak below setTo, T + 1 above it.
+  const tiebreakGames = tiebreakSetGames({ setTo, tiebreakAt });
   if (tiebreakAt < setTo) return setTo;
 
   // A tiebreak AT setTo: the set can be tied there and taken by one more game — `setTo + 1`, whatever
@@ -181,7 +181,7 @@ export const getMaxSetScore = (params: MaxSetScoreArgs): number | undefined => {
   // in wide use. On a set format `NoAD` is no-advantage GAME scoring — a game at deuce decided by one
   // point — and says nothing about how the SET ends. `getSetComplement`, asked the neighbouring
   // question about the same format, answers that a 6 completes to a 7; the two must not disagree.
-  const ceiling = setTo + 1;
+  const ceiling = tiebreakGames?.winner ?? setTo + 1;
 
   // ── How far below `setTo` the opponent must be before `setTo + 1` is out of reach ──
   //
@@ -198,7 +198,9 @@ export const getMaxSetScore = (params: MaxSetScoreArgs): number | undefined => {
   // Found from `courthive-components`, which hand-rolls this and gets 5 right: its own branch for
   // `oppScore === tiebreakAt - 1` returns `setTo + 1`. Adopting this function unchanged would have
   // REGRESSED a 7-5 there, which is how the disagreement surfaced (CA, 2026-09-30).
-  if (opponentScore !== undefined && opponentScore < setTo - 1) return setTo;
+  // facing fewer than T - 1 the set ends by the margin before the tiebreak: 6 against a 3, 10 against
+  // an 8 under `@12`
+  if (opponentScore !== undefined && opponentScore < tiebreakAt - 1) return Math.max(setTo, opponentScore + 2);
 
   return ceiling;
 };

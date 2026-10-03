@@ -155,18 +155,20 @@ describe('analyzeSet coverage', () => {
     expect(result.isValidSet).toEqual(false);
   });
 
-  it('handles NoAD standard set with minimum win margin of 1', () => {
+  it('a NoAD standard set keeps its two-game margin; a declared winBy of 1 is the one-game set', () => {
+    // `NoAD` is no-advantage GAMES and does not shorten the set (settled 2026-10-01, see
+    // `noAdIsGamesOnly.test.ts`). This pinned a 6-5 as valid under `NoAD: true` until then.
+    const setObject = { setNumber: 1, side1Score: 6, side2Score: 5, winningSide: 1 };
     let result: any = analyzeSet({
-      setObject: {
-        setNumber: 1,
-        side1Score: 6,
-        side2Score: 5,
-        winningSide: 1,
-      },
-      matchUpScoringFormat: {
-        bestOf: 3,
-        setFormat: { setTo: 6, NoAD: true },
-      },
+      setObject,
+      matchUpScoringFormat: { bestOf: 3, setFormat: { setTo: 6, NoAD: true } },
+    });
+    expect(result.isValidSet).toEqual(false);
+    expect(result.isValidStandardSetOutcome).toEqual(false);
+
+    result = analyzeSet({
+      setObject,
+      matchUpScoringFormat: { bestOf: 3, setFormat: { setTo: 6, winBy: 1 } },
     });
     expect(result.isValidSet).toEqual(true);
     expect(result.isValidStandardSetOutcome).toEqual(true);

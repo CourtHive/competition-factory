@@ -3,6 +3,8 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { addExtension } from '@Mutate/extensions/addExtension';
+import { normalizePenaltyType } from './normalizePenaltyType';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
@@ -95,11 +97,11 @@ function penaltyAdd({
   // keeps the two coherent for a penalty captured courtside and synced later.
   // Falls back to now when the caller supplied neither, so existing callers are
   // unaffected. This is the field a governing body reads on appeal.
-  const createdAt = occurredAt ?? issuedAt ?? new Date().toISOString();
+  const createdAt = occurredAt ?? issuedAt ?? nowIso();
   const penaltyItem: Penalty = Object.assign(penaltyTemplate({ penaltyId }), {
     refereeParticipantId,
     penaltyCode,
-    penaltyType,
+    penaltyType: normalizePenaltyType(penaltyType),
     matchUpId,
     createdAt,
     issuedAt,

@@ -1,3 +1,4 @@
+import { tiebreakSetGames, isTiebreakGamesScore } from '@Query/matchUp/tiebreakAtRules';
 import { getWinningSide } from './winningSide';
 import { ensureInt } from '@Tools/ensureInt';
 
@@ -46,42 +47,32 @@ type CheckValidSide2ScoreArgs = {
 function checkValidSide2Score({ analysis, set = {}, value }: CheckValidSide2ScoreArgs) {
   const setFormat =
     (analysis.isDecidingSet && analysis.matchUpScoringFormat.finalSetFormat) || analysis.matchUpScoringFormat.setFormat;
-  const { tiebreakAt, setTo, NoAD } = setFormat;
+  const { tiebreakAt, setTo, tiebreakFormat, noTiebreak, winBy } = setFormat;
   const { side1Score } = set;
 
   let validSide2Score, requiresTiebreak;
 
-  if (tiebreakAt && tiebreakAt < setTo) {
-    if (side1Score === tiebreakAt) {
-      validSide2Score = value <= setTo;
-    } else {
-      validSide2Score = value <= tiebreakAt;
-    }
-  } else if (side1Score === setTo) {
-    if (NoAD) {
-      validSide2Score = value < setTo;
-    } else {
-      validSide2Score = value <= setTo + 1;
-    }
-  } else if (side1Score === setTo - 1) {
-    if (NoAD) {
-      validSide2Score = value <= setTo;
-    } else {
-      validSide2Score = value <= setTo + 1;
-    }
-  } else if (side1Score === setTo + 1) {
-    validSide2Score = value === setTo || value === setTo - 1;
-  } else {
-    validSide2Score = value <= setTo;
+  // an advantage set: any score the set could still be at, or could have ended at, and never a tiebreak
+  const formatHasTiebreak = !noTiebreak && !!(tiebreakFormat || typeof tiebreakAt === 'number');
+  if (!formatHasTiebreak) {
+    const margin = winBy ?? 2;
+    const validSide2 = value <= Math.max(side1Score, setTo - 1) + margin;
+    return { validSide2Score: validSide2, requiresTiebreak: false };
   }
 
+  // A pair is a score the format can reach when the lower side is at most the tiebreak games and the
+  // higher side at most what that lower side allows: the tiebreak winner's games once the lower side
+  // has reached the tiebreak, otherwise first to setTo or two clear games. Wherever the format puts
+  // its tiebreak — `@5`, `@6`, `@12` — the same rule (2026-10-02, validator debate G1).
+  const format = { setTo, tiebreakAt: tiebreakAt ?? setTo, winBy };
+  const games = tiebreakSetGames(format)!;
+  const low = Math.min(side1Score, value);
+  const high = Math.max(side1Score, value);
+  const highest = low >= games.loser ? games.winner : Math.max(setTo, low + (winBy ?? 2));
+  validSide2Score = low <= games.loser && high <= highest;
+
   if (validSide2Score) {
-    if (tiebreakAt && tiebreakAt < setTo) {
-      requiresTiebreak =
-        (side1Score === setTo && value === tiebreakAt) || (side1Score === tiebreakAt && value === setTo);
-    } else {
-      requiresTiebreak = side1Score >= setTo && value >= setTo && side1Score !== value;
-    }
+    requiresTiebreak = isTiebreakGamesScore(high, low, format);
   }
 
   return { validSide2Score, requiresTiebreak };

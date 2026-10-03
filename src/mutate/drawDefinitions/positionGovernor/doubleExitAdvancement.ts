@@ -1470,16 +1470,29 @@ function advanceByeAdvancedDrawPosition({
       }),
     };
 
+    /**
+     * AN EXIT MEETING A BYE LEAVES A BYE, NOT AN EXIT LABEL — CA, 2026-10-02, confirming 2026-09-20:
+     * *"a propagated exit encountering a BYE should be advanced. In both cases the BYE remains a BYE."*
+     *
+     * When the position advancing out of this matchUp is itself a BYE and nobody is here, the BYE is
+     * what moves on, carrying the exit with it. Writing EXIT here left a matchUp labelled WALKOVER
+     * with a BYE on one side and nobody on the other: 26 draws of the exit-propagation suite ended in
+     * that shape (19 FIRST_MATCH_LOSER_CONSOLATION, 7 DOUBLE_ELIMINATION), each with the exit already
+     * carried onward. `carryExitOnward` writes BYE in the same situation; this branch predates it.
+     * The provenance below is still stamped, so the exit's origin stays on record, and the advance
+     * that follows is unchanged.
+     */
+    const byeAdvances = !advancingParticipantId && matchUpHoldsBye({ drawDefinition, matchUp: nextWinnerMatchUp });
     const result = modifyMatchUpScore({
       matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
       appliedPolicies: params.appliedPolicies,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       matchUp: noContextNextWinnerMatchUp,
-      matchUpStatus: EXIT,
+      matchUpStatus: byeAdvances ? BYE : EXIT,
+      winningSide: byeAdvances ? undefined : winningSide,
       removeScore: true,
       context: stack,
       drawDefinition,
-      winningSide,
     });
     if (result.error) return decorateResult({ result, stack });
 
@@ -2134,6 +2147,8 @@ export function settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinit
 
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const carried = new Set<string>();
+  // the view the last pass found nothing to carry in — nothing has been written since it was taken
+  let settledDrawMatchUps: any[] | undefined;
 
   // each pass can make the next matchUp along a holder in its turn; a matchUp is carried from once
   for (let pass = 0; pass < 16; pass++) {
@@ -2144,7 +2159,10 @@ export function settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinit
       held = getHeldExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp });
       if (held) break;
     }
-    if (!held) break;
+    if (!held) {
+      settledDrawMatchUps = inContextDrawMatchUps;
+      break;
+    }
     carried.add(held.holder.matchUpId);
 
     const params = {
@@ -2169,7 +2187,14 @@ export function settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinit
     if (result?.error) return decorateResult({ result, stack });
   }
 
-  const crossed = crossLinksThroughByes({ tournamentRecord, drawDefinition, matchUpsMap, event, stack });
+  const crossed = crossLinksThroughByes({
+    settledDrawMatchUps,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+    stack,
+  });
   if (crossed.error) return decorateResult({ result: crossed, stack });
 
   return { ...SUCCESS };
@@ -2187,10 +2212,29 @@ export function settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinit
  * TRACED 2026-09-29, DOUBLE_ELIMINATION 8/7 at seed 77 with the policy off: the held exit reached
  * `Backdraw|3|1` and its occupant advanced into `Backdraw|4|1`, the Backdraw final, opposite a BYE.
  * The Main final never received them and the Main champion waited there alone.
+ *
+ * ## The view it starts from is the caller's, when the caller's is still current
+ *
+ * `settleHeldExits` ends by hydrating the draw and finding nothing to carry, then calls this — which
+ * hydrated the same unchanged draw again to find, almost always, nothing to cross. Measured
+ * 2026-10-01 (`pipelineCost.test.ts`): 627 of 627 calls with the policy off, 4% of everything the
+ * pipeline spent. `settledDrawMatchUps` is that last view, handed over ONLY when no write followed
+ * it; a pass that crosses somebody derives the next view after its own write, as before.
  */
-function crossLinksThroughByes({ tournamentRecord, drawDefinition, matchUpsMap, event, stack }) {
+function crossLinksThroughByes({
+  settledDrawMatchUps,
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  event,
+  stack,
+}: any) {
+  // a view is current until something is written; `undefined` means derive one
+  let currentDrawMatchUps: any[] | undefined = settledDrawMatchUps;
+
   for (let pass = 0; pass < 16; pass++) {
-    const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+    const inContextDrawMatchUps =
+      currentDrawMatchUps ?? getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
     const crossing = inContextDrawMatchUps
       .map((matchUp) => getByeCrossing({ inContextDrawMatchUps, drawDefinition, matchUp }))
       .find(Boolean);
@@ -2224,6 +2268,8 @@ function crossLinksThroughByes({ tournamentRecord, drawDefinition, matchUpsMap, 
     const after = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
     const target = after.find((matchUp) => matchUp.matchUpId === crossing.winnerMatchUp.matchUpId);
     if (!target?.sides?.some((side) => side.participantId === crossing.participantId)) break;
+    // derived after this pass's write, and nothing is written before the next pass reads it
+    currentDrawMatchUps = after;
   }
 
   return { ...SUCCESS };

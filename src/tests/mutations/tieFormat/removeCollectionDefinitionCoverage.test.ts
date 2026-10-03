@@ -8,9 +8,24 @@ import { NO_MODIFICATIONS_APPLIED } from '@Constants/errorConditionConstants';
 import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
+import { DOUBLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
+
+// COLLEGE_D3 plays its doubles as one eight-game pro set (SET1-S:8/TB7@7) and its singles best of three
+const lineOutcome = (tieMatchUp: any) => ({
+  winningSide: 1,
+  score: {
+    sets:
+      tieMatchUp.matchUpType === DOUBLES
+        ? [{ setNumber: 1, side1Score: 8, side2Score: 3, winningSide: 1 }]
+        : [
+            { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1 },
+            { setNumber: 2, side1Score: 6, side2Score: 4, winningSide: 1 },
+          ],
+  },
+});
 
 describe('removeCollectionDefinition additional branch coverage', () => {
   it('removes collectionDefinition providing drawId alone (draw-level resolution)', () => {
@@ -108,20 +123,10 @@ describe('removeCollectionDefinition additional branch coverage', () => {
       matchUpFilters: { matchUpTypes: [TEAM] },
     }).matchUps;
 
-    const outcome = {
-      winningSide: 1,
-      score: {
-        sets: [
-          { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1 },
-          { setNumber: 2, side1Score: 6, side2Score: 4, winningSide: 1 },
-        ],
-      },
-    };
-
     for (const tieMatchUp of matchUps[0].tieMatchUps) {
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: tieMatchUp.matchUpId,
-        outcome,
+        outcome: lineOutcome(tieMatchUp),
         drawId,
       });
       expect(result.success).toEqual(true);
@@ -237,19 +242,9 @@ describe('removeCollectionDefinition additional branch coverage', () => {
 
     const targetTieMatchUp = matchUps[0].tieMatchUps.find((m) => m.collectionId === collectionId);
 
-    const outcome = {
-      winningSide: 1,
-      score: {
-        sets: [
-          { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1 },
-          { setNumber: 2, side1Score: 6, side2Score: 4, winningSide: 1 },
-        ],
-      },
-    };
-
     const scoreResult = tournamentEngine.setMatchUpStatus({
       matchUpId: targetTieMatchUp.matchUpId,
-      outcome,
+      outcome: lineOutcome(targetTieMatchUp),
       drawId,
     });
     expect(scoreResult.success).toEqual(true);

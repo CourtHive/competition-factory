@@ -208,11 +208,25 @@ it('can add collectionDefinitions to tieFormat in a structure', () => {
     },
   };
 
+  // COLLEGE_D3 doubles are one eight-game pro set (8-1 above); its singles are best of three
+  const singlesOutcome = {
+    winningSide: 1,
+    score: {
+      scoreStringSide1: '6-1 6-1',
+      scoreStringSide2: '1-6 1-6',
+      sets: [
+        { setNumber: 1, side1Score: 6, side2Score: 1, winningSide: 1 },
+        { setNumber: 2, side1Score: 6, side2Score: 1, winningSide: 1 },
+      ],
+    },
+  };
+  const lineOutcome = ({ matchUpType }) => (matchUpType === SINGLES ? singlesOutcome : outcome);
+
   firstRoundDualMatchUps[0].tieMatchUps.forEach((matchUp) => {
     const { matchUpId } = matchUp;
     const result = tournamentEngine.setMatchUpStatus({
+      outcome: lineOutcome(matchUp),
       matchUpId,
-      outcome,
       drawId,
     });
     expect(result.success).toEqual(true);
@@ -269,8 +283,8 @@ it('can add collectionDefinitions to tieFormat in a structure', () => {
   firstRoundDualMatchUps[1].tieMatchUps.forEach((matchUp) => {
     const { matchUpId } = matchUp;
     const result = tournamentEngine.setMatchUpStatus({
+      outcome: lineOutcome(matchUp),
       matchUpId,
-      outcome,
       drawId,
     });
     expect(result.success).toEqual(true);

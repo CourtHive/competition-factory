@@ -55,18 +55,25 @@ export function directLoser(params): ResultType {
     structureId: sourceStructureId,
     drawDefinition,
   });
-  const { matchUps: sourceMatchUps } = getAllStructureMatchUps({
-    afterRecoveryTimes: false,
-    inContext: true,
-    drawDefinition,
-    structure,
-    event,
-  });
-
   // BYEs and WALKOVERs (and unscored DEFAULTED) are not counted as wins — see getDrawPositionWinCount,
   // shared with the read-only feed-eligibility integrity check so the two never diverge.
-  const loserDrawPositionWins = getDrawPositionWinCount({ sourceMatchUps, drawPosition: loserDrawPosition });
-  const validForConsolation = loserLinkCondition === FIRST_MATCHUP && loserDrawPositionWins === 0;
+  //
+  // The count is the ONLY reader of the source structure in context, and it is read for a
+  // FIRST_MATCHUP link alone. The structure used to be hydrated for every loser link — measured
+  // 2026-10-01 (`pipelineCost.test.ts`): 755 hydrations over 2,026 `setMatchUpStatus` calls, 3% of
+  // everything the pipeline spent, most of them for links with no such condition.
+  const loserDrawPositionWins = () =>
+    getDrawPositionWinCount({
+      sourceMatchUps: getAllStructureMatchUps({
+        afterRecoveryTimes: false,
+        inContext: true,
+        drawDefinition,
+        structure,
+        event,
+      }).matchUps,
+      drawPosition: loserDrawPosition,
+    });
+  const validForConsolation = loserLinkCondition === FIRST_MATCHUP && loserDrawPositionWins() === 0;
 
   const { positionAssignments: sourcePositionAssignments } = structureAssignedDrawPositions({
     structureId: sourceStructureId,
@@ -279,10 +286,17 @@ function placeLoser({
       drawDefinition,
       event,
     });
-    return decorateResult({
+    const placed = decorateResult({
       result: decorateResult({ result: byeResult, stack: 'assignLoserPositionBye' }),
       stack: innerStack,
     });
+    if (placed.error) return placed;
+    // THE LOSER WAS NOT PLACED — a BYE was. Nothing of theirs travels to the seat: not their seed,
+    // and not their lineUp. Returned as an early return so the caller does not propagate either.
+    // Measured 2026-10-01 on the TEAM arm of the exit-propagation matrix: the withheld loser's lineUp
+    // landed on the consolation's BYE side, its lines hydrated with players on both sides, and the
+    // driver scored them — BYE_WON on 42 of 60 FIRST_MATCH_LOSER_CONSOLATION cells.
+    return { earlyReturn: placed };
   }
 
   if (isFirstRoundValidDrawPosition) {

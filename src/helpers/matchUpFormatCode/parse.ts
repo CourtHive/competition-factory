@@ -1,6 +1,7 @@
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isConvertableInteger } from '@Tools/math';
 import { isString } from '@Tools/objects';
+import { stringify } from './stringify';
 
 // constants
 import {
@@ -61,7 +62,65 @@ export type ParsedFormat = {
   matchUpConstraint?: { timed?: boolean; minutes?: number }; // for -M: section
 };
 
+/**
+ * A matchUpFormat code, parsed — or `undefined` when the code is not WELL-FORMED.
+ *
+ * ── parse refuses what isValid refuses (CA, 2026-10-02) ──
+ *
+ * The parser read what it recognised and ignored the rest, so `SET3-S:6/TB7;DROP` and a trailing space
+ * parsed as `SET3-S:6/TB7`, `@6.5` became a tiebreak at 6.5, `SET5-S:6/TB7-F:S:6` silently lost its
+ * invalid final section, and `SET1-S:6/TB7-F:TB10` kept a final set the match never plays — while
+ * `isValidMatchUpFormat` refused every one of them. Fifteen modules call `parse` without asking
+ * `isValid` first, so a malformed stored format was quietly reinterpreted (validator debate G7/G10).
+ *
+ * Well-formed means: the code parses, and — once the equivalent spellings below are rewritten — it is
+ * exactly the canonical string `stringify` produces. The equivalent spellings say the same thing:
+ *
+ * - a redundant `@N` equal to `setTo` (`S:6/TB7@6` is `S:6/TB7`);
+ * - an explicit `WB2`, the default margin of a set with no tiebreak (`S:5WB2` is `S:5`);
+ * - `SET1X` for `SET1` — exactly one set is best of one;
+ * - a final-set section identical to the set section (`SET3-S:6-F:6` is `SET3-S:6`);
+ * - a games-based timed set's `G` suffix (`T10G` is `T10`).
+ *
+ * Section order is the documented canonical one. The verdict is cached per code string, so the hot path
+ * pays the round trip once per distinct code.
+ */
+const wellFormed = new Map<string, boolean>();
+
 export function parse(matchUpFormatCode: string): ParsedFormat | undefined {
+  const parsed = parseLenient(matchUpFormatCode);
+  if (!parsed) return undefined;
+  let isWellFormed = wellFormed.get(matchUpFormatCode);
+  if (isWellFormed === undefined) {
+    isWellFormed = canonicalSpelling(matchUpFormatCode) === stringify(parsed);
+    wellFormed.set(matchUpFormatCode, isWellFormed);
+  }
+  return isWellFormed ? parsed : undefined;
+}
+
+/** Strip only a timed set's games-basis `G` suffix (`T10G` → `T10`), never a `-G:` section key. */
+function normalizeTimedBasisG(code: string): string {
+  return code.replaceAll(/T(\d+)G(?=\/TB|@|-|$)/g, 'T$1');
+}
+
+/** The code with every equivalent spelling rewritten to its canonical form — see `parse`. */
+function canonicalSpelling(code: string): string {
+  const [head, ...sections] = normalizeTimedBasisG(code).split('-');
+  const canonicalHead = head.replace(/^([A-Z]+)1X(A?)$/, '$11$2');
+  const rewritten = sections.map((section) => {
+    const match = /^([SF]):(.*)$/.exec(section);
+    if (!match) return section;
+    let value = match[2].replace(/^(\d+)((?:NOAD)?)WB2(?=$|\/)/, '$1$2');
+    const redundantAt = /^(\d+)(.*\/TB\d+(?:NOAD)?)@(\d+)$/.exec(value);
+    if (redundantAt && redundantAt[1] === redundantAt[3]) value = redundantAt[1] + redundantAt[2];
+    return `${match[1]}:${value}`;
+  });
+  const setSection = rewritten.find((section) => section.startsWith('S:'));
+  const kept = rewritten.filter((section) => !(section.startsWith('F:') && section.slice(2) === setSection?.slice(2)));
+  return [canonicalHead, ...kept].join('-');
+}
+
+function parseLenient(matchUpFormatCode: string): ParsedFormat | undefined {
   if (isString(matchUpFormatCode)) {
     const type =
       (matchUpFormatCode.startsWith('T') && TIMED) ||
@@ -240,7 +299,9 @@ function buildParsedFormat({
   const timed = (setFormat && setFormat.timed) || (finalSetFormat && finalSetFormat.timed);
 
   if (matchRoot === SET) {
-    const validSetsCount = (bestOf && bestOf < 6) || (timed && exactly);
+    // Any best-of count is a format: best of seven is table tennis's, best of nine is played too. This
+    // capped it below six (CA, 2026-10-02: "I don't see why best of 7 or 9 would be rejected").
+    const validSetsCount = (bestOf && bestOf >= 1) || (timed && exactly);
     if (!validSetsCount) return undefined;
   }
 
@@ -368,6 +429,7 @@ function parseTiebreakDetails(formatstring: string): TiebreakFormat | false {
   const tiebreakTo = getNumber(tiebreakToString);
 
   if (!tiebreakTo || !validNoAD) return false;
+  if (typeof modifier === 'string' && !isModifierName(modifier)) return false;
 
   const result: TiebreakFormat = { tiebreakTo };
 
@@ -421,6 +483,7 @@ function parseTimedSet(formatstring: string): SetFormat | undefined {
   const validModifier = [undefined, 'P', 'G', ''].includes(legacyModifier);
   if (legacyModifier && !validModifier) {
     const modifier = /^(\d+)([PGA])?(?:\/TB\d+)?(@)([A-Za-z]+)$/.exec(timestring)?.[4];
+    if (modifier && !isModifierName(modifier)) return undefined;
     if (modifier) {
       setFormat.modifier = modifier;
       return setFormat;
@@ -440,6 +503,16 @@ function parseMatchUpConstraint(value: string): { timed: boolean; minutes: numbe
   const minutes = getNumber(match[1]);
   if (!minutes) return undefined;
   return { timed: true, minutes };
+}
+
+/**
+ * A modifier is a name, and `NOAD` is not part of one. `NOAD` is written BEFORE the modifier
+ * (`TB11NOAD@RALLY`); after it, `TB11@RALLYNOAD` was read as a modifier named `RALLYNOAD`. The engine
+ * switches rally scoring on for `modifier === 'RALLY'` only, so that format was silently scored side-out
+ * AND won by two — both of its meanings lost — while parse and isValid accepted it (validator debate G8).
+ */
+function isModifierName(modifier: string): boolean {
+  return !modifier.includes('NOAD');
 }
 
 function isNoAD(formatstring) {

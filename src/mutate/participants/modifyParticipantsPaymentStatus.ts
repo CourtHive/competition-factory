@@ -3,6 +3,7 @@ import { addParticipantTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { getTopics } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { PAYMENT_STATUS, paymentStatusValues, PaymentStatusUnion } from '@Constants/participantConstants';
@@ -46,7 +47,7 @@ export function modifyParticipantsPaymentStatus({
   if (invalidParticipantIds.length) return { error: INVALID_VALUES, context: { invalidParticipantIds } };
 
   const modifiedParticipants: Participant[] = [];
-  const createdAt = occurredAt ?? new Date().toISOString();
+  const createdAt = occurredAt ?? nowIso();
   for (const participant of participants) {
     const { participantId } = participant;
     if (participantIds.includes(participantId)) {

@@ -6,7 +6,9 @@ export const INELIGIBILITY = 'INELIGIBILITY';
 export const PHYSICAL_ABUSE = 'Physical Abuse';
 export const UNSPORTSMANLIKE_CONDUCT = 'Unsportmanlike Conduct';
 export const DRESS_CODE_VIOLATION = 'Dress Code Violation';
-export const EQUIMENT_VIOLATION = 'Equipment Violation';
+export const EQUIPMENT_VIOLATION = 'Equipment Violation';
+/** @deprecated misspelled; use `EQUIPMENT_VIOLATION`. Removed at the next major. */
+export const EQUIMENT_VIOLATION = EQUIPMENT_VIOLATION;
 export const LEAVING_THE_COURT = 'Leaving the court';
 export const FAILURE_TO_COMPLETE = 'Failure to complete';
 export const NO_SHOW = 'No Show';
@@ -14,7 +16,9 @@ export const OTHER = 'Other';
 export const REFUSAL_TO_PLAY = 'REFUSAL_TO_PLAY';
 export const PROHIBITED_SUBSTANCE = 'PROHIBITED_SUBSTANCE';
 export const PUNCTUALITY = 'Puncuality';
-export const FAILUIRE_TO_SIGN_IN = 'Failure to sign in';
+export const FAILURE_TO_SIGN_IN = 'Failure to sign in';
+/** @deprecated misspelled; use `FAILURE_TO_SIGN_IN`. Removed at the next major. */
+export const FAILUIRE_TO_SIGN_IN = FAILURE_TO_SIGN_IN;
 
 export const penaltyConstants = {
   COACHING,
@@ -27,6 +31,7 @@ export const penaltyConstants = {
   UNSPORTSMANLIKE_CONDUCT,
   PROHIBITED_SUBSTANCE,
   DRESS_CODE_VIOLATION,
+  EQUIPMENT_VIOLATION,
   EQUIMENT_VIOLATION,
   LEAVING_THE_COURT,
   REFUSAL_TO_PLAY,
@@ -35,6 +40,7 @@ export const penaltyConstants = {
   NO_SHOW,
   OTHER,
   PUNCTUALITY,
+  FAILURE_TO_SIGN_IN,
   FAILUIRE_TO_SIGN_IN,
 } as const;
 

@@ -3,6 +3,7 @@ import { detectParticipantConflicts, ConflictReport } from './detectConflicts';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { findPracticeBooking } from './findPracticeBooking';
 import { addNotice } from '@Global/state/globalState';
+import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
@@ -66,7 +67,7 @@ export function addPracticeRegistration(params: AddPracticeRegistrationArgs): Ad
     occurredAt,
   } = params;
 
-  const stampedAt = occurredAt ?? new Date().toISOString();
+  const stampedAt = occurredAt ?? nowIso();
 
   const paramsCheck = requireParams({ tournamentRecord, courtId, participantId }, [
     TOURNAMENT_RECORD,

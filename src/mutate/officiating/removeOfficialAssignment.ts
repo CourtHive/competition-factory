@@ -2,6 +2,7 @@
 import { MISSING_OFFICIAL_RECORD, ASSIGNMENT_NOT_FOUND } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
@@ -19,7 +20,7 @@ export function removeOfficialAssignment({ officialRecord, assignmentId }: Remov
   if (index === -1) return { error: ASSIGNMENT_NOT_FOUND, context: { assignmentId } };
 
   officialRecord.assignments.splice(index, 1);
-  officialRecord.updatedAt = new Date().toISOString();
+  officialRecord.updatedAt = nowIso();
 
   return { ...SUCCESS };
 }

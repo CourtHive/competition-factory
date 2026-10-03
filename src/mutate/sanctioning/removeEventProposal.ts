@@ -1,6 +1,7 @@
 // Constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { nowIso } from '@Tools/clock';
 import {
   EDITABLE_STATUSES,
   MISSING_SANCTIONING_RECORD,
@@ -28,7 +29,7 @@ export function removeEventProposal({ sanctioningRecord, eventProposalId }: Remo
   if (index < 0) return { error: EVENT_PROPOSAL_NOT_FOUND, context: { eventProposalId } };
 
   sanctioningRecord.proposal.events.splice(index, 1);
-  sanctioningRecord.updatedAt = new Date().toISOString();
+  sanctioningRecord.updatedAt = nowIso();
   sanctioningRecord.version += 1;
 
   return { ...SUCCESS };

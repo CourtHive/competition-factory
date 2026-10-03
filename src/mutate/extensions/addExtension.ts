@@ -1,5 +1,6 @@
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isValidExtension } from '@Validators/isValidExtension';
+import { nowIso } from '@Tools/clock';
 
 // constants
 import { ErrorType, INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
@@ -58,7 +59,7 @@ export function addExtension(params?: AddExtensionArgs): {
     // Honour a `createdAt` already on the caller's extension rather than
     // stamping over it — same convention as `addTimeItem`. Inert when nothing is
     // supplied; `creationTime: false` still means "add no createdAt at all".
-    params.extension.createdAt ??= new Date().toISOString();
+    params.extension.createdAt ??= nowIso();
   }
 
   // ── Invariant: AT MOST ONE extension per `name`, per element ──

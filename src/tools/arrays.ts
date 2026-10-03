@@ -1,4 +1,5 @@
 import { isConvertableInteger } from './math';
+import { randomSource } from '@Tools/prng';
 
 // returns only unique values within an array
 export function unique(arr) {
@@ -13,7 +14,7 @@ export function noNulls(arr) {
 
 export function shuffleArray(arr, random?: () => number) {
   if (!Array.isArray(arr)) return [];
-  const rng = random ?? Math.random;
+  const rng = random ?? randomSource();
   return arr
 
     .map((a) => [rng(), a])
@@ -64,11 +65,11 @@ export function uniqueValues(arr) {
 }
 export function randomPop(array, random?: () => number) {
   return Array.isArray(array) && array.length
-    ? array.splice(Math.floor((random ?? Math.random)() * array.length), 1)[0]
+    ? array.splice(Math.floor((random ?? randomSource())() * array.length), 1)[0]
     : undefined;
 }
 export function randomMember(arr, random?: () => number) {
-  const index = Math.floor((random ?? Math.random)() * arr.length);
+  const index = Math.floor((random ?? randomSource())() * arr.length);
   return arr[index];
 }
 

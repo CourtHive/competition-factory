@@ -1,6 +1,7 @@
 import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPublishStatus';
 import { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import { isISODateString } from '@Tools/dateTime';
+import { nowMs } from '@Tools/clock';
 
 /**
  * WHEN a published tournament becomes publicly visible — the read-time half of the publish model.
@@ -47,7 +48,7 @@ interface VisibilityArgs {
 function asTime(asOf?: Date | string): number {
   if (asOf instanceof Date) return asOf.getTime();
   if (typeof asOf === 'string' && isISODateString(asOf)) return new Date(asOf).getTime();
-  return Date.now();
+  return nowMs();
 }
 
 /** A future, well-formed ISO embargo instant; anything else is no embargo at all. */

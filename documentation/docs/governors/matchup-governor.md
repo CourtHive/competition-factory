@@ -908,7 +908,10 @@ engine.setMatchUpFormat({
 
 ## setMatchUpState
 
-Sets the state of a matchUp (status, score, winningSide).
+**Deprecated on the engine surface since 7.5.0; removed at the next major.** This is the internal
+state writer behind [`setMatchUpStatus`](#setmatchupstatus). Called directly it skips the scoring
+policy's say over the propagation flags, score-string derivation, format validation and the
+exit-propagation cascade, so the draw may not agree with the result. Use `setMatchUpStatus`.
 
 ```js
 engine.setMatchUpState({
@@ -941,7 +944,7 @@ engine.setMatchUpStatus({
   outcome, // optional — score/status/winningSide object
 
   matchUpFormat, // optional — set matchUpFormat before applying score (validated against)
-  disableScoreValidation, // optional boolean — skip score validation
+  disableScoreValidation, // optional boolean — skip score validation, including the completeness rule below
   allowChangePropagation, // optional boolean — allow winner/loser swap to propagate through structures
   propagateExitStatus, // optional boolean — propagate exit status (WALKOVER, etc.) to consolation matchUps
   disableAutoCalc, // optional boolean — applies only to TEAM matchUps
@@ -964,6 +967,42 @@ engine.setMatchUpStatus({
   },
 });
 ```
+
+### A completed score must be complete
+
+Score validation asks two questions of `score.sets`, under the matchUp's effective
+`matchUpFormat`:
+
+1. **Bounds** — no set exceeds what the format allows, and the `winningSide` named is the
+   one the set counts produce.
+2. **Completeness** — every set is one the format could actually produce:
+   - every set **before the last** is a finished, legal set;
+   - the **last** set is finished too when the outcome claims completion (`COMPLETED`, or
+     a `winningSide` with no `matchUpStatus`);
+   - otherwise (`RETIRED`, `DEFAULTED`, `IN_PROGRESS`, `SUSPENDED` …) the last set may be
+     unfinished, but never past the format's ceiling. This holds even when the set carries
+     a `winningSide`, as `parseScoreString` gives one to the side leading an unfinished set.
+
+Under `SET3-S:6/TB7` this refuses `3-7 6-4 6-4` (a 7-3 set does not exist with a tiebreak
+at six) and `4-2 2-6 2-6` (the first set never finished), both of which were previously
+recorded as `COMPLETED`. A refusal returns `INVALID_SCORE` with an `info` naming the set,
+e.g. `Set 1: …`, and the matchUp is left unchanged. A score with no resolvable `matchUpFormat` is refused with `ERR_MISSING_MATCHUP_FORMAT`
+(CA, 2026-10-02): every rule above is a question about the format. A TEAM line's format is its
+collection definition's, and is resolved from there.
+
+**To record a score the format cannot produce** — an import, a migration, a correction to
+history, an abandoned line — pass `disableScoreValidation: true`. It skips both questions.
+
+Three tiebreak records are settled (CA, 2026-10-02):
+
+- **`7-6` with no tiebreak points is a finished set.** It is recorded, and `validateScore` names
+  the set in a `TIEBREAK_POINTS_NOT_RECORDED` warning. Score entry still asks for the points: the
+  completeness check used while typing does not call a bare `7-6` finished.
+- **A match tiebreak recorded as `1-0` in its game fields** is a finished set whose points were not
+  kept. `1-0` in the tiebreak-point fields is refused, except under `TB1`.
+- **Impossible tiebreak points are refused**, such as `7-6(10-7)` with a tiebreak to seven. An
+  ingestion pipeline can call `scoreGovernor.repairScore` first, which drops such points and keeps
+  `7-6`.
 
 ### Score strings are derived, never trusted
 

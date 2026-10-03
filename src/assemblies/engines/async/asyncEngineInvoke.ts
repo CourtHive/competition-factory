@@ -1,12 +1,13 @@
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
-import { deleteNotices, getTournamentRecords } from '@Global/state/globalState';
+import { deleteNotices, getInvokeObserver, getTournamentRecords } from '@Global/state/globalState';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { isFunction, isObject, isString } from '@Tools/objects';
 import { getMethods } from '@Global/state/syncGlobalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { nowMs } from '@Tools/clock';
 
 // constants
 import { INVALID_VALUES, METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -37,7 +38,7 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
 
   if (result?.error && snapshot) setState(snapshot);
 
-  const timeStamp = Date.now();
+  const timeStamp = nowMs(); // reaches the record via the factory extension
   const mutationStatus = getMutationStatus({ timeStamp });
 
   const notify = result?.success && params?.delayNotify !== true && params?.doNotNotify !== true;
@@ -49,6 +50,8 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
       timeStamp,
     });
   if (notify || !result?.success || params?.doNotNotify) deleteNotices();
+
+  getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
 
   return result;
 }

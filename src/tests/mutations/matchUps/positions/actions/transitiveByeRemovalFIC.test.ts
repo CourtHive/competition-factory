@@ -187,8 +187,17 @@ it('can remove transitive BYEs in consolation of FIC', () => {
   }));
   // consolation seat 5 (fed by Main 3-4's loser) lost its BYE with Main seat 4 and is EMPTY beside
   // seat 4's BYE — the generated shape of such a seat is advanced, and it stays advanced (P46).
-  // Seat 2's advancement over seat 5 goes with the BYE: seat 5 is no longer one.
-  expect(filteredOrderedPairs).toEqual([[4, 5], [6, 7], [2, 5], [3, 6], [6], [1]]);
+  // Seat 2's advancement over seat 5 goes with the BYE: seat 5 is no longer one. And seat 5 now
+  // faces BYEs in rounds 2 and 3, so it is carried on to round 4 — where generation of the same
+  // occupancy puts it (P47; `emptiedSeatCarriedPastByes.test.ts` compares the two routes).
+  expect(filteredOrderedPairs).toEqual([
+    [4, 5],
+    [6, 7],
+    [2, 5],
+    [3, 6],
+    [5, 6],
+    [1, 5],
+  ]);
 });
 
 function replaceWithByes({ drawPositions, drawId, structureId }) {

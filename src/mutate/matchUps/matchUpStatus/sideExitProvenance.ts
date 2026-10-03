@@ -1012,7 +1012,20 @@ function withdrawFromMatchUp(
   }
   if (!removedAny) return undefined;
 
-  if (Object.keys(retained).length) {
+  /**
+   * What remains must still CARRY AN EXIT for the matchUp to remain one (P19: provenance also records
+   * arrivals and BYE claims, which are not exits). This tested only that something remained, so a
+   * WALKOVER whose one carried exit was withdrawn kept its status and winningSide on the strength of a
+   * `BYE` arrival entry beside it — and the next participant to arrive took the walkover. Census seed
+   * 9300405 (DOUBLE_ELIMINATION 8/5), three steps: the stale DOUBLE_WALKOVER origin at `Backdraw|3|1`
+   * was withdrawn by `reconcileStaleExitOrigins`, the side-1 BYE arrival kept the matchUp a WALKOVER,
+   * and the flipped Main loser arriving on side 2 was recorded as its winner (EXIT_WITHOUT_LOSER,
+   * WINNER_NOT_ADVANCED). Such a matchUp reverts below exactly as one with nothing retained does.
+   * A matchUp that is not an exit — a BYE holding only its claim ledger — is not reverted.
+   */
+  const retainsAnExit = !!deriveExitStateFromProvenance(retained) || !isAnyExit(matchUp.matchUpStatus);
+
+  if (Object.keys(retained).length && retainsAnExit) {
     // A side carried here by a DIFFERENT source is still true, so the matchUp remains an exit and
     // only the withdrawn side's entry is dropped.
     //
@@ -1102,9 +1115,9 @@ export function withdrawProducedExits({
          *
          * A RE-DERIVED one is NOT decided here. It is still an exit — of a different kind — and whether
          * it still PRODUCES one downstream turns on whether its new winning side is occupied, which is
-         * not yet settled at this point in the mutation. `reconcileAdvancedExits` asks that after the
-         * link-directed removals and continues the cascade from the ones that now deliver an
-         * advancement; the record carries `rederived` so it can find them.
+         * not yet settled at this point in the mutation. `reconcileStaleExitOrigins` asks that at the end
+         * of `setMatchUpStatus`, once the draw has settled, and continues the cascade from the ones that
+         * now deliver an advancement (#5018).
          */
         if (!rederived) frontier.push(record.matchUpId);
       }
