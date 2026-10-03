@@ -431,7 +431,7 @@ The `WB{n}` modifier overrides the default game-margin required to win a set whe
 
 ### Canonical Stringify
 
-- `WB2` is the implicit default and is **elided** during stringify (`SET3-S:5WB2` round-trips to `SET3-S:5`).
+- `WB2` is the implicit default and is **elided** during stringify (`SET3-S:5WB2` stringifies as `SET3-S:5`). `SET3-S:5WB2` is still a valid, equivalent spelling.
 - Only `winBy` values that differ from the default (typically `WB1`) appear in canonical output.
 - Modifier ordering is canonical: `{games}` → `NOAD` → `WB{n}`. The parser rejects `WB`-before-`NOAD` to keep canonical form unambiguous.
 
