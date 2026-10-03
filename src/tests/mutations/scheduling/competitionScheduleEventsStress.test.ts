@@ -125,4 +125,5 @@ test('competitionScheduelMatchUps supports hydrateParticipants: false', () => {
   const side = result.completedMatchUps[0].sides[0];
   const mappedParticipant = Object.assign(result.mappedParticipants[side.participantId], side.participant);
   expect(expectedParticipant).toEqual(mappedParticipant);
-});
+  // ~32s under CI coverage, against the 30s default (2026-10-03, master)
+}, 180_000);
