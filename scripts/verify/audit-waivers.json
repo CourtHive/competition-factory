@@ -2,12 +2,31 @@
   "$comment": [
     "Advisories verify:audit will not fail on. Every waiver is printed on every run,",
     "so a waived advisory stays visible rather than becoming a silent exception.",
-    "A waiver that no longer matches an open advisory is a FAILURE, not a no-op —",
+    "A waiver that no longer matches an open advisory is a FAILURE, not a no-op \u2014",
     "stale waivers must be deleted, otherwise the list only ever grows and quietly",
     "widens what the gate ignores.",
     "",
     "Waive only when there is no action available. 'We will get to it' is not a",
     "waiver; a version bump is."
   ],
-  "waivers": []
+  "waivers": [
+    {
+      "ghsa": "GHSA-vfj7-8cjw-p6xm",
+      "module": "braces",
+      "tree": "package",
+      "reason": "No patched release exists (advisory range <= 3.0.3, first_patched_version null, checked 2026-10-03). Dev tooling only: braces@3.0.3 via micromatch <- fast-glob/globby <- markdownlint-cli2 (lint of markdown); never in the published package. Delete when a patched braces ships, and override to it."
+    },
+    {
+      "ghsa": "GHSA-vfj7-8cjw-p6xm",
+      "module": "braces",
+      "tree": "documentation",
+      "reason": "No patched release exists (<= 3.0.3, first_patched_version null, checked 2026-10-03). Docs site build tooling only (Docusaurus); the site is static and never runs this at request time. Delete when a patched braces ships."
+    },
+    {
+      "ghsa": "GHSA-ch52-4w7c-c8xp",
+      "module": "http-cache-semantics",
+      "tree": "documentation",
+      "reason": "No patched release exists (<= 4.2.0, first_patched_version null, checked 2026-10-03). Reached only via @docusaurus/core -> update-notifier -> latest-version -> got -> cacheable-request, a version check at docs build time; the published site is static and serves no cached responses. Delete when a patched release ships."
+    }
+  ]
 }
