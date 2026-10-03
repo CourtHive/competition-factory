@@ -21,6 +21,9 @@ describe('junk is refused by parse and isValid alike', () => {
     ['an invalid final-set section, which was silently dropped', 'SET5-S:6/TB7-F:S:6'],
     ['a final set on a one-set match, which the analysis read as a match tiebreak', 'SET1-S:6/TB7-F:TB10'],
     ['a tiebreak with no target', 'SET3-S:6/TB7-F:6/TB'],
+    // NOAD goes before a modifier; after it, the modifier read as `RALLYNOAD` and rally scoring was lost
+    ['NOAD swallowed by a tiebreak modifier', 'SET3-S:TB11@RALLYNOAD'],
+    ['NOAD swallowed by a timed modifier', 'SET3-S:T10@RALLYNOAD'],
   ])('%s: %s', (_, code) => {
     expect(both(code)).toEqual({ parsed: false, valid: false });
   });
@@ -36,6 +39,9 @@ describe('well-formed codes are accepted by both, including equivalent spellings
     ['SET1X for SET1', 'SET1X-S:T10'],
     ['a final set identical to the others', 'SET3-S:6-F:6'],
     ['a games-based timed set with its G', 'SET1-S:T20G'],
+    ['a no-deuce rally tiebreak, NOAD before the modifier', 'SET3-S:TB11NOAD@RALLY'],
+    ['a timed set with a tiebreak', 'SET3-S:T20/TB7'],
+    ['a timed set with a modifier', 'SET3-S:T20@RALLY'],
   ])('%s: %s', (_, code) => {
     expect(both(code)).toEqual({ parsed: true, valid: true });
   });
@@ -59,5 +65,12 @@ describe('stringify never writes a code parse refuses', () => {
 
   it('a match modifier parse keeps is written back', () => {
     expect(stringify(parse('SET3Z-S:6/TB7'))).toEqual('SET3Z-S:6/TB7');
+  });
+});
+
+describe('the canonical rally format keeps both of its meanings', () => {
+  it('TB11NOAD@RALLY is rally scoring, won by one', () => {
+    const tiebreakSet: any = parse('SET3-S:TB11NOAD@RALLY')?.setFormat?.tiebreakSet;
+    expect(tiebreakSet).toEqual({ tiebreakTo: 11, NoAD: true, modifier: 'RALLY' });
   });
 });
