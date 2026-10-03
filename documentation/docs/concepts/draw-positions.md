@@ -17,10 +17,12 @@ Two structures in the same draw both have a drawPosition 3, and they are unrelat
 drawPosition against matchUps or `positionAssignments` drawn from a different structure — scope the
 collection by `structureId` first.
 
-**Crossing a link goes by participant, never by number.** When a participant moves along a link —
-placed into, advanced into, or removed from another structure — resolve who they are from the
-SOURCE structure's `positionAssignments`, then find THEIR drawPosition in the target. A number
-carried across a link names whoever happens to hold that number on the other side.
+**No drawPosition crosses a link. A link moves a participant, never a number.** When a participant
+moves along a link — placed into, advanced into, or removed from another structure — resolve who
+they are from the SOURCE structure's `positionAssignments`, then find THEIR drawPosition in the
+target. The source structure's number is not an input to that lookup, and there is no case where it
+is the right answer on the other side: the same number in the target is a different slot, holding a
+different participant, a bye, or nobody.
 
 `DOUBLE_ELIMINATION` is where this is easiest to get wrong, because its Main and Backdraw structures
 both number from 1 and the Backdraw final feeds back into Main: Backdraw 7 and Main 7 are routinely
