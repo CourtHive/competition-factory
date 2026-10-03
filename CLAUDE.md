@@ -20,6 +20,13 @@ raise releases, publication or the release PR as a consequence of it.
 `verify.yml` uses a bare `pull_request:` trigger, so a PR into `dev` still runs the full verify
 gate. Land work by PR: a direct push to `dev` gets no push-triggered run.
 
+**After a release PR merges, merge `master` back into `dev`** (CA, 2026-10-02). release-please's
+`chore(master): release X.Y.Z` commit lands on `master` only (version in `package.json`, `CHANGELOG.md`,
+`.release-please-manifest.json`), so without the back-merge `dev` drifts: by 2026-10-02 it read 7.1.0
+while `master` was 7.4.0, and anything built from `dev` reported the wrong version. Open a PR from
+`master` into `dev` and merge it with a merge commit, never a squash, so the two histories stay joined.
+`master` should then hold nothing `dev` lacks except the merge commits of past checkpoints.
+
 Full rationale and the CI/release compatibility table:
 `../Mentat/standards/coding-standards.md` § "Branch off `dev`, not `master`".
 
