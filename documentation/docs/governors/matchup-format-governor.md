@@ -418,11 +418,22 @@ boolean; // true if valid, false if invalid
 ```
 
 **Validation Logic:**
-The format is considered valid if:
+A code is valid exactly when `parse` accepts it. `parse` refuses every code `isValidMatchUpFormat`
+refuses, so a malformed stored format is never quietly reinterpreted. A code is well-formed when it
+parses, and when its re-stringified form matches it after these equivalent spellings are rewritten:
 
-1. It can be successfully parsed
-2. When stringified again, it matches the original (round-trip test)
-3. The 'G' suffix on timed-basis sets (e.g., `T10G`) is normalized before comparison
+- a redundant `@N` equal to `setTo`: `SET3-S:6NOAD/TB7@6` is `SET3-S:6NOAD/TB7`;
+- an explicit `WB2`, the default margin of a set with no tiebreak: `SET3-S:5WB2` is `SET3-S:5`;
+- `SET1X` for `SET1`;
+- a final-set section identical to the set section: `SET3-S:6-F:6` is `SET3-S:6`;
+- a games-based timed set's `G` suffix: `T10G` is `T10`.
+
+Anything else that does not round-trip is refused by both: trailing characters (`SET3-S:6/TB7;DROP`, a
+trailing space), a fractional `@6.5`, an invalid section (`SET5-S:6/TB7-F:S:6`), and a final set on a
+one-set match (`SET1-S:6/TB7-F:TB10`). Sections must appear in the canonical order.
+
+Any best-of count is valid (`SET7-S:TB11`, `SET9-S:6/TB7`). `X` (exactly) applies to timed sets only.
+`stringify` never writes a code `parse` refuses, and returns `undefined` instead.
 
 **Examples:**
 

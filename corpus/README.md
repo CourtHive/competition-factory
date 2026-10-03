@@ -26,6 +26,12 @@ Every hash and every patch is computed over the **RFC 8785** (JCS) text of the s
 `sha256:` plus 64 lowercase hex digits over that text. Hashing is done by the writer under the test
 harness, never in the published bundle, which stays browser-safe and dependency-free.
 
+**The factory stamp's `version` is not hashed.** Every mutation stamps the factory version on the
+record's root `factory` attribute (an extension named `factory` in a legacy record). Before hashing,
+remove `version` from that one object, and from nothing else. The patches still carry it. Without this,
+a hash moved whenever `package.json`'s version did, and no behaviour had: a release bump or a
+`dev`→`master` checkpoint failed the manifest gate on that alone (`hash.ts`, `withoutFactoryVersion`).
+
 ## Steps
 
 A step is `directive` → `result` → `patch` → `hash`. The patch is RFC 6902 from the previous

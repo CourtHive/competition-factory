@@ -15,12 +15,11 @@ test('stringify with non-object returns undefined', () => {
   expect(stringify('string')).toBeUndefined();
 });
 
+// `X` (exactly) is for timed sets, and stringify never writes a code parse refuses (validator debate G8):
+// this wrote `SET3X-S:6/TB7`. A timed exactly format still stringifies with its `X`.
 test('stringify with exactly sets', () => {
-  const result = stringify({
-    exactly: 3,
-    setFormat: { setTo: 6, tiebreakFormat: { tiebreakTo: 7 } },
-  });
-  expect(result).toContain('X');
+  expect(stringify({ exactly: 3, setFormat: { setTo: 6, tiebreakFormat: { tiebreakTo: 7 } } })).toBeUndefined();
+  expect(stringify({ exactly: 3, setFormat: { timed: true, minutes: 10 } })).toEqual('SET3X-S:T10');
 });
 
 test('stringify with simplified timed format', () => {
