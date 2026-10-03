@@ -1,9 +1,10 @@
+import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
-import { COMPLETED, DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, DEFAULTED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { CONSOLATION, COMPASS, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -175,4 +176,23 @@ it('COMPASS: withdrawing the carried exit also takes back where losing it sent t
   expect(byName('West', 1, 1).matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(holding(loserId, 'West').length).toBeGreaterThan(0);
   expect(holding(loserId, 'South')).toEqual([]);
+});
+
+it('leaves a CONVERGED carried exit as it stands, and the draw consistent (census 9000008)', () => {
+  setup();
+  // both losers of MAIN 1/1 and 1/2 carry a walkover into CONSOLATION 1/1, where the two exits converge
+  enter(at(MAIN, 1, 1), { matchUpStatus: WALKOVER, winningSide: 1 }, true);
+  enter(at(MAIN, 1, 2), { matchUpStatus: WALKOVER, winningSide: 1 }, true);
+  expect(at(CONSOLATION, 1, 1).matchUpStatus).toEqual(DOUBLE_WALKOVER);
+
+  enter(at(MAIN, 1, 1), played(1), true);
+
+  // withdrawing one origin of a convergence re-derives the other, whose winner must then be directed:
+  // open work, so the convergence stands rather than strand a winner
+  expect(at(CONSOLATION, 1, 1).matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId: DRAW_ID });
+  const errors = ((getDrawInconsistencies({ drawDefinition, drawId: DRAW_ID }) as any).inconsistencies ?? []).filter(
+    (issue: any) => issue.severity === 'error',
+  );
+  expect(errors).toEqual([]);
 });

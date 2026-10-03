@@ -1,5 +1,5 @@
+import { carriedExitStatus, withdrawProducedExits } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeOnwardLoserPlacements } from '@Mutate/matchUps/drawPositions/removeOnwardLoserPlacements';
-import { withdrawProducedExits } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -10,6 +10,7 @@ import { isAnyExit } from '@Validators/isExit';
 import { BYE, COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { MappedMatchUps, MatchUpsMap } from '@Types/factoryTypes';
+import { LOSER } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type RelabelArgs = {
@@ -36,6 +37,9 @@ type RelabelArgs = {
  *
  * Neither applies where that matchUp already has a result of its own: a score, a decided status, or
  * (for the withdrawal) a walkover winner who has since played on. The loser then stays as they are.
+ * A withdrawal is also attempted only where the matchUp still holds exactly what this carry made it: not
+ * where it CONVERGED with another exit, and not where a director recorded a result over it (see
+ * `onlyThisCarry`). Withdrawing from a convergence is open work (Mentat TASKS, S2c).
  *
  * "Where the loser now stands" is the earliest matchUp of the target structure holding them that is
  * not a BYE: a loser fed opposite a BYE has already passed it, and their next opponent is there.
@@ -59,7 +63,11 @@ export function relabelLoserExit(args: RelabelArgs): { carry?: boolean } {
     : false;
 
   if (args.validExitToPropagate) return { carry: !carriedHere && !hasResult(standing) };
-  if (carriedHere && !winnerPlayedOn(standing, inContextDrawMatchUps, drawDefinition)) {
+  const withdrawable = carriedHere && onlyThisCarry(standing, loserParticipantId, sourceMatchUpId);
+  const playedOn =
+    winnerPlayedOn(standing, inContextDrawMatchUps, drawDefinition) ||
+    loserPlayedOn(standing, inContextDrawMatchUps, drawDefinition, loserParticipantId);
+  if (withdrawable && !playedOn) {
     withdraw(args, standing);
     // the loser no longer lost there, so what losing there directed them to is not theirs either: a
     // structure fed from this one (COMPASS, OLYMPIC) already holds them, and their placement in it goes
@@ -72,6 +80,21 @@ export function relabelLoserExit(args: RelabelArgs): { carry?: boolean } {
     });
   }
   return {};
+}
+
+/**
+ * The matchUp's state is EXACTLY what this source's carried exit made it: that exit's status, awarded to
+ * the side opposite the loser, with no exit carried in on the other side. Anything else is somebody else's
+ * result standing there: a convergence (withdrawing one origin re-derives the other, whose winner must
+ * then be directed, which is the cascade's open work) or a result a director recorded over the carry.
+ */
+function onlyThisCarry(standing: HydratedMatchUp, loserParticipantId: string, sourceMatchUpId: string): boolean {
+  const loserSide = standing.sides?.find((side) => side?.participantId === loserParticipantId)?.sideNumber;
+  if (loserSide !== 1 && loserSide !== 2) return false;
+  const own = standing.sideExitProvenance?.[loserSide];
+  const other = standing.sideExitProvenance?.[loserSide === 1 ? 2 : 1];
+  if (own?.sourceMatchUpId !== sourceMatchUpId || carriedExitStatus(other)) return false;
+  return standing.matchUpStatus === own.matchUpStatus && standing.winningSide === (loserSide === 1 ? 2 : 1);
 }
 
 function standingMatchUp(matchUps: HydratedMatchUp[] | undefined, structureId: string, participantId: string) {
@@ -106,6 +129,44 @@ function winnerPlayedOn(standing: HydratedMatchUp, matchUps: HydratedMatchUp[] |
   }).targetMatchUps?.winnerMatchUp?.matchUpId;
   const next = nextId ? matchUps?.find((matchUp) => matchUp.matchUpId === nextId) : undefined;
   return !!next && hasResult(next);
+}
+
+/**
+ * Losing the carried exit sent the loser on (COMPASS, OLYMPIC), and they have a result there already: a
+ * matchUp holding them in a structure fed, link after link, from the one they stand in. Withdrawing the
+ * exit would leave them in two structures at once, since a result they earned onward is not released.
+ */
+function loserPlayedOn(
+  standing: HydratedMatchUp,
+  matchUps: HydratedMatchUp[] | undefined,
+  drawDefinition: DrawDefinition,
+  participantId: string,
+): boolean {
+  const onward = new Set<string>();
+  const pending = [standing.structureId as string];
+  while (pending.length) {
+    const sourceStructureId = pending.shift();
+    for (const link of drawDefinition.links ?? []) {
+      const target = link.target?.structureId;
+      if (link.linkType !== LOSER || link.source?.structureId !== sourceStructureId || !target) continue;
+      if (onward.has(target) || target === standing.structureId) continue;
+      onward.add(target);
+      pending.push(target);
+    }
+  }
+  return (matchUps ?? []).some(
+    (matchUp) =>
+      onward.has(matchUp.structureId as string) &&
+      matchUp.sides?.some((side) => side?.participantId === participantId) &&
+      hasResult(matchUp) &&
+      !carriedFrom(matchUp, participantId),
+  );
+}
+
+/** the participant's own side of this matchUp was carried in: the exit is the cascade's, not a result they earned */
+function carriedFrom(matchUp: HydratedMatchUp, participantId: string): boolean {
+  const side = matchUp.sides?.find((candidate) => candidate?.participantId === participantId)?.sideNumber;
+  return !!side && !!carriedExitStatus(matchUp.sideExitProvenance?.[side]);
 }
 
 function withdraw(args: RelabelArgs, standing: HydratedMatchUp) {
