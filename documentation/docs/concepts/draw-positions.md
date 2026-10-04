@@ -8,7 +8,7 @@ rules that govern the `drawPositions` array — the ones that are load-bearing, 
 not obvious from the type.
 
 ```ts
-matchUp.drawPositions: number[]   // at most two, stored ASCENDING
+matchUp.drawPositions: number[]   // at most two, stored ASCENDING and compacted (round robin excepted: § 2)
 ```
 
 ## 1. A drawPosition is unique within a STRUCTURE, and means nothing outside it
@@ -28,28 +28,44 @@ different participant, a bye, or nobody.
 both number from 1 and the Backdraw final feeds back into Main: Backdraw 7 and Main 7 are routinely
 different participants — or a participant and a bye.
 
-## 2. The array is POSITIONAL: index 0 is side 1, index 1 is side 2
+## 2. The array is SORTED, not positional: the index is a side only while BOTH positions are present
 
-This is the binding between a side and a slot, and several reader idioms across the engine depend on
-it:
+Writers store `drawPositions` **ascending and compacted**: a matchUp awaiting its second participant
+is stored `[4]`, not `[undefined, 4]`. So a lone position sits at index 0 **whatever its side**, and
+reading a side from the index answers 1 for a position that belongs on side 2. The binding between a
+side and a slot holds by index **only when both positions are present**, and then only because the
+ascending order makes the lower one side 1 (§ 3).
 
-| idiom                                        | example                                                        |
-| -------------------------------------------- | -------------------------------------------------------------- |
-| `drawPositions[winningSide - 1]`             | `assignMatchUpDrawPosition`, `sideExitProvenance`              |
-| `drawPositions[someIndex]`                   | `directParticipants`, `positionClear`, `assignDrawPositionBye` |
-| `indexOf(drawPosition) + 1` as a side number | `doubleExitAdvancement`, `removeOnwardLoserPlacements`         |
+Round-robin groups are the exception to the ascending rule: their matchUps store positions in Berger
+pairing order, and `DRAW_POSITIONS_NOT_SORTED` exempts them. Sides there still come from the readers
+below, which sort a copy.
 
-None of them fails loudly when the order is wrong. They answer confidently, with the wrong
-participant.
+**Read sides from structure, never from the raw index of a lone position:**
 
-**Therefore every writer must leave `drawPositions` ascending.** Removing a position — mapping it to
-`undefined` — preserves order and is safe. Substituting one **in place** does not: a positional `map`
-that writes a higher position into the first slot produces `[7, 5]`. That is a real defect this
-codebase has shipped, reported as `DRAW_POSITIONS_NOT_SORTED`.
+| question                                     | reader                                                                |
+| -------------------------------------------- | --------------------------------------------------------------------- |
+| which side is each position on?              | `sides` on a hydrated matchUp; `getDrawPositionSides` on a stored one |
+| which position is on side N?                 | `getSideDrawPosition`                                                 |
+| which position won?                          | `getWinningSideDrawPosition`                                          |
+| which side is this position on?              | `getDrawPositionSideNumber`                                           |
+| which side does a lone exit's position face? | `getExitWinningSide`                                                  |
+| ordering a matchUp's positions for display   | `getOrderedDrawPositions`                                             |
+
+Each reads by index when both positions are present — the ascending order makes that exact — and
+resolves a lone position structurally, through the round profile (§ 4). The raw idioms
+`drawPositions[side - 1]` and `indexOf(drawPosition) + 1` remain sound only where both positions are
+guaranteed: a first-round matchUp, including a loser target's (`feedRound` handled separately), or
+behind an explicit `filter(Boolean).length === 2`. None of them fails loudly when used elsewhere. They
+answer confidently, with the wrong participant.
+
+**Every writer must leave `drawPositions` ascending.** Removing a position preserves order and is
+safe. Substituting one **in place** does not: a positional `map` that writes a higher position into
+the first slot produces `[7, 5]`. That is a real defect this codebase has shipped, reported as
+`DRAW_POSITIONS_NOT_SORTED`.
 
 ## 3. When both positions are present, side 1 is the LOWER drawPosition
 
-A consequence of rule 2 plus the ascending-storage rule. It holds even where fed positions meet
+A consequence of the ascending-storage rule in § 2. It holds even where fed positions meet
 advanced ones in later rounds.
 
 ## 4. On a feed round, a lone position may be FED or ADVANCED — and the array cannot tell you which
