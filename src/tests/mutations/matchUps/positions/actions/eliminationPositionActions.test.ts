@@ -295,7 +295,7 @@ it('returns correct positionActions for BYE positions where paired participants 
   expect(options.includes(ASSIGN_BYE)).toEqual(false);
   expect(options.includes(REMOVE_ASSIGNMENT)).toEqual(true);
   expect(options.includes(ALTERNATE_PARTICIPANT)).toEqual(true); // in this case there are 2 alternates
-  // expect(options.includes(SWAP_PARTICIPANTS)).toEqual(true); // temporarily disabled
+  expect(options.includes(SWAP_PARTICIPANTS)).toEqual(true);
 
   // now check inactive position paired with BYE
   drawPosition = 32;
@@ -686,4 +686,28 @@ it('positionActions works without tournamentRecord when tournamentParticipants p
 
   expect(result.validActions).toBeDefined();
   expect(result.validActions.length).toBeGreaterThan(0);
+});
+
+it('never offers a BYE another inactive BYE to swap with', () => {
+  // 32 positions, 28 participants: four BYEs, nothing played, so every position is inactive
+  const {
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 32, participantsCount: 28 }],
+    setState: true,
+  });
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const structureId = drawDefinition.structures[0].structureId;
+  const { positionAssignments } = tournamentEngine.getPositionAssignments({ drawId, structureId });
+  const byePositions = positionAssignments.filter(({ bye }) => bye).map(({ drawPosition }) => drawPosition);
+  expect(byePositions.length).toEqual(4);
+
+  const result = tournamentEngine.positionActions({ drawPosition: byePositions[0], structureId, drawId });
+  expect(result.isByePosition).toEqual(true);
+  expect(result.isActiveDrawPosition).toEqual(false);
+
+  const swap = result.validActions.find(({ type }) => type === SWAP_PARTICIPANTS);
+  const offered = swap.availableAssignments.map(({ drawPosition }) => drawPosition);
+  expect(offered.length).toEqual(28); // every participant, and none of the other three BYEs
+  expect(offered.some((drawPosition) => byePositions.includes(drawPosition))).toEqual(false);
 });
