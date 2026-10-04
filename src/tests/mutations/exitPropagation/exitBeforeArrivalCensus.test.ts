@@ -94,17 +94,27 @@ function playSeed(seed: number): string | undefined {
   return undefined;
 }
 
-it('recorded exits beside an unreached seat, over random draws, stay within the known budget', () => {
-  // v1 alone. Under `differential` seed 9700103 (COMPASS 32/27) diverges on `dev` too: after a DEFAULTED
-  // recorded at `West|2|1`, a WALKOVER recorded at `West|2|4` carries its loser past a BYE, and v1 converges
-  // the matchUp they reach (DOUBLE_WALKOVER) where v2 plans a WALKOVER won by the side opposite them. The
-  // outcome-v2 session's to rule on; this arm measures v1.
-  const mode = getOutcomePipeline();
-  setOutcomePipeline(OUTCOME_PIPELINE_V1);
-  const failing = SEEDS.map((seed) => ({ seed, failure: playSeed(seed) })).filter(({ failure }) => failure);
-  setOutcomePipeline(mode);
-  const unexpected = failing.filter(({ seed }) => !KNOWN.has(seed));
-  const closed = [...KNOWN].filter((seed) => !failing.some((entry) => entry.seed === seed));
-  expect(unexpected).toEqual([]);
-  expect(closed).toEqual([]);
-}, 180_000);
+/**
+ * Twelve windows of ten seeds, each its own test. One test over all 120 took ~60s locally but 244s under
+ * `verify:coverage` in CI, past the 180s timeout; a window stays well inside it.
+ */
+const WINDOWS = Array.from({ length: SEEDS.length / 10 }, (_, index) => SEEDS.slice(index * 10, index * 10 + 10));
+
+// v1 alone. Under `differential` seed 9700103 (COMPASS 32/27) diverges on `dev` too: after a DEFAULTED
+// recorded at `West|2|1`, a WALKOVER recorded at `West|2|4` carries its loser past a BYE, and v1 converges
+// the matchUp they reach (DOUBLE_WALKOVER) where v2 plans a WALKOVER won by the side opposite them. The
+// outcome-v2 session's to rule on; this arm measures v1.
+it.each(WINDOWS.map((seeds) => ({ seeds, from: seeds[0] })))(
+  'seeds from $from: recorded exits beside an unreached seat stay within the known budget',
+  ({ seeds }) => {
+    const mode = getOutcomePipeline();
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    const failing = seeds.map((seed) => ({ seed, failure: playSeed(seed) })).filter(({ failure }) => failure);
+    setOutcomePipeline(mode);
+    const unexpected = failing.filter(({ seed }) => !KNOWN.has(seed));
+    const closed = seeds.filter((seed) => KNOWN.has(seed) && !failing.some((entry) => entry.seed === seed));
+    expect(unexpected).toEqual([]);
+    expect(closed).toEqual([]);
+  },
+  180_000,
+);
