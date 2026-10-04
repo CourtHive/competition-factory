@@ -103,7 +103,10 @@ two participants, with one family of exceptions and one rule inside it:
 
 - **The waiver.** WALKOVER, DEFAULTED, DOUBLE_WALKOVER or DOUBLE_DEFAULT on a matchUp holding ONE
   participant is accepted when it is the cascade's own write (`propagatingExit`), or when the call
-  names no winner, or when the winner it names is **awardable**.
+  names no winner, or when the winner it names is **awardable**. A DOUBLE exit is waived only as the
+  cascade's own write: entered directly it needs both seats reached, because a double exit is one
+  exit per seat (CA, 2026-10-04). Entered beside a seat nobody has reached, the arrival there would
+  meet a double exit already standing, a third entity in a matchUp that holds two.
 - **Awardable** means the winning side is not the participant already present (a walkover over an
   opponent nobody knows yet would be two winners of one matchUp), is not a BYE, and is not a
   **phantom**: a drawPosition whose assignment exists and holds nobody. An unfilled feed slot, no

@@ -152,6 +152,8 @@ const scenarios: Scenario[] = [
     drawSize: 32,
     seed: 9000408,
     steps: [
+      // the seat Main|1|2 feeds is reached first: a direct double exit needs both seats (CA, 2026-10-04)
+      { structureName: 'Main', roundNumber: 1, roundPosition: 2, outcome: { winningSide: 1 } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: { matchUpStatus: 'DOUBLE_WALKOVER' } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: TBP },
     ],
