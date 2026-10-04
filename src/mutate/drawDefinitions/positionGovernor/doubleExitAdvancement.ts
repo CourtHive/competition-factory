@@ -84,7 +84,7 @@ export function doubleExitAdvancement(params) {
   });
 
   /**
-   * A loser matchUp that is ALREADY a BYE can still be owed one — and NOTHING is what it gets today.
+   * A loser matchUp that is ALREADY a BYE can still be owed one — and before this branch, NOTHING is what it got.
    *
    * `handleLoserMatchUp` offers a target exactly two things: a BYE (`advanceByeToLoserMatchUp`) or a
    * produced WALKOVER (`conditionallyAdvanceDrawPosition`). The guard below read
@@ -111,7 +111,8 @@ export function doubleExitAdvancement(params) {
    *    BYE placement pushes it into occupied positions across a link — the trap #4907 closed in five
    *    other places.
    *
-   * So the semantic is right and making it the DEFAULT is a separate, larger piece of work. Behind
+   * So the semantic is right, and since #5029 it is the default (`propagatesByeOnDoubleExit`); `doubleExitPropagateBye:
+   * false` keeps the older behaviour. Behind
    * the policy the census is **0 closed, 0 opened, 0 changed** on all six arms.
    *
    * `assignDrawPositionBye` returns early on a position that already holds a BYE, so this is a no-op
