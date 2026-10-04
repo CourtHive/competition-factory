@@ -4,6 +4,7 @@ import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipa
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
 import { getCollectionAssignment } from './getCollectionAssignment';
 import { getOrderedDrawPositions } from './getOrderedDrawPositions';
@@ -449,7 +450,7 @@ function annotateScoreSets(matchUpWithContext, matchUpFormat) {
     .sort((a, b) => a.setNumber - b.setNumber)
     .map((set, i) => {
       const setNumber = i + 1;
-      const isDecidingSet = setNumber === bestOf;
+      const isDecidingSet = finalSetGoverns(parsedFormat, setNumber, setNumber === bestOf);
       const currentSetFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
       const isTiebreakOnly = currentSetFormat?.tiebreakSet && !currentSetFormat?.timed;
       const isTimed = currentSetFormat?.timed;

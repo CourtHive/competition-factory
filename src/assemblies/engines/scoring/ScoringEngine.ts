@@ -15,6 +15,7 @@
  *   const matchUp = engine.getState();
  */
 
+import { finalSetGoverns, openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
 import { resolveSetType } from '@Tools/scoring/scoringUtilities';
@@ -651,7 +652,7 @@ export class ScoringEngine {
       if (set.winningSide === 1) setsWon[0]++;
       if (set.winningSide === 2) setsWon[1]++;
     });
-    const setType = resolveSetType(this.cachedFormatStructure, setsWon);
+    const setType = resolveSetType(this.cachedFormatStructure, setsWon, openSetNumber(this.state.score.sets));
 
     return deriveServer(this.state, this.cachedFormatStructure, setType);
   }
@@ -675,7 +676,7 @@ export class ScoringEngine {
       if (set.winningSide === 1) setsWon[0]++;
       if (set.winningSide === 2) setsWon[1]++;
     });
-    const setType = resolveSetType(this.cachedFormatStructure, setsWon);
+    const setType = resolveSetType(this.cachedFormatStructure, setsWon, openSetNumber(this.state.score.sets));
 
     // Compare desired server against the base derivation (which assumes
     // side 0 served game 0). If they disagree, flip is needed.
@@ -1329,7 +1330,12 @@ export class ScoringEngine {
       if (set.winningSide === 1) setsWon[0]++;
       if (set.winningSide === 2) setsWon[1]++;
     });
-    const isDecidingSet = setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1;
+    const setNumber = (currentSet as any).setNumber ?? this.state.score.sets.indexOf(currentSet) + 1;
+    const isDecidingSet = finalSetGoverns(
+      formatStructure,
+      setNumber,
+      setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1,
+    );
     const activeSetFormat =
       isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 
@@ -1452,7 +1458,7 @@ export class ScoringEngine {
       if (set.winningSide === 1) setsWon[0]++;
       if (set.winningSide === 2) setsWon[1]++;
     });
-    const setType = resolveSetType(this.cachedFormatStructure!, setsWon);
+    const setType = resolveSetType(this.cachedFormatStructure!, setsWon, openSetNumber(this.state.score.sets));
     const baseServer = deriveServerBase(this.state, this.cachedFormatStructure!, setType);
     this.state.serverFlip = data.side !== baseServer;
   }
@@ -1525,8 +1531,8 @@ export class ScoringEngine {
         // Auto-infer winningSide only for completed sets (format-aware).
         // A 1-2 set in SET3-S:6/TB7 is incomplete — don't mark side 2 as winner.
         const fs = this.cachedFormatStructure;
-        const setFormat =
-          fs?.finalSetFormat && i === (fs.bestOf ?? fs.exactly ?? 3) - 1 ? fs.finalSetFormat : fs?.setFormat;
+        const isFinalSet = finalSetGoverns(fs, i + 1, i === (fs?.bestOf ?? fs?.exactly ?? 3) - 1);
+        const setFormat = fs?.finalSetFormat && isFinalSet ? fs.finalSetFormat : fs?.setFormat;
         const setTo = setFormat?.setTo;
         if (setTo && (setData.side1Score >= setTo || setData.side2Score >= setTo)) {
           if (setData.side1Score > setData.side2Score) set.winningSide = 1;

@@ -1,4 +1,5 @@
 import { checkValidMatchTiebreak, testTiebreakEntry } from './keyValueUtilities';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { arrayIndices } from '@Tools/arrays';
 
@@ -18,7 +19,7 @@ export function getScoreAnalysis({ matchUpFormat, scoreString, winningSide, valu
   const setNumber = completedSets + (winningSide ? 0 : 1);
 
   const matchUpScoringFormat: any = parse(matchUpFormat);
-  const isDecidingSet = setNumber === matchUpScoringFormat?.bestOf;
+  const isDecidingSet = finalSetGoverns(matchUpScoringFormat, setNumber, setNumber === matchUpScoringFormat?.bestOf);
   const setFormat = (isDecidingSet && matchUpScoringFormat?.finalSetFormat) || (matchUpScoringFormat?.setFormat ?? {});
   const isTimedSet = setFormat?.timed;
 

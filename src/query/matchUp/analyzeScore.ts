@@ -1,4 +1,5 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { timedSetWinnerContradicts } from '@Validators/timedSetWinner';
 import { tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
 import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
@@ -47,7 +48,7 @@ function validateSet(
   irregularEnding: boolean,
 ): boolean {
   const setNumber = i + 1;
-  const isFinalSet = setNumber === totalSets;
+  const isFinalSet = finalSetGoverns(matchUpScoringFormat, setNumber, setNumber === totalSets);
 
   const { side1Score, side2Score, side1TiebreakScore, side2TiebreakScore, winningSide: setWinningSide } = set;
   const maxSetScore = Math.max(side1Score ?? 0, side2Score ?? 0);

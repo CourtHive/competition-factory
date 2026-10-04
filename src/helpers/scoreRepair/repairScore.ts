@@ -1,4 +1,5 @@
 import { INVALID_TIEBREAK_POINTS_DROPPED } from '@Constants/scoreWarningConstants';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { isTiebreakGamesScore } from '@Query/matchUp/tiebreakAtRules';
 import { validateSetScore } from '@Validators/validateMatchUpScore';
 import { formatForSet } from '@Query/matchUp/tiebreakSetShape';
@@ -42,7 +43,7 @@ export function repairScore({ score, matchUpFormat }: RepairScoreArgs): { score:
     if (!hasPoints || typeof a !== 'number' || typeof b !== 'number' || typeof tiebreakAt !== 'number') return set;
     if (!isTiebreakGamesScore(Math.max(a, b), Math.min(a, b), { setTo, tiebreakAt })) return set;
 
-    const isDecidingSet = !!maxSetNumber && setNumber === maxSetNumber;
+    const isDecidingSet = finalSetGoverns(parsed, setNumber, !!maxSetNumber && setNumber === maxSetNumber);
     if (validateSetScore(set, matchUpFormat, isDecidingSet, false).isValid) return set;
 
     const { side1TiebreakScore: _side1, side2TiebreakScore: _side2, ...withoutPoints } = set;

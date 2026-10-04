@@ -1,3 +1,4 @@
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { getTiebreakComplement } from '@Query/matchUp/getComplement';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
@@ -61,7 +62,7 @@ export function parseScoreString({ tiebreakTo = 7, scoreString = '', matchUpForm
   function checkIsTiebreakOnlyFormat(setNumber: number, isTiebreakOnlySet: boolean): boolean {
     if (!parsedFormat || !isTiebreakOnlySet) return false;
 
-    const isDecidingSet = setNumber === bestOfSets;
+    const isDecidingSet = finalSetGoverns(parsedFormat, setNumber, setNumber === bestOfSets);
     const setFormat =
       isDecidingSet && parsedFormat.finalSetFormat ? parsedFormat.finalSetFormat : parsedFormat.setFormat;
 
@@ -75,7 +76,7 @@ export function parseScoreString({ tiebreakTo = 7, scoreString = '', matchUpForm
   function getTiebreakToForSet(setNumber: number): number {
     if (!parsedFormat) return tiebreakTo;
 
-    const isDecidingSet = setNumber === bestOfSets;
+    const isDecidingSet = finalSetGoverns(parsedFormat, setNumber, setNumber === bestOfSets);
     const setFormat =
       isDecidingSet && parsedFormat.finalSetFormat ? parsedFormat.finalSetFormat : parsedFormat.setFormat;
 

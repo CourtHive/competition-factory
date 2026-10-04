@@ -5,6 +5,7 @@
  * Currently implemented in TMX for testing and refinement before factory integration
  */
 import { tiebreakSetGames, isTiebreakGamesScore, tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { isTiebreakMarker } from '@Query/matchUp/tiebreakSetShape';
 import { getMaxSetScore } from '@Query/matchUp/getComplement';
 import { timedSetWinnerContradicts } from './timedSetWinner';
@@ -496,7 +497,7 @@ export function validateMatchUpScore(
     const set = sets[i];
 
     // Check if this specific set is the deciding set (last possible set in the match)
-    const isDecidingSet = i + 1 === bestOfSets;
+    const isDecidingSet = finalSetGoverns(parse(matchUpFormat ?? ''), i + 1, i + 1 === bestOfSets);
     const isLastSet = i === sets.length - 1;
 
     const setHasWinner = set.winningSide !== undefined;
