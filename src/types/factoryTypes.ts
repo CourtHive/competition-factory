@@ -300,8 +300,8 @@ export type PolicySeedingProfile = SeedingProfile & {
  * `validateAndDeriveDrawValues` without any type describing it. Consumers that needed
  * the shape had to hand-write a mirror, which is how a mirror comes to drift.
  *
- * Declared but deliberately NOT wired into {@link PolicyDefinitions}: narrowing that
- * index signature would be a consumer-build break, and is a separate decision.
+ * Wired into {@link PolicyDefinitions} under `POLICY_TYPE_SEEDING` (#4839, breaking); other
+ * policy types remain `{ [key: string]: any }`.
  */
 /**
  * An allowance for seeds ABOVE the count `seedsCountThresholds` yields — *additional* seeds, not

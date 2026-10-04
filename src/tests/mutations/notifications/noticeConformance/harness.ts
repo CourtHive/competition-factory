@@ -13,9 +13,9 @@
  *        the rebuild diff of `cast()` before vs after (`castDiff`). Catches a
  *        notice that fires but carries the wrong payload for the projected rows.
  *
- * This is a scaffold: the entity model + spec cover the main kinds and the two
- * representative spec cases (a covered mutation + a known gap). The full ~640-method
- * catalog sweep is the follow-on (Workstream D-scenarios).
+ * The entity model + spec cover the main kinds. noticeConformance.test.ts holds the
+ * representative cases; noticeConformanceScenarios.test.ts is the catalog sweep
+ * (Workstream D-scenarios).
  */
 import { setSubscriptions, deleteNotices } from '@Global/state/globalState';
 import { cast } from '@Query/readModel/cast';
@@ -85,9 +85,8 @@ const INCIDENTAL_KEYS = new Set(['updatedAt', 'createdAt', 'timeStamp', 'process
 
 /**
  * entity kind → the notice topics that legitimately cover a change of each type.
- * An EMPTY list encodes a KNOWN GAP in the notice vocabulary — e.g. there is no
- * MODIFY_EVENT / DELETE_EVENT topic today, so any event-attribute change is
- * uncoverable and surfaces as a violation (Workstream C2).
+ * An EMPTY list encodes a KNOWN GAP in the notice vocabulary: a change of that type
+ * is uncoverable and surfaces as a violation.
  */
 export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, string[]>>> = {
   tournament: { modified: [MODIFY_TOURNAMENT_DETAIL] },

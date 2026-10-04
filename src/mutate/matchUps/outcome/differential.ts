@@ -16,8 +16,8 @@ import {
  *
  * S2a re-implements the REFUSALS (§ 2 rows 1 to 15). A refusal v1 raises from a write, or from a
  * route v2 does not yet express (§ 3's `unrecognized`, `notDirecting` and `fallthrough`), is an
- * apply-stage code: v2 accepting while v1 refuses with one of these is not a divergence until S2b
- * owns the routes. Every other disagreement throws, with both answers and the matchUp named.
+ * apply-stage code: v2 accepting while v1 refuses with one of these is not a divergence while the
+ * `refused` route stays an apply-stage refusal. Every other disagreement throws, with both answers and the matchUp named.
  */
 export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   INVALID_TIME.code,

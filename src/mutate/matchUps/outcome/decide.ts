@@ -241,8 +241,8 @@ function checkCarriedPastBye({
  * The exit carried past a BYE meets one already standing on the other side: they converge, and nobody
  * wins. KNOWN v1 DEFECT (2026-10-02, Mentat TASKS S2c): when the loser passed the BYE into a side the
  * standing exit had already awarded, v1 advances them on as its winner, and the convergence write that
- * should retract them is refused (ERR_INCOMPATIBLE_MATCHUP_STATUS, active downstream) and dropped by the
- * cascade. That shape, and only that shape, is deferred.
+ * should retract them is refused (ERR_INCOMPATIBLE_MATCHUP_STATUS, active downstream); since #5156 that
+ * refusal is returned rather than dropped. That shape, and only that shape, is deferred.
  */
 function checkPastByeConvergence({
   args,

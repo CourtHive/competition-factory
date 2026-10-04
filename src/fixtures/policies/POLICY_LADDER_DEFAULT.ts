@@ -4,9 +4,9 @@
  * `SWAP` over `INSERTION` and a range of 3 are the most common club settings, not a factory opinion:
  * they are chosen to be unsurprising, and every one of them is expected to be overridden.
  *
- * `ordering: RANK` is the traditional ladder and the only one the movement machinery serves. A
- * policy setting `RATING` is legal to express today and its behaviour is not yet built — see
- * `getLadderOrdering`.
+ * `ordering: RANK` is the traditional ladder and the only one the movement machinery serves. Under
+ * `RATING` the standing is derived from the rating scale and what moves is the rating — see
+ * `getLadderOrdering` and `getLadderStanding`.
  */
 import { EITHER, RANK, SWAP } from '@Constants/ladderConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';

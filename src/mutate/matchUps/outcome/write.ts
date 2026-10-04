@@ -30,8 +30,8 @@ import {
  * matchUp after v1 ran whether v1 wrote the same thing. What a route does to OTHER matchUps
  * (direction, exit propagation, the double-exit cascade) is S2c and is not planned here.
  *
- * `undefined` means the route's write on this matchUp is not predicted yet (swap, the cascade,
- * TEAM duals whose auto-calc rewrites the request), and the differential records it as deferred.
+ * `undefined` means the route refused (§ 3's `unrecognized`, `notDirecting`, `fallthrough`): that
+ * refusal is raised at the apply, and the differential records it as deferred.
  */
 
 type WriteArgs = {

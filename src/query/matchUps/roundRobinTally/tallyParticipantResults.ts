@@ -87,8 +87,9 @@ export function tallyParticipantResults({
     tallyPolicy,
     perPlayer,
   });
-  // `consideredMatchUps` is always an array here, so this cannot fire today — it is propagated
-  // rather than asserted so a future caller change surfaces as an error instead of an empty tally.
+  // getParticipantResults refuses matchUps that carry no sides (INVALID_MATCHUP), which a caller
+  // passing stored rather than in-context matchUps reaches; propagated so the refusal is not read
+  // as an empty tally.
   if (participantResultsOutcome.error) return participantResultsOutcome;
   const { participantResults } = participantResultsOutcome;
 

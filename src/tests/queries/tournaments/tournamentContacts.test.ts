@@ -15,8 +15,8 @@ import { ADMINISTRATION, COMPETITOR, DIRECTOR, OFFICIAL } from '@Constants/parti
  * Which contacts publish is gated on `Contact.isPublic === true`, applied as a predicate in
  * `getTournamentInfo` rather than in the policy template. A template array is an allow-list, but
  * `attributeFilter` only evaluates it for keys the source actually has, so a contact with no `isPublic`
- * would pass unexamined. Absent must withhold — nothing writes the flag today, so fail-open would
- * publish every contact in existence.
+ * would pass unexamined. Absent must withhold — contacts written before `contacts` became writable
+ * (#4680) carry no flag, so fail-open would publish all of them.
  */
 
 const contact = (name: string, isPublic?: boolean) => ({

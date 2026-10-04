@@ -45,7 +45,8 @@ export function planDirection(request: OutcomeRequest, view: OutcomeView, route:
  * S2c, the loser's half (§ 5 rule 1). A first-match-loser feed (the link's condition FIRST_MATCHUP,
  * landing in the target's round 2) takes the loser only if this was their first match: no wins in
  * the source structure besides this one. Every other loser link takes the loser. Planned only when
- * the loser has a participant; what the target holds when they do not arrive (a BYE) is S2c's next.
+ * the loser has a participant; when they do not arrive, a propagated BYE takes their place on the
+ * feed's lower drawPosition.
  */
 function planLoser(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2): DirectionPlan['loser'] {
   const matchUpId = view.targets.loserMatchUpId;
@@ -76,8 +77,8 @@ function planLoser(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2)
 /**
  * S2c (exit-propagation § propagateExitStatus): with propagation on, a WALKOVER or DEFAULTED, and a
  * RETIRED when the policy says a retirement propagates, follows the loser into the target, written
- * as itself (a retirement as a WALKOVER). Planned only where the target is not already an exit: two
- * exits make a double exit, which is the cascade's next piece.
+ * as itself (a retirement as a WALKOVER). Where an exit already stands in the target the two
+ * converge (planLoser); a target already a double exit is a third arrival and is not modelled.
  */
 function carriedExit(request: OutcomeRequest, view: OutcomeView) {
   const { matchUpStatus, flags } = request;
@@ -117,8 +118,8 @@ export function convergence(statuses: string[]): MatchUpStatusUnion {
  *
  * Which side it feeds is read from the structure, planned only where that is unambiguous: the next
  * round in the same structure holds half as many matchUps (no feed round), so roundPosition n feeds
- * side 1 when odd and side 2 when even. Deferred: a target already an exit or carrying one (a
- * convergence, which makes a double exit), a decider, a dual's line.
+ * side 1 when odd and side 2 when even. An exit standing there converges with this one. Deferred:
+ * a target already a double exit (a third arrival), a decider, a dual's line.
  */
 function planProducedExit(request: OutcomeRequest, view: OutcomeView): DirectionPlan | undefined {
   const { winner, source, winnerMatchUpId } = view.targets;
