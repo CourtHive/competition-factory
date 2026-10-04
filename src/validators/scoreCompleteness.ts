@@ -2,11 +2,12 @@ import { validateSetScore } from '@Validators/validateMatchUpScore';
 import { setPlayedAfterDecision } from '@Validators/setCount';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
-// constants
+// constants and types
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 type ScoreCompletenessArgs = {
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   matchUpFormat?: string;
   winningSide?: number;
   sets: any[];

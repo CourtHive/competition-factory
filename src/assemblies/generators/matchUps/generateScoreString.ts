@@ -1,8 +1,9 @@
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isNumeric } from '@Tools/math';
 
-// constants
+// constants and types
 import { ErrorType, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   ABANDONED,
   DEAD_RUBBER,
@@ -17,7 +18,7 @@ import {
 type GenerateScoreString = {
   addOutcomeString?: boolean;
   autoComplete?: boolean;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   matchUpFormat?: string;
   winnerFirst?: boolean;
   winningSide?: number;

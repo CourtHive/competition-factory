@@ -1,5 +1,6 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
+import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { instanceCount } from '@Tools/arrays';
 
@@ -137,6 +138,7 @@ export function analyzeScore({
   winningSide,
   score,
 }: AnalyzeScoreArgs) {
+  if (matchUpStatus !== undefined && !isMatchUpStatus(matchUpStatus)) return { valid: false };
   const sets = score?.sets ?? [];
   const completedSets = sets?.filter((set) => set?.winningSide) ?? [];
   const setsWinCounts = completedSets.reduce(

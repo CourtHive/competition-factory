@@ -2,6 +2,7 @@ import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 
 // constants and types
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 // Counts the REAL (scored) wins a drawPosition has accrued across a structure's matchUps. BYEs and
@@ -18,7 +19,13 @@ import { HydratedMatchUp } from '@Types/hydrated';
  * measured 2026-09-14, when a restated version read the incoming REQUEST while this reads the
  * resulting RECORD, and the two disagreed about the identical operation.
  */
-export function isUnscoredOutcome({ matchUpStatus, score }: { matchUpStatus?: string; score?: any }): boolean {
+export function isUnscoredOutcome({
+  matchUpStatus,
+  score,
+}: {
+  matchUpStatus?: MatchUpStatusUnion;
+  score?: any;
+}): boolean {
   if (matchUpStatus === WALKOVER) return true;
   return matchUpStatus === DEFAULTED && !checkScoreHasValue({ score });
 }
