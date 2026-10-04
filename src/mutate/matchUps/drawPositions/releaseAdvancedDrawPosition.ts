@@ -87,7 +87,9 @@ export function releaseAdvancedDrawPosition({
     if (matchUp.roundNumber === undefined || matchUp.roundNumber < fromRoundNumber) continue;
     if (matchUp.roundNumber === initialRoundNumber) continue;
     if (!matchUp.drawPositions?.includes(drawPosition)) continue;
-    if (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus)) continue;
+    const heldOpenForArrival =
+      withdrawingExit && awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp });
+    if (!heldOpenForArrival && (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus))) continue;
     if (advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp })) continue;
     if (!withdrawingExit && advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp })) {
       continue;
@@ -112,6 +114,27 @@ export function releaseAdvancedDrawPosition({
   }
 
   return { ...SUCCESS };
+}
+
+/**
+ * A matchUp whose winningSide is an exit's AWARD to the seat this position sits in, not a result of its own.
+ *
+ * Scope 2 keeps a decided matchUp's array, because a re-score that removes and re-adds a position inside one
+ * mutation rewrote its winningSide. A matchUp decided ONLY by an exit carried in on the OTHER side is not that:
+ * its winningSide names the seat, and "the side yet to arrive wins, even while still empty" (exit-propagation.md,
+ * the pending exit). When a withdrawal takes back the exit that advanced this position into that seat, the seat
+ * is empty again and the exit stands, pending, for whoever arrives there next.
+ *
+ * Measured 2026-10-04, census w2 9100343 (OLYMPIC 16/11): `East|1|4` WALKOVER carried its loser's exit into
+ * `West|2|1`, whose winner advanced to `West|3|1`, already DEFAULTED towards that seat by an exit carried from
+ * `East|1|5`. Re-scoring `East|1|4` to the other winner withdrew the walkover at `West|2|1` and left the winner
+ * in `West|3|1`, advanced out of an undecided matchUp; the next result there was refused.
+ */
+function awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp }): boolean {
+  if (!isExit(matchUp.matchUpStatus) || !matchUp.winningSide || matchUp.score?.scoreStringSide1) return false;
+  if (getWinningSideDrawPosition({ drawDefinition, structureId, matchUp }) !== drawPosition) return false;
+  const provenance = getSideExitProvenance({ matchUp });
+  return isExit(provenance?.[3 - matchUp.winningSide]?.matchUpStatus);
 }
 
 /**
