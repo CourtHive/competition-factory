@@ -5,7 +5,7 @@ import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear'
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
-import { isDoubleExit, isExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import {
   clearSideExitProvenance,
   getSideExitProvenance,
@@ -16,7 +16,7 @@ import {
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 
 type SettleArgs = {
@@ -47,12 +47,28 @@ export function settleRederivedDoubleExits({
   const { drawMatchUps } = getMatchUpsMap({ drawDefinition: args.drawDefinition });
   for (const matchUp of drawMatchUps) {
     if (matchUp.matchUpId === targetMatchUpId || !doubleExitsBefore.has(matchUp.matchUpId)) continue;
-    if (isDoubleExit(matchUp.matchUpStatus) || !isExit(matchUp.matchUpStatus)) continue;
-    if (getExitSides({ matchUp }).length !== 1) continue;
+    // re-derived to a single exit, or — when the lost origin's seat became a BYE — to a BYE
+    if (isDoubleExit(matchUp.matchUpStatus)) continue;
+    if (!isExit(matchUp.matchUpStatus) && matchUp.matchUpStatus !== BYE) continue;
+    if (liveExitSides({ matchUp, drawMatchUps }).length !== 1) continue;
     const settled = settleRederivedDoubleExit({ ...args, matchUpId: matchUp.matchUpId });
     if (settled?.error) return settled;
   }
   return undefined;
+}
+
+/**
+ * The sides whose carried exit is still TRUE: the origin it names is still an exit. When the lost
+ * origin is withdrawn its entry goes with it; when the lost origin's seat becomes a BYE instead (census
+ * w2 9100488: a double exit upstream turned `South|1|4` into a BYE), its entry stays behind and names
+ * an origin that no longer exits — so the count is of origins, not of entries.
+ */
+function liveExitSides({ matchUp, drawMatchUps }: { matchUp?: MatchUp; drawMatchUps: MatchUp[] }): number[] {
+  const provenance = getSideExitProvenance({ matchUp });
+  return getExitSides({ matchUp }).filter((sideNumber) => {
+    const origin = drawMatchUps.find((candidate) => candidate.matchUpId === provenance?.[sideNumber]?.sourceMatchUpId);
+    return isAnyExit(origin?.matchUpStatus);
+  });
 }
 
 /**
@@ -68,8 +84,9 @@ export function settleRederivedDoubleExits({
  *  1. withdraw the exits this matchUp produced downstream, identity-keyed, as any undo does;
  *  2. withdraw its BYE claims, and clear each BYE seat it was the last to claim (`byeFromPropagation`
  *     only: a BYE the draw was generated with is never touched);
- *  3. reset it to undecided, the carrier left in place, as it was the moment the carrier arrived;
- *  4. replay the kept origin's carry, and carry on through every further loser link.
+ *  3. reset it to undecided, the carrier left in place, as it was the moment the carrier arrived — or
+ *     leave it a BYE where the lost origin's seat became one, the carrier then passing through it;
+ *  4. replay the kept origin's carry (RULE 1 carries it past a BYE), and on through every loser link.
  *
  * Exported for the relabel route (F2), which withdraws one origin of a convergence the same way.
  */
@@ -82,7 +99,7 @@ export function settleRederivedDoubleExit({
 }: SettleArgs & { matchUpId: string }): ResultType | undefined {
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
-  const [keptSide] = getExitSides({ matchUp: stored });
+  const [keptSide] = liveExitSides({ matchUp: stored, drawMatchUps: matchUpsMap.drawMatchUps });
   const keptEntry = getSideExitProvenance({ matchUp: stored })?.[keptSide];
   const origin = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === keptEntry?.sourceMatchUpId);
   const inContext = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps?.find(
@@ -102,9 +119,10 @@ export function settleRederivedDoubleExit({
   // 2. the BYEs it claimed
   withdrawByeSeats({ claimantMatchUpId: matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
 
-  // 3. undecided, carrier in place
+  // 3. as it was the moment the carrier arrived: undecided, or still a BYE where the lost origin's seat
+  //    became one (census w2 9100488) — the carrier then passes through it, carrying the exit
   clearSideExitProvenance(stored);
-  stored.matchUpStatus = TO_BE_PLAYED;
+  if (stored.matchUpStatus !== BYE) stored.matchUpStatus = TO_BE_PLAYED;
   delete stored.winningSide;
   delete stored.sideStatusCodes;
   modifyMatchUpNotice({
