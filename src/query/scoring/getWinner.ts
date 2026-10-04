@@ -6,6 +6,9 @@
 
 import type { MatchUp } from '@Types/scoring/types';
 
+// constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
 /**
  * Get the winner of the matchUp
  *
@@ -13,7 +16,7 @@ import type { MatchUp } from '@Types/scoring/types';
  * @returns Winning side number (1-based) or undefined if not complete
  */
 export function getWinner(matchUp: MatchUp): number | undefined {
-  if (matchUp.matchUpStatus !== 'COMPLETED') {
+  if (matchUp.matchUpStatus !== COMPLETED) {
     return undefined;
   }
 

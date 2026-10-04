@@ -13,6 +13,9 @@ import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { addPoint } from '@Mutate/scoring/addPoint';
 import { getScore } from '@Query/scoring/getScore';
 
+// constants
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+
 export interface ValidateMatchUpOptions {
   matchUp: MatchUp;
   expectedScore?: {
@@ -217,7 +220,7 @@ export function validateSet(options: {
   const matchUp: MatchUp = {
     matchUpId: 'validation',
     matchUpFormat,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
     matchUpType: 'SINGLES',
     sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
     score: {

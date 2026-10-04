@@ -12,6 +12,9 @@
 
 import type { MatchUp, Episode, EpisodeNeeded } from '@Types/scoring/types';
 
+// constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
 export function getEpisodes(matchUp: MatchUp): Episode[] {
   if (!matchUp) return [];
   const points = matchUp.history?.points;
@@ -23,7 +26,7 @@ export function getEpisodes(matchUp: MatchUp): Episode[] {
     const point = points[i];
     const nextPoint = i < points.length - 1 ? points[i + 1] : undefined;
     const isLastPoint = i === points.length - 1;
-    const isCompleted = matchUp.matchUpStatus === 'COMPLETED';
+    const isCompleted = matchUp.matchUpStatus === COMPLETED;
 
     const pointSet = (point as any).set ?? 0;
     const pointGame = (point as any).game ?? 0;
