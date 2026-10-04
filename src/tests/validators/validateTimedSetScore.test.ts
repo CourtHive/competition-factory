@@ -219,7 +219,7 @@ it('rejects invalid timed set scores', () => {
   expect(result.isValid).toEqual(false);
   expect(result.error).toContain('tiebreak');
 
-  // Valid: same score with tiebreak
+  // Valid: same score with tiebreak (all three sets played: an exactly-3 match is COMPLETED only then)
   sets = [
     {
       side1Score: 30,
@@ -229,6 +229,8 @@ it('rejects invalid timed set scores', () => {
       setNumber: 1,
       winningSide: 1,
     },
+    { side1Score: 25, side2Score: 30, setNumber: 2, winningSide: 2 },
+    { side1Score: 30, side2Score: 20, setNumber: 3, winningSide: 1 },
   ];
 
   result = validateMatchUpScore(sets, matchUpFormat, COMPLETED);

@@ -10,7 +10,7 @@ import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTyp
 import { MatchUpsMap } from '@Types/factoryTypes';
 
 /**
- * Withdraw carried exits whose ORIGIN has stopped being a double exit and now delivers a winner.
+ * Withdraw carried exits whose ORIGIN has stopped being a double exit, unless its winning seat is a BYE.
  *
  * ## The question, and why it is asked here
  *
@@ -39,9 +39,9 @@ import { MatchUpsMap } from '@Types/factoryTypes';
  * record of what happened — only the draw — which is what makes it safe to run there: it is a
  * fixpoint over a property of the stored data, and it is idempotent.
  *
- * A source that is no longer a double exit but delivers NOBODY — a BYE, or a pending exit with an
- * empty winning seat — leaves its entries alone. Those exits are still true; the participant who
- * moves on is the exiting side's occupant carrying the exit with them.
+ * A source that is no longer a double exit and whose winning seat is a BYE leaves its entries alone:
+ * those exits are still true, carried through the BYE by the exiting side's occupant. Any other state of
+ * the source — a seated winner, an empty winning seat, no winner at all — voids them (`winnerSeatIsBye`).
  */
 export function reconcileStaleExitOrigins({
   tournamentRecord,
@@ -114,15 +114,29 @@ function getStaleOrigins({
 
       const source = byId.get(sourceMatchUpId);
       if (!source || isDoubleExit(source.matchUp.matchUpStatus)) continue;
-      if (deliversAnAdvancement({ ...source, drawDefinition })) staleOrigins.add(sourceMatchUpId);
+      if (!winnerSeatIsBye({ ...source, drawDefinition })) staleOrigins.add(sourceMatchUpId);
     }
   }
 
   return [...staleOrigins];
 }
 
-/** Does this matchUp's winning side hold a participant who can advance out of it? */
-function deliversAnAdvancement({
+/**
+ * Is this matchUp's winning seat a BYE? The one shape in which a former double exit's downstream entries
+ * stay true once it is no longer a double exit.
+ *
+ * A BYE in the winner's seat advances nobody: whoever moves on is the EXITING side's occupant passing
+ * through it, carrying the exit with them, so what was stamped downstream still describes them
+ * (`byeAdvancesIntoPendingDoubleExit`). Any other state voids those entries:
+ *
+ *  - a seated winner receives an ADVANCEMENT, not an exit (P40, census DE 9301605);
+ *  - an EMPTY winning seat, or no winner at all — a pending single exit, or a matchUp that reverted to
+ *    undecided — sends nothing downstream until somebody arrives. These were read as "delivers nobody"
+ *    and kept, so a convergence that lost an origin, or reverted, left the exit it had produced standing
+ *    a round further on, waiting for an arrival on its EXITING side (census w1 9000562, after a
+ *    converged origin was cleared: MONOTONIC_DECISION).
+ */
+function winnerSeatIsBye({
   drawDefinition,
   structureId,
   matchUp,
@@ -137,9 +151,5 @@ function deliversAnAdvancement({
   // A drawPosition is unique WITHIN A STRUCTURE and carries no meaning across structures, so the
   // assignments are scoped by structureId before the position is compared.
   const { structure } = findStructure({ structureId, drawDefinition });
-  const assignment = structure?.positionAssignments?.find((a) => a.drawPosition === drawPosition);
-
-  // A BYE in the winner's seat advances nobody: whoever moves on is the EXITING side's occupant
-  // passing through it, carrying the exit with them.
-  return !!assignment?.participantId && !assignment.bye;
+  return !!structure?.positionAssignments?.find((a) => a.drawPosition === drawPosition)?.bye;
 }

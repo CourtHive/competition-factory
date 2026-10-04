@@ -140,8 +140,9 @@ const standardDoubles = {
 // ─── Team Event Profiles ─────────────────────────────────────────────────────
 
 // Team events award per-win points. Point values vary by opponent line position.
-// The factory doesn't yet support per-line-position points, so we use the
-// average of the top 3 line positions as a representative per-win value.
+// Per-line values are expressible (`level: { N: { line: [...] } }`, keyed by the tie
+// matchUp's collectionPosition rather than the opponent's line), but this fixture uses
+// the average of the top 3 line positions as a representative per-win value.
 const teamSingles = {
   profileName: 'Team Singles',
   levels: [2, 3, 4, 5, 6],

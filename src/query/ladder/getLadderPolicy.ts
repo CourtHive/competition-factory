@@ -36,8 +36,8 @@ export function getLadderPolicy(params: LadderPolicyArgs): LadderPolicy {
  *
  * Under `RANK` the standing is `positionAssignments` and a completed challenge mutates it. Under
  * `RATING` the standing is derived from the rating scale, `positionAssignments` is a projection,
- * and none of the movement rules apply. Reading the ordering through one accessor is what keeps
- * `RATING` an addition later rather than a rewrite of everything built on top of `RANK`.
+ * and none of the movement rules apply. Reading the ordering through one accessor is what let
+ * `RATING` be an addition rather than a rewrite of everything built on top of `RANK`.
  */
 export function getLadderOrdering(params: LadderPolicyArgs): LadderOrdering {
   return getLadderPolicy(params).ordering ?? RANK;

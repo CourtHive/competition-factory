@@ -4,6 +4,7 @@ import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipa
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
 import { getCollectionAssignment } from './getCollectionAssignment';
 import { getOrderedDrawPositions } from './getOrderedDrawPositions';
@@ -282,10 +283,10 @@ export function addMatchUpContext({
   // first-class schedule object.
   //
   // Strip schedule from the source spread and merge it onto the hydrated
-  // schedule explicitly. Source-side first-class fields the hydrator
-  // doesn't yet know about (e.g. `calledAt`) come through via the
-  // base layer; hydrated-side derived names + applied filters win where
-  // they overlap.
+  // schedule explicitly. Only the source-side fields the hydrator does
+  // not produce (`calledAt`, `scoredTime`) are carried over, by allow-list
+  // in `mergeSourceScheduleFields`; everything else comes from the
+  // hydrated (redacted) schedule.
   //
   // Also closes a privacy leak in the embargo path: when
   // `applyEmbargoFilter` zeroed the hydrated schedule to undefined, the
@@ -449,7 +450,7 @@ function annotateScoreSets(matchUpWithContext, matchUpFormat) {
     .sort((a, b) => a.setNumber - b.setNumber)
     .map((set, i) => {
       const setNumber = i + 1;
-      const isDecidingSet = setNumber === bestOf;
+      const isDecidingSet = finalSetGoverns(parsedFormat, setNumber, setNumber === bestOf);
       const currentSetFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
       const isTiebreakOnly = currentSetFormat?.tiebreakSet && !currentSetFormat?.timed;
       const isTimed = currentSetFormat?.timed;

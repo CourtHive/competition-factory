@@ -6,11 +6,15 @@
  */
 
 import type { MatchUp, ScoreResult, PointSituation, FormatStructure, SetFormatStructure } from '@Types/scoring/types';
+import { resolveSetType, isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
+import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { deriveServer, formatGameScore } from '@Mutate/scoring/addPoint';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
-import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import { RALLY } from '@Constants/matchUpFormatConstants';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+
+// constants
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 export interface GetScoreOptions {
   useBracketNotation?: boolean; // Use [10-8] format for match tiebreaks
@@ -65,7 +69,7 @@ export function getScore(matchUp: MatchUp, options?: GetScoreOptions): ScoreResu
  */
 function computePointDisplay(matchUp: MatchUp, points: number[]): [string, string] | undefined {
   // Only compute if match is in progress and not completed
-  if (matchUp.matchUpStatus === 'COMPLETED' || matchUp.matchUpStatus === 'TO_BE_PLAYED') {
+  if (matchUp.matchUpStatus === COMPLETED || matchUp.matchUpStatus === TO_BE_PLAYED) {
     return undefined;
   }
 
@@ -81,7 +85,7 @@ function computePointDisplay(matchUp: MatchUp, points: number[]): [string, strin
     if (set.winningSide === 1) setsWon[0]++;
     if (set.winningSide === 2) setsWon[1]++;
   });
-  const setType = resolveSetType(formatStructure, setsWon);
+  const setType = resolveSetType(formatStructure, setsWon, matchUp.score.sets.length);
 
   // Detect tiebreak or consecutive
   const isTiebreakOnly = setType === 'tiebreakOnly' || setType === 'matchTiebreak';
@@ -89,9 +93,7 @@ function computePointDisplay(matchUp: MatchUp, points: number[]): [string, strin
 
   let isTiebreak = isTiebreakOnly;
   if (!isTiebreak && setType === 'standard') {
-    const bestOf = formatStructure.exactly || formatStructure.bestOf || 3;
-    const setsToWin = Math.ceil(bestOf / 2);
-    const isDecidingSet = setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1;
+    const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, matchUp.score.sets.length);
     const activeSetFormat: SetFormatStructure | undefined =
       isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 
@@ -120,15 +122,12 @@ function computePointDisplay(matchUp: MatchUp, points: number[]): [string, strin
  */
 function computeSituation(matchUp: MatchUp): PointSituation | undefined {
   // Only compute if match is in progress
-  if (matchUp.matchUpStatus === 'COMPLETED' || matchUp.matchUpStatus === 'TO_BE_PLAYED') {
+  if (matchUp.matchUpStatus === COMPLETED || matchUp.matchUpStatus === TO_BE_PLAYED) {
     return undefined;
   }
 
   const formatStructure: FormatStructure | undefined = parse(matchUp.matchUpFormat);
   if (!formatStructure) return undefined;
-
-  const bestOf = formatStructure.exactly || formatStructure.bestOf || 3;
-  const setsToWin = Math.ceil(bestOf / 2);
 
   // Calculate sets won
   const setsWon: [number, number] = [0, 0];
@@ -137,10 +136,11 @@ function computeSituation(matchUp: MatchUp): PointSituation | undefined {
     if (set.winningSide === 2) setsWon[1]++;
   });
 
-  const setType = resolveSetType(formatStructure, setsWon);
+  const setNumber = openSetNumber(matchUp.score.sets);
+  const setType = resolveSetType(formatStructure, setsWon, setNumber);
 
   // Determine active set format
-  const isDecidingSet = setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1;
+  const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, setNumber);
   const activeSetFormat: SetFormatStructure | undefined =
     isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 

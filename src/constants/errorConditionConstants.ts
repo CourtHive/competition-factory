@@ -6,544 +6,544 @@ export type ErrorType = {
 
 export const ANACHRONISM = {
   message: 'Chronological error; time violation.',
-  code: 'ANACHRONISM',
-};
+  code: 'ANACHRONISM' as const,
+} satisfies ErrorType;
 // A schedule attribute that was accepted but not written. Reported rather than
 // thrown because reading a schedule and writing it back is a supported pattern;
 // `errorOnUnknownAttributes` escalates it, exactly as `errorOnAnachronism` does
 // for ANACHRONISM.
 export const UNWRITABLE_SCHEDULE_ATTRIBUTES = {
   message: 'Schedule attributes accepted but not written.',
-  code: 'UNWRITABLE_SCHEDULE_ATTRIBUTES',
-};
+  code: 'UNWRITABLE_SCHEDULE_ATTRIBUTES' as const,
+} satisfies ErrorType;
 // Assigning a BYE to a drawPosition whose matchUp already holds a court/time is
 // ambiguous: the operator may be mid-swap and want the placement kept, or may want
 // the slot released. Rather than guess, the position-action path refuses until the
 // caller states which, via `preserveScheduling: true | false`.
 export const MATCHUP_HAS_SCHEDULING = {
   message: 'MatchUp has scheduling information; specify preserveScheduling.',
-  code: 'ERR_MATCHUP_HAS_SCHEDULING',
-};
+  code: 'ERR_MATCHUP_HAS_SCHEDULING' as const,
+} satisfies ErrorType;
 export const DUPLICATE_ENTRY = {
   message: 'Duplicate entry',
-  code: 'DUPLICATE_ENTRY',
-};
+  code: 'DUPLICATE_ENTRY' as const,
+} satisfies ErrorType;
 export const CANNOT_REMOVE_MAIN_STRUCTURE = {
   message: 'Cannot remove main structure',
-  code: 'ERR_CANNOT_REMOVE_MAIN_STRUCTURE',
-};
+  code: 'ERR_CANNOT_REMOVE_MAIN_STRUCTURE' as const,
+} satisfies ErrorType;
 export const INVALID_RECORDS = {
   message: 'records must be an object with tournamentId keys',
-  code: 'ERR_INVALID_TOURNAMENTS',
-};
+  code: 'ERR_INVALID_TOURNAMENTS' as const,
+} satisfies ErrorType;
 export const MISSING_TOURNAMENT_RECORDS = {
   message: 'Missing tournamentRecords',
-  code: 'ERR_MISSING_TOURNAMENTS',
-};
+  code: 'ERR_MISSING_TOURNAMENTS' as const,
+} satisfies ErrorType;
 export const MISSING_TOURNAMENT_RECORD = {
   message: 'Missing tournamentRecord',
-  code: 'ERR_MISSING_TOURNAMENT',
-};
+  code: 'ERR_MISSING_TOURNAMENT' as const,
+} satisfies ErrorType;
 export const INVALID_TOURNAMENT_RECORD = {
   message: 'Invalid tournamentRecord',
-  code: 'ERR_INVALID_TOURNAMENT',
-};
+  code: 'ERR_INVALID_TOURNAMENT' as const,
+} satisfies ErrorType;
 export const MISSING_TOURNAMENT_ID = {
   message: 'Missing tournamentId',
-  code: 'ERR_MISSING_TOURNAMENT_ID',
-};
+  code: 'ERR_MISSING_TOURNAMENT_ID' as const,
+} satisfies ErrorType;
 
 export const INVALID_DRAW_DEFINITION = {
   message: 'Invalid drawDefinition',
-  code: 'ERR_INVALID_DRAWDEF',
-};
+  code: 'ERR_INVALID_DRAWDEF' as const,
+} satisfies ErrorType;
 export const MISSING_DRAW_DEFINITION = {
   message: 'Missing drawDefinition',
-  code: 'ERR_MISSING_DRAWDEF',
-};
+  code: 'ERR_MISSING_DRAWDEF' as const,
+} satisfies ErrorType;
 export const EXISTING_DRAW_DEFINITIONS = {
   message: 'Existing drawDefinition(s)',
-  code: 'ERR_EXISTING_DRAWDEFS',
-};
+  code: 'ERR_EXISTING_DRAWDEFS' as const,
+} satisfies ErrorType;
 export const DRAW_DEFINITION_NOT_FOUND = {
   message: 'drawDefinition not found',
-  code: 'ERR_NOT_FOUND_DRAWDEF',
-};
+  code: 'ERR_NOT_FOUND_DRAWDEF' as const,
+} satisfies ErrorType;
 export const INVALID_STRUCTURE = {
   message: 'Invalid structure',
-  code: 'ERR_INVALID_STRUCTURE',
-};
+  code: 'ERR_INVALID_STRUCTURE' as const,
+} satisfies ErrorType;
 export const INCOMPLETE_SOURCE_STRUCTURE = {
   message: 'Incomplete source structure',
-  code: 'ERR_INCOMPLETE_STRUCTURE',
-};
+  code: 'ERR_INCOMPLETE_STRUCTURE' as const,
+} satisfies ErrorType;
 
 export const INVALID_DRAW_POSITION_FOR_SEEDING = {
   message: 'Invalid drawPosition for seedAssignment',
-  code: 'ERR_INVALID_SEEDING_POSITION',
-};
+  code: 'ERR_INVALID_SEEDING_POSITION' as const,
+} satisfies ErrorType;
 export const DRAW_POSITION_ASSIGNED = {
   message: 'drawPosition already assigned',
-  code: 'ERR_EXISTING_POSITION_ASSIGNMENT',
-};
+  code: 'ERR_EXISTING_POSITION_ASSIGNMENT' as const,
+} satisfies ErrorType;
 export const SCHEDULE_NOT_CLEARED = {
   message: 'Schedule not cleared',
-  code: 'ERR_UNCHANGED_SCHEDULE_NOT_CLEARED',
-};
+  code: 'ERR_UNCHANGED_SCHEDULE_NOT_CLEARED' as const,
+} satisfies ErrorType;
 export const SCHEDULE_LOCKED = {
   message: 'matchUp schedule is locked',
-  code: 'ERR_SCHEDULE_LOCKED',
-};
+  code: 'ERR_SCHEDULE_LOCKED' as const,
+} satisfies ErrorType;
 export const MATCHUPS_SCHEDULED_OUTSIDE_DATES = {
   message: 'MatchUps are scheduled outside the new tournament dates',
-  code: 'ERR_MATCHUPS_SCHEDULED_OUTSIDE_DATES',
-};
+  code: 'ERR_MATCHUPS_SCHEDULED_OUTSIDE_DATES' as const,
+} satisfies ErrorType;
 export const MATCHUPS_COMPLETED_OUTSIDE_DATES = {
   message: 'Completed matchUps were played outside the new tournament dates',
-  code: 'ERR_MATCHUPS_COMPLETED_OUTSIDE_DATES',
-};
+  code: 'ERR_MATCHUPS_COMPLETED_OUTSIDE_DATES' as const,
+} satisfies ErrorType;
 export const SCHEDULE_CONFLICT_DOUBLE_BOOKING = {
   message: 'Schedule conflict: court slot already occupied',
-  code: 'ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING',
-};
+  code: 'ERR_SCHEDULE_CONFLICT_DOUBLE_BOOKING' as const,
+} satisfies ErrorType;
 export const SCHEDULE_CONFLICT_COURT_UNAVAILABLE = {
   message: 'Schedule conflict: matchUps scheduled outside court availability',
-  code: 'ERR_SCHEDULE_CONFLICT_COURT_UNAVAILABLE',
-};
+  code: 'ERR_SCHEDULE_CONFLICT_COURT_UNAVAILABLE' as const,
+} satisfies ErrorType;
 export const DRAW_POSITION_NOT_CLEARED = {
   message: 'drawPosition not cleared',
-  code: 'ERR_FAILURE_POSITION_NOT_CLEARED',
-};
+  code: 'ERR_FAILURE_POSITION_NOT_CLEARED' as const,
+} satisfies ErrorType;
 export const DRAW_POSITION_NOT_FOUND = {
   message: 'drawPosition not found',
-  code: 'ERR_NOT_FOUND_DRAW_POSITION',
-};
+  code: 'ERR_NOT_FOUND_DRAW_POSITION' as const,
+} satisfies ErrorType;
 export const UNRECOGNIZED_DRAW_TYPE = {
   message: 'Unrecognized drawType',
-  code: 'ERR_UNRECOGNIZED_DRAW_TYPE',
-};
+  code: 'ERR_UNRECOGNIZED_DRAW_TYPE' as const,
+} satisfies ErrorType;
 export const MISSING_DRAW_POSITIONS = {
   message: 'Missing drawPositions',
-  code: 'ERR_MISSING_DRAW_POSITIONS',
-};
+  code: 'ERR_MISSING_DRAW_POSITIONS' as const,
+} satisfies ErrorType;
 export const DRAW_POSITION_ACTIVE = {
   message: 'drawPosition is active',
-  code: 'ERR_ACTIVE_DRAW_POSITION',
-};
+  code: 'ERR_ACTIVE_DRAW_POSITION' as const,
+} satisfies ErrorType;
 export const DRAW_POSITION_OCCUPIED = {
   message: 'drawPosition is occupied',
-  code: 'ERR_OCCUPIED_DRAW_POSITION',
-};
+  code: 'ERR_OCCUPIED_DRAW_POSITION' as const,
+} satisfies ErrorType;
 export const INVALID_DRAW_POSITION = {
   message: 'Invlid drawPosition',
-  code: 'ERR_INVALID_DRAW_POSITION',
-};
+  code: 'ERR_INVALID_DRAW_POSITION' as const,
+} satisfies ErrorType;
 export const MISSING_DRAW_POSITION = {
   message: 'Missing drawPosition',
-  code: 'ERR_MISSING_DRAW_POSITION',
-};
+  code: 'ERR_MISSING_DRAW_POSITION' as const,
+} satisfies ErrorType;
 export const INVALID_DRAW_TYPE = {
   message: 'Invalid drawType',
-  code: 'ERR_INVALID_DRAW_TYPE',
-};
+  code: 'ERR_INVALID_DRAW_TYPE' as const,
+} satisfies ErrorType;
 export const INVALID_DRAW_SIZE = {
   message: 'Invalid drawSize',
-  code: 'ERR_INVALID_DRAW_SIZE',
-};
+  code: 'ERR_INVALID_DRAW_SIZE' as const,
+} satisfies ErrorType;
 export const DRAW_SIZE_MISMATCH = {
   message: 'Cannot set drawSize to be less than existing entries',
-  code: 'ERR_INVALID_DRAW_SIZE_MISMATCH',
-};
+  code: 'ERR_INVALID_DRAW_SIZE_MISMATCH' as const,
+} satisfies ErrorType;
 export const MISSING_DRAW_SIZE = {
   message: 'Missing drawSize',
-  code: 'ERR_MISSING_DRAW_SIZE',
-};
+  code: 'ERR_MISSING_DRAW_SIZE' as const,
+} satisfies ErrorType;
 export const MISSING_DRAW_ID = {
   message: 'Missing drawId',
-  code: 'ERR_MISSING_DRAW_ID',
-};
+  code: 'ERR_MISSING_DRAW_ID' as const,
+} satisfies ErrorType;
 export const DRAW_ID_EXISTS = {
   message: 'drawId exists',
-  code: 'ERR_EXISTING_DRAW_ID',
-};
+  code: 'ERR_EXISTING_DRAW_ID' as const,
+} satisfies ErrorType;
 export const INVALID_PARTICIPANT_SEEDING = {
   message: 'participantId cannot be assigned to multiple seedNumbers',
-  code: 'INVALID_PARTICIPANT_SEEDING',
-};
+  code: 'INVALID_PARTICIPANT_SEEDING' as const,
+} satisfies ErrorType;
 export const SEEDSCOUNT_GREATER_THAN_DRAW_SIZE = {
   message: 'seedsCount greater than drawSize',
-  code: 'ERR_INVALID_SEED_COUNT',
-};
+  code: 'ERR_INVALID_SEED_COUNT' as const,
+} satisfies ErrorType;
 export const MISSING_SEEDCOUNT_THRESHOLDS = {
   message: 'Missing seedCountThresholds',
-  code: 'ERR_MISSING_SEED_COUNT_THRESHOLD',
-};
+  code: 'ERR_MISSING_SEED_COUNT_THRESHOLD' as const,
+} satisfies ErrorType;
 export const ADDITIONAL_SEEDS_EXHAUSTED = {
   message: 'seeding policy allows no further additional seeds',
-  code: 'ERR_ADDITIONAL_SEEDS_EXHAUSTED',
-};
+  code: 'ERR_ADDITIONAL_SEEDS_EXHAUSTED' as const,
+} satisfies ErrorType;
 export const INVALID_ACTION = {
   message: 'Invalid action',
-  code: 'ERR_INVALID_ACTION',
-};
+  code: 'ERR_INVALID_ACTION' as const,
+} satisfies ErrorType;
 export const INVALID_ASSIGNMENT = {
   message: 'Invalid assignment',
-  code: 'ERR_INVALID_ASSIGNMENT',
-};
+  code: 'ERR_INVALID_ASSIGNMENT' as const,
+} satisfies ErrorType;
 export const MISSING_SEED_ASSIGNMENTS = {
   message: 'Missing seedAssignments',
-  code: 'ERR_MISSING_SEED_ASSIGNMENTS',
-};
+  code: 'ERR_MISSING_SEED_ASSIGNMENTS' as const,
+} satisfies ErrorType;
 export const INVALID_SEED_NUMBER = {
   message: 'Invalid seedNumber',
-  code: 'ERR_INVALID_SEED_NUMBER',
-};
+  code: 'ERR_INVALID_SEED_NUMBER' as const,
+} satisfies ErrorType;
 export const INVALID_SEED_POSITION = {
   message: 'Invalid seedPosition',
-  code: 'ERR_INVALID_SEED_POSITION',
-};
+  code: 'ERR_INVALID_SEED_POSITION' as const,
+} satisfies ErrorType;
 
 export const MISSING_TARGET_LINK = {
   message: 'Missing targetLink',
-  code: 'ERR_MISSING_LINK_TARGET',
-};
+  code: 'ERR_MISSING_LINK_TARGET' as const,
+} satisfies ErrorType;
 
 export const EXISTING_ROUND = {
   message: 'Existing round',
-  code: 'ERR_EXISTING_ROUND',
-};
+  code: 'ERR_EXISTING_ROUND' as const,
+} satisfies ErrorType;
 export const EXISTING_ROUND_PARTICIPANT = {
   message: 'Participant already plays in this round',
-  code: 'ERR_EXISTING_ROUND_PARTICIPANT',
-};
+  code: 'ERR_EXISTING_ROUND_PARTICIPANT' as const,
+} satisfies ErrorType;
 export const MISSING_ROUND_NUMBER = {
   message: 'Missing roundNumber',
-  code: 'ERR_MISSING_ROUND_NUMBER',
-};
+  code: 'ERR_MISSING_ROUND_NUMBER' as const,
+} satisfies ErrorType;
 export const MISSING_STRUCTURE_ID = {
   message: 'Missing structureId',
-  code: 'ERR_MISSING_STRUCTURE_ID',
-};
+  code: 'ERR_MISSING_STRUCTURE_ID' as const,
+} satisfies ErrorType;
 export const STRUCTURE_NOT_FOUND = {
   message: 'structure not found',
-  code: 'ERR_NOT_FOUND_STRUCTURE',
-};
+  code: 'ERR_NOT_FOUND_STRUCTURE' as const,
+} satisfies ErrorType;
 export const MISSING_STRUCTURES = {
   message: 'Missing structures',
-  code: 'ERR_MISSING_STRUCTURES',
-};
+  code: 'ERR_MISSING_STRUCTURES' as const,
+} satisfies ErrorType;
 export const MISSING_STRUCTURE = {
   message: 'Missing structure',
-  code: 'ERR_MISSING_STRUCTURE',
-};
+  code: 'ERR_MISSING_STRUCTURE' as const,
+} satisfies ErrorType;
 export const MISSING_MAIN_STRUCTURE = {
   message: 'Missing MAIN structure',
-  code: 'ERR_MISSING_MAIN_STRUCTURE',
-};
+  code: 'ERR_MISSING_MAIN_STRUCTURE' as const,
+} satisfies ErrorType;
 export const UNLINKED_STRUCTURES = {
   message: 'drawDefinition contains unlinked structures',
-  code: 'ERR_MISSING_STRUCTURE_LINKS',
-};
+  code: 'ERR_MISSING_STRUCTURE_LINKS' as const,
+} satisfies ErrorType;
 
 export const INVALID_EVENT_TYPE = {
   message: 'Invalid eventType',
-  code: 'ERR_INVALID_EVENT_TYPE',
-};
+  code: 'ERR_INVALID_EVENT_TYPE' as const,
+} satisfies ErrorType;
 export const UNRECOGNIZED_EVENT_TYPE = {
   message: 'Unrecognized eventType',
-  code: 'ERR_UNRECOGNIZED_EVENT_TYPE',
-};
+  code: 'ERR_UNRECOGNIZED_EVENT_TYPE' as const,
+} satisfies ErrorType;
 export const MISSING_EVENT = {
   message: 'Missing event / eventId',
-  code: 'ERR_MISSING_EVENT_ID',
-};
+  code: 'ERR_MISSING_EVENT_ID' as const,
+} satisfies ErrorType;
 export const EVENT_NOT_FOUND = {
   message: 'Event not found',
-  code: 'ERR_NOT_FOUND_EVENT',
-};
+  code: 'ERR_NOT_FOUND_EVENT' as const,
+} satisfies ErrorType;
 export const EVENT_EXISTS = {
   message: 'Event exists',
-  code: 'ERR_EXISTING_EVENT',
-};
+  code: 'ERR_EXISTING_EVENT' as const,
+} satisfies ErrorType;
 
 export const MISSING_ENTRIES = {
   message: 'Missing entries',
-  code: 'ERR_MISSING_ENTRIES',
-};
+  code: 'ERR_MISSING_ENTRIES' as const,
+} satisfies ErrorType;
 export const INVALID_ENTRIES = {
   message: 'Invalid entries',
-  code: 'ERR_INVALID_ENTRIES',
-};
+  code: 'ERR_INVALID_ENTRIES' as const,
+} satisfies ErrorType;
 export const MISSING_ASSIGNMENTS = {
   message: 'Missing assignments',
-  code: 'ERR_MISSING_ASSIGNMENTS',
-};
+  code: 'ERR_MISSING_ASSIGNMENTS' as const,
+} satisfies ErrorType;
 
 export const MISSING_STAGE = {
   message: 'Missing stage',
-  code: 'ERR_MISSING_STAGE',
-};
+  code: 'ERR_MISSING_STAGE' as const,
+} satisfies ErrorType;
 export const INVALID_STAGE = {
   message: 'Invalid stage',
-  code: 'ERR_INVALID_STAGE',
-};
+  code: 'ERR_INVALID_STAGE' as const,
+} satisfies ErrorType;
 export const STAGE_SEQUENCE_LIMIT = {
   message: 'stageSequence limit',
-  code: 'ERR_LIMIT_STAGE_SEQUENCE',
-};
+  code: 'ERR_LIMIT_STAGE_SEQUENCE' as const,
+} satisfies ErrorType;
 export const MISSING_POSITION_ASSIGNMENTS = {
   message: 'Missing positionAssignments',
-  code: 'ERR_MISSING_POSITION_ASSIGNMENTS',
-};
+  code: 'ERR_MISSING_POSITION_ASSIGNMENTS' as const,
+} satisfies ErrorType;
 export const INVALID_MATCHUP_STATUS_BYE = {
   message: 'Cannot Assign BYE status if no assignment: { bye: true }',
-  code: 'ERR_UNCHANGED_CANNOT_ASSIGN_BYE',
-};
+  code: 'ERR_UNCHANGED_CANNOT_ASSIGN_BYE' as const,
+} satisfies ErrorType;
 export const LUCKY_DRAW_BYE_LIMIT = {
   message: 'Lucky draw first round allows at most one BYE',
-  code: 'ERR_LUCKY_DRAW_BYE_LIMIT',
-};
+  code: 'ERR_LUCKY_DRAW_BYE_LIMIT' as const,
+} satisfies ErrorType;
 export const UNRECOGNIZED_MATCHUP_STATUS = {
   message: 'Unrecognized matchUpStatus',
-  code: 'ERR_UNRECOGNIZED_MATCHUP_STATUS',
-};
+  code: 'ERR_UNRECOGNIZED_MATCHUP_STATUS' as const,
+} satisfies ErrorType;
 export const UNRECOGNIZED_MATCHUP_FORMAT = {
   message: 'Unrecognized matchUpFormat',
-  code: 'ERR_UNRECOGNIZED_MATCHUP_FORMAT',
-};
+  code: 'ERR_UNRECOGNIZED_MATCHUP_FORMAT' as const,
+} satisfies ErrorType;
 export const INCOMPATIBLE_MATCHUP_STATUS = {
   message: 'Incompatible matchUpStatus',
-  code: 'ERR_INCOMPATIBLE_MATCHUP_STATUS',
-};
+  code: 'ERR_INCOMPATIBLE_MATCHUP_STATUS' as const,
+} satisfies ErrorType;
 export const PROPAGATED_EXITS_DOWNSTREAM = {
   message: 'Propagated exits downstream',
-  code: 'ERR_PROPAGATED_EXITS_DOWNSTREAM',
-};
+  code: 'ERR_PROPAGATED_EXITS_DOWNSTREAM' as const,
+} satisfies ErrorType;
 export const INVALID_MATCHUP_STATUS = {
   message: 'Invalid matchUpStatus',
-  code: 'ERR_INVALID_MATCHUP_STATUS',
-};
+  code: 'ERR_INVALID_MATCHUP_STATUS' as const,
+} satisfies ErrorType;
 export const RESULT_NOT_VALIDATED = {
   message: 'Result has not been validated',
-  code: 'ERR_RESULT_NOT_VALIDATED',
-};
+  code: 'ERR_RESULT_NOT_VALIDATED' as const,
+} satisfies ErrorType;
 export const MATCHUP_STATUS_OUT_OF_SCOPE = {
   message: 'matchUpStatus is not valid in this context',
-  code: 'ERR_MATCHUP_STATUS_OUT_OF_SCOPE',
-};
+  code: 'ERR_MATCHUP_STATUS_OUT_OF_SCOPE' as const,
+} satisfies ErrorType;
 export const INVALID_TIE_FORMAT = {
   message: 'Invalid tieFormat',
-  code: 'ERR_INVALID_TIE_FORMAT',
-};
+  code: 'ERR_INVALID_TIE_FORMAT' as const,
+} satisfies ErrorType;
 export const INVALID_MATCHUP_FORMAT = {
   message: 'Invalid matchUpFormat',
-  code: 'ERR_INVALID_MATCHUP_FORMAT',
-};
+  code: 'ERR_INVALID_MATCHUP_FORMAT' as const,
+} satisfies ErrorType;
 export const MISSING_MATCHUP_FORMAT = {
   message: 'Missing matchUpFormat',
-  code: 'ERR_MISSING_MATCHUP_FORMAT',
-};
+  code: 'ERR_MISSING_MATCHUP_FORMAT' as const,
+} satisfies ErrorType;
 export const MISSING_COLLECTION_DEFINITION = {
   message: 'Missing collectionDefinition',
-  code: 'ERR_MISSING_COLLECTION_DEFINITION',
-};
+  code: 'ERR_MISSING_COLLECTION_DEFINITION' as const,
+} satisfies ErrorType;
 export const MISSING_TIE_FORMAT = {
   message: 'Missing tieFormat',
-  code: 'ERR_MISSING_TIE_FORMAT',
-};
+  code: 'ERR_MISSING_TIE_FORMAT' as const,
+} satisfies ErrorType;
 export const MISSING_MATCHUP_ID = {
   message: 'Missing matchUpId',
-  code: 'ERR_MISSING_MATCHUP_ID',
-};
+  code: 'ERR_MISSING_MATCHUP_ID' as const,
+} satisfies ErrorType;
 export const MISSING_MATCHUP_IDS = {
   message: 'Missing matchUpIds',
-  code: 'ERR_MISSING_MATCHUP_IDS',
-};
+  code: 'ERR_MISSING_MATCHUP_IDS' as const,
+} satisfies ErrorType;
 export const MATCHUP_NOT_FOUND = {
   message: 'matchUp not found',
-  code: 'ERR_NOT_FOUND_MATCHUP',
-};
+  code: 'ERR_NOT_FOUND_MATCHUP' as const,
+} satisfies ErrorType;
 export const MISSING_MATCHUPS = {
   message: 'Missing matchUps',
-  code: 'ERR_MISSING_MATCHUPS',
-};
+  code: 'ERR_MISSING_MATCHUPS' as const,
+} satisfies ErrorType;
 export const MISSING_MATCHUP = {
   message: 'Missing matchUp',
-  code: 'ERR_MISSING_MATCHUP',
-};
+  code: 'ERR_MISSING_MATCHUP' as const,
+} satisfies ErrorType;
 export const INVALID_MATCHUP = {
   message: 'Invalid matchUp',
-  code: 'ERR_INVALID_MATCHUP',
-};
+  code: 'ERR_INVALID_MATCHUP' as const,
+} satisfies ErrorType;
 
 export const MISSING_POLICY_TYPE = {
   message: 'Missing policyType',
-  code: 'ERR_MISSING_POLICY_TYPE',
-};
+  code: 'ERR_MISSING_POLICY_TYPE' as const,
+} satisfies ErrorType;
 export const MISSING_POLICY_DEFINITION = {
   message: 'Missing policyDefinitions',
-  code: 'ERR_MISSING_POLICY_DEFINITIONS',
-};
+  code: 'ERR_MISSING_POLICY_DEFINITIONS' as const,
+} satisfies ErrorType;
 export const MISSING_SEEDING_POLICY = {
   message: 'Missing seeding policy',
-  code: 'ERR_MISSING_POLICY_SEEDING',
-};
+  code: 'ERR_MISSING_POLICY_SEEDING' as const,
+} satisfies ErrorType;
 export const MISSING_AVOIDANCE_POLICY = {
   message: 'Missing avoidance policy',
-  code: 'ERR_MISSING_POLICY_AVOIDANCE',
-};
+  code: 'ERR_MISSING_POLICY_AVOIDANCE' as const,
+} satisfies ErrorType;
 export const MISSING_POLICY_ATTRIBUTES = {
   message: 'Missing policy attributes',
-  code: 'ERR_MISSING_POLICY_ATTRIBUTES',
-};
+  code: 'ERR_MISSING_POLICY_ATTRIBUTES' as const,
+} satisfies ErrorType;
 export const INVALID_POLICY_DEFINITION = {
   message: 'Invalid policyDefinitions',
-  code: 'ERR_INVALID_POLICY_DEFINITIONS',
-};
+  code: 'ERR_INVALID_POLICY_DEFINITIONS' as const,
+} satisfies ErrorType;
 export const EXISTING_POLICY_TYPE = {
   message: 'existing policyType',
-  code: 'ERR_EXISTING_POLICY_TYPE',
-};
+  code: 'ERR_EXISTING_POLICY_TYPE' as const,
+} satisfies ErrorType;
 export const POLICY_NOT_ATTACHED = {
   message: 'Policy not attached',
-  code: 'ERR_FAILURE_POLICY_NOT_ATTACHED',
-};
+  code: 'ERR_FAILURE_POLICY_NOT_ATTACHED' as const,
+} satisfies ErrorType;
 export const POLICY_NOT_FOUND = {
   message: 'Policy not found',
-  code: 'ERR_NOT_FOUND_POLICY',
-};
+  code: 'ERR_NOT_FOUND_POLICY' as const,
+} satisfies ErrorType;
 export const MISSING_SCORING_POLICY = {
   message: 'Missing scoring policy / matchUpFormats',
-  code: 'ERR_MISSING_POLICY_SCORING_MATCHUP_FORMATS',
-};
+  code: 'ERR_MISSING_POLICY_SCORING_MATCHUP_FORMATS' as const,
+} satisfies ErrorType;
 
 export const INVALID_SIDE_NUMBER = {
   message: 'Invalid sideNumber',
-  code: 'ERR_INVALID_SIDE_NUMBER',
-};
+  code: 'ERR_INVALID_SIDE_NUMBER' as const,
+} satisfies ErrorType;
 export const INVALID_SET_NUMBER = {
   message: 'Invalid setNumber',
-  code: 'ERR_INVALID_SET_NUMBER',
-};
+  code: 'ERR_INVALID_SET_NUMBER' as const,
+} satisfies ErrorType;
 export const MISSING_SET_OBJECT = {
   message: 'Missing setObject',
-  code: 'ERR_MISSING_SET_ATTRIBUTE',
-};
+  code: 'ERR_MISSING_SET_ATTRIBUTE' as const,
+} satisfies ErrorType;
 export const MISSING_SET_NUMBER = {
   message: 'Missing setNumber',
-  code: 'ERR_MISSING_SET_NUMBER',
-};
+  code: 'ERR_MISSING_SET_NUMBER' as const,
+} satisfies ErrorType;
 export const MISSING_SIDE_NUMBER = {
   message: 'Missing sideNumber',
-  code: 'ERR_MISSING_SIDE_NUMBER',
-};
+  code: 'ERR_MISSING_SIDE_NUMBER' as const,
+} satisfies ErrorType;
 export const MISSING_COURT_ID = {
   message: 'Missing courtId',
-  code: 'ERR_MISSING_COURT_ID',
-};
+  code: 'ERR_MISSING_COURT_ID' as const,
+} satisfies ErrorType;
 export const MISSING_VALUE = {
   message: 'Missing value',
-  code: 'ERR_MISSING_VALUE',
-};
+  code: 'ERR_MISSING_VALUE' as const,
+} satisfies ErrorType;
 export const MISSING_BIRTH_DATE = {
   message: 'Missing birthdate',
-  code: 'ERR_MISSING_BIRTH_DATE',
-};
+  code: 'ERR_MISSING_BIRTH_DATE' as const,
+} satisfies ErrorType;
 export const MISSING_DATE = {
   message: 'Missing date',
-  code: 'ERR_MISSING_DATE',
-};
+  code: 'ERR_MISSING_DATE' as const,
+} satisfies ErrorType;
 export const NO_VALID_DATES = {
   message: 'No valid dates',
-  code: 'ERR_NO_VALID_DATES',
-};
+  code: 'ERR_NO_VALID_DATES' as const,
+} satisfies ErrorType;
 
 export const INVALID_BOOKINGS = {
   message: 'Invalid bookings',
-  code: 'ERR_INVALID_BOOKINGS',
-};
+  code: 'ERR_INVALID_BOOKINGS' as const,
+} satisfies ErrorType;
 export const INVALID_DATE_AVAILABILITY = {
   message: 'Invalid dateAvailability',
-  code: 'ERR_INVALID_DATE_AVAILABILITY',
-};
+  code: 'ERR_INVALID_DATE_AVAILABILITY' as const,
+} satisfies ErrorType;
 export const MISSING_DATE_AVAILABILITY = {
   message: 'Missing dateAvailability',
-  code: 'ERR_MISSING_DATE_AVAILABILITY',
-};
+  code: 'ERR_MISSING_DATE_AVAILABILITY' as const,
+} satisfies ErrorType;
 
 // Javascript constant for Date() function
 export const INVALID_DATE = {
   message: 'Invalid Date',
-  code: 'ERR_INVALID_DATE',
-};
+  code: 'ERR_INVALID_DATE' as const,
+} satisfies ErrorType;
 export const INVALID_TIME = {
   message: 'Invalid time',
-  code: 'ERR_INVALID_TIME',
-};
+  code: 'ERR_INVALID_TIME' as const,
+} satisfies ErrorType;
 export const INVALID_TOURNAMENT_DATES = {
   message: 'Invalid tournament dates',
-  code: 'ERR_INVALID_DATES_TOURNAMENT',
-};
+  code: 'ERR_INVALID_DATES_TOURNAMENT' as const,
+} satisfies ErrorType;
 export const MISSING_DATE_RANGE = {
   message: 'Missing date range',
   info: 'Event or tournament must have start and end dates',
-  code: 'ERR_MISSING_DATE_RANGE',
-};
+  code: 'ERR_MISSING_DATE_RANGE' as const,
+} satisfies ErrorType;
 export const INVALID_TIME_ZONE = {
   message: 'Invalid Time Zone',
-  code: 'ERR_INVALID_TIME_ZONE',
-};
+  code: 'ERR_INVALID_TIME_ZONE' as const,
+} satisfies ErrorType;
 export const CONFLICTING_TIME_ZONES = {
   message: 'Conflicting venue time zones and no tournament localTimeZone is set',
-  code: 'ERR_CONFLICTING_TIME_ZONES',
-};
+  code: 'ERR_CONFLICTING_TIME_ZONES' as const,
+} satisfies ErrorType;
 export const INVALID_EMBARGO = {
   message: 'Invalid embargo: must be an ISO 8601 datetime with timezone (Z or ±HH:MM offset)',
-  code: 'ERR_INVALID_EMBARGO',
-};
+  code: 'ERR_INVALID_EMBARGO' as const,
+} satisfies ErrorType;
 
 export const INVALID_GAME_SCORES = {
   message: 'Invalid game scores',
-  code: 'ERR_INVALID_SCORES_GAME',
-};
+  code: 'ERR_INVALID_SCORES_GAME' as const,
+} satisfies ErrorType;
 export const INVALID_SCORE = {
   message: 'Invalid score',
-  code: 'ERR_INVALID_SCORE',
-};
+  code: 'ERR_INVALID_SCORE' as const,
+} satisfies ErrorType;
 
 export const INVALID_WINNING_SIDE = {
   message: 'Invalid winningSide',
-  code: 'ERR_INVALID_WINNING_SIDE',
-};
+  code: 'ERR_INVALID_WINNING_SIDE' as const,
+} satisfies ErrorType;
 
 export const NO_PARTICIPANTS = {
   message: 'Tournament has no participants',
-  code: 'ERR_NO_TOURNAMENT_PARTICIPANTS',
-};
+  code: 'ERR_NO_TOURNAMENT_PARTICIPANTS' as const,
+} satisfies ErrorType;
 export const NO_PARTICIPANTS_GENERATED = {
   message: 'No participants generated',
-  code: 'ERR_NO_PARTICIPANTS_GENERATED',
-};
+  code: 'ERR_NO_PARTICIPANTS_GENERATED' as const,
+} satisfies ErrorType;
 export const CANNOT_MODIFY_TIEFORMAT = {
   message: 'Cannot modify tieFormat',
-  code: 'ERR_UNCHANGED_CANNOT_MODIFY_TIEFORMAT',
-};
+  code: 'ERR_UNCHANGED_CANNOT_MODIFY_TIEFORMAT' as const,
+} satisfies ErrorType;
 export const CANNOT_MODIFY_PARTICIPANT_TYPE = {
   message: 'Cannot modify participantType',
-  code: 'ERR_UNCHANGED_CANNOT_MODIFY_PARTICIPANT_TYPE',
-};
+  code: 'ERR_UNCHANGED_CANNOT_MODIFY_PARTICIPANT_TYPE' as const,
+} satisfies ErrorType;
 export const CANNOT_REMOVE_PARTICIPANTS = {
   message: 'Cannot remove participants',
-  code: 'ERR_UNCHANGED_CANNOT_REMOVE_PARTICIPANTS',
-};
+  code: 'ERR_UNCHANGED_CANNOT_REMOVE_PARTICIPANTS' as const,
+} satisfies ErrorType;
 export const CATEGORY_MISMATCH = {
   message: 'Participant category mismatch',
-  code: 'ERR_CATEGORY_MISMATCH',
-};
+  code: 'ERR_CATEGORY_MISMATCH' as const,
+} satisfies ErrorType;
 export const CANNOT_CHANGE_WINNING_SIDE = {
   message: 'Cannot change winningSide',
-  code: 'ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE',
-};
+  code: 'ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE' as const,
+} satisfies ErrorType;
 /**
  * Its own code, for the same reason `CANNOT_CHANGE_FEED_ELIGIBILITY` has one.
  *
@@ -556,8 +556,8 @@ export const CANNOT_CHANGE_WINNING_SIDE = {
  */
 export const CANNOT_CHANGE_OUTCOME = {
   message: 'Cannot change outcome',
-  code: 'ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME',
-};
+  code: 'ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME' as const,
+} satisfies ErrorType;
 /**
  * Its own code, deliberately. The winningSide is NOT changing here — only whether the win was
  * scored — so reporting `CANNOT_CHANGE_WINNING_SIDE` would show a TD a message contradicting what
@@ -565,80 +565,80 @@ export const CANNOT_CHANGE_OUTCOME = {
  */
 export const CANNOT_CHANGE_FEED_ELIGIBILITY = {
   message: 'Cannot change how a win was won while its loser is already directed',
-  code: 'ERR_CANNOT_CHANGE_FEED_ELIGIBILITY',
-};
+  code: 'ERR_CANNOT_CHANGE_FEED_ELIGIBILITY' as const,
+} satisfies ErrorType;
 export const INVALID_PARTICIPANT = {
   message: 'Invalid participant',
-  code: 'ERR_INVALID_PARTICIPANT',
-};
+  code: 'ERR_INVALID_PARTICIPANT' as const,
+} satisfies ErrorType;
 export const INVALID_PARTICIPANT_ID = {
   message: 'Invalid participantId',
-  code: 'ERR_INVALID_PARTICIPANT_ID',
-};
+  code: 'ERR_INVALID_PARTICIPANT_ID' as const,
+} satisfies ErrorType;
 export const INVALID_PARTICIPANT_IDS = {
   message: 'Invalid participantIds',
-  code: 'ERR_INVALID_PARTICIPANT_IDS',
-};
+  code: 'ERR_INVALID_PARTICIPANT_IDS' as const,
+} satisfies ErrorType;
 export const SHARED_INDIVIDUAL_PARTICIPANT = {
   message: 'Participants share an individual and cannot meet',
-  code: 'ERR_SHARED_INDIVIDUAL_PARTICIPANT',
-};
+  code: 'ERR_SHARED_INDIVIDUAL_PARTICIPANT' as const,
+} satisfies ErrorType;
 export const INVALID_PARTICIPANT_ROLE = {
   message: 'Invalid participantRole',
-  code: 'ERR_INVALID_PARTICIPANT_ROLE',
-};
+  code: 'ERR_INVALID_PARTICIPANT_ROLE' as const,
+} satisfies ErrorType;
 export const INVALID_PARTICIPANT_TYPE = {
   message: 'Invalid participantType',
-  code: 'ERR_INVALID_PARTICIPANT_TYPE',
-};
+  code: 'ERR_INVALID_PARTICIPANT_TYPE' as const,
+} satisfies ErrorType;
 export const MISSING_PARTICIPANT_ROLE = {
   message: 'Missing participantRole',
-  code: 'ERR_MISSING_PARTICIPANT_ROLE',
-};
+  code: 'ERR_MISSING_PARTICIPANT_ROLE' as const,
+} satisfies ErrorType;
 export const MISSING_PARTICIPANT = {
   message: 'Missing participant',
-  code: 'ERR_MISSING_PARTICIPANT',
-};
+  code: 'ERR_MISSING_PARTICIPANT' as const,
+} satisfies ErrorType;
 export const MISSING_PARTICIPANTS = {
   message: 'Missing participants',
-  code: 'ERR_MISSING_PARTICIPANTS',
-};
+  code: 'ERR_MISSING_PARTICIPANTS' as const,
+} satisfies ErrorType;
 export const MISSING_PARTICIPANT_ID = {
   message: 'Missing participantId',
-  code: 'ERR_MISSING_PARTICIPANT_ID',
-};
+  code: 'ERR_MISSING_PARTICIPANT_ID' as const,
+} satisfies ErrorType;
 export const MISSING_QUALIFIED_PARTICIPANTS = {
   message: 'Missing qualified participants',
-  code: 'ERR_MISSING_QUALIFIED_PARTICIPANTS',
-};
+  code: 'ERR_MISSING_QUALIFIED_PARTICIPANTS' as const,
+} satisfies ErrorType;
 export const PARTICIPANT_NOT_FOUND = {
   message: 'Participant Not Found',
-  code: 'ERR_NOT_FOUND_PARTICIPANT',
-};
+  code: 'ERR_NOT_FOUND_PARTICIPANT' as const,
+} satisfies ErrorType;
 export const PARTICIPANT_ID_EXISTS = {
   message: 'participantId exists',
-  code: 'ERR_EXISTING_PARTICIPANT_ID',
-};
+  code: 'ERR_EXISTING_PARTICIPANT_ID' as const,
+} satisfies ErrorType;
 export const PARTICIPANT_PAIR_EXISTS = {
   message: 'participant pair exists',
-  code: 'ERR_EXISTING_PARTICIPANT_PAIR',
-};
+  code: 'ERR_EXISTING_PARTICIPANT_PAIR' as const,
+} satisfies ErrorType;
 export const NO_PARTICIPANT_REMOVED = {
   message: 'No participant removed',
-  code: 'ERR_UNCHANGED_NO_PARTICIPANT_REMOVED',
-};
+  code: 'ERR_UNCHANGED_NO_PARTICIPANT_REMOVED' as const,
+} satisfies ErrorType;
 export const MISSING_PARTICIPANT_IDS = {
   message: 'Missing participantIds',
-  code: 'ERR_MISSING_PARTICIPANT_IDS',
-};
+  code: 'ERR_MISSING_PARTICIPANT_IDS' as const,
+} satisfies ErrorType;
 export const MISSING_PARTICIPANT_COUNT = {
   message: 'Missing participantsCount',
-  code: 'ERR_MISSING_PARTICIPANT_COUNT',
-};
+  code: 'ERR_MISSING_PARTICIPANT_COUNT' as const,
+} satisfies ErrorType;
 export const PARTICIPANT_NOT_CHECKED_IN = {
   message: 'Participant not checked in',
-  code: 'ERR_UNCHANGED_PARTICIPANT_NOT_CHECKED_IN',
-};
+  code: 'ERR_UNCHANGED_PARTICIPANT_NOT_CHECKED_IN' as const,
+} satisfies ErrorType;
 
 /**
  * The presence attestation names a PAIR or TEAM as its subject. Only INDIVIDUAL participants may be
@@ -648,8 +648,8 @@ export const PARTICIPANT_NOT_CHECKED_IN = {
  */
 export const INVALID_ATTESTATION_SUBJECT = {
   message: 'Presence subject must be an INDIVIDUAL participant',
-  code: 'ERR_INVALID_ATTESTATION_SUBJECT',
-};
+  code: 'ERR_INVALID_ATTESTATION_SUBJECT' as const,
+} satisfies ErrorType;
 
 /**
  * The attester is not permitted by the sanctioning policy's presence rules, AND that policy set
@@ -658,8 +658,8 @@ export const INVALID_ATTESTATION_SUBJECT = {
  */
 export const INVALID_ATTRIBUTION = {
   message: 'Attester not permitted by the presence policy',
-  code: 'ERR_INVALID_ATTRIBUTION',
-};
+  code: 'ERR_INVALID_ATTRIBUTION' as const,
+} satisfies ErrorType;
 
 /**
  * The write would lose information that the LEGACY representation cannot carry. Raised when an
@@ -668,324 +668,330 @@ export const INVALID_ATTRIBUTION = {
  */
 export const UNSUPPORTED_IN_LEGACY_MODE = {
   message: 'Not supported in LEGACY schemaWriteMode',
-  code: 'ERR_UNSUPPORTED_IN_LEGACY_MODE',
-};
+  code: 'ERR_UNSUPPORTED_IN_LEGACY_MODE' as const,
+} satisfies ErrorType;
 
 export const MISSING_PERSON_DETAILS = {
   message: 'Missing person details',
-  code: 'ERR_MISSING_PERSON_DETAILS',
-};
+  code: 'ERR_MISSING_PERSON_DETAILS' as const,
+} satisfies ErrorType;
 
 export const EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT = {
   message: 'Existing participant drawPosition assignment',
-  code: 'ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT',
-};
+  code: 'ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT' as const,
+} satisfies ErrorType;
 export const EXISTING_PARTICIPANT = {
   message: 'Existing participant',
-  code: 'ERR_EXISTING_PARTICIPANT',
-};
+  code: 'ERR_EXISTING_PARTICIPANT' as const,
+} satisfies ErrorType;
 export const PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE = {
   message: 'participantsCount exceeds drawSize',
-  code: 'ERR_INVALID_PARTICIPANT_COUNT',
-};
+  code: 'ERR_INVALID_PARTICIPANT_COUNT' as const,
+} satisfies ErrorType;
 
 export const INVALID_ENTRY_STATUS = {
   message: 'Invalid entry status',
-  code: 'ERR_INVALID_ENTRY_STATUS',
-};
+  code: 'ERR_INVALID_ENTRY_STATUS' as const,
+} satisfies ErrorType;
 export const PARTICIPANT_ENTRY_NOT_FOUND = {
   message: 'Participant Entry Not Found',
-  code: 'ERR_NOT_FOUND_PARTICIPANT_ENTRY',
-};
+  code: 'ERR_NOT_FOUND_PARTICIPANT_ENTRY' as const,
+} satisfies ErrorType;
 export const PARTICIPANT_NOT_ENTERED_IN_STAGE = {
   message: 'Participant not entered in stage',
-  code: 'ERR_UNCHANGED_PARTICIPANT_NOT_ENTERED',
-};
+  code: 'ERR_UNCHANGED_PARTICIPANT_NOT_ENTERED' as const,
+} satisfies ErrorType;
 export const PARTICIPANT_NOT_FOUND_IN_STAGE = {
   message: 'Participant not found in stageSequence',
-  code: 'ERR_NOT_FOUND_PARTICIPANT_IN_STAGE',
-};
+  code: 'ERR_NOT_FOUND_PARTICIPANT_IN_STAGE' as const,
+} satisfies ErrorType;
 export const ENTRY_STATUS_NOT_ALLOWED_IN_STAGE = {
   message: 'entryStatus not allowed in stage',
-  code: 'ERR_INVALID_ENTRY_STATUS_IN_STAGE',
-};
+  code: 'ERR_INVALID_ENTRY_STATUS_IN_STAGE' as const,
+} satisfies ErrorType;
 export const ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT = {
   message: 'entryStatus not allowed for event',
-  code: 'ERR_INVALID_ENTRY_STATUS_IN_EVENT',
-};
+  code: 'ERR_INVALID_ENTRY_STATUS_IN_EVENT' as const,
+} satisfies ErrorType;
 export const NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS = {
   message: 'No stage space available for entryStatus',
-  code: 'ERR_UNCHANGED_NO_AVAILABLE_STAGE_SPACE',
-};
+  code: 'ERR_UNCHANGED_NO_AVAILABLE_STAGE_SPACE' as const,
+} satisfies ErrorType;
 
 export const NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS = {
   message: 'Insufficient drawPositions to accommodate qualifiers',
-  code: 'ERR_UNCHANGED_NO_DRAW_POSITIONS_FOR_QUALIFIERS',
-};
+  code: 'ERR_UNCHANGED_NO_DRAW_POSITIONS_FOR_QUALIFIERS' as const,
+} satisfies ErrorType;
 export const INSUFFICIENT_DRAW_POSITIONS = {
   message: 'Insufficient drawPositions to accommodate entries',
-  code: 'ERR_INSUFFICIENT_DRAW_POSITIONS',
-};
+  code: 'ERR_INSUFFICIENT_DRAW_POSITIONS' as const,
+} satisfies ErrorType;
 
 export const INSUFFICIENT_UUIDS = {
   message: 'Supplied uuids pool exhausted',
-  code: 'ERR_INSUFFICIENT_UUIDS',
-};
+  code: 'ERR_INSUFFICIENT_UUIDS' as const,
+} satisfies ErrorType;
 
 export const MISSING_PENALTY_TYPE = {
   message: 'Missing penaltyType',
-  code: 'ERR_MISSING_PENALTY_TYPE',
-};
+  code: 'ERR_MISSING_PENALTY_TYPE' as const,
+} satisfies ErrorType;
 export const MISSING_PENALTY_ID = {
   message: 'Missing penaltyId',
-  code: 'ERR_MISSING_PENALTY_ID',
-};
+  code: 'ERR_MISSING_PENALTY_ID' as const,
+} satisfies ErrorType;
 export const PENALTY_NOT_FOUND = {
   message: 'Penalty not found',
-  code: 'ERR_NOT_FOUND_PENALTY',
-};
+  code: 'ERR_NOT_FOUND_PENALTY' as const,
+} satisfies ErrorType;
 
 export const MISSING_COURTS_INFO = {
   message: 'Missing courtsCount/courtNames',
-  code: 'ERR_MISSING_COURTS_INFO',
-};
+  code: 'ERR_MISSING_COURTS_INFO' as const,
+} satisfies ErrorType;
 export const COURT_NOT_FOUND = {
   message: 'Court not found',
-  code: 'ERR_NOT_FOUND_COURT',
-};
+  code: 'ERR_NOT_FOUND_COURT' as const,
+} satisfies ErrorType;
 export const COURT_EXISTS = {
   message: 'Court exists',
-  code: 'ERR_EXISTING_COURT',
-};
+  code: 'ERR_EXISTING_COURT' as const,
+} satisfies ErrorType;
 export const BOOKING_NOT_FOUND = {
   message: 'Booking not found',
-  code: 'ERR_NOT_FOUND_BOOKING',
-};
+  code: 'ERR_NOT_FOUND_BOOKING' as const,
+} satisfies ErrorType;
 export const SCHEDULE_SCENARIO_NOT_FOUND = {
   message: 'Schedule scenario not found',
-  code: 'ERR_NOT_FOUND_SCHEDULE_SCENARIO',
-};
+  code: 'ERR_NOT_FOUND_SCHEDULE_SCENARIO' as const,
+} satisfies ErrorType;
 export const SCHEDULE_SCENARIO_EXISTS = {
   message: 'Schedule scenario exists',
-  code: 'ERR_EXISTING_SCHEDULE_SCENARIO',
-};
+  code: 'ERR_EXISTING_SCHEDULE_SCENARIO' as const,
+} satisfies ErrorType;
 export const EXISTING_DRAFT = {
   message: 'An active draft already exists for this draw',
-  code: 'ERR_EXISTING_DRAFT',
-};
+  code: 'ERR_EXISTING_DRAFT' as const,
+} satisfies ErrorType;
 export const EXISTING_MATCHUPS = {
   message: 'Existing matchUps conflict with booking',
-  code: 'ERR_EXISTING_MATCHUPS',
-};
+  code: 'ERR_EXISTING_MATCHUPS' as const,
+} satisfies ErrorType;
 
 export const VENUE_EXISTS = {
   message: 'Venue exists',
-  code: 'ERR_EXISTING_VENUE',
-};
+  code: 'ERR_EXISTING_VENUE' as const,
+} satisfies ErrorType;
 export const VENUE_NOT_FOUND = {
   message: 'Venue not found',
-  code: 'ERR_NOT_FOUND_VENUE',
-};
+  code: 'ERR_NOT_FOUND_VENUE' as const,
+} satisfies ErrorType;
 export const MISSING_VENUE_ID = {
   message: 'Missing venueId',
-  code: 'ERR_MISSING_VENUE_ID',
-};
+  code: 'ERR_MISSING_VENUE_ID' as const,
+} satisfies ErrorType;
 
 export const INVALID_END_TIME = {
   message: 'Invalid endTime',
-  code: 'ERR_INVALID_END_TIME',
-};
+  code: 'ERR_INVALID_END_TIME' as const,
+} satisfies ErrorType;
 export const EXISTING_END_TIME = {
   message: 'Existing endTime',
-  code: 'ERR_EXISTING_END_TIME',
-};
+  code: 'ERR_EXISTING_END_TIME' as const,
+} satisfies ErrorType;
 export const INVALID_STOP_TIME = {
   message: 'Invalid stopTime',
-  code: 'ERR_INVALID_STOP_TIME',
-};
+  code: 'ERR_INVALID_STOP_TIME' as const,
+} satisfies ErrorType;
 export const INVALID_START_TIME = {
   message: 'Invalid startTime',
-  code: 'ERR_INVALID_START_TIME',
-};
+  code: 'ERR_INVALID_START_TIME' as const,
+} satisfies ErrorType;
 export const INVALID_RESUME_TIME = {
   message: 'Invalid resumeTime',
-  code: 'ERR_INVALID_RESUME_TIME',
-};
+  code: 'ERR_INVALID_RESUME_TIME' as const,
+} satisfies ErrorType;
 export const INVALID_TIME_ITEM = {
   message: 'Invalid timeItem',
-  code: 'ERR_INVALID_TIME_ITEMS',
-};
+  code: 'ERR_INVALID_TIME_ITEMS' as const,
+} satisfies ErrorType;
 export const MISSING_ASYNC_STATE_PROVIDER = {
   message: 'Missing async state provider',
-  code: 'ERR_MISSING_ASYNC_STATE_PROVIDER',
-};
+  code: 'ERR_MISSING_ASYNC_STATE_PROVIDER' as const,
+} satisfies ErrorType;
 export const MISSING_TIME_ITEM = {
   message: 'Missing timeItem',
-  code: 'ERR_MISSING_TIME_ITEM',
-};
+  code: 'ERR_MISSING_TIME_ITEM' as const,
+} satisfies ErrorType;
 export const MISSING_TIME_ITEMS = {
   message: 'Missing timeItems',
-  code: 'ERR_MISSING_TIME_ITEMS',
-};
+  code: 'ERR_MISSING_TIME_ITEMS' as const,
+} satisfies ErrorType;
 export const MISSING_CONTEXT = {
   message: 'Missing context',
-  code: 'ERR_MISSING_CONTEXT',
-};
+  code: 'ERR_MISSING_CONTEXT' as const,
+} satisfies ErrorType;
 export const MISSING_SCHEDULE = {
   message: 'Missing schedule',
-  code: 'ERR_MISSING_SCHEDULE',
-};
+  code: 'ERR_MISSING_SCHEDULE' as const,
+} satisfies ErrorType;
 
 export const INVALID_SCALE_ITEM = {
   message: 'Invalid scaleItem',
-  code: 'ERR_INVALID_SCALE_ITEM',
-};
+  code: 'ERR_INVALID_SCALE_ITEM' as const,
+} satisfies ErrorType;
 
 export const MODIFICATIONS_FAILED = {
   message: 'Modifications failed',
-  code: 'ERR_FAILURE_MODIFICATIONS',
-};
+  code: 'ERR_FAILURE_MODIFICATIONS' as const,
+} satisfies ErrorType;
 export const NO_MODIFICATIONS_APPLIED = {
   message: 'No modifications applied',
-  code: 'ERR_UNCHANGED_NO_MODIFICATIONS_APPLIED',
-};
+  code: 'ERR_UNCHANGED_NO_MODIFICATIONS_APPLIED' as const,
+} satisfies ErrorType;
 
 export const UNABLE_TO_ASSIGN_COURT = {
   message: 'Unable to assign court',
-  code: 'ERR_UNCHANGED_COURT_NOT_ASSIGNED',
-};
+  code: 'ERR_UNCHANGED_COURT_NOT_ASSIGNED' as const,
+} satisfies ErrorType;
 
 export const NO_CANDIDATES = {
   message: 'No Candidates',
-  code: 'ERR_UNCHANGED_NO_CANDIDATES',
-};
+  code: 'ERR_UNCHANGED_NO_CANDIDATES' as const,
+} satisfies ErrorType;
 
 export const INVALID_CONFIGURATION = {
   message: 'Invalid configuration',
-  code: 'ERR_INVALID_CONFIG',
-};
+  code: 'ERR_INVALID_CONFIG' as const,
+} satisfies ErrorType;
 export const INVALID_COLLECTION_DEFINITION = {
   message: 'Invalid collectionDefinition',
-  code: 'ERR_INVALID_COLLECTION_DEFINITION',
-};
+  code: 'ERR_INVALID_COLLECTION_DEFINITION' as const,
+} satisfies ErrorType;
 export const INVALID_OBJECT = {
   message: 'Invalid object',
-  code: 'ERR_INVALID_OBJECT',
-};
+  code: 'ERR_INVALID_OBJECT' as const,
+} satisfies ErrorType;
 export const INVALID_GENDER = {
   message: 'Invalid gender',
-  code: 'ERR_INVALID_GENDER',
-};
+  code: 'ERR_INVALID_GENDER' as const,
+} satisfies ErrorType;
 export const INVALID_CATEGORY = {
   message: 'Invalid category',
-  code: 'ERR_INVALID_CATEGORY',
-};
+  code: 'ERR_INVALID_CATEGORY' as const,
+} satisfies ErrorType;
 export const INVALID_VALUES = {
   message: 'Invalid values',
-  code: 'ERR_INVALID_VALUES',
-};
+  code: 'ERR_INVALID_VALUES' as const,
+} satisfies ErrorType;
 export const DUPLICATE_VALUE = {
   message: 'Duplicate value',
-  code: 'ERR_DUPLICATE_VALUE',
-};
+  code: 'ERR_DUPLICATE_VALUE' as const,
+} satisfies ErrorType;
 
 export const TEAM_NOT_FOUND = {
   message: 'Team not found',
-  code: 'ERR_NOT_FOUND_TEAM',
-};
+  code: 'ERR_NOT_FOUND_TEAM' as const,
+} satisfies ErrorType;
 export const NO_VALID_ACTIONS = {
   message: 'No valid actions',
-  code: 'ERR_NO_VALID_ACTIONS',
-};
+  code: 'ERR_NO_VALID_ACTIONS' as const,
+} satisfies ErrorType;
 export const NO_VALID_ATTRIBUTES = {
   message: 'No valid attributes',
-  code: 'ERR_NO_VALID_ATTRIBUTES',
-};
+  code: 'ERR_NO_VALID_ATTRIBUTES' as const,
+} satisfies ErrorType;
 
 export const VALUE_UNCHANGED = {
   message: 'Value unchanged',
-  code: 'ABORT_UNCHANGED',
-};
-export const NOT_FOUND = { message: 'Not found', code: 'ERR_NOT_FOUND' };
+  code: 'ABORT_UNCHANGED' as const,
+} satisfies ErrorType;
+export const NOT_FOUND = { message: 'Not found', code: 'ERR_NOT_FOUND' as const } satisfies ErrorType;
+
+// Thrown by `unwrap()` when an engine call returns nothing at all: an unknown method, no state loaded.
+export const ENGINE_RETURNED_UNDEFINED = {
+  message: 'engine returned no result',
+  code: 'ENGINE_RETURNED_UNDEFINED' as const,
+} satisfies ErrorType;
 export const NOT_IMPLEMENTED = {
   message: 'Not implemented',
-  code: 'ERR_NOT_IMPLEMENTED',
-};
+  code: 'ERR_NOT_IMPLEMENTED' as const,
+} satisfies ErrorType;
 
 export const EXISTING_FLIGHT = {
   message: 'Existing flight',
-  code: 'ERR_EXISTING_FLIGHT',
-};
+  code: 'ERR_EXISTING_FLIGHT' as const,
+} satisfies ErrorType;
 export const EXISTING_PROFILE = {
   message: 'Existing flight profile',
-  code: 'ERR_EXISTING_FLIGHT_PROFILE',
-};
+  code: 'ERR_EXISTING_FLIGHT_PROFILE' as const,
+} satisfies ErrorType;
 export const EXISTING_OUTCOME = {
   message: 'Existing outcome',
-  code: 'ERR_EXISTING_OUTCOME',
-};
+  code: 'ERR_EXISTING_OUTCOME' as const,
+} satisfies ErrorType;
 
 export const EXISTING_MATCHUP_ID = {
   message: 'Existing matchUpId',
-  code: 'ERR_EXISTING_MATCHUP_ID',
-};
+  code: 'ERR_EXISTING_MATCHUP_ID' as const,
+} satisfies ErrorType;
 
 export const EXISTING_STAGE = {
   message: 'Existing stage',
-  code: 'ERR_EXISTING_STAGE',
-};
+  code: 'ERR_EXISTING_STAGE' as const,
+} satisfies ErrorType;
 
 export const EXISTING_STRUCTURE = {
   message: 'Existing structure',
-  code: 'ERR_EXISTING_STRUCTURE',
-};
+  code: 'ERR_EXISTING_STRUCTURE' as const,
+} satisfies ErrorType;
 
 export const METHOD_NOT_FOUND = {
   message: 'Method not found',
-  code: 'ERR_NOT_FOUND_METHOD',
-};
+  code: 'ERR_NOT_FOUND_METHOD' as const,
+} satisfies ErrorType;
 
 export const MUTATION_LOCKED = {
   message: 'Mutation blocked by active lock',
-  code: 'ERR_MUTATION_LOCKED',
-};
+  code: 'ERR_MUTATION_LOCKED' as const,
+} satisfies ErrorType;
 export const MUTATION_LOCK_EXISTS = {
   message: 'Active mutation lock already exists for scope',
-  code: 'ERR_EXISTING_MUTATION_LOCK',
-};
+  code: 'ERR_EXISTING_MUTATION_LOCK' as const,
+} satisfies ErrorType;
 export const MUTATION_LOCK_NOT_FOUND = {
   message: 'Mutation lock not found',
-  code: 'ERR_NOT_FOUND_MUTATION_LOCK',
-};
+  code: 'ERR_NOT_FOUND_MUTATION_LOCK' as const,
+} satisfies ErrorType;
 export const UNAUTHORIZED_LOCK_OPERATION = {
   message: 'Lock token does not match',
-  code: 'ERR_UNAUTHORIZED_LOCK_OPERATION',
-};
+  code: 'ERR_UNAUTHORIZED_LOCK_OPERATION' as const,
+} satisfies ErrorType;
 
 export const SCHEDULED_MATCHUPS = {
   message: 'Scheduled matchUps',
-  code: 'ERR_SCHEDULED_MATCHUPS',
-};
+  code: 'ERR_SCHEDULED_MATCHUPS' as const,
+} satisfies ErrorType;
 
 export const SCORES_PRESENT = {
   message: 'Scores present',
-  code: 'ERR_SCORES_PRESENT',
-};
+  code: 'ERR_SCORES_PRESENT' as const,
+} satisfies ErrorType;
 
 export const TOURNAMENT_CATEGORY_IN_USE = {
   message: 'Tournament category is referenced by one or more events',
-  code: 'ERR_TOURNAMENT_CATEGORY_IN_USE',
-};
+  code: 'ERR_TOURNAMENT_CATEGORY_IN_USE' as const,
+} satisfies ErrorType;
 
 export const REGISTRATION_NOT_FOUND = {
   message: 'Practice registration not found',
-  code: 'ERR_NOT_FOUND_REGISTRATION',
-};
+  code: 'ERR_NOT_FOUND_REGISTRATION' as const,
+} satisfies ErrorType;
 
 export const CAPACITY_EXCEEDED = {
   message: 'Booking capacity exceeded',
-  code: 'ERR_CAPACITY_EXCEEDED',
-};
+  code: 'ERR_CAPACITY_EXCEEDED' as const,
+} satisfies ErrorType;
 
 export const errorConditionConstants = {
   ANACHRONISM,
@@ -1190,6 +1196,30 @@ export const errorConditionConstants = {
   UNRECOGNIZED_MATCHUP_STATUS,
   VALUE_UNCHANGED,
   VENUE_EXISTS,
+  MATCHUPS_SCHEDULED_OUTSIDE_DATES,
+  DRAW_POSITION_OCCUPIED,
+  INVALID_DRAW_TYPE,
+  UNRECOGNIZED_EVENT_TYPE,
+  PROPAGATED_EXITS_DOWNSTREAM,
+  RESULT_NOT_VALIDATED,
+  MATCHUP_STATUS_OUT_OF_SCOPE,
+  MISSING_DATE_RANGE,
+  INVALID_TIME_ZONE,
+  CONFLICTING_TIME_ZONES,
+  INVALID_EMBARGO,
+  NO_PARTICIPANTS,
+  NO_PARTICIPANTS_GENERATED,
+  SHARED_INDIVIDUAL_PARTICIPANT,
+  INVALID_ENTRY_STATUS,
+  PARTICIPANT_ENTRY_NOT_FOUND,
+  PARTICIPANT_NOT_ENTERED_IN_STAGE,
+  PARTICIPANT_NOT_FOUND_IN_STAGE,
+  SCHEDULE_SCENARIO_NOT_FOUND,
+  SCHEDULE_SCENARIO_EXISTS,
+  VENUE_NOT_FOUND,
+  INVALID_RESUME_TIME,
+  MISSING_CONTEXT,
+  ENGINE_RETURNED_UNDEFINED,
 } as const;
 
 export default errorConditionConstants;

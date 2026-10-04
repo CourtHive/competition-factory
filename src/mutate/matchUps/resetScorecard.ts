@@ -13,7 +13,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { isString } from '@Tools/objects';
 
 // constants and types
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -30,7 +30,7 @@ type ResetScoreCardArgs = {
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
   tiebreakReset?: boolean;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   matchUpId: string;
   event?: Event;
 };

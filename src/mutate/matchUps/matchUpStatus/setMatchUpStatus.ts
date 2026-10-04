@@ -1,8 +1,10 @@
 import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
+import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
 import { getDeciderFinals, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
+import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
@@ -15,6 +17,7 @@ import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { isDoubleExit } from '@Validators/isExit';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
 
@@ -230,6 +233,10 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // cascade writes through, so neither walks the draw again. Its matchUps are the live objects.
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   // which matchUps already could never be played, so the warning names only what THIS call left so
+  // the double exits standing before the call: one that re-derives to a single exit is settled at the end
+  const doubleExitsBefore = new Set(
+    matchUpsMap.drawMatchUps.filter((matchUp) => isDoubleExit(matchUp.matchUpStatus)).map((m) => m.matchUpId),
+  );
   const neverPlayedBefore = new Set(
     matchUpsMap.drawMatchUps.filter((matchUp) => matchUpWillNeverBePlayed({ matchUp })).map((m) => m.matchUpId),
   );
@@ -318,6 +325,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         event: params.event,
       });
 
+      // A REFUSED WRITE IS RETURNED, never dropped (F3). The loop used to read only `context`, so a
+      // refusal here reported success over a draw the cascade had left half-written.
+      if (progressResult.error) {
+        v2.compare?.(progressResult);
+        return decorateResult({ result: progressResult, stack });
+      }
+
       // DECISION: Continue iterating if there's another level of consolation
       // WHY: The consolation matchUp itself might feed into another consolation level
       // If progressResult returns another loserMatchUp, we need to process that too
@@ -330,8 +344,28 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // Everything has settled — removals, directions and exit propagation — which is the earliest point
   // at which a carried exit's ORIGIN can be asked whether it still describes one. See
   // `reconcileStaleExitOrigins` for the two corrections that pull the timing in opposite directions.
+  // a convergence that lost one of its origins goes where the kept origin alone puts it
+  const settled = settleRederivedDoubleExits({
+    tournamentRecord: params.tournamentRecord,
+    drawDefinition: params.drawDefinition,
+    targetMatchUpId: matchUpId,
+    propagateExitStatus,
+    doubleExitsBefore,
+    event: params.event,
+  });
+  if (settled?.error) {
+    v2.compare?.(settled);
+    return decorateResult({ result: settled, stack });
+  }
   reconcileStaleExitOrigins({
     matchUpsMap: result.context?.matchUpsMap,
+    drawDefinition: params.drawDefinition,
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+  });
+  // and once settled, no matchUp left without a result keeps the `scoredTime` a cascade stamped on it
+  reconcileScoredTimes({
+    matchUps: matchUpsMap.drawMatchUps,
     drawDefinition: params.drawDefinition,
     tournamentRecord: params.tournamentRecord,
     event: params.event,

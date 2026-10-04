@@ -1,4 +1,5 @@
 import { isTiebreakGamesScore, isTiebreakWon, tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { isTiebreakMarker, readTiebreakSet } from './tiebreakSetShape';
 import { getSetWinningSide } from './getSetWinningSide';
 
@@ -17,7 +18,11 @@ export function analyzeSet(params) {
   const { setNumber } = setObject ?? {};
   const { bestOf, exactly } = matchUpScoringFormat ?? {};
   const maxSetNumber = bestOf || exactly;
-  const isDecidingSet = !!(setNumber && maxSetNumber && setNumber === maxSetNumber);
+  const isDecidingSet = finalSetGoverns(
+    matchUpScoringFormat,
+    setNumber,
+    !!(setNumber && maxSetNumber && setNumber === maxSetNumber),
+  );
   const setFormat = (isDecidingSet && matchUpScoringFormat?.finalSetFormat) || matchUpScoringFormat?.setFormat;
   const expectTiebreakSet = !!setFormat?.tiebreakSet;
   const expectTimedSet = !!setFormat?.timed;

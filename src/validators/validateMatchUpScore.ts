@@ -5,10 +5,13 @@
  * Currently implemented in TMX for testing and refinement before factory integration
  */
 import { tiebreakSetGames, isTiebreakGamesScore, tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { isTiebreakMarker } from '@Query/matchUp/tiebreakSetShape';
 import { getMaxSetScore } from '@Query/matchUp/getComplement';
+import { timedSetWinnerContradicts } from './timedSetWinner';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { setPlayedAfterDecision } from './setCount';
+import { isMatchUpStatus } from './isMatchUpStatus';
 
 // constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
@@ -343,6 +346,7 @@ function validateRegularSet(
 
 /** A timed set: a completed one needs a score, and a tied points-based one its tiebreak. */
 function validateTimedSet(set: any, setFormat: any, allowIncomplete?: boolean): { isValid: boolean; error?: string } {
+  if (timedSetWinnerContradicts(set)) return { isValid: false, error: 'Timed set winner contradicts the set score' };
   // For timed sets, just validate that scores exist if set is complete
   if (!allowIncomplete) {
     const side1Score = set.side1Score ?? 0;
@@ -462,6 +466,9 @@ export function validateMatchUpScore(
   matchUpFormat?: string,
   matchUpStatus?: string,
 ): { isValid: boolean; error?: string } {
+  if (matchUpStatus !== undefined && !isMatchUpStatus(matchUpStatus)) {
+    return { isValid: false, error: `Unknown matchUpStatus: ${matchUpStatus}` };
+  }
   if (!sets || sets.length === 0) {
     return { isValid: true }; // Empty is valid (not an error, just incomplete)
   }
@@ -490,7 +497,7 @@ export function validateMatchUpScore(
     const set = sets[i];
 
     // Check if this specific set is the deciding set (last possible set in the match)
-    const isDecidingSet = i + 1 === bestOfSets;
+    const isDecidingSet = finalSetGoverns(parse(matchUpFormat ?? ''), i + 1, i + 1 === bestOfSets);
     const isLastSet = i === sets.length - 1;
 
     const setHasWinner = set.winningSide !== undefined;
@@ -510,6 +517,13 @@ export function validateMatchUpScore(
   // answer the engine gives, so a dialog gating Submit here does not offer what the engine refuses
   const afterDecision = setPlayedAfterDecision(sets, matchUpFormat);
   if (afterDecision) return { isValid: false, error: afterDecision };
+
+  // An `exactly` format is COMPLETED only once every set is played — the engine's `analyzeScore` refuses
+  // fewer, and a dialog gating Submit here must not offer it
+  const exactly = parse(matchUpFormat ?? '')?.exactly;
+  if (exactly && matchUpStatus === COMPLETED && sets.length < exactly) {
+    return { isValid: false, error: `exactly ${exactly} sets are played; ${sets.length} recorded` };
+  }
 
   return { isValid: true };
 }

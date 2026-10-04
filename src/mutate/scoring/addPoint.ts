@@ -13,7 +13,8 @@
  * - NoAD games and tiebreaks
  */
 
-import { resolveSetType, isAggregateFormat } from '@Tools/scoring/scoringUtilities';
+import { resolveSetType, isAggregateFormat, isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
+import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 import type { PointMultiplier } from './resolvePointValue';
 import { calculatePointsTo } from './pointsToCalculator';
@@ -32,6 +33,7 @@ import type {
 } from '@Types/scoring/types';
 
 // constants
+import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { RALLY } from '@Constants/matchUpFormatConstants';
 
 /**
@@ -71,7 +73,7 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   // in all 72 recorded streams. The point is ignored, not refused: this function returns the
   // matchUp it was given, as it does for an undecidable winner, and the engine's event detection
   // (which compares completeness before and after) sees no change.
-  if (matchUp.matchUpStatus === 'COMPLETED') return matchUp;
+  if (matchUp.matchUpStatus === COMPLETED) return matchUp;
   const newMatchUp = matchUp;
 
   // Initialize history if not present
@@ -97,10 +99,11 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   });
 
   // Resolve the set type for the current/next set
-  const setType = resolveSetType(formatStructure, setsWon);
+  const setNumber = openSetNumber(newMatchUp.score.sets);
+  const setType = resolveSetType(formatStructure, setsWon, setNumber);
 
   // Determine the active set format
-  const isDecidingSet = setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1;
+  const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, setNumber);
   const activeSetFormat: SetFormatStructure | undefined =
     isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 
@@ -165,8 +168,8 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   newMatchUp.history.points.push(point);
 
   // Update match status if first point
-  if (newMatchUp.matchUpStatus === 'TO_BE_PLAYED') {
-    newMatchUp.matchUpStatus = 'IN_PROGRESS';
+  if (newMatchUp.matchUpStatus === TO_BE_PLAYED) {
+    newMatchUp.matchUpStatus = IN_PROGRESS;
   }
 
   // Dispatch to set-type-specific scoring logic
@@ -572,7 +575,7 @@ export function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatS
     );
 
     if (totals[0] !== totals[1]) {
-      matchUp.matchUpStatus = 'COMPLETED';
+      matchUp.matchUpStatus = COMPLETED;
       matchUp.winningSide = totals[0] > totals[1] ? 1 : 2;
       matchUp.endTime = nowIso();
     }
@@ -591,7 +594,7 @@ export function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatS
   }
 
   const matchWinner = setsWon[0] >= setsToWin ? 0 : 1;
-  matchUp.matchUpStatus = 'COMPLETED';
+  matchUp.matchUpStatus = COMPLETED;
   matchUp.winningSide = matchWinner + 1;
   matchUp.endTime = nowIso();
 }

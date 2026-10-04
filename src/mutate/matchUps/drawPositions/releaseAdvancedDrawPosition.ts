@@ -87,7 +87,9 @@ export function releaseAdvancedDrawPosition({
     if (matchUp.roundNumber === undefined || matchUp.roundNumber < fromRoundNumber) continue;
     if (matchUp.roundNumber === initialRoundNumber) continue;
     if (!matchUp.drawPositions?.includes(drawPosition)) continue;
-    if (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus)) continue;
+    const heldOpenForArrival =
+      withdrawingExit && awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp, matchUps });
+    if (!heldOpenForArrival && (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus))) continue;
     if (advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp })) continue;
     if (!withdrawingExit && advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp })) {
       continue;
@@ -115,6 +117,49 @@ export function releaseAdvancedDrawPosition({
 }
 
 /**
+ * A matchUp whose winningSide is an exit's AWARD to the seat this position sits in, not a result of its own.
+ *
+ * Scope 2 keeps a decided matchUp's array, because a re-score that removes and re-adds a position inside one
+ * mutation rewrote its winningSide. A matchUp decided ONLY by an exit carried in on the OTHER side is not that:
+ * its winningSide names the seat, and "the side yet to arrive wins, even while still empty" (exit-propagation.md,
+ * the pending exit). When a withdrawal takes back the exit that advanced this position into that seat, the seat
+ * is empty again and the exit stands, pending, for whoever arrives there next.
+ *
+ * Measured 2026-10-04, census w2 9100343 (OLYMPIC 16/11): `East|1|4` WALKOVER carried its loser's exit into
+ * `West|2|1`, whose winner advanced to `West|3|1`, already DEFAULTED towards that seat by an exit carried from
+ * `East|1|5`. Re-scoring `East|1|4` to the other winner withdrew the walkover at `West|2|1` and left the winner
+ * in `West|3|1`, advanced out of an undecided matchUp; the next result there was refused.
+ *
+ * WHOSE exit it is, is read from the entry's SOURCE, never from its side key. Sides re-sort by drawPosition
+ * once a participant arrives, so an exit stamped on an empty seat can end up keyed to the side the winner now
+ * holds (census w1 9000477, COMPASS 32/29: `South|3|1` WALKOVER won by side 1, its produced exit's entry also
+ * keyed side 1). An entry the winner brought with them names the matchUp that delivered their drawPosition; an
+ * exit carried or produced for the other seat names any other source.
+ */
+function awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp, matchUps }): boolean {
+  if (!isExit(matchUp.matchUpStatus) || !matchUp.winningSide || matchUp.score?.scoreStringSide1) return false;
+  if (getWinningSideDrawPosition({ drawDefinition, structureId, matchUp }) !== drawPosition) return false;
+  const delivered = latestFeeder({ drawPosition, matchUps, matchUp })?.matchUpId;
+  return Object.values(getSideExitProvenance({ matchUp }) ?? {}).some(
+    (entry: any) => isExit(entry?.matchUpStatus) && !!entry?.sourceMatchUpId && entry.sourceMatchUpId !== delivered,
+  );
+}
+
+/** the latest earlier round in this structure that holds the drawPosition: the matchUp that delivered it here */
+function latestFeeder({ drawPosition, matchUps, matchUp }) {
+  const feeders = matchUps.filter(
+    (candidate) =>
+      candidate.roundNumber !== undefined &&
+      candidate.roundNumber < (matchUp.roundNumber as number) &&
+      candidate.drawPositions?.includes(drawPosition),
+  );
+  if (!feeders.length) return undefined;
+  return feeders.reduce((latest, candidate) =>
+    (candidate.roundNumber as number) > (latest.roundNumber as number) ? candidate : latest,
+  );
+}
+
+/**
  * Did this drawPosition reach this matchUp without a match being played?
  *
  * The feeder is the LATEST earlier round in this structure that holds the position — structure-local
@@ -128,18 +173,8 @@ export function releaseAdvancedDrawPosition({
  * there is exactly what undoing that result should do.
  */
 function advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp }): boolean {
-  const roundNumber = matchUp.roundNumber as number;
-  const feeders = matchUps.filter(
-    (candidate) =>
-      candidate.roundNumber !== undefined &&
-      candidate.roundNumber < roundNumber &&
-      candidate.drawPositions?.includes(drawPosition),
-  );
-  if (!feeders.length) return false;
-
-  const feeder = feeders.reduce((latest, candidate) =>
-    (candidate.roundNumber as number) > (latest.roundNumber as number) ? candidate : latest,
-  );
+  const feeder = latestFeeder({ drawPosition, matchUps, matchUp });
+  if (!feeder) return false;
   return (feeder.drawPositions ?? []).some((position) => byeDrawPositions.has(position));
 }
 
@@ -169,18 +204,8 @@ function advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp }): b
  * there the produced exit itself is what is being taken back.
  */
 function advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp }): boolean {
-  const roundNumber = matchUp.roundNumber as number;
-  const feeders = matchUps.filter(
-    (candidate) =>
-      candidate.roundNumber !== undefined &&
-      candidate.roundNumber < roundNumber &&
-      candidate.drawPositions?.includes(drawPosition),
-  );
-  if (!feeders.length) return false;
-
-  const feeder = feeders.reduce((latest, candidate) =>
-    (candidate.roundNumber as number) > (latest.roundNumber as number) ? candidate : latest,
-  );
+  const feeder = latestFeeder({ drawPosition, matchUps, matchUp });
+  if (!feeder) return false;
   if (!isExit(feeder.matchUpStatus) || !feeder.winningSide) return false;
   if (getWinningSideDrawPosition({ drawDefinition, structureId, matchUp: feeder }) !== drawPosition) return false;
 

@@ -30,16 +30,15 @@ jobs:
     # Skip when the head commit is the release-please bot's release-PR
     # merge. Release-please PRs touch only CHANGELOG.md, package.json
     # (version bump), and .release-please-manifest.json — never any
-    # tested source. The same commit was just verified one push ago
-    # when the feature/fix that triggered the release landed on master,
-    # so re-running the full matrix here adds ~9 min × 2 nodes of CI
-    # for no new signal. The subsequent `npm-publish.yml` run (fired
-    # by release-please creating the GitHub release) gates the publish
-    # via prepublishOnly → pnpm verify, so verification still happens
-    # before any artifact ships to npm.
+    # tested source. The same tree was verified when the checkpoint
+    # landed on master, so re-running the full matrix here adds CI for no
+    # new signal.
     #
-    # PR events (which the bot opens before merging) always run — only
-    # the resulting merge push is skipped.
+    # PR events (which the bot opens before merging) always run the job, but
+    # skip the heavy test gates when the diff is the version files alone (see
+    # the Release-PR scope step); the resulting merge push is skipped.
+    # npm-publish.yml then proves the tree was verified (verify:verified-release)
+    # rather than re-running the chain.
     if: >
       github.event_name != 'push' ||
       !contains(github.event.head_commit.message, 'release-please--branches--')
@@ -61,6 +60,26 @@ jobs:
           # neither the tag nor the history, and the check errors rather than passing quietly — so
           # this is a precondition, not a nicety.
           fetch-depth: 0
+
+      # A release-please PR changes only the version files: package.json's "version" line,
+      # CHANGELOG.md and .release-please-manifest.json. Its base is master, which the checkpoint just
+      # verified, so the heavy test gates have nothing new to test, and they cost ~55 minutes per
+      # release (CA, 2026-10-04). Decided by the DIFF, not the branch name: a release branch that
+      # touches anything else gets the full run. The job itself always runs, because master requires
+      # the `verify (node 24)` check, and the cheap gates plus the build chain still run.
+      - name: Release-PR scope
+        id: scope
+        run: |
+          LIGHT=false
+          if [ "${{ github.event_name }}" = "pull_request" ] && [[ "${{ github.head_ref }}" == release-please--* ]]; then
+            RANGE="origin/${{ github.base_ref }}...HEAD"
+            CHANGED=$(git diff --name-only "$RANGE")
+            OUTSIDE=$(grep -vxE 'package\.json|CHANGELOG\.md|\.release-please-manifest\.json' <<<"$CHANGED" || true)
+            NOT_VERSION=$(git diff -U0 "$RANGE" -- package.json | grep -E '^[-+][^-+]' | grep -vE '^[-+][[:space:]]*"version":' || true)
+            if [ -n "$CHANGED" ] && [ -z "$OUTSIDE" ] && [ -z "$NOT_VERSION" ]; then LIGHT=true; fi
+            echo "changed: $CHANGED"
+          fi
+          echo "light=$LIGHT" | tee -a "$GITHUB_OUTPUT"
 
       # A pnpm that does not match this repo's `packageManager` pin writes an `@pnpm/exe` block
       # into the lockfile; a pnpm that DOES match strips it out again. Committed, it makes every
@@ -181,6 +200,7 @@ jobs:
       # measured where it executes, and a divergence between them fails the job. Into dev, v2 is
       # excluded from coverage instead (vitest.config.mts), so building it spends no margin.
       - name: verify:coverage
+        if: steps.scope.outputs.light != 'true'
         run: pnpm verify:coverage
         env:
           OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
@@ -190,15 +210,19 @@ jobs:
       # only thing that runs it. Added in the same change as the test, deliberately: a budget nobody
       # runs is worse than no budget.
       - name: verify:stall-budget
+        if: steps.scope.outputs.light != 'true'
         run: pnpm verify:stall-budget
 
       - name: verify:route-differential
+        if: steps.scope.outputs.light != 'true'
         run: pnpm verify:route-differential
 
       - name: verify:deep-corrections
+        if: steps.scope.outputs.light != 'true'
         run: pnpm verify:deep-corrections
 
       - name: verify:server
+        if: steps.scope.outputs.light != 'true'
         run: pnpm verify:server
 
       - name: verify:audit

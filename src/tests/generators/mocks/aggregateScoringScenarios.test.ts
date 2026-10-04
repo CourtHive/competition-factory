@@ -8,6 +8,9 @@ import { analyzeScore } from '@Query/matchUp/analyzeScore';
 import { parseScoreString } from '@Tools/parseScoreString';
 import { describe, it, expect } from 'vitest';
 
+// constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
 describe('parseScoreString - Aggregate scoring with timed sets', () => {
   const format = 'SET3XA-S:T10';
 
@@ -215,17 +218,14 @@ describe('analyzeScore - Aggregate scoring validation', () => {
     };
 
     const result = analyzeScore({
+      matchUpStatus: COMPLETED,
       matchUpFormat: format,
       winningSide: 1,
       score,
     });
 
-    // analyzeScore may not support exactly formats yet - skip if not supported
-    if (!result.valid && result.error?.includes('exactly')) {
-      expect(result.valid).toBe(false);
-    } else {
-      expect(result.valid).toBe(true);
-    }
+    // all three sets played, side 1 took two of them; the refusals are in exactlyFormatScores.test.ts
+    expect(result.valid).toBe(true);
   });
 
   it('should validate SET4X aggregate format', () => {

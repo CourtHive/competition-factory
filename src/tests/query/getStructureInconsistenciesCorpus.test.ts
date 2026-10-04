@@ -63,23 +63,28 @@ const DRAW_SIZES = [8, 16, 32, 64];
 
 const MATRIX = DRAW_TYPES.flatMap((drawType) => DRAW_SIZES.map((drawSize) => [drawType, drawSize] as const));
 
-test.for(MATRIX)('CI sweep: %s drawSize %d completes with zero structural inconsistencies', ([drawType, drawSize]) => {
-  setSubscriptions({});
-  const drawId = `ci-${drawType}-${drawSize}`;
-  const { drawIds } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawSize, drawType, outcomes: R1_EXIT_OUTCOMES }],
-    completeAllMatchUps: true,
-    setState: true,
-  });
-  // guard the test's own construction — a matrix cell that fails to generate is a test bug,
-  // not an engine inconsistency; surface it loudly rather than silently passing.
-  expect(drawIds).toContain(drawId);
+test.for(MATRIX)(
+  'CI sweep: %s drawSize %d completes with zero structural inconsistencies',
+  ([drawType, drawSize]) => {
+    setSubscriptions({});
+    const drawId = `ci-${drawType}-${drawSize}`;
+    const { drawIds } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawId, drawSize, drawType, outcomes: R1_EXIT_OUTCOMES }],
+      completeAllMatchUps: true,
+      setState: true,
+    });
+    // guard the test's own construction — a matrix cell that fails to generate is a test bug,
+    // not an engine inconsistency; surface it loudly rather than silently passing.
+    expect(drawIds).toContain(drawId);
 
-  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  const result: any = getStructureInconsistencies({ drawDefinition });
-  if (!result.valid) {
-    // include the offending inconsistencies in the failure message for fast triage
-    expect(JSON.stringify(result.inconsistencies, null, 2)).toEqual('[]');
-  }
-  expect(result.valid).toEqual(true);
-});
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const result: any = getStructureInconsistencies({ drawDefinition });
+    if (!result.valid) {
+      // include the offending inconsistencies in the failure message for fast triage
+      expect(JSON.stringify(result.inconsistencies, null, 2)).toEqual('[]');
+    }
+    expect(result.valid).toEqual(true);
+    // the 64-draw cells take ~30s under CI coverage alone, against the 30s default (2026-10-03, master)
+  },
+  180_000,
+);

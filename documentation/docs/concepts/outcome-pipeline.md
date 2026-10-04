@@ -80,6 +80,7 @@ the old one.
 | 7   | `ERR_MATCHUP_STATUS_OUT_OF_SCOPE`          | the status exists but means nothing in this draw type (CHALLENGED outside a LADDER)                                                                                                                                                                                                                                                                                                                                                      | `getMatchUpStatusScopeViolation`                                                                                       |
 | 8   | `ERR_NOT_FOUND_MATCHUP`                    | `matchUpId` is not in the draw                                                                                                                                                                                                                                                                                                                                                                                                           | `resolveMatchUpAndContext`                                                                                             |
 | 9   | `ERR_INCOMPATIBLE_MATCHUP_STATUS`          | BYE with a winningSide (existing or requested); a live status (IN_PROGRESS, SUSPENDED) on a COMPLETED matchUp whose score is a valid win and the call carries no new result; a live status with a `winningSide` or a score that decides a winner under the incoming format; a non-directing or double-exit status without `winningSide` while downstream is active; a `winningSide` equal to the current one with a non-directing status | `resolveMatchUpAndContext`, `checkCompletedRevertGuard`, `checkImpliedCompletionGuard`, `checkDownstreamCompatibility` |
+| 20  | `ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME`      | a direct write that would change a matchUp holding a carried or produced exit: a re-score, another winner, a relabel to a played result, or a clear (CA, 2026-10-03). The correction is made at the exit's origin. Checked here, between rows 9 and 10; numbered 20 so the existing rows keep their numbers                                                                                                                              | `rewritesCarriedExit`                                                                                                  |
 | 10  | `ERR_PROPAGATED_EXITS_DOWNSTREAM`          | a clear (TO_BE_PLAYED, empty strings, no winner) that would leave a propagated exit standing downstream                                                                                                                                                                                                                                                                                                                                  | `hasPropagatedExitDownstream`                                                                                          |
 | 11  | `ERR_INVALID_SCORE`                        | the score is not valid under the format (sets, tiebreaks, a 7-5 after 6-5 is valid, a 7-6 needs a tiebreak); skipped for TEAM duals and with `disableScoreValidation`                                                                                                                                                                                                                                                                    | `validateScore`                                                                                                        |
 | 12  | `ERR_CANNOT_CHANGE_FEED_ELIGIBILITY`       | the loser of the linked round has already been directed under the previous outcome                                                                                                                                                                                                                                                                                                                                                       | `feedEligibilityChange`                                                                                                |
@@ -102,7 +103,10 @@ two participants, with one family of exceptions and one rule inside it:
 
 - **The waiver.** WALKOVER, DEFAULTED, DOUBLE_WALKOVER or DOUBLE_DEFAULT on a matchUp holding ONE
   participant is accepted when it is the cascade's own write (`propagatingExit`), or when the call
-  names no winner, or when the winner it names is **awardable**.
+  names no winner, or when the winner it names is **awardable**. A DOUBLE exit is waived only as the
+  cascade's own write: entered directly it needs both seats reached, because a double exit is one
+  exit per seat (CA, 2026-10-04). Entered beside a seat nobody has reached, the arrival there would
+  meet a double exit already standing, a third entity in a matchUp that holds two.
 - **Awardable** means the winning side is not the participant already present (a walkover over an
   opponent nobody knows yet would be two winners of one matchUp), is not a BYE, and is not a
   **phantom**: a drawPosition whose assignment exists and holds nobody. An unfilled feed slot, no
@@ -110,6 +114,10 @@ two participants, with one family of exceptions and one rule inside it:
 - **A BYE is never the winning side.** The participant advances through the BYE and their carried
   exit occurs where they land. This was decided in two places before it was written here.
 - A policy may switch the requirement off: `requireParticipantsForScoring: false`.
+- **No request flag is involved.** The waiver is how a director records a walkover or default before
+  the second opponent arrives (CA, 2026-10-04): _"propagateExitStatus shouldn't have anything to do with
+  this ability"_. `propagateExitStatus` decides only whether the exit is then carried into the loser's
+  next matchUp. `matchUpActions` offers it as `EXIT`.
 
 ## 3. The routes
 
@@ -191,10 +199,11 @@ After the write, and only on success:
    loser is fed to; a double exit produces exits downstream. The rules are on
    [exit propagation](./exit-propagation.md) and are not repeated here. `progressExitStatus` iterates
    through up to **ten levels** of consolation (COMPASS feeds consolation into consolation); a
-   failsafe, not a limit anyone has reached. A **relabel** carries nothing: a call that keeps the
-   winner the matchUp already has (a COMPLETED result re-entered as a WALKOVER) changes the status
-   alone, and the loser already directed keeps their next matchUp as it stands. Whether a relabel
-   should carry the exit is an open question (2026-10-02).
+   failsafe, not a limit anyone has reached. A **relabel** keeps the winner the matchUp already has
+   and changes what it says about the loser (CA, 2026-10-02). Re-entered as a WALKOVER or DEFAULTED,
+   it carries the exit to the matchUp the loser already stands in; re-entered as COMPLETED, it
+   withdraws the exit it carried there. Neither applies where that matchUp already has a result of its
+   own, and both apply whether or not the winner has played on since.
 3. **Round robin tally** is recomputed when the matchUp is in a group (`updateTallyIfNeeded`).
 4. **Stale exit origins are reconciled** once removals, directions and propagation have all settled:
    a carried exit whose origin no longer describes an exit is corrected.

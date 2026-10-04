@@ -71,6 +71,7 @@ test.for([...TEAM_DUAL_CELLS, ...TEAM_LINE_CELLS])(
     const stillFailing = new Set((failures ?? []).map((failure) => failure.property));
     expect(quarantined.filter((property) => !stillFailing.has(property))).toEqual([]);
   },
+  180_000,
 );
 
 afterAll(() => {

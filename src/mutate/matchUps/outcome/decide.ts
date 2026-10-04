@@ -4,9 +4,9 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getOutcomePipeline } from '@Global/state/globalState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
-import { isDoubleExit, isExit } from '@Validators/isExit';
 import { refuseOutcome } from './refusals';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
@@ -14,6 +14,7 @@ import { chooseRoute } from './route';
 // constants and types
 import type { BuildViewArgs, DirectionPlan, OutcomeRequest, OutcomeView, Refusal } from './types';
 import { BYE, DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ResultType } from '@Types/factoryTypes';
 import {
@@ -82,7 +83,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
       if (dual) checkDual({ args, route, dual });
       if (route === 'winner' && isExit(planned.matchUpStatus) && isRelabel(planned, view))
-        differentialTally('winner:relabel-exit', 'deferred');
+        differentialTally('winner:relabel-exit', direction?.loser?.exit ? 'compared' : 'deferred');
       if (!direction) return differentialTally(`${route}:direction`, 'deferred');
       checkDirection({ args, route, direction });
       differentialTally(`${route}:direction`, 'compared');
@@ -238,10 +239,10 @@ function checkCarriedPastBye({
 
 /**
  * The exit carried past a BYE meets one already standing on the other side: they converge, and nobody
- * wins. KNOWN v1 DEFECT (2026-10-02, Mentat TASKS S2c): when the loser passed the BYE into a side the
- * standing exit had already awarded, v1 advances them on as its winner, and the convergence write that
- * should retract them is refused (ERR_INCOMPATIBLE_MATCHUP_STATUS, active downstream) and dropped by the
- * cascade. That shape, and only that shape, is deferred.
+ * wins. A loser advanced on as the onward matchUp's winner is a divergence. It was deferred as a known v1
+ * defect (2026-10-02: the convergence write that should retract them was refused and dropped); since
+ * #5156 that refusal is returned, and a whole-suite differential run reached the shape 0 times
+ * (2026-10-04), so it fails loudly if it returns.
  */
 function checkPastByeConvergence({
   args,
@@ -256,7 +257,11 @@ function checkPastByeConvergence({
     return differentialTally(`${route}:loser-exit-past-bye-converged`, 'compared');
   const advancedOn = onward?.winningSide && onward.sides?.find((side) => side?.participantId === loserId)?.sideNumber;
   if (advancedOn === onward?.winningSide)
-    return differentialTally(`${route}:loser-exit-past-bye-convergence-refused`, 'deferred');
+    diverge(
+      args,
+      `loser ${loserId} advanced on as ${onward?.matchUpId}'s winner`,
+      `planned ${expected}, the carried ${exit} converging with the standing ${standingExit}`,
+    );
   diverge(
     args,
     `${onward?.matchUpId} is ${onward?.matchUpStatus} won by side ${onward?.winningSide}`,
@@ -286,9 +291,8 @@ function onwardMatchUp(args: BuildViewArgs, holder: HydratedMatchUp): HydratedMa
  * A produced exit that meets a BYE (CA 2026-09-29, `heldExitIsSentOn.test.ts`): the holder stays a BYE
  * with no winner and the exit is sent on, keeping its flavour, to the holder's winner matchUp. There it
  * is a produced exit like any other: awarded to an opponent already in place, pending (no winningSide)
- * while the other side is empty, converged with an exit standing there. Deferred: a second BYE onward,
- * and the shape v1 writes against the pending rule, an award to a fed slot nobody has reached yet
- * (`produced-past-bye-awarded-unarrived`, Mentat TASKS S2c).
+ * while the other side is empty (a fed slot nobody has reached yet included: CA 2026-10-03, Q3),
+ * converged with an exit standing there. Deferred: a second BYE onward.
  */
 function checkProducedPastBye({
   args,
@@ -329,8 +333,6 @@ function checkProducedPastBye({
     expectedStatus === produced.matchUpStatus && other?.participantId ? other.sideNumber : undefined;
   if (onward.matchUpStatus === expectedStatus && onward.winningSide === expectedWinner)
     return differentialTally(`${route}:produced-past-bye-${expectedWinner ? 'awarded' : 'pending'}`, 'compared');
-  if (!expectedWinner && onward.winningSide === other?.sideNumber && other?.drawPosition && !other?.participantId)
-    return differentialTally(`${route}:produced-past-bye-awarded-unarrived`, 'deferred');
   diverge(
     args,
     `${onward.matchUpId} is ${onward.matchUpStatus} won by side ${onward.winningSide}`,
@@ -400,7 +402,7 @@ function checkDecider({
   route,
   matchUpId,
   matchUpStatus,
-}: CheckArgs & { matchUpId: string; matchUpStatus: string }) {
+}: CheckArgs & { matchUpId: string; matchUpStatus: MatchUpStatusUnion }) {
   const target = standing(args, matchUpId);
   if (target?.matchUpStatus !== matchUpStatus || target?.winningSide)
     diverge(
@@ -417,7 +419,7 @@ function checkConverged({
   route,
   matchUpId,
   matchUpStatus,
-}: CheckArgs & { matchUpId: string; matchUpStatus: string }) {
+}: CheckArgs & { matchUpId: string; matchUpStatus: MatchUpStatusUnion }) {
   const target = standing(args, matchUpId);
   if (target?.sides?.some((side) => side?.bye)) return differentialTally(`${route}:converged`, 'deferred');
   if (target?.matchUpStatus !== matchUpStatus || target?.winningSide)

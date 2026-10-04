@@ -96,6 +96,11 @@ describe('census reproductions — cross-structure advancement never refuses ove
     allowChangePropagation?: boolean;
     submissions: Submission[];
   }[] = [
+    // REFUSED STEPS (CA, 2026-10-04: a direct double exit needs both seats reached). The harness below
+    // accepts a refusal that leaves the draw unchanged, so these cases now run with those steps declined:
+    // 9000196 step 4; 9100555 flag ON steps 1, 5, 7; 9100555 (Backdraw double exit) steps 2, 4, 6;
+    // 9301605 step 2. Measured the same day: 15 calls refused across the whole suite. Rebuilding these
+    // cases on legal steps is open (Mentat OUTCOME_PIPELINE_OPEN_QUESTIONS.md, F3).
     {
       name: 'census 9000402 — Backdraw final winner flipped',
       participantsCount: 4,
@@ -154,8 +159,12 @@ describe('census reproductions — cross-structure advancement never refuses ove
     },
     {
       // unwinding a Backdraw double walkover asked which Backdraw-final positions the Main final
-      // held, by NUMBER: Backdraw 1 (a BYE) matched Main 1 (the Main-draw winner), who was removed
-      name: 'census 9100555 — unwinding a Backdraw double exit leaves the Main-draw winner in the Main final',
+      // held, by NUMBER: Backdraw 1 (a BYE) matched Main 1 (the Main-draw winner), who was removed.
+      // Since CA's 2026-10-04 ruling steps 2 and 4 are REFUSED, unchanged: each is a direct double exit
+      // on a matchUp holding one participant beside a seat nobody has reached, and a direct double exit
+      // needs both. Those steps set up F3's dropped convergence; `aDirectDoubleExitNeedsBothSeats.test.ts`
+      // pins the refusal.
+      name: 'census 9100555 — a Backdraw double exit beside an unreached seat is refused; the Main-draw winner stays in the Main final',
       participantsCount: 6,
       nonRandom: 9100555,
       submissions: [

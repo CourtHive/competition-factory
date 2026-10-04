@@ -7,6 +7,9 @@
 import type { MatchUp, GetScoreboardOptions } from '@Types/scoring/types';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
+// constants
+import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+
 /**
  * Get formatted scoreboard
  *
@@ -56,7 +59,7 @@ export function getScoreboard(matchUp: MatchUp, options?: GetScoreboardOptions):
 
   // Get current game score if match in progress
   const currentSet = sets.at(-1);
-  if (matchUp.matchUpStatus === 'IN_PROGRESS' && currentSet && !currentSet.winningSide) {
+  if (matchUp.matchUpStatus === IN_PROGRESS && currentSet && !currentSet.winningSide) {
     const gameScores = currentSet.side1GameScores ?? [];
     const gameIndex = gameScores.length - 1;
 

@@ -1,5 +1,6 @@
 import type { MatchUpWrite, Refusal } from './types';
 import {
+  DRAW_POSITION_ASSIGNED,
   DRAW_POSITION_ACTIVE,
   INVALID_MATCHUP_STATUS,
   INVALID_MATCHUP_STATUS_BYE,
@@ -15,8 +16,8 @@ import {
  *
  * S2a re-implements the REFUSALS (§ 2 rows 1 to 15). A refusal v1 raises from a write, or from a
  * route v2 does not yet express (§ 3's `unrecognized`, `notDirecting` and `fallthrough`), is an
- * apply-stage code: v2 accepting while v1 refuses with one of these is not a divergence until S2b
- * owns the routes. Every other disagreement throws, with both answers and the matchUp named.
+ * apply-stage code: v2 accepting while v1 refuses with one of these is not a divergence while the
+ * `refused` route stays an apply-stage refusal. Every other disagreement throws, with both answers and the matchUp named.
  */
 export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   INVALID_TIME.code,
@@ -28,6 +29,9 @@ export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   INVALID_MATCHUP_STATUS_BYE.code,
   MISSING_ASSIGNMENTS.code,
   MISSING_DRAW_POSITIONS.code,
+  // a refusal raised INSIDE the exit cascade, which `setMatchUpStatus` now returns rather than drops (F3,
+  // CA 2026-10-04); v2 does not yet plan the cascade writes that raise it ("an exit carried into a swap")
+  DRAW_POSITION_ASSIGNED.code,
 ]);
 
 export class OutcomePipelineDivergence extends Error {

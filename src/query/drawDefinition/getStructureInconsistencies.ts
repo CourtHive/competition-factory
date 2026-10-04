@@ -106,11 +106,11 @@ export const ORIGIN_ON_UNDECIDED_MATCHUP = 'ORIGIN_ON_UNDECIDED_MATCHUP';
 // heuristic would therefore flag the entire codeless-walkover population across the
 // fixtures corpus.
 //
-// There is no stored field that reliably marks an exit as "stale". A trustworthy check
-// would need to re-derive whether the exit is still justified (upstream state) at the
-// mutation boundary that produces it, not as a read-only post-hoc scan. No live trigger
-// is known now that the FMLC collapse/block bugs are fixed. See Mentat TASKS.md for the
-// full disposition.
+// The check belongs at the mutation boundary, and is there: a carried exit records its
+// origin (`sideExitProvenance.sourceMatchUpId`), and `reconcileStaleExitOrigins`
+// withdraws one whose origin stopped being a double exit (P40). A DIRECT walkover
+// carries no provenance, so a read-only scan still cannot tell it from a stale one.
+// See Mentat TASKS.md for the full disposition.
 
 type StructureInconsistency = {
   issueType: string;

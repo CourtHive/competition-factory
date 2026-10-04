@@ -16,6 +16,9 @@ import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { addPoint } from '@Mutate/scoring/addPoint';
 import { getScore } from '@Query/scoring/getScore';
 
+// constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -345,7 +348,7 @@ function validateFinalScore(
 
   const finalScore = getScore(matchUp);
   const actualScore = finalScore.scoreString;
-  const isComplete = matchUp.matchUpStatus === 'COMPLETED';
+  const isComplete = matchUp.matchUpStatus === COMPLETED;
 
   if (!isComplete) {
     warnings.push(`Match not complete. Final score: ${actualScore}`);

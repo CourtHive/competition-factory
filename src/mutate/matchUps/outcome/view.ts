@@ -1,4 +1,3 @@
-import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
@@ -21,8 +20,13 @@ import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { isExit } from '@Validators/isExit';
+import { isAnyExit, isExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
+import {
+  getSideExitProvenance,
+  carriedExitStatus,
+  isPropagatedExit,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, PositionAssignment, Structure } from '@Types/tournamentTypes';
@@ -83,7 +87,7 @@ function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): str
   if (carried.length) return carried;
   // the status is this matchUp's own product when an exit entry came from it: judged on EXIT entries
   // only, since a BYE claim on the other side is not an exit (seed 6341103: a BYE claim on side 1 and
-  // this matchUp's earlier DEFAULTED on side 2 made `exitProducedBy`, which wants every entry, false)
+  // this matchUp's earlier DEFAULTED on side 2 made the old every-entry test false)
   const own = Object.values(getSideExitProvenance({ matchUp }) ?? {}).some(
     (entry) => entry?.sourceMatchUpId === sourceMatchUpId && !!carriedExitStatus(entry),
   );
@@ -159,6 +163,17 @@ function priorWins(
 }
 
 /** a lucky draw's round with an odd number of matchUps feeds nobody forward (`checkIsPreFeedRound`) */
+/** a result of its own: what a relabel's carry may not overwrite (CA, 2026-10-02) */
+function hasResult(matchUp?: HydratedMatchUp): boolean {
+  if (!matchUp) return false;
+  return (
+    !!checkScoreHasValue({ score: matchUp.score }) ||
+    !!matchUp.winningSide ||
+    matchUp.matchUpStatus === COMPLETED ||
+    isAnyExit(matchUp.matchUpStatus)
+  );
+}
+
 function luckyPreFeed(drawDefinition: DrawDefinition, matchUp: MatchUp, structure?: Structure): boolean {
   if (!isLuckyBasedDraw(drawDefinition?.drawType) || !matchUp.roundNumber || !structure?.matchUps) return false;
   return structure.matchUps.filter((m) => m.roundNumber === matchUp.roundNumber).length % 2 !== 0;
@@ -191,7 +206,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     drawType: drawDefinition?.drawType,
     found: false,
     isTeam: false,
-    existing: { validWinningScore: false, scoreHasValue: false, scoredTime: false },
+    existing: { validWinningScore: false, scoreHasValue: false, scoredTime: false, carriedExit: false },
     propagatedExitStands: false,
     activeDownstream: false,
     participants: { required: false, count: 0, exitAwardable: false, requireForScoring: true },
@@ -202,6 +217,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       sideDrawPositions: {},
       priorWins: { 1: 0, 2: 0 },
       priorLosses: { 1: 0, 2: 0 },
+      loserMatchUpHasResult: false,
       loserMatchUpCarriesExit: false,
       loserMatchUpCarriedStatuses: [],
       source: { roundMatchUpCount: 0, nextRoundMatchUpCount: 0 },
@@ -367,6 +383,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       matchUpFormat: storedFormat,
       ownMatchUpFormat: matchUp.matchUpFormat,
       validWinningScore: !LIVE_OR_UNSET.has(matchUp.matchUpStatus) && validWinningScore,
+      carriedExit: isPropagatedExit({ matchUp }),
     },
     impliedWinningSide,
     propagatedExitStands,
@@ -401,6 +418,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpRoundNumber: targetData?.targetMatchUps?.loserMatchUp?.roundNumber,
       loserStructureId: targetData?.targetMatchUps?.loserMatchUp?.structureId,
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
+      loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),
       winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId),
       source: sourcePlace(inContextDrawMatchUps, inContextMatchUp),
       loserMatchUpCarriesExit: carriesExit(targetData?.targetMatchUps?.loserMatchUp),

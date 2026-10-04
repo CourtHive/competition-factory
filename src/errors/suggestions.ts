@@ -18,8 +18,11 @@
  * the same module the registry lives in.
  */
 
+import type { ErrorCode } from '@Types/errorCodeTypes';
+
 type SuggestionFactory = (context?: Record<string, any>) => string[];
 
+// seeded codes are checked against ErrorCode; registerSuggestions still takes any string
 const registry = new Map<string, SuggestionFactory>([
   [
     'ERR_MISSING_TOURNAMENT',
@@ -120,7 +123,7 @@ const registry = new Map<string, SuggestionFactory>([
       'Or confirm the method name exists on the engine (typos surface here).',
     ],
   ],
-]);
+] satisfies [ErrorCode, SuggestionFactory][]);
 
 export function registerSuggestions(code: string, factory: SuggestionFactory): void {
   registry.set(code, factory);

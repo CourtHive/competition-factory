@@ -13,6 +13,9 @@ import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { addPoint } from '@Mutate/scoring/addPoint';
 import { getScore } from '@Query/scoring/getScore';
 
+// constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
 export interface PBPValidationOptions {
   // Point string: "0011001100..." where 0/1 are player indices
   points: string;
@@ -122,7 +125,7 @@ export function pbpValidator(options: PBPValidationOptions): PBPValidationResult
     const winner = pointArray[i];
 
     // Check if match already complete
-    if (matchUp.matchUpStatus === 'COMPLETED' && !allowExtraPoints) {
+    if (matchUp.matchUpStatus === COMPLETED && !allowExtraPoints) {
       rejected.push(winner as unknown as string);
       if (debug) {
         console.log(`Point ${i + 1}: Rejected (match complete)`);

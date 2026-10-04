@@ -43,10 +43,10 @@
  * - **Dot-path access.** `seedingProfile.positioning`, `drawTypes.ROUND_ROBIN.positioning`,
  *   numeric segments for arrays (`seedsCountThresholds.0.seedsCount`).
  *   Same path syntax across `set` / `merge` / `unset` / `get`.
- * - **Arrays replace by default** (matches `deepMerge`). Opt in to
- *   merge with `mergeArrays(path)` — for now the registry's
- *   `seedsCountThresholds`-style "merge by drawSize key" lives in the
- *   consumer; composer's primitive is "deep merge with array replace".
+ * - **Arrays replace** (matches `deepMerge`). There is no array-merge
+ *   primitive: the registry's `seedsCountThresholds`-style "merge by
+ *   drawSize key" lives in the consumer; composer's primitive is
+ *   "deep merge with array replace".
  */
 
 import { policyRegistry, PolicyDefinition } from './policyRegistry';
@@ -162,8 +162,7 @@ export interface PolicyComposer {
    * Deep-merge another policy onto the current state. Accepts either
    * the wrapped form (`{[policyType]: ...}`) or the raw inner shape;
    * the composer detects which by checking whether the supplied object
-   * contains a `[policyType]` key. Arrays replace (no concat / dedupe);
-   * use `mergeArrays(path)` for opt-in array merging.
+   * contains a `[policyType]` key. Arrays replace (no concat / dedupe).
    */
   extend(other: Record<string, any>): PolicyComposer;
 

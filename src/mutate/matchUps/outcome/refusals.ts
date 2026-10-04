@@ -1,5 +1,6 @@
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
+import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { validateScore } from '@Validators/validateScore';
 import { isDoubleExit } from '@Validators/isExit';
@@ -122,6 +123,21 @@ function refuseAgainstExisting(request: OutcomeRequest, view: OutcomeView): Refu
       });
   }
 
+  // row 20, checked here: a carried or produced exit is changed at its ORIGIN (CA, 2026-10-03)
+  const rewrite = rewritesCarriedExit({
+    existingWinningSide: existing.winningSide,
+    existingStatus: existing.matchUpStatus,
+    carriedExit: existing.carriedExit,
+    matchUpStatus,
+    winningSide,
+    score,
+  });
+  if (rewrite)
+    return refuse(20, CANNOT_CHANGE_OUTCOME, {
+      info: 'a carried exit is changed at its origin',
+      context: { matchUpStatus: existing.matchUpStatus },
+    });
+
   if (view.propagatedExitStands && isClear(request)) return refuse(10, PROPAGATED_EXITS_DOWNSTREAM);
   return undefined;
 }
@@ -162,8 +178,9 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
       !!matchUpStatus &&
       EXITS.has(matchUpStatus) &&
       participants.count === 1 &&
-      !!flags.propagateExitStatus &&
-      (!!flags.propagatingExit || !winningSide || participants.exitAwardable);
+      (!!flags.propagatingExit || !winningSide || participants.exitAwardable) &&
+      // a direct double exit needs both seats reached (CA 2026-10-04); only the cascade's own write is waived
+      (!!flags.propagatingExit || !isDoubleExit(matchUpStatus));
     const directing = matchUpStatus ? participantsRequiredMatchUpStatuses.includes(matchUpStatus) : !!winningSide;
     if (!exitWithOne && directing && !participants.required)
       return refuse(6, INVALID_MATCHUP_STATUS, {

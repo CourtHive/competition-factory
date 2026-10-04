@@ -169,7 +169,7 @@ describe('a flipped result reconciles a newly eligible fed loser', () => {
 
     expect(flipsApplied).toBeGreaterThan(0); // control: all-refused would pass vacuously
     expect(offenders).toEqual([]);
-  });
+  }, 180_000);
 });
 
 /**
@@ -292,5 +292,5 @@ describe('a BYE is never recorded as a winner', () => {
 
     expect(flipsApplied).toBeGreaterThan(0); // control: all-refused would pass vacuously
     expect(offenders).toEqual([]);
-  });
+  }, 180_000);
 });

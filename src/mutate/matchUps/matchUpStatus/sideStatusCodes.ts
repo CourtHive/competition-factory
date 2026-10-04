@@ -24,7 +24,7 @@ import { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
  * of the wire cannot drift.
  */
 
-const NON_DIRECTING = new Set(nonDirectingMatchUpStatuses.filter(Boolean) as string[]);
+const NON_DIRECTING = new Set<string>(nonDirectingMatchUpStatuses);
 
 /** Whether a reason for this status attributes to a SIDE rather than to the match. */
 export function reasonAttributesToSide(matchUpStatus?: MatchUpStatusUnion | string): boolean {

@@ -6,6 +6,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { COMPASS, FEED_IN_CHAMPIONSHIP, OLYMPIC } from '@Constants/drawDefinitionConstants';
+import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -82,7 +83,15 @@ it.each([
       { structureName: 'East', roundNumber: 1, roundPosition: 8, outcome: { matchUpStatus: WALKOVER, winningSide: 1 } },
       { structureName: 'East', roundNumber: 1, roundPosition: 6, outcome: { matchUpStatus: WALKOVER, winningSide: 1 } },
       { structureName: 'East', roundNumber: 1, roundPosition: 8, outcome: { matchUpStatus: WALKOVER, winningSide: 2 } },
-      { structureName: 'West', roundNumber: 1, roundPosition: 3, outcome: { winningSide: 1 } },
+      // `West|1|3` is now the DOUBLE_WALKOVER the two carried walkovers converged into: scoring it as a
+      // played match rewrites a carried exit and is refused (CA, 2026-10-03), changing nothing
+      {
+        structureName: 'West',
+        roundNumber: 1,
+        roundPosition: 3,
+        outcome: { winningSide: 1 },
+        refused: CANNOT_CHANGE_OUTCOME.code,
+      },
     ],
   },
   {
@@ -122,7 +131,7 @@ it.each([
     expect(
       result.error?.code,
       `step ${index + 1} (${step.structureName} r${step.roundNumber}p${step.roundPosition})`,
-    ).toBeUndefined();
+    ).toEqual((step as any).refused);
   }
 
   // CONTROL, not the regression assertion: the committed oracle must stay clean, so the fix cannot

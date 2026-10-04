@@ -69,9 +69,11 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
    * lowest round-1 drawPosition" looks like an equivalent and cheaper test. Measured over both
    * frozen census windows on both arms it agrees on **113,626 of 113,632** live cases — and the
    * six exceptions are a whole draw type, not noise. **DOUBLE_ELIMINATION's Main final is fed from
-   * the Backdraw, which shares Main's drawPosition space**, so its fed positions sit INSIDE the
-   * first round's range and the numeric test calls them advanced. `getRoundMatchUps` says the same
-   * thing in its own words: *"ADVANCED fed positions are NOT guaranteed to be in numeric order"*.
+   * the Backdraw, and the Backdraw winner re-enters Main at the Main drawPosition they already
+   * held** — no number crosses the link; the Backdraw has its own positions. So Main's fed
+   * positions sit INSIDE the first round's range and the numeric test calls them advanced.
+   * `getRoundMatchUps` says the same thing in its own words: *"ADVANCED fed positions are NOT
+   * guaranteed to be in numeric order"*.
    */
   const priorRoundDrawPositions = (roundProfile?.[roundNumber - 1]?.drawPositions ?? [])
     .filter(isDrawPosition)

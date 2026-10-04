@@ -1,8 +1,10 @@
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isNumeric } from '@Tools/math';
 
-// constants
+// constants and types
 import { ErrorType, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   ABANDONED,
   DEAD_RUBBER,
@@ -17,7 +19,7 @@ import {
 type GenerateScoreString = {
   addOutcomeString?: boolean;
   autoComplete?: boolean;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   matchUpFormat?: string;
   winnerFirst?: boolean;
   winningSide?: number;
@@ -62,7 +64,7 @@ export function generateScoreString(
   return `${setScores} ${outcomeString}`;
 
   function setString(currentSet) {
-    const isFinalSet = bestOf && currentSet.setNumber === bestOf;
+    const isFinalSet = finalSetGoverns(parsedFormat, currentSet.setNumber, !!bestOf && currentSet.setNumber === bestOf);
     const format = isFinalSet && finalSetFormat ? finalSetFormat : setFormat;
     const hasGameScores = (set) => isNumeric(set?.side1Score) || isNumeric(set?.side2Score);
     const hasTiebreakScores = (set) => isNumeric(set?.side1TiebreakScore) || isNumeric(set?.side2TiebreakScore);

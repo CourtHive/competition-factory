@@ -168,10 +168,12 @@ it.each([
   expect((inconsistencies?.inconsistencies ?? []).map((issue: any) => issue.issueType)).toEqual([]);
 });
 
-it('a double exit with only one occupant is still not active', () => {
-  // The boundary against condition 1. A propagated exit the cascade deposited ahead of an arrival
-  // has a single occupant and must stay transparent, or it blocks the arrival it is waiting for —
-  // the failure `pendingDoubleExitNotActive.test.ts` was written to prevent.
+it('a double exit with only one occupant is refused at entry, and the arrival it would block is not', () => {
+  // The boundary against condition 1. The single-occupant double exit is the PENDING shape the
+  // CASCADE deposits ahead of an arrival, and it stays transparent: `pendingDoubleExitNotActive.test.ts`.
+  // This test used to fabricate that shape with a DIRECT entry beside an unreached seat. CA, 2026-10-04,
+  // ruled the direct entry out: a double exit is one exit per seat, so a director's needs both seats
+  // reached (*"How can three entities arrive in one matchUp which can only hold two drawPositions?"*).
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ participantsCount: 6, drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP, drawId: DRAW_ID }],
@@ -179,25 +181,19 @@ it('a double exit with only one occupant is still not active', () => {
     setState: true,
   });
 
+  // the control: Main|2|2 holds one participant and a seat Main|1|3 has not yet filled
   const first = target({ structureName: 'Main', roundNumber: 2, roundPosition: 2 });
+  expect((first.sides ?? []).filter((side: any) => side?.participantId).length).toEqual(1);
+
+  const before = hash(getDrawDefinition(DRAW_ID));
   const seeded: any = tournamentEngine.setMatchUpStatus({
     outcome: { matchUpStatus: DOUBLE_WALKOVER },
     matchUpId: first.matchUpId,
     propagateExitStatus: true,
     drawId: DRAW_ID,
   });
-  expect(seeded.error).toBeUndefined();
-
-  // the control: the propagated exit this creates must really have fewer than two occupants, or the
-  // assertion below is about nothing
-  const propagated = tournamentEngine
-    .allDrawMatchUps({ inContext: true, drawId: DRAW_ID })
-    .matchUps.filter(
-      (matchUp: any) =>
-        [DOUBLE_WALKOVER, WALKOVER].includes(matchUp.matchUpStatus) &&
-        (matchUp.sides ?? []).filter((side: any) => side?.participantId).length < 2,
-    );
-  expect(propagated.length).toBeGreaterThan(0);
+  expect(seeded.error?.code).toEqual('ERR_INVALID_MATCHUP_STATUS');
+  expect(hash(getDrawDefinition(DRAW_ID))).toEqual(before);
 
   const upstream = target({ structureName: 'Main', roundNumber: 1, roundPosition: 2 });
   const result: any = tournamentEngine.setMatchUpStatus({

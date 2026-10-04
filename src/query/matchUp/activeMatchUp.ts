@@ -3,14 +3,14 @@ import { isActiveMatchUpStatus } from '@Query/matchUp/checkStatusType';
 
 // constants and types
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, IN_PROGRESS, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { Score } from '@Types/tournamentTypes';
+import { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 
 // an active matchUp is one that has a winningSide, more than one set, or a single set with any score value greater than zero
 // when { matchUpType: TEAM } the child tieMatchUps must be checked as well
 // scoreStrings are not reliable because TEAM matchUps can have scoreString '0-0'
 
 type IsActiveMatchUpArgs = {
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   collectionId?: string;
   winningSide?: number;
   tieMatchUps?: any[];

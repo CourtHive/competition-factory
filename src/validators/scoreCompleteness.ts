@@ -1,12 +1,14 @@
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { validateSetScore } from '@Validators/validateMatchUpScore';
 import { setPlayedAfterDecision } from '@Validators/setCount';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
-// constants
+// constants and types
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 type ScoreCompletenessArgs = {
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   matchUpFormat?: string;
   winningSide?: number;
   sets: any[];
@@ -56,7 +58,7 @@ export function checkScoreCompleteness({ matchUpFormat, matchUpStatus, winningSi
     const setNumber = set?.setNumber ?? index + 1;
     const isLastSet = index === sets.length - 1;
     const mustBeFinished = !isLastSet || claimsCompletion;
-    const isDecidingSet = !!maxSetNumber && setNumber === maxSetNumber;
+    const isDecidingSet = finalSetGoverns(parsed, setNumber, !!maxSetNumber && setNumber === maxSetNumber);
 
     const { isValid, error } = validateSetScore(set, matchUpFormat, isDecidingSet, !mustBeFinished);
     if (!isValid) return { isComplete: false, info: `Set ${setNumber}: ${error}` };

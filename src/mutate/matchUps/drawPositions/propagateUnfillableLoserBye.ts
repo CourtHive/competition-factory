@@ -91,8 +91,8 @@ import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
  * the correction is REFUSED outright ... so there is no stale reservation left to withdraw."*
  *
  * A withdrawal function was therefore DELETED rather than shipped, because dead code that looks
- * load-bearing is worse than none. `consolationByeWithdrawalUnreachable` in
- * `unfillableLoserTargetBye.test.ts` pins the ordering, so if that refusal ever loosens the test fires
+ * load-bearing is worse than none. "is safe without a withdrawal, because the correction is refused
+ * before the BYE is ever placed" in `unfillableLoserTargetBye.test.ts` pins the ordering, so if that refusal ever loosens the test fires
  * and tells the next reader that a withdrawal has become necessary.
  *
  * The claim IS still recorded: `removeDoubleExit`'s `byeClaimSurvives` consults the ledger whenever it

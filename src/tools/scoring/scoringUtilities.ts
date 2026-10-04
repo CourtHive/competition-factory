@@ -1,6 +1,7 @@
 // Format Converter Module
 
 import type { FormatStructure, SetFormatStructure, GameFormatStructure } from '@Types/scoring/types';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
@@ -143,10 +144,12 @@ export function isAggregateFormat(parsed: FormatStructure | undefined | null): b
  */
 export type SetType = 'standard' | 'tiebreakOnly' | 'timed' | 'matchTiebreak';
 
-export function resolveSetType(formatStructure: FormatStructure, setsWon: [number, number]): SetType {
-  const bestOf = formatStructure.bestOf || formatStructure.exactly || 3;
-  const setsToWin = Math.ceil(bestOf / 2);
-  const isDecidingSet = setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1;
+export function resolveSetType(
+  formatStructure: FormatStructure,
+  setsWon: [number, number],
+  setNumber?: number,
+): SetType {
+  const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, setNumber);
 
   if (isDecidingSet && formatStructure.finalSetFormat) {
     const ff = formatStructure.finalSetFormat;
@@ -161,6 +164,21 @@ export function resolveSetType(formatStructure: FormatStructure, setsWon: [numbe
   if (sf.tiebreakSet) return 'tiebreakOnly';
   if (sf.timed) return 'timed';
   return 'standard';
+}
+
+/**
+ * Whether the set in play is the one the final-set format governs. Mid-match that is the set played with
+ * both sides one set from winning, except an aggregate format's sudden-death decider, which is set N + 1
+ * by number and never one of the N (`aggregateDeciderSetNumber`).
+ */
+export function isLiveDecidingSet(
+  formatStructure: FormatStructure,
+  setsWon: [number, number],
+  setNumber?: number,
+): boolean {
+  const bestOf = formatStructure.bestOf || formatStructure.exactly || 3;
+  const setsToWin = Math.ceil(bestOf / 2);
+  return finalSetGoverns(formatStructure, setNumber, setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1);
 }
 
 /**

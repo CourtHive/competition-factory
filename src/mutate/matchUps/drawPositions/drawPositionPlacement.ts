@@ -24,20 +24,13 @@
 
 import { removeSubsequentRoundsParticipant } from '@Mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant';
 import { DrawDefinition, Event, MatchUpStatusUnion, PositionAssignment, Tournament } from '@Types/tournamentTypes';
+import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
-import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
-import {
-  clearResolvedSideExitProvenance,
-  isPropagatedExit as sharedIsPropagatedExit,
-  participatesInExitCascade,
-  isProjectedExitCode,
-  policyCodeString,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -49,6 +42,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { SeedingProfile, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { updateSideLineUp } from '@Mutate/matchUps/lineUps/updateSideLineUp';
+import { propagateUnfillableLoserBye } from './propagateUnfillableLoserBye';
 import { isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -58,9 +52,8 @@ import { resetLineUps } from '@Mutate/matchUps/lineUps/resetLineUps';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionTargets } from '@Query/matchUp/positionTargets';
-import { propagateUnfillableLoserBye } from './propagateUnfillableLoserBye';
 import { normalizeDrawPositions } from './normalizeDrawPositions';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { assignDrawPositionBye } from './assignDrawPositionBye';
 import { getParticipantId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -73,6 +66,13 @@ import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import { isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
+import {
+  clearResolvedSideExitProvenance,
+  isPropagatedExit as sharedIsPropagatedExit,
+  participatesInExitCascade,
+  isProjectedExitCode,
+  policyCodeString,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 import { CONSOLATION, CONTAINER, MAIN, PLAY_OFF, QUALIFYING, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 
@@ -96,18 +96,20 @@ import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/m
 
 type AssignMatchUpDrawPositionArgs = {
   inContextDrawMatchUps: HydratedMatchUp[];
+  arrivesWithExit?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
-  sourceMatchUpStatus?: string;
+  sourceMatchUpStatus?: MatchUpStatusUnion;
   matchUpsMap?: MatchUpsMap;
   sourceMatchUpId?: string;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   drawPosition: number;
   matchUpId: string;
   event?: Event;
 };
 export function assignMatchUpDrawPosition({
   inContextDrawMatchUps,
+  arrivesWithExit,
   sourceMatchUpStatus,
   tournamentRecord,
   sourceMatchUpId,
@@ -244,7 +246,16 @@ export function assignMatchUpDrawPosition({
   const arrivingParticipantId = positionAssignments?.find(
     (assignment) => assignment.drawPosition === drawPosition,
   )?.participantId;
-  const participantArrivesAtExit = holdsStandingExit && !!arrivingParticipantId;
+  /**
+   * AN ARRIVAL THAT CARRIES AN EXIT DOES NOT WIN THE EXIT STANDING HERE — it CONVERGES with it (F3, CA
+   * 2026-10-04: fix the arrival itself). A loser carrying a WALKOVER or DEFAULTED under propagation can reach
+   * a matchUp holding a pending exit before `progressExitStatus` has recorded the exit they carry: `directLoser`
+   * places them, and a BYE opposite them advances them here at once (`advanceIntoWinnerMatchUp`). Read as an
+   * ordinary arrival they were awarded the standing exit and advanced, even into a recorded exit's vacant side
+   * one round on, and RULE 4's convergence was then refused over a draw that had moved (census arm
+   * `exitBeforeArrivalCensus`, COMPASS 8/7 9700004). The position is placed; nothing is awarded or advanced.
+   */
+  const participantArrivesAtExit = holdsStandingExit && !!arrivingParticipantId && !arrivesWithExit;
 
   // A drawPosition slot can already be present in this matchUp's drawPositions
   // (e.g. pre-seeded by a consolation BYE feed) while the underlying
@@ -372,6 +383,7 @@ export function assignMatchUpDrawPosition({
   const advanceResult = advanceDrawPosition({
     winnerMatchUpDrawPositionIndex,
     winnerTargetLink,
+    arrivesWithExit,
     event,
     inContextDrawMatchUps: resolvedInContextDrawMatchUps,
     positionAssigned,
@@ -661,6 +673,7 @@ function arrivesOnExitingSide({
  */
 function advanceIntoWinnerMatchUp({
   winnerMatchUpDrawPositionIndex,
+  arrivesWithExit,
   inContextDrawMatchUps,
   tournamentRecord,
   winnerTargetLink,
@@ -696,6 +709,7 @@ function advanceIntoWinnerMatchUp({
   const result = assignMatchUpDrawPosition({
     matchUpId: winnerMatchUp.matchUpId,
     inContextDrawMatchUps,
+    arrivesWithExit,
     tournamentRecord,
     drawDefinition,
     drawPosition,
@@ -1232,6 +1246,8 @@ function propagateLineUp({
 
 type AssignDrawPositionArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
+  /** the participant placed is a loser carrying an exit under propagation; see `assignMatchUpDrawPosition` */
+  arrivesWithExit?: boolean;
   sourceMatchUpStatus?: MatchUpStatusUnion;
   provisionalPositioning?: boolean;
   seedingProfile?: SeedingProfile;
@@ -1248,6 +1264,7 @@ type AssignDrawPositionArgs = {
 
 export function assignDrawPosition({
   provisionalPositioning,
+  arrivesWithExit,
   inContextDrawMatchUps,
   isQualifierPosition, // internal use
   sourceMatchUpStatus,
@@ -1410,6 +1427,7 @@ export function assignDrawPosition({
   } else {
     addDrawPositionToMatchUps({
       provisionalPositioning,
+      arrivesWithExit,
       inContextDrawMatchUps,
       sourceMatchUpStatus,
       tournamentRecord,
@@ -1528,6 +1546,7 @@ function handleContainerAssignment({
 // used for matchUps which are NOT in a ROUND_ROBIN { structureType: CONTAINER }
 function addDrawPositionToMatchUps({
   provisionalPositioning,
+  arrivesWithExit,
   inContextDrawMatchUps,
   sourceMatchUpStatus,
   tournamentRecord,
@@ -1562,6 +1581,7 @@ function addDrawPositionToMatchUps({
       matchUpId: matchUp.matchUpId,
       inContextDrawMatchUps,
       sourceMatchUpStatus,
+      arrivesWithExit,
       tournamentRecord,
       drawDefinition,
       drawPosition,

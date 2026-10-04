@@ -1,9 +1,9 @@
 import { getDrawPositionWinCount, isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
 
 // constants and types
+import { DrawDefinition, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP, LOSER } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { DrawDefinition } from '@Types/tournamentTypes';
 
 /**
  * Refuse a re-score that would change the feed eligibility of a loser who has ALREADY been directed.
@@ -61,7 +61,7 @@ export function feedEligibilityChange({
 }: {
   inContextDrawMatchUps?: any[];
   drawDefinition?: DrawDefinition;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   structure?: any;
   matchUp?: any;

@@ -82,6 +82,8 @@ export type OutcomeView = {
     ownMatchUpFormat?: string;
     /** the existing score, under the resolved format, is a valid win */
     validWinningScore: boolean;
+    /** the matchUp holds a carried or produced exit: changed at its origin, never here (§ 2 row 20) */
+    carriedExit: boolean;
   };
   /** what the requested score would decide under the format the call would apply; undefined when nothing */
   impliedWinningSide?: number;
@@ -122,8 +124,10 @@ export type OutcomeView = {
     loserMatchUpRoundNumber?: number;
     /** the loserMatchUp's structure and drawPositions: where a kept-out loser's BYE lands */
     loserStructureId?: string;
-    /** the loserMatchUp's status before this call: an exit already there makes a double exit (deferred) */
+    /** the loserMatchUp's status before this call: an exit already there converges with the carried one */
     loserMatchUpStatus?: MatchUpStatusUnion;
+    /** the loserMatchUp has a result of its own (a score, a winner, COMPLETED or an exit): a relabel carries nothing there */
+    loserMatchUpHasResult: boolean;
     /** a side of the loserMatchUp already carries an exit in: a second one there makes a double exit */
     loserMatchUpCarriesExit: boolean;
     loserMatchUpCarriedStatuses: string[];
@@ -167,17 +171,17 @@ export type OutcomeView = {
 
 /** § 3: the one route a call takes once the refusals have passed */
 export type Route =
-  | 'swap' // allowChangePropagation with a different winner: swapWinnerLoser (write deferred to S2c)
+  | 'swap' // allowChangePropagation with a different winner: swapWinnerLoser
   | 'winner' // attemptToSetWinningSide: write the result, then direct
   | 'line-score' // a line of a dual that is being rescored: write the score, the dual recomputes
   | 'remove-directed' // a score or status without a winner over a decided matchUp: take the direction back
   | 'noop' // already in the requested double exit
   | 'only-score' // a winner exists and the status is directing: write the score
-  | 'completed-to-double-exit' // remove the directed participants, then advance the double exit (deferred)
+  | 'completed-to-double-exit' // remove the directed participants, then advance the double exit
   | 'existing-winner-removed' // a winner exists, the status is not directing: take the direction back
   | 'clear' // a non-directing status: clear the score
   | 'bye' // the BYE path
-  | 'double-exit' // clear the score, then advance the double exit (the advance is deferred)
+  | 'double-exit' // clear the score, then advance the double exit (planProducedExit)
   | 'team-round-robin' // a dual in a round-robin container: write the score
   | 'propagating' // propagateExitStatus: write the score
   | 'clear-score' // nothing else matched: the score is removed

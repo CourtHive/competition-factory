@@ -1,5 +1,6 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
@@ -320,6 +321,18 @@ export function retainByeClaimsOnly(provenance?: SideExitProvenance): SideExitPr
     if (claims?.length) retained[sideNumber] = { byeClaims: [...claims] } as SideExitProvenanceEntry;
   }
   return Object.keys(retained).length ? retained : undefined;
+}
+
+/**
+ * Blank a matchUp's exit reason codes — the legacy positional `matchUpStatusCodes` and the side-keyed
+ * `sideStatusCodes` — for a writer that is about to re-derive the exit and re-stamp its codes. Lives
+ * here because this file is the legacy array's sanctioned writer (`verify:exit-tenant`). Used by
+ * `settleRederivedDoubleExit`: a converged double exit's `['WO', 'WO']` left behind on what is now a
+ * single exit put an exit code on the winning side (census w2 9100514, EXIT_CODE_ON_WINNER_SIDE).
+ */
+export function blankExitCodes(matchUp: MatchUp): void {
+  matchUp.matchUpStatusCodes = [];
+  delete matchUp.sideStatusCodes;
 }
 
 /**
@@ -829,10 +842,46 @@ export function isProjectedExitCode(code: any): boolean {
  * with none was PLAYED.
  *
  * When the question is narrower — "was it produced by THIS matchUp", which is what an undo has to
- * ask — use {@link exitProducedBy}, which additionally requires every side to name that source.
+ * ask — use {@link exitCarriedFrom}, which additionally requires a carried exit to name that source.
  */
 export function isPropagatedExit({ matchUp }: { matchUp?: MatchUp }): boolean {
   return getExitSides({ matchUp }).length > 0;
+}
+
+/**
+ * Whether a DIRECT write would change a matchUp that holds a carried or produced exit.
+ *
+ * CA, 2026-10-03: such an exit is not a result anybody recorded at this matchUp, so it cannot be
+ * re-scored into another result here (a produced WALKOVER recorded as RETIRED 6-3, say) and it cannot be
+ * removed here; the correction is made at its ORIGIN, whose clear or re-score re-derives this matchUp.
+ * Left open, the re-score was accepted and kept the carried provenance, and clearing the origin later
+ * withdrew the exit from under the director's score (census 9000184, UNDECIDED_WITH_SCORE).
+ *
+ * Only a write that changes nothing passes: the same status, the same winner or none, and no score.
+ * The cascade's own writes (`propagatingExit`) are not direct and are never asked. `carriedExit` is
+ * `isPropagatedExit` of the stored matchUp: v1 reads it there, v2 from its view.
+ */
+export function rewritesCarriedExit({
+  existingWinningSide,
+  existingStatus,
+  matchUpStatus,
+  carriedExit,
+  winningSide,
+  score,
+}: {
+  existingWinningSide?: number;
+  existingStatus?: string;
+  matchUpStatus?: string;
+  carriedExit: boolean;
+  winningSide?: number;
+  score?: any;
+}): boolean {
+  if (!carriedExit) return false;
+  const unchanged =
+    matchUpStatus === existingStatus &&
+    (!winningSide || winningSide === existingWinningSide) &&
+    !checkScoreHasValue({ score });
+  return !unchanged;
 }
 
 /**
@@ -866,28 +915,35 @@ export function getExitSides({ matchUp }: { matchUp?: MatchUp }): number[] {
 }
 
 /**
- * Whether this matchUp's exit is WHOLLY produced by one named source.
+ * Whether one of this matchUp's carried exits came from a named source — the source whose clear is in
+ * question.
  *
- * The question a guard on an undo has to ask. `isPropagatedExit` answers "was this derived
- * at all", which is enough to exempt a matchUp from a detector but not enough to decide whether a
- * particular clear may proceed: the clear can only take back what its own matchUp produced, so an
- * exit that ALSO rests on some other source must still block it.
+ * The question a guard on an undo asks. `isPropagatedExit` answers "was this derived at all", which
+ * exempts a matchUp from a detector but cannot decide whether a particular clear may proceed: the clear
+ * takes back only what its own matchUp produced.
  *
- * EVERY entry must name the source, not merely one of them. The convergence `progressExitStatus`
- * RULE 4 creates has two carried exits from different upstreams meeting in one matchUp; withdrawing
- * one of them leaves the matchUp an exit on the strength of the other, so the clear would not
- * restore the prior state and must be refused as it always was.
+ * ONE entry naming the source is enough (CA, 2026-10-03: *"clearing either origin of a converged
+ * DOUBLE_EXIT cannot be refused if there is no downstream active matchUp"*). This asked that EVERY entry
+ * name it, on the reasoning that withdrawing one of a convergence's two origins would not restore the
+ * prior state. It does: `withdrawProducedExits` is keyed on the source, and what is retained re-derives
+ * (`deriveExitStateFromProvenance`) to the single carried exit the matchUp held before the second
+ * arrived. Whether anything downstream is ACTIVE is `isActiveDownstream`'s question, asked separately.
  *
- * An exit with NO provenance returns false — it was played, and nothing upstream is entitled to take
- * it back.
+ * Judged on EXIT entries only: a BYE claim or an arrival on the other side is not an exit, and the v2
+ * pipeline judges its own product the same way. An exit with no provenance returns false — it was
+ * played, and nothing upstream is entitled to take it back.
  */
-export function exitProducedBy({ sourceMatchUpId, matchUp }: { sourceMatchUpId?: string; matchUp?: MatchUp }): boolean {
+export function exitCarriedFrom({
+  sourceMatchUpId,
+  matchUp,
+}: {
+  sourceMatchUpId?: string;
+  matchUp?: MatchUp;
+}): boolean {
   if (!sourceMatchUpId) return false;
   const provenance = getSideExitProvenance({ matchUp });
   if (!provenance) return false;
-
-  const entries = [1, 2].map((sideNumber) => provenance[sideNumber]).filter(Boolean);
-  return entries.length > 0 && entries.every((entry: any) => entry.sourceMatchUpId === sourceMatchUpId);
+  return getExitSides({ matchUp }).some((sideNumber) => provenance[sideNumber]?.sourceMatchUpId === sourceMatchUpId);
 }
 
 /**
@@ -986,6 +1042,21 @@ export type WithdrawnExit = {
   matchUpId: string;
 };
 
+/** Does a BYE hold one of this matchUp's drawPositions? Read from the structure's assignments. */
+function holdsBye({
+  drawDefinition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition?: DrawDefinition;
+  structureId: string;
+  matchUp: MatchUp;
+}): boolean {
+  const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
+  const byePositions = structure?.positionAssignments?.filter((a) => a.bye).map((a) => a.drawPosition);
+  return !!matchUp.drawPositions?.some((drawPosition) => !!drawPosition && !!byePositions?.includes(drawPosition));
+}
+
 /**
  * Withdraw one matchUp's entries, if any of them name a source in `sources`.
  *
@@ -1038,6 +1109,12 @@ function withdrawFromMatchUp(
     // `sourceMatchUpStatus.test.ts` losing a `previousMatchUpStatus: TO_BE_PLAYED` element that no
     // withdrawal had touched.
     setSideExitProvenance({ provenance: retained, matchUp });
+    // A matchUp holding a BYE stays a BYE whatever provenance survives: `deriveExitStateFromProvenance`
+    // leaves that to the caller, which has the structure. Re-deriving it to an exit labelled a BYE
+    // matchUp WALKOVER beside the BYE with nobody opposite (CA, 2026-09-20 and 2026-10-02, "the BYE
+    // remains a BYE"; caught by v2's held-exit invariant on sweep seed 6161873, where clearing a West
+    // result withdrew one side's entry from a South BYE matchUp whose BYE side still carried an exit).
+    if (holdsBye({ matchUp, structureId, drawDefinition })) return undefined;
     // STAGE 1 EXPERIMENT: re-derive, and report that the matchUp is no longer a double exit
     const derived = deriveExitStateFromProvenance(retained);
     if (derived && derived.matchUpStatus !== matchUp.matchUpStatus) {
@@ -1056,6 +1133,16 @@ function withdrawFromMatchUp(
       };
     }
     return undefined;
+  }
+
+  // A BYE matchUp whose last carried entry is withdrawn is still a BYE, for the reason given above; it
+  // was never undecided. Census w2 9000477 (COMPASS 32/29): a settled convergence left `South|1|3` a
+  // BYE carrying one exit through it, and when that exit's origin became a double exit the withdrawal
+  // reverted the BYE to TO_BE_PLAYED, with BYEs on both sides once the double exit's BYE arrived.
+  if (holdsBye({ matchUp, structureId, drawDefinition })) {
+    clearSideExitProvenance(matchUp);
+    matchUp.matchUpStatusCodes = [];
+    return { roundNumber: matchUp.roundNumber, matchUpId: matchUp.matchUpId, structureId };
   }
 
   // Nothing derived remains: the matchUp reverts to undecided, which is the state it was in before

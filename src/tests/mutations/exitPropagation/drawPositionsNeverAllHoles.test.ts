@@ -90,6 +90,8 @@ type Scenario = {
   drawSize: number;
   seed: number;
   steps: any[];
+  /** the error code a step now returns because its route is closed; the removal control is then moot */
+  closedBy?: string;
 };
 
 const TBP = { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: 'TO_BE_PLAYED' };
@@ -150,6 +152,8 @@ const scenarios: Scenario[] = [
     drawSize: 32,
     seed: 9000408,
     steps: [
+      // the seat Main|1|2 feeds is reached first: a direct double exit needs both seats (CA, 2026-10-04)
+      { structureName: 'Main', roundNumber: 1, roundPosition: 2, outcome: { winningSide: 1 } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: { matchUpStatus: 'DOUBLE_WALKOVER' } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: TBP },
     ],
@@ -184,7 +188,12 @@ const scenarios: Scenario[] = [
   {
     // swapWinnerLoser: a SUBSTITUTION, not a removal — the flipped loser had no drawPosition, so the
     // downstream `[n]` became `[undefined]`. Reachable only through `allowChangePropagation`.
+    //
+    // ROUTE CLOSED 2026-10-03: the flip in step 5 is of `Consolation|2|4`, a CARRIED walkover, and a
+    // carried exit is changed at its origin, never re-scored (CA). The step is refused and changes
+    // nothing, so no position is removed; the no-all-holes assertion still runs over the schedule.
     writer: 'swapWinnerLoser',
+    closedBy: 'ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME',
     drawType: 'FEED_IN_CHAMPIONSHIP_TO_SF',
     allowChangePropagation: true,
     propagateExitStatus: true,
@@ -238,6 +247,7 @@ it.each(scenarios)(
     const offences: string[] = [];
     let positionsRemoved = 0;
     let applied = 0;
+    const refusals: string[] = [];
 
     for (const [index, step] of scenario.steps.entries()) {
       const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId })?.matchUps ?? [];
@@ -246,7 +256,7 @@ it.each(scenarios)(
 
       const before = storedDrawPositions(drawId);
 
-      tournamentEngine.setMatchUpStatus({
+      const result: any = tournamentEngine.setMatchUpStatus({
         ...(scenario.allowChangePropagation ? { allowChangePropagation: true } : {}),
         propagateExitStatus: scenario.propagateExitStatus,
         matchUpId: target.matchUpId,
@@ -254,6 +264,7 @@ it.each(scenarios)(
         drawId,
       });
       applied++;
+      if (result.error) refusals.push(result.error.code);
 
       // After EVERY step, not only at the end: the shape is transient.
       const after = storedDrawPositions(drawId);
@@ -271,7 +282,12 @@ it.each(scenarios)(
 
     // controls: the schedule ran, and it exercised the removal/substitution mechanism under test
     expect(applied).toEqual(scenario.steps.length);
-    expect(positionsRemoved).toBeGreaterThan(0);
+    if (scenario.closedBy) {
+      expect(refusals).toEqual([scenario.closedBy]);
+    } else {
+      expect(refusals).toEqual([]);
+      expect(positionsRemoved).toBeGreaterThan(0);
+    }
 
     expect(offences).toEqual([]);
   },

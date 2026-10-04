@@ -61,17 +61,12 @@ type WriteTieFormatArgs = {
  *   if no other objects share the same ID, or creates a new entry if shared.
  * - If the target had an inline `tieFormat`: writes inline (backwards-compatible).
  *
- * ⚠️ RETURNS AN ERROR OBJECT. Callers currently ignore the return value, which is
- * safe ONLY because none of them thread `uuids` yet — with no pool supplied the
- * error path is unreachable. Any caller that starts passing `uuids` MUST check
- * the result and propagate, or an exhausted pool becomes a silent no-op write.
- *
- * Threading the pool through the ~20 call sites in addCollectionDefinition,
- * removeCollectionDefinition, updateTieFormat and collectionGroupUpdate is
- * deliberately NOT done piecemeal: partial threading makes replay divergence
- * intermittent (some paths reproducible, others not), which is harder to diagnose
- * than the current consistent behaviour. Do it as one pass, with error checks at
- * every site.
+ * ⚠️ RETURNS AN ERROR OBJECT. addCollectionDefinition, removeCollectionDefinition
+ * and collectionGroupUpdate thread `tieFormatUuids` and check the result.
+ * updateTieFormat's call sites pass no pool and ignore the return, which is safe
+ * ONLY while they supply none — with no pool the error path is unreachable. Any
+ * caller that starts passing `uuids` MUST check the result and propagate, or an
+ * exhausted pool becomes a silent no-op write.
  */
 export function writeTieFormat({ target, tieFormat, event, uuids, forkCache }: WriteTieFormatArgs) {
   if (!target) return undefined;
