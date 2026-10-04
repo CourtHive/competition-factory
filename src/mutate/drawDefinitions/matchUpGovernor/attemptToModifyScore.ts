@@ -11,16 +11,8 @@ import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
 export function attemptToModifyScore(params) {
-  const {
-    propagateExitStatus,
-    matchUpStatusCodes,
-    autoCalcDisabled,
-    inContextMatchUp,
-    matchUpStatus,
-    dualMatchUp,
-    structure,
-    matchUp,
-  } = params;
+  const { matchUpStatusCodes, autoCalcDisabled, inContextMatchUp, matchUpStatus, dualMatchUp, structure, matchUp } =
+    params;
 
   const matchUpStatusIsValid =
     isDirectingMatchUpStatus({ matchUpStatus }) ||
@@ -39,7 +31,9 @@ export function attemptToModifyScore(params) {
     hasAdHocSides ||
     drawPositionsAssignedParticipantIds({ structure, matchUp, inContextMatchUp }) ||
     params.appliedPolicies?.[POLICY_TYPE_SCORING]?.requireParticipantsForScoring === false ||
-    (isExit(matchUpStatus) && participantsCount === 1 && propagateExitStatus);
+    // a single exit before the second opponent arrives, whether recorded or carried; checkParticipants has
+    // already decided whose side may be awarded it (CA, 2026-10-04: not a propagateExitStatus question)
+    (isExit(matchUpStatus) && participantsCount === 1);
 
   if (!validToScore) return decorateResult({ result: { error: MISSING_ASSIGNMENTS }, stack });
 

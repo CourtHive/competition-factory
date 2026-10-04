@@ -221,10 +221,26 @@ function activeBelow(params, seen: Map<string, boolean>) {
    * first stayed in North as its loser (WINNER_NOT_ADVANCED). Provenance is what tells the recorded
    * exit from the produced one; with both positions present `winnerSideResolved` already says so.
    */
+  //
+  // Recorded BEFORE the opponent arrived (CA, 2026-10-04), the walkover names only the participant already
+  // there. A source that feeds the VACANT, winning side decides nothing but who arrives to take it, and may
+  // change freely; only the source the exited participant came from is held. Census arm 9700004 (COMPASS
+  // 8/7): a DEFAULTED recorded at `West|2|1` was "active" against `West|1|2`, which feeds its empty side,
+  // and the convergence written there was refused after the draw had been mutated.
+  const exitedParticipantId = winnerMatchUp?.sides?.find(
+    (side: any) => side?.sideNumber && side.sideNumber !== winnerMatchUp.winningSide,
+  )?.participant?.participantId;
+  const winningSideOccupied = !!winnerMatchUp?.sides?.find(
+    (side: any) => side?.sideNumber === winnerMatchUp?.winningSide,
+  )?.participant;
+  const exitedCameFromSource =
+    !!exitedParticipantId &&
+    !!targetData?.matchUp?.sides?.some((side: any) => side?.participant?.participantId === exitedParticipantId);
   const recordedWinnerExit =
     !!winnerMatchUp?.winningSide &&
     isExit(winnerMatchUp.matchUpStatus) &&
-    !isPropagatedExit({ matchUp: winnerMatchUp });
+    !isPropagatedExit({ matchUp: winnerMatchUp }) &&
+    (winningSideOccupied || exitedCameFromSource);
 
   // if a winnerMatchUp contains a WALKOVER and its source matchUps have no winningSides it cannot be considered active
   // unless one of its downstream matchUps is active

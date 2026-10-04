@@ -1,7 +1,8 @@
+import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
-import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { exitAwardable } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -24,7 +25,6 @@ import {
 } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 
 // constants, fixtures and types
-import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_MATCHUP_ACTIONS, POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { MatchUpsMap, PolicyDefinitions, TournamentRecords, ResultType } from '@Types/factoryTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
@@ -32,6 +32,14 @@ import { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamen
 import { ADD_PENALTY, ADD_PENALTY_METHOD } from '@Constants/positionActionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
+import {
+  BYE,
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
 import {
   INVALID_VALUES,
   MATCHUP_NOT_FOUND,
@@ -42,6 +50,7 @@ import {
 import {
   CLEAR_SCORE,
   END,
+  EXIT,
   REFEREE,
   SCHEDULE,
   SCHEDULE_METHOD,
@@ -371,6 +380,35 @@ function addStandardActions({
     });
   }
 
+  // EXIT — a WALKOVER or DEFAULTED recorded before the second opponent arrives (CA, 2026-10-04). The
+  // participant already here is ill, injured, or defaulted for conduct between matches; the EMPTY side is
+  // awarded the matchUp and whoever arrives there takes the walkover. SCORE cannot express it, as it needs
+  // two participants. Offered exactly where `setMatchUpState` accepts it: an undecided matchUp holding one
+  // participant whose empty side `exitAwardable` allows (never a BYE, never a seat claimed by nobody).
+  // Offered again while one it recorded is still pending: until the opponent arrives the director may
+  // change WALKOVER <-> DEFAULTED and its reason, or clear it (CLEAR_SCORE); once they arrive it is a decided
+  // walkover like any other (CA, 2026-10-04). `recorded` names what stands, so a form can start from it.
+  const loneExit =
+    scoringActive && !isCollectionMatchUp && !carriedExit
+      ? exitBeforeTheOpponentArrives({ inContextMatchUp, structure, drawDefinition, hasOutcomeToRemove })
+      : undefined;
+  if (loneExit) {
+    validActions.push({
+      info: 'record a walkover or default before the opponent arrives',
+      method: SCHEDULE_METHOD,
+      type: EXIT,
+      payload: {
+        drawId,
+        matchUpId,
+        exitingParticipantId: loneExit.exitingParticipantId,
+        exitingSideNumber: loneExit.exitingSideNumber,
+        matchUpStatuses: [WALKOVER, DEFAULTED],
+        outcome: { matchUpStatus: undefined, winningSide: loneExit.winningSide },
+        ...(loneExit.recorded ? { recorded: loneExit.recorded } : {}),
+      },
+    });
+  }
+
   if (isCollectionMatchUp && inContextMatchUp) {
     validActions.push(
       ...collectionMatchUpActions({
@@ -390,6 +428,37 @@ function addStandardActions({
       }),
     );
   }
+}
+
+type LoneExit = {
+  recorded?: { matchUpStatus: string; matchUpStatusCode?: string };
+  exitingParticipantId: string;
+  exitingSideNumber: number;
+  winningSide: number;
+};
+
+function exitBeforeTheOpponentArrives({
+  hasOutcomeToRemove,
+  inContextMatchUp,
+  drawDefinition,
+  structure,
+}): LoneExit | undefined {
+  // AD_HOC sides are assigned, never arrived at: there is no opponent on the way to take a walkover
+  if (isAdHoc({ structure })) return undefined;
+  const present = inContextMatchUp?.sides?.filter((side: any) => side?.participantId);
+  if (present?.length !== 1) return undefined;
+  const exitingSideNumber = present[0].sideNumber;
+  const winningSide = 3 - exitingSideNumber;
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: structure?.structureId });
+  if (!exitAwardable({ positionAssignments, inContextMatchUp, winningSide })) return undefined;
+  const exiting = { exitingParticipantId: present[0].participantId, exitingSideNumber, winningSide };
+  if (!hasOutcomeToRemove) return exiting;
+
+  // something stands: only a WALKOVER or DEFAULTED recorded against the present participant may be changed
+  const { matchUpStatus } = inContextMatchUp;
+  if (![WALKOVER, DEFAULTED].includes(matchUpStatus) || inContextMatchUp.winningSide !== winningSide) return undefined;
+  const matchUpStatusCode = inContextMatchUp.sideStatusCodes?.[exitingSideNumber];
+  return { ...exiting, recorded: { matchUpStatus, ...(matchUpStatusCode ? { matchUpStatusCode } : {}) } };
 }
 
 function isScoringActive({ appliedPolicies, allPositionsAssigned, structure }) {

@@ -123,6 +123,7 @@ export function directLoser(params): ResultType {
     const { carry } = relabelLoserExit({
       sourceMatchUpId: params.sourceMatchUpId,
       validExitToPropagate,
+      sourceMatchUpStatus,
       propagateExitStatus,
       loserParticipantId,
       targetStructureId: loserTargetLink.target.structureId,

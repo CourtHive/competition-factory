@@ -131,7 +131,6 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
 
   const {
     disableScoreValidation,
-    propagateExitStatus,
     tournamentRecord,
     disableAutoCalc,
     enableAutoCalc,
@@ -307,7 +306,6 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   const participantCheck = checkParticipants({
     propagatingExit: params.propagatingExit,
     assignedDrawPositions,
-    propagateExitStatus,
     inContextMatchUp,
     appliedPolicies,
     drawDefinition,
@@ -1035,7 +1033,7 @@ function applyMatchUpValues(params) {
  *
  * Only meaningful where exactly one side holds a participant; the caller establishes that.
  */
-function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): boolean {
+export function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): boolean {
   const winnerSide = (inContextMatchUp?.sides ?? []).find((side: any) => side?.sideNumber === winningSide);
 
   /**
@@ -1047,6 +1045,10 @@ function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): 
    * and the entered winner never reached the loser structure: a two-step DROPPED_PROGRESSION on
    * DOUBLE_ELIMINATION (census 9100555 and 9301605, shrunk). With `propagateExitStatus` off the same
    * entry was always refused. CA, 2026-09-17: refuse it.
+   *
+   * The OTHER direction is the one a director records before the opponent arrives (CA, 2026-10-04): the
+   * participant already there walks over or is defaulted, and the EMPTY side is awarded — accepted with or
+   * without `propagateExitStatus`, and offered by `matchUpActions` as `EXIT`. This refuses only the reverse.
    *
    * Nor against a BYE. A matchUp containing a BYE cannot have a winningSide — the BYE always
    * advances its opponent (CA, 2026-09-17). A walkover entered BEFORE a BYE arrives is a different
@@ -1074,7 +1076,6 @@ function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): 
 
 function checkParticipants({
   assignedDrawPositions,
-  propagateExitStatus,
   inContextMatchUp,
   appliedPolicies,
   propagatingExit,
@@ -1115,34 +1116,25 @@ function checkParticipants({
         .every((assignment) => assignment.participantId));
   if (
     matchUpStatus &&
-    //we want to allow wo, default and double walkover inn the consolation draw
-    //to have only one particpiant when they are caused by an exit propagation
+    // A single WALKOVER or DEFAULTED can stand with ONE participant present: carried there by the cascade,
+    // or RECORDED by the director before the second opponent arrives — the present participant is ill,
+    // injured or defaulted for conduct between matches, and whoever arrives takes the walkover. CA,
+    // 2026-10-04: *"propagateExitStatus shouldn't have anything to do with this ability"*; this waiver
+    // required the flag until then, so the same entry was refused under any policy that left it off.
     //
     // DOUBLE_DEFAULT was missing from this list while DOUBLE_WALKOVER was present, so a
     // single-participant propagated DOUBLE_DEFAULT fell through to the participants-required
-    // validation and was refused. Measured: reachable, 1 occurrence over the 600-seed sweep window,
-    // and the probable mechanism behind an earlier experiment in which writing DOUBLE_DEFAULT at
-    // progressExitStatus RULE 4 produced a single DEFAULTED *with* a winningSide. This file already
-    // used the correct pair at line 454.
+    // validation and was refused. Measured: reachable, 1 occurrence over the 600-seed sweep window.
     [WALKOVER, DEFAULTED, DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUpStatus) &&
     participantsCount === 1 &&
-    propagateExitStatus &&
-    // WHO the single exit is awarded to, and it is not a formality.
-    //
-    // The waiver above tested `propagateExitStatus` alone — a REQUEST FLAG any caller can set — even
-    // though its own comment says it is for exits "caused by an exit propagation". So a TD entering
-    // `{ matchUpStatus: WALKOVER, winningSide: <the empty side> }` on a half-filled consolation
-    // matchUp was ACCEPTED, and the draw then recorded a walkover won by nobody. Measured
-    // 2026-09-13 in FIRST_MATCH_LOSER_CONSOLATION for both WALKOVER and DEFAULTED, with
-    // `getDrawInconsistencies` reporting `valid` throughout; with `propagateExitStatus` off the
-    // identical call is refused with ERR_INVALID_MATCHUP_STATUS, which is the engine's own position
-    // on it.
-    //
-    // The cascade genuinely needs the empty side to win — `progressExitStatus` RULE 2 awards the
-    // matchUp to the side WITHOUT the exit, and that side is empty until the opponent arrives — so
-    // it identifies itself with `propagatingExit` rather than being inferred from the flag. A
-    // DIRECT entry gets the waiver only when the side it awards the exit to is not a PHANTOM — a
-    // drawPosition whose assignment holds nobody. See exitAwardable.
+    // WHO the single exit is awarded to, and it is not a formality — this, not a request flag, is the
+    // guard. The waiver once tested `propagateExitStatus` alone, so a TD entering `{ matchUpStatus:
+    // WALKOVER, winningSide: <the empty side> }` on a half-filled FIRST_MATCH_LOSER_CONSOLATION matchUp
+    // whose empty seat was a PHANTOM (claimed, holding nobody) recorded a walkover won by nobody
+    // (measured 2026-09-13). A DIRECT entry is waived only when the side it awards the exit to is not a
+    // phantom, not the participant already there, and not a BYE — see exitAwardable. The cascade
+    // genuinely needs the empty side to win (`progressExitStatus` RULE 2) and identifies itself with
+    // `propagatingExit`.
     (propagatingExit ||
       !winningSide ||
       exitAwardable({ positionAssignments: allAssignments, inContextMatchUp, winningSide })) &&

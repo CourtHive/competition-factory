@@ -63,6 +63,7 @@ The following actions can be controlled by this policy:
 | **SCHEDULE** | `SCHEDULE` | `setMatchUpStatus` | Schedule matchUp (set date/time/court)             |
 | **STATUS**   | `STATUS`   | UI/Engine          | Change matchUp status (COMPLETED, DEFAULTED, etc.) |
 | **SCORE**    | `SCORE`    | `setMatchUpStatus` | Enter or modify score                              |
+| **EXIT**     | `EXIT`     | `setMatchUpStatus` | Walkover/default before the opponent arrives       |
 | **START**    | `START`    | Event Trigger      | Mark matchUp as started                            |
 | **END**      | `END`      | Event Trigger      | Mark matchUp as ended                              |
 | **REFEREE**  | `REFEREE`  | Assignment         | Assign referee to matchUp                          |
@@ -456,6 +457,24 @@ MatchUp actions availability depends on matchUp state:
 
 - `SCORE` - No participants or not ready to score
 - `START` / `END` - Cannot start unassigned matchUp
+
+### One Participant, the Other Not Yet Arrived
+
+A participant has advanced and their opponent has not; in between, the present participant falls ill, is
+injured, or is defaulted for conduct. USTA records such a walkover or default without waiting for the
+match (CA, 2026-10-04).
+
+**Available Actions:**
+
+- `EXIT` - Record a `WALKOVER` or `DEFAULTED` against the participant already there. The payload names
+  `exitingParticipantId`, `exitingSideNumber` and the `matchUpStatuses` offered, and its
+  `outcome.winningSide` already awards the EMPTY side; supply `outcome.matchUpStatus` (and optionally
+  `matchUpStatusCodes`) and call `setMatchUpStatus`. Whoever later arrives takes the walkover and advances.
+
+Offered exactly where the engine accepts it, and independent of `propagateExitStatus`, which decides only
+whether the exit is carried into the loser's next matchUp. Not offered on an AD_HOC matchUp (its sides
+are assigned, never arrived at), beside a BYE, or where the empty seat is claimed by nobody. Once
+recorded, it is removed with `CLEAR_SCORE`.
 
 ### Ready to Score
 
