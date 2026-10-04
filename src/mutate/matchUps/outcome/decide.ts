@@ -239,10 +239,10 @@ function checkCarriedPastBye({
 
 /**
  * The exit carried past a BYE meets one already standing on the other side: they converge, and nobody
- * wins. KNOWN v1 DEFECT (2026-10-02, Mentat TASKS S2c): when the loser passed the BYE into a side the
- * standing exit had already awarded, v1 advances them on as its winner, and the convergence write that
- * should retract them is refused (ERR_INCOMPATIBLE_MATCHUP_STATUS, active downstream); since #5156 that
- * refusal is returned rather than dropped. That shape, and only that shape, is deferred.
+ * wins. A loser advanced on as the onward matchUp's winner is a divergence. It was deferred as a known v1
+ * defect (2026-10-02: the convergence write that should retract them was refused and dropped); since
+ * #5156 that refusal is returned, and a whole-suite differential run reached the shape 0 times
+ * (2026-10-04), so it fails loudly if it returns.
  */
 function checkPastByeConvergence({
   args,
@@ -257,7 +257,11 @@ function checkPastByeConvergence({
     return differentialTally(`${route}:loser-exit-past-bye-converged`, 'compared');
   const advancedOn = onward?.winningSide && onward.sides?.find((side) => side?.participantId === loserId)?.sideNumber;
   if (advancedOn === onward?.winningSide)
-    return differentialTally(`${route}:loser-exit-past-bye-convergence-refused`, 'deferred');
+    diverge(
+      args,
+      `loser ${loserId} advanced on as ${onward?.matchUpId}'s winner`,
+      `planned ${expected}, the carried ${exit} converging with the standing ${standingExit}`,
+    );
   diverge(
     args,
     `${onward?.matchUpId} is ${onward?.matchUpStatus} won by side ${onward?.winningSide}`,
