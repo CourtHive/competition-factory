@@ -324,6 +324,19 @@ export function retainByeClaimsOnly(provenance?: SideExitProvenance): SideExitPr
 }
 
 /**
+ * Blank a matchUp's exit reason codes — the legacy positional `matchUpStatusCodes` and the side-keyed
+ * `sideStatusCodes` — for a writer that is about to re-derive the exit and re-stamp its codes. Lives
+ * here because this file is the legacy array's sanctioned writer (`verify:exit-tenant`). Used by
+ * `settleRederivedDoubleExit`: a converged double exit's `['WO', 'WO']` left behind on what is now a
+ * single exit put an exit code on the winning side (census w2 9100514, EXIT_CODE_ON_WINNER_SIDE).
+ */
+export function blankExitCodes(matchUp?: MatchUp): void {
+  if (!matchUp) return;
+  matchUp.matchUpStatusCodes = [];
+  delete matchUp.sideStatusCodes;
+}
+
+/**
  * Clear provenance ONLY when the matchUp is no longer an exit.
  *
  * `clearSideExitProvenance` is unconditional, which is right where the caller has just collapsed the
@@ -1121,6 +1134,16 @@ function withdrawFromMatchUp(
       };
     }
     return undefined;
+  }
+
+  // A BYE matchUp whose last carried entry is withdrawn is still a BYE, for the reason given above; it
+  // was never undecided. Census w2 9000477 (COMPASS 32/29): a settled convergence left `South|1|3` a
+  // BYE carrying one exit through it, and when that exit's origin became a double exit the withdrawal
+  // reverted the BYE to TO_BE_PLAYED, with BYEs on both sides once the double exit's BYE arrived.
+  if (holdsBye({ matchUp, structureId, drawDefinition })) {
+    clearSideExitProvenance(matchUp);
+    matchUp.matchUpStatusCodes = [];
+    return { roundNumber: matchUp.roundNumber, matchUpId: matchUp.matchUpId, structureId };
   }
 
   // Nothing derived remains: the matchUp reverts to undecided, which is the state it was in before
