@@ -15,6 +15,7 @@ import { HydratedMatchUp } from '@Types/hydrated';
 
 type RelabelArgs = {
   validExitToPropagate: boolean;
+  sourceMatchUpStatus?: string;
   propagateExitStatus?: boolean;
   loserParticipantId?: string;
   sourceMatchUpId?: string;
@@ -62,12 +63,12 @@ export function relabelLoserExit(args: RelabelArgs): { carry?: boolean } {
     ? Object.values(standing.sideExitProvenance).some((entry: any) => entry?.sourceMatchUpId === sourceMatchUpId)
     : false;
 
-  if (args.validExitToPropagate) return { carry: !carriedHere && !hasResult(standing) };
-  const withdrawable = carriedHere && onlyThisCarry(standing, loserParticipantId, sourceMatchUpId);
-  const playedOn =
-    winnerPlayedOn(standing, inContextDrawMatchUps, drawDefinition) ||
-    loserPlayedOn(standing, inContextDrawMatchUps, drawDefinition, loserParticipantId);
-  if (withdrawable && !playedOn) {
+  const withdrawable = () =>
+    carriedHere &&
+    onlyThisCarry(standing, loserParticipantId, sourceMatchUpId) &&
+    !winnerPlayedOn(standing, inContextDrawMatchUps, drawDefinition) &&
+    !loserPlayedOn(standing, inContextDrawMatchUps, drawDefinition, loserParticipantId);
+  const withdrawHere = () => {
     withdraw(args, standing);
     // the loser no longer lost there, so what losing there directed them to is not theirs either: a
     // structure fed from this one (COMPASS, OLYMPIC) already holds them, and their placement in it goes
@@ -78,8 +79,29 @@ export function relabelLoserExit(args: RelabelArgs): { carry?: boolean } {
       matchUpsMap: args.matchUpsMap,
       drawDefinition,
     });
+  };
+
+  if (args.validExitToPropagate) {
+    if (!carriedHere) return { carry: !hasResult(standing) };
+    // An exit re-entered as the OTHER exit, the winner unchanged (WALKOVER <-> DEFAULTED; CA, 2026-10-04,
+    // for a walkover or default recorded before the opponent arrives, which the director may change until
+    // they do): the carry follows the label. Withdrawn and carried again, under the same guards as a
+    // withdrawal; where the loser or the carry's winner has played on, the carry stands as it was.
+    if (!relabelsTheCarry(standing, loserParticipantId, args.sourceMatchUpStatus) || !withdrawable()) return {};
+    withdrawHere();
+    return { carry: true };
   }
+  if (withdrawable()) withdrawHere();
   return {};
+}
+
+/** the loser's carried exit says WALKOVER where the source now says DEFAULTED, or the reverse */
+function relabelsTheCarry(standing: HydratedMatchUp, loserParticipantId: string, sourceMatchUpStatus?: string) {
+  if (sourceMatchUpStatus !== WALKOVER && sourceMatchUpStatus !== DEFAULTED) return false;
+  const loserSide = standing.sides?.find((side) => side?.participantId === loserParticipantId)?.sideNumber;
+  const carried =
+    loserSide === 1 || loserSide === 2 ? standing.sideExitProvenance?.[loserSide]?.matchUpStatus : undefined;
+  return (carried === WALKOVER || carried === DEFAULTED) && carried !== sourceMatchUpStatus;
 }
 
 /**

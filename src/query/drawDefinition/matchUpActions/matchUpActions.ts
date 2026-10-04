@@ -385,9 +385,12 @@ function addStandardActions({
   // awarded the matchUp and whoever arrives there takes the walkover. SCORE cannot express it, as it needs
   // two participants. Offered exactly where `setMatchUpState` accepts it: an undecided matchUp holding one
   // participant whose empty side `exitAwardable` allows (never a BYE, never a seat claimed by nobody).
+  // Offered again while one it recorded is still pending: until the opponent arrives the director may
+  // change WALKOVER <-> DEFAULTED and its reason, or clear it (CLEAR_SCORE); once they arrive it is a decided
+  // walkover like any other (CA, 2026-10-04). `recorded` names what stands, so a form can start from it.
   const loneExit =
-    scoringActive && !isCollectionMatchUp && !hasOutcomeToRemove
-      ? exitBeforeTheOpponentArrives({ inContextMatchUp, structure, drawDefinition })
+    scoringActive && !isCollectionMatchUp && !carriedExit
+      ? exitBeforeTheOpponentArrives({ inContextMatchUp, structure, drawDefinition, hasOutcomeToRemove })
       : undefined;
   if (loneExit) {
     validActions.push({
@@ -401,6 +404,7 @@ function addStandardActions({
         exitingSideNumber: loneExit.exitingSideNumber,
         matchUpStatuses: [WALKOVER, DEFAULTED],
         outcome: { matchUpStatus: undefined, winningSide: loneExit.winningSide },
+        ...(loneExit.recorded ? { recorded: loneExit.recorded } : {}),
       },
     });
   }
@@ -426,7 +430,19 @@ function addStandardActions({
   }
 }
 
-function exitBeforeTheOpponentArrives({ inContextMatchUp, structure, drawDefinition }) {
+type LoneExit = {
+  recorded?: { matchUpStatus: string; matchUpStatusCode?: string };
+  exitingParticipantId: string;
+  exitingSideNumber: number;
+  winningSide: number;
+};
+
+function exitBeforeTheOpponentArrives({
+  hasOutcomeToRemove,
+  inContextMatchUp,
+  drawDefinition,
+  structure,
+}): LoneExit | undefined {
   // AD_HOC sides are assigned, never arrived at: there is no opponent on the way to take a walkover
   if (isAdHoc({ structure })) return undefined;
   const present = inContextMatchUp?.sides?.filter((side: any) => side?.participantId);
@@ -435,7 +451,14 @@ function exitBeforeTheOpponentArrives({ inContextMatchUp, structure, drawDefinit
   const winningSide = 3 - exitingSideNumber;
   const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: structure?.structureId });
   if (!exitAwardable({ positionAssignments, inContextMatchUp, winningSide })) return undefined;
-  return { exitingParticipantId: present[0].participantId, exitingSideNumber, winningSide };
+  const exiting = { exitingParticipantId: present[0].participantId, exitingSideNumber, winningSide };
+  if (!hasOutcomeToRemove) return exiting;
+
+  // something stands: only a WALKOVER or DEFAULTED recorded against the present participant may be changed
+  const { matchUpStatus } = inContextMatchUp;
+  if (![WALKOVER, DEFAULTED].includes(matchUpStatus) || inContextMatchUp.winningSide !== winningSide) return undefined;
+  const matchUpStatusCode = inContextMatchUp.sideStatusCodes?.[exitingSideNumber];
+  return { ...exiting, recorded: { matchUpStatus, ...(matchUpStatusCode ? { matchUpStatusCode } : {}) } };
 }
 
 function isScoringActive({ appliedPolicies, allPositionsAssigned, structure }) {

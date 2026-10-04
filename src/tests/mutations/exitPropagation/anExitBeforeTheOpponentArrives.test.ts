@@ -149,9 +149,9 @@ describe('matchUpActions', () => {
     });
     expect(result.success).toEqual(true);
 
-    // once recorded it is removed with CLEAR_SCORE, not offered again
+    // once recorded, and until the opponent arrives, it can be changed (EXIT, naming what stands) or cleared
     const after = actionsOf(lone.matchUpId);
-    expect(after.some((action) => action.type === EXIT)).toEqual(false);
+    expect(after.find((action) => action.type === EXIT)?.payload.recorded).toEqual({ matchUpStatus: DEFAULTED });
     expect(after.some((action) => action.type === CLEAR_SCORE)).toEqual(true);
   });
 
@@ -172,6 +172,81 @@ describe('refused', () => {
     });
     expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
   });
+});
+
+/**
+ * **Until the opponent arrives the director may change it** — WALKOVER <-> DEFAULTED and its reason — **or
+ * clear it; once they arrive it is a decided walkover like any other** (CA, 2026-10-04). Under propagation
+ * the exit carried to the present participant's next matchUp follows the label.
+ */
+describe('changed before the opponent arrives', () => {
+  it.each([false, true])('propagateExitStatus %s', (propagateExitStatus) => {
+    const { main, at, lone, present, emptySide } = aLoneOccupant(FEED_IN_CHAMPIONSHIP, propagateExitStatus);
+    const record = (outcome: any) =>
+      tournamentEngine.setMatchUpStatus({ matchUpId: lone.matchUpId, propagateExitStatus, outcome, drawId }) as any;
+    const carried = () =>
+      all().find(
+        (m: any) =>
+          m.structureName !== main && m.sides.some((side: any) => side.participantId === present.participantId),
+      ).matchUpStatus;
+
+    expect(record({ matchUpStatus: WALKOVER, winningSide: emptySide }).success).toEqual(true);
+    expect(carried()).toEqual(propagateExitStatus ? WALKOVER : TO_BE_PLAYED);
+
+    // the offered change, with a reason
+    const exit = actionsOf(lone.matchUpId).find((action) => action.type === EXIT);
+    expect(exit.payload.recorded).toEqual({ matchUpStatus: WALKOVER });
+    const outcome = { ...exit.payload.outcome, matchUpStatus: DEFAULTED, matchUpStatusCodes: ['DM'] };
+    expect(record(outcome).success).toEqual(true);
+    expect(carried()).toEqual(propagateExitStatus ? DEFAULTED : TO_BE_PLAYED);
+    expect(actionsOf(lone.matchUpId).find((action) => action.type === EXIT).payload.recorded).toEqual({
+      matchUpStatus: DEFAULTED,
+      matchUpStatusCode: 'DM',
+    });
+    expect(inconsistencies()).toEqual([]);
+
+    // the opponent arrives: a decided walkover like any other, no longer an EXIT
+    const result: any = tournamentEngine.setMatchUpStatus({
+      matchUpId: at(1, 2).matchUpId,
+      outcome: { winningSide: 1 },
+      propagateExitStatus,
+      drawId,
+    });
+    expect(result.success).toEqual(true);
+    expect(actionsOf(lone.matchUpId).some((action) => action.type === EXIT)).toEqual(false);
+    expect(inconsistencies()).toEqual([]);
+  });
+});
+
+/**
+ * **The carry follows the label for any exit re-entered as the other exit**, the winner unchanged — the
+ * 2026-10-02 relabel ruling (a relabel carries the exit to the loser, or withdraws it) applied between the two
+ * exits. Before, the loser's next matchUp kept the label it was first carried with.
+ */
+it('a WALKOVER re-entered as DEFAULTED relabels the exit its loser carried', () => {
+  setSubscriptions({});
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawType: FEED_IN_CHAMPIONSHIP, drawSize: 16, drawId }],
+    nonRandom: 4242,
+    setState: true,
+  });
+  const first = all().find((m: any) => m.structureName === 'Main' && m.roundNumber === 1 && m.roundPosition === 1);
+  const loserId = first.sides.find((side: any) => side.sideNumber === 2).participantId;
+  const carried = () =>
+    all().find(
+      (m: any) => m.structureName === 'Consolation' && m.sides.some((side: any) => side.participantId === loserId),
+    ).matchUpStatus;
+  for (const matchUpStatus of [WALKOVER, DEFAULTED, WALKOVER]) {
+    const result: any = tournamentEngine.setMatchUpStatus({
+      outcome: { matchUpStatus, winningSide: 1 },
+      matchUpId: first.matchUpId,
+      propagateExitStatus: true,
+      drawId,
+    });
+    expect(result.success).toEqual(true);
+    expect(carried()).toEqual(matchUpStatus);
+  }
+  expect(inconsistencies()).toEqual([]);
 });
 
 describe('cleared before the opponent arrives', () => {
