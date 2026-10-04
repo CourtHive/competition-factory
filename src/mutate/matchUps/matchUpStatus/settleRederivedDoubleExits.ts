@@ -105,7 +105,6 @@ export function settleRederivedDoubleExit({
   // 3. undecided, carrier in place
   clearSideExitProvenance(stored);
   stored.matchUpStatus = TO_BE_PLAYED;
-  stored.matchUpStatusCodes = [];
   delete stored.winningSide;
   delete stored.sideStatusCodes;
   modifyMatchUpNotice({
@@ -120,7 +119,9 @@ export function settleRederivedDoubleExit({
   // 4. the kept origin's carry, replayed, and onward through every further loser link
   return carryExitOnward({
     context: {
-      sourceMatchUpStatusCodes: origin.matchUpStatusCodes ?? [],
+      // the origin's reason is read from its own `sideStatusCodes` by `progressExitStatus`; the legacy
+      // positional array is not this function's to read (P37, `verify:exit-tenant`)
+      sourceMatchUpStatusCodes: [],
       sourceMatchUpStatus: origin.matchUpStatus,
       sourceWinningSide: origin.winningSide,
       sourceMatchUpId: origin.matchUpId,
