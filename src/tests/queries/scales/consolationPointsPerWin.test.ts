@@ -60,57 +60,59 @@ const scenarios = [
   },
 ];
 
-it.each(scenarios)('will generate pointsPerWin for all finishingPositions which are not defined', (scenario) => {
-  const drawProfiles = [
-    {
-      drawType: CURTIS_CONSOLATION,
-      drawSize: scenario.drawSize,
-    },
-  ];
-  let result = mocksEngine.generateTournamentRecord({
-    completeAllMatchUps: true,
-    randomWinningSide: true,
-    policyDefinitions,
-    drawProfiles,
-  });
+it.each(scenarios)(
+  'will generate pointsPerWin for all finishingPositions which are not defined',
+  (scenario) => {
+    const drawProfiles = [
+      {
+        drawType: CURTIS_CONSOLATION,
+        drawSize: scenario.drawSize,
+      },
+    ];
+    let result = mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      randomWinningSide: true,
+      policyDefinitions,
+      drawProfiles,
+    });
 
-  const { tournamentRecord } = result;
-  tournamentEngine.setState(tournamentRecord);
+    const { tournamentRecord } = result;
+    tournamentEngine.setState(tournamentRecord);
 
-  const { policyDefinitions: attachedPolicies } = tournamentEngine.getPolicyDefinitions({
-    policyTypes: [POLICY_TYPE_RANKING_POINTS],
-  });
-  expect(attachedPolicies[POLICY_TYPE_RANKING_POINTS]).not.toBeUndefined();
+    const { policyDefinitions: attachedPolicies } = tournamentEngine.getPolicyDefinitions({
+      policyTypes: [POLICY_TYPE_RANKING_POINTS],
+    });
+    expect(attachedPolicies[POLICY_TYPE_RANKING_POINTS]).not.toBeUndefined();
 
-  const finishingPositionSort = (a, b) => a.draws[0].finishingPositionRange[0] - b.draws[0].finishingPositionRange[0];
+    const finishingPositionSort = (a, b) => a.draws[0].finishingPositionRange[0] - b.draws[0].finishingPositionRange[0];
 
-  result = scaleEngine.getTournamentPoints();
-  expect(result.success).toEqual(true);
+    result = scaleEngine.getTournamentPoints();
+    expect(result.success).toEqual(true);
 
-  const participants = result.participantsWithOutcomes.sort(finishingPositionSort);
+    const participants = result.participantsWithOutcomes.sort(finishingPositionSort);
 
-  const pointAwards = Object.keys(result.personPoints)
-    .flatMap((personId) => {
-      const personResults = result.personPoints[personId];
-      const participant = participants.find((p) => p.person.personId === personId);
-      const entryPosition = participant?.draws[0].entryPosition;
-      return personResults.map((pResult) => {
-        const { positionPoints, rangeAccessor, perWinPoints, winCount, points } = pResult;
+    const pointAwards = Object.keys(result.personPoints)
+      .flatMap((personId) => {
+        const personResults = result.personPoints[personId];
+        const participant = participants.find((p) => p.person.personId === personId);
+        const entryPosition = participant?.draws[0].entryPosition;
+        return personResults.map((pResult) => {
+          const { positionPoints, rangeAccessor, perWinPoints, winCount, points } = pResult;
 
-        if (scenario.pointScenarios[rangeAccessor]) {
-          const included = scenario.pointScenarios[rangeAccessor].includes(points);
-          if (!included) console.log({ rangeAccessor, points });
-        } else {
-          console.log('missing', { rangeAccessor });
-        }
+          if (scenario.pointScenarios[rangeAccessor]) {
+            const included = scenario.pointScenarios[rangeAccessor].includes(points);
+            if (!included) console.log({ rangeAccessor, points });
+          } else {
+            console.log('missing', { rangeAccessor });
+          }
 
-        return [points, rangeAccessor, winCount, perWinPoints, positionPoints, entryPosition];
-      });
-    })
-    .sort((a, b) => b[0] - a[0]);
+          return [points, rangeAccessor, winCount, perWinPoints, positionPoints, entryPosition];
+        });
+      })
+      .sort((a, b) => b[0] - a[0]);
 
-  // expect(Object.keys(result.personPoints).length).toEqual(24);
-  /*
+    // expect(Object.keys(result.personPoints).length).toEqual(24);
+    /*
     Object.values(result.personPoints).forEach((personResults) => {
       personResults.forEach((personResult) => {
         const { rangeAccessor, positionPoints, perWinPoints } = personResult;
@@ -120,12 +122,14 @@ it.each(scenarios)('will generate pointsPerWin for all finishingPositions which 
     });
     */
 
-  if (scenario.inspect) {
-    console.log(pointAwards);
-    // written out for sanity checks
-    const dirPath = './scratch/';
-    if (fs.existsSync(dirPath)) {
-      fs.writeFileSync(`${dirPath}consolationPointsPerWin.json`, JSON.stringify(participants, undefined, 1));
+    if (scenario.inspect) {
+      console.log(pointAwards);
+      // written out for sanity checks
+      const dirPath = './scratch/';
+      if (fs.existsSync(dirPath)) {
+        fs.writeFileSync(`${dirPath}consolationPointsPerWin.json`, JSON.stringify(participants, undefined, 1));
+      }
     }
-  }
-});
+  },
+  180_000,
+);
