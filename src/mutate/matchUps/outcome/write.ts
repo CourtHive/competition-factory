@@ -8,6 +8,7 @@ import type { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   ABANDONED,
   AWAITING_RESULT,
+  BYE,
   CANCELLED,
   COMPLETED,
   completedMatchUpStatuses,
@@ -163,7 +164,7 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
     case 'bye':
       return {
         ...applyScoreAndStatus({}, request, view),
-        matchUpStatus: 'BYE' as MatchUpStatusUnion,
+        matchUpStatus: BYE,
         matchUpStatusCodes: [],
         scoredTime: false,
       };

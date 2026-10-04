@@ -6,6 +6,9 @@
 
 import type { MatchUp } from '@Types/scoring/types';
 
+// constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
 /**
  * Check if the matchUp is complete
  *
@@ -13,5 +16,5 @@ import type { MatchUp } from '@Types/scoring/types';
  * @returns True if match is complete
  */
 export function isComplete(matchUp: MatchUp): boolean {
-  return matchUp.matchUpStatus === 'COMPLETED';
+  return matchUp.matchUpStatus === COMPLETED;
 }

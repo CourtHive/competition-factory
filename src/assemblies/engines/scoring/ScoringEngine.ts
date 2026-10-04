@@ -36,6 +36,7 @@ import {
 
 // constants and types
 import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
+import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
 import type {
   MatchUp,
@@ -255,7 +256,7 @@ export class ScoringEngine {
     // Snapshot game/set/match state before point for event detection
     const prevTotalGames = this.state.score.sets.reduce((sum, s) => sum + (s.side1Score || 0) + (s.side2Score || 0), 0);
     const prevCompletedSets = this.state.score.sets.filter((s) => s.winningSide !== undefined).length;
-    const prevComplete = this.state.matchUpStatus === 'COMPLETED';
+    const prevComplete = this.state.matchUpStatus === COMPLETED;
 
     // Decorate active players from lineUp before adding point
     const activePlayersSnapshot = this.hasLineUp() ? this.getActivePlayers() : undefined;
@@ -327,7 +328,7 @@ export class ScoringEngine {
       }
 
       // Detect match completion
-      if (!prevComplete && this.state.matchUpStatus === 'COMPLETED') {
+      if (!prevComplete && this.state.matchUpStatus === COMPLETED) {
         const matchWinner = this.state.winningSide === 1 ? 0 : 1;
         this.eventHandlers.onMatchComplete?.({ ...ctx, matchWinner });
       }
@@ -426,8 +427,8 @@ export class ScoringEngine {
     });
 
     // Mark as in-progress
-    if (this.state.matchUpStatus === 'TO_BE_PLAYED') {
-      this.state.matchUpStatus = 'IN_PROGRESS';
+    if (this.state.matchUpStatus === TO_BE_PLAYED) {
+      this.state.matchUpStatus = IN_PROGRESS;
     }
   }
 
@@ -1208,8 +1209,8 @@ export class ScoringEngine {
 
     this.state.score.sets.push(newSet);
 
-    if (this.state.matchUpStatus === 'TO_BE_PLAYED') {
-      this.state.matchUpStatus = 'IN_PROGRESS';
+    if (this.state.matchUpStatus === TO_BE_PLAYED) {
+      this.state.matchUpStatus = IN_PROGRESS;
     }
 
     if (winningSide !== undefined) {
@@ -1259,8 +1260,8 @@ export class ScoringEngine {
       currentSet.side2TiebreakScore = tiebreakScore[1];
     }
 
-    if (this.state.matchUpStatus === 'TO_BE_PLAYED') {
-      this.state.matchUpStatus = 'IN_PROGRESS';
+    if (this.state.matchUpStatus === TO_BE_PLAYED) {
+      this.state.matchUpStatus = IN_PROGRESS;
     }
 
     // Check set completion
@@ -1431,8 +1432,8 @@ export class ScoringEngine {
 
     if (this.initialScore) {
       this.applyInitialScore(newState, this.initialScore);
-      if (newState.matchUpStatus === 'TO_BE_PLAYED') {
-        newState.matchUpStatus = 'IN_PROGRESS';
+      if (newState.matchUpStatus === TO_BE_PLAYED) {
+        newState.matchUpStatus = IN_PROGRESS;
       }
     }
 
@@ -1475,8 +1476,8 @@ export class ScoringEngine {
     // Apply initial score if present (late arrival)
     if (this.initialScore) {
       this.applyInitialScore(newState, this.initialScore);
-      if (newState.matchUpStatus === 'TO_BE_PLAYED') {
-        newState.matchUpStatus = 'IN_PROGRESS';
+      if (newState.matchUpStatus === TO_BE_PLAYED) {
+        newState.matchUpStatus = IN_PROGRESS;
       }
     }
 

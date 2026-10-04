@@ -7,6 +7,9 @@
 import { nowIso } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
+// constants
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+
 // Import necessary types
 import type { MatchUp, CreateMatchUpOptions, Side, Score } from '@Types/scoring/types';
 
@@ -43,7 +46,7 @@ export function createMatchUp(options: CreateMatchUpOptions): MatchUp {
   const matchUp: MatchUp = {
     matchUpId,
     matchUpFormat,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
     matchUpType: type,
     sides,
     score,

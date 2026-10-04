@@ -12,6 +12,7 @@ import { randomSource } from '@Tools/prng';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -360,7 +361,7 @@ function prepareNextRoundMatchUps({ nextRoundMatchUps, positionAssignments }): R
     if (dps.some(Boolean)) {
       matchUp.drawPositions = [];
     }
-    if (matchUp.matchUpStatus && matchUp.matchUpStatus !== 'TO_BE_PLAYED') {
+    if (matchUp.matchUpStatus && matchUp.matchUpStatus !== TO_BE_PLAYED) {
       matchUp.matchUpStatus = undefined;
       matchUp.winningSide = undefined;
       matchUp.score = undefined;
@@ -632,7 +633,7 @@ function createVirtualMatchUps({
       roundNumber: targetRoundNumber,
       roundPosition: i + 1,
       drawPositions: [pos1, pos2],
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     };
     targetStructure.matchUps.push(matchUp);
     unfilledPositions.push(pos1, pos2);
