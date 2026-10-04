@@ -45,6 +45,11 @@ checkmark once a participant arrives... so, you don't need to keep it."_ The one
 opponent who is already in place: the winner is then read off their side at once, because no arrival
 is still coming to resolve it.
 
+A BYE that carries a produced exit on does not change how it lands. CA, 2026-10-03: a produced exit
+advanced past a BYE is still a produced exit, so it lands pending, as it would without the BYE. A
+seat that a feed link has reserved for a participant who has not arrived yet is not an opponent in
+place, even though it already holds a drawPosition.
+
 ```js
 // A produced exit, opponent not yet arrived
 {

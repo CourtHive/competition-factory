@@ -286,9 +286,8 @@ function onwardMatchUp(args: BuildViewArgs, holder: HydratedMatchUp): HydratedMa
  * A produced exit that meets a BYE (CA 2026-09-29, `heldExitIsSentOn.test.ts`): the holder stays a BYE
  * with no winner and the exit is sent on, keeping its flavour, to the holder's winner matchUp. There it
  * is a produced exit like any other: awarded to an opponent already in place, pending (no winningSide)
- * while the other side is empty, converged with an exit standing there. Deferred: a second BYE onward,
- * and the shape v1 writes against the pending rule, an award to a fed slot nobody has reached yet
- * (`produced-past-bye-awarded-unarrived`, Mentat TASKS S2c).
+ * while the other side is empty (a fed slot nobody has reached yet included: CA 2026-10-03, Q3),
+ * converged with an exit standing there. Deferred: a second BYE onward.
  */
 function checkProducedPastBye({
   args,
@@ -329,8 +328,6 @@ function checkProducedPastBye({
     expectedStatus === produced.matchUpStatus && other?.participantId ? other.sideNumber : undefined;
   if (onward.matchUpStatus === expectedStatus && onward.winningSide === expectedWinner)
     return differentialTally(`${route}:produced-past-bye-${expectedWinner ? 'awarded' : 'pending'}`, 'compared');
-  if (!expectedWinner && onward.winningSide === other?.sideNumber && other?.drawPosition && !other?.participantId)
-    return differentialTally(`${route}:produced-past-bye-awarded-unarrived`, 'deferred');
   diverge(
     args,
     `${onward.matchUpId} is ${onward.matchUpStatus} won by side ${onward.winningSide}`,

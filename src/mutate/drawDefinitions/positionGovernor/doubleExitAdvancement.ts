@@ -1436,8 +1436,27 @@ function advanceByeAdvancedDrawPosition({
      * `occupiedSide` is 1 (a real fed position, not a BYE) and `arrivalSideNumber` is 2, so the winner
      * is still side 1 — the slot the participant arrives into.
      */
-    const winningSide =
-      advancingParticipantId || !occupiedSide ? occupiedSide : 3 - (arrivalSideNumber ?? occupiedSide);
+    const exitSideNumber = arrivalSideNumber ?? occupiedSide;
+    const opponentPresent = !!nextWinnerMatchUp.sides?.some(
+      (side) => side?.sideNumber === 3 - exitSideNumber && side?.participantId && !side?.bye,
+    );
+
+    /**
+     * A PRODUCED EXIT LANDS PENDING UNTIL ITS OPPONENT ARRIVES, past a BYE as anywhere else — CA,
+     * 2026-10-03 (Q3, `Mentat/planning/OUTCOME_PIPELINE_OPEN_QUESTIONS.md`): *"Yes, land pending"*.
+     *
+     * The 2026-09-20 rule (`carryExitOnward`: no winningSide until the opponent arrives, unless the
+     * opponent is already in place) was never applied here, so an exit carried on past a BYE was
+     * awarded to the side yet to arrive. At `FEED_IN_CHAMPIONSHIP 16/16 Consolation|6|1` (seeds 397-400)
+     * that is drawPosition 1, RESERVED by the feed link for the loser of the Main final, with nobody in
+     * it. P29 had moved the award onto the right side; the award itself was the defect. Pending, the
+     * arrival resolves it, as it does on the direct path, and nothing is advanced from here: there is no
+     * winner to advance yet.
+     */
+    const pending = !advancingParticipantId && !!occupiedSide && !opponentPresent;
+    let winningSide: number | undefined;
+    if (advancingParticipantId || !occupiedSide) winningSide = occupiedSide;
+    else if (!pending) winningSide = 3 - exitSideNumber;
 
     /**
      * THE ORIGIN TRAVELS WITH THE EXIT, and until now it did not.
@@ -1459,7 +1478,9 @@ function advanceByeAdvancedDrawPosition({
      * No winningSide means no attributable side, and an unattributed entry is worse than none —
      * the unwind would trust it. Same refusal as `buildSideExitProvenance`'s own.
      */
-    const exitingSideNumber = isExit(EXIT) && winningSide ? 3 - winningSide : undefined;
+    let exitingSideNumber: number | undefined;
+    if (isExit(EXIT) && winningSide) exitingSideNumber = 3 - winningSide;
+    else if (isExit(EXIT) && pending) exitingSideNumber = exitSideNumber;
     const provenance = {
       ...getSideExitProvenance({ matchUp: noContextNextWinnerMatchUp }),
       ...buildCarriedExitProvenance({
@@ -1499,6 +1520,7 @@ function advanceByeAdvancedDrawPosition({
     // stamped AFTER the state write, for the reason progressExitStatus states: a write that blanks
     // the codes the provenance describes clears the provenance with them (#4816).
     mergeSideExitProvenance({ matchUp: noContextNextWinnerMatchUp, provenance });
+    if (pending && !byeAdvances) return decorateResult({ result: { ...SUCCESS }, stack });
 
     const advanceResult = advanceDrawPosition({
       drawPositionToAdvance: nextDrawPositionToAdvance,
