@@ -89,7 +89,8 @@ describe('V11: the 1-0 marker in the GAME fields is a finished match tiebreak', 
 
   it('under TB1 the target is one, so 1-0 in the game fields is still the point, not a marker', () => {
     const tb1 = 'SET3XA-S:T10-F:TB1';
-    const decider = { setNumber: 3, side1Score: 1, side2Score: 0, winningSide: 1 };
+    // the decider is set 4, after the three bolts (CA, 2026-10-04)
+    const decider = { setNumber: 4, side1Score: 1, side2Score: 0, winningSide: 1 };
     expect(analyzeSet({ setObject: decider, matchUpScoringFormat: parse(tb1) }).sideTiebreakScores).toEqual([1, 0]);
   });
 });

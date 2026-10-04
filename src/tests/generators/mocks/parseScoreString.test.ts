@@ -158,12 +158,13 @@ it('uses default TB7 when no matchUpFormat provided', () => {
 describe('TB1 NoAD support', () => {
   it('should set NoAD=true for TB1 tiebreak-only final set', () => {
     const format = 'SET3XA-S:T10-F:TB1';
-    const scoreString = '30-25 25-30 [1-0]';
+    // three level bolts, then the sudden-death decider as set 4 (CA, 2026-10-04: never one of the three)
+    const scoreString = '30-25 25-30 20-20 [1-0]';
     const result = parseScoreString({ scoreString, matchUpFormat: format });
 
-    expect(result.length).toEqual(3);
+    expect(result.length).toEqual(4);
 
-    // First two sets are timed (no brackets)
+    // The bolts are timed (no brackets)
     expect(result[0].side1Score).toEqual(30);
     expect(result[0].side2Score).toEqual(25);
     expect(result[0].NoAD).toBeUndefined();
@@ -174,26 +175,28 @@ describe('TB1 NoAD support', () => {
     expect(result[1].NoAD).toBeUndefined();
     expect(result[1].tiebreakSet).toBeUndefined();
 
-    // Final set is TB1 (tiebreak-only): the point is a tiebreak point, not a game
-    expect(result[2].side1TiebreakScore).toEqual(1);
-    expect(result[2].side2TiebreakScore).toEqual(0);
-    expect(result[2].side1Score).toBeUndefined();
-    expect(result[2].NoAD).toBe(true);
-    expect(result[2].tiebreakSet).toBe(true);
+    expect(result[2].tiebreakSet).toBeUndefined();
+
+    // The decider is TB1 (tiebreak-only): the point is a tiebreak point, not a game
+    expect(result[3].side1TiebreakScore).toEqual(1);
+    expect(result[3].side2TiebreakScore).toEqual(0);
+    expect(result[3].side1Score).toBeUndefined();
+    expect(result[3].NoAD).toBe(true);
+    expect(result[3].tiebreakSet).toBe(true);
   });
 
   it('should set NoAD=true for TB1NOAD tiebreak-only final set', () => {
     const format = 'SET3XA-S:T10-F:TB1NOAD';
-    const scoreString = '40-35 30-35 [1-0]';
+    const scoreString = '40-35 30-35 25-25 [1-0]';
     const result = parseScoreString({ scoreString, matchUpFormat: format });
 
-    expect(result.length).toEqual(3);
+    expect(result.length).toEqual(4);
 
-    // Final set should have NoAD=true
-    expect(result[2].side1TiebreakScore).toEqual(1);
-    expect(result[2].side2TiebreakScore).toEqual(0);
-    expect(result[2].NoAD).toBe(true);
-    expect(result[2].tiebreakSet).toBe(true);
+    // The decider, set 4, should have NoAD=true
+    expect(result[3].side1TiebreakScore).toEqual(1);
+    expect(result[3].side2TiebreakScore).toEqual(0);
+    expect(result[3].NoAD).toBe(true);
+    expect(result[3].tiebreakSet).toBe(true);
   });
 
   it('should NOT set NoAD for TB7 tiebreak-only sets', () => {

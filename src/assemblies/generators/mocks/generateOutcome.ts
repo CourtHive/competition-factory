@@ -1,3 +1,4 @@
+import { aggregateDeciderSetNumber, finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { getSetComplement, getTiebreakComplement } from '@Query/matchUp/getComplement';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
@@ -226,7 +227,7 @@ function generateScoredOutcome({ pointsPerMinute, matchUpFormat, matchUpStatus, 
 
   const setsToGenerate = generateRange(1, (exactly ?? bestOf) + 1);
   for (const setNumber of setsToGenerate) {
-    const isFinalSet = setNumber === (exactly ?? bestOf);
+    const isFinalSet = finalSetGoverns(parsedFormat, setNumber, setNumber === (exactly ?? bestOf));
     const { set, incomplete, winningSideNumber } = generateSet({
       setFormat: (isFinalSet && finalSetFormat) || setFormat,
       incomplete: incompleteAt === setNumber,
@@ -246,6 +247,23 @@ function generateScoredOutcome({ pointsPerMinute, matchUpFormat, matchUpStatus, 
     const analysis = analyzeMatchUp({ matchUp: { score: { sets }, matchUpFormat } });
     // For aggregate formats (e.g. SET2XA-S:T10), always play all sets — winner is by total points
     if (analysis.calculatedWinningSide && !parsedFormat?.aggregate) break;
+  }
+
+  // A level aggregate goes to the sudden-death decider, set N + 1, where the format names one
+  const deciderSetNumber = aggregateDeciderSetNumber(parsedFormat);
+  if (deciderSetNumber && finalSetFormat && !weightedWinningSide && aggregateIsLevel(sets)) {
+    const { set } = generateSet({
+      weightedRange: winningSide ? [winningSide - 1] : weightedRange,
+      setFormat: finalSetFormat,
+      setNumber: deciderSetNumber,
+      incomplete: false,
+      pointsPerMinute,
+      matchUpStatus,
+      random,
+    }) as any;
+    if (winningSide && set.winningSide !== winningSide) swapSides(set);
+    sets.push(set);
+    weightedWinningSide = set.winningSide; // the decider settles it: no bolt is adjusted after it
   }
 
   const matchUpWinningSide = determineMatchUpWinningSide({
@@ -271,6 +289,17 @@ function generateScoredOutcome({ pointsPerMinute, matchUpFormat, matchUpStatus, 
   };
 
   return { outcome };
+}
+
+function swapSides(set: any) {
+  [set.side1Score, set.side2Score] = [set.side2Score, set.side1Score];
+  [set.side1TiebreakScore, set.side2TiebreakScore] = [set.side2TiebreakScore, set.side1TiebreakScore];
+  set.winningSide = set.winningSide === 1 ? 2 : 1;
+}
+
+function aggregateIsLevel(sets: any[]): boolean {
+  const total = (side: 1 | 2) => sets.reduce((sum, set) => sum + (set[`side${side}Score`] ?? 0), 0);
+  return sets.length > 0 && total(1) === total(2);
 }
 
 function determineMatchUpWinningSide({ weightedWinningSide, matchUpFormat, parsedFormat, winningSide, random, sets }) {

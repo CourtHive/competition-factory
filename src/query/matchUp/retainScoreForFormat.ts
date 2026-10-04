@@ -1,3 +1,4 @@
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { validateSetScore } from '@Validators/validateMatchUpScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
@@ -128,7 +129,7 @@ export function retainScoreForFormat(params?: RetainScoreArgs): RetainedScore {
       continue;
     }
 
-    const isDecidingSet = count !== undefined && index === count - 1;
+    const isDecidingSet = finalSetGoverns(parsed, index + 1, count !== undefined && index === count - 1);
     // `allowIncomplete: false` deliberately: where the rule DID change, a part-entered set has no
     // claim to survive it — the values were typed against a question that is no longer being asked.
     const { isValid, error } = validateSetScore(set, matchUpFormat, isDecidingSet, false);

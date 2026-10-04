@@ -1,3 +1,5 @@
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+
 /**
  * One shape for a tiebreak-only set.
  *
@@ -29,7 +31,11 @@ const isNumber = (value: unknown): value is number => typeof value === 'number' 
 export function formatForSet(matchUpScoringFormat: any, setNumber?: number) {
   const { bestOf, exactly, finalSetFormat, setFormat } = matchUpScoringFormat ?? {};
   const maxSetNumber = bestOf || exactly;
-  const isDecidingSet = !!(setNumber && maxSetNumber && setNumber === maxSetNumber);
+  const isDecidingSet = finalSetGoverns(
+    matchUpScoringFormat,
+    setNumber,
+    !!(setNumber && maxSetNumber && setNumber === maxSetNumber),
+  );
   return (isDecidingSet && finalSetFormat) || setFormat;
 }
 

@@ -218,10 +218,12 @@ describe("INTENNSE's own format, and the one case that stays open", () => {
     // CA has said the decider need not appear in the matchUpFormat for INTENNSE; this is the case where
     // it DOES, and the sum has to handle it either way.
     const DECIDER_FORMAT = 'SET3XA-S:T10-F:TB1';
+    // the decider is set 4, after all three bolts (CA, 2026-10-04: never one of the three)
     const sets = [
       { setNumber: 1, side1Score: 20, side2Score: 21, winningSide: 2 },
       { setNumber: 2, side1Score: 21, side2Score: 20, winningSide: 1 },
-      { setNumber: 3, side1Score: 0, side2Score: 0, side1TiebreakScore: 0, side2TiebreakScore: 1, winningSide: 2 },
+      { setNumber: 3, side1Score: 15, side2Score: 15 },
+      { setNumber: 4, side1Score: 0, side2Score: 0, side1TiebreakScore: 0, side2TiebreakScore: 1, winningSide: 2 },
     ];
 
     const analysis = analyzeMatchUp({
@@ -229,8 +231,8 @@ describe("INTENNSE's own format, and the one case that stays open", () => {
       matchUpFormat: DECIDER_FORMAT,
     });
 
-    // 41-41 across the bolts, and the decider's single point to side 2.
-    expect(analysis.aggregateScores).toEqual([41, 42]);
+    // 56-56 across the bolts, and the decider's single point to side 2.
+    expect(analysis.aggregateScores).toEqual([56, 57]);
     expect(analysis.calculatedWinningSide).toEqual(2);
   });
 

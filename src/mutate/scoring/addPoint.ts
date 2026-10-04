@@ -13,7 +13,8 @@
  * - NoAD games and tiebreaks
  */
 
-import { resolveSetType, isAggregateFormat } from '@Tools/scoring/scoringUtilities';
+import { resolveSetType, isAggregateFormat, isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
+import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 import type { PointMultiplier } from './resolvePointValue';
 import { calculatePointsTo } from './pointsToCalculator';
@@ -98,10 +99,11 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   });
 
   // Resolve the set type for the current/next set
-  const setType = resolveSetType(formatStructure, setsWon);
+  const setNumber = openSetNumber(newMatchUp.score.sets);
+  const setType = resolveSetType(formatStructure, setsWon, setNumber);
 
   // Determine the active set format
-  const isDecidingSet = setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1;
+  const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, setNumber);
   const activeSetFormat: SetFormatStructure | undefined =
     isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 
