@@ -1,5 +1,6 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
@@ -833,6 +834,42 @@ export function isProjectedExitCode(code: any): boolean {
  */
 export function isPropagatedExit({ matchUp }: { matchUp?: MatchUp }): boolean {
   return getExitSides({ matchUp }).length > 0;
+}
+
+/**
+ * Whether a DIRECT write would change a matchUp that holds a carried or produced exit.
+ *
+ * CA, 2026-10-03: such an exit is not a result anybody recorded at this matchUp, so it cannot be
+ * re-scored into another result here (a produced WALKOVER recorded as RETIRED 6-3, say) and it cannot be
+ * removed here; the correction is made at its ORIGIN, whose clear or re-score re-derives this matchUp.
+ * Left open, the re-score was accepted and kept the carried provenance, and clearing the origin later
+ * withdrew the exit from under the director's score (census 9000184, UNDECIDED_WITH_SCORE).
+ *
+ * Only a write that changes nothing passes: the same status, the same winner or none, and no score.
+ * The cascade's own writes (`propagatingExit`) are not direct and are never asked. `carriedExit` is
+ * `isPropagatedExit` of the stored matchUp: v1 reads it there, v2 from its view.
+ */
+export function rewritesCarriedExit({
+  existingWinningSide,
+  existingStatus,
+  matchUpStatus,
+  carriedExit,
+  winningSide,
+  score,
+}: {
+  existingWinningSide?: number;
+  existingStatus?: string;
+  matchUpStatus?: string;
+  carriedExit: boolean;
+  winningSide?: number;
+  score?: any;
+}): boolean {
+  if (!carriedExit) return false;
+  const unchanged =
+    matchUpStatus === existingStatus &&
+    (!winningSide || winningSide === existingWinningSide) &&
+    !checkScoreHasValue({ score });
+  return !unchanged;
 }
 
 /**

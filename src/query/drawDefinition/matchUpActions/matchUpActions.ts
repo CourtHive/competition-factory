@@ -1,5 +1,6 @@
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
@@ -315,7 +316,11 @@ function addStandardActions({
 
   if (isInComplete && readyToScore) validActions.push({ type: STATUS });
 
-  if (scoringActive && readyToScore) {
+  // A carried or produced exit is changed at its ORIGIN, never here (CA, 2026-10-03): neither SCORE nor
+  // CLEAR_SCORE is offered on it, as `setMatchUpState` refuses both (`rewritesCarriedExit`).
+  const carriedExit = isPropagatedExit({ matchUp });
+
+  if (scoringActive && readyToScore && !carriedExit) {
     validActions.push({
       info: 'set outcome and winningSide',
       method: SCHEDULE_METHOD,
@@ -349,7 +354,7 @@ function addStandardActions({
   const hasOutcomeToRemove =
     !!matchUp.winningSide || (!!matchUp.matchUpStatus && matchUp.matchUpStatus !== TO_BE_PLAYED);
   const clearWouldBeRefused = activeDownstream || hasPropagatedExitDownstream({ targetData, matchUpsMap });
-  if (scoringActive && hasOutcomeToRemove && !clearWouldBeRefused) {
+  if (scoringActive && hasOutcomeToRemove && !clearWouldBeRefused && !carriedExit) {
     validActions.push({
       info: 'remove the existing outcome',
       method: SCHEDULE_METHOD,

@@ -1,5 +1,6 @@
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
+import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { validateScore } from '@Validators/validateScore';
 import { isDoubleExit } from '@Validators/isExit';
@@ -121,6 +122,21 @@ function refuseAgainstExisting(request: OutcomeRequest, view: OutcomeView): Refu
         context: { matchUpStatus, calculatedWinningSide: view.impliedWinningSide },
       });
   }
+
+  // row 20, checked here: a carried or produced exit is changed at its ORIGIN (CA, 2026-10-03)
+  const rewrite = rewritesCarriedExit({
+    existingWinningSide: existing.winningSide,
+    existingStatus: existing.matchUpStatus,
+    carriedExit: existing.carriedExit,
+    matchUpStatus,
+    winningSide,
+    score,
+  });
+  if (rewrite)
+    return refuse(20, CANNOT_CHANGE_OUTCOME, {
+      info: 'a carried exit is changed at its origin',
+      context: { matchUpStatus: existing.matchUpStatus },
+    });
 
   if (view.propagatedExitStands && isClear(request)) return refuse(10, PROPAGATED_EXITS_DOWNSTREAM);
   return undefined;

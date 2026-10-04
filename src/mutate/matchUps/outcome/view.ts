@@ -1,4 +1,3 @@
-import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
@@ -23,6 +22,11 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { isAnyExit, isExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
+import {
+  getSideExitProvenance,
+  carriedExitStatus,
+  isPropagatedExit,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, PositionAssignment, Structure } from '@Types/tournamentTypes';
@@ -202,7 +206,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     drawType: drawDefinition?.drawType,
     found: false,
     isTeam: false,
-    existing: { validWinningScore: false, scoreHasValue: false, scoredTime: false },
+    existing: { validWinningScore: false, scoreHasValue: false, scoredTime: false, carriedExit: false },
     propagatedExitStands: false,
     activeDownstream: false,
     participants: { required: false, count: 0, exitAwardable: false, requireForScoring: true },
@@ -379,6 +383,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       matchUpFormat: storedFormat,
       ownMatchUpFormat: matchUp.matchUpFormat,
       validWinningScore: !LIVE_OR_UNSET.has(matchUp.matchUpStatus) && validWinningScore,
+      carriedExit: isPropagatedExit({ matchUp }),
     },
     impliedWinningSide,
     propagatedExitStands,
