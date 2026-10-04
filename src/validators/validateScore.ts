@@ -1,6 +1,7 @@
 import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
 import { isTiebreakGamesScore } from '@Query/matchUp/tiebreakAtRules';
 import { formatForSet } from '@Query/matchUp/tiebreakSetShape';
+import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
 import { analyzeScore } from '@Query/matchUp/analyzeScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
@@ -8,10 +9,15 @@ import { isConvertableInteger } from '@Tools/math';
 import { unique } from '@Tools/arrays';
 
 // constants and types
-import { INVALID_SCORE, INVALID_VALUES, MISSING_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 import { TIEBREAK_POINTS_NOT_RECORDED } from '@Constants/scoreWarningConstants';
 import { ResultType, ResultWarning } from '@Types/factoryTypes';
 import type { Score } from '@Types/tournamentTypes';
+import {
+  INVALID_MATCHUP_STATUS,
+  INVALID_SCORE,
+  INVALID_VALUES,
+  MISSING_MATCHUP_FORMAT,
+} from '@Constants/errorConditionConstants';
 
 type validateScoreTypes = {
   existingMatchUpStatus?: string;
@@ -108,6 +114,8 @@ export function validateScore({
   score,
 }: validateScoreTypes): ResultType & { valid?: boolean } {
   if (typeof score !== 'object') return { error: INVALID_VALUES };
+  if (matchUpStatus !== undefined && !isMatchUpStatus(matchUpStatus))
+    return { error: INVALID_MATCHUP_STATUS, info: 'matchUpStatus does not exist' };
   const { sets, scoreStringSide1, scoreStringSide2 } = score;
   const info = 'scoreString must be a string!';
 

@@ -9,6 +9,7 @@ import { isTiebreakMarker } from '@Query/matchUp/tiebreakSetShape';
 import { getMaxSetScore } from '@Query/matchUp/getComplement';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { setPlayedAfterDecision } from './setCount';
+import { isMatchUpStatus } from './isMatchUpStatus';
 
 // constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
@@ -462,6 +463,9 @@ export function validateMatchUpScore(
   matchUpFormat?: string,
   matchUpStatus?: string,
 ): { isValid: boolean; error?: string } {
+  if (matchUpStatus !== undefined && !isMatchUpStatus(matchUpStatus)) {
+    return { isValid: false, error: `Unknown matchUpStatus: ${matchUpStatus}` };
+  }
   if (!sets || sets.length === 0) {
     return { isValid: true }; // Empty is valid (not an error, just incomplete)
   }

@@ -12,7 +12,7 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants and types
 import { COMPLETED, completedMatchUpStatuses, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { DrawDefinition, Event, TieScoreSourceEnum, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUpStatusUnion, TieScoreSourceEnum, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions, TournamentRecords, MatchUpsMap } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -30,7 +30,7 @@ type UpdateTieMatchUpScoreArgs = {
   drawDefinition: DrawDefinition;
   exitWhenNoValues?: boolean;
   matchUpsMap?: MatchUpsMap;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   tournamentId?: string;
   removeScore?: boolean;
   matchUpId: string;
