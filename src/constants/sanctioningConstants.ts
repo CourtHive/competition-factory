@@ -50,105 +50,105 @@ export const AMENDABLE_STATUSES: SanctioningStatus[] = [APPROVED, ACTIVE];
 // Error Constants
 // ---------------------------------------------------------------------------
 
-export const MISSING_SANCTIONING_RECORD: ErrorType = {
+export const MISSING_SANCTIONING_RECORD = {
   message: 'Missing sanctioningRecord',
-  code: 'ERR_MISSING_SANCTIONING_RECORD',
-};
+  code: 'ERR_MISSING_SANCTIONING_RECORD' as const,
+} satisfies ErrorType;
 
-export const INVALID_SANCTIONING_RECORD: ErrorType = {
+export const INVALID_SANCTIONING_RECORD = {
   message: 'Invalid sanctioningRecord',
-  code: 'ERR_INVALID_SANCTIONING_RECORD',
-};
+  code: 'ERR_INVALID_SANCTIONING_RECORD' as const,
+} satisfies ErrorType;
 
-export const SANCTIONING_RECORD_NOT_FOUND: ErrorType = {
+export const SANCTIONING_RECORD_NOT_FOUND = {
   message: 'SanctioningRecord not found',
-  code: 'ERR_NOT_FOUND_SANCTIONING_RECORD',
-};
+  code: 'ERR_NOT_FOUND_SANCTIONING_RECORD' as const,
+} satisfies ErrorType;
 
-export const SANCTIONING_RECORD_EXISTS: ErrorType = {
+export const SANCTIONING_RECORD_EXISTS = {
   message: 'SanctioningRecord already exists',
-  code: 'ERR_EXISTING_SANCTIONING_RECORD',
-};
+  code: 'ERR_EXISTING_SANCTIONING_RECORD' as const,
+} satisfies ErrorType;
 
-export const MISSING_SANCTIONING_ID: ErrorType = {
+export const MISSING_SANCTIONING_ID = {
   message: 'Missing sanctioningId',
-  code: 'ERR_MISSING_SANCTIONING_ID',
-};
+  code: 'ERR_MISSING_SANCTIONING_ID' as const,
+} satisfies ErrorType;
 
-export const INVALID_STATUS_TRANSITION: ErrorType = {
+export const INVALID_STATUS_TRANSITION = {
   message: 'Invalid status transition',
-  code: 'ERR_INVALID_STATUS_TRANSITION',
-};
+  code: 'ERR_INVALID_STATUS_TRANSITION' as const,
+} satisfies ErrorType;
 
-export const MISSING_PROPOSAL: ErrorType = {
+export const MISSING_PROPOSAL = {
   message: 'Missing proposal',
-  code: 'ERR_MISSING_PROPOSAL',
-};
+  code: 'ERR_MISSING_PROPOSAL' as const,
+} satisfies ErrorType;
 
-export const INVALID_PROPOSAL: ErrorType = {
+export const INVALID_PROPOSAL = {
   message: 'Invalid proposal',
-  code: 'ERR_INVALID_PROPOSAL',
-};
+  code: 'ERR_INVALID_PROPOSAL' as const,
+} satisfies ErrorType;
 
-export const MISSING_EVENT_PROPOSAL: ErrorType = {
+export const MISSING_EVENT_PROPOSAL = {
   message: 'Missing event proposal',
-  code: 'ERR_MISSING_EVENT_PROPOSAL',
-};
+  code: 'ERR_MISSING_EVENT_PROPOSAL' as const,
+} satisfies ErrorType;
 
-export const EVENT_PROPOSAL_NOT_FOUND: ErrorType = {
+export const EVENT_PROPOSAL_NOT_FOUND = {
   message: 'Event proposal not found',
-  code: 'ERR_NOT_FOUND_EVENT_PROPOSAL',
-};
+  code: 'ERR_NOT_FOUND_EVENT_PROPOSAL' as const,
+} satisfies ErrorType;
 
-export const PROPOSAL_NOT_EDITABLE: ErrorType = {
+export const PROPOSAL_NOT_EDITABLE = {
   message: 'Proposal is not editable in current status',
-  code: 'ERR_PROPOSAL_NOT_EDITABLE',
-};
+  code: 'ERR_PROPOSAL_NOT_EDITABLE' as const,
+} satisfies ErrorType;
 
-export const ENDORSEMENT_REQUIRED: ErrorType = {
+export const ENDORSEMENT_REQUIRED = {
   message: 'Endorsement is required before submission',
-  code: 'ERR_ENDORSEMENT_REQUIRED',
-};
+  code: 'ERR_ENDORSEMENT_REQUIRED' as const,
+} satisfies ErrorType;
 
-export const MISSING_ENDORSEMENT: ErrorType = {
+export const MISSING_ENDORSEMENT = {
   message: 'Missing endorsement',
-  code: 'ERR_MISSING_ENDORSEMENT',
-};
+  code: 'ERR_MISSING_ENDORSEMENT' as const,
+} satisfies ErrorType;
 
-export const MISSING_SANCTIONING_POLICY: ErrorType = {
+export const MISSING_SANCTIONING_POLICY = {
   message: 'Missing sanctioning policy',
-  code: 'ERR_MISSING_SANCTIONING_POLICY',
-};
+  code: 'ERR_MISSING_SANCTIONING_POLICY' as const,
+} satisfies ErrorType;
 
-export const CONDITION_NOT_FOUND: ErrorType = {
+export const CONDITION_NOT_FOUND = {
   message: 'Condition not found',
-  code: 'ERR_NOT_FOUND_CONDITION',
-};
+  code: 'ERR_NOT_FOUND_CONDITION' as const,
+} satisfies ErrorType;
 
-export const AMENDMENT_NOT_FOUND: ErrorType = {
+export const AMENDMENT_NOT_FOUND = {
   message: 'Amendment not found',
-  code: 'ERR_NOT_FOUND_AMENDMENT',
-};
+  code: 'ERR_NOT_FOUND_AMENDMENT' as const,
+} satisfies ErrorType;
 
-export const AMENDMENT_NOT_ALLOWED: ErrorType = {
+export const AMENDMENT_NOT_ALLOWED = {
   message: 'Amendments not allowed in current status',
-  code: 'ERR_AMENDMENT_NOT_ALLOWED',
-};
+  code: 'ERR_AMENDMENT_NOT_ALLOWED' as const,
+} satisfies ErrorType;
 
-export const CHANGE_WINDOW_CLOSED: ErrorType = {
+export const CHANGE_WINDOW_CLOSED = {
   message: 'Change window has closed; modifications not permitted',
-  code: 'ERR_CHANGE_WINDOW_CLOSED',
-};
+  code: 'ERR_CHANGE_WINDOW_CLOSED' as const,
+} satisfies ErrorType;
 
-export const COMPLIANCE_NOT_APPLICABLE: ErrorType = {
+export const COMPLIANCE_NOT_APPLICABLE = {
   message: 'Compliance tracking not applicable in current status',
-  code: 'ERR_COMPLIANCE_NOT_APPLICABLE',
-};
+  code: 'ERR_COMPLIANCE_NOT_APPLICABLE' as const,
+} satisfies ErrorType;
 
-export const OUTSTANDING_COMPLIANCE: ErrorType = {
+export const OUTSTANDING_COMPLIANCE = {
   message: 'Outstanding compliance items from prior sanctioning must be resolved',
-  code: 'ERR_OUTSTANDING_COMPLIANCE',
-};
+  code: 'ERR_OUTSTANDING_COMPLIANCE' as const,
+} satisfies ErrorType;
 
 // ---------------------------------------------------------------------------
 // Notification Topics

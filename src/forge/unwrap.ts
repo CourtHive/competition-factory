@@ -28,6 +28,9 @@
 import { constructFactoryError } from '../errors/codeRegistry';
 import { FactoryError } from '../errors/FactoryError';
 
+// constants
+import { ENGINE_RETURNED_UNDEFINED } from '@Constants/errorConditionConstants';
+
 /**
  * Type-level: narrow to the success arm.
  *
@@ -60,7 +63,7 @@ export function unwrap<T>(result: T, opts?: { methodName?: string }): Unwrap<T> 
     // didn't dispatch (unknown method, no state loaded, paramsMiddleware
     // bailed). Surface that as a typed error rather than letting the
     // caller dereference null/undefined.
-    throw new FactoryError('ENGINE_RETURNED_UNDEFINED', 'engine returned no result', {
+    throw new FactoryError(ENGINE_RETURNED_UNDEFINED.code, ENGINE_RETURNED_UNDEFINED.message, {
       methodName: opts?.methodName,
     });
   }
