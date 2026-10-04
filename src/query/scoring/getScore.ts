@@ -12,6 +12,9 @@ import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import { RALLY } from '@Constants/matchUpFormatConstants';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
+// constants
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+
 export interface GetScoreOptions {
   useBracketNotation?: boolean; // Use [10-8] format for match tiebreaks
 }
@@ -65,7 +68,7 @@ export function getScore(matchUp: MatchUp, options?: GetScoreOptions): ScoreResu
  */
 function computePointDisplay(matchUp: MatchUp, points: number[]): [string, string] | undefined {
   // Only compute if match is in progress and not completed
-  if (matchUp.matchUpStatus === 'COMPLETED' || matchUp.matchUpStatus === 'TO_BE_PLAYED') {
+  if (matchUp.matchUpStatus === COMPLETED || matchUp.matchUpStatus === TO_BE_PLAYED) {
     return undefined;
   }
 
@@ -120,7 +123,7 @@ function computePointDisplay(matchUp: MatchUp, points: number[]): [string, strin
  */
 function computeSituation(matchUp: MatchUp): PointSituation | undefined {
   // Only compute if match is in progress
-  if (matchUp.matchUpStatus === 'COMPLETED' || matchUp.matchUpStatus === 'TO_BE_PLAYED') {
+  if (matchUp.matchUpStatus === COMPLETED || matchUp.matchUpStatus === TO_BE_PLAYED) {
     return undefined;
   }
 

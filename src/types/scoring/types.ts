@@ -5,6 +5,17 @@
  * All structures are JSON-serializable
  */
 
+import type {
+  ABANDONED,
+  CANCELLED,
+  COMPLETED,
+  DEFAULTED,
+  IN_PROGRESS,
+  RETIRED,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
+
 // ============================================================================
 // TODS Core Types
 // ============================================================================
@@ -349,8 +360,16 @@ export interface MatchUpState {
 // Enums & Constants
 // ============================================================================
 
+/** The statuses the point-by-point engine produces: a subset of CODES', spelled by the constants module. */
 export type MatchUpStatus =
-  'TO_BE_PLAYED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ABANDONED' | 'DEFAULTED' | 'RETIRED' | 'WALKOVER';
+  | typeof TO_BE_PLAYED
+  | typeof IN_PROGRESS
+  | typeof COMPLETED
+  | typeof CANCELLED
+  | typeof ABANDONED
+  | typeof DEFAULTED
+  | typeof RETIRED
+  | typeof WALKOVER;
 
 export type MatchUpType = 'SINGLES' | 'DOUBLES' | 'TEAM';
 
