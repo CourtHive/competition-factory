@@ -5,6 +5,7 @@ export * from './officiatingTypes';
 export * from './sanctioningTypes';
 export * from './declarationTypes';
 export * from './tournamentTypes';
+export * from './errorCodeTypes';
 export * from './rankingTypes';
 export * from './factoryTypes';
 export * from './reportTypes';

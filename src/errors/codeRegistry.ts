@@ -27,9 +27,13 @@ import {
   StructureNotFoundError,
 } from './subclasses';
 
+// types
+import type { ErrorCode } from '@Types/errorCodeTypes';
+
 type FactoryErrorConstructor = new (opts?: FactoryErrorOptions) => FactoryError;
 
-const registry: Record<string, FactoryErrorConstructor> = {
+// keyed by ErrorCode, so a registered code that no constant defines does not compile
+const registry: Partial<Record<ErrorCode, FactoryErrorConstructor>> = {
   ERR_MISSING_TOURNAMENT: MissingTournamentRecordError,
   ERR_MISSING_TOURNAMENTS: MissingTournamentRecordsError,
   ERR_MISSING_DRAWDEF: MissingDrawDefinitionError,
@@ -51,7 +55,7 @@ const registry: Record<string, FactoryErrorConstructor> = {
  * the supplied `message` as-is (typically the legacy constant's `message`).
  */
 export function constructFactoryError(code: string, message: string, opts?: FactoryErrorOptions): FactoryError {
-  const Ctor = registry[code];
+  const Ctor = registry[code as ErrorCode];
   if (Ctor) return new Ctor(opts);
   return new FactoryError(code, message, opts);
 }

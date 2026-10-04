@@ -21,90 +21,104 @@
  * just don't have a dedicated `instanceof`-able subclass yet. Add more as
  * the catch-side ergonomics warrant.
  *
- * Message text mirrors the legacy constants from `errorConditionConstants`
- * so consumers that pattern-match on `error.message` are unaffected. The
- * `code` strings are byte-for-byte identical to the legacy `code` field.
+ * Code and message are read from the constants each subclass stands for,
+ * so they cannot drift from the legacy `{ code, message }` objects: the
+ * registry round-trips, and a consumer's `error.code` check sees the same
+ * code either way.
  */
 import { FactoryError, FactoryErrorOptions } from './FactoryError';
 
-// Sentinel codes — must stay identical to the legacy constants in
-// `src/constants/errorConditionConstants.ts` so the registry round-trips and
-// downstream consumers' `error.code === 'ERR_MISSING_TOURNAMENT'` checks
-// keep working.
+// constants
+import { MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';
+import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
+import {
+  EVENT_NOT_FOUND,
+  INVALID_DATE,
+  INVALID_VALUES,
+  MATCHUP_NOT_FOUND,
+  MISSING_DRAW_DEFINITION,
+  MISSING_EVENT,
+  MISSING_TOURNAMENT_RECORD,
+  MISSING_TOURNAMENT_RECORDS,
+  MISSING_VALUE,
+  PARTICIPANT_NOT_FOUND,
+  STRUCTURE_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
+
 export class MissingTournamentRecordError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_MISSING_TOURNAMENT', 'Missing tournamentRecord', opts);
+    super(MISSING_TOURNAMENT_RECORD.code, MISSING_TOURNAMENT_RECORD.message, opts);
   }
 }
 
 export class MissingTournamentRecordsError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_MISSING_TOURNAMENTS', 'Missing tournamentRecords', opts);
+    super(MISSING_TOURNAMENT_RECORDS.code, MISSING_TOURNAMENT_RECORDS.message, opts);
   }
 }
 
 export class MissingDrawDefinitionError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_MISSING_DRAWDEF', 'Missing drawDefinition', opts);
+    super(MISSING_DRAW_DEFINITION.code, MISSING_DRAW_DEFINITION.message, opts);
   }
 }
 
 export class MissingEventError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_MISSING_EVENT_ID', 'Missing event / eventId', opts);
+    super(MISSING_EVENT.code, MISSING_EVENT.message, opts);
   }
 }
 
 export class MissingValueError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_MISSING_VALUE', 'Missing value', opts);
+    super(MISSING_VALUE.code, MISSING_VALUE.message, opts);
   }
 }
 
 export class MissingSanctioningRecordError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_MISSING_SANCTIONING_RECORD', 'Missing sanctioningRecord', opts);
+    super(MISSING_SANCTIONING_RECORD.code, MISSING_SANCTIONING_RECORD.message, opts);
   }
 }
 
 export class MissingOfficialRecordError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_MISSING_OFFICIAL_RECORD', 'Missing officialRecord', opts);
+    super(MISSING_OFFICIAL_RECORD.code, MISSING_OFFICIAL_RECORD.message, opts);
   }
 }
 
 export class InvalidValuesError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_INVALID_VALUES', 'Invalid values', opts);
+    super(INVALID_VALUES.code, INVALID_VALUES.message, opts);
   }
 }
 
 export class InvalidDateError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_INVALID_DATE', 'Invalid Date', opts);
+    super(INVALID_DATE.code, INVALID_DATE.message, opts);
   }
 }
 
 export class ParticipantNotFoundError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_NOT_FOUND_PARTICIPANT', 'Participant Not Found', opts);
+    super(PARTICIPANT_NOT_FOUND.code, PARTICIPANT_NOT_FOUND.message, opts);
   }
 }
 
 export class StructureNotFoundError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_NOT_FOUND_STRUCTURE', 'structure not found', opts);
+    super(STRUCTURE_NOT_FOUND.code, STRUCTURE_NOT_FOUND.message, opts);
   }
 }
 
 export class MatchUpNotFoundError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_NOT_FOUND_MATCHUP', 'matchUp not found', opts);
+    super(MATCHUP_NOT_FOUND.code, MATCHUP_NOT_FOUND.message, opts);
   }
 }
 
 export class EventNotFoundError extends FactoryError {
   constructor(opts?: FactoryErrorOptions) {
-    super('ERR_NOT_FOUND_EVENT', 'Event not found', opts);
+    super(EVENT_NOT_FOUND.code, EVENT_NOT_FOUND.message, opts);
   }
 }

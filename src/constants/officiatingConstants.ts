@@ -96,101 +96,101 @@ export const EVALUATION_SCALE_OPTIONS = [
 // Error Constants
 // ---------------------------------------------------------------------------
 
-export const MISSING_OFFICIAL_RECORD: ErrorType = {
+export const MISSING_OFFICIAL_RECORD = {
   message: 'Missing officialRecord',
-  code: 'ERR_MISSING_OFFICIAL_RECORD',
-};
+  code: 'ERR_MISSING_OFFICIAL_RECORD' as const,
+} satisfies ErrorType;
 
-export const OFFICIAL_RECORD_NOT_FOUND: ErrorType = {
+export const OFFICIAL_RECORD_NOT_FOUND = {
   message: 'OfficialRecord not found',
-  code: 'ERR_NOT_FOUND_OFFICIAL_RECORD',
-};
+  code: 'ERR_NOT_FOUND_OFFICIAL_RECORD' as const,
+} satisfies ErrorType;
 
-export const OFFICIAL_RECORD_EXISTS: ErrorType = {
+export const OFFICIAL_RECORD_EXISTS = {
   message: 'OfficialRecord already exists',
-  code: 'ERR_EXISTING_OFFICIAL_RECORD',
-};
+  code: 'ERR_EXISTING_OFFICIAL_RECORD' as const,
+} satisfies ErrorType;
 
-export const MISSING_OFFICIAL_RECORD_ID: ErrorType = {
+export const MISSING_OFFICIAL_RECORD_ID = {
   message: 'Missing officialRecordId',
-  code: 'ERR_MISSING_OFFICIAL_RECORD_ID',
-};
+  code: 'ERR_MISSING_OFFICIAL_RECORD_ID' as const,
+} satisfies ErrorType;
 
-export const CERTIFICATION_NOT_FOUND: ErrorType = {
+export const CERTIFICATION_NOT_FOUND = {
   message: 'Certification not found',
-  code: 'ERR_NOT_FOUND_CERTIFICATION',
-};
+  code: 'ERR_NOT_FOUND_CERTIFICATION' as const,
+} satisfies ErrorType;
 
-export const CERTIFICATION_EXPIRED: ErrorType = {
+export const CERTIFICATION_EXPIRED = {
   message: 'Certification has expired',
-  code: 'ERR_CERTIFICATION_EXPIRED',
-};
+  code: 'ERR_CERTIFICATION_EXPIRED' as const,
+} satisfies ErrorType;
 
-export const EVALUATION_NOT_FOUND: ErrorType = {
+export const EVALUATION_NOT_FOUND = {
   message: 'Evaluation not found',
-  code: 'ERR_NOT_FOUND_EVALUATION',
-};
+  code: 'ERR_NOT_FOUND_EVALUATION' as const,
+} satisfies ErrorType;
 
-export const EVALUATION_NOT_EDITABLE: ErrorType = {
+export const EVALUATION_NOT_EDITABLE = {
   message: 'Evaluation is not editable in current status',
-  code: 'ERR_EVALUATION_NOT_EDITABLE',
-};
+  code: 'ERR_EVALUATION_NOT_EDITABLE' as const,
+} satisfies ErrorType;
 
-export const ASSIGNMENT_NOT_FOUND: ErrorType = {
+export const ASSIGNMENT_NOT_FOUND = {
   message: 'Assignment not found',
-  code: 'ERR_NOT_FOUND_ASSIGNMENT',
-};
+  code: 'ERR_NOT_FOUND_ASSIGNMENT' as const,
+} satisfies ErrorType;
 
-export const OFFICIAL_NOT_ELIGIBLE: ErrorType = {
+export const OFFICIAL_NOT_ELIGIBLE = {
   message: 'Official does not meet eligibility requirements',
-  code: 'ERR_OFFICIAL_NOT_ELIGIBLE',
-};
+  code: 'ERR_OFFICIAL_NOT_ELIGIBLE' as const,
+} satisfies ErrorType;
 
-export const INVALID_EVALUATION_SCORES: ErrorType = {
+export const INVALID_EVALUATION_SCORES = {
   message: 'Evaluation scores do not satisfy policy requirements',
-  code: 'ERR_INVALID_EVALUATION_SCORES',
-};
+  code: 'ERR_INVALID_EVALUATION_SCORES' as const,
+} satisfies ErrorType;
 
-export const INVALID_OFFICIATING_STATUS_TRANSITION: ErrorType = {
+export const INVALID_OFFICIATING_STATUS_TRANSITION = {
   message: 'Invalid status transition',
-  code: 'ERR_INVALID_OFFICIATING_STATUS_TRANSITION',
-};
+  code: 'ERR_INVALID_OFFICIATING_STATUS_TRANSITION' as const,
+} satisfies ErrorType;
 
-export const SUSPENSION_NOT_FOUND: ErrorType = {
+export const SUSPENSION_NOT_FOUND = {
   message: 'Suspension not found',
-  code: 'ERR_NOT_FOUND_SUSPENSION',
-};
+  code: 'ERR_NOT_FOUND_SUSPENSION' as const,
+} satisfies ErrorType;
 
-export const CERTIFICATION_REQUIREMENT_NOT_FOUND: ErrorType = {
+export const CERTIFICATION_REQUIREMENT_NOT_FOUND = {
   message: 'Certification requirement not found',
-  code: 'ERR_NOT_FOUND_CERTIFICATION_REQUIREMENT',
-};
+  code: 'ERR_NOT_FOUND_CERTIFICATION_REQUIREMENT' as const,
+} satisfies ErrorType;
 
-export const MISSING_EVALUATION_POLICY: ErrorType = {
+export const MISSING_EVALUATION_POLICY = {
   message: 'Missing evaluation policy',
-  code: 'ERR_MISSING_EVALUATION_POLICY',
-};
+  code: 'ERR_MISSING_EVALUATION_POLICY' as const,
+} satisfies ErrorType;
 
-export const CONFLICT_DECLARATION_NOT_FOUND: ErrorType = {
+export const CONFLICT_DECLARATION_NOT_FOUND = {
   message: 'Conflict declaration not found',
-  code: 'ERR_NOT_FOUND_CONFLICT_DECLARATION',
-};
+  code: 'ERR_NOT_FOUND_CONFLICT_DECLARATION' as const,
+} satisfies ErrorType;
 
-export const MISSING_CONFLICT_SOURCE: ErrorType = {
+export const MISSING_CONFLICT_SOURCE = {
   message:
     'Missing conflict source — supply an officialRecord and/or the official participant plus tournament groupings',
-  code: 'ERR_MISSING_CONFLICT_SOURCE',
-};
+  code: 'ERR_MISSING_CONFLICT_SOURCE' as const,
+} satisfies ErrorType;
 
-export const MISSING_CONFLICT_PARTICIPANTS: ErrorType = {
+export const MISSING_CONFLICT_PARTICIPANTS = {
   message: 'Missing participants — a conflict-of-interest policy was supplied but there is nothing to check against',
-  code: 'ERR_MISSING_CONFLICT_PARTICIPANTS',
-};
+  code: 'ERR_MISSING_CONFLICT_PARTICIPANTS' as const,
+} satisfies ErrorType;
 
-export const OFFICIAL_CONFLICT_OF_INTEREST: ErrorType = {
+export const OFFICIAL_CONFLICT_OF_INTEREST = {
   message: 'Official has a blocking conflict of interest',
-  code: 'ERR_OFFICIAL_CONFLICT_OF_INTEREST',
-};
+  code: 'ERR_OFFICIAL_CONFLICT_OF_INTEREST' as const,
+} satisfies ErrorType;
 
 // ---------------------------------------------------------------------------
 // Notification Topics
