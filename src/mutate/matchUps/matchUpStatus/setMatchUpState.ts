@@ -1145,7 +1145,13 @@ function checkParticipants({
     // drawPosition whose assignment holds nobody. See exitAwardable.
     (propagatingExit ||
       !winningSide ||
-      exitAwardable({ positionAssignments: allAssignments, inContextMatchUp, winningSide }))
+      exitAwardable({ positionAssignments: allAssignments, inContextMatchUp, winningSide })) &&
+    // A DOUBLE exit is two exits, one per seat, so a DIRECT one needs both seats reached. CA,
+    // 2026-10-04: *"How can three entities arrive in one matchUp which can only hold two
+    // drawPositions?"* Entered beside an unreached seat, the arrival later meets a double exit already
+    // standing, and the convergence written there was refused and dropped (F3, census 9100555). Only
+    // the cascade's own write keeps the waiver, as it does with propagation off: refused.
+    (propagatingExit || !isDoubleExit(matchUpStatus))
   ) {
     return { ...SUCCESS };
   }

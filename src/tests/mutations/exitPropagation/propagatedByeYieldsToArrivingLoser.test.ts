@@ -1,3 +1,4 @@
+import { getDrawDefinition, hash } from '@Tests/testHarness/exitPropagation/transitions';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -40,6 +41,15 @@ import {
  *
  * All four cases are shrunk reproductions from that window, which is why the seeds are the sweep's
  * own.
+ *
+ * TWO NOW STOP AT A REFUSAL (CA, 2026-10-04). Each entered a DIRECT double exit on a matchUp holding one
+ * participant beside a seat nobody had reached, which is no longer accepted: a double exit is one exit
+ * per seat. `refusedAt` pins the step and that it changes nothing. Measured the same day: with the
+ * `holdsPropagatedBye` clause switched off, the chain-of-walkovers case was the ONLY one that failed,
+ * and only through that refused shape; a double exit entered with both seats filled and then re-scored
+ * to a winner never needed the clause (six draw types, both double exits, propagation on and off).
+ * Whether the clause is reachable from legal steps at all is recorded as open in
+ * `Mentat/planning/OUTCOME_PIPELINE_OPEN_QUESTIONS.md` (F3).
  */
 
 const DRAW_ID = 'propagated-bye-yields';
@@ -78,6 +88,7 @@ it.each([
     drawSize: 16,
     propagateExitStatus: true,
     seed: 9000572,
+    refusedAt: 2,
     steps: [
       { structureName: 'Main', roundNumber: 1, roundPosition: 5, outcome: { winningSide: 1 } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 3, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
@@ -118,6 +129,7 @@ it.each([
     drawSize: 8,
     propagateExitStatus: true,
     seed: 9000305,
+    refusedAt: 3,
     steps: [
       { structureName: 'Main', roundNumber: 1, roundPosition: 2, outcome: { winningSide: 1 } },
       { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: { winningSide: 2 } },
@@ -165,8 +177,8 @@ it.each([
       { structureName: 'Main', roundNumber: 3, roundPosition: 2, outcome: { winningSide: 1 } },
     ],
   },
-])('$scenario is not refused by a propagated BYE holding the target slot', (testCase) => {
-  const { participantsCount, propagateExitStatus, drawType, drawSize, seed, steps } = testCase;
+])('$scenario is not refused by a propagated BYE holding the target slot', (testCase: any) => {
+  const { participantsCount, propagateExitStatus, drawType, drawSize, seed, steps, refusedAt } = testCase;
 
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
@@ -178,6 +190,7 @@ it.each([
   for (const [index, step] of steps.entries()) {
     const matchUp = target(step);
     expect(matchUp?.matchUpId, `step ${index + 1} target missing`).toBeDefined();
+    const before = hash(getDrawDefinition(DRAW_ID));
     const result: any = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       outcome: step.outcome,
@@ -185,6 +198,12 @@ it.each([
       drawId: DRAW_ID,
     });
     const where = `step ${index + 1} (${step.structureName} r${step.roundNumber}p${step.roundPosition})`;
+    if (index + 1 === refusedAt) {
+      // a direct double exit beside an unreached seat: refused, and nothing written
+      expect(result.error?.code, where).toEqual('ERR_INVALID_MATCHUP_STATUS');
+      expect(hash(getDrawDefinition(DRAW_ID)), where).toEqual(before);
+      return;
+    }
     expect(result.error?.code, where).toBeUndefined();
   }
 });
