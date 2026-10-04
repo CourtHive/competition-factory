@@ -429,8 +429,8 @@ function addStandardActions({
 function exitBeforeTheOpponentArrives({ inContextMatchUp, structure, drawDefinition }) {
   // AD_HOC sides are assigned, never arrived at: there is no opponent on the way to take a walkover
   if (isAdHoc({ structure })) return undefined;
-  const present = (inContextMatchUp?.sides ?? []).filter((side: any) => side?.participantId);
-  if (present.length !== 1) return undefined;
+  const present = inContextMatchUp?.sides?.filter((side: any) => side?.participantId);
+  if (present?.length !== 1) return undefined;
   const exitingSideNumber = present[0].sideNumber;
   const winningSide = 3 - exitingSideNumber;
   const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: structure?.structureId });
