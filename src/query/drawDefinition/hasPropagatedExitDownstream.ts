@@ -1,4 +1,4 @@
-import { exitProducedBy } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { exitCarriedFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
 /**
@@ -59,8 +59,10 @@ export function hasPropagatedExitDownstream(params) {
     targetMatchUps: { loserMatchUp },
   } = targetData;
 
-  // an exit this matchUp produced is unwound BY the clear, so it is not a reason to refuse it
-  if (exitProducedBy({ sourceMatchUpId: targetData?.matchUp?.matchUpId, matchUp: loserMatchUp })) return false;
+  // An exit this matchUp produced is unwound BY the clear, so it is not a reason to refuse it. In a
+  // CONVERGENCE the other origin's exit stands alone afterwards, and `settleRederivedDoubleExits` puts
+  // the draw where that origin alone puts it (CA, 2026-10-03; see `exitCarriedFrom`).
+  if (exitCarriedFrom({ sourceMatchUpId: targetData?.matchUp?.matchUpId, matchUp: loserMatchUp })) return false;
 
   const isLoserMatchUpWO = isExit(loserMatchUp?.matchUpStatus);
   const hasLoserMatchUpUpstreamWOMatches = !!matchUpsMap?.drawMatchUps.find(
