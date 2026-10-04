@@ -13,7 +13,7 @@ import {
   policyCodeString,
   byeClaimSurvives,
   recordByeClaim,
-  exitProducedBy,
+  exitCarriedFrom,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
@@ -84,11 +84,11 @@ describe('a provenance read with nothing to read answers no', () => {
     expect(deriveExitStateFromProvenance(undefined)).toBeUndefined();
   });
 
-  it('exitProducedBy', () => {
+  it('exitCarriedFrom', () => {
     const matchUp: any = { matchUpId: 'm', sideExitProvenance: { 1: carried } };
-    expect(exitProducedBy({ sourceMatchUpId: undefined, matchUp })).toEqual(false);
+    expect(exitCarriedFrom({ sourceMatchUpId: undefined, matchUp })).toEqual(false);
     // CONTROL: and it can say yes
-    expect(exitProducedBy({ sourceMatchUpId: 'source', matchUp })).toEqual(true);
+    expect(exitCarriedFrom({ sourceMatchUpId: 'source', matchUp })).toEqual(true);
   });
 
   it('withdrawProducedExits', () => {
