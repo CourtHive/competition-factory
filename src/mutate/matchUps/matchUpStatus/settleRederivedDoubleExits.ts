@@ -10,6 +10,7 @@ import {
   clearSideExitProvenance,
   getSideExitProvenance,
   withdrawProducedExits,
+  setSideExitProvenance,
   withdrawByeClaim,
   getExitSides,
 } from './sideExitProvenance';
@@ -121,7 +122,11 @@ export function settleRederivedDoubleExit({
 
   // 3. as it was the moment the carrier arrived: undecided, or still a BYE where the lost origin's seat
   //    became one (census w2 9100488) — the carrier then passes through it, carrying the exit
+  // The kept carrier's own entry stays: it is still true, and where the carrier reached this matchUp
+  // through a BYE rather than as the origin's loser, the replay below has no other way to restore it
+  // (sweep seed 6141627: a South final became a BYE, its kept entry was cleared and never re-stamped).
   clearSideExitProvenance(stored);
+  if (keptEntry) setSideExitProvenance({ provenance: { [keptSide]: keptEntry }, matchUp: stored });
   if (stored.matchUpStatus !== BYE) stored.matchUpStatus = TO_BE_PLAYED;
   delete stored.winningSide;
   delete stored.sideStatusCodes;
