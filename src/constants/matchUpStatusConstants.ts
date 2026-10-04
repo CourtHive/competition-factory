@@ -79,7 +79,7 @@ export const directingMatchUpStatuses: MatchUpStatusUnion[] = [
   WALKOVER,
 ];
 
-export const nonDirectingMatchUpStatuses: (MatchUpStatusUnion | undefined)[] = [
+export const nonDirectingMatchUpStatuses: MatchUpStatusUnion[] = [
   ABANDONED,
   AWAITING_RESULT,
   CANCELLED,
@@ -90,7 +90,6 @@ export const nonDirectingMatchUpStatuses: (MatchUpStatusUnion | undefined)[] = [
   NOT_PLAYED,
   SUSPENDED,
   TO_BE_PLAYED,
-  undefined,
 ];
 
 export const completedMatchUpStatuses: MatchUpStatusUnion[] = [
