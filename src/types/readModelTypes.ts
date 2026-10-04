@@ -60,7 +60,7 @@ export interface ReadModelTournamentRow {
  * visibility, where `published` + `embargo` are stored and gated at read time "never a stale stored
  * boolean".
  *
- * ## Why `cast()` does not emit this yet
+ * ## Why emitting it was deferred (lifted in #4743)
  *
  * Emitting it made SEVEN notice-conformance scenarios fail, and the failures are the finding rather
  * than an obstacle: `deleteEvents`, `addVenue`, `modifyVenue`, `setTournamentDates` (widen AND
@@ -74,8 +74,7 @@ export interface ReadModelTournamentRow {
  * member changes — a behaviour decision, not a projection detail, and one that belongs with the CFS
  * half of A9.
  *
- * The type and `tournamentDiscoveryRow()` ship now so the CFS and courthive-query work can be built
- * against a real shape instead of a proposed one.
+ * #4743 resolved it with the `tournamentAggregate` attribution kind, and `cast()` now emits the row.
  */
 export interface ReadModelTournamentDiscoveryRow {
   tournament_id: string;
@@ -369,8 +368,8 @@ export interface ReadModelRows {
   venues: ReadModelVenueRow[];
   tournament_venues: ReadModelTournamentVenueRow[];
   /**
-   * NOT YET EMITTED BY `cast()` — see {@link ReadModelTournamentDiscoveryRow}. Optional so the row
-   * shape can be consumed and built against before the projection wiring exists.
+   * Emitted by `cast()` since #4743 — see {@link ReadModelTournamentDiscoveryRow}. Still optional,
+   * as it was while the projection wiring was deferred.
    */
   tournament_discovery?: ReadModelTournamentDiscoveryRow[];
 }

@@ -22,8 +22,8 @@ import {
 } from '@Constants/topicConstants';
 
 // Workstream D-core scaffold. Demonstrates the notice-completeness invariant on
-// two representative mutations: one COVERED (zero violations) and one KNOWN GAP
-// (the harness flags it). The full ~640-method catalog sweep is the follow-on.
+// two representative mutations, both COVERED (setEventDates was the known gap until
+// C2 added MODIFY_EVENT). The catalog sweep is noticeConformanceScenarios.test.ts.
 
 function seed() {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({

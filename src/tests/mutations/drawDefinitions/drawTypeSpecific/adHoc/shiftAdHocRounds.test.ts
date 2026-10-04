@@ -168,10 +168,10 @@ test.each(scenarios)('can shift AD_HOC rounds', (scenario) => {
     drawId,
   });
 
-  // drawTypes that are not AD_HOC do not support swapping rounds
+  // drawTypes that are not AD_HOC do not support shifting rounds
   if (scenario.drawType !== AD_HOC) return expect(result.error).toEqual(INVALID_STRUCTURE);
 
-  // drawSize of 0 does not support swapping rounds
+  // drawSize of 0 does not support shifting rounds
   if (scenario.drawSize === 0) return expect(result.error).toEqual(MISSING_MATCHUPS);
 
   expect(result.success).toEqual(true);

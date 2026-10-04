@@ -13,13 +13,13 @@ import { INDIVIDUAL } from '@Constants/participantConstants';
  *
  *   - `covered`  → zero completeness violations (a regression guard: if a wired
  *                  notice is dropped, this fails).
- *   - `gap`      → at least one violation (a TRIPWIRE for the known coverage gaps
- *                  from the notice audit; when the matching coverage workstream
- *                  (A/C) wires the notice, the tripwire fails → update the entry).
+ *   - `gap`      → at least one violation (a TRIPWIRE for a known coverage gap;
+ *                  when the notice is wired, the tripwire fails → flip the entry
+ *                  to `covered`).
  *
  * Every scenario asserts the mutation actually changed the record first, so a
- * `gap` assertion can never pass vacuously. This is the seed of the full
- * ~640-method sweep; it currently covers the audit-named methods.
+ * `gap` assertion can never pass vacuously. The catalog covers the audit-named
+ * methods plus the Tier-2 batches; it is not yet the full ~640-method sweep.
  */
 
 type Ctx = {
@@ -229,12 +229,11 @@ const scenarios: Scenario[] = [
     // COMPLETE but not FAITHFUL. MODIFY_PARTICIPANTS fires and covers the participant,
     // but `cast().match_up_competitors` carries `participant_name`, so every competitor
     // row for that person moves too — and a participant is NOT an ancestor of a matchUp,
-    // so the notice stream never says which matchUp rows to re-project. Verified against
-    // the real consumer: CFS `recordParticipants` pushes `{kind:'participants'}`, and
-    // `buildProjectionDeltas` line ~510 re-projects ONLY the entries table from it;
-    // match_up_competitors is written exclusively by the draw-scoped `flattenDraw` path.
-    // → read-model staleness after a rename. Owner: CFS (fan out participants → competitors).
-    fidelityGap: 'CFS recordParticipants re-projects only entries; match_up_competitors.participant_name goes stale',
+    // so the notice stream never says which matchUp rows to re-project. CFS closes this
+    // consumer-side (2026-09-01): `recordParticipants` fans out a `participantName` update
+    // onto match_up_competitors. The oracle does not model that fan-out, so the gap stands
+    // here as an oracle fact, not as read-model staleness.
+    fidelityGap: 'participant notice does not cover match_up_competitors.participant_name (CFS fans it out itself)',
     run: () => {
       const { participants } = tournamentEngine.getParticipants({
         participantFilters: { participantTypes: [INDIVIDUAL] },
@@ -323,7 +322,7 @@ const scenarios: Scenario[] = [
     expectation: 'covered',
     // Same class as `modifyParticipant (person name)` above, at bulk scale — this one
     // moves a competitor row for every renamed participant in the draw.
-    fidelityGap: 'CFS recordParticipants re-projects only entries; match_up_competitors.participant_name goes stale',
+    fidelityGap: 'participant notice does not cover match_up_competitors.participant_name (CFS fans it out itself)',
     run: () =>
       tournamentEngine.regenerateParticipantNames({ formats: { INDIVIDUAL: { personFormat: 'LAST, First' } } }),
   },

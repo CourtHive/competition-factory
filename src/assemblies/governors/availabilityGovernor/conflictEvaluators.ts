@@ -228,9 +228,10 @@ export const adjacentBlockEvaluator = {
  * Ensures courts without lights aren't scheduled after sunset.
  *
  * For outdoor courts without lighting, play must end before dark.
- * This evaluator checks court metadata and validates scheduling.
+ * This evaluator flags AVAILABLE/RESERVED blocks ending after a fixed
+ * sunset time; court lighting metadata is not consulted.
  *
- * Severity: ERROR (can't play in the dark)
+ * Severity: WARN (some courts have lights)
  */
 export const lightingEvaluator = {
   id: 'LIGHTING',

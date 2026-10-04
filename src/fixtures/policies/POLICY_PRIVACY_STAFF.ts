@@ -11,8 +11,8 @@ import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
  * Which contacts appear is decided BEFORE this template runs, by `getTournamentInfo` selecting on
  * `Contact.isPublic === true`. That selection cannot live here: a template array acts as an allow-list
  * (`attributeFilter.ts:49-51`) but is only evaluated for keys the source object actually has, so a
- * contact with no `isPublic` would pass unexamined — fail-open, and every contact in existence lacks the
- * flag today because nothing writes it.
+ * contact with no `isPublic` would pass unexamined — fail-open, and every contact written before
+ * `contacts` became writable (#4680) lacks the flag.
  */
 const PUBLISHED_CONTACT_FIELDS = {
   emailAddress: true,

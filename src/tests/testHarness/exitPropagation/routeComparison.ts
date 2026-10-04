@@ -34,7 +34,7 @@ import { DEAD_RUBBER } from '@Constants/matchUpStatusConstants';
  * divergence while raising Route A's flagged count has moved toward a reference that was itself
  * wrong there. (Measured by the parallel `swapWinnerLoser` workstream, 2026-09-14.)
  *
- * Note also that "Route B" and "the flag-OFF path" are not synonyms: `progressExitStatus.ts:186`
+ * Note also that "Route B" and "the flag-OFF path" are not synonyms: `progressExitStatus.ts`
  * hardcodes `allowChangePropagation: true` on the cascade's internal `setMatchUpState` call, so the
  * swap branch is reachable even when no consumer sends the flag.
  *

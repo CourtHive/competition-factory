@@ -171,12 +171,9 @@ describe('validateSetScore - NoAD property from parseScoreString', () => {
         // NoAD is undefined on set, should fall back to format
       };
 
-      // Note: This will only work if the format itself has NoAD in tiebreakSet
-      // For now, this documents the expected behavior
+      // set.NoAD is undefined, so validation falls back to the format's tiebreakSet.NoAD
       const result = validateSetScore(set, format, false, false);
 
-      // The format parser should set NoAD on the format
-      // If not, this will fail and that's okay - it shows we need format-level support
       expect(result.isValid).toBe(true);
     });
   });
