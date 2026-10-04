@@ -7,7 +7,7 @@ import { expect, test } from 'vitest';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
-import tournamentRecord from '@Tests/testHarness/tallyPolicy.tods.json';
+import tournamentRecord from '@Tests/testHarness/tallyPolicy.codes.json';
 
 test('roundRobinTally policy can specify tally by games only', () => {
   // prettier-ignore

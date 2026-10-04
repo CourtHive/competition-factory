@@ -5,8 +5,8 @@ import { expect, it } from 'vitest';
 import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { CONSOLATION } from '@Constants/drawDefinitionConstants';
 
-import tournamentOne from './tournamentOne.tods.json';
-import tournamentTwo from './tournamentTwo.tods.json';
+import tournamentOne from './tournamentOne.codes.json';
+import tournamentTwo from './tournamentTwo.codes.json';
 
 it('WO/WO advances SF player to F and sets winningSide', () => {
   tournamentEngine.setState(tournamentOne);

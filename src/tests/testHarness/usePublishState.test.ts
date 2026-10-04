@@ -2,7 +2,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // Test data
-import tournamentRecord from './publishState.tods.json';
+import tournamentRecord from './publishState.codes.json';
 
 it('can get competitionScheduleMatchUps', () => {
   tournamentEngine.setState(tournamentRecord);

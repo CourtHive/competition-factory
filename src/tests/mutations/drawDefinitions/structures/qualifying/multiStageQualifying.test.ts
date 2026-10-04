@@ -272,7 +272,7 @@ it('can advance participants through multi-stage qualifying structures', () => {
   expect(matchUps.length).toEqual(readyToScore.length);
 });
 
-import tournamentRecord from './multiStageQualifying.tods.json';
+import tournamentRecord from './multiStageQualifying.codes.json';
 
 it('will ignore winnerMatchUpId when feedProfile is DRAW', () => {
   tournamentEngine.setState(tournamentRecord);

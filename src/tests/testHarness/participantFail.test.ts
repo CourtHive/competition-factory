@@ -4,7 +4,7 @@ import { expect, it } from 'vitest';
 // constants
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
-import tournamentRecord from './participantFail.tods.json';
+import tournamentRecord from './participantFail.codes.json';
 
 it('hydrated tieMatchUps can be processed successfully', () => {
   tournamentEngine.setState(tournamentRecord);

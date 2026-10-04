@@ -1,4 +1,4 @@
-import disableCalcTournamentRecord from '@Mutate/tieFormat/removeCollectionDisableAutoCalc.tods.json';
+import disableCalcTournamentRecord from '@Mutate/tieFormat/removeCollectionDisableAutoCalc.codes.json';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

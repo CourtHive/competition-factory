@@ -148,7 +148,7 @@ jobs:
         run: pnpm verify:lint
 
       # Scoped to the TS/JS sources the repo actually keeps formatted, PLUS the
-      # markdown under documentation/docs (added 2026-09-18). The .tods.json
+      # markdown under documentation/docs (added 2026-09-18). The .codes.json
       # fixtures under src/tests remain deliberately OUT of scope: reformatting
       # them is a ~40k-line diff across large test corpora and buries their
       # blame for no benefit. `format` carries the same target set, so it and

@@ -7,8 +7,8 @@ import { expect, it } from 'vitest';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { DOUBLES, TEAM } from '@Constants/matchUpTypes';
 
-import tournamentRecordSub from './assignTieMatchUpParticipantSub.tods.json';
-import tournamentRecord from './assignTieMatchUpParticipant.tods.json';
+import tournamentRecordSub from './assignTieMatchUpParticipantSub.codes.json';
+import tournamentRecord from './assignTieMatchUpParticipant.codes.json';
 
 it('populates matchUp sides', () => {
   tournamentEngine.setState(tournamentRecord);

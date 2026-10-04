@@ -9,7 +9,7 @@ import { TEAM as PARTICIPANT_TEAM, INDIVIDUAL, PAIR } from '@Constants/participa
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { TEAM as EVENT_TEAM } from '@Constants/eventConstants';
 
-import tournamentRecord from './teamMadness.tods.json';
+import tournamentRecord from './teamMadness.codes.json';
 
 // node --expose-gc ./node_modules/.bin/jest --runInBand --logHeapUsage --watch madness
 it('withOpponents adds appropriate opponents', () => {

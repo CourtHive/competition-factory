@@ -1,7 +1,7 @@
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import tournamentRecord from './voluntaryConsolation.tods.json';
+import tournamentRecord from './voluntaryConsolation.codes.json';
 
 it('voluntary consolation test', () => {
   tournamentEngine.setState(tournamentRecord);

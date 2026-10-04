@@ -1,12 +1,13 @@
+import { STORAGE_DIR, existingRecordFile } from './tournamentRecordFile';
 import { UTF8 } from '@Server/common/constants/app';
 import * as fs from 'fs-extra';
 
 export async function findTournamentRecord({ tournamentId }) {
-  const tournamentFile = `./src/data/fileSystem/storage/${tournamentId}.tods.json`;
-  fs.ensureDirSync(`./src/data/fileSystem/storage`);
+  fs.ensureDirSync(STORAGE_DIR);
 
-  if ((await fs.existsSync(tournamentFile)) === true) {
-    const record = await fs.readFileSync(tournamentFile, UTF8);
+  const tournamentFile = existingRecordFile(tournamentId);
+  if (tournamentFile) {
+    const record = fs.readFileSync(tournamentFile, UTF8);
     const tournamentRecord = JSON.parse(record.trim() || '{}');
     return { tournamentRecord };
   } else {

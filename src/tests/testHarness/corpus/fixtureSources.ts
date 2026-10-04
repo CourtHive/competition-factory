@@ -1,15 +1,15 @@
-import { CorpusWriteError, writeScenario, type Directive } from './writeScenario';
 import { clearOutcome, getDrawDefinition, projectDraw, stableHash } from '../exitPropagation/transitions';
+import { CorpusWriteError, writeScenario, type Directive } from './writeScenario';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import fs from 'fs';
 import path from 'path';
+import fs from 'fs';
 
 // constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**
- * Golden corpus C2c: the real records under `src/tests/testHarness/*.tods.json` as corpus
+ * Golden corpus C2c: the real records under `src/tests/testHarness/*.codes.json` as corpus
  * sources. Two things make them worth having beside the generated scenarios: they are records
  * that real tournaments produced, with the fields and shapes mocks never emit, and they are what
  * the schema's open definitions were left open FOR. A reader that parses all sixteen has parsed
@@ -29,7 +29,7 @@ export const FIXTURE_DIR = 'src/tests/testHarness';
 export function listFixtures(): string[] {
   return fs
     .readdirSync(FIXTURE_DIR)
-    .filter((file) => file.endsWith('.tods.json') && !file.includes('.8')) // TODS 0.8 files are not CODES
+    .filter((file) => file.endsWith('.codes.json'))
     .sort((a, b) => a.localeCompare(b));
 }
 
@@ -84,7 +84,7 @@ export function recordFixtures({
   const failed: { file: string; reason: string }[] = [];
   for (const file of files) {
     const record = JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, file), 'utf8'));
-    const name = file.replace(/\.tods\.json$/, '');
+    const name = file.replace(/\.codes\.json$/, '');
     try {
       const scenario: any = writeScenario({
         scenarioId: `fixture/${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
