@@ -1,3 +1,5 @@
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+
 /**
  * Shared-facility schedule contract.
  *
@@ -10,6 +12,7 @@
  *
  * See planning/LINKED_TOURNAMENTS_AND_SHARED_FACILITY_SCHEDULING.md (§4.5, INV-3/5/6).
  */
+
 export interface ScheduleCell {
   tournamentId: string;
   eventId?: string;
@@ -20,7 +23,7 @@ export interface ScheduleCell {
   courtOrder?: number;
   scheduledDate?: string;
   scheduledTime?: string;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   matchUpType?: string;
   roundName?: string;
   roundNumber?: number;
