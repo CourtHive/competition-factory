@@ -330,8 +330,7 @@ export function retainByeClaimsOnly(provenance?: SideExitProvenance): SideExitPr
  * `settleRederivedDoubleExit`: a converged double exit's `['WO', 'WO']` left behind on what is now a
  * single exit put an exit code on the winning side (census w2 9100514, EXIT_CODE_ON_WINNER_SIDE).
  */
-export function blankExitCodes(matchUp?: MatchUp): void {
-  if (!matchUp) return;
+export function blankExitCodes(matchUp: MatchUp): void {
   matchUp.matchUpStatusCodes = [];
   delete matchUp.sideStatusCodes;
 }
