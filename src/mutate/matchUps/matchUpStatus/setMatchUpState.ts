@@ -1046,6 +1046,10 @@ export function exitAwardable({ positionAssignments, inContextMatchUp, winningSi
    * DOUBLE_ELIMINATION (census 9100555 and 9301605, shrunk). With `propagateExitStatus` off the same
    * entry was always refused. CA, 2026-09-17: refuse it.
    *
+   * The OTHER direction is the one a director records before the opponent arrives (CA, 2026-10-04): the
+   * participant already there walks over or is defaulted, and the EMPTY side is awarded — accepted with or
+   * without `propagateExitStatus`, and offered by `matchUpActions` as `EXIT`. This refuses only the reverse.
+   *
    * Nor against a BYE. A matchUp containing a BYE cannot have a winningSide — the BYE always
    * advances its opponent (CA, 2026-09-17). A walkover entered BEFORE a BYE arrives is a different
    * thing: the player and their walkover are advanced through the BYE and the exit occurs where they
