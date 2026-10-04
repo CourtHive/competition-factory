@@ -25,10 +25,10 @@ import {
 } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 
 // constants, fixtures and types
+import { DrawDefinition, Event, MatchUpStatusUnion, Participant, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_MATCHUP_ACTIONS, POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { MatchUpsMap, PolicyDefinitions, TournamentRecords, ResultType } from '@Types/factoryTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
-import { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { ADD_PENALTY, ADD_PENALTY_METHOD } from '@Constants/positionActionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -431,7 +431,7 @@ function addStandardActions({
 }
 
 type LoneExit = {
-  recorded?: { matchUpStatus: string; matchUpStatusCode?: string };
+  recorded?: { matchUpStatus: MatchUpStatusUnion; matchUpStatusCode?: string };
   exitingParticipantId: string;
   exitingSideNumber: number;
   winningSide: number;

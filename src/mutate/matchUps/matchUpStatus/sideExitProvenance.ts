@@ -86,10 +86,10 @@ export function producedExitStatus(previousMatchUpStatus?: MatchUpStatusUnion): 
  * Takes the statuses as ARGUMENTS rather than reading provenance: provenance writes are gated on
  * `writeNativeEnabled()`, so under LEGACY mode there would be nothing to read.
  */
-export function collapseDoubleExitStatus(sideStatuses: (string | undefined)[]): string {
+export function collapseDoubleExitStatus(sideStatuses: (MatchUpStatusUnion | undefined)[]): MatchUpStatusUnion {
   const known = sideStatuses.filter(Boolean);
   if (!known.length) return DOUBLE_WALKOVER;
-  const isDefaultFlavoured = (status?: string) => status === DEFAULTED || status === DOUBLE_DEFAULT;
+  const isDefaultFlavoured = (status?: MatchUpStatusUnion) => status === DEFAULTED || status === DOUBLE_DEFAULT;
   return known.every(isDefaultFlavoured) ? DOUBLE_DEFAULT : DOUBLE_WALKOVER;
 }
 
@@ -555,7 +555,7 @@ export function getSideExitProvenance({ matchUp }: { matchUp?: MatchUp }): SideE
  *
  * Returns undefined when the side did not exit — including when it has no entry at all.
  */
-export function carriedExitStatus(entry?: SideExitProvenanceEntry): string | undefined {
+export function carriedExitStatus(entry?: SideExitProvenanceEntry): MatchUpStatusUnion | undefined {
   const status = entry?.matchUpStatus;
   if (!isAnyExit(status)) return undefined;
   return status === RETIRED ? WALKOVER : status;
@@ -590,7 +590,7 @@ export function carriedExitStatus(entry?: SideExitProvenanceEntry): string | und
  */
 export function deriveExitStateFromProvenance(
   provenance?: SideExitProvenance,
-): { matchUpStatus: string; winningSide?: number } | undefined {
+): { matchUpStatus: MatchUpStatusUnion; winningSide?: number } | undefined {
   if (!provenance) return undefined;
 
   const exitingSides = ([1, 2] as const).filter((sideNumber) => carriedExitStatus(provenance[sideNumber]));
@@ -602,7 +602,7 @@ export function deriveExitStateFromProvenance(
 
   const exitingSideNumber = exitingSides[0];
   return {
-    matchUpStatus: carriedExitStatus(provenance[exitingSideNumber]) as string,
+    matchUpStatus: carriedExitStatus(provenance[exitingSideNumber]) as MatchUpStatusUnion,
     winningSide: exitingSideNumber === 1 ? 2 : 1,
   };
 }
@@ -870,8 +870,8 @@ export function rewritesCarriedExit({
   score,
 }: {
   existingWinningSide?: number;
-  existingStatus?: string;
-  matchUpStatus?: string;
+  existingStatus?: MatchUpStatusUnion;
+  matchUpStatus?: MatchUpStatusUnion;
   carriedExit: boolean;
   winningSide?: number;
   score?: any;

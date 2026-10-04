@@ -516,7 +516,7 @@ function resolveMatchUpAndContext({
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   matchUpId: string;
   event?: Event;
