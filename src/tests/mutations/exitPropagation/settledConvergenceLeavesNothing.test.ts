@@ -139,6 +139,47 @@ const SCENARIOS = [
       { structureName: 'East', roundNumber: 1, roundPosition: 2, outcome: { winningSide: 1 } },
     ],
   },
+  {
+    // the replay took the participant at the kept entry's side key as its carrier; sides re-sort by drawPosition
+    // once an opponent arrives, so it replayed the walkover with the OPPONENT carrying it, and the next result
+    // was refused ERR_EXISTING_POSITION_ASSIGNMENT after mutating; the carrier is now the kept origin's loser
+    seed: 9300879,
+    config: {
+      participantsCount: 5,
+      propagateExitStatus: true,
+      drawSize: 8,
+      drawType: 'DOUBLE_ELIMINATION',
+      seed: 9300879,
+    },
+    steps: [
+      { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: { winningSide: 2 } },
+      {
+        structureName: 'Main',
+        roundNumber: 1,
+        roundPosition: 3,
+        outcome: {
+          matchUpStatus: 'RETIRED',
+          winningSide: 1,
+          score: { sets: [{ side1Score: 6, side2Score: 3 }], scoreStringSide1: '6-3', scoreStringSide2: '3-6' },
+        },
+      },
+      { structureName: 'Backdraw', roundNumber: 2, roundPosition: 1, outcome: { matchUpStatus: 'DOUBLE_WALKOVER' } },
+      {
+        structureName: 'Main',
+        roundNumber: 2,
+        roundPosition: 2,
+        outcome: { matchUpStatus: 'WALKOVER', winningSide: 2 },
+      },
+      { structureName: 'Backdraw', roundNumber: 2, roundPosition: 1, outcome: { winningSide: 2 } },
+      { structureName: 'Main', roundNumber: 2, roundPosition: 2, outcome: { winningSide: 1 } },
+      {
+        structureName: 'Backdraw',
+        roundNumber: 3,
+        roundPosition: 1,
+        outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 },
+      },
+    ],
+  },
 ];
 
 it.each(SCENARIOS)(

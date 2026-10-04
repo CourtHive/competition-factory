@@ -102,11 +102,19 @@ export function settleRederivedDoubleExit({
   const [keptSide] = liveExitSides({ matchUp: stored, drawMatchUps: matchUpsMap.drawMatchUps });
   const keptEntry = getSideExitProvenance({ matchUp: stored })?.[keptSide];
   const origin = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === keptEntry?.sourceMatchUpId);
-  const inContext = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps?.find(
-    (candidate) => candidate.matchUpId === matchUpId,
-  );
-  const carrierId = inContext?.sides?.find((side: any) => side?.sideNumber === keptSide)?.participantId;
-  if (!stored || !origin || !carrierId) return;
+  // The carrier is the kept origin's LOSER, wherever it sits now. Not the participant at `keptSide`: a
+  // provenance key is the side the exit ARRIVED at, and sides re-sort by drawPosition once an opponent
+  // arrives (census de 9300879: the carrier arrived on side 2 at drawPosition 3, the opponent then took
+  // drawPosition 4, and the side-2 read replayed the walkover with the OPPONENT as its carrier).
+  // A double-exit origin has no winningSide and so no carrier: its produced exit is pending, not carried.
+  const inContextMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
+  const originInContext = inContextMatchUps.find((candidate) => candidate.matchUpId === origin?.matchUpId);
+  const carrierId = originInContext?.winningSide
+    ? originInContext.sides?.find((side: any) => side.sideNumber !== originInContext.winningSide)?.participantId
+    : undefined;
+  const inContext = inContextMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
+  const carrierSide = inContext?.sides?.find((side: any) => carrierId && side.participantId === carrierId)?.sideNumber;
+  if (!stored || !keptEntry || !origin || !carrierSide) return;
 
   // 1. what it produced downstream as a double exit
   const withdrawnExits = withdrawProducedExits({
@@ -124,8 +132,9 @@ export function settleRederivedDoubleExit({
   // The kept carrier's own entry stays: it is still true, and where the carrier reached this matchUp
   // through a BYE rather than as the origin's loser, the replay below has no other way to restore it
   // (sweep seed 6141627: a South final became a BYE, its kept entry was cleared and never re-stamped).
+  // It is kept at the carrier's CURRENT side, where the replay stamps it too, never at its old key.
   clearSideExitProvenance(stored);
-  if (keptEntry) setSideExitProvenance({ provenance: { [keptSide]: keptEntry }, matchUp: stored });
+  setSideExitProvenance({ provenance: { [carrierSide]: keptEntry }, matchUp: stored });
   if (stored.matchUpStatus !== BYE) stored.matchUpStatus = TO_BE_PLAYED;
   delete stored.winningSide;
   blankExitCodes(stored);
@@ -151,7 +160,7 @@ export function settleRederivedDoubleExit({
       loserMatchUp: stored,
       matchUpsMap,
     },
-    propagateExitStatus: propagateExitStatus ?? true,
+    propagateExitStatus,
     tournamentRecord,
     drawDefinition,
     event,
