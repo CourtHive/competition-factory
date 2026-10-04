@@ -84,7 +84,7 @@ export function doubleExitAdvancement(params) {
   });
 
   /**
-   * A loser matchUp that is ALREADY a BYE can still be owed one — and NOTHING is what it gets today.
+   * A loser matchUp that is ALREADY a BYE can still be owed one — and before this branch, NOTHING is what it got.
    *
    * `handleLoserMatchUp` offers a target exactly two things: a BYE (`advanceByeToLoserMatchUp`) or a
    * produced WALKOVER (`conditionallyAdvanceDrawPosition`). The guard below read
@@ -111,7 +111,8 @@ export function doubleExitAdvancement(params) {
    *    BYE placement pushes it into occupied positions across a link — the trap #4907 closed in five
    *    other places.
    *
-   * So the semantic is right and making it the DEFAULT is a separate, larger piece of work. Behind
+   * So the semantic is right, and since #5029 it is the default (`propagatesByeOnDoubleExit`); `doubleExitPropagateBye:
+   * false` keeps the older behaviour. Behind
    * the policy the census is **0 closed, 0 opened, 0 changed** on all six arms.
    *
    * `assignDrawPositionBye` returns early on a position that already holds a BYE, so this is a no-op
@@ -855,7 +856,26 @@ function conditionallyAdvanceDrawPosition(params) {
    * pre-existing — measured identical on clean `dev` — and it wants the convergence PR and census arm
    * P41 asks for, not a rider on the eviction.
    */
-  const existingExit = isExit(noContextTargetMatchUp.matchUpStatus) && !drawPositions.length;
+  /**
+   * A RECORDED exit is an exit too. A director may record a WALKOVER or DEFAULTED before the opponent arrives
+   * (#5160): its lone occupant has EXITED and the winningSide names the seat still to arrive. A produced exit
+   * reaching that seat meets an exit standing there, so the two converge and nobody wins (factory-e2, 2026-10-04:
+   * *"a player recorded as WALKOVER/DEFAULTED has exited and can't later win that matchUp"*). Read structurally:
+   * the occupant sits on the side opposite the winningSide. Without this the occupant was awarded the produced
+   * exit (census arm 9700004, COMPASS 8/7: `West|2|1` DEFAULTED towards its vacant seat read WALKOVER won by the
+   * defaulted participant).
+   */
+  const recordedExitAwaitingThisSeat =
+    isExit(noContextTargetMatchUp.matchUpStatus) &&
+    !!noContextTargetMatchUp.winningSide &&
+    hasDrawPosition &&
+    getExitWinningSide({
+      drawPosition: drawPositions[0],
+      matchUpId: targetMatchUp.matchUpId,
+      inContextDrawMatchUps,
+    }) !== noContextTargetMatchUp.winningSide;
+  const existingExit =
+    isExit(noContextTargetMatchUp.matchUpStatus) && (!drawPositions.length || recordedExitAwaitingThisSeat);
 
   // Derived HERE, not at the top of the function, because this is where the other origin is known:
   // `existingExit` means the target already carries the exit the first arrival produced. See
@@ -902,7 +922,7 @@ function conditionallyAdvanceDrawPosition(params) {
    * matchUp can already carry the award an earlier pass gave it, and passing `undefined` does not
    * remove one.
    */
-  const awardedWinningSide = targetHoldsBye ? undefined : walkoverWinningSide;
+  const awardedWinningSide = targetHoldsBye || recordedExitAwaitingThisSeat ? undefined : walkoverWinningSide;
 
   logAdvancement(stack, {
     color: 'brightyellow',
@@ -961,7 +981,7 @@ function conditionallyAdvanceDrawPosition(params) {
 
   const result = modifyMatchUpScore({
     ...params,
-    removeWinningSide: targetHoldsBye,
+    removeWinningSide: targetHoldsBye || recordedExitAwaitingThisSeat,
     winningSide: awardedWinningSide,
     matchUp: noContextTargetMatchUp,
     matchUpStatusCodes,

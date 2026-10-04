@@ -96,6 +96,7 @@ import { BYE, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/m
 
 type AssignMatchUpDrawPositionArgs = {
   inContextDrawMatchUps: HydratedMatchUp[];
+  arrivesWithExit?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   sourceMatchUpStatus?: MatchUpStatusUnion;
@@ -108,6 +109,7 @@ type AssignMatchUpDrawPositionArgs = {
 };
 export function assignMatchUpDrawPosition({
   inContextDrawMatchUps,
+  arrivesWithExit,
   sourceMatchUpStatus,
   tournamentRecord,
   sourceMatchUpId,
@@ -244,7 +246,16 @@ export function assignMatchUpDrawPosition({
   const arrivingParticipantId = positionAssignments?.find(
     (assignment) => assignment.drawPosition === drawPosition,
   )?.participantId;
-  const participantArrivesAtExit = holdsStandingExit && !!arrivingParticipantId;
+  /**
+   * AN ARRIVAL THAT CARRIES AN EXIT DOES NOT WIN THE EXIT STANDING HERE — it CONVERGES with it (F3, CA
+   * 2026-10-04: fix the arrival itself). A loser carrying a WALKOVER or DEFAULTED under propagation can reach
+   * a matchUp holding a pending exit before `progressExitStatus` has recorded the exit they carry: `directLoser`
+   * places them, and a BYE opposite them advances them here at once (`advanceIntoWinnerMatchUp`). Read as an
+   * ordinary arrival they were awarded the standing exit and advanced, even into a recorded exit's vacant side
+   * one round on, and RULE 4's convergence was then refused over a draw that had moved (census arm
+   * `exitBeforeArrivalCensus`, COMPASS 8/7 9700004). The position is placed; nothing is awarded or advanced.
+   */
+  const participantArrivesAtExit = holdsStandingExit && !!arrivingParticipantId && !arrivesWithExit;
 
   // A drawPosition slot can already be present in this matchUp's drawPositions
   // (e.g. pre-seeded by a consolation BYE feed) while the underlying
@@ -372,6 +383,7 @@ export function assignMatchUpDrawPosition({
   const advanceResult = advanceDrawPosition({
     winnerMatchUpDrawPositionIndex,
     winnerTargetLink,
+    arrivesWithExit,
     event,
     inContextDrawMatchUps: resolvedInContextDrawMatchUps,
     positionAssigned,
@@ -661,6 +673,7 @@ function arrivesOnExitingSide({
  */
 function advanceIntoWinnerMatchUp({
   winnerMatchUpDrawPositionIndex,
+  arrivesWithExit,
   inContextDrawMatchUps,
   tournamentRecord,
   winnerTargetLink,
@@ -696,6 +709,7 @@ function advanceIntoWinnerMatchUp({
   const result = assignMatchUpDrawPosition({
     matchUpId: winnerMatchUp.matchUpId,
     inContextDrawMatchUps,
+    arrivesWithExit,
     tournamentRecord,
     drawDefinition,
     drawPosition,
@@ -1232,6 +1246,8 @@ function propagateLineUp({
 
 type AssignDrawPositionArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
+  /** the participant placed is a loser carrying an exit under propagation; see `assignMatchUpDrawPosition` */
+  arrivesWithExit?: boolean;
   sourceMatchUpStatus?: MatchUpStatusUnion;
   provisionalPositioning?: boolean;
   seedingProfile?: SeedingProfile;
@@ -1248,6 +1264,7 @@ type AssignDrawPositionArgs = {
 
 export function assignDrawPosition({
   provisionalPositioning,
+  arrivesWithExit,
   inContextDrawMatchUps,
   isQualifierPosition, // internal use
   sourceMatchUpStatus,
@@ -1410,6 +1427,7 @@ export function assignDrawPosition({
   } else {
     addDrawPositionToMatchUps({
       provisionalPositioning,
+      arrivesWithExit,
       inContextDrawMatchUps,
       sourceMatchUpStatus,
       tournamentRecord,
@@ -1528,6 +1546,7 @@ function handleContainerAssignment({
 // used for matchUps which are NOT in a ROUND_ROBIN { structureType: CONTAINER }
 function addDrawPositionToMatchUps({
   provisionalPositioning,
+  arrivesWithExit,
   inContextDrawMatchUps,
   sourceMatchUpStatus,
   tournamentRecord,
@@ -1562,6 +1581,7 @@ function addDrawPositionToMatchUps({
       matchUpId: matchUp.matchUpId,
       inContextDrawMatchUps,
       sourceMatchUpStatus,
+      arrivesWithExit,
       tournamentRecord,
       drawDefinition,
       drawPosition,
