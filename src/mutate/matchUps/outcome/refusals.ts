@@ -178,7 +178,6 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
       !!matchUpStatus &&
       EXITS.has(matchUpStatus) &&
       participants.count === 1 &&
-      !!flags.propagateExitStatus &&
       (!!flags.propagatingExit || !winningSide || participants.exitAwardable) &&
       // a direct double exit needs both seats reached (CA 2026-10-04); only the cascade's own write is waived
       (!!flags.propagatingExit || !isDoubleExit(matchUpStatus));

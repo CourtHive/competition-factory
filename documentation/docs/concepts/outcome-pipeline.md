@@ -114,6 +114,10 @@ two participants, with one family of exceptions and one rule inside it:
 - **A BYE is never the winning side.** The participant advances through the BYE and their carried
   exit occurs where they land. This was decided in two places before it was written here.
 - A policy may switch the requirement off: `requireParticipantsForScoring: false`.
+- **No request flag is involved.** The waiver is how a director records a walkover or default before
+  the second opponent arrives (CA, 2026-10-04): _"propagateExitStatus shouldn't have anything to do with
+  this ability"_. `propagateExitStatus` decides only whether the exit is then carried into the loser's
+  next matchUp. `matchUpActions` offers it as `EXIT`.
 
 ## 3. The routes
 

@@ -11,6 +11,7 @@ export const SCHEDULE_METHOD = 'setMatchUpStatus';
 export const CLEAR_SCORE = 'CLEAR_SCORE';
 export const SUBSTITUTION = 'SUBSTITUTION';
 export const SCHEDULE = 'SCHEDULE';
+export const EXIT = 'EXIT';
 export const PENALTY = 'PENALTY';
 export const REFEREE = 'REFEREE';
 export const STATUS = 'STATUS';
@@ -30,6 +31,7 @@ export const matchUpActionConstants = {
   CLEAR_SCORE,
   SUBSTITUTION,
   SCHEDULE,
+  EXIT,
   PENALTY,
   REFEREE,
   STATUS,
