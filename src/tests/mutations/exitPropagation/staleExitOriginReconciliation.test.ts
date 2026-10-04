@@ -5,7 +5,6 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**
  * Punch-list **P40**: a carried exit whose ORIGIN has stopped being a double exit and now delivers a
@@ -49,29 +48,34 @@ describe('a carried exit is withdrawn when its origin stops being a double exit 
   //
   // `Backdraw|4|1` holds a COMPACTED single drawPosition here, so this also pins
   // `getWinningSideDrawPosition` resolving a side structurally rather than by array index.
+  //
+  // REFUSED AT ITS SECOND STEP since CA's 2026-10-04 ruling: `Backdraw|3|1` holds one participant and a
+  // seat `Main|3|1`'s loser has not reached, and a DIRECT double exit needs both seats reached (*"How can
+  // three entities arrive in one matchUp which can only hold two drawPositions?"*). P40 was measured on
+  // Main|2|1 ws1, Backdraw|3|1 DOUBLE_DEFAULT, Main|2|2 ws2, Main|3|1 WALKOVER ws1, Main|3|1 ws2; that
+  // sequence is now unreachable, and the refusal is what is asserted. Whether a stale origin can arise from legal steps is open (OUTCOME_PIPELINE_OPEN
+  // _QUESTIONS.md, F3).
   it('a re-derived origin that seats a real winner voids the exit it stamped downstream', () => {
-    play(
-      [
-        ['Main|2|1', { winningSide: 1 }],
-        ['Backdraw|3|1', { matchUpStatus: 'DOUBLE_DEFAULT' }],
-        ['Main|2|2', { winningSide: 2 }],
-        ['Main|3|1', { matchUpStatus: 'WALKOVER', winningSide: 1 }],
-        ['Main|3|1', { winningSide: 2 }],
-      ],
-      { participantsCount: 4, nonRandom: 9301605 },
-    );
-
-    const backdrawFinal: any = find('Backdraw|4|1');
-    const mainFinal: any = find('Main|4|1');
-
-    // the origin re-derived to a single exit with a winner…
-    expect(backdrawFinal.winningSide).toEqual(1);
-    // …so the carried exit it had stamped is gone, and the Main final holds two arrivals and no exit
-    expect(mainFinal.sideExitProvenance).toBeUndefined();
-    expect(mainFinal.matchUpStatus).toEqual(TO_BE_PLAYED);
-    expect(mainFinal.winningSide).toBeUndefined();
-
-    expect((tournamentEngine.getDrawInconsistencies({ drawId }) as any).inconsistencies ?? []).toEqual([]);
+    setSubscriptions({});
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawType: DOUBLE_ELIMINATION, drawSize: 8, participantsCount: 4, drawId }],
+      setState: true,
+      nonRandom: 9301605,
+    });
+    const first: any = tournamentEngine.setMatchUpStatus({
+      matchUpId: find('Main|2|1').matchUpId,
+      outcome: { winningSide: 1 },
+      propagateExitStatus: true,
+      drawId,
+    });
+    expect(first.error).toBeUndefined();
+    const refused: any = tournamentEngine.setMatchUpStatus({
+      matchUpId: find('Backdraw|3|1').matchUpId,
+      outcome: { matchUpStatus: 'DOUBLE_DEFAULT' },
+      propagateExitStatus: true,
+      drawId,
+    });
+    expect(refused.error?.code).toEqual('ERR_INVALID_MATCHUP_STATUS');
   });
 
   // DE window seed 9303412, the counter-case. `Backdraw|2|2` also drops one origin and also re-derives
