@@ -165,6 +165,8 @@
     "verify:docs-methods": "node scripts/verify/docMethods.mjs",
     "verify:bundle-size": "node scripts/verify/bundle-size.mjs",
     "verify:runtime": "node scripts/verify/runtime.mjs",
+    "verify:release": "pnpm verify:generated && pnpm verify:lockfile && pnpm verify:build && pnpm verify:publint && pnpm verify:runtime && pnpm verify:shakeable && pnpm verify:bundle-size && pnpm verify:surface && pnpm verify:pack",
+    "verify:verified-release": "node scripts/verify/verified-release.mjs",
     "verify:ecosystem": "node scripts/verify/ecosystem.mjs",
     "attr-audit": "node scripts/attr-audit.mjs"
   },

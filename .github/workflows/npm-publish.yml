@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read # verify:verified-release reads the Verify runs that covered the tag's tree
       id-token: write
     steps:
       - name: Resolve tag
@@ -41,6 +42,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ steps.ref.outputs.tag }}
+          fetch-depth: 0 # the gate reads the release commit's parents and when they landed
 
       # No `registry-url`. That input makes setup-node write an `.npmrc` whose
       # auth line is `_authToken=${NODE_AUTH_TOKEN}`, and nothing here sets that
@@ -63,14 +65,21 @@ jobs:
 
       - run: npm run build
 
-      # NOTE: vitest + jest-server are intentionally NOT run here as
-      # explicit steps. `npm publish` below invokes `prepublishOnly`
-      # (= `pinst --disable && pnpm verify`), and the `verify` script
-      # already runs verify:coverage + verify:server (both vitest)
-      # along with the rest of the verification suite. Running them
-      # again here was duplicating ~9 min of test time per release.
-      # The PR-time `verify.yml` workflow remains the first line of
-      # defense; this `prepublishOnly` gate is the tag-time safety net.
+      # The tag-time gate PROVES the tree was verified instead of re-testing it (CA, 2026-10-04).
+      # `prepublishOnly` (= `pinst --disable && pnpm verify`) re-ran the whole chain here, ~45 min on
+      # one runner, on a tree the checkpoint into master had just verified. A release commit changes
+      # only the version files, so verify:verified-release checks exactly that, and that a `Verify`
+      # run with `verify:coverage` green covered its parent: the checkpoint PR's own run, or the push
+      # run on master, which it waits for when it must. An unverified tree is never published.
+      # `prepublishOnly` still guards a manual local publish; this job publishes with
+      # --ignore-scripts after running the fast release gates itself.
+      - name: The tag's tree was verified
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/verify/verified-release.mjs --wait 90
+
+      - name: verify:release (generated, lockfile, build, publint, runtime, shakeable, bundle-size, surface, pack)
+        run: pnpm verify:release
 
       - name: Determine npm dist-tag
         id: distTag
@@ -84,4 +93,6 @@ jobs:
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: npm publish --provenance --access public --tag ${{ steps.distTag.outputs.tag }}
+      - run: npx pinst --disable
+
+      - run: npm publish --ignore-scripts --provenance --access public --tag ${{ steps.distTag.outputs.tag }}
