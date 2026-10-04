@@ -1,4 +1,5 @@
 import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
+import { isPropagatedExit, rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
@@ -192,6 +193,26 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     event,
   });
   if (impliedCompletionError) return impliedCompletionError;
+
+  // A carried or produced exit is changed at its ORIGIN, never here (CA, 2026-10-03); the cascade's own
+  // writes are not direct. See `rewritesCarriedExit`.
+  const carriedExit = !params.propagatingExit && isPropagatedExit({ matchUp });
+  const rewrite = rewritesCarriedExit({
+    existingWinningSide: matchUp.winningSide,
+    existingStatus: matchUp.matchUpStatus,
+    matchUpStatus,
+    carriedExit,
+    winningSide,
+    score,
+  });
+  if (rewrite) {
+    return decorateResult({
+      result: { error: CANNOT_CHANGE_OUTCOME },
+      info: 'a carried exit is changed at its origin',
+      context: { matchUpStatus: matchUp.matchUpStatus },
+      stack,
+    });
+  }
 
   const targetData = positionTargets({
     matchUpId: matchUpTieId || matchUpId,

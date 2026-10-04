@@ -82,6 +82,8 @@ export type OutcomeView = {
     ownMatchUpFormat?: string;
     /** the existing score, under the resolved format, is a valid win */
     validWinningScore: boolean;
+    /** the matchUp holds a carried or produced exit: changed at its origin, never here (§ 2 row 20) */
+    carriedExit: boolean;
   };
   /** what the requested score would decide under the format the call would apply; undefined when nothing */
   impliedWinningSide?: number;

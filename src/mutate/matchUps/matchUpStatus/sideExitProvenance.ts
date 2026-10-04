@@ -1,5 +1,6 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
@@ -836,6 +837,42 @@ export function isPropagatedExit({ matchUp }: { matchUp?: MatchUp }): boolean {
 }
 
 /**
+ * Whether a DIRECT write would change a matchUp that holds a carried or produced exit.
+ *
+ * CA, 2026-10-03: such an exit is not a result anybody recorded at this matchUp, so it cannot be
+ * re-scored into another result here (a produced WALKOVER recorded as RETIRED 6-3, say) and it cannot be
+ * removed here; the correction is made at its ORIGIN, whose clear or re-score re-derives this matchUp.
+ * Left open, the re-score was accepted and kept the carried provenance, and clearing the origin later
+ * withdrew the exit from under the director's score (census 9000184, UNDECIDED_WITH_SCORE).
+ *
+ * Only a write that changes nothing passes: the same status, the same winner or none, and no score.
+ * The cascade's own writes (`propagatingExit`) are not direct and are never asked. `carriedExit` is
+ * `isPropagatedExit` of the stored matchUp: v1 reads it there, v2 from its view.
+ */
+export function rewritesCarriedExit({
+  existingWinningSide,
+  existingStatus,
+  matchUpStatus,
+  carriedExit,
+  winningSide,
+  score,
+}: {
+  existingWinningSide?: number;
+  existingStatus?: string;
+  matchUpStatus?: string;
+  carriedExit: boolean;
+  winningSide?: number;
+  score?: any;
+}): boolean {
+  if (!carriedExit) return false;
+  const unchanged =
+    matchUpStatus === existingStatus &&
+    (!winningSide || winningSide === existingWinningSide) &&
+    !checkScoreHasValue({ score });
+  return !unchanged;
+}
+
+/**
  * The sides of this matchUp that CARRY AN EXIT — read from what each entry says, not from its
  * being there.
  *
@@ -986,6 +1023,21 @@ export type WithdrawnExit = {
   matchUpId: string;
 };
 
+/** Does a BYE hold one of this matchUp's drawPositions? Read from the structure's assignments. */
+function holdsBye({
+  drawDefinition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition?: DrawDefinition;
+  structureId: string;
+  matchUp: MatchUp;
+}): boolean {
+  const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
+  const byePositions = structure?.positionAssignments?.filter((a) => a.bye).map((a) => a.drawPosition);
+  return !!matchUp.drawPositions?.some((drawPosition) => !!drawPosition && !!byePositions?.includes(drawPosition));
+}
+
 /**
  * Withdraw one matchUp's entries, if any of them name a source in `sources`.
  *
@@ -1038,6 +1090,12 @@ function withdrawFromMatchUp(
     // `sourceMatchUpStatus.test.ts` losing a `previousMatchUpStatus: TO_BE_PLAYED` element that no
     // withdrawal had touched.
     setSideExitProvenance({ provenance: retained, matchUp });
+    // A matchUp holding a BYE stays a BYE whatever provenance survives: `deriveExitStateFromProvenance`
+    // leaves that to the caller, which has the structure. Re-deriving it to an exit labelled a BYE
+    // matchUp WALKOVER beside the BYE with nobody opposite (CA, 2026-09-20 and 2026-10-02, "the BYE
+    // remains a BYE"; caught by v2's held-exit invariant on sweep seed 6161873, where clearing a West
+    // result withdrew one side's entry from a South BYE matchUp whose BYE side still carried an exit).
+    if (holdsBye({ matchUp, structureId, drawDefinition })) return undefined;
     // STAGE 1 EXPERIMENT: re-derive, and report that the matchUp is no longer a double exit
     const derived = deriveExitStateFromProvenance(retained);
     if (derived && derived.matchUpStatus !== matchUp.matchUpStatus) {
