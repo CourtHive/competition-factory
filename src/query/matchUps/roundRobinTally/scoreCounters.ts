@@ -3,13 +3,13 @@ import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
-import { Score } from '@Types/tournamentTypes';
 import { Tally } from '@Types/factoryTypes';
 
 type CountSetsArgs = {
   matchUpFormat?: string;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   tallyPolicy?: any;
   score?: Score;
@@ -51,7 +51,7 @@ export function countSets({
 
 interface CountGames {
   matchUpFormat?: string;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   tallyPolicy?: any;
   score: Score;

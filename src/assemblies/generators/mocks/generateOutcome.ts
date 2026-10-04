@@ -8,9 +8,10 @@ import { randomInt, weightedRandom } from '@Tools/math';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';
 import { isExit } from '@Validators/isExit';
 
-// constants and fixtures
+// constants, fixtures and types
 import { INVALID_MATCHUP_FORMAT, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   COMPLETED,
   DEFAULTED,
@@ -73,7 +74,7 @@ function resolveMatchUpStatus({ matchUpStatusProfile, random }) {
   );
 
   const outcomePointer = randomInt(1, 100, random);
-  const matchUpStatus: string = (matchUpStatusMap.valueMap.find((item) => outcomePointer <= item[0]) ?? [
+  const matchUpStatus: MatchUpStatusUnion = (matchUpStatusMap.valueMap.find((item) => outcomePointer <= item[0]) ?? [
     100,
     COMPLETED,
   ])[1];
@@ -161,7 +162,7 @@ export function generateOutcome(params) {
 
   const statusResult = resolveMatchUpStatus({ matchUpStatusProfile, random });
   if (statusResult.error) return statusResult;
-  const { matchUpStatus } = statusResult as { matchUpStatus: string };
+  const { matchUpStatus } = statusResult as { matchUpStatus: MatchUpStatusUnion };
 
   const earlyOutcome = resolveEarlyOutcome({
     defaultWithScorePercent: clampedDefaultPercent,

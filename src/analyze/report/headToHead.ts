@@ -5,6 +5,7 @@ import { intersection, lengthOrZero } from '@Tools/arrays';
 // constants and types
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import { safePct } from '@Tools/math';
@@ -21,7 +22,7 @@ export function participantHeadToHead({ mappedMatchUps, participants }: Particip
 
   type mrecord = {
     matchUpFormat?: string;
-    matchUpStatus?: string;
+    matchUpStatus?: MatchUpStatusUnion;
     winningSide: number;
     score: any;
   };

@@ -4,9 +4,9 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getOutcomePipeline } from '@Global/state/globalState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
-import { isDoubleExit, isExit } from '@Validators/isExit';
 import { refuseOutcome } from './refusals';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
@@ -14,6 +14,7 @@ import { chooseRoute } from './route';
 // constants and types
 import type { BuildViewArgs, DirectionPlan, OutcomeRequest, OutcomeView, Refusal } from './types';
 import { BYE, DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ResultType } from '@Types/factoryTypes';
 import {
@@ -400,7 +401,7 @@ function checkDecider({
   route,
   matchUpId,
   matchUpStatus,
-}: CheckArgs & { matchUpId: string; matchUpStatus: string }) {
+}: CheckArgs & { matchUpId: string; matchUpStatus: MatchUpStatusUnion }) {
   const target = standing(args, matchUpId);
   if (target?.matchUpStatus !== matchUpStatus || target?.winningSide)
     diverge(
@@ -417,7 +418,7 @@ function checkConverged({
   route,
   matchUpId,
   matchUpStatus,
-}: CheckArgs & { matchUpId: string; matchUpStatus: string }) {
+}: CheckArgs & { matchUpId: string; matchUpStatus: MatchUpStatusUnion }) {
   const target = standing(args, matchUpId);
   if (target?.sides?.some((side) => side?.bye)) return differentialTally(`${route}:converged`, 'deferred');
   if (target?.matchUpStatus !== matchUpStatus || target?.winningSide)

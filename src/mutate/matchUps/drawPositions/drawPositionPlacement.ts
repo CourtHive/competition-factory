@@ -24,20 +24,13 @@
 
 import { removeSubsequentRoundsParticipant } from '@Mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant';
 import { DrawDefinition, Event, MatchUpStatusUnion, PositionAssignment, Tournament } from '@Types/tournamentTypes';
+import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
-import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
-import {
-  clearResolvedSideExitProvenance,
-  isPropagatedExit as sharedIsPropagatedExit,
-  participatesInExitCascade,
-  isProjectedExitCode,
-  policyCodeString,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -49,6 +42,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { SeedingProfile, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { updateSideLineUp } from '@Mutate/matchUps/lineUps/updateSideLineUp';
+import { propagateUnfillableLoserBye } from './propagateUnfillableLoserBye';
 import { isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -58,9 +52,8 @@ import { resetLineUps } from '@Mutate/matchUps/lineUps/resetLineUps';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionTargets } from '@Query/matchUp/positionTargets';
-import { propagateUnfillableLoserBye } from './propagateUnfillableLoserBye';
 import { normalizeDrawPositions } from './normalizeDrawPositions';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { assignDrawPositionBye } from './assignDrawPositionBye';
 import { getParticipantId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -73,6 +66,13 @@ import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import { isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
+import {
+  clearResolvedSideExitProvenance,
+  isPropagatedExit as sharedIsPropagatedExit,
+  participatesInExitCascade,
+  isProjectedExitCode,
+  policyCodeString,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 import { CONSOLATION, CONTAINER, MAIN, PLAY_OFF, QUALIFYING, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 
@@ -98,10 +98,10 @@ type AssignMatchUpDrawPositionArgs = {
   inContextDrawMatchUps: HydratedMatchUp[];
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
-  sourceMatchUpStatus?: string;
+  sourceMatchUpStatus?: MatchUpStatusUnion;
   matchUpsMap?: MatchUpsMap;
   sourceMatchUpId?: string;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   drawPosition: number;
   matchUpId: string;
   event?: Event;
