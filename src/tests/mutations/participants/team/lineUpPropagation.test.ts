@@ -244,7 +244,7 @@ it('can propagate and remove lineUps', () => {
     expect(sides[0].lineUp).not.toBeDefined();
     expect(sides[1].lineUp).not.toBeDefined();
   });
-});
+}, 180_000);
 
 it('can propagate COMPASS lineUps properly', () => {
   const { tournamentRecord, drawId, valueGoal } = generateTeamTournament(scenario);

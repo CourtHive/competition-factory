@@ -168,45 +168,51 @@ const scenarios = [
   },
 ];
 
-it.each(scenarios)('supports drawSize thresholds', (scenario) => {
-  const drawProfiles = [{ drawType: COMPASS, drawSize: scenario.drawSize }];
-  mocksEngine.generateTournamentRecord({
-    completeAllMatchUps: true,
-    setState: true,
-    drawProfiles,
-  });
+// Each scenario completes a whole COMPASS draw: the first took 32s cold under CI coverage with the
+// differential on (checkpoint #5167, 2026-10-04), past the 30s default.
+it.each(scenarios)(
+  'supports drawSize thresholds',
+  (scenario) => {
+    const drawProfiles = [{ drawType: COMPASS, drawSize: scenario.drawSize }];
+    mocksEngine.generateTournamentRecord({
+      completeAllMatchUps: true,
+      setState: true,
+      drawProfiles,
+    });
 
-  const participants = tournamentEngine
-    .getParticipants({
-      withRankingProfile: true,
-    })
-    .participants.sort(finishingPositionSort);
+    const participants = tournamentEngine
+      .getParticipants({
+        withRankingProfile: true,
+      })
+      .participants.sort(finishingPositionSort);
 
-  // use awardProfiles with thresholds
-  policyDefinitions[POLICY_TYPE_RANKING_POINTS].awardProfiles = [awardProfileThresholds];
+    // use awardProfiles with thresholds
+    policyDefinitions[POLICY_TYPE_RANKING_POINTS].awardProfiles = [awardProfileThresholds];
 
-  let result = scaleEngine.getTournamentPoints({ policyDefinitions });
-  expect(result.success).toEqual(true);
-  const personPoints = result.personPoints;
+    let result = scaleEngine.getTournamentPoints({ policyDefinitions });
+    expect(result.success).toEqual(true);
+    const personPoints = result.personPoints;
 
-  const fpMap = getFpMap(participants, personPoints);
+    const fpMap = getFpMap(participants, personPoints);
 
-  for (const expectation of scenario.expectations) {
-    const target = fpMap.find((e) => e[positionKey] === expectation.positionKey);
-    if (target) {
-      if (expectation.pointTotal) {
-        expect(target[pointTotal]).toEqual(expectation.pointTotal);
-      } else {
-        console.log({ pointTotal: expectation.pointTotal });
-      }
-      if (expectation.winMap) {
-        expect(target[winMap]).toEqual(expectation.winMap);
-      } else {
-        console.log({ winMap: expectation.winMap });
+    for (const expectation of scenario.expectations) {
+      const target = fpMap.find((e) => e[positionKey] === expectation.positionKey);
+      if (target) {
+        if (expectation.pointTotal) {
+          expect(target[pointTotal]).toEqual(expectation.pointTotal);
+        } else {
+          console.log({ pointTotal: expectation.pointTotal });
+        }
+        if (expectation.winMap) {
+          expect(target[winMap]).toEqual(expectation.winMap);
+        } else {
+          console.log({ winMap: expectation.winMap });
+        }
       }
     }
-  }
-});
+  },
+  180_000,
+);
 
 // prettier-ignore
 const requireWinScenarios = [
