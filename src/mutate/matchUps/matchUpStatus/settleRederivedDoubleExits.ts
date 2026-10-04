@@ -1,18 +1,18 @@
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
-import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import {
   clearSideExitProvenance,
   getSideExitProvenance,
   withdrawProducedExits,
   setSideExitProvenance,
-  blankExitCodes,
   withdrawByeClaim,
+  blankExitCodes,
   getExitSides,
 } from './sideExitProvenance';
 
@@ -107,12 +107,12 @@ export function settleRederivedDoubleExit({
   // arrives (census de 9300879: the carrier arrived on side 2 at drawPosition 3, the opponent then took
   // drawPosition 4, and the side-2 read replayed the walkover with the OPPONENT as its carrier).
   // A double-exit origin has no winningSide and so no carrier: its produced exit is pending, not carried.
-  const inContextMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
-  const originInContext = inContextMatchUps.find((candidate) => candidate.matchUpId === origin?.matchUpId);
+  const inContextMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps;
+  const originInContext = inContextMatchUps?.find((candidate) => candidate.matchUpId === origin?.matchUpId);
   const carrierId = originInContext?.winningSide
     ? originInContext.sides?.find((side: any) => side.sideNumber !== originInContext.winningSide)?.participantId
     : undefined;
-  const inContext = inContextMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
+  const inContext = inContextMatchUps?.find((candidate) => candidate.matchUpId === matchUpId);
   const carrierSide = inContext?.sides?.find((side: any) => carrierId && side.participantId === carrierId)?.sideNumber;
   if (!stored || !keptEntry || !origin || !carrierSide) return;
 
@@ -197,9 +197,9 @@ export function carryExitOnward({ context, propagateExitStatus, tournamentRecord
 
 /** Withdraw a matchUp's BYE claims, clearing each propagated BYE seat no other claim still holds. */
 function withdrawByeSeats({ claimantMatchUpId, tournamentRecord, drawDefinition, matchUpsMap, event }: any) {
-  for (const [structureId, mapped] of Object.entries(matchUpsMap.mappedMatchUps ?? {}) as [string, any][]) {
+  for (const [structureId, mapped] of Object.entries(matchUpsMap.mappedMatchUps) as [string, any][]) {
     const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
-    for (const matchUp of (mapped?.matchUps ?? []) as MatchUp[]) {
+    for (const matchUp of mapped.matchUps as MatchUp[]) {
       for (const sideNumber of [1, 2]) {
         const claims = matchUp.sideExitProvenance?.[sideNumber]?.byeClaims ?? [];
         if (!claims.includes(claimantMatchUpId)) continue;
