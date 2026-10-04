@@ -19,7 +19,7 @@ import {
 // constants and types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import type { MatchUpsMap } from '@Types/factoryTypes';
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 
 type SettleArgs = {
   tournamentRecord?: Tournament;
@@ -44,8 +44,8 @@ export function settleRederivedDoubleExits({
   doubleExitsBefore,
   targetMatchUpId,
   ...args
-}: SettleArgs & { doubleExitsBefore: Set<string>; targetMatchUpId?: string }): void {
-  if (!doubleExitsBefore.size) return;
+}: SettleArgs & { doubleExitsBefore: Set<string>; targetMatchUpId?: string }): ResultType | undefined {
+  if (!doubleExitsBefore.size) return undefined;
   const { drawMatchUps } = getMatchUpsMap({ drawDefinition: args.drawDefinition });
   for (const matchUp of drawMatchUps) {
     if (matchUp.matchUpId === targetMatchUpId || !doubleExitsBefore.has(matchUp.matchUpId)) continue;
@@ -53,8 +53,10 @@ export function settleRederivedDoubleExits({
     if (isDoubleExit(matchUp.matchUpStatus)) continue;
     if (!isExit(matchUp.matchUpStatus) && matchUp.matchUpStatus !== BYE) continue;
     if (liveExitSides({ matchUp, drawMatchUps }).length !== 1) continue;
-    settleRederivedDoubleExit({ ...args, matchUpId: matchUp.matchUpId });
+    const settled = settleRederivedDoubleExit({ ...args, matchUpId: matchUp.matchUpId });
+    if (settled?.error) return settled;
   }
+  return undefined;
 }
 
 /**
@@ -96,7 +98,7 @@ export function settleRederivedDoubleExit({
   drawDefinition,
   matchUpId,
   event,
-}: SettleArgs & { matchUpId: string }): void {
+}: SettleArgs & { matchUpId: string }): ResultType | undefined {
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
   const [keptSide] = liveExitSides({ matchUp: stored, drawMatchUps: matchUpsMap.drawMatchUps });
@@ -114,7 +116,7 @@ export function settleRederivedDoubleExit({
     : undefined;
   const inContext = inContextMatchUps?.find((candidate) => candidate.matchUpId === matchUpId);
   const carrierSide = inContext?.sides?.find((side: any) => carrierId && side.participantId === carrierId)?.sideNumber;
-  if (!stored || !keptEntry || !origin || !carrierSide) return;
+  if (!stored || !keptEntry || !origin || !carrierSide) return undefined;
 
   // 1. what it produced downstream as a double exit
   const withdrawnExits = withdrawProducedExits({
@@ -148,7 +150,7 @@ export function settleRederivedDoubleExit({
   });
 
   // 4. the kept origin's carry, replayed, and onward through every further loser link
-  carryExitOnward({
+  return carryExitOnward({
     context: {
       // the origin's reason is read from its own `sideStatusCodes` by `progressExitStatus`; the legacy
       // positional array is not this function's to read (P37, `verify:exit-tenant`)
@@ -172,7 +174,13 @@ export function settleRederivedDoubleExit({
  * carried exit, and keep going while that produces a further loser (COMPASS: East → West → South →
  * Southeast). Bounded, as there.
  */
-export function carryExitOnward({ context, propagateExitStatus, tournamentRecord, drawDefinition, event }: any): void {
+export function carryExitOnward({
+  context,
+  propagateExitStatus,
+  tournamentRecord,
+  drawDefinition,
+  event,
+}: any): ResultType | undefined {
   let current = context;
   for (let failsafe = 0; current?.loserMatchUp && failsafe < 10; failsafe += 1) {
     const progressResult: any = progressExitStatus({
@@ -188,11 +196,11 @@ export function carryExitOnward({ context, propagateExitStatus, tournamentRecord
       drawDefinition,
       event,
     });
-    // A refused write is discarded here exactly as `setMatchUpStatus`'s own loop discards it. Returning
-    // it is held for both loops together: returning it surfaced refusals in LEGAL census play
-    // (9000449, 9100362, 9100285) that are being root-caused first (F3, 2026-10-04).
+    // a refused write is returned, never dropped, exactly as `setMatchUpStatus`'s own loop returns it (F3)
+    if (progressResult?.error) return progressResult;
     current = progressResult?.context?.loserMatchUp ? { ...current, ...progressResult.context } : undefined;
   }
+  return undefined;
 }
 
 /** Withdraw a matchUp's BYE claims, clearing each propagated BYE seat no other claim still holds. */

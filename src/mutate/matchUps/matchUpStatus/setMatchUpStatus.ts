@@ -345,7 +345,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // at which a carried exit's ORIGIN can be asked whether it still describes one. See
   // `reconcileStaleExitOrigins` for the two corrections that pull the timing in opposite directions.
   // a convergence that lost one of its origins goes where the kept origin alone puts it
-  settleRederivedDoubleExits({
+  const settled = settleRederivedDoubleExits({
     tournamentRecord: params.tournamentRecord,
     drawDefinition: params.drawDefinition,
     targetMatchUpId: matchUpId,
@@ -353,6 +353,10 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     doubleExitsBefore,
     event: params.event,
   });
+  if (settled?.error) {
+    v2.compare?.(settled);
+    return decorateResult({ result: settled, stack });
+  }
   reconcileStaleExitOrigins({
     matchUpsMap: result.context?.matchUpsMap,
     drawDefinition: params.drawDefinition,
