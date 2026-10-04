@@ -1,7 +1,9 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
+import { timedSetWinnerContradicts } from '@Validators/timedSetWinner';
 import { tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
 import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { maxExactlySets } from '@Validators/setCount';
 import { instanceCount } from '@Tools/arrays';
 
 // constants and types
@@ -78,6 +80,7 @@ function validateSet(
     if (!isValidTiebreak) return false;
   }
 
+  if (setValues?.timed && timedSetWinnerContradicts(set)) return false;
   if (!setValues.setTo) return true;
 
   // The ceiling is the tiebreak winner's games wherever the format puts its tiebreak: 6 for `@5`, 7 for
@@ -181,14 +184,13 @@ export function analyzeScore({
       validateSet(set, i, matchUpScoringFormat, totalSets ?? 0, i === sets.length - 1, irregularEnding),
     );
 
-  // For "exactly" formats, COMPLETED matches must have all N sets
+  // For "exactly" formats, COMPLETED matches must have all N sets, and no match has more than N (plus the
+  // sudden-death tiebreak of a format decided by aggregate points)
   const exactly = matchUpScoringFormat?.exactly;
   const isExactlyComplete =
     !exactly ||
-    !relevantMatchUpStatus ||
-    relevantMatchUpStatus !== COMPLETED ||
-    irregularEnding ||
-    sets.length >= exactly;
+    (sets.length <= (maxExactlySets(matchUpScoringFormat) ?? exactly) &&
+      (!relevantMatchUpStatus || relevantMatchUpStatus !== COMPLETED || irregularEnding || sets.length >= exactly));
 
   // For aggregate scoring, calculate winner based on total score across all sets
   const isAggregateScoring = isAggregateFormat(matchUpScoringFormat);
