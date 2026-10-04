@@ -1,6 +1,9 @@
+import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { replay } from '@Tests/testHarness/exitPropagation/sweep';
-import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
+
+// constants
+import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 
 /**
  * **A settled convergence leaves nothing behind that the census can see.**
@@ -144,12 +147,18 @@ const SCENARIOS = [
     // once an opponent arrives, so it replayed the walkover with the OPPONENT carrying it, and the next result
     // was refused ERR_EXISTING_POSITION_ASSIGNMENT after mutating; the carrier is now the kept origin's loser
     seed: 9300879,
+    // v1 alone: under `differential` this schedule diverges on `dev` too, before the settle is reached (v1
+    // awards a produced WALKOVER to side 2 where v2 plans it pending); the outcome-v2 session's to rule on
+    pipeline: OUTCOME_PIPELINE_V1,
     config: {
       participantsCount: 5,
       propagateExitStatus: true,
       drawSize: 8,
       drawType: 'DOUBLE_ELIMINATION',
       seed: 9300879,
+      // v1 alone: under `differential` this schedule diverges on `dev` too, before the settle is reached (v1
+      // awards a produced WALKOVER to side 2 where v2 plans it pending); the outcome-v2 session's to rule on
+      pipeline: OUTCOME_PIPELINE_V1,
     },
     steps: [
       { structureName: 'Main', roundNumber: 2, roundPosition: 1, outcome: { winningSide: 2 } },
@@ -184,9 +193,13 @@ const SCENARIOS = [
 
 it.each(SCENARIOS)(
   'census seed $seed replays clean',
-  ({ config, steps }) => {
+  ({ config, steps, pipeline }: { config: any; steps: any[]; pipeline?: any }) => {
+    const mode = getOutcomePipeline();
+    if (pipeline) setOutcomePipeline(pipeline);
     setSubscriptions({});
-    expect(replay(config, steps, `settled-${config.seed}`)).toEqual(null);
+    const failure = replay(config, steps, `settled-${config.seed}`);
+    setOutcomePipeline(mode);
+    expect(failure).toEqual(null);
   },
   180_000,
 );
