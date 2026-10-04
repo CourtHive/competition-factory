@@ -1023,6 +1023,21 @@ export type WithdrawnExit = {
   matchUpId: string;
 };
 
+/** Does a BYE hold one of this matchUp's drawPositions? Read from the structure's assignments. */
+function holdsBye({
+  drawDefinition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition?: DrawDefinition;
+  structureId: string;
+  matchUp: MatchUp;
+}): boolean {
+  const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
+  const byePositions = structure?.positionAssignments?.filter((a) => a.bye).map((a) => a.drawPosition);
+  return !!matchUp.drawPositions?.some((drawPosition) => !!drawPosition && !!byePositions?.includes(drawPosition));
+}
+
 /**
  * Withdraw one matchUp's entries, if any of them name a source in `sources`.
  *
@@ -1075,6 +1090,12 @@ function withdrawFromMatchUp(
     // `sourceMatchUpStatus.test.ts` losing a `previousMatchUpStatus: TO_BE_PLAYED` element that no
     // withdrawal had touched.
     setSideExitProvenance({ provenance: retained, matchUp });
+    // A matchUp holding a BYE stays a BYE whatever provenance survives: `deriveExitStateFromProvenance`
+    // leaves that to the caller, which has the structure. Re-deriving it to an exit labelled a BYE
+    // matchUp WALKOVER beside the BYE with nobody opposite (CA, 2026-09-20 and 2026-10-02, "the BYE
+    // remains a BYE"; caught by v2's held-exit invariant on sweep seed 6161873, where clearing a West
+    // result withdrew one side's entry from a South BYE matchUp whose BYE side still carried an exit).
+    if (holdsBye({ matchUp, structureId, drawDefinition })) return undefined;
     // STAGE 1 EXPERIMENT: re-derive, and report that the matchUp is no longer a double exit
     const derived = deriveExitStateFromProvenance(retained);
     if (derived && derived.matchUpStatus !== matchUp.matchUpStatus) {
