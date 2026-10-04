@@ -319,6 +319,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
         event: params.event,
       });
 
+      // A REFUSED WRITE IS RETURNED, never dropped (F3). The loop used to read only `context`, so a
+      // refusal here reported success over a draw the cascade had left half-written.
+      if (progressResult.error) {
+        v2.compare?.(progressResult);
+        return decorateResult({ result: progressResult, stack });
+      }
+
       // DECISION: Continue iterating if there's another level of consolation
       // WHY: The consolation matchUp itself might feed into another consolation level
       // If progressResult returns another loserMatchUp, we need to process that too
