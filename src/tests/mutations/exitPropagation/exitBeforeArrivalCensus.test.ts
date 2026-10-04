@@ -35,13 +35,13 @@ const OUTCOMES = [
 ];
 
 /**
- * - a participant carrying an exit ARRIVES at a pending walkover, takes it and advances — then takes a
- *   recorded exit's vacant side one round on — and the convergence `progressExitStatus` RULE 4 writes behind
- *   it is refused ERR_INCOMPATIBLE_MATCHUP_STATUS after the draw has moved (the arrival should converge, not
- *   take): 9700004, 9700018, 9700019, 9700049, 9700078, 9700079;
  * - ORIGIN_ON_UNDECIDED_MATCHUP after three recorded exits in West and a walkover in East: 9700009.
+ *
+ * Struck (closed by "an arrival carrying an exit converges", F3): 9700004, 9700018, 9700019, 9700049, 9700078,
+ * 9700079, where a participant carrying an exit ARRIVED at a pending walkover, took it and advanced, and the
+ * convergence `progressExitStatus` RULE 4 wrote behind it was refused after the draw had moved.
  */
-const KNOWN = new Set([9700004, 9700009, 9700018, 9700019, 9700049, 9700078, 9700079]);
+const KNOWN = new Set([9700009]);
 
 const undecided = (m: any) => !m.winningSide && (!m.matchUpStatus || m.matchUpStatus === TO_BE_PLAYED);
 const occupants = (m: any) => m.sides.filter((side: any) => side.participantId).length;
