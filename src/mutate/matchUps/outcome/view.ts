@@ -87,7 +87,7 @@ function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): str
   if (carried.length) return carried;
   // the status is this matchUp's own product when an exit entry came from it: judged on EXIT entries
   // only, since a BYE claim on the other side is not an exit (seed 6341103: a BYE claim on side 1 and
-  // this matchUp's earlier DEFAULTED on side 2 made `exitProducedBy`, which wants every entry, false)
+  // this matchUp's earlier DEFAULTED on side 2 made the old every-entry test false)
   const own = Object.values(getSideExitProvenance({ matchUp }) ?? {}).some(
     (entry) => entry?.sourceMatchUpId === sourceMatchUpId && !!carriedExitStatus(entry),
   );
