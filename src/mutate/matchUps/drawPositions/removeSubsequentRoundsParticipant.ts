@@ -203,7 +203,7 @@ function carriedAwardToEmptySeat({ matchUp, positionAssignments, drawDefinition,
     drawDefinition,
     structureId,
   });
-  const entry: any = carrierSide ? matchUp.sideExitProvenance?.[carrierSide] : undefined;
+  const entry = carrierSide ? matchUp.sideExitProvenance?.[carrierSide] : undefined;
   if (!carriedExitStatus(entry) || isDoubleExit(entry?.previousMatchUpStatus)) return undefined;
   return carrierSide === 1 ? 2 : 1;
 }
