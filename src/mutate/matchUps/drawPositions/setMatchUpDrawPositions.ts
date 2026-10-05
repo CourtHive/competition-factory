@@ -2,7 +2,7 @@ import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalize
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 
 // types
-import type { DrawDefinition } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 
 type SetMatchUpDrawPositionsArgs = {
   drawPositions: (number | undefined)[];
@@ -10,7 +10,7 @@ type SetMatchUpDrawPositionsArgs = {
   /** false where the caller assigns `winningSide` itself, from the side the arrival takes (the arrival path) */
   rekeyWinningSide?: boolean;
   structureId?: string;
-  matchUp: any;
+  matchUp: MatchUp;
 };
 
 /**
@@ -91,7 +91,7 @@ const swapKeys = (record?: Record<string | number, any>) => {
   return swapped;
 };
 
-function swapSideFacts(matchUp: any, rekeyWinningSide: boolean) {
+function swapSideFacts(matchUp: MatchUp, rekeyWinningSide: boolean) {
   if (matchUp.sideExitProvenance) matchUp.sideExitProvenance = swapKeys(matchUp.sideExitProvenance);
   if (matchUp.sideStatusCodes) matchUp.sideStatusCodes = swapKeys(matchUp.sideStatusCodes);
   if (matchUp.matchUpStatusCodes?.length) {
