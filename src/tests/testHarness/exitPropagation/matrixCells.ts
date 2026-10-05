@@ -6,7 +6,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 
 // constants
 import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER, RETIRED } from '@Constants/matchUpStatusConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { COLLEGE_DEFAULT, DOMINANT_DUO, LAVER_CUP } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
@@ -72,9 +72,9 @@ export type MatrixCell = {
   lineUps?: boolean;
 };
 
-const composeCells = (drawTypes: string[]): Omit<MatrixCell, 'seed'>[] =>
+const composeCells = (drawTypes: string[], drawSizes: number[] = MATRIX_DRAW_SIZES): Omit<MatrixCell, 'seed'>[] =>
   drawTypes.flatMap((drawType) =>
-    MATRIX_DRAW_SIZES.flatMap((drawSize) =>
+    drawSizes.flatMap((drawSize) =>
       MATRIX_REDUCTIONS.flatMap((reduction) =>
         MATRIX_EXIT_STATUSES.flatMap((exitStatus) =>
           [true, false].map((propagateExitStatus) => ({
@@ -141,9 +141,13 @@ export const TEAM_MATRIX_DRAW_TYPES = [SINGLE_ELIMINATION, DOUBLE_ELIMINATION, F
 export const TEAM_DUAL_SEED_BASE = 200000;
 export const TEAM_LINE_SEED_BASE = 300000;
 
-const teamCell = (cell: Omit<MatrixCell, 'seed'>, lineUps: boolean): Omit<MatrixCell, 'seed'> => ({
+const teamCell = (
+  cell: Omit<MatrixCell, 'seed'>,
+  lineUps: boolean,
+  tieFormatName: string = DOMINANT_DUO,
+): Omit<MatrixCell, 'seed'> => ({
   ...cell,
-  tieFormatName: DOMINANT_DUO,
+  tieFormatName,
   eventType: TEAM,
   lineUps,
 });
@@ -157,6 +161,38 @@ export const TEAM_LINE_CELLS: MatrixCell[] = composeCells(TEAM_MATRIX_DRAW_TYPES
   ...teamCell(cell, true),
   seed: TEAM_LINE_SEED_BASE + index + 1,
 }));
+
+/**
+ * THE TEAM ARM, EXTENDED — 2026-10-05, the unowned-threads prompt § 4.
+ *
+ *  - **The seven extension draw types** as TEAM events (DOMINANT_DUO), dual and line level, from
+ *    seed bases of their own so no existing cell moves. Measured on first contact: 800 of 800 clean,
+ *    and a control over 130 of them confirmed every cell entered its exit (on the dual in the dual
+ *    arm, on a line in the line arm), so the zero is not an exit that never landed.
+ *  - **Two more tieFormats** on the four TEAM draw types, drawSize 8 only (a LAVER_CUP 16-draw takes
+ *    ~10 s a cell). COLLEGE_DEFAULT is the one whose doubles rubbers share a single point
+ *    (`collectionValue`), so a decided rubber can leave the dual at 0-0: its line arm found the
+ *    walkover rubber that did not start its dual (`aWalkoverRubberStartsTheDual.test.ts`). LAVER_CUP
+ *    scores by set value across many rubbers.
+ */
+export const TEAM_EXTENSION_DUAL_SEED_BASE = 400000;
+export const TEAM_EXTENSION_LINE_SEED_BASE = 450000;
+export const TEAM_FORMAT_SEED_BASE = 500000;
+export const TEAM_FORMATS = [COLLEGE_DEFAULT, LAVER_CUP];
+
+const teamExtension = (lineUps: boolean, seedBase: number): MatrixCell[] =>
+  composeCells(MATRIX_EXTENSION_DRAW_TYPES)
+    .map((cell, index) => ({ ...teamCell(cell, lineUps), seed: seedBase + index + 1 }))
+    .filter((cell) => !isUnpopulatedLuckyDraw(cell));
+
+export const TEAM_EXTENSION_DUAL_CELLS: MatrixCell[] = teamExtension(false, TEAM_EXTENSION_DUAL_SEED_BASE);
+export const TEAM_EXTENSION_LINE_CELLS: MatrixCell[] = teamExtension(true, TEAM_EXTENSION_LINE_SEED_BASE);
+
+export const TEAM_FORMAT_CELLS: MatrixCell[] = TEAM_FORMATS.flatMap((tieFormatName) =>
+  [false, true].flatMap((lineUps) =>
+    composeCells(TEAM_MATRIX_DRAW_TYPES, [8]).map((cell) => teamCell(cell, lineUps, tieFormatName)),
+  ),
+).map((cell, index) => ({ ...cell, seed: TEAM_FORMAT_SEED_BASE + index + 1 }));
 
 export const MATRIX_EXTENSION_CELLS: MatrixCell[] = composeCells(MATRIX_EXTENSION_DRAW_TYPES)
   .map((cell, index) => ({ ...cell, seed: MATRIX_EXTENSION_SEED_BASE + index + 1 }))
@@ -221,6 +257,15 @@ function generateCell(cell: MatrixCell, drawId: string, policyDefinitions?: any)
   return true;
 }
 
+/**
+ * The driver's runaway guard, sized to the draw. A flat 200 sat above every singles draw in the
+ * matrix, but a nine-rubber TEAM draw holds more playable matchUps than that (DOUBLE_ELIMINATION 16
+ * in COLLEGE_DEFAULT: 30 duals and 270 rubbers), so the guard reported DRIVER_DID_NOT_CONVERGE on a
+ * draw that was still making progress. Measured 2026-10-05: 119 of 960 exploratory TEAM cells.
+ */
+const stepGuard = (drawId: string): number =>
+  Math.max(200, 2 * (tournamentEngine.allDrawMatchUps({ drawId }).matchUps?.length ?? 0));
+
 export function runMatrixCell(cell: MatrixCell, drawId: string): PropertyFailure[] | undefined {
   if (!generateCell(cell, drawId)) return undefined;
 
@@ -233,7 +278,12 @@ export function runMatrixCell(cell: MatrixCell, drawId: string): PropertyFailure
   ];
   if (!failures.length) {
     failures.push(
-      ...playForward({ propagateExitStatus: cell.propagateExitStatus, exitOutcome: outcome, drawId }).failures,
+      ...playForward({
+        propagateExitStatus: cell.propagateExitStatus,
+        maxSteps: stepGuard(drawId),
+        exitOutcome: outcome,
+        drawId,
+      }).failures,
     );
   }
   if (!failures.length) failures.push(...checkIntegrity(drawId, target.matchUpId));

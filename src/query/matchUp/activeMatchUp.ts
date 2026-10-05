@@ -49,7 +49,14 @@ export function isActiveMatchUp({
   // awaiting the participant who will fall through into it — must NOT read as active,
   // otherwise it marks the feeding drawPositions active and blocks that participant
   // from advancing into the slot (ERR_ACTIVE_DRAW_POSITION).
-  const winnerAssigned = !!winningSide && !!sides?.find((side) => side.sideNumber === winningSide)?.participantId;
+  //
+  // A COLLECTION matchUp (a rubber) is the exception: its players are on `lineUp`, so its sides never
+  // hold a participantId, and nothing propagates an exit INTO a rubber, so it has no produced exit to
+  // guard against. Its winningSide alone is decisive. Without this a rubber decided by WALKOVER or
+  // DEFAULTED read inactive and, where the dual's score stayed 0-0 (COLLEGE_DEFAULT's doubles point),
+  // left the dual TO_BE_PLAYED carrying a score (`aWalkoverRubberStartsTheDual.test.ts`).
+  const winnerAssigned =
+    !!winningSide && (!!collectionId || !!sides?.find((side) => side.sideNumber === winningSide)?.participantId);
   const activeTieMatchUps = tieMatchUps?.filter(isActiveMatchUp)?.length;
   const scoreExists = checkScoreHasValue({ score });
 
