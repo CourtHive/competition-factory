@@ -8,7 +8,7 @@ import { findStructure } from '@Acquire/findStructure';
 // constants and types
 import { ErrorType, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { LOSER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -205,9 +205,9 @@ export function getLuckyDrawRoundStatus({
 
     // Resolve participantId for a given side of a matchUp.
     // Hydrated matchUps have sides[]; raw structure matchUps only have drawPositions[].
-    const resolveParticipantId = (m: any, sideNumber: number): string | undefined => {
+    const resolveParticipantId = (m: MatchUp, sideNumber: number): string | undefined => {
       // Try hydrated sides first
-      const side = m.sides?.find((s: any) => s.sideNumber === sideNumber);
+      const side = m.sides?.find((s) => s.sideNumber === sideNumber);
       if (side) return side.participantId || side.participant?.participantId;
       // Fall back to drawPositions → positionAssignments
       // Derives a side from drawPosition ORDER — valid only because drawPositions are stored
@@ -216,12 +216,12 @@ export function getLuckyDrawRoundStatus({
       return drawPosition ? positionToParticipantId[drawPosition] : undefined;
     };
 
-    const resolveParticipantName = (m: any, sideNumber: number, participantId: string): string | undefined => {
-      const side = m.sides?.find((s: any) => s.sideNumber === sideNumber);
+    const resolveParticipantName = (m: MatchUp, sideNumber: number, participantId: string): string | undefined => {
+      const side = m.sides?.find((s) => s.sideNumber === sideNumber);
       return side?.participant?.participantName || participantMap[participantId];
     };
 
-    const getParticipantInfo = (m: any, sideNumber: number): LuckyParticipantInfo | undefined => {
+    const getParticipantInfo = (m: MatchUp, sideNumber: number): LuckyParticipantInfo | undefined => {
       const participantId = resolveParticipantId(m, sideNumber);
       if (!participantId) return undefined;
 

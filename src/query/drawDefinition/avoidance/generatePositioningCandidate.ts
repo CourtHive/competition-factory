@@ -7,8 +7,9 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { getSwapOptions } from './getSwapOptions';
 
 // constants and types
-import { INVALID_ASSIGNMENT } from '@Constants/errorConditionConstants';
+import { ErrorType, INVALID_ASSIGNMENT } from '@Constants/errorConditionConstants';
 import { PositionAssignment } from '@Types/tournamentTypes';
+import type { HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import { IdCollections } from '@Types/factoryTypes';
 
@@ -21,7 +22,7 @@ type GeneratePositioningCandidateArgs = {
   allGroups: { [key: string]: any }; // map of values and participantIds which have those values
   unseededByePositions?: number[];
   drawPositionChunks?: number[][]; // drawPositions grouped by round starting with the final round
-  participantsWithGroupings: any; //  participants with added team/group/pair participantIds arrays
+  participantsWithGroupings: HydratedParticipant[]; //  participants with added team/group/pair participantIds arrays
   opponentsToPlaceCount: number;
   idCollections: IdCollections;
   pairedPriority?: boolean; // flag whether to prioritize positions which already have one opponent placed
@@ -42,7 +43,7 @@ export function generatePositioningCandidate(params: GeneratePositioningCandidat
     random,
   } = params;
 
-  const errors: any[] = [];
+  const errors: ErrorType[] = [];
   let groupKey;
 
   const groupSize = Math.min(...(drawPositionGroups ?? []).map((dpg) => dpg?.length).filter(Boolean));

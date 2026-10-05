@@ -1,14 +1,15 @@
-import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
+import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 
 // constants and types
-import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, DrawLink, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { LOSER, QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // getDrawInconsistencies is the DRAW layer of the integrity hierarchy. It fans out to
@@ -73,8 +74,8 @@ function collectStructures(structures: Structure[] | undefined, collected: Struc
   }
 }
 
-function getLinkInconsistencies(drawDefinition: DrawDefinition, structureIds: Set<string>): any[] {
-  const inconsistencies: any[] = [];
+function getLinkInconsistencies(drawDefinition: DrawDefinition, structureIds: Set<string>): Partial<Inconsistency>[] {
+  const inconsistencies: Partial<Inconsistency>[] = [];
   for (const link of drawDefinition.links ?? []) {
     if (!link) continue;
     const sourceStructureId = link.source?.structureId;
@@ -109,7 +110,7 @@ function getLinkInconsistencies(drawDefinition: DrawDefinition, structureIds: Se
 
 // The leaf derives inContext matchUps, which throws on certain corrupt state. An integrity scan
 // must report rather than crash, so failures become a SCAN_ERROR inconsistency.
-function scanStructures(params: GetDrawInconsistenciesArgs): any[] {
+function scanStructures(params: GetDrawInconsistenciesArgs): Partial<Inconsistency>[] {
   try {
     return getStructureInconsistencies(params).inconsistencies ?? [];
   } catch (err: any) {
@@ -122,7 +123,10 @@ function scanStructures(params: GetDrawInconsistenciesArgs): any[] {
 // inContext derivation can throw on corrupt state (the same reason scanStructures is wrapped). The
 // progression check must never crash the scan; on failure it yields no matchUps (the underlying throw
 // is already reported as SCAN_ERROR by scanStructures, so progression is simply skipped).
-function safeInContextMatchUps(drawDefinition: DrawDefinition, matchUpsMap: MatchUpsMap | undefined): any[] {
+function safeInContextMatchUps(
+  drawDefinition: DrawDefinition,
+  matchUpsMap: MatchUpsMap | undefined,
+): HydratedMatchUp[] {
   try {
     return getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
   } catch {
@@ -137,11 +141,11 @@ function safeInContextMatchUps(drawDefinition: DrawDefinition, matchUpsMap: Matc
 // EXCEPT from a QUALIFYING source, where placement is a separate deferred mutation (qualifier slots) and
 // so is not asserted here.
 function droppedProgressionForLink(
-  link: any,
+  link: DrawLink,
   sourceStructure: Structure | undefined,
-  sourceStructureMatchUps: any[],
+  sourceStructureMatchUps: HydratedMatchUp[],
   targetStructure: Structure,
-): any[] {
+): Partial<Inconsistency>[] {
   const isLoserLink = link.linkType === LOSER;
   if (!isLoserLink && sourceStructure?.stage === QUALIFYING) return []; // qualifier placement is deferred (B2b)
 
@@ -155,7 +159,7 @@ function droppedProgressionForLink(
       (!link.source?.roundNumber || matchUp.roundNumber === link.source.roundNumber),
   );
 
-  const inconsistencies: any[] = [];
+  const inconsistencies: Partial<Inconsistency>[] = [];
   for (const matchUp of roundMatchUps) {
     if (isPropagatedExit({ matchUp })) continue;
     const loserSideNumber = matchUp.winningSide === 1 ? 2 : 1;
@@ -216,9 +220,9 @@ function droppedProgressionForLink(
 // link suppressed the scan) yield no source matchUps and therefore no findings.
 function getProgressionInconsistencies(
   drawDefinition: DrawDefinition,
-  inContextDrawMatchUps: any[],
+  inContextDrawMatchUps: HydratedMatchUp[],
   structureById: Map<string, Structure>,
-): any[] {
+): Partial<Inconsistency>[] {
   const progressionLinks = (drawDefinition.links ?? []).filter((link) => ROUND_LINK_TYPES.includes(link?.linkType));
   return progressionLinks.flatMap((link) => {
     const sourceStructureId = link.source?.structureId;

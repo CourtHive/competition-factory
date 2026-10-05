@@ -182,7 +182,7 @@ export function getValidSeedBlocks({
     blocks.forEach((block) => validSeedBlocks.push(block));
   }
 
-  const seedDrawPositions: any[] = validSeedBlocks.flatMap((seedBlock) => seedBlock.drawPositions);
+  const seedDrawPositions: number[] = validSeedBlocks.flatMap((seedBlock) => seedBlock.drawPositions);
   const validSeedPositions = seedDrawPositions.reduce((result, drawPosition) => {
     return firstRoundDrawPositions?.includes(drawPosition) && result;
   }, true);
@@ -297,7 +297,7 @@ function constructPower2Blocks(params) {
   } = params;
 
   let count: number;
-  const blocks: any[] = [];
+  const blocks: SeedBlock[] = [];
 
   const { seedBlocks } = getSeedBlocks({
     cluster: [CLUSTER, ADJACENT].includes(getSeedPattern(seedingProfile)),

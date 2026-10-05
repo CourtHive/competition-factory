@@ -52,7 +52,7 @@ export function getStageSpace({
   }
 
   // No structures for this stage — unconstrained
-  const hasStructures = drawDefinition?.structures?.some((s: any) => s.stage === stage);
+  const hasStructures = drawDefinition?.structures?.some((s) => s.stage === stage);
   if (!hasStructures) {
     return { positionsAvailable: Infinity, ...SUCCESS };
   }

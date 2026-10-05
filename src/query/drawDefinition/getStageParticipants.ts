@@ -6,6 +6,9 @@ import { isAny } from '@Validators/isAny';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 
+// types
+import type { Participant } from '@Types/tournamentTypes';
+
 // Selects participants (by stage) from a supplied pool for the preset-participant
 // mocks flow. Filters by participantType, gender (when the event is gendered),
 // and excludes participants already consumed by earlier events
@@ -21,7 +24,7 @@ export function getStageParticipants({
   allUniqueParticipantIds: string[];
   stageParticipantsCount: { [key: string]: number };
   eventParticipantType: string;
-  targetParticipants?: any[];
+  targetParticipants?: Participant[];
   gender?: string;
 }) {
   const mainParticipantsCount = stageParticipantsCount[MAIN] || 0;
@@ -51,10 +54,10 @@ export function getStageParticipants({
  * pre-gender-filter behavior). PAIRs match when their constituent individuals
  * all match. Mirrors the gender check in `addEventEntries`.
  */
-function genderMatcher(gender: string | undefined, participantMap: Map<string, any>) {
+function genderMatcher(gender: string | undefined, participantMap: Map<string, Participant>) {
   if (!gender || isMixed(gender) || isAny(gender)) return () => true;
   const target = coercedGender(gender);
-  return (participant: any): boolean => {
+  return (participant: Participant): boolean => {
     if (participant.participantType === PAIR) {
       const memberIds: string[] = participant.individualParticipantIds ?? [];
       return (

@@ -47,7 +47,7 @@ export function getParticipantIdFinishingPositions({
   const mainStructure = drawDefinition?.structures?.find(
     (structure) => structure.stage === MAIN && structure.stageSequence === 1,
   );
-  const containedStructures: any = mainStructure?.structureType === CONTAINER && mainStructure.structures;
+  const containedStructures = mainStructure?.structureType === CONTAINER && mainStructure.structures;
 
   // positionAssignments contains the participantResults which include groupOrder and provisionalOrder
   // which can be used to determine finishing positions for container matchUps
@@ -55,7 +55,7 @@ export function getParticipantIdFinishingPositions({
     ? getPositionAssignments({ tournamentRecord, drawDefinition, structureId: mainStructure?.structureId })
         ?.positionAssignments
     : undefined;
-  const drawPositionsCount: any = positionAssignments?.length || 0;
+  const drawPositionsCount = positionAssignments?.length || 0;
 
   const participantIdFinishingPositions =
     participantIds?.map((participantId) => {

@@ -46,7 +46,7 @@ export function getStructureData(params: any): {
   const { structure: found } = findStructure({ drawDefinition, structureId });
   if (!found) return { error: STRUCTURE_NOT_FOUND };
 
-  const result: any = getDrawData(params);
+  const result = getDrawData(params);
   if (result.error) return result;
 
   const structure = (result.structures ?? []).find((s: any) => s?.structureId === structureId);

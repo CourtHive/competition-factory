@@ -114,7 +114,7 @@ export function getDrawData(params: GetDrawDataArgs): {
   // Unknown value is an ERROR, never a silent fall-through to FULL — a typo must not quietly return the
   // full payload a caller was explicitly trying to avoid. Mirrors getEventData's drawsProfile.
   if (!Object.values(PayloadProfileEnum).includes(structuresProfile as PayloadProfileEnum)) {
-    return { error: INVALID_VALUES } as any;
+    return { error: INVALID_VALUES };
   }
 
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };

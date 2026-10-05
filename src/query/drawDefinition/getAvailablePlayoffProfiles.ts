@@ -128,7 +128,7 @@ function availablePlayoffProfiles({ playoffPositions, drawDefinition, structure,
   const potentialFirstMatchUpRounds =
     links?.source?.filter((link) => link.linkCondition === FIRST_MATCHUP).map((link) => link.source?.roundNumber) ?? [];
 
-  const sourceRoundsResult: any = getSourceRounds({
+  const sourceRoundsResult = getSourceRounds({
     excludeRoundNumbers: linkSourceRoundNumbers,
     playoffPositions,
     drawDefinition,

@@ -1,12 +1,21 @@
 import { getAvoidanceConflicts } from './getAvoidanceConflicts';
 
-function getPotentialOpponentDrawPosition(drawPositionGroups: any[], possibleDrawPosition: any): any {
+// types
+import type { PositionAssignment } from '@Types/tournamentTypes';
+
+function getPotentialOpponentDrawPosition(
+  drawPositionGroups: number[][],
+  possibleDrawPosition: number,
+): number | undefined {
   const pair = drawPositionGroups.find((pair) => pair.includes(possibleDrawPosition));
   if (!pair) return undefined;
   return pair.find((drawPosition) => drawPosition !== possibleDrawPosition);
 }
 
-function findParticipantByDrawPosition(positionedParticipants: any[], drawPosition: any): any {
+function findParticipantByDrawPosition(
+  positionedParticipants: PositionAssignment[],
+  drawPosition: number | undefined,
+): PositionAssignment | undefined {
   return positionedParticipants.find((placement) => placement.drawPosition === drawPosition);
 }
 
@@ -18,10 +27,10 @@ function hasNoConflict({
   isRoundRobin,
   getAvoidanceConflicts,
 }: {
-  moveableParticipant: any;
-  possibleDrawPosition: any;
-  positionedParticipants: any[];
-  drawPositionGroups: any[];
+  moveableParticipant: PositionAssignment;
+  possibleDrawPosition: number;
+  positionedParticipants: PositionAssignment[];
+  drawPositionGroups: number[][];
   isRoundRobin: boolean;
   getAvoidanceConflicts: (params: { isRoundRobin: boolean; groupedParticipants: any[][] }) => any[];
 }): boolean {

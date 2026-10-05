@@ -9,7 +9,7 @@ import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER, QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 // types
-import type { DrawDefinition } from '@Types/tournamentTypes';
+import type { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
 
 type GetQualifiersCountArgs = {
   provisionalPositioning?: boolean;
@@ -25,7 +25,7 @@ function calculateQualifiersFromLinks({
   provisionalPositioning,
   roundQualifiersCounts,
 }: {
-  relevantLinks: any[];
+  relevantLinks: DrawLink[];
   drawDefinition: DrawDefinition;
   provisionalPositioning?: boolean;
   roundQualifiersCounts: Record<string, number>;

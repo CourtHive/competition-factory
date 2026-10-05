@@ -28,7 +28,7 @@ export function getAllPositionedParticipantIds({ drawDefinition }): ResultType &
 
 type GetPositionAssignmentsArgs = {
   structureId?: string;
-  drawDefinition?: any;
+  drawDefinition?: DrawDefinition;
   structure?: any;
 };
 
@@ -36,7 +36,7 @@ export function getPositionAssignments({ drawDefinition, structureId, structure 
   positionAssignments: PositionAssignment[];
   error?: ErrorType;
 } {
-  let error: any,
+  let error: ErrorType | undefined,
     positionAssignments: PositionAssignment[] = [];
   if (!structure) {
     if (!drawDefinition) {
