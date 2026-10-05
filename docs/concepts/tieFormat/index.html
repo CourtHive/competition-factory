@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">tieFormats | Competition Factory</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://courthive.github.io/competition-factory/docs/concepts/tieFormat"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="tieFormats | Competition Factory"><meta data-rh="true" name="description" content="Overview"><meta data-rh="true" property="og:description" content="Overview"><link data-rh="true" rel="icon" href="/competition-factory/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://courthive.github.io/competition-factory/docs/concepts/tieFormat"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/tieFormat" hreflang="en"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/tieFormat" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"tieFormats","item":"https://courthive.github.io/competition-factory/docs/concepts/tieFormat"}]}</script><link rel="stylesheet" href="/competition-factory/assets/css/styles.dd9d5d48.css">
-<script src="/competition-factory/assets/js/runtime~main.8781f83b.js" defer="defer"></script>
-<script src="/competition-factory/assets/js/main.ce6a43e7.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/runtime~main.6de60e78.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/main.4643ed8b.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -74,6 +74,17 @@ season that is the bulk of the record&#x27;s weight, and it removes the ambiguit
 <li class="">the read model projects <code>score_source: &#x27;REPORTED&#x27;</code> on the TIE row, so a consumer can render &quot;no line
 detail published&quot; rather than an empty scorecard awaiting entry (see
 <a class="" href="/competition-factory/docs/governors/query-governor#cast"><code>cast</code></a>).</li>
+</ul>
+<p>When the score is <code>DERIVED</code>, three rules govern what the dual stores:</p>
+<ul>
+<li class=""><strong>A dual with no rubber result stores no score</strong>, not 0-0 (since 7.6.0). Clearing a dual&#x27;s only
+result, or clearing a rubber that never had one, removes the dual&#x27;s score, so it reads the same as
+a dual that was never touched.</li>
+<li class=""><strong>A rubber decided by <code>WALKOVER</code> or <code>DEFAULTED</code> starts the dual</strong> (since 7.6.0): the dual becomes
+<code>IN_PROGRESS</code>, as it does for a played rubber, even where the rubber scores no point of its own
+(in <code>COLLEGE_DEFAULT</code> three doubles rubbers share one point).</li>
+<li class=""><strong>A line re-scored with a winner and no status is <code>COMPLETED</code></strong> (since 7.5.0), including where the
+re-score undoes the dual&#x27;s decision; it is never left <code>IN_PROGRESS</code> with a winner.</li>
 </ul>
 <h3 class="anchor anchorTargetStickyNavbar_SIHU" id="relationship-to-disableautocalc">Relationship to <code>disableAutoCalc</code><a href="#relationship-to-disableautocalc" class="hash-link" aria-label="Direct link to relationship-to-disableautocalc" title="Direct link to relationship-to-disableautocalc" translate="no">​</a></h3>
 <p><a class="" href="/competition-factory/docs/governors/matchup-governor"><code>disableTieAutoCalc</code></a> sets <code>disableAutoCalc</code> on a single TEAM <code>matchUp</code> and
