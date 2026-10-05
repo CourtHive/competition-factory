@@ -1,4 +1,4 @@
-import tournamentRecord from './seedingBasis.tods.json';
+import tournamentRecord from './seedingBasis.codes.json';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 

@@ -7,7 +7,7 @@ it is best used with logs of method parameters produced by using `engine.devCont
 
 The logged output can then be pasted into the `methods` array provided in `ubik.test.ts`:
 
-- Paste snapshot of tournamentRecord into co-located `tournament.tods.json` file
+- Paste snapshot of tournamentRecord into co-located `tournament.codes.json` file
 - Capture logged { method, params } and paste into methods array
 
 ```js

@@ -99,7 +99,7 @@ const testFixture = mocksGovernor.anonymizeTournamentRecord({
 });
 
 // Save for future tests
-fs.writeFileSync('fixtures/edge-case.tods.json', JSON.stringify(testFixture));
+fs.writeFileSync('fixtures/edge-case.codes.json', JSON.stringify(testFixture));
 ```
 
 ### Example: Preserve Specific Extensions

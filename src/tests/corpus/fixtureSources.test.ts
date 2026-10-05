@@ -1,7 +1,7 @@
 import { replayAsReader, replayThroughEngine } from '../testHarness/corpus/replayScenario';
 import { listFixtures, recordFixtures } from '../testHarness/corpus/fixtureSources';
-import { setRandomSource } from '@Tools/prng';
 import { afterEach, expect, it } from 'vitest';
+import { setRandomSource } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -32,7 +32,7 @@ it.skipIf(process.env.CORPUS_RECORD === '1')(
     const { written, failed } = recordFixtures({ outDir });
     expect(failed).toEqual([]);
     expect(written.map((s) => s.scenarioId)).toEqual(
-      files.map((f) => `fixture/${f.replace(/\.tods\.json$/, '').toLowerCase()}`),
+      files.map((f) => `fixture/${f.replace(/\.codes\.json$/, '').toLowerCase()}`),
     );
 
     const probed = written.filter((s) => s.steps.length === 2);
