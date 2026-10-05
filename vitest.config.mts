@@ -101,20 +101,21 @@ export default defineConfig({
       //    which the 95% global already passed. Vitest 5 resolves `perFile` per
       //    group and supports the object form below, which states the two tiers
       //    without a glob and cannot be silently downgraded to an aggregate.
-      thresholds: isShard
-        ? undefined
-        : {
-            statements: 95,
-            functions: 95,
-            branches: 85,
-            lines: 95,
-            perFile: {
-              statements: 50,
-              functions: 50,
-              branches: 50,
-              lines: 50,
-            },
-          },
+      thresholds: {
+        statements: 95,
+        functions: 95,
+        branches: 85,
+        lines: 95,
+        perFile: {
+          statements: 50,
+          functions: 50,
+          branches: 50,
+          lines: 50,
+        },
+      },
+      // A shard drops them (see `isShard`). An override AFTER the literal, not a conditional around it:
+      // scripts/verify/coverage-headroom.mjs reads the global floors out of the `thresholds: {` text.
+      ...(isShard && { thresholds: undefined }),
     },
   },
   resolve: {
