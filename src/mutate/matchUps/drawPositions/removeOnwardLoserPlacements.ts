@@ -7,7 +7,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
-import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { LOSER } from '@Constants/drawDefinitionConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
@@ -45,7 +45,7 @@ function placementIsInert({
   structureId,
 }: {
   drawDefinition: DrawDefinition;
-  structureMatchUps: any[];
+  structureMatchUps: MatchUp[];
   drawPosition: number;
   structureId: string;
 }) {
@@ -64,7 +64,17 @@ function placementIsInert({
 }
 
 /** The side a drawPosition holds — by order with both present, structurally with one (never by index). */
-function getDrawPositionSideNumber({ drawDefinition, structureId, matchUp, drawPosition }: any): number | undefined {
+function getDrawPositionSideNumber({
+  drawDefinition,
+  structureId,
+  matchUp,
+  drawPosition,
+}: {
+  drawDefinition: DrawDefinition;
+  structureId: string;
+  matchUp: MatchUp;
+  drawPosition: number;
+}): number | undefined {
   const drawPositions = matchUp.drawPositions ?? [];
   // `indexOf` as a side number — valid only because drawPositions are stored ascending, and only while
   // both are present. See the canonical statement in `getOrderedDrawPositions`.
@@ -82,7 +92,14 @@ function releaseInertPlacements({
   participantId,
   matchUpsMap,
   structure,
-}: any): number {
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  targetStructureId: string;
+  participantId: string;
+  structure: Structure;
+}): number {
   const structureMatchUps = matchUpsMap?.mappedMatchUps?.[targetStructureId]?.matchUps ?? [];
   const { positionAssignments } = structureAssignedDrawPositions({ structure });
 

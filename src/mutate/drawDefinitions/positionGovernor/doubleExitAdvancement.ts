@@ -33,10 +33,27 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
-import { DRAW_POSITION_ASSIGNED, MISSING_MATCHUP, MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
 import { CONTAINER, FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import {
+  DRAW_POSITION_ASSIGNED,
+  ErrorType,
+  MISSING_MATCHUP,
+  MISSING_STRUCTURE,
+} from '@Constants/errorConditionConstants';
+
+// types
+import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
+import type {
+  SideExitProvenanceEntry,
+  MatchUpStatusUnion,
+  DrawDefinition,
+  Structure,
+  Tournament,
+  Event,
+} from '@Types/tournamentTypes';
 
 function logAdvancement(method, details) {
   pushGlobalLog({ method, ...details });
@@ -125,8 +142,7 @@ export function doubleExitAdvancement(params) {
     !getPositionAssignments({
       structureId: targetLinks?.loserTargetLink?.target?.structureId,
       drawDefinition,
-    }).positionAssignments?.find((assignment: any) => assignment.drawPosition === loserTargetDrawPosition)
-      ?.participantId
+    }).positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition)?.participantId
   );
 
   if (loserTargetStillOpen) {
@@ -185,11 +201,11 @@ export function doubleExitAdvancement(params) {
       event,
     });
     const priorRounds = (structureMatchUps ?? []).filter(
-      (matchUp: any) => (matchUp.roundNumber ?? 0) < (sourceMatchUp?.roundNumber ?? 0),
+      (matchUp) => (matchUp.roundNumber ?? 0) < (sourceMatchUp?.roundNumber ?? 0),
     );
     const anyEligible = (sourceMatchUp?.drawPositions ?? [])
       .filter(Boolean)
-      .some((drawPosition: any) =>
+      .some((drawPosition) =>
         isFedLoserEligible({ sourceMatchUps: priorRounds, loserDrawPosition: drawPosition, loserTargetLink }),
       );
 
@@ -442,7 +458,7 @@ function stampExitOnByeHeldLoserTarget({
   matchUpsMap,
   params,
   stack,
-}): { error?: any; success?: boolean; stamped?: boolean } {
+}): { error?: ErrorType; success?: boolean; stamped?: boolean } {
   // THE TARGET POSITION MUST BE GENUINELY VACANT. A loser target drawPosition that already holds a
   // draw BYE is not an empty slot awaiting an arrival — it is SETTLED, and the BYE is its record.
   // Stamping an exit there says "this side came from a double walkover" about a side that came from
@@ -452,7 +468,7 @@ function stampExitOnByeHeldLoserTarget({
   // A position holding a PARTICIPANT is likewise not ours — somebody already arrived there.
   const { positionAssignments } = getPositionAssignments({ structureId: loserMatchUp.structureId, drawDefinition });
   const targetAssignment = positionAssignments?.find(
-    (assignment: any) => assignment.drawPosition === loserTargetDrawPosition,
+    (assignment) => assignment.drawPosition === loserTargetDrawPosition,
   );
   if (targetAssignment?.bye || targetAssignment?.participantId) return { ...SUCCESS, stamped: false };
 
@@ -673,7 +689,7 @@ function advanceConvergedWinner({ convergedMatchUp, drawDefinition, matchUpsMap,
 }
 
 /** the converged matchUp as the cascade now sees it — its status changed a moment ago */
-function inContextLoserMatchUp(inContextDrawMatchUps: any[], matchUpId: string) {
+function inContextLoserMatchUp(inContextDrawMatchUps: HydratedMatchUp[], matchUpId: string) {
   return inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
 }
 
@@ -900,7 +916,7 @@ function conditionallyAdvanceDrawPosition(params) {
   // here the status may already have been overwritten, which is the same reason
   // `removeDoubleExit.targetDrawPositionIsBye` reads the assignment.
   const targetHoldsBye = !!getPositionAssignments({ structure })?.positionAssignments?.some(
-    (assignment: any) => assignment.bye && drawPositions.includes(assignment.drawPosition),
+    (assignment) => assignment.bye && drawPositions.includes(assignment.drawPosition),
   );
 
   const producedStatus = existingExit ? DOUBLE_EXIT : EXIT;
@@ -1737,9 +1753,7 @@ function matchUpHoldsBye({ drawDefinition, matchUp }) {
   const drawPositions = (matchUp?.drawPositions ?? []).filter(Boolean);
   if (!drawPositions.length) return false;
   const { positionAssignments } = getPositionAssignments({ structureId: matchUp.structureId, drawDefinition });
-  return !!positionAssignments?.some(
-    (assignment: any) => assignment.bye && drawPositions.includes(assignment.drawPosition),
-  );
+  return !!positionAssignments?.some((assignment) => assignment.bye && drawPositions.includes(assignment.drawPosition));
 }
 
 /**
@@ -1798,7 +1812,22 @@ function carryExitOnward({
   params,
   stack,
   EXIT,
-}: any) {
+}: {
+  params: {
+    matchUpStatus?: MatchUpStatusUnion;
+    appliedPolicies?: PolicyDefinitions;
+    tournamentRecord?: Tournament;
+    event?: Event;
+  };
+  inContextDrawMatchUps: HydratedMatchUp[];
+  fromMatchUp?: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  EXIT?: MatchUpStatusUnion;
+  originMatchUpId?: string;
+  matchUpsMap: MatchUpsMap;
+  visited?: Set<string>;
+  stack: string;
+}) {
   // a matchUp is visited at most once, so a malformed winner-target cycle cannot spin here
   const seen = visited ?? new Set<string>();
   if (!fromMatchUp?.matchUpId || seen.has(fromMatchUp.matchUpId)) {
@@ -2129,7 +2158,7 @@ function advanceByeToLoserMatchUp(params) {
    * and a write to it is invisible to every later read (#4816).
    */
   const noContextLoserMatchUp = (matchUpsMap?.drawMatchUps ?? []).find(
-    (candidate: any) => candidate.matchUpId === loserMatchUp?.matchUpId,
+    (candidate) => candidate.matchUpId === loserMatchUp?.matchUpId,
   );
   if (noContextLoserMatchUp) {
     const claimPositions = noContextLoserMatchUp.drawPositions ?? [];
@@ -2191,7 +2220,17 @@ function advanceByeToLoserMatchUp(params) {
  *
  * The exit travels as ITSELF — its own status and the origin it already carries.
  */
-export function settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinition, event }: any) {
+export function settleHeldExits({
+  tournamentRecord,
+  appliedPolicies,
+  drawDefinition,
+  event,
+}: {
+  appliedPolicies?: PolicyDefinitions;
+  drawDefinition?: DrawDefinition;
+  tournamentRecord?: Tournament;
+  event?: Event;
+}) {
   const stack = 'settleHeldExits';
   if (!drawDefinition) return { ...SUCCESS };
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
@@ -2209,15 +2248,29 @@ export function settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinit
   return { ...SUCCESS };
 }
 
-function sendHeldExitsOn({ tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, event, stack }: any) {
+function sendHeldExitsOn({
+  tournamentRecord,
+  appliedPolicies,
+  drawDefinition,
+  matchUpsMap,
+  event,
+  stack,
+}: {
+  appliedPolicies?: PolicyDefinitions;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  event?: Event;
+  stack: string;
+}) {
   const carried = new Set<string>();
   // the view the last pass found nothing to carry in — nothing has been written since it was taken
-  let settledDrawMatchUps: any[] | undefined;
+  let settledDrawMatchUps: HydratedMatchUp[] | undefined;
 
   // each pass can make the next matchUp along a holder in its turn; a matchUp is carried from once
   for (let pass = 0; pass < 16; pass++) {
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-    let held: any;
+    let held: HeldExit | undefined;
     for (const matchUp of inContextDrawMatchUps) {
       if (carried.has(matchUp.matchUpId)) continue;
       held = getHeldExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp });
@@ -2292,9 +2345,16 @@ function crossLinksThroughByes({
   matchUpsMap,
   event,
   stack,
-}: any) {
+}: {
+  settledDrawMatchUps?: HydratedMatchUp[];
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  event?: Event;
+  stack: string;
+}) {
   // a view is current until something is written; `undefined` means derive one
-  let currentDrawMatchUps: any[] | undefined = settledDrawMatchUps;
+  let currentDrawMatchUps: HydratedMatchUp[] | undefined = settledDrawMatchUps;
 
   for (let pass = 0; pass < 16; pass++) {
     const inContextDrawMatchUps =
@@ -2339,7 +2399,15 @@ function crossLinksThroughByes({
   return { ...SUCCESS };
 }
 
-function getByeCrossing({ inContextDrawMatchUps, drawDefinition, matchUp }) {
+function getByeCrossing({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUp,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUp: HydratedMatchUp;
+}) {
   if (matchUp.collectionId || !matchUp.winnerMatchUpId) return undefined;
   const occupants = (matchUp.sides ?? []).filter((side) => side.participantId && !side.bye);
   if (occupants.length !== 1 || !matchUpHoldsBye({ drawDefinition, matchUp })) return undefined;
@@ -2395,20 +2463,28 @@ function getByeCrossing({ inContextDrawMatchUps, drawDefinition, matchUp }) {
  * the provenance that records where the exit came from — the write blanks it, so it is restored after.
  */
 /** a seat holding a participant or a BYE; a BYE keeps its own handling (`targetHoldsBye`), only an EMPTY reserved seat is held back */
-function isOccupiedSeat({ structure, drawPosition }): boolean {
+function isOccupiedSeat({ structure, drawPosition }: { structure?: Structure; drawPosition?: number }): boolean {
   const assignment = getPositionAssignments({ structure })?.positionAssignments?.find(
-    (candidate: any) => candidate.drawPosition === drawPosition,
+    (candidate) => candidate.drawPosition === drawPosition,
   );
   return !!(assignment?.participantId || assignment?.bye);
 }
 
-function settleHoldersToBye({ drawDefinition, matchUpsMap, params }) {
+function settleHoldersToBye({
+  drawDefinition,
+  matchUpsMap,
+  params,
+}: {
+  params: { appliedPolicies?: PolicyDefinitions };
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+}) {
   const holders = (getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? []).filter(
-    (matchUp: any) =>
+    (matchUp) =>
       isExit(matchUp.matchUpStatus) &&
       !matchUp.winningSide &&
       !matchUp.collectionId &&
-      !matchUp.sides?.some((side: any) => side?.participantId) &&
+      !matchUp.sides?.some((side) => side?.participantId) &&
       matchUpHoldsBye({ drawDefinition, matchUp }),
   );
   for (const { matchUpId } of holders) {
@@ -2418,7 +2494,17 @@ function settleHoldersToBye({ drawDefinition, matchUpsMap, params }) {
   return undefined;
 }
 
-function settleHolderToBye({ holderMatchUpId, drawDefinition, matchUpsMap, params }) {
+function settleHolderToBye({
+  holderMatchUpId,
+  drawDefinition,
+  matchUpsMap,
+  params,
+}: {
+  params: { appliedPolicies?: PolicyDefinitions };
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  holderMatchUpId: string;
+}) {
   const holder = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === holderMatchUpId);
   if (!holder || !isAnyExit(holder.matchUpStatus)) return undefined;
   const provenance = getSideExitProvenance({ matchUp: holder });
@@ -2438,7 +2524,19 @@ function settleHolderToBye({ holderMatchUpId, drawDefinition, matchUpsMap, param
   return undefined;
 }
 
-function getHeldExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp }) {
+type HeldExit = { holder: HydratedMatchUp; origin: SideExitProvenanceEntry };
+
+function getHeldExit({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpsMap,
+  matchUp,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  matchUp: HydratedMatchUp;
+}): HeldExit | undefined {
   if (matchUp.collectionId || matchUp.winningSide || !matchUp.winnerMatchUpId) return undefined;
   if (matchUp.sides?.some((side) => side.participantId)) return undefined;
   if (!matchUpHoldsBye({ drawDefinition, matchUp })) return undefined;

@@ -2,8 +2,9 @@ import { getSideExitProvenance, isPropagatedExit } from '@Mutate/matchUps/matchU
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
-// constants
+// constants and types
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { BYE } from '@Constants/matchUpStatusConstants';
 
 export function isActiveDownstream(params) {
@@ -59,7 +60,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
   const byeMatchUp = targetData?.matchUp;
   const fedPosition = Math.min(...((byeMatchUp?.drawPositions ?? []).filter(Boolean) as number[]));
   const fedSideHoldsParticipant = !!byeMatchUp?.sides?.some(
-    (side: any) => side?.drawPosition === fedPosition && side?.participant,
+    (side: HydratedSide) => side?.drawPosition === fedPosition && side?.participant,
   );
   const fmlcBYE =
     relevantLink?.linkCondition === FIRST_MATCHUP && byeMatchUp?.matchUpStatus === BYE && !fedSideHoldsParticipant;
@@ -80,7 +81,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
     // re-score that un-decided that consolation match, leaving it TO_BE_PLAYED with its 6-3 score.
     const byeWinnerDecided =
       byeWinnerMatchUp?.winningSide &&
-      !!byeWinnerMatchUp.sides?.find((s: any) => s?.sideNumber === byeWinnerMatchUp.winningSide)?.participant;
+      !!byeWinnerMatchUp.sides?.find((s: HydratedSide) => s?.sideNumber === byeWinnerMatchUp.winningSide)?.participant;
     if (!byeWinnerDecided) return false;
   }
 
@@ -130,7 +131,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
 
   //to identify a propagated exit (WO/DEFAULT) for matches that are WO/DEFAULT, have a winning side,
   //and have only one participant (the WO/DF player).
-  const loserMatchUpParticipantsCount = loserMatchUp?.sides?.filter((s: any) => s?.participant).length ?? 0;
+  const loserMatchUpParticipantsCount = loserMatchUp?.sides?.filter((s: HydratedSide) => s?.participant).length ?? 0;
   const isLoserMatchUpWalkoverWithOnePlayer =
     //this catches downstream matches marked as WO with only one participant
     loserMatchUp?.winningSide && isLoserMatchUpWO && loserMatchUpParticipantsCount === 1;
@@ -162,9 +163,9 @@ function activeBelow(params, seen: Map<string, boolean>) {
    * The distinction is the general one this guard already needs everywhere: a status blocks only
    * when it was earned at this matchUp, never when it was propagated into it.
    */
-  const contestedDoubleExit = (candidate: any) => {
+  const contestedDoubleExit = (candidate?: HydratedMatchUp) => {
     if (!isDoubleExit(candidate?.matchUpStatus)) return false;
-    const occupiedSides = (candidate?.sides ?? []).filter((side: any) => side?.participant);
+    const occupiedSides = (candidate?.sides ?? []).filter((side) => side?.participant);
     if (occupiedSides.length !== 2) return false;
     const provenance = getSideExitProvenance({ matchUp: candidate });
     return !occupiedSides.every((side: any) => provenance?.[side.sideNumber]);
@@ -204,7 +205,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
    * `removeLinkedWinner` handles only ACROSS-link advancement (`if (!winnerTargetLink) return`).
    */
   const winnerSideResolved =
-    !!winnerMatchUp?.sides?.find((s: any) => s?.sideNumber === winnerMatchUp.winningSide)?.participant &&
+    !!winnerMatchUp?.sides?.find((s: HydratedSide) => s?.sideNumber === winnerMatchUp.winningSide)?.participant &&
     !isPropagatedExit({ matchUp: winnerMatchUp });
 
   /**
@@ -228,14 +229,16 @@ function activeBelow(params, seen: Map<string, boolean>) {
   // 8/7): a DEFAULTED recorded at `West|2|1` was "active" against `West|1|2`, which feeds its empty side,
   // and the convergence written there was refused after the draw had been mutated.
   const exitedParticipantId = winnerMatchUp?.sides?.find(
-    (side: any) => side?.sideNumber && side.sideNumber !== winnerMatchUp.winningSide,
+    (side: HydratedSide) => side?.sideNumber && side.sideNumber !== winnerMatchUp.winningSide,
   )?.participant?.participantId;
   const winningSideOccupied = !!winnerMatchUp?.sides?.find(
-    (side: any) => side?.sideNumber === winnerMatchUp?.winningSide,
+    (side: HydratedSide) => side?.sideNumber === winnerMatchUp?.winningSide,
   )?.participant;
   const exitedCameFromSource =
     !!exitedParticipantId &&
-    !!targetData?.matchUp?.sides?.some((side: any) => side?.participant?.participantId === exitedParticipantId);
+    !!targetData?.matchUp?.sides?.some(
+      (side: HydratedSide) => side?.participant?.participantId === exitedParticipantId,
+    );
   const recordedWinnerExit =
     !!winnerMatchUp?.winningSide &&
     isExit(winnerMatchUp.matchUpStatus) &&

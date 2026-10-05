@@ -47,7 +47,7 @@ export function carryEmptiedSeatsPastByes({
     tried.add(`${seat.matchUpId}|${seat.drawPosition}`);
 
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
-    const result: any = advanceDrawPosition({
+    const result = advanceDrawPosition({
       drawPositionToAdvance: seat.drawPosition,
       matchUpId: seat.matchUpId,
       inContextDrawMatchUps,

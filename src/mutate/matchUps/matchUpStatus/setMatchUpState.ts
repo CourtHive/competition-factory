@@ -38,13 +38,23 @@ import { nowIso } from '@Tools/clock';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
 // constants and types
-import { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  PositionAssignment,
+  Score,
+  Structure,
+  Tournament,
+} from '@Types/tournamentTypes';
 import {
   CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_WINNING_SIDE,
@@ -402,7 +412,16 @@ function checkCompletedRevertGuard({
   matchUp,
   score,
   event,
-}: any) {
+}: {
+  inContextMatchUp?: HydratedMatchUp;
+  matchUpStatus?: MatchUpStatusUnion;
+  drawDefinition: DrawDefinition;
+  structure?: Structure;
+  winningSide?: number;
+  matchUp: MatchUp;
+  score?: Score;
+  event?: Event;
+}) {
   if (!matchUpStatus || !REVERT_GUARDED_STATUSES.has(matchUpStatus)) return undefined;
   if (winningSide || checkScoreHasValue({ score })) return undefined;
   if (matchUp?.matchUpStatus !== COMPLETED || !matchUp?.winningSide) return undefined;
@@ -1033,8 +1052,16 @@ function applyMatchUpValues(params) {
  *
  * Only meaningful where exactly one side holds a participant; the caller establishes that.
  */
-export function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): boolean {
-  const winnerSide = (inContextMatchUp?.sides ?? []).find((side: any) => side?.sideNumber === winningSide);
+export function exitAwardable({
+  positionAssignments,
+  inContextMatchUp,
+  winningSide,
+}: {
+  positionAssignments?: PositionAssignment[];
+  inContextMatchUp?: HydratedMatchUp;
+  winningSide?: number;
+}): boolean {
+  const winnerSide = (inContextMatchUp?.sides ?? []).find((side) => side?.sideNumber === winningSide);
 
   /**
    * Not to the participant who is ALREADY THERE. Exactly one side holds a participant, so awarding it
@@ -1064,7 +1091,7 @@ export function exitAwardable({ positionAssignments, inContextMatchUp, winningSi
   // no drawPosition claimed: an unfilled feed slot, awaiting its arrival
   if (winnerSide?.drawPosition === undefined) return true;
 
-  const assignment = positionAssignments?.find((entry: any) => entry.drawPosition === winnerSide.drawPosition);
+  const assignment = positionAssignments?.find((entry) => entry.drawPosition === winnerSide.drawPosition);
   // an assignment that does not exist is not a phantom either — nothing is being claimed
   if (!assignment) return true;
 

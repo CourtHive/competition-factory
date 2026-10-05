@@ -1,18 +1,18 @@
+import { assignDrawPositionBye, assignFedDrawPositionBye } from './assignDrawPositionBye';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionTargets } from '@Query/matchUp/positionTargets';
+import { isExit } from '@Validators/isExit';
 import {
   carriedExitStatus,
   getSideExitProvenance,
   recordByeClaim,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { assignDrawPositionBye, assignFedDrawPositionBye } from './assignDrawPositionBye';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionTargets } from '@Query/matchUp/positionTargets';
-import { isExit } from '@Validators/isExit';
 
 // constants and types
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { BYE } from '@Constants/matchUpStatusConstants';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
  * P39 — THE LOSER OF A PRODUCED EXIT IS NOBODY, SO THE FIRST-ROUND SEAT IT FEEDS IS A BYE.
@@ -119,7 +119,7 @@ export function propagateUnfillableLoserBye({
    * every drawPosition placement in every draw. Nothing below derives the draw until the shape is
    * known to be a resolved produced exit with exactly one exited side.
    */
-  const matchUp: any = matchUpsMap.drawMatchUps?.find((candidate: any) => candidate.matchUpId === matchUpId);
+  const matchUp = matchUpsMap.drawMatchUps?.find((candidate) => candidate.matchUpId === matchUpId);
 
   /**
    * A MATCHUP THE CASCADE MADE A BYE CANNOT PRODUCE A LOSER EITHER — 2026-09-29.
@@ -158,7 +158,7 @@ export function propagateUnfillableLoserBye({
   }
 
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-  const inContextMatchUp: any = inContextDrawMatchUps.find((candidate: any) => candidate.matchUpId === matchUpId);
+  const inContextMatchUp = inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
   const {
     targetLinks: { loserTargetLink },
     targetMatchUps: { loserMatchUp, loserTargetDrawPosition },
@@ -184,7 +184,7 @@ export function propagateUnfillableLoserBye({
   // the target seat must still be empty; anything already there is not this cascade's to overwrite
   const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId });
   const targetAssignment = positionAssignments?.find(
-    (assignment: any) => assignment.drawPosition === loserTargetDrawPosition,
+    (assignment) => assignment.drawPosition === loserTargetDrawPosition,
   );
   if (targetAssignment?.participantId || targetAssignment?.bye) return undefined;
 
@@ -227,14 +227,14 @@ export function propagateUnfillableLoserBye({
    * the same P24 hazard this function avoids everywhere else.
    */
   const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-  const inContextTarget: any = refreshed.find((candidate: any) => candidate.matchUpId === loserMatchUp.matchUpId);
+  const inContextTarget = refreshed.find((candidate) => candidate.matchUpId === loserMatchUp.matchUpId);
   const claimSideNumber = (inContextTarget?.sides ?? []).find(
-    (side: any) => side?.drawPosition === loserTargetDrawPosition,
+    (side) => side?.drawPosition === loserTargetDrawPosition,
   )?.sideNumber;
 
   if (claimSideNumber === 1 || claimSideNumber === 2) {
-    const rawLoserMatchUp: any = matchUpsMap.drawMatchUps?.find(
-      (candidate: any) => candidate.matchUpId === loserMatchUp.matchUpId,
+    const rawLoserMatchUp = matchUpsMap.drawMatchUps?.find(
+      (candidate) => candidate.matchUpId === loserMatchUp.matchUpId,
     );
     recordByeClaim({ claimantMatchUpId: matchUpId, sideNumber: claimSideNumber, matchUp: rawLoserMatchUp });
   }
@@ -243,16 +243,22 @@ export function propagateUnfillableLoserBye({
 }
 
 /** Whether one of this matchUp's seats holds a BYE that the cascade, not the draw, put there. */
-function holdsPropagatedBye({ drawDefinition, matchUp }: { drawDefinition: DrawDefinition; matchUp: any }): boolean {
-  const structure = (drawDefinition.structures ?? []).find((candidate: any) =>
-    (candidate.matchUps ?? []).some((held: any) => held.matchUpId === matchUp.matchUpId),
+function holdsPropagatedBye({
+  drawDefinition,
+  matchUp,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUp: MatchUp;
+}): boolean {
+  const structure = (drawDefinition.structures ?? []).find((candidate) =>
+    (candidate.matchUps ?? []).some((held) => held.matchUpId === matchUp.matchUpId),
   );
   if (!structure) return false;
 
   const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: structure.structureId });
   return (matchUp.drawPositions ?? []).some((drawPosition: number) =>
     positionAssignments?.some(
-      (assignment: any) => assignment.drawPosition === drawPosition && assignment.bye && assignment.byeFromPropagation,
+      (assignment) => assignment.drawPosition === drawPosition && assignment.bye && assignment.byeFromPropagation,
     ),
   );
 }

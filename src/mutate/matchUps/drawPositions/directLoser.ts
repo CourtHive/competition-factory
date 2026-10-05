@@ -167,7 +167,7 @@ export function directLoser(params): ResultType {
   const isFeedRound = loserTargetLink.target.roundNumber > 1 && availableTargetMatchUpDrawPositions?.length;
   const isFirstRoundValidDrawPosition = loserTargetLink.target.roundNumber === 1 && targetDrawPositionIsUnfilled;
 
-  const placementResult: any = placeLoser({
+  const placementResult = placeLoser({
     fedDrawPositionFMLC,
     isFirstRoundValidDrawPosition,
     loserParticipantId,
@@ -191,7 +191,7 @@ export function directLoser(params): ResultType {
   });
   if (placementResult.context) Object.assign(context, placementResult.context);
   if (placementResult.error) return decorateResult({ result: placementResult, stack });
-  if (placementResult.earlyReturn) return placementResult.earlyReturn;
+  if ('earlyReturn' in placementResult && placementResult.earlyReturn) return placementResult.earlyReturn;
 
   propagateLoserSeed({
     loserParticipantId,
