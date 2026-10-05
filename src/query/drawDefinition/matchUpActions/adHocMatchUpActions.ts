@@ -115,7 +115,7 @@ export function adHocMatchUpActions({
   let availableAlternatesParticipantIds = unique(enteredParticipantIds.concat(availableEventAlternatesParticipantIds));
 
   if (otherFlightEntries) {
-    const flightProfile: any = event ? getFlightProfile({ event }) : undefined;
+    const flightProfile = event ? getFlightProfile({ event }).flightProfile : undefined;
     const otherFlightEnteredParticipantIds = flightProfile?.flights
       ?.filter((flight) => flight.drawId !== drawId)
       .flatMap((flight) =>
