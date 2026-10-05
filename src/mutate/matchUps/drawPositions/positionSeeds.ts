@@ -49,7 +49,7 @@ export function positionSeedBlocks({
   event,
 }: PositionSeedBlocksArgs) {
   const seedPositions: number[] = [];
-  const errors: any[] = [];
+  const errors: ErrorType[] = [];
   let placedSeedBlocks = 0;
 
   if (!structure) ({ structure } = findStructure({ drawDefinition, structureId }));
@@ -184,7 +184,7 @@ function reorderSeedsForAvoidance({
   unplacedSeedParticipantIds: string[];
   unfilledPositions: number[];
   policyAttributes: any[];
-  participants: any[];
+  participants: HydratedParticipant[];
 }) {
   // `idCollections` is REQUIRED for the `directive` rules — groups, teams and pairs.
   //

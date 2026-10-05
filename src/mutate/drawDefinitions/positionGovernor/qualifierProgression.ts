@@ -196,7 +196,7 @@ function collectRoundRobinQualifiers({
     if (!structureCompleted) continue;
 
     const { positionAssignments } = getPositionAssignments({ structure });
-    const relevantParticipantIds: any =
+    const relevantParticipantIds =
       positionAssignments
         ?.map((assignment) => {
           const participantId = assignment.participantId;
