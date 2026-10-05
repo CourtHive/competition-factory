@@ -22,8 +22,8 @@ import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
+import { PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import { PolicyDefinitions, ResultType, ResultWarning } from '@Types/factoryTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { SCHEDULE_PRESERVED_ON_EXIT } from '@Constants/scheduleConstants';
@@ -63,7 +63,7 @@ type SetMatchUpStatusArgs = {
  * A convenience for a direct caller: the engine always hands over a `drawDefinition`. It writes what
  * it finds onto `params`, which is what the rest of `setMatchUpStatus` reads.
  */
-function resolveDrawDefinition(params: SetMatchUpStatusArgs, tournamentRecords: any) {
+function resolveDrawDefinition(params: SetMatchUpStatusArgs, tournamentRecords: TournamentRecords) {
   // with nothing to find it BY there is nothing to look for, and the caller is told what is missing
   if (params.drawDefinition || (!params.drawId && !params.eventId)) return undefined;
 
@@ -210,7 +210,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     // render it as [10-8]. The format usually lives on the matchUp, not on the outcome, so spreading
     // outcome alone left it undefined and the deciding set rendered as a plain game score.
     // Resolution failure yields undefined — the same format-less rendering as before, never worse.
-    const formatResult: any = matchUpFormat
+    const formatResult = matchUpFormat
       ? undefined
       : getMatchUpFormat({ tournamentRecord, drawDefinition, matchUpId, event });
     const effectiveMatchUpFormat = matchUpFormat ?? formatResult?.matchUpFormat;
@@ -392,7 +392,15 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
  * 2026-10-02, ruling V11). Read off the RECORDED matchUp in context, so the format is the one the score
  * was validated against — a TEAM line's comes from its collection — and a dual's tally is never asked.
  */
-function recordedScoreWarnings({ drawDefinition, matchUpId, event }: any): ResultWarning[] {
+function recordedScoreWarnings({
+  drawDefinition,
+  matchUpId,
+  event,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUpId: string;
+  event?: Event;
+}): ResultWarning[] {
   const { matchUp } = findDrawMatchUp({ drawDefinition, matchUpId, event, inContext: true });
   if (!matchUp || matchUp.matchUpType === TEAM) return [];
   return tiebreakPointsWarnings(matchUp.score?.sets, matchUp.matchUpFormat);

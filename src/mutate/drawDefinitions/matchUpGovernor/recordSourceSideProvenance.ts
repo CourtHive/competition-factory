@@ -66,7 +66,7 @@ export function recordSourceSideProvenance({
             matchUpStatus: producedExitStatus(sourceMatchUpStatus),
             previousMatchUpStatus: sourceMatchUpStatus,
             sourceMatchUpId,
-          }) as any,
+          }),
         },
       });
     }

@@ -1,3 +1,5 @@
+import { PolicyDefinitions } from '@Types/factoryTypes';
+
 /**
  * Whether a double exit produces a BYE for the seat its loser would have taken.
  *
@@ -13,6 +15,6 @@
  * ONE READER, because the three sites that asked this each read the policy for themselves and each
  * treated an absent policy as OFF. A default that is decided in three places is three defaults.
  */
-export function propagatesByeOnDoubleExit(appliedPolicies?: any): boolean {
+export function propagatesByeOnDoubleExit(appliedPolicies?: PolicyDefinitions): boolean {
   return appliedPolicies?.progression?.doubleExitPropagateBye !== false;
 }

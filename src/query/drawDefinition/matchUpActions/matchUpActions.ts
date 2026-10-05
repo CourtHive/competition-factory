@@ -144,7 +144,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
 
   const inContextMatchUp = inContextDrawMatchUps?.find((drawMatchUp) => drawMatchUp.matchUpId === matchUpId);
 
-  const side: any = sideNumber && inContextMatchUp?.sides?.find((s) => s.sideNumber === sideNumber);
+  const side = sideNumber && inContextMatchUp?.sides?.find((s) => s.sideNumber === sideNumber);
 
   const matchUpParticipantIds =
     inContextMatchUp?.sides?.map((s: any) => s.participantId || s.participant?.participantId).filter(Boolean) ?? [];

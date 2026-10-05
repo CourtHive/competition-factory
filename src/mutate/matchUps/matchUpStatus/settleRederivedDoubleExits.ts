@@ -17,7 +17,7 @@ import {
 } from './sideExitProvenance';
 
 // constants and types
-import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 
@@ -27,6 +27,17 @@ type SettleArgs = {
   propagateExitStatus?: boolean;
   matchUpsMap?: MatchUpsMap;
   event?: Event;
+};
+
+/** What `carryExitOnward` carries from one loser matchUp to the next. */
+type CarriedExit = {
+  sourceMatchUpStatus?: MatchUpStatusUnion;
+  sourceMatchUpStatusCodes?: string[];
+  loserParticipantId?: string;
+  matchUpsMap?: MatchUpsMap;
+  sourceWinningSide?: number;
+  sourceMatchUpId?: string;
+  loserMatchUp?: MatchUp;
 };
 
 /**
@@ -112,10 +123,10 @@ export function settleRederivedDoubleExit({
   const inContextMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps;
   const originInContext = inContextMatchUps?.find((candidate) => candidate.matchUpId === origin?.matchUpId);
   const carrierId = originInContext?.winningSide
-    ? originInContext.sides?.find((side: any) => side.sideNumber !== originInContext.winningSide)?.participantId
+    ? originInContext.sides?.find((side) => side.sideNumber !== originInContext.winningSide)?.participantId
     : undefined;
   const inContext = inContextMatchUps?.find((candidate) => candidate.matchUpId === matchUpId);
-  const carrierSide = inContext?.sides?.find((side: any) => carrierId && side.participantId === carrierId)?.sideNumber;
+  const carrierSide = inContext?.sides?.find((side) => carrierId && side.participantId === carrierId)?.sideNumber;
   if (!stored || !keptEntry || !origin || !carrierSide) return undefined;
 
   // 1. what it produced downstream as a double exit
@@ -180,10 +191,16 @@ export function carryExitOnward({
   tournamentRecord,
   drawDefinition,
   event,
-}: any): ResultType | undefined {
-  let current = context;
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  propagateExitStatus?: boolean;
+  context?: CarriedExit;
+  event?: Event;
+}): ResultType | undefined {
+  let current: CarriedExit | undefined = context;
   for (let failsafe = 0; current?.loserMatchUp && failsafe < 10; failsafe += 1) {
-    const progressResult: any = progressExitStatus({
+    const progressResult = progressExitStatus({
       sourceMatchUpStatusCodes: current.sourceMatchUpStatusCodes,
       sourceMatchUpStatus: current.sourceMatchUpStatus,
       sourceWinningSide: current.sourceWinningSide,
@@ -204,8 +221,20 @@ export function carryExitOnward({
 }
 
 /** Withdraw a matchUp's BYE claims, clearing each propagated BYE seat no other claim still holds. */
-function withdrawByeSeats({ claimantMatchUpId, tournamentRecord, drawDefinition, matchUpsMap, event }: any) {
-  for (const [structureId, mapped] of Object.entries(matchUpsMap.mappedMatchUps) as [string, any][]) {
+function withdrawByeSeats({
+  claimantMatchUpId,
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  claimantMatchUpId: string;
+  event?: Event;
+}) {
+  for (const [structureId, mapped] of Object.entries(matchUpsMap.mappedMatchUps)) {
     const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
     for (const matchUp of mapped.matchUps as MatchUp[]) {
       for (const sideNumber of [1, 2]) {
@@ -215,7 +244,7 @@ function withdrawByeSeats({ claimantMatchUpId, tournamentRecord, drawDefinition,
         if (matchUp.sideExitProvenance?.[sideNumber]?.byeClaims?.length) continue;
         const drawPosition = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber });
         const assignment = structure?.positionAssignments?.find((entry) => entry.drawPosition === drawPosition);
-        if (!assignment?.bye || !(assignment as any).byeFromPropagation) continue;
+        if (!assignment?.bye || !assignment.byeFromPropagation) continue;
         clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
       }
     }

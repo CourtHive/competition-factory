@@ -2,8 +2,15 @@ import { removeDoubleExit } from './removeDoubleExit';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
-import type { ResultType } from '@Types/factoryTypes';
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import type { MatchUp } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+
+type UnwindDualDoubleExitArgs = {
+  isCollectionMatchUp?: boolean;
+  matchUpsMap?: MatchUpsMap;
+  dualMatchUp?: MatchUp;
+};
 
 /**
  * A TIE SCORE THAT ENDS A DUAL'S DOUBLE EXIT UNWINDS THE DOUBLE EXIT FIRST.
@@ -31,11 +38,11 @@ import { SUCCESS } from '@Constants/resultConstants';
  * resolves targets for `matchUpTieId` when there is one. The dual's own new status is then written by
  * the tie-score path as before.
  */
-export function unwindDualDoubleExit(params: any): ResultType {
+export function unwindDualDoubleExit(params: UnwindDualDoubleExitArgs): ResultType {
   const { isCollectionMatchUp, dualMatchUp, matchUpsMap } = params;
-  if (!isCollectionMatchUp || !isDoubleExit(dualMatchUp?.matchUpStatus)) return { ...SUCCESS };
+  if (!isCollectionMatchUp || !dualMatchUp || !isDoubleExit(dualMatchUp.matchUpStatus)) return { ...SUCCESS };
 
   const rawDual =
-    matchUpsMap?.drawMatchUps?.find((candidate: any) => candidate.matchUpId === dualMatchUp.matchUpId) ?? dualMatchUp;
+    matchUpsMap?.drawMatchUps?.find((candidate) => candidate.matchUpId === dualMatchUp.matchUpId) ?? dualMatchUp;
   return removeDoubleExit({ ...params, matchUp: rawDual });
 }

@@ -87,7 +87,7 @@ export function reconcileDecider({
 
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
-  const final: any = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
+  const final = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
   if (!final || final.collectionId || final.winningSide === winningSideBefore) return { ...SUCCESS };
 
   const { winnerMatchUp, loserMatchUp } =
@@ -99,7 +99,7 @@ export function reconcileDecider({
   if (!decider) return { ...SUCCESS };
 
   const participantOn = (sideNumber?: number) =>
-    (final.sides ?? []).find((side: any) => side.sideNumber === sideNumber)?.participantId;
+    (final.sides ?? []).find((side) => side.sideNumber === sideNumber)?.participantId;
   const winnerId = participantOn(final.winningSide);
   const loserId = final.winningSide ? participantOn(3 - final.winningSide) : undefined;
 
@@ -109,12 +109,12 @@ export function reconcileDecider({
 
   const lossesOutsideTheDecider = (participantId?: string) =>
     inContextDrawMatchUps.filter(
-      (matchUp: any) =>
+      (matchUp) =>
         matchUp.matchUpId !== decider.matchUpId &&
         !matchUp.collectionId &&
         matchUp.winningSide &&
         (matchUp.sides ?? []).some(
-          (side: any) => side.participantId === participantId && side.sideNumber !== matchUp.winningSide,
+          (side) => side.participantId === participantId && side.sideNumber !== matchUp.winningSide,
         ),
     ).length;
   const needed = !!loserId && lossesOutsideTheDecider(loserId) < 2;
@@ -155,7 +155,7 @@ export function reconcileDecider({
  */
 export function getDeciderFinals(drawDefinition?: DrawDefinition): Map<string, number | undefined> {
   const finals = new Map<string, number | undefined>();
-  const links: any[] = drawDefinition?.links ?? [];
+  const links = drawDefinition?.links ?? [];
 
   for (const winnerLink of links.filter((link) => link.linkType === WINNER)) {
     const { structureId, roundNumber } = winnerLink.source ?? {};

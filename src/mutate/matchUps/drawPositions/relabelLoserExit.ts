@@ -60,7 +60,7 @@ export function relabelLoserExit(args: RelabelArgs): { carry?: boolean } {
   if (!standing) return {};
 
   const carriedHere = standing.sideExitProvenance
-    ? Object.values(standing.sideExitProvenance).some((entry: any) => entry?.sourceMatchUpId === sourceMatchUpId)
+    ? Object.values(standing.sideExitProvenance).some((entry) => entry?.sourceMatchUpId === sourceMatchUpId)
     : false;
 
   const withdrawable = () =>
