@@ -1,4 +1,4 @@
-import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
+import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -105,9 +105,16 @@ export function releaseAdvancedDrawPosition({
     // Any writer that SUBSTITUTES must re-sort — see the canonical statement in
     // `getOrderedDrawPositions`. Settled through `normalizeDrawPositions`, which keeps a hole
     // beside a survivor and collapses an all-holes result to `[]`.
-    matchUp.drawPositions = normalizeDrawPositions(
-      (matchUp.drawPositions ?? []).map((position) => (position === drawPosition ? undefined : position)),
-    );
+    // ...and the participant who stays can change side as the seat empties: `setMatchUpDrawPositions` moves what
+    // is recorded by side with them.
+    setMatchUpDrawPositions({
+      drawPositions: (matchUp.drawPositions ?? []).map((position) =>
+        position === drawPosition ? undefined : position,
+      ),
+      drawDefinition,
+      structureId,
+      matchUp,
+    });
     releasedRoundNumbers.push(matchUp.roundNumber);
 
     // A PRODUCED exit has no winningSide until a participant arrives (CA, 2026-09-20). Its award was read off the

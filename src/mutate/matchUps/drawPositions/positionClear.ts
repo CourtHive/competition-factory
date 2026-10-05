@@ -2,7 +2,7 @@ import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/m
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
-import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
+import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
@@ -400,11 +400,15 @@ function removeDrawPosition({
     // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
     // Settled through `normalizeDrawPositions`, which keeps a hole beside a survivor and collapses
     // an all-holes result to `[]`.
-    targetMatchUp.drawPositions = normalizeDrawPositions(
-      (targetMatchUp.drawPositions ?? []).map((currentDrawPosition) =>
+    // The participant who stays can change side as the seat empties; what is recorded by side goes with them.
+    setMatchUpDrawPositions({
+      drawPositions: (targetMatchUp.drawPositions ?? []).map((currentDrawPosition) =>
         currentDrawPosition === drawPosition ? undefined : currentDrawPosition,
       ),
-    );
+      structureId: structure.structureId,
+      matchUp: targetMatchUp,
+      drawDefinition,
+    });
 
     // AND ACROSS THE LINK. This removal walked the rounds of one structure and stopped at its edge.
     // Measured 2026-09-30 by `correctionDivergenceDeep` on DOUBLE_ELIMINATION 8/5: a double exit's

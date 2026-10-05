@@ -36,6 +36,7 @@ import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getE
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+import { rekeySideFacts } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -521,6 +522,17 @@ function applyPositionToMatchUp({
       })) ||
     advancedExitWinningSide ||
     undefined;
+
+  // The arrival can move the participant already here to the other side (a lone position sits on its bracket side,
+  // two sort ascending). Everything recorded by side moves with them; `winningSide` is assigned below from the side
+  // the arrival takes, so it is left to that (CA, 2026-10-05: `setMatchUpDrawPositions`).
+  rekeySideFacts({
+    structureId: inContextMatchUp?.structureId,
+    drawPositions: updatedDrawPositions,
+    rekeyWinningSide: false,
+    drawDefinition,
+    matchUp,
+  });
 
   // Advancing into a single pending propagated exit re-orders the sides, so the carried
   // exit code must follow the EXITING participant to its new side (opposite the advancing
