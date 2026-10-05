@@ -82,6 +82,20 @@ Status groupings are also exported:
 - `particicipantsRequiredMatchUpStatuses` - Statuses requiring participant assignment
 - `recoveryTimeRequiredMatchUpStatuses` - Statuses where recovery time applies
 
+**scoreWarningConstants** - Warnings a successful score write can carry
+
+```js
+const { TIEBREAK_POINTS_NOT_RECORDED, INVALID_TIEBREAK_POINTS_DROPPED } = factoryConstants.scoreWarningConstants;
+```
+
+The score was recorded, and something about it is worth knowing. Each warning is `{ code, setNumbers }`, naming the
+sets it concerns. Added in 7.5.0.
+
+- `TIEBREAK_POINTS_NOT_RECORDED` - a set decided by its tiebreak was recorded on games alone (`7-6` with no tiebreak
+  points). Accepted; the points are simply unknown.
+- `INVALID_TIEBREAK_POINTS_DROPPED` - `repairScore` dropped tiebreak points no tiebreak could end on, keeping the
+  games. An ingestion fallback, never applied to a live entry.
+
 ### Draw & Structure Constants
 
 **drawDefinitionConstants** - Draw types, stages, and positioning
@@ -249,9 +263,21 @@ const {
 **scheduleConstants** - Scheduling-related values
 
 ```js
-const { SCHEDULE_TIMING, START_TIME, END_TIME, SCHEDULED_TIME, SCHEDULE_DATE, COURTS, VENUES } =
-  factoryConstants.scheduleConstants;
+const {
+  CONFLICT_PARTICIPANTS,
+  CONFLICT_COURT_DOUBLE_BOOKING,
+  CONFLICT_BYE_SCHEDULED,
+  CONFLICT_EXIT_SCHEDULED,
+  SCHEDULE_PRESERVED_ON_EXIT,
+  SCHEDULE_CONFLICT,
+  SCHEDULE_WARNING,
+} = factoryConstants.scheduleConstants;
 ```
+
+- `CONFLICT_EXIT_SCHEDULED` (`'exitScheduledOnCourt'`) - a matchUp the exit cascade decided (a produced `WALKOVER` or
+  `DEFAULTED`) is holding a court it can never use. Added in 7.5.0.
+- `SCHEDULE_PRESERVED_ON_EXIT` - the mutation payload's warning that a BYE or a produced exit was left holding a court
+  or a time. Added in 7.5.0.
 
 **timeItemConstants** - Time item types
 
@@ -392,9 +418,22 @@ engine method fails the factory's own type check rather than surfacing as
 **penaltyConstants** - Penalty types
 
 ```js
-const { BALL_ABUSE, VERBAL_ABUSE, PHYSICAL_ABUSE, COACHING, DELAY_OF_GAME, UNSPORTSMANLIKE_CONDUCT } =
+const { BALL_ABUSE, VERBAL_ABUSE, PHYSICAL_ABUSE, COACHING, TIME_VIOLATION, UNSPORTSMANLIKE_CONDUCT } =
   factoryConstants.penaltyConstants;
 ```
+
+The values are display labels (`'Ball Abuse'`, `'Time Violation'`), and a label is what gets stored as
+`penaltyType`. The codes of [`PenaltyTypeEnum`](./enums.mdx) are a separate vocabulary.
+
+- `AUDIBLE_OBSCENITY`, `VISIBLE_OBSCENITY`, `TIME_VIOLATION`, `FAILURE_TO_SIGN_OUT` - added in 7.6.0.
+- `EQUIPMENT_VIOLATION`, `FAILURE_TO_SIGN_IN` - added in 7.5.0 as the correct spellings. The misspelled
+  `EQUIMENT_VIOLATION` and `FAILUIRE_TO_SIGN_IN` remain as deprecated aliases of them, removed in 8.0.0.
+- `UNSPORTSMANLIKE_CONDUCT` and `PUNCTUALITY` carry corrected labels since 7.6.0 (`'Unsportsmanlike Conduct'`,
+  `'Punctuality'`; previously `'Unsportmanlike Conduct'` and `'Puncuality'`).
+
+`addPenalty` and `modifyPenalty` still accept the misspelled values (the codes `EQUIMENT_VIOLATION` and
+`FAILUIRE_TO_SIGN_IN`, and the labels `'Unsportmanlike Conduct'` and `'Puncuality'`) and rewrite them to the correct
+spelling on write. 8.0.0 stops accepting them.
 
 ### Data & Resource Constants
 

@@ -79,6 +79,8 @@ const penaltyData = {
 let result = engine.addPenalty(penaltyData);
 ```
 
+A misspelled `penaltyType` from earlier releases (`EQUIMENT_VIOLATION`, `FAILUIRE_TO_SIGN_IN`, `'Unsportmanlike Conduct'`, `'Puncuality'`) is still accepted and stored with the correct spelling; 8.0.0 stops accepting them. See [penaltyConstants](../constants.mdx).
+
 ---
 
 ## addPersons
@@ -640,6 +642,8 @@ const notes = 'Hit ball into spectator';
 const modifications = { notes };
 engine.modifyPenalty({ penaltyId, modifications });
 ```
+
+A `penaltyType` modification with one of the old misspellings (see [addPenalty](#addpenalty)) is rewritten to the correct spelling before it is stored, until 8.0.0.
 
 ---
 

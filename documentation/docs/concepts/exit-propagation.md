@@ -80,12 +80,17 @@ Whether an exit status travels into the consolation structure at all is a scorin
 | `propagateExitStatus: false` (factory default) | the loser is directed normally; the exit status does not follow them |
 | `propagateExitStatus: true`                    | the exit status is carried into the target structure                 |
 
-It can be set on the scoring policy or passed per call to `setMatchUpStatus`. The USTA scoring
-policy enables it; the factory default does not.
+It can be set on the scoring policy or passed per call to `setMatchUpStatus`. Since 7.5.0 a policy
+that sets the flag, `true` or `false`, wins over the call; the call decides only where the policy is
+silent (`policy ?? param`). The USTA scoring policy enables it; the factory default policy is silent
+on it, so it is off unless the call turns it on.
 
-When it is on, `checkParticipants` relaxes its usual requirement so that a `WALKOVER`, `DEFAULTED`
-or `DOUBLE_WALKOVER` may sit on a matchUp holding only one participant — which is exactly the
-pending shape described above.
+The flag does not decide whether an exit may stand on a matchUp holding only one participant.
+Since 7.5.0 a `WALKOVER` or `DEFAULTED` can be recorded before the second opponent arrives with the
+flag on or off; the flag decides only whether an exit is then carried into the loser's next matchUp.
+A direct double exit needs both seats reached; only the cascade's own write may place one beside a
+seat nobody has reached. The rules for who may receive the exit are in
+[the outcome pipeline § 2.1](./outcome-pipeline.md#21-who-may-receive-a-directing-outcome).
 
 ## BYE provenance: `byeFromPropagation`
 
@@ -170,7 +175,7 @@ tournament records.
 
 ## Guarantees
 
-These hold as of 7.0.0 (the last two as of 7.4.0) and are enforced by the
+These hold as of 7.0.0, or as of the release each states, and are enforced by the
 [exit-propagation harness](/docs/testing/exit-propagation-harness).
 
 ### Re-applying the same double exit does nothing
@@ -203,6 +208,11 @@ where the default call returned an error _after_ changing the draw left it uncha
 `executionQueue` snapshots for the whole queue, so TMX and competition-factory-server — which pass
 `rollbackOnError: true` on every mutation — already have this. A consumer calling `setMatchUpStatus`
 directly should pass it.
+
+The flag can only restore what an error reports, so the cascade reports every error. Since 7.5.0 any
+write the cascade makes that fails, fails the call, and a refusal raised inside the cascade is
+returned to the caller rather than dropped behind a success. Before that, a call could report
+success over a draw the cascade had left half-written, and `rollbackOnError` had nothing to act on.
 
 If you are writing a client, an error response with the flag needs no compensating action. It does
 **not** mean every rejection is a no-op for your UI: the request was refused, and the reason in the
@@ -262,10 +272,10 @@ Three rules fell out of making this hold, each a defect that only the order of e
 
 ### A team dual's double exit is unwound by its lines, or protected from them
 
-In a TEAM event a dual that holds a `DOUBLE_WALKOVER` has propagated like any other. Scoring one of
-its lines (tieMatchUps) afterwards takes the dual out of the double exit — so the produced walkover
-is withdrawn first, and a team that had been awarded it is taken back out of the next round. Once
-that produced walkover has been **played on**, a line of the dual is refused with
+Since 7.4.0. In a TEAM event a dual that holds a `DOUBLE_WALKOVER` has propagated like any other.
+Scoring one of its lines (tieMatchUps) afterwards takes the dual out of the double exit — so the
+produced walkover is withdrawn first, and a team that had been awarded it is taken back out of the
+next round. Once that produced walkover has been **played on**, a line of the dual is refused with
 `CANNOT_CHANGE_OUTCOME`, exactly as a direct re-score of the dual is: a played result is never
 reset by a score entered elsewhere.
 
@@ -273,11 +283,55 @@ reset by a score entered elsewhere.
 
 A BYE or a produced exit that lands on a scheduled matchUp keeps that matchUp's court, order and
 times — the rule the [schedule governor](/docs/governors/schedule-governor#assigning-a-bye-preserves-scheduling)
-states for BYEs, applied to produced exits since 7.4.1. The read side flags both
+states for BYEs, applied to produced exits since 7.5.0. The read side flags both
 (`CONFLICT_BYE_SCHEDULED`, `CONFLICT_EXIT_SCHEDULED`), and the `setMatchUpStatus` call that left
 them returns `warnings: [{ code: 'SCHEDULE_PRESERVED_ON_EXIT', matchUpIds }]` so the client can
 offer to release the slots. Enforced over the drawSize-8 matrix cells with every matchUp scheduled
 first: no slot moves under any cascade.
+
+### A produced exit awards no empty seat, on any path
+
+A produced exit is never awarded to a seat that holds a drawPosition but no participant and no BYE,
+such as one a BYE advanced forward to wait for a loser fed from another structure. That seat is not
+an opponent in place, and the exit stays pending until a participant arrives; an empty position
+arriving does not resolve it. 7.5.0 applied this past a BYE; since 7.6.0 it holds on every path
+that writes a produced exit.
+
+### An exit that meets a BYE leaves a BYE behind
+
+Since 7.5.0. An exit carried or produced into a matchUp whose other side is a BYE moves on with the
+BYE's advancement; the matchUp it leaves reads `BYE`, not `WALKOVER` or `DEFAULTED` beside a BYE
+and nobody.
+
+### A carried exit is corrected at its origin
+
+Since 7.5.0. A carried or produced exit is not a result anybody recorded at the matchUp it reached,
+so it cannot be re-scored there, flipped, relabelled as a played match or cleared: a direct call
+that would change it is refused with `CANNOT_CHANGE_OUTCOME`, and `matchUpActions` offers neither
+`SCORE` nor `CLEAR_SCORE` on it. Clear or re-score the exit's origin, and the exit is re-derived. A
+relabel at the origin, which keeps the winner and changes what the result says about the loser, is
+covered in [the outcome pipeline § 5](./outcome-pipeline.md#5-the-side-effects-in-order), rule 2.
+
+### A withdrawn exit releases the seat it won
+
+Since 7.5.0. A carried exit awards its seat to whoever stands opposite, and that winner may advance.
+When the origin is re-scored and the exit withdrawn, the advancement is released, including where
+the next matchUp was itself decided by an exit carried in on the other side. The seat is emptied
+and the exit there stands pending the next arrival.
+
+### An arrival carrying an exit converges with a pending exit
+
+Since 7.5.0. A loser carrying a `WALKOVER` or `DEFAULTED` can reach a matchUp that already holds a
+pending exit, a carried one or one a director recorded before the opponent arrived. The arrival is
+placed and nothing is awarded to it: the two exits converge into a double exit by the rule above.
+The participant who exited never takes the exit standing there.
+
+### Either origin of a converged double exit clears to the kept origin's draw
+
+Since 7.5.0. When two exits have converged into a double exit and nothing downstream is active,
+either origin can be cleared, and the draw afterwards is the draw the kept origin alone would have
+produced: the double exit and whatever it produced downstream are unwound, and the kept origin's
+carried exit is replayed forward.
 
 ### Nothing to do is success, not failure
 
@@ -301,10 +355,10 @@ success.
 
 A scoring-policy setting, effective only when `propagateExitStatus` is also on.
 
-| value              | effect on the retiring player's consolation matchUp                         |
-| ------------------ | --------------------------------------------------------------------------- |
-| `true` _(default)_ | a `WALKOVER` to the opponent — the retiree is treated as unable to continue |
-| `false`            | left `TO_BE_PLAYED` — the retiree is an ordinary loser who may still play   |
+| value               | effect on the retiring player's consolation matchUp                         |
+| ------------------- | --------------------------------------------------------------------------- |
+| `true`              | a `WALKOVER` to the opponent — the retiree is treated as unable to continue |
+| `false` _(default)_ | left `TO_BE_PLAYED` — the retiree is an ordinary loser who may still play   |
 
 Placement is identical either way: the retiring player is directed to the linked structure in both
 cases, as any other loser is. Only what happens to them **on arrival** differs.
@@ -315,10 +369,10 @@ was answering a rules question on a federation's behalf. `POLICY_SCORING_USTA` s
 explicitly, so its observable behaviour is unchanged. A provider with `propagateExitStatus` off —
 the factory default — is unaffected either way.
 
-An explicit `false` wins from either params or policy. That differs from `propagateExitStatus`
-itself, which resolves as `param || policy || undefined` and therefore cannot express an explicit
-`false`; suppressing retirement propagation is the whole purpose of this setting, so it resolves
-with `??`.
+It resolves the way `propagateExitStatus` does, since 7.5.0: `policy ?? param ?? false`. A policy
+that sets it, `true` or `false`, wins over the call; the call decides only where the policy is
+silent; absent both it is `false`. A tournament director under a policy that ends a retiree's
+participation cannot keep that participant in the draw by passing `false` on the call.
 
 The single gate is `validExitToPropagate` in `directLoser.ts`. `progressExitStatus` also names
 `RETIRED`, but it runs after the decision to propagate has been taken, so it can only choose the
