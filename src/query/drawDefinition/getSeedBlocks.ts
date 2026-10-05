@@ -194,7 +194,7 @@ export function getSeedingThresholds({
   roundRobinGroupsCount,
   participantsCount,
 }: GetSeedingThresholdsArgs): ResultType & {
-  seedingThresholds?: any;
+  seedingThresholds?: number[];
   success?: boolean;
 } {
   if (roundRobinGroupsCount) {
