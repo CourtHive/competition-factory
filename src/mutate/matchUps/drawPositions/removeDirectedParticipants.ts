@@ -1,3 +1,4 @@
+import { releaseAcrossWinnerLinks, releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
 import { includesMatchUpStatuses } from '@Mutate/drawDefinitions/matchUpGovernor/includesMatchUpStatuses';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { removeSubsequentRoundsParticipant } from './removeSubsequentRoundsParticipant';
@@ -6,7 +7,6 @@ import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpSc
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -391,8 +391,9 @@ function removeDirectedLoser({
   // participantId, and a participant fed back into a draw holds more than one.
   if (loserMatchUp?.roundNumber) {
     for (const drawPosition of clearedDrawPositions) {
-      releaseAdvancedDrawPosition({
+      releaseAdvancedDrawPositionAcrossLinks({
         fromRoundNumber: loserMatchUp.roundNumber,
+        participantId: loserParticipantId,
         tournamentRecord,
         drawDefinition,
         drawPosition,
@@ -401,6 +402,21 @@ function removeDirectedLoser({
         event,
       });
     }
+  }
+
+  // A seat that keeps its BYE advancement releases no round above, so nothing asked the links out of this
+  // structure: a loser removed from a Backdraw they had BYE-advanced through stayed in the grand final (mode D).
+  const [clearedDrawPosition] = clearedDrawPositions;
+  if (clearedDrawPosition && loserParticipantId) {
+    releaseAcrossWinnerLinks({
+      drawPosition: clearedDrawPosition,
+      participantId: loserParticipantId,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      structureId,
+      event,
+    });
   }
 
   // The removal above is ONE link deep. Where the target structure itself feeds a further structure
