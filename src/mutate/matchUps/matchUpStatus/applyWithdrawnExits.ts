@@ -1,4 +1,5 @@
 import { releaseAdvancedDrawPosition } from '@Mutate/matchUps/drawPositions/releaseAdvancedDrawPosition';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 
 // constants and types
@@ -67,6 +68,38 @@ export function applyWithdrawnExits({
 
     const withdrawnMatchUp = matchUpsMap?.drawMatchUps?.find((m) => m.matchUpId === withdrawnExit.matchUpId);
     if (!withdrawnMatchUp) continue;
+
+    /**
+     * A PENDING produced exit has no winner, and its lone seat may still have been ADVANCED: an empty position
+     * moves forward structurally, as a BYE placeholder does, and is what carries the exit on past a BYE (seed 397,
+     * #5148). Since a produced exit awards no empty seat (Q3, CA 2026-10-03), the release above, keyed on a
+     * winner, finds nothing to take back, and the empty position stayed one round on after its exit was gone
+     * (census w1 9000562 on #5155: `Consolation|5|1`, later read as a BYE advanced out of an undecided matchUp).
+     * Released here instead: every position of the withdrawn matchUp that holds nobody, from the round after it.
+     * `releaseAdvancedDrawPosition`'s own scopes keep it off a BYE advancement and off any decided matchUp.
+     */
+    if (withdrawnExit.winnerDrawPosition === undefined && !withdrawnExit.rederived && withdrawnExit.roundNumber) {
+      const { positionAssignments } = getPositionAssignments({
+        drawDefinition,
+        structureId: withdrawnExit.structureId,
+      });
+      const vacant = (withdrawnMatchUp.drawPositions ?? []).filter((drawPosition) => {
+        const assignment = positionAssignments?.find((candidate) => candidate.drawPosition === drawPosition);
+        return drawPosition && !assignment?.participantId && !assignment?.bye && !assignment?.qualifier;
+      });
+      for (const drawPosition of vacant) {
+        releaseAdvancedDrawPosition({
+          fromRoundNumber: withdrawnExit.roundNumber + 1,
+          structureId: withdrawnExit.structureId,
+          withdrawingExit: true,
+          tournamentRecord,
+          drawDefinition,
+          drawPosition,
+          matchUpsMap,
+          event,
+        });
+      }
+    }
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       context: 'withdrawProducedExits',
