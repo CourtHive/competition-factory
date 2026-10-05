@@ -23,9 +23,16 @@ gate. Land work by PR: a direct push to `dev` gets no push-triggered run.
 **After a release PR merges, merge `master` back into `dev`** (CA, 2026-10-02). release-please's
 `chore(master): release X.Y.Z` commit lands on `master` only (version in `package.json`, `CHANGELOG.md`,
 `.release-please-manifest.json`), so without the back-merge `dev` drifts: by 2026-10-02 it read 7.1.0
-while `master` was 7.4.0, and anything built from `dev` reported the wrong version. Open a PR from
-`master` into `dev` and merge it with a merge commit, never a squash, so the two histories stay joined.
-`master` should then hold nothing `dev` lacks except the merge commits of past checkpoints.
+while `master` was 7.4.0, and anything built from `dev` reported the wrong version.
+**`.github/workflows/back-merge.yml` opens that PR automatically** (CA, 2026-10-05) on
+`release: published` (`chore: merge master back into dev after vX.Y.Z`), with the
+`courthive-release-bot` App token so CI runs on it, and skips when `dev` already contains the tag or
+the PR is already open. It is never auto-merged: **merge it with a merge commit, never a squash**, so
+the two histories stay joined. `master` should then hold nothing `dev` lacks except the merge commits
+of past checkpoints. If a release's run was missed:
+`gh workflow run back-merge.yml -R CourtHive/competition-factory -f tag=vX.Y.Z`. The workflow fires
+only once it is on `master`, so it takes effect after the next checkpoint carries it there; until
+then open the PR by hand. `verify.yml` runs the light path on it (`.github/scripts/release-scope.sh`).
 
 Full rationale and the CI/release compatibility table:
 `../Mentat/standards/coding-standards.md` § "Branch off `dev`, not `master`".
