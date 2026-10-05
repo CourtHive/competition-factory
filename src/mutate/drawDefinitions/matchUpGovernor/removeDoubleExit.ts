@@ -23,7 +23,9 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import type { MatchUp, MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUp, MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
@@ -137,7 +139,7 @@ export function removeDoubleExit(params) {
    * answer "another cascade still owes this" forever.
    */
   const rawLoserMatchUp = (matchUpsMap?.drawMatchUps ?? []).find(
-    (candidate: any) => candidate.matchUpId === loserMatchUp?.matchUpId,
+    (candidate) => candidate.matchUpId === loserMatchUp?.matchUpId,
   );
   const claimSideNumber = (rawLoserMatchUp?.drawPositions ?? []).indexOf(loserTargetDrawPosition) + 1 || 1;
   withdrawByeClaim({ matchUp: rawLoserMatchUp, sideNumber: claimSideNumber, claimantMatchUpId: matchUpId });
@@ -285,7 +287,15 @@ function withdrawExitFromByeChain({
   fromMatchUp,
   visited,
   stack,
-}: any) {
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  withdrawnSourceIds: Set<string>;
+  drawDefinition: DrawDefinition;
+  fromMatchUp: HydratedMatchUp;
+  matchUpsMap: MatchUpsMap;
+  visited?: Set<string>;
+  stack: string;
+}): ResultType {
   const seen: Set<string> = visited ?? new Set<string>();
   if (!fromMatchUp?.matchUpId || seen.has(fromMatchUp.matchUpId)) return { ...SUCCESS };
   seen.add(fromMatchUp.matchUpId);
@@ -309,10 +319,7 @@ function withdrawExitFromByeChain({
     ? (noContextTargetMatchUp.drawPositions ?? [])[priorWinningSide - 1]
     : undefined;
 
-  // `any` because `getUnwoundState` types `matchUpStatus` as a bare string while `modifyMatchUpScore`
-  // takes the status union; `conditionallyRemoveDrawPosition` passes the same value through an
-  // untyped spread and never meets the mismatch.
-  const unwound: any = getUnwoundState({
+  const unwound = getUnwoundState({
     pairedPreviousDoubleExit: false,
     noContextTargetMatchUp,
     targetMatchUp: fromMatchUp,
@@ -734,7 +741,7 @@ function getUnwoundState({
   withdrawnSourceIds,
   drawDefinition,
   targetMatchUp,
-}): { matchUpStatus: MatchUpStatusUnion; winningSide?: number; provenance?: any } {
+}): { matchUpStatus: MatchUpStatusUnion; winningSide?: number; provenance?: SideExitProvenance } {
   // A BYE STAYS A BYE — the status is never re-derived — but the codes are. The cascade records a
   // produced exit on a BYE matchUp's side, and an unwind that left the status alone AND the codes
   // alone would keep an exit that no longer exists. Retaining by source identity is what keeps the
@@ -805,7 +812,7 @@ function getUnwoundState({
  * Returns undefined both when the drawPosition carries no BYE and when the BYE carries no marker;
  * the caller treats those alike, since neither is a positive statement that this cascade placed it.
  */
-function findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPosition }): any {
+function findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPosition }): boolean | undefined {
   if (!loserMatchUp?.structureId || loserTargetDrawPosition === undefined) return undefined;
   const { structure } = findStructure({ drawDefinition, structureId: loserMatchUp.structureId });
   const assignment = structure?.positionAssignments?.find(
