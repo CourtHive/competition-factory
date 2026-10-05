@@ -267,6 +267,13 @@ export class ScoringEngine {
       pointMultipliers: this.pointMultipliers,
     });
 
+    // The pure function ignores a point it cannot score — one after the match is COMPLETED, or one
+    // naming no winner — and returns the matchUp unchanged. Nothing was played, so nothing is
+    // recorded: no timeline entry (undo would pop it as a phantom), no cleared redo stack, no
+    // onPoint, and no activePlayers or penaltyType stamped onto the point before it. A correction to
+    // a point already played goes through decoratePoint or editPoint, which a completed match takes.
+    if ((this.state.history?.points.length || 0) === pointIndex) return;
+
     // Attach activePlayers to the just-added point
     if (activePlayersSnapshot) {
       const lastPoint = this.state.history!.points[this.state.history!.points.length - 1];
@@ -1003,6 +1010,10 @@ export class ScoringEngine {
   /**
    * Decorate a point with additional metadata
    *
+   * Any point can be decorated, in a match that is COMPLETED too: a penaltyType or an annotation is
+   * a correction to the record, not a point played. The metadata is also written to the point's
+   * timeline entry, so a later rebuild (undo, redo, editPoint, removePoint) keeps it.
+   *
    * @param pointIndex - 0-based point index in history
    * @param metadata - Key-value pairs to attach to the point
    */
@@ -1010,7 +1021,14 @@ export class ScoringEngine {
     const point = this.state.history?.points[pointIndex];
     if (point) {
       Object.assign(point, metadata);
+      const entry = this.pointEntry(pointIndex);
+      if (entry) Object.assign(entry.data, metadata);
     }
+  }
+
+  /** The timeline entry that replays the point at `pointIndex`, if the timeline is kept. */
+  private pointEntry(pointIndex: number) {
+    return this.state.history?.entries?.find((e) => e.type === 'point' && e.pointIndex === pointIndex);
   }
 
   /**
@@ -1034,8 +1052,13 @@ export class ScoringEngine {
   /**
    * Edit a point in history
    *
+   * Any point can be edited, in a match that is COMPLETED too (a penaltyType added after the
+   * match, for one). Every field given is written to the point and to its timeline entry, so a
+   * later rebuild keeps the edit; with `recalculate: false` the score is left as it was until the
+   * next rebuild, which then applies the edit.
+   *
    * @param pointIndex - 0-based point index in history
-   * @param newData - New point data (winner, server, metadata)
+   * @param newData - New point data (winner, server, penaltyType, metadata)
    * @param options - Edit options
    *   - recalculate: true (default) recalculates from the edited point forward;
    *     false only updates point data
@@ -1046,27 +1069,37 @@ export class ScoringEngine {
 
     const shouldRecalculate = options?.recalculate !== false;
     const point = points[pointIndex];
+    const entry = this.pointEntry(pointIndex);
 
-    // Apply updates to the point object
-    if (newData.winner !== undefined) point.winner = newData.winner;
-    if (newData.server !== undefined) point.server = newData.server;
-    if (newData.timestamp !== undefined) point.timestamp = newData.timestamp;
-    if (newData.rallyLength !== undefined) point.rallyLength = newData.rallyLength;
-    if (newData.wrongSide !== undefined) (point as any).wrongSide = newData.wrongSide;
-    if (newData.wrongServer !== undefined) (point as any).wrongServer = newData.wrongServer;
-    if (newData.penaltyPoint !== undefined) (point as any).penaltyPoint = newData.penaltyPoint;
+    const edits: Record<string, any> = Object.fromEntries(
+      Object.entries(newData).filter(([, value]) => value !== undefined),
+    );
+    // A winner and a server each have two spellings. The point carries both, so it gets both. The
+    // entry keeps the one it was played with and its replay reads the 0-indexed spelling first, so
+    // an edit in either spelling clears the other there.
+    const pointEdits = { ...edits };
+    const entryEdits = { ...edits };
+    if (edits.winner !== undefined) {
+      pointEdits.winningSide = edits.winner + 1;
+      entryEdits.winningSide = undefined;
+    } else if (edits.winningSide !== undefined) {
+      pointEdits.winner = edits.winningSide - 1;
+      entryEdits.winner = undefined;
+    }
+    if (edits.server !== undefined) {
+      pointEdits.serverSideNumber = edits.server + 1;
+      entryEdits.serverSideNumber = undefined;
+    } else if (edits.serverSideNumber !== undefined) {
+      pointEdits.server = edits.serverSideNumber - 1;
+      entryEdits.server = undefined;
+    }
+
+    Object.assign(point, pointEdits);
+    if (entry) Object.assign(entry.data, entryEdits);
 
     if (!shouldRecalculate) return;
 
-    // Also update the corresponding entry data if entries exist
     const entries = this.state.history?.entries;
-    if (entries) {
-      const pointEntry = entries.find((e) => e.type === 'point' && e.pointIndex === pointIndex);
-      if (pointEntry) {
-        if (newData.winner !== undefined) pointEntry.data.winner = newData.winner;
-        if (newData.server !== undefined) pointEntry.data.server = newData.server;
-      }
-    }
 
     // Rebuild state from all entries (or points)
     if (entries && entries.length > 0) {
@@ -1497,6 +1530,11 @@ export class ScoringEngine {
           timestamp: point.timestamp,
           rallyLength: point.rallyLength,
           result: point.result,
+          // corrections recorded on the point (none of them moves the score)
+          penaltyType: (point as any).penaltyType,
+          penaltyPoint: (point as any).penaltyPoint,
+          wrongSide: (point as any).wrongSide,
+          wrongServer: (point as any).wrongServer,
         },
         {
           pointMultipliers: this.pointMultipliers,
