@@ -62,7 +62,8 @@ export function rekeySideFacts({
 function occupantChangesSide({ matchUp, before, after, drawDefinition, structureId }): boolean {
   if (!drawDefinition || !structureId) return false;
   const held = (positions: (number | undefined)[]) => positions.filter((position): position is number => !!position);
-  const stayed = held(before).filter((position) => after.includes(position));
+  const present = new Set(held(after));
+  const stayed = held(before).filter((position) => present.has(position));
   // nobody stayed, or nobody left and nobody arrived: no participant can have moved
   if (stayed.length !== 1 || held(before).length === held(after).length) return false;
 
