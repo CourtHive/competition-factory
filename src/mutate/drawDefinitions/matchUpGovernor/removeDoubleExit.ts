@@ -5,24 +5,25 @@ import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { intersection, overlap } from '@Tools/arrays';
-import { isDoubleExit } from '@Validators/isExit';
 import {
   withdrawByeClaimsFrom,
   byeClaimSurvives,
   withdrawByeClaim,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
-  getSideExitProvenance,
   deriveExitStateFromProvenance,
+  getSideExitProvenance,
+  carriedExitStatus,
   retainForeignProvenance,
   retainPolicyCodes,
   setSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import type { MatchUp, MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
@@ -329,7 +330,7 @@ function withdrawExitFromByeChain({
   });
 
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: retainPolicyCodes(noContextTargetMatchUp),
+    matchUpStatusCodes: codesForUnwound(noContextTargetMatchUp, unwound),
     removeWinningSide: unwound.winningSide === undefined,
     matchUpStatus: unwound.matchUpStatus,
     matchUpId: fromMatchUp.matchUpId,
@@ -604,7 +605,7 @@ export function conditionallyRemoveDrawPosition(params) {
   const removeScore = !pairedPreviousDoubleExit;
   result = modifyMatchUpScore({
     ...params,
-    matchUpStatusCodes: retainPolicyCodes(noContextTargetMatchUp),
+    matchUpStatusCodes: codesForUnwound(noContextTargetMatchUp, unwound),
     removeWinningSide: unwound.winningSide === undefined,
     matchUpId: targetMatchUp.matchUpId,
     matchUp: noContextTargetMatchUp,
@@ -811,4 +812,22 @@ function findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPositi
     (candidate) => candidate.drawPosition === loserTargetDrawPosition,
   );
   return assignment?.bye ? assignment.byeFromPropagation : undefined;
+}
+
+/**
+ * The policy codes an unwound matchUp keeps: all of them, except on a side whose exit no longer stands.
+ *
+ * Unwinding a convergence of two double exits re-derives it to the other origin's single exit. Both sides held a code
+ * (`['DEF', 'DEF']`); keeping every policy code left the withdrawn side's code in its slot, and the participant who
+ * then arrives there and wins the exit stood beside it: a reason badge on the winner (census w1 9000276, w1 9000517,
+ * w2 9100184: EXIT_CODE_ON_WINNER_SIDE). A single exit keeps the code only where its retained provenance still
+ * records an exit. Any other unwound state keeps the codes as before.
+ */
+function codesForUnwound(
+  matchUp: MatchUp,
+  unwound: { matchUpStatus?: MatchUpStatusUnion; provenance?: SideExitProvenance },
+) {
+  const codes = retainPolicyCodes(matchUp);
+  if (!unwound.provenance || !isExit(unwound.matchUpStatus)) return codes;
+  return codes.map((code, index) => (carriedExitStatus(unwound.provenance?.[index + 1]) ? code : ''));
 }
