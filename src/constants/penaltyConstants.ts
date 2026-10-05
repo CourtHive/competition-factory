@@ -10,6 +10,9 @@ export const RACKET_ABUSE = 'Racket Abuse';
 export const VERBAL_ABUSE = 'Verbal Abuse';
 export const INELIGIBILITY = 'INELIGIBILITY';
 export const PHYSICAL_ABUSE = 'Physical Abuse';
+export const AUDIBLE_OBSCENITY = 'Audible Obscenity';
+export const VISIBLE_OBSCENITY = 'Visible Obscenity';
+export const TIME_VIOLATION = 'Time Violation';
 /**
  * Corrected 2026-10-05 (was `'Unsportmanlike Conduct'`). Stored records may hold the old spelling; it is accepted
  * and rewritten on write (`normalizePenaltyType`) until 8.0.0, when it stops being accepted.
@@ -31,6 +34,7 @@ export const PROHIBITED_SUBSTANCE = 'PROHIBITED_SUBSTANCE';
  */
 export const PUNCTUALITY = 'Punctuality';
 export const FAILURE_TO_SIGN_IN = 'Failure to sign in';
+export const FAILURE_TO_SIGN_OUT = 'Failure to sign out';
 /** @deprecated misspelled; use `FAILURE_TO_SIGN_IN`. Removed in 8.0.0. */
 export const FAILUIRE_TO_SIGN_IN = FAILURE_TO_SIGN_IN;
 
@@ -41,6 +45,8 @@ export const penaltyConstants = {
   VERBAL_ABUSE,
   PHYSICAL_ABUSE,
   INELIGIBILITY,
+  AUDIBLE_OBSCENITY,
+  VISIBLE_OBSCENITY,
 
   UNSPORTSMANLIKE_CONDUCT,
   PROHIBITED_SUBSTANCE,
@@ -54,7 +60,9 @@ export const penaltyConstants = {
   NO_SHOW,
   OTHER,
   PUNCTUALITY,
+  TIME_VIOLATION,
   FAILURE_TO_SIGN_IN,
+  FAILURE_TO_SIGN_OUT,
   FAILUIRE_TO_SIGN_IN,
 } as const;
 

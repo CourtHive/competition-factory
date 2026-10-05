@@ -75,3 +75,23 @@ it('the two misspelled penalty labels are corrected, and the old spellings are r
   stored = tournamentEngine.getTournamentPenalties().penalties.find((p: any) => p.penaltyId === penaltyId);
   expect(stored.penaltyType).toEqual(penaltyConstants.PUNCTUALITY);
 });
+
+/**
+ * `PenaltyTypeEnum` is the canonical penalty vocabulary (CA, 2026-10-05). The legacy TMX vocabulary carried in
+ * `@courthive/i18n` named four code-of-conduct offences it lacked; they are codes now, so every consumer label can
+ * be keyed by an enum code.
+ */
+it('the code-of-conduct offences of the legacy vocabulary are penalty types', () => {
+  for (const code of ['TIME_VIOLATION', 'AUDIBLE_OBSCENITY', 'VISIBLE_OBSCENITY', 'FAILURE_TO_SIGN_OUT']) {
+    expect(PenaltyTypeEnum[code]).toEqual(code);
+    expect(penaltyConstants[code]).toBeDefined();
+  }
+
+  mocksEngine.generateTournamentRecord({ participantsProfile: { participantsCount: 2 }, setState: true });
+  const participantIds = tournamentEngine.getParticipants().participants.map((p: any) => p.participantId);
+  const result: any = tournamentEngine.addPenalty({
+    penaltyType: PenaltyTypeEnum.TIME_VIOLATION,
+    participantIds: [participantIds[0]],
+  });
+  expect(result.success).toEqual(true);
+});
