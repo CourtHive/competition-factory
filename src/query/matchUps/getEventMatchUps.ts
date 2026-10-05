@@ -5,7 +5,7 @@ import { getDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { definedAttributes } from '@Tools/definedAttributes';
 
 // constants and types
-import { GetMatchUpsArgs, GroupsMatchUpsResult } from '@Types/factoryTypes';
+import { GetMatchUpsArgs, GroupInfo, GroupsMatchUpsResult } from '@Types/factoryTypes';
 import { MISSING_EVENT } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -49,7 +49,7 @@ export function eventMatchUps(params: GetMatchUpsArgs): GroupsMatchUpsResult {
     }),
   };
 
-  let groupInfo: any;
+  let groupInfo: GroupInfo | undefined;
   if (!tournamentParticipants && tournamentRecord) {
     ({
       participants: tournamentParticipants,

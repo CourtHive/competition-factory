@@ -48,7 +48,7 @@ export function getMatchUpCompetitiveProfile({
   matchUp,
 }: GetMatchUpCompetitivenessArgs): {
   perspectiveSideNumber?: number;
-  competitiveness?: any;
+  competitiveness?: string;
   signedDelta?: number;
   deltaBand?: string;
   pctSpread?: number;

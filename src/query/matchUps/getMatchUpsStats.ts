@@ -47,7 +47,7 @@ export function getMatchUpsStats({ profileBands, tournamentRecord, matchUps }) {
   });
   const total: number = Object.keys(pctspd).reduce((a, k) => (pctspd[k] || 0) + a, 0);
 
-  const competitiveBands: any = Object.keys(pctspd).map((k: any) => {
+  const competitiveBands = Object.keys(pctspd).map((k) => {
     const value = Number.parseFloat((pctspd[k] / total).toFixed(4));
     return {
       [k]: value * 100,

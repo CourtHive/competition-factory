@@ -2,7 +2,7 @@ import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 
 // constants and types
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 // Counts the REAL (scored) wins a drawPosition has accrued across a structure's matchUps. BYEs and
@@ -24,7 +24,7 @@ export function isUnscoredOutcome({
   score,
 }: {
   matchUpStatus?: MatchUpStatusUnion;
-  score?: any;
+  score?: Score;
 }): boolean {
   if (matchUpStatus === WALKOVER) return true;
   return matchUpStatus === DEFAULTED && !checkScoreHasValue({ score });

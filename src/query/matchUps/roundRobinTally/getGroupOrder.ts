@@ -212,7 +212,7 @@ function processAttribute({
   matchUps,
   reversed, // reverses default which is greatest to least
 }) {
-  const participantResultsOutcome: any = getParticipantResults({
+  const participantResultsOutcome = getParticipantResults({
     participantIds: idsFilter && participantIds,
     groupingTotal: groupTotals && attribute,
     matchUpFormat,

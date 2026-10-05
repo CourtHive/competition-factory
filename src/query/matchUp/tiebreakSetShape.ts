@@ -1,5 +1,8 @@
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 
+// types
+import type { Set as SetType } from '@Types/tournamentTypes';
+
 /**
  * One shape for a tiebreak-only set.
  *
@@ -48,7 +51,7 @@ type SideValues = [number | undefined, number | undefined];
  * in the tiebreak FIELDS is points, and under a target above one it is no finished tiebreak; under `TB1`
  * the target is one, so `1-0` there is the points and never the marker.
  */
-export function isTiebreakMarker(set: any, setFormat?: any): boolean {
+export function isTiebreakMarker(set: SetType | undefined, setFormat?: any): boolean {
   const tiebreakTo = setFormat?.tiebreakSet?.tiebreakTo;
   if (typeof tiebreakTo !== 'number' || tiebreakTo <= 1) return false;
   if (isNumber(set?.side1TiebreakScore) || isNumber(set?.side2TiebreakScore)) return false;

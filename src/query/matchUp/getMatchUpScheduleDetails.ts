@@ -64,7 +64,7 @@ type GetMatchUpScheduleDetailsArgs = {
  *     the annotation goes on claiming it has not begun. A completed status
  *     settles it too, walkovers included — resolved is resolved.
  */
-function startIsSettled(matchUp: any): boolean {
+function startIsSettled(matchUp: HydratedMatchUp): boolean {
   if (matchUp?.schedule?.calledAt) return true;
   if (matchUp?.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)) return true;
   if (matchUp?.winningSide) return true;

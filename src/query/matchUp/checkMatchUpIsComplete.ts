@@ -1,5 +1,6 @@
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+import type { MatchUp } from '@Types/tournamentTypes';
 
 type CheckMatchUpIsCompleteArgs = { matchUp?: any };
 
@@ -42,7 +43,7 @@ export function checkMatchUpIsComplete({ matchUp }: CheckMatchUpIsCompleteArgs) 
  * `undefined` rather than `false` is deliberate and load-bearing: `tallyParticipantResults`
  * separates "not complete" from "no answer" with `?? matchUp.matchUpType === TEAM`.
  */
-export function matchUpCompletion(matchUp: any) {
+export function matchUpCompletion(matchUp: MatchUp | undefined) {
   if (!matchUp) return undefined;
   const result: any = checkMatchUpIsComplete({ matchUp });
   return result?.error ? undefined : result;

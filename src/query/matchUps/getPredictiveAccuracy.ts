@@ -162,7 +162,7 @@ export function getPredictiveAccuracy(params: getPredictiveAccuracyArgs) {
         })
     : [];
 
-  const zoneBands: any = getGroupingBands({ zoneData });
+  const zoneBands = getGroupingBands({ zoneData });
   const totalZoneMatchUps = zoneBands && Object.values(zoneBands).flat().length;
 
   const zoneDistribution =

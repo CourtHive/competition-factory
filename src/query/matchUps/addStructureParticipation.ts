@@ -52,7 +52,7 @@ export function addStructureParticipation({
 
   const structureParticipation = participantAggregator.structureParticipation[structureId];
 
-  const { winner, loser } = matchUpFinishingPositionRanges as any;
+  const { winner, loser } = matchUpFinishingPositionRanges;
   const finishingPositionRange = participantWon ? winner : loser;
   if (participantWon) {
     structureParticipation.winCount += 1;

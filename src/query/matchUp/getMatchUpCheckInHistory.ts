@@ -4,7 +4,8 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants and types
 import { DRAW_DEFINITION, ERROR, MATCHUP_ID } from '@Constants/attributeConstants';
-import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { ErrorType, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
+import type { Event, Tournament } from '@Types/tournamentTypes';
 import type { PresenceAttestation } from '@Types/presenceTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -25,11 +26,11 @@ import { SUCCESS } from '@Constants/resultConstants';
  * return exactly the thing this exists to return.
  */
 export function getMatchUpCheckInHistory(params: {
-  tournamentRecord?: any;
+  tournamentRecord?: Tournament;
   drawDefinition?: any;
   matchUpId: string;
-  event?: any;
-}): { checkIns?: PresenceAttestation[]; success?: boolean; error?: any } {
+  event?: Event;
+}): { checkIns?: PresenceAttestation[]; success?: boolean; error?: ErrorType } {
   const paramCheck = checkRequiredParameters(params, [{ [DRAW_DEFINITION]: true }, { [MATCHUP_ID]: true }]);
   if (paramCheck[ERROR]) return paramCheck;
 

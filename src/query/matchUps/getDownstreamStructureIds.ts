@@ -86,7 +86,7 @@ export function getDownstreamStructureIds({
     visited.add(currentMatchUpId);
 
     const currentStructureId = structureIdOf(currentMatchUpId);
-    const targets: any = positionTargets({
+    const targets = positionTargets({
       matchUpId: currentMatchUpId,
       inContextDrawMatchUps,
       drawDefinition,

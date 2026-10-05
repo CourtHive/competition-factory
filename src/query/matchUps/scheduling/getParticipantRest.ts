@@ -192,7 +192,7 @@ function localDate(ms: number | null, frame: Frame): string | null {
 }
 
 export function normalizeTimes(matchUp: HydratedMatchUp, frame: Frame): NormalizedTimes {
-  const schedule: any = matchUp.schedule ?? {};
+  const schedule = matchUp.schedule ?? {};
   const scoredMs = isoToMs(schedule.scoredTime);
   return {
     // END_DATE is written only when the match crossed midnight, so it dates the
@@ -634,7 +634,7 @@ export function getParticipantRest(params: GetParticipantRestArgs): ResultType &
   const limits: any = getDailyLimit({ tournamentRecord });
 
   const rest = analyzeParticipantRest({
-    frame: { utcOffsetMinutes, timeZone: params.timeZone ?? (tournamentRecord as any)?.localTimeZone },
+    frame: { utcOffsetMinutes, timeZone: params.timeZone ?? tournamentRecord?.localTimeZone },
     timingFor: makeTimingResolver(tournamentRecord),
     dailyLimits: limits?.error ? undefined : limits?.matchUpDailyLimits,
     scheduledDate,

@@ -59,7 +59,7 @@ export const FALLBACK_TIMING: SchedulingTiming = {
 
 /** The category identifiers the scheduling policy matches on, read the way `getScheduleTiming` reads them. */
 function categoryOf(event?: Event): { categoryName?: string; categoryType?: string } {
-  const category: any = event?.category;
+  const category = event?.category;
   return {
     categoryName: category?.categoryName ?? category?.ageCategoryCode,
     categoryType: category?.categoryType ?? category?.subType,
@@ -89,7 +89,7 @@ export function makeTimingResolver(tournamentRecord: Tournament): (matchUp: Hydr
     if (matchUpFormat) {
       const event = events.get(eventId);
       const result: any = getMatchUpFormatTiming({
-        eventType: matchUp.matchUpType as any,
+        eventType: matchUp.matchUpType,
         ...categoryOf(event),
         tournamentRecord,
         matchUpFormat,
