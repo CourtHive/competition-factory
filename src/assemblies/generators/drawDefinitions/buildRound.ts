@@ -1,7 +1,8 @@
 import { generateMatchUpId } from './generateMatchUpId';
 
-// constants
+// constants and types
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { MatchUp } from '@Types/tournamentTypes';
 
 type BuildRoundArgs = {
   includeMatchUpType?: boolean;
@@ -10,7 +11,7 @@ type BuildRoundArgs = {
   idPrefix?: string;
   isMock?: boolean;
   uuids?: string[];
-  matchUps: any[];
+  matchUps: MatchUp[];
   nodes?: any[];
 };
 

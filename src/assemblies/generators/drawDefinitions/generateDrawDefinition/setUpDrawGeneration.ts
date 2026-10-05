@@ -45,7 +45,7 @@ export function setUpDrawGeneration(params): ResultType & {
   )
     existingDrawDefinition.drawType = drawType as DrawTypeUnion;
 
-  const drawDefinition: any =
+  const drawDefinition: DrawDefinition =
     existingDrawDefinition ??
     newDrawDefinition({
       processCodes: params.processCodes,

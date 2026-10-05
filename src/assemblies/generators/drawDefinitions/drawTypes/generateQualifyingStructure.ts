@@ -11,7 +11,7 @@ import { constantToString } from '@Tools/strings';
 import { treeMatchUps } from './eliminationTree';
 
 // constants, fixtures and types
-import { DrawDefinition, DrawLink, DrawTypeUnion, Event, Structure, TieFormat } from '@Types/tournamentTypes';
+import { DrawDefinition, DrawLink, DrawTypeUnion, Event, MatchUp, Structure, TieFormat } from '@Types/tournamentTypes';
 import { POSITION, QUALIFYING, ROUND_ROBIN, WINNER } from '@Constants/drawDefinitionConstants';
 import POLICY_ROUND_NAMING_DEFAULT from '@Fixtures/policies/POLICY_ROUND_NAMING_DEFAULT';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
@@ -99,7 +99,7 @@ function getStructureProfile(drawDefinition: DrawDefinition, targetStructureId: 
 }
 
 // Helper to generate round robin structure
-function generateRoundRobinStructure(args: any) {
+function generateRoundRobinStructure(args: Parameters<typeof generateRoundRobin>[0]) {
   const { maxRoundNumber, structures, groupCount } = generateRoundRobin(args);
   return {
     qualifiersCount: groupCount,
@@ -199,7 +199,7 @@ export function generateQualifyingStructure(params: GenerateQualifyingStructureA
       : `${pre}${constantToString(QUALIFYING)}`);
 
   let structure: Structure | undefined;
-  let matchUps: any;
+  let matchUps: MatchUp[] | undefined;
   let roundLimit: number | undefined;
   let qualifiersCount: number | undefined;
   let finishingPositions: number[] | undefined;
@@ -263,7 +263,7 @@ export function generateQualifyingStructure(params: GenerateQualifyingStructureA
 
   if (tieFormat) {
     matchUps = getAllStructureMatchUps({ structure })?.matchUps ?? [];
-    matchUps?.forEach((matchUp: any) => {
+    matchUps?.forEach((matchUp) => {
       const { tieMatchUps } = generateTieMatchUps({ tieFormat, matchUp, isMock });
       Object.assign(matchUp, { tieMatchUps, matchUpType });
     });

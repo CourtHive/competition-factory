@@ -5,8 +5,9 @@ import { isConvertableInteger } from '@Tools/math';
 import { generateRange } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
 
-// constants
+// constants and types
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import type { MatchUp } from '@Types/tournamentTypes';
 
 type CustomLuckyDrawParams = {
   finishingPositionOffset?: number;
@@ -25,7 +26,7 @@ type CustomLuckyDrawResult = {
   roundProfile?: number[];
   roundsCount: number;
   roundLimit?: number;
-  matchUps: any[];
+  matchUps: MatchUp[];
   error?: ErrorType;
   info?: string;
 };

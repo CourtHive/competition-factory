@@ -33,7 +33,7 @@ export function qualifyingGeneration(params): ResultType & { qualifyingConflicts
   const qualifyingConflicts: any[] = [];
 
   if (qualifyingProfiles) {
-    const profileResult: any = processQualifyingProfiles({
+    const profileResult = processQualifyingProfiles({
       qualifyingProfiles,
       qualifyingConflicts,
       positioningReports,

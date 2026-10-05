@@ -2,7 +2,7 @@ import { generateRange } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
-import { MatchUp, TieFormat, TieScoreSourceEnum } from '@Types/tournamentTypes';
+import { CollectionDefinition, MatchUp, TieFormat, TieScoreSourceEnum } from '@Types/tournamentTypes';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 type GenerateTieMatchUpsArgs = {
@@ -31,7 +31,7 @@ export function generateTieMatchUps({ matchUp, tieFormat, isMock, uuids }: Gener
 
 type GenerateCollectionMatchUpsArgs = {
   collectionPositionOffset?: number;
-  collectionDefinition: any;
+  collectionDefinition: CollectionDefinition;
   matchUpsLimit?: number;
   matchUp?: MatchUp;
   isMock?: boolean;

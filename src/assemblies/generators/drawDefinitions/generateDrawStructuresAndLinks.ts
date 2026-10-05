@@ -12,11 +12,16 @@ import { ensureInt } from '@Tools/ensureInt';
 import { isPowerOf2 } from '@Tools/math';
 
 // constants and types
-import { EXISTING_STAGE, INVALID_DRAW_SIZE, UNRECOGNIZED_DRAW_TYPE } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Structure, TieFormat } from '@Types/tournamentTypes';
+import { DrawDefinition, DrawLink, Structure, TieFormat } from '@Types/tournamentTypes';
 import { PlayoffAttributes, PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
+import {
+  ErrorType,
+  EXISTING_STAGE,
+  INVALID_DRAW_SIZE,
+  UNRECOGNIZED_DRAW_TYPE,
+} from '@Constants/errorConditionConstants';
 import {
   MAIN,
   FEED_IN,
@@ -39,6 +44,7 @@ type GenerateDrawStructuresAndLinksArgs = {
   staggeredEntry?: boolean;
   qualifyingOnly?: boolean;
   qualifyingProfiles?: any;
+  qualifiersCount?: number;
   structureName?: string;
   tieFormat?: TieFormat;
   matchUpType?: string;
@@ -78,7 +84,7 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
   const drawType = coercedDrawType.drawType;
 
   const structures: Structure[] = [],
-    links: any[] = [];
+    links: DrawLink[] = [];
 
   const matchUpType = params?.matchUpType ?? SINGLES;
 
@@ -123,7 +129,7 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
     qualifiersCount: existingQualifiersCount,
   };
   // Fall back to explicit qualifiersCount param (e.g., placeholder qualifying)
-  const qualifiersCount = derivedQualifiersCount || (params as any).qualifiersCount || 0;
+  const qualifiersCount = derivedQualifiersCount || params.qualifiersCount || 0;
 
   if (qualifyingDrawPositionsCount) {
     if (qualifyingResult?.structures) {
@@ -301,7 +307,7 @@ function reconcileMainStructureIds({
   overwriteExisting,
   generatedLinks,
   structures,
-}): { error?: any } | undefined {
+}): { error?: ErrorType } | undefined {
   const generatedMainStructure = generatedStructures.find(
     ({ stage, stageSequence }) => stage === MAIN && stageSequence === 1,
   );

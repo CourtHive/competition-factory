@@ -70,7 +70,7 @@ export function generateSwissRound(params: GenerateSwissRoundArgs): GenerateSwis
   // can't use the standard qualifierProgression flow which requires matchUps).
   const positionParticipantIds =
     structure.positionAssignments
-      ?.map((pa: any) => pa.participantId)
+      ?.map((pa) => pa.participantId)
       .filter((pid: string | undefined): pid is string => !!pid) ?? [];
 
   const qualifierWinnerIds = getQualifierWinners({ drawDefinition, targetStructureId: structure.structureId });
@@ -165,14 +165,14 @@ function getQualifierWinners({
 }): string[] {
   const links = drawDefinition.links ?? [];
   const relevantLinks = links.filter(
-    (link: any) => link.linkType === WINNER && link.target?.structureId === targetStructureId,
+    (link) => link.linkType === WINNER && link.target?.structureId === targetStructureId,
   );
   const winnerIds: string[] = [];
   for (const link of relevantLinks) {
-    const sourceStructure = drawDefinition.structures?.find((s) => s.structureId === (link as any).source?.structureId);
+    const sourceStructure = drawDefinition.structures?.find((s) => s.structureId === link.source?.structureId);
     if (sourceStructure?.stage !== QUALIFYING) continue;
 
-    const sourceRound = (link as any).source?.roundNumber;
+    const sourceRound = link.source?.roundNumber;
     // roundNumber 0 is the placeholder link (no qualifying structure generated yet)
     if (!sourceRound) continue;
 
@@ -183,7 +183,7 @@ function getQualifierWinners({
       inContext: true,
     });
     for (const m of matchUps ?? []) {
-      const winningSide = m.sides?.find((s: any) => s?.sideNumber === m.winningSide);
+      const winningSide = m.sides?.find((s) => s?.sideNumber === m.winningSide);
       if (winningSide?.participantId) winnerIds.push(winningSide.participantId);
     }
   }

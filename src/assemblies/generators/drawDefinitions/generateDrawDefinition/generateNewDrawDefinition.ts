@@ -66,7 +66,7 @@ export function generateNewDrawDefinition(params): ResultType & {
   )?.structureId;
   const existingQualifyingLink =
     mainStructureId &&
-    drawDefinition?.links?.some((l: any) => l.target?.structureId === mainStructureId && l.source?.structureId);
+    drawDefinition?.links?.some((l) => l.target?.structureId === mainStructureId && l.source?.structureId);
   if (
     qualifyingPlaceholder &&
     !qualifyingProfiles?.length &&

@@ -3,21 +3,22 @@ import { getEntriesAndSeedsCount } from '@Query/entries/getEntriesAndSeedsCount'
 import { getScaledEntries } from '@Query/event/getScaledEntries';
 
 // constants and types
+import { DrawDefinition, Event, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
+import { PolicyDefinitions, ScaleAttributes } from '@Types/factoryTypes';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { StageTypeUnion } from '@Types/tournamentTypes';
 
 type AutoSeedingParams = {
   sortDescending: boolean;
   stage: StageTypeUnion;
-  tournamentRecord: any;
-  policyDefinitions: any;
-  scaleAttributes: any;
+  tournamentRecord: Tournament;
+  policyDefinitions: PolicyDefinitions;
+  scaleAttributes: ScaleAttributes;
   scaleSortMethod: any;
-  drawDefinition: any;
+  drawDefinition: DrawDefinition;
   scaleName: string;
   drawSize: number;
   drawId: string;
-  event: any;
+  event: Event;
 };
 
 export function autoSeeding({

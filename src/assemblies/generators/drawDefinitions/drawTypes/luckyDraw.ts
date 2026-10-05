@@ -96,7 +96,9 @@ export function luckyRoundProfiles(drawSize) {
   const intDrawSize = ensureInt(drawSize);
   let participantsCount = intDrawSize % 2 ? intDrawSize + 1 : intDrawSize;
   const preFeedRound = !!(Math.ceil(participantsCount / 2) % 2);
-  const rounds: any[] = [{ participantsCount, preFeedRound }];
+  const rounds: { participantsCount: number; preFeedRound: boolean; feedRound?: boolean }[] = [
+    { participantsCount, preFeedRound },
+  ];
   while (participantsCount > 2) {
     const nextRound = Math.ceil(participantsCount / 2);
     const nextIsFinal = nextRound === 1;

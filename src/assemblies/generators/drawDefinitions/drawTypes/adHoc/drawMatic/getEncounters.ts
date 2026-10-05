@@ -2,7 +2,7 @@ import { getParticipantId } from '@Functions/global/extractors';
 import { pairingHash } from './generateCandidate';
 
 export function getEncounters({ matchUps }) {
-  const encounters: any = [];
+  const encounters: string[] = [];
 
   for (const matchUp of matchUps) {
     const participantIds = matchUp.sides.map(getParticipantId);

@@ -4,9 +4,9 @@ import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { isObject } from '@Tools/objects';
 
 // constants and types
+import { EventTypeUnion, Participant } from '@Types/tournamentTypes';
 import { DYNAMIC, RATING } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
-import { EventTypeUnion } from '@Types/tournamentTypes';
 import { ScaleAttributes } from '@Types/factoryTypes';
 import { ELO } from '@Constants/ratingConstants';
 
@@ -69,7 +69,7 @@ type GetScaleValueArgs = {
   scaleAccessor?: string;
   scaleType?: string;
   scaleName: string;
-  participant: any;
+  participant: Participant | undefined;
 };
 
 function getScaleValue({ scaleType = RATING, scaleAccessor, participant, scaleName, eventType }: GetScaleValueArgs) {
