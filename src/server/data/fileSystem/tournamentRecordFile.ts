@@ -1,8 +1,8 @@
-import * as path from 'path';
+import { dirname, resolve } from 'path';
 import * as fs from 'fs-extra';
 
 export const STORAGE_DIR = './src/data/fileSystem/storage';
-const STORAGE_ROOT = path.resolve(STORAGE_DIR);
+const STORAGE_ROOT = resolve(STORAGE_DIR);
 
 /**
  * A tournament's record file, or `undefined` when the id would place it anywhere but directly inside the
@@ -13,8 +13,8 @@ const STORAGE_ROOT = path.resolve(STORAGE_DIR);
  */
 function recordFile(tournamentId: string, suffix: string): string | undefined {
   if (typeof tournamentId !== 'string' || !tournamentId) return undefined;
-  const file = path.resolve(STORAGE_ROOT, `${tournamentId}${suffix}`);
-  return path.dirname(file) === STORAGE_ROOT ? file : undefined;
+  const file = resolve(STORAGE_ROOT, `${tournamentId}${suffix}`);
+  return dirname(file) === STORAGE_ROOT ? file : undefined;
 }
 
 /** Records are written as CODES; `.tods.json` is the legacy suffix, still read so stored records load. */
