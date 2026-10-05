@@ -509,8 +509,11 @@ function applyPositionToMatchUp({
         structureId: inContextMatchUp?.structureId,
       })
     : undefined;
+  // a produced exit is awarded to the arriving side only when somebody ARRIVES: an empty position reaching it
+  // resolves nothing (CA 2026-09-20; Q3, 2026-10-04: census w1 9000477 `South|3|1`, awarded to an empty dp 7)
   const exitWinningSide =
     (isDoubleExitExit &&
+      participantArrivesAtExit &&
       getExitWinningSide({
         inContextDrawMatchUps: refreshedMatchUps(),
         drawPosition,
