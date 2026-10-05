@@ -14,6 +14,7 @@ import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 type ScheduleProfileGridArgs = {
   tournamentRecords: TournamentRecords;
@@ -33,7 +34,7 @@ type RoundProfile = {
 };
 
 function getSegmentMatchUpIds(
-  allMatchUps: any[],
+  allMatchUps: HydratedMatchUp[],
   structureId: string,
   roundNumber: number,
   drawId: string,
@@ -41,22 +42,22 @@ function getSegmentMatchUpIds(
   segmentNumber: number,
 ): string[] {
   const roundMatchUps = allMatchUps.filter(
-    (rm: any) => rm.structureId === structureId && rm.roundNumber === roundNumber && rm.drawId === drawId,
+    (rm) => rm.structureId === structureId && rm.roundNumber === roundNumber && rm.drawId === drawId,
   );
   const chunkSize = Math.ceil(roundMatchUps.length / segmentsCount);
   const sortedIds = roundMatchUps
-    .sort((a: any, b: any) => (a.roundPosition ?? 0) - (b.roundPosition ?? 0))
-    .map((rm: any) => rm.matchUpId);
+    .sort((a, b) => (a.roundPosition ?? 0) - (b.roundPosition ?? 0))
+    .map((rm) => rm.matchUpId);
   const segStart = (segmentNumber - 1) * chunkSize;
   return sortedIds.slice(segStart, segStart + chunkSize);
 }
 
 function findRoundMatchUps(
   roundProfile: RoundProfile,
-  allMatchUps: any[],
+  allMatchUps: HydratedMatchUp[],
   containedStructureIds: Record<string, string>,
   scheduleCompletedMatchUps?: boolean,
-): any[] {
+): HydratedMatchUp[] {
   const { structureId, roundNumber, drawId, roundSegment } = roundProfile;
   const effectiveStructureId = containedStructureIds[structureId] ?? structureId;
 
@@ -101,11 +102,11 @@ function collectVenuePlan(
   dateProfile: any,
   courtsByVenue: Map<string, string[]>,
   courtIdsFilter: Set<string> | null,
-  allMatchUps: any[],
+  allMatchUps: HydratedMatchUp[],
   containedStructureIds: Record<string, string>,
   scheduleCompletedMatchUps?: boolean,
-): { dateMatchUps: any[]; dateCourtIds: string[] } {
-  const dateMatchUps: any[] = [];
+): { dateMatchUps: HydratedMatchUp[]; dateCourtIds: string[] } {
+  const dateMatchUps: HydratedMatchUp[] = [];
   const dateCourtIds: string[] = [];
 
   for (const venueProfile of dateProfile.venues ?? []) {
@@ -202,7 +203,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     tournamentRecords,
   });
   const courtsByVenue = new Map<string, string[]>();
-  for (const court of (allCourts as any[]) ?? []) {
+  for (const court of allCourts ?? []) {
     const venueId = court.venueId;
     if (!courtsByVenue.has(venueId)) courtsByVenue.set(venueId, []);
     courtsByVenue.get(venueId)?.push(court.courtId);
@@ -245,7 +246,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     // BYE / completed filtering already happened in `findRoundMatchUps` above
     // when `scheduleCompletedMatchUps` was false (the default), so the
     // scheduler is fed the pre-filtered set.
-    const gridResult: any = proAutoSchedule({
+    const gridResult = proAutoSchedule({
       courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
       matchUpDailyLimits,
       minCourtGridRows,
