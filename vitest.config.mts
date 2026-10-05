@@ -10,6 +10,12 @@ import { configDefaults, defineConfig } from 'vitest/config';
 
 import { testFileAliases } from './vitest.aliases.mjs';
 
+// A `--shard=i/n` run holds a fraction of the suite, so its coverage is a fraction too: every file another
+// shard covers reads as untested, and the thresholds below would fail it. CI shards coverage 4 ways and runs
+// `vitest run --merge-reports --coverage` over the shards' blob reports; THAT run carries no `--shard`, so
+// the thresholds apply to the merged result, exactly as they did to one whole-suite run (verify.yml).
+const isShard = process.argv.some((arg) => arg.startsWith('--shard'));
+
 export default defineConfig({
   test: {
     testTimeout: 30000, // 30 seconds for slow tests
@@ -107,6 +113,9 @@ export default defineConfig({
           lines: 50,
         },
       },
+      // A shard drops them (see `isShard`). An override AFTER the literal, not a conditional around it:
+      // scripts/verify/coverage-headroom.mjs reads the global floors out of the `thresholds: {` text.
+      ...(isShard && { thresholds: undefined }),
     },
   },
   resolve: {

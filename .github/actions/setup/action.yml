@@ -1,0 +1,37 @@
+name: Set up Node, pnpm and dependencies
+description: >
+  The toolchain every verify.yml job needs after its checkout: Node at the matrix version, pnpm via
+  corepack, the pnpm store cache, and a frozen install. One definition, so the jobs verify.yml runs
+  in parallel cannot drift apart in how they provision.
+
+inputs:
+  node-version:
+    description: The Node version to set up (the job's matrix value).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    # pnpm via corepack (driven by `packageManager` in package.json). The
+    # repo's allowed-actions policy blocks third-party actions like
+    # pnpm/action-setup, so we avoid them and stay on actions/* only.
+    - run: corepack enable
+      shell: bash
+
+    - name: Resolve pnpm store path
+      run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+      shell: bash
+
+    - uses: actions/cache@v6
+      with:
+        path: ${{ env.PNPM_STORE_PATH }}
+        key: ${{ runner.os }}-node${{ inputs.node-version }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-node${{ inputs.node-version }}-pnpm-
+
+    - run: pnpm install --frozen-lockfile --ignore-scripts
+      shell: bash
