@@ -523,3 +523,21 @@ matchUpFormatGovernor.isValidMatchUpFormat({
 - See [matchUpFormat Codes](/docs/codes/matchup-format) for the complete format specification
 
 ---
+
+## aggregateDeciderSetNumber / finalSetGoverns
+
+A format decided by **aggregate** points over **exactly** N sets settles a level total with a sudden-death tiebreak (`SET3XA-S:T10-F:TB1`). That tiebreak is **not one of the N sets**: it is set N + 1, played only when the totals are level. So the final-set format (`-F:`) of such a format governs set N + 1, never set N. Every other format keeps its own reading of which set is the final one.
+
+```js
+const parsed = matchUpFormatGovernor.parse('SET3XA-S:T10-F:TB1');
+
+matchUpFormatGovernor.aggregateDeciderSetNumber(parsed); // 4
+matchUpFormatGovernor.aggregateDeciderSetNumber(matchUpFormatGovernor.parse('SET3X-S:T10')); // undefined (not aggregate)
+
+// whether -F: governs a set: the decider's number for an aggregate format, otherwise the caller's own reading
+matchUpFormatGovernor.finalSetGoverns(parsed, 3, true); // false: bolt 3 is a timed bolt
+matchUpFormatGovernor.finalSetGoverns(parsed, 4, false); // true: set 4 is the sudden death
+matchUpFormatGovernor.finalSetGoverns(matchUpFormatGovernor.parse('SET3-S:6/TB7-F:TB10'), 3, true); // true
+```
+
+Use these wherever a set's format is chosen by its number, so the rule lives in one place.

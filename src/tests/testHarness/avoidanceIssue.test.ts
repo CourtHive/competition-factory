@@ -7,7 +7,7 @@ import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 
-import tournamentRecord from './avoidanceIssue.tods.json';
+import tournamentRecord from './avoidanceIssue.codes.json';
 
 it.each([1, 2, 3, 4, 5])('Swap Options in candiate generation works as expected', () => {
   tournamentEngine.setState(tournamentRecord);

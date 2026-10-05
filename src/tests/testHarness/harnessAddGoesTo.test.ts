@@ -7,7 +7,7 @@ import { expect, it } from 'vitest';
 // constants
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
-import tournamentRecord from './goesToTournament.tods.json';
+import tournamentRecord from './goesToTournament.codes.json';
 competitionEngine.setState(tournamentRecord);
 const showGlobalLog = false;
 

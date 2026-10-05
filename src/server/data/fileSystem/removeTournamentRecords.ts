@@ -1,3 +1,4 @@
+import { codesRecordFile, legacyRecordFile } from './tournamentRecordFile';
 import * as fs from 'fs-extra';
 
 // constants
@@ -8,11 +9,12 @@ export async function removeTournamentRecords(params?: any) {
   let removed = 0;
 
   for (const tournamentId of tournamentIds) {
-    const tournamentFile = `./src/data/fileSystem/storage/${tournamentId}.tods.json`;
-    if ((await fs.existsSync(tournamentFile)) === true) {
-      fs.removeSync(tournamentFile);
-      removed += 1;
-    }
+    // a record saved before the rename may still sit under the legacy suffix; remove whichever exist
+    const files = [codesRecordFile(tournamentId), legacyRecordFile(tournamentId)].filter(
+      (file): file is string => !!file && fs.existsSync(file),
+    );
+    files.forEach((file) => fs.removeSync(file));
+    if (files.length) removed += 1;
   }
 
   return { ...SUCCESS, removed };

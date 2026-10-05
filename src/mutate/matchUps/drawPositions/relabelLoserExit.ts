@@ -7,8 +7,8 @@ import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
+import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { BYE, COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { MappedMatchUps, MatchUpsMap } from '@Types/factoryTypes';
 import { LOSER } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -226,7 +226,7 @@ export function relabelWithoutDirection(params: {
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   matchUpId: string;
   event?: Event;

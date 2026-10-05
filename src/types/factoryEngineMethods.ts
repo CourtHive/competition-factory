@@ -76,6 +76,7 @@ export type FactoryEngineMethod =
   | 'addVenueOtherId'
   | 'addVoluntaryConsolationStructure'
   | 'adHocPositionSwap'
+  | 'aggregateDeciderSetNumber'
   | 'aggregateTieFormats'
   | 'allCompetitionMatchUps'
   | 'allDrawMatchUps'
@@ -209,6 +210,7 @@ export type FactoryEngineMethod =
   | 'filterCapacityCurve'
   | 'filterMatchUps'
   | 'filterParticipants'
+  | 'finalSetGoverns'
   | 'findBlocksContainingTime'
   | 'findDrawDefinition'
   | 'findExtension'
@@ -832,6 +834,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'addVenueOtherId',
   'addVoluntaryConsolationStructure',
   'adHocPositionSwap',
+  'aggregateDeciderSetNumber',
   'aggregateTieFormats',
   'allCompetitionMatchUps',
   'allDrawMatchUps',
@@ -965,6 +968,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'filterCapacityCurve',
   'filterMatchUps',
   'filterParticipants',
+  'finalSetGoverns',
   'findBlocksContainingTime',
   'findDrawDefinition',
   'findExtension',

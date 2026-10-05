@@ -22,7 +22,7 @@ test('json arrays to xml', () => {
 });
 
 test('generation of statcrew from dual', () => {
-  const tournamentRecordJSON = fs.readFileSync('./src/tests/generators/dual.tods.json', 'utf-8');
+  const tournamentRecordJSON = fs.readFileSync('./src/tests/generators/dual.codes.json', 'utf-8');
   const tournamentRecord = JSON.parse(tournamentRecordJSON);
 
   const result: any = generateStatCrew({ tournamentRecord });

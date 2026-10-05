@@ -1,6 +1,8 @@
 import { MATRIX_EXTENSION_DRAW_TYPES, isUnpopulatedLuckyDraw } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { deepCorrectionScenario, compareCorrection } from '@Tests/testHarness/exitPropagation/correctionDivergence';
+import { renderFieldDivergence, FIELD_NAMES } from '@Tests/testHarness/exitPropagation/fieldProjections';
 import type { DivergenceConfig } from '@Tests/testHarness/exitPropagation/correctionDivergence';
+import type { FieldName } from '@Tests/testHarness/exitPropagation/fieldProjections';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
@@ -86,6 +88,17 @@ import {
  * BYE-advanced seat keeps its advancement through ANY clear, and `assignDrawPositionBye` completes
  * the loser feed on a seat that is already advanced and alone — the step whose absence had broken
  * 4 of `shuffleCompletion`'s byeLimit cases the first time the rule was tried. 3 → 0.
+ *
+ * ## The fields the signature cannot see — G14, 2026-10-05
+ *
+ * The signature is status, winner, positions and provenance. Each cell now also compares entries,
+ * seedAssignments, extensions and lineUp (`fieldProjections`), counted apart from the buckets above
+ * as `fieldDivergent`, with a ratchet of its own. A cell can be `identical` and field-divergent.
+ *
+ * `exercised` is the control on that zero: how many cells populated each field at all. These draws
+ * are unseeded and none is TEAM, so `seedAssignments` and `lineUp` are populated by NO cell and their
+ * zero says nothing; `fieldProjections.test.ts` plants a divergence in each field to prove the
+ * projection and this wiring report one.
  */
 
 const DRAW_TYPES = [
@@ -115,7 +128,7 @@ const POLICIES: { label: string; doubleExitPropagateBye?: boolean }[] = [
 const enabled = process.env.DEEP_CORRECTIONS === '1';
 
 // 960 baseline cells + 672 extension cells - 32 unpopulated lucky draws
-const BASELINE = { cells: 1600, severe: 0, incomparable: 4, provenanceOnly: 0 };
+const BASELINE = { cells: 1600, severe: 0, incomparable: 4, provenanceOnly: 0, fieldDivergent: 0 };
 
 function alternative(outcome: any): any {
   switch (outcome?.matchUpStatus) {
@@ -188,7 +201,9 @@ function composeCells(
 }
 
 /** Which bucket one cell falls in, and the divergence text if it is severe. */
-function classify(config: DivergenceConfig, cellExit: any): { bucket: Bucket; detail: string } | undefined {
+type Classified = { bucket: Bucket; detail: string; fields: string[]; exercisedFields: Record<FieldName, boolean> };
+
+function classify(config: DivergenceConfig, cellExit: any): Classified | undefined {
   const scenario = deepCorrectionScenario({ config, cellExit, alternative });
   if (!scenario) return undefined;
 
@@ -197,26 +212,32 @@ function classify(config: DivergenceConfig, cellExit: any): { bucket: Bucket; de
   // 600-second timeout (#5049 and #5050 both timed out at 608 s with the counts already printed).
   const {
     divergences,
+    fieldDivergences,
+    exercisedFields,
     directRefusals: direct,
     correctedRefusals: corrected,
   } = compareCorrection({ config, direct: scenario.direct, corrected: scenario.corrected });
+  const fields = fieldDivergences.map(renderFieldDivergence);
+  const bucket = (name: Bucket, detail: string): Classified => ({ bucket: name, detail, fields, exercisedFields });
   const { structureName, roundNumber, roundPosition } = scenario.mistake;
   const mistake = `${structureName}|${roundNumber}|${roundPosition}`;
   const rendered = divergences.map((d) => `${d.coordinate} [${d.direct}] vs [${d.corrected}]`).join('; ');
   const detail = `at ${mistake}: ${rendered}`;
 
-  if (direct.includes(mistake)) return { bucket: 'incomparable', detail };
-  if (direct !== corrected) return { bucket: 'refused', detail };
+  if (direct.includes(mistake)) return bucket('incomparable', detail);
+  if (direct !== corrected) return bucket('refused', detail);
   const severe = divergences.some((d) => withoutProvenance(d.direct) !== withoutProvenance(d.corrected));
-  if (severe) return { bucket: 'severe', detail };
-  if (divergences.length) return { bucket: 'provenanceOnly', detail };
-  return { bucket: 'identical', detail };
+  if (severe) return bucket('severe', detail);
+  if (divergences.length) return bucket('provenanceOnly', detail);
+  return bucket('identical', detail);
 }
 
 it.skipIf(!enabled)(
   'a correction taken deep in a draw leaves the same draw as the direct entry',
   () => {
     const counts: Record<Bucket, number> = { identical: 0, provenanceOnly: 0, incomparable: 0, refused: 0, severe: 0 };
+    const exercisedCells = Object.fromEntries(FIELD_NAMES.map((field) => [field, 0])) as Record<FieldName, number>;
+    const fieldDivergent: string[] = [];
     const severe: string[] = [];
     let played = 0;
 
@@ -229,10 +250,17 @@ it.skipIf(!enabled)(
       played += 1;
       counts[result.bucket] += 1;
       if (result.bucket === 'severe') severe.push(`${label} ${result.detail}`);
+      // incomparable cells compare draws that did not run the same experiment; their fields are noise
+      if (result.fields.length && result.bucket !== 'incomparable')
+        fieldDivergent.push(`${label}: ${result.fields.join('; ')}`);
+      for (const field of FIELD_NAMES) if (result.exercisedFields[field]) exercisedCells[field] += 1;
     }
 
     const report = severe.join('\n');
-    process.stdout.write(`\ndeep corrections: ${JSON.stringify(counts)}\n${report}\n`);
+    const fieldReport = fieldDivergent.join('\n');
+    process.stdout.write(
+      `\ndeep corrections: ${JSON.stringify(counts)} fieldDivergent=${fieldDivergent.length} exercised=${JSON.stringify(exercisedCells)}\n${report}\n${fieldReport}\n`,
+    );
 
     // CONTROL: the sweep looked at what it says it looked at
     expect(played).toEqual(BASELINE.cells);
@@ -242,6 +270,14 @@ it.skipIf(!enabled)(
     expect(counts.incomparable, 'incomparable cells').toBeLessThanOrEqual(BASELINE.incomparable);
     expect(counts.provenanceOnly, 'provenance-only cells').toBeLessThanOrEqual(BASELINE.provenanceOnly);
     expect(counts.severe, `severe cells:\n${report}`).toBeLessThanOrEqual(BASELINE.severe);
+    expect(fieldDivergent.length, `field-divergent cells:\n${fieldReport}`).toBeLessThanOrEqual(
+      BASELINE.fieldDivergent,
+    );
+
+    // CONTROL on the field ratchet: entries and extensions are populated on every cell, so their zero
+    // is a measurement. seedAssignments and lineUp are populated on none — see the docblock.
+    expect(exercisedCells.entries).toEqual(played);
+    expect(exercisedCells.extensions).toEqual(played);
   },
   // the sweep takes ~4 minutes locally and ran to 608 s on the CI runner before the double run above
   // was removed; the ceiling is a guard against a hang, not a budget

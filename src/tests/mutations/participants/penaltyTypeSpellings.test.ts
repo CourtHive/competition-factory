@@ -47,3 +47,51 @@ it('a penalty added or modified with a misspelled type is stored with the correc
   stored = tournamentEngine.getTournamentPenalties().penalties.find((p: any) => p.penaltyId === penaltyId);
   expect(stored.penaltyType).toEqual('FAILURE_TO_SIGN_IN');
 });
+
+/**
+ * Two DISPLAY LABELS of `penaltyConstants` were misspelled too, and callers store a label as `penaltyType` (CA,
+ * 2026-10-05: fix them as suggested, the old spellings accepted until 8.0.0).
+ */
+it('the two misspelled penalty labels are corrected, and the old spellings are rewritten on write', () => {
+  expect(penaltyConstants.UNSPORTSMANLIKE_CONDUCT).toEqual('Unsportsmanlike Conduct');
+  expect(penaltyConstants.PUNCTUALITY).toEqual('Punctuality');
+  expect(normalizePenaltyType('Unsportmanlike Conduct')).toEqual('Unsportsmanlike Conduct');
+  expect(normalizePenaltyType('Puncuality')).toEqual('Punctuality');
+
+  mocksEngine.generateTournamentRecord({ participantsProfile: { participantsCount: 2 }, setState: true });
+  const participantIds = tournamentEngine.getParticipants().participants.map((p: any) => p.participantId);
+
+  let result: any = tournamentEngine.addPenalty({
+    penaltyType: 'Unsportmanlike Conduct' as any,
+    participantIds: [participantIds[0]],
+  });
+  expect(result.success).toEqual(true);
+  const { penaltyId } = result.penaltyId ? result : { penaltyId: result.penalty?.penaltyId };
+  let stored = tournamentEngine.getTournamentPenalties().penalties.find((p: any) => p.penaltyId === penaltyId);
+  expect(stored.penaltyType).toEqual(penaltyConstants.UNSPORTSMANLIKE_CONDUCT);
+
+  result = tournamentEngine.modifyPenalty({ penaltyId, modifications: { penaltyType: 'Puncuality' } });
+  expect(result.success).toEqual(true);
+  stored = tournamentEngine.getTournamentPenalties().penalties.find((p: any) => p.penaltyId === penaltyId);
+  expect(stored.penaltyType).toEqual(penaltyConstants.PUNCTUALITY);
+});
+
+/**
+ * `PenaltyTypeEnum` is the canonical penalty vocabulary (CA, 2026-10-05). The legacy TMX vocabulary carried in
+ * `@courthive/i18n` named four code-of-conduct offences it lacked; they are codes now, so every consumer label can
+ * be keyed by an enum code.
+ */
+it('the code-of-conduct offences of the legacy vocabulary are penalty types', () => {
+  for (const code of ['TIME_VIOLATION', 'AUDIBLE_OBSCENITY', 'VISIBLE_OBSCENITY', 'FAILURE_TO_SIGN_OUT']) {
+    expect(PenaltyTypeEnum[code]).toEqual(code);
+    expect(penaltyConstants[code]).toBeDefined();
+  }
+
+  mocksEngine.generateTournamentRecord({ participantsProfile: { participantsCount: 2 }, setState: true });
+  const participantIds = tournamentEngine.getParticipants().participants.map((p: any) => p.participantId);
+  const result: any = tournamentEngine.addPenalty({
+    penaltyType: PenaltyTypeEnum.TIME_VIOLATION,
+    participantIds: [participantIds[0]],
+  });
+  expect(result.success).toEqual(true);
+});

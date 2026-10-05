@@ -137,6 +137,40 @@ export function getSideDrawPosition({
     ?.drawPosition;
 }
 
+/**
+ * The side a matchUp's `drawPosition` is on, or `undefined` when the matchUp does not hold it.
+ *
+ * The inverse of `getSideDrawPosition`, and it replaces the inverse idiom: `drawPositions.indexOf(dp) + 1`.
+ * That is only sound while BOTH positions are present — a lone position is stored at index 0 whatever its
+ * side, so the idiom answers 1 for a position that belongs on side 2. With both present the ascending
+ * order binds side to position and the answer is the index (see `getOrderedDrawPositions`); with one,
+ * hydrated `sides` carry the binding, and failing that `getDrawPositionSides` resolves it through the
+ * round profile. Never by the index of a lone position.
+ */
+export function getDrawPositionSideNumber({
+  drawDefinition,
+  drawPosition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition?: DrawDefinition;
+  drawPosition?: number;
+  structureId?: string;
+  matchUp?: any;
+}): number | undefined {
+  if (!drawPosition) return undefined;
+  const drawPositions: (number | undefined)[] = matchUp?.drawPositions ?? [];
+  if (!drawPositions.includes(drawPosition)) return undefined;
+  if (drawPositions.filter(Boolean).length === 2) return drawPositions.indexOf(drawPosition) + 1;
+
+  const side = matchUp?.sides?.find((candidate: any) => candidate?.drawPosition === drawPosition);
+  if (side?.sideNumber) return side.sideNumber;
+
+  return getDrawPositionSides({ drawDefinition, structureId, matchUp })?.find(
+    (side) => side.drawPosition === drawPosition,
+  )?.sideNumber;
+}
+
 /** Depth first: a round robin's matchUps belong to the GROUP, not its parent. */
 function findStructure(structures: any[], structureId: string): any {
   for (const structure of structures ?? []) {

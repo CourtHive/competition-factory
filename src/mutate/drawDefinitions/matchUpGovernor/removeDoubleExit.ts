@@ -21,7 +21,8 @@ import {
   setSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
-// constants
+// constants and types
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
@@ -732,7 +733,7 @@ function getUnwoundState({
   withdrawnSourceIds,
   drawDefinition,
   targetMatchUp,
-}): { matchUpStatus: string; winningSide?: number; provenance?: any } {
+}): { matchUpStatus: MatchUpStatusUnion; winningSide?: number; provenance?: any } {
   // A BYE STAYS A BYE — the status is never re-derived — but the codes are. The cascade records a
   // produced exit on a BYE matchUp's side, and an unwind that left the status alone AND the codes
   // alone would keep an exit that no longer exists. Retaining by source identity is what keeps the

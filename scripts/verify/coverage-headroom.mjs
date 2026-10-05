@@ -28,6 +28,12 @@
  * Modes:
  *   --update-baseline   overwrite the baseline with current headroom
  *   --budget=N          items of margin a change may spend (default 25)
+ *   --report            CI mode (CA, 2026-10-05): print the headroom (and write it to the GitHub job
+ *                       summary when $GITHUB_STEP_SUMMARY is set) WITHOUT comparing to the baseline —
+ *                       a PR into dev has no prior run on dev to compare against, and the committed
+ *                       baseline goes stale between refreshes
+ *   --min=N             fail when ANY metric's headroom is below N items: an absolute margin floor that
+ *                       fires well before the thresholds themselves do (they fail only at 0)
  *
  * Reads `coverage/coverage-summary.json`, so it must run after
  * `verify:coverage` (whose reporters already include `json-summary`).
@@ -48,6 +54,9 @@ const args = process.argv.slice(2);
 const updateBaseline = args.includes('--update-baseline');
 const budgetArg = args.find((a) => a.startsWith('--budget='));
 const BUDGET = budgetArg ? Number(budgetArg.split('=')[1]) : 25;
+const reportOnly = args.includes('--report');
+const minArg = args.find((a) => a.startsWith('--min='));
+const MIN = minArg ? Number(minArg.split('=')[1]) : undefined;
 
 function log(msg) {
   process.stdout.write(`[verify:coverage-headroom] ${msg}\n`);
@@ -115,6 +124,42 @@ for (const metric of METRICS) {
       `${c.pct.toFixed(2).padStart(6)}%  floor ${String(c.floor).padStart(2)}  headroom ${String(c.headroom).padStart(5)}`,
   );
 }
+
+// The job summary: the margin on every PR, where a reviewer sees it without opening the log.
+if (process.env.GITHUB_STEP_SUMMARY) {
+  const rows = METRICS.map((metric) => {
+    const c = current[metric];
+    const low = MIN !== undefined && c.headroom < MIN ? ' ⚠️' : '';
+    return `| ${metric} | ${c.covered}/${c.count} | ${c.pct.toFixed(2)}% | ${c.floor}% | **${c.headroom}**${low} |`;
+  });
+  const minLine = MIN === undefined ? '' : `\nA metric below **${MIN}** items of headroom fails this check.\n`;
+  writeFileSync(
+    process.env.GITHUB_STEP_SUMMARY,
+    [
+      '### Coverage headroom (items above the floor)',
+      '',
+      '| metric | covered | coverage | floor | headroom |',
+      '|---|---|---|---|---|',
+      ...rows,
+      minLine,
+    ].join('\n') + '\n',
+    { flag: 'a' },
+  );
+}
+
+if (MIN !== undefined) {
+  const thin = METRICS.filter((metric) => current[metric].headroom < MIN);
+  if (thin.length) {
+    fail(
+      `headroom below the ${MIN}-item minimum: ` +
+        thin.map((metric) => `${metric} ${current[metric].headroom}`).join(', ') +
+        ` — add tests for the uncovered code before the thresholds themselves fail.`,
+    );
+  }
+  log(`OK — every metric has at least ${MIN} items of headroom`);
+}
+
+if (reportOnly) process.exit(0);
 
 if (updateBaseline) {
   mkdirSync(dirname(BASELINE), { recursive: true });

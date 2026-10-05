@@ -1,4 +1,5 @@
 import { clearOutcome, getDrawDefinition, getDrawMatchUps } from './transitions';
+import { projectFields, FIELD_NAMES } from './fieldProjections';
 
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -68,6 +69,10 @@ const isCoord = (matchUp: any, coord: Coord): boolean =>
  * the result was) and the `positionAssignments` (who holds which back-draw place). Gap 1 surfaces
  * in the assignments; Gap 3 surfaces only in the matchUps, so a projection covering one of the two
  * would silently under-report.
+ *
+ * And, since G14 (2026-10-05), every field `fieldProjections` covers — entries, seedAssignments,
+ * extensions and lineUp — under `F:<field>:<key>`, so a route that leaves an entry, a seed or an
+ * extension behind diverges like any other.
  */
 export function projectByCoordinate(drawId: string): Record<string, any> {
   const projection: Record<string, any> = {};
@@ -97,6 +102,10 @@ export function projectByCoordinate(drawId: string): Record<string, any> {
     }
   };
   walk(getDrawDefinition(drawId)?.structures ?? []);
+
+  const fields = projectFields(drawId);
+  for (const field of FIELD_NAMES)
+    for (const [key, value] of Object.entries(fields[field])) projection[`F:${field}:${key}`] = value;
 
   return projection;
 }
@@ -275,9 +284,12 @@ export function compareRoutes({
   drawSize,
   drawId,
   index,
+  plant,
   seed,
 }: {
   participantsCount?: number;
+  /** FALSIFICATION ONLY: a write applied to one route just before it is projected */
+  plant?: { route: 'A' | 'B'; apply: (drawId: string) => void };
   playOrder: Coord[];
   drawType: string;
   drawSize: number;
@@ -298,6 +310,7 @@ export function compareRoutes({
   const flipped = targetA.winningSide === 1 ? 2 : 1;
   if (applyOutcome(targetA.matchUpId, drawId, { winningSide: flipped }, true)?.error)
     return { differences: null, skipped: 'A:refused' };
+  if (plant?.route === 'A') plant.apply(drawId);
   const projectionA = projectByCoordinate(drawId);
 
   // ---- ROUTE B: clear everything entered after the target, flip, re-enter ----
@@ -343,5 +356,6 @@ export function compareRoutes({
     applyOutcome(matchUp.matchUpId, drawId, { winningSide });
   }
 
+  if (plant?.route === 'B') plant.apply(drawId);
   return { differences: diffProjections(projectionA, projectByCoordinate(drawId)) };
 }

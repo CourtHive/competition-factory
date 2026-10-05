@@ -827,9 +827,18 @@ function conditionallyAdvanceDrawPosition(params) {
   const drawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean) ?? [];
 
   const hasDrawPosition = drawPositions.length === 1;
+  /**
+   * A PRODUCED EXIT IS AWARDED ONLY TO AN OPPONENT IN PLACE — CA 2026-09-20, and 2026-10-03 (Q3): it lands
+   * pending until the opponent arrives. The lone drawPosition here can be a seat nobody occupies yet: one a
+   * BYE advanced forward, still waiting for the loser fed into it from another structure. Census w1 9000477
+   * (COMPASS 32/29): `South|1|3`'s double walkover produced into `South|2|2`, whose dp 7 had been BYE-advanced
+   * from `South|1|4` and held no participant; the walkover was awarded to dp 7 and advanced it on, and when
+   * the seat's real occupant arrived later `South|3|1` held two positions from one feeder.
+   */
+  const occupiedDrawPosition = hasDrawPosition && isOccupiedSeat({ structure, drawPosition: drawPositions[0] });
   const walkoverWinningSide =
     params.walkoverWinningSide ||
-    (hasDrawPosition &&
+    (occupiedDrawPosition &&
       getExitWinningSide({
         drawPosition: drawPositions[0],
         matchUpId: targetMatchUp.matchUpId,
@@ -2184,10 +2193,23 @@ function advanceByeToLoserMatchUp(params) {
  */
 export function settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinition, event }: any) {
   const stack = 'settleHeldExits';
-  // where a double exit produces a BYE there is no exit set down to wait, and nothing to settle
-  if (!drawDefinition || propagatesByeOnDoubleExit(appliedPolicies)) return { ...SUCCESS };
-
+  if (!drawDefinition) return { ...SUCCESS };
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
+
+  // where a double exit produces a BYE there is no exit set down to wait, and nothing to send on
+  if (!propagatesByeOnDoubleExit(appliedPolicies)) {
+    const sent = sendHeldExitsOn({ tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, event, stack });
+    if (sent.error) return sent;
+  }
+
+  // under either policy, an exit label left beside a BYE with nobody in it is the BYE it holds
+  const relabelled = settleHoldersToBye({ drawDefinition, matchUpsMap, params: { appliedPolicies } });
+  if (relabelled?.error) return decorateResult({ result: relabelled, stack });
+
+  return { ...SUCCESS };
+}
+
+function sendHeldExitsOn({ tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, event, stack }: any) {
   const carried = new Set<string>();
   // the view the last pass found nothing to carry in — nothing has been written since it was taken
   let settledDrawMatchUps: any[] | undefined;
@@ -2362,6 +2384,60 @@ function getByeCrossing({ inContextDrawMatchUps, drawDefinition, matchUp }) {
  * built and measured on 2026-09-29: it closed four more cells and stopped twenty others from
  * playing out, because an exit on a fed seat does not mean nobody can still arrive there.
  */
+/**
+ * THE HOLDER IS A BYE once its exit is sent on — CA, 2026-09-29: *"a propagated exit encountering a BYE should
+ * be advanced … the BYE remains a BYE"*; 2026-10-04 (Q3, a second path): *"BYE holder, exit sent on"*.
+ *
+ * The exit can come to rest beside a seat that becomes a BYE only later: a produced exit lands PENDING opposite
+ * a reserved seat nobody has reached, and the seat is then given a BYE. `carryExitOnward` sends the exit on, as
+ * it always did; the holder kept the exit's label beside a BYE with nobody in it (matrix cell 337,
+ * FEED_IN_CHAMPIONSHIP_TO_SF 16, `Consolation|4|2`). It is written as the BYE it is, with no winner, and keeps
+ * the provenance that records where the exit came from — the write blanks it, so it is restored after.
+ */
+/** a seat holding a participant or a BYE; a BYE keeps its own handling (`targetHoldsBye`), only an EMPTY reserved seat is held back */
+function isOccupiedSeat({ structure, drawPosition }): boolean {
+  const assignment = getPositionAssignments({ structure })?.positionAssignments?.find(
+    (candidate: any) => candidate.drawPosition === drawPosition,
+  );
+  return !!(assignment?.participantId || assignment?.bye);
+}
+
+function settleHoldersToBye({ drawDefinition, matchUpsMap, params }) {
+  const holders = (getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? []).filter(
+    (matchUp: any) =>
+      isExit(matchUp.matchUpStatus) &&
+      !matchUp.winningSide &&
+      !matchUp.collectionId &&
+      !matchUp.sides?.some((side: any) => side?.participantId) &&
+      matchUpHoldsBye({ drawDefinition, matchUp }),
+  );
+  for (const { matchUpId } of holders) {
+    const result = settleHolderToBye({ holderMatchUpId: matchUpId, drawDefinition, matchUpsMap, params });
+    if (result?.error) return result;
+  }
+  return undefined;
+}
+
+function settleHolderToBye({ holderMatchUpId, drawDefinition, matchUpsMap, params }) {
+  const holder = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === holderMatchUpId);
+  if (!holder || !isAnyExit(holder.matchUpStatus)) return undefined;
+  const provenance = getSideExitProvenance({ matchUp: holder });
+  const result = modifyMatchUpScore({
+    matchUpStatusCodes: retainPolicyCodes(holder),
+    appliedPolicies: params.appliedPolicies,
+    matchUpId: holder.matchUpId,
+    context: 'settleHeldExits',
+    removeWinningSide: true,
+    matchUpStatus: BYE,
+    removeScore: true,
+    matchUp: holder,
+    drawDefinition,
+  });
+  if (result.error) return result;
+  if (provenance) mergeSideExitProvenance({ matchUp: holder, provenance });
+  return undefined;
+}
+
 function getHeldExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp }) {
   if (matchUp.collectionId || matchUp.winningSide || !matchUp.winnerMatchUpId) return undefined;
   if (matchUp.sides?.some((side) => side.participantId)) return undefined;

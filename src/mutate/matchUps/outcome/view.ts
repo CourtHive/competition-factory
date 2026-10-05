@@ -29,12 +29,19 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import type { DrawDefinition, Event, MatchUp, PositionAssignment, Structure } from '@Types/tournamentTypes';
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
+import type {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  PositionAssignment,
+  Structure,
+} from '@Types/tournamentTypes';
 
 /**
  * The outcome pipeline, v2: the view.
@@ -74,15 +81,15 @@ function exitAwardable(
  * before it is re-entered (a re-scored double exit makes a single exit, not a convergence), so it is
  * not something a new exit converges with.
  */
-function carriedStatuses(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): string[] {
+function carriedStatuses(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): MatchUpStatusUnion[] {
   return Object.values(getSideExitProvenance({ matchUp }) ?? {})
     .filter((entry) => entry?.sourceMatchUpId !== sourceMatchUpId)
     .map((entry) => carriedExitStatus(entry))
-    .filter((status): status is string => !!status);
+    .filter((status): status is MatchUpStatusUnion => !!status);
 }
 
 /** an exit standing on a matchUp, other than one this matchUp produced itself */
-function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): string[] {
+function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): MatchUpStatusUnion[] {
   const carried = carriedStatuses(matchUp, sourceMatchUpId);
   if (carried.length) return carried;
   // the status is this matchUp's own product when an exit entry came from it: judged on EXIT entries
@@ -91,7 +98,7 @@ function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): str
   const own = Object.values(getSideExitProvenance({ matchUp }) ?? {}).some(
     (entry) => entry?.sourceMatchUpId === sourceMatchUpId && !!carriedExitStatus(entry),
   );
-  return isExit(matchUp?.matchUpStatus) && !own ? [matchUp?.matchUpStatus as string] : [];
+  return isExit(matchUp?.matchUpStatus) && !own ? [matchUp?.matchUpStatus as MatchUpStatusUnion] : [];
 }
 
 function carriesExit(matchUp?: HydratedMatchUp): boolean {

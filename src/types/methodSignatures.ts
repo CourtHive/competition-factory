@@ -61,6 +61,7 @@ import type { removeEventMatchUpFormatTiming } from '@Mutate/extensions/events/r
 import type { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
 import type { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import type { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import type { aggregateDeciderSetNumber, finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import type { setPositionAssignments } from '@Mutate/drawDefinitions/positionGovernor/setPositionAssignments';
 import type { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUps/getMatchUpsToSchedule';
 import type { toggleParticipantCheckInState } from '@Mutate/timeItems/matchUps/toggleParticipantCheckInState';
@@ -756,6 +757,7 @@ export interface MethodSignatures {
   addVenueOtherId: EngineMethod<typeof addVenueOtherId>;
   addVoluntaryConsolationStructure: EngineMethod<typeof addVoluntaryConsolationStructure>;
   adHocPositionSwap: EngineMethod<typeof adHocPositionSwap>;
+  aggregateDeciderSetNumber: EngineMethod<typeof aggregateDeciderSetNumber>;
   aggregateTieFormats: EngineMethod<typeof aggregateTieFormats>;
   allCompetitionMatchUps: EngineMethod<typeof allCompetitionMatchUps>;
   allDrawMatchUps: EngineMethod<typeof allDrawMatchUps>;
@@ -865,6 +867,7 @@ export interface MethodSignatures {
   exportMatchUpJSON: EngineMethod<typeof exportMatchUpJSON>;
   filterMatchUps: EngineMethod<typeof filterMatchUps>;
   filterParticipants: EngineMethod<typeof filterParticipants>;
+  finalSetGoverns: EngineMethod<typeof finalSetGoverns>;
   findDrawDefinition: EngineMethod<typeof publicFindDrawDefinition>;
   findExtension: EngineMethod<typeof findExtension>;
   findMatchUp: EngineMethod<typeof publicFindMatchUp>;

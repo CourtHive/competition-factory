@@ -9,7 +9,7 @@ import { POLICY_ROUND_ROBIN_TALLY_JTT } from '@Fixtures/policies/POLICY_ROUND_RO
 import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_TOC';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 
-import tournamentRecord from './dominantDuo.tods.json';
+import tournamentRecord from './dominantDuo.codes.json';
 
 it('supports multiple policy configurations', () => {
   let result = tournamentEngine.setState(tournamentRecord);

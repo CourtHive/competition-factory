@@ -93,7 +93,7 @@ their scenarios are simply not produced.
 pnpm corpus:fixtures          # .corpus-out/fixtures/fixtures.jsonl, one scenario per fixture
 ```
 
-`src/tests/testHarness/corpus/fixtureSources.ts` turns each of the sixteen `*.tods.json` records
+`src/tests/testHarness/corpus/fixtureSources.ts` turns each of the sixteen `*.codes.json` records
 under `src/tests/testHarness/` into a scenario whose initial state is the record itself, with one
 authored probe: score the first playable matchUp, then clear it. When the clear restores the initial
 hash the scenario records `DO_UNDO_IDENTITY`. These are records real tournaments produced, with

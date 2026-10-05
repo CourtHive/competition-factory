@@ -21,12 +21,6 @@
       "module": "braces",
       "tree": "documentation",
       "reason": "No patched release exists (<= 3.0.3, first_patched_version null, checked 2026-10-03). Docs site build tooling only (Docusaurus); the site is static and never runs this at request time. Delete when a patched braces ships."
-    },
-    {
-      "ghsa": "GHSA-ch52-4w7c-c8xp",
-      "module": "http-cache-semantics",
-      "tree": "documentation",
-      "reason": "No patched release exists (<= 4.2.0, first_patched_version null, checked 2026-10-03). Reached only via @docusaurus/core -> update-notifier -> latest-version -> got -> cacheable-request, a version check at docs build time; the published site is static and serves no cached responses. Delete when a patched release ships."
     }
   ]
 }

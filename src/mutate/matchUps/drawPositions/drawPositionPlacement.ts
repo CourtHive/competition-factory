@@ -28,6 +28,7 @@ import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGover
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
@@ -36,7 +37,6 @@ import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpS
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
-import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -499,11 +499,21 @@ function applyPositionToMatchUp({
   // re-sorted, so the winning side is the side the advancing participant now occupies
   // in updatedDrawPositions — NOT the pre-sort winningSide (which, after the sort, can
   // point at the exiting/loser side). Mirrors resolvePropagatedExitOnAdvance (BYE path).
-  // `indexOf` as a side number — valid only because drawPositions are stored ascending.
-  // See the canonical statement in `getOrderedDrawPositions`.
-  const advancedExitWinningSide = participantArrivesAtExit ? updatedDrawPositions.indexOf(drawPosition) + 1 : undefined;
+  // The side the arrival now occupies — read structurally, because a lone position is stored at index 0
+  // whatever its side (`getDrawPositionSideNumber`).
+  const advancedExitWinningSide = participantArrivesAtExit
+    ? getDrawPositionSideNumber({
+        matchUp: { ...matchUp, drawPositions: updatedDrawPositions },
+        drawDefinition,
+        drawPosition,
+        structureId: inContextMatchUp?.structureId,
+      })
+    : undefined;
+  // a produced exit is awarded to the arriving side only when somebody ARRIVES: an empty position reaching it
+  // resolves nothing (CA 2026-09-20; Q3, 2026-10-04: census w1 9000477 `South|3|1`, awarded to an empty dp 7)
   const exitWinningSide =
     (isDoubleExitExit &&
+      participantArrivesAtExit &&
       getExitWinningSide({
         inContextDrawMatchUps: refreshedMatchUps(),
         drawPosition,

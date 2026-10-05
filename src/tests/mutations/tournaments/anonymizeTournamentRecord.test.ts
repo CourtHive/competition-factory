@@ -152,14 +152,21 @@ test('multi-tournament pipeline: same real provider maps to same mock provider a
   expect(groups['real-B']).toBeUndefined();
 });
 
+// This block ran ZERO cases from the day it was written: it kept only names containing '.8'
+// (none of the 16 fixtures has one) and read from `./src/global/testHarness`, which does not
+// exist. `it.each([])` registers nothing and vitest stays green, so the control below is what
+// keeps it from going vacuous again. The suffix filter must change together with the ones in
+// schemaValidation.test.ts and corpus/fixtureSources.ts.
 const sourcePath = './src/tests/testHarness';
-const filenames = fs.readdirSync(sourcePath).filter(
-  (filename) => filename.indexOf('.tods.json') > 0 && filename.indexOf('.8') > 0, // skip v0.8
-);
+const filenames = fs.readdirSync(sourcePath).filter((filename) => filename.endsWith('.codes.json'));
 
-it.each(filenames)('can anonymize TODS files in the testHarness directory', (filename) => {
+it('finds CODES files to anonymize', () => {
+  expect(filenames.length).toBeGreaterThan(10);
+});
+
+it.each(filenames)('can anonymize %s from the testHarness directory', (filename) => {
   const tournamentRecord = JSON.parse(
-    fs.readFileSync(`./src/global/testHarness/${filename}`, {
+    fs.readFileSync(`${sourcePath}/${filename}`, {
       encoding: 'utf8',
     }),
   );

@@ -1,6 +1,6 @@
 name: Verify
 
-# Runs the full verification suite on every PR + push to main. The `verify`
+# Runs the full verification suite on every PR + push to master. The `verify`
 # script is also wired into `prepublishOnly`, so this acts as the canary —
 # any check that fails here will also block publish, but here we catch it
 # at PR time instead of at release-tag time.
@@ -9,6 +9,19 @@ name: Verify
 # repos aren't checked out. Maintainers run `pnpm verify:ecosystem` locally
 # when needed. CI tests the factory in isolation across the supported Node
 # matrix.
+#
+# LAYOUT (CA, 2026-10-05). The gates used to run in ONE job per Node version, in sequence, and
+# verify:coverage alone took ~38 min of a 30-59 min dev PR run (~70 min at a checkpoint). They now run
+# as parallel jobs, each once per Node version as before:
+#
+#   scope           decides the release-path light run (.github/scripts/release-scope.sh)
+#   gates           the cheap gates, verify:server and the build chain, in their old order
+#   coverage-shard  the coverage run split 4 ways (vitest --shard), each writing a blob report
+#   coverage        merges the 4 blobs (vitest --merge-reports --coverage): the thresholds and
+#                   coverage/coverage-summary.json are computed over the MERGED result
+#   slow-gates      stall-budget, route-differential, deep-corrections and team-arms, one job each
+#   verify          `verify (node N)`, the check master's branch protection requires: it passes only
+#                   when every job above passed (or, on a light run, was skipped as intended)
 
 on:
   pull_request:
@@ -26,22 +39,51 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  verify:
+  # A release-please PR (into master) or the back-merge PR (master into dev, after a publish) changes
+  # only the version files: package.json's "version" line, CHANGELOG.md and
+  # .release-please-manifest.json. The tree under it was verified when it landed, so the heavy test
+  # jobs have nothing new to test, and they cost ~55 minutes per release (CA, 2026-10-04). Decided by
+  # the DIFF, not the branch name: a release-path PR that touches anything else gets the full run.
+  # The `gates` job and the aggregating `verify` job always run, because master requires the
+  # `verify (node 24)` check; the cheap gates plus the build chain still run.
+  scope:
     # Skip when the head commit is the release-please bot's release-PR
     # merge. Release-please PRs touch only CHANGELOG.md, package.json
     # (version bump), and .release-please-manifest.json — never any
     # tested source. The same tree was verified when the checkpoint
     # landed on master, so re-running the full matrix here adds CI for no
-    # new signal.
+    # new signal. Every other job needs this one, so they skip with it.
     #
-    # PR events (which the bot opens before merging) always run the job, but
-    # skip the heavy test gates when the diff is the version files alone (see
-    # the Release-PR scope step); the resulting merge push is skipped.
-    # npm-publish.yml then proves the tree was verified (verify:verified-release)
-    # rather than re-running the chain.
+    # PR events (which the bot opens before merging) always run, but skip the
+    # heavy test jobs when the diff is the version files alone; the resulting
+    # merge push is skipped. npm-publish.yml then proves the tree was verified
+    # (verify:verified-release) rather than re-running the chain.
     if: >
       github.event_name != 'push' ||
       !contains(github.event.head_commit.message, 'release-please--branches--')
+    runs-on: ubuntu-latest
+    outputs:
+      light: ${{ steps.scope.outputs.light }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # release-scope.sh diffs the PR's merge commit against its first parent, the base tip.
+          fetch-depth: 2
+
+      # Refs and repository names reach the script through env, never inlined into the shell:
+      # a branch name is chosen by whoever opens the PR.
+      - name: Release-path scope
+        id: scope
+        run: bash .github/scripts/release-scope.sh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO: ${{ github.repository }}
+
+  gates:
+    needs: scope
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -51,7 +93,7 @@ jobs:
         # ([22, 24]) before anything lands — so a Node-22 regression is still
         # caught pre-merge-to-master while `engines: ">=22"` holds.
         node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
-    name: verify (node ${{ matrix.node-version }})
+    name: gates (node ${{ matrix.node-version }})
 
     steps:
       - uses: actions/checkout@v7
@@ -60,26 +102,6 @@ jobs:
           # neither the tag nor the history, and the check errors rather than passing quietly — so
           # this is a precondition, not a nicety.
           fetch-depth: 0
-
-      # A release-please PR changes only the version files: package.json's "version" line,
-      # CHANGELOG.md and .release-please-manifest.json. Its base is master, which the checkpoint just
-      # verified, so the heavy test gates have nothing new to test, and they cost ~55 minutes per
-      # release (CA, 2026-10-04). Decided by the DIFF, not the branch name: a release branch that
-      # touches anything else gets the full run. The job itself always runs, because master requires
-      # the `verify (node 24)` check, and the cheap gates plus the build chain still run.
-      - name: Release-PR scope
-        id: scope
-        run: |
-          LIGHT=false
-          if [ "${{ github.event_name }}" = "pull_request" ] && [[ "${{ github.head_ref }}" == release-please--* ]]; then
-            RANGE="origin/${{ github.base_ref }}...HEAD"
-            CHANGED=$(git diff --name-only "$RANGE")
-            OUTSIDE=$(grep -vxE 'package\.json|CHANGELOG\.md|\.release-please-manifest\.json' <<<"$CHANGED" || true)
-            NOT_VERSION=$(git diff -U0 "$RANGE" -- package.json | grep -E '^[-+][^-+]' | grep -vE '^[-+][[:space:]]*"version":' || true)
-            if [ -n "$CHANGED" ] && [ -z "$OUTSIDE" ] && [ -z "$NOT_VERSION" ]; then LIGHT=true; fi
-            echo "changed: $CHANGED"
-          fi
-          echo "light=$LIGHT" | tee -a "$GITHUB_OUTPUT"
 
       # A pnpm that does not match this repo's `packageManager` pin writes an `@pnpm/exe` block
       # into the lockfile; a pnpm that DOES match strips it out again. Committed, it makes every
@@ -108,26 +130,9 @@ jobs:
           LOCKS
           exit $bad
 
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/setup
         with:
           node-version: ${{ matrix.node-version }}
-
-      # pnpm via corepack (driven by `packageManager` in package.json). The
-      # repo's allowed-actions policy blocks third-party actions like
-      # pnpm/action-setup, so we avoid them and stay on actions/* only.
-      - run: corepack enable
-
-      - name: Resolve pnpm store path
-        run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
-
-      - uses: actions/cache@v6
-        with:
-          path: ${{ env.PNPM_STORE_PATH }}
-          key: ${{ runner.os }}-node${{ matrix.node-version }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-node${{ matrix.node-version }}-pnpm-
-
-      - run: pnpm install --frozen-lockfile --ignore-scripts
 
       # In-CI verify minus the ecosystem sweep (siblings aren't here).
       # Order: cheap fail-fast → expensive checks last.
@@ -148,7 +153,7 @@ jobs:
         run: pnpm verify:lint
 
       # Scoped to the TS/JS sources the repo actually keeps formatted, PLUS the
-      # markdown under documentation/docs (added 2026-09-18). The .tods.json
+      # markdown under documentation/docs (added 2026-09-18). The .codes.json
       # fixtures under src/tests remain deliberately OUT of scope: reformatting
       # them is a ~40k-line diff across large test corpora and buries their
       # blame for no benefit. `format` carries the same target set, so it and
@@ -195,34 +200,10 @@ jobs:
       - name: verify:attr-audit
         run: pnpm verify:attr-audit
 
-      # On the path to a release (a PR into master, or a push to master) coverage runs the WHOLE suite
-      # under OUTCOME_PIPELINE=differential: every call runs v1 and the v2 outcome pipeline, v2 is
-      # measured where it executes, and a divergence between them fails the job. Into dev, v2 is
-      # excluded from coverage instead (vitest.config.mts), so building it spends no margin.
-      - name: verify:coverage
-        if: steps.scope.outputs.light != 'true'
-        run: pnpm verify:coverage
-        env:
-          OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
-
-      # The stalled-position RATCHET. Inert on `pnpm test` (it replays all 600 exit-propagation
-      # matrix cells, which costs about what exitPropagationMatrix itself costs), so this step is the
-      # only thing that runs it. Added in the same change as the test, deliberately: a budget nobody
-      # runs is worse than no budget.
-      - name: verify:stall-budget
-        if: steps.scope.outputs.light != 'true'
-        run: pnpm verify:stall-budget
-
-      - name: verify:route-differential
-        if: steps.scope.outputs.light != 'true'
-        run: pnpm verify:route-differential
-
-      - name: verify:deep-corrections
-        if: steps.scope.outputs.light != 'true'
-        run: pnpm verify:deep-corrections
-
+      # Seconds, not minutes, so it stays here rather than in its own job; skipped on a light run like
+      # the other test gates.
       - name: verify:server
-        if: steps.scope.outputs.light != 'true'
+        if: needs.scope.outputs.light != 'true'
         run: pnpm verify:server
 
       - name: verify:audit
@@ -261,3 +242,169 @@ jobs:
 
       - name: verify:pack
         run: pnpm verify:pack
+
+  # On the path to a release (a PR into master, or a push to master) coverage runs the WHOLE suite
+  # under OUTCOME_PIPELINE=differential: every call runs v1 and the v2 outcome pipeline, v2 is
+  # measured where it executes, and a divergence between them fails the job. Into dev, v2 is
+  # excluded from coverage instead (vitest.config.mts), so building it spends no margin.
+  #
+  # The suite runs as 4 shards. A shard's own coverage is partial, so vitest.config.mts drops the
+  # thresholds on a `--shard` run; the shard fails only on a failing test (a differential divergence
+  # is one). Its coverage travels in the blob report to the `coverage` job, which applies them.
+  coverage-shard:
+    needs: scope
+    if: needs.scope.outputs.light != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
+        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+        shard: [1, 2, 3, 4]
+    name: coverage shard ${{ matrix.shard }}/4 (node ${{ matrix.node-version }})
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: coverage shard ${{ matrix.shard }}/4
+        run: pnpm exec vitest run --coverage --shard=${{ matrix.shard }}/4 --reporter=default --reporter=blob
+        env:
+          OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
+
+      # `.vitest/blob/blob-<shard>-4.json` (vitest's default); a dot-directory, hence include-hidden-files
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-blob-node${{ matrix.node-version }}-${{ matrix.shard }}
+          path: .vitest/blob/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3
+
+  coverage:
+    needs: [scope, coverage-shard]
+    if: needs.scope.outputs.light != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
+        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+    name: coverage (node ${{ matrix.node-version }})
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-blob-node${{ matrix.node-version }}-*
+          path: .vitest/blob
+          merge-multiple: true
+
+      # The step NAME is load-bearing: scripts/verify/verified-release.mjs accepts a run as proof only
+      # if a step named exactly `verify:coverage` succeeded in it. This step is where the thresholds
+      # (vitest.config.mts) are applied, to the merged coverage of all 4 shards, so it is the step the
+      # name means. It loads the same config, so it needs the same OUTCOME_PIPELINE as the shards: that
+      # env decides whether src/mutate/matchUps/outcome/** is in the measured set.
+      - name: verify:coverage
+        run: |
+          count=$(find .vitest/blob -name 'blob-*.json' | wc -l)
+          if [ "$count" -ne 4 ]; then
+            echo "::error::expected 4 shard blob reports, found $count"
+            exit 1
+          fi
+          pnpm exec vitest run --merge-reports=.vitest/blob --coverage --reporter=default
+        env:
+          OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
+
+      # How much margin the merged coverage has above the floors, in items (CA, 2026-10-05: report +
+      # an absolute minimum). Written to the job summary on every run, and the run fails if any metric
+      # has fewer than 50 items of headroom: early warning, well before the thresholds fail at 0. Report
+      # mode skips the committed-baseline budget, which local `pnpm verify` still applies.
+      - name: verify:coverage-headroom
+        run: node scripts/verify/coverage-headroom.mjs --report --min=50
+
+      # coverage/coverage-summary.json of the merged run, so anyone can re-run the headroom against it.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-summary-node${{ matrix.node-version }}
+          path: coverage/coverage-summary.json
+          if-no-files-found: error
+          retention-days: 14
+
+  slow-gates:
+    needs: scope
+    if: needs.scope.outputs.light != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
+        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+        # stall-budget is the stalled-position RATCHET. Inert on `pnpm test` (it replays all 600
+        # exit-propagation matrix cells, which costs about what exitPropagationMatrix itself costs), so
+        # this job is the only thing that runs it. Added in the same change as the test, deliberately:
+        # a budget nobody runs is worse than no budget.
+        # team-arms: the TEAM matrix over the seven extension draw types and two more tieFormats,
+        # ~10 minutes locally, inert on `pnpm test` (2026-10-05)
+        gate: [stall-budget, route-differential, deep-corrections, team-arms]
+    name: ${{ matrix.gate }} (node ${{ matrix.node-version }})
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: verify:${{ matrix.gate }}
+        run: pnpm verify:${{ matrix.gate }}
+
+  # The check master's branch protection requires is `verify (node 24)`, and this job is it. It
+  # passes only when every other job passed, except that on a light run the heavy jobs must have been
+  # SKIPPED (any other result, cancelled included, fails it). It runs whatever its needs did, so a red
+  # job still produces a red `verify (node N)` rather than a missing one.
+  verify:
+    needs: [scope, gates, coverage-shard, coverage, slow-gates]
+    if: >
+      always() && (
+        github.event_name != 'push' ||
+        !contains(github.event.head_commit.message, 'release-please--branches--')
+      )
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
+        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+    name: verify (node ${{ matrix.node-version }})
+
+    steps:
+      - name: Every verify job passed
+        env:
+          LIGHT: ${{ needs.scope.outputs.light }}
+          SCOPE: ${{ needs.scope.result }}
+          GATES: ${{ needs.gates.result }}
+          SHARDS: ${{ needs.coverage-shard.result }}
+          COVERAGE: ${{ needs.coverage.result }}
+          SLOW: ${{ needs.slow-gates.result }}
+        run: |
+          heavy=success
+          if [ "$LIGHT" = true ]; then heavy=skipped; fi
+          bad=0
+          check() {
+            if [ "$2" = "$3" ]; then echo "ok    $1: $2"; else echo "::error::$1: $2 (expected $3)"; bad=1; fi
+          }
+          check scope "$SCOPE" success
+          check gates "$GATES" success
+          check coverage-shard "$SHARDS" "$heavy"
+          check coverage "$COVERAGE" "$heavy"
+          check slow-gates "$SLOW" "$heavy"
+          exit $bad

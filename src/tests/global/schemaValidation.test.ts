@@ -1,11 +1,16 @@
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import addFormats from 'ajv-formats';
 import { describe, expect, it } from 'vitest';
+import addFormats from 'ajv-formats';
 import fs from 'fs-extra';
 import Ajv from 'ajv';
 
 // constants
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { NOT_BEFORE } from '@Constants/timeItemConstants';
+import { OFFICIAL } from '@Constants/participantRoles';
+import { TEAM } from '@Constants/eventConstants';
 import {
   COMPASS,
   CURTIS_CONSOLATION,
@@ -17,11 +22,6 @@ import {
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
 } from '@Constants/drawDefinitionConstants';
-import { INDIVIDUAL } from '@Constants/participantConstants';
-import { NOT_BEFORE } from '@Constants/timeItemConstants';
-import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
-import { OFFICIAL } from '@Constants/participantRoles';
-import { TEAM } from '@Constants/eventConstants';
 
 const ajv = new Ajv({ allowUnionTypes: true, verbose: true, allErrors: true });
 ajv.addFormat('date-time', (dateTime: any) => {
@@ -41,18 +41,18 @@ const sourcePath = './src/tests/testHarness';
 // `.includes`, not `indexOf(...) === undefined`. `indexOf` returns a NUMBER, so the old
 // `filename.indexOf('.8') === undefined` was always false and `filenames` was always EMPTY —
 // `it.each([])` registers no tests and vitest does not complain, so this suite reported green
-// while validating none of the 16 TODS files. The read path below was wrong too
+// while validating none of the 16 fixtures. The read path below was wrong too
 // (`src/global/testHarness`, which does not exist), so either bug alone was fatal.
-const filenames: any[] = fs
-  .readdirSync(sourcePath)
-  .filter((filename) => filename.includes('.tods.json') && !filename.includes('.8')); // TODS v0.8 is not validated
+// The suffix is `.codes.json` (renamed from `.tods.json`); this filter, `listFixtures` in
+// corpus/fixtureSources.ts and anonymizeTournamentRecord.test.ts must all change together.
+const filenames: any[] = fs.readdirSync(sourcePath).filter((filename) => filename.endsWith('.codes.json'));
 
 // Guard the guard: if the glob ever goes empty again, fail loudly instead of silently passing.
-it('finds TODS files to validate', () => {
-  expect(filenames.length).toBeGreaterThan(0);
+it('finds CODES files to validate', () => {
+  expect(filenames.length).toBeGreaterThan(10);
 });
 
-it.each(filenames)('can validate all tods files in testHarness directory', (filename) => {
+it.each(filenames)('can validate all CODES files in testHarness directory', (filename) => {
   const data = JSON.parse(
     fs.readFileSync(`${sourcePath}/${filename}`, {
       encoding: 'utf8',

@@ -1,7 +1,7 @@
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
-import tournamentRecord from './lineUps.tods.json';
+import tournamentRecord from './lineUps.codes.json';
 
 it('can get competitionScheduleMatchUps', () => {
   tournamentEngine.setState(tournamentRecord);
