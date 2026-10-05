@@ -5,6 +5,7 @@ import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 
 // constants
 import { MATCHUP_NOT_FOUND, SCHEDULE_LOCKED } from '@Constants/errorConditionConstants';
+import { DrawDefinition, Event } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ALLOCATE_COURTS,
@@ -72,9 +73,9 @@ export function clearMatchUpSchedule({
   overrideScheduleLock?: boolean;
   scheduleAttributes?: string[];
   tournamentRecord?: any;
-  drawDefinition?: any;
+  drawDefinition?: DrawDefinition;
   matchUpId: string;
-  event?: any;
+  event?: Event;
 }) {
   const stack = 'clearMatchUpSchedule';
   const matchUp = drawDefinition

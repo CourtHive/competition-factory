@@ -1,4 +1,5 @@
 import { setMatchUpHomeParticipantId } from '@Mutate/matchUps/schedule/scheduleItems/setMatchUpHomeParticipantId';
+import { calledBeforeTournamentStart, setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 import { addMatchUpScheduledTime, addMatchUpTimeModifiers } from '@Mutate/matchUps/schedule/scheduledTime';
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
@@ -7,7 +8,6 @@ import { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOffici
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
-import { calledBeforeTournamentStart, setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
@@ -15,10 +15,10 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduleLockConflicts } from '@Query/matchUp/isScheduleLocked';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { dateValidation, validTimeString } from '@Validators/regex';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findParticipant } from '@Acquire/findParticipant';
-import { dateValidation, validTimeString } from '@Validators/regex';
 import { isConvertableInteger } from '@Tools/math';
 import { ensureInt } from '@Tools/ensureInt';
 import { isString } from '@Tools/objects';
@@ -34,11 +34,11 @@ import {
 } from '@Tools/dateTime';
 
 // constants and types
+import { AddScheduleAttributeArgs, PolicyDefinitions, ResultType, TournamentRecords } from '@Types/factoryTypes';
+import { DrawDefinition, Event, MatchUpSchedule, Tournament } from '@Types/tournamentTypes';
 import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
-import { AddScheduleAttributeArgs } from '@Types/factoryTypes';
-import { DrawDefinition, Event } from '@Types/tournamentTypes';
 import type { OfficialRecord } from '@Types/officiatingTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
@@ -82,7 +82,7 @@ import {
  * array through unchanged, so `allocatedCourts: []` behaves exactly as
  * `courtIds: []` does rather than acquiring new semantics here.
  */
-function allocatedCourtIds(value: any): string[] | undefined {
+function allocatedCourtIds(value: MatchUpSchedule['allocatedCourts']): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   return value.map((entry) => (typeof entry === 'string' ? entry : entry?.courtId)).filter(Boolean);
 }
@@ -426,7 +426,7 @@ const DERIVED_SCHEDULE_ATTRIBUTES = new Set([
  * about hygiene would be the wrong trade; `errorOnUnknownAttributes` escalates
  * per call, mirroring how `errorOnAnachronism` escalates ANACHRONISM.
  */
-function unwritableScheduleAttributes(schedule: any): string[] {
+function unwritableScheduleAttributes(schedule: MatchUpSchedule): string[] {
   return Object.keys(schedule ?? {}).filter(
     (key) =>
       schedule[key] !== undefined && !WRITABLE_SCHEDULE_ATTRIBUTES.has(key) && !DERIVED_SCHEDULE_ATTRIBUTES.has(key),
@@ -434,7 +434,7 @@ function unwritableScheduleAttributes(schedule: any): string[] {
 }
 
 /** The unwritable attributes, plus the error to return if this caller asked to be stopped by them. */
-function checkUnwritableAttributes(schedule: any, errorOnUnknownAttributes: boolean, stack: string) {
+function checkUnwritableAttributes(schedule: MatchUpSchedule, errorOnUnknownAttributes: boolean, stack: string) {
   const unwritable = unwritableScheduleAttributes(schedule);
   if (!unwritable.length || !errorOnUnknownAttributes) return { unwritable };
   return {
@@ -448,7 +448,7 @@ function checkUnwritableAttributes(schedule: any, errorOnUnknownAttributes: bool
 }
 
 /** Success, carrying whatever the call has to say for itself. */
-function scheduleItemsResult(warning: any, unwritable: string[]) {
+function scheduleItemsResult(warning: ErrorType | undefined, unwritable: string[]) {
   const warnings = [
     ...(warning ? [warning] : []),
     ...(unwritable.length ? [{ ...UNWRITABLE_SCHEDULE_ATTRIBUTES, attributes: unwritable }] : []),
@@ -470,10 +470,10 @@ type AddMatchUpScheduleItemsArgs = {
   checkChronology?: boolean;
   matchUpDependencies?: any;
   disableNotice?: boolean;
-  tournamentRecords: any;
-  tournamentRecord: any;
+  tournamentRecords?: TournamentRecords;
+  tournamentRecord: Tournament;
   matchUpId: string;
-  schedule: any;
+  schedule: MatchUpSchedule;
   event?: Event;
 };
 
@@ -710,7 +710,7 @@ function checkScheduleRefusals({
   schedule,
   matchUp,
   stack,
-}): { error?: any; unwritable: string[] } {
+}): { error?: ResultType; unwritable: string[] } {
   // A director's schedule lock pins PLACEMENT. Actual-play attributes
   // (startTime / stopTime / resumeTime / endTime) are never guarded, so a
   // locked matchUp can still be started, suspended and completed. Callers that
@@ -747,8 +747,8 @@ export function checkScheduleValues({
   tournamentRecord,
   schedule,
 }: {
-  tournamentRecord?: any;
-  schedule: any;
+  tournamentRecord?: Tournament;
+  schedule: MatchUpSchedule;
 }): { error?: ErrorType; info?: string } | undefined {
   const { calledAt, courtOrder, endTime, resumeTime, scheduledDate, scheduledTime, startTime, stopTime } = schedule;
 
@@ -794,7 +794,7 @@ function checkScheduleConflicts({
   stack,
 }: {
   proConflictDetection: boolean;
-  tournamentRecord: any;
+  tournamentRecord: Tournament;
   scheduledDate?: string;
   courtOrder?: number;
   matchUpId: string;
@@ -906,7 +906,7 @@ export function addMatchUpOfficial({
   matchUpId,
   event,
 }: AddScheduleAttributeArgs & {
-  policyDefinitions?: { [key: string]: any };
+  policyDefinitions?: PolicyDefinitions;
   officialRecord?: OfficialRecord;
   organisationIds?: string[];
   nationalityCode?: string;
@@ -960,7 +960,7 @@ export function addMatchUpOfficial({
       return { error: OFFICIAL_CONFLICT_OF_INTEREST, conflicts: conflictResult.conflicts };
     }
 
-    const result: any = setMatchUpFirstClassOrTimeItem({
+    const result = setMatchUpFirstClassOrTimeItem({
       duplicateValues: false,
       attribute: 'official',
       itemType: 'SCHEDULE.ASSIGNMENT.OFFICIAL',
@@ -1010,7 +1010,10 @@ export function addMatchUpStartTime({
   const earliestRelevantTimeValue = timeItems
     .filter((timeItem: any) => [STOP_TIME, RESUME_TIME, END_TIME].includes(timeItem?.itemType))
     .map((timeItem) => timeDate(timeItem.itemValue, scheduledDate))
-    .reduce((earliest: any, timeValue) => (!earliest || timeValue < earliest ? timeValue : earliest), undefined);
+    .reduce<number | undefined>(
+      (earliest, timeValue) => (!earliest || timeValue < earliest ? timeValue : earliest),
+      undefined,
+    );
 
   // START_TIME must be prior to any STOP_TIMEs, RESUME_TIMEs and STOP_TIME
   if (!earliestRelevantTimeValue || timeDate(startTime, scheduledDate) < earliestRelevantTimeValue) {
@@ -1095,7 +1098,7 @@ export function addMatchUpEndTime({
   const latestRelevantTimeValue = timeItems
     .filter((timeItem: any) => [START_TIME, RESUME_TIME, STOP_TIME].includes(timeItem?.itemType))
     .map((timeItem) => timeDate(timeItem.itemValue, scheduledDate))
-    .reduce((latest: any, timeValue) => (!latest || timeValue > latest ? timeValue : latest), undefined);
+    .reduce<number | undefined>((latest, timeValue) => (!latest || timeValue > latest ? timeValue : latest), undefined);
 
   const placement = resolveEndTimePlacement({ latestRelevantTimeValue, validateTimeSeries, scheduledDate, endTime });
   if (!placement.acceptable) return { error: INVALID_END_TIME };
@@ -1109,7 +1112,7 @@ export function addMatchUpEndTime({
 
   // All times stored as military time; END_TIME stays a bare HH:MM value
   const militaryTime = convertTime(endTime, true, true);
-  const endTimeResult: any = addMatchUpTimeItem({
+  const endTimeResult = addMatchUpTimeItem({
     duplicateValues: false,
     removePriorValues,
     tournamentRecord,
@@ -1122,7 +1125,7 @@ export function addMatchUpEndTime({
 
   // when the match crossed midnight, record the end's calendar day (scheduledDate + 1)
   if (placement.endDate) {
-    const endDateResult: any = addMatchUpTimeItem({
+    const endDateResult = addMatchUpTimeItem({
       duplicateValues: false,
       removePriorValues,
       tournamentRecord,
@@ -1159,7 +1162,7 @@ function addChronologicalTimeItem({
   const { scheduledDate } = scheduledMatchUpDate({ matchUp });
   const timeItems = matchUp?.timeItems ?? [];
 
-  const hasEndTime = timeItems.reduce((hasEndTime: any, timeItem) => {
+  const hasEndTime = timeItems.reduce<boolean | undefined>((hasEndTime, timeItem) => {
     return timeItem.itemType === END_TIME || hasEndTime;
   }, undefined);
 

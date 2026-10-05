@@ -94,7 +94,7 @@ export function addMatchUpTimeModifiers({
   matchUp,
 }: AddScheduleAttributeArgs & {
   matchUp?: MatchUp;
-  timeModifiers: any[];
+  timeModifiers: string[];
 }) {
   const stack = 'addMatchUpTimeModifiers';
   if (!matchUpId) return decorateResult({ result: { error: MISSING_MATCHUP_ID }, stack });

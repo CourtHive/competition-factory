@@ -14,6 +14,7 @@ import { isObject } from '@Tools/objects';
 import { INVALID_VALUES, MISSING_CONTEXT } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
+import { ResultType } from '@Types/factoryTypes';
 
 // NOTE: matchUps are assumed to be { inContext: true, nextMatchUps: true }
 
@@ -82,7 +83,7 @@ function isClosedAt(windows: ClosureWindow[] | undefined, scheduledTime?: string
  */
 function findOpenCourtIndex(
   availableCourts: any[],
-  matchUp: any,
+  matchUp: HydratedMatchUp | undefined,
   hasClosures: boolean,
   courtClosures: Record<string, ClosureWindow[]>,
 ): number {
@@ -98,7 +99,11 @@ export function proAutoSchedule({
   scheduledDate,
   courtIds,
   matchUps,
-}: ProAutoScheduleArgs) {
+}: ProAutoScheduleArgs): ResultType & {
+  notScheduled?: HydratedMatchUp[];
+  scheduled?: HydratedMatchUp[];
+  overLimitMatchUpIds?: string[];
+} {
   if (!validMatchUps(matchUps)) return { error: INVALID_VALUES };
   if (matchUps.some(({ hasContext }) => !hasContext)) {
     return {
@@ -177,7 +182,7 @@ export function proAutoSchedule({
   // and potential (winner-advancing) participants.
   const enforceLimits = !!matchUpDailyLimits && Object.keys(matchUpDailyLimits).length > 0;
   const individualParticipantProfiles: any = {};
-  const matchUpPotentialParticipantIds: any = {};
+  const matchUpPotentialParticipantIds: { [key: string]: string[] } = {};
   const overLimitMatchUpIds: string[] = [];
 
   if (enforceLimits) {
@@ -272,7 +277,7 @@ export function proAutoSchedule({
 function bumpCountersForMatchUps(
   matchUps: HydratedMatchUp[],
   individualParticipantProfiles: any,
-  matchUpPotentialParticipantIds: any,
+  matchUpPotentialParticipantIds: { [key: string]: string[] },
 ): void {
   for (const m of matchUps) {
     modifyParticipantMatchUpsCount({

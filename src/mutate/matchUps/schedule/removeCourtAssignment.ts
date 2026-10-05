@@ -15,11 +15,11 @@ import {
 } from '@Constants/errorConditionConstants';
 
 // types
-import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 
 type RemoveCourtAssignmentArgs = {
   /** Supplied so notices can carry the sanctioning origin; resolved by paramsMiddleware. */
-  event?: any;
+  event?: Event;
   drawDefinition?: DrawDefinition;
   tournamentRecord?: Tournament;
   matchUpId: string;

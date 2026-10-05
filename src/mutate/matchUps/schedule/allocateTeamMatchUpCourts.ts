@@ -22,7 +22,7 @@ type AllocateTeamMatchUpCourtsArgs = {
   disableNotice?: boolean;
   courtDayDate?: string;
   matchUpId: string;
-  courtIds: any;
+  courtIds?: string[];
 };
 export function allocateTeamMatchUpCourts({
   removePriorValues,
@@ -50,7 +50,7 @@ export function allocateTeamMatchUpCourts({
 
   let itemValue;
   if (courtIds) {
-    const tournaments: any =
+    const tournaments =
       tournamentRecords ??
       (tournamentRecord && {
         [tournamentRecord.tournamentId]: tournamentRecord,
