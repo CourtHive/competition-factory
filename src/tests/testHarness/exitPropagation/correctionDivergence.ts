@@ -1,3 +1,5 @@
+import type { FieldDivergence, FieldName, FieldProjection } from '@Tests/testHarness/exitPropagation/fieldProjections';
+import { projectFields, diffFields, exercised } from '@Tests/testHarness/exitPropagation/fieldProjections';
 import { nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -58,6 +60,8 @@ export type PathResult = {
   signature: Map<string, string>;
   /** steps the engine declined, with the code it declined them under */
   refusals: { coordinate: string; code?: string }[];
+  /** the fields the signature cannot see (G14) — entries, seedAssignments, extensions, lineUp */
+  fields: FieldProjection;
 };
 
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
@@ -151,7 +155,13 @@ function matchUpSignature(matchUp: any): string {
 }
 
 /** Build the draw, apply the steps, and return the coordinate-keyed signature. */
-export function runPath(config: DivergenceConfig, steps: Step[], drawId: string): PathResult {
+export function runPath(
+  config: DivergenceConfig,
+  steps: Step[],
+  drawId: string,
+  /** FALSIFICATION ONLY: a write applied after the steps, before the path is read */
+  plant?: (drawId: string) => void,
+): PathResult {
   const { drawType, drawSize, participantsCount, seed, propagateExitStatus = true, doubleExitPropagateBye } = config;
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawType, drawSize, participantsCount, drawId }],
@@ -192,9 +202,10 @@ export function runPath(config: DivergenceConfig, steps: Step[], drawId: string)
     if (!result?.success) refusals.push({ coordinate: coordinate(target), code: result?.error?.code });
   }
 
+  plant?.(drawId);
   const signature = new Map<string, string>();
   for (const matchUp of allMatchUps()) signature.set(coordinate(matchUp), matchUpSignature(matchUp));
-  return { signature, refusals };
+  return { signature, refusals, fields: projectFields(drawId) };
 }
 
 /**
@@ -209,13 +220,25 @@ export function compareCorrection({
   config,
   direct,
   corrected,
+  plant,
 }: {
   config: DivergenceConfig;
   direct: Step[];
   corrected: Step[];
-}): { divergences: Divergence[]; refusalMismatch?: string; directRefusals: string; correctedRefusals: string } {
-  const a = runPath(config, direct, 'divergence-direct');
-  const b = runPath(config, corrected, 'divergence-corrected');
+  /** FALSIFICATION ONLY: a write applied to one path after its steps */
+  plant?: { path: 'direct' | 'corrected'; apply: (drawId: string) => void };
+}): {
+  divergences: Divergence[];
+  /** differences in the fields the signature cannot see, reported apart so a ratchet can hold them */
+  fieldDivergences: FieldDivergence[];
+  /** which fields the direct path populated at all: a field that is never populated compares as zero */
+  exercisedFields: Record<FieldName, boolean>;
+  refusalMismatch?: string;
+  directRefusals: string;
+  correctedRefusals: string;
+} {
+  const a = runPath(config, direct, 'divergence-direct', plant?.path === 'direct' ? plant.apply : undefined);
+  const b = runPath(config, corrected, 'divergence-corrected', plant?.path === 'corrected' ? plant.apply : undefined);
 
   const renderRefusals = (result: PathResult) =>
     result.refusals.map((refusal) => `${refusal.coordinate}:${refusal.code ?? 'REFUSED'}`).join(',') || 'none';
@@ -236,6 +259,8 @@ export function compareCorrection({
 
   // the refusals are returned as rendered, so a caller that needs them does not run both paths again
   return {
+    fieldDivergences: diffFields(a.fields, b.fields),
+    exercisedFields: exercised(a.fields),
     divergences,
     directRefusals,
     correctedRefusals,
