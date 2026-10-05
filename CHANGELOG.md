@@ -1,5 +1,26 @@
 # Changelog
 
+## [7.6.0](https://github.com/CourtHive/competition-factory/compare/v7.5.0...v7.6.0) (2026-10-05)
+
+
+### Features
+
+* **matchUpFormat:** export the aggregate decider rule ([#5172](https://github.com/CourtHive/competition-factory/issues/5172)) ([a036ca2](https://github.com/CourtHive/competition-factory/commit/a036ca2219bdf16f72843f1e81c9a86868309c65))
+* **penalties:** the penalty types cover the code-of-conduct offences TMX named ([#5181](https://github.com/CourtHive/competition-factory/issues/5181)) ([4564719](https://github.com/CourtHive/competition-factory/commit/4564719b45b919ecfb1f9f2444b95d6df1ea4286))
+
+
+### Bug Fixes
+
+* **drawPositions:** a side is read from structure, never from a lone position's index ([#5174](https://github.com/CourtHive/competition-factory/issues/5174)) ([2de4e72](https://github.com/CourtHive/competition-factory/commit/2de4e725a834b59e484c2e397d6bbf503e10d6ff))
+* **exits:** a produced exit awards no empty seat, on any path ([#5158](https://github.com/CourtHive/competition-factory/issues/5158)) ([90df8a2](https://github.com/CourtHive/competition-factory/commit/90df8a20dda011c5d374f71ad097b147cd98e400))
+* **outcome:** the differential reads a pending exit on an unreached side by its side number ([#5186](https://github.com/CourtHive/competition-factory/issues/5186)) ([e467739](https://github.com/CourtHive/competition-factory/commit/e467739b919004def7f9f44a6ff6b765aabe86fa))
+* **penalties:** the two misspelled penalty labels get their correct spellings ([#5180](https://github.com/CourtHive/competition-factory/issues/5180)) ([474e9fb](https://github.com/CourtHive/competition-factory/commit/474e9fb4bd17ac33fb5cdc1918dfcd675a8f7e12))
+* **scoring:** an exactly format names no winner until every set is played ([#5175](https://github.com/CourtHive/competition-factory/issues/5175)) ([570da42](https://github.com/CourtHive/competition-factory/commit/570da42239e816db854d3fc2aec9ec51c16eaed6))
+* **server:** a tournamentId never reaches a file outside the record storage directory ([#5189](https://github.com/CourtHive/competition-factory/issues/5189)) ([9cff8a1](https://github.com/CourtHive/competition-factory/commit/9cff8a1bcd691b5e94fb8db84224dc184ab02ba6))
+* **server:** guard the record path in the forms CodeQL recognises as sanitisers ([#5190](https://github.com/CourtHive/competition-factory/issues/5190)) ([a608af4](https://github.com/CourtHive/competition-factory/commit/a608af4176f4a0206326d009ab2c6359b0985898))
+* **team:** a dual with no rubber result holds no score ([#5187](https://github.com/CourtHive/competition-factory/issues/5187)) ([faa7dcc](https://github.com/CourtHive/competition-factory/commit/faa7dcc82673472b21f29abaffa4d483e65aff21))
+* **team:** a rubber decided by walkover or default starts its dual, found by the extended TEAM arms ([#5182](https://github.com/CourtHive/competition-factory/issues/5182)) ([172fc4f](https://github.com/CourtHive/competition-factory/commit/172fc4f4a32cdb5ba3a0fa78d2df7ea77148920f))
+
 ## [7.5.0](https://github.com/CourtHive/competition-factory/compare/v7.4.0...v7.5.0) (2026-10-04)
 
 
