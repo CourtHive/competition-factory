@@ -258,8 +258,7 @@ Substitutions are undoable/redoable like any other action. If the `outParticipan
 ```js
 const active = engine.getActivePlayers();
 // { side1: ['player-A', 'player-E'], side2: ['player-C', 'player-D'] }
-
-engine.hasLineUp(); // true — at least one side has a lineup set
+// a side with no lineup set returns []
 ```
 
 ### Per-Point Active Player Snapshots
@@ -274,6 +273,12 @@ point.activePlayers;
 ```
 
 This enables per-player statistics and analysis of who was on court for each point.
+
+Since 7.6.1 the snapshot survives every rebuild of the score (`undo`, `redo`, a recalculating
+`editPoint`, `removePoint`). A rebuild starts the lineups from their initial state and replays the
+substitutions in order, so each point keeps the players who played it. A matchUp loaded with
+`setState` and no `loadSupplementaryState` takes its initial lineups from its current ones, with its
+substitutions undone.
 
 ---
 

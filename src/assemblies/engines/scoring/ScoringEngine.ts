@@ -163,6 +163,31 @@ export interface ScoringEngineSupplementaryState {
 }
 
 /**
+ * The lineUps a matchUp started from: its current lineUps with every substitution on its timeline
+ * undone, last first. Undefined when neither side has a lineUp.
+ */
+function deriveInitialLineUps(matchUp: MatchUp): Record<number, TeamCompetitor[]> | undefined {
+  const sides = (matchUp.sides ?? []).filter((side) => side.lineUp?.length);
+  if (!sides.length) return undefined;
+
+  const lineUps: Record<number, TeamCompetitor[]> = {};
+  for (const side of sides) lineUps[side.sideNumber!] = side.lineUp!.map((tc) => ({ ...tc }));
+
+  const entries = matchUp.history?.entries;
+  const substitutions: SubstitutionEvent[] = entries
+    ? entries.filter((e) => e.type === 'substitution').map((e) => e.data)
+    : (matchUp.history?.substitutions ?? []);
+
+  for (const sub of [...substitutions].reverse()) {
+    const lineUp = lineUps[sub.sideNumber];
+    const index = lineUp?.findIndex((tc) => tc.participantId === sub.inParticipantId) ?? -1;
+    if (index !== -1) lineUp[index] = { ...lineUp[index], participantId: sub.outParticipantId };
+  }
+
+  return lineUps;
+}
+
+/**
  * ScoringEngine - Stateful engine for multi-level scoring
  *
  * Holds internal matchUp state and provides mutation operations.
@@ -224,6 +249,10 @@ export class ScoringEngine {
     this.isDoubles = matchUp.matchUpType === 'DOUBLES';
     this.redoStack = [];
     this.initialScore = undefined;
+    // A rebuild starts the lineUps from their initial snapshot. Loaded without one (no
+    // loadSupplementaryState to follow), the snapshot is the loaded lineUps with the substitution
+    // timeline undone; never a previous matchUp's.
+    this.initialLineUps = deriveInitialLineUps(matchUp);
     this.cacheFormatStructure();
   }
 
@@ -260,7 +289,7 @@ export class ScoringEngine {
     const prevComplete = this.state.matchUpStatus === COMPLETED;
 
     // Decorate active players from lineUp before adding point
-    const activePlayersSnapshot = this.hasLineUp() ? this.getActivePlayers() : undefined;
+    const activePlayers = this.activePlayersForPoint();
 
     // Add point using pure function with multiplier config
     this.state = addPoint(this.state, options, {
@@ -275,13 +304,9 @@ export class ScoringEngine {
     if ((this.state.history?.points.length || 0) === pointIndex) return;
 
     // Attach activePlayers to the just-added point
-    if (activePlayersSnapshot) {
+    if (activePlayers) {
       const lastPoint = this.state.history!.points[this.state.history!.points.length - 1];
-      if (this.isDoubles) {
-        (lastPoint as any).activePlayers = [activePlayersSnapshot.side1, activePlayersSnapshot.side2];
-      } else {
-        (lastPoint as any).activePlayers = [activePlayersSnapshot.side1[0] || '', activePlayersSnapshot.side2[0] || ''];
-      }
+      (lastPoint as any).activePlayers = activePlayers;
     }
 
     // Attach penaltyType to the point if provided
@@ -902,6 +927,16 @@ export class ScoringEngine {
     return this.state.sides.some((s) => s.lineUp && s.lineUp.length > 0);
   }
 
+  /**
+   * The players on court for the point about to be played, in the shape a point records them:
+   * both of each side's players in doubles, one per side in singles. Undefined without a lineUp.
+   */
+  private activePlayersForPoint(): string[][] | string[] | undefined {
+    if (!this.hasLineUp()) return undefined;
+    const { side1, side2 } = this.getActivePlayers();
+    return this.isDoubles ? [side1, side2] : [side1[0] || '', side2[0] || ''];
+  }
+
   // ===========================================================================
   // Point Multipliers
   // ===========================================================================
@@ -1424,13 +1459,20 @@ export class ScoringEngine {
 
     for (const entry of entries) {
       switch (entry.type) {
-        case 'point':
+        case 'point': {
+          // The lineUps start from their initial snapshot and the substitutions replay in order, so
+          // the players on court here are the ones who played this point.
+          const activePlayers = this.activePlayersForPoint();
+          const pointCount = this.state.history?.points.length || 0;
           this.state = addPoint(this.state, entry.data, {
             pointMultipliers: this.pointMultipliers,
           });
           // Restore entries (addPoint may reset them since it mutates)
           this.state.history!.entries = newState.history!.entries;
+          const points = this.state.history!.points;
+          if (activePlayers && points.length > pointCount) (points.at(-1) as any).activePlayers = activePlayers;
           break;
+        }
         case 'set':
           this.applyAddSet(entry.data);
           break;
@@ -1512,6 +1554,12 @@ export class ScoringEngine {
       isDoubles: this.isDoubles,
     });
 
+    // Without a timeline no substitution is replayed, so the lineUps on court now are kept as they are
+    for (const side of newState.sides) {
+      const lineUp = this.state.sides.find((s) => s.sideNumber === side.sideNumber)?.lineUp;
+      if (lineUp) side.lineUp = lineUp.map((tc) => ({ ...tc }));
+    }
+
     // Apply initial score if present (late arrival)
     if (this.initialScore) {
       this.applyInitialScore(newState, this.initialScore);
@@ -1522,6 +1570,7 @@ export class ScoringEngine {
 
     // Replay all tracked points with multipliers
     for (const point of currentPoints) {
+      const pointCount = newState.history?.points.length || 0;
       newState = addPoint(
         newState,
         {
@@ -1540,6 +1589,10 @@ export class ScoringEngine {
           pointMultipliers: this.pointMultipliers,
         },
       );
+      // the players recorded on court for the point; with no timeline there is nothing to recompute from
+      const replayed = newState.history?.points ?? [];
+      const activePlayers = (point as any).activePlayers;
+      if (activePlayers && replayed.length > pointCount) (replayed.at(-1) as any).activePlayers = activePlayers;
     }
 
     this.state = newState;

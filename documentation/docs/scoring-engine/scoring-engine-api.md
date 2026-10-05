@@ -180,6 +180,8 @@ setState(matchUp: MatchUp): void
 ```
 
 Load matchUp state from a CODES MatchUp JSON object. Replaces all internal state, clears redo stack.
+The initial lineups a rebuild starts from are the matchUp's lineups with its substitutions undone
+(since 7.6.1); `loadSupplementaryState` replaces them with the saved snapshot.
 
 ```js
 const savedMatchUp = JSON.parse(localStorage.getItem('matchUp'));
