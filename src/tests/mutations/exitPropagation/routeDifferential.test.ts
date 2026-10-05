@@ -3,6 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
 import {
+  projectByCoordinate,
   compareRoutes,
   generateDraw,
   playForward,
@@ -52,6 +53,15 @@ import {
  * left and the DOUBLE_ELIMINATION row above now reads 0.
  *
  * Anything that diverges fails this test, and so does a refusal from any route but A.
+ *
+ * ## The fields the projection could not see — G14, 2026-10-05
+ *
+ * The projection now carries entries, seedAssignments, extensions and lineUp (`F:<field>:<key>`,
+ * from `fieldProjections`), so a route that leaves any of them behind diverges here too. Measured on
+ * first contact: 0 diverging, the same as before. These draws are unseeded and none is TEAM, so only
+ * entries and extensions are populated — the control below asserts that much, and
+ * `fieldProjections.test.ts` plants a divergence in each field, through `compareRoutes`, to prove the
+ * wiring reports one.
  *
  *   ROUTE_DIFF=1 TZ=UTC OUT=/tmp/route-diff.jsonl \
  *     npx vitest run src/tests/mutations/exitPropagation/routeDifferential.test.ts \
@@ -121,6 +131,11 @@ test.skipIf(!enabled)(`route differential — seed ${seed}, drawSize ${drawSize}
       // CONTROL: a draw that played zero matchUps would yield "0 diverging", which is
       // indistinguishable from a clean result. Assert the input before trusting the output.
       expect(playOrder.length).toBeGreaterThan(0);
+      // CONTROL for the G14 fields: a projection that holds no entries or extensions compares them
+      // as equal however they differ
+      const projected = Object.keys(projectByCoordinate(drawId));
+      expect(projected.some((key) => key.startsWith('F:entries:'))).toEqual(true);
+      expect(projected.some((key) => key.startsWith('F:extensions:'))).toEqual(true);
 
       for (let index = 0; index < playOrder.length; index++) {
         const { differences, skipped: skipReason } = compareRoutes({
