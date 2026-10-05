@@ -1,6 +1,5 @@
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
-import { retainPolicyCodes, policyCodeString } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { rekeySideFacts } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
@@ -22,6 +21,12 @@ import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
 import { isExit } from '@Validators/isExit';
+import {
+  carriedExitStatus,
+  getSideExitProvenance,
+  policyCodeString,
+  retainPolicyCodes,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
@@ -982,7 +987,12 @@ function arrivalIntoProvenanceOnlyExit({
   matchUp,
   ...context
 }): boolean {
-  const exitSides = Object.keys(matchUp.sideExitProvenance ?? {}).map(Number);
+  // only entries that record an EXIT: provenance also holds a BYE's claim on its seat (`BYE>BYE`), which is not an
+  // exit and must not make a lone pending exit look like a convergence (census w2 9100521, COMPASS 32/29: a produced
+  // walkover beside a BYE claim at `South|3|1` was overwritten TO_BE_PLAYED when a participant advanced into it)
+  const exitSides = Object.entries(getSideExitProvenance({ matchUp }) ?? {})
+    .filter(([, entry]) => carriedExitStatus(entry))
+    .map(([sideNumber]) => Number(sideNumber));
   const applies =
     isExit(matchUp.matchUpStatus) &&
     !matchUp.winningSide &&
