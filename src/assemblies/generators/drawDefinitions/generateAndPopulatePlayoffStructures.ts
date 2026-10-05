@@ -25,6 +25,7 @@ import { nextPowerOf2 } from '@Tools/math';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { CONTAINER, LOSER, PLAY_OFF, TOP_DOWN } from '@Constants/drawDefinitionConstants';
+import type { PlayoffGroupConfig } from '@Validators/validatePlayoffGroups';
 import { RoundProfile, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -42,7 +43,7 @@ type GenerateAndPopulateArgs = {
   playoffPositions?: number[];
   roundOffsetLimit?: number;
   exitProfileLimit?: boolean;
-  playoffGroups?: any[];
+  playoffGroups?: PlayoffGroupConfig[];
   roundNumbers?: number[];
   structureId: string;
   idPrefix?: string;

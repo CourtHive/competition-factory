@@ -3,8 +3,9 @@ import { getDrawPosition } from '@Functions/global/extractors';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { ensureInt } from '@Tools/ensureInt';
 
-// constants
+// constants and types
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
+import type { PositionAssignment } from '@Types/tournamentTypes';
 
 /**
  *
@@ -31,8 +32,8 @@ export function resolveDrawPositions({
   participantFactors,
   random,
 }: {
-  positionAssignments: any;
-  participantFactors: any;
+  positionAssignments: PositionAssignment[];
+  participantFactors: Record<string, { preferences: number[] }>;
   random?: () => number;
 }) {
   if (!participantFactors || !positionAssignments) return { error: MISSING_VALUE };
@@ -126,23 +127,26 @@ export function resolveDrawPositions({
 
 function resolvePreferences({ participantPreferences, drawPositionResolutions = {}, random }) {
   // for all participantPreferences create a map of drawPositions to arrays of participantIds which have the drawPosition as first preference
-  const drawPositionsMap = Object.keys(participantPreferences).reduce((dpm, participantId) => {
-    const pp = participantPreferences[participantId];
-    const firstPreference = pp.preferences[0];
-    // there may be no preferences left!
-    if (firstPreference) {
-      if (!dpm[firstPreference]) dpm[firstPreference] = [];
-      dpm[firstPreference].push(participantId);
-    }
-    return dpm;
-  }, {});
+  const drawPositionsMap = Object.keys(participantPreferences).reduce<Record<string, string[]>>(
+    (dpm, participantId) => {
+      const pp = participantPreferences[participantId];
+      const firstPreference = pp.preferences[0];
+      // there may be no preferences left!
+      if (firstPreference) {
+        if (!dpm[firstPreference]) dpm[firstPreference] = [];
+        dpm[firstPreference].push(participantId);
+      }
+      return dpm;
+    },
+    {},
+  );
 
   // select the drawPositions for which there is the least overlap in preferences
   // e.g. in the first pass expect there to be drawPositions for which there is no contention
   const minimumContentionCount = Math.min(
     ...Object.values(drawPositionsMap)
-      .filter((f: any) => f.length)
-      .map((v: any) => v.length),
+      .filter((f) => f.length)
+      .map((v) => v.length),
   );
   const minimumContentionPositions = Object.keys(drawPositionsMap).filter(
     (drawPosition) =>

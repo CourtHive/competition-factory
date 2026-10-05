@@ -4,8 +4,8 @@ import { getCompetitionState } from '@Query/drawDefinition/competition/getCompet
 import { buildIndividualIdsMap } from '@Query/participants/individualParticipantIds';
 
 // Generators
-import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
+import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
 
 // Acquire
 import { findStructure } from '@Acquire/findStructure';
@@ -255,7 +255,7 @@ function getValueObjects({ encounters, tournamentParticipants, encounterValue, s
   //  'P-I-0|P-I-3': 1
   // }
 
-  const valueObjects: any = {};
+  const valueObjects: { [key: string]: number } = {};
   for (const pairing of encounters) {
     if (!valueObjects[pairing]) valueObjects[pairing] = 0;
     valueObjects[pairing] += encounterValue;

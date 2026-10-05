@@ -14,7 +14,7 @@ type FeedInMatchUpsArgs = {
   linkFedRoundNumbers?: number[];
   feedsFromFinal?: number;
   isConsolation?: boolean;
-  feedRoundsProfile?: any;
+  feedRoundsProfile?: number[];
   baseDrawSize?: number;
   feedRounds?: number;
   skipRounds?: number;

@@ -10,7 +10,7 @@ type GenerateCandidateArgs = {
   valueObjects: { [key: string]: number };
   random?: () => number;
   maxIterations: number;
-  pairingValues: any;
+  pairingValues: { [key: string]: { opponent: string; value: number }[] };
 };
 
 export function generateCandidate({
@@ -26,7 +26,7 @@ export function generateCandidate({
   const pairingValueMap = Object.assign({}, ...valueSortedPairings.map((rm) => ({ [rm.pairing]: rm.value })));
 
   const actors = Object.keys(pairingValues);
-  let proposedCandidates: any[] = [];
+  let proposedCandidates: ReturnType<typeof roundCandidate>[] = [];
 
   // generate an initial candidate value with no stipulated pairings
   const initialProposal = roundCandidate({
@@ -39,7 +39,7 @@ export function generateCandidate({
     random,
   });
 
-  const candidateHashes: any[] = [candidateHash(initialProposal)];
+  const candidateHashes: string[] = [candidateHash(initialProposal)];
   proposedCandidates.push(initialProposal);
   let lowCandidateValue = initialProposal.value;
   let mostPairings = pairingsCount(initialProposal);
@@ -147,13 +147,13 @@ function candidateHash(candidate) {
 
 type RoundCandiateArgs = {
   individualIdsMap?: Record<string, string[]>;
-  pairingValueMap: any;
+  pairingValueMap: { [key: string]: number };
   valueSortedPairings: any;
   random?: () => number;
   actorsCount: number;
-  stipulated?: any[];
-  deltaObjects: any;
-  valueObjects: any;
+  stipulated?: string[][];
+  deltaObjects: { [key: string]: number };
+  valueObjects: { [key: string]: number };
 };
 
 function roundCandidate({
@@ -185,7 +185,7 @@ function roundCandidate({
   stipulated.filter(Boolean).forEach(occupy);
 
   // aggregates the pairings generated for a roundCandidate
-  const participantIdPairings: any[] = [];
+  const participantIdPairings: { participantIds: string[]; value: number }[] = [];
 
   // candidateValue is the sum of all participantIdPairings in a roundCandidate
   // the winning candidate has the LOWEST total value

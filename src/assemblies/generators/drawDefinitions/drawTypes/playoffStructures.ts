@@ -75,7 +75,7 @@ export function generatePlayoffStructures(params: GeneratePlayoffStructuresArgs)
 
   if (!generateStructure || drawSize < 2 || (sequenceLimit && stageSequence > sequenceLimit)) return {};
 
-  const allMatchUps: any[] = [];
+  const allMatchUps: MatchUp[] = [];
   const structures: Structure[] = [];
   const links: DrawLink[] = [];
 

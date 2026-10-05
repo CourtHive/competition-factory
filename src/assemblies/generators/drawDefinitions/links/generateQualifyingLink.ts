@@ -9,7 +9,7 @@ type GenerateQualifyingLinkArgs = {
   qualifyingPositions?: number;
   targetEntryRound?: number;
   sourceRoundNumber: number;
-  finishingPositions?: any;
+  finishingPositions?: number[];
   sourceStructureId: string;
   targetStructureId: string;
   linkType?: LinkTypeUnion;
