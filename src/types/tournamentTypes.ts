@@ -1878,10 +1878,10 @@ export enum PenaltyTypeEnum {
   BALL_ABUSE = 'BALL_ABUSE',
   COACHING = 'COACHING',
   DRESS_CODE_VIOLATION = 'DRESS_CODE_VIOLATION',
-  /** @deprecated misspelled; use `EQUIPMENT_VIOLATION`. Accepted on input, rewritten on write; removed at the next major. */
+  /** @deprecated misspelled; use `EQUIPMENT_VIOLATION`. Accepted on input, rewritten on write; removed in 8.0.0. */
   EQUIMENT_VIOLATION = 'EQUIMENT_VIOLATION',
   EQUIPMENT_VIOLATION = 'EQUIPMENT_VIOLATION',
-  /** @deprecated misspelled; use `FAILURE_TO_SIGN_IN`. Accepted on input, rewritten on write; removed at the next major. */
+  /** @deprecated misspelled; use `FAILURE_TO_SIGN_IN`. Accepted on input, rewritten on write; removed in 8.0.0. */
   FAILUIRE_TO_SIGN_IN = 'FAILUIRE_TO_SIGN_IN',
   FAILURE_TO_SIGN_IN = 'FAILURE_TO_SIGN_IN',
   FAILURE_TO_COMPLETE = 'FAILURE_TO_COMPLETE',
