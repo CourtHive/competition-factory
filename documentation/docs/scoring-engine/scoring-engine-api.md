@@ -23,8 +23,11 @@ addPoint(options: AddPointOptions): void
 
 Add a point to the match. This is the primary input method for point-by-point scoring.
 
-A point added after the match is `COMPLETED` is not refused, and it does not change the score; no
-game, set or match completion event fires for it (since 7.5.0).
+A point added after the match is `COMPLETED` is not refused, and it does not change the score
+(since 7.5.0). Since 7.6.1 nothing records it either: no history entry (so `undo` cannot pop it), no
+`onPoint` event, and its `penaltyType` is not stamped on the last point played. The same holds for a
+point that names no winner. To add a penalty or a note to a point already played, use
+[decoratePoint](#decoratepoint) or [editPoint](#editpoint).
 
 ```js
 // 0-based convention
@@ -488,10 +491,14 @@ Get who serves the next point. Uses format-driven server alternation by default,
 decoratePoint(pointIndex: number, metadata: Record<string, any>): void
 ```
 
-Attach additional metadata to a point in history.
+Attach additional metadata to a point in history. Any point can be decorated, including after the
+match is `COMPLETED`: a `penaltyType` or an annotation is a correction to the record, not a point
+played. Since 7.6.1 the metadata is kept through every later rebuild of the score (`undo`, `redo`,
+`editPoint`, `removePoint`).
 
 ```js
 engine.decoratePoint(0, { courtPosition: 'deuce', shotType: 'forehand' });
+engine.decoratePoint(12, { penaltyType: 'Ball Abuse', annotation: 'racquet thrown' });
 ```
 
 ---
@@ -506,9 +513,17 @@ editPoint(
 ): void
 ```
 
-Edit a point in history. By default, recalculates the score from the edited point forward.
+Edit a point in history. By default, recalculates the score from the edited point forward. Any
+point can be edited, including after the match is `COMPLETED`. Since 7.6.1 every field given is kept
+through later rebuilds (before, a recalculating edit kept only `winner` and `server`, and dropped
+decorations on other points), `penaltyType` can be set, and a winner given as `winningSide` takes
+effect as one given as `winner` does. With `recalculate: false` the score is left as it was; the
+next rebuild applies the edit.
 
 ```js
+// Record a penalty against a point after the match
+engine.editPoint(5, { penaltyType: 'Coaching' });
+
 // Fix a wrong winner call
 engine.editPoint(5, { winner: 1 });
 
