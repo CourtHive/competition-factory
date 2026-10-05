@@ -51,6 +51,7 @@ import type {
   TeamCompetitor,
   SubstitutionEvent,
   FormatStructure,
+  Point,
   Episode,
 } from '@Types/scoring/types';
 
@@ -306,7 +307,7 @@ export class ScoringEngine {
     // Attach activePlayers to the just-added point
     if (activePlayers) {
       const lastPoint = this.state.history!.points[this.state.history!.points.length - 1];
-      (lastPoint as any).activePlayers = activePlayers;
+      lastPoint.activePlayers = activePlayers;
     }
 
     // Attach penaltyType to the point if provided
@@ -931,7 +932,7 @@ export class ScoringEngine {
    * The players on court for the point about to be played, in the shape a point records them:
    * both of each side's players in doubles, one per side in singles. Undefined without a lineUp.
    */
-  private activePlayersForPoint(): string[][] | string[] | undefined {
+  private activePlayersForPoint(): Point['activePlayers'] {
     if (!this.hasLineUp()) return undefined;
     const { side1, side2 } = this.getActivePlayers();
     return this.isDoubles ? [side1, side2] : [side1[0] || '', side2[0] || ''];
@@ -1470,7 +1471,8 @@ export class ScoringEngine {
           // Restore entries (addPoint may reset them since it mutates)
           this.state.history!.entries = newState.history!.entries;
           const points = this.state.history!.points;
-          if (activePlayers && points.length > pointCount) (points.at(-1) as any).activePlayers = activePlayers;
+          const played = points.length > pointCount ? points.at(-1) : undefined;
+          if (activePlayers && played) played.activePlayers = activePlayers;
           break;
         }
         case 'set':
@@ -1591,8 +1593,8 @@ export class ScoringEngine {
       );
       // the players recorded on court for the point; with no timeline there is nothing to recompute from
       const replayed = newState.history?.points ?? [];
-      const activePlayers = (point as any).activePlayers;
-      if (activePlayers && replayed.length > pointCount) (replayed.at(-1) as any).activePlayers = activePlayers;
+      const played = replayed.length > pointCount ? replayed.at(-1) : undefined;
+      if (point.activePlayers && played) played.activePlayers = point.activePlayers;
     }
 
     this.state = newState;
