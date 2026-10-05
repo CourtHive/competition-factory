@@ -3,6 +3,7 @@ import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/no
 import { retainPolicyCodes, policyCodeString } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
+import { rekeySideFacts } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -818,6 +819,13 @@ function advanceWinner({
 
   const matchUpStatus = drawPositionIsBye || pairedDrawPositionIsBye ? BYE : TO_BE_PLAYED;
 
+  rekeySideFacts({
+    structureId: winnerMatchUp?.structureId,
+    matchUp: noContextWinnerMatchUp,
+    rekeyWinningSide: false,
+    drawDefinition,
+    drawPositions,
+  });
   Object.assign(noContextWinnerMatchUp, {
     matchUpStatus,
     score: undefined,
@@ -1040,6 +1048,16 @@ function resolvePropagatedExitOnAdvance({
       drawDefinition,
     });
   const exitSideNumber = advancingSideNumber === 1 ? 2 : 1;
+
+  // the participant already here can change side as the advancing position arrives; what is recorded by side goes
+  // with them, and `winningSide` is assigned below from the advancing side (`setMatchUpDrawPositions`)
+  rekeySideFacts({
+    structureId: winnerMatchUp?.structureId ?? matchUp?.structureId,
+    rekeyWinningSide: false,
+    drawDefinition,
+    drawPositions,
+    matchUp,
+  });
 
   /**
    * THE POLICY CODE FOLLOWS THE EXITING SIDE — and the exit tenant is not here to be re-sided.

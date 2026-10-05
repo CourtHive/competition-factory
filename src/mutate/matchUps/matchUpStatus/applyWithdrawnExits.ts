@@ -93,6 +93,30 @@ export function applyWithdrawnExits({
      * Released here instead: every position of the withdrawn matchUp that holds nobody, from the round after it.
      * `releaseAdvancedDrawPosition`'s own scopes keep it off a BYE advancement and off any decided matchUp.
      */
+    /**
+     * A matchUp the withdrawal reverted to UNDECIDED advances nobody, whoever the release above named as its winner.
+     * The name can be wrong: an arrival can land before the withdrawal and re-award a standing produced exit to
+     * itself, so the "winner" read off `winningSide` is the newcomer, who advanced nowhere, while the participant the
+     * exit had really awarded stays one round on, advanced out of an undecided matchUp (census w2 9100303, DE 16/11:
+     * `Backdraw|4|1` kept the old award's winner). Every other occupied position is released too; the release's own
+     * scopes keep a BYE advancement and any decided matchUp.
+     */
+    if (!withdrawnExit.rederived && withdrawnExit.roundNumber && !withdrawnMatchUp.winningSide) {
+      for (const drawPosition of withdrawnMatchUp.drawPositions ?? []) {
+        if (!drawPosition || drawPosition === withdrawnExit.winnerDrawPosition) continue;
+        releaseAdvancedDrawPositionAcrossLinks({
+          fromRoundNumber: withdrawnExit.roundNumber + 1,
+          structureId: withdrawnExit.structureId,
+          withdrawingExit: true,
+          tournamentRecord,
+          drawDefinition,
+          drawPosition,
+          matchUpsMap,
+          event,
+        });
+      }
+    }
+
     if (withdrawnExit.winnerDrawPosition === undefined && !withdrawnExit.rederived && withdrawnExit.roundNumber) {
       const { positionAssignments } = getPositionAssignments({
         drawDefinition,

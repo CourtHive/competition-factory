@@ -74,6 +74,8 @@ const ALLOWED = {
   'mutate/matchUps/drawPositions/assignDrawPositionBye.ts': 'WRITE — re-sides the policy code',
   'mutate/matchUps/drawPositions/positionClear.ts': 'WRITE — blanks',
   'mutate/matchUps/drawPositions/progressExitStatus.ts': 'WRITE — deriveStatusCodes',
+  'mutate/matchUps/drawPositions/setMatchUpDrawPositions.ts':
+    'WRITE — re-sides the policy codes with the participant whose side changed (option R, CA 2026-10-05)',
   'mutate/matchUps/drawPositions/removeDirectedParticipants.ts': 'WRITE — deriveStatusCodes',
   'mutate/matchUps/matchUpStatus/attemptToSetMatchUpStatusBYE.ts': 'WRITE — blanks',
 

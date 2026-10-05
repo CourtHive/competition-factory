@@ -1,12 +1,14 @@
-import { participatesInExitCascade } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { carriedExitStatus, participatesInExitCascade } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
+import { rekeySideFacts } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { releaseLinkedWinnerAdvancement } from './releaseLinkedWinnerAdvancement';
+import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
-import { isExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
@@ -68,6 +70,7 @@ export function removeSubsequentRoundsParticipant({
 
   for (const matchUp of relevantMatchUps ?? []) {
     removeDrawPosition({
+      structureId,
       inContextDrawMatchUps,
       sourceMatchUpStatus,
       positionAssignments,
@@ -98,6 +101,7 @@ export function removeSubsequentRoundsParticipant({
 
 function removeDrawPosition({
   inContextDrawMatchUps,
+  structureId,
   positionAssignments,
   sourceMatchUpStatus,
   targetDrawPosition,
@@ -123,10 +127,13 @@ function removeDrawPosition({
     }
   }
 
-  // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
-  matchUp.drawPositions = (matchUp.drawPositions ?? [])
+  // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`. The participant who stays
+  // can change side as the other seat empties, and what is recorded by side goes with them (`setMatchUpDrawPositions`).
+  const remaining = (matchUp.drawPositions ?? [])
     .map((drawPosition) => (drawPosition === targetDrawPosition ? undefined : drawPosition))
     .filter(Boolean);
+  rekeySideFacts({ drawPositions: remaining, drawDefinition, structureId, matchUp });
+  matchUp.drawPositions = remaining;
   const matchUpAssignments = positionAssignments.filter(({ drawPosition }) =>
     matchUp.drawPositions?.includes(drawPosition),
   );
@@ -148,7 +155,13 @@ function removeDrawPosition({
    * score goes for the same reason — a set score over a contest that no longer has two sides is the
    * same residue wearing a different field.
    */
-  matchUp.winningSide = undefined;
+  //
+  // EXCEPT the award of a CARRIED exit to the seat that just emptied. A carried exit points `winningSide` at its
+  // opponent's side even while that side is empty: the outcome is known, and whoever arrives wins it
+  // (exit-propagation.md, "The pending propagated exit"; only a PRODUCED exit waits for an arrival). Clearing it
+  // here left a carry that no relabel or withdrawal at its source could recognise as its own (`onlyThisCarry`
+  // asks for exactly that award), so the source's change never reached it (census w2 9100478, FICSF 8/5).
+  matchUp.winningSide = carriedAwardToEmptySeat({ matchUp, positionAssignments, drawDefinition, structureId });
   matchUp.score = undefined;
 
   // A LEGACY-ARRAY GATE ON A NATIVE WRITE. Kept: removing it is measured wrong — see the long note at the
@@ -175,4 +188,22 @@ function removeDrawPosition({
   });
 
   return { ...SUCCESS };
+}
+
+/** the side a carried exit standing here awards, when the participant who stays is the one who carried it in */
+function carriedAwardToEmptySeat({ matchUp, positionAssignments, drawDefinition, structureId }): number | undefined {
+  if (!isExit(matchUp.matchUpStatus)) return undefined;
+  const occupied = (matchUp.drawPositions ?? []).filter((drawPosition) =>
+    positionAssignments.some((assignment) => assignment.drawPosition === drawPosition && assignment.participantId),
+  );
+  if (occupied.length !== 1) return undefined;
+  const carrierSide = getDrawPositionSideNumber({
+    matchUp: { ...matchUp, sides: undefined },
+    drawPosition: occupied[0],
+    drawDefinition,
+    structureId,
+  });
+  const entry: any = carrierSide ? matchUp.sideExitProvenance?.[carrierSide] : undefined;
+  if (!carriedExitStatus(entry) || isDoubleExit(entry?.previousMatchUpStatus)) return undefined;
+  return carrierSide === 1 ? 2 : 1;
 }
