@@ -1118,9 +1118,8 @@ function withdrawFromMatchUp(
     // STAGE 1 EXPERIMENT: re-derive, and report that the matchUp is no longer a double exit
     const derived = deriveExitStateFromProvenance(retained);
     if (derived && derived.matchUpStatus !== matchUp.matchUpStatus) {
-      const previousWinnerDrawPosition = matchUp.winningSide
-        ? matchUp.drawPositions?.[matchUp.winningSide - 1]
-        : undefined;
+      // read structurally, as the undecided branch below does: a lone position sits at index 0 whatever its side
+      const previousWinnerDrawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
       matchUp.matchUpStatus = derived.matchUpStatus as any;
       if (derived.winningSide) matchUp.winningSide = derived.winningSide;
       else delete matchUp.winningSide;

@@ -4,6 +4,7 @@ import { retainPolicyCodes, policyCodeString } from '@Mutate/matchUps/matchUpSta
 import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -1030,7 +1031,14 @@ function resolvePropagatedExitOnAdvance({
   stack,
   advancingSide = undefined as number | undefined,
 }) {
-  const advancingSideNumber = advancingSide ?? drawPositions.indexOf(drawPositionToAdvance) + 1;
+  const advancingSideNumber =
+    advancingSide ??
+    getDrawPositionSideNumber({
+      structureId: winnerMatchUp?.structureId ?? matchUp?.structureId,
+      matchUp: { ...matchUp, drawPositions },
+      drawPosition: drawPositionToAdvance,
+      drawDefinition,
+    });
   const exitSideNumber = advancingSideNumber === 1 ? 2 : 1;
 
   /**
