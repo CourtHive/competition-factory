@@ -3,9 +3,10 @@ import { mergeFacilitySchedule } from '@Query/facilitySchedule/mergeFacilitySche
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 
 // constants and types
+import { MatchUpSchedule, ScheduleScenario, Tournament } from '@Types/tournamentTypes';
 import { FacilityScheduleGrid, ScheduleCell } from '@Types/facilityScheduleTypes';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { ScheduleScenario, Tournament } from '@Types/tournamentTypes';
+import { ErrorType } from '@Constants/errorConditionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -31,7 +32,7 @@ type GetScenarioScheduleProjectionArgs = {
  * TMX renders the same shape it already knows.
  */
 export function getScenarioScheduleProjection(params: GetScenarioScheduleProjectionArgs): {
-  error?: any;
+  error?: ErrorType;
   scheduleCells?: ScenarioProjectionCell[];
   grid?: FacilityScheduleGrid;
   conflicts?: FacilityScheduleGrid['conflicts'];
@@ -76,8 +77,8 @@ export function getScenarioScheduleProjection(params: GetScenarioScheduleProject
   };
 }
 
-function buildPlacementMap(scenario: ScheduleScenario): { [matchUpId: string]: any } {
-  const map: { [matchUpId: string]: any } = {};
+function buildPlacementMap(scenario: ScheduleScenario): { [matchUpId: string]: MatchUpSchedule } {
+  const map: { [matchUpId: string]: MatchUpSchedule } = {};
   for (const placement of scenario.placements ?? []) map[placement.matchUpId] = placement.schedule ?? {};
   return map;
 }
@@ -95,7 +96,7 @@ function buildCourtToVenueMap(tournamentRecord: Tournament): { [courtId: string]
 type ProjectMatchUpArgs = {
   matchUp: any;
   record: Tournament;
-  placementMap: { [matchUpId: string]: any };
+  placementMap: { [matchUpId: string]: MatchUpSchedule };
   courtToVenue: { [courtId: string]: string };
   venueFilter?: Set<string>;
   plannedMatchUpIds: string[];

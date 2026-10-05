@@ -41,7 +41,7 @@ export type RoundMatchUpsResult = {
   error?: ErrorType;
 };
 
-function findDrawPositionInChunk(chunk: any[], filteredDrawPositions: any[]) {
+function findDrawPositionInChunk(chunk: (number | undefined)[], filteredDrawPositions: (number | undefined)[]) {
   return filteredDrawPositions?.find((drawPosition) => chunk.includes(drawPosition));
 }
 

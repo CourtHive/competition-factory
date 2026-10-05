@@ -47,9 +47,9 @@ import { commitmentOf, TimeCommitment } from './timeCommitment';
 // constants and types
 import { MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
+import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { Tournament } from '@Types/tournamentTypes';
-import { HydratedMatchUp } from '@Types/hydrated';
 import { ResultType } from '@Types/factoryTypes';
 
 export type ReadinessKind = 'undetermined' | 'dependency' | 'recovery' | 'overlap';
@@ -141,7 +141,7 @@ export function individualIds(matchUp: HydratedMatchUp): string[] {
   return [...ids];
 }
 
-function sideLabel(side: any): string {
+function sideLabel(side: HydratedSide | undefined): string {
   return side?.participant?.participantName ?? side?.participantName ?? 'TBD';
 }
 

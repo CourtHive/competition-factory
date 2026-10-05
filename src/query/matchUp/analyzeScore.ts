@@ -9,7 +9,7 @@ import { instanceCount } from '@Tools/arrays';
 
 // constants and types
 import { COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { Score } from '@Types/tournamentTypes';
+import { Score, Set as SetType } from '@Types/tournamentTypes';
 
 type AnalyzeScoreArgs = {
   existingMatchUpStatus?: string;
@@ -92,7 +92,7 @@ function validateSet(
   return !excessiveSetScore;
 }
 
-function calculateAggregateWinner(sets: any[]): number | undefined {
+function calculateAggregateWinner(sets: SetType[]): number | undefined {
   const aggregateTotals = sets.reduce(
     (totals, set) => {
       if (set.side1Score !== undefined || set.side2Score !== undefined) {

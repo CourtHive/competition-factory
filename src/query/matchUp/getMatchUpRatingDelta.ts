@@ -6,6 +6,9 @@ import { signedRatingDelta } from './resolveDeltaBand';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 
+// types
+import type { HydratedParticipant, HydratedSide } from '@Types/hydrated';
+
 export type MatchUpRatingDelta = {
   perspectiveSideNumber?: number;
   signedDelta?: number;
@@ -25,10 +28,10 @@ type GetMatchUpRatingDeltaArgs = {
   matchUp: any;
 };
 
-function participantIds(participant: any): string[] {
+function participantIds(participant?: HydratedParticipant): string[] {
   if (!participant) return [];
   const individualIds = (participant.individualParticipants ?? [])
-    .map((individual: any) => individual?.participantId)
+    .map((individual) => individual?.participantId)
     .filter(Boolean);
   return participant.participantId ? [participant.participantId, ...individualIds] : individualIds;
 }
@@ -40,7 +43,7 @@ function scaleValueForParticipant({
   type,
 }: {
   valueAccessor?: string;
-  participant: any;
+  participant?: HydratedParticipant;
   scaleName?: string;
   type: string;
 }): number | undefined {
@@ -74,14 +77,14 @@ function sideRating({
 }: {
   valueAccessor?: string;
   scaleName?: string;
-  side: any;
+  side?: HydratedSide;
   type: string;
 }): number | undefined {
   const participant = side?.participant;
   const individuals = participant?.individualParticipants;
 
   if (Array.isArray(individuals) && individuals.length) {
-    const values = individuals.map((individual: any) =>
+    const values = individuals.map((individual) =>
       scaleValueForParticipant({ participant: individual, valueAccessor, scaleName, type }),
     );
     if (values.some((value) => value === undefined)) return undefined;
@@ -98,7 +101,7 @@ function perspectiveIndex({
 }: {
   participantId?: string;
   sideNumber?: number;
-  sides: any[];
+  sides: HydratedSide[];
 }): number | undefined {
   if (sideNumber === 1 || sideNumber === 2) return sideNumber - 1;
   if (participantId) {

@@ -4,6 +4,7 @@ import { analyzeSet } from './analyzeSet';
 
 // constants and types
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+import { Set as SetType } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 export function analyzeMatchUp(params?): ResultType & {
@@ -184,7 +185,7 @@ export function analyzeMatchUp(params?): ResultType & {
 }
 
 /** Whether a set carries any score at all, and is therefore one of the sets that were played. */
-function hasSetValues(set: any): boolean {
+function hasSetValues(set: SetType): boolean {
   return [set?.side1Score, set?.side2Score, set?.side1TiebreakScore, set?.side2TiebreakScore].some(
     (value) => value !== undefined && value !== null,
   );
@@ -202,7 +203,7 @@ function hasSetValues(set: any): boolean {
  * `sideGameScores`, while a tiebreak decider reports its point in `sideTiebreakScores` and 0-0 games,
  * so reading the games alone would silently drop the one point that settles a tie.
  */
-function aggregateSideScores(sets: any[] | undefined, matchUpScoringFormat: any): number[] | undefined {
+function aggregateSideScores(sets: SetType[] | undefined, matchUpScoringFormat: any): number[] | undefined {
   const played = (sets ?? []).filter(hasSetValues);
   const expected = matchUpScoringFormat?.exactly ?? matchUpScoringFormat?.bestOf;
   if (expected !== undefined && played.length < expected) return undefined;

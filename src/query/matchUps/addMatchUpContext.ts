@@ -33,6 +33,7 @@ import {
   ContextProfile,
   ParticipantMap,
   PolicyDefinitions,
+  RoundProfile,
   ScheduleTiming,
   ScheduleVisibilityFilters,
 } from '@Types/factoryTypes';
@@ -76,7 +77,7 @@ type AddMatchUpContextArgs = {
   structure: Structure;
   publishStatus?: any;
   sideLineUps?: any[];
-  roundProfile?: any;
+  roundProfile?: RoundProfile;
   event?: Event;
 };
 

@@ -97,7 +97,7 @@ function setFormatAt(parsed: any, index: number): any {
  * grammar, so two formats that mean the same thing serialise the same way — which is what makes
  * comparing them honest rather than a list of fields someone has to remember to extend.
  */
-function sameSetFormat(a: any, b: any): boolean {
+function sameSetFormat(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   return JSON.stringify(a) === JSON.stringify(b);

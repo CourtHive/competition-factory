@@ -53,7 +53,7 @@ export function getParticipantResults({
   // All-or-nothing is deliberate: skipping the offending matchUps would return a tally silently
   // missing matches, which is the failure this guard exists to prevent rather than a milder form of
   // it. An EMPTY array is still a valid question — the guard is on matchUps present but unusable.
-  const unusable = matchUps.some((matchUp: any) => matchUp && !(matchUp.sides?.[0] && matchUp.sides?.[1]));
+  const unusable = matchUps.some((matchUp) => matchUp && !(matchUp.sides?.[0] && matchUp.sides?.[1]));
   if (unusable) {
     return {
       error: INVALID_MATCHUP,

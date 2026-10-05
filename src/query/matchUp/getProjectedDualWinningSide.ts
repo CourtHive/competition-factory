@@ -4,11 +4,19 @@ import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants types and fixtures
-import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Structure, TieFormat } from '@Types/tournamentTypes';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  Score,
+  Structure,
+  TieFormat,
+} from '@Types/tournamentTypes';
 
 type GetProjectedDualWinningSideArgs = {
   drawDefinition?: DrawDefinition;
@@ -20,7 +28,7 @@ type GetProjectedDualWinningSideArgs = {
   winningSide?: number;
   matchUp: MatchUp;
   event?: Event;
-  score?: any;
+  score?: Score;
 };
 export function getProjectedDualWinningSide({
   drawDefinition,

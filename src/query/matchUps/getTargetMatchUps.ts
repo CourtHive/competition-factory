@@ -2,7 +2,7 @@ import { getContainedStructures } from '@Query/drawDefinition/getContainedStruct
 import { intersection } from '@Tools/arrays';
 
 // types
-import { DrawDefinition, Structure } from '@Types/tournamentTypes';
+import { DrawDefinition, PositionAssignment, Structure } from '@Types/tournamentTypes';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -11,7 +11,7 @@ type GetTargetMatchUpsArgs = {
   drawDefinition?: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
   structure: Structure;
-  assignments?: any;
+  assignments?: PositionAssignment[];
 };
 export function getTargetMatchUps({
   inContextDrawMatchUps,

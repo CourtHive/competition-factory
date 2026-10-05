@@ -2,7 +2,7 @@ import { getOrderedDrawPositions } from '@Query/matchUps/getOrderedDrawPositions
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 
 // types
-import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
 
 export type DrawPositionSide = { drawPosition: number; sideNumber: number };
 
@@ -172,7 +172,7 @@ export function getDrawPositionSideNumber({
 }
 
 /** Depth first: a round robin's matchUps belong to the GROUP, not its parent. */
-function findStructure(structures: any[], structureId: string): any {
+function findStructure(structures: Structure[], structureId: string): Structure | undefined {
   for (const structure of structures ?? []) {
     if (structure?.structures?.length) {
       const nested = findStructure(structure.structures, structureId);
