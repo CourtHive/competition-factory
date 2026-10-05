@@ -1,12 +1,11 @@
 import { checkIntegrity, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
-import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
 import { prepareDraw, randomConfig, rng } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
 import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { EXIT } from '@Constants/matchUpActionConstants';
 
 /**
@@ -100,17 +99,17 @@ function playSeed(seed: number): string | undefined {
  */
 const WINDOWS = Array.from({ length: SEEDS.length / 10 }, (_, index) => SEEDS.slice(index * 10, index * 10 + 10));
 
-// v1 alone. Under `differential` seed 9700103 (COMPASS 32/27) diverges on `dev` too: after a DEFAULTED
-// recorded at `West|2|1`, a WALKOVER recorded at `West|2|4` carries its loser past a BYE, and v1 converges
-// the matchUp they reach (DOUBLE_WALKOVER) where v2 plans a WALKOVER won by the side opposite them. The
-// outcome-v2 session's to rule on; this arm measures v1.
+// Under whichever pipeline the suite runs, so the `differential` run (into and on master) compares v2
+// here too. It was pinned to v1 while seed 9700103 (COMPASS 32/27) diverged: a WALKOVER recorded at
+// `West|2|4` carries its loser past a BYE into `Southwest|2|1`, where a DEFAULTED a double default
+// produced stands pending on the unreached side; v1 converged it (DOUBLE_WALKOVER, right by
+// exit-propagation.md's mixed rule) and the differential, finding that side by an in-context
+// `sideNumber` an unreached side does not carry, expected a WALKOVER instead. Pinned by
+// `aCarriedExitPastAByeMeetsAPendingProducedExit.test.ts`.
 it.each(WINDOWS.map((seeds) => ({ seeds, from: seeds[0] })))(
   'seeds from $from: recorded exits beside an unreached seat stay within the known budget',
   ({ seeds }) => {
-    const mode = getOutcomePipeline();
-    setOutcomePipeline(OUTCOME_PIPELINE_V1);
     const failing = seeds.map((seed) => ({ seed, failure: playSeed(seed) })).filter(({ failure }) => failure);
-    setOutcomePipeline(mode);
     const unexpected = failing.filter(({ seed }) => !KNOWN.has(seed));
     const closed = seeds.filter((seed) => KNOWN.has(seed) && !failing.some((entry) => entry.seed === seed));
     expect(unexpected).toEqual([]);

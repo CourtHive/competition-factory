@@ -223,10 +223,15 @@ function checkCarriedPastBye({
   const onwardId = onward.matchUpId;
   const onwardSide = onward?.sides?.find((side) => side?.participantId === loserId)?.sideNumber;
   if (!onwardSide) diverge(args, `loser ${loserId} not in ${onwardId}`, `planned the loser on past the BYE into it`);
-  const other = onward?.sides?.find((side) => side?.sideNumber === 3 - (onwardSide ?? 0));
+  // by NUMBER: a side nobody has reached is an in-context `{}` with no sideNumber, and a pending exit
+  // produced there by a double exit holds no drawPosition, so only its provenance says it stands (a BYE
+  // claimed there is not an exit)
+  const otherSide = 3 - (onwardSide ?? 0);
+  const other = onward?.sides?.find((side) => side?.sideNumber === otherSide);
   if (other?.bye) return differentialTally(`${route}:loser-exit-past-bye-again`, 'deferred');
-  const standingExit = onward?.sideExitProvenance?.[other?.sideNumber ?? 0]?.matchUpStatus;
-  if (standingExit) return checkPastByeConvergence({ args, route, exit, standingExit, onward, loserId });
+  const standingExit = onward?.sideExitProvenance?.[otherSide]?.matchUpStatus;
+  if (standingExit && standingExit !== BYE)
+    return checkPastByeConvergence({ args, route, exit, standingExit, onward, loserId });
   const expectedWinner = onwardSide === 1 ? 2 : 1;
   if (onward?.matchUpStatus !== exit || onward?.winningSide !== expectedWinner)
     diverge(
