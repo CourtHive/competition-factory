@@ -122,8 +122,16 @@ export function analyzeMatchUp(params?): ResultType & {
   // every one of them had not won either. Downstream that is not cosmetic — `courthive-components`
   // gates its Submit on this, so a decided bolt match could not be recorded unless it ended 5-4.
   //
+  // ── ...and it is decided only once EVERY set is played ──
+  //
+  // CA, 2026-10-05, on `SET9X-S:T10`: *"All nine must be played."* Reaching `setsToWin` early is a lead,
+  // not a win: five bolts to side 1 resolved side 1 here while `validateScore` refused the same score
+  // (`analyzeScore`'s `isExactlyComplete`), and `courthive-components` gates Submit on this, so the card
+  // offered a result the engine then refused. The aggregate branch below already waits for every set.
+  //
   const playsEverySet = exactly !== undefined;
-  const reachedSetsToWin = playsEverySet ? maxSetsCount >= setsToWin : maxSetsCount === setsToWin;
+  const everySetPlayed = !playsEverySet || (sets ?? []).filter(hasSetValues).length >= exactly;
+  const reachedSetsToWin = playsEverySet ? everySetPlayed && maxSetsCount >= setsToWin : maxSetsCount === setsToWin;
 
   // ── An AGGREGATE format is decided on POINTS, and sets won are not the question ──
   //
