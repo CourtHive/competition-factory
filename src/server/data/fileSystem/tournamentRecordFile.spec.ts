@@ -55,8 +55,7 @@ describe('fileSystem record suffix: write .codes.json, still read .tods.json', (
 });
 
 describe('a tournamentId never reaches outside the storage directory (path injection)', () => {
-  // (`..` alone is NOT an escape: it names a file `..codes.json` inside storage, which the guard allows)
-  const escapes = ['../escape', '../../escape', 'a/b', 'nested/../../escape', '/tmp/escape', ''];
+  const escapes = ['../escape', '../../escape', 'a/b', 'a\\b', 'nested/../../escape', '..', '/tmp/escape', ''];
 
   it('names no file for an id that would leave storage, and the usual one for a plain id', () => {
     for (const id of escapes) {
