@@ -14,7 +14,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
 
 // constants and types
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Entry, Event, Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import { GROUP, PAIR, TEAM } from '@Constants/participantConstants';
 import { IdCollections, MatchUpsMap } from '@Types/factoryTypes';
@@ -39,7 +39,7 @@ type RandomUnseededDistribution = {
   structureId: string;
   drawSize: number;
   avoidance?: any;
-  entries?: any;
+  entries?: Entry[];
   event?: Event;
   random?: () => number;
 };
@@ -165,8 +165,8 @@ export function randomUnseededSeparation({
     }),
   );
 
-  candidate = noPairPriorityCandidates.reduce(
-    (p: any, c) => (!p || (c.conflicts || 0) < (p.conflicts || 0) ? c : p),
+  candidate = noPairPriorityCandidates.reduce<(typeof noPairPriorityCandidates)[number] | undefined>(
+    (p, c) => (!p || (c.conflicts || 0) < (p.conflicts || 0) ? c : p),
     undefined,
   );
 
@@ -195,7 +195,10 @@ export function randomUnseededSeparation({
       .concat(...pairedPriorityCandidates)
       .filter((candidate) => !candidate.errors?.length);
 
-    candidate = candidates.reduce((p: any, c) => (!p || (c.conflicts || 0) < (p.conflicts || 0) ? c : p), undefined);
+    candidate = candidates.reduce<(typeof candidates)[number] | undefined>(
+      (p, c) => (!p || (c.conflicts || 0) < (p.conflicts || 0) ? c : p),
+      undefined,
+    );
   }
 
   if (!candidate) return { error: NO_CANDIDATES };

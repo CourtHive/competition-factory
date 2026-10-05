@@ -9,6 +9,7 @@ import { unique } from '@Tools/arrays';
 // constants and types
 import { ALTERNATE, DIRECT_ENTRY_STATUSES, UNGROUPED, UNPAIRED, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { ASSIGN_SIDE_METHOD, REMOVE_PARTICIPANT, REMOVE_SIDE_METHOD } from '@Constants/matchUpActionConstants';
+import { DrawDefinition, Event, MatchUp, Structure } from '@Types/tournamentTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 import {
   ASSIGN_PARTICIPANT,
@@ -34,12 +35,12 @@ export function adHocMatchUpActions({
   otherFlightEntries?: boolean;
   structureId: string;
   sideNumber?: number;
-  drawDefinition: any;
+  drawDefinition: DrawDefinition;
   matchUpId: string;
   drawId: string;
-  structure: any;
-  matchUp: any;
-  event: any;
+  structure?: Structure;
+  matchUp: MatchUp;
+  event?: Event;
 }) {
   const validActions: any = [];
 
@@ -65,7 +66,7 @@ export function adHocMatchUpActions({
   // individual with anyone already in the round would put that person in two matchUps at once.
   // Assignment refuses both, so neither is offered. The participant being replaced on this side
   // frees its individuals.
-  const individualIdsMap = buildIndividualIdsMap(tournamentParticipants as any);
+  const individualIdsMap = buildIndividualIdsMap(tournamentParticipants);
   const individualsOf = (participantIds: string[]) =>
     new Set(participantIds.flatMap((participantId) => individualIdsMap[participantId] ?? []));
   const opposingIndividualIds = individualsOf(

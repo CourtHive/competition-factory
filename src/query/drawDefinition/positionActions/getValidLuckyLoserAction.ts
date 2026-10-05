@@ -58,8 +58,8 @@ export function getValidLuckyLosersAction({
   */
 
   const { sourceStructureIds, targetStructureIds } =
-    drawDefinition.links?.reduce(
-      (ids: any, link) => {
+    drawDefinition.links?.reduce<{ sourceStructureIds: string[]; targetStructureIds: string[] }>(
+      (ids, link) => {
         const sourceStructureId = link.source?.structureId;
         const targetStructureId = link.target?.structureId;
         if (!ids.sourceStructureIds.includes(sourceStructureId)) ids.sourceStructureIds.push(sourceStructureId);
@@ -130,7 +130,7 @@ export function getValidLuckyLosersAction({
     availableLuckyLoserParticipantIds?.includes(participant.participantId),
   );
 
-  availableLuckyLosers?.forEach((luckyLoser: any) => {
+  availableLuckyLosers?.forEach((luckyLoser) => {
     const entry = (drawDefinition.entries ?? []).find((entry) => entry.participantId === luckyLoser.participantId);
     luckyLoser.entryPosition = entry?.entryPosition;
   });
