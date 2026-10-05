@@ -10,6 +10,12 @@ import { configDefaults, defineConfig } from 'vitest/config';
 
 import { testFileAliases } from './vitest.aliases.mjs';
 
+// A `--shard=i/n` run holds a fraction of the suite, so its coverage is a fraction too: every file another
+// shard covers reads as untested, and the thresholds below would fail it. CI shards coverage 4 ways and runs
+// `vitest run --merge-reports --coverage` over the shards' blob reports; THAT run carries no `--shard`, so
+// the thresholds apply to the merged result, exactly as they did to one whole-suite run (verify.yml).
+const isShard = process.argv.some((arg) => arg.startsWith('--shard'));
+
 export default defineConfig({
   test: {
     testTimeout: 30000, // 30 seconds for slow tests
@@ -95,18 +101,20 @@ export default defineConfig({
       //    which the 95% global already passed. Vitest 5 resolves `perFile` per
       //    group and supports the object form below, which states the two tiers
       //    without a glob and cannot be silently downgraded to an aggregate.
-      thresholds: {
-        statements: 95,
-        functions: 95,
-        branches: 85,
-        lines: 95,
-        perFile: {
-          statements: 50,
-          functions: 50,
-          branches: 50,
-          lines: 50,
-        },
-      },
+      thresholds: isShard
+        ? undefined
+        : {
+            statements: 95,
+            functions: 95,
+            branches: 85,
+            lines: 95,
+            perFile: {
+              statements: 50,
+              functions: 50,
+              branches: 50,
+              lines: 50,
+            },
+          },
     },
   },
   resolve: {
