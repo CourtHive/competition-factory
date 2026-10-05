@@ -151,6 +151,13 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
       winningSide,
   );
 
+  // A DUAL WITH NO RUBBER RESULT HOLDS NO SCORE (CA, 2026-10-05). The generator derives 0-0 whenever no
+  // point is won, so clearing a dual's only result (or "clearing" a rubber that never had one) used to
+  // store a 0-0 score on a TO_BE_PLAYED dual. The dual then differed from one that was never touched, and
+  // read as UNDECIDED_WITH_SCORE. With no winner and no rubber holding anything, the score is removed.
+  const noResult = !hasWinner && !hasResults;
+  if (noResult) delete matchUp.score;
+
   let tieFormatRemoved;
 
   if (matchUp.tieFormat && !hasWinner && !hasResults) {
@@ -176,7 +183,7 @@ export function updateTieMatchUpScore(params: UpdateTieMatchUpScoreArgs): {
     appliedPolicies: params.appliedPolicies,
     matchUpStatus: newMatchUpStatus,
     context: 'updateTieMatchUpScore',
-    score: scoreObject,
+    score: noResult ? undefined : scoreObject,
     removeWinningSide,
     tournamentRecord,
     drawDefinition,

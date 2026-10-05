@@ -68,10 +68,10 @@ test('positionActions work when team score is 0-0', () => {
   validActions = result.validActions.map(({ type }) => type);
   expect(validActions.includes('SWAP')).toEqual(false);
 
-  // remove outcome
+  // remove outcome: a dual with no rubber result holds no score (CA, 2026-10-05); it held 0-0 before
   processOutcome({
     dualMatchUp: firstDualMatchUp,
-    expectedScore: '0-0',
+    expectedScore: undefined,
     outcome: toBePlayed,
   });
 
@@ -99,9 +99,7 @@ function processOutcome({ dualMatchUp, outcome, expectedScore }) {
     expect(result.success).toEqual(true);
   });
   const updatedDualMatchUp = getMatchUp(dualMatchUp.matchUpId);
-  const {
-    score: { scoreStringSide1 },
-  } = updatedDualMatchUp;
+  const scoreStringSide1 = updatedDualMatchUp.score?.scoreStringSide1;
 
   expect(scoreStringSide1).toEqual(expectedScore);
 }
