@@ -133,9 +133,9 @@ export function projectFieldsOf({ event, drawDefinition }: { event: any; drawDef
       putExtensions(`M:${at}`, matchUp.extensions);
       for (const side of matchUp.sides ?? []) {
         if (side?.lineUp?.length) {
-          const lineUp = side.lineUp
-            .slice()
-            .sort((a: any, b: any) => String(a.participantId).localeCompare(String(b.participantId)));
+          const lineUp = side.lineUp.toSorted((a: any, b: any) =>
+            String(a.participantId).localeCompare(String(b.participantId)),
+          );
           put('lineUp', `${at}|${side.sideNumber}`, lineUp);
         }
       }

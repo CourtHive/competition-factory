@@ -118,10 +118,10 @@ describe('the projection is stable where it must be', () => {
         .drawDefinition.structures[0].matchUps.map((matchUp: any) => matchUp.matchUpId);
     generateTeam();
     const first = projectFields(drawId);
-    const firstIds = matchUpIds();
+    const firstIds = new Set(matchUpIds());
     generateTeam();
     // the control: the ids really are regenerated (measured: eventId and structureId are not)
-    expect(matchUpIds().some((matchUpId: string) => firstIds.includes(matchUpId))).toEqual(false);
+    expect(matchUpIds().some((matchUpId: string) => firstIds.has(matchUpId))).toEqual(false);
     expect(diffFields(first, projectFields(drawId))).toEqual([]);
   });
 
