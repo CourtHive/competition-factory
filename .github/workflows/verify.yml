@@ -324,8 +324,14 @@ jobs:
         env:
           OUTCOME_PIPELINE: ${{ (github.base_ref == 'master' || github.ref == 'refs/heads/master') && 'differential' || '' }}
 
-      # coverage/coverage-summary.json of the merged run, where verify:coverage-headroom reads it.
-      # Headroom is not a CI gate (yet); the artifact lets anyone run it against this run's numbers.
+      # How much margin the merged coverage has above the floors, in items (CA, 2026-10-05: report +
+      # an absolute minimum). Written to the job summary on every run, and the run fails if any metric
+      # has fewer than 50 items of headroom: early warning, well before the thresholds fail at 0. Report
+      # mode skips the committed-baseline budget, which local `pnpm verify` still applies.
+      - name: verify:coverage-headroom
+        run: node scripts/verify/coverage-headroom.mjs --report --min=50
+
+      # coverage/coverage-summary.json of the merged run, so anyone can re-run the headroom against it.
       - uses: actions/upload-artifact@v7
         with:
           name: coverage-summary-node${{ matrix.node-version }}
