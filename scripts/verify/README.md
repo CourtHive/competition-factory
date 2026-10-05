@@ -6,22 +6,22 @@ A 12th check, `verify:ecosystem`, runs downstream consumer tests against the in-
 
 ## What each check catches
 
-| Step                       | Catches                                                                                                                                                                                                                                                | Cost   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| `verify:generated`         | a generated module (enum exports/constants, engine methods, method signatures) is stale; and `check:request-shapes` — a request shape reaching for bare `any` or bare `string` where a closed union exists                                             | ~2 s   |
-| `verify:types`             | type errors anywhere in `src`                                                                                                                                                                                                                          | ~3 s   |
-| `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                                                                                            | ~5 s   |
-| `verify:exit-tenant`       | a NEW file in `src/` reaching for `matchUpStatusCodes` — the LEGACY array whose per-side exit tenant was evicted (P37); reads `sideExitProvenance` instead. Allowlisted by FILE, with a reason each, and a stale entry fails so the list ratchets down | ~0 s   |
-| `verify:coverage`          | regressions below `95/95/85/95` statements/functions/branches/lines                                                                                                                                                                                    | ~100 s |
-| `verify:coverage-headroom` | a change spending more than 25 items of margin before the coverage floor; always prints headroom per metric                                                                                                                                            | ~0 s   |
-| `verify:server`            | NestJS-style server specs (`pnpm test:server` — vitest, `vitest.server.config.mts`)                                                                                                                                                                    | ~7 s   |
-| `verify:audit`             | high or critical `pnpm audit` advisories in **every** lockfile (package + `documentation/`), minus entries in `audit-waivers.json`; a waiver matching no open advisory also fails                                                                      | ~10 s  |
-| `verify:build`             | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                                                                                                       | ~13 s  |
-| `verify:publint`           | `publint --strict --level warning` — package.json `exports` correctness, per-format type declarations, `sideEffects` / `type` hints, tarball contents match `files` field                                                                              | ~6 s   |
-| `verify:runtime`           | "compiles but doesn't run" — CJS + ESM smoke against the built dist                                                                                                                                                                                    | ~3 s   |
-| `verify:bundle-size`       | a file in `dist/` grew beyond +10 % vs baseline                                                                                                                                                                                                        | ~1 s   |
-| `verify:surface`           | a public export was removed (breaking) or signature drifted                                                                                                                                                                                            | ~1 s   |
-| `verify:pack`              | the published `.d.ts` references an internal path that didn't get packed; runtime `require()` smoke after `npm install` of the tarball                                                                                                                 | ~30 s  |
+| Step                       | Catches                                                                                                                                                                                                                                                        | Cost   |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `verify:generated`         | a generated module (enum exports/constants, engine methods, method signatures) is stale; and `check:request-shapes` — a request shape reaching for bare `any` or bare `string` where a closed union exists; and `verify:any-count` — a directory gaining `any` | ~2 s   |
+| `verify:types`             | type errors anywhere in `src`                                                                                                                                                                                                                                  | ~3 s   |
+| `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                                                                                                    | ~5 s   |
+| `verify:exit-tenant`       | a NEW file in `src/` reaching for `matchUpStatusCodes` — the LEGACY array whose per-side exit tenant was evicted (P37); reads `sideExitProvenance` instead. Allowlisted by FILE, with a reason each, and a stale entry fails so the list ratchets down         | ~0 s   |
+| `verify:coverage`          | regressions below `95/95/85/95` statements/functions/branches/lines                                                                                                                                                                                            | ~100 s |
+| `verify:coverage-headroom` | a change spending more than 25 items of margin before the coverage floor; always prints headroom per metric                                                                                                                                                    | ~0 s   |
+| `verify:server`            | NestJS-style server specs (`pnpm test:server` — vitest, `vitest.server.config.mts`)                                                                                                                                                                            | ~7 s   |
+| `verify:audit`             | high or critical `pnpm audit` advisories in **every** lockfile (package + `documentation/`), minus entries in `audit-waivers.json`; a waiver matching no open advisory also fails                                                                              | ~10 s  |
+| `verify:build`             | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                                                                                                               | ~13 s  |
+| `verify:publint`           | `publint --strict --level warning` — package.json `exports` correctness, per-format type declarations, `sideEffects` / `type` hints, tarball contents match `files` field                                                                                      | ~6 s   |
+| `verify:runtime`           | "compiles but doesn't run" — CJS + ESM smoke against the built dist                                                                                                                                                                                            | ~3 s   |
+| `verify:bundle-size`       | a file in `dist/` grew beyond +10 % vs baseline                                                                                                                                                                                                                | ~1 s   |
+| `verify:surface`           | a public export was removed (breaking) or signature drifted                                                                                                                                                                                                    | ~1 s   |
+| `verify:pack`              | the published `.d.ts` references an internal path that didn't get packed; runtime `require()` smoke after `npm install` of the tarball                                                                                                                         | ~30 s  |
 
 Total: ~3 minutes warm. The chain is ordered so cheap fail-fast checks run first.
 
@@ -39,13 +39,14 @@ Total: ~3 minutes warm. The chain is ordered so cheap fail-fast checks run first
 
 ## Baselines
 
-Three artifacts live under `scripts/verify/baseline/`:
+Four artifacts live under `scripts/verify/baseline/`:
 
 - **`surface.txt`** — sorted list of every public export name. Surface drift is computed by set diff against this file. Regenerate after intentional surface changes with `pnpm verify:surface -- --update-baseline`.
 - **`bundle-size.json`** — `{ rawBytes, gzipBytes }` per published file. Growth-budget is +10 % per file by default; override with `--budget=N` (decimal).
 - **`coverage-headroom.json`** — items of margin per metric before the coverage floor. A change may spend 25 by default (`--budget=N`); accept a new margin with `node scripts/verify/coverage-headroom.mjs --update-baseline`. Percentages hide how close the floor is — 95.09 % against a 95 floor was **39 statements** out of 43,284 — so this tracks the number in items.
+- **`any-count.json`** — `any` per directory in non-test `src`; it may only fall (`verify:any-count`, below).
 
-Both baselines are tracked in git so the budget travels with the code.
+All of them are tracked in git so the budget travels with the code.
 
 ## Modes worth knowing
 
@@ -126,3 +127,17 @@ nothing **fails** the run, the same stale-waiver rule `verify:audit` applies to 
 `pnpm check:request-shapes:self-test` asserts that both rules and the polysemy rule actually FIRE,
 and runs immediately before the real check in `verify:generated`. A guard measured at zero that has
 never been shown to fail is indistinguishable from a scan that matches nothing.
+
+## `verify:any-count` — `any` may only go down
+
+`scripts/verify/anyCount.mjs` counts `: any`, `: any[]`, `as any`, `<any>` and bare `any[]` per directory
+(non-recursive) in non-test `src`, and fails when a directory rises above
+`scripts/verify/baseline/any-count.json`, or a directory missing from it holds any at all. Comments, test
+files and `Record<string, any>`-style open maps are not counted. `no-explicit-any` is off in this repo, so
+this ratchet is the only thing holding the count; the plan that lowers it is
+`Mentat/planning/FACTORY_ANY_TIGHTENING.md`.
+
+- `pnpm verify:any-count --update-baseline` writes LOWER counts after you remove `any`.
+- It refuses to write a rise. `--accept-rise` records one deliberately, so it shows up as a reviewed line
+  in the baseline diff, never silently.
+- `pnpm verify:any-count --self-test` proves it fires on a rise and stays quiet on a fall.
