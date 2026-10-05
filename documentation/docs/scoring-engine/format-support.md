@@ -140,6 +140,18 @@ const engine = new ScoringEngine({ matchUpFormat: 'SET7XA-S:T10P' });
 // Exactly 7 segments, all played regardless of score
 ```
 
+A non-aggregate exactly format is decided on sets won, but only once all N sets are recorded:
+
+- Reaching `setsToWin` before the last set is a lead, not a win. Five sets to side 1 in
+  `SET9X-S:T10` names no winner while four remain to play (since 7.6.0).
+- Once every set is played, the side with more sets wins, however many it took: a 3-0 sweep of
+  `SET3X-S:T10` is a win. A level count (2-2 in `SET4X-S:T10`) names no winner, so a score that names
+  one is refused (since 7.5.0).
+- No set beyond N is recorded; a score with an extra set is refused (since 7.5.0).
+
+An aggregate exactly format (`XA`) may record one set more than N: a level total goes to a
+sudden-death decider (`-F:`), which is set N + 1 and not one of the N sets (since 7.5.0).
+
 ## Format Introspection
 
 The ScoringEngine provides methods to query format properties without parsing format strings manually:

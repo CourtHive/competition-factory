@@ -204,14 +204,14 @@ const parsed = matchUpFormatGovernor.parse('INVALID');
 
 **Notes:**
 
-- Returns `undefined` for invalid format codes
+- Returns `undefined` for invalid format codes, including every code `isValidMatchUpFormat` refuses and every code that does not round-trip through `stringify` (since 7.5.0; see [Validation Logic](#isvalid--isvalidmatchupformat))
 - Supports standard sets, timed sets, and tiebreak sets
 - Handles special cases like no-advantage (NoAD) games and tiebreaks
 - Timed sets can be games-based (G) or points-based (P); aggregate scoring is signaled by the match-level `A` modifier
 - `matchRoot` is only included when the root is not `SET` (backward compatibility)
 - `aggregate` is only included when `true`
-- Sections (`-S:`, `-F:`, `-G:`, `-M:`) are dispatched by key, not by position, so order doesn't matter
-- For `SET` root, `bestOf` must be < 6 (for non-timed formats); non-`SET` roots have no limit
+- Sections must appear in the canonical order (`-S:`, `-G:`, `-F:`, `-M:`); a code with sections out of order is refused (since 7.5.0)
+- Any best-of count is valid, for every root (since 7.5.0)
 - Format grammar: `{ROOT}{count}[X][A]-S:{setSpec}[-G:{gameSpec}][-F:{setSpec}][-M:{matchConstraint}]`
 - Outs-based set format (`-S:O3`) is for innings-based sports (baseball, wiffle ball)
 - Match constraint (`-M:T50`) sets a match-level time cap that applies across all segments

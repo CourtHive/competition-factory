@@ -8,7 +8,7 @@ rules that govern the `drawPositions` array — the ones that are load-bearing, 
 not obvious from the type.
 
 ```ts
-matchUp.drawPositions: number[]   // at most two, stored ASCENDING and compacted (round robin excepted: § 2)
+matchUp.drawPositions: number[]   // at most two, stored ASCENDING, usually compacted (round robin excepted: § 2)
 ```
 
 ## 1. A drawPosition is unique within a STRUCTURE, and means nothing outside it
@@ -30,11 +30,12 @@ different participants — or a participant and a bye.
 
 ## 2. The array is SORTED, not positional: the index is a side only while BOTH positions are present
 
-Writers store `drawPositions` **ascending and compacted**: a matchUp awaiting its second participant
-is stored `[4]`, not `[undefined, 4]`. So a lone position sits at index 0 **whatever its side**, and
-reading a side from the index answers 1 for a position that belongs on side 2. The binding between a
-side and a slot holds by index **only when both positions are present**, and then only because the
-ascending order makes the lower one side 1 (§ 3).
+Writers store `drawPositions` **ascending**, and usually **compacted**: a matchUp awaiting its second
+participant is often stored `[4]`, but a leading hole may survive, `[undefined, 4]` (§ 5, § 6). So a
+lone position's index is **not its side**: compacted, it sits at index 0 whichever side it belongs
+on, and reading a side from the index answers 1 for a position that belongs on side 2. The binding
+between a side and a slot holds by index **only when both positions are present**, and then only
+because the ascending order makes the lower one side 1 (§ 3).
 
 Round-robin groups are the exception to the ascending rule: their matchUps store positions in Berger
 pairing order, and `DRAW_POSITIONS_NOT_SORTED` exempts them. Sides there still come from the readers
@@ -57,6 +58,10 @@ resolves a lone position structurally, through the round profile (§ 4). The raw
 guaranteed: a first-round matchUp, including a loser target's (`feedRound` handled separately), or
 behind an explicit `filter(Boolean).length === 2`. None of them fails loudly when used elsewhere. They
 answer confidently, with the wrong participant.
+
+These readers are engine internals, not public exports (`getExitWinningSide` and
+`getOrderedDrawPositions` included). A consumer reads `sides` on a hydrated matchUp, which carries
+each side's `drawPosition` and `sideNumber` already resolved.
 
 **Every writer must leave `drawPositions` ascending.** Removing a position preserves order and is
 safe. Substituting one **in place** does not: a positional `map` that writes a higher position into
@@ -275,8 +280,9 @@ partitioning matchUps.
 | rule                                                     | source                                           |
 | -------------------------------------------------------- | ------------------------------------------------ |
 | ascending order, and the reader idioms that depend on it | `getOrderedDrawPositions`                        |
+| reading a side from structure                            | `getDrawPositionSides`                           |
 | crossing a link by participant                           | `directWinner`, `releaseLinkedWinnerAdvancement` |
 | fed vs advanced, and side resolution                     | `getOrderedDrawPositions`, `getRoundMatchUps`    |
 | a reserved fed slot vs a round that merely feeds sides   | `getRoundMatchUps`, `getWinnerLinkRoundNumbers`  |
-| all-holes normalisation                                  | `normalizeDrawPositions`                         |
+| all-holes normalisation, and the trailing-hole trim      | `normalizeDrawPositions`                         |
 | the published shape                                      | `addMatchUpContext`, via `definedAttributes`     |

@@ -38,9 +38,11 @@ The **Scoring Policy** (`POLICY_TYPE_SCORING`) controls scoring requirements, fo
     requireParticipantsForScoring?: boolean;           // Both participants must be present (default: false)
     requireAllPositionsAssigned?: boolean | undefined; // All positions assigned before scoring (default: undefined = true)
 
-    // Change propagation
-    allowChangePropagation?: boolean;                  // Propagate winningSide changes downstream (default: false)
-    propagateExitStatus?: boolean;                     // Propagate exit status (WALKOVER/DEFAULTED) into the consolation (default: false)
+    // Change propagation: a value set here (true or false) overrides the setMatchUpStatus call;
+    // left out, the call decides (see Exit-Status Propagation below)
+    allowChangePropagation?: boolean;                  // Propagate winningSide changes downstream (absent policy and call: undefined, no propagation)
+    propagateExitStatus?: boolean;                     // Propagate exit status (WALKOVER/DEFAULTED) into the consolation (absent policy and call: undefined, no propagation)
+    propagateRetirementAsExit?: boolean;               // With propagateExitStatus, a RETIRED loser is carried on as an exit (absent policy and call: false)
 
     // Stage-specific requirements
     stage?: {
@@ -97,7 +99,9 @@ const { POLICY_SCORING_DEFAULT } = fixtures.policies;
 //     },
 //     requireParticipantsForScoring: false,           // Participants not required
 //     requireAllPositionsAssigned: undefined,         // Defaults to true for MAIN stage
-//     allowChangePropagation: false,                  // No automatic propagation
+//     allowChangePropagation: undefined,              // Silent: the setMatchUpStatus call decides
+//     propagateExitStatus: undefined,                 // Silent: the setMatchUpStatus call decides
+//     propagateRetirementAsExit: undefined,           // Silent: the call decides; absent both, false
 //     stage: {
 //       MAIN: {
 //         stageSequence: {
@@ -554,7 +558,8 @@ const propagationPolicy = {
 // 5. Without propagation: Manual repositioning required
 
 // WARNING: Can cause unexpected changes in large structures
-// Recommended: Keep false for manual control
+// Recommended: Keep false for manual control. Since 7.5.0 a `false` in the policy also overrides
+// a per-call `allowChangePropagation: true`; leave the key out to let each call decide.
 ```
 
 ### Exit-Status Propagation

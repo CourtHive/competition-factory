@@ -84,3 +84,29 @@ setTournamentId(tournamentId);
 ```
 
 ---
+
+## setOutcomePipeline
+
+Sets which outcome pipeline implementation decides, process-wide: `'v1'` (the default), `'v2'` or `'differential'`. No argument restores `'v1'`; any other value is refused with `INVALID_VALUES`. Engines expose the same setting as [`engine.outcomePipeline`](/docs/engines/engine-methods#outcomepipeline), which is the usual way to reach it; `getOutcomePipeline()` returns the current mode. Added in 7.5.0.
+
+```js
+import { globalState } from 'tods-competition-factory';
+
+globalState.setOutcomePipeline('differential');
+globalState.setOutcomePipeline(); // back to 'v1'
+```
+
+---
+
+## setInvokeObserver
+
+Registers a process-wide observer of every engine method execution. It is called with `phase: 'before'` and the caller's `params`, then with `phase: 'after'` and the `result`, along with `methodName` and `engineType`. Nothing in production sets it: it exists for the golden corpus recorder, which uses it to harvest the test suite into scenarios. An observer that calls engine queries from its `after` phase must guard its own re-entrancy, because those calls are observed too. No argument removes the observer; a non-function is refused with `INVALID_VALUES`. Added in 7.5.0.
+
+```js
+import { globalState } from 'tods-competition-factory';
+
+globalState.setInvokeObserver(({ phase, methodName }) => console.log(phase, methodName));
+globalState.setInvokeObserver(); // remove
+```
+
+---

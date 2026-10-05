@@ -943,10 +943,11 @@ engine.setMatchUpStatus({
   drawId, // required — resolved to drawDefinition by engine
   outcome, // optional — score/status/winningSide object
 
-  matchUpFormat, // optional — set matchUpFormat before applying score (validated against)
+  matchUpFormat, // optional — set matchUpFormat before applying score (validated against); a score with no resolvable format is refused
   disableScoreValidation, // optional boolean — skip score validation, including the completeness rule below
-  allowChangePropagation, // optional boolean — allow winner/loser swap to propagate through structures
-  propagateExitStatus, // optional boolean — propagate exit status (WALKOVER, etc.) to consolation matchUps
+  allowChangePropagation, // optional boolean — allow winner/loser swap to propagate through structures; a scoring policy that sets it wins
+  propagateExitStatus, // optional boolean — propagate exit status (WALKOVER, etc.) to consolation matchUps; a scoring policy that sets it wins
+  propagateRetirementAsExit, // optional boolean — with propagateExitStatus, carry a RETIRED loser on as an exit (default false); a scoring policy that sets it wins
   disableAutoCalc, // optional boolean — applies only to TEAM matchUps
   enableAutoCalc, // optional boolean — applies only to TEAM matchUps
   setTBlast, // optional boolean — when true, tiebreak score appears last in set score string
@@ -967,6 +968,18 @@ engine.setMatchUpStatus({
   },
 });
 ```
+
+**Propagation flags.** A scoring policy that sets `allowChangePropagation`, `propagateExitStatus` or
+`propagateRetirementAsExit` to `true` or `false` overrides the value passed on the call, in both
+directions; the call decides only where the policy is silent (since 7.5.0). The resolution is
+`policy ?? param ?? default`, where the default is `undefined` for the first two and `false` for
+`propagateRetirementAsExit`. `POLICY_SCORING_DEFAULT` is silent on all three. See
+[Scoring Policy](../policies/scoringPolicy.md).
+
+**Warnings.** A successful call can return `warnings`. When the recorded score holds a set decided by
+its tiebreak with no tiebreak points (`7-6`), the result carries
+`{ code: 'TIEBREAK_POINTS_NOT_RECORDED', setNumbers }` (since 7.5.0). It is not reported under
+`disableScoreValidation`, nor for a TEAM matchUp, whose score is the dual's tally.
 
 ### A completed score must be complete
 
@@ -1025,6 +1038,17 @@ Two consequences worth knowing:
 - The derived score object is **merged into** `outcome.score` rather than replacing it,
   so non-derived attributes such as `score.side1PointScore` survive.
 
+### Recording an exit before the second opponent arrives
+
+A `WALKOVER` or `DEFAULTED` can be recorded against the one participant present before the opponent
+arrives, whether or not `propagateExitStatus` is on (since 7.5.0). The outcome names no winner, or
+awards the empty side; whoever later arrives takes the walkover and advances. See
+[Who may receive a directing outcome](../concepts/outcome-pipeline.md#21-who-may-receive-a-directing-outcome)
+and the `EXIT` action in [MatchUp Actions](../policies/matchUpActions.md).
+
+A double exit (`DOUBLE_WALKOVER`, `DOUBLE_DEFAULT`) entered directly needs both seats reached: one
+exit per seat. Beside a seat nobody has reached it is refused (since 7.5.0).
+
 ### Reversing a propagated exit
 
 A propagated exit can advance through a consolation BYE into a later matchUp that then
@@ -1039,6 +1063,14 @@ and for both `WALKOVER` and `DEFAULTED` exits.
 resolved walkover is correctly detected as active rather than being masked by the BYE. A
 still-**pending** propagated exit (its winning side is an empty feed slot, nothing has
 fallen through yet) is not active, so the source result can still be reset while pending.
+
+A carried exit is corrected at its **origin**. Where the exit was carried, a direct write that
+would re-score it, name another winner, relabel it as a played result or clear it is refused with
+`CANNOT_CHANGE_OUTCOME`; clearing or re-scoring the origin re-derives it (since 7.5.0).
+
+An exit **recorded** against a vacant side, rather than carried there, is active whatever the other
+side holds. Flipping the winner of the matchUp that feeds it is refused with
+`CANNOT_CHANGE_WINNING_SIDE` (since 7.5.0).
 
 ### Reverting a completed matchUp to a live status
 

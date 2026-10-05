@@ -1626,7 +1626,7 @@ occupancy specifically.
 
 An exit the cascade produces — a `WALKOVER` or `DEFAULTED` stamped onto a side by an upstream double
 exit, with nobody arriving to contest it — will never be played either, and its placement is
-preserved for the same reason. Since 7.4.1 it is shown the same way: `courtByeMatchUps: true`
+preserved for the same reason. Since 7.5.0 it is shown the same way: `courtByeMatchUps: true`
 includes a court-holding produced exit beside the byes, and `proConflicts` annotates it
 `CONFLICT_EXIT_SCHEDULED` at `SCHEDULE_WARNING` — a code of its own, so a client can offer
 "release" against a walkover and "re-seat" against a BYE. A walkover a director recorded between

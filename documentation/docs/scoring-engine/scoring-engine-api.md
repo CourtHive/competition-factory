@@ -23,6 +23,9 @@ addPoint(options: AddPointOptions): void
 
 Add a point to the match. This is the primary input method for point-by-point scoring.
 
+A point added after the match is `COMPLETED` is not refused, and it does not change the score; no
+game, set or match completion event fires for it (since 7.5.0).
+
 ```js
 // 0-based convention
 engine.addPoint({ winner: 0 }); // Side 1 wins the point
