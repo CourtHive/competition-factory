@@ -1,12 +1,11 @@
-import { quarantineFor, unusedQuarantineKeys } from '@Tests/testHarness/exitPropagation/knownFailures';
-import { afterAll, expect, test } from 'vitest';
 import {
   TEAM_MATRIX_DRAW_TYPES,
   TEAM_DUAL_CELLS,
   TEAM_LINE_CELLS,
-  runMatrixCell,
-  cellLabel,
 } from '@Tests/testHarness/exitPropagation/matrixCells';
+import { unusedQuarantineKeys } from '@Tests/testHarness/exitPropagation/knownFailures';
+import { teamLabel } from '@Tests/testHarness/exitPropagation/teamMatrixSlice';
+import { expect, test } from 'vitest';
 
 /**
  * THE TEAM ARM OF THE EXIT-PROPAGATION MATRIX — assessment gap G2, *"the largest untested surface
@@ -33,13 +32,17 @@ import {
  *  3. `directLoser` propagated a withheld FMLC loser's lineUp onto the seat that had just received
  *     a BYE instead of them — the same shape from the loser link, 42 of 60.
  *
- * Each is pinned by name in `teamLineUpPlacement.test.ts`; this file is the gate that keeps the
- * surface executed. `#5054` (a line of a double-walkover dual) was found the same way by hand the
+ * Each is pinned by name in `teamLineUpPlacement.test.ts`; the matrix is the gate that keeps the
+ * surface executed.
+ *
+ * ## Split across eight files — 2026-10-05
+ *
+ * vitest shards by FILE, and as one file the matrix (~578s) pinned a CI coverage shard to 12-20 minutes
+ * while the others took 6-9. The cells now run from `teamMatrix.<arm>.<drawType>.test.ts`, one per arm
+ * and draw type, through `runTeamMatrixSlice`. This file keeps the composition control and the one
+ * check no slice can make alone: that every `team matrix` quarantine key names a real cell. `#5054` (a line of a double-walkover dual) was found the same way by hand the
  * day before and is pinned in `tieScoreUnwindsDualDoubleExit.test.ts`.
  */
-
-const observedKeys = new Set<string>();
-const teamLabel = (cell: (typeof TEAM_DUAL_CELLS)[number]) => `team ${cellLabel(cell)}`;
 
 // CONTROL: the composition covers what it says
 test('the TEAM arm composes 240 dual-level and 240 line-level cells over four draw types', () => {
@@ -52,28 +55,9 @@ test('the TEAM arm composes 240 dual-level and 240 line-level cells over four dr
   expect(seeds.size).toEqual(480);
 });
 
-test.for([...TEAM_DUAL_CELLS, ...TEAM_LINE_CELLS])(
-  'team $eventType $drawType $drawSize/$participantsCount $exitStatus propagate=$propagateExitStatus lines=$lineUps',
-  (cell) => {
-    const key = teamLabel(cell);
-    observedKeys.add(key);
-
-    const failures = runMatrixCell(cell, `team-${cell.seed}`);
-    expect(failures, `${key}: nothing playable`).toBeDefined();
-
-    const quarantined = quarantineFor(key);
-    const unexpected = (failures ?? []).filter((failure) => !quarantined.includes(failure.property));
-    if (unexpected.length) {
-      const report = unexpected.map((f) => `${f.property} @ ${f.matchUpId.slice(0, 8)}\n  ${f.detail}`).join('\n');
-      expect(`${key}\n${report}`).toEqual(key);
-    }
-
-    const stillFailing = new Set((failures ?? []).map((failure) => failure.property));
-    expect(quarantined.filter((property) => !stillFailing.has(property))).toEqual([]);
-  },
-  180_000,
-);
-
-afterAll(() => {
-  expect(unusedQuarantineKeys(observedKeys, 'team matrix ')).toEqual([]);
+// No quarantine entry may name a cell that no slice runs: each slice checks only its own keys, so a
+// stale key outside every slice would otherwise go unreported.
+test('every team matrix quarantine key names a real cell', () => {
+  const allKeys = new Set([...TEAM_DUAL_CELLS, ...TEAM_LINE_CELLS].map(teamLabel));
+  expect(unusedQuarantineKeys(allKeys, 'team matrix ')).toEqual([]);
 });
