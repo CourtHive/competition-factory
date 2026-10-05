@@ -18,12 +18,15 @@ export async function saveTournamentRecords(params?: {
   fs.ensureDirSync(STORAGE_DIR);
 
   for (const tournamentId of Object.keys(tournamentRecords)) {
+    const codesFile = codesRecordFile(tournamentId);
+    const legacyFile = legacyRecordFile(tournamentId);
+    if (!codesFile || !legacyFile) continue; // an id that would leave the storage directory is never written
     const content = JSON.stringify(tournamentRecords[tournamentId], null, 2);
-    fs.writeFileSync(codesRecordFile(tournamentId), content, UTF8, (err) => {
+    fs.writeFileSync(codesFile, content, UTF8, (err) => {
       if (err) console.log(`error: ${err}`);
     });
     // the codes file now shadows any legacy copy; drop it so the two can never disagree
-    fs.removeSync(legacyRecordFile(tournamentId));
+    fs.removeSync(legacyFile);
   }
 
   return { ...SUCCESS };
