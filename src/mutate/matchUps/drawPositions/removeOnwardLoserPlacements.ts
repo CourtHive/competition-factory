@@ -1,7 +1,7 @@
 import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
-import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
 import { isAnyExit } from '@Validators/isExit';
@@ -103,7 +103,7 @@ function releaseInertPlacements({
       .filter((roundNumber): roundNumber is number => roundNumber !== undefined);
     if (!holdingRoundNumbers.length) continue;
 
-    releaseAdvancedDrawPosition({
+    releaseAdvancedDrawPositionAcrossLinks({
       fromRoundNumber: Math.min(...holdingRoundNumbers),
       structureId: targetStructureId,
       tournamentRecord,

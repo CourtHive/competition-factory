@@ -1,7 +1,7 @@
+import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
-import { releaseAdvancedDrawPosition } from '@Mutate/matchUps/drawPositions/releaseAdvancedDrawPosition';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
@@ -758,7 +758,7 @@ function conditionallyAdvanceDrawPosition(params) {
       for (const drawPosition of targetMatchUpDrawPositions.filter((position) =>
         sourceDrawPositions.includes(position),
       )) {
-        releaseAdvancedDrawPosition({
+        releaseAdvancedDrawPositionAcrossLinks({
           fromRoundNumber: targetMatchUp.roundNumber,
           structureId: targetMatchUp.structureId,
           withdrawingExit: true,

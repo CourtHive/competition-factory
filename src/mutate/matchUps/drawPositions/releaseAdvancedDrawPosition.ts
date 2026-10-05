@@ -16,6 +16,9 @@ import { SUCCESS } from '@Constants/resultConstants';
 const RELEASABLE_STATUSES: (string | undefined)[] = [undefined, TO_BE_PLAYED, BYE];
 
 type ReleaseAdvancedDrawPositionArgs = {
+  /** the participant in this position has left it (see `releaseLinkedWinnerAdvancement`), so an exit awarded to
+   *  their seat is held open for whoever arrives next, as it is for `withdrawingExit` */
+  occupantLeaving?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   withdrawingExit?: boolean;
@@ -63,6 +66,7 @@ type ReleaseAdvancedDrawPositionArgs = {
  * shift the surviving position onto the other side.
  */
 export function releaseAdvancedDrawPosition({
+  occupantLeaving,
   tournamentRecord,
   fromRoundNumber,
   withdrawingExit,
@@ -71,7 +75,7 @@ export function releaseAdvancedDrawPosition({
   matchUpsMap,
   structureId,
   event,
-}: ReleaseAdvancedDrawPositionArgs) {
+}: ReleaseAdvancedDrawPositionArgs): { success: boolean; releasedRoundNumbers: number[] } {
   const resolvedMap = matchUpsMap ?? getMatchUpsMap({ drawDefinition });
   const matchUps = resolvedMap?.mappedMatchUps?.[structureId]?.matchUps ?? [];
   const { initialRoundNumber } = getInitialRoundNumber({ drawPosition, matchUps });
@@ -83,12 +87,14 @@ export function releaseAdvancedDrawPosition({
     (positionAssignments ?? []).filter(({ bye }) => bye).map(({ drawPosition: position }) => position),
   );
 
+  const releasedRoundNumbers: number[] = [];
   for (const matchUp of matchUps) {
     if (matchUp.roundNumber === undefined || matchUp.roundNumber < fromRoundNumber) continue;
     if (matchUp.roundNumber === initialRoundNumber) continue;
     if (!matchUp.drawPositions?.includes(drawPosition)) continue;
     const heldOpenForArrival =
-      withdrawingExit && awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp, matchUps });
+      (withdrawingExit || occupantLeaving) &&
+      awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp, matchUps });
     if (!heldOpenForArrival && (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus))) continue;
     if (advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp })) continue;
     if (!withdrawingExit && advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp })) {
@@ -102,6 +108,14 @@ export function releaseAdvancedDrawPosition({
     matchUp.drawPositions = normalizeDrawPositions(
       (matchUp.drawPositions ?? []).map((position) => (position === drawPosition ? undefined : position)),
     );
+    releasedRoundNumbers.push(matchUp.roundNumber);
+
+    // A PRODUCED exit has no winningSide until a participant arrives (CA, 2026-09-20). Its award was read off the
+    // participant who stood in this seat, so with the seat empty again the award goes with them; the exit stands,
+    // pending. A CARRIED exit keeps its winningSide on an empty seat by design (exit-propagation.md).
+    if (heldOpenForArrival && awardedByProducedExit({ drawPosition, matchUps, matchUp })) {
+      matchUp.winningSide = undefined;
+    }
 
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
@@ -113,7 +127,16 @@ export function releaseAdvancedDrawPosition({
     });
   }
 
-  return { ...SUCCESS };
+  return { ...SUCCESS, releasedRoundNumbers };
+}
+
+/** the exit standing against this seat came from a double exit (produced), not with a participant (carried) */
+function awardedByProducedExit({ drawPosition, matchUps, matchUp }): boolean {
+  const delivered = latestFeeder({ drawPosition, matchUps, matchUp })?.matchUpId;
+  const against = Object.values(getSideExitProvenance({ matchUp }) ?? {}).filter(
+    (entry: any) => isExit(entry?.matchUpStatus) && !!entry?.sourceMatchUpId && entry.sourceMatchUpId !== delivered,
+  );
+  return against.length > 0 && against.every((entry: any) => isDoubleExit(entry?.previousMatchUpStatus));
 }
 
 /**

@@ -1,7 +1,6 @@
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
-import { releaseLinkedWinnerAdvancement } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -15,6 +14,10 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
 import { overlap } from '@Tools/arrays';
+import {
+  releaseAcrossWinnerLinks,
+  releaseLinkedWinnerAdvancement,
+} from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import {
   deriveExitStateFromProvenance,
   clearSideExitProvenance,
@@ -158,6 +161,10 @@ export function drawPositionRemovals({
       structure,
     }).positionAssignments ?? [];
 
+  // read BEFORE the assignment is emptied: the link releases below must know who left (mode D)
+  const clearedParticipantId = positionAssignments.find(
+    (assignment) => assignment.drawPosition === drawPosition,
+  )?.participantId;
   const drawPositionCleared = positionAssignments.some((assignment) => {
     if (assignment.drawPosition === drawPosition) {
       delete assignment.participantId;
@@ -222,6 +229,7 @@ export function drawPositionRemovals({
 
     removeDrawPosition({
       inContextDrawMatchUps,
+      clearedParticipantId,
       positionAssignments,
       tournamentRecord,
       drawDefinition,
@@ -232,6 +240,20 @@ export function drawPositionRemovals({
       event,
     });
   });
+
+  // The participant left this structure. Whatever a WINNER link carried for them out of it comes back, including
+  // where their seat keeps its BYE advancement and the round walk above released nothing (mode D).
+  if (clearedParticipantId) {
+    releaseAcrossWinnerLinks({
+      participantId: clearedParticipantId,
+      tournamentRecord,
+      drawDefinition,
+      drawPosition,
+      matchUpsMap,
+      structureId,
+      event,
+    });
+  }
 
   return { tasks, drawPositionCleared, positionAssignments };
 }
@@ -288,6 +310,7 @@ function removeSubsequentRoundsParticipant({
 
 type RemoveDrawPositionArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
+  clearedParticipantId?: string;
   positionAssignments: PositionAssignment[];
   targetMatchUp: HydratedMatchUp;
   tournamentRecord?: Tournament;
@@ -299,6 +322,7 @@ type RemoveDrawPositionArgs = {
 };
 function removeDrawPosition({
   inContextDrawMatchUps,
+  clearedParticipantId,
   positionAssignments,
   tournamentRecord,
   drawDefinition,
@@ -387,7 +411,9 @@ function removeDrawPosition({
     // BYE let the other Backdraw finalist advance through the Backdraw final and across the winner
     // link into the Main final; correcting the double exit to a single took them out of the Backdraw
     // final here and left them in the Main final, where the direct entry never had them.
+    // `participantId` is passed because the assignment it would be read from was emptied before this ran.
     releaseLinkedWinnerAdvancement({
+      participantId: clearedParticipantId,
       roundNumber: targetMatchUp.roundNumber,
       structureId: structure.structureId,
       tournamentRecord,
