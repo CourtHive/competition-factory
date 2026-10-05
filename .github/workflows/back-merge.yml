@@ -1,0 +1,82 @@
+name: back-merge
+
+# After a release publishes, release-please's `chore(master): release X.Y.Z` commit (version,
+# CHANGELOG, manifest) exists on `master` only. Left there, `dev` drifts behind: by 2026-10-02 it
+# read 7.1.0 while `master` was 7.4.0, and everything built from `dev` reported the wrong version.
+# This opens the PR that merges `master` back into `dev` (CA, 2026-10-05: the back-merge after a
+# publish is automatic on every repo that publishes; mirrors courthive-components #644).
+#
+# MERGE IT WITH A MERGE COMMIT, never squash: squash leaves `master`'s commits unreachable from
+# `dev`, so the next checkpoint and every later back-merge carry them again. The PR is never
+# auto-merged. `delete_branch_on_merge` must stay false here, or merging a PR whose head is
+# `master` deletes `master`.
+#
+# The PR is opened with the courthive-release-bot App token (the same secrets release-please.yml
+# uses), not GITHUB_TOKEN: GitHub runs no workflows for a PR opened by GITHUB_TOKEN, so it would
+# sit with no CI at all. verify.yml's release-path scope (.github/scripts/release-scope.sh)
+# recognises it (head `master`, base `dev`, version files only) and runs the light path.
+#
+# Skips quietly when `dev` already contains the release, or a back-merge PR is already open.
+# Run it by hand (workflow_dispatch) to open one for a release whose run was missed.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to name in the PR title (blank: compare the branch itself)'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: back-merge
+  cancel-in-progress: false
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Mint App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      - name: Open the back-merge PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          RELEASE_BRANCH: master
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          REF=${TAG:-$RELEASE_BRANCH}
+          AHEAD=$(gh api "repos/$REPO/compare/dev...$REF" --jq .ahead_by)
+          if [ "$AHEAD" = 0 ]; then
+            echo "dev already contains $REF: nothing to merge back."
+            exit 0
+          fi
+          OPEN=$(gh pr list -R "$REPO" --base dev --head "$RELEASE_BRANCH" --state open \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$OPEN" ]; then
+            echo "Back-merge PR #$OPEN is already open."
+            exit 0
+          fi
+          gh pr create -R "$REPO" --base dev --head "$RELEASE_BRANCH" \
+            --title "chore: merge $RELEASE_BRANCH back into dev after ${TAG:-$RELEASE_BRANCH}" \
+            --body-file - <<EOF
+          Merges \`$RELEASE_BRANCH\` back into \`dev\` after ${TAG:-the latest release}.
+
+          release-please's release commit (version, CHANGELOG, manifest) lands on \`$RELEASE_BRANCH\`
+          only. Without this merge \`dev\` keeps the previous version.
+
+          **Merge with a MERGE COMMIT, never squash**, so the two histories stay joined.
+
+          CI takes the light path when the diff is the version files alone
+          (\`.github/scripts/release-scope.sh\`); anything else gets the full run.
+          EOF
