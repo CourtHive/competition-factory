@@ -95,10 +95,10 @@ export function collectionMatchUpActions({
         !existingParticipantIds?.includes(participantId) &&
         (!gender ||
           isAny(gender) ||
-          coercedGender(person.sex) === coercedGender(gender) ||
+          coercedGender(person?.sex) === coercedGender(gender) ||
           // case where one gendered member has been assigned
           (isMixed(gender) && !assignedGender) ||
-          (assignedGender && coercedGender(person.sex) !== coercedGender(assignedGender))),
+          (assignedGender && coercedGender(person?.sex) !== coercedGender(assignedGender))),
     ),
   );
 
