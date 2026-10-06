@@ -71,7 +71,12 @@ export function getSwapOptions({
   avoidanceConflicts,
   isRoundRobin,
 }) {
-  return avoidanceConflicts.flatMap((conflict) => {
+  return avoidanceConflicts.flatMap((avoidanceConflict: (number | PositionAssignment)[]) => {
+    // An elimination conflict is a pair of positioned participants; a round robin conflict is a
+    // pair of drawPositions (getAvoidanceConflicts), so resolve those to their participants.
+    const conflict = avoidanceConflict
+      .map((c) => (typeof c === 'number' ? findParticipantByDrawPosition(positionedParticipants, c) : c))
+      .filter((c): c is PositionAssignment => !!c);
     const drawPositions = conflict.map((c) => c.drawPosition);
     const moveableParticipants = conflict.filter((placedParticipant) =>
       potentialDrawPositions.includes(placedParticipant.drawPosition),
