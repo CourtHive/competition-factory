@@ -23,7 +23,7 @@ import {
 
 // constants and types
 import { ErrorType, MISSING_DRAW_POSITIONS, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { DrawDefinition, DrawLink, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, DrawLink, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -225,7 +225,7 @@ type RemvoveDirectedWinnerArgs = {
   tournamentRecord?: Tournament;
   winnerParticipantId?: string;
   drawDefinition: DrawDefinition;
-  sourceMatchUpStatus?: string;
+  sourceMatchUpStatus?: MatchUpStatusUnion;
   winningDrawPosition?: number;
   winnerTargetLink?: DrawLink;
   matchUpsMap?: MatchUpsMap;

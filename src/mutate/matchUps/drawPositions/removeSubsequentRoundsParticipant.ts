@@ -11,7 +11,14 @@ import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  PositionAssignment,
+  Tournament,
+} from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -23,7 +30,7 @@ type RemoveSubsequentDrawPositionArgs = {
   dualMatchUp?: HydratedMatchUp;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
-  sourceMatchUpStatus?: string;
+  sourceMatchUpStatus?: MatchUpStatusUnion;
   targetDrawPosition: number;
   matchUpsMap?: MatchUpsMap;
   sourceMatchUpId?: string;
@@ -80,6 +87,7 @@ export function removeSubsequentRoundsParticipant({
       drawDefinition,
       dualMatchUp,
       matchUpsMap,
+      roundNumber,
       matchUp,
       event,
     });
@@ -110,15 +118,30 @@ function removeDrawPosition({
   drawDefinition,
   dualMatchUp,
   matchUpsMap,
+  roundNumber,
   matchUp,
   event,
+}: {
+  positionAssignments: PositionAssignment[];
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  dualMatchUp?: HydratedMatchUp;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  sourceMatchUpStatus?: MatchUpStatusUnion;
+  targetDrawPosition: number;
+  matchUpsMap: MatchUpsMap;
+  sourceMatchUpId?: string;
+  roundNumber: number;
+  structureId: string;
+  matchUp: MatchUp;
+  event?: Event;
 }) {
   const stack = 'removeSubsequentDrawPosition';
 
   if (dualMatchUp) {
     // remove propagated lineUp
-    const inContextMatchUp = inContextDrawMatchUps.find(({ matchUpId }) => matchUp.matchUpId === matchUpId);
-    const targetSideNumber = inContextMatchUp.sides?.find(
+    const inContextMatchUp = inContextDrawMatchUps?.find(({ matchUpId }) => matchUp.matchUpId === matchUpId);
+    const targetSideNumber = inContextMatchUp?.sides?.find(
       (side) => side.drawPosition === targetDrawPosition,
     )?.sideNumber;
     const targetSide = matchUp.sides?.find((side) => side.sideNumber === targetSideNumber);
@@ -131,7 +154,7 @@ function removeDrawPosition({
   // can change side as the other seat empties, and what is recorded by side goes with them (`setMatchUpDrawPositions`).
   const remaining = (matchUp.drawPositions ?? [])
     .map((drawPosition) => (drawPosition === targetDrawPosition ? undefined : drawPosition))
-    .filter(Boolean);
+    .filter((drawPosition): drawPosition is number => !!drawPosition);
   rekeySideFacts({ drawPositions: remaining, drawDefinition, structureId, matchUp });
   matchUp.drawPositions = remaining;
   const matchUpAssignments = positionAssignments.filter(({ drawPosition }) =>
@@ -168,11 +191,18 @@ function removeDrawPosition({
   // twin site in `drawPositionPlacement`, where the pair of removals costs 58 tests across 5 files and the
   // measurement names what the truthy array stands in for ("this matchUp is already part of the exit
   // cascade"), why it matters (provenance is PRESENCE-read — P19), and what a replacement has to test.
-  if (participatesInExitCascade({ matchUp })) {
+  //
+  // ONLY THE SOURCE'S OWN TARGET. The loop above reaches every later round holding the position; the source feeds
+  // just the first of them (`roundNumber`, the winner matchUp's round). Stamping the rest recorded an origin from a
+  // matchUp that does not feed them, on a side computed for a different matchUp (factory-a7's probe, 2026-10-06:
+  // 20 such stamps over the census, e.g. w1 9000273 FRLC `Main|3|1` "from" `Main|1|3`).
+  if (matchUp.roundNumber === roundNumber && participatesInExitCascade({ matchUp })) {
     recordSourceSideProvenance({
-      inContextDrawMatchUps,
+      inContextDrawMatchUps: inContextDrawMatchUps ?? [],
+      drawPositions: matchUp.drawPositions,
       sourceMatchUpStatus,
       sourceMatchUpId,
+      drawDefinition,
       matchUpsMap,
       matchUp,
     });
