@@ -1,3 +1,4 @@
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 
 // types
@@ -33,8 +34,8 @@ function collectStoredMatchUps(drawDefinition: DrawDefinition): MatchUp[] {
   const out: MatchUp[] = [];
   const walk = (structures: Structure[] | undefined) => {
     for (const structure of structures ?? []) {
-      for (const matchUp of structure?.matchUps ?? []) out.push(matchUp);
-      walk(structure?.structures);
+      for (const matchUp of matchUpsOf(structure) ?? []) out.push(matchUp);
+      walk(structuresOf(structure));
     }
   };
   walk(drawDefinition?.structures);

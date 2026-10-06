@@ -1,5 +1,6 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -90,7 +91,7 @@ export function getStructureSeedAssignments({
     error = MISSING_SEED_ASSIGNMENTS;
   }
 
-  const seedLimit = structure.seedLimit ?? structure?.positionAssignments?.length;
+  const seedLimit = structure.seedLimit ?? positionAssignmentsOf(structure)?.length;
 
   return {
     seedAssignments,

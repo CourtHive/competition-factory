@@ -9,6 +9,7 @@ import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { structureSort } from '@Functions/sorters/structureSort';
@@ -161,7 +162,10 @@ export function getDrawData(params: GetDrawDataArgs): {
   const buildStructureStub = (structureId) => {
     const { structure } = findStructure({ drawDefinition, structureId });
     const leafMatchUps = (function collect(structs) {
-      return (structs ?? []).flatMap((st) => (st?.structures?.length ? collect(st.structures) : (st?.matchUps ?? [])));
+      return (structs ?? []).flatMap((st) => {
+        const contained = structuresOf(st);
+        return contained?.length ? collect(contained) : (matchUpsOf(st) ?? []);
+      });
     })(structure ? [structure] : []);
     const completedStatuses = [...completedMatchUpStatuses, BYE];
     const displaySettings = findExtension({ element: structure, name: DISPLAY }).extension?.value;
@@ -255,7 +259,7 @@ export function getDrawData(params: GetDrawDataArgs): {
         if (
           matchUps.length &&
           ((!participantResults?.length && params.allParticipantResults) || // don't override existing participantResults, unless { refreshresults: true }
-            (refreshResults && !structure.structures)) // cannot refresh for round roubins
+            (refreshResults && !structuresOf(structure))) // cannot refresh for round roubins
         ) {
           const { subOrderMap } = createSubOrderMap({ positionAssignments });
 

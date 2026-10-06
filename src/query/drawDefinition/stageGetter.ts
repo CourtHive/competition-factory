@@ -1,3 +1,4 @@
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
 // Query
@@ -142,7 +143,7 @@ function getPlayoffEntries({ provisionalPositioning, drawDefinition, structureId
 
       // Build results for each RR group
       const allGroupResults = rrGroupStructures.map((structure) => {
-        const positionAssignments = structure.positionAssignments ?? [];
+        const positionAssignments = positionAssignmentsOf(structure) ?? [];
         const { structureId: groupStructureId } = structure;
 
         const results = Object.assign(
@@ -239,7 +240,7 @@ function collectRemainderEntries({
       drawDefinition,
     });
     if (otherPlayoffStructure) {
-      for (const assignment of otherPlayoffStructure.positionAssignments ?? []) {
+      for (const assignment of positionAssignmentsOf(otherPlayoffStructure) ?? []) {
         if (assignment.participantId) {
           priorPlayoffParticipantIds.add(assignment.participantId);
         }

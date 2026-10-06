@@ -1,6 +1,7 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { structureSort } from '@Functions/sorters/structureSort';
+import { structuresOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { MISSING_STRUCTURES, STRUCTURE_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -28,7 +29,8 @@ export function findStructure(params: FindStructureArgs): ResultType & FoundStru
 
   const { structures } = getDrawStructures({ drawDefinition });
   const allStructures = structures?.flatMap((structure) => {
-    return structure.structures ? [...structure.structures].concat(structure) : structure;
+    const contained = structuresOf(structure);
+    return contained ? [...contained].concat(structure) : structure;
   });
 
   const structure = allStructures?.find((structure) => structure.structureId === structureId);
@@ -37,7 +39,7 @@ export function findStructure(params: FindStructureArgs): ResultType & FoundStru
 
   const containingStructure =
     structure.structureType === ITEM
-      ? allStructures?.find((s) => s.structures?.some((s) => s.structureId === structureId))
+      ? allStructures?.find((s) => structuresOf(s)?.some((s) => s.structureId === structureId))
       : undefined;
 
   return { structure, containingStructure };

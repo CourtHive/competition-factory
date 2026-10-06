@@ -1,6 +1,7 @@
-import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
-import { expectedParticipantType } from '@Query/event/participantTypeForEvent';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
+import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
+import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { expectedParticipantType } from '@Query/event/participantTypeForEvent';
 import { getParticipants } from '@Query/participants/getParticipants';
 
 // constants and types
@@ -37,7 +38,7 @@ type GetEventInconsistenciesArgs = {
 function collectStructures(structures: Structure[] | undefined, collected: Structure[]): void {
   for (const structure of structures ?? []) {
     collected.push(structure);
-    if (structure.structures?.length) collectStructures(structure.structures, collected);
+    if (structuresOf(structure)?.length) collectStructures(structuresOf(structure), collected);
   }
 }
 
@@ -53,7 +54,7 @@ function getParticipantTypeMismatches(params: GetEventInconsistenciesArgs, parti
     const structures: Structure[] = [];
     collectStructures(drawDefinition.structures, structures);
     return structures.flatMap((structure) =>
-      (structure.positionAssignments ?? [])
+      (positionAssignmentsOf(structure) ?? [])
         .filter((assignment) => assignment.participantId)
         .map((assignment) => ({
           drawId: drawDefinition.drawId,

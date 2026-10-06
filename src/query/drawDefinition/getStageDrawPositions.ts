@@ -1,5 +1,6 @@
 // Query
 import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getQualifiersCount } from './getQualifiersCount';
 
 // constants
@@ -31,7 +32,7 @@ export function getStageDrawPositionsCount({
     return structures.reduce((total: number, s) => {
       if (s.structureType === CONTAINER) {
         return (
-          total + (s.structures?.reduce((sum: number, sub) => sum + (sub.positionAssignments?.length ?? 0), 0) ?? 0)
+          total + (s.structures?.reduce((sum: number, sub) => sum + (positionAssignmentsOf(sub)?.length ?? 0), 0) ?? 0)
         );
       }
       return total + (s.positionAssignments?.length ?? 0);

@@ -1,3 +1,5 @@
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+
 // constants and types
 import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
@@ -56,7 +58,7 @@ function matchUpResolved(matchUp: MatchUp): boolean {
 function collectStructures(structures: Structure[] | undefined, collected: Structure[]): void {
   for (const structure of structures ?? []) {
     collected.push(structure);
-    if (structure.structures?.length) collectStructures(structure.structures, collected);
+    if (structuresOf(structure)?.length) collectStructures(structuresOf(structure), collected);
   }
 }
 
@@ -77,12 +79,12 @@ export function getStructureCompleteness(params: GetStructureCompletenessArgs): 
   for (const structure of allStructures) {
     if (structureId && structure.structureId !== structureId) continue;
 
-    const unassignedPositions = (structure.positionAssignments ?? [])
+    const unassignedPositions = (positionAssignmentsOf(structure) ?? [])
       .filter((assignment) => !positionOccupied(assignment))
       .map((assignment) => assignment.drawPosition)
       .sort((a, b) => a - b);
 
-    const unplayedMatchUps: UnplayedMatchUp[] = ((structure.matchUps ?? []) as MatchUp[])
+    const unplayedMatchUps: UnplayedMatchUp[] = ((matchUpsOf(structure) ?? []) as MatchUp[])
       .filter((matchUp) => !matchUp.collectionId && !matchUpResolved(matchUp))
       .map((matchUp) => ({
         matchUpId: matchUp.matchUpId,

@@ -1,6 +1,7 @@
 import { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 
@@ -70,7 +71,7 @@ type GetDrawInconsistenciesArgs = {
 function collectStructures(structures: Structure[] | undefined, collected: Structure[]): void {
   for (const structure of structures ?? []) {
     collected.push(structure);
-    if (structure.structures?.length) collectStructures(structure.structures, collected);
+    if (structuresOf(structure)?.length) collectStructures(structuresOf(structure), collected);
   }
 }
 
@@ -150,7 +151,7 @@ function droppedProgressionForLink(
   if (!isLoserLink && sourceStructure?.stage === QUALIFYING) return []; // qualifier placement is deferred (B2b)
 
   const targetParticipantIds = new Set(
-    (targetStructure.positionAssignments ?? []).map((assignment) => assignment.participantId).filter(Boolean),
+    (positionAssignmentsOf(targetStructure) ?? []).map((assignment) => assignment.participantId).filter(Boolean),
   );
   const roundMatchUps = sourceStructureMatchUps.filter(
     (matchUp) =>

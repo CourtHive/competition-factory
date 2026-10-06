@@ -1,4 +1,5 @@
 import { getOrderedDrawPositions } from '@Query/matchUps/getOrderedDrawPositions';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 
 // types
@@ -41,9 +42,9 @@ export function getDrawPositionSides({
   if (!roundNumber || !structureId || !drawDefinition?.structures?.length) return undefined;
 
   const structure = findStructure(drawDefinition.structures, structureId);
-  if (!structure?.matchUps?.length) return undefined;
+  if (!matchUpsOf(structure)?.length) return undefined;
 
-  const { roundProfile } = getRoundMatchUps({ matchUps: structure.matchUps });
+  const { roundProfile } = getRoundMatchUps({ matchUps: matchUpsOf(structure) });
   if (!roundProfile) return undefined;
 
   const { orderedDrawPositions } = getOrderedDrawPositions({
@@ -174,8 +175,9 @@ export function getDrawPositionSideNumber({
 /** Depth first: a round robin's matchUps belong to the GROUP, not its parent. */
 function findStructure(structures: Structure[], structureId: string): Structure | undefined {
   for (const structure of structures ?? []) {
-    if (structure?.structures?.length) {
-      const nested = findStructure(structure.structures, structureId);
+    const contained = structuresOf(structure);
+    if (contained?.length) {
+      const nested = findStructure(contained, structureId);
       if (nested) return nested;
     }
     if (structure?.structureId === structureId) return structure;

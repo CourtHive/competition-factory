@@ -3,6 +3,7 @@ import { getEventAlternateParticipantIds } from './getEventAlternateParticipanti
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { unique } from '@Tools/arrays';
 
@@ -45,7 +46,7 @@ export function adHocMatchUpActions({
 }) {
   const validActions: MatchUpAction[] = [];
 
-  const matchUps = structure?.matchUps ?? [];
+  const matchUps = matchUpsOf(structure) ?? [];
   const side = matchUp.sides?.find((side) => side.sideNumber === sideNumber);
   const sideParticipantId = side?.participantId;
   const roundMatchUps = matchUps.filter(({ roundNumber }) => roundNumber === matchUp.roundNumber);

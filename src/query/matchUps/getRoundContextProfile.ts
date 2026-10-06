@@ -1,4 +1,5 @@
 import { getWinnerLinkRoundNumbers } from '@Query/drawDefinition/linkGetter';
+import { structuresOf } from '@Acquire/structureMembers';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { getRoundMatchUps } from './getRoundMatchUps';
@@ -42,7 +43,7 @@ export function getRoundContextProfile({
   const isAdHocStructure = isAdHoc({ structure });
   const isLuckyStructure = isLucky({ structure });
 
-  const isRoundRobin = structure.structures;
+  const isRoundRobin = structuresOf(structure);
   const roundNamingProfile = {};
 
   const defaultRoundNamingPolicy = POLICY_ROUND_NAMING_DEFAULT[POLICY_TYPE_ROUND_NAMING];
