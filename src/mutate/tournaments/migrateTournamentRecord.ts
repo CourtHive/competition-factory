@@ -1,3 +1,4 @@
+import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getMatchUpPresence, getParticipantPresence } from '@Acquire/presenceAttestations';
 
@@ -181,6 +182,7 @@ type MigrationCounts = {
   matchUps: number;
   matchUpScheduleTimeItems: number;
   matchUpCheckIns: number;
+  drawPositions: number;
   participantPresence: number;
   venues: number;
   courts: number;
@@ -282,6 +284,7 @@ export function migrateTournamentRecord({
     matchUps: 0,
     matchUpScheduleTimeItems: 0,
     matchUpCheckIns: 0,
+    drawPositions: 0,
     participantPresence: 0,
     venues: 0,
     courts: 0,
@@ -354,6 +357,22 @@ function migrateMatchUpSchedule(matchUp: MatchUp, counts: MigrationCounts, clear
   }
 }
 
+/**
+ * A stored `drawPositions` hole is compacted (leading-hole removal step 3; CA's Q2 ruling, 2026-10-05).
+ *
+ * Since 7.7.0 no writer stores a hole: `normalizeDrawPositions` keeps the positions present, ascending, and a lone
+ * survivor's side is read structurally. Records written before may hold `[undefined, 5]`, `[5, null]` or `[null]`,
+ * which serialise with a `null` that `tournament.schema.json` rejects. The engine already reads them correctly; this
+ * makes them validate. Unconditional, unlike the promotions: a hole is never a legacy fact worth keeping.
+ */
+function compactDrawPositions(matchUp: MatchUp): number {
+  const stored: (number | null | undefined)[] | undefined = matchUp?.drawPositions;
+  if (!Array.isArray(stored)) return 0;
+  const before = JSON.stringify(stored);
+  matchUp.drawPositions = normalizeDrawPositions(stored.map((drawPosition) => drawPosition ?? undefined));
+  return JSON.stringify(matchUp.drawPositions) === before ? 0 : 1;
+}
+
 function walkStructures(structures: Structure[], counts: MigrationCounts, clearLegacy: boolean) {
   for (const structure of structures) {
     counts.structures += applyFlatPromotions(structure, STRUCTURE_PROMOTIONS, clearLegacy);
@@ -364,6 +383,7 @@ function walkStructures(structures: Structure[], counts: MigrationCounts, clearL
       counts.matchUps += applyFlatPromotions(matchUp, MATCHUP_PROMOTIONS, clearLegacy);
       migrateMatchUpSchedule(matchUp, counts, clearLegacy);
       counts.matchUpCheckIns += promoteMatchUpCheckIns(matchUp, clearLegacy);
+      counts.drawPositions += compactDrawPositions(matchUp);
     }
     const childStructures = structuresOf(structure);
     if (Array.isArray(childStructures)) walkStructures(childStructures, counts, clearLegacy);
