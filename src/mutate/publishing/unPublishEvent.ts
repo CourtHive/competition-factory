@@ -23,9 +23,12 @@ export function unPublishEvent({ removePriorValues = true, tournamentRecord, sta
   });
 
   const itemValue = timeItem?.itemValue || { [status]: {} };
-  delete itemValue[status].structureIds; // legacy
-  delete itemValue[status].drawDetails;
-  delete itemValue[status].drawIds; // legacy
+  // an event published only under another status holds no entry for this one
+  if (itemValue[status]) {
+    delete itemValue[status].structureIds; // legacy
+    delete itemValue[status].drawDetails;
+    delete itemValue[status].drawIds; // legacy
+  }
 
   const updatedTimeItem = { itemValue, itemType };
 

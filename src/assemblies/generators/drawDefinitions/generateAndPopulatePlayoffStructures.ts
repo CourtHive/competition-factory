@@ -514,7 +514,13 @@ function advanceCompletedMatchUps({
   return undefined;
 }
 
-function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tournamentRecord, drawDefinition, event }) {
+export function advanceByeMatchUps({
+  inContextDrawMatchUps,
+  sourceStructureId,
+  tournamentRecord,
+  drawDefinition,
+  event,
+}) {
   const byeMatchUps = inContextDrawMatchUps?.filter(
     (matchUp) => matchUp.matchUpStatus === BYE && matchUp.structureId === sourceStructureId,
   );

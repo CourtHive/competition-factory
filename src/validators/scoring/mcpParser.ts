@@ -611,21 +611,76 @@ export function parseMCPPoint(mcpPoint: MCPPoint, serverIndex: 0 | 1): ParsedMCP
 }
 
 /**
+ * Split one CSV line into fields.
+ *
+ * Tolerates RFC 4180 quoting: a field wrapped in double quotes may contain commas, and a doubled
+ * quote inside it is a literal quote. Unquoted fields are split on bare commas, exactly as before.
+ * A quoted field spanning a line break is not supported (lines are split on `\n` first).
+ * A trailing carriage return (CRLF files) is dropped.
+ */
+function splitCSVLine(line: string): string[] {
+  const fields: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  const chars = line.endsWith('\r') ? line.slice(0, -1) : line;
+
+  for (let i = 0; i < chars.length; i++) {
+    const char = chars[i];
+    if (char === '"') {
+      if (inQuotes && chars[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      fields.push(field);
+      field = '';
+    } else {
+      field += char;
+    }
+  }
+  fields.push(field);
+
+  return fields;
+}
+
+/**
+ * Key each header column; a repeated header name gets an ordinal suffix.
+ *
+ * MCP's full point export names `Gm1`, `Gm2`, `Set1` and `Set2` twice: the before-point copy near the
+ * start of the row and the after-point copy near the end. The first occurrence keeps the bare name,
+ * the second is keyed `<name>_2` (a third would be `<name>_3`), so `point.Set1` is always the
+ * before-point value and `point.Set1_2` the after-point value. Non-repeated columns are unaffected.
+ */
+function keyHeaders(headers: string[]): string[] {
+  const seen = new Map<string, number>();
+  return headers.map((header) => {
+    const count = (seen.get(header) ?? 0) + 1;
+    seen.set(header, count);
+    return count === 1 ? header : `${header}_${count}`;
+  });
+}
+
+/**
  * Parse CSV content into MCP points
+ *
+ * Each row is keyed by header name (see `keyHeaders` for repeated names and `splitCSVLine` for
+ * quoted fields). Missing trailing fields read as ''.
  */
 export function parseCSV(csvContent: string): MCPPoint[] {
   if (!csvContent || !isString(csvContent)) return [];
   const lines = csvContent.trim().split('\n');
   if (lines.length < 2) return [];
 
-  const headers = lines[0]?.split(',') ?? [];
+  const headers = keyHeaders(splitCSVLine(lines[0] ?? ''));
   const points: MCPPoint[] = [];
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
     if (!line) continue;
 
-    const values = line.split(',');
+    const values = splitCSVLine(line);
     const point: Record<string, string> = {};
 
     for (let j = 0; j < headers.length; j++) {
