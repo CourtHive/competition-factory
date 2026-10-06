@@ -136,6 +136,8 @@ export type OutcomeView = {
     /** a side of the loserMatchUp already carries an exit in: a second one there makes a double exit */
     loserMatchUpCarriesExit: boolean;
     loserMatchUpCarriedStatuses: string[];
+    /** a side of the loserMatchUp carries THIS matchUp's exit in: a relabel to a played result withdraws it (F2) */
+    loserMatchUpCarriesSourceExit: boolean;
     /** the winnerMatchUp, for what a double exit produces there (S2c) */
     winner?: {
       structureId?: string;
@@ -214,6 +216,9 @@ export type BuildViewArgs = {
 };
 
 /** § 5 rule 1: what direction must have done once the route has written */
+/** F2: what the loser's matchUp holds once a relabel withdraws the exit carried there */
+export type WithdrawnCarry = { matchUpStatus: MatchUpStatusUnion; loserWins: boolean };
+
 export type DirectionPlan = {
   winner?: { matchUpId: string; participantId: string };
   /** S2c: the exit a double exit produces in the matchUp it feeds, in its own structure; `winningSide` is
@@ -234,5 +239,10 @@ export type DirectionPlan = {
     exit?: MatchUpStatusUnion;
     /** S2c: the double exit the carried exit makes where an exit already stands */
     converged?: MatchUpStatusUnion;
+    /**
+     * F2: a relabel to a played result withdraws the exit this matchUp carried there. Alone, the target is left
+     * undecided; CONVERGED with another exit, it re-derives to that exit, which the loser now wins.
+     */
+    withdrawn?: WithdrawnCarry;
   };
 };

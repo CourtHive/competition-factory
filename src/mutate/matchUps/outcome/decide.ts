@@ -1,4 +1,5 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
+import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { convergence, isRelabel, planDirection } from './direction';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -13,7 +14,7 @@ import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
 
 // constants and types
-import type { BuildViewArgs, DirectionPlan, OutcomeRequest, OutcomeView, Refusal } from './types';
+import type { BuildViewArgs, DirectionPlan, OutcomeRequest, OutcomeView, Refusal, WithdrawnCarry } from './types';
 import { BYE, DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -176,6 +177,34 @@ function checkLoser({ args, route, loser }: CheckArgs & { loser: NonNullable<Dir
   if (loser.converged && present)
     checkConverged({ args, route, matchUpId: loser.matchUpId, matchUpStatus: loser.converged });
   if (loser.bye) checkPropagatedBye({ args, route, bye: loser.bye });
+  if (loser.withdrawn && present) checkWithdrawnCarry({ args, route, withdrawn: loser.withdrawn, target, loserSide });
+}
+
+/**
+ * F2: the relabel withdrew the exit this matchUp carried to the loser. Where v1 kept it, a result stands onward (the
+ * loser or the carry's winner played on), which the view does not read: deferred. Otherwise the loser's matchUp is
+ * undecided, or, where the carry had converged, the other origin's exit won by the loser.
+ */
+function checkWithdrawnCarry({
+  args,
+  route,
+  withdrawn,
+  target,
+  loserSide,
+}: CheckArgs & { withdrawn: WithdrawnCarry; target?: HydratedMatchUp; loserSide?: number }) {
+  const kept = Object.values(target?.sideExitProvenance ?? {}).some(
+    (entry) => entry?.sourceMatchUpId === args.request.matchUpId && !!carriedExitStatus(entry),
+  );
+  if (kept) return differentialTally(`${route}:loser-withdrawal-kept`, 'deferred');
+  const winningSide = withdrawn.loserWins ? loserSide : undefined;
+  const winner = winningSide ? ` won by the loser, side ${winningSide}` : '';
+  if (target?.matchUpStatus !== withdrawn.matchUpStatus || target?.winningSide !== winningSide)
+    diverge(
+      args,
+      `${target?.matchUpId} is ${target?.matchUpStatus} won by side ${target?.winningSide}`,
+      `planned the carry withdrawn: ${withdrawn.matchUpStatus}${winner}`,
+    );
+  differentialTally(`${route}:loser-withdrawn${withdrawn.loserWins ? '-converged' : ''}`, 'compared');
 }
 
 function checkCarriedExit({

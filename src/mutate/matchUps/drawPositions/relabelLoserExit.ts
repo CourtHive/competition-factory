@@ -5,7 +5,7 @@ import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { isAnyExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
@@ -39,9 +39,11 @@ type RelabelArgs = {
  *
  * Neither applies where that matchUp already has a result of its own: a score, a decided status, or
  * (for the withdrawal) a walkover winner who has since played on. The loser then stays as they are.
- * A withdrawal is also attempted only where the matchUp still holds exactly what this carry made it: not
- * where it CONVERGED with another exit, and not where a director recorded a result over it (see
- * `onlyThisCarry`). Withdrawing from a convergence is open work (Mentat TASKS, S2c).
+ * A withdrawal is also attempted only where the matchUp still holds what this carry made it, alone or
+ * CONVERGED with another exit, and not where a director recorded a result over it (see `onlyThisCarry`).
+ * Withdrawn from a convergence, only this source's entry goes: the matchUp re-derives to the kept origin's
+ * single exit, and `settleRederivedDoubleExits` (at the end of `setMatchUpStatus`) directs that exit's
+ * carrier onward, replacing what the double exit produced (F2).
  *
  * "Where the loser now stands" is the earliest matchUp of the target structure holding them that is
  * not a BYE: a loser fed opposite a BYE has already passed it, and their next opponent is there.
@@ -113,17 +115,18 @@ function relabelsTheCarry(standing: HydratedMatchUp, loserParticipantId: string,
 }
 
 /**
- * The matchUp's state is EXACTLY what this source's carried exit made it: that exit's status, awarded to
- * the side opposite the loser, with no exit carried in on the other side. Anything else is somebody else's
- * result standing there: a convergence (withdrawing one origin re-derives the other, whose winner must
- * then be directed, which is the cascade's open work) or a result a director recorded over the carry.
+ * The matchUp's state is what this source's carried exit made it: that exit's status, awarded to the side
+ * opposite the loser, or a double exit with no winner where it CONVERGED with an exit carried in on the other
+ * side (withdrawing this origin re-derives the matchUp to the other, and the settle directs its winner).
+ * Anything else is a result a director recorded over the carry.
  */
 function onlyThisCarry(standing: HydratedMatchUp, loserParticipantId: string, sourceMatchUpId: string): boolean {
   const loserSide = standing.sides?.find((side) => side?.participantId === loserParticipantId)?.sideNumber;
   if (loserSide !== 1 && loserSide !== 2) return false;
   const own = standing.sideExitProvenance?.[loserSide];
   const other = standing.sideExitProvenance?.[loserSide === 1 ? 2 : 1];
-  if (own?.sourceMatchUpId !== sourceMatchUpId || carriedExitStatus(other)) return false;
+  if (own?.sourceMatchUpId !== sourceMatchUpId) return false;
+  if (carriedExitStatus(other)) return isDoubleExit(standing.matchUpStatus) && !standing.winningSide;
   return standing.matchUpStatus === own.matchUpStatus && standing.winningSide === (loserSide === 1 ? 2 : 1);
 }
 
@@ -153,13 +156,35 @@ function hasResult(matchUp: HydratedMatchUp): boolean {
  * through. A BYE is passed, not played, so stopping at it missed the match they then won; withdrawing the carry
  * released them from a round they had reached by that result (census w1 9000087, FMLC 16/13: `Consolation|3|1`
  * won, then the winner taken out of `Consolation|4|1` when `Main|1|3`'s walkover was relabelled as played).
+ *
+ * A CONVERGENCE has no winner; what it decided is the exit it PRODUCED one round on, so the question is asked of
+ * that exit's winner. Withdrawing an origin re-derives the convergence and withdraws its produced exit, which
+ * would leave whoever won it standing a round further on, advanced out of an undecided matchUp (F2, FMLC 8:
+ * `Consolation|2|1`'s produced walkover won, then `Consolation|3|1` played). A clear of the origin is refused
+ * there, and the relabel leaves the convergence as it stands.
  */
 function winnerPlayedOn(
   standing: HydratedMatchUp,
   matchUps: HydratedMatchUp[] | undefined,
   drawDefinition: DrawDefinition,
 ): ResultType & { playedOn?: boolean } {
+  if (isDoubleExit(standing.matchUpStatus)) {
+    const produced = nextPlayable(standing, matchUps, drawDefinition);
+    if (produced.error || !produced.next) return produced.error ? produced : { playedOn: false };
+    return winnerPlayedOn(produced.next, matchUps, drawDefinition);
+  }
   if (!standing.winningSide) return { playedOn: false };
+  const onward = nextPlayable(standing, matchUps, drawDefinition);
+  if (onward.error) return onward;
+  return { playedOn: !!onward.next && hasResult(onward.next) };
+}
+
+/** the winner matchUp onward, past any BYEs (bounded, as a draw is); a malformed round link is an error */
+function nextPlayable(
+  standing: HydratedMatchUp,
+  matchUps: HydratedMatchUp[] | undefined,
+  drawDefinition: DrawDefinition,
+): ResultType & { next?: HydratedMatchUp } {
   let current: HydratedMatchUp | undefined = standing;
   for (let hops = 0; current && hops < 16; hops++) {
     const targetData = positionTargets({
@@ -168,16 +193,15 @@ function winnerPlayedOn(
       inContextMatchUp: current,
       drawDefinition,
     });
-    if (targetData.error) return decorateResult({ result: targetData, stack: 'winnerPlayedOn' });
+    if (targetData.error) return decorateResult({ result: targetData, stack: 'nextPlayable' });
     const nextId: string | undefined = targetData.targetMatchUps?.winnerMatchUp?.matchUpId;
     const next: HydratedMatchUp | undefined = nextId
       ? matchUps?.find((matchUp) => matchUp.matchUpId === nextId)
       : undefined;
-    if (!next) return { playedOn: false };
-    if (next.matchUpStatus !== BYE) return { playedOn: hasResult(next) };
+    if (next?.matchUpStatus !== BYE) return { next };
     current = next;
   }
-  return { playedOn: false };
+  return {};
 }
 
 /**
