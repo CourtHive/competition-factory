@@ -89,9 +89,9 @@ export function tournamentRelevantSchedulingIds(params) {
   const structureIds: string[] = [];
   const eventIds: string[] = [];
   const drawIds: string[] = [];
-  const venueIds: string[] = (tournamentRecord?.venues ?? []).map(
-    ({ venueId, courts }) => (!requireCourts || courts?.length) && venueId,
-  );
+  const venueIds: string[] = (tournamentRecord?.venues ?? [])
+    .filter(({ courts }) => !requireCourts || courts?.length)
+    .map(({ venueId }) => venueId);
   const tournamentId = tournamentRecord?.tournamentId;
 
   if (tournamentId) {

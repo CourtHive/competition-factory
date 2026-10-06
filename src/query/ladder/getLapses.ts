@@ -1,4 +1,4 @@
-import { addDaysIso, getChallengeState } from '@Query/ladder/getChallengeState';
+import { addDaysIso, getChallengeState, itemDateIso } from '@Query/ladder/getChallengeState';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { matchUpsOf } from '@Acquire/structureMembers';
@@ -38,8 +38,9 @@ export type Lapses = {
 const itemDate = (matchUp: MatchUp, itemType: string): string | undefined =>
   (matchUp?.timeItems ?? [])
     .filter((item) => item.itemType === itemType)
-    .map((item: any) => item.itemDate)
-    .sort((a: string, b: string) => a.localeCompare(b))
+    .map((item) => itemDateIso(item.itemDate))
+    .filter((date): date is string => !!date)
+    .sort((a, b) => a.localeCompare(b))
     .at(-1);
 
 /** `declineForfeitsPosition` is sugar; an explicit lapsePolicy wins where both are present. */

@@ -114,7 +114,7 @@ export function clearMatchUpSchedule({
   }
 
   modifyMatchUpNotice({
-    tournamentId: tournamentRecord.tournamentId,
+    tournamentId: tournamentRecord?.tournamentId,
     context: stack,
     drawDefinition,
     matchUp,
