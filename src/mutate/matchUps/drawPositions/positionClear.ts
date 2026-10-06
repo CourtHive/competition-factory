@@ -418,8 +418,8 @@ function removeDrawPosition({
     targetMatchUp.roundNumber > initialRoundNumber
   ) {
     // Removal, not substitution: preserves ascending order. See `getOrderedDrawPositions`.
-    // Settled through `normalizeDrawPositions`, which keeps a hole beside a survivor and collapses
-    // an all-holes result to `[]`.
+    // Settled through `normalizeDrawPositions`, which stores the positions present (a lone survivor
+    // alone, its side read structurally) and an empty result as `[]`.
     // The participant who stays can change side as the seat empties; what is recorded by side goes with them.
     setMatchUpDrawPositions({
       drawPositions: (targetMatchUp.drawPositions ?? []).map((currentDrawPosition) =>

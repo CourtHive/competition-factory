@@ -436,26 +436,19 @@ function exchangePathPositions({
       structureId,
     });
 
-    // The substitution can put a HOLE in: the flipped loser has no drawPosition when their side was
-    // an empty fed slot, so `[4, 7]` becomes `[undefined, 7]` — correct, and positional. What it
-    // must not leave is an array of nothing but holes; `[7]` becoming `[undefined]` carries no
-    // information. Measured on census seed 9100016 (FEED_IN_CHAMPIONSHIP_TO_SF, flag ON), which is
-    // the only all-holes writer the two REMOVAL sites do not account for.
+    // The substitution can leave a position out: the flipped loser has no drawPosition when their
+    // side was an empty fed slot, so `[4, 7]` becomes `[7]` once settled, its side read structurally.
+    // An array of nothing settles to `[]` (census seed 9100016, FEED_IN_CHAMPIONSHIP_TO_SF).
     const substituted =
       matchUp.drawPositions?.map((drawPosition) => {
         if (drawPosition === positionA) return positionB;
         if (positionB && drawPosition === positionB) return positionA;
         return drawPosition;
       }) ?? [];
-    // Sort only when BOTH positions are present. A hole beside a lone position is POSITIONAL — it is
-    // what holds that position's side — and `Array.prototype.sort` moves holes to the end, so sorting
-    // `[undefined, 3]` wrote `[3, undefined]`. On DOUBLE_ELIMINATION's Main final, which has no fed
-    // position, a pending walkover won by side 2 then read as won by the empty side 1 (census 9100555
-    // step 29, DE window 9300695 step 27; found by `swapPathEquivalence`).
-    const bothPresent = substituted.filter((drawPosition) => typeof drawPosition === 'number').length === 2;
-    matchUp.drawPositions = normalizeDrawPositions(
-      bothPresent ? substituted.sort((a, b) => (a as number) - (b as number)) : substituted,
-    );
+    // `normalizeDrawPositions` sorts and compacts. A lone survivor's side is no longer carried by a hole
+    // (census 9100555's DE Main final once read a side-2 walkover as won by the empty side 1 when a
+    // sort moved the hole); `followWinnerAcrossResort` reads it structurally.
+    matchUp.drawPositions = normalizeDrawPositions(substituted);
     followWinnerAcrossResort({
       existingWinnerDrawPosition: positionA,
       drawDefinition,
