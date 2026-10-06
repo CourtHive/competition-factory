@@ -57,7 +57,7 @@
   "src/mutate/extensions/policies": 2,
   "src/mutate/ladder": 31,
   "src/mutate/matchUps/drawPositions": 30,
-  "src/mutate/matchUps/lineUps": 6,
+  "src/mutate/matchUps/lineUps": 5,
   "src/mutate/matchUps/matchUpFormat": 1,
   "src/mutate/matchUps/matchUpStatus": 23,
   "src/mutate/matchUps/schedule": 17,
