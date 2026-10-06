@@ -5,6 +5,7 @@ import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import { getLapses } from '@Query/ladder/getLapses';
 
 // constants and types
+import type { DrawDefinition, Event, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
 import { INVALID_VALUES, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DROP, FORFEIT, FORFEIT_POSITION, RANK, REMOVE } from '@Constants/ladderConstants';
 import type { LapseConsequence } from '@Constants/ladderConstants';
@@ -18,10 +19,10 @@ type ConsequenceArgs = {
   participantId: string;
   /** Needed only for FORFEIT_POSITION: someone must receive the forfeited position. */
   challengerParticipantId?: string;
-  tournamentRecord?: any;
-  drawDefinition: any;
-  structure: any;
-  event?: any;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  structure: Structure;
+  event?: Event;
 };
 
 /**
@@ -87,20 +88,20 @@ export function applyLapseConsequence(
  * they pass simply moves up one. Dropping past the bottom lands on the bottom rather than erroring,
  * because a policy of "drop 5" on a 3-person ladder is clumsy configuration, not a failure state.
  */
-function dropPositions(params: any): ResultType {
+function dropPositions(params: ConsequenceArgs & { dropBy: number }): ResultType {
   const { participantId, structure, dropBy } = params;
   if (getLadderOrdering(params) !== RANK) return { ...SUCCESS }; // a RATING standing is derived
 
   const assignments = structure?.positionAssignments ?? [];
-  const target = assignments.find((a: any) => a.participantId === participantId);
+  const target = assignments.find((a) => a.participantId === participantId);
   if (!target) return { error: PARTICIPANT_NOT_FOUND };
 
   const from = target.drawPosition;
-  const lowest = Math.max(...assignments.map((a: any) => a.drawPosition));
+  const lowest = Math.max(...assignments.map((a) => a.drawPosition));
   const to = Math.min(from + dropBy, lowest);
   if (to === from) return { ...SUCCESS };
 
-  const touched: any[] = [];
+  const touched: PositionAssignment[] = [];
   for (const assignment of assignments) {
     if (assignment.drawPosition > from && assignment.drawPosition <= to) {
       assignment.drawPosition -= 1;

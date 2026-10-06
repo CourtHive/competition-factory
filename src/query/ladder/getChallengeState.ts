@@ -6,6 +6,7 @@ import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, CHALLENGE_ISSUED } from '@Const
 import { ACCEPTED, DECLINED, EXPIRED, PENDING } from '@Constants/ladderConstants';
 import type { ChallengeState } from '@Constants/ladderConstants';
 import type { LadderPolicy } from '@Types/ladderTypes';
+import type { MatchUp } from '@Types/tournamentTypes';
 
 type ChallengeStateArgs = {
   /** The instant to evaluate against. REQUIRED — see below. */
@@ -20,9 +21,9 @@ type ChallengeStateArgs = {
   event?: any;
 };
 
-const itemDateOf = (matchUp: any, itemType: string): string | undefined =>
+const itemDateOf = (matchUp: MatchUp | undefined, itemType: string): string | undefined =>
   (matchUp?.timeItems ?? [])
-    .filter((item: any) => item.itemType === itemType)
+    .filter((item) => item.itemType === itemType)
     .map((item: any) => item.itemDate)
     .sort((a: string, b: string) => a.localeCompare(b))
     .at(-1);

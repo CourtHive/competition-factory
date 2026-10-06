@@ -1,3 +1,13 @@
+import type { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
+
+type LadderContextArgs = {
+  drawDefinition?: DrawDefinition;
+  structure?: Structure;
+  structureId?: string;
+  matchUp?: MatchUp;
+  matchUpId?: string;
+};
+
 /**
  * Resolution shared by the ladder queries and mutations that the engine exposes.
  *
@@ -14,10 +24,10 @@
  * pay a lookup, and a caller holding a structure the drawDefinition does not contain is doing so on
  * purpose.
  */
-export function resolveLadderStructure(params: any): any {
+export function resolveLadderStructure(params: LadderContextArgs): Structure | undefined {
   if (params?.structure) return params.structure;
   const structures = params?.drawDefinition?.structures ?? [];
-  if (params?.structureId) return structures.find((s: any) => s.structureId === params.structureId);
+  if (params?.structureId) return structures.find((s) => s.structureId === params.structureId);
   // A ladder is a single structure by construction; falling back to the first is not a guess.
   return structures[0];
 }
@@ -28,12 +38,12 @@ export function resolveLadderStructure(params: any): any {
  * Searches every structure rather than assuming the first, because the caller identified the
  * matchUp and not the structure — answering from the wrong one would be a silent mismatch.
  */
-export function resolveLadderMatchUp(params: any): { matchUp?: any; structure?: any } {
+export function resolveLadderMatchUp(params: LadderContextArgs): { matchUp?: MatchUp; structure?: Structure } {
   if (params?.matchUp) return { matchUp: params.matchUp, structure: resolveLadderStructure(params) };
   const matchUpId = params?.matchUpId;
   if (!matchUpId) return {};
   for (const structure of params?.drawDefinition?.structures ?? []) {
-    const matchUp = structure.matchUps?.find((m: any) => m.matchUpId === matchUpId);
+    const matchUp = structure.matchUps?.find((m) => m.matchUpId === matchUpId);
     if (matchUp) return { matchUp, structure };
   }
   return {};

@@ -1,6 +1,16 @@
+import type { DrawDefinition, Event, PositionAssignment, Tournament } from '@Types/tournamentTypes';
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
+import type { ErrorType } from '@Constants/errorConditionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
+
+type MirrorStandingArgs = {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  touched?: PositionAssignment[];
+  appliedAt: string;
+  event?: Event;
+};
 
 /**
  * Writes each changed rank as a dated `ScaleItem`, which is what makes a ladder's history queryable
@@ -10,9 +20,15 @@ import { RANKING } from '@Constants/scaleConstants';
  * removal — so that the snapshot and the series cannot drift apart depending on how someone moved.
  * Always call it as a side effect of the mutation, never as a separate step a caller might skip.
  */
-export function mirrorStandingToScale({ tournamentRecord, drawDefinition, appliedAt, touched, event }: any): {
+export function mirrorStandingToScale({
+  tournamentRecord,
+  drawDefinition,
+  appliedAt,
+  touched,
+  event,
+}: MirrorStandingArgs): {
   written: number;
-  error?: any;
+  error?: ErrorType;
 } {
   if (!tournamentRecord) return { written: 0 }; // positions still move; only history needs a record
   let written = 0;
