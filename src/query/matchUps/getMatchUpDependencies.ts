@@ -60,10 +60,11 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
   const allTournamentRecords: Tournament[] = Object.values(tournamentRecords);
 
   const allLinks: DrawLink[] = allTournamentRecords.reduce((allLinks: any[], tournamentRecord) => {
-    return allLinks
-      .concat(tournamentRecord.events ?? [])
-      .map((event) => (event.drawDefinitions ?? []).map((drawDefinition) => drawDefinition.links ?? []))
-      .flat(Infinity);
+    return allLinks.concat(
+      (tournamentRecord.events ?? [])
+        .map((event) => (event.drawDefinitions ?? []).map((drawDefinition) => drawDefinition.links ?? []))
+        .flat(Infinity),
+    );
   }, []);
 
   const positionLinks = allLinks.filter(({ linkType }) => linkType === POSITION);

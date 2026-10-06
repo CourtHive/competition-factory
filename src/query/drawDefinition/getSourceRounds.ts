@@ -61,7 +61,7 @@ export function getSourceRounds({
   });
 
   // reduce the sourceRoundsMap to roundNumbers, not including excludedRoundNumbers
-  const keys: SourceRoundsMap[string][] = Object.values(playoffPositionSourceRoundsMap);
+  const keys: SourceRoundsMap[string][] = Object.values(playoffPositionSourceRoundsMap ?? {});
   const relevantPlayoffSourceRounds = keys
     .reduce<string[]>((rounds, round) => {
       return rounds.includes(round.roundNumber) ? rounds : rounds.concat(round.roundNumber);
