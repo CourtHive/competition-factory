@@ -21,7 +21,7 @@ import { DOUBLE_ELIMINATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinit
  * out of an undecided matchUp, since only the removed position's own advancements were taken back.
  *
  * Census de 9301695 (DOUBLE_ELIMINATION 16/15), shrunk from 30 steps to 5, is the same rule past a BYE: the double
- * exit's propagated BYE let `Backdraw|2|3`'s occupant pass into `3|2` and `4|2`, and undoing it left them there.
+ * exit's propagated BYE let `Backdraw|2|3`'s occupant pass into `3|2`, and undoing it left them there.
  */
 const drawId = 'undo-double-exit-relay';
 const key = (m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}`;
@@ -93,12 +93,14 @@ it('undoing a double exit releases what its propagated BYE had advanced', () => 
   score('Main|1|5', { matchUpStatus: DOUBLE_WALKOVER });
   score('Main|1|4', { winningSide: 2 });
 
-  // CONTROL: Backdraw|2|3 is a BYE, and its occupant has passed it into 3|2 and 4|2
+  // CONTROL: Backdraw|2|3 is a BYE, and its occupant has passed it into 3|2, where they await the other feeder's
+  // winner. (Before the BYE holder advanced one position, 3|2 also held the BYE's own position, read as a BYE, and the
+  // occupant was carried on into 4|2 as well: TWO_POSITIONS_FROM_ONE_FEEDER.)
   const passed = find('Backdraw|2|3');
   expect(passed.matchUpStatus).toEqual(BYE);
   const occupant = occupants(passed)[0];
-  expect(occupants(find('Backdraw|3|2'))).toContain(occupant);
-  expect(occupants(find('Backdraw|4|2'))).toContain(occupant);
+  expect(occupants(find('Backdraw|3|2'))).toEqual([occupant]);
+  expect(occupants(find('Backdraw|4|2'))).not.toContain(occupant);
 
   score('Main|1|5', { winningSide: 2 });
 
