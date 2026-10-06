@@ -4,7 +4,7 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { uniqueValues } from '@Tools/arrays';
 
 // constants and types
-import { DrawDefinition, SeedAssignment, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, SeedAssignment, Tournament } from '@Types/tournamentTypes';
 import { TOURNAMENT_RECORD, DRAW_ID } from '@Constants/attributeConstants';
 import { SeedingProfile, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
