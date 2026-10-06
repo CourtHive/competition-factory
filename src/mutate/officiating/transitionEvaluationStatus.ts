@@ -20,17 +20,25 @@ type TransitionEvaluationStatusArgs = {
 };
 
 // When submitting, validate that policy-required scores are present.
-function checkEvaluationSubmissionScores({ record, entity, toStatus }: { record: any; entity: any; toStatus: string }) {
+function checkEvaluationSubmissionScores({
+  record,
+  entity,
+  toStatus,
+}: {
+  record: OfficialRecord;
+  entity: any;
+  toStatus: string;
+}) {
   if (toStatus !== EVAL_SUBMITTED || !entity.policyName) return undefined;
-  const policy = record.evaluationPolicies.find((p: any) => p.policyName === entity.policyName);
+  const policy = record.evaluationPolicies.find((p) => p.policyName === entity.policyName);
   if (!policy) return undefined;
 
-  const requiredCriteria = policy.sections.flatMap((s: any) => s.criteria.filter((c: any) => c.required));
+  const requiredCriteria = policy.sections.flatMap((s) => s.criteria.filter((c) => c.required));
   const scoredIds = new Set(entity.scores.map((s: any) => s.criterionId));
-  const missing = requiredCriteria.filter((c: any) => !scoredIds.has(c.criterionId));
+  const missing = requiredCriteria.filter((c) => !scoredIds.has(c.criterionId));
   if (!missing.length) return undefined;
 
-  return { error: INVALID_EVALUATION_SCORES, context: { missingCriteria: missing.map((c: any) => c.criterionId) } };
+  return { error: INVALID_EVALUATION_SCORES, context: { missingCriteria: missing.map((c) => c.criterionId) } };
 }
 
 export function transitionEvaluationStatus({

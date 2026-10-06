@@ -92,7 +92,7 @@
   "src/query/matchUps": 400,
   "src/query/matchUps/roundRobinTally": 182,
   "src/query/matchUps/scheduling": 57,
-  "src/query/officiating": 13,
+  "src/query/officiating": 6,
   "src/query/participant": 81,
   "src/query/participants": 242,
   "src/query/publishing": 22,

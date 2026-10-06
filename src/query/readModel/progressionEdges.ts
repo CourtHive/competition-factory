@@ -1,5 +1,8 @@
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 
+// types
+import { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
+
 /**
  * Stamp draw-progression edges (`winnerMatchUpId` / `loserMatchUpId`) onto ALREADY
  * FLATTENED in-context matchUps.
@@ -26,9 +29,9 @@ import { addGoesTo } from '@Query/matchUps/addGoesTo';
  * every flatten.
  */
 /** Every stored matchUp of a draw, including nested round-robin group structures. */
-function collectStoredMatchUps(drawDefinition: any): any[] {
-  const out: any[] = [];
-  const walk = (structures: any[]) => {
+function collectStoredMatchUps(drawDefinition: DrawDefinition): MatchUp[] {
+  const out: MatchUp[] = [];
+  const walk = (structures: Structure[] | undefined) => {
     for (const structure of structures ?? []) {
       for (const matchUp of structure?.matchUps ?? []) out.push(matchUp);
       walk(structure?.structures);
@@ -54,7 +57,7 @@ export function applyProgressionEdges({ drawDefinitions, matchUps }: { drawDefin
     // rebuild hands it records it does not intend to write back. So snapshot the three
     // fields it touches and restore them, keeping only the returned goesToMap.
     const stored = collectStoredMatchUps(drawDefinition);
-    const snapshot = stored.map((matchUp: any) => ({
+    const snapshot = stored.map((matchUp) => ({
       matchUp,
       hasWinner: 'winnerMatchUpId' in matchUp,
       hasLoser: 'loserMatchUpId' in matchUp,
@@ -63,7 +66,7 @@ export function applyProgressionEdges({ drawDefinitions, matchUps }: { drawDefin
       finishingLoser: matchUp.finishingPositionRange?.loser,
     }));
 
-    let result: any;
+    let result: ReturnType<typeof addGoesTo> | undefined;
     try {
       result = addGoesTo({ drawDefinition });
     } finally {

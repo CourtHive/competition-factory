@@ -10,7 +10,7 @@ import {
 } from '@Constants/officiatingConstants';
 
 // types
-import type { OfficialRecord, OfficialEvaluation, EvaluationScore } from '@Types/officiatingTypes';
+import type { OfficialRecord, OfficialEvaluation, EvaluationScore, EvaluationStatus } from '@Types/officiatingTypes';
 
 type ModifyEvaluationArgs = {
   officialRecord: OfficialRecord;
@@ -32,17 +32,18 @@ type ModifyEvaluationArgs = {
 
 export function modifyEvaluation({ officialRecord, evaluationId, updates }: ModifyEvaluationArgs): {
   error?: any;
+  context?: { message?: string; evaluationId?: string; status?: EvaluationStatus };
   evaluation?: OfficialEvaluation;
   success?: boolean;
 } {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!evaluationId) return { error: INVALID_VALUES, context: { message: 'Missing evaluationId' } } as any;
+  if (!evaluationId) return { error: INVALID_VALUES, context: { message: 'Missing evaluationId' } };
 
   const evaluation = officialRecord.evaluations.find((e) => e.evaluationId === evaluationId);
-  if (!evaluation) return { error: EVALUATION_NOT_FOUND, context: { evaluationId } } as any;
+  if (!evaluation) return { error: EVALUATION_NOT_FOUND, context: { evaluationId } };
 
   if (!EVALUATION_EDITABLE.includes(evaluation.status)) {
-    return { error: EVALUATION_NOT_EDITABLE, context: { status: evaluation.status } } as any;
+    return { error: EVALUATION_NOT_EDITABLE, context: { status: evaluation.status } };
   }
 
   if (updates.overallRating !== undefined) evaluation.overallRating = updates.overallRating;

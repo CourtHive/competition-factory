@@ -25,8 +25,8 @@ import {
 // constants and types
 import { ReadModelCompetitorRow, ReadModelMatchUpRow, ReadModelRows } from '@Types/readModelTypes';
 import { MISSING_TOURNAMENT_RECORD, ErrorType } from '@Constants/errorConditionConstants';
+import { Structure, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
 
 type CastArgs = {
   tournamentRecord?: Tournament;
@@ -69,7 +69,7 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
   // generated before the edges were materialised (and TODS files not produced by the
   // factory) carry none, and a NULL edge is indistinguishable from "no feed exists".
   applyProgressionEdges({
-    drawDefinitions: (tournamentRecord.events ?? []).flatMap((event: any) => event?.drawDefinitions ?? []),
+    drawDefinitions: (tournamentRecord.events ?? []).flatMap((event) => event?.drawDefinitions ?? []),
     matchUps,
   });
 
@@ -95,14 +95,14 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
     match_up_competitors.push(...competitorRows);
   }
 
-  const placedVenues = (tournamentRecord.venues ?? []).filter((venue: any) => venue?.venueId);
+  const placedVenues = (tournamentRecord.venues ?? []).filter((venue) => venue?.venueId);
 
   // one row per event; `published` resolves through the SAME cascade as the per-matchUp
   // state above (`isEventPublished`), not a truthiness test on the PUBLIC envelope — an
   // unpublished event retains that envelope with undefined-valued keys.
   const events = (tournamentRecord.events ?? [])
-    .filter((event: any) => event?.eventId)
-    .map((event: any) =>
+    .filter((event) => event?.eventId)
+    .map((event) =>
       eventRow(event, tournamentId, providerId, isEventPublished(publishStatusByEventId.get(event.eventId))),
     );
 
@@ -148,7 +148,7 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
       match_up_competitors,
       entries: entryRows(tournamentRecord),
       venues: placedVenues.map(venueRow),
-      tournament_venues: placedVenues.map((venue: any) => ({ tournament_id: tournamentId, venue_id: venue.venueId })),
+      tournament_venues: placedVenues.map((venue) => ({ tournament_id: tournamentId, venue_id: venue.venueId })),
     },
   };
 }
@@ -161,7 +161,7 @@ export function cast(params?: CastArgs): { error?: ErrorType; success?: boolean;
 // is the owning CONTAINER for a nested group (null at the top level) so a matchUp's
 // `structure_id` — which points at the GROUP, not the container — always resolves.
 function collectStructures(
-  structureList: any[],
+  structureList: Structure[] | undefined,
   baseCtx: { tournamentId: string; eventId: string; drawId: string; providerId: string | undefined },
   parentStructureId: string | null,
   structures: ReadModelRows['structures'],
@@ -179,7 +179,7 @@ function collectStructures(
 }
 
 function buildDrawEntityRows(
-  tournamentRecord: any,
+  tournamentRecord: Tournament,
   tournamentId: string,
   providerId: string | undefined,
 ): { draws: ReadModelRows['draws']; structures: ReadModelRows['structures']; seeds: ReadModelRows['seeds'] } {

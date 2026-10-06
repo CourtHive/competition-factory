@@ -14,6 +14,7 @@ type GetEvaluationTemplateArgs = {
 
 export function getEvaluationTemplate({ officialRecord, policyName, evaluationPolicy }: GetEvaluationTemplateArgs): {
   error?: any;
+  context?: { message?: string; policyName?: string };
   success?: boolean;
   fields?: EvaluationFormField[];
   evaluationPolicy?: EvaluationPolicy;
@@ -26,8 +27,8 @@ export function getEvaluationTemplate({ officialRecord, policyName, evaluationPo
   }
 
   if (!policy) {
-    if (policyName) return { error: MISSING_EVALUATION_POLICY, context: { policyName } } as any;
-    return { error: INVALID_VALUES, context: { message: 'Missing evaluationPolicy or policyName' } } as any;
+    if (policyName) return { error: MISSING_EVALUATION_POLICY, context: { policyName } };
+    return { error: INVALID_VALUES, context: { message: 'Missing evaluationPolicy or policyName' } };
   }
 
   const fields: EvaluationFormField[] = [];
