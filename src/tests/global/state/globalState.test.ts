@@ -1,3 +1,4 @@
+import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
 // constants
@@ -418,24 +419,45 @@ describe('globalState', () => {
   });
 
   describe('error handling', () => {
+    // the catch path itself: run under the default provider, which catches and logs
+    useEngineCatch();
+
+    const loggedError = (consoleSpy: any) => {
+      expect(consoleSpy).toHaveBeenCalledOnce();
+      const [label, logged] = consoleSpy.mock.calls[0];
+      expect(label).toEqual('ERROR');
+      return logged;
+    };
+
     it('handles caught error with error object', () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const result = handleCaughtError({
         engineName: 'testEngine',
         methodName: 'testMethod',
         params: { test: 'param' },
         err: new Error('Test error'),
       });
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual('Test error');
+      expect(loggedError(consoleSpy)).toMatchObject({
+        params: '{"test":"param"}',
+        methodName: 'testMethod',
+        engine: 'testEngine',
+        error: 'Test error',
+      });
+      consoleSpy.mockRestore();
     });
 
     it('handles caught error with string', () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const result = handleCaughtError({
         engineName: 'testEngine',
         methodName: 'testMethod',
         params: {},
         err: 'string error',
       });
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual('STRING ERROR');
+      expect(loggedError(consoleSpy).error).toEqual('STRING ERROR');
+      consoleSpy.mockRestore();
     });
 
     it('excludes tournamentRecord from error log', () => {
@@ -446,6 +468,7 @@ describe('globalState', () => {
         params: { tournamentRecord: { data: 'sensitive' }, other: 'param' },
         err: 'error',
       });
+      expect(loggedError(consoleSpy).params).toEqual('{"other":"param"}');
       consoleSpy.mockRestore();
     });
   });

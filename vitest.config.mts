@@ -41,6 +41,7 @@ export default defineConfig({
       './src/tests/testHarness/corpusRecord.ts',
       './src/tests/testHarness/setOutcomePipeline.ts',
       './src/tests/testHarness/differentialTally.ts',
+      './src/tests/testHarness/rethrowCaughtErrors.ts',
     ],
     coverage: {
       reporter: ['html', 'json-summary'],

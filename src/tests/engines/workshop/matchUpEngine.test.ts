@@ -1,6 +1,7 @@
 import { setState, getMatchUp, getMatchUps, reset, getState } from '@Assemblies/engines/matchUp/stateMethods';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as scoreGovernor from '@Assemblies/governors/scoreGovernor';
+import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import matchUpEngineSync from '@Assemblies/engines/matchUp';
 import { setDevContext } from '@Global/state/globalState';
 
@@ -285,6 +286,15 @@ describe('matchUpEngine', () => {
   // ─── devContext behavior ────────────────────────────────────────────
 
   describe('devContext', () => {
+    // the catch path itself: run under the default provider, which catches and logs
+    useEngineCatch();
+
+    const expectCaughtAndLogged = (consoleSpy: any) => {
+      expect(consoleSpy).toHaveBeenCalledOnce();
+      expect(consoleSpy.mock.calls[0][0]).toEqual('ERROR');
+      expect(consoleSpy.mock.calls[0][1]).toMatchObject({ engine: 'matchUpEngine', methodName: 'generate' });
+    };
+
     it('returns engine for chaining', () => {
       const result = matchUpEngineSync.devContext(true);
       expect(result).toBe(matchUpEngineSync);
@@ -294,8 +304,11 @@ describe('matchUpEngine', () => {
       matchUpEngineSync.setState({ matchUpId: '123' } as any);
       // Calling a namespace object (not a function) throws TypeError
       // catch block handles it via handleCaughtError, returns undefined
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const result = matchUpEngineSync.generate({});
       expect(result).toBeUndefined();
+      expectCaughtAndLogged(consoleSpy);
+      consoleSpy.mockRestore();
     });
 
     it('with devContext enabled, errors in governor methods propagate', () => {
@@ -318,8 +331,11 @@ describe('matchUpEngine', () => {
       matchUpEngineSync.devContext(undefined);
       matchUpEngineSync.setState({ matchUpId: '123' } as any);
       // Should be caught again
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const result = matchUpEngineSync.generate({});
       expect(result).toBeUndefined();
+      expectCaughtAndLogged(consoleSpy);
+      consoleSpy.mockRestore();
     });
   });
 
