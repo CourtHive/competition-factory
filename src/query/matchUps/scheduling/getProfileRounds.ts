@@ -48,7 +48,7 @@ export function getProfileRounds({
 
   if (!schedulingProfile) return { error: NOT_FOUND };
 
-  const segmentedRounds: { [key: string]: any } = {};
+  const segmentedRounds: { [key: string]: number } = {};
 
   const profileRounds = schedulingProfile
     .map(({ venues, scheduleDate }) =>

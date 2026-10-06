@@ -4,6 +4,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getScheduleScenarioStatus,
   findScopedScenario,
+  ScheduleScenarioStatus,
 } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
 
 // types
@@ -56,7 +57,7 @@ export function getScenarioScheduleView(params: GetScenarioScheduleViewArgs): an
     usePublishState: false,
   });
 
-  const status: any = getScheduleScenarioStatus(params);
+  const status: Partial<ScheduleScenarioStatus> = getScheduleScenarioStatus(params);
 
   return {
     ...view,

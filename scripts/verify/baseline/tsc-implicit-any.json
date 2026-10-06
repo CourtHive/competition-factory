@@ -91,7 +91,7 @@
   "src/query/matchUp": 188,
   "src/query/matchUps": 400,
   "src/query/matchUps/roundRobinTally": 182,
-  "src/query/matchUps/scheduling": 57,
+  "src/query/matchUps/scheduling": 53,
   "src/query/officiating": 6,
   "src/query/participant": 81,
   "src/query/participants": 224,
@@ -125,7 +125,7 @@
   "src/tests/testHarness/exitPropagation": 21,
   "src/tests/testHarness/testUtilities": 11,
   "src/tools": 227,
-  "src/tools/buildFromSources": 90,
+  "src/tools/buildFromSources": 89,
   "src/validators": 38,
   "src/validators/sanctioning": 2
 }

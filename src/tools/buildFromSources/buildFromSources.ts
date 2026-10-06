@@ -19,7 +19,7 @@
 //   { tournamentParticipants: { participants } }
 //   The unwrapped factory shapes are accepted too.
 
-import { inferDrawLinks } from '@Mutate/drawDefinitions/links/inferDrawLinks';
+import { inferDrawLinks, InferredLink } from '@Mutate/drawDefinitions/links/inferDrawLinks';
 
 // ------------------------------------------------------------------- types
 //
@@ -83,7 +83,7 @@ export interface BuildFromSourcesResult {
    * Empty when nothing needed repair. Never silent: a caller that would rather refuse than repair
    * can inspect this and decide.
    */
-  inferredLinks: { drawId?: string; inferred: any[]; issues: string[] }[];
+  inferredLinks: { drawId?: string; inferred: InferredLink[]; issues: string[] }[];
   /**
    * matchUps that named a structure the draw does not contain. Empty in the ordinary case. Reported
    * rather than dropped: a shorter draw with no complaint is the hardest loss to notice.
@@ -305,8 +305,14 @@ function walkStructures(structures, fn) {
   return undefined;
 }
 
+// drawPosition → participantId, collected from the matchUps' sides
+type PositionMap = Map<number, string>;
+
+/** A positionAssignment as this module reads and writes it: only the two fields it carries over. */
+type PositionAssignmentLike = { drawPosition?: number; participantId?: string };
+
 // Map<drawPosition, participantId> → sorted positionAssignment[]
-function positionMapToAssignments(positions) {
+function positionMapToAssignments(positions: PositionMap) {
   return [...positions.entries()]
     .sort((a, b) => a[0] - b[0])
     .map(([drawPosition, participantId]) => ({ drawPosition, participantId }));
@@ -314,8 +320,8 @@ function positionMapToAssignments(positions) {
 
 // Walk a list of matchUps' sides and collect drawPosition → participantId.
 // Optionally also accumulates into a passed-in "container" map.
-function collectPositionsFromMatchUps(matchUps: any[], accumulator?: Map<any, any>) {
-  const positions = new Map();
+function collectPositionsFromMatchUps(matchUps: any[], accumulator?: PositionMap) {
+  const positions: PositionMap = new Map();
   for (const m of matchUps) {
     for (const s of m.sides ?? []) {
       if (s.drawPosition != null && s.participantId) {
@@ -462,9 +468,14 @@ function collectRoundMatchUps(container) {
 // Shared core for both draw-definition builders: turn a "bucketed by
 // structureId" map into ITEM group structures and a positionAssignment map
 // for the parent container.
-function buildGroupStructures(byStructure: Map<any, any>, matchUpFormat?: any, containerId?: any, container?: any) {
-  const groupStructures: any[] = [];
-  const containerPositions = new Map();
+function buildGroupStructures(
+  byStructure: Map<any, any>,
+  matchUpFormat?: string,
+  containerId?: string,
+  container?: any,
+) {
+  const groupStructures: ReturnType<typeof makeGroupStructureNode>[] = [];
+  const containerPositions: PositionMap = new Map();
   for (const [structureId, bucket] of byStructure) {
     collectPositionsFromMatchUps(bucket.matchUps, containerPositions);
     const isSelfReferencingContainer = structureId === containerId;
@@ -643,7 +654,7 @@ function buildEvents({
   matchUps,
   unplaced,
 }: {
-  eventDataDocs: any[];
+  eventDataDocs: EventDataDoc[];
   matchUps: any[];
   unplaced?: UnplacedMatchUp[];
 }) {
@@ -750,8 +761,8 @@ const DEFAULT_ENTRY_INFO = { entryStage: 'MAIN', entryStatus: 'DIRECT_ACCEPTANCE
 function deriveDrawEntries(drawDef) {
   const entryInfo = collectEntryInfoFromDrawSides(drawDef);
   const positions = selectPositionsForDraw(drawDef);
-  const seen = new Set<any>();
-  for (const pa of positions as any[]) {
+  const seen = new Set<string>();
+  for (const pa of positions) {
     if (!pa.participantId || seen.has(pa.participantId)) continue;
     seen.add(pa.participantId);
     const info = entryInfo.get(pa.participantId) ?? DEFAULT_ENTRY_INFO;
@@ -795,8 +806,8 @@ function recordEntryInfo(entryInfo, side) {
 // canonical "entered into this draw" set); otherwise fall through to whatever
 // the ITEM structures contributed.
 function selectPositionsForDraw(drawDef) {
-  const container: any[] = [];
-  const groups: any[] = [];
+  const container: PositionAssignmentLike[] = [];
+  const groups: PositionAssignmentLike[] = [];
   walkStructures(drawDef.structures, (s) => {
     const target = s.structureType === 'CONTAINER' ? container : groups;
     target.push(...(s.positionAssignments ?? []));
@@ -874,7 +885,7 @@ export function buildTournamentRecord({
 // Returns { record, classification, unknownCount } so callers can surface
 // "I skipped N sources I couldn't classify".
 export function buildFromSources(sources?: any[]): BuildFromSourcesResult {
-  const eventDataDocs: any[] = [];
+  const eventDataDocs: EventDataDoc[] = [];
   const matchUpDocs: any[] = [];
   const participantDocs: any[] = [];
   const classification: { index: number; kind: SourceKind }[] = [];
