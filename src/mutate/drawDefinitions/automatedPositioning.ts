@@ -376,7 +376,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
     entries,
     error: initialError,
   } = getInitialData(params, drawDefinition, structureId, event);
-  if (initialError) return handleErrorCondition(initialError, applyPositioning);
+  if (initialError) return handleErrorCondition({ error: initialError }, applyPositioning);
 
   if (!entries?.length && !qualifiersCount) return handleSuccessCondition({ ...SUCCESS }, applyPositioning);
 
@@ -435,7 +435,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
       positioningReport,
       random,
     });
-    if (waterfallResult?.error) return handleErrorCondition(waterfallResult.error, applyPositioning);
+    if (waterfallResult?.error) return handleErrorCondition({ error: waterfallResult.error }, applyPositioning);
     unseededByePositions = waterfallResult.unseededByePositions;
   } else {
     const nonWaterfallResult = handleNonWaterfall({
@@ -460,7 +460,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
       positioningReport,
       random,
     });
-    if (nonWaterfallResult?.error) return handleErrorCondition(nonWaterfallResult.error, applyPositioning);
+    if (nonWaterfallResult?.error) return handleErrorCondition({ error: nonWaterfallResult.error }, applyPositioning);
     unseededByePositions = nonWaterfallResult.unseededByePositions;
   }
 
@@ -490,7 +490,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
     conflicts,
     random,
   });
-  if (qualifiersResult?.error) return handleErrorCondition(qualifiersResult.error, applyPositioning);
+  if (qualifiersResult?.error) return handleErrorCondition({ error: qualifiersResult.error }, applyPositioning);
 
   const { positionAssignments } = getPositionAssignments({
     drawDefinition,

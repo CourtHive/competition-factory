@@ -44,6 +44,8 @@ test('generate qualifying structure with multiple qualifying rounds', () => {
     drawProfiles: [
       {
         drawSize: 32,
+        // 4 round 1 qualifiers, 2 round 2 qualifiers each facing a first round BYE
+        participantsCount: 24,
         qualifyingProfiles: [
           {
             roundTarget: 1,
