@@ -17,6 +17,7 @@ import { isDoubleExit } from '@Validators/isExit';
 import { ensureInt } from '@Tools/ensureInt';
 import { overlap } from '@Tools/arrays';
 import {
+  releaseAdvancedDrawPositionAcrossLinks,
   releaseAcrossWinnerLinks,
   releaseLinkedWinnerAdvancement,
 } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
@@ -480,6 +481,19 @@ function removeDrawPosition({
     stack,
   });
 
+  releaseUndecidedAdvancements({
+    initialMatchUpStatus,
+    initialDrawPositions,
+    initialWinningSide,
+    tournamentRecord,
+    drawDefinition,
+    targetMatchUp,
+    drawPosition,
+    matchUpsMap,
+    structure,
+    event,
+  });
+
   if (loserMatchUp && loserMatchUp.structureId !== targetData.matchUp.structureId && !matchUpContainsBye) {
     const result = handleLoserMatchUpRemoval({
       loserMatchUpDrawPositionIndex,
@@ -609,6 +623,61 @@ function handleTeamPositionRemoval({
       eventId: event?.eventId,
       matchUp: targetMatchUp,
       drawDefinition,
+      event,
+    });
+  }
+}
+
+/**
+ * A matchUp this removal left UNDECIDED advances nobody, so what it had advanced comes back.
+ *
+ * The removed position's own advancements are taken by the caller, which walks every round holding it. The other
+ * position's are not, and it stayed one round on, advanced out of an undecided matchUp (`ADVANCED_FROM_UNDECIDED`):
+ *
+ *  - as the WINNER of a result the removal voided. Census w1 9000562 (FEED_IN_CHAMPIONSHIP 16/11): a walkover carried
+ *    past a propagated BYE decided `Consolation|3|1` and its winner advanced to `4|1`; undoing the double exit that
+ *    had made the BYE took the carrier back out of `3|1`, which reverted to TO_BE_PLAYED with the winner left in `4|1`.
+ *  - past a BYE the removal took away. Census de 9301695 (DOUBLE_ELIMINATION 16/15): undoing a double exit cleared the
+ *    propagated BYE opposite `Backdraw|2|3`'s occupant, who had passed it into `3|2` and `4|2` and stayed there.
+ *
+ * A matchUp left a BYE keeps its advancement: a BYE advancement is structural (P46, `advancedByOpponentsBye`).
+ */
+function releaseUndecidedAdvancements({
+  initialMatchUpStatus,
+  initialDrawPositions,
+  initialWinningSide,
+  tournamentRecord,
+  drawDefinition,
+  targetMatchUp,
+  drawPosition,
+  matchUpsMap,
+  structure,
+  event,
+}: {
+  initialMatchUpStatus?: MatchUpStatusUnion;
+  initialDrawPositions?: number[];
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  initialWinningSide?: number;
+  targetMatchUp: MatchUp;
+  matchUpsMap?: MatchUpsMap;
+  structure: Structure;
+  drawPosition: number;
+  event?: Event;
+}) {
+  const roundNumber = targetMatchUp.roundNumber;
+  if (!roundNumber || targetMatchUp.winningSide || targetMatchUp.matchUpStatus !== TO_BE_PLAYED) return;
+  if (!initialWinningSide && initialMatchUpStatus !== BYE) return;
+  for (const advanced of initialDrawPositions ?? []) {
+    if (!advanced || advanced === drawPosition) continue;
+    releaseAdvancedDrawPositionAcrossLinks({
+      structureId: structure.structureId,
+      fromRoundNumber: roundNumber + 1,
+      drawPosition: advanced,
+      withdrawingExit: true,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
       event,
     });
   }
