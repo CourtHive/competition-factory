@@ -133,7 +133,7 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   };
 
   if (derivedCode) {
-    (point as any).code = derivedCode;
+    point.code = derivedCode;
   }
 
   // Add v3-compatible index field
@@ -281,7 +281,7 @@ function handleStandardSet(
   // Calculate game score display
   const gameScore =
     gameWon === undefined ? formatGameScore(side1Points, side2Points, isTiebreak, isConsecutive && !isTiebreak) : '0-0';
-  (point as any).score = gameScore;
+  point.score = gameScore;
 
   if (gameWon !== undefined) {
     handleGameCompletion(
@@ -401,7 +401,7 @@ function handleTiebreakOnlySet(
 
   // Game score display (numeric for tiebreak)
   const gameWon = checkTiebreakWon(side1Points, side2Points, tiebreakTo, isNoAD);
-  (point as any).score = gameWon === undefined ? `${side1Points}-${side2Points}` : '0-0';
+  point.score = gameWon === undefined ? `${side1Points}-${side2Points}` : '0-0';
 
   if (gameWon !== undefined) {
     // Set is complete
@@ -464,7 +464,7 @@ function handleMatchTiebreak(
   currentSet.side2GameScores = side2GameScores;
 
   const gameWon = checkTiebreakWon(side1Points, side2Points, tiebreakTo, isNoAD);
-  (point as any).score = gameWon === undefined ? `${side1Points}-${side2Points}` : '0-0';
+  point.score = gameWon === undefined ? `${side1Points}-${side2Points}` : '0-0';
 
   if (gameWon !== undefined) {
     currentSet.side1TiebreakScore = side1Points;
@@ -506,7 +506,7 @@ function handleTimedSet(
 
   const s1 = currentSet.side1Score || 0;
   const s2 = currentSet.side2Score || 0;
-  (point as any).score = `${s1}-${s2}`;
+  point.score = `${s1}-${s2}`;
 }
 
 // ============================================================================

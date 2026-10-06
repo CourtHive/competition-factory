@@ -73,7 +73,7 @@ export function computeScheduleFingerprint(params: RecordScope & { matchUpIds: s
   return fnv1a(tuples.join('\n'));
 }
 
-type ScheduleScenarioStatus = {
+export type ScheduleScenarioStatus = {
   scenarioId: string;
   outOfDate: boolean; // the official baseline moved since authoring/rebase
   currentHash: string;

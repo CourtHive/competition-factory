@@ -6,6 +6,7 @@ import { getGroupedRounds } from './getGroupedRounds';
 import { extractDate } from '@Tools/dateTime';
 
 // types
+import { ScheduleTimesResult } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -89,7 +90,7 @@ export function getVenueSchedulingDetails({
     });
 
     let dateScheduledMatchUpIds;
-    let scheduleTimes: any = [];
+    let scheduleTimes: ScheduleTimesResult[] | undefined = [];
 
     if (useGarman) {
       // determines court availability taking into account already scheduled matchUps on the scheduleDate
