@@ -11,8 +11,8 @@ import { isExit } from '@Validators/isExit';
 
 // constants, fixtures and types
 import { INVALID_MATCHUP_FORMAT, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import type { MatchUpStatusUnion, Set as SetType } from '@Types/tournamentTypes';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   COMPLETED,
   DEFAULTED,
@@ -209,7 +209,7 @@ function generateScoredOutcome({ pointsPerMinute, matchUpFormat, matchUpStatus, 
   const parsedFormat = parse(matchUpFormat);
   const { bestOf = 1, exactly, setFormat, finalSetFormat } = parsedFormat ?? {};
 
-  const sets: any[] = [];
+  const sets: SetType[] = [];
   const weightedSide = randomInt(0, 1, random);
   const weightedRange = winningSide
     ? [winningSide - 1]
@@ -260,7 +260,7 @@ function generateScoredOutcome({ pointsPerMinute, matchUpFormat, matchUpStatus, 
       pointsPerMinute,
       matchUpStatus,
       random,
-    }) as any;
+    });
     if (winningSide && set.winningSide !== winningSide) swapSides(set);
     sets.push(set);
     weightedWinningSide = set.winningSide; // the decider settles it: no bolt is adjusted after it
@@ -291,13 +291,13 @@ function generateScoredOutcome({ pointsPerMinute, matchUpFormat, matchUpStatus, 
   return { outcome };
 }
 
-function swapSides(set: any) {
+function swapSides(set: SetType) {
   [set.side1Score, set.side2Score] = [set.side2Score, set.side1Score];
   [set.side1TiebreakScore, set.side2TiebreakScore] = [set.side2TiebreakScore, set.side1TiebreakScore];
   set.winningSide = set.winningSide === 1 ? 2 : 1;
 }
 
-function aggregateIsLevel(sets: any[]): boolean {
+function aggregateIsLevel(sets: SetType[]): boolean {
   const total = (side: 1 | 2) => sets.reduce((sum, set) => sum + (set[`side${side}Score`] ?? 0), 0);
   return sets.length > 0 && total(1) === total(2);
 }
@@ -338,7 +338,7 @@ function generateSet({
   setNumber,
   random,
 }) {
-  const set: any = { setNumber };
+  const set: SetType = { setNumber };
   const { setTo, tiebreakFormat, tiebreakAt, tiebreakSet, timed, minutes, outs } = setFormat;
 
   // will tend to be more likely to either reverse or not revderse all sets

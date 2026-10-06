@@ -13,6 +13,7 @@ import { xa } from '@Tools/extractAttributes';
 import { DRAW_DEFINITION_NOT_FOUND, ErrorType, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MAIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
+import { Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SEEDING } from '@Constants/scaleConstants';
 
@@ -30,10 +31,10 @@ export function generateFlightDrawDefinitions({
   matchUpStatusProfile?: any;
   completeAllMatchUps?: boolean;
   randomWinningSide?: boolean;
-  tournamentRecord: any;
+  tournamentRecord: Tournament;
   drawProfiles: any[];
   isMock?: boolean;
-  event: any;
+  event: Event;
 }): {
   drawIds?: string[];
   success?: boolean;

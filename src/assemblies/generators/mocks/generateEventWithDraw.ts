@@ -157,10 +157,10 @@ function generateEventParticipants({
 
   const uniqueParticipantIds: string[] = [];
   unique.forEach(({ participantId }) => uniqueParticipantIds.push(participantId));
-  let targetParticipants: any = unique;
+  let targetParticipants: Participant[] = unique;
 
   if (eventType === TEAM) {
-    const teamResult: any = buildTeamParticipants({
+    const teamResult = buildTeamParticipants({
       drawParticipantsCount,
       tournamentRecord,
       drawProfileCopy,
@@ -175,7 +175,7 @@ function generateEventParticipants({
   }
 
   if (isHybrid) {
-    const hybridResult: any = buildHybridParticipants({
+    const hybridResult = buildHybridParticipants({
       drawParticipantsCount,
       tournamentRecord,
       unique,
@@ -278,7 +278,7 @@ function buildHybridParticipants({ drawParticipantsCount, tournamentRecord, uniq
   const individuals = unique.filter(({ participantType: pt }) => pt === INDIVIDUAL);
   const soloCount = drawParticipantsCount - Math.floor(drawParticipantsCount / 2);
   const pairMemberIndividuals = individuals.slice(soloCount);
-  const pairParticipants: any[] = [];
+  const pairParticipants: Participant[] = [];
 
   for (let i = 0; i + 1 < pairMemberIndividuals.length; i += 2) {
     const m1 = pairMemberIndividuals[i];
@@ -953,7 +953,7 @@ export function generateEventWithDraw(params) {
     drawProfile.automated !== false &&
     (drawProfileCopy.roundsCount ?? 1) > 1;
 
-  const genResult: any = generateAndAttachDraw({
+  const genResult = generateAndAttachDraw({
     matchUpStatusProfile,
     completeAllMatchUps,
     randomWinningSide,

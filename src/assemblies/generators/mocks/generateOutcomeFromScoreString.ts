@@ -9,14 +9,16 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
+type ParsedSets = ReturnType<typeof parseScoreString>;
+
 // An aggregate is the points of EVERY set, and a tiebreak-only decider's point is one of them (CA,
 // 2026-09-29: "INTENNSE requires all sets recorded to be included in the aggregate total"). This read
 // the game fields alone, which counted that point only while the parser put it there (G3, 2026-10-02).
-function inferWinningSideFromAggregate(neutralParsedSets, matchUpFormat?: string) {
+function inferWinningSideFromAggregate(neutralParsedSets: ParsedSets, matchUpFormat?: string) {
   const parsedFormat = matchUpFormat ? parse(matchUpFormat) : undefined;
   const isNumber = (value: unknown): value is number => typeof value === 'number' && !Number.isNaN(value);
   const aggregateTotals = neutralParsedSets.reduce(
-    (totals: any, set: any) => {
+    (totals, set) => {
       const { isTiebreakSet, sideGameScores, sideTiebreakScores } = readTiebreakSet(
         set,
         formatForSet(parsedFormat, set?.setNumber),
@@ -35,14 +37,14 @@ function inferWinningSideFromAggregate(neutralParsedSets, matchUpFormat?: string
   if (aggregateTotals.side2 > aggregateTotals.side1) return 2;
 
   const tiebreakSet = neutralParsedSets.find(
-    (set: any) => set.side1TiebreakScore !== undefined || set.side2TiebreakScore !== undefined,
+    (set) => set.side1TiebreakScore !== undefined || set.side2TiebreakScore !== undefined,
   );
   return tiebreakSet?.winningSide;
 }
 
-function inferWinningSideFromSets(neutralParsedSets) {
+function inferWinningSideFromSets(neutralParsedSets: ParsedSets) {
   const setsWon = { side1: 0, side2: 0 };
-  neutralParsedSets.forEach((set: any) => {
+  neutralParsedSets.forEach((set) => {
     if (set.winningSide === 1) setsWon.side1++;
     else if (set.winningSide === 2) setsWon.side2++;
   });

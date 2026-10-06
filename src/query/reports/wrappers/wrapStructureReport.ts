@@ -2,6 +2,7 @@ import { getStructureReports } from '@Query/structure/structureReport';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
+import { ErrorType } from '@Constants/errorConditionConstants';
 import { STRUCTURE_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
@@ -10,8 +11,8 @@ export function wrapStructureReport({
   tournamentRecord,
 }: {
   tournamentRecord: Tournament;
-}): ReportResult | { error: any } {
-  const result: any = getStructureReports({ tournamentRecord });
+}): ReportResult | { error: ErrorType | string } {
+  const result = getStructureReports({ tournamentRecord });
   if (result.error) return result;
 
   // Build lookup maps for names
@@ -22,7 +23,7 @@ export function wrapStructureReport({
     eventNameMap[event.eventId] = event.eventName ?? '';
     for (const draw of event.drawDefinitions ?? []) {
       drawNameMap[draw.drawId] = draw.drawName ?? '';
-      const mainStructure = draw.structures?.find((s: any) => s.stage === 'MAIN' && s.stageSequence === 1);
+      const mainStructure = draw.structures?.find((s) => s.stage === 'MAIN' && s.stageSequence === 1);
       if (mainStructure?.positionAssignments) {
         drawSizeMap[draw.drawId] = mainStructure.positionAssignments.length;
       }
@@ -58,7 +59,7 @@ export function wrapStructureReport({
     { key: 'seedingBasis', title: 'Seeding Basis', type: 'string' as const },
   ];
 
-  const rows = (result.structureReports ?? []).map((report: any) => {
+  const rows = (result.structureReports ?? []).map((report) => {
     // Resolve winner name from personId or teamId
     const winnerName = participantNameMap[report.winningPersonId] || participantNameMap[report.winningTeamId] || '';
     const winningParticipantId =

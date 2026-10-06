@@ -4,6 +4,7 @@ import { nowIso } from '@Tools/clock';
 // constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MATCHUP_STATUS_REPORT } from '@Constants/reportConstants';
+import { ErrorType } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
 
@@ -11,7 +12,7 @@ export function wrapMatchUpStatusReport({
   tournamentRecord,
 }: {
   tournamentRecord: Tournament;
-}): ReportResult | { error: any } {
+}): ReportResult | { error: ErrorType | string } {
   const { matchUps } = allTournamentMatchUps({ tournamentRecord });
   if (!matchUps) return { error: 'No matchUps found' };
 
@@ -30,7 +31,7 @@ export function wrapMatchUpStatusReport({
   // Aggregate by event + status
   const aggregateMap: Record<string, Record<string, number>> = {};
   for (const m of completed) {
-    const eventId = (m as any).eventId ?? 'unknown';
+    const eventId = m.eventId ?? 'unknown';
     const status = m.matchUpStatus ?? 'UNKNOWN';
     aggregateMap[eventId] ??= {};
     aggregateMap[eventId][status] = (aggregateMap[eventId][status] ?? 0) + 1;

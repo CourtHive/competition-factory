@@ -12,7 +12,7 @@ import { wrapStructureReport } from './wrappers/wrapStructureReport';
 import { wrapVenuesReport } from './wrappers/wrapVenuesReport';
 
 // constants and types
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
 
@@ -42,7 +42,7 @@ type GenerateReportArgs = {
 
 type WrapperArgs = { tournamentRecord: Tournament; parameters?: Record<string, any> };
 
-const wrapperMap: Record<string, (args: WrapperArgs) => ReportResult | { error: any }> = {
+const wrapperMap: Record<string, (args: WrapperArgs) => ReportResult | { error: ErrorType | string }> = {
   [ENTRY_STATUS_REPORT]: wrapEntryStatusReport,
   [STRUCTURE_REPORT]: wrapStructureReport,
   [MATCH_RESULTS_REPORT]: wrapMatchResultsReport,

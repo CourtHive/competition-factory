@@ -3,6 +3,7 @@ import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { ENTRY_STATUS_REPORT } from '@Constants/reportConstants';
+import { ErrorType } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
 
@@ -10,8 +11,8 @@ export function wrapEntryStatusReport({
   tournamentRecord,
 }: {
   tournamentRecord: Tournament;
-}): ReportResult | { error: any } {
-  const result: any = getEntryStatusReports({ tournamentRecord });
+}): ReportResult | { error: ErrorType | string } {
+  const result = getEntryStatusReports({ tournamentRecord });
   if (result.error) return result;
 
   // Build lookup maps for human-readable names

@@ -37,14 +37,19 @@
  * observation.
  */
 
-import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { zonedWallClockToMs, zonedParts } from '@Tools/zonedDateTime';
+import {
+  getMatchUpFormatTiming,
+  matchUpFormatTimes,
+} from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 
 // constants and types
+import { Event, MatchUpSchedule, Tournament } from '@Types/tournamentTypes';
+import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
-import { Tournament } from '@Types/tournamentTypes';
+import { PolicyDefinitions } from '@Types/factoryTypes';
 
 const MS_PER_MINUTE = 60_000;
 const MINUTES_PER_DAY = 1440;
@@ -179,7 +184,7 @@ function localParts(ms: number, frame: VenueFrame): { date: string; time: string
  * When the matchUp began, strongest rung first: an operator-recorded start, the
  * moment it was called to court, then the plan.
  */
-function resolveStart(schedule: any, frame: VenueFrame): { ms: number; source: string } | null {
+function resolveStart(schedule: MatchUpSchedule, frame: VenueFrame): { ms: number; source: string } | null {
   const started = wallClockToMs(schedule?.scheduledDate, schedule?.startTime, frame);
   if (started !== null) return { ms: started, source: 'startTime' };
   const called = isoToMs(schedule?.calledAt);
@@ -199,7 +204,7 @@ function resolveStart(schedule: any, frame: VenueFrame): { ms: number; source: s
  * direction, since it reports a player as less rested rather than more.
  */
 function resolveFinish(
-  schedule: any,
+  schedule: MatchUpSchedule,
   averageMinutes: number,
   startMs: number | null,
   frame: VenueFrame,
@@ -231,7 +236,7 @@ function resolveFinish(
  * and why the summary counts how many rows landed there.
  */
 function resolveDuration(
-  schedule: any,
+  schedule: MatchUpSchedule,
   averageMinutes: number,
   frame: VenueFrame,
 ): { minutes: number; source: DurationSource } {
@@ -253,13 +258,13 @@ function resolveDuration(
 }
 
 /** Every individual behind a side — recovery is a property of a person, not of an entry. */
-function sideIndividualIds(side: any, matchUpType?: string): string[] {
+function sideIndividualIds(side: HydratedSide | undefined, matchUpType?: string): string[] {
   if (!side) return [];
   if (matchUpType === DOUBLES_MATCHUP) {
     const ids = side.participant?.individualParticipantIds ?? [];
-    return ids.length ? ids : [side.participantId].filter(Boolean);
+    return ids.length ? ids : [side.participantId].filter((id): id is string => !!id);
   }
-  return [side.participantId ?? side.participant?.participantId].filter(Boolean);
+  return [side.participantId ?? side.participant?.participantId].filter((id): id is string => !!id);
 }
 
 export type TimelineAppearance = {
@@ -288,7 +293,7 @@ export type TimelineAppearance = {
 };
 
 type BuildArgs = {
-  policyDefinitions?: any;
+  policyDefinitions?: PolicyDefinitions;
   utcOffsetMinutes?: number;
   tournamentRecord: Tournament;
   /** IANA zone identifier; when supplied it wins over `utcOffsetMinutes` and is DST-correct. */
@@ -330,7 +335,7 @@ export function buildRecoveryTimeline({
   let estimatedCount = 0;
   let totalCount = 0;
 
-  for (const matchUp of (matchUps ?? []) as any[]) {
+  for (const matchUp of matchUps ?? []) {
     const appearances = appearancesForMatchUp({
       eventNames,
       frame,
@@ -358,7 +363,7 @@ export function buildRecoveryTimeline({
 function buildNameMaps(tournamentRecord: Tournament) {
   const eventNames: Record<string, string> = {};
   const drawNames: Record<string, string> = {};
-  const eventsById: Record<string, any> = {};
+  const eventsById: Record<string, Event> = {};
   for (const event of tournamentRecord.events ?? []) {
     eventNames[event.eventId] = event.eventName ?? '';
     eventsById[event.eventId] = event;
@@ -371,16 +376,27 @@ function buildNameMaps(tournamentRecord: Tournament) {
  * Timing resolved per (format × matchUpType × event × playedMinutes) — a
  * tournament has a handful of distinct combinations, not one per matchUp.
  */
-function makeTimingResolver({ tournamentRecord, policyDefinitions, eventsById }: any) {
-  const cache = new Map<string, any>();
-  return (matchUp: any, playedMinutes?: number) => {
+type FormatTiming = ReturnType<typeof matchUpFormatTimes>;
+type TimingResolver = (matchUp: HydratedMatchUp, playedMinutes?: number) => FormatTiming;
+
+function makeTimingResolver({
+  tournamentRecord,
+  policyDefinitions,
+  eventsById,
+}: {
+  policyDefinitions?: PolicyDefinitions;
+  eventsById: Record<string, Event>;
+  tournamentRecord: Tournament;
+}): TimingResolver {
+  const cache = new Map<string, FormatTiming>();
+  return (matchUp, playedMinutes) => {
     const key = [matchUp.matchUpFormat, matchUp.matchUpType, matchUp.eventId, playedMinutes].join('|');
     const cached = cache.get(key);
     if (cached) return cached;
 
     const event = eventsById[matchUp.eventId];
     const category = event?.category;
-    const timing: any = getMatchUpFormatTiming({
+    const timing = getMatchUpFormatTiming({
       categoryName: category?.categoryName ?? category?.ageCategoryCode,
       // Passed explicitly as well as via `event`: an explicit value still wins,
       // and published factories at or below 6.29.1 discard the resolved one.
@@ -392,7 +408,7 @@ function makeTimingResolver({ tournamentRecord, policyDefinitions, eventsById }:
       playedMinutes,
       event,
     });
-    const resolved = timing?.error ? {} : timing;
+    const resolved: FormatTiming = timing?.error ? {} : timing;
     cache.set(key, resolved);
     return resolved;
   };
@@ -406,7 +422,14 @@ function appearancesForMatchUp({
   matchUp,
   asOfMs,
   frame,
-}: any): TimelineAppearance[] {
+}: {
+  eventNames: Record<string, string>;
+  drawNames: Record<string, string>;
+  timingFor: TimingResolver;
+  matchUp: HydratedMatchUp;
+  asOfMs?: number;
+  frame: VenueFrame;
+}): TimelineAppearance[] {
   if (!wasPlayed(matchUp)) return [];
 
   const schedule = matchUp.schedule ?? {};
