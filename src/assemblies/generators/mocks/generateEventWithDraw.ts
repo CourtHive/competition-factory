@@ -844,9 +844,11 @@ export function generateEventWithDraw(params) {
 
   const qualifyingParticipantsCount = calcQualifyingParticipantsCount({ qualifyingProfiles, participantType });
 
+  // positions a qualifiersCount reserves are not filled by direct entries
+  const directCapacity = drawSize && drawSize - (drawProfile.qualifiersCount ?? 0);
   const participantsCount =
-    (!drawProfile.participantsCount || drawProfile.participantsCount > drawSize
-      ? drawSize
+    (!drawProfile.participantsCount || drawProfile.participantsCount > directCapacity
+      ? directCapacity
       : drawProfile.participantsCount) || 0;
 
   const event = buildMockEvent({
