@@ -1,4 +1,5 @@
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -39,8 +40,9 @@ export function remapDrawDefinitionMatchUpIds({
     const structureExitProfiles: string[] = exitProfiles?.[structure.structureId] ?? [];
 
     // Handle CONTAINER structures (round-robin groups)
-    if (structure.structures?.length) {
-      for (const childStructure of structure.structures) {
+    const childStructures = structuresOf(structure);
+    if (childStructures?.length) {
+      for (const childStructure of childStructures) {
         remappedCount += remapStructureMatchUps({
           exitProfiles: structureExitProfiles,
           structure: childStructure,
@@ -64,7 +66,7 @@ export function remapDrawDefinitionMatchUpIds({
   if (Object.keys(idMap).length) {
     for (const structure of structures) {
       updateCrossReferences(structure, idMap);
-      for (const child of structure.structures ?? []) {
+      for (const child of structuresOf(structure) ?? []) {
         updateCrossReferences(child, idMap);
       }
     }
@@ -90,7 +92,7 @@ function remapStructureMatchUps({
   const resolvedStage = parentStructure?.stage ?? structure.stage;
   const resolvedStageSequence = parentStructure?.stageSequence ?? structure.stageSequence;
 
-  for (const matchUp of structure.matchUps ?? []) {
+  for (const matchUp of matchUpsOf(structure) ?? []) {
     const target = findTarget({
       stageSequence: resolvedStageSequence,
       roundPosition: matchUp.roundPosition,
@@ -181,7 +183,7 @@ function updateCrossReferences(structure: Structure, idMap: Record<string, strin
     }
   };
 
-  for (const matchUp of structure.matchUps ?? []) {
+  for (const matchUp of matchUpsOf(structure) ?? []) {
     updateMatchUp(matchUp);
   }
 }

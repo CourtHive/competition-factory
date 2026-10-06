@@ -3,6 +3,7 @@ import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { INVALID_STRUCTURE, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
@@ -26,7 +27,7 @@ export function checkRoundsArgs(
   if (!structureIsAdHoc)
     return decorateResult({ result: { error: INVALID_STRUCTURE, message: 'structure must be adHoc' } });
 
-  const { roundMatchUps = [], roundNumbers } = getRoundMatchUps({ matchUps: structure?.matchUps });
+  const { roundMatchUps = [], roundNumbers } = getRoundMatchUps({ matchUps: matchUpsOf(structure) });
   if (!roundNumbers?.length) return { error: MISSING_MATCHUPS };
 
   return { valid: true, structure, roundMatchUps, roundNumbers };

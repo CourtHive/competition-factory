@@ -2,6 +2,7 @@ import { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant'
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getLapses } from '@Query/ladder/getLapses';
 
 // constants and types
@@ -92,7 +93,7 @@ function dropPositions(params: ConsequenceArgs & { dropBy: number }): ResultType
   const { participantId, structure, dropBy } = params;
   if (getLadderOrdering(params) !== RANK) return { ...SUCCESS }; // a RATING standing is derived
 
-  const assignments = structure?.positionAssignments ?? [];
+  const assignments = positionAssignmentsOf(structure) ?? [];
   const target = assignments.find((a) => a.participantId === participantId);
   if (!target) return { error: PARTICIPANT_NOT_FOUND };
 

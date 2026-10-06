@@ -3,6 +3,7 @@ import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propag
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isDoubleExit, isExit } from '@Validators/isExit';
@@ -657,7 +658,7 @@ function targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targe
   if (!drawPositions.length || !structureId) return false;
 
   const { structure: targetStructure } = findStructure({ drawDefinition, structureId });
-  return !!targetStructure?.positionAssignments?.some(
+  return !!positionAssignmentsOf(targetStructure)?.some(
     (assignment) => drawPositions.includes(assignment.drawPosition) && assignment.bye,
   );
 }
@@ -688,7 +689,7 @@ function removeLinkedWinner({
   const participantsIn = (matchUp) => {
     const { structure } = findStructure({ drawDefinition, structureId: matchUp.structureId });
     const positions = (matchUp.drawPositions ?? []).filter(Boolean);
-    return (structure?.positionAssignments ?? [])
+    return (positionAssignmentsOf(structure) ?? [])
       .filter((assignment) => assignment.participantId && positions.includes(assignment.drawPosition))
       .map(({ participantId, drawPosition }) => ({ participantId, drawPosition }));
   };
@@ -815,7 +816,7 @@ function getUnwoundState({
 function findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPosition }): boolean | undefined {
   if (!loserMatchUp?.structureId || loserTargetDrawPosition === undefined) return undefined;
   const { structure } = findStructure({ drawDefinition, structureId: loserMatchUp.structureId });
-  const assignment = structure?.positionAssignments?.find(
+  const assignment = positionAssignmentsOf(structure)?.find(
     (candidate) => candidate.drawPosition === loserTargetDrawPosition,
   );
   return assignment?.bye ? assignment.byeFromPropagation : undefined;

@@ -7,6 +7,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { resequenceStructures } from './resequenceStructures';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { xa } from '@Tools/extractAttributes';
 
 // constants and types
@@ -66,7 +67,7 @@ export function removeStructure(params: RemoveStructureArgs) {
 
   // if this is MAIN stageSequence: 1 there must be qualifying, return to empty state
   if (isMainStageSequence1) {
-    const mainStageSequence1MatchUpIds = (mainStageSequence1.matchUps ?? [])?.map(xa('matchUpId'));
+    const mainStageSequence1MatchUpIds = (matchUpsOf(mainStageSequence1) ?? [])?.map(xa('matchUpId'));
     removedMatchUpIds.push(...mainStageSequence1MatchUpIds);
 
     mainStageSequence1.positionAssignments = [];

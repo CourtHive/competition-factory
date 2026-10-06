@@ -1,4 +1,5 @@
 import { deleteMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { analyzeDraws } from '@Query/tournaments/analyzeDraws';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { getDrawStructures } from '@Acquire/findStructure';
@@ -36,7 +37,7 @@ export function pruneDrawDefinition({
       ({ structureId }) => mainStructure.structureId === structureId,
     );
 
-    const matchUps = (mainStructure.matchUps ?? []).toSorted((a: any, b: any) => a.roundPosition - b.roundPosition);
+    const matchUps = (matchUpsOf(mainStructure) ?? []).toSorted((a: any, b: any) => a.roundPosition - b.roundPosition);
     relevantMatchUps = matchUps.filter(({ roundNumber }) => !structureData.inactiveRounds.includes(roundNumber));
     const relevantMatchUpIds = relevantMatchUps.map(getMatchUpId);
     const deletedMatchUpIds = matchUps.map(getMatchUpId).filter((matchUpId) => !relevantMatchUpIds.includes(matchUpId));
@@ -74,7 +75,7 @@ export function pruneDrawDefinition({
       });
 
       if (matchPlayDrawPositions) {
-        const updatedPositionAssignments = mainStructure?.positionAssignments
+        const updatedPositionAssignments = positionAssignmentsOf(mainStructure)
           ?.filter((assignment) => existingDrawPositions.includes(assignment.drawPosition))
           .map((assignment) => {
             assignment.drawPosition = drawPositionsMap[assignment.drawPosition];

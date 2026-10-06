@@ -1,4 +1,5 @@
 import { deleteMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // Constants
 import { MISSING_DRAW_DEFINITION, SCORES_PRESENT, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -29,13 +30,13 @@ export function resetQualifyingStructure({
 
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
-  const scoresPresent = structure.matchUps?.some(
+  const scoresPresent = matchUpsOf(structure)?.some(
     ({ matchUpStatus, score }) =>
       checkScoreHasValue({ score }) ?? (!!matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus)),
   );
   if (scoresPresent) return { error: SCORES_PRESENT };
 
-  const removedMatchUpIds = structure.matchUps?.map(({ matchUpId }) => matchUpId) ?? [];
+  const removedMatchUpIds = matchUpsOf(structure)?.map(({ matchUpId }) => matchUpId) ?? [];
 
   structure.positionAssignments = [];
   structure.seedAssignments = [];

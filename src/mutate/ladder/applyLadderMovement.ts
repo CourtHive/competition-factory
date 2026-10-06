@@ -1,4 +1,5 @@
 import { getLadderMovement, getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
@@ -66,7 +67,7 @@ function resolveTrigger(params: MovementArgs) {
   }
 
   if (!matchUpId) return { error: INVALID_VALUES, info: 'RESULT requires a matchUpId' };
-  const matchUp: any = structure?.matchUps?.find((m) => m.matchUpId === matchUpId);
+  const matchUp: any = matchUpsOf(structure)?.find((m) => m.matchUpId === matchUpId);
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
   if (![1, 2].includes(matchUp.winningSide)) return { error: INVALID_VALUES, info: 'matchUp has no winningSide' };
 
@@ -146,7 +147,7 @@ export function applyLadderMovement(params: MovementArgs): ResultType & { moved?
   // The defender keeps their position when they hold off the challenger; nobody else is affected.
   if (!challengerPrevails) return { ...SUCCESS, moved: false };
 
-  const assignments = structure?.positionAssignments ?? [];
+  const assignments = positionAssignmentsOf(structure) ?? [];
   const assignmentOf = (participantId: string) => assignments.find((a) => a.participantId === participantId);
 
   const challenger = assignmentOf(challengerParticipantId);

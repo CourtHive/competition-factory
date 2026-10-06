@@ -2,6 +2,7 @@ import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsG
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getSeedGroups } from '@Query/drawDefinition/getSeedBlocks';
 import { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
+import { structuresOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { isConvertableInteger } from '@Tools/math';
 import { generateRange } from '@Tools/arrays';
@@ -52,7 +53,7 @@ export function initializeStructureSeedAssignments({
 
   if (seedsCount > drawSize) return { error: SEEDSCOUNT_GREATER_THAN_DRAW_SIZE };
 
-  const roundRobinGroupsCount = structure.structures?.length;
+  const roundRobinGroupsCount = structuresOf(structure)?.length;
   const groupSeedingThreshold =
     isConvertableInteger(seedingProfile?.groupSeedingThreshold) && seedingProfile?.groupSeedingThreshold;
 

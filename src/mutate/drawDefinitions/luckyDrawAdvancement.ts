@@ -1,5 +1,6 @@
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -107,7 +108,7 @@ export function luckyDrawAdvancement({
 
   // Find next round matchUps sorted by roundPosition
   const nextRoundNumber = roundNumber + 1;
-  const nextRoundMatchUps = (structure.matchUps ?? [])
+  const nextRoundMatchUps = (matchUpsOf(structure) ?? [])
     .filter((m) => m.roundNumber === nextRoundNumber)
     .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
@@ -138,7 +139,7 @@ export function luckyDrawAdvancement({
     });
   }
 
-  let positionAssignments = structure.positionAssignments ?? [];
+  let positionAssignments = positionAssignmentsOf(structure) ?? [];
   positionAssignments = cleanupStalePositionAssignments({
     positionAssignments,
     nextRoundMatchUps,
@@ -219,11 +220,11 @@ function placeDiscardedLosers({
     return { ...SUCCESS };
   }
 
-  let targetMatchUps = (targetStructure.matchUps ?? [])
+  let targetMatchUps = (matchUpsOf(targetStructure) ?? [])
     .filter((m) => m.roundNumber === targetRoundNumber)
     .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
-  let targetPositionAssignments = targetStructure.positionAssignments ?? [];
+  let targetPositionAssignments = positionAssignmentsOf(targetStructure) ?? [];
   const unfilledPositions: number[] = [];
 
   targetStructure.matchUps ??= [];
@@ -236,7 +237,7 @@ function placeDiscardedLosers({
       unfilledPositions,
     });
 
-    targetMatchUps = targetStructure.matchUps
+    targetMatchUps = (matchUpsOf(targetStructure) ?? [])
       .filter((m) => m.roundNumber === targetRoundNumber)
       .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
   } else {

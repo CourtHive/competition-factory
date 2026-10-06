@@ -1,4 +1,5 @@
 import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
+import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { positionTargets } from '@Query/matchUp/positionTargets';
@@ -53,17 +54,17 @@ export function replaceQualifier(params) {
             positionAssignment.participantId = newWinningParticipantId;
 
             // update positionAssignments on structure
-            if (structure?.positionAssignments) {
+            if (structure && 'positionAssignments' in structure && structure.positionAssignments) {
               structure.positionAssignments = positionAssignments;
-            } else if (structure?.structures) {
+            } else if (structuresOf(structure)) {
               const assignmentMap = Object.assign(
                 {},
                 ...(positionAssignments ?? []).map((assignment) => ({
                   [assignment.drawPosition]: assignment.participantId,
                 })),
               );
-              for (const subStructure of structure.structures) {
-                subStructure.positionAssignments?.forEach(
+              for (const subStructure of structuresOf(structure) ?? []) {
+                positionAssignmentsOf(subStructure)?.forEach(
                   (assignment) => (assignment.participantId = assignmentMap[assignment.drawPosition]),
                 );
               }

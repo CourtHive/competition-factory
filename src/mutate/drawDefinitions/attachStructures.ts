@@ -2,6 +2,7 @@ import { addMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mutat
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
+import { structuresOf } from '@Acquire/structureMembers';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { xa } from '@Tools/extractAttributes';
 
@@ -163,8 +164,9 @@ export function attachStructures({
     // pre-existing structures must be updated if any matchUpModifications were passed into this method
     drawDefinition.structures.forEach((structure) => {
       if (existingStructureIds?.includes(structure.structureId)) {
-        if (structure.structures) {
-          for (const subStructure of structure.structures) {
+        const subStructures = structuresOf(structure);
+        if (subStructures) {
+          for (const subStructure of subStructures) {
             modifyStructureMatchUps(subStructure);
           }
         } else {

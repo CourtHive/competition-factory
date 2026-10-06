@@ -1,4 +1,5 @@
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getSeedOrderByePositions } from './getSeedOrderedByePositions';
 import { getUnseededByePositions } from './getUnseededByePositions';
@@ -47,7 +48,7 @@ export function positionByes({
   if (!structure) ({ structure } = findStructure({ drawDefinition, structureId }));
   if (!structureId) structureId = structure?.structureId;
 
-  const blockOrdered = !(structure?.structures ?? structure?.stage === QUALIFYING);
+  const blockOrdered = !(structuresOf(structure) ?? structure?.stage === QUALIFYING);
 
   const { byesCount, placedByes, relevantMatchUps } = getByesData({
     provisionalPositioning,
@@ -63,7 +64,9 @@ export function positionByes({
   if (isLuckyBasedDraw(drawDefinition.drawType)) {
     const firstRoundPositions = (relevantMatchUps ?? []).flatMap((m) => m.drawPositions ?? []).filter(Boolean);
     const filledPositions = new Set(
-      structure?.positionAssignments?.filter((a) => a.participantId).map((a) => a.drawPosition) ?? [],
+      positionAssignmentsOf(structure)
+        ?.filter((a) => a.participantId)
+        .map((a) => a.drawPosition) ?? [],
     );
     const byeDrawPositions = firstRoundPositions.filter((dp) => !filledPositions.has(dp)).slice(0, byesToPlace);
 
