@@ -178,7 +178,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     pushGlobalLog({ method: 'replaceTieMatchUpParticipant', issue: 'team participantId not found' });
   }
 
-  const { participantAdded, participantRemoved } = isDoubles
+  const pairResult = isDoubles
     ? manageDoublesPairParticipants({
         existingIndividualParticipantIds,
         individualParticipantIds,
@@ -186,6 +186,8 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
         stack,
       })
     : { participantAdded: undefined, participantRemoved: undefined };
+  if (pairResult.error) return pairResult;
+  const { participantAdded, participantRemoved } = pairResult;
 
   handleProcessCodes({
     substitutionProcessCodes,

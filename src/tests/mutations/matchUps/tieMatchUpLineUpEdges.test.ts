@@ -4,7 +4,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
+import { DOUBLES_MATCHUP, SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
+import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
+import { PAIR } from '@Constants/participantConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 function setUpTeamDual() {
@@ -84,4 +86,35 @@ it('a second substitution in a tie matchUp gets order 2', () => {
 
   const side = getTieMatchUp(SINGLES_MATCHUP).sides.find(({ sideNumber }) => sideNumber === 1);
   expect(side.participant.participantId).toEqual(third);
+});
+
+it('replacing a doubles pair with a pair participant returns the pair creation error', () => {
+  const { drawId, teamOneMemberIds, getTieMatchUp } = setUpTeamDual();
+  const doubles = getTieMatchUp(DOUBLES_MATCHUP);
+  const [first, second] = teamOneMemberIds;
+
+  for (const participantId of [first, second]) {
+    const result: any = tournamentEngine.assignTieMatchUpParticipantId({
+      tieMatchUpId: doubles.matchUpId,
+      participantId,
+      drawId,
+    });
+    expect(result.success).toEqual(true);
+  }
+
+  const pairOnSide = getTieMatchUp(DOUBLES_MATCHUP).sides.find(({ sideNumber }) => sideNumber === 1).participant;
+  expect(pairOnSide.participantType).toEqual(PAIR);
+
+  const otherPair = tournamentEngine
+    .getParticipants({ participantFilters: { participantTypes: [PAIR] } })
+    .participants.find(({ participantId }) => participantId !== pairOnSide.participantId);
+  expect(otherPair).toBeDefined();
+
+  const result: any = tournamentEngine.replaceTieMatchUpParticipantId({
+    existingParticipantId: pairOnSide.participantId,
+    newParticipantId: otherPair.participantId,
+    tieMatchUpId: doubles.matchUpId,
+    drawId,
+  });
+  expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
 });
