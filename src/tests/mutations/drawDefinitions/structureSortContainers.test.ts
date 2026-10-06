@@ -4,9 +4,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
 // constants and types
+import { ABANDONED, BYE, CANCELLED, COMPLETED, DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { ItemStructure, MatchUp, MatchUpStatusUnion, PositionAssignment, Structure } from '@Types/tournamentTypes';
 import { CONTAINER, ITEM, MAIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
-import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 const matchUp = (matchUpId: string, matchUpStatus: MatchUpStatusUnion): MatchUp => ({
   matchUpId,
@@ -43,6 +43,21 @@ test('deprioritizeCompleted sorts a completed structure after one still in play'
 
   expect(structureSort(completed, inPlay, { deprioritizeCompleted: true })).toBeGreaterThan(0);
   expect(structureSort(inPlay, completed, { deprioritizeCompleted: true })).toBeLessThan(0);
+});
+
+test('a structure whose only unplayed matchUps will never be played reads as completed', () => {
+  // CA 2026-10-06: a BYE, an ABANDONED, a CANCELLED or a DEAD_RUBBER matchUp will never be played
+  const neverPlayed = item('neverPlayed', [
+    matchUp('m1', COMPLETED),
+    matchUp('m2', BYE),
+    matchUp('m3', ABANDONED),
+    matchUp('m4', CANCELLED),
+    matchUp('m5', DEAD_RUBBER),
+  ]);
+  const inPlay = item('inPlay', [matchUp('m6', BYE), matchUp('m7', TO_BE_PLAYED)]);
+
+  expect(structureSort(neverPlayed, inPlay, { deprioritizeCompleted: true })).toBeGreaterThan(0);
+  expect(structureSort(inPlay, neverPlayed, { deprioritizeCompleted: true })).toBeLessThan(0);
 });
 
 test('deprioritizeCompleted reads a round robin container through its groups', () => {

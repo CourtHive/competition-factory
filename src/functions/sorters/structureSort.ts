@@ -2,7 +2,7 @@ import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/struct
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
 // constants and types
-import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
+import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
 import { MatchUp, Structure } from '@Types/tournamentTypes';
 import {
@@ -37,8 +37,10 @@ export function structureSort(a: Structure | undefined, b: Structure | undefined
     return groups.flatMap((group) => positionAssignmentsOf(group) ?? []).length;
   };
 
+  // a matchUp that will never be played (a BYE; completedMatchUpStatuses already holds ABANDONED, CANCELLED and
+  // DEAD_RUBBER) does not keep a structure from reading as completed (CA 2026-10-06)
   const isCompleted = ({ matchUpStatus }: MatchUp) =>
-    !!matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus);
+    !!matchUpStatus && (matchUpStatus === BYE || completedMatchUpStatuses.includes(matchUpStatus));
   const completedStructure = (s?: Structure): number => (structureMatchUps(s).every(isCompleted) ? 1 : 0);
 
   return (
