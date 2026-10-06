@@ -725,6 +725,12 @@ const { valid, inconsistencies } = engine.getStructureInconsistencies({
 // inconsistencies: [{ issueType, message, matchUpId, structureId, winningSide, ... }]
 ```
 
+Most checks start from a decided matchUp. One starts from the other end:
+`ADVANCED_FROM_UNDECIDED` reports a participant standing in a later round although the
+matchUp that delivered their drawPosition has no result (no `winningSide`, `TO_BE_PLAYED`,
+no BYE). It names the participant, the `drawPosition` and the `feederMatchUpId`. It is what
+a withdrawn result leaves behind when the advancement it made is not released.
+
 You can also call it directly against a `drawDefinition` object, without loading a
 tournament into the engine — useful when validating records built outside the factory:
 

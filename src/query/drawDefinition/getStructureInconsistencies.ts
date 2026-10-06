@@ -12,6 +12,7 @@ import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tourname
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   DOUBLE_WALKOVER,
@@ -69,6 +70,12 @@ import {
 //  - EXIT_WITHOUT_LOSER: a single WALKOVER/DEFAULTED with a winningSide whose LOSING
 //    side holds no participant — a walkover with nobody who walked over (an orphaned
 //    exit). A pending exit is not flagged: there the loser side holds the exit carrier.
+//  - ADVANCED_FROM_UNDECIDED: a participant stands in a later round although the matchUp that
+//    delivered their drawPosition (the latest earlier round in the same structure holding it) has no
+//    result: no winningSide, TO_BE_PLAYED, no BYE. Every winner-rooted check above starts from a decided
+//    matchUp, so an advancement left behind when its result was withdrawn is invisible to all of them
+//    (census w2 9100343, 2026-10-04: a walkover re-scored to the other winner left its winner one round
+//    on; #5157 fixed that release).
 //  - DRAW_POSITION_UNASSIGNED: a decided, non-exit matchUp references a drawPosition
 //    whose stored positionAssignment holds no participant, no bye and no qualifier — a
 //    phantom position. Read from STORED structure state (drawPositions ↔
@@ -89,6 +96,7 @@ export const PROPAGATED_EXIT_LOST = 'PROPAGATED_EXIT_LOST';
 export const UNCOLLAPSED_CONVERGENCE = 'UNCOLLAPSED_CONVERGENCE';
 export const STALLED_POSITION = 'STALLED_POSITION';
 export const ORIGIN_ON_UNDECIDED_MATCHUP = 'ORIGIN_ON_UNDECIDED_MATCHUP';
+export const ADVANCED_FROM_UNDECIDED = 'ADVANCED_FROM_UNDECIDED';
 
 // DEFERRED — STALE_EXIT_STATUS is intentionally NOT implemented.
 //
@@ -269,6 +277,64 @@ function getByeAdvancementInconsistency(
     participantId: advancingParticipantId,
     winnerMatchUpId,
   };
+}
+
+/**
+ * ADVANCED_FROM_UNDECIDED — see the header. Positions are read per side; a position first appearing in this
+ * round (an initial or fed slot) has no feeder and is skipped, and so is a feeder holding a BYE (a BYE
+ * advancement is structural, not a result) or carrying any status other than TO_BE_PLAYED (an exit, pending or
+ * awarded, or a BYE, is not "undecided" for this purpose).
+ */
+function getAdvancedFromUndecidedInconsistencies(
+  matchUp: HydratedMatchUp,
+  structureMatchUps: HydratedMatchUp[],
+): StructureInconsistency[] {
+  const found: StructureInconsistency[] = [];
+  const roundNumber = matchUp.roundNumber ?? 0;
+  for (const side of matchUp.sides ?? []) {
+    if (!side?.participantId || !side.drawPosition) continue;
+    const feeder = structureMatchUps
+      .filter(
+        (candidate) =>
+          (candidate.roundNumber ?? 0) < roundNumber && candidate.drawPositions?.includes(side.drawPosition),
+      )
+      .reduce<HydratedMatchUp | undefined>(
+        (latest, candidate) =>
+          !latest || (candidate.roundNumber ?? 0) > (latest.roundNumber ?? 0) ? candidate : latest,
+        undefined,
+      );
+    if (!feeder || feeder.winningSide) continue;
+    if (feeder.matchUpStatus && feeder.matchUpStatus !== TO_BE_PLAYED) continue;
+    if ((feeder.sides ?? []).some((feederSide) => feederSide?.bye)) continue;
+    found.push({
+      matchUpId: matchUp.matchUpId,
+      structureId: matchUp.structureId,
+      issueType: ADVANCED_FROM_UNDECIDED,
+      message: 'a participant stands in this matchUp although the matchUp that delivered them has no result',
+      participantId: side.participantId,
+      drawPosition: side.drawPosition,
+      feederMatchUpId: feeder.matchUpId,
+    });
+  }
+  return found;
+}
+
+function getAllAdvancedFromUndecided(
+  scoped: HydratedMatchUp[],
+  inContextDrawMatchUps: HydratedMatchUp[],
+  roundRobinGroupStructureIds: Set<string>,
+): StructureInconsistency[] {
+  const matchUpsByStructure = new Map<string, HydratedMatchUp[]>();
+  for (const matchUp of inContextDrawMatchUps) {
+    if (matchUp.collectionId || roundRobinGroupStructureIds.has(matchUp.structureId)) continue;
+    const list = matchUpsByStructure.get(matchUp.structureId) ?? [];
+    list.push(matchUp);
+    matchUpsByStructure.set(matchUp.structureId, list);
+  }
+  return scoped.flatMap((matchUp) => {
+    const structureMatchUps = matchUpsByStructure.get(matchUp.structureId);
+    return structureMatchUps ? getAdvancedFromUndecidedInconsistencies(matchUp, structureMatchUps) : [];
+  });
 }
 
 /**
@@ -680,6 +746,8 @@ export function getStructureInconsistencies(
   inconsistencies.push(
     ...getStalledPositionInconsistencies(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds),
   );
+
+  inconsistencies.push(...getAllAdvancedFromUndecided(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds));
 
   for (const matchUp of scoped) {
     const { winningSide, matchUpStatus, matchUpStatusCodes, sides, matchUpId, drawPositions } = matchUp;
