@@ -25,11 +25,13 @@ type GetScheduledRoundsDetailsArgs = {
   periodLength?: number;
   rounds: any[];
 };
+type RoundError = { error: ErrorType; round: { [key: string]: unknown } };
 type RoundsDetailsResult = {
   greatestAverageMinutes?: number;
   scheduledRoundsDetails?: any[];
   orderedMatchUpIds?: string[];
   matchUpFormatCohorts?: any; // currently unused
+  roundErrors?: RoundError[];
   recoveryMinutesMap?: any;
   averageMinutesMap?: any;
   error?: ErrorType;
@@ -57,6 +59,7 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
   const matchUpFormatCohorts = {};
   const hashes: string[] = [];
   const orderedMatchUpIds: string[] = [];
+  const roundErrors: RoundError[] = [];
   const rounds = params.rounds.toSorted((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   // ---------------------------------------------------------
@@ -146,7 +149,11 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
         matchUpFormat,
         eventType,
       });
-      if (error) return { error, round };
+      if (error) {
+        // a round whose timing cannot be found is reported as an error, not as a scheduled round
+        roundErrors.push({ error, round });
+        return undefined;
+      }
 
       const matchUpIds = roundMatchUps
         .filter(
@@ -191,6 +198,7 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
     averageMinutesMap,
     orderedMatchUpIds,
     minutesMap,
+    ...(roundErrors.length ? { roundErrors } : {}),
     ...SUCCESS,
   };
 }
