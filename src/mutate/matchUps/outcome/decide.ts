@@ -1,6 +1,7 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { convergence, isRelabel, planDirection } from './direction';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getOutcomePipeline } from '@Global/state/globalState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -439,7 +440,7 @@ function checkConverged({
 function checkPropagatedBye({ args, route, bye }: CheckArgs & { bye: { structureId: string; drawPosition: number } }) {
   if (!args.drawDefinition) return;
   const { structure } = findStructure({ drawDefinition: args.drawDefinition, structureId: bye.structureId });
-  if (!structure?.positionAssignments?.find((assignment) => assignment.drawPosition === bye.drawPosition)?.bye)
+  if (!positionAssignmentsOf(structure)?.find((assignment) => assignment.drawPosition === bye.drawPosition)?.bye)
     diverge(
       args,
       `no BYE at drawPosition ${bye.drawPosition} of ${bye.structureId}`,

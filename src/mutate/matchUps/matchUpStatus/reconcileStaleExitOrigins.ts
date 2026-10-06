@@ -1,6 +1,7 @@
 import { getSideExitProvenance, withdrawProducedExits, withdrawRelayedExit } from './sideExitProvenance';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
@@ -180,7 +181,7 @@ function getStaleRelays({
     if (known.matchUp.matchUpStatus === BYE) return true;
     const { structure } = findStructure({ structureId: known.structureId, drawDefinition });
     const positions = known.matchUp.drawPositions ?? [];
-    return !!structure?.positionAssignments?.some((a) => a.bye && positions.includes(a.drawPosition));
+    return !!positionAssignmentsOf(structure)?.some((a) => a.bye && positions.includes(a.drawPosition));
   };
 
   return candidates.filter(({ matchUp, sourceMatchUpId }) => {
@@ -233,5 +234,5 @@ function winnerSeatIsBye({
   // A drawPosition is unique WITHIN A STRUCTURE and carries no meaning across structures, so the
   // assignments are scoped by structureId before the position is compared.
   const { structure } = findStructure({ structureId, drawDefinition });
-  return !!structure?.positionAssignments?.find((a) => a.drawPosition === drawPosition)?.bye;
+  return !!positionAssignmentsOf(structure)?.find((a) => a.drawPosition === drawPosition)?.bye;
 }
