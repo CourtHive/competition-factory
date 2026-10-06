@@ -471,18 +471,32 @@ export enum EntryStatusEnum {
 }
 export type EntryStatusUnion = `${EntryStatusEnum}`;
 
-export interface DrawLink {
+/** The fields every draw link carries, whatever it feeds. */
+export interface DrawLinkBase {
   createdAt?: Date | string;
   extensions?: Extension[];
   isMock?: boolean;
   linkCondition?: string;
-  linkType: LinkTypeUnion;
   notes?: string;
-  source: DrawLinkSource;
   target: DrawLinkTarget;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
 }
+
+/** A link that moves the winners or losers of one round of the source structure. */
+export interface RoundDrawLink extends DrawLinkBase {
+  linkType: `${LinkTypeEnum.LOSER}` | `${LinkTypeEnum.WINNER}`;
+  source: DrawLinkSource & { roundNumber: number; finishingPositions?: never };
+}
+
+/** A link that moves participants by their finishing position in the source structure (round robin playoffs). */
+export interface PositionDrawLink extends DrawLinkBase {
+  linkType: `${LinkTypeEnum.POSITION}`;
+  source: DrawLinkSource & { finishingPositions: number[]; roundNumber?: never };
+}
+
+/** Discriminated by `linkType`: a round link names a source `roundNumber`, a position link `finishingPositions`. */
+export type DrawLink = RoundDrawLink | PositionDrawLink;
 
 export enum LinkTypeEnum {
   LOSER = 'LOSER',
@@ -1202,17 +1216,16 @@ export interface CollectionGroup {
   winCriteria?: WinCriteria;
 }
 
-export interface Structure {
+/** The fields every structure carries, whether it holds matchUps or other structures. */
+export interface StructureBase {
   competitionFormat?: competitionFormat;
   createdAt?: Date | string;
   extensions?: Extension[];
   finishingPosition?: FinishingPositionUnion;
   isMock?: boolean;
   matchUpFormat?: string;
-  matchUps?: MatchUp[];
   matchUpType?: EventTypeUnion;
   notes?: string;
-  positionAssignments?: PositionAssignment[];
   processCodes?: string[];
   qualifyingRoundNumber?: number;
   roundLimit?: number;
@@ -1227,14 +1240,41 @@ export interface Structure {
   structureAbbreviation?: string;
   structureId: string;
   structureName?: string;
-  structures?: Structure[];
   structureOrder?: number;
-  structureType?: StructureTypeUnion;
   tieFormat?: TieFormat;
   tieFormatId?: string;
   timeItems?: TimeItem[];
   updatedAt?: Date | string;
 }
+
+/**
+ * A structure that holds matchUps: an elimination bracket, a round robin group, an AD_HOC or Swiss round set.
+ *
+ * `structureType` is optional because stored records mostly omit it: only the groups nested in a round robin
+ * container say `ITEM`. The CONTAINER fields are typed `never`, so reading them on an un-narrowed `Structure`
+ * still compiles (as `undefined`) while writing them onto an ITEM does not.
+ */
+export interface ItemStructure extends StructureBase {
+  structureType?: `${StructureTypeEnum.ITEM}`;
+  matchUps?: MatchUp[];
+  positionAssignments?: PositionAssignment[];
+  structures?: never;
+}
+
+/** A structure that holds other structures: a round robin's groups. It carries no matchUps or assignments itself. */
+export interface ContainerStructure extends StructureBase {
+  structureType: `${StructureTypeEnum.CONTAINER}`;
+  structures: Structure[];
+  matchUps?: never;
+  positionAssignments?: never;
+}
+
+/**
+ * Discriminated by `structureType`: test `structureType === CONTAINER` to reach `structures`, anything else to
+ * reach `matchUps` and `positionAssignments`. This is the soft form; the 8.0.0 form drops the `never` fields so
+ * that a read must narrow first (Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md).
+ */
+export type Structure = ItemStructure | ContainerStructure;
 
 export enum FinishingPositionEnum {
   ROUND_OUTCOME = 'ROUND_OUTCOME',
