@@ -1,14 +1,14 @@
-import { MATRIX_CELLS, playMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
+import { playStalledChain } from '@Tests/testHarness/exitPropagation/stalledChain';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
 import { DOUBLE_WALKOVER, COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
-import { DOUBLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
+import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
  * `STALLED_POSITION` — a participant in a match that can never be played, in a draw that has stopped.
@@ -218,26 +218,22 @@ it('reports nothing on a draw that completes cleanly', () => {
  *
  * ## So the case is no longer in the DEFAULT matrix at all
  *
- * Under the default policy the 600 cells strand nobody. The rule still has work to do wherever
- * `doubleExitPropagateBye` is turned off, so that is where this case lives: `DOUBLE_ELIMINATION
- * 16/13` at seed 117 under the produced-exit policy, where two exits meet in the Backdraw and four
- * participants wait in a chain behind them.
+ * Under the default policy the 600 cells strand nobody, and since 2026-10-06 nor do they with
+ * `doubleExitPropagateBye` off: the last cell, `DOUBLE_ELIMINATION 16/13` at seed 117, stalled where two
+ * exits met in the Backdraw, and they now converge. So the case is BUILT (`playStalledChain`): a double
+ * walkover whose cascade never ran, and four participants waiting in a chain behind it.
  *
- * (`DOUBLE_ELIMINATION 8/7` at seed 77 held this place for a day, until `settleHeldExits` sent its
- * held exit on. The cell changes every time the one it names is fixed, which is the point of it.)
+ * (`DOUBLE_ELIMINATION 8/7` at seed 77, then seed 117, each held this place until it was fixed, which
+ * is the point of it.)
  *
  * `COMPASS 16/16` at seed 511 was considered and NOT used. Its one finding is `Southeast|1|1`, a
  * `DOUBLE_WALKOVER` whose lone occupant is on a side that itself carries an exit — somebody who
  * walked over, not somebody waiting. Whether that is a stall at all is an open question, and a case
  * that exists to prove the rule fires should not rest on it.
  */
-it('still fires where a stall remains — DOUBLE_ELIMINATION 16/13, matrix seed 117, produced-exit policy', () => {
-  const cell = MATRIX_CELLS.find(({ seed }) => seed === 117);
-  expect(cell?.drawType).toEqual(DOUBLE_ELIMINATION);
-  expect(cell?.participantsCount).toEqual(13);
-
-  const drawId = 'stalls-de-16-13';
-  expect(playMatrixCell(cell as any, drawId, 'exits', PRODUCED_EXIT_POLICY)).toEqual(true);
+it('still fires where a stall remains — the built stalled chain', () => {
+  const drawId = 'stalls-built-chain';
+  playStalledChain(drawId);
 
   const drawDefinition: any = tournamentEngine.getEvent({ drawId }).drawDefinition;
   const result: any = getDrawInconsistencies({ drawDefinition, drawId });

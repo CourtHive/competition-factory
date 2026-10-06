@@ -1,5 +1,4 @@
-import { MATRIX_CELLS, playMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
-import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
+import { playStalledChain, STALLED_CHAIN } from '@Tests/testHarness/exitPropagation/stalledChain';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
 import tournamentEngine from '@Engines/syncEngine';
@@ -15,18 +14,19 @@ import { ABANDONED, CANCELLED, DEAD_RUBBER } from '@Constants/matchUpStatusConst
  * that a matchup isn't ever going to be played (and any matchUps fed by the matchUp that won't be
  * played are also excluded)."*
  *
- * The draw is DOUBLE_ELIMINATION 16/13 at matrix seed 117 under the produced-exit policy, which
+ * The draw is `playStalledChain`'s: SINGLE_ELIMINATION 32/32 with a double walkover whose cascade never ran, which
  * ends with four stalls in one chain:
  *
- *   Backdraw|4|2  one participant, waiting on a matchUp that holds two exits and nobody
- *   Backdraw|5|1  one participant, waiting on the winner of `Backdraw|4|2`
- *   Backdraw|6|1  one participant, waiting on the winner of `Backdraw|5|1`
- *   Main|5|1      the Main champion, waiting on a Backdraw champion who cannot exist
+ *   Main|2|8  one participant, waiting on a seat the double walkover can never fill
+ *   Main|3|4  one participant, waiting on the winner of `Main|2|8`
+ *   Main|4|2  one participant, waiting on the winner of `Main|3|4`
+ *   Main|5|1  one participant, waiting on the winner of `Main|4|2`
  *
  * Each feeds the next, so the last is three steps downstream of the first. One draw shows both
  * halves of the rule, and shows that FED is followed all the way down.
  *
- * (It used DOUBLE_ELIMINATION 8/7 at seed 77 until that draw stopped stalling: `settleHeldExits`.)
+ * (It used DOUBLE_ELIMINATION 8/7 at seed 77 until `settleHeldExits`, then 16/13 at seed 117 under the
+ * produced-exit policy until carried exits began to converge, 2026-10-06. The matrix holds no stall now.)
  */
 
 const STATUSES = [DEAD_RUBBER, CANCELLED, ABANDONED].map((matchUpStatus) => ({ matchUpStatus }));
@@ -52,8 +52,7 @@ function stalledAt(): string[] {
 }
 
 function play() {
-  const cell = MATRIX_CELLS.find(({ seed }) => seed === 117);
-  expect(playMatrixCell(cell as any, DRAW_ID, 'exits', PRODUCED_EXIT_POLICY)).toEqual(true);
+  playStalledChain(DRAW_ID);
 }
 
 function setStatus(matchUp: any, matchUpStatus: string) {
@@ -66,16 +65,16 @@ function setStatus(matchUp: any, matchUpStatus: string) {
   expect(matchUps().find((m) => m.matchUpId === matchUp.matchUpId).matchUpStatus).toEqual(matchUpStatus);
 }
 
-const CHAIN = ['Backdraw|4|2', 'Backdraw|5|1', 'Backdraw|6|1', 'Main|5|1'];
+const CHAIN = STALLED_CHAIN;
 
 // CONTROL: the stalls are there, and the chain between them is what the docblock says it is
 it('has four stalls in one chain before anything is declared', () => {
   play();
   expect(stalledAt()).toEqual(CHAIN);
 
-  expect(at('Backdraw', 4, 2).winnerMatchUpId).toEqual(at('Backdraw', 5, 1).matchUpId);
-  expect(at('Backdraw', 5, 1).winnerMatchUpId).toEqual(at('Backdraw', 6, 1).matchUpId);
-  expect(at('Backdraw', 6, 1).winnerMatchUpId).toEqual(at('Main', 5, 1).matchUpId);
+  expect(at('Main', 2, 8).winnerMatchUpId).toEqual(at('Main', 3, 4).matchUpId);
+  expect(at('Main', 3, 4).winnerMatchUpId).toEqual(at('Main', 4, 2).matchUpId);
+  expect(at('Main', 4, 2).winnerMatchUpId).toEqual(at('Main', 5, 1).matchUpId);
 });
 
 it.each(STATUSES)('$matchUpStatus silences the stall in the matchUp that carries it', ({ matchUpStatus }) => {
@@ -88,14 +87,14 @@ it.each(STATUSES)('$matchUpStatus silences the stall in the matchUp that carries
 
 it.each(STATUSES)('$matchUpStatus silences every stall in what the matchUp feeds', ({ matchUpStatus }) => {
   play();
-  setStatus(at('Backdraw', 4, 2), matchUpStatus);
+  setStatus(at('Main', 2, 8), matchUpStatus);
 
   expect(stalledAt()).toEqual([]);
 });
 
 it.each(STATUSES)('$matchUpStatus leaves the stalls UPSTREAM of the matchUp that carries it', ({ matchUpStatus }) => {
   play();
-  setStatus(at('Backdraw', 5, 1), matchUpStatus);
+  setStatus(at('Main', 3, 4), matchUpStatus);
 
-  expect(stalledAt()).toEqual(['Backdraw|4|2']);
+  expect(stalledAt()).toEqual(['Main|2|8']);
 });

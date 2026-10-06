@@ -2,6 +2,7 @@ import { MATRIX_CELLS, playMatrixCell } from '@Tests/testHarness/exitPropagation
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
+import { playStalledChain } from '@Tests/testHarness/exitPropagation/stalledChain';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -70,9 +71,10 @@ it('does not report the lone occupant of a converged double exit — COMPASS 16/
 });
 
 it('still reports somebody waiting OPPOSITE an exit, and stops only when the exit is their own', () => {
-  // DOUBLE_ELIMINATION 16/13: `Backdraw|4|2` holds one participant who is waiting, and no exit at all
-  play(117);
-  const waiting = at('Backdraw', 4, 2);
+  // `playStalledChain`: `Main|2|8` holds one participant who is waiting, and no exit at all (the matrix holds no
+  // stall since carried exits began to converge, 2026-10-06; this used DOUBLE_ELIMINATION 16/13 at seed 117)
+  playStalledChain(DRAW_ID);
+  const waiting = at('Main', 2, 8);
   const [occupant] = occupantsOf(waiting);
   const vacantSideNumber = 3 - occupant.sideNumber;
 
