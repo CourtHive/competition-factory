@@ -229,8 +229,8 @@ function getSideValues({
       const exclusionValues: number[] = [];
       const individualParticipants = participant?.individualParticipants;
       if (individualParticipants?.length) {
-        const scaleValues: any[] = [];
-        let value: any = 0;
+        const scaleValues: unknown[] = [];
+        let value: number | undefined = 0;
 
         for (const participant of individualParticipants) {
           const { scaleValue, value: pValue } = getSideValue({
