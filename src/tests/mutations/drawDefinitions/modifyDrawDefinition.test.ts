@@ -118,24 +118,28 @@ it('succeeds with empty drawUpdates (no drawName, no policyDefinitions)', () => 
   expect(result.success).toEqual(true);
 });
 
-it('returns error when drawUpdates.drawName is invalid type', () => {
+it('returns an { error } result when drawUpdates.drawName is not a string', () => {
   const {
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 4 }],
+    setState: true,
   });
+  const originalName = tournamentRecord.events[0].drawDefinitions[0].drawName;
 
-  tournamentEngine.setState(tournamentRecord);
-
-  // drawName as a number should cause modifyDrawName to return an error
-  // modifyDrawDefinition line 43 returns nameResult?.error (the raw error object)
-  const result = tournamentEngine.modifyDrawDefinition({
+  // modifyDrawName rejects a non-string drawName. modifyDrawDefinition used to return the bare
+  // ErrorType ({ message, code }) instead of the result, so `result.error` was undefined and a caller
+  // checking it read the rejection as a success.
+  const result: any = tournamentEngine.modifyDrawDefinition({
     drawUpdates: { drawName: 123 as any },
     drawId,
   });
-  // The return is the raw error object from modifyDrawName, so check for error code
-  expect(result.success).not.toEqual(true);
+  expect(result.error).toEqual(INVALID_VALUES);
+  expect(result.success).toBeUndefined();
+
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  expect(drawDefinition.drawName).toEqual(originalName);
 });
 
 it('updates flight profile extension when modifying draw name', () => {
