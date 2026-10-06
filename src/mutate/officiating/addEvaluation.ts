@@ -41,13 +41,18 @@ export function addEvaluation({
   comments,
   documentReference,
   extensions,
-}: AddEvaluationArgs): { error?: any; evaluation?: OfficialEvaluation; success?: boolean } {
+}: AddEvaluationArgs): {
+  error?: any;
+  context?: { message: string };
+  evaluation?: OfficialEvaluation;
+  success?: boolean;
+} {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!evaluatorPersonId) return { error: INVALID_VALUES, context: { message: 'Missing evaluatorPersonId' } } as any;
+  if (!evaluatorPersonId) return { error: INVALID_VALUES, context: { message: 'Missing evaluatorPersonId' } };
   if (overallRating === undefined || overallRating === null)
-    return { error: INVALID_VALUES, context: { message: 'Missing overallRating' } } as any;
+    return { error: INVALID_VALUES, context: { message: 'Missing overallRating' } };
   if (typeof overallRating !== 'number' || overallRating < 0)
-    return { error: INVALID_VALUES, context: { message: 'overallRating must be a non-negative number' } } as any;
+    return { error: INVALID_VALUES, context: { message: 'overallRating must be a non-negative number' } };
 
   const now = nowIso();
 

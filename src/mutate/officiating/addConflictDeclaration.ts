@@ -39,13 +39,18 @@ export function addConflictDeclaration({
   personId,
   notes,
   extensions,
-}: AddConflictDeclarationArgs): { error?: any; declaration?: OfficialConflictDeclaration; success?: boolean } {
+}: AddConflictDeclarationArgs): {
+  error?: any;
+  context?: { message: string };
+  declaration?: OfficialConflictDeclaration;
+  success?: boolean;
+} {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
   if (!personId && !participantId && !organisationId) {
     return {
       error: INVALID_VALUES,
       context: { message: 'One of personId, participantId or organisationId is required' },
-    } as any;
+    };
   }
 
   const now = nowIso();

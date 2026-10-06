@@ -20,14 +20,15 @@ type ModifyCertificationArgs = {
 
 export function modifyCertification({ officialRecord, certificationId, updates }: ModifyCertificationArgs): {
   error?: any;
+  context?: { message?: string; certificationId?: string };
   certification?: OfficialCertification;
   success?: boolean;
 } {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!certificationId) return { error: INVALID_VALUES, context: { message: 'Missing certificationId' } } as any;
+  if (!certificationId) return { error: INVALID_VALUES, context: { message: 'Missing certificationId' } };
 
   const certification = officialRecord.certifications.find((c) => c.certificationId === certificationId);
-  if (!certification) return { error: CERTIFICATION_NOT_FOUND, context: { certificationId } } as any;
+  if (!certification) return { error: CERTIFICATION_NOT_FOUND, context: { certificationId } };
 
   if (updates.certificationLevel !== undefined) certification.certificationLevel = updates.certificationLevel;
   if (updates.validFrom !== undefined) certification.validFrom = updates.validFrom;

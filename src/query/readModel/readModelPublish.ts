@@ -21,6 +21,9 @@
 
 import { isISODateString } from '@Tools/dateTime';
 
+// types
+import type { DrawPublishingDetails } from '@Mutate/publishing/publishEvent';
+
 export interface MatchUpPublishState {
   published: boolean;
   embargo: string | null;
@@ -32,14 +35,14 @@ export interface MatchUpPublishState {
 
 const NOT_PUBLISHED: MatchUpPublishState = { published: false, embargo: null, scheduleEmbargo: null };
 
-function keyed(obj?: Record<string, any>): boolean {
+function keyed<T extends object>(obj?: T): obj is T {
   return !!obj && Object.keys(obj).length > 0;
 }
 
 // Publish intent through the cascade. A level with no enumerated keys means "all
 // published" (inherit); an enumerated level publishes only listed entries, and an
 // explicit `published: false` un-publishes.
-function resolveIntent(drawDetail: any, structureId?: string, stage?: string): boolean {
+function resolveIntent(drawDetail: DrawPublishingDetails, structureId?: string, stage?: string): boolean {
   if (!drawDetail.publishingDetail?.published) return false;
 
   if (keyed(drawDetail.structureDetails)) {
@@ -58,7 +61,7 @@ function resolveIntent(drawDetail: any, structureId?: string, stage?: string): b
 // it is visible only once the last one lifts — NOT the highest-precedence one (a lifted
 // draw embargo must not unmask a still-active structure embargo). Only ISO strings
 // constrain, matching `isEmbargoed`.
-function resolveEmbargo(drawDetail: any, structureId?: string, stage?: string): string | null {
+function resolveEmbargo(drawDetail: DrawPublishingDetails, structureId?: string, stage?: string): string | null {
   const candidates = [
     drawDetail.publishingDetail?.embargo,
     stage ? drawDetail.stageDetails?.[stage]?.embargo : undefined,
@@ -73,7 +76,7 @@ function resolveEmbargo(drawDetail: any, structureId?: string, stage?: string): 
 // A per-structure `roundLimit` hides every round beyond the limit (getEventData drops
 // them from `roundMatchUps`); a hidden round is simply not published — a hard,
 // time-independent hide, distinct from an embargo release.
-function roundHidden(drawDetail: any, structureId?: string, roundNumber?: number): boolean {
+function roundHidden(drawDetail: DrawPublishingDetails, structureId?: string, roundNumber?: number): boolean {
   if (structureId == null || roundNumber == null) return false;
   const roundLimit = drawDetail.structureDetails?.[structureId]?.roundLimit;
   return roundLimit != null && roundNumber > roundLimit;
@@ -81,7 +84,11 @@ function roundHidden(drawDetail: any, structureId?: string, roundNumber?: number
 
 // The round-level scheduledRounds embargo (structure → round), the finer gate that
 // redacts a round's placement while the matchUp stays visible. Only ISO strings constrain.
-function resolveScheduleEmbargo(drawDetail: any, structureId?: string, roundNumber?: number): string | null {
+function resolveScheduleEmbargo(
+  drawDetail: DrawPublishingDetails,
+  structureId?: string,
+  roundNumber?: number,
+): string | null {
   if (structureId == null || roundNumber == null) return null;
   const embargo = drawDetail.structureDetails?.[structureId]?.scheduledRounds?.[roundNumber]?.embargo;
   return typeof embargo === 'string' && isISODateString(embargo) ? embargo : null;

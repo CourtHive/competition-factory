@@ -84,8 +84,8 @@ export function getMatchUpOfficialConflicts(
   if (result.error) return { error: result.error };
 
   const sideParticipantIds: string[] = (result.matchUp?.sides ?? [])
-    .map((side: any) => side?.participantId)
-    .filter(Boolean);
+    .map((side) => side?.participantId)
+    .filter((participantId): participantId is string => !!participantId);
 
   const participantMap = new Map(tournamentParticipants.map((participant) => [participant.participantId, participant]));
 

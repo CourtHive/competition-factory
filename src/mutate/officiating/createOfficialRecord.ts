@@ -20,8 +20,13 @@ export function createOfficialRecord({
   personId,
   organisationId,
   extensions,
-}: CreateOfficialRecordArgs): { error?: any; officialRecord?: OfficialRecord; success?: boolean } {
-  if (!personId) return { error: INVALID_VALUES, context: { message: 'Missing personId' } } as any;
+}: CreateOfficialRecordArgs): {
+  error?: any;
+  context?: { message: string };
+  officialRecord?: OfficialRecord;
+  success?: boolean;
+} {
+  if (!personId) return { error: INVALID_VALUES, context: { message: 'Missing personId' } };
 
   const now = nowIso();
 

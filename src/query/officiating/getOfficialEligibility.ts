@@ -4,7 +4,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { nowIso } from '@Tools/clock';
 
 // types
-import type { OfficialRecord } from '@Types/officiatingTypes';
+import type { OfficialRecord, CertificationRequirement } from '@Types/officiatingTypes';
 
 type GetOfficialEligibilityArgs = {
   officialRecord: OfficialRecord;
@@ -95,7 +95,17 @@ export function getOfficialEligibility({
   return { ...SUCCESS, eligible, reasons };
 }
 
-function checkRequirementConstraints({ certificationFamily, officialRecord, requirement, reasons }) {
+function checkRequirementConstraints({
+  certificationFamily,
+  officialRecord,
+  requirement,
+  reasons,
+}: {
+  certificationFamily: string;
+  officialRecord: OfficialRecord;
+  requirement: CertificationRequirement;
+  reasons: string[];
+}) {
   if (requirement.minimumAssignments !== undefined) {
     const completedAssignments = officialRecord.assignments.filter((a) => a.status === 'COMPLETED');
     if (completedAssignments.length < requirement.minimumAssignments) {

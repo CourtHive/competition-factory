@@ -39,16 +39,16 @@ export function addCertificationRequirement({
   extensions,
 }: AddCertificationRequirementArgs): {
   error?: any;
+  context?: { message: string };
   certificationRequirement?: CertificationRequirement;
   success?: boolean;
 } {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!certificationFamily)
-    return { error: INVALID_VALUES, context: { message: 'Missing certificationFamily' } } as any;
-  if (!certificationLevel) return { error: INVALID_VALUES, context: { message: 'Missing certificationLevel' } } as any;
-  if (!organisationId) return { error: INVALID_VALUES, context: { message: 'Missing organisationId' } } as any;
+  if (!certificationFamily) return { error: INVALID_VALUES, context: { message: 'Missing certificationFamily' } };
+  if (!certificationLevel) return { error: INVALID_VALUES, context: { message: 'Missing certificationLevel' } };
+  if (!organisationId) return { error: INVALID_VALUES, context: { message: 'Missing organisationId' } };
   if (!Array.isArray(requirements) || requirements.length === 0)
-    return { error: INVALID_VALUES, context: { message: 'Requirements must be a non-empty array' } } as any;
+    return { error: INVALID_VALUES, context: { message: 'Requirements must be a non-empty array' } };
 
   const certificationRequirement: CertificationRequirement = {
     requirementId: requirementId || UUID(),
