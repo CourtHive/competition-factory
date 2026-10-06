@@ -1,4 +1,5 @@
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
@@ -10,8 +11,8 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
+import { Contact, ParticipantRoleUnion, Structure, Tournament } from '@Types/tournamentTypes';
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { Contact, ParticipantRoleUnion, Tournament } from '@Types/tournamentTypes';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { TOURNAMENT_IMAGE_RESOURCE_NAME } from '@Constants/tournamentConstants';
 import POLICY_PRIVACY_STAFF from '@Fixtures/policies/POLICY_PRIVACY_STAFF';
@@ -88,6 +89,18 @@ function publishableContacts(participant: HydratedParticipant) {
     ...(participant.person?.contacts
       ? { person: { ...participant.person, contacts: filterContacts(participant.person.contacts) } }
       : {}),
+  };
+}
+
+// a round robin is a CONTAINER: its matchUps and positionAssignments live on its groups
+function getStructureMembers(structure: Structure) {
+  const groups = structuresOf(structure);
+  if (!groups) {
+    return { structureMatchUps: matchUpsOf(structure) ?? [], positionAssignments: positionAssignmentsOf(structure) };
+  }
+  return {
+    structureMatchUps: groups.flatMap((group) => matchUpsOf(group) ?? []),
+    positionAssignments: getPositionAssignments({ structure }).positionAssignments,
   };
 }
 
@@ -209,7 +222,8 @@ export function getTournamentInfo(params?: {
     for (const event of tournamentRecord.events ?? []) {
       for (const drawDefinition of event.drawDefinitions ?? []) {
         for (const structure of drawDefinition.structures ?? []) {
-          matchUps.push(...(matchUpsOf(structure) ?? []));
+          const { structureMatchUps, positionAssignments } = getStructureMembers(structure);
+          matchUps.push(...structureMatchUps);
           structures.push(
             definedAttributes({
               eventId: event.eventId,
@@ -222,7 +236,7 @@ export function getTournamentInfo(params?: {
               structureName: structure.structureName,
               stage: structure.stage,
               stageSequence: structure.stageSequence,
-              positionAssignments: positionAssignmentsOf(structure),
+              positionAssignments,
               seedAssignments: structure.seedAssignments,
               matchUpFormat: structure.matchUpFormat,
             }),
