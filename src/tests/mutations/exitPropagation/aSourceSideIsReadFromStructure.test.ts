@@ -12,15 +12,16 @@ import { DOUBLE_ELIMINATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitio
 /**
  * AN ORIGIN LEARNED FROM A SOURCE IS RECORDED ONLY ON THE MATCHUP THAT SOURCE FEEDS, ON THE SIDE ITS SEAT IS ON.
  *
- * `recordSourceSideProvenance` stamps where a side came from. factory-a7's probe (2026-10-06) found 33 of its stamps on
- * the wrong side over the frozen census, two classes:
+ * `recordSourceSideProvenance` stamps where a side came from. factory-a7's probes (2026-10-06) found two kinds of
+ * misplaced stamp over the frozen census:
  *
- *  - a stamp on a matchUp the source does not feed. `removeSubsequentRoundsParticipant` walks every later round holding
- *    the removed position and stamped each one with the same source (census w1 9000041, SE 8/7: `Main|3|1` "from"
- *    `Main|1|4`);
- *  - a side computed from roundPosition order. Two positions sort ascending, so where the next round carries larger,
- *    fed-in positions the source's participant can sit on side 2 although its matchUp has the lower roundPosition
- *    (census de 9304301, DE 16/11: `Backdraw|3|1` side 1 "from" `Backdraw|2|1`, whose participant sits on side 2).
+ *  - a stamp on a matchUp the source does not feed (20). `removeSubsequentRoundsParticipant` walks every later round
+ *    holding the removed position and stamped each one with the same source (census w1 9000041, SE 8/7: `Main|3|1`
+ *    "from" `Main|1|4`);
+ *  - a side computed from roundPosition order at the ARRIVAL (13), where the entry is keyed against both positions.
+ *    Two positions sort ascending, so where the next round carries larger, fed-in positions the source's participant
+ *    can sit on side 2 although its matchUp has the lower roundPosition (census de 9304301, DE 16/11: `Backdraw|3|1`
+ *    side 1 "from" `Backdraw|2|1`, whose participant sits on side 2).
  *
  * Each case is the census seed shrunk to its fewest steps. The check is the probe's, applied to what the draw stores
  * after every step: an origin naming a source in the same structure sits on that source's winner matchUp, and on the

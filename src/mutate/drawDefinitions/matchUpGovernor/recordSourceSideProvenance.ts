@@ -83,10 +83,12 @@ export function recordSourceSideProvenance({
 /**
  * The side of the seat the source feeds, read from what the matchUp HOLDS in the keyed state, never from roundPosition
  * order. Two positions sort ascending, so where the second round carries larger, fed-in positions the source's
- * participant can sit on side 2 although its matchUp has the lower roundPosition (factory-a7's probe, 2026-10-06: 14
- * of 33 stamps on the wrong side, e.g. census w1 9000055 FMLC `Consolation|3|2`, source dp[3,9] beside paired
- * dp[4,11], seated {1: dp4, 2: dp9}). A position of the source names its own side; one of the paired matchUp names
- * the other. Neither present: `undefined`, and the caller falls back to the bracket.
+ * participant can sit on side 2 although its matchUp has the lower roundPosition. At the arrival the entry is keyed
+ * after `rekeySideFacts`, against both positions, and the roundPosition formula named the wrong side 13 times over the
+ * census (factory-a7's re-probe, 2026-10-06; e.g. w1 9000055 FMLC `Consolation|3|2`, keyed [4,9]: the source's dp 9 is
+ * on side 2, the formula said 1). After a removal the formula happened to agree, because the lone survivor takes its
+ * bracket side. A position of the source names its own side; one of the paired matchUp names the other. Neither
+ * present: `undefined`, and the caller falls back to the bracket.
  */
 function seatSideNumber({
   drawDefinition,

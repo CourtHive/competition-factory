@@ -195,7 +195,7 @@ function removeDrawPosition({
   // ONLY THE SOURCE'S OWN TARGET. The loop above reaches every later round holding the position; the source feeds
   // just the first of them (`roundNumber`, the winner matchUp's round). Stamping the rest recorded an origin from a
   // matchUp that does not feed them, on a side computed for a different matchUp (factory-a7's probe, 2026-10-06:
-  // 19 of 33 wrong-side stamps, e.g. census w1 9000273 FRLC `Main|3|1` "from" `Main|1|3`).
+  // 20 such stamps over the census, e.g. w1 9000273 FRLC `Main|3|1` "from" `Main|1|3`).
   if (matchUp.roundNumber === roundNumber && participatesInExitCascade({ matchUp })) {
     recordSourceSideProvenance({
       inContextDrawMatchUps: inContextDrawMatchUps ?? [],
