@@ -48,6 +48,8 @@ function publishOOP({
   if (eventIds !== undefined) orderOfPlay.eventIds = eventIds;
   if (embargo && !isValidEmbargoDate(embargo)) return { error: INVALID_EMBARGO };
   if (embargo) orderOfPlay.embargo = embargo;
+  // a record already published under another status holds no entry for this one yet
+  itemValue[status] ??= {};
   itemValue[status].orderOfPlay = orderOfPlay;
   if (language) itemValue[status].language = language;
   const updatedTimeItem = { itemValue, itemType };

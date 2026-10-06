@@ -4,7 +4,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
-import { PUBLIC } from '@Constants/timeItemConstants';
+import { PUBLIC, PUBLISH, STATUS } from '@Constants/timeItemConstants';
 
 const NOW = new Date('2025-06-15T12:00:00Z').getTime();
 const FUTURE_EMBARGO = '2025-06-20T12:00:00Z';
@@ -94,13 +94,25 @@ describe('non-PUBLIC status publishing', () => {
   it('unpublish INTERNAL OOP but keep PUBLIC OOP — PUBLIC still works', () => {
     const { eventId } = setupTournament();
 
-    // Publish both statuses
-    tournamentEngine.publishEvent({ eventId, status: PUBLIC });
-    tournamentEngine.publishOrderOfPlay({ scheduledDates: [START_DATE], status: PUBLIC });
-    tournamentEngine.publishOrderOfPlay({ scheduledDates: [START_DATE], status: INTERNAL });
+    // Publish both statuses — the second status is added to a record that already holds the first
+    let result: any = tournamentEngine.publishEvent({ eventId, status: PUBLIC });
+    expect(result.success).toEqual(true);
+    result = tournamentEngine.publishOrderOfPlay({ scheduledDates: [START_DATE], status: PUBLIC });
+    expect(result.success).toEqual(true);
+    result = tournamentEngine.publishOrderOfPlay({ scheduledDates: [START_DATE], status: INTERNAL });
+    expect(result.success).toEqual(true);
+
+    // CONTROL: INTERNAL really was published, so the empty INTERNAL query below is the unpublish
+    result = tournamentEngine.competitionScheduleMatchUps({
+      matchUpFilters: { scheduledDate: START_DATE },
+      usePublishState: true,
+      status: INTERNAL,
+    });
+    expect(result.dateMatchUps.length).toBeGreaterThan(0);
 
     // Unpublish INTERNAL OOP
-    tournamentEngine.unPublishOrderOfPlay({ status: INTERNAL });
+    result = tournamentEngine.unPublishOrderOfPlay({ status: INTERNAL });
+    expect(result.success).toEqual(true);
 
     // PUBLIC should still work
     const publicResult = tournamentEngine.competitionScheduleMatchUps({
@@ -142,5 +154,49 @@ describe('non-PUBLIC status publishing', () => {
     });
     // Draw is embargoed → matchUps hidden (draw details always read from PUBLIC status)
     expect(internalResult.dateMatchUps.length).toEqual(0);
+  });
+});
+
+describe('a second publish status is added beside the first', () => {
+  const tournamentPublishStatus = () =>
+    tournamentEngine
+      .getTournament()
+      .tournamentRecord.timeItems?.filter(({ itemType }: any) => itemType === `${PUBLISH}.${STATUS}`)
+      .at(-1)?.itemValue;
+
+  it('publishOrderOfPlay keeps PUBLIC and adds INTERNAL', () => {
+    setupTournament();
+    let result: any = tournamentEngine.publishOrderOfPlay({ status: PUBLIC });
+    expect(result.success).toEqual(true);
+    result = tournamentEngine.publishOrderOfPlay({ status: INTERNAL });
+    expect(result.success).toEqual(true);
+
+    const itemValue = tournamentPublishStatus();
+    expect(itemValue[PUBLIC].orderOfPlay.published).toEqual(true);
+    expect(itemValue[INTERNAL].orderOfPlay.published).toEqual(true);
+  });
+
+  it('publishParticipants keeps PUBLIC and adds INTERNAL', () => {
+    setupTournament();
+    let result: any = tournamentEngine.publishParticipants({ status: PUBLIC });
+    expect(result.success).toEqual(true);
+    result = tournamentEngine.publishParticipants({ status: INTERNAL });
+    expect(result.success).toEqual(true);
+
+    const itemValue = tournamentPublishStatus();
+    expect(itemValue[PUBLIC].participants.published).toEqual(true);
+    expect(itemValue[INTERNAL].participants.published).toEqual(true);
+  });
+
+  it('unPublishEvent for a status the event was never published under leaves PUBLIC published', () => {
+    const { eventId, drawId } = setupTournament();
+    let result: any = tournamentEngine.publishEvent({ eventId, status: PUBLIC });
+    expect(result.success).toEqual(true);
+    result = tournamentEngine.unPublishEvent({ eventId, status: INTERNAL });
+    expect(result.success).toEqual(true);
+
+    const { publishState } = tournamentEngine.getPublishState({ eventId });
+    expect(publishState.status.published).toEqual(true);
+    expect(publishState.status.publishedDrawIds).toContain(drawId);
   });
 });

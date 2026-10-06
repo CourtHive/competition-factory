@@ -1,5 +1,6 @@
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
+import { getEventTimeItem } from '@Query/base/timeItems';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -23,8 +24,10 @@ export function modifyEventPublishStatus({
   if (!isObject(statusObject)) return { error: INVALID_VALUES };
   const publishStatus = getEventPublishStatus({ event, status });
   const itemType = `${PUBLISH}.${STATUS}`;
+  // the time item holds every status; modifying one must carry the others forward
+  const otherStatuses = event && getEventTimeItem({ event, itemType })?.timeItem?.itemValue;
   const updatedTimeItem = {
-    itemValue: { [status]: { ...publishStatus, ...statusObject } },
+    itemValue: { ...otherStatuses, [status]: { ...publishStatus, ...statusObject } },
     itemType,
   };
 
