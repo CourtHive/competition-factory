@@ -109,7 +109,7 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
 
   eventRecord.eventId ??= UUID();
 
-  const eventExists = tournamentRecord.events.reduce((exists: any, event) => {
+  const eventExists = tournamentRecord.events.reduce((exists: boolean | undefined, event) => {
     return exists || event.eventId === eventRecord.eventId;
   }, undefined);
 

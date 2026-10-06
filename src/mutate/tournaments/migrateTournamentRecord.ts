@@ -1,10 +1,11 @@
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getMatchUpPresence, getParticipantPresence } from '@Acquire/presenceAttestations';
 
 // constants and types
+import { DrawDefinition, Event, MatchUp, Participant, Structure, TimeItem, Tournament } from '@Types/tournamentTypes';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SIGN_IN_STATUS } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 import {
   COMPETITION_STATE,
@@ -103,13 +104,13 @@ function promoteMatchUpScheduleTimeItem(
   attribute: string,
   clearLegacy: boolean,
 ): boolean {
-  const timeItems = matchUp?.timeItems;
+  const timeItems: TimeItem[] | undefined = matchUp?.timeItems;
   if (!Array.isArray(timeItems)) return false;
 
   // schedule itemTypes are last-write-wins, so pick the most-recent entry
-  const matching = timeItems.filter((t: any) => t?.itemType === itemType);
+  const matching = timeItems.filter((t) => t?.itemType === itemType);
   if (!matching.length) return false;
-  const latest = matching.toSorted((a: any, b: any) => {
+  const latest = matching.toSorted((a, b) => {
     const aT = a.createdAt ? new Date(a.createdAt).getTime() : 0;
     const bT = b.createdAt ? new Date(b.createdAt).getTime() : 0;
     return aT - bT;
@@ -117,14 +118,14 @@ function promoteMatchUpScheduleTimeItem(
 
   if (latest.itemValue === undefined || latest.itemValue === null) {
     // an explicit clear sentinel — strip but do not write a first-class value
-    if (clearLegacy) matchUp.timeItems = timeItems.filter((t: any) => t?.itemType !== itemType);
+    if (clearLegacy) matchUp.timeItems = timeItems.filter((t) => t?.itemType !== itemType);
     return true;
   }
 
   matchUp.schedule = matchUp.schedule ?? {};
   if (matchUp.schedule[attribute] === undefined) matchUp.schedule[attribute] = latest.itemValue;
 
-  if (clearLegacy) matchUp.timeItems = timeItems.filter((t: any) => t?.itemType !== itemType);
+  if (clearLegacy) matchUp.timeItems = timeItems.filter((t) => t?.itemType !== itemType);
   return true;
 }
 
@@ -224,7 +225,7 @@ function applyGroupPromotions(element: any, promotions: GroupExtensionPromotion[
   return n;
 }
 
-function migrateTournamentLevel(record: any, counts: MigrationCounts, clearLegacy: boolean) {
+function migrateTournamentLevel(record: Tournament, counts: MigrationCounts, clearLegacy: boolean) {
   counts.tournament += applyFlatPromotions(record, TOURNAMENT_FLAT_PROMOTIONS, clearLegacy);
   counts.tournament += applyGroupPromotions(record, TOURNAMENT_GROUP_PROMOTIONS, clearLegacy);
   for (const participant of record.participants ?? []) {
@@ -232,7 +233,7 @@ function migrateTournamentLevel(record: any, counts: MigrationCounts, clearLegac
   }
 }
 
-function migrateVenuesAndCourts(record: any, counts: MigrationCounts, clearLegacy: boolean) {
+function migrateVenuesAndCourts(record: Tournament, counts: MigrationCounts, clearLegacy: boolean) {
   for (const venue of record.venues ?? []) {
     counts.venues += applyFlatPromotions(venue, VENUE_PROMOTIONS, clearLegacy);
     for (const court of venue.courts ?? []) {
@@ -241,7 +242,7 @@ function migrateVenuesAndCourts(record: any, counts: MigrationCounts, clearLegac
   }
 }
 
-function migrateDrawDefinition(drawDefinition: any, counts: MigrationCounts, clearLegacy: boolean) {
+function migrateDrawDefinition(drawDefinition: DrawDefinition, counts: MigrationCounts, clearLegacy: boolean) {
   counts.drawDefinitions += applyFlatPromotions(drawDefinition, DRAW_DEFINITION_PROMOTIONS, clearLegacy);
   for (const entry of drawDefinition.entries ?? []) {
     counts.entries += applyFlatPromotions(entry, ENTRY_PROMOTIONS, clearLegacy);
@@ -249,7 +250,7 @@ function migrateDrawDefinition(drawDefinition: any, counts: MigrationCounts, cle
   walkStructures(drawDefinition.structures ?? [], counts, clearLegacy);
 }
 
-function migrateEvent(event: any, counts: MigrationCounts, clearLegacy: boolean) {
+function migrateEvent(event: Event, counts: MigrationCounts, clearLegacy: boolean) {
   counts.events += applyFlatPromotions(event, EVENT_PROMOTIONS, clearLegacy);
   for (const entry of event.entries ?? []) {
     counts.entries += applyFlatPromotions(entry, ENTRY_PROMOTIONS, clearLegacy);
@@ -305,7 +306,7 @@ export function migrateTournamentRecord({
  * Promoted entries carry no `attributedTo` — nobody ever recorded one, and an absent attester is
  * honest where a synthesised one would not be.
  */
-function promoteMatchUpCheckIns(matchUp: any, clearLegacy: boolean): number {
+function promoteMatchUpCheckIns(matchUp: MatchUp, clearLegacy: boolean): number {
   if (Array.isArray(matchUp?.checkIns)) return 0;
   if (!Array.isArray(matchUp?.timeItems)) return 0;
 
@@ -331,7 +332,7 @@ function promoteMatchUpCheckIns(matchUp: any, clearLegacy: boolean): number {
  * Unlike matchUp check-in — which appears once in the archived records — `SIGN_IN_STATUS` goes back to
  * 2023 and is extensive, so this promotion runs against real data far more often than the other.
  */
-function promoteParticipantPresence(participant: any, clearLegacy: boolean): number {
+function promoteParticipantPresence(participant: Participant, clearLegacy: boolean): number {
   if (Array.isArray(participant?.presence)) return 0;
   if (!Array.isArray(participant?.timeItems)) return 0;
 
@@ -340,12 +341,12 @@ function promoteParticipantPresence(participant: any, clearLegacy: boolean): num
 
   participant.presence = promoted;
   if (clearLegacy) {
-    participant.timeItems = participant.timeItems.filter((timeItem: any) => timeItem?.itemType !== SIGN_IN_STATUS);
+    participant.timeItems = participant.timeItems.filter((timeItem) => timeItem?.itemType !== SIGN_IN_STATUS);
   }
   return promoted.length;
 }
 
-function migrateMatchUpSchedule(matchUp: any, counts: MigrationCounts, clearLegacy: boolean) {
+function migrateMatchUpSchedule(matchUp: MatchUp, counts: MigrationCounts, clearLegacy: boolean) {
   for (const { itemType, attribute } of MATCHUP_SCHEDULE_TIMEITEM_PROMOTIONS) {
     if (promoteMatchUpScheduleTimeItem(matchUp, itemType, attribute, clearLegacy)) {
       counts.matchUpScheduleTimeItems += 1;
@@ -353,17 +354,18 @@ function migrateMatchUpSchedule(matchUp: any, counts: MigrationCounts, clearLega
   }
 }
 
-function walkStructures(structures: any[], counts: MigrationCounts, clearLegacy: boolean) {
+function walkStructures(structures: Structure[], counts: MigrationCounts, clearLegacy: boolean) {
   for (const structure of structures) {
     counts.structures += applyFlatPromotions(structure, STRUCTURE_PROMOTIONS, clearLegacy);
-    for (const assignment of structure.positionAssignments ?? []) {
+    for (const assignment of positionAssignmentsOf(structure) ?? []) {
       counts.positionAssignments += applyFlatPromotions(assignment, POSITION_ASSIGNMENT_PROMOTIONS, clearLegacy);
     }
-    for (const matchUp of structure.matchUps ?? []) {
+    for (const matchUp of matchUpsOf(structure) ?? []) {
       counts.matchUps += applyFlatPromotions(matchUp, MATCHUP_PROMOTIONS, clearLegacy);
       migrateMatchUpSchedule(matchUp, counts, clearLegacy);
       counts.matchUpCheckIns += promoteMatchUpCheckIns(matchUp, clearLegacy);
     }
-    if (Array.isArray(structure.structures)) walkStructures(structure.structures, counts, clearLegacy);
+    const childStructures = structuresOf(structure);
+    if (Array.isArray(childStructures)) walkStructures(childStructures, counts, clearLegacy);
   }
 }

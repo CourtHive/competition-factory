@@ -8,7 +8,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { Event } from '@Types/tournamentTypes';
 
 type ModifyEventPublishStatus = {
-  statusObject: { [key: string]: any };
+  statusObject: { [key: string]: unknown };
   removePriorValues?: boolean;
   status?: string;
   event?: Event;

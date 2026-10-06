@@ -28,7 +28,7 @@ export function getTournamentCompleteness(
   const tournamentId = tournamentRecord.tournamentId;
 
   const byEvent = (tournamentRecord.events ?? []).map((event) => {
-    const result: any = getEventCompleteness({ event, tournamentRecord });
+    const result = getEventCompleteness({ event, tournamentRecord });
     return { eventId: event.eventId, complete: result.complete, completeness: result.completeness };
   });
 
