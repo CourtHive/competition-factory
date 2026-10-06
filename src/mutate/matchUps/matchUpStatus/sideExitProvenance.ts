@@ -1071,7 +1071,7 @@ function holdsBye({
  * real side, CA 2026-10-05). Read by identity: a source in this structure whose WINNING position is the position
  * on the entry's side delivered a winner, not an exit.
  */
-function withoutWinnersOrigins({
+export function withoutWinnersOrigins({
   drawDefinition,
   structureId,
   provenance,

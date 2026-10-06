@@ -23,6 +23,7 @@ import {
 import {
   deriveExitStateFromProvenance,
   clearSideExitProvenance,
+  withoutWinnersOrigins,
   retainByeClaimsOnly,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -696,7 +697,9 @@ function updateMatchUpStatusAfterRemoval({
    * the direct entry converges to DOUBLE_WALKOVER. Same derivation `removeDoubleExit` applies to
    * what it retains; a BYE-held matchUp stays BYE, because a BYE is a fact about the draw.
    */
-  const rederived = !matchUpContainsBye && retained ? deriveExitStateFromProvenance(retained) : undefined;
+  const exitsRetained =
+    retained && withoutWinnersOrigins({ provenance: retained, matchUp: targetMatchUp, structureId, drawDefinition });
+  const rederived = !matchUpContainsBye && exitsRetained ? deriveExitStateFromProvenance(exitsRetained) : undefined;
   if (rederived) {
     targetMatchUp.matchUpStatus = rederived.matchUpStatus;
     targetMatchUp.winningSide = awardStands({
