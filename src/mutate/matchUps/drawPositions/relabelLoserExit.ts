@@ -88,6 +88,7 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
       matchUpsMap: args.matchUpsMap,
       drawDefinition,
     });
+    withdrawOnward(args, standing);
   };
 
   if (args.validExitToPropagate) {
@@ -126,7 +127,12 @@ function onlyThisCarry(standing: HydratedMatchUp, loserParticipantId: string, so
   const own = standing.sideExitProvenance?.[loserSide];
   const other = standing.sideExitProvenance?.[loserSide === 1 ? 2 : 1];
   if (own?.sourceMatchUpId !== sourceMatchUpId) return false;
-  if (carriedExitStatus(other)) return isDoubleExit(standing.matchUpStatus) && !standing.winningSide;
+  // converged: withdrawn only where the kept exit was CARRIED, so the settle has a carrier to direct. One PRODUCED by a
+  // double exit has none, and re-deriving to it awarded the loser a matchUp nothing then advanced them out of (census
+  // w2 9100377, MFIC 16/11 `Consolation|3|2`); that convergence stands, as before (open: OUTCOME_PIPELINE F2)
+  if (carriedExitStatus(other)) {
+    return isDoubleExit(standing.matchUpStatus) && !standing.winningSide && !isDoubleExit(other?.previousMatchUpStatus);
+  }
   return standing.matchUpStatus === own.matchUpStatus && standing.winningSide === (loserSide === 1 ? 2 : 1);
 }
 
@@ -254,6 +260,32 @@ function withdraw(args: RelabelArgs, standing: HydratedMatchUp) {
     sourceMatchUpId: args.sourceMatchUpId,
     drawDefinition: args.drawDefinition,
     mappedMatchUps,
+  });
+  applyWithdrawnExits({
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    matchUpsMap: args.matchUpsMap,
+    event: args.event,
+    withdrawnExits,
+  });
+}
+
+/**
+ * The matchUp the withdrawal left UNDECIDED produces nothing, so every exit it had carried on is withdrawn too.
+ * `withdraw` is scoped to the one matchUp the loser stands in, and `removeOnwardLoserPlacements` takes back its loser's
+ * placements but not the exit that loser carried there. Census w1 9000479 (COMPASS 32/29): `East|1|7`'s walkover
+ * relabelled as played reverted `West|1|4`, whose loser had carried a WALKOVER into `South|1|2` and converged there;
+ * the loser went, its entry stayed, and `South|1|2` stood a double exit with an empty seat and a dead origin.
+ * Withdrawn as any undo withdraws a source's products, identity-keyed; a convergence it leaves re-derives, and
+ * `settleRederivedDoubleExits` settles it.
+ */
+function withdrawOnward(args: RelabelArgs, standing: HydratedMatchUp) {
+  const stored = args.matchUpsMap?.drawMatchUps?.find((matchUp: MatchUp) => matchUp.matchUpId === standing.matchUpId);
+  if (!stored || stored.winningSide || stored.matchUpStatus === BYE || isAnyExit(stored.matchUpStatus)) return;
+  const withdrawnExits = withdrawProducedExits({
+    mappedMatchUps: args.matchUpsMap?.mappedMatchUps,
+    sourceMatchUpId: standing.matchUpId,
+    drawDefinition: args.drawDefinition,
   });
   applyWithdrawnExits({
     tournamentRecord: args.tournamentRecord,

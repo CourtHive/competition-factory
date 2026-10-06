@@ -1,13 +1,20 @@
 import { getDifferentialTally, resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
-import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
+import {
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  CONSOLATION,
+  COMPASS,
+  MAIN,
+} from '@Constants/drawDefinitionConstants';
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -136,4 +143,73 @@ it('leaves the convergence standing where the winner of what it produced has pla
   // Main|1|1's winner has played Main|2|1, whose loser feeds Consolation|2|1, so this relabel directs nobody (the
   // `apply-values` route, `relabelWithoutDirection`) and v2 plans no direction for it
   expect(getDifferentialTally()['apply-values:direction']).toEqual({ compared: 0, deferred: 1 });
+});
+
+const byKey = (k: string): any =>
+  tournamentEngine
+    .allDrawMatchUps({ drawId: DRAW_ID, inContext: true })
+    .matchUps?.find((m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}` === k);
+
+/** a frozen-census seed's shrunk steps, through `prepareDraw`; every step is legal */
+function prepareSeed(config: any) {
+  setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
+  setSubscriptions({});
+  expect(prepareDraw(config, DRAW_ID)).toEqual(true);
+}
+
+function step(k: string, outcome: any) {
+  const result: any = tournamentEngine.setMatchUpStatus({
+    matchUpId: byKey(k).matchUpId,
+    propagateExitStatus: true,
+    drawId: DRAW_ID,
+    outcome,
+  });
+  expect(result.error, k).toBeUndefined();
+}
+
+it('a relabel that leaves its matchUp undecided withdraws the exit its loser carried on (census w1 9000479)', () => {
+  prepareSeed({ participantsCount: 29, propagateExitStatus: true, drawSize: 32, drawType: COMPASS, seed: 9000479 });
+  step('East|1|7', { matchUpStatus: WALKOVER, winningSide: 1 });
+  step('East|1|6', { winningSide: 2 });
+  step('East|1|5', { winningSide: 1 });
+  step('West|1|3', { matchUpStatus: WALKOVER, winningSide: 1 });
+  // CONTROL: West|1|4's loser carried a walkover into South|1|2, where it converged
+  const westId = byKey('West|1|4').matchUpId;
+  const sources = () => Object.values(byKey('South|1|2').sideExitProvenance ?? {}).map((e: any) => e.sourceMatchUpId);
+  expect(byKey('South|1|2').matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  expect(sources()).toContain(westId);
+
+  // East|1|7's walkover relabelled as played reverts West|1|4, and its loser's carry onward goes with it
+  step('East|1|7', { winningSide: 1 });
+  expect(byKey('West|1|4').matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(sources()).not.toContain(westId);
+  expect(byKey('South|1|2').matchUpStatus).toEqual(WALKOVER);
+  expect(errors()).toEqual([]);
+
+  // and the next relabel, withdrawing the other origin, leaves nothing stranded
+  step('West|1|3', { winningSide: 1 });
+  expect(errors()).toEqual([]);
+});
+
+it('a convergence whose other exit was PRODUCED by a double exit stands (census w2 9100377)', () => {
+  prepareSeed({
+    drawType: MODIFIED_FEED_IN_CHAMPIONSHIP,
+    propagateExitStatus: true,
+    participantsCount: 11,
+    seed: 9100377,
+    drawSize: 16,
+  });
+  step('Main|1|4', { winningSide: 2 });
+  step('Main|1|5', { winningSide: 1 });
+  step('Main|2|2', { winningSide: 2 });
+  step('Consolation|2|3', { matchUpStatus: DOUBLE_WALKOVER });
+  step('Main|1|2', { winningSide: 1 });
+  step('Main|2|1', { matchUpStatus: WALKOVER, winningSide: 1 });
+  // CONTROL: the loser's carried walkover converged with the walkover Consolation|2|3's double exit produced
+  expect(byKey('Consolation|3|2').matchUpStatus).toEqual(DOUBLE_WALKOVER);
+
+  step('Main|2|1', { winningSide: 1 });
+  // the settle has no carrier to direct for a produced exit, so the convergence stands rather than strand its winner
+  expect(byKey('Consolation|3|2').matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  expect(errors()).toEqual([]);
 });
