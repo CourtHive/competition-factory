@@ -3,13 +3,14 @@ import { removeOnwardLoserPlacements } from '@Mutate/matchUps/drawPositions/remo
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { BYE, COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { MappedMatchUps, MatchUpsMap } from '@Types/factoryTypes';
+import { MappedMatchUps, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { LOSER } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -45,7 +46,7 @@ type RelabelArgs = {
  * "Where the loser now stands" is the earliest matchUp of the target structure holding them that is
  * not a BYE: a loser fed opposite a BYE has already passed it, and their next opponent is there.
  */
-export function relabelLoserExit(args: RelabelArgs): { carry?: boolean } {
+export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: boolean } {
   const { propagateExitStatus, loserParticipantId, sourceMatchUpId, drawDefinition } = args;
   if (!propagateExitStatus || !loserParticipantId || !sourceMatchUpId) return {};
 
@@ -63,11 +64,17 @@ export function relabelLoserExit(args: RelabelArgs): { carry?: boolean } {
     ? Object.values(standing.sideExitProvenance).some((entry) => entry?.sourceMatchUpId === sourceMatchUpId)
     : false;
 
-  const withdrawable = () =>
-    carriedHere &&
-    onlyThisCarry(standing, loserParticipantId, sourceMatchUpId) &&
-    !winnerPlayedOn(standing, inContextDrawMatchUps, drawDefinition) &&
-    !loserPlayedOn(standing, inContextDrawMatchUps, drawDefinition, loserParticipantId);
+  // a walk that cannot read the draw's links refuses the relabel rather than reading as "not played on"
+  let refused: ResultType | undefined;
+  const withdrawable = () => {
+    if (!carriedHere || !onlyThisCarry(standing, loserParticipantId, sourceMatchUpId)) return false;
+    const onward = winnerPlayedOn(standing, inContextDrawMatchUps, drawDefinition);
+    if (onward.error) {
+      refused = onward;
+      return false;
+    }
+    return !onward.playedOn && !loserPlayedOn(standing, inContextDrawMatchUps, drawDefinition, loserParticipantId);
+  };
   const withdrawHere = () => {
     withdraw(args, standing);
     // the loser no longer lost there, so what losing there directed them to is not theirs either: a
@@ -87,12 +94,13 @@ export function relabelLoserExit(args: RelabelArgs): { carry?: boolean } {
     // for a walkover or default recorded before the opponent arrives, which the director may change until
     // they do): the carry follows the label. Withdrawn and carried again, under the same guards as a
     // withdrawal; where the loser or the carry's winner has played on, the carry stands as it was.
-    if (!relabelsTheCarry(standing, loserParticipantId, args.sourceMatchUpStatus) || !withdrawable()) return {};
+    if (!relabelsTheCarry(standing, loserParticipantId, args.sourceMatchUpStatus) || !withdrawable())
+      return refused ?? {};
     withdrawHere();
     return { carry: true };
   }
   if (withdrawable()) withdrawHere();
-  return {};
+  return refused ?? {};
 }
 
 /** the loser's carried exit says WALKOVER where the source now says DEFAULTED, or the reverse */
@@ -150,24 +158,26 @@ function winnerPlayedOn(
   standing: HydratedMatchUp,
   matchUps: HydratedMatchUp[] | undefined,
   drawDefinition: DrawDefinition,
-) {
-  if (!standing.winningSide) return false;
+): ResultType & { playedOn?: boolean } {
+  if (!standing.winningSide) return { playedOn: false };
   let current: HydratedMatchUp | undefined = standing;
   for (let hops = 0; current && hops < 16; hops++) {
-    const nextId: string | undefined = positionTargets({
+    const targetData = positionTargets({
       inContextDrawMatchUps: matchUps,
       matchUpId: current.matchUpId,
       inContextMatchUp: current,
       drawDefinition,
-    }).targetMatchUps?.winnerMatchUp?.matchUpId;
+    });
+    if (targetData.error) return decorateResult({ result: targetData, stack: 'winnerPlayedOn' });
+    const nextId: string | undefined = targetData.targetMatchUps?.winnerMatchUp?.matchUpId;
     const next: HydratedMatchUp | undefined = nextId
       ? matchUps?.find((matchUp) => matchUp.matchUpId === nextId)
       : undefined;
-    if (!next) return false;
-    if (next.matchUpStatus !== BYE) return hasResult(next);
+    if (!next) return { playedOn: false };
+    if (next.matchUpStatus !== BYE) return { playedOn: hasResult(next) };
     current = next;
   }
-  return false;
+  return { playedOn: false };
 }
 
 /**
@@ -247,7 +257,7 @@ export function relabelWithoutDirection(params: {
   winningSide?: number;
   matchUpId: string;
   event?: Event;
-}): { context?: Record<string, unknown> } {
+}): ResultType & { context?: Record<string, unknown> } {
   const { matchUpId, matchUpStatus, winningSide, drawDefinition } = params;
   if (!params.propagateExitStatus || !winningSide) return {};
 
@@ -259,6 +269,7 @@ export function relabelWithoutDirection(params: {
     event: params.event,
   }).matchUps;
   const targetData = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
+  if (targetData.error) return decorateResult({ result: targetData, stack: 'relabelWithoutDirection' });
   const loserMatchUp = targetData.targetMatchUps?.loserMatchUp;
   const targetStructureId = targetData.targetLinks?.loserTargetLink?.target?.structureId;
   if (!loserMatchUp || !targetStructureId) return {};
@@ -267,7 +278,7 @@ export function relabelWithoutDirection(params: {
   const loserParticipantId = source?.sides?.find((side) => side?.sideNumber === 3 - winningSide)?.participantId;
   const propagating = params.propagateRetirementAsExit ? [RETIRED, WALKOVER, DEFAULTED] : [WALKOVER, DEFAULTED];
 
-  const { carry } = relabelLoserExit({
+  const relabel = relabelLoserExit({
     validExitToPropagate: propagating.includes(matchUpStatus ?? ''),
     propagateExitStatus: params.propagateExitStatus,
     tournamentRecord: params.tournamentRecord,
@@ -278,7 +289,8 @@ export function relabelWithoutDirection(params: {
     targetStructureId,
     drawDefinition,
   });
-  if (!carry) return {};
+  if (relabel.error) return relabel;
+  if (!relabel.carry) return {};
 
   return {
     context: {

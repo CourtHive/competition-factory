@@ -12,6 +12,12 @@ import { MAIN, FEED_IN_CHAMPIONSHIP, FIRST_MATCH_LOSER_CONSOLATION, COMPASS } fr
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ERROR } from '@Constants/resultConstants';
 
+// the targets as a test reads them, without narrowing away the error a malformed link would return
+const targetsOf = (args: Parameters<typeof positionTargets>[0]) => {
+  const result: any = positionTargets(args);
+  return result;
+};
+
 it('can direct participants in First Match Consolation (FIRST_MATCH_LOSER_CONSOLATION)', () => {
   const drawSize = 32;
   const drawDefinition: DrawDefinition = newDrawDefinition();
@@ -45,7 +51,7 @@ it('can direct participants in First Match Consolation (FIRST_MATCH_LOSER_CONSOL
   let {
     matchUp,
     targetMatchUps: { winnerMatchUp, loserMatchUp },
-  } = positionTargets({
+  } = targetsOf({
     drawDefinition,
     inContextDrawMatchUps,
     matchUpId,
@@ -69,7 +75,7 @@ it('can direct participants in First Match Consolation (FIRST_MATCH_LOSER_CONSOL
   ({
     matchUp,
     targetMatchUps: { winnerMatchUp, loserMatchUp },
-  } = positionTargets({
+  } = targetsOf({
     drawDefinition,
     inContextDrawMatchUps,
     matchUpId,
@@ -89,7 +95,7 @@ it('can direct participants in First Match Consolation (FIRST_MATCH_LOSER_CONSOL
   const {
     matchUp: matchUp2ndRound,
     targetMatchUps: { winnerMatchUp: winnerMatchUp2ndRound, loserMatchUp: loserMatchUp2ndRound },
-  } = positionTargets({
+  } = targetsOf({
     drawDefinition,
     inContextDrawMatchUps,
     matchUpId,
@@ -136,7 +142,7 @@ it('can direct participants in FEED_IN_CHAMPIONSHIP structure', () => {
   let {
     matchUp,
     targetMatchUps: { winnerMatchUp, loserMatchUp },
-  } = positionTargets({
+  } = targetsOf({
     inContextDrawMatchUps,
     drawDefinition,
     matchUpId,
@@ -161,7 +167,7 @@ it('can direct participants in FEED_IN_CHAMPIONSHIP structure', () => {
   ({
     matchUp,
     targetMatchUps: { winnerMatchUp, loserMatchUp },
-  } = positionTargets({
+  } = targetsOf({
     drawDefinition,
     inContextDrawMatchUps,
     matchUpId,
@@ -182,7 +188,7 @@ it('can direct participants in FEED_IN_CHAMPIONSHIP structure', () => {
   const {
     matchUp: matchUp2ndRound,
     targetMatchUps: { winnerMatchUp: winnerMatchUp2ndRound, loserMatchUp: loserMatchUp2ndRound },
-  } = positionTargets({
+  } = targetsOf({
     drawDefinition,
     inContextDrawMatchUps,
     matchUpId,
@@ -233,7 +239,7 @@ it('can direct participants in COMPASS', () => {
     matchUp,
     targetLinks: { loserTargetLink },
     targetMatchUps: { winnerMatchUp, loserMatchUp },
-  } = positionTargets({
+  } = targetsOf({
     inContextDrawMatchUps,
     drawDefinition,
     matchUpId,
@@ -265,7 +271,7 @@ it('can direct participants in COMPASS', () => {
     matchUp: matchUp2ndRound,
     targetLinks: { loserTargetLink: round2loserTargetLink },
     targetMatchUps: { winnerMatchUp: winnerMatchUp2ndRound, loserMatchUp: loserMatchUp2ndRound },
-  } = positionTargets({
+  } = targetsOf({
     inContextDrawMatchUps,
     drawDefinition,
     matchUpId,

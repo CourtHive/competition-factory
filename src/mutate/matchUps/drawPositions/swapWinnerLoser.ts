@@ -1,15 +1,16 @@
-import {
-  reconcileFedLoserEligibility,
-  fedLoserPlacementRefusal,
-} from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { getDownstreamStructureIds } from '@Query/matchUps/getDownstreamStructureIds';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { reverseScore } from '@Generators/score/reverseScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import {
+  reconcileFedLoserEligibility,
+  fedLoserPlacementRefusal,
+} from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 
 // constants
 import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
@@ -161,12 +162,14 @@ export function swapWinnerLoser(params) {
    * r4`); the two participants keep their assignments THERE, since a drawPosition's binding to a
    * participant in the structure they played in is exactly what does not change.
    */
-  const { structureIds: subsequentStructureIds } = getDownstreamStructureIds({
+  const downstream = getDownstreamStructureIds({
     inContextDrawMatchUps: params.inContextDrawMatchUps ?? [],
     excludeStructureId: structure.structureId,
     matchUpId: inContextMatchUp.matchUpId,
     drawDefinition,
   });
+  if (downstream.error) return decorateResult({ result: downstream, stack });
+  const subsequentStructureIds = downstream.structureIds;
 
   /**
    * A structure the flipped participants were SENT FROM is their origin, not a destination — even

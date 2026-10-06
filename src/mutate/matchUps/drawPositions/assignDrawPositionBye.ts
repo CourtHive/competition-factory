@@ -191,7 +191,8 @@ export function assignDrawPositionBye({
   // with the ids stripped ended in a different draw 14 times before, and 44 times after. A draw that
   // stores its edges (`hasStoredGoesTo`, a walk of the stored matchUps) needs nothing; one that does
   // not is given them here, as it was.
-  if (isPropagationPlacement) ensureGoesTo({ drawDefinition });
+  const goesTo = goesToForPropagation({ isPropagationPlacement, drawDefinition });
+  if (goesTo?.error) return decorateResult({ result: goesTo, stack });
 
   const drawPositionIsActive =
     !isPropagationPlacement &&
@@ -447,6 +448,17 @@ export function assignDrawPositionBye({
  * `sourceMatchUpId`, and that remains true whether or not a winner can be named. `withdrawProducedExits`
  * unwinds by that key, so correcting the original result still takes this back.
  */
+/** the edges a propagation placement gives a draw stored without them (above); a malformed round link is returned */
+function goesToForPropagation({
+  isPropagationPlacement,
+  drawDefinition,
+}: {
+  isPropagationPlacement?: boolean;
+  drawDefinition: DrawDefinition;
+}) {
+  return isPropagationPlacement ? ensureGoesTo({ drawDefinition }) : undefined;
+}
+
 function correctResultsAwardedToTheBye({
   inContextDrawMatchUps,
   furthestMatchUpId,
@@ -640,14 +652,16 @@ export function advanceDrawPosition({
   const losingDrawPosition = matchUp?.drawPositions?.find((drawPosition) => drawPosition !== drawPositionToAdvance);
   const losingDrawPosiitonIsBye = losingDrawPosition && byeAssignedDrawPositions?.includes(losingDrawPosition);
 
-  const {
-    targetLinks: { loserTargetLink },
-    targetMatchUps: { loserMatchUp, winnerMatchUp, loserTargetDrawPosition },
-  } = positionTargets({
+  const targetData = positionTargets({
     inContextDrawMatchUps,
     drawDefinition,
     matchUpId,
   });
+  if (targetData.error) return decorateResult({ result: targetData, stack });
+  const {
+    targetLinks: { loserTargetLink },
+    targetMatchUps: { loserMatchUp, winnerMatchUp, loserTargetDrawPosition },
+  } = targetData;
 
   // In lucky draws, pre-feed rounds (odd matchUp count) defer advancement to
   // luckyDrawAdvancement. Normal power-of-2 rounds advance immediately.
@@ -677,8 +691,15 @@ export function advanceDrawPosition({
   }
 
   // only handling situation where a BYE is being placed in linked structure
-  // and linked structure is NOT the same structure
-  if (loserMatchUp && losingDrawPosiitonIsBye && loserMatchUp.structureId !== structure?.structureId) {
+  // and linked structure is NOT the same structure (a loser target is only found from its link, and
+  // always with its target drawPosition)
+  if (
+    loserTargetLink &&
+    loserMatchUp &&
+    loserTargetDrawPosition !== undefined &&
+    losingDrawPosiitonIsBye &&
+    loserMatchUp.structureId !== structure?.structureId
+  ) {
     const { roundNumber } = loserMatchUp;
 
     if (roundNumber === 1) {
@@ -958,15 +979,18 @@ function assignByeToLoserTarget({
   matchUp,
   event,
 }) {
-  const {
-    targetLinks: { loserTargetLink },
-    targetMatchUps: { loserMatchUp, loserTargetDrawPosition },
-  } = positionTargets({
+  const targetData = positionTargets({
     matchUpId: matchUp.matchUpId,
     inContextDrawMatchUps,
     drawDefinition,
   });
-  if (!loserTargetLink || !loserMatchUp) return { ...SUCCESS };
+  if (targetData.error) return decorateResult({ result: targetData, stack: 'assignByeToLoserTarget' });
+  const {
+    targetLinks: { loserTargetLink },
+    targetMatchUps: { loserMatchUp, loserTargetDrawPosition },
+  } = targetData;
+  // a loser target is only found from its link, and always with its drawPositions and target drawPosition
+  if (!loserTargetLink || !loserMatchUp?.drawPositions || loserTargetDrawPosition === undefined) return { ...SUCCESS };
 
   if (loserMatchUp.feedRound) {
     return assignFedDrawPositionBye({

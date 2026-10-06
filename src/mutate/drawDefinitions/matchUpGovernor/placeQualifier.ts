@@ -1,7 +1,7 @@
 import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
+import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
-import { positionTargets } from '@Query/matchUp/positionTargets';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { findStructure } from '@Acquire/findStructure';
 import { randomMember } from '@Tools/arrays';
 
@@ -32,13 +32,13 @@ export function placeQualifier(params): ResultType & { qualifierPlaced?: boolean
     return { ...SUCCESS, qualifierPlaced: undefined };
   }
 
-  const targetData = positionTargets({
+  const downstream = getTargetsDownstream({
     matchUpId: mainDrawTargetMatchUp.matchUpId,
     inContextDrawMatchUps,
     drawDefinition,
   });
-
-  if (isActiveDownstream({ inContextDrawMatchUps, drawDefinition, targetData })) {
+  if (downstream.error) return decorateResult({ result: downstream, stack: 'placeQualifier' });
+  if (downstream.activeDownstream) {
     return { ...SUCCESS, qualifierPlaced: undefined };
   }
 

@@ -2,13 +2,14 @@ import { addFinishingRounds } from '@Assemblies/generators/drawDefinitions/addFi
 import { getMappedStructureMatchUps } from '@Query/matchUps/getMatchUpsMap';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 
 // constants and types
-import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { DrawDefinition } from '@Types/tournamentTypes';
-import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type AddGoesToArgs = {
@@ -16,10 +17,18 @@ type AddGoesToArgs = {
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
 };
-export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }: AddGoesToArgs) {
+type GoesToMap = {
+  loserMatchUpIds: { [matchUpId: string]: string };
+  winnerMatchUpIds: { [matchUpId: string]: string };
+};
+type AddGoesToResult =
+  | (ResultType & { error: ErrorType; inContextDrawMatchUps?: undefined; goesToMap?: undefined })
+  | { inContextDrawMatchUps?: HydratedMatchUp[]; goesToMap: GoesToMap; error?: undefined };
+
+export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }: AddGoesToArgs): AddGoesToResult {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  const goesToMap = { loserMatchUpIds: {}, winnerMatchUpIds: {} };
+  const goesToMap: GoesToMap = { loserMatchUpIds: {}, winnerMatchUpIds: {} };
 
   // Both args are optional, so all four combinations must work. Previously the map was
   // only ever built inside `if (!inContextDrawMatchUps)`, which meant the one combination
@@ -49,48 +58,50 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
     addFinishingRounds({ matchUps });
   }
 
-  (inContextDrawMatchUps ?? [])
-    .filter(({ collectionId }) => !collectionId)
-    .forEach((inContextMatchUp) => {
-      const { matchUpId, structureId } = inContextMatchUp;
-      const targetData = positionTargets({
-        inContextDrawMatchUps,
-        drawDefinition,
-        matchUpId,
-      });
-      const { winnerMatchUp, loserMatchUp } = targetData.targetMatchUps;
-      const winnerMatchUpId = winnerMatchUp?.matchUpId;
-      const loserMatchUpId = loserMatchUp?.matchUpId;
+  for (const inContextMatchUp of (inContextDrawMatchUps ?? []).filter(({ collectionId }) => !collectionId)) {
+    const { matchUpId, structureId } = inContextMatchUp;
+    const targetData = positionTargets({
+      inContextDrawMatchUps,
+      drawDefinition,
+      matchUpId,
+    });
+    // a malformed round link is an error, never an edge that is quietly not written
+    if (targetData.error)
+      return { ...decorateResult({ result: targetData, stack: 'addGoesTo' }), error: targetData.error };
+    const { winnerMatchUp, loserMatchUp } = targetData.targetMatchUps;
+    const winnerMatchUpId = winnerMatchUp?.matchUpId;
+    const loserMatchUpId = loserMatchUp?.matchUpId;
 
-      const matchUps = getMappedStructureMatchUps({
-        matchUpsMap,
-        structureId,
-      });
-      const matchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
+    const matchUps = getMappedStructureMatchUps({
+      matchUpsMap,
+      structureId,
+    });
+    const matchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
 
-      if (matchUp) {
-        if (winnerMatchUpId) {
-          goesToMap.winnerMatchUpIds[matchUp.matchUpId] = winnerMatchUpId;
-          Object.assign(matchUp, { winnerMatchUpId });
-          Object.assign(inContextMatchUp, { winnerMatchUpId });
-        }
-        if (loserMatchUpId) {
-          goesToMap.loserMatchUpIds[matchUp.matchUpId] = loserMatchUpId;
-          inContextMatchUp.loserMatchUpId = loserMatchUpId;
-          matchUp.loserMatchUpId = loserMatchUpId;
+    if (matchUp) {
+      if (winnerMatchUpId) {
+        goesToMap.winnerMatchUpIds[matchUp.matchUpId] = winnerMatchUpId;
+        Object.assign(matchUp, { winnerMatchUpId });
+        Object.assign(inContextMatchUp, { winnerMatchUpId });
+      }
+      if (loserMatchUpId) {
+        goesToMap.loserMatchUpIds[matchUp.matchUpId] = loserMatchUpId;
+        inContextMatchUp.loserMatchUpId = loserMatchUpId;
+        matchUp.loserMatchUpId = loserMatchUpId;
 
-          if (inContextMatchUp.finishingPositionRange) {
-            const loserRange = loserMatchUp.finishingPositionRange && [
-              ...inContextMatchUp.finishingPositionRange.loser,
-              ...loserMatchUp.finishingPositionRange.loser,
-            ];
-            const loser = loserRange && [Math.min(...loserRange), Math.max(...loserRange)];
-            inContextMatchUp.finishingPositionRange.loser = loser;
-            matchUp.finishingPositionRange.loser = loser;
-          }
+        if (inContextMatchUp.finishingPositionRange) {
+          const loserRange = loserMatchUp.finishingPositionRange && [
+            ...inContextMatchUp.finishingPositionRange.loser,
+            ...loserMatchUp.finishingPositionRange.loser,
+          ];
+          // undefined where the loser target carries no range: written as it always was
+          const loser = loserRange && [Math.min(...loserRange), Math.max(...loserRange)];
+          Object.assign(inContextMatchUp.finishingPositionRange, { loser });
+          matchUp.finishingPositionRange.loser = loser;
         }
       }
-    });
+    }
+  }
 
   return { inContextDrawMatchUps, goesToMap };
 }
@@ -139,5 +150,7 @@ export function hasStoredGoesTo({ drawDefinition }: { drawDefinition: DrawDefini
  * the repair costs a `positionTargets` per matchUp, once, and the draw stores its edges from then on.
  */
 export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }: AddGoesToArgs) {
-  if (!hasStoredGoesTo({ drawDefinition })) addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
+  if (hasStoredGoesTo({ drawDefinition })) return undefined;
+  const result = addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
+  return result.error ? result : undefined;
 }

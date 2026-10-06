@@ -2,6 +2,7 @@ import { getSideExitProvenance, withdrawProducedExits, withdrawRelayedExit } fro
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
@@ -10,8 +11,8 @@ import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
-import { MatchUpsMap } from '@Types/factoryTypes';
 
 /**
  * Withdraw carried exits whose ORIGIN has stopped being a double exit, unless its winning seat is a BYE.
@@ -57,15 +58,15 @@ export function reconcileStaleExitOrigins({
   drawDefinition?: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
   event?: Event;
-}): void {
-  if (!drawDefinition) return;
+}): ResultType | undefined {
+  if (!drawDefinition) return undefined;
 
   // `setMatchUpStatus` only carries a `matchUpsMap` in its result context on the exit-propagation
   // path — measured absent on four of five submissions of the P40 sequence, including the one that
   // matters. Building it here rather than trusting the context is what makes the reconciliation run
   // on every mutation; the map is a view over the same stored matchUps, so writes through it land.
   const resolvedMap = matchUpsMap?.drawMatchUps?.length ? matchUpsMap : getMatchUpsMap({ drawDefinition });
-  if (!resolvedMap?.drawMatchUps?.length) return;
+  if (!resolvedMap?.drawMatchUps?.length) return undefined;
 
   // the chain cannot be longer than the draw, so this is a fixpoint with a structural bound rather
   // than a `while (true)` that trusts the data to terminate
@@ -73,8 +74,12 @@ export function reconcileStaleExitOrigins({
 
   while (guard-- > 0) {
     const staleOrigins = getStaleOrigins({ drawDefinition, matchUpsMap: resolvedMap });
-    const staleRelays = staleOrigins.length ? [] : getStaleRelays({ drawDefinition, matchUpsMap: resolvedMap });
-    if (!staleOrigins.length && !staleRelays.length) return;
+    const relays = staleOrigins.length
+      ? { staleRelays: [] }
+      : getStaleRelays({ drawDefinition, matchUpsMap: resolvedMap });
+    if (relays.error) return relays;
+    const staleRelays = relays.staleRelays ?? [];
+    if (!staleOrigins.length && !staleRelays.length) return undefined;
 
     for (const { matchUp, structureId, sourceMatchUpId } of staleRelays) {
       const withdrawnExits = withdrawRelayedExit({ matchUp, structureId, sourceMatchUpId, drawDefinition });
@@ -90,6 +95,7 @@ export function reconcileStaleExitOrigins({
       applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap: resolvedMap, event });
     }
   }
+  return undefined;
 }
 
 /** The sourceMatchUpIds named by a carried-exit entry which no longer describe their source. */
@@ -153,7 +159,7 @@ function getStaleRelays({
 }: {
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
-}): Relay[] {
+}): ResultType & { staleRelays?: Relay[] } {
   const byId = new Map<string, { matchUp: MatchUp; structureId: string }>();
   for (const [structureId, value] of Object.entries(matchUpsMap.mappedMatchUps ?? {})) {
     for (const matchUp of value?.matchUps ?? []) byId.set(matchUp.matchUpId, { matchUp, structureId });
@@ -170,11 +176,16 @@ function getStaleRelays({
       candidates.push({ matchUp, structureId, sourceMatchUpId });
     }
   }
-  if (!candidates.length) return [];
+  if (!candidates.length) return { staleRelays: [] };
 
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-  const targetsOf = (matchUpId: string) =>
-    positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId })?.targetMatchUps ?? {};
+  // a source whose links cannot be read refuses the reconciliation; it is never read as "reaches nothing"
+  let refused: ResultType | undefined;
+  const targetsOf = (matchUpId: string) => {
+    const targetData = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
+    if (targetData.error) refused ??= decorateResult({ result: targetData, stack: 'reconcileStaleExitOrigins' });
+    return targetData.targetMatchUps ?? {};
+  };
   const holdsBye = (matchUpId: string) => {
     const known = byId.get(matchUpId);
     if (!known) return false;
@@ -184,7 +195,7 @@ function getStaleRelays({
     return !!positionAssignmentsOf(structure)?.some((a) => a.bye && positions.includes(a.drawPosition));
   };
 
-  return candidates.filter(({ matchUp, sourceMatchUpId }) => {
+  const staleRelays = candidates.filter(({ matchUp, sourceMatchUpId }) => {
     const { winnerMatchUp, loserMatchUp } = targetsOf(sourceMatchUpId);
     const reached = new Set<string>();
     let frontier = [winnerMatchUp?.matchUpId, loserMatchUp?.matchUpId].filter((id): id is string => !!id);
@@ -202,6 +213,7 @@ function getStaleRelays({
     }
     return true;
   });
+  return refused ?? { staleRelays };
 }
 
 /**

@@ -247,7 +247,7 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     }
   }
 
-  advanceCompletedMatchUps({
+  const advanced = advanceCompletedMatchUps({
     inContextDrawMatchUps,
     sourceStructureId,
     tournamentRecord,
@@ -256,14 +256,16 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     structure,
     event,
   });
+  if (advanced?.error) return decorateResult({ result: advanced, stack });
 
-  advanceByeMatchUps({
+  const byesAdvanced = advanceByeMatchUps({
     inContextDrawMatchUps,
     sourceStructureId,
     tournamentRecord,
     drawDefinition,
     event,
   });
+  if (byesAdvanced?.error) return decorateResult({ result: byesAdvanced, stack });
 
   const matchUpModifications = buildMatchUpModifications({
     inContextDrawMatchUps,
@@ -274,6 +276,7 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     params,
     stack,
   });
+  if (!Array.isArray(matchUpModifications)) return decorateResult({ result: matchUpModifications, stack });
 
   return {
     structures: newStructures,
@@ -420,7 +423,7 @@ function generatePositionBasedPlayoffs({
     drawDefinition,
   });
 
-  advanceCompletedMatchUps({
+  const advanced = advanceCompletedMatchUps({
     inContextDrawMatchUps,
     sourceStructureId,
     tournamentRecord,
@@ -429,14 +432,16 @@ function generatePositionBasedPlayoffs({
     structure,
     event,
   });
+  if (advanced?.error) return decorateResult({ result: advanced, stack });
 
-  advanceByeMatchUps({
+  const byesAdvanced = advanceByeMatchUps({
     inContextDrawMatchUps,
     sourceStructureId,
     tournamentRecord,
     drawDefinition,
     event,
   });
+  if (byesAdvanced?.error) return decorateResult({ result: byesAdvanced, stack });
 
   return {
     structures: playoffStructures,
@@ -481,13 +486,15 @@ function advanceCompletedMatchUps({
     (matchUp) => matchUpCompletion(matchUp) && matchUp.structureId === sourceStructureId,
   );
 
-  completedMatchUps?.forEach((matchUp) => {
+  for (const matchUp of completedMatchUps ?? []) {
     const { matchUpId, score, winningSide } = matchUp;
     const targetData = positionTargets({
       inContextDrawMatchUps,
       drawDefinition,
       matchUpId,
     });
+    // a malformed round link is returned; the other errors here are logged, as they were
+    if (targetData.error) return targetData;
     const result = directParticipants({
       inContextDrawMatchUps,
       tournamentRecord,
@@ -502,7 +509,8 @@ function advanceCompletedMatchUps({
       event,
     });
     if (result.error) pushGlobalLog({ method: 'generateAndPopulatePlayoffStructures', error: result.error });
-  });
+  }
+  return undefined;
 }
 
 function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tournamentRecord, drawDefinition, event }) {
@@ -510,19 +518,21 @@ function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tourname
     (matchUp) => matchUp.matchUpStatus === BYE && matchUp.structureId === sourceStructureId,
   );
 
-  byeMatchUps?.forEach((matchUp) => {
+  for (const matchUp of byeMatchUps ?? []) {
     const { matchUpId } = matchUp;
     const targetData = positionTargets({
       inContextDrawMatchUps,
       drawDefinition,
       matchUpId,
     });
+    if (targetData.error) return targetData;
     const {
       targetLinks: { loserTargetLink },
       targetMatchUps: { loserMatchUpDrawPositionIndex, loserMatchUp },
     } = targetData;
 
-    if (loserTargetLink && loserMatchUp) {
+    // a loser target found from a link always has its drawPositions and the index into them
+    if (loserTargetLink && loserMatchUp?.drawPositions && loserMatchUpDrawPositionIndex !== undefined) {
       const targetStructureId = loserTargetLink.target.structureId;
       const targetDrawPosition = loserMatchUp.drawPositions[loserMatchUpDrawPositionIndex];
 
@@ -535,7 +545,8 @@ function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tourname
       });
       if (result.error) pushGlobalLog({ method: 'generateAndPopulatePlayoffStructures', error: result.error });
     }
-  });
+  }
+  return undefined;
 }
 
 function buildMatchUpModifications({
@@ -548,11 +559,13 @@ function buildMatchUpModifications({
   stack,
 }) {
   const matchUpModifications: any[] = [];
-  const goesToMap = addGoesTo({
+  const goesTo = addGoesTo({
     inContextDrawMatchUps,
     drawDefinition,
     matchUpsMap,
-  }).goesToMap;
+  });
+  if (goesTo.error) return goesTo;
+  const goesToMap = goesTo.goesToMap;
 
   const { structure: sourceStructure } = findStructure({
     drawDefinition: params.drawDefinition,

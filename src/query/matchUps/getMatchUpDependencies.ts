@@ -159,7 +159,8 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
   };
 
   if (drawDefinition) {
-    addGoesTo({ drawDefinition });
+    const goesTo = addGoesTo({ drawDefinition });
+    if (goesTo.error) return goesTo;
     if (!matchUps?.length) {
       matchUps = allDrawMatchUps({ drawDefinition }).matchUps;
     }
@@ -177,12 +178,13 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
     }
 
     for (const drawId of drawIds) {
-      processDrawMatchUps({
+      const result = processDrawMatchUps({
         matchUps,
         drawId,
         tournamentRecords,
         processMatchUps,
       });
+      if (result?.error) return result;
     }
   }
 
@@ -233,8 +235,10 @@ function processDrawMatchUps({ matchUps, drawId, tournamentRecords, processMatch
       tournamentRecord: tournamentRecords[hasTournamentId?.tournamentId],
       drawId,
     });
-    if (drawDefinition) addGoesTo({ drawDefinition });
+    const goesTo = drawDefinition && addGoesTo({ drawDefinition });
+    if (goesTo?.error) return goesTo;
   }
 
   processMatchUps(drawMatchUps);
+  return undefined;
 }

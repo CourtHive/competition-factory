@@ -138,6 +138,10 @@ function refuseAgainstExisting(request: OutcomeRequest, view: OutcomeView): Refu
       context: { matchUpStatus: existing.matchUpStatus },
     });
 
+  // row 21, checked here: a malformed round link, the matchUp's own or downstream (CA, 2026-10-06)
+  const unreadable = view.unreadableLink;
+  if (unreadable) return refuse(21, unreadable.error, { info: unreadable.info, context: unreadable.context });
+
   if (view.propagatedExitStands && isClear(request)) return refuse(10, PROPAGATED_EXITS_DOWNSTREAM);
   return undefined;
 }

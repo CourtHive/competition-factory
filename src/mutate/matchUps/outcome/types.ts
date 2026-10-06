@@ -1,3 +1,5 @@
+import type { ErrorType } from '@Constants/errorConditionConstants';
+import type { PolicyDefinitions } from '@Types/factoryTypes';
 import type {
   DrawDefinition,
   Event,
@@ -6,8 +8,6 @@ import type {
   Score,
   Tournament,
 } from '@Types/tournamentTypes';
-import type { ErrorType } from '@Constants/errorConditionConstants';
-import type { PolicyDefinitions } from '@Types/factoryTypes';
 
 /**
  * The outcome pipeline, v2: types.
@@ -91,6 +91,11 @@ export type OutcomeView = {
   propagatedExitStands: boolean;
   /** something later depends on this result (§ 3) */
   activeDownstream: boolean;
+  /**
+   * a WINNER/LOSER link with no source roundNumber, met reading this matchUp's targets or what depends on
+   * it (§ 2 row 21; CA, 2026-10-06: a malformed round link is an error)
+   */
+  unreadableLink?: { error: ErrorType; info?: string; context?: Record<string, unknown> };
   participants: {
     required: boolean;
     count: number;
