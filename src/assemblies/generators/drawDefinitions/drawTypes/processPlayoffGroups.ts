@@ -15,7 +15,7 @@ import { nextPowerOf2 } from '@Tools/math';
 
 // constants and types
 import { INVALID_CONFIGURATION, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { DrawLink, DrawLinkSource, Structure } from '@Types/tournamentTypes';
+import { DrawLink, PositionDrawLink, Structure } from '@Types/tournamentTypes';
 import { POLICY_TYPE_FEED_IN } from '@Constants/policyConstants';
 import { WIN_RATIO } from '@Constants/statsConstants';
 import { GEM_SCORE } from '@Constants/tallyConstants';
@@ -821,7 +821,7 @@ function generatePlayoffLink({
   bestOf,
   rankBy,
 }: any): DrawLink {
-  const source: DrawLinkSource = {
+  const source: PositionDrawLink['source'] = {
     structureId: sourceStructureId,
     finishingPositions,
   };
