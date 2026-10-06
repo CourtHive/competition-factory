@@ -25,7 +25,10 @@ export function positionQualifiers(params) {
 
   const { unplacedRoundQualifierCounts, positionAssignments, roundDrawPositions } = getQualifiersData(params);
 
-  for (const roundNumber of Object.keys(unplacedRoundQualifierCounts)) {
+  // later rounds first: a later-round qualifier needs a position a BYE has advanced, which a
+  // first round qualifier could otherwise take
+  const roundNumbers = Object.keys(unplacedRoundQualifierCounts).sort((a, b) => Number(b) - Number(a));
+  for (const roundNumber of roundNumbers) {
     const unfilledDrawPositions = positionAssignments
       ?.filter((assignment) => {
         return (
