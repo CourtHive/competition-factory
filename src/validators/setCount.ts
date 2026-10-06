@@ -1,8 +1,11 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+
+// types
+import type { Set as SetType } from '@Types/tournamentTypes';
 
 const hasValue = (value: unknown) => value !== undefined && value !== null;
-const isPlayed = (set: any) =>
+const isPlayed = (set?: SetType) =>
   [set?.side1Score, set?.side2Score, set?.side1TiebreakScore, set?.side2TiebreakScore].some(hasValue);
 
 /**
@@ -10,7 +13,7 @@ const isPlayed = (set: any) =>
  * There a level total goes to a sudden-death tiebreak (`-F:TB1`), and that tiebreak is NOT one of the N
  * sets (CA, 2026-10-04, the INTENNSE format). A format decided by sets plays N and no more.
  */
-export function maxExactlySets(parsed: any): number | undefined {
+export function maxExactlySets(parsed?: ParsedFormat): number | undefined {
   const exactly = parsed?.exactly;
   if (!exactly) return undefined;
   return exactly + (isAggregateFormat(parsed) ? 1 : 0);
@@ -32,7 +35,7 @@ export function maxExactlySets(parsed: any): number | undefined {
  * `SET3X-S:T10` recorded a fourth set as COMPLETED (measured 2026-10-04). Sets with no score at all are
  * not counted as played.
  */
-export function setPlayedAfterDecision(sets: any[], matchUpFormat?: string): string | undefined {
+export function setPlayedAfterDecision(sets: SetType[], matchUpFormat?: string): string | undefined {
   if (!matchUpFormat || !sets?.length) return undefined;
   const parsed = parse(matchUpFormat);
   const maxSets = maxExactlySets(parsed);

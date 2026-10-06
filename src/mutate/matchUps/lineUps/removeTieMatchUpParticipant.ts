@@ -16,9 +16,10 @@ import { ensureSideLineUps } from './ensureSideLineUps';
 // constants and types
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { POLICY_TYPE_MATCHUP_ACTIONS, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { LineUp, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -31,6 +32,17 @@ import {
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
+type RemoveSubstitutionProcessCodesArgs = {
+  substitutionProcessCodes?: string[];
+  inContextTieMatchUp?: HydratedMatchUp;
+  tournamentRecord: Tournament;
+  drawDefinition: DrawDefinition;
+  tieMatchUp?: MatchUp;
+  side: HydratedSide;
+  stack: string;
+  event: Event;
+};
+
 function removeSubstitutionProcessCodes({
   substitutionProcessCodes,
   inContextTieMatchUp,
@@ -40,8 +52,8 @@ function removeSubstitutionProcessCodes({
   stack,
   side,
   event,
-}) {
-  const otherSide: any = inContextTieMatchUp?.sides?.find((s) => s.sideNumber !== side.sideNumber);
+}: RemoveSubstitutionProcessCodesArgs) {
+  const otherSide = inContextTieMatchUp?.sides?.find((s) => s.sideNumber !== side.sideNumber);
   if (!otherSide?.substitutions?.length && tieMatchUp?.processCodes?.length) {
     for (const substitutionProcessCode of substitutionProcessCodes ?? []) {
       const codeIndex = tieMatchUp.processCodes.lastIndexOf(substitutionProcessCode);
@@ -211,8 +223,8 @@ export function removeTieMatchUpParticipantId(
 
   if (!dualMatchUp) return decorateResult({ result: { error: MISSING_MATCHUP }, stack });
 
-  const side: any = inContextTieMatchUp?.sides?.find(
-    (side: any) =>
+  const side = inContextTieMatchUp?.sides?.find(
+    (side) =>
       side.participant?.participantId === participantId ||
       side.participant?.individualParticipantIds?.includes(participantId),
   );

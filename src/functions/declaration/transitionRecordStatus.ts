@@ -9,7 +9,7 @@
 // emitted result is byte-for-byte identical to the original per-domain function.
 
 // constants and types
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { nowIso } from '@Tools/clock';
 
@@ -25,7 +25,11 @@ type TransitionEntity = {
   [key: string]: any;
 };
 
-export type TransitionRecordStatusArgs = {
+type TransitionErrors = { missingRecord: ErrorType; notFound: ErrorType; invalidTransition: ErrorType };
+
+// `E` is the domain entity, so a `preTransition` typed for its own entity (an evaluation, an
+// assignment) is accepted as it is, rather than having to take the generic `TransitionEntity`.
+export interface TransitionRecordStatusArgs<E extends TransitionEntity = TransitionEntity> {
   record: any;
   collectionKey: string;
   idKey: string;
@@ -35,16 +39,16 @@ export type TransitionRecordStatusArgs = {
   reason?: string;
   machineDef: Record<string, string[]>;
   resultKey: string;
-  errors: { missingRecord: any; notFound: any; invalidTransition: any };
+  errors: TransitionErrors;
   preTransition?: (args: {
     record: any;
-    entity: TransitionEntity;
+    entity: E;
     toStatus: string;
-  }) => { error: any; context?: any } | undefined;
+  }) => { error: ErrorType; context?: { [key: string]: unknown } } | undefined;
   touch?: (record: any, timestamp: string) => void;
-};
+}
 
-export function transitionRecordStatus({
+export function transitionRecordStatus<E extends TransitionEntity = TransitionEntity>({
   record,
   collectionKey,
   idKey,
@@ -57,12 +61,12 @@ export function transitionRecordStatus({
   errors,
   preTransition,
   touch,
-}: TransitionRecordStatusArgs): { error?: any; success?: boolean; [key: string]: any } {
+}: TransitionRecordStatusArgs<E>): { error?: ErrorType; success?: boolean; [key: string]: any } {
   if (!record) return { error: errors.missingRecord };
   if (!entityId) return { error: INVALID_VALUES, context: { message: `Missing ${idKey}` } };
   if (!toStatus) return { error: INVALID_VALUES, context: { message: 'Missing toStatus' } };
 
-  const entity: TransitionEntity | undefined = record[collectionKey]?.find((item: any) => item[idKey] === entityId);
+  const entity: E | undefined = record[collectionKey]?.find((item: E) => item[idKey] === entityId);
   if (!entity) return { error: errors.notFound, context: { [idKey]: entityId } };
 
   const validTargets = machineDef[entity.status];

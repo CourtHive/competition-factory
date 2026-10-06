@@ -137,7 +137,15 @@ export function validatePlayoffGroups({
   return { valid: true, consumptionMap };
 }
 
-function validateRemainderGroup({ hasBestOf, totalAvailable, totalClaimed }) {
+type ConsumptionMap = { [finishingPosition: number]: number };
+
+type ValidateRemainderGroupArgs = {
+  totalAvailable: number;
+  totalClaimed: number;
+  hasBestOf: boolean;
+};
+
+function validateRemainderGroup({ hasBestOf, totalAvailable, totalClaimed }: ValidateRemainderGroupArgs) {
   if (!hasBestOf) {
     return {
       error: INVALID_CONFIGURATION,
@@ -156,7 +164,13 @@ function validateRemainderGroup({ hasBestOf, totalAvailable, totalClaimed }) {
   return {};
 }
 
-function validateStandardGroup({ finishingPositions, groupCount, consumptionMap }) {
+type ValidateStandardGroupArgs = {
+  consumptionMap: ConsumptionMap;
+  finishingPositions: number[];
+  groupCount: number;
+};
+
+function validateStandardGroup({ finishingPositions, groupCount, consumptionMap }: ValidateStandardGroupArgs) {
   for (const pos of finishingPositions) {
     const available = groupCount - consumptionMap[pos];
     if (available < 2) {
@@ -171,6 +185,17 @@ function validateStandardGroup({ finishingPositions, groupCount, consumptionMap 
   return {};
 }
 
+type ValidateBestOfGroupArgs = {
+  consumptionMap: ConsumptionMap;
+  finishingPositions: number[];
+  guaranteedCount: number;
+  totalAvailable: number;
+  groupCount: number;
+  groupSize: number;
+  rankBy?: string;
+  bestOf: number;
+};
+
 function validateBestOfGroup({
   finishingPositions,
   guaranteedCount,
@@ -180,7 +205,7 @@ function validateBestOfGroup({
   groupSize,
   bestOf,
   rankBy,
-}) {
+}: ValidateBestOfGroupArgs) {
   if (typeof bestOf !== 'number' || bestOf < 1) {
     return { error: INVALID_VALUES, valid: false, info: 'bestOf must be a positive number' };
   }
@@ -223,7 +248,23 @@ function validateBestOfGroup({
   return {};
 }
 
-function consumeRemainder({ remainder, finishingPositions, groupCount, groupSize, consumptionMap, bestOf }) {
+type ConsumeRemainderArgs = {
+  consumptionMap: ConsumptionMap;
+  finishingPositions: number[];
+  groupCount: number;
+  groupSize: number;
+  remainder: number;
+  bestOf: number;
+};
+
+function consumeRemainder({
+  remainder,
+  finishingPositions,
+  groupCount,
+  groupSize,
+  consumptionMap,
+  bestOf,
+}: ConsumeRemainderArgs) {
   // Fill from next finishing positions in order
   let remaining = remainder;
   const sortedPositions = [...finishingPositions].sort(numericSort);

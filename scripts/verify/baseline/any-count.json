@@ -31,7 +31,7 @@
   "src/errors": 1,
   "src/forge": 65,
   "src/forge/builders": 11,
-  "src/functions/declaration": 29,
+  "src/functions/declaration": 11,
   "src/functions/global": 8,
   "src/functions/sorters": 3,
   "src/global": 5,
@@ -57,7 +57,7 @@
   "src/mutate/extensions/policies": 2,
   "src/mutate/ladder": 31,
   "src/mutate/matchUps/drawPositions": 30,
-  "src/mutate/matchUps/lineUps": 23,
+  "src/mutate/matchUps/lineUps": 6,
   "src/mutate/matchUps/matchUpFormat": 1,
   "src/mutate/matchUps/matchUpStatus": 23,
   "src/mutate/matchUps/schedule": 17,
@@ -133,7 +133,7 @@
   "src/tools/scoring": 1,
   "src/types": 64,
   "src/types/scoring": 1,
-  "src/validators": 40,
-  "src/validators/officiating": 3,
-  "src/validators/scoring": 5
+  "src/validators": 19,
+  "src/validators/officiating": 1,
+  "src/validators/scoring": 1
 }

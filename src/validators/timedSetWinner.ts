@@ -1,3 +1,5 @@
+import type { Set as SetType } from '@Types/tournamentTypes';
+
 /**
  * True when a timed set names a winner its own score contradicts.
  *
@@ -6,7 +8,7 @@
  * so a winner holding FEWER points than the other side is impossible. A level score is not judged here: a
  * tiebreak or the aggregate decides it, and those are asked elsewhere.
  */
-export function timedSetWinnerContradicts(set: any): boolean {
+export function timedSetWinnerContradicts(set?: SetType): boolean {
   const { side1Score, side2Score, winningSide } = set ?? {};
   if (winningSide !== 1 && winningSide !== 2) return false;
   if (typeof side1Score !== 'number' || typeof side2Score !== 'number' || side1Score === side2Score) return false;
