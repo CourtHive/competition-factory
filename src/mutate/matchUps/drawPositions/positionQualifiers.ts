@@ -37,7 +37,7 @@ export function positionQualifiers(params) {
       })
       .map((assignment) => assignment.drawPosition);
 
-    if (unplacedRoundQualifierCounts[roundNumber] > (unfilledDrawPositions || 0))
+    if (unplacedRoundQualifierCounts[roundNumber] > (unfilledDrawPositions?.length ?? 0))
       return decorateResult({
         result: { error: NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS },
         context: { unfilledDrawPositions },

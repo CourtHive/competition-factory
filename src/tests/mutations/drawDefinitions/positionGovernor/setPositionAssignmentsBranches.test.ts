@@ -275,7 +275,7 @@ test('setPositionAssignments direct call exercises qualifier branch', () => {
   const structureId = structure.structureId;
 
   // Build submitted assignments: some with qualifier, some with neither
-  // The qualifier branch modifies the submitted positionAssignments array in-place
+  // The qualifier branch marks the structure's own positionAssignments, not the submitted copies
   const submittedAssignments = structure.positionAssignments.map((a) => ({ ...a }));
   // Mark first two as qualifiers (no bye, no participantId)
   submittedAssignments[0].qualifier = true;
@@ -292,10 +292,13 @@ test('setPositionAssignments direct call exercises qualifier branch', () => {
   });
   expect(result.success).toEqual(true);
 
-  // The qualifier branch sets qualifier=true and deletes participantId/bye on the submitted array
-  expect(submittedAssignments[0].qualifier).toBe(true);
-  expect(submittedAssignments[0].participantId).toBeUndefined();
-  expect(submittedAssignments[0].bye).toBeUndefined();
+  // The qualifier branch sets qualifier=true and deletes participantId/bye on the structure
+  const [first, second, third] = structure.positionAssignments;
+  expect(first.qualifier).toBe(true);
+  expect(first.participantId).toBeUndefined();
+  expect(first.bye).toBeUndefined();
+  expect(second.qualifier).toBe(true);
+  expect(third.qualifier).toBeUndefined();
 });
 
 test('setPositionAssignments direct call with mixed bye/qualifier/participant assignments', () => {
