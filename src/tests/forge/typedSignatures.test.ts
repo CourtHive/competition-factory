@@ -75,7 +75,8 @@ describe('FactoryEngineTyped — typed method signatures', () => {
     // type-level: methods that aren't in MethodSignatures yet still accept any args
     // (they fall through to the Record<..., (...args:any[]) => any> half).
     // Pick one that exists at runtime but isn't yet in MethodSignatures.
-    const result = engine.getEventTimeItem({ tournamentRecord: undefined as any, eventId: 'x' });
-    expect(typeof result).toEqual('object');
+    // `getEventTimeItem` was the example until it gained a signature; `getDevContext` has none.
+    const result = engine.getDevContext({ tournamentRecord: undefined as any, eventId: 'x' });
+    expect(typeof result).toEqual('boolean');
   });
 });
