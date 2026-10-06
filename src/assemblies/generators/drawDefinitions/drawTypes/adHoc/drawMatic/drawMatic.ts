@@ -59,8 +59,6 @@ export function drawMatic(
 }
 
 function getAdHocStructure(params): ResultType & { structure?: Structure } {
-  if (params.structureId) return params.structureId;
-
   const drawDefinition = params.drawDefinition;
   // if no structureId is specified find the latest AD_HOC stage which has matchUps
   const targetStructure = drawDefinition?.structures
@@ -73,7 +71,7 @@ function getAdHocStructure(params): ResultType & { structure?: Structure } {
     }, undefined);
 
   const structure = drawDefinition?.structures?.find(
-    (structure) => structure.structureId === targetStructure?.structureId,
+    (structure) => structure.structureId === (params.structureId ?? targetStructure?.structureId),
   );
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
