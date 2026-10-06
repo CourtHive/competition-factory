@@ -48,22 +48,12 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
     count: 1,
     why: 'a different `drawPositions`: a map keyed by participantId, not a matchUp array',
   },
-  'mutate/drawDefinitions/matchUpGovernor/removeDoubleExit.ts': {
-    count: 1,
-    why:
-      "CAN misread — `advancedDrawPosition = (drawPositions ?? [])[priorWinningSide - 1]`, the design table's " +
-      'removeDoubleExit:320 (factory-xu), left by #5253 because its matcher could not see the `?? [])[` form. ' +
-      'A lone side-2 position held as `[5]` reads as `undefined`. To be moved onto getWinningSideDrawPosition.',
-  },
   'mutate/drawDefinitions/positionGovernor/doubleExitAdvancement.ts': {
-    count: 4,
+    count: 2,
     why:
-      "two CAN misread, left by #5253 and missed by the design table (S2D): the cascade's " +
-      "`exitingSideNumber = (drawPositions ?? []).indexOf(…) + 1` and the bye claim's `claimPositions.indexOf(…)` " +
-      'taken + 1 as a side; each answers 1 for a lone position held as `[5]`. To be moved onto ' +
-      'getDrawPositionSideNumber. The other two read `targetMatchUpDrawPositions`, a `.filter(Boolean)` copy that ' +
-      'cannot hold a hole: `[walkoverWinningSide - 1]` behind `length === 2`, else `[0]`, the lone position and ' +
-      'not a side',
+      'safe: `targetMatchUpDrawPositions` is a `.filter(Boolean)` copy, indexed by side only when both are present ' +
+      "and read at `[0]` as the lone position otherwise. (The cascade's exiting side and the bye claim's side, which " +
+      'did misread, now read structurally.)',
   },
   'mutate/matchUps/drawPositions/directLoser.ts': {
     count: 1,

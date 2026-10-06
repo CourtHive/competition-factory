@@ -5,7 +5,7 @@ import { expect, test } from 'vitest';
 import fs from 'fs';
 
 /**
- * `drawPositions` must never be an array of nothing but holes. INERT unless `SHAPE_SCAN=1`.
+ * A stored `drawPositions` holds no hole at all (step 2 of LEADING_HOLE_REMOVAL_DESIGN.md). INERT unless `SHAPE_SCAN=1`.
  *
  *   SHAPE_SCAN=1 TZ=UTC SEED_START=9000001 SEED_COUNT=600 OUT=/tmp/shape.jsonl \
  *     npx vitest run src/tests/mutations/exitPropagation/drawPositionShape.test.ts
@@ -16,10 +16,11 @@ import fs from 'fs';
  *
  * ## The rule this asserts
  *
- * A hole is load-bearing ONLY beside a survivor. `[undefined, 5]` keeps 5 on side 2, because
- * `drawPositions` is POSITIONAL and compacting would move the survivor to the other side —
- * `releaseAdvancedDrawPosition` preserves that deliberately, and it must keep doing so. An array of
- * nothing BUT holes says nothing: there is no survivor for the hole to hold a side open beside.
+ * No hole is stored (CA, Q2, 2026-10-05: `tournament.schema.json` types the items as `number`). Until 2026-10 a
+ * leading hole was kept, `[undefined, 5]`, to put a lone survivor on side 2; every reader now resolves the side
+ * structurally (#5253), so it is stored `[5]`. Measured on dev `8439ed95c1` before the change, census w1: 74 of 600
+ * seeds stored a leading hole at some step (e.g. 9000016 COMPASS 32/30, step 12: `North|2|2` `[null, 7]`). This
+ * scanner first asserted only "never all holes" (2026-09-16), below.
  *
  * ## Why this is a scanner and not a unit test
  *
@@ -43,17 +44,17 @@ const maxSteps = Number(process.env.MAX_STEPS ?? 30);
 const outPath = process.env.OUT ?? '/tmp/drawPositionShape.jsonl';
 const schedulesIn = process.env.SCHEDULES_IN;
 
-const isAllHoles = (drawPositions: any): boolean =>
+const hasHole = (drawPositions: any): boolean =>
   Array.isArray(drawPositions) &&
   drawPositions.length > 0 &&
-  drawPositions.every((position: any) => position === undefined || position === null);
+  drawPositions.some((position: any) => position === undefined || position === null);
 
-/** Every stored matchUp carrying an all-holes array, with the structure it sits in. */
+/** Every stored matchUp whose array holds a hole, with the structure it sits in. */
 export function allHolesMatchUps(drawId: string): any[] {
   const found: any[] = [];
   const walk = (structure: any) => {
     for (const matchUp of structure.matchUps ?? []) {
-      if (isAllHoles(matchUp.drawPositions)) {
+      if (hasHole(matchUp.drawPositions)) {
         found.push({
           coordinate: `${structure.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`,
           drawPositions: matchUp.drawPositions,
