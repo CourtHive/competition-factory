@@ -27,13 +27,22 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import { DrawDefinition, Event, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { CONTAINER, DRAW } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  PositionAssignment,
+  SideExitProvenance,
+  Structure,
+  Tournament,
+} from '@Types/tournamentTypes';
 
 // constants
 import {
@@ -616,6 +625,18 @@ function updateMatchUpStatusAfterRemoval({
   structureId,
   event,
   stack,
+}: {
+  initialMatchUpStatus?: MatchUpStatusUnion;
+  positionAssignments: PositionAssignment[];
+  initialDrawPositions?: number[];
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  initialWinningSide?: number;
+  targetMatchUp: MatchUp;
+  drawPosition: number;
+  structureId: string;
+  event?: Event;
+  stack: string;
 }) {
   const matchUpAssignments = positionAssignments.filter(({ drawPosition }) =>
     targetMatchUp.drawPositions?.includes(drawPosition),
@@ -729,6 +750,13 @@ function awardStands({
   targetMatchUp,
   drawDefinition,
   structureId,
+}: {
+  rederived: { matchUpStatus: MatchUpStatusUnion; winningSide?: number };
+  positionAssignments: PositionAssignment[];
+  retained?: SideExitProvenance;
+  drawDefinition: DrawDefinition;
+  targetMatchUp: MatchUp;
+  structureId: string;
 }): boolean {
   const { winningSide } = rederived;
   if (!winningSide) return true;
