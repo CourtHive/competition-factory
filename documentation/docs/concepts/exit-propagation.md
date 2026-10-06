@@ -143,6 +143,12 @@ Two properties follow from what provenance _is_ — a record of where each side 
 - **Origins accumulate.** One side's origin can become known before the other's — the second feeder
   may not have been played yet — so a write that knows only its own side adds to the record instead
   of replacing it.
+- **An origin sits on the matchUp its source feeds, on its seat's side.** Since 7.7.0 an entry naming a
+  source in the same structure is written only on that source's own next matchUp, never on a later round
+  the same participant had reached, and it is keyed to the side the source's position holds there,
+  which roundPosition order does not predict where fed positions interleave with advanced ones. The one
+  entry found further on is an exit relayed past BYEs (below). When the occupants change sides as the
+  seats fill and empty, the entries move with them.
 
 **A known limit, since the field is visible in stored records.** On a consolation convergence the
 stored entry can be present for only one of the two sides; the entries that _are_ there are correct.
@@ -295,13 +301,21 @@ A produced exit is never awarded to a seat that holds a drawPosition but no part
 such as one a BYE advanced forward to wait for a loser fed from another structure. That seat is not
 an opponent in place, and the exit stays pending until a participant arrives; an empty position
 arriving does not resolve it. 7.5.0 applied this past a BYE; since 7.6.0 it holds on every path
-that writes a produced exit.
+that writes a produced exit. Since 7.7.0 it also holds when a position is cleared out of a matchUp:
+a produced exit on the other side stands, pending, rather than being won by the emptied seat. And an
+empty position advanced into a matchUp holding a pending exit takes its seat; it is not moved on as
+that exit's winner.
 
 ### An exit that meets a BYE leaves a BYE behind
 
 Since 7.5.0. An exit carried or produced into a matchUp whose other side is a BYE moves on with the
 BYE's advancement; the matchUp it leaves reads `BYE`, not `WALKOVER` or `DEFAULTED` beside a BYE
 and nobody.
+
+Since 7.7.0 the reverse holds too. When that BYE is withdrawn — the double exit that placed it is
+re-scored, say — the exit comes to rest where the BYE was, pending, and the copy it carried further on
+is withdrawn. A relayed copy keeps its origin's id, so it stands only while every matchUp it passed
+still holds a BYE.
 
 ### A carried exit is corrected at its origin
 
@@ -324,7 +338,8 @@ and the exit there stands pending the next arrival.
 Since 7.5.0. A loser carrying a `WALKOVER` or `DEFAULTED` can reach a matchUp that already holds a
 pending exit, a carried one or one a director recorded before the opponent arrived. The arrival is
 placed and nothing is awarded to it: the two exits converge into a double exit by the rule above.
-The participant who exited never takes the exit standing there.
+The participant who exited never takes the exit standing there. Since 7.7.0 this includes a carrier
+advanced in past a BYE: the convergence stands, rather than reverting to `TO_BE_PLAYED`.
 
 ### Either origin of a converged double exit clears to the kept origin's draw
 
