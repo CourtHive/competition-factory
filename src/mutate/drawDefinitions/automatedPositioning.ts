@@ -115,7 +115,7 @@ function handleWaterfall({
   positioningReport,
   random,
 }) {
-  let result: any = placeByes
+  const byeResult = placeByes
     ? positionByes({
         provisionalPositioning,
         tournamentRecord,
@@ -130,14 +130,14 @@ function handleWaterfall({
         event,
       })
     : undefined;
-  if (result?.error) return { error: result.error };
-  const unseededByePositions = result?.unseededByePositions;
+  if (byeResult?.error) return { error: byeResult.error };
+  const unseededByePositions = byeResult?.unseededByePositions;
 
   positioningReport.push({ action: 'positionByes', unseededByePositions });
 
   const profileSeeding = structureSeedingProfile ? { positioning: structureSeedingProfile } : seedingProfile;
 
-  result = positionSeedBlocks({
+  const seedResult = positionSeedBlocks({
     seedingProfile: profileSeeding,
     provisionalPositioning,
     inContextDrawMatchUps,
@@ -152,10 +152,10 @@ function handleWaterfall({
     random,
     event,
   });
-  if (result.error) return { error: result.error };
+  if (seedResult.error) return { error: seedResult.error };
 
   positioningReport.push({
-    seedPositions: result.seedPositions,
+    seedPositions: seedResult.seedPositions,
     action: 'positionSeedBlocks',
   });
 
@@ -186,7 +186,7 @@ function handleNonWaterfall({
   let unseededByePositions;
   if (!isLuckyBasedDraw(drawType)) {
     const profileSeeding = structureSeedingProfile ? { positioning: structureSeedingProfile } : seedingProfile;
-    const result: any = positionSeedBlocks({
+    const result = positionSeedBlocks({
       seedingProfile: profileSeeding,
       provisionalPositioning,
       inContextDrawMatchUps,
@@ -335,7 +335,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
     event,
   } = params;
 
-  const positioningReport: any[] = [];
+  const positioningReport: { [key: string]: unknown }[] = [];
 
   if (!applyPositioning) {
     disableNotifications();

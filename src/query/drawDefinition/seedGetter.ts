@@ -83,7 +83,7 @@ export function getValidSeedBlocks({
     .sort((a, b) => a - b);
   const uniqueDrawPositionsByRound = roundNumbers
     .map((roundNumber) => {
-      const roundDrawPositions: any[] = roundMatchUps[roundNumber]
+      const roundDrawPositions: number[] = roundMatchUps[roundNumber]
         .map((matchUp) => matchUp.drawPositions)
         .flat(Infinity)
         .filter(Boolean);

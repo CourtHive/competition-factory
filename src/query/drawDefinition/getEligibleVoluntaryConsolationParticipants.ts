@@ -9,9 +9,9 @@ import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionCon
 import { POLICY_TYPE_VOLUNTARY_CONSOLATION } from '@Constants/policyConstants';
 import { UNGROUPED, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { HydratedParticipant, HydratedSide } from '@Types/hydrated';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { HydratedSide } from '@Types/hydrated';
 import {
   DrawDefinition,
   Event,
@@ -120,7 +120,7 @@ export function getEligibleVoluntaryConsolationParticipants({
   const losingParticipantIdSet = new Set(losingParticipantIds);
 
   const eligibleParticipants = consideredParticipants
-    .filter((participant: any) => {
+    .filter((participant) => {
       return isParticipantEligible({
         voluntaryConsolationEntryIds,
         losingParticipantIdSet,
@@ -130,7 +130,7 @@ export function getEligibleVoluntaryConsolationParticipants({
         participant,
       });
     })
-    .map((participant: any) => {
+    .map((participant) => {
       return {
         ...participant,
         individualParticipants: participant.individualParticipantIds?.map((participantId) =>
@@ -326,7 +326,7 @@ function getConsideredParticipants({
   requirePlay,
   allEntries,
   event,
-}) {
+}): (Participant | HydratedParticipant)[] {
   const considerEntered = tournamentRecord?.participants && !requirePlay && !requireLoss && allEntries;
 
   let entriesSource;

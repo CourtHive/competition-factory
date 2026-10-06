@@ -49,13 +49,15 @@ export function getStageDrawPositionsCount({
 }
 
 // drawSize - qualifyingPositions
-export function getStageDrawPositionsAvailable(params: any) {
+export function getStageDrawPositionsAvailable(
+  params: GetStageDrawPositionsCountArgs & { drawDefinition: DrawDefinition; provisionalPositioning?: boolean },
+) {
   const { provisionalPositioning, drawDefinition, stageSequence, stage, tournamentRecord, event } = params;
   const drawSize = getStageDrawPositionsCount({ stage, drawDefinition, stageSequence, tournamentRecord, event });
 
   // Find the structureId for the target stage so getQualifiersCount can derive from links
   const targetStructure = drawDefinition?.structures?.find(
-    (s: any) => s.stage === stage && (!stageSequence || s.stageSequence === stageSequence),
+    (s) => s.stage === stage && (!stageSequence || s.stageSequence === stageSequence),
   );
 
   const { qualifiersCount } = getQualifiersCount({

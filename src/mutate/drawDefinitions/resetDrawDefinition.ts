@@ -5,6 +5,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { MAIN, QUALIFYING, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
@@ -120,9 +121,9 @@ function resetStructureAssignments({ structure, isLuckyDraw, removeAssignments }
 
 function resetLuckyDrawAssignments({ structure, positionAssignments, isMainOrQualifyingFirst, removeAssignments }) {
   const initialDrawPositions = new Set(
-    (structure.matchUps ?? [])
-      .filter((m: any) => m.roundNumber === 1)
-      .flatMap((m: any) => m.drawPositions ?? [])
+    (matchUpsOf(structure) ?? [])
+      .filter((m) => m.roundNumber === 1)
+      .flatMap((m) => m.drawPositions ?? [])
       .filter(Boolean),
   );
 
