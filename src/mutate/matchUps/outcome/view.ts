@@ -101,6 +101,13 @@ function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): Mat
   return isExit(matchUp?.matchUpStatus) && !own ? [matchUp?.matchUpStatus as MatchUpStatusUnion] : [];
 }
 
+/** an exit carried in from this source stands on a side of the matchUp */
+function carriesExitFrom(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): boolean {
+  return Object.values(getSideExitProvenance({ matchUp }) ?? {}).some(
+    (entry) => entry?.sourceMatchUpId === sourceMatchUpId && !!carriedExitStatus(entry),
+  );
+}
+
 function carriesExit(matchUp?: HydratedMatchUp): boolean {
   return carriedStatuses(matchUp).length > 0;
 }
@@ -228,6 +235,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpHasResult: false,
       loserMatchUpCarriesExit: false,
       loserMatchUpCarriedStatuses: [],
+      loserMatchUpCarriesSourceExit: false,
       source: { roundMatchUpCount: 0, nextRoundMatchUpCount: 0 },
     },
   };
@@ -437,6 +445,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       source: sourcePlace(inContextDrawMatchUps, inContextMatchUp),
       loserMatchUpCarriesExit: carriesExit(targetData?.targetMatchUps?.loserMatchUp),
       loserMatchUpCarriedStatuses: standingExits(targetData?.targetMatchUps?.loserMatchUp, request.matchUpId),
+      loserMatchUpCarriesSourceExit: carriesExitFrom(targetData?.targetMatchUps?.loserMatchUp, request.matchUpId),
       loserMatchUpDrawPositions: (targetData?.targetMatchUps?.loserMatchUp?.drawPositions ?? []).filter(
         (position): position is number => typeof position === 'number',
       ),

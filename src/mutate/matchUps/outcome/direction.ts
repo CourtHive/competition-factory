@@ -13,7 +13,7 @@ import {
 } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 
-import type { DirectionPlan, OutcomeRequest, OutcomeView, Route } from './types';
+import type { DirectionPlan, OutcomeRequest, OutcomeView, Route, WithdrawnCarry } from './types';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
 /**
@@ -64,6 +64,7 @@ function planLoser(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2)
   const standing = view.targets.loserMatchUpCarriedStatuses; // this matchUp's own product excluded
   const exit = carried && standing.length ? undefined : carried;
   const converged = carried && standing.length ? convergence([carried, ...standing]) : undefined;
+  const withdrawn = arrives && !carried ? withdrawnCarry(request, view) : undefined;
   return {
     matchUpId,
     participantId,
@@ -71,7 +72,27 @@ function planLoser(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2)
     ...(bye ? { bye } : {}),
     ...(exit ? { exit } : {}),
     ...(converged ? { converged } : {}),
+    ...(withdrawn ? { withdrawn } : {}),
   };
+}
+
+/**
+ * F2 and the 2026-10-02 relabel ruling: an exit re-entered as a played result, the winner unchanged, withdraws the
+ * exit it carried to the loser. Alone, it leaves the loser's matchUp undecided; where it CONVERGED with an exit
+ * carried in on the other side, the matchUp re-derives to that exit, and the loser, no longer exiting, wins it.
+ * Not planned past a BYE (the view does not read the holder's onward matchUp). v1 keeps the carry where a result
+ * stands onward (a winner or loser who has played on); `checkLoser` defers those, which the view does not read.
+ */
+function withdrawnCarry(request: OutcomeRequest, view: OutcomeView): WithdrawnCarry | undefined {
+  const { targets } = view;
+  if (!request.flags.propagateExitStatus || !isRelabel(request, view) || !targets.loserMatchUpCarriesSourceExit)
+    return undefined;
+  if (targets.loserMatchUpStatus === BYE) return undefined;
+  const [kept] = targets.loserMatchUpCarriedStatuses;
+  if (isDoubleExit(targets.loserMatchUpStatus) && kept)
+    return { matchUpStatus: kept as MatchUpStatusUnion, loserWins: true };
+  if (isDoubleExit(targets.loserMatchUpStatus)) return undefined;
+  return { matchUpStatus: TO_BE_PLAYED, loserWins: false };
 }
 
 /**
