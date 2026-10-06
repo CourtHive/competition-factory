@@ -1094,6 +1094,29 @@ function withoutWinnersOrigins({
 }
 
 /**
+ * Withdraw ONE matchUp's entries naming `sourceMatchUpId`, leaving the source's other entries alone.
+ *
+ * `withdrawProducedExits` withdraws every entry a source stamped, which is right when the source stops
+ * producing an exit. A RELAYED entry can go stale while its source still produces one: the exit was carried
+ * past a BYE (`doubleExitAdvancement`'s `carryExitOnward`, which keeps the origin's id across every hop), and
+ * the BYE has since gone. The entry where the exit now rests is still true; the one beyond it is not.
+ */
+export function withdrawRelayedExit({
+  sourceMatchUpId,
+  drawDefinition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition?: DrawDefinition;
+  sourceMatchUpId: string;
+  structureId: string;
+  matchUp: MatchUp;
+}): WithdrawnExit[] {
+  const record = withdrawFromMatchUp(matchUp, new Set([sourceMatchUpId]), structureId, drawDefinition);
+  return record ? [record] : [];
+}
+
+/**
  * Withdraw one matchUp's entries, if any of them name a source in `sources`.
  *
  * Extracted so `withdrawProducedExits` stays inside the cognitive-complexity budget; it is the
