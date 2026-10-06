@@ -1,4 +1,4 @@
-import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
+import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
@@ -9,7 +9,6 @@ import { INVALID_VALUES, MISSING_DRAW_DEFINITION, PARTICIPANT_NOT_FOUND } from '
 import { LADDER_PARTICIPANT_REMOVED, RANK } from '@Constants/ladderConstants';
 import type { Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { RANKING } from '@Constants/scaleConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 type RemoveArgs = {
@@ -72,20 +71,9 @@ export function removeLadderParticipant(params: RemoveArgs): ResultType & { vaca
     element: structure,
   });
 
-  if (params.tournamentRecord) {
-    for (const assignment of touched) {
-      setParticipantScaleItem({
-        scaleItem: {
-          scaleType: RANKING,
-          scaleName: drawDefinition.drawId,
-          scaleValue: assignment.drawPosition,
-          scaleDate: removedAt,
-        },
-        participantId: assignment.participantId,
-        tournamentRecord: params.tournamentRecord,
-      });
-    }
-  }
+  // The shared writer, as every other standing move uses: it skips an assignment with no
+  // participantId and supplies the eventType without which no scale item is written at all.
+  mirrorStandingToScale({ ...params, appliedAt: removedAt, touched });
 
   return { ...SUCCESS, vacatedPosition };
 }
