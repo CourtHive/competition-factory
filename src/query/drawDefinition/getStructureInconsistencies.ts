@@ -1,3 +1,4 @@
+import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLinkAdvancements';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -76,6 +77,12 @@ import {
 //    matchUp, so an advancement left behind when its result was withdrawn is invisible to all of them
 //    (census w2 9100343, 2026-10-04: a walkover re-scored to the other winner left its winner one round
 //    on; #5157 fixed that release).
+//  - ADVANCED_ACROSS_LINK_FROM_UNDECIDED: a participant stands in a link's target structure, at or after the
+//    target round, although the source-round matchUp they play in has no result. Advancing across a WINNER or
+//    LOSER link means that matchUp was decided; ADVANCED_FROM_UNDECIDED reads only within a structure, so an
+//    advancement left behind across a link was invisible to every check (design § 3.1: clearing `Backdraw|3|1`
+//    left its finalist in the grand final and the Decider, and the draw read clean; CA approved the check
+//    2026-10-05).
 //  - DRAW_POSITION_UNASSIGNED: a decided, non-exit matchUp references a drawPosition
 //    whose stored positionAssignment holds no participant, no bye and no qualifier — a
 //    phantom position. Read from STORED structure state (drawPositions ↔
@@ -97,6 +104,7 @@ export const UNCOLLAPSED_CONVERGENCE = 'UNCOLLAPSED_CONVERGENCE';
 export const STALLED_POSITION = 'STALLED_POSITION';
 export const ORIGIN_ON_UNDECIDED_MATCHUP = 'ORIGIN_ON_UNDECIDED_MATCHUP';
 export const ADVANCED_FROM_UNDECIDED = 'ADVANCED_FROM_UNDECIDED';
+export const ADVANCED_ACROSS_LINK_FROM_UNDECIDED = 'ADVANCED_ACROSS_LINK_FROM_UNDECIDED';
 
 // DEFERRED — STALE_EXIT_STATUS is intentionally NOT implemented.
 //
@@ -335,6 +343,25 @@ function getAllAdvancedFromUndecided(
     const structureMatchUps = matchUpsByStructure.get(matchUp.structureId);
     return structureMatchUps ? getAdvancedFromUndecidedInconsistencies(matchUp, structureMatchUps) : [];
   });
+}
+
+/** ADVANCED_ACROSS_LINK_FROM_UNDECIDED — see the header; the predicate is `getUnearnedLinkAdvancements`. */
+function getCrossLinkAdvancementInconsistencies(
+  drawDefinition: DrawDefinition,
+  inContextDrawMatchUps: HydratedMatchUp[],
+  structureId?: string,
+): StructureInconsistency[] {
+  return getUnearnedLinkAdvancements({ inContextDrawMatchUps, drawDefinition })
+    .filter(({ targetMatchUp }) => !structureId || targetMatchUp.structureId === structureId)
+    .map(({ link, sourceMatchUp, targetMatchUp, participantId }) => ({
+      matchUpId: targetMatchUp.matchUpId,
+      structureId: targetMatchUp.structureId,
+      issueType: ADVANCED_ACROSS_LINK_FROM_UNDECIDED,
+      message: `a participant stands in this matchUp across a ${link.linkType} link, although the matchUp they play in the source round has no result`,
+      sourceMatchUpId: sourceMatchUp.matchUpId,
+      linkType: link.linkType,
+      participantId,
+    }));
 }
 
 /**
@@ -748,6 +775,8 @@ export function getStructureInconsistencies(
   );
 
   inconsistencies.push(...getAllAdvancedFromUndecided(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds));
+
+  inconsistencies.push(...getCrossLinkAdvancementInconsistencies(drawDefinition, inContextDrawMatchUps, structureId));
 
   for (const matchUp of scoped) {
     const { winningSide, matchUpStatus, matchUpStatusCodes, sides, matchUpId, drawPositions } = matchUp;

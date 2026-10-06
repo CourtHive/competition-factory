@@ -9,7 +9,7 @@ import { findStructure } from '@Acquire/findStructure';
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { WINNER } from '@Constants/drawDefinitionConstants';
+import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 
 type ReleaseLinkedWinnerAdvancementArgs = {
@@ -18,7 +18,10 @@ type ReleaseLinkedWinnerAdvancementArgs = {
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
-  drawPosition: number;
+  /** read only when `participantId` is not given: the source position whose occupant is released */
+  drawPosition?: number;
+  /** the link to release across; a LOSER link's placement comes back the same way (default WINNER) */
+  linkType?: typeof WINNER | typeof LOSER;
   structureId: string;
   roundNumber: number;
   event?: Event;
@@ -75,13 +78,14 @@ export function releaseLinkedWinnerAdvancement({
   drawDefinition,
   drawPosition,
   matchUpsMap,
+  linkType = WINNER,
   structureId,
   roundNumber,
   event,
 }: ReleaseLinkedWinnerAdvancementArgs) {
   const link = drawDefinition.links?.find(
     (candidate) =>
-      candidate.linkType === WINNER &&
+      candidate.linkType === linkType &&
       candidate.source.structureId === structureId &&
       candidate.source.roundNumber === roundNumber,
   );

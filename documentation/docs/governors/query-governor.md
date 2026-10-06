@@ -731,6 +731,14 @@ matchUp that delivered their drawPosition has no result (no `winningSide`, `TO_B
 no BYE). It names the participant, the `drawPosition` and the `feederMatchUpId`. It is what
 a withdrawn result leaves behind when the advancement it made is not released.
 
+`ADVANCED_ACROSS_LINK_FROM_UNDECIDED` asks the same question across a draw link. A participant
+stands in a link's target structure, at or after the target round, although the source-round
+matchUp they play in has no result (no `winningSide`, not a BYE). It names the participant, the
+`linkType` (`WINNER` or `LOSER`) and the `sourceMatchUpId`. `ADVANCED_FROM_UNDECIDED` reads within
+one structure, so this is the only check that sees, say, a Backdraw finalist still in a
+double-elimination grand final after the Backdraw final lost its result. Since 7.7.0,
+`setMatchUpStatus` releases such a placement once the draw has settled.
+
 You can also call it directly against a `drawDefinition` object, without loading a
 tournament into the engine — useful when validating records built outside the factory:
 
