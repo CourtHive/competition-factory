@@ -5,6 +5,7 @@ import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/prop
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
+import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -21,11 +22,13 @@ import { overlap } from '@Tools/arrays';
 import {
   deriveExitStateFromProvenance,
   buildCarriedExitProvenance,
+  carriedExitStatus,
   recordByeClaim,
   collapseDoubleExitStatus,
   retainPolicyCodes,
   buildSideExitProvenance,
   mergeSideExitProvenance,
+  withdrawProducedExits,
   getSideExitProvenance,
   getExitSides,
   deriveStatusCodes,
@@ -44,7 +47,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 // types
-import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
+import type { MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type {
   SideExitProvenanceEntry,
@@ -1841,7 +1844,7 @@ function carryExitOnward({
   matchUpsMap: MatchUpsMap;
   visited?: Set<string>;
   stack: string;
-}) {
+}): ResultType {
   // a matchUp is visited at most once, so a malformed winner-target cycle cannot spin here
   const seen = visited ?? new Set<string>();
   if (!fromMatchUp?.matchUpId || seen.has(fromMatchUp.matchUpId)) {
@@ -1907,6 +1910,18 @@ function carryExitOnward({
   const arrivingSideOccupied = !!nextWinnerMatchUp.sides?.some(
     (side) => side?.sideNumber === arrivalSideNumber && side?.participantId,
   );
+  if (!arrivingSideOccupied && convergesAtTarget({ nextWinnerMatchUp, arrivalSideNumber })) {
+    return convergeCarriedExit({
+      inContextDrawMatchUps,
+      arrivalSideNumber,
+      nextWinnerMatchUp,
+      originMatchUpId,
+      drawDefinition,
+      matchUpsMap,
+      params,
+      stack,
+    });
+  }
   if (arrivingSideOccupied || isAnyExit(nextWinnerMatchUp.matchUpStatus)) {
     logAdvancement(stack, {
       color: 'brightyellow',
@@ -2110,6 +2125,122 @@ function carryExitOnward({
  * excluded: it has no participant to direct, and `directWinnerViaLink`'s terminal branch would
  * report an unavailable target for it.
  */
+/**
+ * A CARRIED EXIT THAT MEETS AN EXIT CONVERGES (RULE 4), and the double exit produces onward.
+ *
+ * `carryExitOnward` used to stop here: *"Two exits MEETING is a convergence ... resolving it is a separate piece of
+ * work, left exactly as it was."* Left so, the carried exit reached its target as a bare empty seat with no record,
+ * the exit standing on the other side waited for an opponent who could never arrive, and everything downstream
+ * stalled. With `doubleExitPropagateBye` on, a BYE fills such seats; with it off, this was the whole of the second
+ * stall budget: 11 cells, 17 findings, in COMPASS, PLAYOFF, FIRST_MATCH_LOSER_CONSOLATION and DOUBLE_ELIMINATION
+ * 16/13 (CA, 2026-10-06: "build the convergence"). Settling held exits after the fact was tried for this family
+ * and taken out on 2026-09-29; converging where the carry arrives is RULE 4 applied where it was skipped.
+ *
+ * Converges only a single exit recorded on the OPPONENT's side, with nothing recorded as an exit on the arriving
+ * side; a double exit already there, or an exit on the arriving side, is left as it was. The write and the onward
+ * step are `handleEmptyExitLoser`'s, so both routes to a convergence leave the same draw.
+ */
+function convergesAtTarget({
+  nextWinnerMatchUp,
+  arrivalSideNumber,
+}: {
+  nextWinnerMatchUp: HydratedMatchUp;
+  arrivalSideNumber: number;
+}): boolean {
+  if (!isExit(nextWinnerMatchUp.matchUpStatus) || isDoubleExit(nextWinnerMatchUp.matchUpStatus)) return false;
+  const provenance = getSideExitProvenance({ matchUp: nextWinnerMatchUp });
+  return (
+    !!carriedExitStatus(provenance?.[3 - arrivalSideNumber]) && !carriedExitStatus(provenance?.[arrivalSideNumber])
+  );
+}
+
+function convergeCarriedExit({
+  inContextDrawMatchUps,
+  arrivalSideNumber,
+  nextWinnerMatchUp,
+  originMatchUpId,
+  drawDefinition,
+  matchUpsMap,
+  params,
+  stack,
+}: {
+  params: {
+    matchUpStatus?: MatchUpStatusUnion;
+    appliedPolicies?: PolicyDefinitions;
+    tournamentRecord?: Tournament;
+    event?: Event;
+  };
+  inContextDrawMatchUps: HydratedMatchUp[];
+  nextWinnerMatchUp: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  originMatchUpId?: string;
+  arrivalSideNumber: number;
+  matchUpsMap: MatchUpsMap;
+  stack: string;
+}): ResultType {
+  const stored = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === nextWinnerMatchUp.matchUpId);
+  if (!stored) return decorateResult({ result: { ...SUCCESS }, stack });
+  const DOUBLE_EXIT = collapseDoubleExitStatus([params.matchUpStatus, nextWinnerMatchUp.matchUpStatus]);
+  const provenance = {
+    ...getSideExitProvenance({ matchUp: stored }),
+    ...buildCarriedExitProvenance({
+      previousMatchUpStatus: params.matchUpStatus,
+      exitingSideNumber: arrivalSideNumber,
+      matchUpStatus: params.matchUpStatus,
+      sourceMatchUpId: originMatchUpId,
+    }),
+  };
+  logAdvancement(stack, {
+    color: 'brightred',
+    decision: 'CARRIED_EXIT_converges_at_target',
+    nextWinnerMatchUpId: nextWinnerMatchUp.matchUpId,
+    newStatus: DOUBLE_EXIT,
+    arrivalSideNumber,
+  });
+  const result = modifyMatchUpScore({
+    matchUpStatusCodes: retainPolicyCodes(stored),
+    appliedPolicies: params.appliedPolicies,
+    matchUpId: stored.matchUpId,
+    matchUpStatus: DOUBLE_EXIT,
+    winningSide: undefined,
+    removeScore: true,
+    matchUp: stored,
+    context: stack,
+    drawDefinition,
+  });
+  if (result.error) return decorateResult({ result, stack });
+  mergeSideExitProvenance({ matchUp: stored, provenance });
+
+  // What this matchUp produced as a single pending exit is withdrawn first: the double exit produces its own, and
+  // meeting the old one there converged the matchUp with itself (MODIFIED_FEED_IN_CHAMPIONSHIP, CURTIS_CONSOLATION and
+  // FEED_IN_CHAMPIONSHIP_TO_QF 16/16: `Consolation|4|1` a DOUBLE_WALKOVER beside a real participant).
+  const withdrawnExits = withdrawProducedExits({
+    mappedMatchUps: matchUpsMap.mappedMatchUps,
+    sourceMatchUpId: stored.matchUpId,
+    drawDefinition,
+  });
+  applyWithdrawnExits({
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+    withdrawnExits,
+    drawDefinition,
+    matchUpsMap,
+  });
+
+  // the carrier's params are narrower than `doubleExitAdvancement`'s; a nested double exit downstream reads `structure`
+  const { structure } = findStructure({ drawDefinition, structureId: nextWinnerMatchUp.structureId });
+  const onward = advanceConvergedWinner({
+    convergedMatchUp: nextWinnerMatchUp,
+    params: { ...params, inContextDrawMatchUps, drawDefinition, matchUpsMap, structure },
+    drawDefinition,
+    matchUpsMap,
+    DOUBLE_EXIT,
+    stack,
+  });
+  if (onward?.error) return decorateResult({ result: onward, stack });
+  return decorateResult({ result: { ...SUCCESS }, stack });
+}
+
 function directExitWinnerAcrossLink({
   drawPositionToAdvance,
   inContextDrawMatchUps,
@@ -2578,10 +2709,22 @@ function getHeldExit({
 
   const storedTarget = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === target.matchUpId);
   const targetProvenance = getSideExitProvenance({ matchUp: storedTarget });
-  if (targetProvenance?.[arrivalSideNumber]) return undefined;
+  // the BYE's own advancement records an arrival by BYE from this holder; that is the seat the exit travels to, not a
+  // delivery standing in its way (COMPASS and PLAYOFF 16/13, policy off: `West|2|1`, the last six stalled cells)
+  const arrivalEntry = targetProvenance?.[arrivalSideNumber];
+  const byeArrivalFromHolder =
+    arrivalEntry?.matchUpStatus === BYE &&
+    !carriedExitStatus(arrivalEntry) &&
+    (!arrivalEntry.sourceMatchUpId || arrivalEntry.sourceMatchUpId === matchUp.matchUpId);
+  if (arrivalEntry && !byeArrivalFromHolder) return undefined;
 
   const opponentSide = target.sides?.find((side) => side.sideNumber === 3 - arrivalSideNumber);
-  const settledNow = !!opponentSide?.participantId || !!opponentSide?.bye;
+  // an exit standing on the other side is settled too: the held exit meets it, and they converge (RULE 4;
+  // `convergesAtTarget` in the carrier). Declining here was the policy-off stall budget's whole population.
+  const settledNow =
+    !!opponentSide?.participantId ||
+    !!opponentSide?.bye ||
+    convergesAtTarget({ nextWinnerMatchUp: { ...target, sideExitProvenance: targetProvenance }, arrivalSideNumber });
   if (!settledNow) return undefined;
 
   return { holder: matchUp, origin };
