@@ -4,6 +4,7 @@ import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/d
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -11,6 +12,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { isDoubleExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
 import { overlap } from '@Tools/arrays';
@@ -460,6 +462,7 @@ function removeDrawPosition({
     initialWinningSide,
     positionAssignments,
     tournamentRecord,
+    structureId: structure.structureId,
     drawDefinition,
     targetMatchUp,
     drawPosition,
@@ -610,6 +613,7 @@ function updateMatchUpStatusAfterRemoval({
   drawDefinition,
   targetMatchUp,
   drawPosition,
+  structureId,
   event,
   stack,
 }) {
@@ -645,12 +649,18 @@ function updateMatchUpStatusAfterRemoval({
   const removedDrawPosition = initialDrawPositions?.find(
     (position) => !targetMatchUp.drawPositions?.includes(position),
   );
-  // The side being cleared is the one `drawPosition` occupies in the array as it stood: on the
-  // position's initial round the seat stays in the array (only its assignment is emptied), so the
-  // position removed from the array is not the whole story. `indexOf` as a side number — valid
-  // only because drawPositions are stored ascending.
-  const clearedIndex = initialDrawPositions?.indexOf(drawPosition) ?? -1;
-  const clearedSideNumber = clearedIndex >= 0 ? clearedIndex + 1 : undefined;
+  // The side being cleared is the one `drawPosition` occupied as the matchUp stood: on the position's initial round
+  // the seat stays in the array (only its assignment is emptied), so the position removed from the array is not the
+  // whole story. Read STRUCTURALLY. `indexOf + 1` is a side only while both positions are present; a lone position
+  // is stored at index 0 whatever its side (draw-positions.md § 2), so a lone side-2 position was cleared as side 1,
+  // taking the OTHER side's origin and keeping its own (census de 9302775, DE 16/11 `Backdraw|3|2`: a produced
+  // DEFAULTED from `Backdraw|2|3` erased, a BYE claim left on an undecided matchUp).
+  const clearedSideNumber = getDrawPositionSideNumber({
+    matchUp: { ...targetMatchUp, sides: undefined, drawPositions: initialDrawPositions },
+    drawDefinition,
+    drawPosition,
+    structureId,
+  });
   const retained = retainProvenanceBesideRemoval(targetMatchUp.sideExitProvenance, clearedSideNumber);
   clearSideExitProvenance(targetMatchUp);
   if (retained) targetMatchUp.sideExitProvenance = retained;
@@ -668,7 +678,16 @@ function updateMatchUpStatusAfterRemoval({
   const rederived = !matchUpContainsBye && retained ? deriveExitStateFromProvenance(retained) : undefined;
   if (rederived) {
     targetMatchUp.matchUpStatus = rederived.matchUpStatus;
-    targetMatchUp.winningSide = rederived.winningSide;
+    targetMatchUp.winningSide = awardStands({
+      rederived,
+      retained,
+      positionAssignments,
+      targetMatchUp,
+      drawDefinition,
+      structureId,
+    })
+      ? rederived.winningSide
+      : undefined;
   }
   const noChange =
     initialDrawPositions?.includes(drawPosition) &&
@@ -695,6 +714,34 @@ function updateMatchUpStatusAfterRemoval({
   }
 
   return matchUpContainsBye;
+}
+
+/**
+ * A PRODUCED exit has no winningSide until a participant arrives (CA, 2026-09-20); a CARRIED exit keeps its
+ * winningSide on an empty seat (exit-propagation.md). `deriveExitStateFromProvenance` awards the other side either
+ * way, so the award stands here only for a carried exit or a seat that holds a participant. Census de 9302775
+ * (DE 16/11): a produced DEFAULTED retained on `Backdraw|3|2` side 1 was otherwise won by an empty dp 7.
+ */
+function awardStands({
+  rederived,
+  retained,
+  positionAssignments,
+  targetMatchUp,
+  drawDefinition,
+  structureId,
+}): boolean {
+  const { winningSide } = rederived;
+  if (!winningSide) return true;
+  const exitEntry = retained?.[3 - winningSide];
+  if (!isDoubleExit(exitEntry?.previousMatchUpStatus)) return true;
+  const drawPosition = getSideDrawPosition({
+    matchUp: { ...targetMatchUp, sides: undefined },
+    sideNumber: winningSide,
+    drawDefinition,
+    structureId,
+  });
+  const assignment = positionAssignments.find((candidate) => candidate.drawPosition === drawPosition);
+  return !!(assignment?.participantId || assignment?.qualifier);
 }
 
 /**
