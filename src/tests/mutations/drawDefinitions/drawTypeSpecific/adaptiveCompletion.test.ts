@@ -54,12 +54,8 @@ function completeReadyMatchUps(readyMatchUps: any[], drawId: string): number {
       outcome,
       drawId,
     });
-    if (result.success) {
-      completed++;
-    } else {
-      console.log('setMatchUpStatus error:', result.error, matchUp.matchUpId);
-      break;
-    }
+    expect(result.error, `setMatchUpStatus ${matchUp.matchUpId}`).toBeUndefined();
+    completed++;
   }
   return completed;
 }
@@ -70,13 +66,7 @@ function verifyStructureCompletion(allMatchUps: any[], structures: any[]) {
     if (structureMatchUps.length === 0) continue;
 
     const hasWinner = structureMatchUps.some((m: any) => m.winningSide);
-    if (structureMatchUps.length > 0) {
-      console.log(
-        `${structure.structureName}: ${structureMatchUps.length} matchUps, ` +
-          `${structureMatchUps.filter((m: any) => m.winningSide).length} completed`,
-      );
-    }
-    expect(hasWinner).toBe(true);
+    expect(hasWinner, structure.structureName).toBe(true);
   }
 }
 
@@ -130,18 +120,16 @@ describe('Adaptive draw completion and reset', () => {
     const structures = drawDefinition.structures;
     expect(structures.length).toBeGreaterThan(1);
 
-    const structureNames = structures.map((s) => s.structureName);
-    console.log('structures:', structureNames);
-
-    // Check East structure has participants positioned
+    // Check East structure has every position filled
     const eastStructure = structures.find((s) => s.structureName === 'East');
     const eastAssignments = eastStructure?.positionAssignments?.filter((a) => a.participantId);
-    console.log('East positioned:', eastAssignments?.length, 'of', eastStructure?.positionAssignments?.length);
+    expect(eastAssignments?.length).toBeGreaterThan(0);
+    expect(eastAssignments?.length).toEqual(eastStructure?.positionAssignments?.length);
 
     // Check initial matchUp state
     const { matchUps: initialMatchUps } = tournamentEngine.allDrawMatchUps({ drawId, inContext: true });
     const readyInitial = initialMatchUps.filter((m: any) => m.readyToScore && !m.winningSide);
-    console.log('initially ready:', readyInitial.length, 'total:', initialMatchUps.length);
+    expect(readyInitial.length).toBeGreaterThan(0);
 
     // Complete all matchUps across all structures, handling lucky advancement
     let maxIterations = 100; // safety
@@ -154,15 +142,6 @@ describe('Adaptive draw completion and reset', () => {
       });
 
       const readyMatchUps = matchUps.filter((m: any) => m.readyToScore && !m.winningSide && m.matchUpStatus !== 'BYE');
-      if (readyMatchUps.length)
-        console.log(
-          'ready:',
-          readyMatchUps.length,
-          'round:',
-          readyMatchUps[0].roundNumber,
-          'structure:',
-          readyMatchUps[0].structureName,
-        );
       if (!readyMatchUps.length) {
         if (!attemptLuckyAdvancement(drawId, structures)) break;
         continue;
@@ -171,7 +150,6 @@ describe('Adaptive draw completion and reset', () => {
       totalCompleted += completeReadyMatchUps(readyMatchUps, drawId);
     }
 
-    console.log('total completed:', totalCompleted);
     expect(totalCompleted).toBeGreaterThan(0);
 
     // Verify all structures have been played
@@ -179,7 +157,8 @@ describe('Adaptive draw completion and reset', () => {
     const completedMatchUps = allMatchUps.filter((m: any) => m.winningSide || m.matchUpStatus === 'BYE');
     const incompleteMatchUps = allMatchUps.filter((m: any) => !m.winningSide && m.matchUpStatus !== 'BYE');
 
-    console.log('completed:', completedMatchUps.length, 'incomplete:', incompleteMatchUps.length);
+    // every matchUp that is not a BYE was scored by this loop
+    expect(totalCompleted).toEqual(completedMatchUps.filter((m: any) => m.matchUpStatus !== 'BYE').length);
 
     verifyStructureCompletion(allMatchUps, structures);
 

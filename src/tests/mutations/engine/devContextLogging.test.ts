@@ -13,12 +13,14 @@ describe('should mock console.log', () => {
   // Call counts below are per-test, not cumulative. Vitest 5 clears mock history before
   // every test (`clearMocks` defaults to true); this makes the expectations independent
   // of that default, so they hold on both 4.x and 5.x.
+  // mockReset would put the REAL console.log back mid-file (vitest restores a spy's original
+  // implementation on reset), so later tests printed while their call counts still passed.
   beforeEach(() => {
     consoleMock.mockClear();
   });
 
   afterAll(() => {
-    consoleMock.mockReset();
+    consoleMock.mockRestore();
   });
 
   it('should log `sample output`', () => {
@@ -63,7 +65,7 @@ describe('should mock console.log', () => {
     tournamentEngine.getEvent();
     expect(consoleMock).toHaveBeenCalledTimes(3);
 
-    consoleMock.mockReset();
+    consoleMock.mockClear();
     expect(consoleMock).toHaveBeenCalledTimes(0);
   });
 

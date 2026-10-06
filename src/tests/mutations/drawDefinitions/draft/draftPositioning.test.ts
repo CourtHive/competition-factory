@@ -1194,11 +1194,8 @@ describe('Draft Sorting - diagnostic', () => {
       scaleAttributes: { scaleType: RATING, scaleName: 'ELO', eventType: SINGLES },
     });
 
-    // Log both for diagnosis
-    console.log('Without eventType:', noEventType);
-    console.log('With eventType:', withEventType);
-
-    // The one with eventType should definitely find it
+    // The scale was stored under SINGLES, so only the lookup that names the eventType finds it
+    expect(noEventType).toBeUndefined();
     expect(withEventType?.scaleValue).toBe(2000);
   });
 });

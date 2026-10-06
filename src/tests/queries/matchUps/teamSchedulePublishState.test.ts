@@ -63,11 +63,6 @@ it('competitionScheduleMatchUps with usePublishState includes tieMatchUps', () =
   });
   const dateMatchUpsNoPublish = result.dateMatchUps;
   const tieMatchUpsInSchedule = dateMatchUpsNoPublish.filter((m) => m.collectionId);
-  console.log('Without usePublishState:', {
-    total: dateMatchUpsNoPublish.length,
-    tieMatchUps: tieMatchUpsInSchedule.length,
-    teamMatchUps: dateMatchUpsNoPublish.filter((m) => m.matchUpType === 'TEAM').length,
-  });
   expect(tieMatchUpsInSchedule.length).toBeGreaterThan(0);
 
   // Now publish the event and order of play
@@ -90,14 +85,10 @@ it('competitionScheduleMatchUps with usePublishState includes tieMatchUps', () =
   const dateMatchUpsWithPublish = result.dateMatchUps;
   const tieMatchUpsPublished = dateMatchUpsWithPublish.filter((m) => m.collectionId);
   const teamMatchUpsPublished = dateMatchUpsWithPublish.filter((m) => m.matchUpType === 'TEAM');
-  console.log('With usePublishState:', {
-    total: dateMatchUpsWithPublish.length,
-    tieMatchUps: tieMatchUpsPublished.length,
-    teamMatchUps: teamMatchUpsPublished.length,
-  });
 
   // This is the bug: tieMatchUps should be present
   expect(tieMatchUpsPublished.length).toBeGreaterThan(0);
+  expect(teamMatchUpsPublished.length).toBeGreaterThan(0);
 });
 
 it('tieMatchUps included when only tieMatchUps are scheduled (not parent TEAM)', () => {
@@ -141,11 +132,6 @@ it('tieMatchUps included when only tieMatchUps are scheduled (not parent TEAM)',
     matchUpFilters: { scheduledDate },
   });
   const noPublishTie = result.dateMatchUps.filter((m) => m.collectionId);
-  console.log('No parent schedule, without usePublishState:', {
-    total: result.dateMatchUps.length,
-    tieMatchUps: noPublishTie.length,
-    teamMatchUps: result.dateMatchUps.filter((m) => m.matchUpType === 'TEAM').length,
-  });
   // tieMatchUps should be in dateMatchUps even when parent TEAM is not scheduled
   expect(noPublishTie.length).toBeGreaterThan(0);
 
@@ -163,11 +149,6 @@ it('tieMatchUps included when only tieMatchUps are scheduled (not parent TEAM)',
     usePublishState: true,
   });
   const publishTie = result.dateMatchUps.filter((m) => m.collectionId);
-  console.log('No parent schedule, with usePublishState:', {
-    total: result.dateMatchUps.length,
-    tieMatchUps: publishTie.length,
-    teamMatchUps: result.dateMatchUps.filter((m) => m.matchUpType === 'TEAM').length,
-  });
 
   expect(publishTie.length).toBeGreaterThan(0);
 });
@@ -247,13 +228,8 @@ it('tieMatchUps included with TEAM + SINGLES events (mixed)', () => {
   const publishTie = result.dateMatchUps.filter((m) => m.collectionId);
   const publishTeam = result.dateMatchUps.filter((m) => m.matchUpType === 'TEAM');
   const publishSingles = result.dateMatchUps.filter((m) => m.drawId === 'singlesDraw');
-  console.log('Mixed events, with usePublishState:', {
-    total: result.dateMatchUps.length,
-    tieMatchUps: publishTie.length,
-    teamMatchUps: publishTeam.length,
-    singlesMatchUps: publishSingles.length,
-  });
 
   expect(publishTie.length).toBeGreaterThan(0);
+  expect(publishTeam.length).toBeGreaterThan(0);
   expect(publishSingles.length).toBeGreaterThan(0);
 });
