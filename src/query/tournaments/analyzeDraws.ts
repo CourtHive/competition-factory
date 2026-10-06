@@ -4,11 +4,12 @@ import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { getStructureLinks } from '@Query/drawDefinition/linkGetter';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { stageOrder } from '@Constants/drawDefinitionConstants';
+import { structuresOf } from '@Acquire/structureMembers';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type DrawsAnalysis = {
@@ -138,7 +139,12 @@ export function analyzeDraws({ tournamentRecord }): {
 
     const inactiveDraw = structuresData?.every(({ inactiveStructure }) => inactiveStructure);
 
+    // a round robin MAIN is a CONTAINER of groups: it has no draw size to reduce, so it is never prunable
+    const mainIsRoundRobin = !!structuresOf(
+      structures.find((structure: Structure) => structure.structureId === mainStructure.structureId),
+    );
     const canBePruned =
+      !mainIsRoundRobin &&
       !links.length &&
       mainStructure.activeRounds.length &&
       (mainStructure.roundProfile[1].inactiveCount || mainStructure.inactiveRounds.length);

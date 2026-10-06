@@ -22,14 +22,14 @@ test('a round robin draw is not pruned and nothing is written onto its container
     setState: true,
   });
 
-  // one first-round result makes the draw read as prunable match play
+  // one first-round result: the draw is match play, but a round robin is never listed as prunable (CA 2026-10-06)
   const firstRoundMatchUp = tournamentEngine.allDrawMatchUps({ drawId }).matchUps?.find((m) => m.roundNumber === 1);
   const outcome = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
   let result: any = tournamentEngine.setMatchUpStatus({ matchUpId: firstRoundMatchUp?.matchUpId, outcome, drawId });
   expect(result.success).toEqual(true);
 
   const { drawsAnalysis } = tournamentEngine.analyzeDraws();
-  expect(drawsAnalysis.canBePruned).toEqual([drawId]);
+  expect(drawsAnalysis.canBePruned).toEqual([]);
   expect(drawsAnalysis.matchPlay).toEqual([drawId]);
 
   const before = tournamentEngine.getEvent({ drawId }).drawDefinition.structures[0];
