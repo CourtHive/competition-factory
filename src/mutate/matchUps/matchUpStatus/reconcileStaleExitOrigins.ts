@@ -9,8 +9,8 @@ import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import { MatchUpsMap } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
+import { MatchUpsMap } from '@Types/factoryTypes';
 
 /**
  * Withdraw carried exits whose ORIGIN has stopped being a double exit, unless its winning seat is a BYE.
