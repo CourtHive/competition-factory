@@ -1,3 +1,4 @@
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
@@ -207,7 +208,7 @@ export function getTournamentInfo(params?: {
     for (const event of tournamentRecord.events ?? []) {
       for (const drawDefinition of event.drawDefinitions ?? []) {
         for (const structure of drawDefinition.structures ?? []) {
-          matchUps.push(...(structure.matchUps ?? []));
+          matchUps.push(...(matchUpsOf(structure) ?? []));
           structures.push(
             definedAttributes({
               eventId: event.eventId,
@@ -220,7 +221,7 @@ export function getTournamentInfo(params?: {
               structureName: structure.structureName,
               stage: structure.stage,
               stageSequence: structure.stageSequence,
-              positionAssignments: structure.positionAssignments,
+              positionAssignments: positionAssignmentsOf(structure),
               seedAssignments: structure.seedAssignments,
               matchUpFormat: structure.matchUpFormat,
             }),

@@ -1,6 +1,7 @@
 import { addDaysIso, getChallengeState } from '@Query/ladder/getChallengeState';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { CONSECUTIVE, DECLINE, EXPIRY, FORFEIT_POSITION, ROLLING, UNPLAYED } from '@Constants/ladderConstants';
@@ -64,7 +65,7 @@ export function getLapses(params: LapsesArgs): Lapses {
   const lapsePolicy = effectiveLapsePolicy(policy);
   const kinds: LapseKind[] = lapsePolicy.countsAsLapse ?? [DECLINE, EXPIRY, UNPLAYED];
 
-  const defended: any[] = (structure?.matchUps ?? []).filter((m) => m.sides?.[1]?.participantId === participantId);
+  const defended: any[] = (matchUpsOf(structure) ?? []).filter((m) => m.sides?.[1]?.participantId === participantId);
 
   const lapses: Lapse[] = [];
   for (const matchUp of defended) {

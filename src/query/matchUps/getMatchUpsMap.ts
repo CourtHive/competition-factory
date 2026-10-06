@@ -1,3 +1,4 @@
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // types
@@ -17,7 +18,9 @@ export function getMatchUpsMap({ drawDefinition, structure }: GetMatchUpsMapArgs
     .filter((structure) => structure && typeof structure === 'object')
     .forEach((structure) => {
       if (!structure) return;
-      const { structureId, matchUps, structures } = structure;
+      const { structureId } = structure;
+      const matchUps = matchUpsOf(structure);
+      const structures = structuresOf(structure);
       const isRoundRobin = Array.isArray(structures);
       if (!isRoundRobin) {
         const filteredMatchUps = matchUps;
@@ -32,7 +35,7 @@ export function getMatchUpsMap({ drawDefinition, structure }: GetMatchUpsMapArgs
       } else if (isRoundRobin) {
         structures.forEach((itemStructure) => {
           const { structureName } = itemStructure;
-          const filteredMatchUps = itemStructure.matchUps;
+          const filteredMatchUps = matchUpsOf(itemStructure);
 
           mappedMatchUps[itemStructure.structureId] = {
             matchUps: filteredMatchUps,

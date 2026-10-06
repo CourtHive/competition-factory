@@ -1,4 +1,5 @@
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
@@ -35,7 +36,7 @@ export function structureSort(a: Structure | undefined, b: Structure | undefined
     (getRoundTarget(a) || 0) - (getRoundTarget(b) || 0) ||
     (!finish &&
       !aggregate &&
-      (b?.positionAssignments?.length ?? Infinity) - (a?.positionAssignments?.length ?? Infinity)) ||
+      (positionAssignmentsOf(b)?.length ?? Infinity) - (positionAssignmentsOf(a)?.length ?? Infinity)) ||
     (a?.stageSequence ?? 0) - (b?.stageSequence ?? 0) ||
     (getMinFinishingPositionRange(a) || 0) - (getMinFinishingPositionRange(b) || 0)
   );

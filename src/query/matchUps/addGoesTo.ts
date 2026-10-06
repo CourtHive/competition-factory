@@ -1,5 +1,6 @@
 import { addFinishingRounds } from '@Assemblies/generators/drawDefinitions/addFinishingRounds';
 import { getMappedStructureMatchUps } from '@Query/matchUps/getMatchUpsMap';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 
@@ -42,7 +43,7 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
   if (
     !hasFinishingPositionRanges &&
     drawDefinition?.structures?.length === 1 &&
-    !drawDefinition?.structures[0].structures
+    !structuresOf(drawDefinition?.structures[0])
   ) {
     const matchUps = matchUpsMap?.drawMatchUps ?? [];
     addFinishingRounds({ matchUps });
@@ -120,9 +121,9 @@ export function hasStoredGoesTo({ drawDefinition }: { drawDefinition: DrawDefini
   );
 
   return (drawDefinition.structures ?? []).every((structure) => {
-    const matchUps = structure.matchUps ?? [];
+    const matchUps = matchUpsOf(structure) ?? [];
     if (loserSources.has(structure.structureId) && !matchUps.some((matchUp) => matchUp.loserMatchUpId)) return false;
-    if (structure.finishingPosition === WIN_RATIO || structure.structures) return true;
+    if (structure.finishingPosition === WIN_RATIO || structuresOf(structure)) return true;
     // the ordinary answer is found on the first matchUp looked at; the rounds are counted only for
     // a structure that holds no winner edge at all, to tell a single round from a missing edge
     if (matchUps.some((matchUp) => matchUp.winnerMatchUpId)) return true;

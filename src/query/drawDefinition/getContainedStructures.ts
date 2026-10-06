@@ -1,3 +1,5 @@
+import { structuresOf } from '@Acquire/structureMembers';
+
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 
 /**
@@ -22,12 +24,13 @@ export function getContainedStructures({ tournamentRecord, drawDefinition, event
   const containerStructures = {};
 
   const structureContainers = drawDefinitions
-    .map((dd) => dd?.structures?.filter((structure) => structure?.structures))
+    .map((dd) => dd?.structures?.filter((structure) => structuresOf(structure)))
     .flat()
     .filter(Boolean);
 
   for (const structureContainer of structureContainers) {
-    const { structures, structureId } = structureContainer ?? {};
+    const { structureId } = structureContainer ?? {};
+    const structures = structuresOf(structureContainer);
     structures &&
       structureId &&
       (containedStructures[structureId] = structures?.map((structure) => structure.structureId)) &&

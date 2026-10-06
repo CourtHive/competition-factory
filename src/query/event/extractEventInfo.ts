@@ -1,3 +1,5 @@
+import { structuresOf } from '@Acquire/structureMembers';
+
 import type { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
 
 /**
@@ -9,7 +11,7 @@ import type { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
 function collectStructureMatchUpFormats(structures: Structure[] | undefined, collected: Set<string>): void {
   for (const structure of structures ?? []) {
     if (structure?.matchUpFormat) collected.add(structure.matchUpFormat);
-    collectStructureMatchUpFormats(structure?.structures, collected);
+    collectStructureMatchUpFormats(structuresOf(structure), collected);
   }
 }
 

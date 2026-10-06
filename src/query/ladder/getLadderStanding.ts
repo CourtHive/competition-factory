@@ -2,6 +2,7 @@ import { getLadderPolicy, getLadderOrdering } from '@Query/ladder/getLadderPolic
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -58,7 +59,7 @@ function readScale({ participant, scaleName, scaleAccessor, eventType }: ReadSca
 export function getLadderStanding(params: StandingArgs): LadderStanding {
   const { tournamentRecord } = params;
   const structure = resolveLadderStructure(params);
-  const assignments = (structure?.positionAssignments ?? []).filter(
+  const assignments = (positionAssignmentsOf(structure) ?? []).filter(
     (a): a is PositionAssignment & { participantId: string } => !!a.participantId,
   );
 

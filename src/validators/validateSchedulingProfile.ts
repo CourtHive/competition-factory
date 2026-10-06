@@ -2,6 +2,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { getDrawStructures } from '@Acquire/findStructure';
+import { structuresOf } from '@Acquire/structureMembers';
 import { isValidDateString } from '@Tools/dateTime';
 
 // constants
@@ -100,8 +101,9 @@ export function tournamentRelevantSchedulingIds(params) {
           const rounds = roundMatchUps && Object.keys(roundMatchUps).map(mapParsedInt);
           tournamentMap[tournamentId][eventId][drawId][structureId] = rounds;
           structureIds.push(structureId);
-          if (structure.structures?.length) {
-            for (const itemStructure of structure.structures) {
+          const itemStructures = structuresOf(structure);
+          if (itemStructures?.length) {
+            for (const itemStructure of itemStructures) {
               structureIds.push(itemStructure.structureId);
               tournamentMap[tournamentId][eventId][drawId][itemStructure.structureId] = rounds;
             }

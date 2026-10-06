@@ -1,3 +1,5 @@
+import { matchUpsOf } from '@Acquire/structureMembers';
+
 import type { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
 
 type LadderContextArgs = {
@@ -43,7 +45,7 @@ export function resolveLadderMatchUp(params: LadderContextArgs): { matchUp?: Mat
   const matchUpId = params?.matchUpId;
   if (!matchUpId) return {};
   for (const structure of params?.drawDefinition?.structures ?? []) {
-    const matchUp = structure.matchUps?.find((m) => m.matchUpId === matchUpId);
+    const matchUp = matchUpsOf(structure)?.find((m) => m.matchUpId === matchUpId);
     if (matchUp) return { matchUp, structure };
   }
   return {};

@@ -1,4 +1,5 @@
 import { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { isLucky } from '@Query/drawDefinition/isLucky';
@@ -86,7 +87,7 @@ export function getLuckyDrawRoundStatus({
   const isLuckyDraw = isLuckyDrawType || isLucky({ drawDefinition, structure });
   if (!isLuckyDraw) return { ...SUCCESS, isLuckyDraw: false, rounds: [] };
 
-  const matchUps = structure.matchUps ?? [];
+  const matchUps = matchUpsOf(structure) ?? [];
   const { roundProfile, roundNumbers } = getRoundMatchUps({ matchUps });
   if (!roundProfile || !roundNumbers?.length) return { ...SUCCESS, isLuckyDraw: true, rounds: [] };
 
@@ -99,7 +100,7 @@ export function getLuckyDrawRoundStatus({
     number[] | undefined;
 
   // Build lookup maps for resolving participants from drawPositions
-  const positionAssignments = structure.positionAssignments ?? [];
+  const positionAssignments = positionAssignmentsOf(structure) ?? [];
   const positionToParticipantId: Record<number, string> = {};
   for (const pa of positionAssignments) {
     if (pa.drawPosition && pa.participantId) {
@@ -175,8 +176,8 @@ export function getLuckyDrawRoundStatus({
 
       // Check if losers have already been placed in the target structure
       const { structure: targetStructure } = findStructure({ drawDefinition, structureId: targetStructureId });
-      const targetAssignments = targetStructure?.positionAssignments ?? [];
-      const targetMatchUps = (targetStructure?.matchUps ?? []).filter((m) => m.roundNumber === targetRoundNumber);
+      const targetAssignments = positionAssignmentsOf(targetStructure) ?? [];
+      const targetMatchUps = (matchUpsOf(targetStructure) ?? []).filter((m) => m.roundNumber === targetRoundNumber);
       const targetDrawPositions = new Set(targetMatchUps.flatMap((m) => (m.drawPositions ?? []).filter(Boolean)));
 
       const losersPlaced =

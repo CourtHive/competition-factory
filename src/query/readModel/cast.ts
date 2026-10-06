@@ -4,6 +4,7 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { applyProgressionEdges } from './progressionEdges';
+import { structuresOf } from '@Acquire/structureMembers';
 import {
   courtRow,
   drawRow,
@@ -174,7 +175,7 @@ function collectStructures(
       if (!assignment?.participantId) continue;
       seeds.push(seedRow(assignment, { ...baseCtx, structureId: structure.structureId }));
     }
-    collectStructures(structure.structures, baseCtx, structure.structureId, structures, seeds);
+    collectStructures(structuresOf(structure), baseCtx, structure.structureId, structures, seeds);
   }
 }
 
