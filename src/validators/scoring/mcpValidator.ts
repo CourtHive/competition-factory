@@ -117,30 +117,250 @@ function parseMatchId(matchId: string): {
   };
 }
 
+// ============================================================================
+// Expected score, read from MCP's own columns
+// ============================================================================
+
 /**
- * Extract final score from MCP data
+ * What MCP's score columns say about a match, independently of the point-by-point replay.
+ *
+ * Every MCP row carries the state BEFORE its point: `Set1`/`Set2` are the SETS WON by each player
+ * (not set scores), `Gm1`/`Gm2` the games in the current set and `Pts` the points in the current
+ * game, from the server's perspective. A set's final games are therefore read off the row of its
+ * last point: the games before that point plus one for the point's winner. A set that ends from
+ * level games (6-6 to 7-6, or 0-0 to 1-0 for a match tiebreak) was decided by a tiebreak, and the
+ * points charted at that games count are its tiebreak points.
  */
-function extractFinalScore(points: MCPPoint[]): string | undefined {
-  if (!points || points.length === 0) return undefined;
+export interface MCPExpectedScore {
+  // Score string in the same shape getScore() builds: '7-6(0), 4-6, 6-1'
+  scoreString: string;
+  // Sets won per player when the chart ends
+  setsWon: [number, number];
+  // Sets needed to win times two, less one: 3 or 5
+  bestOf: number;
+  // Whether a player has won the sets needed
+  complete: boolean;
+}
 
-  // Get the last point to find the final score
-  const lastPoint = points.at(-1);
-  if (!lastPoint) return undefined;
+interface SetGames {
+  games: [number, number];
+  tiebreak?: [number, number];
+}
 
-  // MCP CSV has Set1, Set2 columns with final set scores
-  const set1 = lastPoint.Set1;
-  const set2 = lastPoint.Set2;
-  const set3 = lastPoint.Set3;
-  const set4 = lastPoint.Set4;
-  const set5 = lastPoint.Set5;
+const GAME_POINT_VALUES = new Set(['15', '30', '40', 'AD']);
 
-  const sets: string[] = [];
-  if (set1) sets.push(`${set1}-${set2}`);
-  if (set3) sets.push(`${set3}-${set2 || '0'}`);
-  if (set4) sets.push(`${set4}-${set2 || '0'}`);
-  if (set5) sets.push(`${set5}-${set2 || '0'}`);
+function parsePair(first: string | undefined, second: string | undefined): [number, number] | undefined {
+  const a = Number.parseInt(first ?? '', 10);
+  const b = Number.parseInt(second ?? '', 10);
+  if (Number.isNaN(a) || Number.isNaN(b)) return undefined;
+  return [a, b];
+}
 
-  return sets.length > 0 ? sets.join(', ') : undefined;
+function pointWinnerIndex(point: MCPPoint): 0 | 1 | undefined {
+  if (point.PtWinner === '1') return 0;
+  if (point.PtWinner === '2') return 1;
+  return undefined;
+}
+
+interface GamePointOutcome {
+  gameWon: boolean;
+  // The point was a tiebreak point (numeric points at level games)
+  tiebreak: boolean;
+}
+
+/**
+ * Whether the point ends the game it is played in, read from `Pts` (server's perspective).
+ *
+ * Only needed for a chart's last row, which has no following row to compare sets-won against:
+ * MCP's reduced export has no after-point columns, so the game-point test is made from the points
+ * before. A tiebreak is recognised by numeric points at level games (15, 30 and 40 read as game
+ * points); its end is read as first to 7 by 2, which a chart cut short inside a 10-point tiebreak
+ * would misread (the replay then reports an incomplete match, so the anomaly still surfaces).
+ */
+function pointEndsGame(point: MCPPoint, games: [number, number]): GamePointOutcome {
+  const [serverPoints = '', receiverPoints = ''] = point.Pts?.split('-') ?? [];
+  const winnerIsServer = point.PtWinner === point.Svr;
+  const [winner, loser] = winnerIsServer ? [serverPoints, receiverPoints] : [receiverPoints, serverPoints];
+
+  const gameNotation = GAME_POINT_VALUES.has(winner) || GAME_POINT_VALUES.has(loser);
+  const tiebreak = games[0] === games[1] && !gameNotation && /^\d+$/.test(winner) && /^\d+$/.test(loser);
+  if (tiebreak) {
+    const winnerAfter = Number.parseInt(winner, 10) + 1;
+    return { tiebreak, gameWon: winnerAfter >= 7 && winnerAfter - Number.parseInt(loser, 10) >= 2 };
+  }
+
+  const gameWon = winner === 'AD' || (winner === '40' && loser !== '40' && loser !== 'AD');
+  return { tiebreak, gameWon };
+}
+
+interface LastPointOutcome {
+  gameWon: boolean;
+  setWon: boolean;
+}
+
+/**
+ * Whether a set can end on these games: a tiebreak decided it, or the winner leads by two with at
+ * least four games. Guards a chart cut short at a game's end from being read as a finished set; a
+ * set to six cut at 5-3 is still misread, which the replay's incomplete-match warning then surfaces.
+ */
+function setCanEndOn(tiebreak: boolean, gamesAfter: [number, number]): boolean {
+  if (tiebreak) return true;
+  const lead = Math.abs(gamesAfter[0] - gamesAfter[1]);
+  return lead >= 2 && Math.max(...gamesAfter) >= 4;
+}
+
+/**
+ * What a chart's last point decided. It has no following row to compare sets-won against, so the
+ * after-point copies (`Set1_2`/`Set2_2`, `Gm1_2`/`Gm2_2`, see parseCSV) answer when the export
+ * carries them; otherwise the game-point test does, and a game won on the last charted point ends
+ * the set when the games allow it.
+ */
+function lastPointOutcome(
+  point: MCPPoint,
+  setsBefore: [number, number],
+  gamesBefore: [number, number],
+  gamesAfter: [number, number],
+): LastPointOutcome {
+  const setsAfterCopy = parsePair(point.Set1_2, point.Set2_2);
+  const gamesAfterCopy = parsePair(point.Gm1_2, point.Gm2_2);
+  if (setsAfterCopy && gamesAfterCopy) {
+    const setWon = setsAfterCopy[0] !== setsBefore[0] || setsAfterCopy[1] !== setsBefore[1];
+    const gameWon = setWon || gamesAfterCopy[0] !== gamesBefore[0] || gamesAfterCopy[1] !== gamesBefore[1];
+    return { gameWon, setWon };
+  }
+
+  const { gameWon, tiebreak } = pointEndsGame(point, gamesBefore);
+  return { gameWon, setWon: gameWon && setCanEndOn(tiebreak, gamesAfter) };
+}
+
+function formatSet({ games: [a, b], tiebreak }: SetGames): string {
+  if (!tiebreak) return `${a}-${b}`;
+  return a > b ? `${a}-${b}(${tiebreak[1]})` : `${a}(${tiebreak[0]})-${b}`;
+}
+
+function setsWonFrom(sets: SetGames[]): [number, number] {
+  const setsWon: [number, number] = [0, 0];
+  for (const { games } of sets) setsWon[games[0] > games[1] ? 0 : 1]++;
+  return setsWon;
+}
+
+interface CollectedSets {
+  sets: SetGames[];
+  // Games of the set in progress when the chart ends, if any were won
+  partial?: [number, number];
+  // Points were charted after a player had won two sets
+  continuedPastTwo: boolean;
+}
+
+/**
+ * Points won at an unchanged games count: the tiebreak's points if the set ends from level games.
+ */
+function createLevelTally() {
+  let tally: [number, number] = [0, 0];
+  let tallyGames: [number, number] | undefined;
+  return {
+    record(games: [number, number], winner: 0 | 1) {
+      if (!tallyGames || tallyGames[0] !== games[0] || tallyGames[1] !== games[1]) {
+        tally = [0, 0];
+        tallyGames = games;
+      }
+      tally[winner]++;
+    },
+    points: () => tally,
+  };
+}
+
+/**
+ * Whether the point ended its set, and the games standing after it: read from the next row's
+ * before-point columns when there is one, else from the last row itself.
+ */
+function stateAfterPoint(
+  point: MCPPoint,
+  next: MCPPoint | undefined,
+  setsBefore: [number, number],
+  gamesBefore: [number, number],
+  gamesAfter: [number, number],
+): { setWon: boolean; current: [number, number] } {
+  const nextSets = next && parsePair(next.Set1, next.Set2);
+  const nextGames = next && parsePair(next.Gm1, next.Gm2);
+  if (nextSets && nextGames) {
+    return { setWon: nextSets[0] !== setsBefore[0] || nextSets[1] !== setsBefore[1], current: nextGames };
+  }
+
+  const outcome = lastPointOutcome(point, setsBefore, gamesBefore, gamesAfter);
+  return { setWon: outcome.setWon, current: outcome.gameWon ? gamesAfter : gamesBefore };
+}
+
+/**
+ * Walk the chart and collect each set's games: a set ends on the row before the sets-won columns
+ * change, or on the last row when that row's point ends the set. A set that ends from level games
+ * was decided by a tiebreak, whose points are the ones charted at that games count.
+ */
+function collectSets(points: MCPPoint[]): CollectedSets | undefined {
+  const sets: SetGames[] = [];
+  const tally = createLevelTally();
+  let partial: [number, number] | undefined;
+  let continuedPastTwo = false;
+
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i];
+    const setsBefore = parsePair(point.Set1, point.Set2);
+    const games = parsePair(point.Gm1, point.Gm2);
+    if (!setsBefore || !games) return undefined;
+
+    const winner = pointWinnerIndex(point);
+    if (winner === undefined) continue;
+    if (Math.max(...setsBefore) >= 2) continuedPastTwo = true;
+    tally.record(games, winner);
+
+    const gamesAfter: [number, number] = [games[0], games[1]];
+    gamesAfter[winner]++;
+    const { setWon, current } = stateAfterPoint(point, points[i + 1], setsBefore, games, gamesAfter);
+
+    if (setWon) {
+      const set: SetGames = { games: gamesAfter };
+      if (games[0] === games[1]) set.tiebreak = tally.points();
+      sets.push(set);
+      partial = undefined;
+    } else {
+      partial = current[0] || current[1] ? current : undefined;
+    }
+  }
+
+  return { sets, partial, continuedPastTwo };
+}
+
+/**
+ * Read the match's final score from MCP's columns, with the sets needed to win.
+ *
+ * Best-of is deduced from the sets won: a player with three has won a best-of-five; a chart that
+ * continues after a player reached two is a best-of-five in progress; otherwise best-of-three.
+ * A set still in progress when the chart ends contributes its games, so a chart cut short still
+ * compares against the replay (which then warns that the match is not complete).
+ */
+export function extractFinalScore(points: MCPPoint[]): MCPExpectedScore | undefined {
+  const rows = points?.filter(Boolean) ?? [];
+  if (rows.length === 0) return undefined;
+
+  const collected = collectSets(rows);
+  if (!collected || (collected.sets.length === 0 && !collected.partial)) return undefined;
+
+  const { sets, partial, continuedPastTwo } = collected;
+  const setsWon = setsWonFrom(sets);
+  const bestOf = Math.max(...setsWon) === 3 || continuedPastTwo ? 5 : 3;
+  const complete = Math.max(...setsWon) === (bestOf + 1) / 2;
+  const setStrings = sets.map(formatSet);
+  if (partial) setStrings.push(`${partial[0]}-${partial[1]}`);
+
+  return { scoreString: setStrings.join(', '), setsWon, bestOf, complete };
+}
+
+/**
+ * Deduce the matchUpFormat for an expected score: set-level details (set length, tiebreak,
+ * advantage final set) from the score string, the set count from the sets won.
+ */
+function deduceFormatFromExpected(expected: MCPExpectedScore): string {
+  return deduceMatchUpFormat(expected.scoreString).replace(/^SET\d+/, `SET${expected.bestOf}`);
 }
 
 /**
@@ -162,8 +382,9 @@ export function validateMCPMatch(
   // Parse match metadata
   const metadata = parseMatchId(mcpMatch.match_id);
 
-  // Try to extract expected score from MCP data
-  const expectedScore = extractFinalScore(mcpMatch.points);
+  // Read the expected score from MCP's own columns
+  const expected = extractFinalScore(mcpMatch.points);
+  const expectedScore = expected?.scoreString;
 
   // Determine format
   let matchUpFormat: string;
@@ -171,9 +392,9 @@ export function validateMCPMatch(
 
   if (providedFormat) {
     matchUpFormat = providedFormat;
-  } else if (expectedScore) {
-    // Deduce format from expected score (like pbpValidator)
-    matchUpFormat = deduceMatchUpFormat(expectedScore);
+  } else if (expected) {
+    // Set count from the sets won, set details from the score (like pbpValidator)
+    matchUpFormat = deduceFormatFromExpected(expected);
     formatDeduced = true;
     if (debug) {
       console.log(`Deduced format: ${matchUpFormat} from score: ${expectedScore}`);
