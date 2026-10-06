@@ -598,8 +598,10 @@ function applyPositionToMatchUp({
      */
     recordSourceSideProvenance({
       inContextDrawMatchUps: refreshedMatchUps(),
+      drawPositions: updatedDrawPositions,
       sourceMatchUpStatus,
       sourceMatchUpId,
+      drawDefinition,
       matchUpsMap,
       matchUp,
     });

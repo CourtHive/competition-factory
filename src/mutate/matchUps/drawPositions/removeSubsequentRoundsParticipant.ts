@@ -80,6 +80,7 @@ export function removeSubsequentRoundsParticipant({
       drawDefinition,
       dualMatchUp,
       matchUpsMap,
+      roundNumber,
       matchUp,
       event,
     });
@@ -110,6 +111,7 @@ function removeDrawPosition({
   drawDefinition,
   dualMatchUp,
   matchUpsMap,
+  roundNumber,
   matchUp,
   event,
 }) {
@@ -168,11 +170,18 @@ function removeDrawPosition({
   // twin site in `drawPositionPlacement`, where the pair of removals costs 58 tests across 5 files and the
   // measurement names what the truthy array stands in for ("this matchUp is already part of the exit
   // cascade"), why it matters (provenance is PRESENCE-read — P19), and what a replacement has to test.
-  if (participatesInExitCascade({ matchUp })) {
+  //
+  // ONLY THE SOURCE'S OWN TARGET. The loop above reaches every later round holding the position; the source feeds
+  // just the first of them (`roundNumber`, the winner matchUp's round). Stamping the rest recorded an origin from a
+  // matchUp that does not feed them, on a side computed for a different matchUp (factory-a7's probe, 2026-10-06:
+  // 19 of 33 wrong-side stamps, e.g. census w1 9000273 FRLC `Main|3|1` "from" `Main|1|3`).
+  if (matchUp.roundNumber === roundNumber && participatesInExitCascade({ matchUp })) {
     recordSourceSideProvenance({
+      drawPositions: matchUp.drawPositions,
       inContextDrawMatchUps,
       sourceMatchUpStatus,
       sourceMatchUpId,
+      drawDefinition,
       matchUpsMap,
       matchUp,
     });

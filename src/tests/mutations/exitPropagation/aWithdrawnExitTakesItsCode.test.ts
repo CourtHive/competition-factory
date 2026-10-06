@@ -56,6 +56,10 @@ const CASES = [
     config: { drawType: DOUBLE_ELIMINATION, drawSize: 8, participantsCount: 8, seed: 9100184 },
     propagateExitStatus: true,
     converged: 'Main|3|1',
+    // The losing side carries no code either: its exit was produced by `Main|2|1`'s double walkover, which holds
+    // none, and the same results entered directly leave `['', '']`. The `WO` once seen here was stamped through
+    // `removeSubsequentRoundsParticipant` from `Main|1|2`, which does not feed `Main|3|1` (factory-a7's probe).
+    loserCoded: false,
     steps: [
       at('Main|1|3', { matchUpStatus: WALKOVER, winningSide: 2 }),
       at('Main|1|2', { matchUpStatus: DEFAULTED, winningSide: 1 }),
@@ -76,7 +80,8 @@ it.each(CASES)('$name: the census replay holds every property', ({ config, propa
   expect(replay({ ...config, propagateExitStatus }, steps, 'code-replay')).toBeNull();
 });
 
-it.each(CASES)('$name: no code stands on the winning side', ({ config, propagateExitStatus, steps, converged }) => {
+it.each(CASES)('$name: no code stands on the winning side', (testCase) => {
+  const { config, propagateExitStatus, steps, converged } = testCase;
   const drawId = 'code-side';
   setSubscriptions({});
   prepareDraw({ ...config, propagateExitStatus }, drawId);
@@ -101,5 +106,6 @@ it.each(CASES)('$name: no code stands on the winning side', ({ config, propagate
     return typeof code === 'string' ? code : code?.code;
   };
   expect(codeOn(matchUp.winningSide) || undefined).toBeUndefined();
-  expect(codeOn(3 - matchUp.winningSide)).toBeDefined();
+  if ('loserCoded' in testCase) expect(codeOn(3 - matchUp.winningSide) || undefined).toBeUndefined();
+  else expect(codeOn(3 - matchUp.winningSide)).toBeDefined();
 });
