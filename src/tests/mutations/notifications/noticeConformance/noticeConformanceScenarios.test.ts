@@ -904,7 +904,11 @@ const reset = () => {
 describe('notice conformance — scenario catalog (D-scenarios)', () => {
   afterEach(reset);
 
+  // The living gap list — the audit's hand-probed silences, automated. Every gap is already pinned
+  // as a tripwire by its own test, so a routine run has nothing to read here; print it on request:
+  //   NOTICE_GAPS=1 pnpm vitest run src/tests/mutations/notifications/noticeConformance
   afterAll(() => {
+    if (!process.env.NOTICE_GAPS) return;
     if (gapReport.length) {
       const lines = gapReport
         .map((g) => {
@@ -912,7 +916,6 @@ describe('notice conformance — scenario catalog (D-scenarios)', () => {
           return `  • ${g.name} — ${g.violations} violation(s)${suffix}`;
         })
         .join('\n');
-      // Living gap list — the audit's hand-probed silences, now automated.
       console.log(`\n[notice-conformance] known coverage gaps (tripwires):\n${lines}\n`);
     }
     if (fidelityReport.length) {
