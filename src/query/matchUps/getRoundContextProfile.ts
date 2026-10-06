@@ -12,6 +12,10 @@ import { DrawDefinition, Structure } from '@Types/tournamentTypes';
 import { RoundProfile, ResultType } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
+export type RoundNamingProfile = {
+  [key: string]: { roundName: string; abbreviatedRoundName: string };
+};
+
 type GetRoundContextProfileArgs = {
   drawDefinition?: DrawDefinition;
   matchUps: HydratedMatchUp[];
@@ -24,9 +28,7 @@ export function getRoundContextProfile({
   structure,
   matchUps,
 }: GetRoundContextProfileArgs): ResultType & {
-  roundNamingProfile?: {
-    [key: string]: { roundName: string; abbreviatedRoundName: string };
-  };
+  roundNamingProfile?: RoundNamingProfile;
   roundMatchUps?: { [roundNumber: string]: HydratedMatchUp[] };
   roundProfile?: RoundProfile;
 } {

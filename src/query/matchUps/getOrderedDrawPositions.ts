@@ -21,7 +21,7 @@ type GetOrderedDrawPositionsArgs = {
  * and `null` included — and `isNaN(0)` is `false`. So every "is this a position?" test written as
  * `!isNaN(ensureInt(x))` silently accepts a hole. Excluding them explicitly is the only safe form.
  */
-const isDrawPosition = (position: any): boolean =>
+const isDrawPosition = (position: unknown): boolean =>
   position !== undefined && position !== null && !Number.isNaN(ensureInt(position));
 
 export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumber }: GetOrderedDrawPositionsArgs) {

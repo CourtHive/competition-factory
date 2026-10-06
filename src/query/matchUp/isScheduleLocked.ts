@@ -67,7 +67,7 @@ const isEmpty = (value: unknown): boolean =>
   value === undefined || value === null || value === '' || (Array.isArray(value) && !value.length);
 
 /** Current placement value, first-class preferred, legacy timeItem as fallback. */
-function currentValue(matchUp: MatchUp | undefined, attribute: ScheduleLockAttribute): any {
+function currentValue(matchUp: MatchUp | undefined, attribute: ScheduleLockAttribute): unknown {
   const firstClass = matchUp?.schedule?.[attribute];
   if (!isEmpty(firstClass)) return firstClass;
 

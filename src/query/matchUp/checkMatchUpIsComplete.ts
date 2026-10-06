@@ -45,6 +45,6 @@ export function checkMatchUpIsComplete({ matchUp }: CheckMatchUpIsCompleteArgs) 
  */
 export function matchUpCompletion(matchUp: MatchUp | undefined) {
   if (!matchUp) return undefined;
-  const result: any = checkMatchUpIsComplete({ matchUp });
+  const result = checkMatchUpIsComplete({ matchUp });
   return result?.error ? undefined : result;
 }

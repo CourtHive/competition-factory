@@ -1,4 +1,4 @@
-import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { instanceCount } from '@Tools/arrays';
 import { analyzeSet } from './analyzeSet';
 
@@ -203,7 +203,10 @@ function hasSetValues(set: SetType): boolean {
  * `sideGameScores`, while a tiebreak decider reports its point in `sideTiebreakScores` and 0-0 games,
  * so reading the games alone would silently drop the one point that settles a tie.
  */
-function aggregateSideScores(sets: SetType[] | undefined, matchUpScoringFormat: any): number[] | undefined {
+function aggregateSideScores(
+  sets: SetType[] | undefined,
+  matchUpScoringFormat: ParsedFormat | undefined,
+): number[] | undefined {
   const played = (sets ?? []).filter(hasSetValues);
   const expected = matchUpScoringFormat?.exactly ?? matchUpScoringFormat?.bestOf;
   if (expected !== undefined && played.length < expected) return undefined;
