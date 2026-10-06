@@ -1,7 +1,6 @@
 {
   "src/mutate/drawDefinitions": 6,
   "src/mutate/drawDefinitions/matchUpGovernor": 2,
-  "src/mutate/drawDefinitions/structureGovernor": 2,
   "src/mutate/ladder": 2,
   "src/query/drawDefinition": 8,
   "src/query/reports": 2,
