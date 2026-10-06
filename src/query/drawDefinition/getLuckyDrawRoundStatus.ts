@@ -1,5 +1,6 @@
 import { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { isLucky } from '@Query/drawDefinition/isLucky';
@@ -210,10 +211,8 @@ export function getLuckyDrawRoundStatus({
       // Try hydrated sides first
       const side = m.sides?.find((s) => s.sideNumber === sideNumber);
       if (side) return side.participantId || side.participant?.participantId;
-      // Fall back to drawPositions → positionAssignments
-      // Derives a side from drawPosition ORDER — valid only because drawPositions are stored
-      // ascending. See the canonical statement in `getOrderedDrawPositions`.
-      const drawPosition = m.drawPositions?.[sideNumber - 1];
+      // Fall back to drawPositions → positionAssignments, the side read structurally
+      const drawPosition = getSideDrawPosition({ matchUp: m, sideNumber, drawDefinition, structureId });
       return drawPosition ? positionToParticipantId[drawPosition] : undefined;
     };
 

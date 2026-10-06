@@ -28,7 +28,11 @@ import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGover
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import {
+  getDrawPositionSideNumber,
+  getWinningSideDrawPosition,
+  getSideDrawPosition,
+} from '@Query/matchUps/getDrawPositionSides';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
@@ -1112,7 +1116,12 @@ function directWinnerViaLink({
   stack,
 }) {
   const targetMatchUpDrawPositions = winnerMatchUp.drawPositions ?? [];
-  const targetMatchUpDrawPosition = targetMatchUpDrawPositions[winnerMatchUpDrawPositionIndex];
+  const targetMatchUpDrawPosition = getSideDrawPosition({
+    sideNumber: winnerMatchUpDrawPositionIndex + 1,
+    structureId: winnerMatchUp.structureId,
+    matchUp: winnerMatchUp,
+    drawDefinition,
+  });
 
   const sourceStructureId = winnerTargetLink.source.structureId;
   const result = findStructure({ structureId: sourceStructureId, drawDefinition });
@@ -1147,9 +1156,15 @@ function directWinnerViaLink({
       return inTarget && unfilled;
     })
     .map((assignment) => assignment.drawPosition);
-  const targetDrawPositionIsUnfilled = unfilledTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
+  const targetDrawPositionIsUnfilled =
+    !!targetMatchUpDrawPosition && unfilledTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
 
-  if (winnerParticipantId && winnerTargetLink.target.roundNumber === 1 && targetDrawPositionIsUnfilled) {
+  if (
+    winnerParticipantId &&
+    winnerTargetLink.target.roundNumber === 1 &&
+    targetMatchUpDrawPosition &&
+    targetDrawPositionIsUnfilled
+  ) {
     assignDrawPosition({
       drawPosition: targetMatchUpDrawPosition,
       participantId: winnerParticipantId,

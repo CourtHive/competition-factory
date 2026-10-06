@@ -1,6 +1,7 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
+import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -142,7 +143,14 @@ export function removeDoubleExit(params) {
   const rawLoserMatchUp = (matchUpsMap?.drawMatchUps ?? []).find(
     (candidate) => candidate.matchUpId === loserMatchUp?.matchUpId,
   );
-  const claimSideNumber = (rawLoserMatchUp?.drawPositions ?? []).indexOf(loserTargetDrawPosition) + 1 || 1;
+  // the claim's side, read structurally: a lone position's side is not its index
+  const claimSideNumber =
+    getDrawPositionSideNumber({
+      matchUp: rawLoserMatchUp && { ...rawLoserMatchUp, sides: undefined },
+      structureId: loserMatchUp?.structureId,
+      drawPosition: loserTargetDrawPosition,
+      drawDefinition,
+    }) || 1;
   withdrawByeClaim({ matchUp: rawLoserMatchUp, sideNumber: claimSideNumber, claimantMatchUpId: matchUpId });
   // ...and wherever else this cascade claimed one: a BYE that WALKS is claimed on a downstream
   // matchUp the unwind never revisits at this coordinate

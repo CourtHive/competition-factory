@@ -2,9 +2,9 @@ import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGove
 import { rekeySideFacts, setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
+import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -43,6 +43,7 @@ import {
   LUCKY_DRAW_BYE_LIMIT,
   MATCHUP_HAS_SCHEDULING,
   MISSING_DRAW_DEFINITION,
+  MISSING_DRAW_POSITION,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
@@ -1008,7 +1009,15 @@ function assignByeToLoserTarget({
   const sourceStructureRoundPosition = matchUp.roundPosition;
   // loser drawPosition in target structure is determined bye even/odd
   const targetDrawPositionIndex = 1 - (sourceStructureRoundPosition % 2);
-  const targetDrawPosition = loserMatchUp.drawPositions[targetDrawPositionIndex];
+  const targetDrawPosition = getSideDrawPosition({
+    structureId: loserTargetLink.target.structureId,
+    sideNumber: targetDrawPositionIndex + 1,
+    matchUp: loserMatchUp,
+    drawDefinition,
+  });
+  // a non-feed loser target holds both positions from generation; refuse rather than place a BYE nowhere
+  if (!targetDrawPosition)
+    return decorateResult({ result: { error: MISSING_DRAW_POSITION }, stack: 'advanceByeToLoserMatchUp' });
 
   return assignDrawPositionBye({
     byeFromPropagation,

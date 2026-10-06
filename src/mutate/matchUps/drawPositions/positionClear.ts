@@ -889,7 +889,15 @@ function handleLoserMatchUpRemoval({
   const { drawPositions, roundNumber } = loserMatchUp;
 
   if (roundNumber === 1) {
-    const loserMatchUpDrawPosition = drawPositions[loserMatchUpDrawPositionIndex];
+    // the side's position, read structurally: index 0 is side 1
+    const loserMatchUpDrawPosition = getSideDrawPosition({
+      sideNumber: loserMatchUpDrawPositionIndex + 1,
+      structureId: loserMatchUp.structureId,
+      matchUp: loserMatchUp,
+      drawDefinition,
+    });
+    // a first-round loser target holds both positions from generation
+    if (!loserMatchUpDrawPosition) return decorateResult({ result: { error: MISSING_DRAW_POSITION }, stack });
 
     const removals = drawPositionRemovals({
       structureId: loserMatchUp.structureId,
