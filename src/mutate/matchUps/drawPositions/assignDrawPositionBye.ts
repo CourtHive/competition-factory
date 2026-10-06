@@ -1080,7 +1080,8 @@ function arrivalIntoProvenanceOnlyExit({
   else if (sourceRoundPosition) side = sourceRoundPosition % 2 === 1 ? 1 : 2;
   if (!side) return false;
 
-  const positional = side === 1 ? [drawPositionToAdvance, undefined] : [undefined, drawPositionToAdvance];
+  // stored alone, whatever its side (`normalizeDrawPositions`); the side travels as `advancingSide`
+  const positional = [drawPositionToAdvance];
 
   if (holdsParticipant && side !== exitSides[0]) {
     resolvePropagatedExitOnAdvance({

@@ -91,16 +91,12 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
   // THE ASCENDING ORDER IS THE SIDE/POSITION BINDING. This is the canonical statement of it; sites
   // that depend on it point here rather than restate it.
   //
-  // A matchUp's `drawPositions` are stored ascending, and THREE reader idioms across the engine
-  // derive a side from that order:
-  //
-  //   1. `drawPositions[winningSide - 1]`      — assignMatchUpDrawPosition, sideExitProvenance
-  //   2. `drawPositions[someIndex]`            — directParticipants, removeDirectedParticipants,
-  //                                              positionClear, assignDrawPositionBye
-  //   3. `indexOf(drawPosition) + 1` as a side — doubleExitAdvancement, removeOnwardLoserPlacements
-  //
-  // Every one of them silently resolves the WRONG PARTICIPANT if the order is not maintained. They
-  // do not fail loudly; they answer confidently and wrongly.
+  // A matchUp's `drawPositions` are stored ascending, positions present only (no hole: a lone survivor
+  // is `[5]`, `normalizeDrawPositions`). With both present the order IS the side: side 1 is the lower.
+  // With one present it is not, and the side is read through the round profile, here. The readers that
+  // once indexed the raw array (`[winningSide - 1]`, `[someIndex]`, `indexOf + 1`) now go through the
+  // helpers in `getDrawPositionSides.ts`, which index only when both are present;
+  // `drawPositionsAreReadByStructure.test.ts` holds the rest to an exact allow-list.
   //
   // THEREFORE: ANY WRITER OF `drawPositions` MUST LEAVE THEM ASCENDING. Removing a position (mapping
   // it to `undefined`) preserves order and is safe. Rewriting one IN PLACE does not — a positional

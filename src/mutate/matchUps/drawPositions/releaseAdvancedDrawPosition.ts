@@ -62,8 +62,8 @@ type ReleaseAdvancedDrawPositionArgs = {
  *     rewrote its `winningSide`. A matchUp with a recorded result therefore keeps its array; only
  *     TO_BE_PLAYED and BYE, with no winningSide, release.
  *
- * The hole is preserved rather than compacted, for the same positional reason: closing it would
- * shift the surviving position onto the other side.
+ * What survives is stored alone (`normalizeDrawPositions`); its side is read structurally, so
+ * compacting it does not move it.
  */
 export function releaseAdvancedDrawPosition({
   occupantLeaving,

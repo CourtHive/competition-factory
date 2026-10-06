@@ -190,9 +190,9 @@ it('preserves the reserved FED slot as well as the BYE advancement beside it', (
   expect(after).toEqual(before);
 });
 
-it('leaves a hole undefined rather than compacting the survivor onto the wrong side', () => {
-  // the trap this area has sprung before: a hole is `undefined`, and only RENDERS as `null` through
-  // JSON.stringify. Compacting `[<hole>, 16]` to `[16]` would move 16 from side 2 to side 1.
+it('stores a lone survivor without a hole, and still reads the side its feeder gives it', () => {
+  // No hole is stored (CA, 2026-10-05, Q2; leading-hole removal step 2): a lone survivor is `[16]` whatever its
+  // side, and its side is read structurally. This used to pin `[<hole>, 16]`, the hole keeping 16 on side 2.
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       { drawType: SINGLE_ELIMINATION, drawSize: 16, participantsCount: 13, drawId: DRAW_ID, completionGoal: 15 },
@@ -201,27 +201,34 @@ it('leaves a hole undefined rather than compacting the survivor onto the wrong s
   tournamentEngine.setState(tournamentRecord);
   tournamentEngine.resetDrawDefinition({ drawId: DRAW_ID });
 
-  const round2 = getStructureMatchUps(DRAW_ID).matchUps.filter((m: any) => m.roundNumber === 2);
-  const partiallyFilled = round2.filter(
-    (m: any) =>
-      (m.drawPositions ?? []).length === 2 &&
-      (m.drawPositions ?? []).filter((p: any) => typeof p === 'number').length === 1,
-  );
+  const stored = getStructureMatchUps(DRAW_ID).matchUps;
+  const round2 = stored.filter((m: any) => m.roundNumber === 2);
+  const partiallyFilled = round2.filter((m: any) => (m.drawPositions ?? []).filter(Boolean).length === 1);
   expect(partiallyFilled.length).toBeGreaterThan(0);
 
-  for (const matchUp of partiallyFilled) {
-    const holeIndex = matchUp.drawPositions.findIndex((p: any) => typeof p !== 'number');
-    // the hole is undefined, NOT null
-    expect(matchUp.drawPositions[holeIndex]).toBeUndefined();
-    expect(matchUp.drawPositions[holeIndex]).not.toBeNull();
-  }
-
-  // and the surviving participant still derives the side its feeder gives it
   const { matchUps }: any = tournamentEngine.allDrawMatchUps({ drawId: DRAW_ID, inContext: true });
   for (const matchUp of partiallyFilled) {
+    // stored compacted: one position, no hole, no null
+    expect(matchUp.drawPositions).toHaveLength(1);
+    const [lone] = matchUp.drawPositions;
+
+    // and on the side its feeder gives it: the top feeder (odd roundPosition) is side 1, the bottom side 2
+    const feeder = stored.find((m: any) => m.roundNumber === 1 && m.drawPositions?.includes(lone));
+    const expectedSide = feeder.roundPosition % 2 === 1 ? 1 : 2;
     const inContext = matchUps.find((m: any) => m.matchUpId === matchUp.matchUpId);
     const occupied = (inContext.sides ?? []).filter((side: any) => side.participantId);
     expect(occupied.length).toBe(1);
-    expect([1, 2]).toContain(occupied[0].sideNumber);
+    expect(occupied[0].sideNumber).toEqual(expectedSide);
+    expect(occupied[0].drawPosition).toEqual(lone);
   }
+  // CONTROL: both sides occur, so a reader that put every lone survivor on side 1 would fail above
+  const sidesSeen = new Set(
+    partiallyFilled.map((matchUp: any) => {
+      const feeder = stored.find(
+        (m: any) => m.roundNumber === 1 && m.drawPositions?.includes(matchUp.drawPositions[0]),
+      );
+      return feeder.roundPosition % 2;
+    }),
+  );
+  expect(sidesSeen.size).toEqual(2);
 });

@@ -1,7 +1,7 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
-import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
+import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -320,13 +320,13 @@ function withdrawExitFromByeChain({
   /**
    * The drawPosition this matchUp ADVANCED, captured before the reset blanks it.
    *
-   * `drawPositions` is positional — index 0 is side 1 — which is the canonical rule stated in
-   * `documentation/docs/concepts/draw-positions.md`.
+   * Read structurally: a lone position's side is not its index (`documentation/docs/concepts/draw-positions.md`).
    */
-  const priorWinningSide = noContextTargetMatchUp.winningSide;
-  const advancedDrawPosition = priorWinningSide
-    ? (noContextTargetMatchUp.drawPositions ?? [])[priorWinningSide - 1]
-    : undefined;
+  const advancedDrawPosition = getWinningSideDrawPosition({
+    matchUp: { ...noContextTargetMatchUp, sides: undefined },
+    structureId: fromMatchUp.structureId,
+    drawDefinition,
+  });
 
   const unwound = getUnwoundState({
     pairedPreviousDoubleExit: false,
