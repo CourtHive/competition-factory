@@ -2,6 +2,7 @@ import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchU
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
 import { getDeciderFinals, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
+import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
@@ -374,6 +375,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   if (!result.error) {
     const settled = settleDraw({ finalsBefore, params });
     if (settled.error) return decorateResult({ result: settled, stack });
+    // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
+    // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
+    reconcileLinkAdvancements({
+      drawDefinition: params.drawDefinition,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+    });
     const warnings = [
       ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
       ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
