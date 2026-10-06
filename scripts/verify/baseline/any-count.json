@@ -42,7 +42,7 @@
   "src/helpers/parameters": 9,
   "src/helpers/scoreRepair": 1,
   "src/mutate/base": 12,
-  "src/mutate/drawDefinitions": 19,
+  "src/mutate/drawDefinitions": 18,
   "src/mutate/drawDefinitions/competition": 1,
   "src/mutate/drawDefinitions/draft": 19,
   "src/mutate/drawDefinitions/entryGovernor": 2,

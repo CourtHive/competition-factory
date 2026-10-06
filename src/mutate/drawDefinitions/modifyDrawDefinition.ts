@@ -30,19 +30,19 @@ export function modifyDrawDefinition({
 
   const flightProfile = getFlightProfile({ event }).flightProfile;
 
-  const nameResult: any =
-    drawUpdates.drawName &&
-    modifyDrawName({
-      drawName: drawUpdates.drawName,
-      tournamentRecord,
-      drawDefinition,
-      flightProfile,
-      drawId,
-      event,
-    });
-  if (nameResult?.error) return nameResult?.error;
+  const nameResult = drawUpdates.drawName
+    ? modifyDrawName({
+        drawName: drawUpdates.drawName,
+        tournamentRecord,
+        drawDefinition,
+        flightProfile,
+        drawId,
+        event,
+      })
+    : undefined;
+  if (nameResult?.error) return nameResult;
 
-  const flight = nameResult?.flight || flightProfile?.flights?.find((flight) => flight.drawId === drawId);
+  const flight = nameResult?.flight ?? flightProfile?.flights?.find((flight) => flight.drawId === drawId);
 
   if (!flight && !drawDefinition) {
     return { error: MISSING_DRAW_DEFINITION };
