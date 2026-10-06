@@ -62,3 +62,37 @@ it('can aggregate team scores across SINGLES/DOUBLES events', () => {
     expect(isNumeric(diff)).toBe(true);
   }
 });
+
+// Only timed formats are tallied. A two-sided matchUp whose format is absent, or does not parse,
+// is not one of them — it is skipped, not a reason to throw.
+it.each([
+  ['no', undefined],
+  ['an unparsable', 'NOT-A-FORMAT'],
+])('skips a two-sided matchUp with %s matchUpFormat', (_label, matchUpFormat) => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 4 }],
+  });
+  const event = tournamentRecord.events[0];
+  delete event.matchUpFormat;
+  for (const drawDefinition of event.drawDefinitions) {
+    delete drawDefinition.matchUpFormat;
+    for (const structure of drawDefinition.structures) {
+      delete structure.matchUpFormat;
+      for (const matchUp of structure.matchUps) {
+        if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
+        else delete matchUp.matchUpFormat;
+      }
+    }
+  }
+  tournamentEngine.setState(tournamentRecord);
+
+  const { matchUps = [] } = tournamentEngine.allTournamentMatchUps();
+  const twoSided = matchUps.filter((matchUp) => matchUp.sides?.length === 2);
+  expect(twoSided.length).toBeGreaterThan(0);
+  expect(twoSided.every((matchUp) => matchUp.matchUpFormat === matchUpFormat)).toEqual(true);
+
+  const result: any = tournamentEngine.getAggregateTeamResults();
+  expect(result.success).toEqual(true);
+  expect(result.teamResults).toEqual({});
+  expect(result.individualResults).toEqual({});
+});

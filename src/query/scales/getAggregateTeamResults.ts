@@ -99,7 +99,7 @@ function tallyMatchUpResults({ getTeamParticipant, initializeResults, increment,
 
     if (
       sides?.length === 2 &&
-      parsedMatchUpFormat.setFormat?.timed &&
+      parsedMatchUpFormat?.setFormat?.timed &&
       (!parsedMatchUpFormat.finalSetFormat || parsedMatchUpFormat.finalSetFormat?.timed)
     ) {
       for (const side of sides) {
