@@ -47,6 +47,7 @@ Four artifacts live under `scripts/verify/baseline/`:
 - **`any-count.json`** — `any` per directory in non-test `src`; it may only fall (`verify:any-count`, below).
 - **`tsc-test-types.json`** — tsc errors per test file; may only fall (`verify:test-types`, below).
 - **`tsc-implicit-any.json`** — implicit `any` (TS7xxx) per directory in non-test `src`; may only fall (`verify:implicit-any`, below).
+- **`tsc-hard-union.json`** — tsc errors per directory under the 8.0.0 hard `Structure`/`DrawLink` unions; may only fall (`verify:hard-union`, below).
 
 All of them are tracked in git so the budget travels with the code.
 
@@ -161,3 +162,15 @@ Both follow `verify:any-count`'s rules: a rise, or a new key with errors, fails;
 lower counts and refuses a rise unless `--accept-rise`; a tsc run that exits non-zero with no parsable
 error fails rather than reading as clean. `node scripts/verify/tscRatchet.mjs --self-test` proves the
 parsing and the rise rule.
+
+## `verify:hard-union` — the 8.0.0 `Structure` union, ratcheted toward zero
+
+The third mode of `scripts/verify/tscRatchet.mjs`, also run by `verify:types`. It copies `src/types` to a temp
+directory, deletes the `never` fields that make `Structure` and `DrawLink` "soft" (#5214), maps `@Types/*` to the
+copy, and counts tsc errors per directory in non-test `src` against `baseline/tsc-hard-union.json` (44 at the start,
+all in the 14 unconverted writes and the areas another workstream holds). A read added the old way —
+`structure.matchUps` without narrowing — raises the count; read it through `matchUpsOf` / `positionAssignmentsOf` /
+`structuresOf` (`@Acquire/structureMembers`) or narrow on `structureType`. `src/types/typeAssertions` is not counted:
+its soft-form assertions fail under the hard form by design. When the count is 0 everywhere, 8.0.0 deletes the
+`never` fields (Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md). The transform refuses to run unless each `never`
+line is found exactly once, so a reshaped `tournamentTypes.ts` fails loudly instead of silently counting the soft form.

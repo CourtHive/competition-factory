@@ -28,12 +28,20 @@
  * A tsc run that exits non-zero yet yields no parsable error is a broken run and fails, so a config
  * mistake can never read as "0 errors".
  *
- * Run:        node scripts/verify/tscRatchet.mjs <test-types|implicit-any> [--update-baseline [--accept-rise]]
+ *   hard-union    every tsc error, per DIRECTORY, compiling non-test `src` against a temporary copy of
+ *                 `src/types` in which `Structure` and `DrawLink` are the 8.0.0 HARD unions (the `never`
+ *                 fields deleted). It holds stage 1 of Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md:
+ *                 a site converted to read through `matchUpsOf`/`positionAssignmentsOf`/`structuresOf` cannot
+ *                 quietly go back. `src/types/typeAssertions` is not counted (its soft-form assertions fail
+ *                 under the hard form by design). At 0 everywhere, 8.0.0 can delete the `never` fields.
+ *
+ * Run:        node scripts/verify/tscRatchet.mjs <test-types|implicit-any|hard-union> [--update-baseline [--accept-rise]]
  * Self-test:  node scripts/verify/tscRatchet.mjs --self-test
  */
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdtempSync, cpSync, rmSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -52,7 +60,68 @@ const COUNTS = {
     counts: (code) => code.startsWith('7'),
     fix: 'Annotate the new parameters with the existing domain types (Mentat/planning/FACTORY_ANY_TIGHTENING.md).',
   },
+  'hard-union': {
+    prepare: prepareHardUnion,
+    keyOf: (file) => dirname(file),
+    counts: () => true,
+    include: (key) => key.startsWith('src/') && !key.startsWith('src/types/typeAssertions'),
+    fix: 'Read the structure through matchUpsOf/positionAssignmentsOf/structuresOf (@Acquire/structureMembers), or narrow on structureType first.',
+  },
 };
+
+/** The `never` fields the 8.0.0 hard form deletes. Each must be present exactly once, or the count is meaningless. */
+export const SOFT_ONLY_LINES = [
+  '  structures?: never;\n',
+  '  matchUps?: never;\n  positionAssignments?: never;\n',
+  '; finishingPositions?: never }',
+  '; roundNumber?: never }',
+];
+
+export function toHardUnion(source) {
+  let hard = source;
+  for (const line of SOFT_ONLY_LINES) {
+    const found = hard.split(line).length - 1;
+    if (found !== 1)
+      throw new Error(`expected exactly one ${JSON.stringify(line)} in tournamentTypes.ts, found ${found}`);
+    hard = hard.replace(line, line.startsWith(';') ? ' }' : '');
+  }
+  return hard;
+}
+
+/**
+ * A copy of src/types with the hard unions, and a tsconfig that maps `@Types/*` to it. Nothing in src imports the
+ * types folder by relative path (checked when this was written), so the alias reaches every consumer.
+ */
+function prepareHardUnion() {
+  const dir = mkdtempSync(join(tmpdir(), 'factory-hard-union-'));
+  const types = join(dir, 'types');
+  cpSync(join(ROOT, 'src', 'types'), types, { recursive: true });
+  const typesFile = join(types, 'tournamentTypes.ts');
+  writeFileSync(typesFile, toHardUnion(readFileSync(typesFile, 'utf8')));
+  const base = JSON.parse(stripJsonComments(readFileSync(join(ROOT, 'tsconfig.base.json'), 'utf8')));
+  const paths = Object.fromEntries(
+    Object.entries(base.compilerOptions.paths).map(([alias, targets]) => [
+      alias,
+      alias === '@Types/*' ? [join(types, '*')] : targets.map((target) => join(ROOT, target)),
+    ]),
+  );
+  const config = join(dir, 'tsconfig.json');
+  writeFileSync(
+    config,
+    JSON.stringify({
+      extends: join(ROOT, 'tsconfig.json'),
+      compilerOptions: { baseUrl: ROOT, rootDir: '/', paths },
+      include: [join(ROOT, 'src/**/*.ts'), join(ROOT, 'src/**/*.js')],
+      exclude: ['dist', 'src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/scratch/**'].map((glob) => join(ROOT, glob)),
+    }),
+  );
+  return {
+    args: ['--noEmit', '--pretty', 'false', '-p', config],
+    cleanup: () => rmSync(dir, { recursive: true, force: true }),
+  };
+}
+
+const stripJsonComments = (text) => text.replace(/^\s*\/\/.*$/gm, '');
 
 const ERROR_LINE = /^(.+?)\(\d+,\d+\): error TS(\d+):/;
 
@@ -98,7 +167,13 @@ function run(name, { update, acceptRise }) {
   }
   const baselinePath = join(ROOT, 'scripts', 'verify', 'baseline', `tsc-${name}.json`);
 
-  const tsc = spawnSync(TSC, spec.args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  const prepared = spec.prepare ? spec.prepare() : { args: spec.args, cleanup: () => {} };
+  let tsc;
+  try {
+    tsc = spawnSync(TSC, prepared.args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  } finally {
+    prepared.cleanup();
+  }
   const output = `${tsc.stdout ?? ''}${tsc.stderr ?? ''}`;
   const parsed = output.split('\n').filter((line) => ERROR_LINE.test(line)).length;
   if (tsc.status !== 0 && parsed === 0) {
@@ -106,7 +181,9 @@ function run(name, { update, acceptRise }) {
     console.error(output.slice(0, 2000));
     return 1;
   }
-  const current = tally(output, spec);
+  const current = Object.fromEntries(
+    Object.entries(tally(output, spec)).filter(([key]) => (spec.include ? spec.include(key) : true)),
+  );
 
   if (!existsSync(baselinePath) && !update) {
     console.error(`${tag} FAIL — no baseline at ${relative(ROOT, baselinePath)}; run with --update-baseline`);
@@ -166,12 +243,29 @@ function selfTest() {
   expect('equal is quiet', rises({ k: 2 }, { k: 2 }).length, 0);
   expect('a new key with errors FIRES', rises({ fresh: 1 }, {}).length, 1);
 
+  const soft = [
+    'interface ItemStructure {\n  matchUps?: MatchUp[];\n  structures?: never;\n}',
+    'interface ContainerStructure {\n  structures: Structure[];\n  matchUps?: never;\n  positionAssignments?: never;\n}',
+    'source: DrawLinkSource & { roundNumber: number; finishingPositions?: never };',
+    'source: DrawLinkSource & { finishingPositions: number[]; roundNumber?: never };',
+  ].join('\n');
+  const hard = toHardUnion(soft);
+  expect('the hard form deletes every never field', hard.includes('never'), false);
+  expect('the hard form keeps the real fields', hard.includes('structures: Structure[];'), true);
+  let threw = false;
+  try {
+    toHardUnion(soft.replace('  structures?: never;\n', ''));
+  } catch {
+    threw = true;
+  }
+  expect('a missing never field FAILS rather than counting against the soft form', threw, true);
+
   if (failures.length) {
     console.error('[verify:tsc-ratchet] SELF-TEST FAILED');
     for (const failure of failures) console.error(`  ${failure}`);
     return 1;
   }
-  console.log('[verify:tsc-ratchet] self-test OK — fires on a rise, quiet on a fall, implicit-any counts TS7xxx only');
+  console.log('[verify:tsc-ratchet] self-test OK — fires on a rise, quiet on a fall, TS7xxx only, hard form complete');
   return 0;
 }
 
