@@ -198,7 +198,7 @@ function getMergedAvailability(dateDetails) {
       } else {
         if (bookings) {
           if (lastBookings) {
-            lastBookings.push(bookings);
+            lastBookings = [...lastBookings, ...bookings];
           } else {
             lastBookings = bookings;
           }
