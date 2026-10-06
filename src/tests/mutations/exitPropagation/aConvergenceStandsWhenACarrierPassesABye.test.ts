@@ -2,12 +2,12 @@ import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions'
 import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
+import { isDoubleExit } from '@Validators/isExit';
 import { expect, it } from 'vitest';
 
 // constants
-import { FIRST_ROUND_LOSER_CONSOLATION, DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { isDoubleExit } from '@Validators/isExit';
+import { FIRST_ROUND_LOSER_CONSOLATION, DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * A CONVERGENCE STANDS WHEN THE CARRIER OF ONE OF ITS EXITS ADVANCES IN PAST A BYE.
