@@ -99,7 +99,7 @@
   "src/query/hierarchical": 1,
   "src/query/hierarchical/tieFormats": 6,
   "src/query/integrity": 2,
-  "src/query/ladder": 26,
+  "src/query/ladder": 24,
   "src/query/matchUp": 25,
   "src/query/matchUps": 36,
   "src/query/matchUps/roundRobinTally": 13,
