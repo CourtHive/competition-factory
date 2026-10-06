@@ -611,14 +611,34 @@ export function parseMCPPoint(mcpPoint: MCPPoint, serverIndex: 0 | 1): ParsedMCP
 }
 
 /**
+ * Key each header column; a repeated header name gets an ordinal suffix.
+ *
+ * MCP's full point export names `Gm1`, `Gm2`, `Set1` and `Set2` twice: the before-point copy near the
+ * start of the row and the after-point copy near the end. The first occurrence keeps the bare name,
+ * the second is keyed `<name>_2` (a third would be `<name>_3`), so `point.Set1` is always the
+ * before-point value and `point.Set1_2` the after-point value. Non-repeated columns are unaffected.
+ */
+function keyHeaders(headers: string[]): string[] {
+  const seen = new Map<string, number>();
+  return headers.map((header) => {
+    const count = (seen.get(header) ?? 0) + 1;
+    seen.set(header, count);
+    return count === 1 ? header : `${header}_${count}`;
+  });
+}
+
+/**
  * Parse CSV content into MCP points
+ *
+ * Each row is keyed by header name (see `keyHeaders` for repeated names). Missing trailing fields
+ * read as ''.
  */
 export function parseCSV(csvContent: string): MCPPoint[] {
   if (!csvContent || !isString(csvContent)) return [];
   const lines = csvContent.trim().split('\n');
   if (lines.length < 2) return [];
 
-  const headers = lines[0]?.split(',') ?? [];
+  const headers = keyHeaders(lines[0]?.split(',') ?? []);
   const points: MCPPoint[] = [];
 
   for (let i = 1; i < lines.length; i++) {
