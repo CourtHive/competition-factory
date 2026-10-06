@@ -1,3 +1,5 @@
+import type { ErrorType } from '@Constants/errorConditionConstants';
+import type { PolicyDefinitions } from '@Types/factoryTypes';
 import type {
   DrawDefinition,
   Event,
@@ -6,8 +8,6 @@ import type {
   Score,
   Tournament,
 } from '@Types/tournamentTypes';
-import type { ErrorType } from '@Constants/errorConditionConstants';
-import type { PolicyDefinitions } from '@Types/factoryTypes';
 
 /**
  * The outcome pipeline, v2: types.

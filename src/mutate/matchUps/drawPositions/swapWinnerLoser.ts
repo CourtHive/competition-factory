@@ -1,7 +1,3 @@
-import {
-  reconcileFedLoserEligibility,
-  fedLoserPlacementRefusal,
-} from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { getDownstreamStructureIds } from '@Query/matchUps/getDownstreamStructureIds';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -11,6 +7,10 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { reverseScore } from '@Generators/score/reverseScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import {
+  reconcileFedLoserEligibility,
+  fedLoserPlacementRefusal,
+} from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 
 // constants
 import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
