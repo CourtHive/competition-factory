@@ -33,6 +33,9 @@ export function pruneDrawDefinition({
       stage: MAIN,
     });
 
+    // a round robin MAIN is a CONTAINER of groups: it has no draw size to reduce, so it is not pruned
+    if (mainStructure && 'structures' in mainStructure) return { ...SUCCESS, matchUps: relevantMatchUps };
+
     const structureData = drawAnalysis.structuresData.find(
       ({ structureId }) => mainStructure.structureId === structureId,
     );

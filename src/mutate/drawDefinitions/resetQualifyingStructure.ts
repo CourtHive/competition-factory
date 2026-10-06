@@ -1,5 +1,5 @@
 import { deleteMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { matchUpsOf } from '@Acquire/structureMembers';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 
 // Constants
 import { MISSING_DRAW_DEFINITION, SCORES_PRESENT, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -30,17 +30,25 @@ export function resetQualifyingStructure({
 
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
-  const scoresPresent = matchUpsOf(structure)?.some(
+  // a round robin qualifying structure is a CONTAINER: its matchUps live on its groups
+  const groups = structuresOf(structure);
+  const matchUps = groups ? groups.flatMap((group) => matchUpsOf(group) ?? []) : matchUpsOf(structure);
+
+  const scoresPresent = matchUps?.some(
     ({ matchUpStatus, score }) =>
       checkScoreHasValue({ score }) ?? (!!matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus)),
   );
   if (scoresPresent) return { error: SCORES_PRESENT };
 
-  const removedMatchUpIds = matchUpsOf(structure)?.map(({ matchUpId }) => matchUpId) ?? [];
+  const removedMatchUpIds = matchUps?.map(({ matchUpId }) => matchUpId) ?? [];
 
-  structure.positionAssignments = [];
   structure.seedAssignments = [];
-  structure.matchUps = [];
+  if ('structures' in structure) {
+    structure.structures = [];
+  } else {
+    structure.positionAssignments = [];
+    structure.matchUps = [];
+  }
 
   deleteMatchUpsNotice({
     tournamentId: tournamentRecord?.tournamentId,

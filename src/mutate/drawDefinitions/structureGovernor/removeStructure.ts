@@ -3,11 +3,11 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { resequenceStructures } from './resequenceStructures';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { findStructure } from '@Acquire/findStructure';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import { xa } from '@Tools/extractAttributes';
 
 // constants and types
@@ -67,12 +67,20 @@ export function removeStructure(params: RemoveStructureArgs) {
 
   // if this is MAIN stageSequence: 1 there must be qualifying, return to empty state
   if (isMainStageSequence1) {
-    const mainStageSequence1MatchUpIds = (matchUpsOf(mainStageSequence1) ?? [])?.map(xa('matchUpId'));
-    removedMatchUpIds.push(...mainStageSequence1MatchUpIds);
+    // a round robin MAIN is a CONTAINER: its matchUps live on its groups
+    const groups = structuresOf(mainStageSequence1);
+    const mainStageSequence1MatchUps = groups
+      ? groups.flatMap((group) => matchUpsOf(group) ?? [])
+      : (matchUpsOf(mainStageSequence1) ?? []);
+    removedMatchUpIds.push(...mainStageSequence1MatchUps.map(xa('matchUpId')));
 
-    mainStageSequence1.positionAssignments = [];
     mainStageSequence1.seedAssignments = [];
-    mainStageSequence1.matchUps = [];
+    if ('structures' in mainStageSequence1) {
+      mainStageSequence1.structures = [];
+    } else {
+      mainStageSequence1.positionAssignments = [];
+      mainStageSequence1.matchUps = [];
+    }
     if (mainStageSequence1.extensions) {
       mainStageSequence1.extensions = [];
     }
