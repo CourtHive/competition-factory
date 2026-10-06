@@ -83,6 +83,11 @@ import {
 //    advancement left behind across a link was invisible to every check (design § 3.1: clearing `Backdraw|3|1`
 //    left its finalist in the grand final and the Decider, and the draw read clean; CA approved the check
 //    2026-10-05).
+//  - TWO_POSITIONS_FROM_ONE_FEEDER: both drawPositions of a matchUp were delivered by the same earlier matchUp
+//    in the structure, which sends exactly one on. A BYE holder whose other seat was empty advanced its lone
+//    position, and a participant passing the BYE later was added beside it (census w2 9100198, Consolation|5|1
+//    [1, 3]); the next arrival then evicted one of the two. A round a link feeds is not checked: a position fed
+//    across the link keeps its own number there (DOUBLE_ELIMINATION's Main final, a rematch of the semifinal).
 //  - DRAW_POSITION_UNASSIGNED: a decided, non-exit matchUp references a drawPosition
 //    whose stored positionAssignment holds no participant, no bye and no qualifier — a
 //    phantom position. Read from STORED structure state (drawPositions ↔
@@ -105,6 +110,7 @@ export const STALLED_POSITION = 'STALLED_POSITION';
 export const ORIGIN_ON_UNDECIDED_MATCHUP = 'ORIGIN_ON_UNDECIDED_MATCHUP';
 export const ADVANCED_FROM_UNDECIDED = 'ADVANCED_FROM_UNDECIDED';
 export const ADVANCED_ACROSS_LINK_FROM_UNDECIDED = 'ADVANCED_ACROSS_LINK_FROM_UNDECIDED';
+export const TWO_POSITIONS_FROM_ONE_FEEDER = 'TWO_POSITIONS_FROM_ONE_FEEDER';
 
 // DEFERRED — STALE_EXIT_STATUS is intentionally NOT implemented.
 //
@@ -301,16 +307,7 @@ function getAdvancedFromUndecidedInconsistencies(
   const roundNumber = matchUp.roundNumber ?? 0;
   for (const side of matchUp.sides ?? []) {
     if (!side?.participantId || !side.drawPosition) continue;
-    const feeder = structureMatchUps
-      .filter(
-        (candidate) =>
-          (candidate.roundNumber ?? 0) < roundNumber && candidate.drawPositions?.includes(side.drawPosition),
-      )
-      .reduce<HydratedMatchUp | undefined>(
-        (latest, candidate) =>
-          !latest || (candidate.roundNumber ?? 0) > (latest.roundNumber ?? 0) ? candidate : latest,
-        undefined,
-      );
+    const feeder = feederOf(side.drawPosition, roundNumber, structureMatchUps);
     if (!feeder || feeder.winningSide) continue;
     if (feeder.matchUpStatus && feeder.matchUpStatus !== TO_BE_PLAYED) continue;
     if ((feeder.sides ?? []).some((feederSide) => feederSide?.bye)) continue;
@@ -327,10 +324,49 @@ function getAdvancedFromUndecidedInconsistencies(
   return found;
 }
 
+/** the latest matchUp of an earlier round in the same structure that holds `drawPosition`: the one that delivered it */
+function feederOf(
+  drawPosition: number,
+  roundNumber: number,
+  structureMatchUps: HydratedMatchUp[],
+): HydratedMatchUp | undefined {
+  return structureMatchUps
+    .filter(
+      (candidate) => (candidate.roundNumber ?? 0) < roundNumber && candidate.drawPositions?.includes(drawPosition),
+    )
+    .reduce<HydratedMatchUp | undefined>(
+      (latest, candidate) => (!latest || (candidate.roundNumber ?? 0) > (latest.roundNumber ?? 0) ? candidate : latest),
+      undefined,
+    );
+}
+
+/**
+ * TWO_POSITIONS_FROM_ONE_FEEDER — see the header. Both of a matchUp's positions were delivered by the SAME earlier
+ * matchUp, which sends one on. A fed position appears first in this round and has no feeder, so it is never counted.
+ */
+function getTwoFromOneFeederInconsistency(
+  matchUp: HydratedMatchUp,
+  structureMatchUps: HydratedMatchUp[],
+): StructureInconsistency | undefined {
+  const positions = (matchUp.drawPositions ?? []).filter((position): position is number => !!position);
+  if (positions.length !== 2 || !matchUp.roundNumber) return undefined;
+  const [first, second] = positions.map((position) => feederOf(position, matchUp.roundNumber ?? 0, structureMatchUps));
+  if (!first || first.matchUpId !== second?.matchUpId) return undefined;
+  return {
+    matchUpId: matchUp.matchUpId,
+    structureId: matchUp.structureId,
+    issueType: TWO_POSITIONS_FROM_ONE_FEEDER,
+    message: 'both drawPositions of this matchUp were delivered by the same earlier matchUp, which sends one on',
+    drawPositions: positions,
+    feederMatchUpId: first.matchUpId,
+  };
+}
+
 function getAllAdvancedFromUndecided(
   scoped: HydratedMatchUp[],
   inContextDrawMatchUps: HydratedMatchUp[],
   roundRobinGroupStructureIds: Set<string>,
+  linkTargetRounds: Set<string>,
 ): StructureInconsistency[] {
   const matchUpsByStructure = new Map<string, HydratedMatchUp[]>();
   for (const matchUp of inContextDrawMatchUps) {
@@ -341,7 +377,15 @@ function getAllAdvancedFromUndecided(
   }
   return scoped.flatMap((matchUp) => {
     const structureMatchUps = matchUpsByStructure.get(matchUp.structureId);
-    return structureMatchUps ? getAdvancedFromUndecidedInconsistencies(matchUp, structureMatchUps) : [];
+    if (!structureMatchUps) return [];
+    // a round a link feeds receives a position from ANOTHER structure under its own number here: the Backdraw champion
+    // re-enters DOUBLE_ELIMINATION's Main final on their Main drawPosition, beside the semifinal they lost (a rematch)
+    const fedByLink = linkTargetRounds.has(`${matchUp.structureId}|${matchUp.roundNumber}`);
+    const twoFromOne = fedByLink ? undefined : getTwoFromOneFeederInconsistency(matchUp, structureMatchUps);
+    return [
+      ...getAdvancedFromUndecidedInconsistencies(matchUp, structureMatchUps),
+      ...(twoFromOne ? [twoFromOne] : []),
+    ];
   });
 }
 
@@ -774,7 +818,12 @@ export function getStructureInconsistencies(
     ...getStalledPositionInconsistencies(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds),
   );
 
-  inconsistencies.push(...getAllAdvancedFromUndecided(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds));
+  const linkTargetRounds = new Set(
+    (drawDefinition.links ?? []).map((link) => `${link.target?.structureId}|${link.target?.roundNumber}`),
+  );
+  inconsistencies.push(
+    ...getAllAdvancedFromUndecided(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds, linkTargetRounds),
+  );
 
   inconsistencies.push(...getCrossLinkAdvancementInconsistencies(drawDefinition, inContextDrawMatchUps, structureId));
 

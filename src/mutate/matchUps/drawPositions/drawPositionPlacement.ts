@@ -23,7 +23,14 @@
  */
 
 import { removeSubsequentRoundsParticipant } from '@Mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant';
-import { DrawDefinition, Event, MatchUpStatusUnion, PositionAssignment, Tournament } from '@Types/tournamentTypes';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  PositionAssignment,
+  Tournament,
+} from '@Types/tournamentTypes';
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
@@ -40,7 +47,7 @@ import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getE
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
-import { rekeySideFacts } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
+import { rekeySideFacts, setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -735,6 +742,14 @@ function advanceIntoWinnerMatchUp({
     return result.error ? result : undefined;
   }
 
+  replaceEarlierAdvance({
+    winnerMatchUpId: winnerMatchUp.matchUpId,
+    structureId: structure.structureId,
+    sourceMatchUp: matchUp,
+    drawDefinition,
+    drawPosition,
+    matchUpsMap,
+  });
   const result = assignMatchUpDrawPosition({
     matchUpId: winnerMatchUp.matchUpId,
     inContextDrawMatchUps,
@@ -746,6 +761,48 @@ function advanceIntoWinnerMatchUp({
     event,
   });
   return result.error ? result : undefined;
+}
+
+/**
+ * ONE position goes on from a matchUp. A BYE-held matchUp whose other seat is still empty advances its lone position
+ * (the BYE, or an empty seat) structurally; when somebody then arrives opposite it, it is THEIR position that goes on,
+ * and it REPLACES the one already there rather than sitting beside it. Census w2 9100198 (FEED_IN_CHAMPIONSHIP_TO_SF
+ * 16/11): `Consolation|4|1` held only a propagated BYE on dp1, already advanced into `5|1`; the arrival on dp3 was
+ * added beside it, so `5|1` held two positions from one feeder (`[1, 3]`), and the next arrival from `4|2` evicted the
+ * BYE and un-decided `5|1` (MONOTONIC_DECISION). A position that holds a participant is never replaced here.
+ */
+function replaceEarlierAdvance({
+  winnerMatchUpId,
+  drawDefinition,
+  sourceMatchUp,
+  drawPosition,
+  matchUpsMap,
+  structureId,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  winnerMatchUpId: string;
+  drawPosition: number;
+  structureId: string;
+  sourceMatchUp?: MatchUp;
+}) {
+  const stored = matchUpsMap?.drawMatchUps?.find((candidate) => candidate.matchUpId === winnerMatchUpId);
+  const held = (stored?.drawPositions ?? []).filter((position): position is number => !!position);
+  if (!stored || held.includes(drawPosition)) return;
+  const sourcePositions: number[] = sourceMatchUp?.drawPositions ?? [];
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId });
+  const earlier = held.find((position) => {
+    if (position === drawPosition || !sourcePositions.includes(position)) return false;
+    const assignment = positionAssignments?.find((candidate) => candidate.drawPosition === position);
+    return !assignment?.participantId;
+  });
+  if (!earlier) return;
+  setMatchUpDrawPositions({
+    drawPositions: (stored.drawPositions ?? []).map((position) => (position === earlier ? undefined : position)),
+    matchUp: stored,
+    drawDefinition,
+    structureId,
+  });
 }
 
 function advanceDrawPosition(params) {

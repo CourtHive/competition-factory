@@ -1,6 +1,7 @@
+import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { playForward } from '@Tests/testHarness/exitPropagation/driver';
-import { setSubscriptions } from '@Global/state/globalState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -61,6 +62,19 @@ const KNOWN_PLAY_FAILURES: Record<number, string[]> = {
     'ERROR_IMPLIES_NO_MUTATION returned {"message":"drawPosition is occupied","code":"ERR_OCCUPIED_DRAW_POSITION"} after mutating the draw',
   ],
 };
+/**
+ * The same step read under `OUTCOME_PIPELINE=differential` (Button's suite-differential gate): v2 accepts what v1
+ * refuses after mutating, so the run reports the divergence instead of the refusal.
+ */
+const KNOWN_DIFFERENTIAL_PLAY_FAILURES: Record<number, string[]> = {
+  300071: [
+    'NO_EXCEPTION_ESCAPES outcome pipeline divergence on eba78b98-8e8e-4a65-9573-0aba31f5125b: v1 ERR_OCCUPIED_DRAW_POSITION, v2 ok (state was mutated before the throw)',
+  ],
+};
+const knownPlayFailures = (seed: number) =>
+  (getOutcomePipeline() === OUTCOME_PIPELINE_DIFFERENTIAL ? KNOWN_DIFFERENTIAL_PLAY_FAILURES : KNOWN_PLAY_FAILURES)[
+    seed
+  ] ?? [];
 
 function compareEveryMatchUp(drawId: string): number {
   const { tournamentRecord } = tournamentEngine.getTournament();
@@ -125,7 +139,7 @@ it.each(CELLS)(
     expect(partial.map(({ property }) => property)).toEqual(['DRIVER_DID_NOT_CONVERGE']);
     expect(compareEveryMatchUp(drawId)).toBeGreaterThan(0);
     const played = playForward({ propagateExitStatus, exitOutcome, drawId }).failures;
-    expect(played.map(({ property, detail }) => `${property} ${detail}`)).toEqual(KNOWN_PLAY_FAILURES[cell.seed] ?? []);
+    expect(played.map(({ property, detail }) => `${property} ${detail}`)).toEqual(knownPlayFailures(cell.seed));
     expect(compareEveryMatchUp(drawId)).toBeGreaterThan(0);
   },
 );
