@@ -2,6 +2,7 @@ import { assignDrawPositionBye, assignFedDrawPositionBye } from './assignDrawPos
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { isExit } from '@Validators/isExit';
 import {
   carriedExitStatus,
@@ -251,7 +252,7 @@ function holdsPropagatedBye({
   matchUp: MatchUp;
 }): boolean {
   const structure = (drawDefinition.structures ?? []).find((candidate) =>
-    (candidate.matchUps ?? []).some((held) => held.matchUpId === matchUp.matchUpId),
+    (matchUpsOf(candidate) ?? []).some((held) => held.matchUpId === matchUp.matchUpId),
   );
   if (!structure) return false;
 

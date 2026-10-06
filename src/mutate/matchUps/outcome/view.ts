@@ -21,6 +21,7 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { isAnyExit, isExit } from '@Validators/isExit';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { isObject } from '@Tools/objects';
 import {
   getSideExitProvenance,
@@ -182,8 +183,9 @@ function hasResult(matchUp?: HydratedMatchUp): boolean {
 }
 
 function luckyPreFeed(drawDefinition: DrawDefinition, matchUp: MatchUp, structure?: Structure): boolean {
-  if (!isLuckyBasedDraw(drawDefinition?.drawType) || !matchUp.roundNumber || !structure?.matchUps) return false;
-  return structure.matchUps.filter((m) => m.roundNumber === matchUp.roundNumber).length % 2 !== 0;
+  const structureMatchUps = matchUpsOf(structure);
+  if (!isLuckyBasedDraw(drawDefinition?.drawType) || !matchUp.roundNumber || !structureMatchUps) return false;
+  return structureMatchUps.filter((m) => m.roundNumber === matchUp.roundNumber).length % 2 !== 0;
 }
 
 // a TEAM line's format is its collection's, which only the hydrated matchUp carries — see `resolveScoringFormat`

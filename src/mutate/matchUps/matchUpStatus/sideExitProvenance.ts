@@ -1,5 +1,6 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -1053,7 +1054,9 @@ function holdsBye({
   matchUp: MatchUp;
 }): boolean {
   const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
-  const byePositions = structure?.positionAssignments?.filter((a) => a.bye).map((a) => a.drawPosition);
+  const byePositions = positionAssignmentsOf(structure)
+    ?.filter((a) => a.bye)
+    .map((a) => a.drawPosition);
   return !!matchUp.drawPositions?.some((drawPosition) => !!drawPosition && !!byePositions?.includes(drawPosition));
 }
 
@@ -1084,7 +1087,7 @@ function withoutWinnersOrigins({
   for (const sideNumber of [1, 2] as const) {
     const entry = provenance[sideNumber];
     if (!entry) continue;
-    const source = structure?.matchUps?.find((candidate) => candidate.matchUpId === entry.sourceMatchUpId);
+    const source = matchUpsOf(structure)?.find((candidate) => candidate.matchUpId === entry.sourceMatchUpId);
     const sourceWinner = source && getWinningSideDrawPosition({ drawDefinition, structureId, matchUp: source });
     const here = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber });
     if (sourceWinner && sourceWinner === here) continue;

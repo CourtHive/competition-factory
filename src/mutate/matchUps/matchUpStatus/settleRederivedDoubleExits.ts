@@ -4,6 +4,7 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
 import {
@@ -243,7 +244,7 @@ function withdrawByeSeats({
         withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
         if (matchUp.sideExitProvenance?.[sideNumber]?.byeClaims?.length) continue;
         const drawPosition = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber });
-        const assignment = structure?.positionAssignments?.find((entry) => entry.drawPosition === drawPosition);
+        const assignment = positionAssignmentsOf(structure)?.find((entry) => entry.drawPosition === drawPosition);
         if (!assignment?.bye || !assignment.byeFromPropagation) continue;
         clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
       }

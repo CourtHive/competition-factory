@@ -4,6 +4,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
@@ -170,7 +171,7 @@ export function getDeciderFinals(drawDefinition?: DrawDefinition): Map<string, n
     if (!feedsBoth || targetStructureId === structureId) continue;
 
     const { structure } = findStructure({ drawDefinition, structureId });
-    for (const matchUp of structure?.matchUps ?? []) {
+    for (const matchUp of matchUpsOf(structure) ?? []) {
       if (matchUp.roundNumber === roundNumber) finals.set(matchUp.matchUpId, matchUp.winningSide);
     }
   }

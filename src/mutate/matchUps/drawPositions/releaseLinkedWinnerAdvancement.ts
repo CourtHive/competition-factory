@@ -2,6 +2,7 @@ import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/no
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
 
@@ -127,7 +128,7 @@ export function releaseLinkedWinnerAdvancement({
       (matchUp) => matchUp.roundNumber === targetRoundNumber && matchUp.drawPositions?.includes(targetDrawPosition),
     );
     const undecided = holder && !holder.winningSide && [undefined, TO_BE_PLAYED, BYE].includes(holder.matchUpStatus);
-    const assignment = targetStructure.positionAssignments?.find(
+    const assignment = positionAssignmentsOf(targetStructure)?.find(
       (candidate) => candidate.drawPosition === targetDrawPosition,
     );
     if (!undecided || !assignment?.participantId) return;

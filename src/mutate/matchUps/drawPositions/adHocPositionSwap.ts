@@ -3,6 +3,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { isString } from '@Tools/objects';
 
 // constants and types
@@ -51,7 +52,7 @@ export function adHocPositionSwap(params: AdHocPositionSwapArgs): ResultType {
   const noScoreValue = (matchUp) => !checkScoreHasValue(matchUp);
 
   // find two unscored rounds matchUps that contain the two participants being swapped
-  const targetMatchUps = (structure?.matchUps ?? [])
+  const targetMatchUps = (matchUpsOf(structure) ?? [])
     .filter(targetRoundNumber)
     .filter(noScoreValue)
     .filter(hasParticipant);

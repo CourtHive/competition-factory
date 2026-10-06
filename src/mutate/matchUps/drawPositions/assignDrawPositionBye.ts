@@ -19,6 +19,7 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { drawPositionFilled } from './drawPositionFilled';
 import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { numericSort } from '@Tools/sorting';
 import { isExit } from '@Validators/isExit';
 import {
@@ -652,8 +653,9 @@ export function advanceDrawPosition({
   // luckyDrawAdvancement. Normal power-of-2 rounds advance immediately.
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition?.drawType);
   const isPreFeedRound = (() => {
-    if (!isLuckyDraw || !matchUp?.roundNumber || !structure?.matchUps) return false;
-    const roundMatchUpCount = structure.matchUps.filter((m: any) => m.roundNumber === matchUp.roundNumber).length;
+    const structureMatchUps = matchUpsOf(structure);
+    if (!isLuckyDraw || !matchUp?.roundNumber || !structureMatchUps) return false;
+    const roundMatchUpCount = structureMatchUps.filter((m: any) => m.roundNumber === matchUp.roundNumber).length;
     return roundMatchUpCount % 2 !== 0;
   })();
 
