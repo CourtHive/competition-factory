@@ -141,16 +141,28 @@ function hasResult(matchUp: HydratedMatchUp): boolean {
 }
 
 /** the carried exit's winner has advanced and that next matchUp already has a result */
+/**
+ * The carry's winner has a result onward: in the next matchUp, or in the first one past any BYEs they were advanced
+ * through. A BYE is passed, not played, so stopping at it missed the match they then won; withdrawing the carry
+ * released them from a round they had reached by that result (census w1 9000087, FMLC 16/13: `Consolation|3|1`
+ * won, then the winner taken out of `Consolation|4|1` when `Main|1|3`'s walkover was relabelled as played).
+ */
 function winnerPlayedOn(standing: HydratedMatchUp, matchUps: HydratedMatchUp[] | undefined, drawDefinition) {
   if (!standing.winningSide) return false;
-  const nextId = positionTargets({
-    inContextDrawMatchUps: matchUps,
-    matchUpId: standing.matchUpId,
-    inContextMatchUp: standing,
-    drawDefinition,
-  }).targetMatchUps?.winnerMatchUp?.matchUpId;
-  const next = nextId ? matchUps?.find((matchUp) => matchUp.matchUpId === nextId) : undefined;
-  return !!next && hasResult(next);
+  let current: HydratedMatchUp | undefined = standing;
+  for (let hops = 0; current && hops < 16; hops++) {
+    const nextId = positionTargets({
+      inContextDrawMatchUps: matchUps,
+      matchUpId: current.matchUpId,
+      inContextMatchUp: current,
+      drawDefinition,
+    }).targetMatchUps?.winnerMatchUp?.matchUpId;
+    const next = nextId ? matchUps?.find((matchUp) => matchUp.matchUpId === nextId) : undefined;
+    if (!next) return false;
+    if (next.matchUpStatus !== BYE) return hasResult(next);
+    current = next;
+  }
+  return false;
 }
 
 /**
