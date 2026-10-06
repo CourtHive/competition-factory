@@ -41,7 +41,7 @@ export function addPositionActionTelemetry(params: AddPositionActionTelemetry) {
   const existingValue = Array.isArray(extension?.value) ? (extension?.value ?? []) : [];
 
   if (!existingValue?.length) {
-    const mainStructure = drawDefinition.structures.find((structure) => structure.stage === MAIN);
+    const mainStructure = drawDefinition.structures?.find((structure) => structure.stage === MAIN);
     if (mainStructure) {
       const initialAssignments = getPositionAssignments({
         structure: mainStructure,
