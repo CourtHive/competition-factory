@@ -26,7 +26,7 @@ export function removeQualifier(params: RemoveQualifierArgs): ResultType & { qua
 
   const winnerTargetLink = params.targetData.targetLinks?.winnerTargetLink;
 
-  if (winnerTargetLink.target.feedProfile === DRAW) {
+  if (winnerTargetLink?.target?.feedProfile === DRAW) {
     const previousWinningParticipantId = inContextMatchUp.sides?.find(
       ({ sideNumber }) => sideNumber === inContextMatchUp.winningSide,
     )?.participantId;
