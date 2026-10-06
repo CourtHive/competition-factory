@@ -1,0 +1,13 @@
+{
+  "src/mutate/drawDefinitions": 8,
+  "src/mutate/drawDefinitions/matchUpGovernor": 2,
+  "src/mutate/drawDefinitions/structureGovernor": 2,
+  "src/mutate/ladder": 2,
+  "src/mutate/matchUps/drawPositions": 7,
+  "src/mutate/matchUps/matchUpStatus": 6,
+  "src/mutate/matchUps/outcome": 3,
+  "src/query/drawDefinition": 8,
+  "src/query/reports": 2,
+  "src/query/reports/wrappers": 2,
+  "src/tests/mutations/drawDefinitions/primitives": 2
+}
