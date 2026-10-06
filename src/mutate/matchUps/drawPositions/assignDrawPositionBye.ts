@@ -22,8 +22,9 @@ import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
 import { isExit } from '@Validators/isExit';
 import {
-  carriedExitStatus,
+  deriveExitStateFromProvenance,
   getSideExitProvenance,
+  carriedExitStatus,
   policyCodeString,
   retainPolicyCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
@@ -822,7 +823,14 @@ function advanceWinner({
     return;
   }
 
-  const matchUpStatus = drawPositionIsBye || pairedDrawPositionIsBye ? BYE : TO_BE_PLAYED;
+  // A CONVERGENCE STANDS. When the matchUp already records an exit on BOTH sides, the position advancing in is a
+  // carrier passing a BYE with its exit (a propagated exit meeting a BYE is advanced, CA 2026-09-20), beside an exit
+  // produced for the other seat: the two collapse and nobody wins (RULE 4; #5161, "an arrival carrying an exit
+  // converges, never takes"). Writing TO_BE_PLAYED here lost both while provenance still recorded them (census w2
+  // 9100283, FRLC 32/30 `Consolation|2|3`; de 9301596, DE 16/13 `Backdraw|3|1`: ORIGIN_ON_UNDECIDED_MATCHUP).
+  const standingExit = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp: noContextWinnerMatchUp }));
+  const convergence = standingExit && !standingExit.winningSide ? standingExit.matchUpStatus : undefined;
+  const matchUpStatus = drawPositionIsBye || pairedDrawPositionIsBye ? BYE : (convergence ?? TO_BE_PLAYED);
 
   rekeySideFacts({
     structureId: winnerMatchUp?.structureId,
