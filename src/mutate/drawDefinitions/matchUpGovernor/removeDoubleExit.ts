@@ -1,7 +1,11 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
-import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import {
+  getDrawPositionSideNumber,
+  getSideDrawPosition,
+  getWinningSideDrawPosition,
+} from '@Query/matchUps/getDrawPositionSides';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -811,10 +815,42 @@ function getUnwoundState({
   // matchUp. What separates them is the shape being taken apart.
   if (isDoubleExit(noContextTargetMatchUp?.matchUpStatus)) {
     const rederived = deriveExitStateFromProvenance(retained);
-    if (rederived) return { ...rederived, provenance: retained };
+    if (rederived) {
+      // A PRODUCED exit has no winningSide until a participant arrives (CA, 2026-09-20); a CARRIED exit keeps its
+      // award on an empty seat. The derivation awards the other side either way, so the award stands only for a
+      // carried exit, or where the winning seat holds somebody (as `positionClear`'s `awardStands`). Matrix FMLC 8/8,
+      // do/undo: a double exit undone left the pending WALKOVER it had converged with won by a seat nobody had reached.
+      const awarded = producedAwardStands({ rederived, retained, drawDefinition, targetMatchUp });
+      return { ...rederived, winningSide: awarded ? rederived.winningSide : undefined, provenance: retained };
+    }
   }
 
   return { matchUpStatus: TO_BE_PLAYED };
+}
+
+function producedAwardStands({
+  rederived,
+  retained,
+  drawDefinition,
+  targetMatchUp,
+}: {
+  rederived: { matchUpStatus: MatchUpStatusUnion; winningSide?: number };
+  retained?: SideExitProvenance;
+  drawDefinition: DrawDefinition;
+  targetMatchUp: HydratedMatchUp;
+}): boolean {
+  const { winningSide } = rederived;
+  if (!winningSide) return false;
+  if (!isDoubleExit(retained?.[3 - winningSide]?.previousMatchUpStatus)) return true;
+  const { structure } = findStructure({ drawDefinition, structureId: targetMatchUp.structureId });
+  const drawPosition = getSideDrawPosition({
+    matchUp: { ...targetMatchUp, sides: undefined },
+    structureId: targetMatchUp.structureId,
+    sideNumber: winningSide,
+    drawDefinition,
+  });
+  const assignment = positionAssignmentsOf(structure)?.find((candidate) => candidate.drawPosition === drawPosition);
+  return !!(assignment?.participantId || assignment?.qualifier);
 }
 
 /**
