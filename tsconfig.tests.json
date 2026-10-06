@@ -1,0 +1,7 @@
+{
+  // tsconfig.json with the test files put back. tsconfig.json excludes them so the build typecheck stays
+  // fast and does not load test-only code; this config exists so `verify:test-types`
+  // (scripts/verify/tscRatchet.mjs) can count their type errors and hold each file's count from rising.
+  "extends": "./tsconfig.json",
+  "exclude": ["dist", "src/**/scratch/**", "**/*tsconfig*/**"]
+}
