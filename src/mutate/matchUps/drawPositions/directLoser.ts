@@ -155,6 +155,10 @@ export function directLoser(params): ResultType {
   // `assignDrawPosition` already clears a BYE before assigning (see the `containsBye` branch in
   // positionAssignment.ts), so the placement it was refusing is one it knows how to perform.
   //
+  // STILL REACHED on legal play after #5154 (measured 2026-10-06, S2D item 6): it decides 700 placements across 56
+  // test files and every census window, and without it sweep seed 6141627 (COMPASS 16/14, 6 legal steps) fails a
+  // relabel with ERR_OCCUPIED_DRAW_POSITION over a changed draw. Pinned: `aLoserTakesAPropagatedByeSeat.test.ts`.
+  //
   // `byeFromPropagation` is the authoritative marker, and consulting it is the point: it exists so
   // that removal does not have to infer "did the cascade place this BYE" from topology. An unmarked
   // BYE is NOT treated as available — it may be a structural BYE that legitimately owns the slot,
