@@ -39,3 +39,20 @@ it('still moves with everything else, the stamp timeStamp included', () => {
     canonicalHash({ tournamentId: 't', notes: { version: '2' } }),
   );
 });
+
+it('ignores the creating version too, first-class or as an extension', () => {
+  const created = (createdVersion: string) => ({
+    tournamentId: 't',
+    factory: { createdVersion, version: createdVersion, timeStamp: 1 },
+  });
+  expect(canonicalHash(created('7.6.0'))).toEqual(canonicalHash(created('7.7.0')));
+  const legacyCreated = (createdVersion: string) => ({
+    tournamentId: 't',
+    extensions: [{ name: 'factory', value: { createdVersion, timeStamp: 1 } }],
+  });
+  expect(canonicalHash(legacyCreated('7.6.0'))).toEqual(canonicalHash(legacyCreated('7.7.0')));
+  // CONTROL: the timeStamp beside it still counts
+  expect(canonicalHash({ tournamentId: 't', factory: { createdVersion: '7.6.0', timeStamp: 2 } })).not.toEqual(
+    canonicalHash(created('7.6.0')),
+  );
+});

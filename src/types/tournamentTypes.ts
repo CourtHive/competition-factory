@@ -8,7 +8,7 @@ export interface Tournament {
   events?: Event[];
   extensions?: Extension[];
   // CODES first-class: previously stored as `factory` extension (processor versioning)
-  factory?: { version?: string; [key: string]: any };
+  factory?: { createdVersion?: string; version?: string; timeStamp?: number; [key: string]: any };
   formalName?: string;
   hostCountryCode?: CountryCodeUnion;
   indoorOutdoor?: IndoorOutdoorUnion;

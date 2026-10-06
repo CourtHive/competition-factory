@@ -174,7 +174,22 @@
           }
         },
         "factory": {
-          "type": "object"
+          "type": "object",
+          "description": "The factory versions that created and last wrote this record. Formerly the `factory` extension.",
+          "properties": {
+            "createdVersion": {
+              "type": "string",
+              "description": "Factory version that created the record; absent on records created before it was stamped"
+            },
+            "version": {
+              "type": "string",
+              "description": "Factory version that last wrote the record"
+            },
+            "timeStamp": {
+              "type": "number",
+              "description": "Engine clock (milliseconds since the epoch) at the last write"
+            }
+          }
         },
         "linkedTournamentIds": {
           "type": "array",
