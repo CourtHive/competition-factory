@@ -298,7 +298,7 @@ function buildModifiedLineUp({
       }
 
       if (substitution && existingParticipantId === modifiedCompetitor.participantId) {
-        modifiedCompetitor.collectionAssignments = modifiedCompetitor.collectionAssignments.map((assignment) => {
+        modifiedCompetitor.collectionAssignments = modifiedCompetitor.collectionAssignments?.map((assignment) => {
           if (
             assignment.collectionPosition === collectionPosition &&
             assignment.collectionId === collectionId &&

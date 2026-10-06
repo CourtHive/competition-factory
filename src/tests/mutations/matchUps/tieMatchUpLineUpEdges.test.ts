@@ -5,7 +5,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
-import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
+import { INVALID_PARTICIPANT_IDS, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
@@ -117,4 +117,48 @@ it('replacing a doubles pair with a pair participant returns the pair creation e
     drawId,
   });
   expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
+});
+
+function setUpTeamDualWithStoredLineUp(buildLineUp: (memberIds: string[], collectionAssignment) => any[]) {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
+  });
+  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const dualMatchUp = drawDefinition.structures[0].matchUps[0];
+  const singles = dualMatchUp.tieMatchUps.find(({ matchUpType }) => matchUpType === SINGLES_MATCHUP);
+  const teamParticipantId = drawDefinition.structures[0].positionAssignments[0].participantId;
+  const teamParticipant = tournamentRecord.participants.find(
+    ({ participantId }) => participantId === teamParticipantId,
+  );
+  const memberIds: string[] = teamParticipant.individualParticipantIds;
+
+  const collectionAssignment = { collectionId: singles.collectionId, collectionPosition: singles.collectionPosition };
+  drawDefinition.lineUps = { [teamParticipantId]: buildLineUp(memberIds, collectionAssignment) };
+
+  tournamentEngine.setState(tournamentRecord);
+
+  return { drawId: drawDefinition.drawId, tieMatchUpId: singles.matchUpId, memberIds };
+}
+
+it('a substitution reads a line-up entry with no collection assignments as empty', () => {
+  const { drawId, tieMatchUpId, memberIds } = setUpTeamDualWithStoredLineUp(([first], collectionAssignment) => [
+    { participantId: first },
+    { participantId: first, collectionAssignments: [collectionAssignment] },
+  ]);
+  const [first, second] = memberIds;
+
+  const side = tournamentEngine
+    .allTournamentMatchUps({ matchUpFilters: { matchUpIds: [tieMatchUpId] } })
+    .matchUps[0].sides.find(({ participant }) => participant?.participantId === first);
+  expect(side).toBeDefined();
+
+  const result: any = tournamentEngine.replaceTieMatchUpParticipantId({
+    existingParticipantId: first,
+    newParticipantId: second,
+    substitution: true,
+    tieMatchUpId,
+    drawId,
+  });
+  // the duplicated entry is reported by line-up validation instead of a TypeError on the bare entry
+  expect(result.error).toEqual(INVALID_VALUES);
 });
