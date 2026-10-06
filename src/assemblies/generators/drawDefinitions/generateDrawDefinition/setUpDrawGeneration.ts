@@ -1,9 +1,9 @@
 import { newDrawDefinition } from '@Generators/drawDefinitions/newDrawDefinition';
+import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { checkFormatScopeEquivalence } from './checkFormatScopeEquivalence';
 import { policyAttachment } from './drawDefinitionPolicyAttachment';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -33,9 +33,10 @@ export function setUpDrawGeneration(params): ResultType & {
   const existingQualifyingStructures = existingDrawDefinition
     ? existingDrawDefinition.structures?.filter((structure) => structure.stage === QUALIFYING)
     : [];
+  // a placeholder has no matchUps; a round robin's matchUps are on its groups
   const existingQualifyingPlaceholderStructureId =
     existingQualifyingStructures?.length === 1 &&
-    !matchUpsOf(existingQualifyingStructures[0])?.length &&
+    !getAllStructureMatchUps({ structure: existingQualifyingStructures[0] }).matchUps.length &&
     existingQualifyingStructures[0].structureId;
 
   // Only overwrite drawType when not just adding qualifying to an existing draw
