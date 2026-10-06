@@ -5,8 +5,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * A WINNER'S ORIGIN IS NOT AN EXIT WHEN A REMOVAL RE-DERIVES THE MATCHUP IT SITS ON.
