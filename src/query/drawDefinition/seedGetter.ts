@@ -371,7 +371,11 @@ export function isValidSeedPosition({
   }
 
   if (appliedPolicies?.seeding?.validSeedPositions?.ignore) return true;
-  if (appliedPolicies?.seeding?.validSeedPositions?.strict) {
+  // no structure and no seedBlockInfo: there are no seed blocks, so no position is valid
+  validSeedBlocks ??= [];
+
+  // strict narrows a seed to its own block; with no seedNumber there is nothing to narrow by
+  if (appliedPolicies?.seeding?.validSeedPositions?.strict && seedNumber !== undefined) {
     const targetSeedBlock = validSeedBlocks.find((seedBlock) => seedBlock.seedNumbers.includes(seedNumber));
     const validSeedPositions = targetSeedBlock?.drawPositions ?? [];
     return validSeedPositions.includes(drawPosition);
