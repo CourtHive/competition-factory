@@ -77,17 +77,24 @@ export function directParticipants(params): ResultType {
     return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack });
   }
 
+  // A RUBBER'S EXIT IS NOT THE TEAM'S. When a line decides its dual, it is the DUAL whose participants
+  // are directed, and a dual decided on its rubbers is COMPLETED (`updateTieMatchUpScore`). Directing it
+  // with the line's own status carried a single rubber's WALKOVER onto the losing team's next matchUp
+  // as a pending exit, which then awarded that matchUp to whoever arrived (TEAM double elimination:
+  // a Backdraw semi-final winner walked over into the grand final).
+  const directingStatus = isCollectionMatchUp ? COMPLETED : matchUpStatus;
+
   return processDrawPositionDirecting({
     propagateRetirementAsExit: params.propagateRetirementAsExit,
-    matchUpStatusIsValid,
+    matchUpStatusIsValid: isCollectionMatchUp || matchUpStatusIsValid,
+    matchUpStatusCodes: isCollectionMatchUp ? [] : matchUpStatusCodes,
     inContextDrawMatchUps,
     projectedWinningSide,
     propagateExitStatus,
-    matchUpStatusCodes,
     tournamentRecord,
     drawDefinition,
     drawPositions,
-    matchUpStatus,
+    matchUpStatus: directingStatus,
     dualMatchUp,
     matchUpsMap,
     winningSide,

@@ -1,7 +1,6 @@
-import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { getOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { playForward } from '@Tests/testHarness/exitPropagation/driver';
+import { setSubscriptions } from '@Global/state/globalState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -49,32 +48,6 @@ const CELLS = [
     (cell) => cell.drawSize === 8 && cell.participantsCount === 7 && cell.exitStatus === 'WALKOVER',
   ),
 ].filter((cell) => cell.propagateExitStatus);
-
-/**
- * KNOWN, TRACKED, NOT THIS FILE'S SUBJECT. The TEAM double elimination's lines cell crashed in
- * `removeDirectedParticipants` until 2026-10-06, which ended its play early and hid this: a later
- * step refuses after it has mutated the draw — the double-elimination residual of the
- * ERROR_IMPLIES_NO_MUTATION class (Mentat/planning/ERROR_ATOMICITY_ROUTES_ASSESSED.md). Pinned so
- * the fix shows up here as a failure to update, not as a silent pass.
- */
-const KNOWN_PLAY_FAILURES: Record<number, string[]> = {
-  300071: [
-    'ERROR_IMPLIES_NO_MUTATION returned {"message":"drawPosition is occupied","code":"ERR_OCCUPIED_DRAW_POSITION"} after mutating the draw',
-  ],
-};
-/**
- * The same step read under `OUTCOME_PIPELINE=differential` (Button's suite-differential gate): v2 accepts what v1
- * refuses after mutating, so the run reports the divergence instead of the refusal.
- */
-const KNOWN_DIFFERENTIAL_PLAY_FAILURES: Record<number, string[]> = {
-  300071: [
-    'NO_EXCEPTION_ESCAPES outcome pipeline divergence on eba78b98-8e8e-4a65-9573-0aba31f5125b: v1 ERR_OCCUPIED_DRAW_POSITION, v2 ok (state was mutated before the throw)',
-  ],
-};
-const knownPlayFailures = (seed: number) =>
-  (getOutcomePipeline() === OUTCOME_PIPELINE_DIFFERENTIAL ? KNOWN_DIFFERENTIAL_PLAY_FAILURES : KNOWN_PLAY_FAILURES)[
-    seed
-  ] ?? [];
 
 function compareEveryMatchUp(drawId: string): number {
   const { tournamentRecord } = tournamentEngine.getTournament();
@@ -138,8 +111,7 @@ it.each(CELLS)(
     const partial = playForward({ propagateExitStatus, exitOutcome, maxSteps: 5, drawId }).failures;
     expect(partial.map(({ property }) => property)).toEqual(['DRIVER_DID_NOT_CONVERGE']);
     expect(compareEveryMatchUp(drawId)).toBeGreaterThan(0);
-    const played = playForward({ propagateExitStatus, exitOutcome, drawId }).failures;
-    expect(played.map(({ property, detail }) => `${property} ${detail}`)).toEqual(knownPlayFailures(cell.seed));
+    expect(playForward({ propagateExitStatus, exitOutcome, drawId }).failures).toEqual([]);
     expect(compareEveryMatchUp(drawId)).toBeGreaterThan(0);
   },
 );
