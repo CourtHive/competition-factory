@@ -60,13 +60,14 @@ export function autoSeeding({
       stage,
     }).scaledEntries ?? [];
 
-  const { scaleItemsWithParticipantIds } = generateSeedingScaleItems({
+  const seedingResult = generateSeedingScaleItems({
     scaleAttributes,
     scaledEntries,
     stageEntries,
     seedsCount,
     scaleName,
   });
+  if (seedingResult.error) return seedingResult;
 
-  return { scaleItemsWithParticipantIds };
+  return { scaleItemsWithParticipantIds: seedingResult.scaleItemsWithParticipantIds };
 }
