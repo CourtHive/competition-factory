@@ -130,17 +130,8 @@ function extractFinalScore(points: MCPPoint[]): string | undefined {
   // MCP CSV has Set1, Set2 columns with final set scores
   const set1 = lastPoint.Set1;
   const set2 = lastPoint.Set2;
-  const set3 = lastPoint.Set3;
-  const set4 = lastPoint.Set4;
-  const set5 = lastPoint.Set5;
 
-  const sets: string[] = [];
-  if (set1) sets.push(`${set1}-${set2}`);
-  if (set3) sets.push(`${set3}-${set2 || '0'}`);
-  if (set4) sets.push(`${set4}-${set2 || '0'}`);
-  if (set5) sets.push(`${set5}-${set2 || '0'}`);
-
-  return sets.length > 0 ? sets.join(', ') : undefined;
+  return set1 ? `${set1}-${set2}` : undefined;
 }
 
 /**

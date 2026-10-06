@@ -140,7 +140,7 @@ describe('mcpValidator - Branch Coverage', () => {
       expect(result.expectedScore).toContain('6-4');
     });
 
-    it('should handle points with Set3/Set4/Set5 properties', () => {
+    it('should ignore Set3/Set4/Set5 columns, which MCP does not have', () => {
       const point = makeMCPPoint({ Set1: '6', Set2: '4' });
       (point as any).Set3 = '7';
       (point as any).Set4 = '6';
@@ -148,7 +148,7 @@ describe('mcpValidator - Branch Coverage', () => {
 
       const match = makeMCPMatch({ points: [point] });
       const result = validateMCPMatch(match, { matchUpFormat: 'SET5-S:6/TB7' });
-      expect(result.expectedScore).toBeDefined();
+      expect(result.expectedScore).toBe('6-4');
     });
   });
 
