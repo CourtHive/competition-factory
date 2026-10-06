@@ -1,5 +1,6 @@
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { findStructure } from '@Acquire/findStructure';
 
@@ -44,7 +45,7 @@ export function updateParticipantResults({
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
   const targetStructures: Structure[] =
-    structure.structures && structure.structureType === CONTAINER ? structure.structures : [structure];
+    structuresOf(structure) && structure.structureType === CONTAINER ? structure.structures : [structure];
 
   const isDualMatchUp =
     event?.eventType === TEAM ||
@@ -53,7 +54,7 @@ export function updateParticipantResults({
   const matchUpFilters = isDualMatchUp ? { matchUpTypes: [TEAM] } : undefined;
 
   for (const target of targetStructures) {
-    if (!target.positionAssignments?.length) continue;
+    if (!positionAssignmentsOf(target)?.length) continue;
 
     const { matchUps } = getAllStructureMatchUps({
       structure: target,
@@ -68,7 +69,7 @@ export function updateParticipantResults({
     const matchUpFormat = target.matchUpFormat ?? structure.matchUpFormat ?? drawDefinition.matchUpFormat;
 
     const result = updateAssignmentParticipantResults({
-      positionAssignments: target.positionAssignments,
+      positionAssignments: positionAssignmentsOf(target),
       tournamentRecord,
       drawDefinition,
       matchUpFormat,

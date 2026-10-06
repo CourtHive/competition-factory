@@ -12,6 +12,7 @@ import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/dra
 import { generateSwissPairings } from './swissPairing';
 
 // Acquire
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { findExtension } from '@Acquire/findExtension';
 
@@ -69,7 +70,7 @@ export function generateSwissRound(params: GenerateSwissRoundArgs): GenerateSwis
   // the final round of qualifying matchUps (for Swiss/ad-hoc main structures that
   // can't use the standard qualifierProgression flow which requires matchUps).
   const positionParticipantIds =
-    structure.positionAssignments
+    positionAssignmentsOf(structure)
       ?.map((pa) => pa.participantId)
       .filter((pid: string | undefined): pid is string => !!pid) ?? [];
 
@@ -121,7 +122,7 @@ export function generateSwissRound(params: GenerateSwissRoundArgs): GenerateSwis
     params.swissPolicy ??
     (findExtension({ element: drawDefinition, name: 'swissPolicy' })?.extension?.value as SwissPolicy | undefined);
 
-  const existingMatchUps = structure.matchUps ?? [];
+  const existingMatchUps = matchUpsOf(structure) ?? [];
 
   const { participantIdPairings, byeParticipantId } = generateSwissPairings({
     allowDraws: swissPolicy?.allowDraws,

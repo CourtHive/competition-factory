@@ -14,6 +14,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { structuresOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { generateTieMatchUps } from './tieMatchUps';
@@ -324,7 +325,7 @@ function resolvePlayoffParams(params: GenerateAndPopulateArgs, stack: string): a
     return { error: true, earlyReturn: decorateResult({ result: { error: STRUCTURE_NOT_FOUND }, stack }) };
   }
 
-  if (structure.structureType === CONTAINER || structure.structures) {
+  if (structure.structureType === CONTAINER || structuresOf(structure)) {
     return {
       error: true,
       earlyReturn: generateAndPopulateRRplayoffStructures({

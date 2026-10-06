@@ -2,6 +2,7 @@ import { getResultAttestation } from '@Query/ladder/getResultAttestation';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { INVALID_VALUES, MATCHUP_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -24,7 +25,7 @@ function resolve(params: ReportArgs) {
   if (!isLadder(drawDefinition.drawType)) return { error: INVALID_VALUES, info: 'requires a LADDER drawType' };
   const structures: Structure[] = drawDefinition.structures ?? [];
   for (const structure of structures) {
-    const matchUp = structure.matchUps?.find((m) => m.matchUpId === matchUpId);
+    const matchUp = matchUpsOf(structure)?.find((m) => m.matchUpId === matchUpId);
     if (matchUp) return { matchUp, structure };
   }
   return { error: MATCHUP_NOT_FOUND };

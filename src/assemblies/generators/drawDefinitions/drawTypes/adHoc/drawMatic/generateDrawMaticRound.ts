@@ -9,6 +9,7 @@ import { generateDynamicRatings } from '@Generators/scales/generateDynamicRating
 
 // Acquire
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // Helpers
 import { getPairingsData } from './getPairingsData';
@@ -118,7 +119,7 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
   if (!participantIds?.length) return { error: MISSING_PARTICIPANT_IDS };
 
   // create valueObject for each previous encounter within the structure
-  const consideredMatchUps = [...(iterationMatchUps ?? []), ...(structure?.matchUps ?? [])];
+  const consideredMatchUps = [...(iterationMatchUps ?? []), ...(matchUpsOf(structure) ?? [])];
   const { encounters } = getEncounters({ matchUps: consideredMatchUps });
 
   const tournamentParticipants = tournamentRecord?.participants ?? [];
@@ -139,13 +140,11 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
       modifiedScaleValues[pid] = pState.dynamicFormRating;
     }
   } else if (dynamicRatings) {
-    const roundNumbers: number[] = unique(
-      structure?.matchUps ? structure.matchUps.map(({ roundNumber }) => roundNumber) : [],
-    );
+    const roundNumbers: number[] = unique(matchUpsOf(structure)?.map(({ roundNumber }) => roundNumber) ?? []);
     const lastRoundNumber = Math.max(...roundNumbers, 0);
     if (lastRoundNumber) {
       // generate dynamic ratings from results of prior round matchUps
-      const matchUpIds = structure?.matchUps
+      const matchUpIds = matchUpsOf(structure)
         ?.filter(({ roundNumber }) => roundNumber === lastRoundNumber)
         .map(({ matchUpId }) => matchUpId);
       const result = generateDynamicRatings({

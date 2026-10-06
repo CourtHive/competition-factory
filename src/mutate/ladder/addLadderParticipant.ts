@@ -2,6 +2,7 @@ import { getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolic
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 import { isObject } from '@Tools/objects';
 
@@ -73,7 +74,7 @@ export function addLadderParticipant(params: AddArgs): ResultType & { drawPositi
   if (!structure) return { error: INVALID_VALUES, info: 'structure not found' };
 
   structure.positionAssignments ??= [];
-  const assignments = structure.positionAssignments;
+  const assignments = positionAssignmentsOf(structure) ?? [];
   if (assignments.some((a) => a.participantId === participantId)) return { error: EXISTING_PARTICIPANT };
 
   const bottom = assignments.length ? Math.max(...assignments.map((a) => a.drawPosition)) + 1 : 1;

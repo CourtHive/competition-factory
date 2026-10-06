@@ -1,4 +1,5 @@
 import { getLadderPolicy, isChallengeInRange } from '@Query/ladder/getLadderPolicy';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
@@ -56,7 +57,7 @@ export function issueChallenge(params: IssueChallengeArgs): ResultType & { match
 
   // The standing. Under RANK ordering these positions ARE the ladder.
   const positionOf = (participantId: string): number | undefined =>
-    structure.positionAssignments?.find((a) => a.participantId === participantId)?.drawPosition;
+    positionAssignmentsOf(structure)?.find((a) => a.participantId === participantId)?.drawPosition;
 
   const challengerPosition = positionOf(challengerParticipantId);
   const defenderPosition = positionOf(defenderParticipantId);
@@ -87,7 +88,7 @@ export function issueChallenge(params: IssueChallengeArgs): ResultType & { match
   const addResult = addAdHocMatchUps({ ...params, matchUps: [matchUp], structureId } as any);
   if (addResult.error) return addResult;
 
-  const added = structure.matchUps?.find((m) => m.matchUpId === matchUpId);
+  const added = matchUpsOf(structure)?.find((m) => m.matchUpId === matchUpId);
   addTimeItem({
     timeItem: { itemType: CHALLENGE_ISSUED, itemValue: challengerParticipantId, itemDate: issuedAt },
     element: added,

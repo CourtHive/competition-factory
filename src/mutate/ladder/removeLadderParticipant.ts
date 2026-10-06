@@ -1,5 +1,6 @@
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
@@ -47,7 +48,7 @@ export function removeLadderParticipant(params: RemoveArgs): ResultType & { vaca
   const structure = structures?.find((s) => s.structureId === structureId);
   if (!structure) return { error: INVALID_VALUES, info: 'structure not found' };
 
-  const assignments = structure.positionAssignments ?? [];
+  const assignments = positionAssignmentsOf(structure) ?? [];
   const target = assignments.find((a) => a.participantId === participantId);
   if (!target) return { error: PARTICIPANT_NOT_FOUND };
 
@@ -58,7 +59,7 @@ export function removeLadderParticipant(params: RemoveArgs): ResultType & { vaca
   // Close the gap: a ladder with a hole in it is not a ranking. Only meaningful under RANK — a
   // RATING ladder's positions are a projection and will be recomputed from the scale.
   if (getLadderOrdering({ ...params, structure }) === RANK) {
-    for (const assignment of structure.positionAssignments) {
+    for (const assignment of positionAssignmentsOf(structure) ?? []) {
       if (assignment.drawPosition > vacatedPosition) {
         assignment.drawPosition -= 1;
         touched.push(assignment);

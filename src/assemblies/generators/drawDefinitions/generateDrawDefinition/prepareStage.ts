@@ -3,6 +3,7 @@ import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioni
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getScaledEntries } from '@Query/event/getScaledEntries';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
@@ -55,10 +56,11 @@ export function prepareStage(params): ResultType & {
   if (positioningResult?.error) return decorateResult({ result: positioningResult, stack });
 
   // For ad-hoc/Swiss draws where full positioning is skipped, still mark qualifier positions
-  if (!doPositioning && isAdHocType(params.drawType) && structure?.positionAssignments?.length) {
+  const structurePositionAssignments = positionAssignmentsOf(structure);
+  if (!doPositioning && isAdHocType(params.drawType) && structurePositionAssignments?.length) {
     const qualifiersCount = params.qualifiersCount || 0;
     if (qualifiersCount > 0) {
-      const unfilled = structure.positionAssignments.filter((a) => !a.participantId && !a.qualifier && !a.bye);
+      const unfilled = structurePositionAssignments.filter((a) => !a.participantId && !a.qualifier && !a.bye);
       for (let i = 0; i < qualifiersCount && i < unfilled.length; i++) {
         unfilled[i].qualifier = true;
       }

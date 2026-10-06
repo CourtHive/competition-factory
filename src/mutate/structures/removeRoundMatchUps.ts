@@ -3,6 +3,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { structuresOf } from '@Acquire/structureMembers';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
@@ -47,7 +48,7 @@ export function removeRoundMatchUps({
 
   const structure = structureResult.structure;
   // cannot be a round robin structure
-  if (structure?.structures) return { error: INVALID_STRUCTURE };
+  if (structuresOf(structure)) return { error: INVALID_STRUCTURE };
 
   const isAdHocStructure = isAdHoc({ structure });
 
