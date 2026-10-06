@@ -580,9 +580,15 @@ function handleEmptyExitLoser({
     // derivation the sibling non-empty branch uses for `walkoverWinningSide`. Measured across those
     // 223 firings it resolves to a valid side every time, and to the side the existing provenance
     // does NOT hold in every case but one — a re-score of the same side, where replacing is right.
-    // `indexOf` as a side number — valid only because drawPositions are stored ascending.
-    // See the canonical statement in `getOrderedDrawPositions`.
-    const exitingSideNumber = (loserMatchUp.drawPositions ?? []).indexOf(loserTargetDrawPosition) + 1;
+    // read structurally: a lone position's side is not its index (0 when the position is absent, which the
+    // provenance builder refuses, as `indexOf + 1` gave)
+    const exitingSideNumber =
+      getDrawPositionSideNumber({
+        matchUp: { ...loserMatchUp, sides: undefined },
+        structureId: loserMatchUp.structureId,
+        drawPosition: loserTargetDrawPosition,
+        drawDefinition,
+      }) ?? 0;
     const arrivingProvenance = buildCarriedExitProvenance({
       previousMatchUpStatus: params.matchUpStatus,
       sourceMatchUpId: sourceMatchUp?.matchUpId,
@@ -2318,13 +2324,15 @@ function advanceByeToLoserMatchUp(params) {
     (candidate) => candidate.matchUpId === loserMatchUp?.matchUpId,
   );
   if (noContextLoserMatchUp) {
-    const claimPositions = noContextLoserMatchUp.drawPositions ?? [];
-    const claimIndex = claimPositions.indexOf(loserTargetDrawPosition);
+    // the claim's side, read structurally; where the position is not yet present it is recorded on side 1, as before
+    const claimSide = getDrawPositionSideNumber({
+      matchUp: { ...noContextLoserMatchUp, sides: undefined },
+      structureId: loserMatchUp?.structureId,
+      drawPosition: loserTargetDrawPosition,
+      drawDefinition,
+    });
     recordByeClaim({
-      // `indexOf` as a side number is valid only because drawPositions are stored ascending — see
-      // `getOrderedDrawPositions`. Where the position is not yet present the claim is recorded
-      // against the side it will occupy.
-      sideNumber: claimIndex >= 0 ? claimIndex + 1 : 1,
+      sideNumber: claimSide ?? 1,
       claimantMatchUpId: params.sourceMatchUp?.matchUpId,
       matchUp: noContextLoserMatchUp,
     });
