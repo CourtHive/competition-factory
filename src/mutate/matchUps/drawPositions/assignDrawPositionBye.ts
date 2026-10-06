@@ -691,8 +691,15 @@ export function advanceDrawPosition({
   }
 
   // only handling situation where a BYE is being placed in linked structure
-  // and linked structure is NOT the same structure
-  if (loserMatchUp && losingDrawPosiitonIsBye && loserMatchUp.structureId !== structure?.structureId) {
+  // and linked structure is NOT the same structure (a loser target is only found from its link, and
+  // always with its target drawPosition)
+  if (
+    loserTargetLink &&
+    loserMatchUp &&
+    loserTargetDrawPosition !== undefined &&
+    losingDrawPosiitonIsBye &&
+    loserMatchUp.structureId !== structure?.structureId
+  ) {
     const { roundNumber } = loserMatchUp;
 
     if (roundNumber === 1) {
@@ -982,7 +989,8 @@ function assignByeToLoserTarget({
     targetLinks: { loserTargetLink },
     targetMatchUps: { loserMatchUp, loserTargetDrawPosition },
   } = targetData;
-  if (!loserTargetLink || !loserMatchUp) return { ...SUCCESS };
+  // a loser target is only found from its link, and always with its drawPositions and target drawPosition
+  if (!loserTargetLink || !loserMatchUp?.drawPositions || loserTargetDrawPosition === undefined) return { ...SUCCESS };
 
   if (loserMatchUp.feedRound) {
     return assignFedDrawPositionBye({

@@ -502,7 +502,7 @@ function removeDrawPosition({
     event,
   });
 
-  if (loserMatchUp && loserMatchUp.structureId !== targetData.matchUp.structureId && !matchUpContainsBye) {
+  if (loserMatchUp && loserMatchUp.structureId !== targetData.matchUp?.structureId && !matchUpContainsBye) {
     const result = handleLoserMatchUpRemoval({
       loserMatchUpDrawPositionIndex,
       inContextDrawMatchUps,
@@ -518,9 +518,9 @@ function removeDrawPosition({
 
   if (
     winnerMatchUp &&
-    winnerMatchUp.structureId !== targetData.matchUp.structureId &&
+    winnerMatchUp.structureId !== targetData.matchUp?.structureId &&
     // does not apply to traversals that are based on QUALIFYING
-    winnerTargetLink.target.feedProfile !== DRAW
+    winnerTargetLink?.target.feedProfile !== DRAW
   ) {
     /*
     const { structure } = findStructure({

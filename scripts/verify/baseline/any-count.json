@@ -85,7 +85,7 @@
   "src/mutate/tournaments/mutationLocks": 4,
   "src/mutate/venues": 19,
   "src/query/base": 3,
-  "src/query/drawDefinition": 53,
+  "src/query/drawDefinition": 52,
   "src/query/drawDefinition/avoidance": 8,
   "src/query/drawDefinition/draft": 2,
   "src/query/drawDefinition/matchUpActions": 6,

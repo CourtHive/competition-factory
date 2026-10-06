@@ -531,7 +531,8 @@ function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tourname
       targetMatchUps: { loserMatchUpDrawPositionIndex, loserMatchUp },
     } = targetData;
 
-    if (loserTargetLink && loserMatchUp) {
+    // a loser target found from a link always has its drawPositions and the index into them
+    if (loserTargetLink && loserMatchUp?.drawPositions && loserMatchUpDrawPositionIndex !== undefined) {
       const targetStructureId = loserTargetLink.target.structureId;
       const targetDrawPosition = loserMatchUp.drawPositions[loserMatchUpDrawPositionIndex];
 

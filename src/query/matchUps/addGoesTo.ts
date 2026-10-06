@@ -94,8 +94,9 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
             ...inContextMatchUp.finishingPositionRange.loser,
             ...loserMatchUp.finishingPositionRange.loser,
           ];
+          // undefined where the loser target carries no range: written as it always was
           const loser = loserRange && [Math.min(...loserRange), Math.max(...loserRange)];
-          inContextMatchUp.finishingPositionRange.loser = loser;
+          Object.assign(inContextMatchUp.finishingPositionRange, { loser });
           matchUp.finishingPositionRange.loser = loser;
         }
       }

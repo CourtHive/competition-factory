@@ -3,10 +3,11 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { overlap } from '@Tools/arrays';
 
 // constants and types
+import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION, STRUCTURE_ID } from '@Constants/attributeConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
 type GetRoundLinksArgs = {
   roundNumber?: number;
@@ -38,10 +39,18 @@ type GetTargetLinkArgs = {
   finishingPositions?: number[];
   linkCondition?: string;
   linkType?: string;
-  source: any[];
+  source: DrawLink[];
 };
 
-export function getTargetLink({ finishingPositions, linkCondition, linkType, source }: GetTargetLinkArgs) {
+/** what `getTargetLink` returns for a WINNER or LOSER link with no source round: an error, never a link */
+export type TargetLinkError = ResultType & { error: ErrorType };
+
+export function getTargetLink({
+  finishingPositions,
+  linkCondition,
+  linkType,
+  source,
+}: GetTargetLinkArgs): DrawLink | TargetLinkError | undefined {
   const result = source.find((link) => {
     const positionCondition =
       !link.source?.finishingPositions ||
@@ -51,12 +60,11 @@ export function getTargetLink({ finishingPositions, linkCondition, linkType, sou
     return condition && positionCondition && link.linkType === linkType;
   });
 
-  if ([WINNER, LOSER].includes(result?.linkType) && !result?.source?.roundNumber) {
-    return decorateResult({
-      result: { error: INVALID_VALUES },
-      stack: 'getTargetLink',
-      context: result,
-    });
+  if (result && [WINNER, LOSER].includes(result.linkType) && !result.source?.roundNumber) {
+    return {
+      ...decorateResult({ result: { error: INVALID_VALUES }, stack: 'getTargetLink', context: result }),
+      error: INVALID_VALUES,
+    };
   }
   return result;
 }
