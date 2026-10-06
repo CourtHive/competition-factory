@@ -44,6 +44,10 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
     count: 2,
     why: 'a reset: the side-keyed facts are reset with the positions (`toBePlayed`)',
   },
+  'mutate/tournaments/migrateTournamentRecord.ts': {
+    count: 1,
+    why: 'migration of a stored record: compacts a hole through `normalizeDrawPositions`; the set of positions is kept',
+  },
 };
 
 function writers(dir: string, root: string, found: Record<string, number>) {
