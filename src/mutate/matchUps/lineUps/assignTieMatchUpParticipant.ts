@@ -520,6 +520,7 @@ function updateLineUp({
   const newAssignment = { collectionId, collectionPosition };
 
   if (participantCompetitiorProfile) {
+    participantCompetitiorProfile.collectionAssignments ??= [];
     participantCompetitiorProfile.collectionAssignments.push(newAssignment);
   } else {
     const teamCompetitor = {

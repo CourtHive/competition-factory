@@ -14,7 +14,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { unique } from '@Tools/arrays';
 
 // constants and types
-import { CollectionAssignment, DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { CollectionAssignment, DrawDefinition, Event, TeamCompetitor, Tournament } from '@Types/tournamentTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { LineUp, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
@@ -178,7 +178,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     pushGlobalLog({ method: 'replaceTieMatchUpParticipant', issue: 'team participantId not found' });
   }
 
-  const { participantAdded, participantRemoved } = isDoubles
+  const pairResult = isDoubles
     ? manageDoublesPairParticipants({
         existingIndividualParticipantIds,
         individualParticipantIds,
@@ -186,6 +186,8 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
         stack,
       })
     : { participantAdded: undefined, participantRemoved: undefined };
+  if (pairResult.error) return pairResult;
+  const { participantAdded, participantRemoved } = pairResult;
 
   handleProcessCodes({
     substitutionProcessCodes,
@@ -272,8 +274,11 @@ function buildModifiedLineUp({
   const newParticipantIdInLineUp = teamLineUp?.find(({ participantId }) => newParticipantId === participantId);
 
   const substitutionOrder = teamLineUp?.reduce(
-    (order, teamCompetitor: any) =>
-      teamCompetitor.substitutionOrder > order ? teamCompetitor.substitutionOrder : order,
+    (order: number, teamCompetitor: TeamCompetitor) =>
+      (teamCompetitor.collectionAssignments ?? []).reduce(
+        (max, assignment) => Math.max(max, assignment.substitutionOrder ?? 0),
+        order,
+      ),
     0,
   );
 
@@ -293,7 +298,7 @@ function buildModifiedLineUp({
       }
 
       if (substitution && existingParticipantId === modifiedCompetitor.participantId) {
-        modifiedCompetitor.collectionAssignments = modifiedCompetitor.collectionAssignments.map((assignment) => {
+        modifiedCompetitor.collectionAssignments = modifiedCompetitor.collectionAssignments?.map((assignment) => {
           if (
             assignment.collectionPosition === collectionPosition &&
             assignment.collectionId === collectionId &&
