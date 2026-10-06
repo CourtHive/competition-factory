@@ -3,6 +3,7 @@ import { getTargetElement } from '@Query/scales/getTargetElement';
 // constants
 import { WALKOVER, DEFAULTED } from '@Constants/matchUpStatusConstants';
 import { SCALE, RANKING } from '@Constants/scaleConstants';
+import type { Participant } from '@Types/tournamentTypes';
 
 type QualityWin = {
   opponentParticipantId: string;
@@ -88,7 +89,7 @@ function resolveRanking({
   rankingSnapshot,
   tournamentStartDate,
 }: {
-  participant: any;
+  participant: Participant;
   rankingScaleName: string;
   rankingSnapshot: string;
   tournamentStartDate?: string;

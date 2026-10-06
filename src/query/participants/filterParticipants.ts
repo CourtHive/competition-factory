@@ -178,7 +178,7 @@ function getDrawEntries({ drawEntryStatuses, tournamentEvents }) {
 
   return unique(
     tournamentEvents.reduce((entries, event) => {
-      const { flightProfile } = getFlightProfile({ event } as any);
+      const { flightProfile } = getFlightProfile({ event });
       const flightEntries =
         flightProfile?.flights?.flatMap(({ drawEntries }) =>
           Array.isArray(drawEntries) ? drawEntries.filter(statusFilter).map(getParticipantId) : [],

@@ -16,6 +16,7 @@ import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SPLIT_EVEN, TEAM_ONLY } from '@Constants/rankingConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
+import type { AwardProfile } from '@Types/rankingTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
@@ -602,10 +603,10 @@ function buildAccumulator({ initialRequireWinFirstRound, requireWinForPoints }) 
     requireWinFirstRound: initialRequireWinFirstRound,
     requireWin: requireWinForPoints,
     bestFinishingPosition: undefined as number | undefined,
-    primaryAwardProfile: undefined as any,
+    primaryAwardProfile: undefined as AwardProfile | undefined,
     maxCountable: undefined as number | undefined,
-    rangeAccessor: undefined as any,
-    profileName: undefined as any,
+    rangeAccessor: undefined as string | number | undefined,
+    profileName: undefined as string | undefined,
     // rankingStage of the participation that contributed positionPoints —
     // tracked so emitted awards can be disambiguated by stage. Without it,
     // a Q-final loser (accessor rewritten to 2) and a MAIN finalist (max

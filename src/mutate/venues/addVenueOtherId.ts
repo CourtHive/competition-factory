@@ -6,6 +6,7 @@ import { nowIso } from '@Tools/clock';
 
 // constants
 import { ErrorType, MISSING_VALUE, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -86,7 +87,7 @@ function venueOtherIdAdd({
   uniqueOrganisationName?: string;
   organisationId: string;
   otherVenueId: string;
-  tournamentRecord: any;
+  tournamentRecord: Tournament;
   occurredAt?: string;
   venueId: string;
 }): { success?: boolean; error?: ErrorType } {
@@ -94,7 +95,7 @@ function venueOtherIdAdd({
   if (!venue) return { error: VENUE_NOT_FOUND };
 
   venue.venueOtherIds ??= [];
-  const existing = venue.venueOtherIds.find((entry: any) => entry?.organisationId === organisationId);
+  const existing = venue.venueOtherIds.find((entry) => entry?.organisationId === organisationId);
 
   if (existing) {
     if (existing.venueId === otherVenueId && existing.uniqueOrganisationName === uniqueOrganisationName) {

@@ -1,4 +1,5 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getEventSeedAssignments } from '@Query/event/getEventSeedAssignments';
 import { getDrawId, getParticipantId } from '@Functions/global/extractors';
@@ -20,10 +21,14 @@ import { isObject } from '@Tools/objects';
 // constants and types
 import { CONTAINER, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { UNGROUPED, UNPAIRED } from '@Constants/entryStatusConstants';
+import type { DrawDefinition } from '@Types/tournamentTypes';
+import type { ScheduleConflict } from '@Types/factoryTypes';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { WIN_RATIO } from '@Constants/statsConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { unique } from '@Tools/arrays';
+
+type RRContainerInfo = { [containerStructureId: string]: { drawDefinition: DrawDefinition; drawId: string } };
 
 export function getParticipantEntries(params) {
   const {
@@ -86,7 +91,7 @@ export function getParticipantEntries(params) {
 
   // RR group matchUp collection for tally-based finishing positions
   const rrGroupMatchUps: { [structureId: string]: HydratedMatchUp[] } = {};
-  const rrContainerInfo: { [containerStructureId: string]: { drawDefinition: any; drawId: string } } = {};
+  const rrContainerInfo: RRContainerInfo = {};
 
   const getRanking = ({ eventType, scaleNames, participantId }) =>
     participantMap[participantId]?.participant?.rankings?.[eventType]?.find((ranking) =>
@@ -795,21 +800,25 @@ function processRRBracket({
   }
 }
 
-function computeRRFinishingPositions(rrGroupMatchUps, rrContainerInfo, withRankingProfile) {
+function computeRRFinishingPositions(
+  rrGroupMatchUps: { [structureId: string]: HydratedMatchUp[] },
+  rrContainerInfo: RRContainerInfo,
+  withRankingProfile?: boolean,
+) {
   const rrFinishingPositions: { [drawId: string]: { [participantId: string]: number[] } } = {};
 
   if (!withRankingProfile) return rrFinishingPositions;
 
-  for (const [containerStructureId, containerInfo] of Object.entries(rrContainerInfo) as any) {
+  for (const [containerStructureId, containerInfo] of Object.entries(rrContainerInfo)) {
     const { drawDefinition, drawId } = containerInfo;
     const mainStructure = drawDefinition.structures?.find(
       (s) => s.structureType === CONTAINER && s.stage === MAIN && s.stageSequence === 1,
     );
-    if (!mainStructure?.structures) continue;
+    const containedStructures = structuresOf(mainStructure);
+    if (!containedStructures) continue;
 
-    const containedStructures = mainStructure.structures;
     const bracketsCount = containedStructures.length;
-    const drawPositionsCount = containedStructures.reduce((sum, s) => sum + (s.positionAssignments?.length || 0), 0);
+    const drawPositionsCount = containedStructures.reduce((sum, s) => sum + (positionAssignmentsOf(s)?.length || 0), 0);
     const playoffStructure = drawDefinition.structures?.find((s) => s.stage === PLAY_OFF);
 
     if (!rrFinishingPositions[drawId]) rrFinishingPositions[drawId] = {};
@@ -833,7 +842,7 @@ function computeRRFinishingPositions(rrGroupMatchUps, rrContainerInfo, withRanki
 
 function detectScheduleConflicts({ scheduleItems, potentialMatchUps, scheduleAnalysis }) {
   const scheduledMinutesDifference = isObject(scheduleAnalysis) ? scheduleAnalysis.scheduledMinutesDifference : 0;
-  const scheduleConflicts: { [key: string]: any } = {};
+  const scheduleConflicts: { [key: string]: ScheduleConflict } = {};
 
   const dateItems = scheduleItems.reduce((dateItems, scheduleItem) => {
     const { scheduledDate, scheduledTime } = scheduleItem;

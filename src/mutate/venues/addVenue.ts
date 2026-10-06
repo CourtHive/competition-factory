@@ -12,10 +12,10 @@ import { UUID } from '@Tools/UUID';
 // constants and types
 import { ErrorType, MISSING_VALUE, VENUE_EXISTS, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
+import { Tournament, Venue } from '@Types/tournamentTypes';
 import { CONTEXT } from '@Constants/extensionConstants';
 import { ADD_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Venue } from '@Types/tournamentTypes';
 
 export function addVenue(params) {
   const { disableNotice, venue, context } = params;
@@ -46,7 +46,7 @@ export function addVenue(params) {
 type AddVenueArgs = {
   context?: { [key: string]: any };
   disableNotice?: boolean;
-  tournamentRecord: any;
+  tournamentRecord: Tournament;
   venue: Venue;
 };
 
@@ -63,7 +63,7 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
   tournamentRecord.venues ??= [];
   venue.venueId ??= UUID();
 
-  const venueExists = tournamentRecord.venues.reduce((exists: any, existingVenue) => {
+  const venueExists = tournamentRecord.venues.reduce((exists: boolean | undefined, existingVenue) => {
     return exists || existingVenue.venueId === venue.venueId;
   }, undefined);
 

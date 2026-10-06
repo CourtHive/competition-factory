@@ -55,7 +55,7 @@ export function getTournamentPointAwards({
   const personToParticipant: Record<string, { participantId: string; participantName: string }> = {};
   const participantLookup: Record<string, { participantName: string; personId?: string }> = {};
 
-  for (const p of participants as any[]) {
+  for (const p of participants) {
     participantLookup[p.participantId] = {
       participantName: p.participantName ?? '',
       personId: p.person?.personId,

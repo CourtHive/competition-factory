@@ -2,6 +2,7 @@ import { attributeFilter } from '@Tools/attributeFilter';
 
 // constants and types
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
+import type { PresenceAttestation } from '@Types/presenceTypes';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 
 /**
@@ -92,7 +93,7 @@ export function applyParticipantPrivacyToMap(params: { participantMap?: any; tem
  */
 export function stripPresenceAttribution<T = any>(participants?: T[]): T[] | undefined {
   if (!participants?.length) return participants;
-  return participants.map((participant: any) => strippedParticipant(participant));
+  return participants.map((participant) => strippedParticipant(participant));
 }
 
 /**
@@ -127,7 +128,9 @@ export function stripCheckInAttribution<T = any>(matchUps?: T[]): T[] | undefine
   });
 }
 
-function withoutAttribution(attestation: any): any {
+function withoutAttribution(
+  attestation: PresenceAttestation,
+): PresenceAttestation | Omit<PresenceAttestation, 'attributedTo'> {
   if (!attestation?.attributedTo) return attestation;
   const { attributedTo: _attributedTo, ...rest } = attestation;
   return rest;

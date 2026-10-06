@@ -2,10 +2,10 @@ import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 
 // constants and types
 import { POLICY_TYPE_SANCTIONING } from '@Constants/policyConstants';
+import type { Category, Participant } from '@Types/tournamentTypes';
 import type { SanctioningPolicy } from '@Types/sanctioningTypes';
 import { COMPETITOR } from '@Constants/participantRoleValues';
 import type { Attribution } from '@Types/presenceTypes';
-import type { Category } from '@Types/tournamentTypes';
 import type {
   AttributionCategoryRule,
   AttributionRule,
@@ -44,7 +44,7 @@ export function getPresenceRules(params: {
  * no role — never people with no part to play. Reading the absence as "no rule applies" would silently
  * exempt exactly the population the rules are mostly about.
  */
-export function presenceRoleOf(participant?: any): string {
+export function presenceRoleOf(participant?: Participant): string {
   return participant?.participantRole ?? COMPETITOR;
 }
 

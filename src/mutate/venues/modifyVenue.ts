@@ -18,10 +18,11 @@ import { addCourt } from './addCourt';
 // constants and types
 import { TOURNAMENT_RECORD, VENUE_ID } from '@Constants/attributeConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
-import { Venue, Tournament } from '@Types/tournamentTypes';
+import { Venue, Tournament, Court } from '@Types/tournamentTypes';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { HydratedMatchUp } from '@Types/hydrated';
 import {
   COURT_NOT_FOUND,
   INVALID_OBJECT,
@@ -31,6 +32,9 @@ import {
   VENUE_NOT_FOUND,
   NO_VALID_ATTRIBUTES,
 } from '@Constants/errorConditionConstants';
+
+// courts without a courtId are added rather than modified
+type VenueModifications = Omit<Partial<Venue>, 'courts'> & { courts?: Partial<Court>[] };
 
 type ModifyVenueArgs = {
   tournamentRecords?: TournamentRecords;
@@ -75,9 +79,9 @@ function handleCourtDeletions({
   allowModificationWhenMatchUpsScheduled,
 }: {
   venue: Venue;
-  modifications: any;
+  modifications: VenueModifications;
   tournamentRecord: Tournament;
-  venueMatchUps: any;
+  venueMatchUps?: HydratedMatchUp[];
   allowModificationWhenMatchUpsScheduled: boolean;
 }) {
   const existingCourtIds = venue?.courts?.map((court) => court.courtId) ?? [];
@@ -132,7 +136,7 @@ function handleCourtModifications({
 }: {
   modifications: any;
   tournamentRecord: Tournament;
-  venueMatchUps: any;
+  venueMatchUps?: HydratedMatchUp[];
   venueId: string;
   force?: boolean;
 }) {
