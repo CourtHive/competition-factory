@@ -1,8 +1,8 @@
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
+import { rekeySideFacts, setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
-import { rekeySideFacts } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -799,6 +799,36 @@ function advanceWinner({
       stack,
     })
   ) {
+    return;
+  }
+
+  // AN EMPTY POSITION RESOLVES NOTHING. A pending exit is awarded to whoever ARRIVES on its seat (CA 2026-09-20; #5158
+  // for the arrival path); a position that holds nobody yet, advanced structurally ahead of a BYE being placed on it,
+  // takes its seat and the exit stands, still awarded to that seat. Resolving it advanced the empty position onward as
+  // the walkover's winner, where the BYE then landed, while the carrier who met the BYE stayed behind (census w2
+  // 9100079, DE 16/13 `Backdraw|3|1`: BYE_ADVANCEMENT_MISSING).
+  if (
+    isExit(noContextWinnerMatchUp.matchUpStatus) &&
+    noContextWinnerMatchUp.winningSide &&
+    !drawPositionIsBye &&
+    !pairedDrawPositionIsBye &&
+    !drawPositionToAdvanceAssigment?.participantId &&
+    !drawPositionToAdvanceAssigment?.qualifier
+  ) {
+    setMatchUpDrawPositions({
+      structureId: winnerMatchUp?.structureId,
+      matchUp: noContextWinnerMatchUp,
+      drawDefinition,
+      drawPositions,
+    });
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      eventId: event?.eventId,
+      matchUp: noContextWinnerMatchUp,
+      drawDefinition,
+      context: stack,
+      event,
+    });
     return;
   }
 
