@@ -3,8 +3,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 /**
  * getAvoidanceConflicts reports an elimination conflict as a pair of positioned participants but a

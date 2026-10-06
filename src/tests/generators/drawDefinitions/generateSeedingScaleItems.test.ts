@@ -1,11 +1,11 @@
 import { generateSeedingScaleItems } from '@Assemblies/generators/drawDefinitions/generateSeedingScaleItems';
-import mocksEngine from '@Assemblies/engines/mock';
-import tournamentEngine from '@Engines/syncEngine';
 import POLICY_SEEDING_DEFAULT from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SEEDING, RATING } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { ScaleAttributes } from '@Types/factoryTypes';
+import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 describe('generateSeedingScaleItems', () => {
