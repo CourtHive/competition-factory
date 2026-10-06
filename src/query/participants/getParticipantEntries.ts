@@ -1,4 +1,5 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getEventSeedAssignments } from '@Query/event/getEventSeedAssignments';
 import { getDrawId, getParticipantId } from '@Functions/global/extractors';
@@ -813,11 +814,11 @@ function computeRRFinishingPositions(
     const mainStructure = drawDefinition.structures?.find(
       (s) => s.structureType === CONTAINER && s.stage === MAIN && s.stageSequence === 1,
     );
-    if (!mainStructure?.structures) continue;
+    const containedStructures = structuresOf(mainStructure);
+    if (!containedStructures) continue;
 
-    const containedStructures = mainStructure.structures;
     const bracketsCount = containedStructures.length;
-    const drawPositionsCount = containedStructures.reduce((sum, s) => sum + (s.positionAssignments?.length || 0), 0);
+    const drawPositionsCount = containedStructures.reduce((sum, s) => sum + (positionAssignmentsOf(s)?.length || 0), 0);
     const playoffStructure = drawDefinition.structures?.find((s) => s.stage === PLAY_OFF);
 
     if (!rrFinishingPositions[drawId]) rrFinishingPositions[drawId] = {};
