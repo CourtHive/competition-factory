@@ -665,6 +665,7 @@ function advanceConvergedWinner({ convergedMatchUp, drawDefinition, matchUpsMap,
     inContextDrawMatchUps: refreshed,
     drawDefinition,
   });
+  if (convergedTargets.error) return decorateResult({ result: convergedTargets, stack });
   const convergedWinnerMatchUp = convergedTargets?.targetMatchUps?.winnerMatchUp;
   if (!convergedWinnerMatchUp) return { ...SUCCESS };
 
@@ -686,6 +687,20 @@ function advanceConvergedWinner({ convergedMatchUp, drawDefinition, matchUpsMap,
     drawDefinition,
     matchUpsMap,
   });
+}
+
+/** a double exit's own position, found in its target, is taken back across the links it was advanced over (P44) */
+function withdrawOwnAdvancement({
+  targetMatchUpDrawPositions,
+  sourceDrawPositions,
+  ...release
+}: Omit<Parameters<typeof releaseAdvancedDrawPositionAcrossLinks>[0], 'drawPosition'> & {
+  targetMatchUpDrawPositions: number[];
+  sourceDrawPositions: number[];
+}) {
+  for (const drawPosition of targetMatchUpDrawPositions.filter((position) => sourceDrawPositions.includes(position))) {
+    releaseAdvancedDrawPositionAcrossLinks({ ...release, drawPosition });
+  }
 }
 
 /** the converged matchUp as the cascade now sees it — its status changed a moment ago */
@@ -770,22 +785,18 @@ function conditionallyAdvanceDrawPosition(params) {
      * `withdrawingExit` because this IS the produced exit's own advancement being taken back, which
      * is the one case `releaseAdvancedDrawPosition`'s produced-exit guard must not protect.
      */
-    if (isDoubleExit(params.matchUpStatus)) {
-      for (const drawPosition of targetMatchUpDrawPositions.filter((position) =>
-        sourceDrawPositions.includes(position),
-      )) {
-        releaseAdvancedDrawPositionAcrossLinks({
-          fromRoundNumber: targetMatchUp.roundNumber,
-          structureId: targetMatchUp.structureId,
-          withdrawingExit: true,
-          event: params.event,
-          tournamentRecord,
-          drawDefinition,
-          drawPosition,
-          matchUpsMap,
-        });
-      }
-    }
+    if (isDoubleExit(params.matchUpStatus))
+      withdrawOwnAdvancement({
+        fromRoundNumber: targetMatchUp.roundNumber,
+        structureId: targetMatchUp.structureId,
+        targetMatchUpDrawPositions,
+        withdrawingExit: true,
+        sourceDrawPositions,
+        event: params.event,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+      });
     targetMatchUpDrawPositions = targetMatchUpDrawPositions.filter(
       (drawPosition) => !sourceDrawPositions.includes(drawPosition),
     );
@@ -818,6 +829,7 @@ function conditionallyAdvanceDrawPosition(params) {
     inContextDrawMatchUps,
     drawDefinition,
   });
+  if (targetData.error) return decorateResult({ result: targetData, stack });
   const { targetMatchUps, targetLinks } = targetData;
 
   const {
@@ -1357,6 +1369,7 @@ function advanceFromTarget({
         inContextDrawMatchUps,
         drawDefinition,
       });
+      if (targetData.error) return decorateResult({ result: targetData, stack });
       const advancementResult = doubleExitAdvancement({
         ...params,
         matchUpId: targetMatchUp.matchUpId,
@@ -1390,6 +1403,7 @@ function advanceByeAdvancedDrawPosition({
     inContextDrawMatchUps,
     drawDefinition,
   });
+  if (nextTargetData.error) return decorateResult({ result: nextTargetData, stack });
 
   if (nextWinnerMatchUpHasDrawPosition) {
     const nextDrawPositionToAdvance = nextWinnerMatchUpDrawPositions.find(Boolean);
@@ -1857,12 +1871,13 @@ function carryExitOnward({
   const currentDrawMatchUps =
     getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? inContextDrawMatchUps;
 
-  const { targetMatchUps } = positionTargets({
+  const fromTargets = positionTargets({
     inContextDrawMatchUps: currentDrawMatchUps,
     matchUpId: fromMatchUp.matchUpId,
     drawDefinition,
   });
-  const nextWinnerMatchUp = targetMatchUps?.winnerMatchUp;
+  if (fromTargets.error) return decorateResult({ result: fromTargets, stack });
+  const nextWinnerMatchUp = fromTargets.targetMatchUps?.winnerMatchUp;
   if (!nextWinnerMatchUp?.matchUpId) return decorateResult({ result: { ...SUCCESS }, stack });
 
   const arrivalSideNumber = getExitArrivalSideNumber({
@@ -2363,6 +2378,7 @@ function crossLinksThroughByes({
       .map((matchUp) => getByeCrossing({ inContextDrawMatchUps, drawDefinition, matchUp }))
       .find(Boolean);
     if (!crossing) break;
+    if ('error' in crossing) return decorateResult({ result: crossing, stack });
 
     logAdvancement(stack, {
       color: 'cyan',
@@ -2412,11 +2428,14 @@ function getByeCrossing({
   const occupants = (matchUp.sides ?? []).filter((side) => side.participantId && !side.bye);
   if (occupants.length !== 1 || !matchUpHoldsBye({ drawDefinition, matchUp })) return undefined;
 
-  const { targetMatchUps, targetLinks } = positionTargets({
+  const targetData = positionTargets({
     matchUpId: matchUp.matchUpId,
     inContextDrawMatchUps,
     drawDefinition,
   });
+  // a crossing whose links cannot be read is refused, never read as "nothing crosses"
+  if (targetData.error) return targetData;
+  const { targetMatchUps, targetLinks } = targetData;
   const winnerMatchUp = targetMatchUps?.winnerMatchUp;
   const winnerTargetLink = targetLinks?.winnerTargetLink;
   if (!winnerMatchUp || !winnerTargetLink || winnerMatchUp.structureId === matchUp.structureId) return undefined;

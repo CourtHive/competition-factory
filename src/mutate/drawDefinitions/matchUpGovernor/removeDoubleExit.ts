@@ -361,12 +361,13 @@ function withdrawExitFromByeChain({
   // `conditionallyRemoveDrawPosition`'s own stamp.
   setSideExitProvenance({ provenance: unwound.provenance, matchUp: noContextTargetMatchUp });
 
-  const { targetMatchUps } = positionTargets({
+  const fromTargets = positionTargets({
     matchUpId: fromMatchUp.matchUpId,
     inContextDrawMatchUps,
     drawDefinition,
   });
-  const nextWinnerMatchUp = targetMatchUps?.winnerMatchUp;
+  if (fromTargets.error) return decorateResult({ result: fromTargets, stack });
+  const nextWinnerMatchUp = fromTargets.targetMatchUps?.winnerMatchUp;
   if (!nextWinnerMatchUp?.matchUpId) return { ...SUCCESS };
 
   /**
@@ -437,6 +438,7 @@ export function conditionallyRemoveDrawPosition(params) {
     inContextDrawMatchUps,
     drawDefinition,
   });
+  if (nextTargetData.error) return decorateResult({ result: nextTargetData, stack });
 
   const {
     targetMatchUps: { winnerMatchUp: nextWinnerMatchUp },

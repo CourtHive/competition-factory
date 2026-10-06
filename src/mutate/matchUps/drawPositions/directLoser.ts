@@ -120,7 +120,7 @@ export function directLoser(params): ResultType {
 
   if (loserAlreadyDirected) {
     // a RELABEL (the winner unchanged): carry an exit that is now one, or withdraw one that no longer is
-    const { carry } = relabelLoserExit({
+    const relabel = relabelLoserExit({
       sourceMatchUpId: params.sourceMatchUpId,
       validExitToPropagate,
       sourceMatchUpStatus,
@@ -132,7 +132,8 @@ export function directLoser(params): ResultType {
       matchUpsMap,
       event,
     });
-    if (carry) return { ...SUCCESS, stack, context: { ...context, progressExitStatus: true } };
+    if (relabel.error) return decorateResult({ result: relabel, stack });
+    if (relabel.carry) return { ...SUCCESS, stack, context: { ...context, progressExitStatus: true } };
     return { ...SUCCESS, stack };
   }
 

@@ -46,11 +46,15 @@ export function attemptToSetWinningSide(params) {
 
   let qualifierReplaced, qualifierPlaced;
   if (params.qualifierChanging && appliedPolicies?.[POLICY_TYPE_PROGRESSION]?.autoReplaceQualifiers) {
-    qualifierReplaced = replaceQualifier(params).qualifierReplaced;
+    const replaced = replaceQualifier(params);
+    if (replaced.error) return decorateResult({ result: replaced, stack });
+    qualifierReplaced = replaced.qualifierReplaced;
   }
 
   if (params.qualifierAdvancing && appliedPolicies?.[POLICY_TYPE_PROGRESSION]?.autoPlaceQualifiers) {
-    qualifierPlaced = placeQualifier(params).qualifierPlaced;
+    const placed = placeQualifier(params);
+    if (placed.error) return decorateResult({ result: placed, stack });
+    qualifierPlaced = placed.qualifierPlaced;
   }
 
   return decorateResult({

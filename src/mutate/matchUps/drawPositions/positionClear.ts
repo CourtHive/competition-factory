@@ -136,6 +136,7 @@ export function clearDrawPosition(params: ClearDrawPositionArgs): ResultType & {
     event,
   });
 
+  if (result.error) return result;
   if (!result.drawPositionCleared) return { error: DRAW_POSITION_NOT_CLEARED };
 
   modifyPositionAssignmentsNotice({
@@ -165,7 +166,11 @@ export function drawPositionRemovals({
   matchUpsMap,
   structureId,
   event,
-}: DrawPositionRemovalsArgs) {
+}: DrawPositionRemovalsArgs): ResultType & {
+  positionAssignments?: PositionAssignment[];
+  drawPositionCleared?: boolean;
+  tasks?: unknown;
+} {
   const { structure } = findStructure({ drawDefinition, structureId });
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
   const positionAssignments =
@@ -222,15 +227,14 @@ export function drawPositionRemovals({
 
   const tasks: any = buildRemovalTasks(pairingDetails);
 
-  tasks?.forEach(({ roundNumber, targetDrawPosition, relevantPair }) => {
+  // a removal that fails is returned, not dropped: a malformed round link refuses the clear (CA, 2026-10-06)
+  for (const { roundNumber, targetDrawPosition, relevantPair } of tasks ?? []) {
     const targetMatchUp = roundMatchUps?.[roundNumber].find((matchUp) =>
       overlap(matchUp.drawPositions?.filter(Boolean), relevantPair.filter(Boolean)),
     );
-    if (!targetMatchUp) {
-      return;
-    }
+    if (!targetMatchUp) continue;
 
-    removeSubsequentRoundsParticipant({
+    const subsequent = removeSubsequentRoundsParticipant({
       inContextDrawMatchUps,
       targetDrawPosition,
       tournamentRecord,
@@ -239,8 +243,9 @@ export function drawPositionRemovals({
       roundNumber,
       matchUpsMap,
     });
+    if (subsequent?.error) return subsequent;
 
-    removeDrawPosition({
+    const removed = removeDrawPosition({
       inContextDrawMatchUps,
       clearedParticipantId,
       positionAssignments,
@@ -252,7 +257,8 @@ export function drawPositionRemovals({
       structure,
       event,
     });
-  });
+    if (removed?.error) return removed;
+  }
 
   // The participant left this structure. Whatever a WINNER link carried for them out of it comes back, including
   // where their seat keeps its BYE advancement and the round walk above released nothing (mode D).
@@ -306,8 +312,8 @@ function removeSubsequentRoundsParticipant({
       structureId,
     }).positionAssignments ?? [];
 
-  relevantMatchUps?.forEach((matchUp) =>
-    removeDrawPosition({
+  for (const matchUp of relevantMatchUps ?? []) {
+    const removed = removeDrawPosition({
       drawPosition: targetDrawPosition,
       targetMatchUp: matchUp,
       inContextDrawMatchUps,
@@ -316,8 +322,9 @@ function removeSubsequentRoundsParticipant({
       drawDefinition,
       matchUpsMap,
       structure,
-    }),
-  );
+    });
+    if (removed?.error) return removed;
+  }
   return { ...SUCCESS };
 }
 
@@ -456,6 +463,7 @@ function removeDrawPosition({
     inContextDrawMatchUps,
     drawDefinition,
   });
+  if (targetData.error) return decorateResult({ result: targetData, stack });
 
   const {
     targetLinks: { winnerTargetLink },
@@ -883,7 +891,7 @@ function handleLoserMatchUpRemoval({
   if (roundNumber === 1) {
     const loserMatchUpDrawPosition = drawPositions[loserMatchUpDrawPositionIndex];
 
-    drawPositionRemovals({
+    const removals = drawPositionRemovals({
       structureId: loserMatchUp.structureId,
       drawPosition: loserMatchUpDrawPosition,
       inContextDrawMatchUps,
@@ -891,6 +899,7 @@ function handleLoserMatchUpRemoval({
       drawDefinition,
       matchUpsMap,
     });
+    if (removals.error) return decorateResult({ result: removals, stack });
 
     return;
   }
@@ -926,7 +935,7 @@ function handleLoserMatchUpRemoval({
       loserMatchUpDrawPosition,
     });
 
-    drawPositionRemovals({
+    const removals = drawPositionRemovals({
       structureId: loserMatchUp.structureId,
       drawPosition: loserMatchUpDrawPosition,
       inContextDrawMatchUps,
@@ -934,6 +943,7 @@ function handleLoserMatchUpRemoval({
       drawDefinition,
       matchUpsMap,
     });
+    if (removals.error) return decorateResult({ result: removals, stack });
   }
 }
 

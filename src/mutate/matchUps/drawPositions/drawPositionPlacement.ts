@@ -373,6 +373,7 @@ export function assignMatchUpDrawPosition({
     drawDefinition,
     matchUpId,
   });
+  if (targetData.error) return decorateResult({ result: targetData, stack });
   const {
     targetMatchUps: { winnerMatchUp, loserMatchUp, loserTargetDrawPosition, winnerMatchUpDrawPositionIndex },
     targetLinks: { loserTargetLink, winnerTargetLink },

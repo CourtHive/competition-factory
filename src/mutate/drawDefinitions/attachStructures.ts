@@ -111,7 +111,8 @@ export function attachStructures({
   const newStructures = structures?.filter(({ structureId }) => !existingStructureIds?.includes(structureId));
   if (newStructures.length) drawDefinition.structures.push(...newStructures);
 
-  addGoesTo({ drawDefinition });
+  const goesTo = addGoesTo({ drawDefinition });
+  if (goesTo.error) return decorateResult({ result: goesTo, stack });
 
   const matchUps = structures.map((structure) => getAllStructureMatchUps({ structure })?.matchUps ?? []).flat();
 

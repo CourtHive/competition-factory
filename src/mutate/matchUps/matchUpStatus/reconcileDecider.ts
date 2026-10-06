@@ -1,6 +1,7 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
@@ -91,8 +92,9 @@ export function reconcileDecider({
   const final = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
   if (!final || final.collectionId || final.winningSide === winningSideBefore) return { ...SUCCESS };
 
-  const { winnerMatchUp, loserMatchUp } =
-    positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId })?.targetMatchUps ?? {};
+  const targetData = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
+  if (targetData.error) return decorateResult({ result: targetData, stack: 'reconcileDecider' });
+  const { winnerMatchUp, loserMatchUp } = targetData.targetMatchUps ?? {};
   const feedsOneMatchUp = winnerMatchUp?.matchUpId && winnerMatchUp.matchUpId === loserMatchUp?.matchUpId;
   if (!feedsOneMatchUp || winnerMatchUp.structureId === final.structureId) return { ...SUCCESS };
 

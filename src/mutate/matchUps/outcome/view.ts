@@ -6,15 +6,14 @@ import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventTyp
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
+import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -274,11 +273,13 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         }).calculatedWinningSide
       : undefined;
 
-  const targetData = positionTargets({
+  // a malformed round link, the matchUp's own or downstream, is an error in v1 (CA, 2026-10-06): § 2 row 21
+  const targets = getTargetsDownstream({
     matchUpId: matchUpTieId || request.matchUpId,
     inContextDrawMatchUps,
     drawDefinition,
   });
+  const targetData = targets.targetData;
   const drawView = {
     inContextDrawMatchUps,
     inContextMatchUp,
@@ -289,8 +290,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     matchUp,
     drawDefinition,
   };
-  const propagatedExitStands = !!hasPropagatedExitDownstream(drawView);
-  const activeDownstream = !!isActiveDownstream(drawView);
+  const unreadableLink = targets.error
+    ? { error: targets.error, info: targets.info, context: targets.context }
+    : undefined;
+  const propagatedExitStands = !unreadableLink && !!hasPropagatedExitDownstream(drawView);
+  const activeDownstream = !!targets.activeDownstream;
 
   const appliedPolicies =
     getAppliedPolicies({
@@ -397,6 +401,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     impliedWinningSide,
     propagatedExitStands,
     activeDownstream,
+    ...(unreadableLink ? { unreadableLink } : {}),
     participants: {
       required: !!required,
       count,

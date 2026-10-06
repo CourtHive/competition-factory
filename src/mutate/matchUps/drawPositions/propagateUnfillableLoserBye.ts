@@ -1,6 +1,7 @@
 import { assignDrawPositionBye, assignFedDrawPositionBye } from './assignDrawPositionBye';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { isExit } from '@Validators/isExit';
@@ -160,10 +161,12 @@ export function propagateUnfillableLoserBye({
 
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
   const inContextMatchUp = inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
+  const targetData = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
+  if (targetData.error) return decorateResult({ result: targetData, stack: 'propagateUnfillableLoserBye' });
   const {
     targetLinks: { loserTargetLink },
     targetMatchUps: { loserMatchUp, loserTargetDrawPosition },
-  } = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
+  } = targetData;
 
   if (!loserMatchUp || !loserTargetDrawPosition || !loserTargetLink) return undefined;
 

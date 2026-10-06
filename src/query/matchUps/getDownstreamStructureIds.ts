@@ -1,8 +1,10 @@
+import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 
 // constants and types
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
+import { ResultType } from '@Types/factoryTypes';
 
 type GetDownstreamStructureIdsArgs = {
   inContextDrawMatchUps: HydratedMatchUp[];
@@ -71,7 +73,7 @@ export function getDownstreamStructureIds({
   excludeStructureId,
   drawDefinition,
   matchUpId,
-}: GetDownstreamStructureIdsArgs): { structureIds: string[] } {
+}: GetDownstreamStructureIdsArgs): ResultType & { structureIds: string[] } {
   const structureIdOf = (id: string) => inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === id)?.structureId;
 
   const structureIds = new Set<string>();
@@ -91,8 +93,12 @@ export function getDownstreamStructureIds({
       inContextDrawMatchUps,
       drawDefinition,
     });
+    // a structure whose links cannot be read is an error, never "nothing downstream"
+    // (the ids are empty beside it, and are never read without asking for the error first)
+    if (targets.error)
+      return { ...decorateResult({ result: targets, stack: 'getDownstreamStructureIds' }), structureIds: [] };
 
-    const { loserMatchUp, winnerMatchUp } = targets?.targetMatchUps ?? {};
+    const { loserMatchUp, winnerMatchUp } = targets.targetMatchUps ?? {};
 
     // Convergence — both sides of one matchUp feeding the same structure — only disqualifies a
     // relabel AT THE ORIGIN, and getting that wrong cost a measured regression in each direction.

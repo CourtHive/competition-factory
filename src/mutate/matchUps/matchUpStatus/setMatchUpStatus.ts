@@ -84,6 +84,42 @@ function resolveDrawDefinition(params: SetMatchUpStatusArgs, tournamentRecords: 
 }
 
 /**
+ * A convergence that lost one of its origins goes where the kept origin alone puts it; then every carried
+ * exit's ORIGIN is asked whether it still describes one (`reconcileStaleExitOrigins`).
+ */
+function settleExitOrigins({
+  propagateExitStatus,
+  doubleExitsBefore,
+  matchUpId,
+  params,
+  result,
+}: {
+  params: SetMatchUpStatusArgs;
+  doubleExitsBefore: Set<string>;
+  propagateExitStatus?: boolean;
+  result: ResultType;
+  matchUpId: string;
+}): ResultType | undefined {
+  const settled = settleRederivedDoubleExits({
+    tournamentRecord: params.tournamentRecord,
+    drawDefinition: params.drawDefinition,
+    targetMatchUpId: matchUpId,
+    propagateExitStatus,
+    doubleExitsBefore,
+    event: params.event,
+  });
+  if (settled?.error) return settled;
+  const reconciled = reconcileStaleExitOrigins({
+    matchUpsMap: result.context?.matchUpsMap,
+    drawDefinition: params.drawDefinition,
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+  });
+  // an error already in hand is the answer; a reconciliation that cannot read the draw is the answer otherwise
+  return reconciled?.error && !result.error ? reconciled : undefined;
+}
+
+/**
  * What is decided on the draw as it STANDS once the mutation has settled, rather than on the events
  * that led there. Each returns its error; neither is allowed to fail quietly.
  */
@@ -345,25 +381,11 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // Everything has settled — removals, directions and exit propagation — which is the earliest point
   // at which a carried exit's ORIGIN can be asked whether it still describes one. See
   // `reconcileStaleExitOrigins` for the two corrections that pull the timing in opposite directions.
-  // a convergence that lost one of its origins goes where the kept origin alone puts it
-  const settled = settleRederivedDoubleExits({
-    tournamentRecord: params.tournamentRecord,
-    drawDefinition: params.drawDefinition,
-    targetMatchUpId: matchUpId,
-    propagateExitStatus,
-    doubleExitsBefore,
-    event: params.event,
-  });
+  const settled = settleExitOrigins({ params, result, matchUpId, propagateExitStatus, doubleExitsBefore });
   if (settled?.error) {
     v2.compare?.(settled);
     return decorateResult({ result: settled, stack });
   }
-  reconcileStaleExitOrigins({
-    matchUpsMap: result.context?.matchUpsMap,
-    drawDefinition: params.drawDefinition,
-    tournamentRecord: params.tournamentRecord,
-    event: params.event,
-  });
   // and once settled, no matchUp left without a result keeps the `scoredTime` a cascade stamped on it
   reconcileScoredTimes({
     matchUps: matchUpsMap.drawMatchUps,

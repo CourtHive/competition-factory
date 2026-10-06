@@ -1,4 +1,5 @@
 import { getSideExitProvenance, isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
@@ -6,9 +7,43 @@ import { isDoubleExit, isExit } from '@Validators/isExit';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { BYE } from '@Constants/matchUpStatusConstants';
+import { DrawDefinition } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
-export function isActiveDownstream(params) {
-  return activeBelow(params, new Map());
+/** one walk: the answers already given, and the first refusal met (a malformed round link downstream) */
+type Walk = { seen: Map<string, boolean>; refused?: ResultType };
+
+/**
+ * Whether anything downstream of the matchUp is active, as a boolean. A downstream structure whose
+ * links cannot be read (a malformed round link, CA 2026-10-06) reads as ACTIVE here, never as
+ * "nothing downstream". A caller that returns results asks `getTargetsDownstream`, which returns that
+ * refusal as an error instead.
+ */
+export function isActiveDownstream(params): boolean {
+  return activeBelow(params, { seen: new Map() });
+}
+
+/**
+ * A matchUp's position targets, and whether anything downstream of it is active, in one call. Either can
+ * meet a malformed round link (CA, 2026-10-06: an error): the matchUp's own, or one in a structure it feeds.
+ * Either way that error is the answer.
+ */
+export function getTargetsDownstream(params: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpId: string;
+}): ResultType & { targetData?: ReturnType<typeof positionTargets>; activeDownstream?: boolean } {
+  const targetData = positionTargets(params);
+  if (targetData.error) return decorateResult({ result: targetData, stack: 'isActiveDownstream' });
+  const walk: Walk = { seen: new Map() };
+  const activeDownstream = activeBelow({ ...params, targetData }, walk);
+  if (walk.refused) return walk.refused;
+  return { targetData, activeDownstream };
+}
+
+function refuse(walk: Walk, targetData: ResultType): boolean {
+  walk.refused ??= decorateResult({ result: targetData, stack: 'isActiveDownstream' });
+  return true;
 }
 
 /**
@@ -25,22 +60,23 @@ export function isActiveDownstream(params) {
  * the FIRST_MATCHUP BYE test reads. So the answer is kept for one walk, keyed on both, and never
  * beyond it: the next call takes a new view and a new map.
  */
-function visit({ matchUpId, relevantLink, targetData, inContextDrawMatchUps, drawDefinition, seen }: any): boolean {
+function visit({ matchUpId, relevantLink, targetData, inContextDrawMatchUps, drawDefinition, walk }: any): boolean {
   const key = `${matchUpId}|${relevantLink?.linkCondition ?? ''}`;
-  if (seen.has(key)) return seen.get(key);
+  if (walk.seen.has(key)) return walk.seen.get(key);
 
   const resolvedTargetData = targetData ?? positionTargets({ matchUpId, inContextDrawMatchUps, drawDefinition });
   const active = !!activeBelow(
     { targetData: resolvedTargetData, inContextDrawMatchUps, drawDefinition, relevantLink },
-    seen,
+    walk,
   );
-  seen.set(key, active);
+  walk.seen.set(key, active);
   return active;
 }
 
-function activeBelow(params, seen: Map<string, boolean>) {
+function activeBelow(params, walk: Walk): boolean {
   // relevantLink is passed in iterative calls (see below)
   const { inContextDrawMatchUps, targetData, drawDefinition, relevantLink } = params;
+  if (targetData?.error) return refuse(walk, targetData);
 
   /**
    * A fed FMLC BYE is inert only when the FED side holds nobody. The BYE matchUp takes one of two
@@ -97,6 +133,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
       inContextDrawMatchUps,
       drawDefinition,
     });
+  if (loserTargetData?.error) return refuse(walk, loserTargetData);
 
   // NOTE: produced WALKOVER, DEFAULTEED fed into consolation structures should NOT be considered active
   // IF: the loserMatchUp has no further downstream matchUps or there is no propagated loserParticipant (e.g. DOUBLE_EXIT)
@@ -273,7 +310,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
       targetData: loserTargetData,
       inContextDrawMatchUps,
       drawDefinition,
-      seen,
+      walk,
     });
   if (loserActive) return true;
 
@@ -283,7 +320,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
       matchUpId: winnerMatchUp.matchUpId,
       inContextDrawMatchUps,
       drawDefinition,
-      seen,
+      walk,
     })
   );
 }

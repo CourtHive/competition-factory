@@ -1,6 +1,7 @@
 import { getRoundLinks, getTargetLink } from '@Query/drawDefinition/linkGetter';
 import { getNextRoundMatchUp } from '@Query/matchUps/getNextRoundMatchUp';
 import { getTargetMatchUp } from '@Query/matchUps/getTargetMatchUp';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { findStructure } from '@Acquire/findStructure';
 
@@ -77,6 +78,24 @@ function targetByRoundOutcome({ inContextDrawMatchUps, useTargetMatchUpIds, draw
     source,
   });
   let loserTargetLink = getTargetLink({ source, linkType: LOSER });
+
+  /**
+   * A MALFORMED ROUND LINK IS AN ERROR (CA, 2026-10-06). A WINNER or LOSER link with no
+   * `source.roundNumber` cannot say which round it directs, and `getTargetLink` answers it with an
+   * error in place of the link. Passed on as a link it reached `getTargetMatchUp`, which read
+   * `.target` off it and threw. It is returned here, naming the link and the matchUp, and every
+   * caller propagates it. A round with no link at all is not this: it has no target link and is
+   * directed exactly as before.
+   */
+  const malformed = [winnerTargetLink, byeTargetLink, loserTargetLink].find((link) => link?.error);
+  if (malformed) {
+    return decorateResult({
+      context: { matchUpId: matchUp.matchUpId, structureId: structure.structureId, roundNumber: matchUp.roundNumber },
+      info: 'a WINNER or LOSER link has no source roundNumber',
+      stack: 'positionTargets',
+      result: malformed,
+    });
+  }
 
   const propagateByeFMLC = byeTargetLink && loserTargetLink;
   if (!loserTargetLink) loserTargetLink = byeTargetLink;
