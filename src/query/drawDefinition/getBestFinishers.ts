@@ -24,7 +24,7 @@ type ParticipantResult = {
   groupOrder?: number;
   provisionalOrder?: number;
   GEMscore?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 type GroupResults = {

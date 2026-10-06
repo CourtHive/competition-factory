@@ -86,6 +86,15 @@ export type GetDrawDataArgs = {
   event?: Event;
 };
 
+type DrawInfo = Pick<DrawDefinition, 'matchUpFormat' | 'updatedAt' | 'drawName' | 'drawType' | 'drawId'> & {
+  participantPlacements?: boolean;
+  drawPublished?: boolean;
+  drawGenerated?: boolean;
+  drawCompleted?: boolean;
+  drawActive?: boolean;
+  display?: unknown;
+};
+
 // NOTE: if { usePublishState: true } then { eventPublishState } or { event } must be provided
 export function getDrawData(params: GetDrawDataArgs): {
   structures?: any[];
@@ -121,7 +130,7 @@ export function getDrawData(params: GetDrawDataArgs): {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const { matchUpFormat, updatedAt, drawType, drawName, drawId } = drawDefinition;
-  const drawInfo: any = {
+  const drawInfo: DrawInfo = {
     matchUpFormat,
     updatedAt,
     drawName,

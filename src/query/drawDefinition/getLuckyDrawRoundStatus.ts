@@ -13,7 +13,7 @@ import { DrawDefinition, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { LOSER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-type LuckyParticipantInfo = {
+export type LuckyParticipantInfo = {
   participantId: string;
   participantName?: string;
   matchUpId: string;
@@ -33,7 +33,7 @@ type ConsolidationLinkInfo = {
   losersPlaced: boolean;
 };
 
-type LuckyRoundInfo = {
+export type LuckyRoundInfo = {
   roundNumber: number;
   matchUpsCount: number;
   completedCount: number;

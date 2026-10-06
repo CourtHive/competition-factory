@@ -6,10 +6,11 @@ import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 
 // constants and types
-import { MAIN, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE, DIRECT_ENTRY_STATUSES, LUCKY_LOSER } from '@Constants/entryStatusConstants';
+import { MAIN, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { EntryStatusUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Flight } from '@Types/factoryTypes';
 import {
   SHARED_INDIVIDUAL_PARTICIPANT,
   MISSING_PARTICIPANT_IDS,
@@ -139,7 +140,7 @@ type ParticipantInFlightEntriesArgs = {
   entryStatus?: EntryStatusUnion;
   participantId: string;
   entryStage?: string;
-  flight: any;
+  flight: Flight;
 };
 function participantInFlightEntries({
   participantId,
