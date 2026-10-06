@@ -49,7 +49,7 @@
   "src/mutate/extensions/policies": 6,
   "src/mutate/ladder": 3,
   "src/mutate/matchUps/drawPositions": 564,
-  "src/mutate/matchUps/lineUps": 132,
+  "src/mutate/matchUps/lineUps": 91,
   "src/mutate/matchUps/matchUpFormat": 21,
   "src/mutate/matchUps/matchUpStatus": 70,
   "src/mutate/matchUps/outcome": 1,
@@ -126,6 +126,6 @@
   "src/tests/testHarness/testUtilities": 11,
   "src/tools": 227,
   "src/tools/buildFromSources": 90,
-  "src/validators": 62,
+  "src/validators": 38,
   "src/validators/sanctioning": 2
 }

@@ -5,8 +5,22 @@ import { getDrawStructures } from '@Acquire/findStructure';
 import { structuresOf } from '@Acquire/structureMembers';
 import { isValidDateString } from '@Tools/dateTime';
 
-// constants
+// constants and types
 import { INVALID_VALUES, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { TournamentRecords } from '@Types/factoryTypes';
+
+/** The round numbers of each structure, keyed tournamentId → eventId → drawId → structureId. */
+type SchedulingRoundsMap = {
+  [tournamentId: string]: { [eventId: string]: { [drawId: string]: { [structureId: string]: number[] | undefined } } };
+};
+
+type SchedulingIds = {
+  tournamentIds: string[];
+  structureIds: string[];
+  venueIds: string[];
+  eventIds: string[];
+  drawIds: string[];
+};
 
 export function validateSchedulingProfile({ tournamentRecords, schedulingProfile }): any {
   if (!schedulingProfile) return { valid: true };
@@ -123,10 +137,10 @@ export function tournamentRelevantSchedulingIds(params) {
   };
 }
 
-export function getAllRelevantSchedulingIds(params) {
-  const records: any = (params?.tournamentRecords && Object.values(params?.tournamentRecords)) ?? [];
-  const tournamentsMap = {};
-  const { venueIds, eventIds, drawIds, structureIds, tournamentIds } = records.reduce(
+export function getAllRelevantSchedulingIds(params?: { tournamentRecords?: TournamentRecords }) {
+  const records = (params?.tournamentRecords && Object.values(params?.tournamentRecords)) ?? [];
+  const tournamentsMap: SchedulingRoundsMap = {};
+  const { venueIds, eventIds, drawIds, structureIds, tournamentIds } = records.reduce<SchedulingIds>(
     (aggregator, tournamentRecord) => {
       const { tournamentIds, tournamentMap, structureIds, venueIds, eventIds, drawIds } =
         tournamentRelevantSchedulingIds({

@@ -9,7 +9,7 @@
  * 5. Returns MatchUp ready for hive-eye-tracker visualization
  */
 
-import { parseCSV, groupByMatch, parseMCPPoint, type MCPPoint, type MCPMatch } from './mcpParser';
+import { parseCSV, groupByMatch, parseMCPPoint, type MCPPoint, type MCPMatch, type ParsedMCPPoint } from './mcpParser';
 import { deduceMatchUpFormat } from '@Query/scoring/deduceMatchUpFormat';
 import type { MatchUp, AddPointOptions } from '@Types/scoring/types';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
@@ -130,9 +130,9 @@ function extractFinalScore(points: MCPPoint[]): string | undefined {
   // MCP CSV has Set1, Set2 columns with final set scores
   const set1 = lastPoint.Set1;
   const set2 = lastPoint.Set2;
-  const set3 = (lastPoint as any).Set3;
-  const set4 = (lastPoint as any).Set4;
-  const set5 = (lastPoint as any).Set5;
+  const set3 = lastPoint.Set3;
+  const set4 = lastPoint.Set4;
+  const set5 = lastPoint.Set5;
 
   const sets: string[] = [];
   if (set1) sets.push(`${set1}-${set2}`);
@@ -243,7 +243,7 @@ export function validateMCPMatch(
   };
 }
 
-function decorateLastPoint(matchUp: MatchUp, parsedPoint: any) {
+function decorateLastPoint(matchUp: MatchUp, parsedPoint: ParsedMCPPoint) {
   if (matchUp.history?.points && matchUp.history.points.length > 0) {
     const lastPoint = matchUp.history.points.at(-1);
     if (lastPoint) {

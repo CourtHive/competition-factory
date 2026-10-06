@@ -16,10 +16,11 @@ import { ensureSideLineUps } from './ensureSideLineUps';
 import { overlap } from '@Tools/arrays';
 
 // constants and types
+import { DrawDefinition, Event, MatchUp, Participant, PositionAssignment, Tournament } from '@Types/tournamentTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { LineUp, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
+import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
@@ -251,14 +252,24 @@ export function assignTieMatchUpParticipantId(
   return { ...SUCCESS, modifiedLineUp };
 }
 
-function checkAlreadyAssigned(inContextTieMatchUp, participantId) {
+function checkAlreadyAssigned(inContextTieMatchUp: HydratedMatchUp | undefined, participantId: string) {
   const allTieIndividualParticipantIds = inContextTieMatchUp?.sides?.flatMap(
     (side: any) => side.participant?.individualParticipantIds || (side.participant?.participantId ?? []),
   );
   return allTieIndividualParticipantIds?.includes(participantId);
 }
 
-function resolveTeamParticipantId({ teamParticipantId, inContextDualMatchUp, sideNumber }) {
+type ResolveTeamParticipantIdArgs = {
+  inContextDualMatchUp?: HydratedMatchUp;
+  teamParticipantId?: string;
+  sideNumber?: number;
+};
+
+function resolveTeamParticipantId({
+  teamParticipantId,
+  inContextDualMatchUp,
+  sideNumber,
+}: ResolveTeamParticipantIdArgs) {
   if (teamParticipantId) return teamParticipantId;
   if (!sideNumber) return undefined;
   return inContextDualMatchUp?.sides?.find((side) => side.sideNumber === sideNumber)?.participantId;
@@ -279,7 +290,17 @@ function resolveGenderEnforced({ policyDefinitions, enforceGender, tournamentRec
   return (enforceGender ?? matchUpActionsPolicy?.participants?.enforceGender) !== false;
 }
 
-function checkGenderEnforcement({ inContextTieMatchUp, participantToAssign, genderEnforced }) {
+type CheckGenderEnforcementArgs = {
+  inContextTieMatchUp?: HydratedMatchUp;
+  participantToAssign: HydratedParticipant;
+  genderEnforced: boolean;
+};
+
+function checkGenderEnforcement({
+  inContextTieMatchUp,
+  participantToAssign,
+  genderEnforced,
+}: CheckGenderEnforcementArgs) {
   if (
     genderEnforced &&
     isGendered(inContextTieMatchUp?.gender) &&
@@ -334,6 +355,15 @@ function resolveAssignmentParticipantIds({
   );
 }
 
+type ResolveSideNumberArgs = {
+  inContextTieMatchUp?: HydratedMatchUp;
+  relevantAssignments?: PositionAssignment[];
+  participantTeam?: Participant;
+  teamParticipantId: string;
+  dualMatchUp?: MatchUp;
+  sideNumber?: number;
+};
+
 function resolveSideNumber({
   inContextTieMatchUp,
   teamParticipantId,
@@ -341,16 +371,14 @@ function resolveSideNumber({
   participantTeam,
   dualMatchUp,
   sideNumber: paramSideNumber,
-}) {
+}: ResolveSideNumberArgs) {
   const teamAssignment = relevantAssignments?.find(
     (assignment) => assignment.participantId === participantTeam?.participantId,
   );
   const teamDrawPosition = teamAssignment?.drawPosition;
-  const dualTeamSideNumber = dualMatchUp?.sides?.find(
-    (side: any) => side.participantId === teamParticipantId,
-  )?.sideNumber;
+  const dualTeamSideNumber = dualMatchUp?.sides?.find((side) => side.participantId === teamParticipantId)?.sideNumber;
   const teamSideNumber = inContextTieMatchUp?.sides?.find(
-    (side: any) => teamDrawPosition && side.drawPosition === teamDrawPosition,
+    (side) => teamDrawPosition && side.drawPosition === teamDrawPosition,
   )?.sideNumber;
   return dualTeamSideNumber ?? teamSideNumber ?? paramSideNumber;
 }
@@ -371,11 +399,11 @@ function handleDoublesAssignment({
   tieFormat,
   stack,
   event,
-}) {
+}): ResultType & { deletedParticipantId?: string } {
   let deletedParticipantId;
 
   if (participantType !== PAIR) {
-    let result: any = updateLineUp({
+    let result: ResultType & { deletedParticipantId?: string } = updateLineUp({
       collectionPosition,
       teamParticipantId,
       drawDefinition,

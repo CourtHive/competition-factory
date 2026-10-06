@@ -1,18 +1,21 @@
-type RegisterCreatedRecordArgs = {
+// constants and types
+import { ErrorType } from '@Constants/errorConditionConstants';
+
+type RegisterCreatedRecordArgs<R> = {
   result: any;
   recordKey: string;
   idKey: string;
-  getRecord: (id?: string) => any;
-  setRecord: (record: any) => any;
-  setActiveId: (id?: string) => any;
-  existsError: any;
+  getRecord: (id?: string) => unknown;
+  setRecord: (record: R) => unknown;
+  setActiveId: (id?: string) => unknown;
+  existsError: ErrorType;
 };
 
 // Generic "register a freshly-created record" step shared by declaration engines:
 // validate the domain builder's result, reject a duplicate id, persist it, and make
 // it the active record. The domain supplies its own record builder (via `result`)
 // and its own duplicate-id error (`existsError`); everything else is population-agnostic.
-export function registerCreatedRecord({
+export function registerCreatedRecord<R>({
   result,
   recordKey,
   idKey,
@@ -20,7 +23,7 @@ export function registerCreatedRecord({
   setRecord,
   setActiveId,
   existsError,
-}: RegisterCreatedRecordArgs) {
+}: RegisterCreatedRecordArgs<R>) {
   if (result.error) return result;
   const record = result[recordKey];
   if (!record) return result;

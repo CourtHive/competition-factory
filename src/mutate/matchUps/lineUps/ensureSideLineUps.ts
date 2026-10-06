@@ -5,8 +5,8 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
+import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { LINEUPS } from '@Constants/extensionConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
 
 type EnsureSideLineUpsArgs = {
   inContextDualMatchUp?: HydratedMatchUp;
@@ -41,7 +41,7 @@ export function ensureSideLineUps({
     const lineUpsValue = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS });
     const lineUps = makeDeepCopy(lineUpsValue ?? {}, false, true);
 
-    const extractSideDetail = ({ displaySideNumber, drawPosition, sideNumber }) => ({
+    const extractSideDetail = ({ displaySideNumber, drawPosition, sideNumber }: HydratedSide) => ({
       drawPosition,
       sideNumber,
       displaySideNumber,
@@ -62,7 +62,7 @@ export function ensureSideLineUps({
      * `BYE_WON` on 56 of 60 cells (the consolation's auto-calc awarded the dual to its BYE side).
      * A side that holds no participant holds no lineUp, whatever the raw record says.
      */
-    dualMatchUp.sides = inContextDualMatchUp?.sides?.map((contextSide: any) => {
+    dualMatchUp.sides = inContextDualMatchUp?.sides?.map((contextSide) => {
       const participantId = contextSide.participantId;
       const referenceLineUp = (participantId && lineUps[participantId]) || undefined;
       const rawSides = dualMatchUp.sides ?? [];

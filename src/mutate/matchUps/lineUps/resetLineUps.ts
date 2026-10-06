@@ -3,7 +3,7 @@ import { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
 import { getTargetMatchUps } from '@Query/matchUps/getTargetMatchUps';
 
 // constants and types
-import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -17,7 +17,7 @@ type ResetLineUpsArgs = {
   matchUpsMap?: MatchUpsMap;
   inheritance?: boolean;
   structure: Structure;
-  assignments?: any;
+  assignments?: PositionAssignment[];
   event?: Event;
 };
 export function resetLineUps({
@@ -44,7 +44,7 @@ export function resetLineUps({
   for (const inContextMatchUp of targetMatchUps) {
     if (inContextMatchUp.matchUpType !== TEAM_MATCHUP) continue;
 
-    (inContextMatchUp.sides ?? []).forEach((side: any, sideIndex) => {
+    (inContextMatchUp.sides ?? []).forEach((side, sideIndex) => {
       if (side?.drawPosition && drawPositions?.includes(side.drawPosition)) {
         const matchUp = matchUps.find(({ matchUpId }) => matchUpId === inContextMatchUp.matchUpId);
         if (matchUp?.sides?.[sideIndex]) {

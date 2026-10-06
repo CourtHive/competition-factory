@@ -1,14 +1,23 @@
 // constants and types
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+
+type DeclarationRecords<R> = { [id: string]: R };
 
 // Generic in-memory keyed-record store with an "active record" pointer and a
 // method registry, shared by declaration-style engines (officiating, sanctioning,
 // and a future player/declarations engine). Each engine instantiates its OWN store
 // — state is never shared between engines. The id field name and the not-found
 // error are injected so emitted results match each domain's behavior byte-for-byte.
-export function createRecordStore({ idKey, notFoundError }: { idKey: string; notFoundError: any }) {
-  const state: { records: { [id: string]: any }; activeId?: string; methods: { [key: string]: any } } = {
+// `K` is the injected id field, so a record's id is typed by the key the domain names.
+export function createRecordStore<K extends string, R extends { [P in K]: string }>({
+  idKey,
+  notFoundError,
+}: {
+  idKey: K;
+  notFoundError: ErrorType;
+}) {
+  const state: { records: DeclarationRecords<R>; activeId?: string; methods: { [key: string]: unknown } } = {
     records: {},
     activeId: undefined,
     methods: {},
@@ -22,13 +31,13 @@ export function createRecordStore({ idKey, notFoundError }: { idKey: string; not
       return key ? state.records[key] : undefined;
     },
 
-    setRecord: (record: any) => {
+    setRecord: (record: R) => {
       if (!record?.[idKey]) return { error: INVALID_VALUES, context: { message: `Missing ${idKey}` } };
       state.records[record[idKey]] = record;
       return { ...SUCCESS };
     },
 
-    setRecords: (records: any) => {
+    setRecords: (records?: DeclarationRecords<R>) => {
       state.records = records ?? {};
       const ids = Object.keys(state.records);
       state.activeId = ids.length === 1 ? ids[0] : undefined;
@@ -52,7 +61,7 @@ export function createRecordStore({ idKey, notFoundError }: { idKey: string; not
 
     getMethods: () => state.methods,
 
-    setMethods: (toRegister: { [key: string]: any }) => {
+    setMethods: (toRegister: { [key: string]: unknown }) => {
       Object.keys(toRegister).forEach((key) => {
         if (typeof toRegister[key] === 'function') state.methods[key] = toRegister[key];
       });
