@@ -203,7 +203,9 @@ After the write, and only on success:
    and changes what it says about the loser (CA, 2026-10-02). Re-entered as a WALKOVER or DEFAULTED,
    it carries the exit to the matchUp the loser already stands in; re-entered as COMPLETED, it
    withdraws the exit it carried there. Neither applies where that matchUp already has a result of its
-   own, and both apply whether or not the winner has played on since.
+   own, nor where the winner of the carried exit has played on from it, counting past any BYEs they
+   were advanced through (7.7.0). Both apply whether or not the relabelled matchUp's own winner has
+   played on since.
 3. **Round robin tally** is recomputed when the matchUp is in a group (`updateTallyIfNeeded`).
 4. **Stale exit origins are reconciled** once removals, directions and propagation have all settled:
    a carried exit whose origin no longer describes an exit is corrected.
