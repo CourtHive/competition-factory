@@ -9,6 +9,7 @@ import { unique } from '@Tools/arrays';
 // constants and types
 import { ALTERNATE, DIRECT_ENTRY_STATUSES, UNGROUPED, UNPAIRED, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { ASSIGN_SIDE_METHOD, REMOVE_PARTICIPANT, REMOVE_SIDE_METHOD } from '@Constants/matchUpActionConstants';
+import { MatchUpAction } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 import { DrawDefinition, Event, MatchUp, Structure } from '@Types/tournamentTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 import {
@@ -42,7 +43,7 @@ export function adHocMatchUpActions({
   matchUp: MatchUp;
   event?: Event;
 }) {
-  const validActions: any = [];
+  const validActions: MatchUpAction[] = [];
 
   const matchUps = structure?.matchUps ?? [];
   const side = matchUp.sides?.find((side) => side.sideNumber === sideNumber);

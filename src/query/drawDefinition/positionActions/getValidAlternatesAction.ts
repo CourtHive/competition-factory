@@ -9,6 +9,7 @@ import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefiniti
 import { ALTERNATE, UNGROUPED, UNPAIRED, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
+import { PositionAction } from './actionPolicyUtils';
 import {
   ALTERNATE_PARTICIPANT,
   ALTERNATE_PARTICIPANT_METHOD,
@@ -26,7 +27,7 @@ type GetValidAlternatesActionArgs = {
   drawPosition: number;
   structureId?: string;
   structure: Structure;
-  validActions: any[];
+  validActions: PositionAction[];
   drawId: string;
   event?: Event;
 };

@@ -18,6 +18,7 @@ import { DrawDefinition, Entry, Event, Tournament } from '@Types/tournamentTypes
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import { GROUP, PAIR, TEAM } from '@Constants/participantConstants';
 import { IdCollections, MatchUpsMap } from '@Types/factoryTypes';
+import { SeedBlockInfo } from '@Query/drawDefinition/seedGetter';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -25,6 +26,27 @@ import {
   MISSING_AVOIDANCE_POLICY,
   NO_CANDIDATES,
 } from '@Constants/errorConditionConstants';
+
+/**
+ * One participant attribute an avoidance policy separates on: a `key` path into the participant
+ * (`'person.nationalityCode'`), a `directive` naming an id collection, or explicit `groupings`.
+ */
+export type PolicyAttribute = {
+  groupings?: { [groupName: string]: string[] };
+  directive?: keyof IdCollections;
+  significantCharacters?: number;
+  includeIds?: string[];
+  key?: string;
+};
+
+/** The avoidance policy (`POLICY_TYPE_AVOIDANCE`) as positioning reads it. */
+export type AvoidancePolicy = {
+  policyAttributes?: PolicyAttribute[];
+  roundsToSeparate?: number;
+  targetDivisions?: number;
+  candidatesCount?: number;
+  policyName?: string;
+};
 
 type RandomUnseededDistribution = {
   inContextDrawMatchUps?: HydratedMatchUp[];
@@ -35,10 +57,10 @@ type RandomUnseededDistribution = {
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
-  seedBlockInfo?: any;
+  seedBlockInfo?: SeedBlockInfo;
   structureId: string;
   drawSize: number;
-  avoidance?: any;
+  avoidance?: AvoidancePolicy;
   entries?: Entry[];
   event?: Event;
   random?: () => number;

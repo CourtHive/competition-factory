@@ -11,6 +11,7 @@ import { shuffleArray } from '@Tools/arrays';
 import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions, SeedingProfile, MatchUpsMap } from '@Types/factoryTypes';
 import { CONTAINER, ITEM, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { SeedBlockInfo } from '@Query/drawDefinition/seedGetter';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type PositionByesArgs = {
@@ -22,7 +23,7 @@ type PositionByesArgs = {
   matchUpsMap?: MatchUpsMap;
   structure?: Structure;
   structureId?: string;
-  seedBlockInfo?: any;
+  seedBlockInfo?: SeedBlockInfo;
   seedsOnly?: boolean;
   seedLimit?: number;
   event?: Event;

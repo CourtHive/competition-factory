@@ -9,9 +9,21 @@ import { PolicyDefinitions } from '@Types/factoryTypes';
 
 // updates 'positionActions' extension to keep track of positionActions by end-user
 
+/**
+ * One end-user position action as the extension records it: its method `name`, where it happened,
+ * and whatever the action adds (a participantId under an action-specific name, `replaceWithBye`, …).
+ */
+type PositionActionRecord = {
+  [attribute: string]: unknown;
+  drawPositions?: number[];
+  drawPosition?: number;
+  structureId: string;
+  name: string;
+};
+
 type AddPositionActionTelemetry = {
+  positionAction: PositionActionRecord;
   appliedPolicies?: PolicyDefinitions;
-  positionAction: any;
   drawDefinition: any;
 };
 

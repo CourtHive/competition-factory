@@ -22,6 +22,7 @@ import {
   getPolicyActions,
   isAvailableAction,
   MATCHUP_ACTION,
+  MatchUpAction,
 } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 
 // constants, fixtures and types
@@ -152,7 +153,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   const { assignedPositions, allPositionsAssigned } = structureAssignedDrawPositions({ structure });
   const { structureId } = structure ?? {};
 
-  const validActions: any[] = [];
+  const validActions: MatchUpAction[] = [];
   if (!structureId) return { validActions };
 
   const isCollectionMatchUp = Boolean(matchUp.collectionId);

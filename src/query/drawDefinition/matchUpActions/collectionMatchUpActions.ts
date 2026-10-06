@@ -1,10 +1,15 @@
-import { isAvailableAction } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getParticipantId } from '@Functions/global/extractors';
 import { coercedGender } from '@Helpers/coercedGender';
 import { isMixed } from '@Validators/isMixed';
 import { isAny } from '@Validators/isAny';
+import {
+  ActionsStructurePolicy,
+  isAvailableAction,
+  MatchUpAction,
+  MatchUpActionsPolicy,
+} from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 
 // constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
@@ -45,17 +50,17 @@ export function collectionMatchUpActions({
   inContextDrawMatchUps?: HydratedMatchUp[];
   inContextMatchUp: HydratedMatchUp;
   matchUpParticipantIds: string[];
-  matchUpActionsPolicy: any;
+  matchUpActionsPolicy: MatchUpActionsPolicy;
   enforceGender?: boolean;
   participantId?: string;
   sideNumber?: number;
   side: HydratedSide;
-  policyActions: any;
+  policyActions: ActionsStructurePolicy | undefined;
   matchUpId: string;
   matchUp: MatchUp;
   drawId: string;
 }) {
-  const validActions: any = [];
+  const validActions: MatchUpAction[] = [];
   const matchUpType = inContextMatchUp.matchUpType;
   const genderEnforced = (enforceGender ?? matchUpActionsPolicy?.participants?.enforceGender) !== false;
 
