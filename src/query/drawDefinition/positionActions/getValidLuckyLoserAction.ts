@@ -3,6 +3,7 @@ import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { getParticipantId } from '@Functions/global/extractors';
 import { findStructure } from '@Acquire/findStructure';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { DrawDefinition, Event, Participant, PositionAssignment, Structure } from '@Types/tournamentTypes';
@@ -126,9 +127,9 @@ export function getValidLuckyLosersAction({
     });
   }
 
-  const availableLuckyLosers = tournamentParticipants?.filter((participant: Participant) =>
-    availableLuckyLoserParticipantIds?.includes(participant.participantId),
-  );
+  const availableLuckyLosers = tournamentParticipants
+    ?.filter((participant: Participant) => availableLuckyLoserParticipantIds?.includes(participant.participantId))
+    .map((participant) => makeDeepCopy(participant, undefined, true));
 
   availableLuckyLosers?.forEach((luckyLoser) => {
     const entry = (drawDefinition.entries ?? []).find((entry) => entry.participantId === luckyLoser.participantId);
