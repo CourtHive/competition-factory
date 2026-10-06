@@ -5,6 +5,7 @@ import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
 import { getEntryFeeRange } from '@Query/entries/resolveEntryFee';
 import { findExtension } from '@Acquire/findExtension';
+import { isDateObject } from '@Tools/dateTime';
 
 // types
 import { HydratedMatchUp, HydratedParticipant, HydratedSide } from '@Types/hydrated';
@@ -84,6 +85,16 @@ function toNumber(value: string | number | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * Registration instants are `Date | string` in CODES, and their columns hold strings. A string
+ * passes through as written; a `Date` becomes its ISO instant, and an invalid one has none.
+ */
+function toInstantString(value: Date | string | null | undefined): string | null {
+  if (!isDateObject(value)) return (value as string | null | undefined) ?? null;
+  const date = value as Date;
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 /** Sorted, de-duplicated, empties dropped — a facet list is a set, and a stable one. */
 function facet(values: (string | undefined | null)[]): string[] {
   return [...new Set(values.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b));
@@ -137,8 +148,8 @@ export function tournamentDiscoveryRow(record: any): ReadModelTournamentDiscover
     recognition: sanction.recognition ?? null,
     decision: sanction.decision ?? null,
     ranking_eligible: sanction.confers?.rankingEligible ?? null,
-    entries_open: registration?.entriesOpen ?? null,
-    entries_close: registration?.entriesClose ?? null,
+    entries_open: toInstantString(registration?.entriesOpen),
+    entries_close: toInstantString(registration?.entriesClose),
     fee_min: comparable ? range.min.amount : null,
     fee_max: comparable ? range.max.amount : null,
     fee_currency: comparable ? range.min.currencyCode : null,
