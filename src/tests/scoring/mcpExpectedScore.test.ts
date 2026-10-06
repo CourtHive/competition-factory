@@ -48,6 +48,25 @@ describe('parseCSV keeps every copy of a repeated header', () => {
   });
 });
 
+describe('parseCSV tolerates RFC 4180 quoting', () => {
+  it('keeps the columns after a quoted field that contains a comma', () => {
+    const header = 'match_id,Pt,Notes,PtWinner';
+    const points = parseCSV(`${header}\nm1,1,"Let on 4, replayed",2\nm1,2,"He said ""out""",1`);
+    expect(points).toEqual([
+      { match_id: 'm1', Pt: '1', Notes: 'Let on 4, replayed', PtWinner: '2' },
+      { match_id: 'm1', Pt: '2', Notes: 'He said "out"', PtWinner: '1' },
+    ]);
+  });
+
+  it('drops the carriage return of CRLF line endings', () => {
+    const points = parseCSV('match_id,Pt,PtWinner\r\nm1,1,2\r\nm1,2,1\r\n');
+    expect(points).toEqual([
+      { match_id: 'm1', Pt: '1', PtWinner: '2' },
+      { match_id: 'm1', Pt: '2', PtWinner: '1' },
+    ]);
+  });
+});
+
 describe('extractFinalScore reads the real score of the fixture', () => {
   it('is 7-6(0) 4-6 6-1 over three sets, a complete best-of-three', () => {
     expect(extractFinalScore(fixtureMatch().points)).toEqual({
