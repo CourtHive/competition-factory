@@ -116,8 +116,7 @@ export function getQualifiersData({
     ...targetRoundNumbers.map((roundNumber) => {
       const assignedQualifierPositions = positionAssignments
         ?.filter(
-          (assignment) =>
-            assignment.qualifier && roundDrawPositions[roundNumber]?.drawPositions?.includes(assignment.drawPosition),
+          (assignment) => assignment.qualifier && roundDrawPositions[roundNumber]?.includes(assignment.drawPosition),
         )
         .map((assignment) => assignment.drawPosition);
       return {
