@@ -52,6 +52,9 @@ overrides:
   #                   and <4.1.0, so every line is affected; the open floor lands docusaurus
   #                   on 4.1.0, which is patched. Docs build verified green on it.
   '@tiptap/core': '>=3.30.5' # GHSA-j95f-988m-3j2f (quadratic ReDoS in markdown attr parsing)
+  tinypool: '>=2.1.2' # GHSA-5gmw-xhrv-c9v3 + GHSA-85c8-ppgw-ccpr (prototype-pollution gadgets to RCE
+  #                    in worker options and run() options), both CRITICAL, <2.1.2. Sole consumer is
+  #                    @docusaurus/core (SSG workers, ^1.x); the floor lands it on the patched 2.x line.
 
 allowBuilds:
   core-js: true
