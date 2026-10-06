@@ -1,3 +1,4 @@
+import { TWO_POSITIONS_FROM_ONE_FEEDER } from '@Query/drawDefinition/getStructureInconsistencies';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
@@ -64,6 +65,8 @@ it('a participant passing a BYE holder replaces the lone position it had already
   expect(find('Consolation|5|1').drawPositions).toContain(byePosition);
 
   score('Main|2|4', { winningSide: 2 });
+  const issues = (tournamentEngine.getDrawInconsistencies({ drawId }) as any).inconsistencies ?? [];
+  expect(issues.filter((issue: any) => issue.issueType === TWO_POSITIONS_FROM_ONE_FEEDER)).toEqual([]);
 
   const passed = find('Consolation|4|1');
   const arrived = passed.drawPositions.find((position: number) => position && position !== byePosition);
