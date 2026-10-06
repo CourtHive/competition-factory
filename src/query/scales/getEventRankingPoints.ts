@@ -3,8 +3,9 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { policyRegistry } from '@Global/policyRegistry';
 
 // constants and types
+import { EventTypeUnion, TierClassification, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
-import { EventTypeUnion, Tournament } from '@Types/tournamentTypes';
+import type { RankingPolicy } from '@Types/rankingTypes';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { DOUBLES } from '@Constants/eventConstants';
@@ -167,7 +168,10 @@ function collectPersonAwards({ personPoints, personToParticipant, eventDrawIds, 
  * without every policy enumerating that federation's categories. Returns
  * undefined when neither source yields a level.
  */
-function resolveLevelFromTier(tier: any, policy: any): number | undefined {
+function resolveLevelFromTier(
+  tier: TierClassification | undefined,
+  policy: Pick<RankingPolicy, 'tierToLevel'>,
+): number | undefined {
   if (!tier?.system || !tier?.value) return undefined;
   const mapped = policy?.tierToLevel?.[tier.system]?.[tier.value];
   return mapped ?? tier.numericRank;

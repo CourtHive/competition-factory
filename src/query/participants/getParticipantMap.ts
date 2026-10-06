@@ -8,8 +8,8 @@ import { isObject } from '@Tools/objects';
 
 // constants and types
 import { GROUP, PAIR, SIGNED_IN, TEAM } from '@Constants/participantConstants';
+import { GroupInfo, ParticipantMap } from '@Types/factoryTypes';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
-import { ParticipantMap } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
 
 const typeMap = {
@@ -49,7 +49,7 @@ export function getParticipantMap({
 }: GetParticpantsMapArgs): {
   missingParticipantIds: string[];
   participantMap: ParticipantMap;
-  groupInfo: any;
+  groupInfo?: GroupInfo;
 } {
   const missingParticipantIds: string[] = [];
   const participantMap: ParticipantMap = {};

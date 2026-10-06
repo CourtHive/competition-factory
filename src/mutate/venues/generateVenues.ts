@@ -4,7 +4,7 @@ import { addVenue } from './addVenue';
 import { UUID } from '@Tools/UUID';
 
 // types
-import { Tournament } from '@Types/tournamentTypes';
+import { Tournament, Venue } from '@Types/tournamentTypes';
 
 type GenerateVenuesArgs = {
   ignoreExistingVenues?: boolean;
@@ -35,7 +35,7 @@ export function generateVenues({ tournamentRecord, ignoreExistingVenues, venuePr
       courtIds,
     } = venueProfile;
 
-    const newVenue: any = {
+    const newVenue: Venue = {
       venueName: venueName || `Venue ${index + 1}`,
       venueAbbreviation,
       venueId,

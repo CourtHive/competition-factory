@@ -17,7 +17,7 @@ type DisableCourtsArgs = {
 export function disableCourts(params: DisableCourtsArgs) {
   const { courtIds, dates } = params;
   const tournamentRecords = resolveTournamentRecords(params);
-  const paramsToCheck: any[] = [{ [TOURNAMENT_RECORDS]: true, [COURT_IDS]: true }];
+  const paramsToCheck = [{ [TOURNAMENT_RECORDS]: true, [COURT_IDS]: true }];
   const paramCheck = checkRequiredParameters(params, paramsToCheck);
   if (paramCheck.error) return paramCheck;
 

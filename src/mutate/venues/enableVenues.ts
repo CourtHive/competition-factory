@@ -16,7 +16,7 @@ type EnableVenuesArgs = {
 
 export function enableVenues(params: EnableVenuesArgs) {
   const tournamentRecords = resolveTournamentRecords(params);
-  const paramsToCheck: any[] = [{ [TOURNAMENT_RECORDS]: true }];
+  const paramsToCheck: { [key: string]: boolean }[] = [{ [TOURNAMENT_RECORDS]: true }];
   !params.enableAll && paramsToCheck.push({ [VENUE_IDS]: true });
   const paramCheck = checkRequiredParameters(params, paramsToCheck);
   if (paramCheck.error) return paramCheck;

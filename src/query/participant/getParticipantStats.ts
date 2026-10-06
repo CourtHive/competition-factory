@@ -9,6 +9,7 @@ import { isObject } from '@Tools/objects';
 
 // constants and types
 import { ParticipantTypeUnion, Tournament } from '@Types/tournamentTypes';
+import type { ScalesType } from '@Query/participant/getScaleValues';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { ResultType, Tally } from '@Types/factoryTypes';
@@ -106,7 +107,7 @@ export function getParticipantStats({
 
   if (!teamParticipantIds.length) teamParticipantIds.push(...teamParticipants.map(getParticipantId));
 
-  const participantDetails = new Map<string, { participantName: string; ratings: any }>();
+  const participantDetails = new Map<string, { participantName: string; ratings?: ScalesType }>();
   const participantStats = new Map<string, StatCounters>();
   const participating = new Map<string, boolean>();
   const teamMap = new Map<string, string[]>();
