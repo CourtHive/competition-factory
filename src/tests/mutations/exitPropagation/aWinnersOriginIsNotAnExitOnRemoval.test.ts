@@ -18,7 +18,9 @@ import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstant
  * `updateMatchUpStatusAfterRemoval`, which re-derived the matchUp from what it retained. Read by status alone, the
  * winner's origin is an exit they carried, so `Consolation|2|2` became a WALKOVER won by the newcomer opposite, who
  * then advanced from it. `withoutWinnersOrigins` is the reading `removeDoubleExit`'s withdrawal already applies
- * (census 9100303); the removal now applies it too.
+ * (census 9100303); the removal now applies it too, and drops the origin with the decision, as that withdrawal does:
+ * an undecided matchUp carries no origin (ORIGIN_ON_UNDECIDED_MATCHUP, which a first version of this fix tripped on
+ * census w1 9000004, 9000347, 9000463 and de 9301998).
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
@@ -66,17 +68,20 @@ it('the census replay holds every property', () => {
   expect(replay(config, steps, 'winners-origin')).toBeNull();
 });
 
-it("the removal leaves the matchUp undecided, keeping the winner's origin", () => {
+it("the removal leaves the matchUp undecided, and the winner's origin goes with the decision", () => {
+  const before = play('winners-origin-before', steps.slice(0, 4))('Consolation|2|2');
+  // CONTROL: before the removal, side 1 holds a winner's origin naming the matchUp its participant won
+  expect(before.sideExitProvenance?.[1]?.previousMatchUpStatus).toEqual(WALKOVER);
+  expect(before.sideExitProvenance?.[1]?.matchUpStatus).toEqual(WALKOVER);
+
   const find = play('winners-origin', steps.slice(0, 5));
   const meeting = find('Consolation|2|2');
-  const origin = meeting.sideExitProvenance?.[1];
-  // CONTROL: the shape is reached; side 1 holds a winner's origin naming the matchUp they won, and both seats are held
-  expect(origin?.previousMatchUpStatus).toEqual(WALKOVER);
-  expect(origin?.sourceMatchUpId).toEqual(find('Consolation|1|3').matchUpId);
+  // CONTROL: both seats are held, so a walkover awarded here would advance someone
   expect(meeting.sides.filter((side: any) => side.participantId)).toHaveLength(2);
-
   expect(meeting.matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(meeting.winningSide).toBeUndefined();
+  // an undecided matchUp carries no origin (ORIGIN_ON_UNDECIDED_MATCHUP), and nothing advanced from it
+  expect(meeting.sideExitProvenance?.[1]).toBeUndefined();
   expect(find('Consolation|3|1').drawPositions?.filter(Boolean) ?? []).toEqual([]);
 });
 

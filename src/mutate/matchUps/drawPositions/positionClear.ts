@@ -712,6 +712,12 @@ function updateMatchUpStatusAfterRemoval({
     })
       ? rederived.winningSide
       : undefined;
+  } else if (!matchUpContainsBye && retained) {
+    // Undecided, so no origin stands on it either; a winner's origin rides only on a matchUp that is an exit or a
+    // BYE (ORIGIN_ON_UNDECIDED_MATCHUP). `removeDoubleExit`'s withdrawal clears it the same way. The claims stay.
+    clearSideExitProvenance(targetMatchUp);
+    const claims = retainByeClaimsOnly(retained);
+    if (claims) targetMatchUp.sideExitProvenance = claims;
   }
   const noChange =
     initialDrawPositions?.includes(drawPosition) &&
