@@ -5,7 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { DEFAULTED, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, COMPLETED, DEFAULTED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const drawId = 'cross-structure';
@@ -95,12 +95,18 @@ describe('census reproductions — cross-structure advancement never refuses ove
     nonRandom: number;
     allowChangePropagation?: boolean;
     submissions: Submission[];
+    /** the step numbers (1-based) refused by ruling; any other refusal fails the case */
+    refusals?: number[];
+    /** the shape the case pins: after step `after`, each matchUp holds the status given */
+    reaches?: { after: number; statuses: Record<string, string> }[];
   }[] = [
-    // REFUSED STEPS (CA, 2026-10-04: a direct double exit needs both seats reached). The harness below
-    // accepts a refusal that leaves the draw unchanged, so these cases now run with those steps declined:
-    // 9000196 step 4; 9100555 flag ON steps 1, 5, 7; 9100555 (Backdraw double exit) steps 2, 4, 6;
-    // 9301605 step 2. Measured the same day: 15 calls refused across the whole suite. Rebuilding these
-    // cases on legal steps is open (Mentat OUTCOME_PIPELINE_OPEN_QUESTIONS.md, F3).
+    // REFUSED STEPS (CA, 2026-10-04: a direct double exit needs both seats reached; 2026-10-03: a carried exit is
+    // not re-scored where it landed). A refused step leaves the draw unchanged, which hollowed these cases out after
+    // #5154(factory): they kept passing without reaching the shapes they were written to pin. Every refusal a case
+    // expects is now DECLARED in `refusals` and asserted, so an undeclared one fails; and each rebuilt case asserts
+    // the shape it pins (`reaches`). Rebuilt 2026-10-06 on legal steps, each double exit entered with both seats
+    // reached: 9000196, 9100555 flag ON, 9100555 (Backdraw double exit, as its own case), 9301605, and the last case,
+    // whose step re-scoring a carried walkover is gone.
     {
       name: 'census 9000402 — Backdraw final winner flipped',
       participantsCount: 4,
@@ -114,7 +120,10 @@ describe('census reproductions — cross-structure advancement never refuses ove
       ],
     },
     {
-      name: 'census 9000196 — Main semifinal re-scored with the same winner over a pending exit',
+      // The census's exit was PENDING: its double exit was entered beside an unreached seat. Entered legally, the
+      // Backdraw final's second seat is the Main semifinal's loser, so the semifinal is decided first and its winner
+      // already stands in the Main final: the produced exit lands awarded, never pending, on legal steps here.
+      name: 'census 9000196 — Main semifinal re-scored with the same winner over the exit its loser produced',
       participantsCount: 4,
       nonRandom: 9000196,
       allowChangePropagation: true,
@@ -122,9 +131,11 @@ describe('census reproductions — cross-structure advancement never refuses ove
         ['Main', 2, 1, { winningSide: 2 }],
         ['Main', 2, 2, { winningSide: 2 }],
         ['Main', 3, 1, { winningSide: 1 }],
+        ['Backdraw', 3, 1, { winningSide: 1 }],
         ['Backdraw', 4, 1, { matchUpStatus: DOUBLE_WALKOVER }],
         ['Main', 3, 1, { matchUpStatus: DEFAULTED, winningSide: 1 }],
       ],
+      reaches: [{ after: 5, statuses: { 'Backdraw|4|1': DOUBLE_WALKOVER, 'Main|4|1': WALKOVER } }],
     },
     {
       // census 9100555's opening, then the Backdraw semifinal is CLEARED: its winner had passed
@@ -148,13 +159,17 @@ describe('census reproductions — cross-structure advancement never refuses ove
       nonRandom: 9100555,
       allowChangePropagation: true,
       submissions: [
-        ['Main', 2, 2, { matchUpStatus: 'DOUBLE_DEFAULT' }],
         ['Main', 1, 2, { winningSide: 1 }],
         ['Main', 1, 3, { winningSide: 1 }],
+        ['Main', 2, 2, { matchUpStatus: 'DOUBLE_DEFAULT' }],
         ['Main', 2, 1, { matchUpStatus: 'WALKOVER', winningSide: 2 }],
         ['Backdraw', 3, 1, { matchUpStatus: DEFAULTED, winningSide: 1 }],
         ['Main', 1, 3, { matchUpStatus: 'WALKOVER', winningSide: 2 }],
         ['Backdraw', 3, 1, { winningSide: 1 }],
+      ],
+      reaches: [
+        { after: 5, statuses: { 'Backdraw|3|1': DEFAULTED, 'Backdraw|4|1': BYE } },
+        { after: 7, statuses: { 'Backdraw|3|1': COMPLETED, 'Backdraw|4|1': BYE } },
       ],
     },
     {
@@ -175,6 +190,27 @@ describe('census reproductions — cross-structure advancement never refuses ove
         ['Main', 1, 3, { matchUpStatus: 'WALKOVER', winningSide: 2 }],
         ['Backdraw', 3, 1, { winningSide: 1 }],
       ],
+      refusals: [2, 4, 6],
+    },
+    {
+      // the same shape on legal steps: the Backdraw double walkover entered with both seats reached, beside the
+      // Backdraw final's BYE at drawPosition 1 while the Main final holds the Main-draw winner on drawPosition 1
+      name: 'census 9100555 on legal steps — unwinding a Backdraw double walkover keeps the Main-draw winner in the Main final',
+      participantsCount: 6,
+      nonRandom: 9100555,
+      submissions: [
+        ['Main', 1, 2, { winningSide: 2 }],
+        ['Main', 1, 3, { winningSide: 2 }],
+        ['Main', 2, 2, { matchUpStatus: 'DOUBLE_DEFAULT' }],
+        ['Main', 2, 1, { matchUpStatus: DEFAULTED, winningSide: 1 }],
+        ['Backdraw', 3, 1, { matchUpStatus: DOUBLE_WALKOVER }],
+        ['Main', 1, 3, { matchUpStatus: 'WALKOVER', winningSide: 2 }],
+        ['Backdraw', 3, 1, { winningSide: 1 }],
+      ],
+      reaches: [
+        { after: 5, statuses: { 'Backdraw|3|1': DOUBLE_WALKOVER, 'Backdraw|4|1': BYE, 'Main|4|1': WALKOVER } },
+        { after: 7, statuses: { 'Backdraw|3|1': COMPLETED, 'Main|4|1': TO_BE_PLAYED } },
+      ],
     },
     {
       // the Main-draw winner reached the Decider through the Main final's pending walkover; flipping
@@ -184,11 +220,12 @@ describe('census reproductions — cross-structure advancement never refuses ove
       nonRandom: 9301605,
       submissions: [
         ['Main', 2, 1, { winningSide: 1 }],
-        ['Backdraw', 3, 1, { matchUpStatus: 'DOUBLE_DEFAULT' }],
         ['Main', 2, 2, { winningSide: 2 }],
+        ['Backdraw', 3, 1, { matchUpStatus: 'DOUBLE_DEFAULT' }],
         ['Main', 3, 1, { matchUpStatus: 'WALKOVER', winningSide: 1 }],
         ['Main', 3, 1, { winningSide: 2 }],
       ],
+      reaches: [{ after: 4, statuses: { 'Main|4|1': WALKOVER, 'Decider|1|1': BYE } }],
     },
     {
       name: 'census 9100555 — Backdraw semifinal winner advances through a BYE into the Main final',
@@ -200,54 +237,66 @@ describe('census reproductions — cross-structure advancement never refuses ove
         ['Main', 2, 2, { matchUpStatus: 'DOUBLE_DEFAULT' }],
         ['Main', 2, 1, { matchUpStatus: DEFAULTED, winningSide: 1 }],
         ['Main', 2, 1, { matchUpStatus: 'WALKOVER', winningSide: 2 }],
-        ['Backdraw', 2, 1, { winningSide: 1 }],
         ['Backdraw', 3, 1, { winningSide: 1 }],
       ],
+      reaches: [{ after: 6, statuses: { 'Backdraw|3|1': COMPLETED, 'Backdraw|4|1': BYE } }],
     },
   ];
 
-  it.each(CASES)('$name', ({ participantsCount, nonRandom, allowChangePropagation, submissions }) => {
-    setSubscriptions({});
-    mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawType: DOUBLE_ELIMINATION, drawSize: 8, participantsCount, drawId }],
-      setState: true,
-      nonRandom,
-    });
-
-    for (const [index, [structureName, roundNumber, roundPosition, outcome]] of submissions.entries()) {
-      const step = `step ${index + 1} ${structureName}|${roundNumber}|${roundPosition}`;
-      const matchUp = find(`${structureName}|${roundNumber}|${roundPosition}`);
-      const before = hash(getDrawDefinition(drawId));
-      const result: any = tournamentEngine.setMatchUpStatus({
-        matchUpId: matchUp.matchUpId,
-        propagateExitStatus: true,
-        allowChangePropagation,
-        outcome,
-        drawId,
+  it.each(CASES)(
+    '$name',
+    ({ participantsCount, nonRandom, allowChangePropagation, submissions, refusals, reaches }) => {
+      setSubscriptions({});
+      mocksEngine.generateTournamentRecord({
+        drawProfiles: [{ drawType: DOUBLE_ELIMINATION, drawSize: 8, participantsCount, drawId }],
+        setState: true,
+        nonRandom,
       });
-      // checked per step: a later step can overwrite the damage an earlier one did
-      if (result.error) expect(hash(getDrawDefinition(drawId)), `${step} ${result.error.code}`).toEqual(before);
-      const integrity: any = tournamentEngine.getDrawInconsistencies({ drawId });
-      // ERRORS only, for the reason `hasErrorSeverity` documents: `STALLED_POSITION` is advisory, and
-      // this per-step assertion is about structural soundness. One stall DOES occur here and it is
-      // tracked rather than dropped: census 9100555's transient inside a correction sequence. DE
-      // window 9301605 was the second, punch-list **P40**, and it is closed —
-      // `reconcileStaleExitOrigins` withdraws the carried exit whose origin stopped being a double
-      // exit, and `staleExitOriginReconciliation.test.ts` asserts that sequence reports NOTHING at any
-      // severity.
-      expect(
-        (integrity.inconsistencies ?? []).filter((i: any) => i.severity === 'error'),
-        step,
-      ).toEqual([]);
 
-      // the Decider is fed by the Main final alone: nobody can be assigned there who is not in it
-      const mainFinalIds = participantIds(find('Main|4|1'));
-      const deciderIds = (
-        getDrawDefinition(drawId).structures.find((s: any) => s.structureName === 'Decider')?.positionAssignments ?? []
-      )
-        .map((assignment: any) => assignment.participantId)
-        .filter(Boolean);
-      for (const participantId of deciderIds) expect(mainFinalIds, `${step} Decider`).toContain(participantId);
-    }
-  });
+      const refused: number[] = [];
+      for (const [index, [structureName, roundNumber, roundPosition, outcome]] of submissions.entries()) {
+        const step = `step ${index + 1} ${structureName}|${roundNumber}|${roundPosition}`;
+        const matchUp = find(`${structureName}|${roundNumber}|${roundPosition}`);
+        const before = hash(getDrawDefinition(drawId));
+        const result: any = tournamentEngine.setMatchUpStatus({
+          matchUpId: matchUp.matchUpId,
+          propagateExitStatus: true,
+          allowChangePropagation,
+          outcome,
+          drawId,
+        });
+        // checked per step: a later step can overwrite the damage an earlier one did
+        if (result.error) expect(hash(getDrawDefinition(drawId)), `${step} ${result.error.code}`).toEqual(before);
+        if (result.error) refused.push(index + 1);
+        for (const [shapeKey, matchUpStatus] of Object.entries(
+          reaches?.find(({ after }) => after === index + 1)?.statuses ?? {},
+        )) {
+          expect(find(shapeKey)?.matchUpStatus, `${step} reaches ${shapeKey}`).toEqual(matchUpStatus);
+        }
+        const integrity: any = tournamentEngine.getDrawInconsistencies({ drawId });
+        // ERRORS only, for the reason `hasErrorSeverity` documents: `STALLED_POSITION` is advisory, and
+        // this per-step assertion is about structural soundness. One stall DOES occur here and it is
+        // tracked rather than dropped: census 9100555's transient inside a correction sequence. DE
+        // window 9301605 was the second, punch-list **P40**, and it is closed —
+        // `reconcileStaleExitOrigins` withdraws the carried exit whose origin stopped being a double
+        // exit, and `staleExitOriginReconciliation.test.ts` asserts that sequence reports NOTHING at any
+        // severity.
+        expect(
+          (integrity.inconsistencies ?? []).filter((i: any) => i.severity === 'error'),
+          step,
+        ).toEqual([]);
+
+        // the Decider is fed by the Main final alone: nobody can be assigned there who is not in it
+        const mainFinalIds = participantIds(find('Main|4|1'));
+        const deciderIds = (
+          getDrawDefinition(drawId).structures.find((s: any) => s.structureName === 'Decider')?.positionAssignments ??
+          []
+        )
+          .map((assignment: any) => assignment.participantId)
+          .filter(Boolean);
+        for (const participantId of deciderIds) expect(mainFinalIds, `${step} Decider`).toContain(participantId);
+      }
+      expect(refused).toEqual(refusals ?? []);
+    },
+  );
 });
