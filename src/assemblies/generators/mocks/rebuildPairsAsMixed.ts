@@ -22,16 +22,16 @@ import { Participant } from '@Types/tournamentTypes';
 export function rebuildPairsAsMixed(unique: Participant[]) {
   const pairs = unique.filter((p) => p.participantType === PAIR);
   const individuals = unique.filter((p) => p.participantType === INDIVIDUAL);
-  const males = individuals.filter((p) => (p as any).person?.sex === MALE);
-  const females = individuals.filter((p) => (p as any).person?.sex === FEMALE);
+  const males = individuals.filter((p) => p.person?.sex === MALE);
+  const females = individuals.filter((p) => p.person?.sex === FEMALE);
   for (let i = 0; i < pairs.length; i++) {
     const m = males[i];
     const f = females[i];
     if (!m || !f) continue;
-    const pair: any = pairs[i];
+    const pair = pairs[i];
     pair.individualParticipantIds = [m.participantId, f.participantId];
-    const mName = (m as any).person?.standardFamilyName ?? '';
-    const fName = (f as any).person?.standardFamilyName ?? '';
+    const mName = m.person?.standardFamilyName ?? '';
+    const fName = f.person?.standardFamilyName ?? '';
     pair.participantName = `${mName}/${fName}`;
   }
 }

@@ -69,7 +69,7 @@ export function addTournamentParticipants({
     .filter(({ participantType }) => participantType === INDIVIDUAL)
     .map(getParticipantId);
   const idPrefix = participantsProfile?.idPrefix ? `${TEAM}-${participantsProfile.idPrefix}` : undefined;
-  const teamParticipants: any[] = generateRange(0, largestTeamDraw).map((teamIndex) => {
+  const teamParticipants: Participant[] = generateRange(0, largestTeamDraw).map((teamIndex) => {
     const individualParticipantIds = allIndividualParticipantIds.slice(
       teamIndex * largestTeamSize,
       (teamIndex + 1) * largestTeamSize,

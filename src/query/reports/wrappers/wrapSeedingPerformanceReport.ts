@@ -3,9 +3,10 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SEEDING_PERFORMANCE_REPORT } from '@Constants/reportConstants';
+import { ErrorType } from '@Constants/errorConditionConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
-import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
 
 function getPerformanceLabel(finishMin: number, seedValue: number): string {
@@ -22,16 +23,21 @@ function formatFinishRange(posData: any): string {
   return min === max ? `${min}` : `${min}-${max}`;
 }
 
-function buildDrawRows(event: any, drawDefinition: any, participantMap: any, tournamentRecord: Tournament): any[] {
+function buildDrawRows(
+  event: Event,
+  drawDefinition: DrawDefinition,
+  participantMap: any,
+  tournamentRecord: Tournament,
+): Record<string, any>[] {
   const finishingPositions = getParticipantIdFinishingPositions({
     drawDefinition,
     tournamentRecord,
     event,
   });
-  if (!finishingPositions || (finishingPositions as any).error) return [];
+  if (!finishingPositions || finishingPositions.error) return [];
 
-  const rows: any[] = [];
-  for (const [participantId, posData] of Object.entries(finishingPositions as any)) {
+  const rows: Record<string, any>[] = [];
+  for (const [participantId, posData] of Object.entries(finishingPositions)) {
     const pData = participantMap?.[participantId];
     if (!pData) continue;
 
@@ -60,7 +66,7 @@ export function wrapSeedingPerformanceReport({
   tournamentRecord,
 }: {
   tournamentRecord: Tournament;
-}): ReportResult | { error: any } {
+}): ReportResult | { error: ErrorType | string } {
   const { participantMap } = getParticipants({
     withSeeding: true,
     withDraws: true,

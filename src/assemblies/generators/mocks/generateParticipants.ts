@@ -20,10 +20,11 @@ import { RANKING, RATING, SCALE } from '@Constants/scaleConstants';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
+import { HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function generateParticipants(params): {
-  participants?: any[];
+  participants?: HydratedParticipant[];
   error?: ErrorType;
 } {
   let {
@@ -217,7 +218,7 @@ export function generateParticipants(params): {
     const pairName = individualParticipants.map((i) => i.person.standardFamilyName).join('/');
 
     const participantType = doubles ? PAIR : TEAM;
-    const groupParticipant: any = {
+    const groupParticipant: HydratedParticipant = {
       participantId: genParticipantId({
         participantType,
         index: i,
