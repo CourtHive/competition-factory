@@ -162,3 +162,19 @@ it('a substitution reads a line-up entry with no collection assignments as empty
   // the duplicated entry is reported by line-up validation instead of a TypeError on the bare entry
   expect(result.error).toEqual(INVALID_VALUES);
 });
+
+it('assigning a player whose line-up entry has no collection assignments places them in the tie matchUp', () => {
+  const { drawId, tieMatchUpId, memberIds } = setUpTeamDualWithStoredLineUp(([first]) => [{ participantId: first }]);
+  const [first] = memberIds;
+
+  const result: any = tournamentEngine.assignTieMatchUpParticipantId({
+    participantId: first,
+    tieMatchUpId,
+    drawId,
+  });
+  expect(result.success).toEqual(true);
+
+  const tieMatchUp = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { matchUpIds: [tieMatchUpId] } })
+    .matchUps[0];
+  expect(tieMatchUp.sides.some(({ participant }) => participant?.participantId === first)).toEqual(true);
+});
