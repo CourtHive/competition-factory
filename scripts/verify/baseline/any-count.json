@@ -46,7 +46,7 @@
   "src/mutate/drawDefinitions/competition": 1,
   "src/mutate/drawDefinitions/draft": 19,
   "src/mutate/drawDefinitions/entryGovernor": 3,
-  "src/mutate/drawDefinitions/matchUpGovernor": 7,
+  "src/mutate/drawDefinitions/matchUpGovernor": 2,
   "src/mutate/drawDefinitions/positionGovernor": 7,
   "src/mutate/drawDefinitions/positionGovernor/byePositioning": 2,
   "src/mutate/drawDefinitions/structureGovernor": 3,
