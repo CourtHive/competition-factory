@@ -2,8 +2,8 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { nowIso } from '@Tools/clock';
 
 // constants and types
+import { ErrorType, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { CALL_TIMING_VARIANCE_REPORT } from '@Constants/reportConstants';
-import { ErrorType } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -142,9 +142,9 @@ function buildRow(
 export function wrapCallTimingVarianceReport({
   tournamentRecord,
   parameters,
-}: WrapArgs): ReportResult | { error: ErrorType | string } {
+}: WrapArgs): ReportResult | { error: ErrorType } {
   const { matchUps } = allTournamentMatchUps({ tournamentRecord });
-  if (!matchUps) return { error: 'No matchUps found' };
+  if (!matchUps) return { error: MISSING_MATCHUPS };
 
   const utcOffsetMinutes = parameters?.utcOffsetMinutes ?? 0;
 

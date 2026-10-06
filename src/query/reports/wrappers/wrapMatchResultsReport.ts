@@ -2,9 +2,9 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { nowIso } from '@Tools/clock';
 
 // constants and types
+import { ErrorType, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MATCH_RESULTS_REPORT } from '@Constants/reportConstants';
-import { ErrorType } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -13,9 +13,9 @@ export function wrapMatchResultsReport({
   tournamentRecord,
 }: {
   tournamentRecord: Tournament;
-}): ReportResult | { error: ErrorType | string } {
+}): ReportResult | { error: ErrorType } {
   const { matchUps } = allTournamentMatchUps({ tournamentRecord });
-  if (!matchUps) return { error: 'No matchUps found' };
+  if (!matchUps) return { error: MISSING_MATCHUPS };
 
   const completedMatchUps = matchUps.filter((m: any) => completedMatchUpStatuses.includes(m.matchUpStatus));
 
