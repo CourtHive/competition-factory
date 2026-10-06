@@ -24,7 +24,9 @@ import {
   getEnabledStructures,
   getPolicyActions,
   isAvailableAction,
+  MatchUpAction,
   POSITION_ACTION,
+  PositionAction,
 } from './actionPolicyUtils';
 
 // constants and types
@@ -672,7 +674,7 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
   hasPositionAssigned?: boolean;
   isDrawPosition?: boolean;
   isByePosition?: boolean;
-  validActions?: any[];
+  validActions?: (PositionAction | MatchUpAction)[];
 } {
   const context = resolvePositionContext(params);
   if ('earlyReturn' in context) return context.earlyReturn;
@@ -707,7 +709,7 @@ function positionActionsInternal(params: PositionActionsArgs): ResultType & {
     event,
   } = context;
 
-  const validActions: any[] = [];
+  const validActions: PositionAction[] = [];
 
   addAssignmentActions({
     validActions,

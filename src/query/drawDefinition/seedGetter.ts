@@ -11,9 +11,9 @@ import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
 import { ADJACENT, CLUSTER, CONTAINER, QUALIFYING, WATERFALL } from '@Constants/drawDefinitionConstants';
+import { PolicyDefinitions, ResultType, SeedBlock, SeedingProfile } from '@Types/factoryTypes';
 import { INVALID_SEED_POSITION, MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
 import { SeedingProfileUnion, DrawDefinition, Structure } from '@Types/tournamentTypes';
-import { PolicyDefinitions, SeedBlock, SeedingProfile } from '@Types/factoryTypes';
 
 /**
  * A seedBlock is an object pairing an array of drawPositions with an array of seedNumbers { drawPositions: [], seedNumbers: []}
@@ -36,6 +36,18 @@ type GetValidSeedBlocksArgs = {
   random?: () => number;
 };
 
+/**
+ * What `getValidSeedBlocks` reports about a structure's seed blocks. Positioning passes it down the
+ * chain as `seedBlockInfo` so the blocks are computed once per positioning pass.
+ */
+export type SeedBlockInfo = ResultType & {
+  validSeedBlocks?: SeedBlock[];
+  isLuckyStructure?: boolean;
+  /** the number of fed rounds in a feed-in structure, otherwise `false`; read as a flag */
+  isFeedIn?: number | false;
+  isContainer?: boolean;
+};
+
 export function getValidSeedBlocks({
   provisionalPositioning,
   returnAllProxies,
@@ -45,7 +57,7 @@ export function getValidSeedBlocks({
   allPositions,
   structure,
   random,
-}: GetValidSeedBlocksArgs) {
+}: GetValidSeedBlocksArgs): SeedBlockInfo {
   let validSeedBlocks: SeedBlock[] = [];
 
   if (!structure) return { error: MISSING_STRUCTURE };
