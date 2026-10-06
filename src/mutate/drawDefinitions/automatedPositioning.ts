@@ -1,7 +1,7 @@
 import { positionUnseededParticipants } from '@Mutate/matchUps/drawPositions/positionUnseededParticipants';
+import { getSeedPattern, getValidSeedBlocks, SeedBlockInfo } from '@Query/drawDefinition/seedGetter';
 import { positionQualifiers } from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { disableNotifications, enableNotifications } from '@Global/state/globalState';
-import { getSeedPattern, getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { positionSeedBlocks } from '@Mutate/matchUps/drawPositions/positionSeeds';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { positionByes } from './positionGovernor/byePositioning/positionByes';
@@ -18,8 +18,8 @@ import { findStructure } from '@Acquire/findStructure';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
-import { PolicyDefinitions, SeedingProfile, MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { DrawDefinition, Event, PositionAssignment, Tournament } from '@Types/tournamentTypes';
+import { PolicyDefinitions, SeedBlock, SeedingProfile, MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import { DrawDefinition, Event, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
@@ -47,6 +47,29 @@ type AutomatedPositioningArgs = {
   drawSize?: number;
   event?: Event;
 };
+type ByeAndSeedPositioningArgs = {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  positioningReport: { [key: string]: unknown }[];
+  structureSeedingProfile?: Structure['seedingProfile'];
+  participants?: HydratedParticipant[];
+  appliedPolicies?: PolicyDefinitions;
+  provisionalPositioning?: boolean;
+  seedingProfile?: SeedingProfile;
+  validSeedBlocks?: SeedBlock[];
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  seedBlockInfo: SeedBlockInfo;
+  matchUpsMap: MatchUpsMap;
+  qualifiersCount: number;
+  random?: () => number;
+  structure: Structure;
+  placeByes?: boolean;
+  seedsOnly?: boolean;
+  seedLimit?: number;
+  drawType?: string;
+  event?: Event;
+};
+
 // Helper functions to reduce complexity
 function handleErrorCondition(result, applyPositioning) {
   if (!applyPositioning) enableNotifications();
@@ -97,6 +120,7 @@ function getInitialData(params, drawDefinition, structureId, event) {
 }
 
 function handleWaterfall({
+  qualifiersCount,
   placeByes,
   provisionalPositioning,
   tournamentRecord,
@@ -114,12 +138,13 @@ function handleWaterfall({
   participants,
   positioningReport,
   random,
-}) {
+}: ByeAndSeedPositioningArgs) {
   const byeResult = placeByes
     ? positionByes({
         provisionalPositioning,
         tournamentRecord,
         appliedPolicies,
+        qualifiersCount,
         drawDefinition,
         seedBlockInfo,
         matchUpsMap,
@@ -163,6 +188,7 @@ function handleWaterfall({
 }
 
 function handleNonWaterfall({
+  qualifiersCount,
   drawType,
   structureSeedingProfile,
   seedingProfile,
@@ -182,7 +208,7 @@ function handleNonWaterfall({
   seedsOnly,
   positioningReport,
   random,
-}) {
+}: ByeAndSeedPositioningArgs) {
   let unseededByePositions;
   if (!isLuckyBasedDraw(drawType)) {
     const profileSeeding = structureSeedingProfile ? { positioning: structureSeedingProfile } : seedingProfile;
@@ -215,6 +241,7 @@ function handleNonWaterfall({
         provisionalPositioning,
         tournamentRecord,
         appliedPolicies,
+        qualifiersCount,
         drawDefinition,
         seedBlockInfo,
         matchUpsMap,
@@ -389,6 +416,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
   let unseededByePositions;
   if (getSeedPattern(structure.seedingProfile || seedingProfile) === WATERFALL) {
     const waterfallResult = handleWaterfall({
+      qualifiersCount,
       placeByes,
       provisionalPositioning,
       tournamentRecord,
@@ -411,6 +439,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
     unseededByePositions = waterfallResult.unseededByePositions;
   } else {
     const nonWaterfallResult = handleNonWaterfall({
+      qualifiersCount,
       drawType,
       structureSeedingProfile: structure.seedingProfile,
       seedingProfile,

@@ -12,6 +12,7 @@ import { shuffleArray } from '@Tools/arrays';
 import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions, SeedingProfile, MatchUpsMap } from '@Types/factoryTypes';
 import { CONTAINER, ITEM, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { SeedBlockInfo } from '@Query/drawDefinition/seedGetter';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -24,6 +25,7 @@ type PositionByesArgs = {
   matchUpsMap?: MatchUpsMap;
   structure?: Structure;
   structureId?: string;
+  qualifiersCount?: number;
   seedBlockInfo?: SeedBlockInfo;
   seedsOnly?: boolean;
   seedLimit?: number;
@@ -34,6 +36,7 @@ export function positionByes({
   provisionalPositioning,
   tournamentRecord,
   appliedPolicies,
+  qualifiersCount,
   drawDefinition,
   seedBlockInfo,
   seedingProfile,
@@ -46,12 +49,14 @@ export function positionByes({
   random,
 }: PositionByesArgs) {
   if (!structure) ({ structure } = findStructure({ drawDefinition, structureId }));
-  if (!structureId) structureId = structure?.structureId;
+  if (!structure) return { error: STRUCTURE_NOT_FOUND };
+  if (!structureId) structureId = structure.structureId;
 
   const blockOrdered = !(structuresOf(structure) ?? structure?.stage === QUALIFYING);
 
   const { byesCount, placedByes, relevantMatchUps } = getByesData({
     provisionalPositioning,
+    qualifiersCount,
     drawDefinition,
     matchUpsMap,
     structure,
