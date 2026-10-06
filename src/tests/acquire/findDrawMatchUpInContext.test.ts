@@ -49,6 +49,19 @@ const CELLS = [
   ),
 ].filter((cell) => cell.propagateExitStatus);
 
+/**
+ * KNOWN, TRACKED, NOT THIS FILE'S SUBJECT. The TEAM double elimination's lines cell crashed in
+ * `removeDirectedParticipants` until 2026-10-06, which ended its play early and hid this: a later
+ * step refuses after it has mutated the draw — the double-elimination residual of the
+ * ERROR_IMPLIES_NO_MUTATION class (Mentat/planning/ERROR_ATOMICITY_ROUTES_ASSESSED.md). Pinned so
+ * the fix shows up here as a failure to update, not as a silent pass.
+ */
+const KNOWN_PLAY_FAILURES: Record<number, string[]> = {
+  300071: [
+    'ERROR_IMPLIES_NO_MUTATION returned {"message":"drawPosition is occupied","code":"ERR_OCCUPIED_DRAW_POSITION"} after mutating the draw',
+  ],
+};
+
 function compareEveryMatchUp(drawId: string): number {
   const { tournamentRecord } = tournamentEngine.getTournament();
   const event = tournamentRecord.events.find((candidate: any) =>
@@ -105,9 +118,14 @@ it.each(CELLS)(
 
     // CONTROL: every state compared something, lines included where there are lines
     expect(compareEveryMatchUp(drawId)).toBeGreaterThan(0);
-    playForward({ propagateExitStatus, exitOutcome, maxSteps: 5, drawId });
+    // play must succeed for the comparisons after it to mean anything: a step that throws is
+    // reported in `failures` (ERROR_ATOMICITY) and the draw stops short of being played out.
+    // Five steps cannot finish a draw, so that partial play reports only that it did not converge.
+    const partial = playForward({ propagateExitStatus, exitOutcome, maxSteps: 5, drawId }).failures;
+    expect(partial.map(({ property }) => property)).toEqual(['DRIVER_DID_NOT_CONVERGE']);
     expect(compareEveryMatchUp(drawId)).toBeGreaterThan(0);
-    playForward({ propagateExitStatus, exitOutcome, drawId });
+    const played = playForward({ propagateExitStatus, exitOutcome, drawId }).failures;
+    expect(played.map(({ property, detail }) => `${property} ${detail}`)).toEqual(KNOWN_PLAY_FAILURES[cell.seed] ?? []);
     expect(compareEveryMatchUp(drawId)).toBeGreaterThan(0);
   },
 );

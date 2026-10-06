@@ -305,7 +305,8 @@ export function removeDirectedWinner({
         }
       });
     } else {
-      const drawPositionMatchUps = matchUps.filter(({ drawPositions }) => drawPositions.includes(winnerDrawPosition));
+      // a TEAM structure's lines carry no drawPositions
+      const drawPositionMatchUps = matchUps.filter(({ drawPositions }) => drawPositions?.includes(winnerDrawPosition));
       pushGlobalLog({
         method: 'removeDirectedParticipants',
         retained: 'position assignment kept: drawPosition instances > 1',
