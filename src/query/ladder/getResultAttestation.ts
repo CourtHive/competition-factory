@@ -3,6 +3,7 @@ import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 
 // constants and types
 import type { LadderPolicy } from '@Types/ladderTypes';
+import type { MatchUp } from '@Types/tournamentTypes';
 import {
   EITHER,
   OPERATOR,
@@ -33,10 +34,10 @@ export type Attestation = {
   reason?: string;
 };
 
-const latest = (matchUp: any, itemType: string) =>
+const latest = (matchUp: MatchUp | undefined, itemType: string) =>
   (matchUp?.timeItems ?? [])
-    .filter((item: any) => item.itemType === itemType)
-    .sort((a: any, b: any) => String(a.itemDate).localeCompare(String(b.itemDate)))
+    .filter((item) => item.itemType === itemType)
+    .sort((a, b) => String(a.itemDate).localeCompare(String(b.itemDate)))
     .at(-1);
 
 /**

@@ -6,6 +6,7 @@ import { isLadder } from '@Query/drawDefinition/isLadder';
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { LADDER_PARTICIPANT_REMOVED, RANK } from '@Constants/ladderConstants';
+import type { Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { RANKING } from '@Constants/scaleConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -42,15 +43,16 @@ export function removeLadderParticipant(params: RemoveArgs): ResultType & { vaca
   if (!removedAt) return { error: INVALID_VALUES, info: 'removedAt is required' };
 
   const structureId = params.structureId ?? drawDefinition.structures?.[0]?.structureId;
-  const structure = drawDefinition.structures?.find((s: any) => s.structureId === structureId);
+  const structures: Structure[] | undefined = drawDefinition.structures;
+  const structure = structures?.find((s) => s.structureId === structureId);
   if (!structure) return { error: INVALID_VALUES, info: 'structure not found' };
 
   const assignments = structure.positionAssignments ?? [];
-  const target = assignments.find((a: any) => a.participantId === participantId);
+  const target = assignments.find((a) => a.participantId === participantId);
   if (!target) return { error: PARTICIPANT_NOT_FOUND };
 
   const vacatedPosition = target.drawPosition;
-  structure.positionAssignments = assignments.filter((a: any) => a.participantId !== participantId);
+  structure.positionAssignments = assignments.filter((a) => a.participantId !== participantId);
 
   const touched: any[] = [];
   // Close the gap: a ladder with a hole in it is not a ranking. Only meaningful under RANK — a

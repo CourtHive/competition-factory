@@ -7,6 +7,7 @@ import { isLadder } from '@Query/drawDefinition/isLadder';
 import { INVALID_VALUES, MATCHUP_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { RESULT_CONFIRMED, RESULT_DISPUTED, RESULT_SUBMITTED } from '@Constants/ladderConstants';
 import { AWAITING_RESULT, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { MatchUp, Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -21,15 +22,16 @@ function resolve(params: ReportArgs) {
   const { drawDefinition, matchUpId } = params;
   if (typeof drawDefinition !== 'object') return { error: MISSING_DRAW_DEFINITION };
   if (!isLadder(drawDefinition.drawType)) return { error: INVALID_VALUES, info: 'requires a LADDER drawType' };
-  for (const structure of drawDefinition.structures ?? []) {
-    const matchUp = structure.matchUps?.find((m: any) => m.matchUpId === matchUpId);
+  const structures: Structure[] = drawDefinition.structures ?? [];
+  for (const structure of structures) {
+    const matchUp = structure.matchUps?.find((m) => m.matchUpId === matchUpId);
     if (matchUp) return { matchUp, structure };
   }
   return { error: MATCHUP_NOT_FOUND };
 }
 
-const sideParticipantIds = (matchUp: any): string[] =>
-  (matchUp.sides ?? []).map((side: any) => side.participantId).filter(Boolean);
+const sideParticipantIds = (matchUp: MatchUp): string[] =>
+  (matchUp.sides ?? []).map((side) => side.participantId).filter((id): id is string => !!id);
 
 /**
  * A participant reports the score of a ladder match they played.
@@ -76,7 +78,7 @@ export function submitResult(
 export function confirmResult(
   params: ReportArgs & { participantId?: string; operator?: boolean; confirmedAt: string },
 ): ResultType {
-  const resolved: any = resolve(params);
+  const resolved = resolve(params);
   if (resolved.error) return resolved;
   const { matchUp, structure } = resolved;
   const { participantId, operator, confirmedAt } = params;

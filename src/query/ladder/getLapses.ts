@@ -8,6 +8,7 @@ import { AWAITING_RESULT, CHALLENGED, COMPLETED, TO_BE_PLAYED } from '@Constants
 import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, CHALLENGE_ISSUED } from '@Constants/ladderConstants';
 import type { LapseConsequence, LapseKind } from '@Constants/ladderConstants';
 import type { LadderPolicy, LapsePolicy } from '@Types/ladderTypes';
+import type { MatchUp } from '@Types/tournamentTypes';
 
 type LapsesArgs = {
   /** The instant to judge against — expiry and play-by are derived, never stored. */
@@ -33,9 +34,9 @@ export type Lapses = {
   dropPositions?: number;
 };
 
-const itemDate = (matchUp: any, itemType: string): string | undefined =>
+const itemDate = (matchUp: MatchUp, itemType: string): string | undefined =>
   (matchUp?.timeItems ?? [])
-    .filter((item: any) => item.itemType === itemType)
+    .filter((item) => item.itemType === itemType)
     .map((item: any) => item.itemDate)
     .sort((a: string, b: string) => a.localeCompare(b))
     .at(-1);
@@ -63,7 +64,7 @@ export function getLapses(params: LapsesArgs): Lapses {
   const lapsePolicy = effectiveLapsePolicy(policy);
   const kinds: LapseKind[] = lapsePolicy.countsAsLapse ?? [DECLINE, EXPIRY, UNPLAYED];
 
-  const defended = (structure?.matchUps ?? []).filter((m: any) => m.sides?.[1]?.participantId === participantId);
+  const defended: any[] = (structure?.matchUps ?? []).filter((m) => m.sides?.[1]?.participantId === participantId);
 
   const lapses: Lapse[] = [];
   for (const matchUp of defended) {
@@ -118,12 +119,12 @@ export function getLapses(params: LapsesArgs): Lapses {
  * The trailing run of lapses with no completed match after it. Ordered by the challenge's own
  * chronology rather than by when it was recorded, so a late-entered result still breaks the run.
  */
-function consecutiveTail({ lapses, defended }: any): Lapse[] {
+function consecutiveTail({ lapses, defended }: { lapses: Lapse[]; defended: MatchUp[]; kinds: LapseKind[] }): Lapse[] {
   const lastPlayed = defended
     .filter((m: any) => [COMPLETED, AWAITING_RESULT].includes(m.matchUpStatus))
-    .map((m: any) => itemDate(m, CHALLENGE_ACCEPTED) ?? itemDate(m, CHALLENGE_ISSUED))
-    .filter(Boolean)
-    .sort((a: string, b: string) => a.localeCompare(b))
+    .map((m) => itemDate(m, CHALLENGE_ACCEPTED) ?? itemDate(m, CHALLENGE_ISSUED))
+    .filter((date): date is string => !!date)
+    .sort((a, b) => a.localeCompare(b))
     .at(-1);
-  return lastPlayed ? lapses.filter((lapse: Lapse) => lapse.at > lastPlayed) : lapses;
+  return lastPlayed ? lapses.filter((lapse) => lapse.at > lastPlayed) : lapses;
 }

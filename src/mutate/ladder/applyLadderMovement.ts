@@ -9,6 +9,7 @@ import { getResultAttestation } from '@Query/ladder/getResultAttestation';
 // constants and types
 import { FORFEIT, INSERTION, RANK, RESULT, movementTriggers } from '@Constants/ladderConstants';
 import type { MovementTrigger } from '@Constants/ladderConstants';
+import type { PositionAssignment } from '@Types/tournamentTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -51,7 +52,7 @@ type MovementArgs = {
  * who prevailed all come off the matchUp, and the attestation gate is consulted here rather than
  * left to the call site. A caller cannot assert a win it has not evidenced.
  */
-function resolveTrigger(params: MovementArgs): any {
+function resolveTrigger(params: MovementArgs) {
   const { trigger, matchUpId } = params;
   const structure = resolveLadderStructure(params);
 
@@ -65,7 +66,7 @@ function resolveTrigger(params: MovementArgs): any {
   }
 
   if (!matchUpId) return { error: INVALID_VALUES, info: 'RESULT requires a matchUpId' };
-  const matchUp = structure?.matchUps?.find((m: any) => m.matchUpId === matchUpId);
+  const matchUp: any = structure?.matchUps?.find((m) => m.matchUpId === matchUpId);
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
   if (![1, 2].includes(matchUp.winningSide)) return { error: INVALID_VALUES, info: 'matchUp has no winningSide' };
 
@@ -146,7 +147,7 @@ export function applyLadderMovement(params: MovementArgs): ResultType & { moved?
   if (!challengerPrevails) return { ...SUCCESS, moved: false };
 
   const assignments = structure?.positionAssignments ?? [];
-  const assignmentOf = (participantId: string) => assignments.find((a: any) => a.participantId === participantId);
+  const assignmentOf = (participantId: string) => assignments.find((a) => a.participantId === participantId);
 
   const challenger = assignmentOf(challengerParticipantId);
   const defender = assignmentOf(defenderParticipantId);
@@ -158,7 +159,7 @@ export function applyLadderMovement(params: MovementArgs): ResultType & { moved?
   if (!(to < from)) return { error: INVALID_VALUES, info: 'challenger must occupy a lower rank than the defender' };
 
   const movement = getLadderMovement({ ...params });
-  const touched: any[] = [];
+  const touched: PositionAssignment[] = [];
 
   if (movement === INSERTION) {
     // The winner takes the defender's position and everyone from there down to the winner's old
