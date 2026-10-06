@@ -7,7 +7,28 @@ import { getStageEntries } from './stageGetter';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { CONSOLATION, CONTAINER } from '@Constants/drawDefinitionConstants';
 
-export function getByesData({ provisionalPositioning, drawDefinition, matchUpsMap, structure, event }) {
+// types
+import type { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
+import type { MatchUpsMap } from '@Types/factoryTypes';
+
+type GetByesDataArgs = {
+  provisionalPositioning?: boolean;
+  drawDefinition: DrawDefinition;
+  // positions reserved for qualifiers when no link into the structure accounts for them
+  qualifiersCount?: number;
+  matchUpsMap?: MatchUpsMap;
+  structure: Structure;
+  event?: Event;
+};
+
+export function getByesData({
+  qualifiersCount: reservedQualifiersCount,
+  provisionalPositioning,
+  drawDefinition,
+  matchUpsMap,
+  structure,
+  event,
+}: GetByesDataArgs) {
   const matchUpFilters = { isCollectionMatchUp: false };
   const { matchUps, roundMatchUps } = getAllStructureMatchUps({
     afterRecoveryTimes: false,
@@ -39,14 +60,15 @@ export function getByesData({ provisionalPositioning, drawDefinition, matchUpsMa
     stage,
   });
 
-  const { qualifiersCount } = getQualifiersCount({
+  const { qualifiersCount: derivedQualifiersCount } = getQualifiersCount({
     provisionalPositioning,
     drawDefinition,
     stageSequence,
     structureId,
     stage,
   });
-  const entriesCount = entries.length + (qualifiersCount ?? 0);
+  const qualifiersCount = derivedQualifiersCount || reservedQualifiersCount || 0;
+  const entriesCount = entries.length + qualifiersCount;
 
   // # Byes = drawSize (positionAssignments) - total entries
   // const { positionAssignments, qualifierPositions, byePositions, unassignedPositions } = structureAssignedDrawPositions({structure});

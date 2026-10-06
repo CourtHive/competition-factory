@@ -307,6 +307,8 @@ it('does what Jeff wants it to', () => {
   const drawProfiles = [
     {
       drawSize: 2,
+      // both MAIN positions are filled by qualifiers, so no participant enters MAIN directly
+      qualifiersCount: 2,
       mathcUpType: 'DOUBLES',
       qualifyingProfiles: [
         {

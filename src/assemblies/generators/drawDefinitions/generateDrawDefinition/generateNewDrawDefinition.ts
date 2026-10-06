@@ -1,8 +1,11 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
+import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import structureTemplate from '@Generators/templates/structureTemplate';
+import { getStageEntries } from '@Query/drawDefinition/stageGetter';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { constantToString } from '@Tools/strings';
 import { generateAdHoc } from './generateAdHoc';
@@ -10,8 +13,9 @@ import { prepareStage } from './prepareStage';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
+import { DIRECT_ENTRY_STATUSES, WITHDRAWN } from '@Constants/entryStatusConstants';
+import { INSUFFICIENT_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
 import { MAIN, POSITION, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { WITHDRAWN } from '@Constants/entryStatusConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -94,6 +98,10 @@ export function generateNewDrawDefinition(params): ResultType & {
     drawDefinition.links.push(link);
   }
 
+  // direct entries and qualifiers must fit the MAIN draw; an overfull draw cannot be positioned
+  const fitResult = checkMainFits({ ...params, drawDefinition, mainStructureId });
+  if (fitResult.error) return fitResult;
+
   // temporary until seeding is supported in LUCKY_DRAW
   const seedsCount = isLuckyBasedDraw(drawType) ? 0 : ensureInt(params.seedsCount ?? 0);
 
@@ -167,4 +175,30 @@ function addEntries(params) {
   }
 
   return { error: undefined };
+}
+
+type CheckMainFitsArgs = {
+  drawDefinition?: DrawDefinition;
+  mainStructureId?: string;
+  qualifyingOnly?: boolean;
+  qualifiersCount?: number;
+  drawSize?: number;
+  drawType?: string;
+};
+
+function checkMainFits(params: CheckMainFitsArgs): ResultType {
+  const { drawDefinition, mainStructureId, qualifyingOnly, drawSize, drawType, qualifiersCount } = params;
+  if (!drawDefinition || !mainStructureId || qualifyingOnly || !drawSize || isAdHocType(drawType)) return {};
+
+  const stageScope = { stage: MAIN, stageSequence: 1, drawDefinition };
+  const directEntries = getStageEntries({ ...stageScope, entryStatuses: DIRECT_ENTRY_STATUSES });
+  const derivedQualifiersCount = getQualifiersCount({ ...stageScope, structureId: mainStructureId }).qualifiersCount;
+  const reservedQualifiersCount = derivedQualifiersCount || qualifiersCount || 0;
+
+  if (directEntries.length + reservedQualifiersCount <= drawSize) return {};
+  return decorateResult({
+    context: { drawSize, directEntriesCount: directEntries.length, qualifiersCount: reservedQualifiersCount },
+    result: { error: INSUFFICIENT_DRAW_POSITIONS },
+    stack: 'generateNewDrawDefinition',
+  });
 }

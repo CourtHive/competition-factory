@@ -1068,37 +1068,25 @@ describe('adHocPositionSwap', () => {
 // ──────────────────────────────────────────────────────────────────────────────
 describe('lucky draw bye limit', () => {
   it('enforces LUCKY_DRAW_BYE_LIMIT', () => {
-    const drawProfiles = [
-      {
-        drawSize: 5,
-        drawType: LUCKY_DRAW,
-        participantsCount: 4,
-      },
-    ];
+    // a LUCKY_DRAW of 5 has 6 drawPositions: room for exactly one BYE
+    const drawProfiles = [{ drawSize: 5, drawType: LUCKY_DRAW, participantsCount: 5, automated: false }];
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({ drawProfiles, setState: true });
 
     const {
       drawDefinition: {
-        structures: [structure],
+        structures: [{ structureId, positionAssignments }],
       },
     } = tournamentEngine.getEvent({ drawId });
+    expect(positionAssignments).toHaveLength(6);
 
-    // There should be one bye position already for drawSize 5, 4 participants
-    const existingByes = structure.positionAssignments.filter((a) => a.bye);
-    expect(existingByes.length).toBe(1);
+    let result: any = tournamentEngine.assignDrawPositionBye({ structureId, drawPosition: 1, drawId });
+    expect(result.success).toEqual(true);
 
     // trying to add another BYE should fail with LUCKY_DRAW_BYE_LIMIT
-    const nonByeNonParticipant = structure.positionAssignments.find((a) => !a.bye && !a.participantId);
-    if (nonByeNonParticipant) {
-      let result: any = tournamentEngine.assignDrawPositionBye({
-        structureId: structure.structureId,
-        drawPosition: nonByeNonParticipant.drawPosition,
-        drawId,
-      });
-      expect(result.error).toBe(LUCKY_DRAW_BYE_LIMIT);
-    }
+    result = tournamentEngine.assignDrawPositionBye({ structureId, drawPosition: 3, drawId });
+    expect(result.error).toBe(LUCKY_DRAW_BYE_LIMIT);
   });
 });
 
