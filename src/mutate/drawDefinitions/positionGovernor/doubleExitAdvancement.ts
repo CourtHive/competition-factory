@@ -7,6 +7,7 @@ import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propag
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
@@ -411,10 +412,15 @@ function handleLoserMatchUp({
     return { ...SUCCESS };
   }
 
-  const { feedRound, drawPositions, matchUpId } = loserMatchUp;
-  // Derives a side from drawPosition ORDER — valid only because drawPositions are stored ascending.
-  // See the canonical statement in `getOrderedDrawPositions`.
-  const walkoverWinningSide: number | undefined = feedRound ? 2 : 2 - drawPositions.indexOf(loserTargetDrawPosition);
+  const { feedRound, matchUpId } = loserMatchUp;
+  // the side opposite the loser's target position, read structurally: a lone position's side is not its index
+  const loserTargetSide = getDrawPositionSideNumber({
+    matchUp: { ...loserMatchUp, sides: undefined },
+    structureId: loserMatchUp.structureId,
+    drawPosition: loserTargetDrawPosition,
+    drawDefinition,
+  });
+  const walkoverWinningSide: number | undefined = feedRound ? 2 : loserTargetSide && 3 - loserTargetSide;
   logAdvancement(stack, {
     color: 'cyan',
     decision: 'conditionallyAdvanceLoser',
@@ -475,12 +481,15 @@ function stampExitOnByeHeldLoserTarget({
   );
   if (targetAssignment?.bye || targetAssignment?.participantId) return { ...SUCCESS, stamped: false };
 
-  const drawPositions = loserMatchUp.drawPositions ?? [];
-  const positionIndex = drawPositions.indexOf(loserTargetDrawPosition);
-  // `indexOf` as a side number — valid only because drawPositions are stored ascending.
-  // See the canonical statement in `getOrderedDrawPositions`.
-  const exitingSideNumber = loserMatchUp.feedRound ? 1 : positionIndex + 1;
-  if (positionIndex === -1 || (exitingSideNumber !== 1 && exitingSideNumber !== 2)) {
+  // the loser's target side, read structurally: a lone position's side is not its index
+  const targetSide = getDrawPositionSideNumber({
+    matchUp: { ...loserMatchUp, sides: undefined },
+    structureId: loserMatchUp.structureId,
+    drawPosition: loserTargetDrawPosition,
+    drawDefinition,
+  });
+  const exitingSideNumber = loserMatchUp.feedRound ? 1 : targetSide;
+  if (!targetSide || (exitingSideNumber !== 1 && exitingSideNumber !== 2)) {
     return { ...SUCCESS, stamped: false };
   }
 
@@ -858,6 +867,8 @@ function conditionallyAdvanceDrawPosition(params) {
   const drawPositions = noContextTargetMatchUp.drawPositions?.filter(Boolean) ?? [];
 
   const hasDrawPosition = drawPositions.length === 1;
+  // the one position present, when it is alone: not a side read, so it holds for either stored shape
+  const [lonePosition] = drawPositions;
   /**
    * A PRODUCED EXIT IS AWARDED ONLY TO AN OPPONENT IN PLACE — CA 2026-09-20, and 2026-10-03 (Q3): it lands
    * pending until the opponent arrives. The lone drawPosition here can be a seat nobody occupies yet: one a
@@ -866,12 +877,12 @@ function conditionallyAdvanceDrawPosition(params) {
    * from `South|1|4` and held no participant; the walkover was awarded to dp 7 and advanced it on, and when
    * the seat's real occupant arrived later `South|3|1` held two positions from one feeder.
    */
-  const occupiedDrawPosition = hasDrawPosition && isOccupiedSeat({ structure, drawPosition: drawPositions[0] });
+  const occupiedDrawPosition = hasDrawPosition && isOccupiedSeat({ structure, drawPosition: lonePosition });
   const walkoverWinningSide =
     params.walkoverWinningSide ||
     (occupiedDrawPosition &&
       getExitWinningSide({
-        drawPosition: drawPositions[0],
+        drawPosition: lonePosition,
         matchUpId: targetMatchUp.matchUpId,
         inContextDrawMatchUps,
       })) ||
@@ -910,7 +921,7 @@ function conditionallyAdvanceDrawPosition(params) {
     !!noContextTargetMatchUp.winningSide &&
     hasDrawPosition &&
     getExitWinningSide({
-      drawPosition: drawPositions[0],
+      drawPosition: lonePosition,
       matchUpId: targetMatchUp.matchUpId,
       inContextDrawMatchUps,
     }) !== noContextTargetMatchUp.winningSide;

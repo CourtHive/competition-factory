@@ -7,6 +7,7 @@ import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
@@ -48,8 +49,11 @@ export function directLoser(params): ResultType {
     loserMatchUp.roundNumber === 2 &&
     Math.min(...targetMatchUpDrawPositions.filter(Boolean));
 
-  const targetMatchUpDrawPosition = fedDrawPositionFMLC || targetMatchUpDrawPositions[loserMatchUpDrawPositionIndex];
-  const loserBackdrawPosition = fedDrawPositionFMLC || targetMatchUpDrawPositions[1 - loserMatchUpDrawPositionIndex];
+  // the target's sides, read structurally: index 0 is side 1, and a lone position's side is not its index
+  const targetSide = (sideNumber: number) =>
+    getSideDrawPosition({ matchUp: loserMatchUp, structureId: loserMatchUp.structureId, sideNumber, drawDefinition });
+  const targetMatchUpDrawPosition = fedDrawPositionFMLC || targetSide(loserMatchUpDrawPositionIndex + 1);
+  const loserBackdrawPosition = fedDrawPositionFMLC || targetSide(2 - loserMatchUpDrawPositionIndex);
 
   const sourceStructureId = loserTargetLink.source.structureId;
   const { structure } = findStructure({
@@ -164,7 +168,8 @@ export function directLoser(params): ResultType {
     })
     .map((assignment) => assignment.drawPosition);
 
-  const targetDrawPositionIsUnfilled = availableTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
+  const targetDrawPositionIsUnfilled =
+    !!targetMatchUpDrawPosition && availableTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
   const isFeedRound = loserTargetLink.target.roundNumber > 1 && availableTargetMatchUpDrawPositions?.length;
   const isFirstRoundValidDrawPosition = loserTargetLink.target.roundNumber === 1 && targetDrawPositionIsUnfilled;
 

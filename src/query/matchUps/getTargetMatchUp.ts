@@ -1,4 +1,5 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { reduceGroupedOrder } from './reduceGroupedOrder';
@@ -132,8 +133,13 @@ export function getTargetMatchUp({
     matchUpDrawPositionIndex = 0;
     targetDrawPosition = Math.min(...(matchUp.drawPositions ?? []).filter(Boolean));
   } else {
-    // when not a feedRound targetDrawPosition can only be determined when both drawPositions present
-    targetDrawPosition = matchUp?.drawPositions?.length === 2 && matchUp?.drawPositions[matchUpDrawPositionIndex];
+    // the side's position, read structurally: a lone position's side is not its index
+    targetDrawPosition = getSideDrawPosition({
+      sideNumber: matchUpDrawPositionIndex + 1,
+      drawDefinition,
+      structureId,
+      matchUp,
+    });
   }
 
   const relevantAssignment = positionAssignments?.find(({ drawPosition }) => drawPosition === targetDrawPosition);

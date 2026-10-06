@@ -1,3 +1,4 @@
+import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { getDownstreamStructureIds } from '@Query/matchUps/getDownstreamStructureIds';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -12,7 +13,8 @@ import {
   fedLoserPlacementRefusal,
 } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 
-// constants
+// constants and types
+import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -136,6 +138,7 @@ export function swapWinnerLoser(params) {
    */
   exchangePathPositions({
     matchUps: existingWinnerSubsequentMatchUps,
+    structureId: structure.structureId,
     positionA: existingWinnerDrawPosition,
     positionB: existingLoserDrawPosition,
     tournamentRecord,
@@ -186,7 +189,7 @@ export function swapWinnerLoser(params) {
    * the matchUps they RE-ENTER by a WINNER link carry the exchange, by their origin positions — the same
    * exchange the source structure's later rounds receive above.
    */
-  const originStructureIds = new Set(
+  const originStructureIds = new Set<string>(
     (drawDefinition.links ?? [])
       .filter((link) => link.linkType === LOSER && link.target.structureId === structure.structureId)
       .map((link) => link.source.structureId)
@@ -214,6 +217,7 @@ export function swapWinnerLoser(params) {
           (roundNumber ?? 0) >= firstReEntryRound &&
           (drawPositions?.includes(positionA) || (!!positionB && drawPositions?.includes(positionB))),
       ),
+      structureId: originStructureId,
       tournamentRecord,
       drawDefinition,
       positionA,
@@ -344,22 +348,37 @@ export function swapWinnerLoser(params) {
  */
 function followWinnerAcrossResort({
   matchUp,
+  structureId,
+  drawDefinition,
   winnerDrawPosition,
   existingWinnerDrawPosition,
   existingLoserDrawPosition,
+}: {
+  existingWinnerDrawPosition?: number;
+  existingLoserDrawPosition?: number;
+  winnerDrawPosition?: number;
+  drawDefinition: DrawDefinition;
+  structureId: string;
+  matchUp: MatchUp;
 }) {
   if (!matchUp.winningSide || winnerDrawPosition === undefined) return;
 
-  let followed = winnerDrawPosition;
+  let followed: number | undefined = winnerDrawPosition;
   if (winnerDrawPosition === existingWinnerDrawPosition) followed = existingLoserDrawPosition;
   else if (existingLoserDrawPosition && winnerDrawPosition === existingLoserDrawPosition)
     followed = existingWinnerDrawPosition;
 
-  const index = matchUp.drawPositions?.indexOf(followed);
-  if (index === undefined || index < 0 || index + 1 === matchUp.winningSide) return;
+  // the followed position's side, read structurally: a lone position's side is not its index
+  const followedSide = getDrawPositionSideNumber({
+    matchUp: { ...matchUp, sides: undefined },
+    drawPosition: followed,
+    drawDefinition,
+    structureId,
+  });
+  if (!followedSide || followedSide === matchUp.winningSide) return;
 
   const otherSide = (sideNumber) => (sideNumber === 1 ? 2 : 1);
-  matchUp.winningSide = index + 1;
+  matchUp.winningSide = followedSide;
 
   if (matchUp.score?.sets?.length) {
     const { reversedScore } = reverseScore({ score: matchUp.score });
@@ -391,11 +410,31 @@ function followWinnerAcrossResort({
  * and carrying each decided matchUp's winner across the re-sort. Shared by the source structure's later
  * rounds and by the re-entry matchUps of an origin structure.
  */
-function exchangePathPositions({ matchUps, positionA, positionB, tournamentRecord, drawDefinition, event }) {
+function exchangePathPositions({
+  matchUps,
+  structureId,
+  positionA,
+  positionB,
+  tournamentRecord,
+  drawDefinition,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  positionA?: number;
+  positionB?: number;
+  structureId: string;
+  matchUps: MatchUp[];
+  event?: Event;
+}) {
   const stack = 'swapWinnerLoser';
   matchUps.forEach((matchUp) => {
     // read BEFORE the rewrite: which position won, in the array order the winningSide refers to
-    const winnerDrawPosition = matchUp.winningSide ? matchUp.drawPositions?.[matchUp.winningSide - 1] : undefined;
+    const winnerDrawPosition = getWinningSideDrawPosition({
+      matchUp: { ...matchUp, sides: undefined },
+      drawDefinition,
+      structureId,
+    });
 
     // The substitution can put a HOLE in: the flipped loser has no drawPosition when their side was
     // an empty fed slot, so `[4, 7]` becomes `[undefined, 7]` — correct, and positional. What it
@@ -419,6 +458,8 @@ function exchangePathPositions({ matchUps, positionA, positionB, tournamentRecor
     );
     followWinnerAcrossResort({
       existingWinnerDrawPosition: positionA,
+      drawDefinition,
+      structureId,
       existingLoserDrawPosition: positionB,
       winnerDrawPosition,
       matchUp,

@@ -5,6 +5,7 @@ import { NamingEntry, generatePlayoffStructures } from './drawTypes/playoffStruc
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { processPlayoffGroups } from './drawTypes/processPlayoffGroups';
@@ -534,7 +535,14 @@ function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tourname
     // a loser target found from a link always has its drawPositions and the index into them
     if (loserTargetLink && loserMatchUp?.drawPositions && loserMatchUpDrawPositionIndex !== undefined) {
       const targetStructureId = loserTargetLink.target.structureId;
-      const targetDrawPosition = loserMatchUp.drawPositions[loserMatchUpDrawPositionIndex];
+      // the side's position, read structurally: index 0 is side 1
+      const targetDrawPosition = getSideDrawPosition({
+        sideNumber: loserMatchUpDrawPositionIndex + 1,
+        structureId: targetStructureId,
+        matchUp: loserMatchUp,
+        drawDefinition,
+      });
+      if (!targetDrawPosition) continue;
 
       const result = assignDrawPositionBye({
         drawPosition: targetDrawPosition,
