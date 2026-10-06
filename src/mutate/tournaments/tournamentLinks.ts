@@ -10,6 +10,7 @@ import { INVALID_VALUES, MISSING_TOURNAMENT_ID, MISSING_TOURNAMENT_RECORDS } fro
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { LINKED_TOURNAMENTS } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Tournament } from '@Types/tournamentTypes';
 
 /**
  * Stamp a single tournamentRecord with its linked-tournament list, per the
@@ -20,7 +21,7 @@ import { SUCCESS } from '@Constants/resultConstants';
  * extension `{tournamentIds: []}` and strips any first-class field. BRIDGE
  * writes both. When `tournamentIds` is empty, both surfaces are cleared.
  */
-function writeRecordLinkedTournamentIds(tournamentRecord: any, tournamentIds: string[]): void {
+function writeRecordLinkedTournamentIds(tournamentRecord: Tournament, tournamentIds: string[]): void {
   const isClear = !tournamentIds.length;
   if (writeNativeEnabled() && !isClear) {
     tournamentRecord.linkedTournamentIds = [...tournamentIds];

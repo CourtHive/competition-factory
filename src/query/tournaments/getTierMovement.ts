@@ -19,7 +19,7 @@ type GetTierMovementArgs = {
  */
 function resolveLevel(tier: TierClassification | undefined, policyDefinitions?: PolicyDefinitions): number | undefined {
   if (!tier?.system || !tier?.value) return undefined;
-  const policy: any = policyDefinitions?.[POLICY_TYPE_RANKING_POINTS];
+  const policy = policyDefinitions?.[POLICY_TYPE_RANKING_POINTS];
   return policy?.tierToLevel?.[tier.system]?.[tier.value] ?? tier.numericRank;
 }
 

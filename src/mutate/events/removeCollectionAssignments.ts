@@ -1,7 +1,8 @@
 import { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
 
-// constants
+// constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { CollectionAssignment } from '@Types/tournamentTypes';
 
 export function removeCollectionAssignments({
   collectionPosition,
@@ -25,7 +26,7 @@ export function removeCollectionAssignments({
     })?.lineUp;
 
   const previousParticipantIds: string[] = [];
-  const assignmentsRemoved: any[] = [];
+  const assignmentsRemoved: (CollectionAssignment & { participantId: string })[] = [];
 
   const modifiedLineUp =
     lineUp

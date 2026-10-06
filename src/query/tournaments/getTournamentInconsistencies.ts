@@ -1,5 +1,5 @@
-import { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
+import { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
 import { getParticipants } from '@Query/participants/getParticipants';
 
 // constants and types
@@ -24,7 +24,7 @@ type GetTournamentInconsistenciesArgs = {
   tournamentRecord?: Tournament;
 };
 
-function getIdentityDuplications(tournamentRecord: Tournament): any[] {
+function getIdentityDuplications(tournamentRecord: Tournament): Partial<Inconsistency>[] {
   const participantIdsByPersonId = new Map<string, string[]>();
   for (const participant of tournamentRecord.participants ?? []) {
     if (participant.participantType !== INDIVIDUAL) continue;
@@ -35,7 +35,7 @@ function getIdentityDuplications(tournamentRecord: Tournament): any[] {
     participantIdsByPersonId.set(personId, participantIds);
   }
 
-  const inconsistencies: any[] = [];
+  const inconsistencies: Partial<Inconsistency>[] = [];
   for (const [personId, participantIds] of participantIdsByPersonId) {
     if (participantIds.length > 1) {
       inconsistencies.push({

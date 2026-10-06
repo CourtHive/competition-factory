@@ -229,8 +229,7 @@ function getEnteredParticipants(params) {
   const enteredParticipantIds: string[] =
     event?.entries
       ?.filter(({ entryStatus }) => {
-        const status: any = entryStatus;
-        return [...STRUCTURE_SELECTED_STATUSES, ALTERNATE].includes(status);
+        return [...STRUCTURE_SELECTED_STATUSES, ALTERNATE].includes(entryStatus);
       })
       .map(({ participantId }) => participantId) ?? [];
 
@@ -245,7 +244,7 @@ function getEnteredParticipants(params) {
 
 function getParticipantsProfile({ enteredParticipants }) {
   const genderAccumulator: string[] = [];
-  const enteredParticipantTypes = enteredParticipants.reduce((types: any[], participant) => {
+  const enteredParticipantTypes = enteredParticipants.reduce((types: string[], participant) => {
     const genders = participant.person?.sex
       ? [participant.person.sex]
       : (participant.individualParticipants?.map((p) => p.person?.sex) ?? []);

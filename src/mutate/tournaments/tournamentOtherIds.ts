@@ -3,10 +3,10 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { addNotice } from '@Global/state/globalState';
 
 // constants and types
+import { Tournament, UnifiedTournamentID } from '@Types/tournamentTypes';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { UnifiedTournamentID } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 /**
@@ -101,7 +101,7 @@ export function setTournamentOtherIds({
     return { ...SUCCESS };
   }
 
-  const check = checkUnifiedIds(tournamentOtherIds as any[]);
+  const check = checkUnifiedIds(tournamentOtherIds);
   if (check?.error) return check;
 
   tournamentRecord.tournamentOtherIds = tournamentOtherIds;
@@ -110,7 +110,7 @@ export function setTournamentOtherIds({
   return { ...SUCCESS };
 }
 
-function notifyTournamentOtherIds(tournamentRecord: any) {
+function notifyTournamentOtherIds(tournamentRecord: Tournament) {
   addNotice({
     topic: MODIFY_TOURNAMENT_DETAIL,
     payload: {

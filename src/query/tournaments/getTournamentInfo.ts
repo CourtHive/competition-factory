@@ -11,11 +11,12 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { Contact, ParticipantRoleUnion, Tournament } from '@Types/tournamentTypes';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { TOURNAMENT_IMAGE_RESOURCE_NAME } from '@Constants/tournamentConstants';
 import POLICY_PRIVACY_STAFF from '@Fixtures/policies/POLICY_PRIVACY_STAFF';
-import { ParticipantRoleUnion, Tournament } from '@Types/tournamentTypes';
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
+import { HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ADMINISTRATION,
@@ -75,8 +76,8 @@ const STAFF_CONTACT_ROLES = [
  *
  * Strict equality is the point: absent and `false` both withhold. Opting in has to be deliberate.
  */
-function publishableContacts(participant: any): any {
-  const filterContacts = (contacts: any) =>
+function publishableContacts(participant: HydratedParticipant) {
+  const filterContacts = (contacts?: Contact[]) =>
     Array.isArray(contacts) ? contacts.filter((contact) => contact?.isPublic === true) : contacts;
 
   if (!participant?.contacts && !participant?.person?.contacts) return participant;
@@ -177,7 +178,7 @@ export function getTournamentInfo(params?: {
   if (tournamentContacts) tournamentInfo.tournamentContacts = tournamentContacts;
 
   const imageUrl = tournamentRecord?.onlineResources?.find(
-    (r: any) => r.name === TOURNAMENT_IMAGE_RESOURCE_NAME && r.resourceType === 'URL',
+    (r) => r.name === TOURNAMENT_IMAGE_RESOURCE_NAME && r.resourceType === 'URL',
   )?.identifier;
   if (imageUrl) tournamentInfo.imageUrl = imageUrl;
 
@@ -188,7 +189,7 @@ export function getTournamentInfo(params?: {
   const infoEventIds = info?.eventIds ? new Set<string>(info.eventIds) : undefined;
   const isListed = (eventId: string) =>
     publishedEventIds.has(eventId) || (!!info?.published && (!infoEventIds || infoEventIds.has(eventId)));
-  const eventInfo: any[] = [];
+  const eventInfo: ReturnType<typeof extractEventInfo>['eventInfo'][] = [];
 
   for (const event of tournamentRecord.events ?? []) {
     if (!params?.usePublishState || isListed(event.eventId)) {

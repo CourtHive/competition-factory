@@ -178,7 +178,7 @@ export function setTournamentTier({ tournamentRecord, tournamentTier }) {
  * (`resolveEntryFee`) reports such a fee as indeterminate rather than rendering it wrong. Close it
  * when proposals are known to carry units.
  */
-function invalidEntryFee(entryFees: any): boolean {
+function invalidEntryFee(entryFees: unknown): boolean {
   if (!Array.isArray(entryFees)) return false;
   return entryFees.some(
     (fee) => fee && typeof fee === 'object' && typeof fee.amount === 'number' && (!fee.currencyCode || !fee.unit),

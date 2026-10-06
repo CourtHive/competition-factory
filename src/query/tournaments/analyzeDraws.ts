@@ -8,6 +8,7 @@ import { ensureInt } from '@Tools/ensureInt';
 
 // constants
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { DrawDefinition, Event } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type DrawsAnalysis = {
@@ -15,7 +16,7 @@ type DrawsAnalysis = {
   canBePruned: string[];
   matchPlay: string[];
   inactive: string[];
-  drawAnalysis: any;
+  drawAnalysis: Record<string, unknown>;
 };
 
 export function analyzeDraws({ tournamentRecord }): {
@@ -40,10 +41,10 @@ export function analyzeDraws({ tournamentRecord }): {
   // tournament with no events is ordinary — one that has been created but not yet built out — and
   // analysis of it should return empty, not crash.
   const eventDraws = (tournamentRecord.events ?? [])
-    .flatMap((event: any) => {
+    .flatMap((event: Event) => {
       const eventId = event.eventId;
       eventsMap[eventId] = event;
-      return (event?.drawDefinitions ?? []).map((drawDefinition: any) => ({
+      return (event?.drawDefinitions ?? []).map((drawDefinition: DrawDefinition) => ({
         drawDefinition,
         eventId,
       }));

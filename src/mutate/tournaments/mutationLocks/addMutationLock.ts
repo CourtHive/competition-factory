@@ -7,8 +7,8 @@ import { UUID } from '@Tools/UUID';
 // constants and types
 import { MutationLock, MutationLockScope, MutationLocksValue } from '@Types/mutationLockTypes';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
+import { Extension, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
 import {
   ErrorType,
   INVALID_VALUES,
@@ -45,7 +45,7 @@ export function addMutationLock(params: AddMutationLockArgs): {
   }
 
   // Resolve target element: draw > event > venue > tournament
-  let element: any;
+  let element: { extensions?: Extension[] } | undefined;
   if (drawDefinition) {
     element = drawDefinition;
   } else if (event) {
@@ -127,7 +127,7 @@ export function addMutationLock(params: AddMutationLockArgs): {
 
 // When a lock is added at any level, ensure the tournament-level MUTATION_LOCKS
 // extension exists with enabled: true so the interceptor knows to check.
-function ensureFeatureGate(tournamentRecord: Tournament, element: any) {
+function ensureFeatureGate(tournamentRecord: Tournament, element?: { extensions?: Extension[] }) {
   if (element === tournamentRecord) {
     // Lock was added to tournament record — set enabled on its own value
     const { extension } = findExtension({ element: tournamentRecord, name: MUTATION_LOCKS });

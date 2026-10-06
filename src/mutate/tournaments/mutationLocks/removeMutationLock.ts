@@ -5,8 +5,8 @@ import { findVenue } from '@Query/venues/findVenue';
 // constants and types
 import { MutationLockScope, MutationLocksValue } from '@Types/mutationLockTypes';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
+import { Extension, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
 import {
   ErrorType,
   MISSING_TOURNAMENT_RECORD,
@@ -37,7 +37,7 @@ export function removeMutationLock(params: RemoveMutationLockArgs): {
   if (!lockId && !scope) return { error: MISSING_VALUE, info: 'Provide lockId or scope to identify the lock' };
 
   // Resolve target element: draw > event > venue > tournament
-  let element: any;
+  let element: { extensions?: Extension[] } | undefined;
   if (drawDefinition) {
     element = drawDefinition;
   } else if (event) {
