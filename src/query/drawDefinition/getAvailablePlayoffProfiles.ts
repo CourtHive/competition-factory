@@ -48,7 +48,7 @@ export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: Get
     const scoped = scopeStructureIds
       ? getPositionsPlayedOff({ structureIds: scopeStructureIds, drawDefinition, matchUpsMap })
       : { positionsNotPlayedOff, positionsPlayedOff };
-    if (scopeStructureIds) scopedPositions[structureId] = scoped.positionsPlayedOff;
+    if (scopeStructureIds) scopedPositions[structureId] = scoped.positionsPlayedOff ?? [];
 
     const result = availablePlayoffProfiles({
       playoffPositions: scoped.positionsNotPlayedOff,
