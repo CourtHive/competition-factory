@@ -1,4 +1,5 @@
 import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLinkAdvancements';
+import { getByeCrossings } from '@Query/drawDefinition/getByeCrossings';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -45,6 +46,12 @@ import {
 //    is the one advancement invariant that has to start from the positionAssignment
 //    instead. Bye-vs-bye and bye-vs-empty are excluded — neither has a participant whose
 //    absence would mean anything.
+//  - BYE_ADVANCEMENT_MISSING_ACROSS_LINK: the participant opposite a BYE at the source round of a
+//    cross-structure WINNER link is absent from the link's target, which is still undecided. The
+//    within-structure check above stops at the structure; the settle that performs this crossing
+//    (`crossLinksThroughByes`) and this check share one predicate, `getByeCrossing`, so a crossing
+//    the engine owes and has not made is exactly what is reported (census w2 9100389: a
+//    DOUBLE_ELIMINATION Backdraw champion stranded beside a propagated BYE scored clean).
 //  - PROPAGATED_EXIT_LOST: the matchUp carries NATIVE exit provenance — the cascade's own
 //    record that an exit was delivered to one of its sides — while its matchUpStatus says
 //    no exit happened and no winner was awarded. The record and the status contradict each
@@ -101,6 +108,7 @@ export const WINNING_SIDE_WITHOUT_PARTICIPANT = 'WINNING_SIDE_WITHOUT_PARTICIPAN
 export const WINNING_SIDE_ADVANCEMENT_MISMATCH = 'WINNING_SIDE_ADVANCEMENT_MISMATCH';
 export const WINNER_NOT_ADVANCED = 'WINNER_NOT_ADVANCED';
 export const BYE_ADVANCEMENT_MISSING = 'BYE_ADVANCEMENT_MISSING';
+export const BYE_ADVANCEMENT_MISSING_ACROSS_LINK = 'BYE_ADVANCEMENT_MISSING_ACROSS_LINK';
 export const DRAW_POSITION_UNASSIGNED = 'DRAW_POSITION_UNASSIGNED';
 export const DRAW_POSITIONS_NOT_SORTED = 'DRAW_POSITIONS_NOT_SORTED';
 export const EXIT_CODE_ON_WINNER_SIDE = 'EXIT_CODE_ON_WINNER_SIDE';
@@ -388,6 +396,24 @@ function getAllAdvancedFromUndecided(
       ...(twoFromOne ? [twoFromOne] : []),
     ];
   });
+}
+
+/** BYE_ADVANCEMENT_MISSING_ACROSS_LINK — see the header; the predicate is `getByeCrossing`. */
+function getCrossLinkByeAdvancementInconsistencies(
+  drawDefinition: DrawDefinition,
+  inContextDrawMatchUps: HydratedMatchUp[],
+  structureId?: string,
+): StructureInconsistency[] {
+  return getByeCrossings({ inContextDrawMatchUps, drawDefinition })
+    .filter((crossing) => !structureId || crossing.matchUp.structureId === structureId)
+    .map((crossing) => ({
+      matchUpId: crossing.matchUp.matchUpId,
+      structureId: crossing.matchUp.structureId,
+      issueType: BYE_ADVANCEMENT_MISSING_ACROSS_LINK,
+      message: 'the participant opposite a BYE did not advance across the WINNER link into its target matchUp',
+      winnerMatchUpId: crossing.winnerMatchUp.matchUpId,
+      participantId: crossing.participantId,
+    }));
 }
 
 /** ADVANCED_ACROSS_LINK_FROM_UNDECIDED — see the header; the predicate is `getUnearnedLinkAdvancements`. */
@@ -827,6 +853,9 @@ export function getStructureInconsistencies(
   );
 
   inconsistencies.push(...getCrossLinkAdvancementInconsistencies(drawDefinition, inContextDrawMatchUps, structureId));
+  inconsistencies.push(
+    ...getCrossLinkByeAdvancementInconsistencies(drawDefinition, inContextDrawMatchUps, structureId),
+  );
 
   for (const matchUp of scoped) {
     const { winningSide, matchUpStatus, matchUpStatusCodes, sides, matchUpId, drawPositions } = matchUp;
