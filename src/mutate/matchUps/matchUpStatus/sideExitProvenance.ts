@@ -65,6 +65,18 @@ export function producedExitStatus(previousMatchUpStatus?: MatchUpStatusUnion): 
 }
 
 /**
+ * Does an origin that ended this way DECIDE something for the side it feeds?
+ *
+ * A double exit does: nobody arrives, and the exit it produced stands pending on that side. A BYE does: the side
+ * holds a BYE. A played result or a single exit does NOT: its winner arrived and is waiting, so the entry records
+ * the origin (`previousMatchUpStatus`) and no `matchUpStatus` (CA, 2026-10-07: "nothing was decided when they
+ * arrived, they were just waiting"; OUTCOME_PIPELINE_OPEN_QUESTIONS F9).
+ */
+export function decidesForTheSide(previousMatchUpStatus?: MatchUpStatusUnion): boolean {
+  return isDoubleExit(previousMatchUpStatus) || previousMatchUpStatus === BYE;
+}
+
+/**
  * The status for a matchUp where two exits MEET, from the exits each side carried.
  *
  * CA, 2026-09-12: *"a WALKOVER and a DEFAULT would produce a WALKOVER, not a DEF… and a
@@ -125,12 +137,20 @@ export function buildSideExitProvenance(params: BuildArgs): SideExitProvenance |
   //
   // A COMPLETED origin IS recorded, deliberately: `sideExitProvenance.test.ts` pins a double exit
   // meeting a played win, and that opponent's origin is a real fact.
+  //
+  // `matchUpStatus` is what was decided on the side (`decidesForTheSide`). A side whose origin was a played or
+  // single-exit result ARRIVED: its participant won that matchUp and is waiting here, so the entry carries the
+  // origin and no status (CA, 2026-10-07; F9). Writing `producedExitStatus(origin)` for an arrival made "won a
+  // DEFAULTED" the same entry as "lost a DEFAULTED and carried the exit", and `carriedExitStatus` read both as
+  // an exit.
   const isDecided = (status?: string) => !!status && status !== TO_BE_PLAYED;
+  const decidedStatus = (status?: MatchUpStatusUnion) =>
+    decidesForTheSide(status) ? producedExitStatus(status) : undefined;
   const provenance: SideExitProvenance = {
     ...(isDecided(sourceMatchUpStatus)
       ? {
           [sourceSideNumber]: definedAttributes({
-            matchUpStatus: producedExitStatus(sourceMatchUpStatus),
+            matchUpStatus: decidedStatus(sourceMatchUpStatus),
             previousMatchUpStatus: sourceMatchUpStatus,
             sourceMatchUpId,
           }) as SideExitProvenanceEntry,
@@ -139,7 +159,7 @@ export function buildSideExitProvenance(params: BuildArgs): SideExitProvenance |
     ...(isDecided(pairedMatchUpStatus)
       ? {
           [pairedSideNumber]: definedAttributes({
-            matchUpStatus: producedExitStatus(pairedMatchUpStatus),
+            matchUpStatus: decidedStatus(pairedMatchUpStatus),
             previousMatchUpStatus: pairedMatchUpStatus,
             sourceMatchUpId: pairedMatchUpId,
           }) as SideExitProvenanceEntry,
@@ -239,10 +259,22 @@ function admissibleOn(matchUp: MatchUp, provenance?: SideExitProvenance): SideEx
 
   const admitted: SideExitProvenance = {};
   for (const [sideNumber, entry] of Object.entries(provenance)) {
-    const arrivedByResult = !!entry?.matchUpStatus && !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
-    if (!arrivedByResult) admitted[Number(sideNumber)] = entry;
+    if (!arrivedByResult(entry)) admitted[Number(sideNumber)] = entry;
   }
   return admitted;
+}
+
+/**
+ * Did this side's participant get here by WINNING its origin?
+ *
+ * An arrival records its origin and no decided status (F9, CA 2026-10-07): `{ previousMatchUpStatus, sourceMatchUpId }`.
+ * Records written before that carry the origin's status as `matchUpStatus` too, so a non-exit, non-BYE status is
+ * accepted as the same answer. A BYE's own arrival (`{ BYE, BYE }`) is not a result.
+ */
+export function arrivedByResult(entry?: SideExitProvenanceEntry): boolean {
+  if (!entry) return false;
+  if (!entry.matchUpStatus) return !!entry.previousMatchUpStatus && entry.previousMatchUpStatus !== BYE;
+  return !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
 }
 
 /** Write provenance onto a matchUp, honouring the schema write mode. */

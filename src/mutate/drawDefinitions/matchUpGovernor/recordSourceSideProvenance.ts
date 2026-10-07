@@ -1,6 +1,12 @@
-import { mergeSideExitProvenance, producedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  mergeSideExitProvenance,
+  decidesForTheSide,
+  producedExitStatus,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { findStructure } from '@Acquire/findStructure';
 import { definedAttributes } from '@Tools/definedAttributes';
 
 // constants
@@ -65,12 +71,34 @@ export function recordSourceSideProvenance({
     //
     // Merged, not set: the other side's origin may already be recorded, and may have arrived first.
     // An UNDECIDED source is not recorded — provenance can never be TO_BE_PLAYED.
+    //
+    // WHAT THE ENTRY SAYS. `previousMatchUpStatus` is why this side holds the position: the source ended that
+    // way. `matchUpStatus` is what was decided on THIS side as a result, and for an ARRIVAL that is nothing: a
+    // participant who won a DEFAULTED (or any result) is simply waiting here. A double exit decides something
+    // for the side it feeds, since nobody arrives and the exit it produced stands pending there; a BYE origin
+    // leaves the side holding a BYE, which the BYE-arrival readers ask for by status.
+    //
+    // This wrote `producedExitStatus(source status)` for every source, so a participant who won a DEFAULTED
+    // carried `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DEFAULTED }` into the next round: byte for
+    // byte the entry the LOSER of that DEFAULTED carries over the loser link, which does mean "this side is
+    // exiting". `carriedExitStatus` read both as an exit (OUTCOME_PIPELINE_OPEN_QUESTIONS F9, census w2
+    // 9100389: v2 planned a convergence where a present participant wins the produced exit). CA, 2026-10-07:
+    // "there should be no matchUpStatus on the provenance for A, because nothing was decided when they
+    // arrived, they were just waiting."
+    //
+    // The same writer stamps the source's LOSER where they are relayed past a BYE in the structure the loser link
+    // feeds (FRLC w2 9100283: the Main|1|12 walkover's loser passes a consolation BYE into Consolation|2|3). That
+    // side IS exiting, so its status stays. Which one arrived is read off the seat: the source's winner is an
+    // arrival; anyone else carried the exit in.
     if (sourceMatchUpStatus && sourceMatchUpStatus !== TO_BE_PLAYED) {
+      const decided =
+        decidesForTheSide(sourceMatchUpStatus) ||
+        !seatHoldsSourceWinner({ inContextDrawMatchUps, drawDefinition, drawPositions, sourceMatchUp, matchUp });
       mergeSideExitProvenance({
         matchUp,
         provenance: {
           [sourceSideNumber]: definedAttributes({
-            matchUpStatus: producedExitStatus(sourceMatchUpStatus),
+            matchUpStatus: decided ? producedExitStatus(sourceMatchUpStatus) : undefined,
             previousMatchUpStatus: sourceMatchUpStatus,
             sourceMatchUpId,
           }),
@@ -78,6 +106,39 @@ export function recordSourceSideProvenance({
       });
     }
   }
+}
+
+/**
+ * Does the seat being stamped hold the source's WINNER?
+ *
+ * The participant is read from the positionAssignments of the structure the matchUp belongs to, against the positions
+ * the matchUp holds in the keyed state (`drawPositions`, passed because the in-context copy predates the placement).
+ * A source with no winner (a double exit) has nobody to arrive, and the caller has already kept the status; an
+ * unresolvable seat answers false, which keeps the status too, as every record before this read did.
+ */
+function seatHoldsSourceWinner({
+  inContextDrawMatchUps,
+  drawDefinition,
+  drawPositions,
+  sourceMatchUp,
+  matchUp,
+}: {
+  drawPositions?: (number | undefined)[];
+  inContextDrawMatchUps: any[];
+  drawDefinition?: DrawDefinition;
+  sourceMatchUp?: HydratedMatchUp;
+  matchUp: MatchUp;
+}): boolean {
+  const winnerParticipantId = sourceMatchUp?.sides?.find(
+    (side) => side?.sideNumber === sourceMatchUp?.winningSide,
+  )?.participantId;
+  if (!winnerParticipantId || !drawDefinition) return false;
+  const structureId = inContextDrawMatchUps.find((m) => m.matchUpId === matchUp.matchUpId)?.structureId;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  const held = (drawPositions ?? matchUp.drawPositions ?? []).filter((position): position is number => !!position);
+  return !!positionAssignmentsOf(structure)?.some(
+    (assignment) => held.includes(assignment.drawPosition) && assignment.participantId === winnerParticipantId,
+  );
 }
 
 /**
