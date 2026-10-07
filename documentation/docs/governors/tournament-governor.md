@@ -91,7 +91,8 @@ Analyzes all draws in a tournament to provide structural insights.
 const { analysis } = engine.analyzeDraws();
 ```
 
-**Returns:** Analysis of draw structures, including sizes, stages, and completeness.
+**Returns:** Analysis of draw structures, including sizes, stages, and completeness. A round robin draw is
+never listed in `canBePruned` (7.7.0).
 
 ---
 

@@ -750,7 +750,9 @@ const sorted = matchUps.sort(tools.matchUpChronologicalSort);
 
 ### structureSort
 
-Sort draw structures by stage, size, and sequence. See [dedicated page](./structure-sort.md).
+Sort draw structures by stage, size, and sequence. See [dedicated page](./structure-sort.md). Since 7.7.0
+the `deprioritizeCompleted` option works: a round robin container is read through its groups, and a
+matchUp that will never be played (a BYE, as well as ABANDONED, CANCELLED and DEAD_RUBBER) counts as done.
 
 ```js
 const sorted = structures.sort(tools.structureSort);

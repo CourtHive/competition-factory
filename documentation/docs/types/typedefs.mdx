@@ -46,6 +46,17 @@ import winCriteria from './assets/winCriteria.ts';
 
 ## Overview
 
+:::info Discriminated unions since 7.7.0
+`Structure` is `ItemStructure | ContainerStructure`, discriminated by `structureType`: a `CONTAINER`
+names its `structures` and holds no `matchUps` or `positionAssignments` of its own; an `ITEM` holds no
+`structures`, and its `structureType` stays optional because stored records mostly omit it. `DrawLink`
+is `RoundDrawLink | PositionDrawLink`, discriminated by `linkType`: `WINNER` and `LOSER` links name a
+source `roundNumber`, a `POSITION` link names source `finishingPositions` and no round. This is the soft
+form: reading `structure.matchUps` on an un-narrowed `Structure` still compiles, building a malformed
+structure or link does not. `StructureBase`, `ItemStructure`, `ContainerStructure`, `DrawLinkBase`,
+`RoundDrawLink` and `PositionDrawLink` are exported. Types only; no runtime change.
+:::
+
 ### Common
 
 Elements that may occur on any CODES object.

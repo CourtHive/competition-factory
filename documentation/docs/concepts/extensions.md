@@ -522,7 +522,18 @@ Attached to: `tournamentRecords`
 
 Purpose: Captures version of factory (and other CODES processors) that created/mutated the tournament record.
 
+Since 7.7.0 the stamp is a first-class `tournamentRecord.factory` attribute (the extension form is written
+only under `LEGACY` write mode), and it carries three fields: `createdVersion` (the factory that created
+the record), `version` (the factory that last wrote it) and `timeStamp` (the engine clock at that write).
+`createTournamentRecord` stamps all three; every later write refreshes `version` and `timeStamp` and keeps
+`createdVersion`. A record created before 7.7.0 has no `createdVersion`, and nothing backfills one: the
+first factory to touch an old record did not create it. The internal readers accept either form.
+
 ```js
+// first-class (7.7.0)
+tournamentRecord.factory = { createdVersion: '7.7.0', version: '7.7.0', timeStamp: 1759795200000 };
+
+// extension form, as records written before 7.7.0 (or under LEGACY write mode) carry it
 {
   name: 'factory',
   value: {

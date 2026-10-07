@@ -747,6 +747,13 @@ participant and the `winnerMatchUpId`. The check and the settle that performs th
 predicate, so what is reported is exactly a crossing the engine owes and has not made. A decided
 target is left alone.
 
+`TWO_POSITIONS_FROM_ONE_FEEDER` (severity `error`) reports a matchUp both of whose positions were
+delivered by the same earlier matchUp. A matchUp sends ONE position on; two from one feeder is what a
+BYE holder left behind when the participant who passed it was added beside the position it had
+already advanced (7.7.0, fixed in the same release). Fed positions are never counted, and a round a
+link feeds is not checked: a double-elimination Backdraw champion re-enters the Main final on their own
+Main drawPosition, beside the semifinal they lost, which is a legitimate rematch.
+
 You can also call it directly against a `drawDefinition` object, without loading a
 tournament into the engine — useful when validating records built outside the factory:
 
