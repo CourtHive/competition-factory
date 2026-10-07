@@ -895,7 +895,7 @@ function producedAwardStands({
  * along them) until the target is reached or the walk runs out. A produced exit's first hop is the winner link, so
  * this walk never meets it.
  */
-function arrivedOverLoserLink({
+export function arrivedOverLoserLink({
   inContextDrawMatchUps,
   targetMatchUpId,
   sourceMatchUpId,
