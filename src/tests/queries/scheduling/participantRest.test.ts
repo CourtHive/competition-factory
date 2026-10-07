@@ -219,8 +219,14 @@ describe('getParticipantRest — a walkover is not load the director has spent',
     const rest = restFor(final.matchUpId, at('12:00'));
     // The walkover winner is in the final having played nothing: no rest
     // requirement, and no slot consumed against a daily limit.
-    expect(rest.rows.every((row: any) => row.status === 'none')).toEqual(true);
-    expect(rest.rows.every((row: any) => row.load.total === 0)).toEqual(true);
+    const people = rest.rows.filter((row: any) => !row.pendingUpstream);
+    expect(people.length).toBeGreaterThan(0);
+    expect(people.every((row: any) => row.status === 'none')).toEqual(true);
+    expect(people.every((row: any) => row.load.total === 0)).toEqual(true);
+    // The final's other side is still being decided by the second semifinal, so it is
+    // reported as a pending row pointing at that feeder rather than left out.
+    const pending = rest.rows.filter((row: any) => row.pendingUpstream);
+    expect(pending.map((row: any) => row.fromMatchUpId)).toEqual([semis[1].matchUpId]);
   });
 });
 

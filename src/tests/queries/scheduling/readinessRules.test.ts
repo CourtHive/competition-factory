@@ -251,6 +251,42 @@ describe('undetermined participants', () => {
   });
 });
 
+/**
+ * A dependency's `notBefore` is when the upstream match frees the COURT; `readyAt` is when
+ * its winner could be on this one, recovery included. Ported from TMX #1459, which the TMX
+ * copy of this analysis carried and this one did not.
+ */
+describe('a dependency carries the court-free time AND when the winner could start', () => {
+  const target = (sides: any[]) => matchUp('target', sides, { scheduledTime: '10:00' });
+  const feeder = () =>
+    matchUp('feeder', [player('alice'), player('bob')], { scheduledTime: '09:00' }, { winnerMatchUpId: 'target' });
+
+  it('reports both figures, and the second is the first plus recovery', () => {
+    const [finding] = analyze([feeder(), target([{}, player('chen')])], 'target');
+    // 09:00 + 90 = 10:30 court-free; + 60 recovery = 11:30
+    expect(finding).toMatchObject({ kind: 'dependency', notBefore: '10:30', readyAt: '11:30' });
+  });
+
+  it('carries no second figure when recovery adds nothing', () => {
+    const findings = analyzeMatchUpReadiness({
+      matchUps: [feeder(), target([{}, player('chen')])],
+      matchUpId: 'target',
+      timingFor: () => ({ ...TIMING, recoveryMinutes: 0 }),
+    });
+    if (!findings.evaluated) throw new Error('expected evaluation');
+    expect(findings.findings[0]).toMatchObject({ kind: 'dependency', notBefore: '10:30' });
+    expect(findings.findings[0].readyAt).toBeUndefined();
+  });
+
+  it('gives a recovery finding no second figure: its time is already recovery-inclusive', () => {
+    const earlier = matchUp('earlier', [player('alice'), player('bob')], { scheduledTime: '09:00' });
+    const later = matchUp('later', [player('alice'), player('chen')], { scheduledTime: '11:00' });
+    const [finding] = analyze([earlier, later], 'later');
+    expect(finding.kind).toEqual('recovery');
+    expect(finding.readyAt).toBeUndefined();
+  });
+});
+
 describe('the small shared helpers', () => {
   it('parses a wall clock and refuses what is not one', () => {
     expect(parseClockMinutes('09:30')).toEqual(570);

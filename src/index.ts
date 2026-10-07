@@ -160,5 +160,22 @@ export type { StatObject, MatchStatistics, StatCounters, StatisticsOptions } fro
 // be importable.
 export type { Episode, EpisodeGame, EpisodeNeeded, EpisodePoint, EpisodeSet } from './types/scoring/types';
 export type { PointsToDecoration } from './mutate/scoring/pointsToCalculator';
+// The payloads of `getMatchUpReadiness` and `getParticipantRest`, named so a consumer rendering
+// them can type against the factory instead of redeclaring the shapes (TMX carried its own copies).
+export type {
+  ReadinessFinding,
+  ReadinessKind,
+  ReadinessResult,
+  ReadinessSeverity,
+  ReadinessSkipReason,
+} from './query/matchUps/scheduling/getMatchUpReadiness';
+export type {
+  RestDailyLoad,
+  RestResult,
+  RestRow,
+  RestSkipReason,
+  RestSourceKind,
+  RestStatus,
+} from './query/matchUps/scheduling/getParticipantRest';
 export { toStatObjects } from './query/scoring/statistics/toStatObjects';
 export { calculateMatchStatistics } from './query/scoring/statistics/standalone';

@@ -62,8 +62,22 @@ export type ReadinessFinding = {
   participantNames?: string[];
   matchUpIds?: string[];
   matchUpLabels?: string[];
-  /** Earliest clock time the blocker clears, `HH:MM`. Absent when it cannot be projected. */
+  /**
+   * Earliest clock time the blocker clears, `HH:MM`. Absent when it cannot be projected.
+   *
+   * For a `dependency` this is when the upstream matchUp is projected to FINISH: court
+   * time, which does not include the recovery its winner will then owe (that is
+   * `readyAt`). For a `recovery` finding it is already recovery-inclusive, because the
+   * recovery window is the whole subject of that finding.
+   */
   notBefore?: string;
+  /**
+   * Earliest the participant coming out of the blocker could actually START, recovery
+   * included: `dependency` only, and only when recovery adds something. A court freeing
+   * at 15:30 does not put the winner on it at 15:30. Always `notBefore` + recovery, because
+   * both come from one finish ladder, so a renderer showing both gets arithmetic that closes.
+   */
+  readyAt?: string;
 };
 
 /**
@@ -152,11 +166,22 @@ export function matchUpLabel(matchUp: HydratedMatchUp): string {
   return matchUp.roundName ? `${matchUp.roundName}: ${players}` : players;
 }
 
-/** Name for a participantId, taken from whichever matchUp side carries it. */
+/**
+ * Name for a participantId: the PERSON's own name, not the side they played on.
+ *
+ * Both callers ask about a person. A rest row measures one player's recovery and a clash
+ * finding names who is in two matchUps at once. Falling through to the side label for
+ * anyone inside a pair labelled a doubles entrant's rest row with two names, collapsed a
+ * clash between both members of a pair to one name, and made the answer depend on array
+ * order for a player entered in singles and doubles. The pair label survives only as a
+ * fallback, for a side whose members were not hydrated.
+ */
 export function nameFor(participantId: string, matchUps: HydratedMatchUp[]): string {
   for (const matchUp of matchUps) {
     for (const side of matchUp.sides ?? []) {
       if ((side.participantId ?? side.participant?.participantId) === participantId) return sideLabel(side);
+      const member = side.participant?.individualParticipants?.find((person) => person.participantId === participantId);
+      if (member?.participantName) return member.participantName;
       if (side.participant?.individualParticipantIds?.includes(participantId)) return sideLabel(side);
     }
   }
@@ -320,8 +345,13 @@ function dependencyFindings(
     // Unscheduled upstream: cannot be projected, and therefore cannot be
     // promised to finish in time — reported without a `notBefore`.
     if (finish === null) return [base];
-    if (finish > startMinutes) return [{ ...base, notBefore: minutesToClock(finish) }];
-    return [];
+    if (finish <= startMinutes) return [];
+    // `freeAfter` is this same finish plus the recovery the winner owes, so the pair
+    // reconciles by construction. Carried only when recovery adds something: with a zero
+    // recovery the court-free time IS the ready time, and one figure twice is noise.
+    const { recoveryMinutes } = timingFor(source);
+    const readyAt = recoveryMinutes > 0 ? minutesToClock(finish + recoveryMinutes) : undefined;
+    return [{ ...base, notBefore: minutesToClock(finish), ...(readyAt && { readyAt }) }];
   });
 }
 

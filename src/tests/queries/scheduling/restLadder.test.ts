@@ -263,3 +263,108 @@ describe('rest declines to evaluate what it cannot', () => {
     expect(result).toEqual({ evaluated: false, reason: 'bye' });
   });
 });
+
+/**
+ * A row does not always stand for a person. When a side has no participant yet, whoever
+ * arrives is still playing upstream, so rest has not begun. Ported from TMX's suite for
+ * the same behaviour (TMX #1449, #1502), which the TMX copy of this analysis carried and
+ * this one did not.
+ */
+describe('sides that have not been decided yet', () => {
+  const halfKnown = (extra: any = {}) =>
+    ({
+      matchUpId: 'sf',
+      matchUpType: 'SINGLES',
+      roundName: 'Semifinal',
+      sides: [{}, { participantId: 'bob', participantName: 'Bob' }],
+      schedule: { scheduledDate: DAY, scheduledTime: '14:30' },
+      ...extra,
+    }) as any;
+  const feeder = (schedule: any, extra: any = {}) =>
+    singles('qf', ['alice', 'chen'], schedule, { roundName: 'Quarterfinal', winnerMatchUpId: 'sf', ...extra });
+
+  it('reports the undecided side as the headline, not the rested player beside it', () => {
+    const earlier = singles('earlier', ['bob', 'chen'], { endTime: '09:00' }, { winningSide: 1 });
+    const { rows } = analyze([halfKnown(), feeder({ startTime: '13:00' }), earlier], 'sf', '13:30');
+    const [headline] = rows;
+    expect(headline).toMatchObject({ pendingUpstream: true, status: 'onCourt', fromMatchUpId: 'qf' });
+    expect(headline.restMinutes).toBeUndefined();
+    // added, not substituted: Bob is still reported
+    expect(rows.find((row) => row.participantId === 'bob')?.status).toEqual('rested');
+  });
+
+  it('names the deciding matchUp rather than inventing a participant, and counts nothing for it', () => {
+    const [headline] = analyze([halfKnown(), feeder({ startTime: '13:00' })], 'sf', '13:30').rows;
+    expect(headline.participantId).toEqual('pending:qf');
+    expect(headline.participantName).toEqual('Quarterfinal: alice vs chen');
+    expect(headline.load).toEqual({ singles: 0, doubles: 0, total: 0, ordinal: 0, atLimit: [] });
+  });
+
+  it('projects readyAt through the feeder finish plus recovery', () => {
+    // started 13:00 + 90 = 14:30, + 60 recovery = 15:30
+    const [headline] = analyze([halfKnown(), feeder({ startTime: '13:00' })], 'sf', '13:20').rows;
+    expect(headline.readyAt).toEqual('15:30');
+    expect(headline.overrun).toBeUndefined();
+  });
+
+  it('withholds readyAt once the feeder has run past its projected finish', () => {
+    const [headline] = analyze([halfKnown(), feeder({ startTime: '13:00' })], 'sf', '15:00').rows;
+    expect(headline.overrun).toEqual(true);
+    expect(headline.readyAt).toBeUndefined();
+  });
+
+  it('reports a feeder that has not started yet: rest has not begun either way', () => {
+    const [headline] = analyze([halfKnown(), feeder({ scheduledTime: '13:00' })], 'sf', '11:40').rows;
+    expect(headline).toMatchObject({ pendingUpstream: true, readyAt: '15:30' });
+  });
+
+  it('adds no pending row when the feeder is already finished', () => {
+    const done = feeder({ endTime: '13:00' }, { winningSide: 1, matchUpStatus: 'COMPLETED' });
+    const { rows } = analyze([halfKnown(), done], 'sf', '13:30');
+    expect(rows.every((row) => !row.pendingUpstream)).toEqual(true);
+  });
+
+  it('adds no pending row when both sides are known', () => {
+    const target = singles('sf', ['alice', 'bob'], { scheduledTime: '14:30' });
+    const { rows } = analyze([target, feeder({ startTime: '13:00' })], 'sf', '13:30');
+    expect(rows.every((row) => !row.pendingUpstream)).toEqual(true);
+  });
+
+  it('still skips when BOTH sides are undecided: there is no rest question yet', () => {
+    const result = analyzeParticipantRest({
+      matchUps: [halfKnown({ sides: [{}, {}] }), feeder({ startTime: '13:00' })],
+      timingFor: () => TIMING,
+      scheduledDate: DAY,
+      asOfMs: at('13:30'),
+      frame: FRAME,
+      matchUpId: 'sf',
+    });
+    expect(result).toEqual({ evaluated: false, reason: 'noParticipants' });
+  });
+});
+
+describe("a doubles entrant's row carries the person's own name", () => {
+  it('names the individual, not the pair they played in', () => {
+    const pair = {
+      participantId: 'pair',
+      participant: {
+        participantId: 'pair',
+        participantName: 'Alice/Dana',
+        individualParticipantIds: ['alice', 'dana'],
+        individualParticipants: [
+          { participantId: 'alice', participantName: 'Alice' },
+          { participantId: 'dana', participantName: 'Dana' },
+        ],
+      },
+    };
+    const doubles = {
+      matchUpId: 'd',
+      matchUpType: 'DOUBLES',
+      sides: [pair, { participantId: 'other', participantName: 'Other' }],
+      schedule: { scheduledDate: DAY, scheduledTime: '14:00' },
+    } as any;
+    const names = analyze([doubles], 'd', '12:00').rows.map((row) => row.participantName);
+    expect(names).toEqual(expect.arrayContaining(['Alice', 'Dana']));
+    expect(names).not.toContain('Alice/Dana');
+  });
+});
