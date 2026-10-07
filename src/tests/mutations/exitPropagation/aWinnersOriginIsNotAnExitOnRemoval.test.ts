@@ -5,7 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -70,9 +70,14 @@ it('the census replay holds every property', () => {
 
 it("the removal leaves the matchUp undecided, and the winner's origin goes with the decision", () => {
   const before = play('winners-origin-before', steps.slice(0, 4))('Consolation|2|2');
-  // CONTROL: before the removal, side 1 holds a winner's origin naming the matchUp its participant won
-  expect(before.sideExitProvenance?.[1]?.previousMatchUpStatus).toEqual(WALKOVER);
-  expect(before.sideExitProvenance?.[1]?.matchUpStatus).toEqual(WALKOVER);
+  // CONTROL: before the removal, side 1's participant won Consolation|1|3 by walkover and advanced into a BYE.
+  // That is an arrival by result, and a BYE records none (CA, 2026-09-29: "a BYE should not carry COMPLETED
+  // provenance"). It used to record `{ WALKOVER, WALKOVER }` here, which `admissibleOn` admitted because it was
+  // indistinguishable from a carried exit; an arrival now carries no `matchUpStatus` (CA, 2026-10-07: "nothing was
+  // decided when they arrived, they were just waiting"; F9), so the BYE filter sees it for what it is.
+  expect(before.matchUpStatus).toEqual(BYE);
+  expect(before.sides.find((side: any) => side.sideNumber === 1)?.participantId).toBeDefined();
+  expect(before.sideExitProvenance?.[1]).toBeUndefined();
 
   const find = play('winners-origin', steps.slice(0, 5));
   const meeting = find('Consolation|2|2');

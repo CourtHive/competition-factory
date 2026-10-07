@@ -135,7 +135,16 @@ happened in its own feeder. `matchUp.sideExitProvenance` records those reasons, 
 `previousMatchUpStatus` is the upstream status that caused it; `matchUpStatus` is what this side was
 given as a result; `sourceMatchUpId` identifies the matchUp whose exit produced the entry.
 
-Two properties follow from what provenance _is_ — a record of where each side came from:
+Three properties follow from what provenance _is_ — a record of where each side came from:
+
+- **An arrival records no `matchUpStatus`.** A participant who won their previous matchUp — by playing
+  it, or because the opponent walked over or defaulted — arrives and waits; nothing was decided on
+  their side here, so the entry carries the origin alone:
+  `{ previousMatchUpStatus: 'DEFAULTED', sourceMatchUpId: '…' }`. Only a side on which something was
+  decided records a `matchUpStatus`: an exit carried over a loser link (the loser of that DEFAULTED,
+  whose opponent wins by default), an exit a double exit produced (nobody arrives; the exit stands
+  pending), or a BYE. Without this, the winner of a DEFAULTED and its loser carried the same entry into
+  their next matchUps, and a reader asking "does this side carry an exit?" could not tell them apart.
 
 - **An entry is never `TO_BE_PLAYED`.** A side that has not been decided has no origin, so it gets no
   entry rather than one naming a status that is not an outcome. This matters because readers test the
