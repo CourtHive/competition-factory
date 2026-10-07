@@ -1,7 +1,7 @@
+import { getPlayoffScopeStructureIds } from './getPlayoffScopeStructureIds';
 import { getFinishingPositionSourceRoundsMap } from '@Query/structure/structureUtils';
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { getPlayoffScopeStructureIds } from './getPlayoffScopeStructureIds';
 import { getPositionsPlayedOff } from './getPositionsPlayedOff';
 import { generateRange } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';

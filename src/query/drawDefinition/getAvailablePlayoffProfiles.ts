@@ -1,5 +1,5 @@
-import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getPlayoffScopeStructureIds } from './getPlayoffScopeStructureIds';
+import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getPositionsPlayedOff } from './getPositionsPlayedOff';
 import { getPositionAssignments } from './positionsGetter';
 import { getDrawStructures } from '@Acquire/findStructure';
