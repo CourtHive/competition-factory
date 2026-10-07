@@ -124,7 +124,7 @@ function seatHoldsSourceWinner({
   matchUp,
 }: {
   drawPositions?: (number | undefined)[];
-  inContextDrawMatchUps: any[];
+  inContextDrawMatchUps: HydratedMatchUp[];
   drawDefinition?: DrawDefinition;
   sourceMatchUp?: HydratedMatchUp;
   matchUp: MatchUp;
