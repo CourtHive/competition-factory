@@ -1,44 +1,25 @@
 /**
- * The single place a `matchUp.drawPositions` array is settled before it is stored.
+ * The single place a `matchUp.drawPositions` array is settled before it is stored: the positions PRESENT, ascending.
  *
- * A HOLE IS LOAD-BEARING ONLY BESIDE A SURVIVOR. `drawPositions` is positional — the three reader
- * idioms that derive a side from its order are catalogued in `getOrderedDrawPositions` — so
- * `[undefined, 5]` must keep its hole: compacting it to `[5]` moves 5 from side 2 to side 1 and
- * every one of those readers then resolves the wrong participant. That hole is deliberate.
+ * NO HOLE IS STORED (CA, 2026-10-05, Q2: `tournament.schema.json` admits no `null` in `drawPositions`). A lone
+ * survivor is stored `[5]` whatever its side; its side is read STRUCTURALLY, through the round profile, by the helpers
+ * in `getDrawPositionSides.ts` (`getSideDrawPosition`, `getDrawPositionSideNumber`, `getWinningSideDrawPosition`).
+ * The leading hole that used to hold a side-2 survivor at index 1 (`[undefined, 5]`) is gone; every reader that
+ * indexed the raw array was moved onto those helpers first (step 1, #5253) and
+ * `src/tests/mutations/drawPositionsAreReadByStructure.test.ts` holds the rest to an exact allow-list
+ * (`Mentat/planning/LEADING_HOLE_REMOVAL_DESIGN.md`, step 2).
  *
- * An array of nothing BUT holes is a different thing. It holds no side open, because there is no
- * survivor for it to hold the side open beside, and it carries no information at all. It is also
- * not a shape the engine writes anywhere else: generation already emits `[]` for a matchUp nobody
- * has reached yet (`buildRound` filters, `buildFeedRound` writes `[]`), and `pruneDrawDefinition`
- * deletes the key outright. Only the removal/substitution writers produced it.
+ * Two positions are stored ascending, and side 1 is the lower: the binding `getOrderedDrawPositions` states.
  *
- * `[]` is therefore the settled form, and it means what it says: this matchUp holds no drawPosition.
+ * `[]` means what it says: this matchUp holds no drawPosition. `addMatchUpContext` hydrates through
+ * `definedAttributes(obj, undefined, true)`, which DROPS empty arrays, so a stored `[]` is an ABSENT `drawPositions`
+ * key on the inContext matchUp, the existing shape of every unplayed downstream matchUp
+ * (`src/tests/query/matchUps/drawPositionsHydrationContract.test.ts`).
  *
- * A TRAILING hole is trimmed for the same reason: it holds side 2 open beside a survivor already on
- * side 1, which side 1 does by itself. `[5, undefined]` is stored as `[5]`.
- *
- * ## The consumer-visible consequence, stated here because it is not obvious at the call sites
- *
- * `addMatchUpContext` hydrates through `definedAttributes(obj, undefined, true)`, whose third
- * argument DROPS empty arrays — so a stored `[]` becomes an ABSENT `drawPositions` key on the
- * inContext matchUp every consumer renders from. That is already the shape of every unplayed
- * downstream matchUp in every draw, so it is the existing contract rather than a new one; see
- * `src/tests/query/matchUps/drawPositionsHydrationContract.test.ts`, which pins both halves.
- *
- * Every writer that can REMOVE or SUBSTITUTE a position must route through here.
- * `src/tests/refactoring/drawPositionsNormalizationBypass.test.ts` fails on any that does not.
- *
- * The full set of rules governing this array — uniqueness within a structure, the positional
- * binding and the three reader idioms that depend on it, fed vs advanced, and why an absent key is
- * the ordinary shape of an unplayed matchUp — is published for consumers and contributors at
- * `documentation/docs/concepts/draw-positions.md`. Keep the two in step.
+ * Every writer that can REMOVE or SUBSTITUTE a position routes through here;
+ * `src/tests/refactoring/drawPositionsNormalizationBypass.test.ts` fails on any that does not. The rules for this array
+ * are published at `documentation/docs/concepts/draw-positions.md`. Keep the two in step.
  */
 export function normalizeDrawPositions(drawPositions: (number | undefined)[]): number[] {
-  if (!drawPositions.some(Boolean)) return [];
-  // a TRAILING hole holds no side open: `[5, undefined]` and `[5]` resolve side 1 alike under every
-  // positional reader, and the hole is stored as `null`, which tournament.schema.json rejects (CA,
-  // 2026-10-02: trim it). A LEADING hole stays: it is what puts the survivor on side 2.
-  const trimmed = [...drawPositions];
-  while (trimmed.length && !trimmed[trimmed.length - 1]) trimmed.pop();
-  return trimmed as number[];
+  return drawPositions.filter((drawPosition): drawPosition is number => !!drawPosition).sort((a, b) => a - b);
 }

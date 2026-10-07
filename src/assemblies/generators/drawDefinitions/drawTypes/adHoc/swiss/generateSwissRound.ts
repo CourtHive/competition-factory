@@ -12,6 +12,7 @@ import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/dra
 import { generateSwissPairings } from './swissPairing';
 
 // Acquire
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { findExtension } from '@Acquire/findExtension';
 
@@ -69,8 +70,8 @@ export function generateSwissRound(params: GenerateSwissRoundArgs): GenerateSwis
   // the final round of qualifying matchUps (for Swiss/ad-hoc main structures that
   // can't use the standard qualifierProgression flow which requires matchUps).
   const positionParticipantIds =
-    structure.positionAssignments
-      ?.map((pa: any) => pa.participantId)
+    positionAssignmentsOf(structure)
+      ?.map((pa) => pa.participantId)
       .filter((pid: string | undefined): pid is string => !!pid) ?? [];
 
   const qualifierWinnerIds = getQualifierWinners({ drawDefinition, targetStructureId: structure.structureId });
@@ -121,7 +122,7 @@ export function generateSwissRound(params: GenerateSwissRoundArgs): GenerateSwis
     params.swissPolicy ??
     (findExtension({ element: drawDefinition, name: 'swissPolicy' })?.extension?.value as SwissPolicy | undefined);
 
-  const existingMatchUps = structure.matchUps ?? [];
+  const existingMatchUps = matchUpsOf(structure) ?? [];
 
   const { participantIdPairings, byeParticipantId } = generateSwissPairings({
     allowDraws: swissPolicy?.allowDraws,
@@ -165,14 +166,14 @@ function getQualifierWinners({
 }): string[] {
   const links = drawDefinition.links ?? [];
   const relevantLinks = links.filter(
-    (link: any) => link.linkType === WINNER && link.target?.structureId === targetStructureId,
+    (link) => link.linkType === WINNER && link.target?.structureId === targetStructureId,
   );
   const winnerIds: string[] = [];
   for (const link of relevantLinks) {
-    const sourceStructure = drawDefinition.structures?.find((s) => s.structureId === (link as any).source?.structureId);
+    const sourceStructure = drawDefinition.structures?.find((s) => s.structureId === link.source?.structureId);
     if (sourceStructure?.stage !== QUALIFYING) continue;
 
-    const sourceRound = (link as any).source?.roundNumber;
+    const sourceRound = link.source?.roundNumber;
     // roundNumber 0 is the placeholder link (no qualifying structure generated yet)
     if (!sourceRound) continue;
 
@@ -183,7 +184,7 @@ function getQualifierWinners({
       inContext: true,
     });
     for (const m of matchUps ?? []) {
-      const winningSide = m.sides?.find((s: any) => s?.sideNumber === m.winningSide);
+      const winningSide = m.sides?.find((s) => s?.sideNumber === m.winningSide);
       if (winningSide?.participantId) winnerIds.push(winningSide.participantId);
     }
   }

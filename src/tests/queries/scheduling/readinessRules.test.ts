@@ -140,9 +140,12 @@ describe('recovery — the window that has not elapsed', () => {
       scheduledTime: '09:00',
       startTime: '09:40',
     });
-    const target = matchUp('target', [player('alice'), player('chen')], { scheduledTime: '11:00' });
+    // 11:30, not 11:00: started at 09:40 the match is projected on court until 11:10, so an
+    // 11:00 start is an OVERLAP (see "overlap dates a neighbour by when it actually went on").
+    // This fixture pinned `recovery` at 11:00 only because the overlap test read the plan.
+    const target = matchUp('target', [player('alice'), player('chen')], { scheduledTime: '11:30' });
     // 09:40 + 90 average + 60 recovery = 12:10.
-    expect(analyze([earlier, target], 'target')[0]).toMatchObject({ notBefore: '12:10' });
+    expect(analyze([earlier, target], 'target')[0]).toMatchObject({ kind: 'recovery', notBefore: '12:10' });
   });
 
   it('says nothing when the window has already elapsed', () => {
@@ -248,6 +251,42 @@ describe('undetermined participants', () => {
       (finding) => finding.kind === 'undetermined',
     );
     expect(undetermined?.matchUpIds).toEqual(expect.arrayContaining(['parent', 'grand']));
+  });
+});
+
+/**
+ * A dependency's `notBefore` is when the upstream match frees the COURT; `readyAt` is when
+ * its winner could be on this one, recovery included. Ported from TMX #1459, which the TMX
+ * copy of this analysis carried and this one did not.
+ */
+describe('a dependency carries the court-free time AND when the winner could start', () => {
+  const target = (sides: any[]) => matchUp('target', sides, { scheduledTime: '10:00' });
+  const feeder = () =>
+    matchUp('feeder', [player('alice'), player('bob')], { scheduledTime: '09:00' }, { winnerMatchUpId: 'target' });
+
+  it('reports both figures, and the second is the first plus recovery', () => {
+    const [finding] = analyze([feeder(), target([{}, player('chen')])], 'target');
+    // 09:00 + 90 = 10:30 court-free; + 60 recovery = 11:30
+    expect(finding).toMatchObject({ kind: 'dependency', notBefore: '10:30', readyAt: '11:30' });
+  });
+
+  it('carries no second figure when recovery adds nothing', () => {
+    const findings = analyzeMatchUpReadiness({
+      matchUps: [feeder(), target([{}, player('chen')])],
+      matchUpId: 'target',
+      timingFor: () => ({ ...TIMING, recoveryMinutes: 0 }),
+    });
+    if (!findings.evaluated) throw new Error('expected evaluation');
+    expect(findings.findings[0]).toMatchObject({ kind: 'dependency', notBefore: '10:30' });
+    expect(findings.findings[0].readyAt).toBeUndefined();
+  });
+
+  it('gives a recovery finding no second figure: its time is already recovery-inclusive', () => {
+    const earlier = matchUp('earlier', [player('alice'), player('bob')], { scheduledTime: '09:00' });
+    const later = matchUp('later', [player('alice'), player('chen')], { scheduledTime: '11:00' });
+    const [finding] = analyze([earlier, later], 'later');
+    expect(finding.kind).toEqual('recovery');
+    expect(finding.readyAt).toBeUndefined();
   });
 });
 
@@ -421,5 +460,90 @@ describe('a target between an earlier and a later neighbour', () => {
     expect(findings[0]).toMatchObject({ kind: 'overlap' });
     expect(findings[0].matchUpIds).toEqual(['target']);
     expect(findings[0].participantIds).toEqual(['alice']);
+  });
+});
+
+/**
+ * The overlap test asks whether the neighbour is ON COURT at this start time, so it
+ * must date the neighbour by when it actually went on. It read only `scheduledTime`,
+ * while `finishOf` and the recovery gate read `startTime` first: a neighbour planned
+ * for 08:00 that went on at 10:00 is on court at 10:15, and was reported as
+ * `recovery` — the right clock, the wrong kind, about a player who is mid-match.
+ * Each case is paired with the same fixture minus the `startTime`, which is what
+ * the old anchor saw.
+ */
+describe('overlap dates a neighbour by when it actually went on', () => {
+  const target = () => matchUp('target', [player('alice'), player('chen')], { scheduledTime: '10:15' });
+
+  it('reports a neighbour that went on late, and is still on court, as an overlap', () => {
+    const late = matchUp('late', [player('alice'), player('bob')], { scheduledTime: '08:00', startTime: '10:00' });
+    const findings = analyze([late, target()], 'target');
+    expect(findings.map((finding) => finding.kind)).toEqual(['overlap']);
+    expect(findings[0].participantIds).toEqual(['alice']);
+  });
+
+  it('reports the same neighbour by its plan when no start was recorded — the control', () => {
+    // 08:00 + 90 = 09:30, so 10:15 is past the playing window but inside the recovery that follows.
+    const planned = matchUp('planned', [player('alice'), player('bob')], { scheduledTime: '08:00' });
+    expect(analyze([planned, target()], 'target')[0]).toMatchObject({ kind: 'recovery', notBefore: '10:30' });
+  });
+
+  it('reports a neighbour that went on early, and is on court at this start, as an overlap', () => {
+    const early = matchUp('early', [player('alice'), player('bob')], { scheduledTime: '10:00', startTime: '08:00' });
+    const at0900 = matchUp('target', [player('alice'), player('chen')], { scheduledTime: '09:00' });
+    expect(analyze([early, at0900], 'target').map((finding) => finding.kind)).toEqual(['overlap']);
+  });
+});
+
+/**
+ * Recovery is time owed for a match that put its players on court. A walkover put
+ * nobody there, yet `isFinished` counts it, so an earlier walkover projected a full
+ * recovery window. `getParticipantRest` and the Participant Recovery report already
+ * skip such a matchUp through `wasPlayed`; readiness was the only one of the three
+ * without it. The same predicate stops a CANCELLED neighbour — which `isFinished`
+ * does not count — from being read as an overlap.
+ */
+describe('a matchUp nobody played owes nothing', () => {
+  const target = () => matchUp('target', [player('alice'), player('chen')], { scheduledTime: '11:00' });
+  const at0900 = (extra: any) =>
+    matchUp('earlier', [player('alice'), player('bob')], { scheduledTime: '09:00' }, extra);
+
+  it('charges no recovery for an earlier walkover', () => {
+    expect(analyze([at0900({ matchUpStatus: 'WALKOVER', winningSide: 1 }), target()], 'target')).toEqual([]);
+  });
+
+  it('charges no recovery for an earlier double walkover', () => {
+    expect(analyze([at0900({ matchUpStatus: 'DOUBLE_WALKOVER' }), target()], 'target')).toEqual([]);
+  });
+
+  it('charges recovery for the same matchUp when it was played — the control', () => {
+    const played = at0900({ matchUpStatus: 'COMPLETED', winningSide: 1 });
+    expect(analyze([played, target()], 'target')[0]).toMatchObject({ kind: 'recovery', notBefore: '11:30' });
+  });
+
+  it('charges recovery for a default with a score, which was played up to the default', () => {
+    const defaulted = at0900({ matchUpStatus: 'DEFAULTED', winningSide: 1, score: { sets: [{ side1Score: 3 }] } });
+    expect(analyze([defaulted, target()], 'target')[0]).toMatchObject({ kind: 'recovery', notBefore: '11:30' });
+  });
+
+  it('charges no recovery for a default with no score, which is a no-show', () => {
+    expect(analyze([at0900({ matchUpStatus: 'DEFAULTED', winningSide: 1 }), target()], 'target')).toEqual([]);
+  });
+
+  it('does not read a cancelled neighbour as an overlap', () => {
+    const cancelled = matchUp(
+      'cancelled',
+      [player('alice'), player('bob')],
+      { scheduledTime: '10:30' },
+      {
+        matchUpStatus: 'CANCELLED',
+      },
+    );
+    expect(analyze([cancelled, target()], 'target')).toEqual([]);
+  });
+
+  it('reads the same neighbour as an overlap when it stands — the control', () => {
+    const standing = matchUp('standing', [player('alice'), player('bob')], { scheduledTime: '10:30' });
+    expect(analyze([standing, target()], 'target').map((finding) => finding.kind)).toEqual(['overlap']);
   });
 });

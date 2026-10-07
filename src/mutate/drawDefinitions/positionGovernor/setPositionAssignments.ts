@@ -33,9 +33,8 @@ export function setPositionAssignments({
     const structure = result.structure;
 
     if (!structure) return { error: STRUCTURE_NOT_FOUND };
-    const structureDrawPositions = getPositionAssignments({
-      structure,
-    }).positionAssignments?.map(({ drawPosition }) => drawPosition);
+    const recordedAssignments = getPositionAssignments({ structure }).positionAssignments;
+    const structureDrawPositions = recordedAssignments?.map(({ drawPosition }) => drawPosition);
 
     const submittedDrawPositions = positionAssignments?.map(({ drawPosition }) => drawPosition);
 
@@ -69,7 +68,7 @@ export function setPositionAssignments({
         });
         if (result?.error) return result;
       } else if (qualifier) {
-        positionAssignments.forEach((assignment) => {
+        recordedAssignments?.forEach((assignment) => {
           if (assignment.drawPosition === drawPosition) {
             assignment.qualifier = true;
             delete assignment.participantId;

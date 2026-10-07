@@ -1,8 +1,9 @@
 import { getOrderedDrawPositions } from '@Query/matchUps/getOrderedDrawPositions';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 
 // types
-import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
 
 export type DrawPositionSide = { drawPosition: number; sideNumber: number };
 
@@ -10,10 +11,9 @@ export type DrawPositionSide = { drawPosition: number; sideNumber: number };
  * Which side each of a matchUp's drawPositions is on.
  *
  * `drawPositions` alone cannot answer this while only ONE position is present. The array is
- * COMPACTED — a matchUp awaiting its second participant is stored `[4]`, not `[undefined, 4]` — so
+ * COMPACTED — a matchUp awaiting its second participant is stored `[4]`, never with a hole — so
  * `drawPositions[sideNumber - 1]` indexes past the end, and the reverse reading seats the arrival on
- * side 1 when it belongs on side 2. `documentation/docs/concepts/draw-positions.md` § 5 and § 6
- * carry the spellings and why the hole beside a survivor is load-bearing.
+ * side 1 when it belongs on side 2. `documentation/docs/concepts/draw-positions.md` § 5 and § 6.
  *
  * A subscriber holding a HYDRATED matchUp should read `sides` instead: `sideNumber` and
  * `drawPosition` are already bound there. This exists for the notice payload, which carries the
@@ -41,9 +41,9 @@ export function getDrawPositionSides({
   if (!roundNumber || !structureId || !drawDefinition?.structures?.length) return undefined;
 
   const structure = findStructure(drawDefinition.structures, structureId);
-  if (!structure?.matchUps?.length) return undefined;
+  if (!matchUpsOf(structure)?.length) return undefined;
 
-  const { roundProfile } = getRoundMatchUps({ matchUps: structure.matchUps });
+  const { roundProfile } = getRoundMatchUps({ matchUps: matchUpsOf(structure) });
   if (!roundProfile) return undefined;
 
   const { orderedDrawPositions } = getOrderedDrawPositions({
@@ -172,10 +172,11 @@ export function getDrawPositionSideNumber({
 }
 
 /** Depth first: a round robin's matchUps belong to the GROUP, not its parent. */
-function findStructure(structures: any[], structureId: string): any {
+function findStructure(structures: Structure[], structureId: string): Structure | undefined {
   for (const structure of structures ?? []) {
-    if (structure?.structures?.length) {
-      const nested = findStructure(structure.structures, structureId);
+    const contained = structuresOf(structure);
+    if (contained?.length) {
+      const nested = findStructure(contained, structureId);
       if (nested) return nested;
     }
     if (structure?.structureId === structureId) return structure;

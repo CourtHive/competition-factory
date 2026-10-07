@@ -157,7 +157,7 @@ export function progressExitStatus({
         from: updatedLoserMatchUp.matchUpId?.slice(0, 8),
         to: advancementMatchUp?.matchUpId?.slice(0, 8) ?? 'none',
       });
-      const context: any = advancementMatchUp
+      const context = advancementMatchUp
         ? { progressExitStatus: true, loserMatchUp: advancementMatchUp, loserParticipantId }
         : { progressExitStatus: true };
       return decorateResult({ result: { ...SUCCESS }, stack, context });

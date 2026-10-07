@@ -14,15 +14,14 @@ import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventTyp
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
+import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -38,13 +37,23 @@ import { nowIso } from '@Tools/clock';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
 // constants and types
-import { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  PositionAssignment,
+  Score,
+  Structure,
+  Tournament,
+} from '@Types/tournamentTypes';
 import {
   CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_WINNING_SIDE,
@@ -213,11 +222,10 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     });
   }
 
-  const targetData = positionTargets({
-    matchUpId: matchUpTieId || matchUpId,
-    inContextDrawMatchUps,
-    drawDefinition,
-  });
+  // the matchUp's targets and what depends on it; a malformed round link in either is the answer (CA, 2026-10-06)
+  const targets = getTargetsDownstream({ matchUpId: matchUpTieId || matchUpId, inContextDrawMatchUps, drawDefinition });
+  if (targets.error) return decorateResult({ result: targets, stack });
+  const { targetData, activeDownstream } = targets;
 
   Object.assign(params, {
     inContextDrawMatchUps,
@@ -237,8 +245,6 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   if (propagatedExitDownStream && isClearScore) {
     return { error: PROPAGATED_EXITS_DOWNSTREAM };
   }
-
-  const activeDownstream = isActiveDownstream(params);
 
   let dualWinningSideChange;
   if (isTeam) {
@@ -402,7 +408,16 @@ function checkCompletedRevertGuard({
   matchUp,
   score,
   event,
-}: any) {
+}: {
+  inContextMatchUp?: HydratedMatchUp;
+  matchUpStatus?: MatchUpStatusUnion;
+  drawDefinition: DrawDefinition;
+  structure?: Structure;
+  winningSide?: number;
+  matchUp: MatchUp;
+  score?: Score;
+  event?: Event;
+}) {
   if (!matchUpStatus || !REVERT_GUARDED_STATUSES.has(matchUpStatus)) return undefined;
   if (winningSide || checkScoreHasValue({ score })) return undefined;
   if (matchUp?.matchUpStatus !== COMPLETED || !matchUp?.winningSide) return undefined;
@@ -551,7 +566,8 @@ function resolveMatchUpAndContext({
    * addition of missing winner and loser matchUpIds. They are derived from the draw's own links and
    * are what it would have stored had the factory generated it.
    */
-  if (inContextDrawMatchUps) ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
+  const goesTo = inContextDrawMatchUps && ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
+  if (goesTo?.error) return goesTo;
 
   const matchUp = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
   const inContextMatchUp = inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
@@ -917,10 +933,12 @@ function winningSideWithDownstreamDependencies(params) {
     if (result.error || !relabel) return result;
     // a RELABEL with the winner already played on: nothing here directs the loser, so the exit it now
     // carries (or no longer carries) is settled on its own (CA, 2026-10-02)
-    const { context } = relabelWithoutDirection({
+    const relabelled = relabelWithoutDirection({
       matchUpId: params.matchUpId ?? matchUp.matchUpId,
       ...params,
     });
+    if (relabelled.error) return relabelled;
+    const { context } = relabelled;
     return context ? { ...result, context: { ...((result as any).context ?? {}), ...context } } : result;
   } else {
     // A double exit has no `winningSide` to change — it is the OUTCOME being changed, and naming
@@ -1033,8 +1051,16 @@ function applyMatchUpValues(params) {
  *
  * Only meaningful where exactly one side holds a participant; the caller establishes that.
  */
-export function exitAwardable({ positionAssignments, inContextMatchUp, winningSide }): boolean {
-  const winnerSide = (inContextMatchUp?.sides ?? []).find((side: any) => side?.sideNumber === winningSide);
+export function exitAwardable({
+  positionAssignments,
+  inContextMatchUp,
+  winningSide,
+}: {
+  positionAssignments?: PositionAssignment[];
+  inContextMatchUp?: HydratedMatchUp;
+  winningSide?: number;
+}): boolean {
+  const winnerSide = (inContextMatchUp?.sides ?? []).find((side) => side?.sideNumber === winningSide);
 
   /**
    * Not to the participant who is ALREADY THERE. Exactly one side holds a participant, so awarding it
@@ -1064,7 +1090,7 @@ export function exitAwardable({ positionAssignments, inContextMatchUp, winningSi
   // no drawPosition claimed: an unfilled feed slot, awaiting its arrival
   if (winnerSide?.drawPosition === undefined) return true;
 
-  const assignment = positionAssignments?.find((entry: any) => entry.drawPosition === winnerSide.drawPosition);
+  const assignment = positionAssignments?.find((entry) => entry.drawPosition === winnerSide.drawPosition);
   // an assignment that does not exist is not a phantom either — nothing is being claimed
   if (!assignment) return true;
 

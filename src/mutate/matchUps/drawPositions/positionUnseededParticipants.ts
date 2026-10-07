@@ -65,7 +65,11 @@ export function positionUnseededParticipants({
     roundTarget,
     stage,
   });
-  const unseededEntries = entries.filter((entry) => !assignedSeedParticipantIds?.includes(entry.participantId));
+  const placedParticipantIds = new Set(positionAssignments.map((assignment) => assignment.participantId));
+  const unseededEntries = entries.filter(
+    (entry) =>
+      !assignedSeedParticipantIds?.includes(entry.participantId) && !placedParticipantIds.has(entry.participantId),
+  );
   const unseededParticipantIds = unseededEntries.map((entry) => entry.participantId);
   const unfilledDrawPositions = positionAssignments
     ?.filter((assignment) => {

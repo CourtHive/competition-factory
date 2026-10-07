@@ -4,11 +4,12 @@ import { getCompetitionState } from '@Query/drawDefinition/competition/getCompet
 import { buildIndividualIdsMap } from '@Query/participants/individualParticipantIds';
 
 // Generators
-import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
+import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
 
 // Acquire
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // Helpers
 import { getPairingsData } from './getPairingsData';
@@ -118,7 +119,7 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
   if (!participantIds?.length) return { error: MISSING_PARTICIPANT_IDS };
 
   // create valueObject for each previous encounter within the structure
-  const consideredMatchUps = [...(iterationMatchUps ?? []), ...(structure?.matchUps ?? [])];
+  const consideredMatchUps = [...(iterationMatchUps ?? []), ...(matchUpsOf(structure) ?? [])];
   const { encounters } = getEncounters({ matchUps: consideredMatchUps });
 
   const tournamentParticipants = tournamentRecord?.participants ?? [];
@@ -139,13 +140,11 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
       modifiedScaleValues[pid] = pState.dynamicFormRating;
     }
   } else if (dynamicRatings) {
-    const roundNumbers: number[] = unique(
-      structure?.matchUps ? structure.matchUps.map(({ roundNumber }) => roundNumber) : [],
-    );
+    const roundNumbers: number[] = unique(matchUpsOf(structure)?.map(({ roundNumber }) => roundNumber) ?? []);
     const lastRoundNumber = Math.max(...roundNumbers, 0);
     if (lastRoundNumber) {
       // generate dynamic ratings from results of prior round matchUps
-      const matchUpIds = structure?.matchUps
+      const matchUpIds = matchUpsOf(structure)
         ?.filter(({ roundNumber }) => roundNumber === lastRoundNumber)
         .map(({ matchUpId }) => matchUpId);
       const result = generateDynamicRatings({
@@ -255,7 +254,7 @@ function getValueObjects({ encounters, tournamentParticipants, encounterValue, s
   //  'P-I-0|P-I-3': 1
   // }
 
-  const valueObjects: any = {};
+  const valueObjects: { [key: string]: number } = {};
   for (const pairing of encounters) {
     if (!valueObjects[pairing]) valueObjects[pairing] = 0;
     valueObjects[pairing] += encounterValue;

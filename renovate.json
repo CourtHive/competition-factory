@@ -3,7 +3,7 @@
   "extends": ["config:recommended", ":semanticCommits"],
   "baseBranchPatterns": ["dev"],
   "minimumReleaseAge": "3 days",
-  "rebaseWhen": "behind-base-branch",
+  "rebaseWhen": "conflicted",
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,
   "postUpdateOptions": ["pnpmDedupe"],
@@ -12,6 +12,13 @@
     "schedule": ["before 6am on monday"]
   },
   "packageRules": [
+    {
+      "description": "pnpm itself is updated through packageManager / .tool-versions, not as a devDependency, so the dev-deps group never caught it: it got its own PR, no schedule, re-run on every rebase (32 factory CI runs in a day, 2026-10-07). Minor/patch ride the Monday group; majors still arrive alone.",
+      "matchPackageNames": ["pnpm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dev dependencies (non-major)",
+      "schedule": ["before 6am on monday"]
+    },
     {
       "description": "pnpm 11.12.0 self-installer regression breaks pnpm/action-setup in CI (integrity/undefined crash). Skip only that version; other pnpm updates allowed.",
       "matchPackageNames": ["pnpm"],

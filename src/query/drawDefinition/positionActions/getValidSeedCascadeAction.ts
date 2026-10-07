@@ -5,6 +5,7 @@ import { getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { SEED_CASCADE, SEED_CASCADE_METHOD } from '@Constants/positionActionConstants';
 import { DrawDefinition, PositionAssignment, Structure } from '@Types/tournamentTypes';
 import { CONTAINER, MAIN } from '@Constants/drawDefinitionConstants';
+import { PositionAction } from './actionPolicyUtils';
 
 type GetValidSeedCascadeActionArgs = {
   positionAssignments: PositionAssignment[];
@@ -31,7 +32,7 @@ export function getValidSeedCascadeAction({
   drawPosition,
   structureId,
   drawId,
-}: GetValidSeedCascadeActionArgs): { validSeedCascadeAction?: any } {
+}: GetValidSeedCascadeActionArgs): { validSeedCascadeAction?: PositionAction } {
   // Only MAIN stage sequence 1, non-round-robin
   if (structure.stage !== MAIN || structure.stageSequence !== 1) return {};
   if (structure.structureType === CONTAINER) return {};

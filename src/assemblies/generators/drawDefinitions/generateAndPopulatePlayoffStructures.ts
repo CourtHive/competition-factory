@@ -5,6 +5,7 @@ import { NamingEntry, generatePlayoffStructures } from './drawTypes/playoffStruc
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { processPlayoffGroups } from './drawTypes/processPlayoffGroups';
@@ -14,6 +15,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { structuresOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { generateTieMatchUps } from './tieMatchUps';
@@ -25,6 +27,7 @@ import { nextPowerOf2 } from '@Tools/math';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { CONTAINER, LOSER, PLAY_OFF, TOP_DOWN } from '@Constants/drawDefinitionConstants';
+import type { PlayoffGroupConfig } from '@Validators/validatePlayoffGroups';
 import { RoundProfile, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -42,7 +45,7 @@ type GenerateAndPopulateArgs = {
   playoffPositions?: number[];
   roundOffsetLimit?: number;
   exitProfileLimit?: boolean;
-  playoffGroups?: any[];
+  playoffGroups?: PlayoffGroupConfig[];
   roundNumbers?: number[];
   structureId: string;
   idPrefix?: string;
@@ -245,7 +248,7 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     }
   }
 
-  advanceCompletedMatchUps({
+  const advanced = advanceCompletedMatchUps({
     inContextDrawMatchUps,
     sourceStructureId,
     tournamentRecord,
@@ -254,14 +257,16 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     structure,
     event,
   });
+  if (advanced?.error) return decorateResult({ result: advanced, stack });
 
-  advanceByeMatchUps({
+  const byesAdvanced = advanceByeMatchUps({
     inContextDrawMatchUps,
     sourceStructureId,
     tournamentRecord,
     drawDefinition,
     event,
   });
+  if (byesAdvanced?.error) return decorateResult({ result: byesAdvanced, stack });
 
   const matchUpModifications = buildMatchUpModifications({
     inContextDrawMatchUps,
@@ -272,6 +277,7 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     params,
     stack,
   });
+  if (!Array.isArray(matchUpModifications)) return decorateResult({ result: matchUpModifications, stack });
 
   return {
     structures: newStructures,
@@ -323,7 +329,7 @@ function resolvePlayoffParams(params: GenerateAndPopulateArgs, stack: string): a
     return { error: true, earlyReturn: decorateResult({ result: { error: STRUCTURE_NOT_FOUND }, stack }) };
   }
 
-  if (structure.structureType === CONTAINER || structure.structures) {
+  if (structure.structureType === CONTAINER || structuresOf(structure)) {
     return {
       error: true,
       earlyReturn: generateAndPopulateRRplayoffStructures({
@@ -418,7 +424,7 @@ function generatePositionBasedPlayoffs({
     drawDefinition,
   });
 
-  advanceCompletedMatchUps({
+  const advanced = advanceCompletedMatchUps({
     inContextDrawMatchUps,
     sourceStructureId,
     tournamentRecord,
@@ -427,14 +433,16 @@ function generatePositionBasedPlayoffs({
     structure,
     event,
   });
+  if (advanced?.error) return decorateResult({ result: advanced, stack });
 
-  advanceByeMatchUps({
+  const byesAdvanced = advanceByeMatchUps({
     inContextDrawMatchUps,
     sourceStructureId,
     tournamentRecord,
     drawDefinition,
     event,
   });
+  if (byesAdvanced?.error) return decorateResult({ result: byesAdvanced, stack });
 
   return {
     structures: playoffStructures,
@@ -479,13 +487,15 @@ function advanceCompletedMatchUps({
     (matchUp) => matchUpCompletion(matchUp) && matchUp.structureId === sourceStructureId,
   );
 
-  completedMatchUps?.forEach((matchUp) => {
+  for (const matchUp of completedMatchUps ?? []) {
     const { matchUpId, score, winningSide } = matchUp;
     const targetData = positionTargets({
       inContextDrawMatchUps,
       drawDefinition,
       matchUpId,
     });
+    // a malformed round link is returned; the other errors here are logged, as they were
+    if (targetData.error) return targetData;
     const result = directParticipants({
       inContextDrawMatchUps,
       tournamentRecord,
@@ -500,29 +510,45 @@ function advanceCompletedMatchUps({
       event,
     });
     if (result.error) pushGlobalLog({ method: 'generateAndPopulatePlayoffStructures', error: result.error });
-  });
+  }
+  return undefined;
 }
 
-function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tournamentRecord, drawDefinition, event }) {
+export function advanceByeMatchUps({
+  inContextDrawMatchUps,
+  sourceStructureId,
+  tournamentRecord,
+  drawDefinition,
+  event,
+}) {
   const byeMatchUps = inContextDrawMatchUps?.filter(
     (matchUp) => matchUp.matchUpStatus === BYE && matchUp.structureId === sourceStructureId,
   );
 
-  byeMatchUps?.forEach((matchUp) => {
+  for (const matchUp of byeMatchUps ?? []) {
     const { matchUpId } = matchUp;
     const targetData = positionTargets({
       inContextDrawMatchUps,
       drawDefinition,
       matchUpId,
     });
+    if (targetData.error) return targetData;
     const {
       targetLinks: { loserTargetLink },
       targetMatchUps: { loserMatchUpDrawPositionIndex, loserMatchUp },
     } = targetData;
 
-    if (loserTargetLink && loserMatchUp) {
+    // a loser target found from a link always has its drawPositions and the index into them
+    if (loserTargetLink && loserMatchUp?.drawPositions && loserMatchUpDrawPositionIndex !== undefined) {
       const targetStructureId = loserTargetLink.target.structureId;
-      const targetDrawPosition = loserMatchUp.drawPositions[loserMatchUpDrawPositionIndex];
+      // the side's position, read structurally: index 0 is side 1
+      const targetDrawPosition = getSideDrawPosition({
+        sideNumber: loserMatchUpDrawPositionIndex + 1,
+        structureId: targetStructureId,
+        matchUp: loserMatchUp,
+        drawDefinition,
+      });
+      if (!targetDrawPosition) continue;
 
       const result = assignDrawPositionBye({
         drawPosition: targetDrawPosition,
@@ -533,7 +559,8 @@ function advanceByeMatchUps({ inContextDrawMatchUps, sourceStructureId, tourname
       });
       if (result.error) pushGlobalLog({ method: 'generateAndPopulatePlayoffStructures', error: result.error });
     }
-  });
+  }
+  return undefined;
 }
 
 function buildMatchUpModifications({
@@ -546,11 +573,13 @@ function buildMatchUpModifications({
   stack,
 }) {
   const matchUpModifications: any[] = [];
-  const goesToMap = addGoesTo({
+  const goesTo = addGoesTo({
     inContextDrawMatchUps,
     drawDefinition,
     matchUpsMap,
-  }).goesToMap;
+  });
+  if (goesTo.error) return goesTo;
+  const goesToMap = goesTo.goesToMap;
 
   const { structure: sourceStructure } = findStructure({
     drawDefinition: params.drawDefinition,

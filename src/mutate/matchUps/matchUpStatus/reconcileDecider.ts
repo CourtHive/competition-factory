@@ -1,9 +1,11 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
@@ -87,11 +89,12 @@ export function reconcileDecider({
 
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
-  const final: any = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
+  const final = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
   if (!final || final.collectionId || final.winningSide === winningSideBefore) return { ...SUCCESS };
 
-  const { winnerMatchUp, loserMatchUp } =
-    positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId })?.targetMatchUps ?? {};
+  const targetData = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
+  if (targetData.error) return decorateResult({ result: targetData, stack: 'reconcileDecider' });
+  const { winnerMatchUp, loserMatchUp } = targetData.targetMatchUps ?? {};
   const feedsOneMatchUp = winnerMatchUp?.matchUpId && winnerMatchUp.matchUpId === loserMatchUp?.matchUpId;
   if (!feedsOneMatchUp || winnerMatchUp.structureId === final.structureId) return { ...SUCCESS };
 
@@ -99,7 +102,7 @@ export function reconcileDecider({
   if (!decider) return { ...SUCCESS };
 
   const participantOn = (sideNumber?: number) =>
-    (final.sides ?? []).find((side: any) => side.sideNumber === sideNumber)?.participantId;
+    (final.sides ?? []).find((side) => side.sideNumber === sideNumber)?.participantId;
   const winnerId = participantOn(final.winningSide);
   const loserId = final.winningSide ? participantOn(3 - final.winningSide) : undefined;
 
@@ -109,12 +112,12 @@ export function reconcileDecider({
 
   const lossesOutsideTheDecider = (participantId?: string) =>
     inContextDrawMatchUps.filter(
-      (matchUp: any) =>
+      (matchUp) =>
         matchUp.matchUpId !== decider.matchUpId &&
         !matchUp.collectionId &&
         matchUp.winningSide &&
         (matchUp.sides ?? []).some(
-          (side: any) => side.participantId === participantId && side.sideNumber !== matchUp.winningSide,
+          (side) => side.participantId === participantId && side.sideNumber !== matchUp.winningSide,
         ),
     ).length;
   const needed = !!loserId && lossesOutsideTheDecider(loserId) < 2;
@@ -155,7 +158,7 @@ export function reconcileDecider({
  */
 export function getDeciderFinals(drawDefinition?: DrawDefinition): Map<string, number | undefined> {
   const finals = new Map<string, number | undefined>();
-  const links: any[] = drawDefinition?.links ?? [];
+  const links = drawDefinition?.links ?? [];
 
   for (const winnerLink of links.filter((link) => link.linkType === WINNER)) {
     const { structureId, roundNumber } = winnerLink.source ?? {};
@@ -170,7 +173,7 @@ export function getDeciderFinals(drawDefinition?: DrawDefinition): Map<string, n
     if (!feedsBoth || targetStructureId === structureId) continue;
 
     const { structure } = findStructure({ drawDefinition, structureId });
-    for (const matchUp of structure?.matchUps ?? []) {
+    for (const matchUp of matchUpsOf(structure) ?? []) {
       if (matchUp.roundNumber === roundNumber) finals.set(matchUp.matchUpId, matchUp.winningSide);
     }
   }

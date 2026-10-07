@@ -39,7 +39,7 @@ export function generateConsolationStructure({
   matchUpFormat,
   matchUpType,
 }: GenerateConsolationArgs) {
-  const generatorParams: any = {
+  const generatorParams = {
     stage: CONSOLATION,
     stageSequence: 1,
     structureName: structureName || constantToString(CONSOLATION),

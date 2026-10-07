@@ -287,6 +287,13 @@ See [Policies](../concepts/policies.md).
 engine.automatedPositioning({ drawId, structureId });
 ```
 
+Since 7.7.0 anything positioning refuses is returned as a real `{ error }` — `INSUFFICIENT_DRAW_POSITIONS`,
+`NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS`, `LUCKY_DRAW_BYE_LIMIT`, … — where it used to be decorated
+into a success. Re-running on a positioned structure succeeds and returns the existing assignments;
+`automatedPlayoffPositioning` returns no entry for AD_HOC playoff structures. Qualifiers are placed in
+the structure and refused, not partially placed, when they do not fit; later-round qualifiers are placed
+before first-round ones; a standalone `PAGE_PLAYOFF` positions both entry structures.
+
 ---
 
 ## autoSeeding
@@ -415,6 +422,12 @@ const { drawDefinition } = engine.generateDrawDefinition({
 ```
 
 **Purpose:** Core draw generation method.
+
+Since 7.7.0 a draw whose direct entries and reserved qualifiers exceed its `drawSize` is refused with
+`{ error: INSUFFICIENT_DRAW_POSITIONS, context }` (it used to return a draw with nobody positioned), a
+draw's `qualifiersCount` reserves no positions in the qualifying structure, and a round link that cannot
+be read is reported as an error rather than thrown. A malformed `drawName` is refused by `modifyDrawDefinition`
+as `{ error }` rather than read as success.
 
 ---
 
@@ -968,6 +981,8 @@ engine.pruneDrawDefinition({
 
 **Purpose:** Clean up draw by removing unused structures.
 
+A round robin draw is never listed as prunable by `analyzeDraws` and is returned unchanged here (7.7.0).
+
 ---
 
 ## findDrawDefinition
@@ -1137,6 +1152,11 @@ engine.resetDrawDefinition({
 engine.resetQualifyingStructure({ structureId, drawId });
 ```
 
+A round robin qualifying structure is read through its groups (7.7.0): the reset is refused when a group
+matchUp holds a score, every group matchUp is notified, and the container is emptied. The same reading
+applies to `removeStructure`, `getTournamentInfo`, `generateVoluntaryConsolation` and draw generation
+after a round robin qualifying-only draw, which no longer deletes the qualifying structure.
+
 --
 
 ## resetVoluntaryConsolationStructure
@@ -1192,6 +1212,10 @@ result = engine.setPositionAssignments({
   drawId,
 });
 ```
+
+Since 7.7.0 a qualifier in the submitted assignments is placed in the **structure's** assignments (the
+caller's array is left as given); before, the qualifier branch marked the submitted array and the engine
+reported success with no qualifier in the structure.
 
 ---
 

@@ -12,6 +12,7 @@ import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
 import { getDrawPositionsRanges } from './getDrawPositionsRanges';
 import { getRoundContextProfile } from './getRoundContextProfile';
+import { structuresOf } from '@Acquire/structureMembers';
 import { addMatchUpContext } from './addMatchUpContext';
 import { filterMatchUps } from '@Query/filterMatchUps';
 import { getRoundMatchUps } from './getRoundMatchUps';
@@ -175,7 +176,7 @@ export function getAllStructureMatchUps(params: GetAllStructureMatchUps) {
       .reduce((a, b) => a + b, 0) ||
       0);
 
-  const isRoundRobin = !!structure.structures;
+  const isRoundRobin = !!structuresOf(structure);
 
   let matchUps = getMappedStructureMatchUps({
     matchUpsMap,

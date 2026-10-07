@@ -1,9 +1,10 @@
 import { getDrawPositionWinCount, isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
 
 // constants and types
-import { DrawDefinition, MatchUpStatusUnion } from '@Types/tournamentTypes';
+import { DrawDefinition, MatchUp, MatchUpStatusUnion, Score, Structure } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP, LOSER } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * Refuse a re-score that would change the feed eligibility of a loser who has ALREADY been directed.
@@ -45,8 +46,8 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
  * the re-sort was added alongside this. Reading through `sides` cannot be wrong either way, because
  * `getOrderedDrawPositions` resolves the binding itself.
  */
-function sideDrawPosition(matchUp: any, sideNumber?: number): number | undefined {
-  const side = (matchUp?.sides ?? []).find((candidate: any) => candidate?.sideNumber === sideNumber);
+function sideDrawPosition(matchUp: HydratedMatchUp | undefined, sideNumber?: number): number | undefined {
+  const side = (matchUp?.sides ?? []).find((candidate) => candidate?.sideNumber === sideNumber);
   return typeof side?.drawPosition === 'number' ? side.drawPosition : undefined;
 }
 
@@ -59,13 +60,13 @@ export function feedEligibilityChange({
   matchUp,
   score,
 }: {
-  inContextDrawMatchUps?: any[];
+  inContextDrawMatchUps?: HydratedMatchUp[];
   drawDefinition?: DrawDefinition;
   matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
-  structure?: any;
-  matchUp?: any;
-  score?: any;
+  structure?: Structure;
+  matchUp?: MatchUp;
+  score?: Score;
 }): { participantDrawPosition: number; sourceRoundMatchUpId?: string } | undefined {
   // a collection matchUp (a rubber inside a tie) has no drawPositions, so no count can depend on it
   if (!matchUp || matchUp.collectionId) return undefined;
@@ -75,7 +76,7 @@ export function feedEligibilityChange({
   if (winningSide !== matchUp.winningSide) return undefined;
 
   const feedLink = (drawDefinition?.links ?? []).find(
-    (link: any) =>
+    (link) =>
       link?.linkType === LOSER &&
       link?.linkCondition === FIRST_MATCHUP &&
       link?.source?.structureId === structure?.structureId,
@@ -84,15 +85,15 @@ export function feedEligibilityChange({
 
   // Only rounds BEFORE the feeding round contribute prior wins. The feeding round itself decides who
   // the loser IS, which is a different question and a different guard.
-  const feedingRoundNumber = (feedLink as any).source?.roundNumber;
+  const feedingRoundNumber = feedLink.source?.roundNumber;
   if (!feedingRoundNumber || (matchUp.roundNumber ?? 0) >= feedingRoundNumber) return undefined;
 
   const structureMatchUps = (inContextDrawMatchUps ?? []).filter(
-    (candidate: any) => candidate.structureId === structure?.structureId && !candidate.collectionId,
+    (candidate) => candidate.structureId === structure?.structureId && !candidate.collectionId,
   );
 
   // sides come from the inContext projection, where the side/position binding is already resolved
-  const inContextSource = structureMatchUps.find((candidate: any) => candidate.matchUpId === matchUp.matchUpId);
+  const inContextSource = structureMatchUps.find((candidate) => candidate.matchUpId === matchUp.matchUpId);
   const winnerDrawPosition = sideDrawPosition(inContextSource, matchUp.winningSide);
   if (typeof winnerDrawPosition !== 'number') return undefined;
 
@@ -100,7 +101,7 @@ export function feedEligibilityChange({
   // round matchUp they reached has been decided AND they are its loser — a participant who won it
   // never fed, and one whose matchUp is undecided has nothing to un-decide.
   const feedingMatchUp = structureMatchUps.find(
-    (candidate: any) =>
+    (candidate) =>
       candidate.roundNumber === feedingRoundNumber && candidate.drawPositions?.includes(winnerDrawPosition),
   );
   if (!feedingMatchUp?.winningSide) return undefined;
@@ -112,11 +113,9 @@ export function feedEligibilityChange({
    * decides it. With another scored win in hand the participant is ineligible either way, and the
    * correction changes nothing downstream.
    */
-  const priorRoundMatchUps = structureMatchUps.filter(
-    (candidate: any) => (candidate.roundNumber ?? 0) < feedingRoundNumber,
-  );
+  const priorRoundMatchUps = structureMatchUps.filter((candidate) => (candidate.roundNumber ?? 0) < feedingRoundNumber);
   const otherWins = getDrawPositionWinCount({
-    sourceMatchUps: priorRoundMatchUps.filter((candidate: any) => candidate.matchUpId !== matchUp.matchUpId) as any,
+    sourceMatchUps: priorRoundMatchUps.filter((candidate) => candidate.matchUpId !== matchUp.matchUpId),
     drawPosition: winnerDrawPosition,
   });
   if (otherWins > 0) return undefined;

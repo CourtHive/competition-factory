@@ -39,6 +39,12 @@ function buildCSV(points: MCPPoint[]): string {
   return lines.join('\n');
 }
 
+// A single point that, by its before-point columns, closes a 6-0 set: 5-0 up, 40-0, server wins it.
+// The replay of that one point reaches 0-0, so the charted score and the replay disagree.
+function makeSetClosingPoint(overrides: Partial<MCPPoint> = {}): MCPPoint {
+  return makeMCPPoint({ Set1: '0', Set2: '0', Gm1: '5', Gm2: '0', Pts: '40-0', Svr: '1', PtWinner: '1', ...overrides });
+}
+
 // Helper to make a minimal MCPMatch
 function makeMCPMatch(overrides: Partial<MCPMatch> = {}): MCPMatch {
   return {
@@ -131,24 +137,24 @@ describe('mcpValidator - Branch Coverage', () => {
       expect(result.expectedScore).toBeUndefined();
     });
 
-    it('should construct expected score from Set1 and Set2', () => {
-      const point = makeMCPPoint({ Set1: '6', Set2: '4' });
+    it('should read the expected score from the games at each set end, not from Set1/Set2', () => {
+      // Set1/Set2 are sets won: a point charted at 1-0 in sets with 5-0, 40-0 closes a second set 6-0
+      const point = makeSetClosingPoint({ Set1: '1', Set2: '0' });
       const match = makeMCPMatch({ points: [point] });
 
       const result = validateMCPMatch(match, { matchUpFormat: 'SET3-S:6/TB7' });
-      expect(result.expectedScore).toBeDefined();
-      expect(result.expectedScore).toContain('6-4');
+      expect(result.expectedScore).toBe('6-0');
     });
 
-    it('should handle points with Set3/Set4/Set5 properties', () => {
-      const point = makeMCPPoint({ Set1: '6', Set2: '4' });
+    it('should ignore Set3/Set4/Set5 columns, which MCP does not have', () => {
+      const point = makeSetClosingPoint();
       (point as any).Set3 = '7';
       (point as any).Set4 = '6';
       (point as any).Set5 = '3';
 
       const match = makeMCPMatch({ points: [point] });
       const result = validateMCPMatch(match, { matchUpFormat: 'SET5-S:6/TB7' });
-      expect(result.expectedScore).toBeDefined();
+      expect(result.expectedScore).toBe('6-0');
     });
   });
 
@@ -165,13 +171,14 @@ describe('mcpValidator - Branch Coverage', () => {
     });
 
     it('should deduce format from expected score when available', () => {
-      const point = makeMCPPoint({ Set1: '6', Set2: '4' });
+      const point = makeSetClosingPoint();
       const match = makeMCPMatch({ points: [point] });
 
-      // No provided format => deduces from expected score "6-4"
+      // No provided format => deduces from expected score "6-0"
       const result = validateMCPMatch(match);
       expect(result.formatDeduced).toBe(true);
-      expect(result.expectedScore).toBeDefined();
+      expect(result.expectedScore).toBe('6-0');
+      expect(result.matchUp.matchUpFormat).toBe('SET3-S:6/TB7');
     });
 
     it('should use default format when no expected score and no provided format', () => {
@@ -189,7 +196,7 @@ describe('mcpValidator - Branch Coverage', () => {
   // ========================================================================
   describe('validateMCPMatch debug mode', () => {
     it('should run with debug=true and deduced format from expected score', () => {
-      const point = makeMCPPoint({ Set1: '6', Set2: '4' });
+      const point = makeSetClosingPoint();
       const match = makeMCPMatch({ points: [point] });
 
       const result = validateMCPMatch(match, { debug: true });
@@ -284,7 +291,7 @@ describe('mcpValidator - Branch Coverage', () => {
   // ========================================================================
   describe('validateMCPMatch score validation', () => {
     it('should skip score validation when validateScore is false', () => {
-      const point = makeMCPPoint({ Set1: '6', Set2: '4' });
+      const point = makeSetClosingPoint();
       const match = makeMCPMatch({ points: [point] });
 
       const result = validateMCPMatch(match, { validateScore: false, matchUpFormat: 'SET3-S:6/TB7' });
@@ -292,16 +299,16 @@ describe('mcpValidator - Branch Coverage', () => {
     });
 
     it('should detect score mismatch when expected differs from actual', () => {
-      const point = makeMCPPoint({ Set1: '6', Set2: '4' });
+      const point = makeSetClosingPoint();
       const match = makeMCPMatch({ points: [point] });
 
       const result = validateMCPMatch(match, { validateScore: true, matchUpFormat: 'SET3-S:6/TB7' });
       expect(result.scoreMatches).toBe(false);
-      expect(result.errors.some((e) => e.includes('Score mismatch'))).toBe(true);
+      expect(result.errors).toEqual(['Score mismatch: expected "6-0", got "0-0"']);
     });
 
     it('should validate score with debug enabled', () => {
-      const point = makeMCPPoint({ Set1: '6', Set2: '4' });
+      const point = makeSetClosingPoint();
       const match = makeMCPMatch({ points: [point] });
 
       const result = validateMCPMatch(match, { validateScore: true, debug: true, matchUpFormat: 'SET3-S:6/TB7' });
@@ -529,10 +536,10 @@ describe('mcpValidator - Branch Coverage', () => {
     });
 
     it('should accumulate errors from invalid matches', () => {
-      const point = makeMCPPoint({ Set1: '6', Set2: '4' });
+      const point = makeSetClosingPoint();
       const csvData = buildCSV([point]);
 
-      // Will have score mismatch: expected "6-4" but only 1 point played
+      // Will have score mismatch: expected "6-0" but only 1 point played
       const result = mcpValidator({ csvData, matchUpFormat: 'SET3-S:6/TB7' });
       expect(result.valid).toBe(false);
     });

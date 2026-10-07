@@ -1,6 +1,11 @@
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { extensionConstants } from '@Constants/extensionConstants';
+import { factoryVersion } from '@Functions/global/factoryVersion';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { validDateString } from '@Validators/regex';
 import { isISODateString } from '@Tools/dateTime';
+import { nowMs } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
 import { isValidIANATimeZone } from '@Tools/timeZone';
@@ -43,6 +48,19 @@ export function createTournamentRecord(params): any {
 
   if (attributes.extensions) {
     attributes.extensions = attributes.extensions.filter(isValidExtension);
+  }
+
+  // the creating factory is on file from the start; every later write refreshes `version` and keeps `createdVersion`.
+  // A `factory` the caller supplies is history and is kept as given, never backfilled.
+  const { FACTORY } = extensionConstants;
+  if (!firstClassOrExtension({ element: attributes, attribute: 'factory', name: FACTORY })) {
+    const version = factoryVersion();
+    setFirstClassOrExtension({
+      value: { createdVersion: version, version, timeStamp: nowMs() },
+      element: attributes,
+      attribute: 'factory',
+      name: FACTORY,
+    });
   }
 
   return { ...attributes };

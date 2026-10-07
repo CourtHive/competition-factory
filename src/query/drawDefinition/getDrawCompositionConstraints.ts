@@ -14,6 +14,13 @@ export type DrawCompositionConstraints = {
   maxQualifiers?: number;
 };
 
+// one event's entry in the sanctioning constraints extension: how it is matched, and what it constrains
+type SanctionedEventConstraints = DrawCompositionConstraints & {
+  category?: { categoryName?: string };
+  eventName?: string;
+  eventType?: string;
+};
+
 type GetDrawCompositionConstraintsArgs = {
   tournamentRecord?: Tournament;
   event?: Event;
@@ -34,13 +41,13 @@ export function getDrawCompositionConstraints({ tournamentRecord, event }: GetDr
     name: SANCTIONING_CONSTRAINTS,
   });
 
-  const sanctioningConstraints = extension?.value;
+  const sanctioningConstraints: { events?: SanctionedEventConstraints[] } | undefined = extension?.value;
   if (!sanctioningConstraints?.events?.length) return {};
 
   // Match by event metadata
   const eventConstraints = event
     ? sanctioningConstraints.events.find(
-        (ec: any) =>
+        (ec) =>
           ec.eventType === event.eventType &&
           (!ec.eventName || ec.eventName === event.eventName) &&
           (!ec.category?.categoryName || ec.category?.categoryName === event.category?.categoryName),

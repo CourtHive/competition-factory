@@ -9,12 +9,13 @@ import { uniqueValues } from '@Tools/arrays';
 
 // constants and types
 import { INVALID_MATCHUP_STATUS, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 type SetOrderOfFinishArgs = {
   /** Supplied so notices can carry the sanctioning origin; resolved by paramsMiddleware. */
-  event?: any;
+  event?: Event;
   finishingOrder: { matchUpId: string; orderOfFinish: number }[];
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
@@ -41,8 +42,13 @@ export function setOrderOfFinish({ tournamentRecord, drawDefinition, finishingOr
 
   const { matchUpTypes, roundNumbers, structureIds, matchUpTieIds } = (completedMatchUps ?? [])
     .filter(({ matchUpId }) => targetMatchUpIds.includes(matchUpId))
-    .reduce(
-      (aggregator: any, matchUp) => {
+    .reduce<{
+      matchUpTypes: HydratedMatchUp['matchUpType'][];
+      roundNumbers: HydratedMatchUp['roundNumber'][];
+      structureIds: HydratedMatchUp['structureId'][];
+      matchUpTieIds: HydratedMatchUp['matchUpTieId'][];
+    }>(
+      (aggregator, matchUp) => {
         const { matchUpTieId, matchUpType, roundNumber, structureId } = matchUp;
         if (!aggregator.matchUpTypes.includes(matchUpType)) aggregator.matchUpTypes.push(matchUpType);
         if (!aggregator.roundNumbers.includes(roundNumber)) aggregator.roundNumbers.push(roundNumber);

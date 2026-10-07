@@ -174,13 +174,16 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
   };
 
   if (nextMatchUps) {
-    const nextFilter: any = typeof nextMatchUps === 'object' || {
-      abandoned: true,
-      completed: true,
-      upcoming: true,
-      pending: true,
-      bye: true,
-    };
+    const nextFilter: any =
+      typeof nextMatchUps === 'object'
+        ? nextMatchUps
+        : {
+            abandoned: true,
+            completed: true,
+            upcoming: true,
+            pending: true,
+            bye: true,
+          };
     const { abandoned, completed, upcoming, pending, bye } = nextFilter;
     const matchUps = [].concat(
       ...((abandoned && allAbandonedMatchUps) ?? []),

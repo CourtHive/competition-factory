@@ -2,15 +2,17 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { overlap } from '@Tools/arrays';
 
-// constants
+// constants and types
+import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION, STRUCTURE_ID } from '@Constants/attributeConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
+import { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
 type GetRoundLinksArgs = {
   roundNumber?: number;
   structureId: string;
-  drawDefinition: any;
+  drawDefinition: DrawDefinition;
 };
 
 // Return links which govern movement for a given matchUp either as a source or a target
@@ -34,13 +36,21 @@ export function getRoundLinks({
 }
 
 type GetTargetLinkArgs = {
-  finishingPositions?: any;
+  finishingPositions?: number[];
   linkCondition?: string;
   linkType?: string;
-  source: any[];
+  source: DrawLink[];
 };
 
-export function getTargetLink({ finishingPositions, linkCondition, linkType, source }: GetTargetLinkArgs) {
+/** what `getTargetLink` returns for a WINNER or LOSER link with no source round: an error, never a link */
+export type TargetLinkError = ResultType & { error: ErrorType };
+
+export function getTargetLink({
+  finishingPositions,
+  linkCondition,
+  linkType,
+  source,
+}: GetTargetLinkArgs): DrawLink | TargetLinkError | undefined {
   const result = source.find((link) => {
     const positionCondition =
       !link.source?.finishingPositions ||
@@ -50,12 +60,11 @@ export function getTargetLink({ finishingPositions, linkCondition, linkType, sou
     return condition && positionCondition && link.linkType === linkType;
   });
 
-  if ([WINNER, LOSER].includes(result?.linkType) && !result?.source?.roundNumber) {
-    return decorateResult({
-      result: { error: INVALID_VALUES },
-      stack: 'getTargetLink',
-      context: result,
-    });
+  if (result && [WINNER, LOSER].includes(result.linkType) && !result.source?.roundNumber) {
+    return {
+      ...decorateResult({ result: { error: INVALID_VALUES }, stack: 'getTargetLink', context: result }),
+      error: INVALID_VALUES,
+    };
   }
   return result;
 }
@@ -63,7 +72,7 @@ export function getTargetLink({ finishingPositions, linkCondition, linkType, sou
 type GetStructureLinksArgs = {
   roundNumber?: number;
   structureId: string;
-  drawDefinition: any;
+  drawDefinition: DrawDefinition;
 };
 
 // Returns all links for which a structure is either a source or a target; optionally filter by roundNumber
@@ -75,7 +84,7 @@ export function getStructureLinks({
   const paramsCheck = requireParams({ drawDefinition, structureId }, [DRAW_DEFINITION, STRUCTURE_ID]);
   if (paramsCheck.error) return paramsCheck;
   const links = drawDefinition.links ?? [];
-  const structureLinks = links.filter(Boolean).reduce(
+  const structureLinks = links.filter(Boolean).reduce<{ source: DrawLink[]; target: DrawLink[] }>(
     (structureLinks, link) => {
       if (link.source?.structureId === structureId && (!roundNumber || link.source.roundNumber === roundNumber))
         structureLinks.source = structureLinks.source.concat(link);
@@ -89,7 +98,7 @@ export function getStructureLinks({
 }
 
 type GetWinnerLinkRoundNumbersArgs = {
-  drawDefinition?: any;
+  drawDefinition?: DrawDefinition;
   structureId?: string;
 };
 

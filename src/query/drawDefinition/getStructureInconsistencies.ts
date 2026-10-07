@@ -1,9 +1,12 @@
+import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLinkAdvancements';
+import { getByeCrossings } from '@Query/drawDefinition/getByeCrossings';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import {
   isPropagatedExit as sharedIsPropagatedExit,
   getSideExitProvenance,
+  arrivedByResult,
   getExitSides,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -12,6 +15,7 @@ import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tourname
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   DOUBLE_WALKOVER,
@@ -42,6 +46,12 @@ import {
 //    is the one advancement invariant that has to start from the positionAssignment
 //    instead. Bye-vs-bye and bye-vs-empty are excluded — neither has a participant whose
 //    absence would mean anything.
+//  - BYE_ADVANCEMENT_MISSING_ACROSS_LINK: the participant opposite a BYE at the source round of a
+//    cross-structure WINNER link is absent from the link's target, which is still undecided. The
+//    within-structure check above stops at the structure; the settle that performs this crossing
+//    (`crossLinksThroughByes`) and this check share one predicate, `getByeCrossing`, so a crossing
+//    the engine owes and has not made is exactly what is reported (census w2 9100389: a
+//    DOUBLE_ELIMINATION Backdraw champion stranded beside a propagated BYE scored clean).
 //  - PROPAGATED_EXIT_LOST: the matchUp carries NATIVE exit provenance — the cascade's own
 //    record that an exit was delivered to one of its sides — while its matchUpStatus says
 //    no exit happened and no winner was awarded. The record and the status contradict each
@@ -69,6 +79,23 @@ import {
 //  - EXIT_WITHOUT_LOSER: a single WALKOVER/DEFAULTED with a winningSide whose LOSING
 //    side holds no participant — a walkover with nobody who walked over (an orphaned
 //    exit). A pending exit is not flagged: there the loser side holds the exit carrier.
+//  - ADVANCED_FROM_UNDECIDED: a participant stands in a later round although the matchUp that
+//    delivered their drawPosition (the latest earlier round in the same structure holding it) has no
+//    result: no winningSide, TO_BE_PLAYED, no BYE. Every winner-rooted check above starts from a decided
+//    matchUp, so an advancement left behind when its result was withdrawn is invisible to all of them
+//    (census w2 9100343, 2026-10-04: a walkover re-scored to the other winner left its winner one round
+//    on; #5157 fixed that release).
+//  - ADVANCED_ACROSS_LINK_FROM_UNDECIDED: a participant stands in a link's target structure, at or after the
+//    target round, although the source-round matchUp they play in has no result. Advancing across a WINNER or
+//    LOSER link means that matchUp was decided; ADVANCED_FROM_UNDECIDED reads only within a structure, so an
+//    advancement left behind across a link was invisible to every check (design § 3.1: clearing `Backdraw|3|1`
+//    left its finalist in the grand final and the Decider, and the draw read clean; CA approved the check
+//    2026-10-05).
+//  - TWO_POSITIONS_FROM_ONE_FEEDER: both drawPositions of a matchUp were delivered by the same earlier matchUp
+//    in the structure, which sends exactly one on. A BYE holder whose other seat was empty advanced its lone
+//    position, and a participant passing the BYE later was added beside it (census w2 9100198, Consolation|5|1
+//    [1, 3]); the next arrival then evicted one of the two. A round a link feeds is not checked: a position fed
+//    across the link keeps its own number there (DOUBLE_ELIMINATION's Main final, a rematch of the semifinal).
 //  - DRAW_POSITION_UNASSIGNED: a decided, non-exit matchUp references a drawPosition
 //    whose stored positionAssignment holds no participant, no bye and no qualifier — a
 //    phantom position. Read from STORED structure state (drawPositions ↔
@@ -81,6 +108,7 @@ export const WINNING_SIDE_WITHOUT_PARTICIPANT = 'WINNING_SIDE_WITHOUT_PARTICIPAN
 export const WINNING_SIDE_ADVANCEMENT_MISMATCH = 'WINNING_SIDE_ADVANCEMENT_MISMATCH';
 export const WINNER_NOT_ADVANCED = 'WINNER_NOT_ADVANCED';
 export const BYE_ADVANCEMENT_MISSING = 'BYE_ADVANCEMENT_MISSING';
+export const BYE_ADVANCEMENT_MISSING_ACROSS_LINK = 'BYE_ADVANCEMENT_MISSING_ACROSS_LINK';
 export const DRAW_POSITION_UNASSIGNED = 'DRAW_POSITION_UNASSIGNED';
 export const DRAW_POSITIONS_NOT_SORTED = 'DRAW_POSITIONS_NOT_SORTED';
 export const EXIT_CODE_ON_WINNER_SIDE = 'EXIT_CODE_ON_WINNER_SIDE';
@@ -89,6 +117,9 @@ export const PROPAGATED_EXIT_LOST = 'PROPAGATED_EXIT_LOST';
 export const UNCOLLAPSED_CONVERGENCE = 'UNCOLLAPSED_CONVERGENCE';
 export const STALLED_POSITION = 'STALLED_POSITION';
 export const ORIGIN_ON_UNDECIDED_MATCHUP = 'ORIGIN_ON_UNDECIDED_MATCHUP';
+export const ADVANCED_FROM_UNDECIDED = 'ADVANCED_FROM_UNDECIDED';
+export const ADVANCED_ACROSS_LINK_FROM_UNDECIDED = 'ADVANCED_ACROSS_LINK_FROM_UNDECIDED';
+export const TWO_POSITIONS_FROM_ONE_FEEDER = 'TWO_POSITIONS_FROM_ONE_FEEDER';
 
 // DEFERRED — STALE_EXIT_STATUS is intentionally NOT implemented.
 //
@@ -272,6 +303,139 @@ function getByeAdvancementInconsistency(
 }
 
 /**
+ * ADVANCED_FROM_UNDECIDED — see the header. Positions are read per side; a position first appearing in this
+ * round (an initial or fed slot) has no feeder and is skipped, and so is a feeder holding a BYE (a BYE
+ * advancement is structural, not a result) or carrying any status other than TO_BE_PLAYED (an exit, pending or
+ * awarded, or a BYE, is not "undecided" for this purpose).
+ */
+function getAdvancedFromUndecidedInconsistencies(
+  matchUp: HydratedMatchUp,
+  structureMatchUps: HydratedMatchUp[],
+): StructureInconsistency[] {
+  const found: StructureInconsistency[] = [];
+  const roundNumber = matchUp.roundNumber ?? 0;
+  for (const side of matchUp.sides ?? []) {
+    if (!side?.participantId || !side.drawPosition) continue;
+    const feeder = feederOf(side.drawPosition, roundNumber, structureMatchUps);
+    if (!feeder || feeder.winningSide) continue;
+    if (feeder.matchUpStatus && feeder.matchUpStatus !== TO_BE_PLAYED) continue;
+    if ((feeder.sides ?? []).some((feederSide) => feederSide?.bye)) continue;
+    found.push({
+      matchUpId: matchUp.matchUpId,
+      structureId: matchUp.structureId,
+      issueType: ADVANCED_FROM_UNDECIDED,
+      message: 'a participant stands in this matchUp although the matchUp that delivered them has no result',
+      participantId: side.participantId,
+      drawPosition: side.drawPosition,
+      feederMatchUpId: feeder.matchUpId,
+    });
+  }
+  return found;
+}
+
+/** the latest matchUp of an earlier round in the same structure that holds `drawPosition`: the one that delivered it */
+function feederOf(
+  drawPosition: number,
+  roundNumber: number,
+  structureMatchUps: HydratedMatchUp[],
+): HydratedMatchUp | undefined {
+  return structureMatchUps
+    .filter(
+      (candidate) => (candidate.roundNumber ?? 0) < roundNumber && candidate.drawPositions?.includes(drawPosition),
+    )
+    .reduce<HydratedMatchUp | undefined>(
+      (latest, candidate) => (!latest || (candidate.roundNumber ?? 0) > (latest.roundNumber ?? 0) ? candidate : latest),
+      undefined,
+    );
+}
+
+/**
+ * TWO_POSITIONS_FROM_ONE_FEEDER — see the header. Both of a matchUp's positions were delivered by the SAME earlier
+ * matchUp, which sends one on. A fed position appears first in this round and has no feeder, so it is never counted.
+ */
+function getTwoFromOneFeederInconsistency(
+  matchUp: HydratedMatchUp,
+  structureMatchUps: HydratedMatchUp[],
+): StructureInconsistency | undefined {
+  const positions = (matchUp.drawPositions ?? []).filter((position): position is number => !!position);
+  if (positions.length !== 2 || !matchUp.roundNumber) return undefined;
+  const [first, second] = positions.map((position) => feederOf(position, matchUp.roundNumber ?? 0, structureMatchUps));
+  if (!first || first.matchUpId !== second?.matchUpId) return undefined;
+  return {
+    matchUpId: matchUp.matchUpId,
+    structureId: matchUp.structureId,
+    issueType: TWO_POSITIONS_FROM_ONE_FEEDER,
+    message: 'both drawPositions of this matchUp were delivered by the same earlier matchUp, which sends one on',
+    drawPositions: positions,
+    feederMatchUpId: first.matchUpId,
+  };
+}
+
+function getAllAdvancedFromUndecided(
+  scoped: HydratedMatchUp[],
+  inContextDrawMatchUps: HydratedMatchUp[],
+  roundRobinGroupStructureIds: Set<string>,
+  linkTargetRounds: Set<string>,
+): StructureInconsistency[] {
+  const matchUpsByStructure = new Map<string, HydratedMatchUp[]>();
+  for (const matchUp of inContextDrawMatchUps) {
+    if (matchUp.collectionId || roundRobinGroupStructureIds.has(matchUp.structureId)) continue;
+    const list = matchUpsByStructure.get(matchUp.structureId) ?? [];
+    list.push(matchUp);
+    matchUpsByStructure.set(matchUp.structureId, list);
+  }
+  return scoped.flatMap((matchUp) => {
+    const structureMatchUps = matchUpsByStructure.get(matchUp.structureId);
+    if (!structureMatchUps) return [];
+    // a round a link feeds receives a position from ANOTHER structure under its own number here: the Backdraw champion
+    // re-enters DOUBLE_ELIMINATION's Main final on their Main drawPosition, beside the semifinal they lost (a rematch)
+    const fedByLink = linkTargetRounds.has(`${matchUp.structureId}|${matchUp.roundNumber}`);
+    const twoFromOne = fedByLink ? undefined : getTwoFromOneFeederInconsistency(matchUp, structureMatchUps);
+    return [
+      ...getAdvancedFromUndecidedInconsistencies(matchUp, structureMatchUps),
+      ...(twoFromOne ? [twoFromOne] : []),
+    ];
+  });
+}
+
+/** BYE_ADVANCEMENT_MISSING_ACROSS_LINK — see the header; the predicate is `getByeCrossing`. */
+function getCrossLinkByeAdvancementInconsistencies(
+  drawDefinition: DrawDefinition,
+  inContextDrawMatchUps: HydratedMatchUp[],
+  structureId?: string,
+): StructureInconsistency[] {
+  return getByeCrossings({ inContextDrawMatchUps, drawDefinition })
+    .filter((crossing) => !structureId || crossing.matchUp.structureId === structureId)
+    .map((crossing) => ({
+      matchUpId: crossing.matchUp.matchUpId,
+      structureId: crossing.matchUp.structureId,
+      issueType: BYE_ADVANCEMENT_MISSING_ACROSS_LINK,
+      message: 'the participant opposite a BYE did not advance across the WINNER link into its target matchUp',
+      winnerMatchUpId: crossing.winnerMatchUp.matchUpId,
+      participantId: crossing.participantId,
+    }));
+}
+
+/** ADVANCED_ACROSS_LINK_FROM_UNDECIDED — see the header; the predicate is `getUnearnedLinkAdvancements`. */
+function getCrossLinkAdvancementInconsistencies(
+  drawDefinition: DrawDefinition,
+  inContextDrawMatchUps: HydratedMatchUp[],
+  structureId?: string,
+): StructureInconsistency[] {
+  return getUnearnedLinkAdvancements({ inContextDrawMatchUps, drawDefinition })
+    .filter(({ targetMatchUp }) => !structureId || targetMatchUp.structureId === structureId)
+    .map(({ link, sourceMatchUp, targetMatchUp, participantId }) => ({
+      matchUpId: targetMatchUp.matchUpId,
+      structureId: targetMatchUp.structureId,
+      issueType: ADVANCED_ACROSS_LINK_FROM_UNDECIDED,
+      message: `a participant stands in this matchUp across a ${link.linkType} link, although the matchUp they play in the source round has no result`,
+      sourceMatchUpId: sourceMatchUp.matchUpId,
+      linkType: link.linkType,
+      participantId,
+    }));
+}
+
+/**
  * Winner advancement, for a matchUp that HAS a winningSide.
  *
  * `WINNING_SIDE_ADVANCEMENT_MISMATCH`: the loser advanced into the winnerMatchUp while the
@@ -400,7 +564,7 @@ function getStrayOriginInconsistency(matchUp: any): StructureInconsistency | und
   const sideNumbers = ([1, 2] as const).filter((sideNumber) => {
     const entry = provenance?.[sideNumber];
     if (!onBye) return !!(entry?.matchUpStatus || entry?.previousMatchUpStatus || entry?.sourceMatchUpId);
-    return !!entry?.matchUpStatus && !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
+    return arrivedByResult(entry);
   });
   if (!sideNumbers.length) return undefined;
 
@@ -679,6 +843,18 @@ export function getStructureInconsistencies(
 
   inconsistencies.push(
     ...getStalledPositionInconsistencies(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds),
+  );
+
+  const linkTargetRounds = new Set(
+    (drawDefinition.links ?? []).map((link) => `${link.target?.structureId}|${link.target?.roundNumber}`),
+  );
+  inconsistencies.push(
+    ...getAllAdvancedFromUndecided(scoped, inContextDrawMatchUps, roundRobinGroupStructureIds, linkTargetRounds),
+  );
+
+  inconsistencies.push(...getCrossLinkAdvancementInconsistencies(drawDefinition, inContextDrawMatchUps, structureId));
+  inconsistencies.push(
+    ...getCrossLinkByeAdvancementInconsistencies(drawDefinition, inContextDrawMatchUps, structureId),
   );
 
   for (const matchUp of scoped) {

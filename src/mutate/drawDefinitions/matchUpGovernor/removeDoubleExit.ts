@@ -1,28 +1,37 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
+import {
+  getDrawPositionSideNumber,
+  getSideDrawPosition,
+  getWinningSideDrawPosition,
+} from '@Query/matchUps/getDrawPositionSides';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { intersection, overlap } from '@Tools/arrays';
-import { isDoubleExit } from '@Validators/isExit';
 import {
   withdrawByeClaimsFrom,
   byeClaimSurvives,
   withdrawByeClaim,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
-  getSideExitProvenance,
   deriveExitStateFromProvenance,
+  getSideExitProvenance,
+  carriedExitStatus,
   retainForeignProvenance,
   retainPolicyCodes,
   setSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUp, MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
@@ -136,9 +145,16 @@ export function removeDoubleExit(params) {
    * answer "another cascade still owes this" forever.
    */
   const rawLoserMatchUp = (matchUpsMap?.drawMatchUps ?? []).find(
-    (candidate: any) => candidate.matchUpId === loserMatchUp?.matchUpId,
+    (candidate) => candidate.matchUpId === loserMatchUp?.matchUpId,
   );
-  const claimSideNumber = (rawLoserMatchUp?.drawPositions ?? []).indexOf(loserTargetDrawPosition) + 1 || 1;
+  // the claim's side, read structurally: a lone position's side is not its index
+  const claimSideNumber =
+    getDrawPositionSideNumber({
+      matchUp: rawLoserMatchUp && { ...rawLoserMatchUp, sides: undefined },
+      structureId: loserMatchUp?.structureId,
+      drawPosition: loserTargetDrawPosition,
+      drawDefinition,
+    }) || 1;
   withdrawByeClaim({ matchUp: rawLoserMatchUp, sideNumber: claimSideNumber, claimantMatchUpId: matchUpId });
   // ...and wherever else this cascade claimed one: a BYE that WALKS is claimed on a downstream
   // matchUp the unwind never revisits at this coordinate
@@ -284,7 +300,15 @@ function withdrawExitFromByeChain({
   fromMatchUp,
   visited,
   stack,
-}: any) {
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  withdrawnSourceIds: Set<string>;
+  drawDefinition: DrawDefinition;
+  fromMatchUp: HydratedMatchUp;
+  matchUpsMap: MatchUpsMap;
+  visited?: Set<string>;
+  stack: string;
+}): ResultType {
   const seen: Set<string> = visited ?? new Set<string>();
   if (!fromMatchUp?.matchUpId || seen.has(fromMatchUp.matchUpId)) return { ...SUCCESS };
   seen.add(fromMatchUp.matchUpId);
@@ -300,21 +324,19 @@ function withdrawExitFromByeChain({
   /**
    * The drawPosition this matchUp ADVANCED, captured before the reset blanks it.
    *
-   * `drawPositions` is positional — index 0 is side 1 — which is the canonical rule stated in
-   * `documentation/docs/concepts/draw-positions.md`.
+   * Read structurally: a lone position's side is not its index (`documentation/docs/concepts/draw-positions.md`).
    */
-  const priorWinningSide = noContextTargetMatchUp.winningSide;
-  const advancedDrawPosition = priorWinningSide
-    ? (noContextTargetMatchUp.drawPositions ?? [])[priorWinningSide - 1]
-    : undefined;
+  const advancedDrawPosition = getWinningSideDrawPosition({
+    matchUp: { ...noContextTargetMatchUp, sides: undefined },
+    structureId: fromMatchUp.structureId,
+    drawDefinition,
+  });
 
-  // `any` because `getUnwoundState` types `matchUpStatus` as a bare string while `modifyMatchUpScore`
-  // takes the status union; `conditionallyRemoveDrawPosition` passes the same value through an
-  // untyped spread and never meets the mismatch.
-  const unwound: any = getUnwoundState({
+  const unwound = getUnwoundState({
     pairedPreviousDoubleExit: false,
     noContextTargetMatchUp,
     targetMatchUp: fromMatchUp,
+    inContextDrawMatchUps,
     withdrawnSourceIds,
     drawDefinition,
   });
@@ -329,7 +351,7 @@ function withdrawExitFromByeChain({
   });
 
   const result = modifyMatchUpScore({
-    matchUpStatusCodes: retainPolicyCodes(noContextTargetMatchUp),
+    matchUpStatusCodes: codesForUnwound(noContextTargetMatchUp, unwound),
     removeWinningSide: unwound.winningSide === undefined,
     matchUpStatus: unwound.matchUpStatus,
     matchUpId: fromMatchUp.matchUpId,
@@ -352,12 +374,13 @@ function withdrawExitFromByeChain({
   // `conditionallyRemoveDrawPosition`'s own stamp.
   setSideExitProvenance({ provenance: unwound.provenance, matchUp: noContextTargetMatchUp });
 
-  const { targetMatchUps } = positionTargets({
+  const fromTargets = positionTargets({
     matchUpId: fromMatchUp.matchUpId,
     inContextDrawMatchUps,
     drawDefinition,
   });
-  const nextWinnerMatchUp = targetMatchUps?.winnerMatchUp;
+  if (fromTargets.error) return decorateResult({ result: fromTargets, stack });
+  const nextWinnerMatchUp = fromTargets.targetMatchUps?.winnerMatchUp;
   if (!nextWinnerMatchUp?.matchUpId) return { ...SUCCESS };
 
   /**
@@ -428,6 +451,7 @@ export function conditionallyRemoveDrawPosition(params) {
     inContextDrawMatchUps,
     drawDefinition,
   });
+  if (nextTargetData.error) return decorateResult({ result: nextTargetData, stack });
 
   const {
     targetMatchUps: { winnerMatchUp: nextWinnerMatchUp },
@@ -596,6 +620,7 @@ export function conditionallyRemoveDrawPosition(params) {
   const unwound = getUnwoundState({
     pairedPreviousDoubleExit,
     noContextTargetMatchUp,
+    inContextDrawMatchUps,
     withdrawnSourceIds,
     drawDefinition,
     targetMatchUp,
@@ -604,7 +629,7 @@ export function conditionallyRemoveDrawPosition(params) {
   const removeScore = !pairedPreviousDoubleExit;
   result = modifyMatchUpScore({
     ...params,
-    matchUpStatusCodes: retainPolicyCodes(noContextTargetMatchUp),
+    matchUpStatusCodes: codesForUnwound(noContextTargetMatchUp, unwound),
     removeWinningSide: unwound.winningSide === undefined,
     matchUpId: targetMatchUp.matchUpId,
     matchUp: noContextTargetMatchUp,
@@ -649,7 +674,7 @@ function targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targe
   if (!drawPositions.length || !structureId) return false;
 
   const { structure: targetStructure } = findStructure({ drawDefinition, structureId });
-  return !!targetStructure?.positionAssignments?.some(
+  return !!positionAssignmentsOf(targetStructure)?.some(
     (assignment) => drawPositions.includes(assignment.drawPosition) && assignment.bye,
   );
 }
@@ -680,7 +705,7 @@ function removeLinkedWinner({
   const participantsIn = (matchUp) => {
     const { structure } = findStructure({ drawDefinition, structureId: matchUp.structureId });
     const positions = (matchUp.drawPositions ?? []).filter(Boolean);
-    return (structure?.positionAssignments ?? [])
+    return (positionAssignmentsOf(structure) ?? [])
       .filter((assignment) => assignment.participantId && positions.includes(assignment.drawPosition))
       .map(({ participantId, drawPosition }) => ({ participantId, drawPosition }));
   };
@@ -730,10 +755,18 @@ function removeLinkedWinner({
 function getUnwoundState({
   pairedPreviousDoubleExit,
   noContextTargetMatchUp,
+  inContextDrawMatchUps,
   withdrawnSourceIds,
   drawDefinition,
   targetMatchUp,
-}): { matchUpStatus: MatchUpStatusUnion; winningSide?: number; provenance?: any } {
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  pairedPreviousDoubleExit: boolean;
+  withdrawnSourceIds: Set<string>;
+  drawDefinition: DrawDefinition;
+  targetMatchUp: HydratedMatchUp;
+  noContextTargetMatchUp: MatchUp;
+}): { matchUpStatus: MatchUpStatusUnion; winningSide?: number; provenance?: SideExitProvenance } {
   // A BYE STAYS A BYE — the status is never re-derived — but the codes are. The cascade records a
   // produced exit on a BYE matchUp's side, and an unwind that left the status alone AND the codes
   // alone would keep an exit that no longer exists. Retaining by source identity is what keeps the
@@ -758,8 +791,9 @@ function getUnwoundState({
     // `matchUpStatusCodes: []` onto a matchUp that is still an exit is the residue CA ruled on
     // 2026-09-09: "RE-DERIVE the codes on unwind from the current upstream state instead of writing
     // []". See `knownFailures.ts`, DOUBLE_EXIT_STATUS_CODES_RESIDUE.
+    const status = noContextTargetMatchUp.matchUpStatus;
     return {
-      matchUpStatus: [DOUBLE_DEFAULT, DEFAULTED].includes(noContextTargetMatchUp?.matchUpStatus) ? DEFAULTED : WALKOVER,
+      matchUpStatus: status === DOUBLE_DEFAULT || status === DEFAULTED ? DEFAULTED : WALKOVER,
       provenance: retained,
     };
   }
@@ -792,10 +826,96 @@ function getUnwoundState({
   // matchUp. What separates them is the shape being taken apart.
   if (isDoubleExit(noContextTargetMatchUp?.matchUpStatus)) {
     const rederived = deriveExitStateFromProvenance(retained);
-    if (rederived) return { ...rederived, provenance: retained };
+    if (rederived) {
+      // A PRODUCED exit has no winningSide until a participant arrives (CA, 2026-09-20); a CARRIED exit keeps its
+      // award on an empty seat. The derivation awards the other side either way, so the award stands only for a
+      // carried exit, or where the winning seat holds somebody (as `positionClear`'s `awardStands`). Matrix FMLC 8/8,
+      // do/undo: a double exit undone left the pending WALKOVER it had converged with won by a seat nobody had reached.
+      const awarded = producedAwardStands({
+        inContextDrawMatchUps,
+        drawDefinition,
+        targetMatchUp,
+        rederived,
+        retained,
+      });
+      return { ...rederived, winningSide: awarded ? rederived.winningSide : undefined, provenance: retained };
+    }
   }
 
   return { matchUpStatus: TO_BE_PLAYED };
+}
+
+function producedAwardStands({
+  inContextDrawMatchUps,
+  drawDefinition,
+  targetMatchUp,
+  rederived,
+  retained,
+}: {
+  rederived: { matchUpStatus: MatchUpStatusUnion; winningSide?: number };
+  inContextDrawMatchUps: HydratedMatchUp[];
+  retained?: SideExitProvenance;
+  drawDefinition: DrawDefinition;
+  targetMatchUp: HydratedMatchUp;
+}): boolean {
+  const { winningSide } = rederived;
+  if (!winningSide) return false;
+  // Produced or carried is a question about the LINK, not the entry: an exit carried over a loser link from a
+  // double exit also records `previousMatchUpStatus: DOUBLE_WALKOVER`, and either kind may have been relayed on
+  // through a BYE holder before it got here, so the source's direct targets do not settle it either. What does is
+  // the exit's FIRST hop (`exitStatusClearing` 2.3: two adjacent WOWOs feed Consolation|1|1, and the one left after
+  // a clear keeps its award).
+  const sourceMatchUpId = retained?.[3 - winningSide]?.sourceMatchUpId;
+  if (!sourceMatchUpId) return true;
+  if (
+    arrivedOverLoserLink({
+      targetMatchUpId: targetMatchUp.matchUpId,
+      inContextDrawMatchUps,
+      sourceMatchUpId,
+      drawDefinition,
+    })
+  ) {
+    return true;
+  }
+  const { structure } = findStructure({ drawDefinition, structureId: targetMatchUp.structureId });
+  const drawPosition = getSideDrawPosition({
+    matchUp: { ...targetMatchUp, sides: undefined },
+    structureId: targetMatchUp.structureId,
+    sideNumber: winningSide,
+    drawDefinition,
+  });
+  const assignment = positionAssignmentsOf(structure)?.find((candidate) => candidate.drawPosition === drawPosition);
+  return !!(assignment?.participantId || assignment?.qualifier);
+}
+
+/**
+ * Did the exit `sourceMatchUpId` sent to `targetMatchUpId` leave over the LOSER link?
+ *
+ * The first hop decides: from the source's loser target, follow winner targets (a BYE holder sends a held exit on
+ * along them) until the target is reached or the walk runs out. A produced exit's first hop is the winner link, so
+ * this walk never meets it.
+ */
+export function arrivedOverLoserLink({
+  inContextDrawMatchUps,
+  targetMatchUpId,
+  sourceMatchUpId,
+  drawDefinition,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  targetMatchUpId: string;
+  sourceMatchUpId: string;
+}): boolean {
+  const targetsOf = (matchUpId: string) =>
+    positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId }).targetMatchUps;
+  const visited = new Set<string>();
+  let next = targetsOf(sourceMatchUpId)?.loserMatchUp;
+  while (next && !visited.has(next.matchUpId)) {
+    if (next.matchUpId === targetMatchUpId) return true;
+    visited.add(next.matchUpId);
+    next = targetsOf(next.matchUpId)?.winnerMatchUp;
+  }
+  return false;
 }
 
 /**
@@ -804,11 +924,29 @@ function getUnwoundState({
  * Returns undefined both when the drawPosition carries no BYE and when the BYE carries no marker;
  * the caller treats those alike, since neither is a positive statement that this cascade placed it.
  */
-function findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPosition }): any {
+function findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPosition }): boolean | undefined {
   if (!loserMatchUp?.structureId || loserTargetDrawPosition === undefined) return undefined;
   const { structure } = findStructure({ drawDefinition, structureId: loserMatchUp.structureId });
-  const assignment = structure?.positionAssignments?.find(
+  const assignment = positionAssignmentsOf(structure)?.find(
     (candidate) => candidate.drawPosition === loserTargetDrawPosition,
   );
   return assignment?.bye ? assignment.byeFromPropagation : undefined;
+}
+
+/**
+ * The policy codes an unwound matchUp keeps: all of them, except on a side whose exit no longer stands.
+ *
+ * Unwinding a convergence of two double exits re-derives it to the other origin's single exit. Both sides held a code
+ * (`['DEF', 'DEF']`); keeping every policy code left the withdrawn side's code in its slot, and the participant who
+ * then arrives there and wins the exit stood beside it: a reason badge on the winner (census w1 9000276, w1 9000517,
+ * w2 9100184: EXIT_CODE_ON_WINNER_SIDE). A single exit keeps the code only where its retained provenance still
+ * records an exit. Any other unwound state keeps the codes as before.
+ */
+function codesForUnwound(
+  matchUp: MatchUp,
+  unwound: { matchUpStatus?: MatchUpStatusUnion; provenance?: SideExitProvenance },
+) {
+  const codes = retainPolicyCodes(matchUp);
+  if (!unwound.provenance || !isExit(unwound.matchUpStatus)) return codes;
+  return codes.map((code, index) => (carriedExitStatus(unwound.provenance?.[index + 1]) ? code : ''));
 }

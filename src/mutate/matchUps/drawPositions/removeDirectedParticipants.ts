@@ -1,3 +1,4 @@
+import { releaseAcrossWinnerLinks, releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
 import { includesMatchUpStatuses } from '@Mutate/drawDefinitions/matchUpGovernor/includesMatchUpStatuses';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { removeSubsequentRoundsParticipant } from './removeSubsequentRoundsParticipant';
@@ -6,7 +7,7 @@ import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpSc
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
+import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -14,7 +15,6 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { clearDrawPosition } from './positionClear';
-import { instanceCount } from '@Tools/arrays';
 import {
   clearResolvedSideExitProvenance,
   withdrawProducedExits,
@@ -23,7 +23,7 @@ import {
 
 // constants and types
 import { ErrorType, MISSING_DRAW_POSITIONS, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { DrawDefinition, DrawLink, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, DrawLink, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -225,7 +225,7 @@ type RemvoveDirectedWinnerArgs = {
   tournamentRecord?: Tournament;
   winnerParticipantId?: string;
   drawDefinition: DrawDefinition;
-  sourceMatchUpStatus?: string;
+  sourceMatchUpStatus?: MatchUpStatusUnion;
   winningDrawPosition?: number;
   winnerTargetLink?: DrawLink;
   matchUpsMap?: MatchUpsMap;
@@ -289,26 +289,30 @@ export function removeDirectedWinner({
       structure,
       event,
     });
-    const allDrawPositionInstances = matchUps
-      .map((matchUp) => matchUp.drawPositions)
-      .flat(Infinity)
-      .filter(Boolean);
-    const drawPositionInstanceCount = instanceCount(allDrawPositionInstances);
-    const winnerDrawPositionInstances = winnerDrawPosition ? drawPositionInstanceCount[winnerDrawPosition] : undefined;
+    // The assignment goes only where the link is what put the participant in this structure: their position first
+    // appears in the link's target round (DOUBLE_ELIMINATION's Decider, qualifiers into Main). A participant fed BACK
+    // into a structure they already stand in (the Backdraw champion re-entering the Main final on their own Main
+    // drawPosition) keeps their seat.
+    //
+    // This counted the position's instances across the structure's matchUps and read "one instance" as link-only. By
+    // the time this runs for a cross-link target, `releaseLinkedWinnerAdvancement` can already have taken the
+    // position back out of the target round, and the one instance left was the participant's own first-round seat:
+    // undoing a Backdraw double exit emptied Main drawPosition 5 under a COMPLETED Main|1|3 (census w2 9100389).
+    const { initialRoundNumber } = getInitialRoundNumber({ drawPosition: winnerDrawPosition as number, matchUps });
+    const placedByLink = winnerDrawPosition !== undefined && initialRoundNumber === winnerTargetLink.target.roundNumber;
 
-    if (winnerDrawPositionInstances === 1) {
-      // only remove position assignment if it has a single instance...
-      // if there are multiple instances then a participant has been fed back into a draw
+    if (placedByLink) {
       positionAssignments?.forEach((assignment) => {
         if (assignment.participantId === winnerParticipantId) {
           delete assignment.participantId;
         }
       });
     } else {
-      const drawPositionMatchUps = matchUps.filter(({ drawPositions }) => drawPositions.includes(winnerDrawPosition));
+      // a TEAM structure's lines carry no drawPositions
+      const drawPositionMatchUps = matchUps.filter(({ drawPositions }) => drawPositions?.includes(winnerDrawPosition));
       pushGlobalLog({
         method: 'removeDirectedParticipants',
-        retained: 'position assignment kept: drawPosition instances > 1',
+        retained: 'position assignment kept: the participant stands in this structure before the link target round',
         drawPositionMatchUps,
         winnerTargetLink,
       });
@@ -391,8 +395,9 @@ function removeDirectedLoser({
   // participantId, and a participant fed back into a draw holds more than one.
   if (loserMatchUp?.roundNumber) {
     for (const drawPosition of clearedDrawPositions) {
-      releaseAdvancedDrawPosition({
+      releaseAdvancedDrawPositionAcrossLinks({
         fromRoundNumber: loserMatchUp.roundNumber,
+        participantId: loserParticipantId,
         tournamentRecord,
         drawDefinition,
         drawPosition,
@@ -401,6 +406,21 @@ function removeDirectedLoser({
         event,
       });
     }
+  }
+
+  // A seat that keeps its BYE advancement releases no round above, so nothing asked the links out of this
+  // structure: a loser removed from a Backdraw they had BYE-advanced through stayed in the grand final (mode D).
+  const [clearedDrawPosition] = clearedDrawPositions;
+  if (clearedDrawPosition && loserParticipantId) {
+    releaseAcrossWinnerLinks({
+      drawPosition: clearedDrawPosition,
+      participantId: loserParticipantId,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      structureId,
+      event,
+    });
   }
 
   // The removal above is ONE link deep. Where the target structure itself feeds a further structure

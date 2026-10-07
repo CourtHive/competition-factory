@@ -1,13 +1,12 @@
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieFormats';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
-import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
+import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { setMatchUpState } from './matchUpStatus/setMatchUpState';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { resetTieFormat } from '@Mutate/tieFormat/resetTieFormat';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
 import { isString } from '@Tools/objects';
@@ -72,11 +71,9 @@ export function resetScorecard(params: ResetScoreCardArgs): ResultType {
   if (matchUp.matchUpType !== TEAM_EVENT) return { error: INVALID_MATCHUP };
 
   // Get winner/loser position targets ----------------------------------------
-  const targetData = positionTargets({
-    inContextDrawMatchUps,
-    drawDefinition,
-    matchUpId,
-  });
+  const targets = getTargetsDownstream({ inContextDrawMatchUps, drawDefinition, matchUpId });
+  if (targets.error) return decorateResult({ result: targets, stack });
+  const { targetData, activeDownstream } = targets;
 
   const structureId = inContextMatchUp?.structureId;
   const { structure } = findStructure({ drawDefinition, structureId });
@@ -91,7 +88,6 @@ export function resetScorecard(params: ResetScoreCardArgs): ResultType {
   });
 
   // with propagating winningSide changes, activeDownstream only applies to eventType: TEAM
-  const activeDownstream = isActiveDownstream(params);
   if (activeDownstream) return { error: CANNOT_CHANGE_WINNING_SIDE };
 
   if (matchUp.tieMatchUps?.length) {

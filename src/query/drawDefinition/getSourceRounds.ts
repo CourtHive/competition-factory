@@ -19,6 +19,9 @@ type GetSourceRoundsArgs = {
   structureId: string;
 };
 
+// finishingPosition => the round (an Object.keys string) whose participants finish there
+type SourceRoundsMap = { [finishingPosition: string]: { roundNumber: string } };
+
 type SourceRoundsResult = {
   playoffPositionsReturned?: number[];
   playedOffSourceRounds?: number[];
@@ -58,26 +61,26 @@ export function getSourceRounds({
   });
 
   // reduce the sourceRoundsMap to roundNumbers, not including excludedRoundNumbers
-  const keys: any[] = Object.values(playoffPositionSourceRoundsMap);
-  const relevantPlayoffSourceRounds: any = keys
-    .reduce((rounds: any[], round: any) => {
+  const keys: SourceRoundsMap[string][] = Object.values(playoffPositionSourceRoundsMap ?? {});
+  const relevantPlayoffSourceRounds = keys
+    .reduce<string[]>((rounds, round) => {
       return rounds.includes(round.roundNumber) ? rounds : rounds.concat(round.roundNumber);
     }, [])
     .map((roundNumber) => ensureInt(roundNumber))
     .filter((roundNumber) => !excludeRoundNumbers.includes(roundNumber));
 
   // generate a map of finishingPosition: { roundNumber }
-  const playedOffRoundsMap = getFinishingPositionSourceRoundsMap({
+  const playedOffRoundsMap: SourceRoundsMap | undefined = getFinishingPositionSourceRoundsMap({
     finishingPositions: positionsPlayedOff,
     drawDefinition,
     structureId,
   });
 
   // determine which rounds produced played off positions
-  const roundsMapValues: any[] = playedOffRoundsMap ? Object.values(playedOffRoundsMap) : [];
+  const roundsMapValues = playedOffRoundsMap ? Object.values(playedOffRoundsMap) : [];
   const playedOffSourceRounds = playedOffRoundsMap
     ? roundsMapValues
-        .reduce((rounds: any[], round: any) => {
+        .reduce<string[]>((rounds, round) => {
           return rounds.includes(round.roundNumber) ? rounds : rounds.concat(round.roundNumber);
         }, [])
         .map((round) => ensureInt(round))

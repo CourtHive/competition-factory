@@ -123,7 +123,7 @@ Each lock targets a specific mutation domain. Only mutations mapped to that doma
 | Scope          | Governor                       | Blocked Operations                                                                           |
 | -------------- | ------------------------------ | -------------------------------------------------------------------------------------------- |
 | `SCHEDULING`   | scheduleGovernor               | scheduleMatchUps, assignMatchUpCourt, clearScheduledMatchUps, ...                            |
-| `SCORING`      | matchUpGovernor, scoreGovernor | setMatchUpStatus, setMatchUpState, resetScorecard, addPoint, ...                             |
+| `SCORING`      | matchUpGovernor, scoreGovernor | setMatchUpStatus, setMatchUpState (deprecated), resetScorecard, addPoint, ...                |
 | `DRAWS`        | drawsGovernor                  | setPositionAssignments, resetDrawDefinition, assignDrawPosition, generateDrawDefinition, ... |
 | `MATCHUPS`     | matchUpGovernor                | assignMatchUpSideParticipant, substituteParticipant, setMatchUpFormat, ...                   |
 | `PARTICIPANTS` | participantGovernor            | addParticipants, modifyParticipant, deleteParticipants, ...                                  |
@@ -314,7 +314,7 @@ Mutation locks are stored as a `mutationLocks` extension on the scoped element. 
         lockId: 'uuid-2',
         lockToken: 'scorer-token',
         scope: 'SCORING',
-        methods: ['setMatchUpStatus', 'setMatchUpState'],
+        methods: ['setMatchUpStatus', 'setMatchUpState'], // setMatchUpState is deprecated since 7.5.0
         expiresAt: null,
         createdAt: '2026-02-27T10:00:00.000Z',
       }

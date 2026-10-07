@@ -34,6 +34,7 @@ export function generateSeedingScaleItems({
   );
 
   scaleName = scaleName || scaleAttributes.scaleName;
+  if (!scaleName) return { error: MISSING_VALUE, info: 'missing scaleName' };
   const scaleDate = nowIso();
 
   const scaleItemsWithParticipantIds = stageEntries.map(({ participantId }) => {

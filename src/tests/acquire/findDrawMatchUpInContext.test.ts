@@ -105,9 +105,13 @@ it.each(CELLS)(
 
     // CONTROL: every state compared something, lines included where there are lines
     expect(compareEveryMatchUp(drawId)).toBeGreaterThan(0);
-    playForward({ propagateExitStatus, exitOutcome, maxSteps: 5, drawId });
+    // play must succeed for the comparisons after it to mean anything: a step that throws is
+    // reported in `failures` (ERROR_ATOMICITY) and the draw stops short of being played out.
+    // Five steps cannot finish a draw, so that partial play reports only that it did not converge.
+    const partial = playForward({ propagateExitStatus, exitOutcome, maxSteps: 5, drawId }).failures;
+    expect(partial.map(({ property }) => property)).toEqual(['DRIVER_DID_NOT_CONVERGE']);
     expect(compareEveryMatchUp(drawId)).toBeGreaterThan(0);
-    playForward({ propagateExitStatus, exitOutcome, drawId });
+    expect(playForward({ propagateExitStatus, exitOutcome, drawId }).failures).toEqual([]);
     expect(compareEveryMatchUp(drawId)).toBeGreaterThan(0);
   },
 );

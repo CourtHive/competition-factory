@@ -2,9 +2,11 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { nowIso } from '@Tools/clock';
 
 // constants and types
+import { ErrorType, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { CALL_TIMING_VARIANCE_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 type WrapArgs = {
   tournamentRecord: Tournament;
@@ -53,7 +55,7 @@ function calledDisplay(parts: { date: string; time: string } | null, scheduledDa
   return parts.date === scheduledDate ? parts.time : `${parts.date} ${parts.time}`;
 }
 
-function participantsLabel(matchUp: any): string {
+function participantsLabel(matchUp: HydratedMatchUp): string {
   const side1 = matchUp?.sides?.[0]?.participant?.participantName;
   const side2 = matchUp?.sides?.[1]?.participant?.participantName;
   if (side1 && side2) return `${side1} vs ${side2}`;
@@ -140,9 +142,9 @@ function buildRow(
 export function wrapCallTimingVarianceReport({
   tournamentRecord,
   parameters,
-}: WrapArgs): ReportResult | { error: any } {
+}: WrapArgs): ReportResult | { error: ErrorType } {
   const { matchUps } = allTournamentMatchUps({ tournamentRecord });
-  if (!matchUps) return { error: 'No matchUps found' };
+  if (!matchUps) return { error: MISSING_MATCHUPS };
 
   const utcOffsetMinutes = parameters?.utcOffsetMinutes ?? 0;
 
@@ -172,7 +174,7 @@ export function wrapCallTimingVarianceReport({
 
   const rows: Record<string, any>[] = [];
   let scheduledButUncalled = 0;
-  for (const matchUp of matchUps as any[]) {
+  for (const matchUp of matchUps) {
     const schedule = matchUp.schedule ?? {};
     if (schedule.scheduledTime && !schedule.calledAt) scheduledButUncalled += 1;
     if (!schedule.calledAt || Number.isNaN(Date.parse(schedule.calledAt))) continue;

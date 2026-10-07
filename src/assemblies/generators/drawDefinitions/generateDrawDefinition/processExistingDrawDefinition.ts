@@ -4,13 +4,14 @@ import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntri
 
 // constants and types
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import type { DrawDefinition } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 export function processExistingDrawDefinition(params): ResultType & {
   structureId?: string;
-  drawDefinition?: any;
+  drawDefinition?: DrawDefinition;
 } {
-  const drawDefinition = params.drawDefinition;
+  const drawDefinition: DrawDefinition = params.drawDefinition;
   const {
     existingQualifyingPlaceholderStructureId,
     appliedPolicies,
@@ -44,7 +45,7 @@ export function processExistingDrawDefinition(params): ResultType & {
   drawDefinition.structures = drawDefinition.structures?.filter(
     ({ structureId }) => structureId !== existingQualifyingPlaceholderStructureId,
   );
-  const surviving = new Set((drawDefinition.structures ?? []).map((s: any) => s.structureId));
+  const surviving = new Set((drawDefinition.structures ?? []).map((s) => s.structureId));
   drawDefinition.links = drawDefinition.links?.filter(
     ({ source }) =>
       source.structureId !== existingQualifyingPlaceholderStructureId && surviving.has(source.structureId),

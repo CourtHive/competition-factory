@@ -14,6 +14,7 @@ import {
   INVALID_DRAW_DEFINITION,
   INVALID_VALUES,
   MISSING_PARTICIPANT_IDS,
+  STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
 const getParticipantType = (eventType) => (eventType === SINGLES && INDIVIDUAL) || (eventType === DOUBLES && PAIR);
@@ -316,4 +317,32 @@ it('can generate { automated: false } AD_HOC with arbitrary roundsCount', () => 
 
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
   expect(matchUps.length).toEqual(roundsCount * (drawSize / 2));
+});
+
+// getAdHocStructure returned `params.structureId` itself (a string) when one was given, so the
+// target structure was never resolved or checked: an elimination structureId reached round
+// generation and crashed there, and an unknown one surfaced as MISSING_STRUCTURE from deeper down.
+it('drawMatic resolves and validates a given structureId', () => {
+  const {
+    drawIds: [eliminationDrawId, adHocDrawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }, { drawSize: 8, drawType: AD_HOC }],
+    setState: true,
+  });
+
+  const structureIdOf = (drawId: string) =>
+    tournamentEngine.getEvent({ drawId }).drawDefinition.structures[0].structureId;
+
+  let result: any = tournamentEngine.drawMatic({
+    structureId: structureIdOf(eliminationDrawId),
+    drawId: eliminationDrawId,
+  });
+  expect(result.error).toEqual(INVALID_DRAW_DEFINITION);
+
+  result = tournamentEngine.drawMatic({ drawId: adHocDrawId, structureId: 'unknown-structure-id' });
+  expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
+
+  result = tournamentEngine.drawMatic({ drawId: adHocDrawId, structureId: structureIdOf(adHocDrawId) });
+  expect(result.success).toEqual(true);
+  expect(result.matchUps.length).toEqual(4);
 });

@@ -5,8 +5,8 @@ import { nowIso } from '@Tools/clock';
 import { MutationLock, MutationLockScope, MutationLocksValue } from '@Types/mutationLockTypes';
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
+import { Extension, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
 
 type MutationLockEntry = MutationLock & {
   drawId?: string;
@@ -32,7 +32,10 @@ export function getMutationLocks(params: GetMutationLocksArgs): {
   const result: MutationLockEntry[] = [];
 
   // Helper to extract active locks from an element
-  const collectLocks = (element: any, context?: { drawId?: string; eventId?: string; venueId?: string }) => {
+  const collectLocks = (
+    element: { extensions?: Extension[] },
+    context?: { drawId?: string; eventId?: string; venueId?: string },
+  ) => {
     const { extension } = findExtension({ element, name: MUTATION_LOCKS });
     const locksValue: MutationLocksValue = extension?.value ?? { locks: [] };
 

@@ -1,4 +1,5 @@
 import { getWinnerLinkRoundNumbers } from '@Query/drawDefinition/linkGetter';
+import { structuresOf } from '@Acquire/structureMembers';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { getRoundMatchUps } from './getRoundMatchUps';
@@ -10,6 +11,10 @@ import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
 import { DrawDefinition, Structure } from '@Types/tournamentTypes';
 import { RoundProfile, ResultType } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
+
+export type RoundNamingProfile = {
+  [key: string]: { roundName: string; abbreviatedRoundName: string };
+};
 
 type GetRoundContextProfileArgs = {
   drawDefinition?: DrawDefinition;
@@ -23,9 +28,7 @@ export function getRoundContextProfile({
   structure,
   matchUps,
 }: GetRoundContextProfileArgs): ResultType & {
-  roundNamingProfile?: {
-    [key: string]: { roundName: string; abbreviatedRoundName: string };
-  };
+  roundNamingProfile?: RoundNamingProfile;
   roundMatchUps?: { [roundNumber: string]: HydratedMatchUp[] };
   roundProfile?: RoundProfile;
 } {
@@ -42,7 +45,7 @@ export function getRoundContextProfile({
   const isAdHocStructure = isAdHoc({ structure });
   const isLuckyStructure = isLucky({ structure });
 
-  const isRoundRobin = structure.structures;
+  const isRoundRobin = structuresOf(structure);
   const roundNamingProfile = {};
 
   const defaultRoundNamingPolicy = POLICY_ROUND_NAMING_DEFAULT[POLICY_TYPE_ROUND_NAMING];

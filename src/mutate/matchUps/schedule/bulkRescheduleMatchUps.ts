@@ -20,6 +20,7 @@ import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 type BulkRescheduleMatchUpsArgs = {
   tournamentRecords: TournamentRecords;
@@ -30,8 +31,8 @@ type BulkRescheduleMatchUpsArgs = {
 };
 export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): ResultType & {
   allRescheduled?: boolean;
-  notRescheduled?: any[];
-  rescheduled?: any[];
+  notRescheduled?: HydratedMatchUp[];
+  rescheduled?: HydratedMatchUp[];
 } {
   const { scheduleChange, matchUpIds, dryRun } = params;
   if (!matchUpIds || !Array.isArray(matchUpIds)) return { error: MISSING_MATCHUP_IDS };
@@ -39,8 +40,8 @@ export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): Resu
 
   const tournamentRecords = resolveTournamentRecords(params);
 
-  const rescheduled: any[] = [];
-  let notRescheduled: any[] = [];
+  const rescheduled: HydratedMatchUp[] = [];
+  let notRescheduled: HydratedMatchUp[] = [];
 
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     const result = bulkReschedule({

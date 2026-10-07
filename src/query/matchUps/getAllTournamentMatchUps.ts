@@ -51,7 +51,7 @@ export function allTournamentMatchUps(params?: GetMatchUpsArgs): ResultType & {
     tournamentRecord,
   });
 
-  const additionalContext: { [key: string]: any } = {
+  const additionalContext: { [key: string]: unknown } = {
     ...context,
     tournamentId,
     indoorOutDoor: tournamentRecord.indoorOutdoor,

@@ -2,6 +2,7 @@ import { getMinFinishingPositionRange } from '@Functions/sorters/structureSort';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { getPlayoffStructures } from '@Query/structure/structureGetter';
 import { automatedPositioning } from './automatedPositioning';
+import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 
 // constants and types
 import { DRAW_DEFINITION_NOT_FOUND, ErrorType, INCOMPLETE_SOURCE_STRUCTURE } from '@Constants/errorConditionConstants';
@@ -64,6 +65,8 @@ export function automatedPlayoffPositioning(params: AutomatedPlayoffPositioningA
 
   if (playoffStructures) {
     for (const structure of playoffStructures) {
+      // an AD_HOC playoff has no drawPositions; its participants are paired, not positioned
+      if (isAdHoc({ structure })) continue;
       const { structureId: playoffStructureId } = structure;
       const result = automatedPositioning({
         structureId: playoffStructureId,

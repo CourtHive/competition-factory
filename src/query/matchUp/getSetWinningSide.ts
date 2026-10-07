@@ -1,11 +1,15 @@
 import { checkSetIsComplete, getLeadingSide } from './checkSetIsComplete';
 
+// types
+import type { ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+import type { Set as SetType } from '@Types/tournamentTypes';
+
 type GetSetWinningSideArgs = {
-  matchUpScoringFormat: any;
+  matchUpScoringFormat: ParsedFormat | undefined;
   isTiebreakSet?: boolean;
   isDecidingSet?: boolean;
   isTimedSet?: boolean;
-  setObject: any;
+  setObject: SetType;
 };
 
 export function getSetWinningSide({

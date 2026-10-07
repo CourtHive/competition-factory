@@ -1,8 +1,10 @@
 import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/positionGovernor/initializeSeedAssignments';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
+import { positionPagePlayoff } from '@Mutate/drawDefinitions/positionPagePlayoff';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getScaledEntries } from '@Query/event/getScaledEntries';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
@@ -10,10 +12,10 @@ import { getDrawStructures } from '@Acquire/findStructure';
 import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
+import { PAGE_PLAYOFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { Entry, PositionAssignment } from '@Types/tournamentTypes';
-import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
 import { RANKING, SEEDING } from '@Constants/scaleConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -55,10 +57,11 @@ export function prepareStage(params): ResultType & {
   if (positioningResult?.error) return decorateResult({ result: positioningResult, stack });
 
   // For ad-hoc/Swiss draws where full positioning is skipped, still mark qualifier positions
-  if (!doPositioning && isAdHocType(params.drawType) && structure?.positionAssignments?.length) {
+  const structurePositionAssignments = positionAssignmentsOf(structure);
+  if (!doPositioning && isAdHocType(params.drawType) && structurePositionAssignments?.length) {
     const qualifiersCount = params.qualifiersCount || 0;
     if (qualifiersCount > 0) {
-      const unfilled = structure.positionAssignments.filter((a) => !a.participantId && !a.qualifier && !a.bye);
+      const unfilled = structurePositionAssignments.filter((a) => !a.participantId && !a.qualifier && !a.bye);
       for (let i = 0; i < qualifiersCount && i < unfilled.length; i++) {
         unfilled[i].qualifier = true;
       }
@@ -93,6 +96,7 @@ function positioning(
   params,
 ): ResultType & { conflicts?: any[]; positionAssignments?: PositionAssignment[]; positioningReport?: any } {
   const seedsOnly = typeof params.automated === 'object' && params.automated.seedsOnly;
+  if (params.drawType === PAGE_PLAYOFF) return positionPagePlayoff({ ...params, seedsOnly });
   // if { seedsOnly: true } then only seeds and an Byes releated to seeded positions are placed
   const result = automatedPositioning({ ...params, seedsOnly });
   if (result.error) return result;

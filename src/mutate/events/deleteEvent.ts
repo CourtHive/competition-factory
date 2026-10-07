@@ -7,13 +7,18 @@ import { deleteDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { addTournamentTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { addNotice, hasTopic } from '@Global/state/globalState';
 
-// constants
+// constants and types
 import { AUDIT, DELETE_PARTICIPANTS, UNPUBLISH_TOURNAMENT } from '@Constants/topicConstants';
 import { ARRAY, OF_TYPE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { DELETE_EVENTS } from '@Constants/auditConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { DOUBLES } from '@Constants/eventConstants';
+import { Event } from '@Types/tournamentTypes';
+
+type DeletedEventDetail = Pick<Event, 'eventName' | 'eventType' | 'category' | 'eventId' | 'gender'> & {
+  tournamentId: string;
+};
 
 export function deleteEvents(params) {
   const paramCheck = checkRequiredParameters(params, [
@@ -28,8 +33,8 @@ export function deleteEvents(params) {
   // call, so capture the roll-up now and announce the transition below.
   const wasTournamentPublished = hasTopic(UNPUBLISH_TOURNAMENT) && isTournamentPublished(tournamentRecord);
 
-  const auditTrail: any[] = [];
-  const deletedEventDetails: any[] = [];
+  const auditTrail: { action: string; payload: { events: Event[] } }[] = [];
+  const deletedEventDetails: DeletedEventDetail[] = [];
   const deletedEventIds: string[] = [];
   const deletedDrawIds: string[] = [];
 

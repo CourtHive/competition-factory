@@ -13,8 +13,9 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { setPlayedAfterDecision } from './setCount';
 import { isMatchUpStatus } from './isMatchUpStatus';
 
-// constants
+// constants and types
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import type { Set as SetType } from '@Types/tournamentTypes';
 
 /**
  * Helper functions to reduce cognitive complexity
@@ -345,7 +346,11 @@ function validateRegularSet(
 }
 
 /** A timed set: a completed one needs a score, and a tied points-based one its tiebreak. */
-function validateTimedSet(set: any, setFormat: any, allowIncomplete?: boolean): { isValid: boolean; error?: string } {
+function validateTimedSet(
+  set: SetType,
+  setFormat: any,
+  allowIncomplete?: boolean,
+): { isValid: boolean; error?: string } {
   if (timedSetWinnerContradicts(set)) return { isValid: false, error: 'Timed set winner contradicts the set score' };
   // For timed sets, just validate that scores exist if set is complete
   if (!allowIncomplete) {
@@ -370,7 +375,7 @@ function validateTimedSet(set: any, setFormat: any, allowIncomplete?: boolean): 
 }
 
 /** The 1-0 marker must name the same winner as the set, where the set names one. */
-function validateTiebreakMarker(set: any): { isValid: boolean; error?: string } {
+function validateTiebreakMarker(set: SetType): { isValid: boolean; error?: string } {
   const markerWinner = set.side1Score === 1 ? 1 : 2;
   if (set.winningSide !== undefined && set.winningSide !== markerWinner) {
     return { isValid: false, error: 'Tiebreak set marker contradicts the set winner' };

@@ -2,8 +2,8 @@ import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/d
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { exitAwardable } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
-import { isActiveDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
@@ -11,7 +11,6 @@ import { collectionMatchUpActions } from './collectionMatchUpActions';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { adHocMatchUpActions } from './adHocMatchUpActions';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -22,6 +21,7 @@ import {
   getPolicyActions,
   isAvailableAction,
   MATCHUP_ACTION,
+  MatchUpAction,
 } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 
 // constants, fixtures and types
@@ -144,7 +144,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
 
   const inContextMatchUp = inContextDrawMatchUps?.find((drawMatchUp) => drawMatchUp.matchUpId === matchUpId);
 
-  const side: any = sideNumber && inContextMatchUp?.sides?.find((s) => s.sideNumber === sideNumber);
+  const side = sideNumber && inContextMatchUp?.sides?.find((s) => s.sideNumber === sideNumber);
 
   const matchUpParticipantIds =
     inContextMatchUp?.sides?.map((s: any) => s.participantId || s.participant?.participantId).filter(Boolean) ?? [];
@@ -152,7 +152,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
   const { assignedPositions, allPositionsAssigned } = structureAssignedDrawPositions({ structure });
   const { structureId } = structure ?? {};
 
-  const validActions: any[] = [];
+  const validActions: MatchUpAction[] = [];
   if (!structureId) return { validActions };
 
   const isCollectionMatchUp = Boolean(matchUp.collectionId);
@@ -182,7 +182,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
 
   const isDoubleExit = matchUp.matchUpStatus && [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(matchUp.matchUpStatus);
 
-  addStandardActions({
+  const standard = addStandardActions({
     validActions,
     policyActions,
     matchUpActionsPolicy,
@@ -206,6 +206,7 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
     drawDefinition,
     side,
   });
+  if (standard?.error) return standard;
 
   return { structureIsComplete, validActions, isDoubleExit, ...SUCCESS };
 }
@@ -286,8 +287,10 @@ function addStandardActions({
   const scoringActive = isScoringActive({ appliedPolicies, allPositionsAssigned, structure });
   const hasParticipants = matchUp.sides?.filter((s) => s?.participantId).length === 2;
 
-  const targetData = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
-  const activeDownstream = isActiveDownstream({ inContextDrawMatchUps, drawDefinition, targetData });
+  // a malformed round link is an error (CA, 2026-10-06): the matchUp's actions are not offered over it
+  const targets = getTargetsDownstream({ inContextDrawMatchUps, drawDefinition, matchUpId });
+  if (targets.error) return decorateResult({ result: targets, stack: 'matchUpActions' });
+  const { targetData, activeDownstream } = targets;
 
   const participantAssignedDrawPositions = assignedPositions
     ?.filter((assignment) => assignment.participantId)
@@ -428,6 +431,7 @@ function addStandardActions({
       }),
     );
   }
+  return undefined;
 }
 
 type LoneExit = {

@@ -14,10 +14,11 @@ import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
 
 // constants and types
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Entry, Event, Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import { GROUP, PAIR, TEAM } from '@Constants/participantConstants';
 import { IdCollections, MatchUpsMap } from '@Types/factoryTypes';
+import { SeedBlockInfo } from '@Query/drawDefinition/seedGetter';
 import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -25,6 +26,27 @@ import {
   MISSING_AVOIDANCE_POLICY,
   NO_CANDIDATES,
 } from '@Constants/errorConditionConstants';
+
+/**
+ * One participant attribute an avoidance policy separates on: a `key` path into the participant
+ * (`'person.nationalityCode'`), a `directive` naming an id collection, or explicit `groupings`.
+ */
+export type PolicyAttribute = {
+  groupings?: { [groupName: string]: string[] };
+  directive?: keyof IdCollections;
+  significantCharacters?: number;
+  includeIds?: string[];
+  key?: string;
+};
+
+/** The avoidance policy (`POLICY_TYPE_AVOIDANCE`) as positioning reads it. */
+export type AvoidancePolicy = {
+  policyAttributes?: PolicyAttribute[];
+  roundsToSeparate?: number;
+  targetDivisions?: number;
+  candidatesCount?: number;
+  policyName?: string;
+};
 
 type RandomUnseededDistribution = {
   inContextDrawMatchUps?: HydratedMatchUp[];
@@ -35,11 +57,11 @@ type RandomUnseededDistribution = {
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
-  seedBlockInfo?: any;
+  seedBlockInfo?: SeedBlockInfo;
   structureId: string;
   drawSize: number;
-  avoidance?: any;
-  entries?: any;
+  avoidance?: AvoidancePolicy;
+  entries?: Entry[];
   event?: Event;
   random?: () => number;
 };
@@ -165,8 +187,8 @@ export function randomUnseededSeparation({
     }),
   );
 
-  candidate = noPairPriorityCandidates.reduce(
-    (p: any, c) => (!p || (c.conflicts || 0) < (p.conflicts || 0) ? c : p),
+  candidate = noPairPriorityCandidates.reduce<(typeof noPairPriorityCandidates)[number] | undefined>(
+    (p, c) => (!p || (c.conflicts || 0) < (p.conflicts || 0) ? c : p),
     undefined,
   );
 
@@ -195,7 +217,10 @@ export function randomUnseededSeparation({
       .concat(...pairedPriorityCandidates)
       .filter((candidate) => !candidate.errors?.length);
 
-    candidate = candidates.reduce((p: any, c) => (!p || (c.conflicts || 0) < (p.conflicts || 0) ? c : p), undefined);
+    candidate = candidates.reduce<(typeof candidates)[number] | undefined>(
+      (p, c) => (!p || (c.conflicts || 0) < (p.conflicts || 0) ? c : p),
+      undefined,
+    );
   }
 
   if (!candidate) return { error: NO_CANDIDATES };

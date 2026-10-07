@@ -32,6 +32,7 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 | A produced exit no longer overwrites `matchUpStatus: BYE` — the BYE stays a BYE                   | Anyone reading `matchUpStatus` to detect an exit at a BYE-held matchUp      | See §19           |
 | A produced exit carries NO `winningSide` until a participant actually arrives                     | Any UI or caller reading `winningSide` to render a produced walkover        | See §20           |
 | A load-bearing outcome can no longer be re-scored while a dependent result stands                 | Anyone correcting a result that has already propagated into a decided match | See §21           |
+| A lone `drawPosition` is stored as `[5]`, never `[undefined, 5]` (7.7.0)                          | Anyone reading a side from `matchUp.drawPositions[0]` / `[1]`               | See §25           |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -1810,3 +1811,50 @@ matchUp.matchUpStatusCode; // 'OA'
 
 **Do not index `matchUpStatusCodes` to decide which side did something.** Its index is a display
 position. Nothing in the engine reads the array to decide behaviour.
+
+## 25. [#5255](https://github.com/CourtHive/competition-factory/pull/5255) read sides, not array positions: a lone `drawPosition` is stored without a hole
+
+_Shipped in 7.7.0._
+
+### What changed — no hole is stored
+
+A matchUp holding only one of its two positions used to store a **hole** on the empty side, so the array's index
+happened to match the side: `[undefined, 5]` for a position on side 2. Since 7.7.0 every writer stores the positions
+present, ascending, with no hole: that matchUp is stored as **`[5]`**. `tournament.schema.json` admits no `null` in
+`drawPositions`, and a stored hole serialised as one.
+
+```js
+// a survivor waiting on side 2 of Main|2|1
+// BEFORE (<= 7.6.x)
+matchUp.drawPositions; // [undefined, 5]  → serialised as [null, 5]
+
+// AFTER (7.7.0)
+matchUp.drawPositions; // [5]
+```
+
+### Who is affected — code that reads a side from the array index
+
+Anyone who reads `drawPositions[0]` as side 1 and `drawPositions[1]` as side 2. With a lone position that read is now
+wrong half the time: `[5]` puts a side-2 survivor at index 0. The engine no longer relies on it: every reader takes the
+side from the draw structure, and a test guards that. No CourtHive consumer relies on it either; pdf-factory's one such
+reader was converted in pdf-factory #174.
+
+### What to do — read `sides`
+
+**Read sides from a hydrated matchUp** (`inContext: true`), where each side carries its own `sideNumber` and
+`drawPosition`. Those are unchanged by this release.
+
+```js
+const { matchUps } = engine.allTournamentMatchUps({ inContext: true });
+const side2 = matchUp.sides.find((side) => side.sideNumber === 2);
+side2.drawPosition; // 5, whatever the stored array looks like
+```
+
+Treat the stored array as a **set** of positions. Its shape says nothing, as
+[drawPositions rules](./concepts/draw-positions.md) § 5 sets out.
+
+### Records stored before 7.7.0
+
+They may still hold `[undefined, 5]`, `[5, null]` or `[null]`. The engine reads them correctly as they are, and any
+write to the matchUp compacts it. `migrateTournamentRecord` compacts every stored hole at once, so the record validates
+against `tournament.schema.json`.

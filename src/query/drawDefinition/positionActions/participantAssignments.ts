@@ -11,6 +11,7 @@ import { DrawDefinition, Event, PositionAssignment } from '@Types/tournamentType
 import { PolicyDefinitions, SeedingProfile } from '@Types/factoryTypes';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { HydratedParticipant } from '@Types/hydrated';
+import { PositionAction } from './actionPolicyUtils';
 import { TEAM } from '@Constants/eventConstants';
 import {
   ASSIGN_BYE,
@@ -54,7 +55,7 @@ export function getValidAssignmentActions({
   event,
 }: GetValidAssignmentActionsArgs) {
   const { drawId } = drawDefinition;
-  const validAssignmentActions: any[] = [];
+  const validAssignmentActions: PositionAction[] = [];
 
   let unplacedSeedParticipantIds,
     unplacedSeedAssignments,

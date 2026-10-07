@@ -2,6 +2,7 @@ import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchU
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
 import { getDeciderFinals, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
+import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
@@ -22,8 +23,8 @@ import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
+import { PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import { PolicyDefinitions, ResultType, ResultWarning } from '@Types/factoryTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { SCHEDULE_PRESERVED_ON_EXIT } from '@Constants/scheduleConstants';
@@ -63,7 +64,7 @@ type SetMatchUpStatusArgs = {
  * A convenience for a direct caller: the engine always hands over a `drawDefinition`. It writes what
  * it finds onto `params`, which is what the rest of `setMatchUpStatus` reads.
  */
-function resolveDrawDefinition(params: SetMatchUpStatusArgs, tournamentRecords: any) {
+function resolveDrawDefinition(params: SetMatchUpStatusArgs, tournamentRecords: TournamentRecords) {
   // with nothing to find it BY there is nothing to look for, and the caller is told what is missing
   if (params.drawDefinition || (!params.drawId && !params.eventId)) return undefined;
 
@@ -80,6 +81,42 @@ function resolveDrawDefinition(params: SetMatchUpStatusArgs, tournamentRecords: 
   params.event = result.event;
 
   return undefined;
+}
+
+/**
+ * A convergence that lost one of its origins goes where the kept origin alone puts it; then every carried
+ * exit's ORIGIN is asked whether it still describes one (`reconcileStaleExitOrigins`).
+ */
+function settleExitOrigins({
+  propagateExitStatus,
+  doubleExitsBefore,
+  matchUpId,
+  params,
+  result,
+}: {
+  params: SetMatchUpStatusArgs;
+  doubleExitsBefore: Set<string>;
+  propagateExitStatus?: boolean;
+  result: ResultType;
+  matchUpId: string;
+}): ResultType | undefined {
+  const settled = settleRederivedDoubleExits({
+    tournamentRecord: params.tournamentRecord,
+    drawDefinition: params.drawDefinition,
+    targetMatchUpId: matchUpId,
+    propagateExitStatus,
+    doubleExitsBefore,
+    event: params.event,
+  });
+  if (settled?.error) return settled;
+  const reconciled = reconcileStaleExitOrigins({
+    matchUpsMap: result.context?.matchUpsMap,
+    drawDefinition: params.drawDefinition,
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+  });
+  // an error already in hand is the answer; a reconciliation that cannot read the draw is the answer otherwise
+  return reconciled?.error && !result.error ? reconciled : undefined;
 }
 
 /**
@@ -210,7 +247,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     // render it as [10-8]. The format usually lives on the matchUp, not on the outcome, so spreading
     // outcome alone left it undefined and the deciding set rendered as a plain game score.
     // Resolution failure yields undefined — the same format-less rendering as before, never worse.
-    const formatResult: any = matchUpFormat
+    const formatResult = matchUpFormat
       ? undefined
       : getMatchUpFormat({ tournamentRecord, drawDefinition, matchUpId, event });
     const effectiveMatchUpFormat = matchUpFormat ?? formatResult?.matchUpFormat;
@@ -344,25 +381,11 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // Everything has settled — removals, directions and exit propagation — which is the earliest point
   // at which a carried exit's ORIGIN can be asked whether it still describes one. See
   // `reconcileStaleExitOrigins` for the two corrections that pull the timing in opposite directions.
-  // a convergence that lost one of its origins goes where the kept origin alone puts it
-  const settled = settleRederivedDoubleExits({
-    tournamentRecord: params.tournamentRecord,
-    drawDefinition: params.drawDefinition,
-    targetMatchUpId: matchUpId,
-    propagateExitStatus,
-    doubleExitsBefore,
-    event: params.event,
-  });
+  const settled = settleExitOrigins({ params, result, matchUpId, propagateExitStatus, doubleExitsBefore });
   if (settled?.error) {
     v2.compare?.(settled);
     return decorateResult({ result: settled, stack });
   }
-  reconcileStaleExitOrigins({
-    matchUpsMap: result.context?.matchUpsMap,
-    drawDefinition: params.drawDefinition,
-    tournamentRecord: params.tournamentRecord,
-    event: params.event,
-  });
   // and once settled, no matchUp left without a result keeps the `scoredTime` a cascade stamped on it
   reconcileScoredTimes({
     matchUps: matchUpsMap.drawMatchUps,
@@ -374,6 +397,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   if (!result.error) {
     const settled = settleDraw({ finalsBefore, params });
     if (settled.error) return decorateResult({ result: settled, stack });
+    // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
+    // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
+    reconcileLinkAdvancements({
+      drawDefinition: params.drawDefinition,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+    });
     const warnings = [
       ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
       ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
@@ -392,7 +422,15 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
  * 2026-10-02, ruling V11). Read off the RECORDED matchUp in context, so the format is the one the score
  * was validated against — a TEAM line's comes from its collection — and a dual's tally is never asked.
  */
-function recordedScoreWarnings({ drawDefinition, matchUpId, event }: any): ResultWarning[] {
+function recordedScoreWarnings({
+  drawDefinition,
+  matchUpId,
+  event,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUpId: string;
+  event?: Event;
+}): ResultWarning[] {
   const { matchUp } = findDrawMatchUp({ drawDefinition, matchUpId, event, inContext: true });
   if (!matchUp || matchUp.matchUpType === TEAM) return [];
   return tiebreakPointsWarnings(matchUp.score?.sets, matchUp.matchUpFormat);

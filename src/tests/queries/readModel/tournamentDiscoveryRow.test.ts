@@ -148,6 +148,17 @@ describe('tournamentDiscoveryRow', () => {
     expect(row).not.toHaveProperty('registration_state');
   });
 
+  it('writes a Date-valued registration window into its string columns as ISO instants', () => {
+    // CODES types entriesOpen/entriesClose as `Date | string`; the columns are strings.
+    const registrationProfile = {
+      entriesOpen: new Date('2026-05-01T09:00:00.000Z'),
+      entriesClose: new Date('2026-07-01T17:00:00.000Z'),
+    };
+    const row: any = tournamentDiscoveryRow({ ...record, registrationProfile });
+    expect(row.entries_open).toBe('2026-05-01T09:00:00.000Z');
+    expect(row.entries_close).toBe('2026-07-01T17:00:00.000Z');
+  });
+
   it('survives a bare record without throwing', () => {
     const row: any = tournamentDiscoveryRow({ tournamentId: 't' });
     expect(row.tournament_id).toBe('t');

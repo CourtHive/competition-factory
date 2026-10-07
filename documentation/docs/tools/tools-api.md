@@ -424,6 +424,35 @@ const dates = tools.generateDateRange('2024-01-01', '2024-01-05');
 // Result: ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04', '2024-01-05']
 ```
 
+### now
+
+The engine's current instant as a `Date`: the configured clock if [`setClock`](#setclock) has fixed one, otherwise the
+wall clock. Added in 7.5.0.
+
+```js
+const instant = tools.now();
+```
+
+### nowIso
+
+The engine's current instant as an ISO 8601 string, the form every record timestamp takes. Added in 7.5.0.
+
+```js
+const stamp = tools.nowIso(); // '2026-10-01T12:00:00.000Z'
+```
+
+### setClock
+
+Fixes the clock that [`now`](#now) and [`nowIso`](#nowiso) read, and that every timestamp a mutation writes into a
+record reads. Process-wide. Pass an ISO string, epoch milliseconds, a `Date`, or a function returning any of those; no
+argument restores the wall clock. Returns `{ success }`, or `{ error: INVALID_DATE }` for an unparseable instant. The
+same as [`engine.setClock`](../engines/engine-methods.md#setclock). Added in 7.5.0.
+
+```js
+tools.setClock('2026-10-01T12:00:00.000Z'); // frozen
+tools.setClock(); // wall clock
+```
+
 ---
 
 ## Timezone
@@ -645,6 +674,39 @@ const code = tools.generateTimeCode();
 const indexedCode = tools.generateTimeCode(5);
 ```
 
+### createSeededRandom
+
+Create a seeded random function (mulberry32) returning numbers in `[0, 1)`. The same seed always yields the same
+stream. The function carries its `seed`, and `state()` returns its current internal state, so
+`createSeededRandom(rng.state())` continues the stream. Added in 7.5.0.
+
+```js
+const rng = tools.createSeededRandom(7);
+const value = rng(); // same value for seed 7, every run
+```
+
+### randomSource
+
+The function the engine draws randomness from right now: the configured source if [`setRandomSource`](#setrandomsource)
+has set one, otherwise `Math.random`. Added in 7.5.0.
+
+```js
+const random = tools.randomSource();
+const value = random();
+```
+
+### setRandomSource
+
+Sets the engine's process-wide source of randomness, which `UUID` and every placement or generation step read. Pass a
+seed (a finite number, for a seeded mulberry32) or a `() => number`; no argument restores `Math.random`. A call's own
+`random` parameter still takes precedence. Returns `{ success }`, or `{ error: INVALID_VALUES }` for anything else. The
+same as [`engine.setRandomSource`](../engines/engine-methods.md#setrandomsource). Added in 7.5.0.
+
+```js
+tools.setRandomSource(7);
+tools.setRandomSource(); // back to Math.random
+```
+
 ---
 
 ## Sorting
@@ -688,7 +750,9 @@ const sorted = matchUps.sort(tools.matchUpChronologicalSort);
 
 ### structureSort
 
-Sort draw structures by stage, size, and sequence. See [dedicated page](./structure-sort.md).
+Sort draw structures by stage, size, and sequence. See [dedicated page](./structure-sort.md). Since 7.7.0
+the `deprioritizeCompleted` option works: a round robin container is read through its groups, and a
+matchUp that will never be played (a BYE, as well as ABANDONED, CANCELLED and DEAD_RUBBER) counts as done.
 
 ```js
 const sorted = structures.sort(tools.structureSort);
@@ -739,6 +803,28 @@ Create a filter function for object attributes.
 ```js
 const filter = tools.attributeFilter({ matchUpStatus: 'COMPLETED' });
 const completed = matchUps.filter(filter);
+```
+
+### canonicalJson
+
+The canonical JSON text of a value per RFC 8785 (JSON Canonicalization Scheme): object keys sorted, no whitespace,
+numbers and strings serialised as `JSON.stringify` does. Two values with the same content produce the same bytes. An
+`undefined` property is omitted and `toJSON` is honoured, as with `JSON.stringify`. Throws for a value with no JSON form
+at the top level (`undefined`, a function, a symbol), and for a non-finite number or a bigint anywhere. Added in 7.5.0.
+
+```js
+const text = tools.canonicalJson({ b: 1, a: [true, null] });
+// Result: '{"a":[true,null],"b":1}'
+```
+
+### canonicalizeJsonText
+
+Parse JSON text and re-serialise it with [`canonicalJson`](#canonicaljson): the canonical form of any JSON text. Added
+in 7.5.0.
+
+```js
+const text = tools.canonicalizeJsonText('{ "b": 1, "a": 2 }');
+// Result: '{"a":2,"b":1}'
 ```
 
 ---

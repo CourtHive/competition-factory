@@ -1,6 +1,7 @@
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { findStructure } from '@Acquire/findStructure';
 
@@ -49,13 +50,13 @@ export function setSubOrder({
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
   let targetStructure: Structure | undefined = structure;
 
-  if (structure.structures && structure.structureType === CONTAINER) {
+  if (structuresOf(structure) && structure.structureType === CONTAINER) {
     targetStructure = structure.structures?.find((currentStructure) =>
-      currentStructure.positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition),
+      positionAssignmentsOf(currentStructure)?.find((assignment) => assignment.drawPosition === drawPosition),
     );
   }
 
-  const positionAssignments = targetStructure?.positionAssignments;
+  const positionAssignments = positionAssignmentsOf(targetStructure);
 
   const assignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
 

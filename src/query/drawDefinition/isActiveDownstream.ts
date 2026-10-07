@@ -1,13 +1,49 @@
 import { getSideExitProvenance, isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
-// constants
+// constants and types
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { BYE } from '@Constants/matchUpStatusConstants';
+import { DrawDefinition } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 
-export function isActiveDownstream(params) {
-  return activeBelow(params, new Map());
+/** one walk: the answers already given, and the first refusal met (a malformed round link downstream) */
+type Walk = { seen: Map<string, boolean>; refused?: ResultType };
+
+/**
+ * Whether anything downstream of the matchUp is active, as a boolean. A downstream structure whose
+ * links cannot be read (a malformed round link, CA 2026-10-06) reads as ACTIVE here, never as
+ * "nothing downstream". A caller that returns results asks `getTargetsDownstream`, which returns that
+ * refusal as an error instead.
+ */
+export function isActiveDownstream(params): boolean {
+  return activeBelow(params, { seen: new Map() });
+}
+
+/**
+ * A matchUp's position targets, and whether anything downstream of it is active, in one call. Either can
+ * meet a malformed round link (CA, 2026-10-06: an error): the matchUp's own, or one in a structure it feeds.
+ * Either way that error is the answer.
+ */
+export function getTargetsDownstream(params: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpId: string;
+}): ResultType & { targetData?: ReturnType<typeof positionTargets>; activeDownstream?: boolean } {
+  const targetData = positionTargets(params);
+  if (targetData.error) return decorateResult({ result: targetData, stack: 'isActiveDownstream' });
+  const walk: Walk = { seen: new Map() };
+  const activeDownstream = activeBelow({ ...params, targetData }, walk);
+  if (walk.refused) return walk.refused;
+  return { targetData, activeDownstream };
+}
+
+function refuse(walk: Walk, targetData: ResultType): boolean {
+  walk.refused ??= decorateResult({ result: targetData, stack: 'isActiveDownstream' });
+  return true;
 }
 
 /**
@@ -24,22 +60,23 @@ export function isActiveDownstream(params) {
  * the FIRST_MATCHUP BYE test reads. So the answer is kept for one walk, keyed on both, and never
  * beyond it: the next call takes a new view and a new map.
  */
-function visit({ matchUpId, relevantLink, targetData, inContextDrawMatchUps, drawDefinition, seen }: any): boolean {
+function visit({ matchUpId, relevantLink, targetData, inContextDrawMatchUps, drawDefinition, walk }: any): boolean {
   const key = `${matchUpId}|${relevantLink?.linkCondition ?? ''}`;
-  if (seen.has(key)) return seen.get(key);
+  if (walk.seen.has(key)) return walk.seen.get(key);
 
   const resolvedTargetData = targetData ?? positionTargets({ matchUpId, inContextDrawMatchUps, drawDefinition });
   const active = !!activeBelow(
     { targetData: resolvedTargetData, inContextDrawMatchUps, drawDefinition, relevantLink },
-    seen,
+    walk,
   );
-  seen.set(key, active);
+  walk.seen.set(key, active);
   return active;
 }
 
-function activeBelow(params, seen: Map<string, boolean>) {
+function activeBelow(params, walk: Walk): boolean {
   // relevantLink is passed in iterative calls (see below)
   const { inContextDrawMatchUps, targetData, drawDefinition, relevantLink } = params;
+  if (targetData?.error) return refuse(walk, targetData);
 
   /**
    * A fed FMLC BYE is inert only when the FED side holds nobody. The BYE matchUp takes one of two
@@ -59,7 +96,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
   const byeMatchUp = targetData?.matchUp;
   const fedPosition = Math.min(...((byeMatchUp?.drawPositions ?? []).filter(Boolean) as number[]));
   const fedSideHoldsParticipant = !!byeMatchUp?.sides?.some(
-    (side: any) => side?.drawPosition === fedPosition && side?.participant,
+    (side: HydratedSide) => side?.drawPosition === fedPosition && side?.participant,
   );
   const fmlcBYE =
     relevantLink?.linkCondition === FIRST_MATCHUP && byeMatchUp?.matchUpStatus === BYE && !fedSideHoldsParticipant;
@@ -80,7 +117,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
     // re-score that un-decided that consolation match, leaving it TO_BE_PLAYED with its 6-3 score.
     const byeWinnerDecided =
       byeWinnerMatchUp?.winningSide &&
-      !!byeWinnerMatchUp.sides?.find((s: any) => s?.sideNumber === byeWinnerMatchUp.winningSide)?.participant;
+      !!byeWinnerMatchUp.sides?.find((s: HydratedSide) => s?.sideNumber === byeWinnerMatchUp.winningSide)?.participant;
     if (!byeWinnerDecided) return false;
   }
 
@@ -96,6 +133,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
       inContextDrawMatchUps,
       drawDefinition,
     });
+  if (loserTargetData?.error) return refuse(walk, loserTargetData);
 
   // NOTE: produced WALKOVER, DEFAULTEED fed into consolation structures should NOT be considered active
   // IF: the loserMatchUp has no further downstream matchUps or there is no propagated loserParticipant (e.g. DOUBLE_EXIT)
@@ -130,7 +168,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
 
   //to identify a propagated exit (WO/DEFAULT) for matches that are WO/DEFAULT, have a winning side,
   //and have only one participant (the WO/DF player).
-  const loserMatchUpParticipantsCount = loserMatchUp?.sides?.filter((s: any) => s?.participant).length ?? 0;
+  const loserMatchUpParticipantsCount = loserMatchUp?.sides?.filter((s: HydratedSide) => s?.participant).length ?? 0;
   const isLoserMatchUpWalkoverWithOnePlayer =
     //this catches downstream matches marked as WO with only one participant
     loserMatchUp?.winningSide && isLoserMatchUpWO && loserMatchUpParticipantsCount === 1;
@@ -162,9 +200,9 @@ function activeBelow(params, seen: Map<string, boolean>) {
    * The distinction is the general one this guard already needs everywhere: a status blocks only
    * when it was earned at this matchUp, never when it was propagated into it.
    */
-  const contestedDoubleExit = (candidate: any) => {
+  const contestedDoubleExit = (candidate?: HydratedMatchUp) => {
     if (!isDoubleExit(candidate?.matchUpStatus)) return false;
-    const occupiedSides = (candidate?.sides ?? []).filter((side: any) => side?.participant);
+    const occupiedSides = (candidate?.sides ?? []).filter((side) => side?.participant);
     if (occupiedSides.length !== 2) return false;
     const provenance = getSideExitProvenance({ matchUp: candidate });
     return !occupiedSides.every((side: any) => provenance?.[side.sideNumber]);
@@ -204,7 +242,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
    * `removeLinkedWinner` handles only ACROSS-link advancement (`if (!winnerTargetLink) return`).
    */
   const winnerSideResolved =
-    !!winnerMatchUp?.sides?.find((s: any) => s?.sideNumber === winnerMatchUp.winningSide)?.participant &&
+    !!winnerMatchUp?.sides?.find((s: HydratedSide) => s?.sideNumber === winnerMatchUp.winningSide)?.participant &&
     !isPropagatedExit({ matchUp: winnerMatchUp });
 
   /**
@@ -228,14 +266,16 @@ function activeBelow(params, seen: Map<string, boolean>) {
   // 8/7): a DEFAULTED recorded at `West|2|1` was "active" against `West|1|2`, which feeds its empty side,
   // and the convergence written there was refused after the draw had been mutated.
   const exitedParticipantId = winnerMatchUp?.sides?.find(
-    (side: any) => side?.sideNumber && side.sideNumber !== winnerMatchUp.winningSide,
+    (side: HydratedSide) => side?.sideNumber && side.sideNumber !== winnerMatchUp.winningSide,
   )?.participant?.participantId;
   const winningSideOccupied = !!winnerMatchUp?.sides?.find(
-    (side: any) => side?.sideNumber === winnerMatchUp?.winningSide,
+    (side: HydratedSide) => side?.sideNumber === winnerMatchUp?.winningSide,
   )?.participant;
   const exitedCameFromSource =
     !!exitedParticipantId &&
-    !!targetData?.matchUp?.sides?.some((side: any) => side?.participant?.participantId === exitedParticipantId);
+    !!targetData?.matchUp?.sides?.some(
+      (side: HydratedSide) => side?.participant?.participantId === exitedParticipantId,
+    );
   const recordedWinnerExit =
     !!winnerMatchUp?.winningSide &&
     isExit(winnerMatchUp.matchUpStatus) &&
@@ -270,7 +310,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
       targetData: loserTargetData,
       inContextDrawMatchUps,
       drawDefinition,
-      seen,
+      walk,
     });
   if (loserActive) return true;
 
@@ -280,7 +320,7 @@ function activeBelow(params, seen: Map<string, boolean>) {
       matchUpId: winnerMatchUp.matchUpId,
       inContextDrawMatchUps,
       drawDefinition,
-      seen,
+      walk,
     })
   );
 }

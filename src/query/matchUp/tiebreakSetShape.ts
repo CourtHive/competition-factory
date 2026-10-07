@@ -1,5 +1,9 @@
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 
+// types
+import type { ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+import type { Set as SetType } from '@Types/tournamentTypes';
+
 /**
  * One shape for a tiebreak-only set.
  *
@@ -28,7 +32,7 @@ import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 const isNumber = (value: unknown): value is number => typeof value === 'number' && !Number.isNaN(value);
 
 /** The format a given set is played to: the final set's where the format names one and this is it. */
-export function formatForSet(matchUpScoringFormat: any, setNumber?: number) {
+export function formatForSet(matchUpScoringFormat: ParsedFormat | undefined, setNumber?: number) {
   const { bestOf, exactly, finalSetFormat, setFormat } = matchUpScoringFormat ?? {};
   const maxSetNumber = bestOf || exactly;
   const isDecidingSet = finalSetGoverns(
@@ -48,7 +52,7 @@ type SideValues = [number | undefined, number | undefined];
  * in the tiebreak FIELDS is points, and under a target above one it is no finished tiebreak; under `TB1`
  * the target is one, so `1-0` there is the points and never the marker.
  */
-export function isTiebreakMarker(set: any, setFormat?: any): boolean {
+export function isTiebreakMarker(set: SetType | undefined, setFormat?: any): boolean {
   const tiebreakTo = setFormat?.tiebreakSet?.tiebreakTo;
   if (typeof tiebreakTo !== 'number' || tiebreakTo <= 1) return false;
   if (isNumber(set?.side1TiebreakScore) || isNumber(set?.side2TiebreakScore)) return false;

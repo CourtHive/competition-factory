@@ -133,6 +133,8 @@ Unlike segment-level timed formats (`-S:T45`) where each segment is independentl
 | `A`      | Aggregate scoring across all segments | `SET7XA-S:T10P`, `HAL2A-S:T45`    |
 | `XA`     | Combined: exactly N, aggregate        | `SET7XA-S:T10P` (INTENNSE format) |
 
+In an `XA` format, `-F:` describes the sudden-death decider that settles level aggregate totals (`SET3XA-S:T10-F:TB1`). The decider is **not one of the N sets**: it is set N + 1, played only when the totals are level, so `-F:` governs set N + 1 and never set N (since 7.5.0). See [aggregateDeciderSetNumber / finalSetGoverns](/docs/governors/matchup-format-governor#aggregatedecidersetnumber--finalsetgoverns).
+
 ## parse and stringify
 
 ```js

@@ -143,7 +143,7 @@ const { drawDefinition } = engine.generateDrawDefinition({
 ```
 
 :::note
-Standalone `PAGE_PLAYOFF` generates the four structures and links but does not automatically position participants, since seeds must be distributed across two entry structures (Q1 and Eliminator). Use manual positioning or attach as a playoff to an upstream structure.
+With automated positioning (the default), standalone `PAGE_PLAYOFF` divides its four entrants across the two entry structures: the top two seeds are placed in Qualifier 1 and the other two in the Eliminator. Unseeded entrants are distributed at random. Pass `automated: false` to position participants manually.
 :::
 
 ### As a Playoff Group

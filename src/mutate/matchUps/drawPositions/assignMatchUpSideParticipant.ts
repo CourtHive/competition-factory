@@ -1,5 +1,6 @@
 import { buildIndividualIdsMap, idsShareIndividual } from '@Query/participants/individualParticipantIds';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -60,9 +61,9 @@ export function assignMatchUpSideParticipant({
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
 
   const isAdHoc =
-    !structure?.structures &&
+    !structuresOf(structure) &&
     !(drawDefinition.drawType && !isAdHocType(drawDefinition.drawType)) &&
-    !structure?.matchUps?.find(({ roundPosition }) => !!roundPosition);
+    !matchUpsOf(structure)?.find(({ roundPosition }) => !!roundPosition);
 
   if (!isAdHoc) return { error: INVALID_DRAW_TYPE };
 

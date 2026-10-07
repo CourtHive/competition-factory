@@ -1,15 +1,15 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { timedSetWinnerContradicts } from '@Validators/timedSetWinner';
+import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
 import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { maxExactlySets } from '@Validators/setCount';
 import { instanceCount } from '@Tools/arrays';
 
 // constants and types
 import { COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { Score } from '@Types/tournamentTypes';
+import { Score, Set as SetType } from '@Types/tournamentTypes';
 
 type AnalyzeScoreArgs = {
   existingMatchUpStatus?: string;
@@ -21,9 +21,9 @@ type AnalyzeScoreArgs = {
 
 function validateTiebreak(
   tiebreakFormat: any,
-  side1TiebreakScore: number,
-  side2TiebreakScore: number,
-  setWinningSide: number,
+  side1TiebreakScore: number | undefined,
+  side2TiebreakScore: number | undefined,
+  setWinningSide: number | undefined,
   isLastSet: boolean,
   irregularEnding: boolean,
 ): boolean {
@@ -40,9 +40,9 @@ function validateTiebreak(
 }
 
 function validateSet(
-  set: any,
+  set: SetType,
   i: number,
-  matchUpScoringFormat: any,
+  matchUpScoringFormat: ParsedFormat,
   totalSets: number,
   isLastSet: boolean,
   irregularEnding: boolean,
@@ -92,7 +92,7 @@ function validateSet(
   return !excessiveSetScore;
 }
 
-function calculateAggregateWinner(sets: any[]): number | undefined {
+function calculateAggregateWinner(sets: SetType[]): number | undefined {
   const aggregateTotals = sets.reduce(
     (totals, set) => {
       if (set.side1Score !== undefined || set.side2Score !== undefined) {

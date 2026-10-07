@@ -1,5 +1,5 @@
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
-import { expect, describe, test } from 'vitest';
+import { expect, describe, test, vi } from 'vitest';
 
 // Regression coverage for competition-factory#4564 — the async state provider must give each
 // async context its OWN factory engine state. The previous createHook/executionAsyncId/Map
@@ -135,13 +135,19 @@ describe('asyncGlobalState per-context isolation', () => {
   });
 
   test('an implicit context survives an await, so setState → await → getState stays coherent', async () => {
+    // the first implicit context in this file warns; capture it rather than print it
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const result: any = await (async () => {
       setTournamentRecord(record('IMPLICIT'));
       await new Promise((resolve) => setTimeout(resolve, 5));
       return Object.keys(getTournamentRecords());
     })();
+    const warnings = warnSpy.mock.calls.map(([message]) => message);
+    warnSpy.mockRestore();
 
     expect(result).toEqual(['IMPLICIT']);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('engine state accessed outside runWithInstanceState() (1 so far)');
   });
 
   test('DOCUMENTS THE LIMIT: implicit creation is a safety net, NOT isolation', async () => {

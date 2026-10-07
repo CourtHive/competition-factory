@@ -1,15 +1,16 @@
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
-import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGrid';
+import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
+import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { extractDate } from '@Tools/dateTime';
-import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { now } from '@Tools/clock';
 
 // constants and types
 import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Tournament } from '@Types/tournamentTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * Anchors a generated schedule to a moment, so an example stays demonstrable whenever it is run.
@@ -51,7 +52,7 @@ function isoMinute(date: Date): string {
 }
 
 /** The instant a matchUp is scheduled for, from its own date + time rather than today's. */
-function scheduledInstant(matchUp: any): Date | undefined {
+function scheduledInstant(matchUp: HydratedMatchUp): Date | undefined {
   const { scheduledDate, scheduledTime } = matchUp?.schedule ?? {};
   if (!scheduledTime) return undefined;
   const time = scheduledTime.includes('T') ? scheduledTime.split('T')[1] : scheduledTime;
@@ -76,8 +77,8 @@ export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: Appl
 
   const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
   const scheduled = matchUps
-    .map((matchUp: any) => ({ matchUp, instant: scheduledInstant(matchUp) }))
-    .filter((entry): entry is { matchUp: any; instant: Date } => !!entry.instant);
+    .map((matchUp) => ({ matchUp, instant: scheduledInstant(matchUp) }))
+    .filter((entry): entry is { matchUp: HydratedMatchUp; instant: Date } => !!entry.instant);
 
   // Nothing to anchor is a legitimate outcome, not an error: a caller may have generated without a
   // schedulingProfile. Say so in the result rather than silently succeeding at nothing.
@@ -170,12 +171,12 @@ export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: Appl
     const scheduleDates = [
       ...new Set(
         (allTournamentMatchUps({ tournamentRecord }).matchUps ?? [])
-          .map((m: any) => m.schedule?.scheduledDate)
+          .map((m) => m.schedule?.scheduledDate)
           .filter(Boolean)
-          .map((d: any) => String(d).split('T')[0]),
+          .map((d) => String(d).split('T')[0]),
       ),
     ];
-    if (scheduleDates.length) scheduleProfileGrid({ tournamentRecords, scheduleDates } as any);
+    if (scheduleDates.length) scheduleProfileGrid({ tournamentRecords, scheduleDates });
   }
 
   return {

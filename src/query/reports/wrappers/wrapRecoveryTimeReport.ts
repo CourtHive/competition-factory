@@ -1,16 +1,17 @@
 import { buildRecoveryTimeline, localParts, MS_PER_MINUTE, TimelineAppearance } from '@Query/reports/recoveryTimeline';
-import { INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
+import { ErrorType, INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
 import { isValidIANATimeZone } from '@Tools/timeZone';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { PARTICIPANT_RECOVERY_REPORT } from '@Constants/reportConstants';
+import { PolicyDefinitions } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
 
 type WrapArgs = {
   tournamentRecord: Tournament;
-  parameters?: { utcOffsetMinutes?: number; timeZone?: string; policyDefinitions?: any; asOfMs?: number };
+  parameters?: { utcOffsetMinutes?: number; timeZone?: string; policyDefinitions?: PolicyDefinitions; asOfMs?: number };
 };
 
 /** Signed minutes between two instants, rounded to whole minutes. */
@@ -52,7 +53,10 @@ function requiredAfter(previous: TimelineAppearance, next: TimelineAppearance): 
  * offset); `parameters.policyDefinitions` evaluates the tournament against a
  * policy other than the one attached to it.
  */
-export function wrapRecoveryTimeReport({ tournamentRecord, parameters }: WrapArgs): ReportResult | { error: any } {
+export function wrapRecoveryTimeReport({
+  tournamentRecord,
+  parameters,
+}: WrapArgs): ReportResult | { error: ErrorType | string } {
   const utcOffsetMinutes = parameters?.utcOffsetMinutes ?? 0;
   const timeZone = parameters?.timeZone;
   // A zone the system cannot honour is a config error, not a reason to

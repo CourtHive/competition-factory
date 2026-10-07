@@ -8,12 +8,13 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { instanceCount } from '@Tools/arrays';
 
 // constants and types
+import { DrawDefinition, Event, Participant, TeamCompetitor, TieFormat, Tournament } from '@Types/tournamentTypes';
 import { ARRAY, DRAW_DEFINITION, MATCHUP_ID, OF_TYPE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { DrawDefinition, Event, TeamCompetitor, Tournament } from '@Types/tournamentTypes';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
+import { HydratedMatchUp } from '@Types/hydrated';
 import {
   INVALID_MATCHUP,
   INVALID_PARTICIPANT_TYPE,
@@ -68,7 +69,7 @@ export function applyLineUps(params: ApplyLineUps) {
     event,
   })?.tieFormat;
 
-  const sideAssignments: { [key: string]: any } = {};
+  const sideAssignments: { [key: string]: TeamCompetitor[] } = {};
 
   for (const lineUp of lineUps) {
     if (!Array.isArray(lineUp)) return { error: INVALID_VALUES, lineUp };
@@ -130,8 +131,22 @@ export function applyLineUps(params: ApplyLineUps) {
   return { ...SUCCESS };
 }
 
-function validateLineUpAssignments({ tournamentParticipants, inContextMatchUp, tieFormat, lineUp }) {
-  const collectionParticipantIds = {};
+type CollectionParticipantIds = { [aggregator: string]: string[] };
+
+type ValidateLineUpAssignmentsArgs = {
+  tournamentParticipants: Participant[];
+  inContextMatchUp: HydratedMatchUp;
+  lineUp: TeamCompetitor[];
+  tieFormat?: TieFormat;
+};
+
+function validateLineUpAssignments({
+  tournamentParticipants,
+  inContextMatchUp,
+  tieFormat,
+  lineUp,
+}: ValidateLineUpAssignmentsArgs) {
+  const collectionParticipantIds: CollectionParticipantIds = {};
   const sideNumbers: number[] = [];
 
   for (const lineUpAssignment of lineUp) {
@@ -144,7 +159,7 @@ function validateLineUpAssignments({ tournamentParticipants, inContextMatchUp, t
     if (!participant) return { error: PARTICIPANT_NOT_FOUND };
     if (participant.participantType !== INDIVIDUAL) return { error: INVALID_PARTICIPANT_TYPE };
 
-    const sideNumber = inContextMatchUp.sides?.find((side: any) =>
+    const sideNumber = inContextMatchUp.sides?.find((side) =>
       side.participant?.individualParticipantIds?.includes(participantId),
     )?.sideNumber;
     if (sideNumber) sideNumbers.push(sideNumber);
@@ -183,7 +198,17 @@ function validateLineUpAssignments({ tournamentParticipants, inContextMatchUp, t
   return { collectionParticipantIds, sideNumbers };
 }
 
-function ensureDoublesPairParticipants({ collectionParticipantIds, tournamentParticipants, tournamentRecord }) {
+type EnsureDoublesPairParticipantsArgs = {
+  collectionParticipantIds: CollectionParticipantIds;
+  tournamentParticipants: Participant[];
+  tournamentRecord: Tournament;
+};
+
+function ensureDoublesPairParticipants({
+  collectionParticipantIds,
+  tournamentParticipants,
+  tournamentRecord,
+}: EnsureDoublesPairParticipantsArgs) {
   const collectionParticipantIdPairs: string[][] = Object.values(collectionParticipantIds);
   for (const participantIds of collectionParticipantIdPairs) {
     if (participantIds.length === 2) {

@@ -5,9 +5,22 @@ import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { LINK_UNRESOLVED, resolvePersonLink } from './personRule';
 import { getEntryFeeRange } from '@Query/entries/resolveEntryFee';
 import { findExtension } from '@Acquire/findExtension';
+import { isDateObject } from '@Tools/dateTime';
 
 // types
-import { UnifiedDrawID, UnifiedEventID, UnifiedTournamentID } from '@Types/tournamentTypes';
+import { HydratedMatchUp, HydratedParticipant, HydratedSide } from '@Types/hydrated';
+import {
+  Address,
+  Event,
+  MatchUp,
+  Participant,
+  TierClassification,
+  TournamentSanction,
+  UnifiedDrawID,
+  UnifiedEventID,
+  UnifiedTournamentID,
+  Venue,
+} from '@Types/tournamentTypes';
 import {
   ReadModelTournamentDiscoveryRow,
   ReadModelTournamentRow,
@@ -66,10 +79,20 @@ export function tournamentRow(record: any): ReadModelTournamentRow {
 }
 
 /** Coordinates arrive as `string | number` in CODES. A read model that stores both cannot index. */
-function toNumber(value: any): number | null {
+function toNumber(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined || value === '') return null;
   const n = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Registration instants are `Date | string` in CODES, and their columns hold strings. A string
+ * passes through as written; a `Date` becomes its ISO instant, and an invalid one has none.
+ */
+function toInstantString(value: Date | string | null | undefined): string | null {
+  if (!isDateObject(value)) return (value as string | null | undefined) ?? null;
+  const date = value as Date;
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 /** Sorted, de-duplicated, empties dropped — a facet list is a set, and a stable one. */
@@ -88,12 +111,12 @@ function facet(values: (string | undefined | null)[]): string[] {
  * and the first is the one with the unit rules in it.
  */
 export function tournamentDiscoveryRow(record: any): ReadModelTournamentDiscoveryRow {
-  const events: any[] = record?.events ?? [];
-  const sanction: any = record?.sanction ?? {};
-  const classification: any = sanction.classification ?? record?.tournamentTier ?? {};
+  const events: Event[] = record?.events ?? [];
+  const sanction: TournamentSanction = record?.sanction ?? {};
+  const classification: Partial<TierClassification> = sanction.classification ?? record?.tournamentTier ?? {};
 
-  const primaryVenue: any = record?.venues?.find((v: any) => v?.isPrimary) ?? record?.venues?.[0];
-  const address: any = primaryVenue?.addresses?.[0] ?? {};
+  const primaryVenue: Venue | undefined = record?.venues?.find((v: Venue) => v?.isPrimary) ?? record?.venues?.[0];
+  const address: Address = primaryVenue?.addresses?.[0] ?? {};
 
   const registration: any = getEffectiveRegistrationProfile({ tournamentRecord: record });
 
@@ -103,7 +126,7 @@ export function tournamentDiscoveryRow(record: any): ReadModelTournamentDiscover
     ...(registration?.entryFees ?? []),
     ...events.flatMap((e) => e?.registrationProfile?.entryFees ?? []),
   ];
-  const range: any = getEntryFeeRange(allFees);
+  const range = getEntryFeeRange(allFees);
   const comparable = range && !range.incomparable?.length && !range.indeterminate?.length;
 
   return {
@@ -125,8 +148,8 @@ export function tournamentDiscoveryRow(record: any): ReadModelTournamentDiscover
     recognition: sanction.recognition ?? null,
     decision: sanction.decision ?? null,
     ranking_eligible: sanction.confers?.rankingEligible ?? null,
-    entries_open: registration?.entriesOpen ?? null,
-    entries_close: registration?.entriesClose ?? null,
+    entries_open: toInstantString(registration?.entriesOpen),
+    entries_close: toInstantString(registration?.entriesClose),
     fee_min: comparable ? range.min.amount : null,
     fee_max: comparable ? range.max.amount : null,
     fee_currency: comparable ? range.min.currencyCode : null,
@@ -431,14 +454,25 @@ export function rubberTieValue(tieFormat: any, collectionId?: string, collection
 
 // ── match_ups + match_up_competitors ─────────────────────────────────────────────
 
-function winnerPerspectiveScore(matchUp: any): string | null {
+/** A matchUp as either path hands it over: hydrated by the flatten (`cast()`), stored (the slim
+ *  MODIFY_MATCHUP row), or a TEAM matchUp's rubber (`tieMatchUps`, declared as stored matchUps).
+ *  Hydration adds the parent ids and lifts `scheduledDate` and `venueId` to the top level. */
+type ProjectedMatchUp = MatchUp & {
+  scheduledDate?: string;
+  structureId?: string;
+  venueId?: string;
+  eventId?: string;
+  drawId?: string;
+};
+
+function winnerPerspectiveScore(matchUp: ProjectedMatchUp): string | null {
   const score = matchUp?.score;
   if (!score) return null;
   if (matchUp?.winningSide === 2) return score.scoreStringSide2 ?? score.scoreStringSide1 ?? null;
   return score.scoreStringSide1 ?? score.scoreStringSide2 ?? null;
 }
 
-function matchUpScheduledDate(matchUp: any): string | null {
+function matchUpScheduledDate(matchUp: ProjectedMatchUp): string | null {
   const schedule = matchUp?.schedule;
   if (schedule?.scheduledDate) return schedule.scheduledDate;
   // A scheduledTime stored as a full ISO datetime carries the date; the inContext
@@ -450,7 +484,7 @@ function matchUpScheduledDate(matchUp: any): string | null {
   return matchUp?.scheduledDate ?? null;
 }
 
-function matchUpVenueId(matchUp: any): string | null {
+function matchUpVenueId(matchUp: ProjectedMatchUp): string | null {
   return matchUp?.schedule?.venueId ?? matchUp?.venueId ?? null;
 }
 
@@ -458,7 +492,7 @@ function matchUpVenueId(matchUp: any): string | null {
  *  matchUp (STANDARD) from a TEAM/dual container (TIE) and its nested rubbers
  *  (RUBBER); `parentMatchUpId` is set only for rubbers. */
 function matchUpRow(
-  matchUp: any,
+  matchUp: ProjectedMatchUp,
   level: string,
   parentMatchUpId: string | null,
   ctx: MatchUpRowContext,
@@ -519,7 +553,7 @@ function pairCompetitorRows(
   ctx: MatchUpRowContext,
   teamIdOverride: string | null,
 ): ReadModelCompetitorRow[] {
-  return participant.individualParticipants.map((individual: any, index: number) => {
+  return participant.individualParticipants.map((individual: HydratedParticipant, index: number) => {
     const link = resolvePersonLink(individual?.participantId, individual?.person?.personId);
     return {
       match_up_id: matchUpId,
@@ -542,7 +576,7 @@ function pairCompetitorRows(
  *  no resolved participant (BYE/WALKOVER) yield no rows. `teamIdOverride` stamps
  *  a rubber player's competitor row with the team_id of its dual. */
 function sideCompetitorRows(
-  side: any,
+  side: HydratedSide,
   matchUpId: string,
   ctx: MatchUpRowContext,
   teamIdOverride: string | null,
@@ -581,8 +615,8 @@ function sideCompetitorRows(
   ];
 }
 
-function teamIdForSide(parentMatchUp: any, sideNumber: number | null): string | null {
-  const side = (parentMatchUp?.sides ?? []).find((s: any) => s?.sideNumber === sideNumber);
+function teamIdForSide(parentMatchUp: HydratedMatchUp, sideNumber: number | null): string | null {
+  const side = (parentMatchUp?.sides ?? []).find((s) => s?.sideNumber === sideNumber);
   const participant = side?.participant;
   if (!participant) return null;
   return participant.teamId ?? participant.participantId ?? null;
@@ -658,7 +692,7 @@ export function matchUpResultRow(
 // participantId → personId map for entry person resolution. Includes INDIVIDUAL
 // participants (the humans); PAIR/TEAM entries resolve to their own id (no
 // person, correctly left unresolved by the person rule).
-function buildPersonIndex(participants: any[]): Map<string, string | undefined> {
+function buildPersonIndex(participants: Participant[]): Map<string, string | undefined> {
   const index = new Map<string, string | undefined>();
   for (const participant of participants) {
     if (participant?.participantId) index.set(participant.participantId, participant?.person?.personId);
@@ -681,7 +715,9 @@ function buildPersonIndex(participants: any[]): Map<string, string | undefined> 
  * there is nowhere to put a second; a consumer needing every issuing body should read
  * `getParticipation`, which emits one entry per (body, team).
  */
-function buildTeamIssuedIndex(participants: any[]): Map<string, { teamId: string; organisationId: string | null }> {
+function buildTeamIssuedIndex(
+  participants: Participant[],
+): Map<string, { teamId: string; organisationId: string | null }> {
   const index = new Map<string, { teamId: string; organisationId: string | null }>();
   for (const participant of participants) {
     if (participant?.participantType !== TEAM) continue;

@@ -19,16 +19,17 @@ type ValidateCertificationArgs = {
 
 export function validateCertification({ officialRecord, certificationId, asOfDate }: ValidateCertificationArgs): {
   error?: any;
+  context?: { message?: string; certificationId?: string };
   success?: boolean;
   valid?: boolean;
   certification?: OfficialCertification;
   reasons?: string[];
 } {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!certificationId) return { error: INVALID_VALUES, context: { message: 'Missing certificationId' } } as any;
+  if (!certificationId) return { error: INVALID_VALUES, context: { message: 'Missing certificationId' } };
 
   const certification = officialRecord.certifications.find((c) => c.certificationId === certificationId);
-  if (!certification) return { error: CERTIFICATION_NOT_FOUND, context: { certificationId } } as any;
+  if (!certification) return { error: CERTIFICATION_NOT_FOUND, context: { certificationId } };
 
   const reasons: string[] = [];
   const checkDate = asOfDate ?? nowIso().split('T')[0];

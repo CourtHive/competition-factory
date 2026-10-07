@@ -1,6 +1,6 @@
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { validateSetScore } from '@Validators/validateMatchUpScore';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 import type { Set } from '@Types/tournamentTypes';
 
@@ -72,7 +72,7 @@ export type RetainedScore = {
 };
 
 /** The set count a format plays: every set for an `exactly` format, otherwise the best-of. */
-function setCountOf(parsed: any): number | undefined {
+function setCountOf(parsed: ParsedFormat | undefined): number | undefined {
   return parsed?.exactly ?? parsed?.bestOf;
 }
 
@@ -83,7 +83,7 @@ function setCountOf(parsed: any): number | undefined {
  * set is an ordinary set under `SET5` and the decider under `SET3`, and can change shape without
  * anyone editing it. That is why the position is resolved against each format separately.
  */
-function setFormatAt(parsed: any, index: number): any {
+function setFormatAt(parsed: ParsedFormat | undefined, index: number): any {
   if (!parsed) return undefined;
   const count = setCountOf(parsed);
   const isDeciding = count !== undefined && index === count - 1;
@@ -97,7 +97,7 @@ function setFormatAt(parsed: any, index: number): any {
  * grammar, so two formats that mean the same thing serialise the same way — which is what makes
  * comparing them honest rather than a list of fields someone has to remember to extend.
  */
-function sameSetFormat(a: any, b: any): boolean {
+function sameSetFormat(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   return JSON.stringify(a) === JSON.stringify(b);

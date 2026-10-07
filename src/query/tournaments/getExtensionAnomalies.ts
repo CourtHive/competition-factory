@@ -1,4 +1,4 @@
-import { Tournament } from '@Types/tournamentTypes';
+import { Extension, Tournament } from '@Types/tournamentTypes';
 import {
   DRAW_DEFINITION,
   EVENT,
@@ -45,7 +45,7 @@ export type ExtensionAnomaly = {
   elementId?: string;
 };
 
-function duplicatesOf(element: any): { name: string; occurrences: number }[] {
+function duplicatesOf(element: { extensions?: Extension[] }): { name: string; occurrences: number }[] {
   const extensions = element?.extensions;
   if (!Array.isArray(extensions) || extensions.length < 2) return [];
 
@@ -65,7 +65,7 @@ function duplicatesOf(element: any): { name: string; occurrences: number }[] {
 export function getExtensionAnomalies({ tournamentRecord }: { tournamentRecord: Tournament }): ExtensionAnomaly[] {
   const anomalies: ExtensionAnomaly[] = [];
 
-  const consider = (element: any, elementType: ElementType, elementId?: string) => {
+  const consider = (element: { extensions?: Extension[] }, elementType: ElementType, elementId?: string) => {
     const duplicateNames = duplicatesOf(element);
     if (duplicateNames.length) anomalies.push({ duplicateNames, elementType, ...(elementId && { elementId }) });
   };

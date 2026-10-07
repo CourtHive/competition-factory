@@ -1,8 +1,8 @@
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { isValidSeedPosition, SeedBlockInfo } from '@Query/drawDefinition/seedGetter';
 import { modifySeedAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { participantInEntries } from '@Query/drawDefinition/entryGetter';
-import { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { findStructure } from '@Acquire/findStructure';
@@ -23,7 +23,7 @@ type AssignSeedArgs = {
   seedingProfile?: SeedingProfile;
   drawDefinition: DrawDefinition;
   participantId: string;
-  seedBlockInfo?: any;
+  seedBlockInfo?: SeedBlockInfo;
   structureId: string;
   seedNumber: number;
   /** Why the seed was awarded; see {@link SeedingBasisEnum}. Absent leaves any existing basis alone. */

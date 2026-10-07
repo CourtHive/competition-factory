@@ -144,6 +144,13 @@ export type RestRow = {
    * clean estimate while a recorded stamp sits in the record contradicting it.
    */
   discardedSources?: RestSourceKind[];
+  /**
+   * True for a row standing for a side that has no participant yet, not for a person.
+   * Its `participantId` is `pending:<feeder matchUpId>`, its `participantName` is the
+   * feeder's label, its band is `onCourt` (whoever arrives is still playing upstream, so
+   * rest has not begun), and its `load` is all zeros because nobody is known to count.
+   */
+  pendingUpstream?: boolean;
   /** The matchUp the rest is measured from. Absent for `none`. */
   fromMatchUpId?: string;
   fromMatchUpLabel?: string;
@@ -192,7 +199,7 @@ function localDate(ms: number | null, frame: Frame): string | null {
 }
 
 export function normalizeTimes(matchUp: HydratedMatchUp, frame: Frame): NormalizedTimes {
-  const schedule: any = matchUp.schedule ?? {};
+  const schedule = matchUp.schedule ?? {};
   const scoredMs = isoToMs(schedule.scoredTime);
   return {
     // END_DATE is written only when the match crossed midnight, so it dates the
@@ -554,6 +561,77 @@ function deficitMinutes(row: RestRow): number {
 }
 
 /**
+ * Nothing can be counted for a participant who is not known yet: which of the players
+ * still on court arrives decides their day, and that is exactly what has not happened.
+ * Zero rather than a guess; renderers skip the ordinal for a pending row.
+ */
+const UNKNOWN_LOAD: RestDailyLoad = { singles: 0, doubles: 0, total: 0, ordinal: 0, atLimit: [] };
+
+/** True when `matchUp` feeds either of its outcomes into `matchUpId`. */
+function feedsInto(matchUp: HydratedMatchUp, matchUpId: string): boolean {
+  return matchUp.winnerMatchUpId === matchUpId || matchUp.loserMatchUpId === matchUpId;
+}
+
+/**
+ * The row for a side that has no participant yet. `onCourt` even when the feeder has not
+ * started: the band means "their previous match has not finished, so rest has not begun",
+ * which is as true of a match still to be played as of one in progress. The projected
+ * finish comes from the same ladder every other row uses, so a feeder that is merely
+ * scheduled still yields a `readyAt`: the earliest this matchUp could honestly be called.
+ */
+function pendingRowFor(feeder: HydratedMatchUp, target: HydratedMatchUp, context: RestContext): RestRow {
+  const timing = context.timingFor(feeder);
+  const { requiredMinutes, typeChange } = requirementFor(feeder, target, timing);
+  const anchor = resolveAnchor(normalizeTimes(feeder, context.frame), timing);
+  // As for a live row: once the projected finish has passed, the projection has expired,
+  // and naming a `readyAt` behind the clock would read as though the winner were free.
+  const overrun = !!anchor && anchor.ms <= context.asOfMs;
+  const readyAt =
+    anchor && !overrun ? localClock(anchor.ms + requiredMinutes * MS_PER_MINUTE, context.frame) : undefined;
+  return {
+    // Namespaced so nothing downstream can mistake it for a participantId: the match that
+    // decides the side is the only identity available.
+    participantId: `pending:${feeder.matchUpId}`,
+    participantName: matchUpLabel(feeder),
+    status: 'onCourt',
+    pendingUpstream: true,
+    requiredMinutes,
+    typeChange,
+    ...(readyAt && { readyAt }),
+    ...(overrun && { overrun: true }),
+    ...(anchor && { source: anchor.source }),
+    fromMatchUpId: feeder.matchUpId,
+    fromMatchUpLabel: matchUpLabel(feeder),
+    load: UNKNOWN_LOAD,
+  };
+}
+
+/**
+ * One row per undecided side, drawn from the unfinished matchUps that feed this one.
+ *
+ * Without these, a semifinal reading "TBD vs Camacho/Talla" reported only Camacho/Talla,
+ * rested and apparently ready to call, while its other half was still being played for.
+ * A consumer badging the worst row needs the undecided side to tell the truth. Feeders
+ * pair with sides by count, not by draw position (two undecided sides, two unfinished
+ * feeders; one-sided is the common case), sorted so the pairing is stable. Both sides
+ * undecided stays a `noParticipants` skip: there is no rest question until someone is in.
+ */
+function pendingSideRows(target: HydratedMatchUp, context: RestContext): RestRow[] {
+  const undecided = (target.sides ?? []).filter((side) => !(side.participantId ?? side.participant?.participantId));
+  if (!undecided.length) return [];
+
+  const feeders = context.matchUps
+    .filter((matchUp) => feedsInto(matchUp, target.matchUpId) && matchUp.matchUpStatus !== BYE && !isFinished(matchUp))
+    .toSorted(
+      (a, b) =>
+        (a.schedule?.scheduledTime ?? '').localeCompare(b.schedule?.scheduledTime ?? '') ||
+        a.matchUpId.localeCompare(b.matchUpId),
+    );
+
+  return feeders.slice(0, undecided.length).map((feeder) => pendingRowFor(feeder, target, context));
+}
+
+/**
  * Rest for every individual in one matchUp. Rows are ordered worst-first
  * (`onCourt` → `resting` → `rested` → `none`) so a renderer can take the head as
  * the headline without re-deciding severity.
@@ -572,9 +650,11 @@ export function analyzeParticipantRest(params: RestContext & { matchUpId: string
 
   const dayMatchUps = collectPriorMatchUps(target, context);
   const order: RestStatus[] = ['onCourt', 'resting', 'rested', 'none'];
-  const rows = participantIds
-    .map((participantId) => restRowFor(participantId, target, context, dayMatchUps))
-    .toSorted((a, b) => order.indexOf(a.status) - order.indexOf(b.status) || deficitMinutes(b) - deficitMinutes(a));
+  const rows = [
+    ...participantIds.map((participantId) => restRowFor(participantId, target, context, dayMatchUps)),
+    // Sorted in rather than appended: an undecided side is the worst row by construction.
+    ...pendingSideRows(target, context),
+  ].toSorted((a, b) => order.indexOf(a.status) - order.indexOf(b.status) || deficitMinutes(b) - deficitMinutes(a));
 
   return {
     evaluated: true,
@@ -634,7 +714,7 @@ export function getParticipantRest(params: GetParticipantRestArgs): ResultType &
   const limits: any = getDailyLimit({ tournamentRecord });
 
   const rest = analyzeParticipantRest({
-    frame: { utcOffsetMinutes, timeZone: params.timeZone ?? (tournamentRecord as any)?.localTimeZone },
+    frame: { utcOffsetMinutes, timeZone: params.timeZone ?? tournamentRecord?.localTimeZone },
     timingFor: makeTimingResolver(tournamentRecord),
     dailyLimits: limits?.error ? undefined : limits?.matchUpDailyLimits,
     scheduledDate,

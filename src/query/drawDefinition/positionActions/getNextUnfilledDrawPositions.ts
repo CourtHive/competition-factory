@@ -1,5 +1,5 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
-import { getNextSeedBlock } from '@Query/drawDefinition/seedGetter';
+import { getNextSeedBlock, SeedBlockInfo } from '@Query/drawDefinition/seedGetter';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -11,7 +11,7 @@ type GetNextUfilledDrawPositionsArgs = {
   provisionalPositioning?: boolean;
   drawDefinition: DrawDefinition;
   seedingProfile?: SeedingProfile;
-  seedBlockInfo?: any;
+  seedBlockInfo?: SeedBlockInfo;
   structureId: string;
   event?: Event;
 };

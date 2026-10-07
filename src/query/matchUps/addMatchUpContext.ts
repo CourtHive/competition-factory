@@ -20,6 +20,7 @@ import { unique } from '@Tools/arrays';
 import { getSide } from './getSide';
 
 // constants and types
+import type { RoundNamingProfile } from '@Query/matchUps/getRoundContextProfile';
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { isEmbargoed } from '@Query/publishing/isEmbargoed';
@@ -33,6 +34,7 @@ import {
   ContextProfile,
   ParticipantMap,
   PolicyDefinitions,
+  RoundProfile,
   ScheduleTiming,
   ScheduleVisibilityFilters,
 } from '@Types/factoryTypes';
@@ -67,16 +69,16 @@ type AddMatchUpContextArgs = {
   drawPositionsRanges?: any;
   isCollectionBye?: boolean;
   usePublishState?: boolean;
-  afterRecoveryTimes?: any;
+  afterRecoveryTimes?: boolean;
   matchUp: HydratedMatchUp;
-  roundNamingProfile?: any;
+  roundNamingProfile?: RoundNamingProfile;
   scoringActive?: boolean;
   isRoundRobin?: boolean;
   matchUpTieId?: string;
   structure: Structure;
   publishStatus?: any;
   sideLineUps?: any[];
-  roundProfile?: any;
+  roundProfile?: RoundProfile;
   event?: Event;
 };
 

@@ -374,6 +374,32 @@ it('merges overlapping availability with bookings', () => {
   expect(court.dateAvailability[0].bookings).toBeDefined();
 });
 
+it('merging two overlapping windows that both hold bookings keeps one flat list of bookings', () => {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ courtsCount: 1 }],
+    setState: true,
+  });
+  const { courts } = tournamentEngine.getCourts();
+  const courtId = courts[0].courtId;
+
+  const practice = { startTime: '08:00', endTime: '09:00', bookingType: 'PRACTICE' };
+  const maintenance = { startTime: '14:00', endTime: '15:00', bookingType: 'MAINTENANCE' };
+  const dateAvailability = [
+    { date: d210102, startTime: '08:00', endTime: '12:00', bookings: [practice] },
+    { date: d210102, startTime: '10:00', endTime: '17:00', bookings: [maintenance] },
+  ];
+  const result = tournamentEngine.modifyCourtAvailability({ dateAvailability, courtId });
+  expect(result.success).toEqual(true);
+  expect(result.totalMergeCount).toEqual(1);
+
+  const court = tournamentEngine.getCourts().courts.find((c) => c.courtId === courtId);
+  expect(court.dateAvailability).toEqual([
+    { date: d210102, startTime: '08:00', endTime: '17:00', bookings: [practice, maintenance] },
+  ]);
+  // the caller's own bookings arrays are not merged into
+  expect(dateAvailability[0].bookings).toEqual([practice]);
+});
+
 it('merges overlapping availability where only the second entry has bookings', () => {
   mocksEngine.generateTournamentRecord({
     venueProfiles: [{ courtsCount: 1 }],

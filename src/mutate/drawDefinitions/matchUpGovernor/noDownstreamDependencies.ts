@@ -115,6 +115,7 @@ export function noDownstreamDependencies(params) {
 
     if (params.removingQualifier && params.appliedPolicies?.[POLICY_TYPE_PROGRESSION]?.autoRemoveQualifiers) {
       const result = removeQualifier(params);
+      if (result.error) return result;
       return { ...SUCCESS, connectedStructures, ...result };
     }
 

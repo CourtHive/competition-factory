@@ -139,26 +139,20 @@ export function getAvailableReports({
 
   const hasEvents = (tournamentRecord.events?.length ?? 0) > 0;
   const hasVenues = (tournamentRecord.venues?.length ?? 0) > 0;
-  const hasCompletedDraws = (tournamentRecord.events ?? []).some((e: any) =>
-    (e.drawDefinitions ?? []).some((d: any) =>
-      (d.structures ?? []).some((s: any) => (s.positionAssignments ?? []).length > 0),
-    ),
+  const hasCompletedDraws = (tournamentRecord.events ?? []).some((e) =>
+    (e.drawDefinitions ?? []).some((d) => (d.structures ?? []).some((s) => (s.positionAssignments ?? []).length > 0)),
   );
-  const hasSeededParticipants = (tournamentRecord.events ?? []).some((e: any) =>
-    (e.drawDefinitions ?? []).some((d: any) =>
-      (d.structures ?? []).some((s: any) => (s.seedAssignments ?? []).length > 0),
-    ),
+  const hasSeededParticipants = (tournamentRecord.events ?? []).some((e) =>
+    (e.drawDefinitions ?? []).some((d) => (d.structures ?? []).some((s) => (s.seedAssignments ?? []).length > 0)),
   );
-  const hasTeamParticipants = (tournamentRecord.participants ?? []).some(
-    (p: any) => p.participantType === TEAM_PARTICIPANT,
-  );
+  const hasTeamParticipants = (tournamentRecord.participants ?? []).some((p) => p.participantType === TEAM_PARTICIPANT);
   // Recovery needs a start anchor of some kind — an explicit start, a call to
   // court, or at minimum a planned time. Without any of those, every matchUp is
   // undatable and both reports would return zero rows.
-  const hasScheduledMatchUps = (tournamentRecord.events ?? []).some((e: any) =>
-    (e.drawDefinitions ?? []).some((d: any) =>
-      (d.structures ?? []).some((s: any) =>
-        (s.matchUps ?? []).some((m: any) => m.schedule?.scheduledTime || m.schedule?.startTime || m.schedule?.calledAt),
+  const hasScheduledMatchUps = (tournamentRecord.events ?? []).some((e) =>
+    (e.drawDefinitions ?? []).some((d) =>
+      (d.structures ?? []).some((s) =>
+        (s.matchUps ?? []).some((m) => m.schedule?.scheduledTime || m.schedule?.startTime || m.schedule?.calledAt),
       ),
     ),
   );

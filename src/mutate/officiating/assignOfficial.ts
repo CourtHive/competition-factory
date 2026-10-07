@@ -41,6 +41,7 @@ type AssignOfficialArgs = ConflictEvaluationInputs & {
 
 export function assignOfficial(params: AssignOfficialArgs): {
   error?: any;
+  context?: { message: string };
   assignment?: OfficialAssignment;
   conflicts?: OfficialConflict[];
   success?: boolean;
@@ -60,8 +61,8 @@ export function assignOfficial(params: AssignOfficialArgs): {
   } = params;
 
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!tournamentId) return { error: INVALID_VALUES, context: { message: 'Missing tournamentId' } } as any;
-  if (!roleSubtype) return { error: INVALID_VALUES, context: { message: 'Missing roleSubtype' } } as any;
+  if (!tournamentId) return { error: INVALID_VALUES, context: { message: 'Missing tournamentId' } };
+  if (!roleSubtype) return { error: INVALID_VALUES, context: { message: 'Missing roleSubtype' } };
 
   // Forward the conflict inputs WHOLE. Hand-listing them here is what let this route disagree with
   // addMatchUpOfficial about the same conflict — see conflictEvaluationInputs.ts.
@@ -72,7 +73,7 @@ export function assignOfficial(params: AssignOfficialArgs): {
   // A malformed conflict check must not fall through to an unchecked assignment.
   if (conflictResult.error) return { error: conflictResult.error };
   if (conflictResult.blocked) {
-    return { error: OFFICIAL_CONFLICT_OF_INTEREST, conflicts: conflictResult.conflicts } as any;
+    return { error: OFFICIAL_CONFLICT_OF_INTEREST, conflicts: conflictResult.conflicts };
   }
 
   const conflicts = conflictResult.conflicts ?? [];

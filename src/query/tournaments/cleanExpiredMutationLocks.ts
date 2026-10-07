@@ -5,9 +5,9 @@ import { nowIso } from '@Tools/clock';
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
+import { Extension, Tournament } from '@Types/tournamentTypes';
 import { MutationLocksValue } from '@Types/mutationLockTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
 
 type CleanExpiredArgs = {
   tournamentRecord: Tournament;
@@ -25,7 +25,7 @@ export function cleanExpiredMutationLocks(params: CleanExpiredArgs): {
   const now = nowIso();
   let removedCount = 0;
 
-  const cleanElement = (element: any) => {
+  const cleanElement = (element: { extensions?: Extension[] }) => {
     const { extension } = findExtension({ element, name: MUTATION_LOCKS });
     if (!extension?.value?.locks?.length) return;
 

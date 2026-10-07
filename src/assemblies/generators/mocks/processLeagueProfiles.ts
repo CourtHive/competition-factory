@@ -32,7 +32,7 @@ function deriveLeagueRoundsCount({ roundsCount, drawSize }): number {
   return drawSize - 1;
 }
 
-export function processLeagueProfiles(params): any {
+export function processLeagueProfiles(params) {
   const { tournamentRecord, leagueProfiles, eventIds, venueIds, drawIds, allUniqueParticipantIds, random, uuids } =
     params;
 
@@ -108,7 +108,7 @@ export function processLeagueProfiles(params): any {
       entries.push({ participantId: teamParticipantId, entryStatus: DIRECT_ACCEPTANCE, entryStage: MAIN });
 
       const homeVenueIds = teamProfiles?.[index]?.venueIds ?? [];
-      const teamParticipant: any = {
+      const teamParticipant: Participant = {
         participantId: teamParticipantId,
         participantRole: COMPETITOR,
         participantName: teamName,

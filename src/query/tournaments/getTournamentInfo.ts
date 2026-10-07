@@ -1,3 +1,5 @@
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
@@ -9,12 +11,13 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
+import { Contact, ParticipantRoleUnion, Structure, Tournament } from '@Types/tournamentTypes';
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { TOURNAMENT_IMAGE_RESOURCE_NAME } from '@Constants/tournamentConstants';
 import POLICY_PRIVACY_STAFF from '@Fixtures/policies/POLICY_PRIVACY_STAFF';
-import { ParticipantRoleUnion, Tournament } from '@Types/tournamentTypes';
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
+import { HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ADMINISTRATION,
@@ -74,8 +77,8 @@ const STAFF_CONTACT_ROLES = [
  *
  * Strict equality is the point: absent and `false` both withhold. Opting in has to be deliberate.
  */
-function publishableContacts(participant: any): any {
-  const filterContacts = (contacts: any) =>
+function publishableContacts(participant: HydratedParticipant) {
+  const filterContacts = (contacts?: Contact[]) =>
     Array.isArray(contacts) ? contacts.filter((contact) => contact?.isPublic === true) : contacts;
 
   if (!participant?.contacts && !participant?.person?.contacts) return participant;
@@ -86,6 +89,18 @@ function publishableContacts(participant: any): any {
     ...(participant.person?.contacts
       ? { person: { ...participant.person, contacts: filterContacts(participant.person.contacts) } }
       : {}),
+  };
+}
+
+// a round robin is a CONTAINER: its matchUps and positionAssignments live on its groups
+function getStructureMembers(structure: Structure) {
+  const groups = structuresOf(structure);
+  if (!groups) {
+    return { structureMatchUps: matchUpsOf(structure) ?? [], positionAssignments: positionAssignmentsOf(structure) };
+  }
+  return {
+    structureMatchUps: groups.flatMap((group) => matchUpsOf(group) ?? []),
+    positionAssignments: getPositionAssignments({ structure }).positionAssignments,
   };
 }
 
@@ -176,7 +191,7 @@ export function getTournamentInfo(params?: {
   if (tournamentContacts) tournamentInfo.tournamentContacts = tournamentContacts;
 
   const imageUrl = tournamentRecord?.onlineResources?.find(
-    (r: any) => r.name === TOURNAMENT_IMAGE_RESOURCE_NAME && r.resourceType === 'URL',
+    (r) => r.name === TOURNAMENT_IMAGE_RESOURCE_NAME && r.resourceType === 'URL',
   )?.identifier;
   if (imageUrl) tournamentInfo.imageUrl = imageUrl;
 
@@ -187,7 +202,7 @@ export function getTournamentInfo(params?: {
   const infoEventIds = info?.eventIds ? new Set<string>(info.eventIds) : undefined;
   const isListed = (eventId: string) =>
     publishedEventIds.has(eventId) || (!!info?.published && (!infoEventIds || infoEventIds.has(eventId)));
-  const eventInfo: any[] = [];
+  const eventInfo: ReturnType<typeof extractEventInfo>['eventInfo'][] = [];
 
   for (const event of tournamentRecord.events ?? []) {
     if (!params?.usePublishState || isListed(event.eventId)) {
@@ -207,7 +222,8 @@ export function getTournamentInfo(params?: {
     for (const event of tournamentRecord.events ?? []) {
       for (const drawDefinition of event.drawDefinitions ?? []) {
         for (const structure of drawDefinition.structures ?? []) {
-          matchUps.push(...(structure.matchUps ?? []));
+          const { structureMatchUps, positionAssignments } = getStructureMembers(structure);
+          matchUps.push(...structureMatchUps);
           structures.push(
             definedAttributes({
               eventId: event.eventId,
@@ -220,7 +236,7 @@ export function getTournamentInfo(params?: {
               structureName: structure.structureName,
               stage: structure.stage,
               stageSequence: structure.stageSequence,
-              positionAssignments: structure.positionAssignments,
+              positionAssignments,
               seedAssignments: structure.seedAssignments,
               matchUpFormat: structure.matchUpFormat,
             }),

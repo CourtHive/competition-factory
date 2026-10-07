@@ -90,7 +90,7 @@ export function setDrawOtherIds({
     return { ...SUCCESS };
   }
 
-  const check = checkUnifiedIds(drawOtherIds as any[]);
+  const check = checkUnifiedIds(drawOtherIds);
   if (check?.error) return check;
 
   drawDefinition.drawOtherIds = drawOtherIds;

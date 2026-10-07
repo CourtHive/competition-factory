@@ -4,14 +4,14 @@ import { setPlayedAfterDecision } from '@Validators/setCount';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants and types
-import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import type { MatchUpStatusUnion, Set as SetType } from '@Types/tournamentTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 type ScoreCompletenessArgs = {
   matchUpStatus?: MatchUpStatusUnion;
   matchUpFormat?: string;
   winningSide?: number;
-  sets: any[];
+  sets: SetType[];
 };
 
 /**

@@ -25,15 +25,29 @@ import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORD, SCORES_PRESENT } from '@Constants/errorConditionConstants';
+import { DrawDefinition, Event, PositionAssignment, Tournament } from '@Types/tournamentTypes';
 import { DRAW_DELETIONS, FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { AUDIT, UNPUBLISH_TOURNAMENT } from '@Constants/topicConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { Event, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+
+type DrawDeletionAudit = {
+  action: string;
+  payload: { drawDefinitions: DrawDefinition[]; eventId?: string; auditData?: object };
+};
+
+type DrawDeletionDispatch = {
+  deletedDrawsDetail: Record<string, unknown>[];
+  appliedPolicies?: PolicyDefinitions;
+  auditTrail: DrawDeletionAudit[];
+  auditData?: object;
+  tournamentId: string;
+  event: Event;
+};
 
 type DeleteDrawDefinitionArgs = {
   policyDefinitions?: PolicyDefinitions;
@@ -65,9 +79,9 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
     event = result.event;
   }
 
-  const deletedDrawsDetail: any[] = [];
+  const deletedDrawsDetail: Record<string, unknown>[] = [];
   const matchUpIds: string[] = [];
-  const auditTrail: any[] = [];
+  const auditTrail: DrawDeletionAudit[] = [];
 
   if (!event?.drawDefinitions)
     return decorateResult({
@@ -91,7 +105,7 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
 
   const flightProfile = makeDeepCopy(getFlightProfile({ event }).flightProfile, false, true);
 
-  const positionAssignmentMap = ({ participantId, drawPosition, qualifier, bye }) => ({
+  const positionAssignmentMap = ({ participantId, drawPosition, qualifier, bye }: PositionAssignment) => ({
     bye,
     qualifier,
     drawPosition,
@@ -280,7 +294,7 @@ function dispatchDrawDeletionAudit({
   auditTrail,
   auditData,
   event,
-}) {
+}: DrawDeletionDispatch) {
   // Always dispatch the AUDIT notice so subscribers (notably the server's
   // AuditService when auditAuthorityServer is set) can capture the detail.
   const subscribed = hasTopic(AUDIT);
@@ -300,7 +314,12 @@ function dispatchDrawDeletionAudit({
   }
 }
 
-function addDrawDeletionTelemetry({ appliedPolicies, event, deletedDrawsDetail, auditData }) {
+function addDrawDeletionTelemetry({
+  deletedDrawsDetail,
+  appliedPolicies,
+  auditData,
+  event,
+}: Omit<DrawDeletionDispatch, 'auditTrail' | 'tournamentId'>) {
   // true by default
   if (appliedPolicies?.audit?.[DRAW_DELETIONS] === false) return;
 

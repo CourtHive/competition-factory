@@ -3,6 +3,7 @@ import { computeTiebreakers } from '@Generators/drawDefinitions/drawTypes/adHoc/
 import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
@@ -38,7 +39,7 @@ export function getSwissStandings({
 
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
-  const matchUps = structure.matchUps ?? [];
+  const matchUps = matchUpsOf(structure) ?? [];
   const participantIds = (drawDefinition.entries ?? [])
     .filter((e) => !!e.entryStatus && STRUCTURE_SELECTED_STATUSES.includes(e.entryStatus))
     .map(getParticipantId)

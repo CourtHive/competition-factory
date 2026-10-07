@@ -7,6 +7,7 @@ import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
@@ -48,8 +49,11 @@ export function directLoser(params): ResultType {
     loserMatchUp.roundNumber === 2 &&
     Math.min(...targetMatchUpDrawPositions.filter(Boolean));
 
-  const targetMatchUpDrawPosition = fedDrawPositionFMLC || targetMatchUpDrawPositions[loserMatchUpDrawPositionIndex];
-  const loserBackdrawPosition = fedDrawPositionFMLC || targetMatchUpDrawPositions[1 - loserMatchUpDrawPositionIndex];
+  // the target's sides, read structurally: index 0 is side 1, and a lone position's side is not its index
+  const targetSide = (sideNumber: number) =>
+    getSideDrawPosition({ matchUp: loserMatchUp, structureId: loserMatchUp.structureId, sideNumber, drawDefinition });
+  const targetMatchUpDrawPosition = fedDrawPositionFMLC || targetSide(loserMatchUpDrawPositionIndex + 1);
+  const loserBackdrawPosition = fedDrawPositionFMLC || targetSide(2 - loserMatchUpDrawPositionIndex);
 
   const sourceStructureId = loserTargetLink.source.structureId;
   const { structure } = findStructure({
@@ -120,7 +124,7 @@ export function directLoser(params): ResultType {
 
   if (loserAlreadyDirected) {
     // a RELABEL (the winner unchanged): carry an exit that is now one, or withdraw one that no longer is
-    const { carry } = relabelLoserExit({
+    const relabel = relabelLoserExit({
       sourceMatchUpId: params.sourceMatchUpId,
       validExitToPropagate,
       sourceMatchUpStatus,
@@ -132,7 +136,8 @@ export function directLoser(params): ResultType {
       matchUpsMap,
       event,
     });
-    if (carry) return { ...SUCCESS, stack, context: { ...context, progressExitStatus: true } };
+    if (relabel.error) return decorateResult({ result: relabel, stack });
+    if (relabel.carry) return { ...SUCCESS, stack, context: { ...context, progressExitStatus: true } };
     return { ...SUCCESS, stack };
   }
 
@@ -150,6 +155,10 @@ export function directLoser(params): ResultType {
   // `assignDrawPosition` already clears a BYE before assigning (see the `containsBye` branch in
   // positionAssignment.ts), so the placement it was refusing is one it knows how to perform.
   //
+  // STILL REACHED on legal play after #5154 (measured 2026-10-06, S2D item 6): it decides 700 placements across 56
+  // test files and every census window, and without it sweep seed 6141627 (COMPASS 16/14, 6 legal steps) fails a
+  // relabel with ERR_OCCUPIED_DRAW_POSITION over a changed draw. Pinned: `aLoserTakesAPropagatedByeSeat.test.ts`.
+  //
   // `byeFromPropagation` is the authoritative marker, and consulting it is the point: it exists so
   // that removal does not have to infer "did the cascade place this BYE" from topology. An unmarked
   // BYE is NOT treated as available — it may be a structural BYE that legitimately owns the slot,
@@ -163,11 +172,12 @@ export function directLoser(params): ResultType {
     })
     .map((assignment) => assignment.drawPosition);
 
-  const targetDrawPositionIsUnfilled = availableTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
+  const targetDrawPositionIsUnfilled =
+    !!targetMatchUpDrawPosition && availableTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
   const isFeedRound = loserTargetLink.target.roundNumber > 1 && availableTargetMatchUpDrawPositions?.length;
   const isFirstRoundValidDrawPosition = loserTargetLink.target.roundNumber === 1 && targetDrawPositionIsUnfilled;
 
-  const placementResult: any = placeLoser({
+  const placementResult = placeLoser({
     fedDrawPositionFMLC,
     isFirstRoundValidDrawPosition,
     loserParticipantId,
@@ -191,7 +201,7 @@ export function directLoser(params): ResultType {
   });
   if (placementResult.context) Object.assign(context, placementResult.context);
   if (placementResult.error) return decorateResult({ result: placementResult, stack });
-  if (placementResult.earlyReturn) return placementResult.earlyReturn;
+  if ('earlyReturn' in placementResult && placementResult.earlyReturn) return placementResult.earlyReturn;
 
   propagateLoserSeed({
     loserParticipantId,

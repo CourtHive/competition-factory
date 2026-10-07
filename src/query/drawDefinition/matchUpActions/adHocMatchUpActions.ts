@@ -3,12 +3,15 @@ import { getEventAlternateParticipantIds } from './getEventAlternateParticipanti
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { unique } from '@Tools/arrays';
 
 // constants and types
 import { ALTERNATE, DIRECT_ENTRY_STATUSES, UNGROUPED, UNPAIRED, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { ASSIGN_SIDE_METHOD, REMOVE_PARTICIPANT, REMOVE_SIDE_METHOD } from '@Constants/matchUpActionConstants';
+import { MatchUpAction } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
+import { DrawDefinition, Event, MatchUp, Structure } from '@Types/tournamentTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 import {
   ASSIGN_PARTICIPANT,
@@ -34,16 +37,16 @@ export function adHocMatchUpActions({
   otherFlightEntries?: boolean;
   structureId: string;
   sideNumber?: number;
-  drawDefinition: any;
+  drawDefinition: DrawDefinition;
   matchUpId: string;
   drawId: string;
-  structure: any;
-  matchUp: any;
-  event: any;
+  structure?: Structure;
+  matchUp: MatchUp;
+  event?: Event;
 }) {
-  const validActions: any = [];
+  const validActions: MatchUpAction[] = [];
 
-  const matchUps = structure?.matchUps ?? [];
+  const matchUps = matchUpsOf(structure) ?? [];
   const side = matchUp.sides?.find((side) => side.sideNumber === sideNumber);
   const sideParticipantId = side?.participantId;
   const roundMatchUps = matchUps.filter(({ roundNumber }) => roundNumber === matchUp.roundNumber);
@@ -65,7 +68,7 @@ export function adHocMatchUpActions({
   // individual with anyone already in the round would put that person in two matchUps at once.
   // Assignment refuses both, so neither is offered. The participant being replaced on this side
   // frees its individuals.
-  const individualIdsMap = buildIndividualIdsMap(tournamentParticipants as any);
+  const individualIdsMap = buildIndividualIdsMap(tournamentParticipants);
   const individualsOf = (participantIds: string[]) =>
     new Set(participantIds.flatMap((participantId) => individualIdsMap[participantId] ?? []));
   const opposingIndividualIds = individualsOf(
@@ -114,7 +117,7 @@ export function adHocMatchUpActions({
   let availableAlternatesParticipantIds = unique(enteredParticipantIds.concat(availableEventAlternatesParticipantIds));
 
   if (otherFlightEntries) {
-    const flightProfile: any = event ? getFlightProfile({ event }) : undefined;
+    const flightProfile = event ? getFlightProfile({ event }).flightProfile : undefined;
     const otherFlightEnteredParticipantIds = flightProfile?.flights
       ?.filter((flight) => flight.drawId !== drawId)
       .flatMap((flight) =>

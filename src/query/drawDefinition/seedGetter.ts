@@ -11,9 +11,9 @@ import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
 import { ADJACENT, CLUSTER, CONTAINER, QUALIFYING, WATERFALL } from '@Constants/drawDefinitionConstants';
+import { PolicyDefinitions, ResultType, SeedBlock, SeedingProfile } from '@Types/factoryTypes';
 import { INVALID_SEED_POSITION, MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
 import { SeedingProfileUnion, DrawDefinition, Structure } from '@Types/tournamentTypes';
-import { PolicyDefinitions, SeedBlock, SeedingProfile } from '@Types/factoryTypes';
 
 /**
  * A seedBlock is an object pairing an array of drawPositions with an array of seedNumbers { drawPositions: [], seedNumbers: []}
@@ -36,6 +36,18 @@ type GetValidSeedBlocksArgs = {
   random?: () => number;
 };
 
+/**
+ * What `getValidSeedBlocks` reports about a structure's seed blocks. Positioning passes it down the
+ * chain as `seedBlockInfo` so the blocks are computed once per positioning pass.
+ */
+export type SeedBlockInfo = ResultType & {
+  validSeedBlocks?: SeedBlock[];
+  isLuckyStructure?: boolean;
+  /** the number of fed rounds in a feed-in structure, otherwise `false`; read as a flag */
+  isFeedIn?: number | false;
+  isContainer?: boolean;
+};
+
 export function getValidSeedBlocks({
   provisionalPositioning,
   returnAllProxies,
@@ -45,7 +57,7 @@ export function getValidSeedBlocks({
   allPositions,
   structure,
   random,
-}: GetValidSeedBlocksArgs) {
+}: GetValidSeedBlocksArgs): SeedBlockInfo {
   let validSeedBlocks: SeedBlock[] = [];
 
   if (!structure) return { error: MISSING_STRUCTURE };
@@ -71,7 +83,7 @@ export function getValidSeedBlocks({
     .sort((a, b) => a - b);
   const uniqueDrawPositionsByRound = roundNumbers
     .map((roundNumber) => {
-      const roundDrawPositions: any[] = roundMatchUps[roundNumber]
+      const roundDrawPositions: number[] = roundMatchUps[roundNumber]
         .map((matchUp) => matchUp.drawPositions)
         .flat(Infinity)
         .filter(Boolean);
@@ -182,7 +194,7 @@ export function getValidSeedBlocks({
     blocks.forEach((block) => validSeedBlocks.push(block));
   }
 
-  const seedDrawPositions: any[] = validSeedBlocks.flatMap((seedBlock) => seedBlock.drawPositions);
+  const seedDrawPositions: number[] = validSeedBlocks.flatMap((seedBlock) => seedBlock.drawPositions);
   const validSeedPositions = seedDrawPositions.reduce((result, drawPosition) => {
     return firstRoundDrawPositions?.includes(drawPosition) && result;
   }, true);
@@ -297,7 +309,7 @@ function constructPower2Blocks(params) {
   } = params;
 
   let count: number;
-  const blocks: any[] = [];
+  const blocks: SeedBlock[] = [];
 
   const { seedBlocks } = getSeedBlocks({
     cluster: [CLUSTER, ADJACENT].includes(getSeedPattern(seedingProfile)),
@@ -359,7 +371,11 @@ export function isValidSeedPosition({
   }
 
   if (appliedPolicies?.seeding?.validSeedPositions?.ignore) return true;
-  if (appliedPolicies?.seeding?.validSeedPositions?.strict) {
+  // no structure and no seedBlockInfo: there are no seed blocks, so no position is valid
+  validSeedBlocks ??= [];
+
+  // strict narrows a seed to its own block; with no seedNumber there is nothing to narrow by
+  if (appliedPolicies?.seeding?.validSeedPositions?.strict && seedNumber !== undefined) {
     const targetSeedBlock = validSeedBlocks.find((seedBlock) => seedBlock.seedNumbers.includes(seedNumber));
     const validSeedPositions = targetSeedBlock?.drawPositions ?? [];
     return validSeedPositions.includes(drawPosition);

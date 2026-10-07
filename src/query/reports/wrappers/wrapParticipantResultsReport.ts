@@ -3,23 +3,25 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
+import { ErrorType, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { PARTICIPANT_RESULTS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
+import { HydratedSide } from '@Types/hydrated';
 
 export function wrapParticipantResultsReport({
   tournamentRecord,
 }: {
   tournamentRecord: Tournament;
-}): ReportResult | { error: any } {
+}): ReportResult | { error: ErrorType } {
   const { participantMap } = getParticipants({ tournamentRecord });
   const { matchUps } = allTournamentMatchUps({
     matchUpFilters: { matchUpTypes: [SINGLES_MATCHUP, DOUBLES_MATCHUP] },
     tournamentRecord,
   });
-  if (!matchUps) return { error: 'No matchUps found' };
+  if (!matchUps) return { error: MISSING_MATCHUPS };
 
   const completed = matchUps.filter((m: any) => completedMatchUpStatuses.includes(m.matchUpStatus));
 
@@ -122,10 +124,10 @@ export function wrapParticipantResultsReport({
   };
 }
 
-function getSideParticipantIds(side: any, matchUpType: string): string[] {
+function getSideParticipantIds(side: HydratedSide | undefined, matchUpType: string): string[] {
   if (!side) return [];
   if (matchUpType === DOUBLES_MATCHUP) {
-    return side.participant?.individualParticipantIds ?? [side.participantId].filter(Boolean);
+    return side.participant?.individualParticipantIds ?? [side.participantId].filter((id): id is string => !!id);
   }
-  return [side.participantId ?? side.participant?.participantId].filter(Boolean);
+  return [side.participantId ?? side.participant?.participantId].filter((id): id is string => !!id);
 }

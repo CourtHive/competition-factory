@@ -1,5 +1,5 @@
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -7,10 +7,15 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { findStructure } from '@Acquire/findStructure';
 import { randomSource } from '@Tools/prng';
+import {
+  getLuckyDrawRoundStatus,
+  LuckyParticipantInfo,
+  LuckyRoundInfo,
+} from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -107,7 +112,7 @@ export function luckyDrawAdvancement({
 
   // Find next round matchUps sorted by roundPosition
   const nextRoundNumber = roundNumber + 1;
-  const nextRoundMatchUps = (structure.matchUps ?? [])
+  const nextRoundMatchUps = (matchUpsOf(structure) ?? [])
     .filter((m) => m.roundNumber === nextRoundNumber)
     .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
@@ -138,7 +143,7 @@ export function luckyDrawAdvancement({
     });
   }
 
-  let positionAssignments = structure.positionAssignments ?? [];
+  let positionAssignments = positionAssignmentsOf(structure) ?? [];
   positionAssignments = cleanupStalePositionAssignments({
     positionAssignments,
     nextRoundMatchUps,
@@ -219,11 +224,11 @@ function placeDiscardedLosers({
     return { ...SUCCESS };
   }
 
-  let targetMatchUps = (targetStructure.matchUps ?? [])
+  let targetMatchUps = (matchUpsOf(targetStructure) ?? [])
     .filter((m) => m.roundNumber === targetRoundNumber)
     .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
-  let targetPositionAssignments = targetStructure.positionAssignments ?? [];
+  let targetPositionAssignments = positionAssignmentsOf(targetStructure) ?? [];
   const unfilledPositions: number[] = [];
 
   targetStructure.matchUps ??= [];
@@ -236,7 +241,7 @@ function placeDiscardedLosers({
       unfilledPositions,
     });
 
-    targetMatchUps = targetStructure.matchUps
+    targetMatchUps = (matchUpsOf(targetStructure) ?? [])
       .filter((m) => m.roundNumber === targetRoundNumber)
       .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
   } else {
@@ -389,10 +394,10 @@ function placeLuckyLosers({
   random,
 }: {
   advancingParticipantIds: string[];
-  nextRoundMatchUps: any[];
-  roundStatus: any;
+  winners: LuckyParticipantInfo[];
+  roundStatus: LuckyRoundInfo;
+  nextRoundMatchUps: MatchUp[];
   luckyLoserIds: string[];
-  winners: any[];
   random?: () => number;
 }) {
   const rng = random ?? randomSource();
@@ -422,14 +427,14 @@ function placeOneLuckyLoser({
   rng,
 }: {
   advancingParticipantIds: string[];
-  numMatchUps: number;
-  roundStatus: any;
+  winners: LuckyParticipantInfo[];
+  roundStatus: LuckyRoundInfo;
   winnerIds: Set<string>;
-  winners: any[];
+  numMatchUps: number;
   llId: string;
   rng: () => number;
 }) {
-  const luckyLoserInfo = roundStatus.eligibleLosers?.find((l: any) => l.participantId === llId);
+  const luckyLoserInfo = roundStatus.eligibleLosers?.find((l) => l.participantId === llId);
   if (!luckyLoserInfo || numMatchUps <= 1) {
     advancingParticipantIds.push(llId);
     return;
@@ -525,8 +530,22 @@ function countPriorLLsInHalf({
   return count;
 }
 
-function cleanupStalePositionAssignments({ positionAssignments, nextRoundMatchUps, structure, roundNumber }) {
-  const nextRoundDrawPositions = new Set(nextRoundMatchUps.flatMap((m) => (m.drawPositions ?? []).filter(Boolean)));
+type CleanupStalePositionAssignmentsArgs = {
+  positionAssignments: PositionAssignment[];
+  nextRoundMatchUps: MatchUp[];
+  structure: Structure;
+  roundNumber: number;
+};
+
+function cleanupStalePositionAssignments({
+  positionAssignments,
+  nextRoundMatchUps,
+  structure,
+  roundNumber,
+}: CleanupStalePositionAssignmentsArgs) {
+  const nextRoundDrawPositions = new Set(
+    nextRoundMatchUps.flatMap((m) => (m.drawPositions ?? []).filter((dp): dp is number => !!dp)),
+  );
 
   if (nextRoundDrawPositions.size) {
     const stalePositions: number[] = [];
@@ -534,7 +553,7 @@ function cleanupStalePositionAssignments({ positionAssignments, nextRoundMatchUp
       const entries = positionAssignments.filter((a) => a.drawPosition === dp);
       const hasEmpty = entries.some((a) => !a.participantId && !a.bye);
       if (entries.length > 1 || hasEmpty) {
-        stalePositions.push(dp as any);
+        stalePositions.push(dp);
       }
     }
 
@@ -545,7 +564,7 @@ function cleanupStalePositionAssignments({ positionAssignments, nextRoundMatchUp
   }
 
   const completedRoundPositions = new Set(
-    (structure.matchUps ?? [])
+    (matchUpsOf(structure) ?? [])
       .filter((m) => m.roundNumber && m.roundNumber <= roundNumber)
       .flatMap((m) => m.drawPositions ?? [])
       .filter(Boolean),
@@ -592,8 +611,8 @@ function assignNextRoundPositions({
     // statement in `getOrderedDrawPositions`.
     matchUp.drawPositions = [pos1, pos2];
 
-    const assignment1: any = { drawPosition: pos1, participantId: pid1 };
-    const assignment2: any = { drawPosition: pos2, participantId: pid2 };
+    const assignment1: PositionAssignment = { drawPosition: pos1, participantId: pid1 };
+    const assignment2: PositionAssignment = { drawPosition: pos2, participantId: pid2 };
 
     if (tagLL) {
       if (llSet.has(pid1)) assignment1.extensions = [luckyExtension()];
@@ -628,7 +647,7 @@ function createVirtualMatchUps({
   for (let i = 0; i < matchUpCount; i++) {
     const pos1 = nextPosition++;
     const pos2 = nextPosition++;
-    const matchUp: any = {
+    const matchUp: MatchUp = {
       matchUpId: `${targetStructureId}-mu-${i + 1}`,
       roundNumber: targetRoundNumber,
       roundPosition: i + 1,

@@ -12,6 +12,7 @@ import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { TALLY } from '@Constants/extensionConstants';
 import { HydratedParticipant } from '@Types/hydrated';
+import { PositionAction } from './actionPolicyUtils';
 
 export function getValidQualifiersAction({
   drawPositionInitialRounds,
@@ -26,7 +27,7 @@ export function getValidQualifiersAction({
 }) {
   const qualifyingParticipants: HydratedParticipant[] = [];
   const qualifyingParticipantIds: string[] = [];
-  const validAssignmentActions: any[] = [];
+  const validAssignmentActions: PositionAction[] = [];
   const sourceStructureIds: string[] = [];
 
   const assignedParticipantIds = new Set(
@@ -174,7 +175,7 @@ function collectRoundRobinQualifiers({
     if (requireCompletedStructures && !structureCompleted) continue;
 
     const { positionAssignments } = getPositionAssignments({ structure });
-    const relevantParticipantIds: any =
+    const relevantParticipantIds =
       positionAssignments
         ?.map((assignment) => {
           const participantId = assignment.participantId;

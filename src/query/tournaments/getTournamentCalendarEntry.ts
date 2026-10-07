@@ -39,7 +39,7 @@ export function getTournamentCalendarEntry({
   const providerId = parentOrganisation?.organisationId;
 
   const tournamentImageURL = tournamentRecord.onlineResources?.find(
-    (resource: any) =>
+    (resource) =>
       resource.resourceType === 'URL' &&
       resource.resourceSubType === 'IMAGE' &&
       resource.name === TOURNAMENT_IMAGE_RESOURCE_NAME,

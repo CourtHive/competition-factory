@@ -21,7 +21,7 @@ export function savePersonRequests(params: SavePersonRequestsArgs) {
   const tournaments = Object.values(tournamentRecords);
   for (const tournamentRecord of tournaments) {
     const tournamentParticipants = tournamentRecord.participants ?? [];
-    const relevantPersonRequests: any[] = [];
+    const relevantPersonRequests: { personId: string; requests: PersonRequests[string] }[] = [];
     for (const personId of Object.keys(personRequests)) {
       if (findParticipant({ tournamentParticipants, personId })) {
         const requests = personRequests[personId];

@@ -813,7 +813,7 @@ engine.setRandomSource(() => 0.5); // any function
 engine.setRandomSource(); // back to Math.random
 ```
 
-Two generations of a mocks tournament under the same seed are byte-identical, ids included. This is what the golden corpus relies on to regenerate itself.
+Two generations of a mocks tournament under the same seed are byte-identical, ids included. This is what the [golden corpus](/docs/concepts/outcome-pipeline#8-what-the-corpus-pins) relies on to regenerate itself.
 
 ---
 
@@ -827,6 +827,29 @@ Pass an ISO string, epoch milliseconds, a `Date`, or a function returning any of
 engine.setClock('2026-10-01T12:00:00.000Z'); // frozen
 engine.setClock(() => new Date()); // explicit wall clock
 engine.setClock(); // default
+```
+
+---
+
+## outcomePipeline
+
+Chooses which implementation of the outcome pipeline (`setMatchUpStatus`) decides. `'v1'` is the original pipeline and the default. `'v2'` is the clean-room re-implementation written from the [outcome pipeline spec](/docs/concepts/outcome-pipeline#71-two-implementations-s2). `'differential'` runs both: v2 decides first, v1 runs, and a disagreement throws before anything is written.
+
+No argument restores `'v1'`. Any other value is refused with `INVALID_VALUES`. Process-wide, like `schemaWriteMode`: a run configuration, not request state. Added in 7.5.0.
+
+```js
+engine.outcomePipeline('differential');
+engine.outcomePipeline(); // back to 'v1'
+```
+
+---
+
+## getOutcomePipeline
+
+Returns the current outcome pipeline mode: `'v1'`, `'v2'` or `'differential'`. Added in 7.5.0.
+
+```js
+const mode = engine.getOutcomePipeline(); // 'v1'
 ```
 
 ---

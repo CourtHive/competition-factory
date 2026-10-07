@@ -1,21 +1,38 @@
 // Query
 import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getQualifiersCount } from './getQualifiersCount';
 
 // constants
 import { CONTAINER, MAIN } from '@Constants/drawDefinitionConstants';
 
-export function getStageDrawPositionsCount({ stage, drawDefinition, stageSequence, tournamentRecord, event }: any) {
+// types
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+
+type GetStageDrawPositionsCountArgs = {
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  stageSequence?: number;
+  stage?: string;
+  event?: Event;
+};
+
+export function getStageDrawPositionsCount({
+  stage,
+  drawDefinition,
+  stageSequence,
+  tournamentRecord,
+  event,
+}: GetStageDrawPositionsCountArgs) {
   const structures = drawDefinition?.structures?.filter(
-    (s: any) => s.stage === stage && (!stageSequence || s.stageSequence === stageSequence),
+    (s) => s.stage === stage && (!stageSequence || s.stageSequence === stageSequence),
   );
 
   if (structures?.length) {
-    return structures.reduce((total: number, s: any) => {
+    return structures.reduce((total: number, s) => {
       if (s.structureType === CONTAINER) {
         return (
-          total +
-          (s.structures?.reduce((sum: number, sub: any) => sum + (sub.positionAssignments?.length ?? 0), 0) ?? 0)
+          total + (s.structures?.reduce((sum: number, sub) => sum + (positionAssignmentsOf(sub)?.length ?? 0), 0) ?? 0)
         );
       }
       return total + (s.positionAssignments?.length ?? 0);
@@ -32,13 +49,15 @@ export function getStageDrawPositionsCount({ stage, drawDefinition, stageSequenc
 }
 
 // drawSize - qualifyingPositions
-export function getStageDrawPositionsAvailable(params: any) {
+export function getStageDrawPositionsAvailable(
+  params: GetStageDrawPositionsCountArgs & { drawDefinition: DrawDefinition; provisionalPositioning?: boolean },
+) {
   const { provisionalPositioning, drawDefinition, stageSequence, stage, tournamentRecord, event } = params;
   const drawSize = getStageDrawPositionsCount({ stage, drawDefinition, stageSequence, tournamentRecord, event });
 
   // Find the structureId for the target stage so getQualifiersCount can derive from links
   const targetStructure = drawDefinition?.structures?.find(
-    (s: any) => s.stage === stage && (!stageSequence || s.stageSequence === stageSequence),
+    (s) => s.stage === stage && (!stageSequence || s.stageSequence === stageSequence),
   );
 
   const { qualifiersCount } = getQualifiersCount({

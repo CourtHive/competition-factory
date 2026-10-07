@@ -1,10 +1,10 @@
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
+import { rekeySideFacts, setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
-import { retainPolicyCodes, policyCodeString } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
+import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -19,8 +19,18 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { drawPositionFilled } from './drawPositionFilled';
 import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { numericSort } from '@Tools/sorting';
 import { isExit } from '@Validators/isExit';
+import {
+  deriveExitStateFromProvenance,
+  buildCarriedExitProvenance,
+  mergeSideExitProvenance,
+  getSideExitProvenance,
+  carriedExitStatus,
+  retainPolicyCodes,
+  policyCodeString,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
@@ -35,6 +45,7 @@ import {
   LUCKY_DRAW_BYE_LIMIT,
   MATCHUP_HAS_SCHEDULING,
   MISSING_DRAW_DEFINITION,
+  MISSING_DRAW_POSITION,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
@@ -183,7 +194,8 @@ export function assignDrawPositionBye({
   // with the ids stripped ended in a different draw 14 times before, and 44 times after. A draw that
   // stores its edges (`hasStoredGoesTo`, a walk of the stored matchUps) needs nothing; one that does
   // not is given them here, as it was.
-  if (isPropagationPlacement) ensureGoesTo({ drawDefinition });
+  const goesTo = goesToForPropagation({ isPropagationPlacement, drawDefinition });
+  if (goesTo?.error) return decorateResult({ result: goesTo, stack });
 
   const drawPositionIsActive =
     !isPropagationPlacement &&
@@ -439,6 +451,17 @@ export function assignDrawPositionBye({
  * `sourceMatchUpId`, and that remains true whether or not a winner can be named. `withdrawProducedExits`
  * unwinds by that key, so correcting the original result still takes this back.
  */
+/** the edges a propagation placement gives a draw stored without them (above); a malformed round link is returned */
+function goesToForPropagation({
+  isPropagationPlacement,
+  drawDefinition,
+}: {
+  isPropagationPlacement?: boolean;
+  drawDefinition: DrawDefinition;
+}) {
+  return isPropagationPlacement ? ensureGoesTo({ drawDefinition }) : undefined;
+}
+
 function correctResultsAwardedToTheBye({
   inContextDrawMatchUps,
   furthestMatchUpId,
@@ -632,21 +655,24 @@ export function advanceDrawPosition({
   const losingDrawPosition = matchUp?.drawPositions?.find((drawPosition) => drawPosition !== drawPositionToAdvance);
   const losingDrawPosiitonIsBye = losingDrawPosition && byeAssignedDrawPositions?.includes(losingDrawPosition);
 
-  const {
-    targetLinks: { loserTargetLink },
-    targetMatchUps: { loserMatchUp, winnerMatchUp, loserTargetDrawPosition },
-  } = positionTargets({
+  const targetData = positionTargets({
     inContextDrawMatchUps,
     drawDefinition,
     matchUpId,
   });
+  if (targetData.error) return decorateResult({ result: targetData, stack });
+  const {
+    targetLinks: { loserTargetLink },
+    targetMatchUps: { loserMatchUp, winnerMatchUp, loserTargetDrawPosition },
+  } = targetData;
 
   // In lucky draws, pre-feed rounds (odd matchUp count) defer advancement to
   // luckyDrawAdvancement. Normal power-of-2 rounds advance immediately.
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition?.drawType);
   const isPreFeedRound = (() => {
-    if (!isLuckyDraw || !matchUp?.roundNumber || !structure?.matchUps) return false;
-    const roundMatchUpCount = structure.matchUps.filter((m: any) => m.roundNumber === matchUp.roundNumber).length;
+    const structureMatchUps = matchUpsOf(structure);
+    if (!isLuckyDraw || !matchUp?.roundNumber || !structureMatchUps) return false;
+    const roundMatchUpCount = structureMatchUps.filter((m: any) => m.roundNumber === matchUp.roundNumber).length;
     return roundMatchUpCount % 2 !== 0;
   })();
 
@@ -668,8 +694,15 @@ export function advanceDrawPosition({
   }
 
   // only handling situation where a BYE is being placed in linked structure
-  // and linked structure is NOT the same structure
-  if (loserMatchUp && losingDrawPosiitonIsBye && loserMatchUp.structureId !== structure?.structureId) {
+  // and linked structure is NOT the same structure (a loser target is only found from its link, and
+  // always with its target drawPosition)
+  if (
+    loserTargetLink &&
+    loserMatchUp &&
+    loserTargetDrawPosition !== undefined &&
+    losingDrawPosiitonIsBye &&
+    loserMatchUp.structureId !== structure?.structureId
+  ) {
     const { roundNumber } = loserMatchUp;
 
     if (roundNumber === 1) {
@@ -699,6 +732,78 @@ export function advanceDrawPosition({
   }
 
   return { ...SUCCESS };
+}
+
+/**
+ * A carrier passing a BYE brings its exit with it: record it on the side it arrives at, where a produced exit already
+ * stands pending (an exit with no winner).
+ *
+ * The feeder is the matchUp of the round before that holds the advancing position (`sourceRoundPosition`); the carrier
+ * is the side of it that records a carried exit and did not win it. The entry names the feeder, as
+ * the presumptive stamp did, so nothing keyed by source identity moves.
+ */
+function stampCarriedExitOnArrival({
+  inContextDrawMatchUps,
+  noContextWinnerMatchUp,
+  drawPositionToAdvance,
+  sourceRoundPosition,
+  drawDefinition,
+  drawPositions,
+  winnerMatchUp,
+  structureId,
+}: {
+  drawPositions: (number | undefined)[];
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  noContextWinnerMatchUp: MatchUp;
+  winnerMatchUp: HydratedMatchUp;
+  drawPositionToAdvance: number;
+  sourceRoundPosition?: number;
+  structureId?: string;
+}): void {
+  if (!isExit(noContextWinnerMatchUp.matchUpStatus) || noContextWinnerMatchUp.winningSide) return;
+  const feeder = inContextDrawMatchUps.find(
+    (candidate) =>
+      candidate.structureId === structureId &&
+      candidate.roundNumber === (winnerMatchUp.roundNumber ?? 0) - 1 &&
+      (sourceRoundPosition ? candidate.roundPosition === sourceRoundPosition : true) &&
+      candidate.drawPositions?.includes(drawPositionToAdvance),
+  );
+  if (!feeder) return;
+  // The feeder is read by PROVENANCE, not status: by the time the carrier passes, the BYE has settled it to BYE
+  // (#5158), and its exit side still records the exit the carrier holds.
+  const carrierSide = getDrawPositionSideNumber({
+    matchUp: { ...feeder, sides: undefined },
+    drawPosition: drawPositionToAdvance,
+    drawDefinition,
+    structureId,
+  });
+  if (!carrierSide || carrierSide === feeder.winningSide) return;
+  // a CARRIER is a participant: a produced exit relayed past a BYE holder is `sendHeldExitsOn`'s to deliver, and it
+  // writes the origin's own entry (`byeAdvancesIntoPendingDoubleExit`: both sides then read DOUBLE_WALKOVER)
+  if (!feeder.sides?.some((side) => side?.sideNumber === carrierSide && side.participantId)) return;
+  const carried = carriedExitStatus(getSideExitProvenance({ matchUp: feeder })?.[carrierSide]);
+  if (!carried) return;
+  // the side the lone arrival takes: structurally where the round profile can place it, else its bracket side, as
+  // `arrivalIntoProvenanceOnlyExit` reads it (a fed round seats the fed position on side 1, the arrival on side 2)
+  const bracketSide = winnerMatchUp.feedRound ? 2 : sourceRoundPosition && (sourceRoundPosition % 2 === 1 ? 1 : 2);
+  const arrivalSide =
+    getDrawPositionSideNumber({
+      matchUp: { ...noContextWinnerMatchUp, sides: undefined, drawPositions },
+      drawPosition: drawPositionToAdvance,
+      drawDefinition,
+      structureId,
+    }) ?? bracketSide;
+  mergeSideExitProvenance({
+    matchUp: noContextWinnerMatchUp,
+    provenance: buildCarriedExitProvenance({
+      // the feeder WAS this exit before the BYE settled it; the entry reads as the presumptive stamp did
+      previousMatchUpStatus: carried,
+      sourceMatchUpId: feeder.matchUpId,
+      exitingSideNumber: arrivalSide,
+      matchUpStatus: carried,
+    }),
+  });
 }
 
 function advanceWinner({
@@ -763,6 +868,23 @@ function advanceWinner({
   const pairedDrawPositionIsBye = positionAssignments?.find(
     ({ drawPosition }) => drawPosition === pairedDrawPosition,
   )?.bye;
+
+  // A CARRIER PASSING A BYE brings its exit into a matchUp where a produced exit stands pending: record it as it
+  // arrives, so the branches below see the convergence (RULE 4). The record used to be here already: when the other
+  // feeder's double exit produced onto this matchUp, the carrier's feeder (a single exit, undecided as to who would
+  // come through) was stamped presumptively with its status, as though an exit were certain to arrive from it. An
+  // arrival records no status (CA, 2026-10-07; F9), so the presumptive stamp is gone and the exit is written at the
+  // moment it is true, and only there: a carrier passing a BYE into an undecided matchUp is left as it was.
+  stampCarriedExitOnArrival({
+    inContextDrawMatchUps,
+    noContextWinnerMatchUp,
+    drawPositionToAdvance,
+    sourceRoundPosition,
+    drawDefinition,
+    drawPositions,
+    winnerMatchUp,
+    structureId,
+  });
   const drawPositionIsBye = positionAssignments?.find(
     ({ drawPosition }) => drawPosition === drawPositionToAdvance,
   )?.bye;
@@ -795,6 +917,36 @@ function advanceWinner({
     return;
   }
 
+  // AN EMPTY POSITION RESOLVES NOTHING. A pending exit is awarded to whoever ARRIVES on its seat (CA 2026-09-20; #5158
+  // for the arrival path); a position that holds nobody yet, advanced structurally ahead of a BYE being placed on it,
+  // takes its seat and the exit stands, still awarded to that seat. Resolving it advanced the empty position onward as
+  // the walkover's winner, where the BYE then landed, while the carrier who met the BYE stayed behind (census w2
+  // 9100079, DE 16/13 `Backdraw|3|1`: BYE_ADVANCEMENT_MISSING).
+  if (
+    isExit(noContextWinnerMatchUp.matchUpStatus) &&
+    noContextWinnerMatchUp.winningSide &&
+    !drawPositionIsBye &&
+    !pairedDrawPositionIsBye &&
+    !drawPositionToAdvanceAssigment?.participantId &&
+    !drawPositionToAdvanceAssigment?.qualifier
+  ) {
+    setMatchUpDrawPositions({
+      structureId: winnerMatchUp?.structureId,
+      matchUp: noContextWinnerMatchUp,
+      drawDefinition,
+      drawPositions,
+    });
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      eventId: event?.eventId,
+      matchUp: noContextWinnerMatchUp,
+      drawDefinition,
+      context: stack,
+      event,
+    });
+    return;
+  }
+
   if (
     isExit(noContextWinnerMatchUp.matchUpStatus) &&
     noContextWinnerMatchUp.winningSide &&
@@ -816,8 +968,22 @@ function advanceWinner({
     return;
   }
 
-  const matchUpStatus = drawPositionIsBye || pairedDrawPositionIsBye ? BYE : TO_BE_PLAYED;
+  // A CONVERGENCE STANDS. When the matchUp already records an exit on BOTH sides, the position advancing in is a
+  // carrier passing a BYE with its exit (a propagated exit meeting a BYE is advanced, CA 2026-09-20), beside an exit
+  // produced for the other seat: the two collapse and nobody wins (RULE 4; #5161, "an arrival carrying an exit
+  // converges, never takes"). Writing TO_BE_PLAYED here lost both while provenance still recorded them (census w2
+  // 9100283, FRLC 32/30 `Consolation|2|3`; de 9301596, DE 16/13 `Backdraw|3|1`: ORIGIN_ON_UNDECIDED_MATCHUP).
+  const standingExit = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp: noContextWinnerMatchUp }));
+  const convergence = standingExit && !standingExit.winningSide ? standingExit.matchUpStatus : undefined;
+  const matchUpStatus = drawPositionIsBye || pairedDrawPositionIsBye ? BYE : (convergence ?? TO_BE_PLAYED);
 
+  rekeySideFacts({
+    structureId: winnerMatchUp?.structureId,
+    matchUp: noContextWinnerMatchUp,
+    rekeyWinningSide: false,
+    drawDefinition,
+    drawPositions,
+  });
   Object.assign(noContextWinnerMatchUp, {
     matchUpStatus,
     score: undefined,
@@ -905,15 +1071,18 @@ function assignByeToLoserTarget({
   matchUp,
   event,
 }) {
-  const {
-    targetLinks: { loserTargetLink },
-    targetMatchUps: { loserMatchUp, loserTargetDrawPosition },
-  } = positionTargets({
+  const targetData = positionTargets({
     matchUpId: matchUp.matchUpId,
     inContextDrawMatchUps,
     drawDefinition,
   });
-  if (!loserTargetLink || !loserMatchUp) return { ...SUCCESS };
+  if (targetData.error) return decorateResult({ result: targetData, stack: 'assignByeToLoserTarget' });
+  const {
+    targetLinks: { loserTargetLink },
+    targetMatchUps: { loserMatchUp, loserTargetDrawPosition },
+  } = targetData;
+  // a loser target is only found from its link, and always with its drawPositions and target drawPosition
+  if (!loserTargetLink || !loserMatchUp?.drawPositions || loserTargetDrawPosition === undefined) return { ...SUCCESS };
 
   if (loserMatchUp.feedRound) {
     return assignFedDrawPositionBye({
@@ -931,7 +1100,15 @@ function assignByeToLoserTarget({
   const sourceStructureRoundPosition = matchUp.roundPosition;
   // loser drawPosition in target structure is determined bye even/odd
   const targetDrawPositionIndex = 1 - (sourceStructureRoundPosition % 2);
-  const targetDrawPosition = loserMatchUp.drawPositions[targetDrawPositionIndex];
+  const targetDrawPosition = getSideDrawPosition({
+    structureId: loserTargetLink.target.structureId,
+    sideNumber: targetDrawPositionIndex + 1,
+    matchUp: loserMatchUp,
+    drawDefinition,
+  });
+  // a non-feed loser target holds both positions from generation; refuse rather than place a BYE nowhere
+  if (!targetDrawPosition)
+    return decorateResult({ result: { error: MISSING_DRAW_POSITION }, stack: 'advanceByeToLoserMatchUp' });
 
   return assignDrawPositionBye({
     byeFromPropagation,
@@ -974,7 +1151,12 @@ function arrivalIntoProvenanceOnlyExit({
   matchUp,
   ...context
 }): boolean {
-  const exitSides = Object.keys(matchUp.sideExitProvenance ?? {}).map(Number);
+  // only entries that record an EXIT: provenance also holds a BYE's claim on its seat (`BYE>BYE`), which is not an
+  // exit and must not make a lone pending exit look like a convergence (census w2 9100521, COMPASS 32/29: a produced
+  // walkover beside a BYE claim at `South|3|1` was overwritten TO_BE_PLAYED when a participant advanced into it)
+  const exitSides = Object.entries(getSideExitProvenance({ matchUp }) ?? {})
+    .filter(([, entry]) => carriedExitStatus(entry))
+    .map(([sideNumber]) => Number(sideNumber));
   const applies =
     isExit(matchUp.matchUpStatus) &&
     !matchUp.winningSide &&
@@ -989,7 +1171,8 @@ function arrivalIntoProvenanceOnlyExit({
   else if (sourceRoundPosition) side = sourceRoundPosition % 2 === 1 ? 1 : 2;
   if (!side) return false;
 
-  const positional = side === 1 ? [drawPositionToAdvance, undefined] : [undefined, drawPositionToAdvance];
+  // stored alone, whatever its side (`normalizeDrawPositions`); the side travels as `advancingSide`
+  const positional = [drawPositionToAdvance];
 
   if (holdsParticipant && side !== exitSides[0]) {
     resolvePropagatedExitOnAdvance({
@@ -1040,6 +1223,16 @@ function resolvePropagatedExitOnAdvance({
       drawDefinition,
     });
   const exitSideNumber = advancingSideNumber === 1 ? 2 : 1;
+
+  // the participant already here can change side as the advancing position arrives; what is recorded by side goes
+  // with them, and `winningSide` is assigned below from the advancing side (`setMatchUpDrawPositions`)
+  rekeySideFacts({
+    structureId: winnerMatchUp?.structureId ?? matchUp?.structureId,
+    rekeyWinningSide: false,
+    drawDefinition,
+    drawPositions,
+    matchUp,
+  });
 
   /**
    * THE POLICY CODE FOLLOWS THE EXITING SIDE — and the exit tenant is not here to be re-sided.

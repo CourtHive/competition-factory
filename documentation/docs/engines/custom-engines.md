@@ -78,7 +78,6 @@ import { governors, askEngine } from 'tods-competition-factory';
 // Import only scoring-related mutation methods
 askEngine.importMethods({
   setMatchUpStatus: governors.matchUpGovernor.setMatchUpStatus,
-  setMatchUpState: governors.matchUpGovernor.setMatchUpState,
 });
 
 export { askEngine as scoringEngine };

@@ -3,6 +3,7 @@ import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { getParticipantId } from '@Functions/global/extractors';
 import { findStructure } from '@Acquire/findStructure';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { DrawDefinition, Event, Participant, PositionAssignment, Structure } from '@Types/tournamentTypes';
@@ -58,8 +59,8 @@ export function getValidLuckyLosersAction({
   */
 
   const { sourceStructureIds, targetStructureIds } =
-    drawDefinition.links?.reduce(
-      (ids: any, link) => {
+    drawDefinition.links?.reduce<{ sourceStructureIds: string[]; targetStructureIds: string[] }>(
+      (ids, link) => {
         const sourceStructureId = link.source?.structureId;
         const targetStructureId = link.target?.structureId;
         if (!ids.sourceStructureIds.includes(sourceStructureId)) ids.sourceStructureIds.push(sourceStructureId);
@@ -126,11 +127,11 @@ export function getValidLuckyLosersAction({
     });
   }
 
-  const availableLuckyLosers = tournamentParticipants?.filter((participant: Participant) =>
-    availableLuckyLoserParticipantIds?.includes(participant.participantId),
-  );
+  const availableLuckyLosers = tournamentParticipants
+    ?.filter((participant: Participant) => availableLuckyLoserParticipantIds?.includes(participant.participantId))
+    .map((participant) => makeDeepCopy(participant, undefined, true));
 
-  availableLuckyLosers?.forEach((luckyLoser: any) => {
+  availableLuckyLosers?.forEach((luckyLoser) => {
     const entry = (drawDefinition.entries ?? []).find((entry) => entry.participantId === luckyLoser.participantId);
     luckyLoser.entryPosition = entry?.entryPosition;
   });

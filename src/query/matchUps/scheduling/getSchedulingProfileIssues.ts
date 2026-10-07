@@ -45,7 +45,7 @@ export function getSchedulingProfileIssues(params?: GetSchedulingProfileIssuesAr
       for (const venue of venues ?? []) {
         if (venue) {
           const { rounds } = venue;
-          const schedulingErrors: any = [];
+          const schedulingErrors: { matchUpId: string; shouldBeAfter: string[] }[] = [];
           const { orderedMatchUpIds, scheduledRoundsDetails } = getScheduledRoundsDetails({
             tournamentRecords,
             periodLength,

@@ -1,11 +1,13 @@
 import { resolveLadderMatchUp } from '@Query/ladder/resolveLadderContext';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
+import { isDateObject } from '@Tools/dateTime';
 
 // constants and types
 import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, CHALLENGE_ISSUED } from '@Constants/ladderConstants';
 import { ACCEPTED, DECLINED, EXPIRED, PENDING } from '@Constants/ladderConstants';
 import type { ChallengeState } from '@Constants/ladderConstants';
 import type { LadderPolicy } from '@Types/ladderTypes';
+import type { MatchUp } from '@Types/tournamentTypes';
 
 type ChallengeStateArgs = {
   /** The instant to evaluate against. REQUIRED — see below. */
@@ -20,12 +22,25 @@ type ChallengeStateArgs = {
   event?: any;
 };
 
-const itemDateOf = (matchUp: any, itemType: string): string | undefined =>
+const itemDateOf = (matchUp: MatchUp | undefined, itemType: string): string | undefined =>
   (matchUp?.timeItems ?? [])
-    .filter((item: any) => item.itemType === itemType)
-    .map((item: any) => item.itemDate)
-    .sort((a: string, b: string) => a.localeCompare(b))
+    .filter((item) => item.itemType === itemType)
+    .map((item) => itemDateIso(item.itemDate))
+    .filter((date): date is string => !!date)
+    .sort((a, b) => a.localeCompare(b))
     .at(-1);
+
+/**
+ * A ladder timeItem's `itemDate` as an ISO string — the one read boundary for it.
+ *
+ * The model allows `Date | string`, and every ladder comparison and sort is on ISO strings, so a
+ * `Date` is converted here rather than at each comparison. An invalid `Date` has no instant.
+ */
+export function itemDateIso(itemDate?: Date | string): string | undefined {
+  if (!isDateObject(itemDate)) return itemDate as string | undefined;
+  const date = itemDate as Date;
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
 
 /** Days added to an ISO instant, returned as an ISO instant. The only date arithmetic here. */
 export function addDaysIso(iso: string, days: number): string {

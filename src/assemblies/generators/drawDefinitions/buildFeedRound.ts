@@ -67,9 +67,8 @@ export function buildFeedRound({
      * — which serialises to `[null]` and is stored that way.
      *
      * A one-element array whose only entry is a hole carries no information: there is no surviving
-     * position for the hole to hold a side open beside. (A MIXED array like `[undefined, 5]` is
-     * different and is deliberate — `releaseAdvancedDrawPosition` preserves that hole because
-     * `drawPositions` is positional and closing it would move the survivor to the other side.)
+     * position for the hole to hold a side open beside. (No hole is stored at all now: a lone survivor
+     * is `[5]`, its side read structurally; see `normalizeDrawPositions`.)
      *
      * Measured over 150 generated draws spanning 10 draw types, 3 draw sizes and 5 participant
      * counts: 15 carried an all-holes array, every one of them DOUBLE_ELIMINATION's Main final,

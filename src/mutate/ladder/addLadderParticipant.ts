@@ -2,11 +2,13 @@ import { getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolic
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 import { isObject } from '@Tools/objects';
 
 // constants and types
 import { EXISTING_PARTICIPANT, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import type { EventTypeUnion, Participant, PositionAssignment, Structure } from '@Types/tournamentTypes';
 import { DYNAMIC, RATING as RATING_SCALE } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { BOTTOM, RANK } from '@Constants/ladderConstants';
@@ -23,7 +25,14 @@ type AddArgs = {
   event?: any;
 };
 
-function ratingOf({ participant, ratingType, dynamic, eventType }: any): number | undefined {
+type RatingOfArgs = {
+  participant?: Participant;
+  ratingType: any;
+  dynamic?: boolean;
+  eventType?: EventTypeUnion;
+};
+
+function ratingOf({ participant, ratingType, dynamic, eventType }: RatingOfArgs): number | undefined {
   const parameters = ratingsParameters[ratingType];
   const read = (scaleName: string) => {
     const result =
@@ -60,14 +69,15 @@ export function addLadderParticipant(params: AddArgs): ResultType & { drawPositi
   if (!participantId || !addedAt) return { error: INVALID_VALUES, info: 'participantId and addedAt are required' };
 
   const structureId = params.structureId ?? drawDefinition.structures?.[0]?.structureId;
-  const structure = drawDefinition.structures?.find((s: any) => s.structureId === structureId);
+  const structures: Structure[] | undefined = drawDefinition.structures;
+  const structure = structures?.find((s) => s.structureId === structureId);
   if (!structure) return { error: INVALID_VALUES, info: 'structure not found' };
 
   structure.positionAssignments ??= [];
-  const assignments = structure.positionAssignments;
-  if (assignments.some((a: any) => a.participantId === participantId)) return { error: EXISTING_PARTICIPANT };
+  const assignments = positionAssignmentsOf(structure) ?? [];
+  if (assignments.some((a) => a.participantId === participantId)) return { error: EXISTING_PARTICIPANT };
 
-  const bottom = assignments.length ? Math.max(...assignments.map((a: any) => a.drawPosition)) + 1 : 1;
+  const bottom = assignments.length ? Math.max(...assignments.map((a) => a.drawPosition)) + 1 : 1;
   const policy = getLadderPolicy({ ...params, structure });
   const placement = policy.entryPlacement ?? BOTTOM;
 
@@ -80,8 +90,8 @@ export function addLadderParticipant(params: AddArgs): ResultType & { drawPositi
   // BY_RATING on a RANK ladder: find the first seat whose occupant this participant outranks.
   const ratingType = policy.ratingType;
   const parameters = ratingType ? ratingsParameters[ratingType] : undefined;
-  const participants = params.tournamentRecord?.participants ?? [];
-  const find = (id: string) => participants.find((p: any) => p.participantId === id);
+  const participants: Participant[] = params.tournamentRecord?.participants ?? [];
+  const find = (id?: string) => participants.find((p) => p.participantId === id);
   const value = parameters
     ? ratingOf({
         participant: find(participantId),
@@ -100,7 +110,7 @@ export function addLadderParticipant(params: AddArgs): ResultType & { drawPositi
   const ascending = !!parameters.ascending;
   const better = (a: number, b: number) => (ascending ? a < b : a > b);
 
-  const ordered = [...assignments].sort((a: any, b: any) => a.drawPosition - b.drawPosition);
+  const ordered = [...assignments].sort((a, b) => a.drawPosition - b.drawPosition);
   let target = bottom;
   for (const assignment of ordered) {
     const occupantValue = ratingOf({
@@ -116,7 +126,7 @@ export function addLadderParticipant(params: AddArgs): ResultType & { drawPositi
     }
   }
 
-  const touched: any[] = [];
+  const touched: PositionAssignment[] = [];
   for (const assignment of assignments) {
     if (assignment.drawPosition >= target) {
       assignment.drawPosition += 1;

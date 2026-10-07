@@ -11,6 +11,7 @@ import {
 // constants and types
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { COMPETITIVE, DECISIVE, ROUTINE } from '@Constants/statsConstants';
+import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -43,7 +44,7 @@ type GetCompetitiveProfileArgs = {
   ascending?: boolean;
   profileBands?: any;
   scaleName?: string;
-  matchUps: any[];
+  matchUps: HydratedMatchUp[];
 };
 
 const percent = (part: number, whole: number): number => (whole ? Math.round((10000 * part) / whole) / 100 : 0);
@@ -52,16 +53,16 @@ function ratiosFrom(counts: Counts, whole: number): Counts {
   return Object.assign({}, ...Object.keys(counts).map((key) => ({ [key]: percent(counts[key], whole) })));
 }
 
-function participantIds(participant: any): string[] {
+function participantIds(participant?: HydratedParticipant): string[] {
   if (!participant) return [];
   const individualIds = (participant.individualParticipants ?? [])
-    .map((individual: any) => individual?.participantId)
+    .map((individual) => individual?.participantId)
     .filter(Boolean);
   return participant.participantId ? [participant.participantId, ...individualIds] : individualIds;
 }
 
-function includesParticipant(matchUp: any, participantId: string): boolean {
-  return (matchUp?.sides ?? []).some((side: any) => participantIds(side?.participant).includes(participantId));
+function includesParticipant(matchUp: HydratedMatchUp, participantId: string): boolean {
+  return (matchUp?.sides ?? []).some((side) => participantIds(side?.participant).includes(participantId));
 }
 
 /**

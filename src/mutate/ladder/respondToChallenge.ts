@@ -3,11 +3,13 @@ import { getChallengeState } from '@Query/ladder/getChallengeState';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { INVALID_VALUES, MATCHUP_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, EXPIRED, PENDING } from '@Constants/ladderConstants';
 import { CHALLENGED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -26,8 +28,9 @@ function resolve(params: RespondArgs) {
   if (!isLadder(drawDefinition.drawType)) return { error: INVALID_VALUES, info: 'requires a LADDER drawType' };
   if (!params.respondedAt) return { error: INVALID_VALUES, info: 'respondedAt is required' };
 
-  for (const structure of drawDefinition.structures ?? []) {
-    const matchUp = structure.matchUps?.find((m: any) => m.matchUpId === matchUpId);
+  const structures: Structure[] = drawDefinition.structures ?? [];
+  for (const structure of structures) {
+    const matchUp = matchUpsOf(structure)?.find((m) => m.matchUpId === matchUpId);
     if (matchUp) return { matchUp, structure };
   }
   return { error: MATCHUP_NOT_FOUND };
@@ -41,7 +44,7 @@ function resolve(params: RespondArgs) {
  * on when a background job happened to run.
  */
 export function acceptChallenge(params: RespondArgs): ResultType {
-  const resolved: any = resolve(params);
+  const resolved = resolve(params);
   if (resolved.error) return resolved;
   const { matchUp, structure } = resolved;
 

@@ -1,6 +1,8 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
+import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { convergence, isRelabel, planDirection } from './direction';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getOutcomePipeline } from '@Global/state/globalState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -12,7 +14,7 @@ import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
 
 // constants and types
-import type { BuildViewArgs, DirectionPlan, OutcomeRequest, OutcomeView, Refusal } from './types';
+import type { BuildViewArgs, DirectionPlan, OutcomeRequest, OutcomeView, Refusal, WithdrawnCarry } from './types';
 import { BYE, DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -135,6 +137,26 @@ function checkDirection({ args, route, direction }: CheckArgs & { direction: Dir
   if (direction.winner) checkWinner({ args, route, winner: direction.winner });
 }
 
+/** a feeder of `target` other than the request's own matchUp holds a BYE and a carried exit, with nobody in it */
+function opponentFeederHoldsAnExit(args: BuildViewArgs, target: HydratedMatchUp, excludeMatchUpId: string): boolean {
+  const matchUps =
+    getAllDrawMatchUps({
+      tournamentRecord: args.tournamentRecord,
+      drawDefinition: args.drawDefinition,
+      inContext: true,
+      event: args.event,
+    }).matchUps ?? [];
+  return matchUps.some(
+    (feeder) =>
+      feeder.matchUpId !== excludeMatchUpId &&
+      feeder.matchUpId !== args.request.matchUpId &&
+      (feeder.winnerMatchUpId === target.matchUpId || feeder.loserMatchUpId === target.matchUpId) &&
+      !!feeder.sides?.some((side) => side?.bye) &&
+      !feeder.sides?.some((side) => side?.participantId) &&
+      Object.values(feeder.sideExitProvenance ?? {}).some((entry) => !!carriedExitStatus(entry)),
+  );
+}
+
 /** one matchUp of the draw as it stands after v1 ran, in context */
 function standing(args: BuildViewArgs, matchUpId: string) {
   return getAllDrawMatchUps({
@@ -175,6 +197,34 @@ function checkLoser({ args, route, loser }: CheckArgs & { loser: NonNullable<Dir
   if (loser.converged && present)
     checkConverged({ args, route, matchUpId: loser.matchUpId, matchUpStatus: loser.converged });
   if (loser.bye) checkPropagatedBye({ args, route, bye: loser.bye });
+  if (loser.withdrawn && present) checkWithdrawnCarry({ args, route, withdrawn: loser.withdrawn, target, loserSide });
+}
+
+/**
+ * F2: the relabel withdrew the exit this matchUp carried to the loser. Where v1 kept it, a result stands onward (the
+ * loser or the carry's winner played on), which the view does not read: deferred. Otherwise the loser's matchUp is
+ * undecided, or, where the carry had converged, the other origin's exit won by the loser.
+ */
+function checkWithdrawnCarry({
+  args,
+  route,
+  withdrawn,
+  target,
+  loserSide,
+}: CheckArgs & { withdrawn: WithdrawnCarry; target?: HydratedMatchUp; loserSide?: number }) {
+  const kept = Object.values(target?.sideExitProvenance ?? {}).some(
+    (entry) => entry?.sourceMatchUpId === args.request.matchUpId && !!carriedExitStatus(entry),
+  );
+  if (kept) return differentialTally(`${route}:loser-withdrawal-kept`, 'deferred');
+  const winningSide = withdrawn.loserWins ? loserSide : undefined;
+  const winner = winningSide ? ` won by the loser, side ${winningSide}` : '';
+  if (target?.matchUpStatus !== withdrawn.matchUpStatus || target?.winningSide !== winningSide)
+    diverge(
+      args,
+      `${target?.matchUpId} is ${target?.matchUpStatus} won by side ${target?.winningSide}`,
+      `planned the carry withdrawn: ${withdrawn.matchUpStatus}${winner}`,
+    );
+  differentialTally(`${route}:loser-withdrawn${withdrawn.loserWins ? '-converged' : ''}`, 'compared');
 }
 
 function checkCarriedExit({
@@ -315,27 +365,31 @@ function checkProducedPastBye({
   const onward = onwardMatchUp(args, holder);
   if (!onward) return differentialTally(`${route}:produced-past-bye-final`, 'compared');
   const provenance = onward.sideExitProvenance ?? {};
-  // the side the produced exit landed on: its provenance names the double exit that produced it (a
-  // participant's own entry can name an exit too, the walkover they WON on the way here)
-  const exitSide = [1, 2].find(
-    (side) =>
-      provenance[side]?.matchUpStatus === produced.matchUpStatus &&
-      isDoubleExit(provenance[side]?.previousMatchUpStatus),
-  );
+  // the side the produced exit landed on: the entry naming THIS double exit as its source, else the entry that
+  // reads as it (a participant's own entry can name an exit too, the walkover they WON on the way here)
+  const exitSide =
+    [1, 2].find((side) => provenance[side]?.sourceMatchUpId === args.request.matchUpId) ??
+    [1, 2].find(
+      (side) =>
+        provenance[side]?.matchUpStatus === produced.matchUpStatus &&
+        isDoubleExit(provenance[side]?.previousMatchUpStatus),
+    );
   if (!exitSide)
     diverge(
       args,
       `${onward.matchUpId} holds no ${produced.matchUpStatus}`,
       `planned the produced exit sent on into it`,
     );
-  // by number: an in-context side not yet reached can be an empty object with no sideNumber at all
-  const other = onward.sides?.find((side) => side?.sideNumber === 3 - (exitSide ?? 0));
+  // by number throughout: an in-context side not yet reached is an empty object with no sideNumber at all, and
+  // reading the standing exit through it missed a WALKOVER another double exit had produced there (the
+  // `doubleExitAdvancement` BYE-meets-WALKOVER cell under the differential, 7.7.0 checkpoint: v1 converged,
+  // the check expected the exit pending)
+  const otherSide = 3 - (exitSide ?? 0);
+  const other = onward.sides?.find((side) => side?.sideNumber === otherSide);
   if (other?.bye) return differentialTally(`${route}:produced-past-bye-again`, 'deferred');
-  const standingExit = provenance[other?.sideNumber ?? 0]?.matchUpStatus;
-  const expectedStatus =
-    standingExit && standingExit !== BYE ? convergence([produced.matchUpStatus, standingExit]) : produced.matchUpStatus;
-  const expectedWinner =
-    expectedStatus === produced.matchUpStatus && other?.participantId ? other.sideNumber : undefined;
+  const standingExit = carriedExitStatus(provenance[otherSide]);
+  const expectedStatus = standingExit ? convergence([produced.matchUpStatus, standingExit]) : produced.matchUpStatus;
+  const expectedWinner = expectedStatus === produced.matchUpStatus && other?.participantId ? otherSide : undefined;
   if (onward.matchUpStatus === expectedStatus && onward.winningSide === expectedWinner)
     return differentialTally(`${route}:produced-past-bye-${expectedWinner ? 'awarded' : 'pending'}`, 'compared');
   diverge(
@@ -353,6 +407,10 @@ function checkProducedExit({
   const target = standing(args, produced.matchUpId);
   const opponent = target?.sides?.find((side) => side?.sideNumber === produced.winningSide);
   if (opponent?.bye) return checkProducedPastBye({ args, route, produced, holder: target });
+  // the opponent's seat is fed by a BYE holder holding an exit nobody can take: v1 sends that exit on at the end of
+  // the call (CA, 2026-10-04, "BYE holder, exit sent on"), and the two exits converge here. Not planned: deferred
+  if (target && opponentFeederHoldsAnExit(args, target, produced.matchUpId))
+    return differentialTally(`${route}:produced-meets-held-exit`, 'deferred');
   // CA, 2026-09-20: a produced exit holds NO winningSide until the opponent arrives; the exception
   // (2026-09-25) is an opponent already in place, whose side the winner is read off
   const expectedWinner = opponent?.participantId ? produced.winningSide : undefined;
@@ -439,7 +497,7 @@ function checkConverged({
 function checkPropagatedBye({ args, route, bye }: CheckArgs & { bye: { structureId: string; drawPosition: number } }) {
   if (!args.drawDefinition) return;
   const { structure } = findStructure({ drawDefinition: args.drawDefinition, structureId: bye.structureId });
-  if (!structure?.positionAssignments?.find((assignment) => assignment.drawPosition === bye.drawPosition)?.bye)
+  if (!positionAssignmentsOf(structure)?.find((assignment) => assignment.drawPosition === bye.drawPosition)?.bye)
     diverge(
       args,
       `no BYE at drawPosition ${bye.drawPosition} of ${bye.structureId}`,

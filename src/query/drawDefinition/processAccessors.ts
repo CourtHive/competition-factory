@@ -36,7 +36,7 @@ export function processAccessors({ significantCharacters, accessors = [], value 
 
   function checkValue({ value }) {
     if (value && ['string', 'number'].includes(typeof value)) {
-      const extractedValue = significantCharacters ? value.slice(0, significantCharacters) : value;
+      const extractedValue = significantCharacters ? String(value).slice(0, significantCharacters) : value;
       extractedValues.push(extractedValue);
     }
   }

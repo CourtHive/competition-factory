@@ -2,9 +2,11 @@ import { getLadderPolicy, getLadderOrdering } from '@Query/ladder/getLadderPolic
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isObject } from '@Tools/objects';
 
-// constants
+// constants and types
+import type { EventTypeUnion, Participant, PositionAssignment } from '@Types/tournamentTypes';
 import { DYNAMIC, RATING as RATING_SCALE } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { RANK, RATING } from '@Constants/ladderConstants';
@@ -20,7 +22,14 @@ type StandingArgs = {
 
 export type LadderStanding = { position: number; participantId: string; ratingValue?: number }[];
 
-function readScale({ participant, scaleName, scaleAccessor, eventType }: any) {
+type ReadScaleArgs = {
+  participant?: Participant;
+  scaleName: string;
+  scaleAccessor?: string;
+  eventType?: EventTypeUnion;
+};
+
+function readScale({ participant, scaleName, scaleAccessor, eventType }: ReadScaleArgs) {
   const result =
     participant &&
     participantScaleItem({
@@ -50,13 +59,15 @@ function readScale({ participant, scaleName, scaleAccessor, eventType }: any) {
 export function getLadderStanding(params: StandingArgs): LadderStanding {
   const { tournamentRecord } = params;
   const structure = resolveLadderStructure(params);
-  const assignments = (structure?.positionAssignments ?? []).filter((a: any) => a.participantId);
+  const assignments = (positionAssignmentsOf(structure) ?? []).filter(
+    (a): a is PositionAssignment & { participantId: string } => !!a.participantId,
+  );
 
   if (getLadderOrdering(params) !== RATING) {
     return assignments
       .slice()
-      .sort((a: any, b: any) => a.drawPosition - b.drawPosition)
-      .map((a: any) => ({ position: a.drawPosition, participantId: a.participantId }));
+      .sort((a, b) => a.drawPosition - b.drawPosition)
+      .map((a) => ({ position: a.drawPosition, participantId: a.participantId }));
   }
 
   const policy = getLadderPolicy(params);
@@ -68,13 +79,13 @@ export function getLadderStanding(params: StandingArgs): LadderStanding {
   if (!ratingType || !parameters) {
     return assignments
       .slice()
-      .sort((a: any, b: any) => a.drawPosition - b.drawPosition)
-      .map((a: any) => ({ position: a.drawPosition, participantId: a.participantId }));
+      .sort((a, b) => a.drawPosition - b.drawPosition)
+      .map((a) => ({ position: a.drawPosition, participantId: a.participantId }));
   }
 
-  const participants = tournamentRecord?.participants ?? [];
-  const rated = assignments.map((assignment: any) => {
-    const participant = participants.find((p: any) => p.participantId === assignment.participantId);
+  const participants: Participant[] = tournamentRecord?.participants ?? [];
+  const rated = assignments.map((assignment) => {
+    const participant = participants.find((p) => p.participantId === assignment.participantId);
     const scaleAccessor = parameters.accessor;
     const dynamicValue = policy.dynamicRating
       ? readScale({
@@ -91,7 +102,7 @@ export function getLadderStanding(params: StandingArgs): LadderStanding {
   });
 
   const ascending = !!parameters.ascending;
-  rated.sort((a: any, b: any) => {
+  rated.sort((a, b) => {
     const aHas = typeof a.ratingValue === 'number';
     const bHas = typeof b.ratingValue === 'number';
     // An unrated participant sorts last rather than to the top: absent is not "best".
@@ -102,7 +113,7 @@ export function getLadderStanding(params: StandingArgs): LadderStanding {
     return ascending ? a.ratingValue - b.ratingValue : b.ratingValue - a.ratingValue;
   });
 
-  return rated.map((entry: any, index: number) => ({
+  return rated.map((entry, index) => ({
     position: index + 1,
     participantId: entry.participantId,
     ratingValue: entry.ratingValue,

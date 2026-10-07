@@ -16,14 +16,14 @@ import {
 } from '@Mutate/notifications/drawNotifications';
 
 // constants and types
+import { DrawDefinition, Entry, Event, Tournament } from '@Types/tournamentTypes';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
+import { Flight, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { AUDIT } from '@Constants/topicConstants';
-import { ResultType } from '@Types/factoryTypes';
 import {
   DRAW_ID_EXISTS,
   INVALID_DRAW_DEFINITION,
@@ -96,7 +96,7 @@ export function addDrawDefinition(
     });
   }
 
-  const validationResult: any = validateDrawEntries({
+  const validationResult = validateDrawEntries({
     drawEntries,
     eventEntries,
     relevantFlight,
@@ -193,7 +193,19 @@ export function addDrawDefinition(
   return { ...SUCCESS, modifiedEventEntryStatusCount };
 }
 
-function validateDrawEntries({ drawEntries, eventEntries, relevantFlight, checkEntryStatus }) {
+type ValidateDrawEntriesArgs = {
+  checkEntryStatus?: boolean;
+  relevantFlight?: Flight;
+  eventEntries?: Entry[];
+  drawEntries?: Entry[];
+};
+
+function validateDrawEntries({
+  checkEntryStatus,
+  relevantFlight,
+  eventEntries,
+  drawEntries,
+}: ValidateDrawEntriesArgs): ResultType & { drawEntriesPresentInFlight?: boolean; matchingEventEntries?: boolean } {
   const drawEntriesPresentInFlight = drawEntries?.every(({ participantId, entryStatus }) => {
     const flightEntry = relevantFlight?.drawEntries.find((entry) => entry.participantId === participantId);
     return !entryStatus || flightEntry?.entryStatus === entryStatus;

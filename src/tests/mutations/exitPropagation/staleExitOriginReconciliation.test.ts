@@ -53,8 +53,7 @@ describe('a carried exit is withdrawn when its origin stops being a double exit 
   // seat `Main|3|1`'s loser has not reached, and a DIRECT double exit needs both seats reached (*"How can
   // three entities arrive in one matchUp which can only hold two drawPositions?"*). P40 was measured on
   // Main|2|1 ws1, Backdraw|3|1 DOUBLE_DEFAULT, Main|2|2 ws2, Main|3|1 WALKOVER ws1, Main|3|1 ws2; that
-  // sequence is now unreachable, and the refusal is what is asserted. Whether a stale origin can arise from legal steps is open (OUTCOME_PIPELINE_OPEN
-  // _QUESTIONS.md, F3).
+  // sequence is now unreachable, and the refusal is what is asserted. It can arise from legal steps: see the next case.
   it('a re-derived origin that seats a real winner voids the exit it stamped downstream', () => {
     setSubscriptions({});
     mocksEngine.generateTournamentRecord({
@@ -76,6 +75,51 @@ describe('a carried exit is withdrawn when its origin stops being a double exit 
       drawId,
     });
     expect(refused.error?.code).toEqual('ERR_INVALID_MATCHUP_STATUS');
+  });
+
+  // P40 on LEGAL steps (2026-10-06): the same seed with `Main|2|2` played before the double default, so `Backdraw|3|1`
+  // holds both seats when it is entered. The Main semifinal's walkover loser carries a WALKOVER into `Backdraw|4|1`,
+  // which converges with the DEFAULTED the double default produced; that convergence produces a WALKOVER on
+  // `Main|4|1`, awarded to the Main-draw winner. Re-scoring the semifinal takes the carried origin back:
+  // `Backdraw|4|1` re-derives to the produced DEFAULTED, won by its new, seated loser, so what it delivers is an
+  // advancement and the WALKOVER it stamped on `Main|4|1` is void.
+  it('on legal steps: the re-derived origin seats its winner, and the exit it stamped downstream is withdrawn', () => {
+    play(
+      [
+        ['Main|2|1', { winningSide: 1 }],
+        ['Main|2|2', { winningSide: 2 }],
+        ['Backdraw|3|1', { matchUpStatus: 'DOUBLE_DEFAULT' }],
+        ['Main|3|1', { matchUpStatus: 'WALKOVER', winningSide: 1 }],
+      ],
+      { participantsCount: 4, nonRandom: 9301605 },
+    );
+    // CONTROL: the convergence stands and its produced walkover is stamped on the Main final
+    const origin: any = find('Backdraw|4|1');
+    expect(origin.matchUpStatus).toEqual('DOUBLE_WALKOVER');
+    expect(
+      Object.values(find('Main|4|1').sideExitProvenance ?? {}).map((entry: any) => entry.sourceMatchUpId),
+    ).toContain(origin.matchUpId);
+
+    const result: any = tournamentEngine.setMatchUpStatus({
+      matchUpId: find('Main|3|1').matchUpId,
+      outcome: { winningSide: 2 },
+      propagateExitStatus: true,
+      drawId,
+    });
+    expect(result.error).toBeUndefined();
+
+    const reDerived: any = find('Backdraw|4|1');
+    expect(reDerived.matchUpStatus).toEqual('DEFAULTED');
+    const seated = reDerived.sides.find((side: any) => side.sideNumber === reDerived.winningSide)?.participantId;
+    expect(seated).toBeDefined();
+    const final: any = find('Main|4|1');
+    expect(final.matchUpStatus).toEqual('TO_BE_PLAYED');
+    expect(final.sideExitProvenance ?? {}).toEqual({});
+    expect(final.sides.map((side: any) => side.participantId)).toContain(seated);
+    const errors = ((tournamentEngine.getDrawInconsistencies({ drawId }) as any).inconsistencies ?? []).filter(
+      (issue: any) => issue.severity === 'error',
+    );
+    expect(errors).toEqual([]);
   });
 
   // DE window seed 9303412, the counter-case. `Backdraw|2|2` also drops one origin and also re-derives

@@ -26,6 +26,7 @@ import {
   ScheduleAnalysis,
   ParticipantMap,
   MatchUpFilters,
+  MappedParticipant,
 } from '@Types/factoryTypes';
 
 type GetParticipantsArgs = {
@@ -144,7 +145,7 @@ export function getParticipants(params: GetParticipantsArgs): {
   const { participantIdsWithConflicts, eventsPublishStatuses, derivedEventInfo, derivedDrawInfo, mappedMatchUps } =
     entriesResult;
 
-  const matchUps: any[] = entriesResult.matchUps;
+  const matchUps = entriesResult.matchUps;
 
   participantMap = entriesResult.participantMap;
 
@@ -160,12 +161,12 @@ export function getParticipants(params: GetParticipantsArgs): {
     matchUps,
     events,
     draws,
-  }): HydratedParticipant => {
-    const participantDraws: any[] = Object.values(draws);
+  }: MappedParticipant): HydratedParticipant => {
+    const participantDraws = Object.values(draws);
     const participantOpponents = Object.values(opponents);
     if (withOpponents) {
       participantDraws?.forEach((draw) => {
-        draw.opponents = participantOpponents.filter((opponent: any) => opponent.drawId === draw.drawId);
+        draw.opponents = participantOpponents.filter((opponent) => opponent.drawId === draw.drawId);
       });
     }
 

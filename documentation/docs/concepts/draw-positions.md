@@ -8,7 +8,7 @@ rules that govern the `drawPositions` array — the ones that are load-bearing, 
 not obvious from the type.
 
 ```ts
-matchUp.drawPositions: number[]   // at most two, stored ASCENDING and compacted (round robin excepted: § 2)
+matchUp.drawPositions: number[]   // at most two, stored ASCENDING, usually compacted (round robin excepted: § 2)
 ```
 
 ## 1. A drawPosition is unique within a STRUCTURE, and means nothing outside it
@@ -30,11 +30,12 @@ different participants — or a participant and a bye.
 
 ## 2. The array is SORTED, not positional: the index is a side only while BOTH positions are present
 
-Writers store `drawPositions` **ascending and compacted**: a matchUp awaiting its second participant
-is stored `[4]`, not `[undefined, 4]`. So a lone position sits at index 0 **whatever its side**, and
-reading a side from the index answers 1 for a position that belongs on side 2. The binding between a
-side and a slot holds by index **only when both positions are present**, and then only because the
-ascending order makes the lower one side 1 (§ 3).
+Writers store `drawPositions` **ascending** and **compacted**: a matchUp awaiting its second participant is
+stored `[4]` (since 7.7.0 no writer stores a hole; records written before may still hold `[undefined, 4]`, § 6). So a
+lone position's index is **not its side**: compacted, it sits at index 0 whichever side it belongs
+on, and reading a side from the index answers 1 for a position that belongs on side 2. The binding
+between a side and a slot holds by index **only when both positions are present**, and then only
+because the ascending order makes the lower one side 1 (§ 3).
 
 Round-robin groups are the exception to the ascending rule: their matchUps store positions in Berger
 pairing order, and `DRAW_POSITIONS_NOT_SORTED` exempts them. Sides there still come from the readers
@@ -57,6 +58,10 @@ resolves a lone position structurally, through the round profile (§ 4). The raw
 guaranteed: a first-round matchUp, including a loser target's (`feedRound` handled separately), or
 behind an explicit `filter(Boolean).length === 2`. None of them fails loudly when used elsewhere. They
 answer confidently, with the wrong participant.
+
+These readers are engine internals, not public exports (`getExitWinningSide` and
+`getOrderedDrawPositions` included). A consumer reads `sides` on a hydrated matchUp, which carries
+each side's `drawPosition` and `sideNumber` already resolved.
 
 **Every writer must leave `drawPositions` ascending.** Removing a position preserves order and is
 safe. Substituting one **in place** does not: a positional `map` that writes a higher position into
@@ -209,8 +214,8 @@ matchUp:
 
 | spelling         | written by                                                                                          |
 | ---------------- | --------------------------------------------------------------------------------------------------- |
-| `[5]`            | `removeSubsequentRoundsParticipant` (compacts), `buildFeedRound`                                    |
-| `[undefined, 5]` | `releaseAdvancedDrawPosition`, `positionClear`, `swapWinnerLoser`, BYE advancement                  |
+| `[5]`            | every writer since 7.7.0, through `normalizeDrawPositions`                                          |
+| `[undefined, 5]` | records written before 7.7.0 (`releaseAdvancedDrawPosition`, `positionClear`, BYE advancement)      |
 | `[]`             | `buildRound`, `resetDrawDefinition`, `luckyDrawAdvancement`, and any removal that empties a matchUp |
 | absent           | `pruneDrawDefinition`                                                                               |
 
@@ -227,22 +232,18 @@ Two corollaries for anyone writing engine code:
   positions once, then branch on **how many there are**. `allNumeric` is `true` for a one-element
   array, which is how a compacted lone position used to bypass the feed-round rule entirely.
 
-## 6. A hole is load-bearing only BESIDE a survivor
+## 6. No hole is stored
 
-`[undefined, 5]` keeps 5 on side 2, and compacting it to `[5]` would move 5 to side 1 — so that hole
-carries information and is preserved deliberately.
+Since 7.7.0 `normalizeDrawPositions`, which every removal, substitution, placement and BYE-advancement writer
+routes through, stores the positions **present**, ascending: a lone survivor is `[5]` whatever its side, and a
+matchUp holding nothing is `[]`. A hole serialises as `null`, which `tournament.schema.json` rejects (CA's Q2
+ruling, 2026-10-05), so the side of a lone survivor is not carried by a hole: it is read **structurally**, through
+the round profile (§ 4), by the helpers in `getDrawPositionSides`. Every engine reader that once indexed the raw
+array was moved onto them first; `drawPositionsAreReadByStructure.test.ts` holds the rest to an exact allow-list.
+`drawPositionsNormalizationBypass.test.ts` fails on any writer that does not route through the normaliser.
 
-An array of nothing **but** holes carries none: there is no survivor for it to hold a side open
-beside. `[undefined]` and `[undefined, undefined]` are therefore normalised to `[]`, through
-`normalizeDrawPositions`, which every removal and substitution writer routes through.
-`drawPositionsNormalizationBypass.test.ts` fails on any writer that does not.
-
-A **trailing** hole carries none either: `[5, undefined]` holds side 2 open beside a survivor already
-on side 1, which `[5]` says by itself. Since 2026-10-02 it is trimmed on the way in, by the same
-helper, and the placement and BYE-advancement writers route through it too. This matters beyond
-tidiness: a stored hole serialises as `null`, which `tournament.schema.json` rejects, so every draw
-with a BYE used to fail validation. Records stored before then may still hold `[5, null]`; read them
-by the rules above and they resolve the same. A leading hole, `[undefined, 5]`, is kept.
+Records stored before 7.7.0 may still hold a hole: `[undefined, 5]`, `[5, null]`, `[null]`. The engine reads them
+by the same structural rule and they resolve the same, which is why the shape is not information (§ 5).
 
 ## 7. `[]` is published as an ABSENT key, and that is the ordinary case
 
@@ -275,8 +276,9 @@ partitioning matchUps.
 | rule                                                     | source                                           |
 | -------------------------------------------------------- | ------------------------------------------------ |
 | ascending order, and the reader idioms that depend on it | `getOrderedDrawPositions`                        |
+| reading a side from structure                            | `getDrawPositionSides`                           |
 | crossing a link by participant                           | `directWinner`, `releaseLinkedWinnerAdvancement` |
 | fed vs advanced, and side resolution                     | `getOrderedDrawPositions`, `getRoundMatchUps`    |
 | a reserved fed slot vs a round that merely feeds sides   | `getRoundMatchUps`, `getWinnerLinkRoundNumbers`  |
-| all-holes normalisation                                  | `normalizeDrawPositions`                         |
+| storing the positions present, ascending, with no hole   | `normalizeDrawPositions`                         |
 | the published shape                                      | `addMatchUpContext`, via `definedAttributes`     |

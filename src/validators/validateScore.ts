@@ -10,8 +10,8 @@ import { unique } from '@Tools/arrays';
 
 // constants and types
 import { TIEBREAK_POINTS_NOT_RECORDED } from '@Constants/scoreWarningConstants';
+import type { Score, Set as SetType } from '@Types/tournamentTypes';
 import { ResultType, ResultWarning } from '@Types/factoryTypes';
-import type { Score } from '@Types/tournamentTypes';
 import {
   INVALID_MATCHUP_STATUS,
   INVALID_SCORE,
@@ -28,7 +28,7 @@ type validateScoreTypes = {
 };
 
 /** The sets whose games are a tiebreak result — 7-6 under `@6` — and which carry no tiebreak points. */
-function setsDecidedByTiebreakWithoutPoints(sets: any[], matchUpFormat?: string): number[] {
+function setsDecidedByTiebreakWithoutPoints(sets: SetType[], matchUpFormat?: string): number[] {
   const parsed = matchUpFormat ? parse(matchUpFormat) : undefined;
   if (!parsed) return [];
   return sets
@@ -45,24 +45,24 @@ function setsDecidedByTiebreakWithoutPoints(sets: any[], matchUpFormat?: string)
     .filter((setNumber): setNumber is number => typeof setNumber === 'number');
 }
 
-const hasSetValues = (set: any) =>
+const hasSetValues = (set?: SetType) =>
   [set?.side1Score, set?.side2Score, set?.side1TiebreakScore, set?.side2TiebreakScore].some(
     (value) => value !== undefined && value !== null,
   );
 
 /** The warning for sets decided by their tiebreak with no points recorded, or none (ruling V11). */
-export function tiebreakPointsWarnings(sets: any[] = [], matchUpFormat?: string): ResultWarning[] {
+export function tiebreakPointsWarnings(sets: SetType[] = [], matchUpFormat?: string): ResultWarning[] {
   const setNumbers = setsDecidedByTiebreakWithoutPoints(sets, matchUpFormat);
   return setNumbers.length ? [{ code: TIEBREAK_POINTS_NOT_RECORDED, setNumbers }] : [];
 }
 
-function acceptedWithWarnings(sets: any[], matchUpFormat?: string): ResultType & { valid?: boolean } {
+function acceptedWithWarnings(sets: SetType[], matchUpFormat?: string): ResultType & { valid?: boolean } {
   const warnings = tiebreakPointsWarnings(sets, matchUpFormat);
   return warnings.length ? { valid: true, warnings } : { valid: true };
 }
 
 /** The shape of one set: numeric pairs on both sides or neither, point scores in pairs, a side for a winner. */
-function checkSetValues(set: any): ResultType | undefined {
+function checkSetValues(set: SetType): ResultType | undefined {
   const {
     side1Score,
     side2Score,
@@ -88,8 +88,8 @@ function checkSetValues(set: any): ResultType | undefined {
 
   // point scores can be numeric (points-based formats) or string (tennis game scores: "AD", "40")
   const pointScorePair = [side1PointScore, side2PointScore];
-  const hasPointScore = pointScorePair.some((v: any) => v !== undefined && v !== null);
-  if (hasPointScore && !pointScorePair.every((v: any) => v !== undefined && v !== null)) {
+  const hasPointScore = pointScorePair.some((v) => v !== undefined && v !== null);
+  if (hasPointScore && !pointScorePair.every((v) => v !== undefined && v !== null)) {
     return { error: INVALID_VALUES, info: 'both sides must have point scores if one does' };
   }
 

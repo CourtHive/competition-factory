@@ -37,6 +37,8 @@ function publish({ removePriorValues, tournamentRecord, status = PUBLIC, embargo
   if (embargo && !isValidEmbargoDate(embargo)) return { error: INVALID_EMBARGO };
   if (embargo) participants.embargo = embargo;
   if (columns) participants.columns = columns;
+  // a record already published under another status holds no entry for this one yet
+  itemValue[status] ??= {};
   itemValue[status].participants = participants;
   if (language) itemValue[status].language = language;
   const updatedTimeItem = { itemValue, itemType };

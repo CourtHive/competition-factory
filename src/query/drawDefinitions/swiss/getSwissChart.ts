@@ -2,6 +2,7 @@ import { computeScoreGroups } from '@Generators/drawDefinitions/drawTypes/adHoc/
 import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
@@ -43,7 +44,7 @@ export function getSwissChart({ drawDefinition, structureId }: GetSwissChartArgs
 
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
-  const allMatchUps = structure.matchUps ?? [];
+  const allMatchUps = matchUpsOf(structure) ?? [];
   const participantIds = (drawDefinition.entries ?? [])
     .filter((e) => !!e.entryStatus && STRUCTURE_SELECTED_STATUSES.includes(e.entryStatus))
     .map(getParticipantId)

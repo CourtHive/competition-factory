@@ -3,18 +3,20 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { nowIso } from '@Tools/clock';
 
 // constants and types
+import { ErrorType, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { COMPETITIVENESS_REPORT } from '@Constants/reportConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 export function wrapCompetitivenessReport({
   tournamentRecord,
 }: {
   tournamentRecord: Tournament;
-}): ReportResult | { error: any } {
+}): ReportResult | { error: ErrorType } {
   const { matchUps } = allTournamentMatchUps({ tournamentRecord });
-  if (!matchUps) return { error: 'No matchUps found' };
+  if (!matchUps) return { error: MISSING_MATCHUPS };
 
   const completed = matchUps.filter((m: any) => completedMatchUpStatuses.includes(m.matchUpStatus));
 
@@ -28,12 +30,9 @@ export function wrapCompetitivenessReport({
   ];
 
   const rows = completed
-    .toSorted(
-      (a: any, b: any) =>
-        (a.roundNumber ?? 0) - (b.roundNumber ?? 0) || (a.roundPosition ?? 0) - (b.roundPosition ?? 0),
-    )
-    .map((m: any) => {
-      const profile: any = getMatchUpCompetitiveProfile({ matchUp: m, tournamentRecord });
+    .toSorted((a, b) => (a.roundNumber ?? 0) - (b.roundNumber ?? 0) || (a.roundPosition ?? 0) - (b.roundPosition ?? 0))
+    .map((m) => {
+      const profile = getMatchUpCompetitiveProfile({ matchUp: m, tournamentRecord });
 
       return {
         structureId: m.structureId,
@@ -67,7 +66,7 @@ export function wrapCompetitivenessReport({
  * survive to CSV/JSON export. A doubles side yields its PAIR id; the consumer
  * hydrates individuals from that, so a partner can be opened individually.
  */
-function sideIds(matchUp: any) {
+function sideIds(matchUp: HydratedMatchUp) {
   return {
     side1ParticipantId: matchUp?.sides?.[0]?.participantId ?? matchUp?.sides?.[0]?.participant?.participantId ?? '',
     side2ParticipantId: matchUp?.sides?.[1]?.participantId ?? matchUp?.sides?.[1]?.participant?.participantId ?? '',

@@ -1,3 +1,4 @@
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 
@@ -19,7 +20,7 @@ type IsLuckyArgs = {
  * This is the definitive test for a lucky-style structure, regardless of stage.
  */
 export function hasLuckyRounds({ structure, matchUps }: { structure?: Structure; matchUps?: MatchUp[] }) {
-  matchUps = matchUps ?? structure?.matchUps ?? [];
+  matchUps = matchUps ?? matchUpsOf(structure) ?? [];
   const result = getRoundMatchUps({ matchUps });
 
   // If getRoundMatchUps fails validation, fall back to manual round grouping
@@ -40,14 +41,14 @@ export function hasLuckyRounds({ structure, matchUps }: { structure?: Structure;
 export function isLucky({ roundsNotPowerOf2, drawDefinition, structure, matchUps }: IsLuckyArgs) {
   if (!structure) return false;
 
-  matchUps = matchUps ?? structure.matchUps ?? [];
+  matchUps = matchUps ?? matchUpsOf(structure) ?? [];
   roundsNotPowerOf2 = roundsNotPowerOf2 ?? getRoundMatchUps({ matchUps }).roundsNotPowerOf2;
 
   const hasDrawPositions =
-    !!structure.positionAssignments?.find(({ drawPosition }) => drawPosition) ||
+    !!positionAssignmentsOf(structure)?.find(({ drawPosition }) => drawPosition) ||
     !!matchUps?.find(({ drawPositions }) => drawPositions?.length);
 
-  if (!hasDrawPositions || structure?.structures) return false;
+  if (!hasDrawPositions || structuresOf(structure)) return false;
   if (drawDefinition?.drawType && isLuckyBasedDraw(drawDefinition.drawType)) return false;
   if (!roundsNotPowerOf2) return false;
 

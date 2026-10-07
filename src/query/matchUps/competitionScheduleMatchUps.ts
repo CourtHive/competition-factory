@@ -51,7 +51,7 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
   if (typeof params?.tournamentRecords !== 'object' || !Object.keys(params?.tournamentRecords).length)
     return { error: MISSING_TOURNAMENT_RECORDS };
   const { courts, venues } = getVenuesAndCourts(params);
-  const getResult: any = getSchedulingProfile(params);
+  const getResult = getSchedulingProfile(params);
   const schedulingProfile = getResult.schedulingProfile;
 
   const {
@@ -151,7 +151,7 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
   // and publishing surfaces (`usePublishState`) must not start emitting byes.
   if (courtByeMatchUps) {
     const scheduledDate = params.matchUpFilters?.scheduledDate;
-    const onDate = (matchUp: any) =>
+    const onDate = (matchUp: HydratedMatchUp) =>
       matchUp.schedule?.courtId && (!scheduledDate || matchUp.schedule?.scheduledDate === scheduledDate);
     // and the exits the cascade produced that hold a court — decided, never played, the same
     // invisible occupant a BYE is (CA, 2026-10-01); they sit in the completed bucket by status

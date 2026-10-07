@@ -133,27 +133,40 @@ const { error, success } = engine.checkValidEntries({
 Bulk version of `destroyPairEntry`. Removes multiple PAIR participants from an event and converts them back to individual entries.
 
 ```js
-const { destroyedCount, errors } = engine.destroyPairEntries({
+const result = engine.destroyPairEntries({
   participantIds, // array of PAIR participant IDs to destroy
   removeGroupParticipant, // optional boolean - also remove PAIR from tournament participants
   eventId, // required
   drawId, // optional
 });
 
-console.log(`Destroyed ${destroyedCount} pair entries`);
-if (errors.length) {
-  console.log('Errors:', errors);
+if (result.error) {
+  // nothing was destroyed: result.error is the first failure; every failure is in result.context.errors
+} else {
+  console.log(`Destroyed ${result.destroyedCount} pair entries`);
+  if (result.context?.errors) console.log('Not destroyed:', result.context.errors);
 }
 ```
 
 **Returns:**
 
 ```ts
+// at least one pair destroyed
 {
-  destroyedCount: number;  // Number of pairs successfully destroyed
-  errors: any[];           // Array of errors encountered
+  success: true;
+  destroyedCount: number;               // Number of pairs successfully destroyed
+  context?: { errors: ErrorType[] };    // present only when some pairs could not be destroyed
+}
+
+// none destroyed
+{
+  error: ErrorType;                     // the first failure (PARTICIPANT_ENTRY_NOT_FOUND if none was recorded)
+  context: { errors: ErrorType[] };     // every failure
 }
 ```
+
+Since 7.5.0 a refusal is a single `error` rather than an array, and an empty or missing `participantIds` is refused
+with `MISSING_PARTICIPANT_IDS`.
 
 **What it does:**
 

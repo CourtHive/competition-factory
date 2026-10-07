@@ -1,3 +1,5 @@
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+
 // constants and types
 import { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -59,8 +61,8 @@ type StructureProfile = {
 // children, so recursion reaches each group)
 function collectMatchUpStructures(structures: Structure[] | undefined, collected: Structure[]): void {
   for (const structure of structures ?? []) {
-    if (structure.matchUps?.length) collected.push(structure);
-    if (structure.structures?.length) collectMatchUpStructures(structure.structures, collected);
+    if (matchUpsOf(structure)?.length) collected.push(structure);
+    if (structuresOf(structure)?.length) collectMatchUpStructures(structuresOf(structure), collected);
   }
 }
 
@@ -77,7 +79,7 @@ function structureFormatProfile(
   const byRound = new Map<number, Set<string>>();
   const tally = new Map<string, number>();
 
-  for (const matchUp of (structure.matchUps ?? []) as MatchUp[]) {
+  for (const matchUp of (matchUpsOf(structure) ?? []) as MatchUp[]) {
     if (matchUp.collectionId || typeof matchUp.roundNumber !== 'number') continue;
     // only matchUps that carry format EVIDENCE — an explicit matchUp-level format, or a played
     // result. Unplayed, format-less matchUps merely inherit the current default and would

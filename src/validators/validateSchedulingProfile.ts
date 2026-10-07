@@ -2,10 +2,25 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { getDrawStructures } from '@Acquire/findStructure';
+import { structuresOf } from '@Acquire/structureMembers';
 import { isValidDateString } from '@Tools/dateTime';
 
-// constants
+// constants and types
 import { INVALID_VALUES, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { TournamentRecords } from '@Types/factoryTypes';
+
+/** The round numbers of each structure, keyed tournamentId → eventId → drawId → structureId. */
+type SchedulingRoundsMap = {
+  [tournamentId: string]: { [eventId: string]: { [drawId: string]: { [structureId: string]: number[] | undefined } } };
+};
+
+type SchedulingIds = {
+  tournamentIds: string[];
+  structureIds: string[];
+  venueIds: string[];
+  eventIds: string[];
+  drawIds: string[];
+};
 
 export function validateSchedulingProfile({ tournamentRecords, schedulingProfile }): any {
   if (!schedulingProfile) return { valid: true };
@@ -74,9 +89,9 @@ export function tournamentRelevantSchedulingIds(params) {
   const structureIds: string[] = [];
   const eventIds: string[] = [];
   const drawIds: string[] = [];
-  const venueIds: string[] = (tournamentRecord?.venues ?? []).map(
-    ({ venueId, courts }) => (!requireCourts || courts?.length) && venueId,
-  );
+  const venueIds: string[] = (tournamentRecord?.venues ?? [])
+    .filter(({ courts }) => !requireCourts || courts?.length)
+    .map(({ venueId }) => venueId);
   const tournamentId = tournamentRecord?.tournamentId;
 
   if (tournamentId) {
@@ -100,8 +115,9 @@ export function tournamentRelevantSchedulingIds(params) {
           const rounds = roundMatchUps && Object.keys(roundMatchUps).map(mapParsedInt);
           tournamentMap[tournamentId][eventId][drawId][structureId] = rounds;
           structureIds.push(structureId);
-          if (structure.structures?.length) {
-            for (const itemStructure of structure.structures) {
+          const itemStructures = structuresOf(structure);
+          if (itemStructures?.length) {
+            for (const itemStructure of itemStructures) {
               structureIds.push(itemStructure.structureId);
               tournamentMap[tournamentId][eventId][drawId][itemStructure.structureId] = rounds;
             }
@@ -121,10 +137,10 @@ export function tournamentRelevantSchedulingIds(params) {
   };
 }
 
-export function getAllRelevantSchedulingIds(params) {
-  const records: any = (params?.tournamentRecords && Object.values(params?.tournamentRecords)) ?? [];
-  const tournamentsMap = {};
-  const { venueIds, eventIds, drawIds, structureIds, tournamentIds } = records.reduce(
+export function getAllRelevantSchedulingIds(params?: { tournamentRecords?: TournamentRecords }) {
+  const records = (params?.tournamentRecords && Object.values(params?.tournamentRecords)) ?? [];
+  const tournamentsMap: SchedulingRoundsMap = {};
+  const { venueIds, eventIds, drawIds, structureIds, tournamentIds } = records.reduce<SchedulingIds>(
     (aggregator, tournamentRecord) => {
       const { tournamentIds, tournamentMap, structureIds, venueIds, eventIds, drawIds } =
         tournamentRelevantSchedulingIds({

@@ -1,9 +1,13 @@
+import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/removeDoubleExit';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
+import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
 import {
@@ -17,9 +21,10 @@ import {
 } from './sideExitProvenance';
 
 // constants and types
-import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 type SettleArgs = {
   tournamentRecord?: Tournament;
@@ -27,6 +32,17 @@ type SettleArgs = {
   propagateExitStatus?: boolean;
   matchUpsMap?: MatchUpsMap;
   event?: Event;
+};
+
+/** What `carryExitOnward` carries from one loser matchUp to the next. */
+type CarriedExit = {
+  sourceMatchUpStatus?: MatchUpStatusUnion;
+  sourceMatchUpStatusCodes?: string[];
+  loserParticipantId?: string;
+  matchUpsMap?: MatchUpsMap;
+  sourceWinningSide?: number;
+  sourceMatchUpId?: string;
+  loserMatchUp?: MatchUp;
 };
 
 /**
@@ -112,11 +128,49 @@ export function settleRederivedDoubleExit({
   const inContextMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps;
   const originInContext = inContextMatchUps?.find((candidate) => candidate.matchUpId === origin?.matchUpId);
   const carrierId = originInContext?.winningSide
-    ? originInContext.sides?.find((side: any) => side.sideNumber !== originInContext.winningSide)?.participantId
+    ? originInContext.sides?.find((side) => side.sideNumber !== originInContext.winningSide)?.participantId
     : undefined;
   const inContext = inContextMatchUps?.find((candidate) => candidate.matchUpId === matchUpId);
-  const carrierSide = inContext?.sides?.find((side: any) => carrierId && side.participantId === carrierId)?.sideNumber;
-  if (!stored || !keptEntry || !origin || !carrierSide) return undefined;
+  const carrierSide = inContext?.sides?.find((side) => carrierId && side.participantId === carrierId)?.sideNumber;
+  if (!stored || !keptEntry || !origin) return undefined;
+  if (!carrierSide) {
+    // The kept origin is a DOUBLE EXIT: nothing was carried here, an exit was PRODUCED onto this matchUp, and the
+    // participant who stands here (the withdrawn origin's relabelled loser) is simply present opposite it. The
+    // re-derivation has already awarded it to them (RULE 2: the side without the exit wins); what a carry's replay
+    // would do for a carrier, the forward path does for a winner: they go on. (F2, CA 2026-10-07; census w2 9100377,
+    // MFIC 16/11 `Consolation|3|2`, which stood as a double exit until then, then stood won and unadvanced.)
+    //
+    // Only where someone stands here: two double exits producing into one empty matchUp (adjacent double walkovers in
+    // Main R1, `exitStatusClearing` 2.3) re-derive to the kept produced exit, pending, as they always did; and a double
+    // exit's exit carried here over its LOSER link has no carrier either and is left as re-derived.
+    const produced =
+      isDoubleExit(origin.matchUpStatus) &&
+      !!inContextMatchUps &&
+      !arrivedOverLoserLink({
+        inContextDrawMatchUps: inContextMatchUps,
+        targetMatchUpId: matchUpId,
+        sourceMatchUpId: origin.matchUpId,
+        drawDefinition,
+      });
+    if (!produced || !inContext || !inContextMatchUps) return undefined;
+    // what it produced downstream as a double exit goes first, as for a carrier: the winner target still held the
+    // pending exit this convergence produced, and a winner directed into it would have been awarded it on arrival
+    const withdrawnExits = withdrawProducedExits({
+      mappedMatchUps: matchUpsMap.mappedMatchUps,
+      sourceMatchUpId: matchUpId,
+      drawDefinition,
+    });
+    applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap, event });
+    withdrawByeSeats({ claimantMatchUpId: matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
+    return advanceStandingWinner({
+      inContextDrawMatchUps: inContextMatchUps,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      inContext,
+      event,
+    });
+  }
 
   // 1. what it produced downstream as a double exit
   const withdrawnExits = withdrawProducedExits({
@@ -170,6 +224,44 @@ export function settleRederivedDoubleExit({
 }
 
 /**
+ * The participant who stands in a re-derived produced exit and has been awarded it goes on, exactly as a winner is
+ * directed from any decided matchUp (`directWinner`): nothing is written here that the award did not already decide.
+ * Nobody to advance, or already standing in the winner target: nothing to do.
+ */
+function advanceStandingWinner({
+  inContextDrawMatchUps,
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  inContext,
+  event,
+}: SettleArgs & { inContextDrawMatchUps: HydratedMatchUp[]; matchUpsMap: MatchUpsMap; inContext: HydratedMatchUp }):
+  ResultType | undefined {
+  const winner = inContext.sides?.find((side) => side?.sideNumber === inContext.winningSide && side.participantId);
+  if (!winner?.drawPosition) return undefined;
+  const targetData = positionTargets({ matchUpId: inContext.matchUpId, inContextDrawMatchUps, drawDefinition });
+  if (targetData.error) return targetData;
+  const winnerMatchUp = targetData.targetMatchUps?.winnerMatchUp;
+  if (!winnerMatchUp || winnerMatchUp.sides?.some((side) => side?.participantId === winner.participantId))
+    return undefined;
+  return directWinner({
+    winnerMatchUpDrawPositionIndex: targetData.targetMatchUps?.winnerMatchUpDrawPositionIndex,
+    winnerTargetLink: targetData.targetLinks?.winnerTargetLink,
+    sourceMatchUpStatus: inContext.matchUpStatus,
+    winningDrawPosition: winner.drawPosition,
+    sourceMatchUpId: inContext.matchUpId,
+    projectedWinningSide: undefined,
+    dualMatchUp: undefined,
+    inContextDrawMatchUps,
+    tournamentRecord,
+    drawDefinition,
+    winnerMatchUp,
+    matchUpsMap,
+    event,
+  });
+}
+
+/**
  * The exit-carrying loop `setMatchUpStatus` runs after a direction: set the loser's matchUp from the
  * carried exit, and keep going while that produces a further loser (COMPASS: East → West → South →
  * Southeast). Bounded, as there.
@@ -180,10 +272,16 @@ export function carryExitOnward({
   tournamentRecord,
   drawDefinition,
   event,
-}: any): ResultType | undefined {
-  let current = context;
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  propagateExitStatus?: boolean;
+  context?: CarriedExit;
+  event?: Event;
+}): ResultType | undefined {
+  let current: CarriedExit | undefined = context;
   for (let failsafe = 0; current?.loserMatchUp && failsafe < 10; failsafe += 1) {
-    const progressResult: any = progressExitStatus({
+    const progressResult = progressExitStatus({
       sourceMatchUpStatusCodes: current.sourceMatchUpStatusCodes,
       sourceMatchUpStatus: current.sourceMatchUpStatus,
       sourceWinningSide: current.sourceWinningSide,
@@ -204,8 +302,20 @@ export function carryExitOnward({
 }
 
 /** Withdraw a matchUp's BYE claims, clearing each propagated BYE seat no other claim still holds. */
-function withdrawByeSeats({ claimantMatchUpId, tournamentRecord, drawDefinition, matchUpsMap, event }: any) {
-  for (const [structureId, mapped] of Object.entries(matchUpsMap.mappedMatchUps) as [string, any][]) {
+function withdrawByeSeats({
+  claimantMatchUpId,
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  claimantMatchUpId: string;
+  event?: Event;
+}) {
+  for (const [structureId, mapped] of Object.entries(matchUpsMap.mappedMatchUps)) {
     const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
     for (const matchUp of mapped.matchUps as MatchUp[]) {
       for (const sideNumber of [1, 2]) {
@@ -214,8 +324,8 @@ function withdrawByeSeats({ claimantMatchUpId, tournamentRecord, drawDefinition,
         withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
         if (matchUp.sideExitProvenance?.[sideNumber]?.byeClaims?.length) continue;
         const drawPosition = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber });
-        const assignment = structure?.positionAssignments?.find((entry) => entry.drawPosition === drawPosition);
-        if (!assignment?.bye || !(assignment as any).byeFromPropagation) continue;
+        const assignment = positionAssignmentsOf(structure)?.find((entry) => entry.drawPosition === drawPosition);
+        if (!assignment?.bye || !assignment.byeFromPropagation) continue;
         clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
       }
     }

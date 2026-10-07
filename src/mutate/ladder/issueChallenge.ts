@@ -1,4 +1,5 @@
 import { getLadderPolicy, isChallengeInRange } from '@Query/ladder/getLadderPolicy';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
@@ -7,6 +8,7 @@ import { UUID } from '@Tools/UUID';
 // constants and types
 import { CHALLENGED } from '@Constants/matchUpStatusConstants';
 import { CHALLENGE_ISSUED } from '@Constants/ladderConstants';
+import type { Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
@@ -49,12 +51,13 @@ export function issueChallenge(params: IssueChallengeArgs): ResultType & { match
 
   const structureId = params.structureId ?? drawDefinition.structures?.[0]?.structureId;
   if (typeof structureId !== 'string') return { error: MISSING_STRUCTURE_ID };
-  const structure = drawDefinition.structures?.find((s: any) => s.structureId === structureId);
+  const structures: Structure[] | undefined = drawDefinition.structures;
+  const structure = structures?.find((s) => s.structureId === structureId);
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
   // The standing. Under RANK ordering these positions ARE the ladder.
   const positionOf = (participantId: string): number | undefined =>
-    structure.positionAssignments?.find((a: any) => a.participantId === participantId)?.drawPosition;
+    positionAssignmentsOf(structure)?.find((a) => a.participantId === participantId)?.drawPosition;
 
   const challengerPosition = positionOf(challengerParticipantId);
   const defenderPosition = positionOf(defenderParticipantId);
@@ -85,7 +88,7 @@ export function issueChallenge(params: IssueChallengeArgs): ResultType & { match
   const addResult = addAdHocMatchUps({ ...params, matchUps: [matchUp], structureId } as any);
   if (addResult.error) return addResult;
 
-  const added = structure.matchUps?.find((m: any) => m.matchUpId === matchUpId);
+  const added = matchUpsOf(structure)?.find((m) => m.matchUpId === matchUpId);
   addTimeItem({
     timeItem: { itemType: CHALLENGE_ISSUED, itemValue: challengerParticipantId, itemDate: issuedAt },
     element: added,

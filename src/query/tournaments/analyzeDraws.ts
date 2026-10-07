@@ -4,10 +4,12 @@ import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { getStructureLinks } from '@Query/drawDefinition/linkGetter';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { stageOrder } from '@Constants/drawDefinitionConstants';
+import { structuresOf } from '@Acquire/structureMembers';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type DrawsAnalysis = {
@@ -15,7 +17,7 @@ type DrawsAnalysis = {
   canBePruned: string[];
   matchPlay: string[];
   inactive: string[];
-  drawAnalysis: any;
+  drawAnalysis: Record<string, unknown>;
 };
 
 export function analyzeDraws({ tournamentRecord }): {
@@ -40,10 +42,10 @@ export function analyzeDraws({ tournamentRecord }): {
   // tournament with no events is ordinary — one that has been created but not yet built out — and
   // analysis of it should return empty, not crash.
   const eventDraws = (tournamentRecord.events ?? [])
-    .flatMap((event: any) => {
+    .flatMap((event: Event) => {
       const eventId = event.eventId;
       eventsMap[eventId] = event;
-      return (event?.drawDefinitions ?? []).map((drawDefinition: any) => ({
+      return (event?.drawDefinitions ?? []).map((drawDefinition: DrawDefinition) => ({
         drawDefinition,
         eventId,
       }));
@@ -137,7 +139,12 @@ export function analyzeDraws({ tournamentRecord }): {
 
     const inactiveDraw = structuresData?.every(({ inactiveStructure }) => inactiveStructure);
 
+    // a round robin MAIN is a CONTAINER of groups: it has no draw size to reduce, so it is never prunable
+    const mainIsRoundRobin = !!structuresOf(
+      structures.find((structure: Structure) => structure.structureId === mainStructure.structureId),
+    );
     const canBePruned =
+      !mainIsRoundRobin &&
       !links.length &&
       mainStructure.activeRounds.length &&
       (mainStructure.roundProfile[1].inactiveCount || mainStructure.inactiveRounds.length);

@@ -1,6 +1,7 @@
 import { getAllPositionedParticipantIds } from '@Query/drawDefinition/positionsGetter';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { unique } from '@Tools/arrays';
 
 // constants and types
@@ -9,6 +10,7 @@ import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefiniti
 import { ALTERNATE, UNGROUPED, UNPAIRED, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
+import { PositionAction } from './actionPolicyUtils';
 import {
   ALTERNATE_PARTICIPANT,
   ALTERNATE_PARTICIPANT_METHOD,
@@ -26,7 +28,7 @@ type GetValidAlternatesActionArgs = {
   drawPosition: number;
   structureId?: string;
   structure: Structure;
-  validActions: any[];
+  validActions: PositionAction[];
   drawId: string;
   event?: Event;
 };
@@ -131,9 +133,9 @@ export function getValidAlternatesAction({
 
   const availableAlternatesSet = new Set(availableAlternatesParticipantIds);
   const availableAlternates = returnParticipants
-    ? tournamentParticipants?.filter((participant: Participant) =>
-        availableAlternatesSet.has(participant.participantId),
-      )
+    ? tournamentParticipants
+        ?.filter((participant: Participant) => availableAlternatesSet.has(participant.participantId))
+        .map((participant) => makeDeepCopy(participant, undefined, true))
     : undefined;
   availableAlternates?.forEach((alternate: any) => {
     const entry = (drawDefinition.entries ?? []).find(

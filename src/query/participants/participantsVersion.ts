@@ -34,7 +34,7 @@ function fnv1a(input: string, offsetBasis: number, prime: number): number {
  * upstream query does not present as a content change. Order-independence is the point — a false
  * mismatch is safe but pointless, and it would make the handshake never fire.
  */
-function canonicalize(participants: any[]): string {
+function canonicalize(participants: unknown[]): string {
   return participants
     .map((participant) => JSON.stringify(participant))
     .sort()
@@ -48,7 +48,7 @@ function canonicalize(participants: any[]): string {
  * client mistaking an old stamp for a new one — a scheme change makes every stamp mismatch, which
  * degrades to today's behaviour rather than to a wrong match.
  */
-export function participantsVersion(participants?: any[]): string | undefined {
+export function participantsVersion(participants?: unknown[]): string | undefined {
   if (!Array.isArray(participants)) return undefined;
 
   const canonical = canonicalize(participants);

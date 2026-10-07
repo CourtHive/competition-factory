@@ -16,16 +16,21 @@ The scoreGovernor also re-exports the `ScoringEngine` class and `addPoint` for p
 
 ## addPoint
 
-Adds a single point to the score history. Part of the live scoring history tracking system.
+Adds a single point to a scoring matchUp. Part of the live scoring history tracking system.
 
 ```js
-const result = scoreGovernor.addPoint({
-  score, // current score object
-  sideNumber, // 1 or 2 - which side won the point
-});
+const matchUp = scoreGovernor.addPoint(
+  matchUp, // scoring matchUp; mutated in place and returned
+  { winningSide: 1 }, // AddPointOptions: `winner` (0 | 1) or `winningSide` (1 | 2), plus optional server and metadata
+  config, // optional - { pointMultipliers }
+);
 ```
 
 **Purpose:** Track point-by-point scoring progression for detailed analytics.
+
+A point added after the matchUp is `COMPLETED` is ignored, not refused: the matchUp is returned
+unchanged (since 7.5.0). See [ScoringEngine addPoint](../scoring-engine/scoring-engine-api.md#addpoint)
+for the full `AddPointOptions`.
 
 ---
 
@@ -476,13 +481,26 @@ const code = scoreGovernor.stringify({
 Validates a complete score object against a matchUpFormat.
 
 ```js
-const { valid, errors } = scoreGovernor.validateScore({
-  matchUpFormat, // required - format to validate against
+const { valid, warnings, error, info } = scoreGovernor.validateScore({
   score, // required - score object to validate
+  matchUpFormat, // format to validate against; required whenever any set holds a value
+  matchUpStatus, // optional - the status the score is recorded with (e.g. COMPLETED, RETIRED)
+  winningSide, // optional - 1 or 2; must agree with the winner the score calculates
 });
 ```
 
 **Purpose:** Comprehensive score validation for data integrity.
+
+**Returns:** `{ valid: true }`, or `{ valid: true, warnings }` (below), when the score is accepted;
+otherwise `{ error, info }`, where `info` names the reason. The refusals include:
+
+- `INVALID_MATCHUP_STATUS` when `matchUpStatus` is given and is not a known matchUpStatus (since 7.5.0).
+- `MISSING_MATCHUP_FORMAT` when any set holds a value and no `matchUpFormat` is given: a score cannot be
+  checked without a format (since 7.5.0). A score with no set values is valid without one.
+- `INVALID_VALUES` for a malformed set (non-numeric scores, a score on one side only, duplicate
+  `setNumber`s, a `winningSide` other than 1 or 2).
+- `INVALID_SCORE` when the score does not fit the format, its sets are not ones the format can finish,
+  or `winningSide` does not match the calculated winner.
 
 A valid score can carry `warnings`. A set decided by its tiebreak and recorded on games alone (`7-6`
 with no tiebreak points) is valid, and is named in `{ code: 'TIEBREAK_POINTS_NOT_RECORDED',
@@ -512,22 +530,19 @@ const set = {
   side2TiebreakScore: 5,
 };
 
-const { isValid, error } = scoreGovernor.validateSetScore({
+const { isValid, error } = scoreGovernor.validateSetScore(
   set,
-  matchUpFormat: 'SET3-S:6/TB7',
-  isDecidingSet: false, // optional - whether this is the final set
-  allowIncomplete: false, // optional - allow incomplete scores (for RETIRED/DEFAULTED)
-});
+  'SET3-S:6/TB7', // matchUpFormat
+  false, // isDecidingSet, optional - whether this is the final set
+  false, // allowIncomplete, optional - allow incomplete scores (for RETIRED/DEFAULTED)
+);
 ```
 
 **Tiebreak-only set example:**
 
 ```js
 const set = { side1Score: 11, side2Score: 13 };
-const { isValid } = scoreGovernor.validateSetScore({
-  set,
-  matchUpFormat: 'SET1-S:TB10',
-});
+const { isValid } = scoreGovernor.validateSetScore(set, 'SET1-S:TB10');
 // isValid: true - TB10 set with valid win-by-2 score
 ```
 
@@ -550,12 +565,14 @@ const sets = [
   { side1Score: 7, side2Score: 5 },
 ];
 
-const { isValid, error } = scoreGovernor.validateMatchUpScore({
+const { isValid, error } = scoreGovernor.validateMatchUpScore(
   sets,
-  matchUpFormat: 'SET3-S:6/TB7',
-  matchUpStatus: 'COMPLETED', // optional - allows incomplete scores for RETIRED/DEFAULTED
-});
+  'SET3-S:6/TB7', // matchUpFormat
+  'COMPLETED', // matchUpStatus, optional - allows incomplete scores for RETIRED/DEFAULTED
+);
 ```
+
+An unknown `matchUpStatus` returns `{ isValid: false, error }` (since 7.5.0).
 
 **Best-of-3 TB10 example:**
 
@@ -565,10 +582,7 @@ const sets = [
   { side1Score: 12, side2Score: 10 },
 ];
 
-const { isValid } = scoreGovernor.validateMatchUpScore({
-  sets,
-  matchUpFormat: 'SET3-S:TB10',
-});
+const { isValid } = scoreGovernor.validateMatchUpScore(sets, 'SET3-S:TB10');
 // isValid: true - both TB10 sets have valid win-by-2 scores
 ```
 

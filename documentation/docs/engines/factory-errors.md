@@ -70,6 +70,24 @@ class FactoryError extends Error {
 }
 ```
 
+## The `ErrorCode` type
+
+`ErrorCode` is the closed union of every error code the factory can return: the `code` of each error exported by
+`errorConditionConstants`, `sanctioningConstants` and `officiatingConstants`. Across a socket an error arrives as JSON,
+so its `code` is the only thing a consumer can recognise it by. Typed as `string`, a misspelled code compiles and never
+matches; typed as `ErrorCode`, it does not compile. Added in 7.5.0.
+
+```ts
+import type { ErrorCode } from 'tods-competition-factory';
+
+const MISSING: ErrorCode = 'ERR_MISSING_TOURNAMENT'; // ok
+const TYPO: ErrorCode = 'ERR_MISSING_TOURNAMNT'; // type error
+```
+
+The union is derived from the modules' exports rather than listed, so an error added to any of them is a member without
+further edits. Comparing against the constant itself (`error?.code === INVALID_VALUES.code`) needs no type and is
+equally safe.
+
 ## Suggestions registry
 
 `error.suggestions` is a getter that resolves at read time against a small registry. The lookup is by `code` and may consult `context` for code-specific hints:

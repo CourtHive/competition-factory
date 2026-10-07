@@ -20,7 +20,7 @@ type GetPairingsDataArgs = {
  */
 export function getPairingsData({ participantIds, individualIdsMap }: GetPairingsDataArgs) {
   const possiblePairings = {};
-  const uniquePairings: any = [];
+  const uniquePairings: string[] = [];
 
   const canMeet = (a: string, b: string) =>
     a !== b && !(individualIdsMap && idsShareIndividual(individualIdsMap, a, b));

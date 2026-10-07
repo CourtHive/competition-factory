@@ -178,7 +178,7 @@ it('COMPASS: withdrawing the carried exit also takes back where losing it sent t
   expect(holding(loserId, 'South')).toEqual([]);
 });
 
-it('leaves a CONVERGED carried exit as it stands, and the draw consistent (census 9000008)', () => {
+it('withdraws one origin of a CONVERGED carried exit, and the draw stays consistent (census 9000008, F2)', () => {
   setup();
   // both losers of MAIN 1/1 and 1/2 carry a walkover into CONSOLATION 1/1, where the two exits converge
   enter(at(MAIN, 1, 1), { matchUpStatus: WALKOVER, winningSide: 1 }, true);
@@ -187,9 +187,9 @@ it('leaves a CONVERGED carried exit as it stands, and the draw consistent (censu
 
   enter(at(MAIN, 1, 1), played(1), true);
 
-  // withdrawing one origin of a convergence re-derives the other, whose winner must then be directed:
-  // open work, so the convergence stands rather than strand a winner
-  expect(at(CONSOLATION, 1, 1).matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  // withdrawing one origin of a convergence re-derives it to the other, and its new winner is directed
+  // (aRelabelWithdrawsOneOriginOfAConvergence.test.ts pins the whole shape)
+  expect(at(CONSOLATION, 1, 1).matchUpStatus).toEqual(WALKOVER);
   const { drawDefinition } = tournamentEngine.getEvent({ drawId: DRAW_ID });
   const errors = ((getDrawInconsistencies({ drawDefinition, drawId: DRAW_ID }) as any).inconsistencies ?? []).filter(
     (issue: any) => issue.severity === 'error',

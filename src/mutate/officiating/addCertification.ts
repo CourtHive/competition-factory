@@ -36,11 +36,15 @@ export function addCertification({
   documentReferences,
   notes,
   extensions,
-}: AddCertificationArgs): { error?: any; certification?: OfficialCertification; success?: boolean } {
+}: AddCertificationArgs): {
+  error?: any;
+  context?: { message: string };
+  certification?: OfficialCertification;
+  success?: boolean;
+} {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!organisationId) return { error: INVALID_VALUES, context: { message: 'Missing organisationId' } } as any;
-  if (!certificationFamily)
-    return { error: INVALID_VALUES, context: { message: 'Missing certificationFamily' } } as any;
+  if (!organisationId) return { error: INVALID_VALUES, context: { message: 'Missing organisationId' } };
+  if (!certificationFamily) return { error: INVALID_VALUES, context: { message: 'Missing certificationFamily' } };
 
   const now = nowIso();
 

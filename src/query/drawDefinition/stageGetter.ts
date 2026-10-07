@@ -1,3 +1,4 @@
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
 // Query
@@ -17,14 +18,14 @@ import { POSITION, CONTAINER, PLAY_OFF, validStages } from '@Constants/drawDefin
 import { ROUND_TARGET, TALLY } from '@Constants/extensionConstants';
 
 // constants and types
-import type { DrawDefinition, DrawLink, EntryStatusUnion } from '@Types/tournamentTypes';
+import type { DrawDefinition, DrawLink, Entry, EntryStatusUnion, Event, Tournament } from '@Types/tournamentTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 
-export function stageExists({ stage, drawDefinition }) {
+export function stageExists({ stage, drawDefinition }: { stage: string; drawDefinition?: DrawDefinition }) {
   if (!validStages.includes(stage)) return false;
 
   // A stage exists if any structure is assigned to it, or if it's a valid stage name
-  const hasStructure = drawDefinition?.structures?.some((s: any) => s.stage === stage);
+  const hasStructure = drawDefinition?.structures?.some((s) => s.stage === stage);
   return hasStructure || validStages.includes(stage);
 }
 
@@ -38,12 +39,12 @@ export function stageStructures({ stage, drawDefinition, stageSequence }) {
   );
 }
 
-export function stageAlternatesCount({ tournamentRecord }: any) {
+export function stageAlternatesCount({ tournamentRecord }: { tournamentRecord?: Tournament }) {
   const { constraints } = getDrawCompositionConstraints({ tournamentRecord });
   // Unsanctioned: alternates always allowed
   return constraints?.maxAlternates ?? true;
 }
-export function getStageWildcardsCount({ tournamentRecord, event }: any) {
+export function getStageWildcardsCount({ tournamentRecord, event }: { tournamentRecord?: Tournament; event?: Event }) {
   const { constraints } = getDrawCompositionConstraints({ tournamentRecord, event });
   // Unsanctioned: no wildcard limit
   return constraints?.maxWildcards ?? Infinity;
@@ -82,7 +83,7 @@ export function getStageEntries({
   stage,
 }: GetStageEntriesArgs) {
   const entries =
-    drawDefinition.entries?.reduce((entries: any[], entry) => {
+    drawDefinition.entries?.reduce<Entry[]>((entries, entry) => {
       const entryRoundTarget = firstClassOrExtension({ element: entry, attribute: 'roundTarget', name: ROUND_TARGET });
       const stageTarget =
         (stage && entry.entryStage === stage) ||
@@ -142,7 +143,7 @@ function getPlayoffEntries({ provisionalPositioning, drawDefinition, structureId
 
       // Build results for each RR group
       const allGroupResults = rrGroupStructures.map((structure) => {
-        const positionAssignments = structure.positionAssignments ?? [];
+        const positionAssignments = positionAssignmentsOf(structure) ?? [];
         const { structureId: groupStructureId } = structure;
 
         const results = Object.assign(
@@ -239,7 +240,7 @@ function collectRemainderEntries({
       drawDefinition,
     });
     if (otherPlayoffStructure) {
-      for (const assignment of otherPlayoffStructure.positionAssignments ?? []) {
+      for (const assignment of positionAssignmentsOf(otherPlayoffStructure) ?? []) {
         if (assignment.participantId) {
           priorPlayoffParticipantIds.add(assignment.participantId);
         }

@@ -534,7 +534,7 @@ function computeRoundSchedulingStats({ dateSchedulingProfile, scheduledMatchUpId
         scheduledMatchUpIds[scheduleDate].includes(matchUpId),
       );
       round.canScheduledMatchUpIds = canScheduleMatchUpIds;
-      let possibleToSchedulePct: any =
+      let possibleToSchedulePct: number | undefined =
         Math.round(((canScheduleMatchUpIds?.length || 0) / round.matchUpsCount) * 10000) / 100;
       if (possibleToSchedulePct === Infinity || isNaN(possibleToSchedulePct)) possibleToSchedulePct = undefined;
       round.possibleToSchedulePct = possibleToSchedulePct;
@@ -559,7 +559,7 @@ type V2Scheduler = {
   matchUps?: HydratedMatchUp[];
   excludePriorDates?: boolean;
   clearScheduleDates?: boolean;
-  matchUpDailyLimits?: any;
+  matchUpDailyLimits?: { [key: string]: number };
   courts: HydratedCourt[];
   schedulingProfile?: any;
   periodLength?: number;

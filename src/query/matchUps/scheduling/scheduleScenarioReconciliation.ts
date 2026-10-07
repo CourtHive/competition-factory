@@ -1,7 +1,7 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 
 // constants and types
-import { SCHEDULE_SCENARIO_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { ErrorType, SCHEDULE_SCENARIO_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ScheduleScenario, Tournament } from '@Types/tournamentTypes';
 import { TournamentRecords } from '@Types/factoryTypes';
@@ -28,7 +28,7 @@ function collectMatchUps(scope: RecordScope): { [matchUpId: string]: any } {
 
 export function findScopedScenario(scope: RecordScope & { scenarioId: string }): {
   scenario?: ScheduleScenario;
-  error?: any;
+  error?: ErrorType;
 } {
   for (const record of collectScopedRecords(scope)) {
     const scenario = (record.scheduling?.scenarios ?? []).find((s) => s.scenarioId === scope.scenarioId);
@@ -73,7 +73,7 @@ export function computeScheduleFingerprint(params: RecordScope & { matchUpIds: s
   return fnv1a(tuples.join('\n'));
 }
 
-type ScheduleScenarioStatus = {
+export type ScheduleScenarioStatus = {
   scenarioId: string;
   outOfDate: boolean; // the official baseline moved since authoring/rebase
   currentHash: string;
@@ -81,7 +81,7 @@ type ScheduleScenarioStatus = {
   completedMatchUpIds: string[]; // placements whose matchUp is now completed → skipped on apply
   missingMatchUpIds: string[]; // placements whose matchUpId no longer exists
   applicableMatchUpIds: string[]; // placements that would actually be scheduled
-  error?: any;
+  error?: ErrorType;
 };
 
 /**
@@ -92,7 +92,7 @@ type ScheduleScenarioStatus = {
  */
 export function getScheduleScenarioStatus(
   params: RecordScope & { tournamentId?: string; scenarioId: string },
-): ScheduleScenarioStatus | { error: any } {
+): ScheduleScenarioStatus | { error?: ErrorType } {
   const { scenario, error } = findScopedScenario(params);
   if (error || !scenario) return { error };
 

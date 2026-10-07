@@ -1,27 +1,28 @@
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
-// constants
+// constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { Directives } from '@Types/factoryTypes';
 
 // Generic directive/pipe/rollback pipeline shared by declaration-style engines
 // (officiating, sanctioning, and a future player/declarations engine). The engine
 // supplies its own method surface and its keyed-record store accessors; the queue
 // logic — snapshot, method lookup, pipe, rollback-on-error — is population-agnostic.
-type ExecuteDeclarationQueueArgs = {
+type ExecuteDeclarationQueueArgs<R> = {
   engine: { [method: string]: any };
-  directives: any;
+  directives: Directives;
   rollbackOnError?: boolean;
-  getRecords: () => any;
-  setRecords: (records: any) => any;
+  getRecords: () => R;
+  setRecords: (records: R) => unknown;
 };
 
-export function executeDeclarationQueue({
+export function executeDeclarationQueue<R>({
   engine,
   directives,
   rollbackOnError,
   getRecords,
   setRecords,
-}: ExecuteDeclarationQueueArgs): {
+}: ExecuteDeclarationQueueArgs<R>): {
   error?: any;
   success?: boolean;
   results?: any[];
@@ -38,7 +39,7 @@ export function executeDeclarationQueue({
       return { error: INVALID_VALUES, context: { message: 'directive must be an object' } };
 
     const { method: methodName, pipe } = directive;
-    const params: any = directive.params ? { ...directive.params } : {};
+    const params: { [key: string]: unknown } = directive.params ? { ...directive.params } : {};
 
     const method = engine[methodName];
     if (!method) {

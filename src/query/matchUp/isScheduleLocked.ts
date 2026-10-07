@@ -4,7 +4,7 @@ import { isObject } from '@Tools/objects';
 
 // constants and types
 import { MATCHUP_NOT_FOUND, MISSING_DRAW_DEFINITION, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, ScheduleLock, ScheduleLockAttribute } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, ScheduleLock, ScheduleLockAttribute } from '@Types/tournamentTypes';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -63,11 +63,11 @@ const ATTRIBUTE_ITEM_TYPE: Record<ScheduleLockAttribute, string> = {
 
 const COMPLETED_STATUSES = new Set<string>(completedMatchUpStatuses);
 
-const isEmpty = (value: any): boolean =>
+const isEmpty = (value: unknown): boolean =>
   value === undefined || value === null || value === '' || (Array.isArray(value) && !value.length);
 
 /** Current placement value, first-class preferred, legacy timeItem as fallback. */
-function currentValue(matchUp: any, attribute: ScheduleLockAttribute): any {
+function currentValue(matchUp: MatchUp | undefined, attribute: ScheduleLockAttribute): unknown {
   const firstClass = matchUp?.schedule?.[attribute];
   if (!isEmpty(firstClass)) return firstClass;
 
@@ -97,7 +97,7 @@ const allocationIdentity = (value: any): string =>
  * Clearing an already-absent attribute is a no-op, and `3` / `'3'` are the same
  * court order — neither should trip a lock.
  */
-function equivalent(requested: any, current: any): boolean {
+function equivalent(requested: unknown, current: unknown): boolean {
   if (isEmpty(requested) && isEmpty(current)) return true;
   if (isEmpty(requested) || isEmpty(current)) return false;
   if (Array.isArray(requested) || Array.isArray(current)) {
@@ -164,7 +164,7 @@ export function isScheduleLocked(params: {
   attributes?: ScheduleLockAttribute[];
   drawDefinition?: DrawDefinition;
   matchUpId?: string;
-  matchUp?: any;
+  matchUp?: MatchUp;
   event?: Event;
 }): ResultType & { scheduleLocked?: boolean; lock?: ScheduleLock } {
   const stack = 'isScheduleLocked';
@@ -195,7 +195,7 @@ export function scheduleLockConflicts({
   matchUp,
   schedule,
 }: {
-  matchUp?: any;
+  matchUp?: MatchUp;
   schedule?: any;
 }): ScheduleLockAttribute[] {
   if (!isObject(schedule) || !matchUpScheduleLocked({ matchUp })) return [];

@@ -24,6 +24,12 @@ import {
   SCHEDULE_NOT_CLEARED,
 } from '@Constants/errorConditionConstants';
 
+type TournamentDateBounds = {
+  tournamentRecord: Tournament;
+  startDate?: string;
+  endDate?: string;
+};
+
 type SetTournamentDatesArgs = {
   tournamentRecord: Tournament;
   weekdays?: WeekdayUnion[];
@@ -184,7 +190,7 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   return { ...SUCCESS, datesAdded, datesRemoved, unscheduledMatchUpIds };
 }
 
-function coerceEventDates({ tournamentRecord, startDate, endDate }) {
+function coerceEventDates({ tournamentRecord, startDate, endDate }: TournamentDateBounds) {
   for (const event of tournamentRecord.events ?? []) {
     const { startDate: priorStart, endDate: priorEnd } = event;
     if (startDate && event.startDate && new Date(event.startDate) < new Date(startDate)) event.startDate = startDate;
@@ -200,7 +206,7 @@ function coerceEventDates({ tournamentRecord, startDate, endDate }) {
   }
 }
 
-function normalizeTournamentDateBounds({ tournamentRecord, startDate, endDate }) {
+function normalizeTournamentDateBounds({ tournamentRecord, startDate, endDate }: TournamentDateBounds) {
   if (startDate && tournamentRecord.endDate && new Date(startDate) > new Date(tournamentRecord.endDate)) {
     tournamentRecord.endDate = startDate;
   }
@@ -209,7 +215,13 @@ function normalizeTournamentDateBounds({ tournamentRecord, startDate, endDate })
   }
 }
 
-function validateAndApplyActiveDates({ tournamentRecord, activeDates }) {
+function validateAndApplyActiveDates({
+  tournamentRecord,
+  activeDates,
+}: {
+  tournamentRecord: Tournament;
+  activeDates: string[];
+}) {
   const previousActiveDates: string[] = (tournamentRecord.activeDates as string[]) ?? [];
   const activeDatesSet = new Set(activeDates);
   const removedDates = previousActiveDates.filter((d) => !activeDatesSet.has(d));
@@ -228,7 +240,7 @@ function validateAndApplyActiveDates({ tournamentRecord, activeDates }) {
           message: `Cannot remove active dates with scheduled matchUps: ${dates.join(', ')}`,
         },
         info: `${conflicting.length} matchUp(s) scheduled on dates being removed`,
-      } as any;
+      };
     }
   }
 

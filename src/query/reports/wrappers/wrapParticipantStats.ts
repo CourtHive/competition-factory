@@ -3,6 +3,7 @@ import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { PARTICIPANT_STATS_REPORT } from '@Constants/reportConstants';
+import { ErrorType } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { ReportResult } from '@Types/reportTypes';
 
@@ -10,7 +11,7 @@ export function wrapParticipantStats({
   tournamentRecord,
 }: {
   tournamentRecord: Tournament;
-}): ReportResult | { error: any } {
+}): ReportResult | { error: ErrorType | string } {
   const result: any = getParticipantStats({ tournamentRecord });
   if (result.error) return result;
 

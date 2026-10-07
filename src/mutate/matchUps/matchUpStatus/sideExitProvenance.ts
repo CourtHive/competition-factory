@@ -1,5 +1,6 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
-import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -64,6 +65,18 @@ export function producedExitStatus(previousMatchUpStatus?: MatchUpStatusUnion): 
 }
 
 /**
+ * Does an origin that ended this way DECIDE something for the side it feeds?
+ *
+ * A double exit does: nobody arrives, and the exit it produced stands pending on that side. A BYE does: the side
+ * holds a BYE. A played result or a single exit does NOT: its winner arrived and is waiting, so the entry records
+ * the origin (`previousMatchUpStatus`) and no `matchUpStatus` (CA, 2026-10-07: "nothing was decided when they
+ * arrived, they were just waiting"; OUTCOME_PIPELINE_OPEN_QUESTIONS F9).
+ */
+export function decidesForTheSide(previousMatchUpStatus?: MatchUpStatusUnion): boolean {
+  return isDoubleExit(previousMatchUpStatus) || previousMatchUpStatus === BYE;
+}
+
+/**
  * The status for a matchUp where two exits MEET, from the exits each side carried.
  *
  * CA, 2026-09-12: *"a WALKOVER and a DEFAULT would produce a WALKOVER, not a DEF… and a
@@ -124,12 +137,20 @@ export function buildSideExitProvenance(params: BuildArgs): SideExitProvenance |
   //
   // A COMPLETED origin IS recorded, deliberately: `sideExitProvenance.test.ts` pins a double exit
   // meeting a played win, and that opponent's origin is a real fact.
+  //
+  // `matchUpStatus` is what was decided on the side (`decidesForTheSide`). A side whose origin was a played or
+  // single-exit result ARRIVED: its participant won that matchUp and is waiting here, so the entry carries the
+  // origin and no status (CA, 2026-10-07; F9). Writing `producedExitStatus(origin)` for an arrival made "won a
+  // DEFAULTED" the same entry as "lost a DEFAULTED and carried the exit", and `carriedExitStatus` read both as
+  // an exit.
   const isDecided = (status?: string) => !!status && status !== TO_BE_PLAYED;
+  const decidedStatus = (status?: MatchUpStatusUnion) =>
+    decidesForTheSide(status) ? producedExitStatus(status) : undefined;
   const provenance: SideExitProvenance = {
     ...(isDecided(sourceMatchUpStatus)
       ? {
           [sourceSideNumber]: definedAttributes({
-            matchUpStatus: producedExitStatus(sourceMatchUpStatus),
+            matchUpStatus: decidedStatus(sourceMatchUpStatus),
             previousMatchUpStatus: sourceMatchUpStatus,
             sourceMatchUpId,
           }) as SideExitProvenanceEntry,
@@ -138,7 +159,7 @@ export function buildSideExitProvenance(params: BuildArgs): SideExitProvenance |
     ...(isDecided(pairedMatchUpStatus)
       ? {
           [pairedSideNumber]: definedAttributes({
-            matchUpStatus: producedExitStatus(pairedMatchUpStatus),
+            matchUpStatus: decidedStatus(pairedMatchUpStatus),
             previousMatchUpStatus: pairedMatchUpStatus,
             sourceMatchUpId: pairedMatchUpId,
           }) as SideExitProvenanceEntry,
@@ -238,10 +259,22 @@ function admissibleOn(matchUp: MatchUp, provenance?: SideExitProvenance): SideEx
 
   const admitted: SideExitProvenance = {};
   for (const [sideNumber, entry] of Object.entries(provenance)) {
-    const arrivedByResult = !!entry?.matchUpStatus && !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
-    if (!arrivedByResult) admitted[Number(sideNumber)] = entry;
+    if (!arrivedByResult(entry)) admitted[Number(sideNumber)] = entry;
   }
   return admitted;
+}
+
+/**
+ * Did this side's participant get here by WINNING its origin?
+ *
+ * An arrival records its origin and no decided status (F9, CA 2026-10-07): `{ previousMatchUpStatus, sourceMatchUpId }`.
+ * Records written before that carry the origin's status as `matchUpStatus` too, so a non-exit, non-BYE status is
+ * accepted as the same answer. A BYE's own arrival (`{ BYE, BYE }`) is not a result.
+ */
+export function arrivedByResult(entry?: SideExitProvenanceEntry): boolean {
+  if (!entry) return false;
+  if (!entry.matchUpStatus) return !!entry.previousMatchUpStatus && entry.previousMatchUpStatus !== BYE;
+  return !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
 }
 
 /** Write provenance onto a matchUp, honouring the schema write mode. */
@@ -1053,8 +1086,69 @@ function holdsBye({
   matchUp: MatchUp;
 }): boolean {
   const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
-  const byePositions = structure?.positionAssignments?.filter((a) => a.bye).map((a) => a.drawPosition);
+  const byePositions = positionAssignmentsOf(structure)
+    ?.filter((a) => a.bye)
+    .map((a) => a.drawPosition);
   return !!matchUp.drawPositions?.some((drawPosition) => !!drawPosition && !!byePositions?.includes(drawPosition));
+}
+
+/**
+ * The entries that record an EXIT on their side, leaving out a participant's own ORIGIN.
+ *
+ * An entry is also written for a participant who WON their way here from a matchUp decided by an exit, and it
+ * carries that matchUp's status: the winner of a DEFAULTED match arrives with `DEFAULTED>DEFAULTED` (P19:
+ * provenance records arrivals as well as exits). By status alone it reads as an exit THEY carried, so re-deriving
+ * from it after another entry was withdrawn made the winner the defaulter and awarded the match to whoever stood
+ * opposite (census w2 9100303, DE 16/11 `Backdraw|3|1`; reached once the entry was keyed to its participant's
+ * real side, CA 2026-10-05). Read by identity: a source in this structure whose WINNING position is the position
+ * on the entry's side delivered a winner, not an exit.
+ */
+export function withoutWinnersOrigins({
+  drawDefinition,
+  structureId,
+  provenance,
+  matchUp,
+}: {
+  drawDefinition?: DrawDefinition;
+  provenance: SideExitProvenance;
+  structureId: string;
+  matchUp: MatchUp;
+}): SideExitProvenance {
+  const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
+  const exits: SideExitProvenance = {};
+  for (const sideNumber of [1, 2] as const) {
+    const entry = provenance[sideNumber];
+    if (!entry) continue;
+    const source = matchUpsOf(structure)?.find((candidate) => candidate.matchUpId === entry.sourceMatchUpId);
+    const sourceWinner = source && getWinningSideDrawPosition({ drawDefinition, structureId, matchUp: source });
+    const here = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber });
+    if (sourceWinner && sourceWinner === here) continue;
+    exits[sideNumber] = entry;
+  }
+  return exits;
+}
+
+/**
+ * Withdraw ONE matchUp's entries naming `sourceMatchUpId`, leaving the source's other entries alone.
+ *
+ * `withdrawProducedExits` withdraws every entry a source stamped, which is right when the source stops
+ * producing an exit. A RELAYED entry can go stale while its source still produces one: the exit was carried
+ * past a BYE (`doubleExitAdvancement`'s `carryExitOnward`, which keeps the origin's id across every hop), and
+ * the BYE has since gone. The entry where the exit now rests is still true; the one beyond it is not.
+ */
+export function withdrawRelayedExit({
+  sourceMatchUpId,
+  drawDefinition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition?: DrawDefinition;
+  sourceMatchUpId: string;
+  structureId: string;
+  matchUp: MatchUp;
+}): WithdrawnExit[] {
+  const record = withdrawFromMatchUp(matchUp, new Set([sourceMatchUpId]), structureId, drawDefinition);
+  return record ? [record] : [];
 }
 
 /**
@@ -1094,7 +1188,8 @@ function withdrawFromMatchUp(
    * WINNER_NOT_ADVANCED). Such a matchUp reverts below exactly as one with nothing retained does.
    * A matchUp that is not an exit — a BYE holding only its claim ledger — is not reverted.
    */
-  const retainsAnExit = !!deriveExitStateFromProvenance(retained) || !isAnyExit(matchUp.matchUpStatus);
+  const exitsRetained = withoutWinnersOrigins({ provenance: retained, matchUp, structureId, drawDefinition });
+  const retainsAnExit = !!deriveExitStateFromProvenance(exitsRetained) || !isAnyExit(matchUp.matchUpStatus);
 
   if (Object.keys(retained).length && retainsAnExit) {
     // A side carried here by a DIFFERENT source is still true, so the matchUp remains an exit and
@@ -1116,7 +1211,7 @@ function withdrawFromMatchUp(
     // result withdrew one side's entry from a South BYE matchUp whose BYE side still carried an exit).
     if (holdsBye({ matchUp, structureId, drawDefinition })) return undefined;
     // STAGE 1 EXPERIMENT: re-derive, and report that the matchUp is no longer a double exit
-    const derived = deriveExitStateFromProvenance(retained);
+    const derived = deriveExitStateFromProvenance(exitsRetained);
     if (derived && derived.matchUpStatus !== matchUp.matchUpStatus) {
       // read structurally, as the undecided branch below does: a lone position sits at index 0 whatever its side
       const previousWinnerDrawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });

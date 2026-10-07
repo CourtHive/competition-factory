@@ -9,6 +9,7 @@ import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { structureSort } from '@Functions/sorters/structureSort';
@@ -85,6 +86,15 @@ export type GetDrawDataArgs = {
   event?: Event;
 };
 
+type DrawInfo = Pick<DrawDefinition, 'matchUpFormat' | 'updatedAt' | 'drawName' | 'drawType' | 'drawId'> & {
+  participantPlacements?: boolean;
+  drawPublished?: boolean;
+  drawGenerated?: boolean;
+  drawCompleted?: boolean;
+  drawActive?: boolean;
+  display?: unknown;
+};
+
 // NOTE: if { usePublishState: true } then { eventPublishState } or { event } must be provided
 export function getDrawData(params: GetDrawDataArgs): {
   structures?: any[];
@@ -114,13 +124,13 @@ export function getDrawData(params: GetDrawDataArgs): {
   // Unknown value is an ERROR, never a silent fall-through to FULL — a typo must not quietly return the
   // full payload a caller was explicitly trying to avoid. Mirrors getEventData's drawsProfile.
   if (!Object.values(PayloadProfileEnum).includes(structuresProfile as PayloadProfileEnum)) {
-    return { error: INVALID_VALUES } as any;
+    return { error: INVALID_VALUES };
   }
 
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const { matchUpFormat, updatedAt, drawType, drawName, drawId } = drawDefinition;
-  const drawInfo: any = {
+  const drawInfo: DrawInfo = {
     matchUpFormat,
     updatedAt,
     drawName,
@@ -161,7 +171,10 @@ export function getDrawData(params: GetDrawDataArgs): {
   const buildStructureStub = (structureId) => {
     const { structure } = findStructure({ drawDefinition, structureId });
     const leafMatchUps = (function collect(structs) {
-      return (structs ?? []).flatMap((st) => (st?.structures?.length ? collect(st.structures) : (st?.matchUps ?? [])));
+      return (structs ?? []).flatMap((st) => {
+        const contained = structuresOf(st);
+        return contained?.length ? collect(contained) : (matchUpsOf(st) ?? []);
+      });
     })(structure ? [structure] : []);
     const completedStatuses = [...completedMatchUpStatuses, BYE];
     const displaySettings = findExtension({ element: structure, name: DISPLAY }).extension?.value;
@@ -255,7 +268,7 @@ export function getDrawData(params: GetDrawDataArgs): {
         if (
           matchUps.length &&
           ((!participantResults?.length && params.allParticipantResults) || // don't override existing participantResults, unless { refreshresults: true }
-            (refreshResults && !structure.structures)) // cannot refresh for round roubins
+            (refreshResults && !structuresOf(structure))) // cannot refresh for round roubins
         ) {
           const { subOrderMap } = createSubOrderMap({ positionAssignments });
 

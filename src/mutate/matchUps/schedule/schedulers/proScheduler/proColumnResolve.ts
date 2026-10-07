@@ -97,7 +97,7 @@ export function proColumnResolve({ tournamentRecords, matchUps, scheduledDate, c
 
   const { matchUpDetails, resolved } = buildDetails({ rowOf, byId, scheduledDate });
 
-  const result: any = matchUpDetails.length
+  const result = matchUpDetails.length
     ? bulkScheduleMatchUps({ tournamentRecords, matchUpDetails, scheduleCompletedMatchUps: true })
     : { success: true };
 

@@ -130,6 +130,17 @@ When the resolved score source is `REPORTED`:
   detail published" rather than an empty scorecard awaiting entry (see
   [`cast`](../governors/query-governor.md#cast)).
 
+When the score is `DERIVED`, three rules govern what the dual stores:
+
+- **A dual with no rubber result stores no score**, not 0-0 (since 7.6.0). Clearing a dual's only
+  result, or clearing a rubber that never had one, removes the dual's score, so it reads the same as
+  a dual that was never touched.
+- **A rubber decided by `WALKOVER` or `DEFAULTED` starts the dual** (since 7.6.0): the dual becomes
+  `IN_PROGRESS`, as it does for a played rubber, even where the rubber scores no point of its own
+  (in `COLLEGE_DEFAULT` three doubles rubbers share one point).
+- **A line re-scored with a winner and no status is `COMPLETED`** (since 7.5.0), including where the
+  re-score undoes the dual's decision; it is never left `IN_PROGRESS` with a winner.
+
 ### Relationship to `disableAutoCalc`
 
 [`disableTieAutoCalc`](../governors/matchup-governor.md) sets `disableAutoCalc` on a single TEAM `matchUp` and

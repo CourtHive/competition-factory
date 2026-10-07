@@ -1,6 +1,7 @@
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
+import { playStalledChain } from '@Tests/testHarness/exitPropagation/stalledChain';
 import { getDrawDefinition } from '@Tests/testHarness/exitPropagation/transitions';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
@@ -110,7 +111,6 @@ const BUDGET_CELLS = 0;
 const BUDGET_FINDINGS = 0;
 
 /** DOUBLE_ELIMINATION 16/13: under the produced-exit policy four participants wait in one chain */
-const LIVENESS_SEED = 117;
 
 const occupantsOf = (matchUp: any) => (matchUp?.sides ?? []).filter((s: any) => s?.participantId && !s?.bye);
 const playableShape = (m: any) => !m.winningSide && (!m.matchUpStatus || m.matchUpStatus === 'TO_BE_PLAYED');
@@ -168,9 +168,8 @@ test.skipIf(!enabled)(
 
     // AND IT MUST STILL BITE. The population is zero, so the proof that the detector is awake is a
     // cell where a stall is known to remain: the same matrix, under the policy that produces exits.
-    const livenessCell = MATRIX_CELLS.find(({ seed }) => seed === LIVENESS_SEED);
-    expect(livenessCell).toBeDefined();
-    expect(playMatrixCell(livenessCell as any, 'budget-liveness', 'exits', PRODUCED_EXIT_POLICY)).toEqual(true);
+    // (the matrix holds no stall under either policy since 2026-10-06, so the stall is built)
+    playStalledChain('budget-liveness');
     const liveness: any = getDrawInconsistencies({
       drawDefinition: getDrawDefinition('budget-liveness'),
       drawId: 'budget-liveness',
@@ -202,9 +201,15 @@ test.skipIf(!enabled)(
  *
  * The known family is two held exits meeting at one target, a convergence `settleHeldExits` declines
  * (see `getHeldExit`); settling it was tried and taken out on 2026-09-29.
+ *
+ * **LOWERED 2026-10-06: 11 -> 0 cells, 17 -> 0 findings** (CA: "build the convergence"). All four shapes
+ * were one defect: a produced exit carried past a BYE meeting an exit on the other side of its target,
+ * where `carryExitOnward` stopped and `getHeldExit` declined to send. The carried exit now converges
+ * with it (RULE 4) and the double exit produces onward; a holder's own BYE arrival no longer blocks the
+ * send. Both budgets are at zero, so promoting STALLED_POSITION from `warning` to `error` is CA's call.
  */
-const BUDGET_CELLS_POLICY_OFF = 11;
-const BUDGET_FINDINGS_POLICY_OFF = 17;
+const BUDGET_CELLS_POLICY_OFF = 0;
+const BUDGET_FINDINGS_POLICY_OFF = 0;
 
 test.skipIf(!enabled)(
   'with doubleExitPropagateBye off, the stalled-position population is within its own budget',

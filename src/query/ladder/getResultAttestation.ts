@@ -1,8 +1,10 @@
 import { resolveLadderMatchUp } from '@Query/ladder/resolveLadderContext';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
+import { itemDateIso } from '@Query/ladder/getChallengeState';
 
 // constants and types
 import type { LadderPolicy } from '@Types/ladderTypes';
+import type { MatchUp } from '@Types/tournamentTypes';
 import {
   EITHER,
   OPERATOR,
@@ -33,10 +35,10 @@ export type Attestation = {
   reason?: string;
 };
 
-const latest = (matchUp: any, itemType: string) =>
+const latest = (matchUp: MatchUp | undefined, itemType: string) =>
   (matchUp?.timeItems ?? [])
-    .filter((item: any) => item.itemType === itemType)
-    .sort((a: any, b: any) => String(a.itemDate).localeCompare(String(b.itemDate)))
+    .filter((item) => item.itemType === itemType)
+    .sort((a, b) => String(itemDateIso(a.itemDate)).localeCompare(String(itemDateIso(b.itemDate))))
     .at(-1);
 
 /**
@@ -63,7 +65,8 @@ export function getResultAttestation(params: AttestationArgs): Attestation {
 
   // A dispute raised AFTER a confirmation does not un-confirm it — an operator resolves that. A
   // dispute standing alone leaves the result unvalidated, which is the point of tracking it.
-  const disputeStands = !!disputed && (!confirmed || String(disputed.itemDate) > String(confirmed.itemDate));
+  const disputeStands =
+    !!disputed && (!confirmed || String(itemDateIso(disputed.itemDate)) > String(itemDateIso(confirmed.itemDate)));
   if (disputeStands) {
     return { attested: false, disputed: true, submittedBy, reason: 'result is disputed' };
   }

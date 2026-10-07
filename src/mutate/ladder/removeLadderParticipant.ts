@@ -1,13 +1,14 @@
-import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
+import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { LADDER_PARTICIPANT_REMOVED, RANK } from '@Constants/ladderConstants';
+import type { Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { RANKING } from '@Constants/scaleConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 type RemoveArgs = {
@@ -42,21 +43,22 @@ export function removeLadderParticipant(params: RemoveArgs): ResultType & { vaca
   if (!removedAt) return { error: INVALID_VALUES, info: 'removedAt is required' };
 
   const structureId = params.structureId ?? drawDefinition.structures?.[0]?.structureId;
-  const structure = drawDefinition.structures?.find((s: any) => s.structureId === structureId);
+  const structures: Structure[] | undefined = drawDefinition.structures;
+  const structure = structures?.find((s) => s.structureId === structureId);
   if (!structure) return { error: INVALID_VALUES, info: 'structure not found' };
 
-  const assignments = structure.positionAssignments ?? [];
-  const target = assignments.find((a: any) => a.participantId === participantId);
+  const assignments = positionAssignmentsOf(structure) ?? [];
+  const target = assignments.find((a) => a.participantId === participantId);
   if (!target) return { error: PARTICIPANT_NOT_FOUND };
 
   const vacatedPosition = target.drawPosition;
-  structure.positionAssignments = assignments.filter((a: any) => a.participantId !== participantId);
+  structure.positionAssignments = assignments.filter((a) => a.participantId !== participantId);
 
   const touched: any[] = [];
   // Close the gap: a ladder with a hole in it is not a ranking. Only meaningful under RANK — a
   // RATING ladder's positions are a projection and will be recomputed from the scale.
   if (getLadderOrdering({ ...params, structure }) === RANK) {
-    for (const assignment of structure.positionAssignments) {
+    for (const assignment of positionAssignmentsOf(structure) ?? []) {
       if (assignment.drawPosition > vacatedPosition) {
         assignment.drawPosition -= 1;
         touched.push(assignment);
@@ -69,20 +71,9 @@ export function removeLadderParticipant(params: RemoveArgs): ResultType & { vaca
     element: structure,
   });
 
-  if (params.tournamentRecord) {
-    for (const assignment of touched) {
-      setParticipantScaleItem({
-        scaleItem: {
-          scaleType: RANKING,
-          scaleName: drawDefinition.drawId,
-          scaleValue: assignment.drawPosition,
-          scaleDate: removedAt,
-        },
-        participantId: assignment.participantId,
-        tournamentRecord: params.tournamentRecord,
-      });
-    }
-  }
+  // The shared writer, as every other standing move uses: it skips an assignment with no
+  // participantId and supplies the eventType without which no scale item is written at all.
+  mirrorStandingToScale({ ...params, appliedAt: removedAt, touched });
 
   return { ...SUCCESS, vacatedPosition };
 }

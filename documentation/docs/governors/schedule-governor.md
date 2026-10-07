@@ -936,6 +936,9 @@ const { details } = engine.getScheduledRoundsDetails();
 
 ---
 
+Since 7.7.0 a round that cannot be detailed is listed in an additive `roundErrors` array and its position
+in the rounds holds `undefined`, so the other rounds still schedule.
+
 ### getSchedulingProfile
 
 Returns the current scheduling profile.
@@ -1626,7 +1629,7 @@ occupancy specifically.
 
 An exit the cascade produces — a `WALKOVER` or `DEFAULTED` stamped onto a side by an upstream double
 exit, with nobody arriving to contest it — will never be played either, and its placement is
-preserved for the same reason. Since 7.4.1 it is shown the same way: `courtByeMatchUps: true`
+preserved for the same reason. Since 7.5.0 it is shown the same way: `courtByeMatchUps: true`
 includes a court-holding produced exit beside the byes, and `proConflicts` annotates it
 `CONFLICT_EXIT_SCHEDULED` at `SCHEDULE_WARNING` — a code of its own, so a client can offer
 "release" against a walkover and "re-seat" against a BYE. A walkover a director recorded between
@@ -1790,6 +1793,12 @@ Returns `{ readiness }`, either `{ evaluated: false, reason }` — `unknownMatch
 matchUps involved, and a `notBefore` clock when the blocker can be projected. Findings are ordered
 strongest-first.
 
+Since 7.7.0 a `dependency` finding also carries `readyAt`: the court-free `notBefore` plus the winner's
+recovery, omitted when recovery is zero ("finishes ~15:30 → ready ~16:30"). An overlap is dated by when
+the neighbour actually went on (`startTime`, then `scheduledTime`), and a neighbour nobody played (a
+`WALKOVER` or `DOUBLE_WALKOVER`) projects no recovery window. The payload types are exported by name —
+`ReadinessResult`, `ReadinessFinding` — so a consumer can type against them.
+
 ### getParticipantRest
 
 How long has each individual in this matchUp actually had off, and is it enough?
@@ -1811,6 +1820,11 @@ Returns `{ rest }`, either `{ evaluated: false, reason }` — adding `noAsOf` an
 above — or `{ evaluated: true, asOf, scheduledDate, rows }`, one row per individual, ordered
 worst-first. Every row names the ladder rung its anchor came from, so an inferred figure never reads
 as a measured one.
+
+Since 7.7.0 the result adds one `pendingUpstream` row per undecided side, built from the feeder that
+decides it: `onCourt`, a projected `readyAt`, a `pending:<feederMatchUpId>` source and an all-zero
+load, so a UI can show who is still to come. Both sides undecided gives two rows. `nameFor` returns a
+doubles entrant's own name rather than the pair's. `RestResult` and `RestRow` are exported by name.
 
 ## Related Documentation
 

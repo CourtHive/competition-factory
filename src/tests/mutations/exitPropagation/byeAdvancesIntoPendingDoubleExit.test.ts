@@ -79,16 +79,40 @@ it('a participant arriving through a BYE wins the pending walkover a consolation
   expect(tournamentEngine.getDrawInconsistencies({ drawId }).inconsistencies ?? []).toEqual([]);
 });
 
-it('a position holding nobody arriving through a BYE leaves the pending walkover pending', () => {
+/**
+ * A DOUBLE EXIT'S WALKOVER CARRIED THROUGH A BYE CONVERGES WITH THE PENDING WALKOVER (CA, 2026-10-06).
+ *
+ * This case said `Main|1|2`'s double exit "feeds NOBODY to the consolation", so the empty position arriving through
+ * the BYE resolved nothing and the walkover stayed pending. With `doubleExitPropagateBye` off it feeds a WALKOVER:
+ * the exit meets the BYE on `Consolation|1|1` and is carried on (CA 2026-09-20, the held exit sent on 2026-09-29),
+ * and reaches the pending walkover's other side. Two exits meeting are a double exit nobody wins (RULE 4), which
+ * produces its own walkover onward. Asserting "pending" pinned the carried walkover being dropped.
+ */
+it("a double exit's walkover carried through a BYE converges with the pending walkover", () => {
   const { drawId, key, find, submit, decided, pending } = setup();
   const before = decided();
-  // Main r1p2's double exit feeds NOBODY to the consolation, and that empty position advances
   expect(submit('Main|1|2', { matchUpStatus: DOUBLE_WALKOVER }).error).toBeUndefined();
 
   const after = find(key(pending));
-  expect(after.matchUpStatus).toEqual(WALKOVER);
+  expect(after.matchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(after.winningSide).toBeUndefined();
-  expect([...before].filter((id) => !decided().has(id))).toEqual([]);
+  // both sides record a walkover a double exit produced, and nobody stands in it
+  for (const sideNumber of [1, 2]) {
+    expect(after.sideExitProvenance?.[sideNumber]?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
+  }
+  expect(after.sides.filter((side: any) => side?.participantId)).toEqual([]);
+  // and the double exit produced onward: its winner target holds a pending walkover from it
+  const onward: any = tournamentEngine
+    .allDrawMatchUps({ drawId, inContext: true })
+    .matchUps?.find((matchUp: any) => matchUp.matchUpId === after.winnerMatchUpId);
+  expect(onward.matchUpStatus).toEqual(WALKOVER);
+  expect(onward.winningSide).toBeUndefined();
+  expect(Object.values(onward.sideExitProvenance ?? {}).map((entry: any) => entry.sourceMatchUpId)).toContain(
+    after.matchUpId,
+  );
+  // nothing decided is undecided again; the converged matchUp is still decided, as a double exit (`decided` counts
+  // only a winner or a WALKOVER)
+  expect([...before].filter((id) => id !== after.matchUpId && !decided().has(id))).toEqual([]);
   expect(tournamentEngine.getDrawInconsistencies({ drawId }).inconsistencies ?? []).toEqual([]);
 });
 

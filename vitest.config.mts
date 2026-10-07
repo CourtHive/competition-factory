@@ -19,7 +19,6 @@ const isShard = process.argv.some((arg) => arg.startsWith('--shard'));
 export default defineConfig({
   test: {
     testTimeout: 30000, // 30 seconds for slow tests
-    onConsoleLog: () => {},
     environment: 'node',
     // Persist transformed modules under node_modules/.vitest-cache so a rerun skips
     // the transform pass. Transform was ~30% of tracked time on a cold local run.
@@ -41,6 +40,7 @@ export default defineConfig({
       './src/tests/testHarness/corpusRecord.ts',
       './src/tests/testHarness/setOutcomePipeline.ts',
       './src/tests/testHarness/differentialTally.ts',
+      './src/tests/testHarness/rethrowCaughtErrors.ts',
     ],
     coverage: {
       reporter: ['html', 'json-summary'],

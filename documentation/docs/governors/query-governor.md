@@ -725,6 +725,35 @@ const { valid, inconsistencies } = engine.getStructureInconsistencies({
 // inconsistencies: [{ issueType, message, matchUpId, structureId, winningSide, ... }]
 ```
 
+Most checks start from a decided matchUp. One starts from the other end:
+`ADVANCED_FROM_UNDECIDED` reports a participant standing in a later round although the
+matchUp that delivered their drawPosition has no result (no `winningSide`, `TO_BE_PLAYED`,
+no BYE). It names the participant, the `drawPosition` and the `feederMatchUpId`. It is what
+a withdrawn result leaves behind when the advancement it made is not released.
+
+`ADVANCED_ACROSS_LINK_FROM_UNDECIDED` asks the same question across a draw link. A participant
+stands in a link's target structure, at or after the target round, although the source-round
+matchUp they play in has no result (no `winningSide`, not a BYE). It names the participant, the
+`linkType` (`WINNER` or `LOSER`) and the `sourceMatchUpId`. `ADVANCED_FROM_UNDECIDED` reads within
+one structure, so this is the only check that sees, say, a Backdraw finalist still in a
+double-elimination grand final after the Backdraw final lost its result. Since 7.7.0,
+`setMatchUpStatus` releases such a placement once the draw has settled.
+
+`BYE_ADVANCEMENT_MISSING_ACROSS_LINK` is the mirror for a BYE. `BYE_ADVANCEMENT_MISSING` stops at
+the structure; this one reports a participant beside a BYE at the source round of a cross-structure
+`WINNER` link who is not standing in the link's target while that target is still undecided — a
+Backdraw champion left beside a propagated BYE while the grand final waits. It names the
+participant and the `winnerMatchUpId`. The check and the settle that performs the crossing share one
+predicate, so what is reported is exactly a crossing the engine owes and has not made. A decided
+target is left alone.
+
+`TWO_POSITIONS_FROM_ONE_FEEDER` (severity `error`) reports a matchUp both of whose positions were
+delivered by the same earlier matchUp. A matchUp sends ONE position on; two from one feeder is what a
+BYE holder left behind when the participant who passed it was added beside the position it had
+already advanced (7.7.0, fixed in the same release). Fed positions are never counted, and a round a
+link feeds is not checked: a double-elimination Backdraw champion re-enters the Main final on their own
+Main drawPosition, beside the semifinal they lost, which is a legitimate rematch.
+
 You can also call it directly against a `drawDefinition` object, without loading a
 tournament into the engine — useful when validating records built outside the factory:
 

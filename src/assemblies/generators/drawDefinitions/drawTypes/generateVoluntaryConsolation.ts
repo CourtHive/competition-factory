@@ -128,8 +128,9 @@ export function generateVoluntaryConsolation(params: GenerateVoluntaryConsolatio
   const structureCount = stageStructures.length;
   if (structureCount > 1) return { error: STAGE_SEQUENCE_LIMIT };
 
-  // invalid to already have matchUps generated for any existing structure
-  if (stageStructures?.[0]?.matchUps?.length) return { error: EXISTING_STRUCTURE };
+  // invalid to already have matchUps generated for any existing structure (a round robin's are on its groups)
+  const existingMatchUps = getAllStructureMatchUps({ structure: stageStructures?.[0] }).matchUps;
+  if (existingMatchUps.length) return { error: EXISTING_STRUCTURE };
   const structureId = stageStructures?.[0]?.structureId;
 
   Object.assign(

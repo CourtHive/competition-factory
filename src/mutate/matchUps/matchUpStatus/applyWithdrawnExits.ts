@@ -1,6 +1,9 @@
-import { releaseAdvancedDrawPosition } from '@Mutate/matchUps/drawPositions/releaseAdvancedDrawPosition';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import {
+  releaseAdvancedDrawPositionAcrossLinks,
+  releaseLinkedWinnerAdvancement,
+} from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 
 // constants and types
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
@@ -48,7 +51,7 @@ export function applyWithdrawnExits({
     // load-bearing. A PENDING produced exit — the common shape, with an empty winner slot — has no
     // winningSide here and so releases nothing.
     if (withdrawnExit.winnerDrawPosition !== undefined && withdrawnExit.roundNumber !== undefined) {
-      releaseAdvancedDrawPosition({
+      releaseAdvancedDrawPositionAcrossLinks({
         // `+ 1` — from the round AFTER the withdrawn matchUp, never from the matchUp itself. The
         // winner still belongs in it: they arrived there by winning an earlier round, and that has
         // not changed. Only what they won ON arrival has been taken back. Releasing from its own
@@ -59,6 +62,18 @@ export function applyWithdrawnExits({
         drawPosition: withdrawnExit.winnerDrawPosition,
         structureId: withdrawnExit.structureId,
         withdrawingExit: true,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+        event,
+      });
+      // ...except across a link. The round after a structure's LAST round is in another structure: a Backdraw
+      // final's winner went on to the grand final, and the release above, keyed on this structure's rounds,
+      // never reaches it (mode C, census de 9304168 and 9304795). The link at the withdrawn round itself is asked.
+      releaseLinkedWinnerAdvancement({
+        drawPosition: withdrawnExit.winnerDrawPosition,
+        roundNumber: withdrawnExit.roundNumber,
+        structureId: withdrawnExit.structureId,
         tournamentRecord,
         drawDefinition,
         matchUpsMap,
@@ -78,6 +93,30 @@ export function applyWithdrawnExits({
      * Released here instead: every position of the withdrawn matchUp that holds nobody, from the round after it.
      * `releaseAdvancedDrawPosition`'s own scopes keep it off a BYE advancement and off any decided matchUp.
      */
+    /**
+     * A matchUp the withdrawal reverted to UNDECIDED advances nobody, whoever the release above named as its winner.
+     * The name can be wrong: an arrival can land before the withdrawal and re-award a standing produced exit to
+     * itself, so the "winner" read off `winningSide` is the newcomer, who advanced nowhere, while the participant the
+     * exit had really awarded stays one round on, advanced out of an undecided matchUp (census w2 9100303, DE 16/11:
+     * `Backdraw|4|1` kept the old award's winner). Every other occupied position is released too; the release's own
+     * scopes keep a BYE advancement and any decided matchUp.
+     */
+    if (!withdrawnExit.rederived && withdrawnExit.roundNumber && !withdrawnMatchUp.winningSide) {
+      for (const drawPosition of withdrawnMatchUp.drawPositions ?? []) {
+        if (!drawPosition || drawPosition === withdrawnExit.winnerDrawPosition) continue;
+        releaseAdvancedDrawPositionAcrossLinks({
+          fromRoundNumber: withdrawnExit.roundNumber + 1,
+          structureId: withdrawnExit.structureId,
+          withdrawingExit: true,
+          tournamentRecord,
+          drawDefinition,
+          drawPosition,
+          matchUpsMap,
+          event,
+        });
+      }
+    }
+
     if (withdrawnExit.winnerDrawPosition === undefined && !withdrawnExit.rederived && withdrawnExit.roundNumber) {
       const { positionAssignments } = getPositionAssignments({
         drawDefinition,
@@ -88,7 +127,7 @@ export function applyWithdrawnExits({
         return drawPosition && !assignment?.participantId && !assignment?.bye && !assignment?.qualifier;
       });
       for (const drawPosition of vacant) {
-        releaseAdvancedDrawPosition({
+        releaseAdvancedDrawPositionAcrossLinks({
           fromRoundNumber: withdrawnExit.roundNumber + 1,
           structureId: withdrawnExit.structureId,
           withdrawingExit: true,

@@ -76,6 +76,13 @@ function addEliminationUpcomingInfo({
     drawDefinition,
     matchUpId,
   });
+  /**
+   * A MALFORMED ROUND LINK LEAVES THIS MATCHUP UNDECORATED (CA, 2026-10-06: it is an error). This is
+   * hydration, with no error channel: every `nextMatchUps` read takes it, `modifyMatchUpScore`,
+   * scheduling and the outcome view among them. Failing it would replace the error the directing call
+   * returns with an unrelated one. The error is returned wherever the link is followed.
+   */
+  if (targetData.error) return;
   let { winnerMatchUp } = targetData.targetMatchUps;
   const { loserMatchUp } = targetData.targetMatchUps;
 

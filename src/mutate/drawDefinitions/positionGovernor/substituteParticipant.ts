@@ -6,7 +6,6 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants and types
-import { HydratedSide } from '@Types/hydrated';
 import {
   INVALID_MATCHUP,
   INVALID_PARTICIPANT_ID,
@@ -59,7 +58,7 @@ export function substituteParticipant({
   // ensure that existingParticipantId and substituteParticipantId are on the same team
   const relevantSide = inContextDualMatchUp?.sides?.find((side: any) =>
     side.participant.individualParticipants.some(({ participantId }) => participantId === existingParticipantId),
-  ) as HydratedSide & { [key: string]: any };
+  );
 
   if (!relevantSide || (sideNumber && relevantSide.sideNumber !== sideNumber)) return { error: INVALID_PARTICIPANT_ID };
 

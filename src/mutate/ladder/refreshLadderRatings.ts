@@ -1,6 +1,7 @@
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
 // constants and types
@@ -8,6 +9,7 @@ import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } fr
 import { RATING as RATING_ORDERING } from '@Constants/ladderConstants';
 import { RATING as RATING_SCALE } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import type { Structure } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -45,7 +47,7 @@ export function refreshLadderRatings(params: RefreshArgs): ResultType & { update
   if (!refreshedAt) return { error: INVALID_VALUES, info: 'refreshedAt is required' };
   if (!ratings || typeof ratings !== 'object') return { error: INVALID_VALUES, info: 'ratings map is required' };
 
-  const structure = params.structure ?? drawDefinition.structures?.[0];
+  const structure: Structure | undefined = params.structure ?? drawDefinition.structures?.[0];
   if (getLadderOrdering({ ...params, structure }) !== RATING_ORDERING) {
     return { error: INVALID_VALUES, info: 'refreshLadderRatings applies only to a RATING-ordered ladder' };
   }
@@ -56,7 +58,7 @@ export function refreshLadderRatings(params: RefreshArgs): ResultType & { update
     return { error: INVALID_VALUES, info: `policy.ratingType is missing or unknown: ${ratingType}` };
   }
 
-  const seated = new Set((structure?.positionAssignments ?? []).map((a: any) => a.participantId).filter(Boolean));
+  const seated = new Set((positionAssignmentsOf(structure) ?? []).map((a) => a.participantId).filter(Boolean));
 
   let updated = 0;
   const skipped: string[] = [];

@@ -139,10 +139,10 @@ export function modifyCourtAvailability({
  * A `Map` keys by value, so `undefined` stays `undefined` and the flatten step
  * can omit the property entirely rather than inventing one.
  */
-function sortAndMergeDateAvailability(dateAvailability) {
+function sortAndMergeDateAvailability(dateAvailability: Availability[]) {
   let totalMergeCount = 0;
 
-  const availabilityByDate = new Map<string | undefined, any[]>();
+  const availabilityByDate = new Map<string | undefined, Availability[]>();
   for (const availability of dateAvailability) {
     const { date, startTime, endTime, bookings } = availability;
     const entries = availabilityByDate.get(date);
@@ -150,7 +150,7 @@ function sortAndMergeDateAvailability(dateAvailability) {
     else availabilityByDate.set(date, [{ startTime, endTime, bookings }]);
   }
 
-  const updatedDateAvailability: any[] = [];
+  const updatedDateAvailability: Availability[] = [];
 
   for (const [date, entries] of availabilityByDate) {
     entries.sort(startTimeSort);
@@ -159,7 +159,7 @@ function sortAndMergeDateAvailability(dateAvailability) {
       // `date` is spread in only when there is one. Writing `date: undefined`
       // would survive a structuredClone into the record and read as a present
       // key holding nothing, which is a third state nobody asked for.
-      ...mergedAvailability.map((availability: any) =>
+      ...mergedAvailability.map((availability) =>
         date === undefined ? { ...availability } : { date, ...availability },
       ),
     );
@@ -175,7 +175,7 @@ function getMergedAvailability(dateDetails) {
     lastBookings,
     safety = dateDetails.length,
     mergeCount = 0;
-  const mergedAvailability: any[] = [];
+  const mergedAvailability: Availability[] = [];
 
   while (dateDetails.length && safety) {
     const details = dateDetails.shift();
@@ -186,7 +186,7 @@ function getMergedAvailability(dateDetails) {
       const difference = minutesDifference(timeToDate(lastEndTime), timeToDate(startTime), false);
 
       if (difference > 0) {
-        const availability: any = {
+        const availability: Availability = {
           startTime: lastStartTime,
           endTime: lastEndTime,
         };
@@ -198,7 +198,7 @@ function getMergedAvailability(dateDetails) {
       } else {
         if (bookings) {
           if (lastBookings) {
-            lastBookings.push(bookings);
+            lastBookings = [...lastBookings, ...bookings];
           } else {
             lastBookings = bookings;
           }
@@ -212,7 +212,7 @@ function getMergedAvailability(dateDetails) {
       lastEndTime = endTime;
     }
   }
-  const availability: any = { startTime: lastStartTime, endTime: lastEndTime };
+  const availability: Availability = { startTime: lastStartTime, endTime: lastEndTime };
   if (lastBookings?.length) availability.bookings = lastBookings;
   mergedAvailability.push(availability);
 

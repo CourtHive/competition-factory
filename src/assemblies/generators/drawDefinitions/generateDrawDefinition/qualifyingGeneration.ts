@@ -33,7 +33,7 @@ export function qualifyingGeneration(params): ResultType & { qualifyingConflicts
   const qualifyingConflicts: any[] = [];
 
   if (qualifyingProfiles) {
-    const profileResult: any = processQualifyingProfiles({
+    const profileResult = processQualifyingProfiles({
       qualifyingProfiles,
       qualifyingConflicts,
       positioningReports,
@@ -175,6 +175,9 @@ function prepareQualifyingStage({
 
   return prepareStage({
     ...params,
+    // params.qualifiersCount counts the MAIN positions this qualifying feeds; a qualifying
+    // structure's own qualifiers come only from links into it
+    qualifiersCount: undefined,
     seedingProfile: structureProfile.seedingProfile ?? seedingProfile,
     stageSequence: sequence,
     qualifyingRoundNumber,

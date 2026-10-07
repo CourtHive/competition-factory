@@ -1,5 +1,9 @@
-import { getSideExitProvenance, withdrawProducedExits } from './sideExitProvenance';
+import { getSideExitProvenance, withdrawProducedExits, withdrawRelayedExit } from './sideExitProvenance';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
 import { findStructure } from '@Acquire/findStructure';
@@ -7,7 +11,8 @@ import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import { MatchUpsMap } from '@Types/factoryTypes';
+import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
  * Withdraw carried exits whose ORIGIN has stopped being a double exit, unless its winning seat is a BYE.
@@ -53,15 +58,15 @@ export function reconcileStaleExitOrigins({
   drawDefinition?: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
   event?: Event;
-}): void {
-  if (!drawDefinition) return;
+}): ResultType | undefined {
+  if (!drawDefinition) return undefined;
 
   // `setMatchUpStatus` only carries a `matchUpsMap` in its result context on the exit-propagation
   // path — measured absent on four of five submissions of the P40 sequence, including the one that
   // matters. Building it here rather than trusting the context is what makes the reconciliation run
   // on every mutation; the map is a view over the same stored matchUps, so writes through it land.
   const resolvedMap = matchUpsMap?.drawMatchUps?.length ? matchUpsMap : getMatchUpsMap({ drawDefinition });
-  if (!resolvedMap?.drawMatchUps?.length) return;
+  if (!resolvedMap?.drawMatchUps?.length) return undefined;
 
   // the chain cannot be longer than the draw, so this is a fixpoint with a structural bound rather
   // than a `while (true)` that trusts the data to terminate
@@ -69,7 +74,17 @@ export function reconcileStaleExitOrigins({
 
   while (guard-- > 0) {
     const staleOrigins = getStaleOrigins({ drawDefinition, matchUpsMap: resolvedMap });
-    if (!staleOrigins.length) return;
+    const relays = staleOrigins.length
+      ? { staleRelays: [] }
+      : getStaleRelays({ drawDefinition, matchUpsMap: resolvedMap });
+    if (relays.error) return relays;
+    const staleRelays = relays.staleRelays ?? [];
+    if (!staleOrigins.length && !staleRelays.length) return undefined;
+
+    for (const { matchUp, structureId, sourceMatchUpId } of staleRelays) {
+      const withdrawnExits = withdrawRelayedExit({ matchUp, structureId, sourceMatchUpId, drawDefinition });
+      applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap: resolvedMap, event });
+    }
 
     for (const sourceMatchUpId of staleOrigins) {
       const withdrawnExits = withdrawProducedExits({
@@ -80,6 +95,7 @@ export function reconcileStaleExitOrigins({
       applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap: resolvedMap, event });
     }
   }
+  return undefined;
 }
 
 /** The sourceMatchUpIds named by a carried-exit entry which no longer describe their source. */
@@ -121,6 +137,85 @@ function getStaleOrigins({
   return [...staleOrigins];
 }
 
+type Relay = { matchUp: MatchUp; structureId: string; sourceMatchUpId: string };
+
+/**
+ * Entries carried past a BYE that has since gone, while their source is STILL a double exit.
+ *
+ * A double exit's produced exit lands on its winner target, or its loser target, and travels on from there only
+ * through BYEs (`doubleExitAdvancement`'s `carryExitOnward`: "a propagated exit encountering a BYE should be
+ * advanced", CA 2026-09-20). Every hop keeps the ORIGIN's id, so `getStaleOrigins` cannot see a broken hop: the
+ * origin is still a double exit. When the BYE a hop passed through is withdrawn, the exit comes to rest there,
+ * and the entry beyond it describes an exit that never reached it. Census de 9300866 (DE 16/15): `Backdraw|1|3`'s
+ * walkover passed the BYE on `Backdraw|2|3` into `Backdraw|3|2`; re-scoring `Main|1|6` from a double walkover took
+ * that BYE back, and `Backdraw|3|2` kept the walkover, which the arriving participant then won.
+ *
+ * So an entry stands only where the exit can still reach it: at a direct target of its source, or past a run of
+ * matchUps each still holding a BYE.
+ */
+function getStaleRelays({
+  drawDefinition,
+  matchUpsMap,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+}): ResultType & { staleRelays?: Relay[] } {
+  const byId = new Map<string, { matchUp: MatchUp; structureId: string }>();
+  for (const [structureId, value] of Object.entries(matchUpsMap.mappedMatchUps ?? {})) {
+    for (const matchUp of value?.matchUps ?? []) byId.set(matchUp.matchUpId, { matchUp, structureId });
+  }
+
+  const candidates: Relay[] = [];
+  for (const { matchUp, structureId } of byId.values()) {
+    const provenance = getSideExitProvenance({ matchUp });
+    for (const sideNumber of [1, 2] as const) {
+      const entry = provenance?.[sideNumber];
+      const sourceMatchUpId = entry?.sourceMatchUpId;
+      if (!sourceMatchUpId || !isDoubleExit(entry?.previousMatchUpStatus)) continue;
+      if (!isDoubleExit(byId.get(sourceMatchUpId)?.matchUp.matchUpStatus)) continue;
+      candidates.push({ matchUp, structureId, sourceMatchUpId });
+    }
+  }
+  if (!candidates.length) return { staleRelays: [] };
+
+  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+  // a source whose links cannot be read refuses the reconciliation; it is never read as "reaches nothing"
+  let refused: ResultType | undefined;
+  const targetsOf = (matchUpId: string) => {
+    const targetData = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
+    if (targetData.error) refused ??= decorateResult({ result: targetData, stack: 'reconcileStaleExitOrigins' });
+    return targetData.targetMatchUps ?? {};
+  };
+  const holdsBye = (matchUpId: string) => {
+    const known = byId.get(matchUpId);
+    if (!known) return false;
+    if (known.matchUp.matchUpStatus === BYE) return true;
+    const { structure } = findStructure({ structureId: known.structureId, drawDefinition });
+    const positions = known.matchUp.drawPositions ?? [];
+    return !!positionAssignmentsOf(structure)?.some((a) => a.bye && positions.includes(a.drawPosition));
+  };
+
+  const staleRelays = candidates.filter(({ matchUp, sourceMatchUpId }) => {
+    const { winnerMatchUp, loserMatchUp } = targetsOf(sourceMatchUpId);
+    const reached = new Set<string>();
+    let frontier = [winnerMatchUp?.matchUpId, loserMatchUp?.matchUpId].filter((id): id is string => !!id);
+    // a winner chain is no longer than the draw
+    for (let guard = byId.size; frontier.length && guard > 0; guard -= 1) {
+      const next: string[] = [];
+      for (const matchUpId of frontier) {
+        if (matchUpId === matchUp.matchUpId) return false;
+        if (reached.has(matchUpId) || !holdsBye(matchUpId)) continue;
+        reached.add(matchUpId);
+        const onward = targetsOf(matchUpId).winnerMatchUp?.matchUpId;
+        if (onward) next.push(onward);
+      }
+      frontier = next;
+    }
+    return true;
+  });
+  return refused ?? { staleRelays };
+}
+
 /**
  * Is this matchUp's winning seat a BYE? The one shape in which a former double exit's downstream entries
  * stay true once it is no longer a double exit.
@@ -151,5 +246,5 @@ function winnerSeatIsBye({
   // A drawPosition is unique WITHIN A STRUCTURE and carries no meaning across structures, so the
   // assignments are scoped by structureId before the position is compared.
   const { structure } = findStructure({ structureId, drawDefinition });
-  return !!structure?.positionAssignments?.find((a) => a.drawPosition === drawPosition)?.bye;
+  return !!positionAssignmentsOf(structure)?.find((a) => a.drawPosition === drawPosition)?.bye;
 }

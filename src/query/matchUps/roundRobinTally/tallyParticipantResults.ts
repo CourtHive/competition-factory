@@ -13,6 +13,7 @@ import { INVALID_VALUES, MISSING_MATCHUPS } from '@Constants/errorConditionConst
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
+import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 
 type TallyParticipantResultsArgs = {
@@ -27,7 +28,7 @@ type TallyParticipantResultsArgs = {
   matchUpFormat?: string;
   perPlayer?: number;
   subOrderMap?: any;
-  matchUps: any[];
+  matchUps: HydratedMatchUp[];
 };
 
 type TallyResultType = {
@@ -80,7 +81,7 @@ export function tallyParticipantResults({
   const consideredMatchUps = matchUps.filter(
     (matchUp) => matchUp && (matchUpCompletion(matchUp) ?? matchUp.matchUpType === TEAM),
   );
-  const participantResultsOutcome: any = getParticipantResults({
+  const participantResultsOutcome = getParticipantResults({
     matchUps: consideredMatchUps,
     pressureRating,
     matchUpFormat,
