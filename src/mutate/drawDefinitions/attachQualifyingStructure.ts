@@ -1,7 +1,7 @@
 import { getAvailableQualifyingTargets } from '@Query/drawDefinition/getAvailableQualifyingTargets';
 import { addMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { getLinkQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { getLinkQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { resequenceStructures } from './structureGovernor/resequenceStructures';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -9,8 +9,8 @@ import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
 import { DRAW_DEFINITION, OBJECT, OF_TYPE, STRUCTURE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
 import { MISSING_TARGET_LINK, QUALIFYING_CAPACITY_EXCEEDED } from '@Constants/errorConditionConstants';
+import { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
 
 // constants
 import { ERROR, SUCCESS } from '@Constants/resultConstants';

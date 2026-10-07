@@ -2,15 +2,15 @@ import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProf
 import { getLinkQualifiersCount } from './getQualifiersCount';
 import { isValidForQualifying } from './isValidForQualifying';
 import { getPositionAssignments } from './positionsGetter';
-import { getStructureLinks } from './linkGetter';
 import { structuresOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
+import { getStructureLinks } from './linkGetter';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION, MISSING_STRUCTURE_ID } from '@Constants/errorConditionConstants';
+import { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { LOSER, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 export type QualifyingTarget = {
