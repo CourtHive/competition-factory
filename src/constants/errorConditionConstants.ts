@@ -993,6 +993,11 @@ export const CAPACITY_EXCEEDED = {
   code: 'ERR_CAPACITY_EXCEEDED' as const,
 } satisfies ErrorType;
 
+export const QUALIFYING_CAPACITY_EXCEEDED = {
+  message: 'Qualifiers exceed the drawPositions available in the target round',
+  code: 'ERR_QUALIFYING_CAPACITY_EXCEEDED' as const,
+} satisfies ErrorType;
+
 export const errorConditionConstants = {
   ANACHRONISM,
   UNWRITABLE_SCHEDULE_ATTRIBUTES,
@@ -1001,6 +1006,7 @@ export const errorConditionConstants = {
   CANNOT_CHANGE_WINNING_SIDE,
   CANNOT_CHANGE_OUTCOME,
   CAPACITY_EXCEEDED,
+  QUALIFYING_CAPACITY_EXCEEDED,
   REGISTRATION_NOT_FOUND,
   CANNOT_MODIFY_TIEFORMAT,
   TOURNAMENT_CATEGORY_IN_USE,

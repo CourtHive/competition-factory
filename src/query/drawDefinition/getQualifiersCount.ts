@@ -9,7 +9,7 @@ import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONTAINER, QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 // types
-import type { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
+import type { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
 
 type GetQualifiersCountArgs = {
   provisionalPositioning?: boolean;
@@ -18,6 +18,49 @@ type GetQualifiersCountArgs = {
   structureId?: string;
   stage?: string;
 };
+
+type GetLinkQualifiersCountArgs = {
+  provisionalPositioning?: boolean;
+  drawDefinition: DrawDefinition;
+  sourceStructure?: Structure; // when the source is not (yet) in drawDefinition.structures
+  link: DrawLink;
+};
+
+/**
+ * How many participants a link delivers into its target round, when its source is a QUALIFYING
+ * structure: a round robin sends groups x finishingPositions, a placeholder (source round 0) its
+ * recorded qualifyingPositions, an elimination structure one per matchUp of its exit round.
+ * Returns 0 for a link whose source is not QUALIFYING.
+ */
+export function getLinkQualifiersCount({
+  provisionalPositioning,
+  sourceStructure,
+  drawDefinition,
+  link,
+}: GetLinkQualifiersCountArgs): number {
+  const structure =
+    sourceStructure ?? findStructure({ structureId: link.source.structureId, drawDefinition })?.structure;
+  if (structure?.stage !== QUALIFYING) return 0;
+
+  const sourceRoundNumber: number = link.source.roundNumber as number;
+  if (structure.structureType === CONTAINER) {
+    const groupCount = structure.structures?.length ?? 0;
+    const finishingPositionsCount = link.source.finishingPositions?.length ?? 0;
+    return groupCount * finishingPositionsCount;
+  }
+  if (sourceRoundNumber === 0 && link.source.qualifyingPositions) {
+    // Placeholder link: use the stored qualifyingPositions count
+    return link.source.qualifyingPositions;
+  }
+  const matchUps = getAllStructureMatchUps({
+    matchUpFilters: { roundNumbers: [sourceRoundNumber] },
+    afterRecoveryTimes: false,
+    provisionalPositioning,
+    inContext: false,
+    structure,
+  }).matchUps;
+  return matchUps?.length || 0;
+}
 
 function calculateQualifiersFromLinks({
   relevantLinks,
@@ -33,38 +76,12 @@ function calculateQualifiersFromLinks({
   let qualifiersCount = 0;
 
   for (const relevantLink of relevantLinks) {
-    const sourceStructure = findStructure({
-      structureId: relevantLink.source.structureId,
-      drawDefinition,
-    })?.structure;
-
-    if (sourceStructure?.stage === QUALIFYING) {
-      const sourceRoundNumber: number = relevantLink.source.roundNumber as number;
-      const roundTarget = relevantLink.target.roundNumber;
-      let count: number;
-
-      if (sourceStructure.structureType === CONTAINER) {
-        const groupCount = sourceStructure.structures?.length ?? 0;
-        const finishingPositionsCount = relevantLink.source.finishingPositions?.length ?? 0;
-        count = groupCount * finishingPositionsCount;
-      } else if (sourceRoundNumber === 0 && relevantLink.source.qualifyingPositions) {
-        // Placeholder link: use the stored qualifyingPositions count
-        count = relevantLink.source.qualifyingPositions;
-      } else {
-        const matchUps = getAllStructureMatchUps({
-          matchUpFilters: { roundNumbers: [sourceRoundNumber] },
-          structure: sourceStructure,
-          afterRecoveryTimes: false,
-          provisionalPositioning,
-          inContext: false,
-        }).matchUps;
-        count = matchUps?.length || 0;
-      }
-
-      if (!roundQualifiersCounts[roundTarget]) roundQualifiersCounts[roundTarget] = 0;
-      roundQualifiersCounts[roundTarget] += count;
-      qualifiersCount += count;
-    }
+    const count = getLinkQualifiersCount({ provisionalPositioning, drawDefinition, link: relevantLink });
+    if (!count) continue;
+    const roundTarget = relevantLink.target.roundNumber;
+    if (!roundQualifiersCounts[roundTarget]) roundQualifiersCounts[roundTarget] = 0;
+    roundQualifiersCounts[roundTarget] += count;
+    qualifiersCount += count;
   }
 
   return qualifiersCount;

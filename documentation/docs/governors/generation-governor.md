@@ -566,6 +566,7 @@ let { structure, link } = engine.generateQualifyingStructure({
   qualifyingRoundNumber, // optional: determine qualifyingPositions by # of matchUps in specified round; does not apply to ROUND_ROBIN
   structureOptions, // optional: specific to ROUND_ROBIN generation
   structureName, // optional
+  roundTarget, // optional: round of the target structure the qualifiers enter; defaults to 1; carried on link.target.roundNumber
   drawSize,
   drawType, // optional: defaults to SINGLE_ELIMINATION
   drawId, // required: draw within which target structure appears

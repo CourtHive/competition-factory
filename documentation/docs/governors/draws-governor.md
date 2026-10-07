@@ -150,11 +150,14 @@ engine.addQualifyingStructure({
   qualifyingRoundNumber, // optional: determine qualifyingPositions by # of matchUps in specified round; does not apply to ROUND_ROBIN
   structureOptions, // optional: specific to ROUND_ROBIN generation
   structureName, // optional
+  roundTarget, // optional: round of the target structure the qualifiers enter; defaults to 1. See getAvailableQualifyingTargets
   drawSize,
   drawType, // optional: defaults to SINGLE_ELIMINATION
   drawId, // required: draw within which target structure appears
 });
 ```
+
+Refused with `QUALIFYING_CAPACITY_EXCEEDED` when the qualifiers this structure produces, added to those every other qualifying structure already sends into the same round, exceed the drawPositions that round has.
 
 ---
 
@@ -581,6 +584,36 @@ const { profiles } = engine.getAvailablePlayoffProfiles({
 ```
 
 **Purpose:** Get playoff options for structure.
+
+---
+
+## getAvailableQualifyingTargets
+
+The rounds of a structure that qualifying structures may feed, and how much room each has. Several qualifying structures may feed the same round as long as the qualifiers they produce, in aggregate, do not exceed the drawPositions that round has; `attachQualifyingStructure` enforces that rule. The rest of the numbers describe the placement state so a client can show "already fed by Qualifying (16)" and clamp its offer.
+
+```js
+const { valid, targets } = engine.getAvailableQualifyingTargets({
+  drawId, // required
+  structureId, // required: the structure to be fed, usually MAIN
+});
+
+// valid: the isValidForQualifying answer — false when the structure is itself fed by losers
+// targets: one entry per round that qualifiers can enter (round 1, and any feed round not fed by a LOSER link)
+// [
+//   {
+//     roundNumber: 1,
+//     drawPositionsCount: 64, // positions that enter the structure in this round
+//     unfilledPositionsCount: 16, // of those, positions with no participant and no bye
+//     qualifierPositionsCount: 16, // of those, positions marked `qualifier` (reserved, with or without a link)
+//     unplacedDirectEntriesCount: 0, // round 1 only: direct entries in the draw not yet positioned
+//     feedingStructures: [{ structureId, structureName: 'Qualifying', qualifiersCount: 16, placeholder: false }],
+//     promisedQualifiers: 16, // qualifiers already sent here by real qualifying structures
+//     reservedQualifiers: 0, // qualifiers a placeholder link reserves; a real structure consumes them
+//     structuralCapacity: 48, // drawPositionsCount - promisedQualifiers: what attach will accept
+//     remainingCapacity: 0, // unfilled - promised - unplaced direct entries: what the draw can hold today
+//   },
+// ]
+```
 
 ---
 
