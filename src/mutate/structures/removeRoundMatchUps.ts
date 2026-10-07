@@ -9,7 +9,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
 
 // constants and types
-import { INVALID_STRUCTURE, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { INVALID_STRUCTURE, MISSING_VALUE, NOT_IMPLEMENTED } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, DRAW_DEFINITION } from '@Constants/attributeConstants';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
@@ -62,11 +62,16 @@ export function removeRoundMatchUps({
       structure,
       event,
     });
-  } else {
-    pushGlobalLog({ method: 'removeRoundMatchUps', notImplemented: true });
   }
 
-  return { ...SUCCESS };
+  // an elimination structure's rounds are its shape: removing one is not a matchUp deletion but a
+  // structural change (see pruneDrawDefinition); until that exists the caller must hear "no", not "done"
+  pushGlobalLog({ method: 'removeRoundMatchUps', notImplemented: true });
+  return decorateResult({
+    result: { error: NOT_IMPLEMENTED },
+    info: 'removeRoundMatchUps supports AD_HOC structures only',
+    context: { structureId, roundNumber },
+  });
 }
 
 function removeAdHocRound({
