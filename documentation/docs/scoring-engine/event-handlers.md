@@ -274,7 +274,7 @@ point.activePlayers;
 
 This enables per-player statistics and analysis of who was on court for each point.
 
-Since 7.6.1 the snapshot survives every rebuild of the score (`undo`, `redo`, a recalculating
+Since 7.7.0 the snapshot survives every rebuild of the score (`undo`, `redo`, a recalculating
 `editPoint`, `removePoint`). A rebuild starts the lineups from their initial state and replays the
 substitutions in order, so each point keeps the players who played it. A matchUp loaded with
 `setState` and no `loadSupplementaryState` takes its initial lineups from its current ones, with its

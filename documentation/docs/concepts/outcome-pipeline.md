@@ -206,7 +206,11 @@ After the write, and only on success:
    withdraws the exit it carried there. Neither applies where that matchUp already has a result of its
    own, nor where the winner of the carried exit has played on from it, counting past any BYEs they
    were advanced through (7.7.0). Both apply whether or not the relabelled matchUp's own winner has
-   played on since.
+   played on since. Where the carried exit had converged with another, only this origin's entry is
+   withdrawn and the matchUp re-derives to the kept exit (its carrier directed on, or — a produced
+   exit — won by the relabelled loser, who goes on); and a loser who had won a produced exit on
+   arrival has that award taken back when the origin becomes an exit again, so the exit converges as
+   it would have at first entry (7.7.0; [exit propagation](./exit-propagation.md#a-relabel-out-of-a-convergence-and-back-into-one)).
 3. **Round robin tally** is recomputed when the matchUp is in a group (`updateTallyIfNeeded`).
 4. **Stale exit origins are reconciled** once removals, directions and propagation have all settled:
    a carried exit whose origin no longer describes an exit is corrected.

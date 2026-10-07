@@ -335,6 +335,26 @@ that would change it is refused with `CANNOT_CHANGE_OUTCOME`, and `matchUpAction
 relabel at the origin, which keeps the winner and changes what the result says about the loser, is
 covered in [the outcome pipeline § 5](./outcome-pipeline.md#5-the-side-effects-in-order), rule 2.
 
+### A relabel out of a convergence, and back into one
+
+Since 7.7.0. A relabel keeps the winner and changes what the result says about the loser. Where the
+loser's carried exit had **converged** with another exit (a double exit, nobody winning), relabelling
+the origin as a played result withdraws only that origin's entry; the matchUp re-derives to the kept
+exit, and what the double exit had produced downstream is withdrawn:
+
+- **the kept exit was carried** by another loser — that carrier is directed on again, as if their
+  exit had arrived alone;
+- **the kept exit was produced** by a double exit — the relabelled loser, now simply a participant
+  standing opposite a pending produced exit, wins it and goes on (RULE 2), which is the state forward
+  play reaches when the origin is entered as a played result from the start.
+
+The reverse holds too. A loser who won a produced exit on arrival and is then relabelled as exiting at
+the origin has that win **taken back** — it was the cascade's award, not a result a director recorded —
+and the exit is carried in, converging as it would have had it been entered first. A result the loser
+then **earned** onward stands, and the carry is refused as before; the relabel is still accepted at the
+origin. The three states (exit first; played then relabelled; exit, played, exit again) are pinned
+equal on status, winner, positions and occupants.
+
 ### A withdrawn exit releases the seat it won
 
 Since 7.5.0. A carried exit awards its seat to whoever stands opposite, and that winner may advance.

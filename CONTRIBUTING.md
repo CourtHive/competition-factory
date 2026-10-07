@@ -97,11 +97,14 @@ pnpm verify
 tool and is not run in CI; you do not need it.)
 
 A Husky pre-commit hook runs `lint-staged` plus a type check, so staged files are linted and
-formatted on commit.
+formatted on commit. Since 7.7.0 it also runs the cheap gates CI's `gates` job runs — `verify:generated`
+(with the `any-count` ratchet), the three type ratchets (`test-types`, `implicit-any`, `hard-union`) and
+`verify:exit-tenant` — about 20 seconds, so a ratchet rise is refused at `git commit` rather than twenty
+minutes into a CI run.
 
 ## Tests
 
-The suite is large (15,600+ tests) and a PR that changes behaviour is expected to carry a test.
+The suite is large (15,800+ tests) and a PR that changes behaviour is expected to carry a test.
 
 - Unit tests live **beside the code** as `*.test.ts`.
 - Broader integration and scenario suites live under `src/tests/`, organized by area.
