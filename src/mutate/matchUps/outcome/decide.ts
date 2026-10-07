@@ -365,27 +365,31 @@ function checkProducedPastBye({
   const onward = onwardMatchUp(args, holder);
   if (!onward) return differentialTally(`${route}:produced-past-bye-final`, 'compared');
   const provenance = onward.sideExitProvenance ?? {};
-  // the side the produced exit landed on: its provenance names the double exit that produced it (a
-  // participant's own entry can name an exit too, the walkover they WON on the way here)
-  const exitSide = [1, 2].find(
-    (side) =>
-      provenance[side]?.matchUpStatus === produced.matchUpStatus &&
-      isDoubleExit(provenance[side]?.previousMatchUpStatus),
-  );
+  // the side the produced exit landed on: the entry naming THIS double exit as its source, else the entry that
+  // reads as it (a participant's own entry can name an exit too, the walkover they WON on the way here)
+  const exitSide =
+    [1, 2].find((side) => provenance[side]?.sourceMatchUpId === args.request.matchUpId) ??
+    [1, 2].find(
+      (side) =>
+        provenance[side]?.matchUpStatus === produced.matchUpStatus &&
+        isDoubleExit(provenance[side]?.previousMatchUpStatus),
+    );
   if (!exitSide)
     diverge(
       args,
       `${onward.matchUpId} holds no ${produced.matchUpStatus}`,
       `planned the produced exit sent on into it`,
     );
-  // by number: an in-context side not yet reached can be an empty object with no sideNumber at all
-  const other = onward.sides?.find((side) => side?.sideNumber === 3 - (exitSide ?? 0));
+  // by number throughout: an in-context side not yet reached is an empty object with no sideNumber at all, and
+  // reading the standing exit through it missed a WALKOVER another double exit had produced there (the
+  // `doubleExitAdvancement` BYE-meets-WALKOVER cell under the differential, 7.7.0 checkpoint: v1 converged,
+  // the check expected the exit pending)
+  const otherSide = 3 - (exitSide ?? 0);
+  const other = onward.sides?.find((side) => side?.sideNumber === otherSide);
   if (other?.bye) return differentialTally(`${route}:produced-past-bye-again`, 'deferred');
-  const standingExit = provenance[other?.sideNumber ?? 0]?.matchUpStatus;
-  const expectedStatus =
-    standingExit && standingExit !== BYE ? convergence([produced.matchUpStatus, standingExit]) : produced.matchUpStatus;
-  const expectedWinner =
-    expectedStatus === produced.matchUpStatus && other?.participantId ? other.sideNumber : undefined;
+  const standingExit = carriedExitStatus(provenance[otherSide]);
+  const expectedStatus = standingExit ? convergence([produced.matchUpStatus, standingExit]) : produced.matchUpStatus;
+  const expectedWinner = expectedStatus === produced.matchUpStatus && other?.participantId ? otherSide : undefined;
   if (onward.matchUpStatus === expectedStatus && onward.winningSide === expectedWinner)
     return differentialTally(`${route}:produced-past-bye-${expectedWinner ? 'awarded' : 'pending'}`, 'compared');
   diverge(
