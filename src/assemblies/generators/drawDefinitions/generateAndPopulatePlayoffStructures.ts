@@ -13,6 +13,7 @@ import { getSourceRounds } from '@Query/drawDefinition/getSourceRounds';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { isConvertableInteger, nextPowerOf2 } from '@Tools/math';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { structuresOf } from '@Acquire/structureMembers';
@@ -21,7 +22,6 @@ import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { generateTieMatchUps } from './tieMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { ensureInt } from '@Tools/ensureInt';
-import { isConvertableInteger, nextPowerOf2 } from '@Tools/math';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
