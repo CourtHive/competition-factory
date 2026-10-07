@@ -43,6 +43,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { makeTimingResolver, SchedulingTiming } from './schedulingTiming';
 import { commitmentOf, TimeCommitment } from './timeCommitment';
+import { wasPlayed } from '@Query/reports/recoveryTimeline';
 
 // constants and types
 import { MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
@@ -391,8 +392,18 @@ function clashFindings(
   const overlappedIds = new Set<string>();
 
   for (const neighbour of sameDayNeighbours(target, matchUps)) {
+    // A matchUp nobody played put no one on court: a walkover owes no recovery,
+    // and a cancelled matchUp (which `isFinished` does not count) is no overlap.
+    // `getParticipantRest` and the Participant Recovery report skip it through
+    // the same predicate, so the three agree on what was played.
+    if (!wasPlayed(neighbour)) continue;
+
     const timing = timingFor(neighbour);
-    const neighbourStart = parseClockMinutes(neighbour.schedule?.scheduledTime);
+    // The overlap test asks whether the neighbour is on court at this start, so it
+    // dates the neighbour by when it actually went on — `occupiedFrom`, the same
+    // anchor the recovery gate below uses. Reading only `scheduledTime` reported a
+    // neighbour that went on late, and was mid-match at this start, as `recovery`.
+    const neighbourStart = occupiedFrom(neighbour);
     const clashes = clashesBetween(target, neighbour, matchUps);
     if (!clashes.length) continue;
 
