@@ -5,6 +5,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import {
   isPropagatedExit as sharedIsPropagatedExit,
   getSideExitProvenance,
+  arrivedByResult,
   getExitSides,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -537,7 +538,7 @@ function getStrayOriginInconsistency(matchUp: any): StructureInconsistency | und
   const sideNumbers = ([1, 2] as const).filter((sideNumber) => {
     const entry = provenance?.[sideNumber];
     if (!onBye) return !!(entry?.matchUpStatus || entry?.previousMatchUpStatus || entry?.sourceMatchUpId);
-    return !!entry?.matchUpStatus && !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
+    return arrivedByResult(entry);
   });
   if (!sideNumbers.length) return undefined;
 

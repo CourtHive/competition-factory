@@ -100,11 +100,13 @@ type DrawContext = { inContextDrawMatchUps: HydratedMatchUp[]; drawDefinition: D
 /**
  * An entry that records how a side ARRIVED, not an exit standing on it.
  *
- * `recordSourceSideProvenance` stamps an arrival with its source's status, so a participant who won a DEFAULTED
- * carries `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DEFAULTED }` into the next round: the same shape as
- * the exit the loser of that DEFAULTED carries over the loser link. Only the link tells them apart. v1's forward
- * rules read the target's status and never see the entry; this read did, and planned a convergence where a present
- * participant wins the produced exit (census w2 9100389, DE 8/8, `Main|2|2`).
+ * Records written before F9 (CA, 2026-10-07) stamped an arrival with its source's status, so a participant who won a
+ * DEFAULTED carried `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DEFAULTED }` into the next round: the same
+ * shape as the exit the loser of that DEFAULTED carries over the loser link. Only the link tells them apart. v1's
+ * forward rules read the target's status and never saw the entry; this read did, and planned a convergence where a
+ * present participant wins the produced exit (census w2 9100389, DE 8/8, `Main|2|2`). The writer now records an
+ * arrival with no `matchUpStatus`, so on a current record `carriedExitStatus` already answers nothing for it; this
+ * read remains for records that still carry the old shape.
  */
 function arrivedByWinning(
   matchUp: HydratedMatchUp | undefined,
