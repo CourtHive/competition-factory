@@ -1,4 +1,5 @@
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
+import { getPlayoffScopeStructureIds } from './getPlayoffScopeStructureIds';
 import { getPositionsPlayedOff } from './getPositionsPlayedOff';
 import { getPositionAssignments } from './positionsGetter';
 import { getDrawStructures } from '@Acquire/findStructure';
@@ -38,10 +39,19 @@ export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: Get
 
   const available = {};
 
+  // a QUALIFYING structure's finishing positions are scoped to its own chain of loser-fed structures
+  const scopedPositions = {};
+
   for (const structure of filteredStructures) {
     const structureId = structure?.structureId;
+    const scopeStructureIds = getPlayoffScopeStructureIds({ drawDefinition, structureId });
+    const scoped = scopeStructureIds
+      ? getPositionsPlayedOff({ structureIds: scopeStructureIds, drawDefinition, matchUpsMap })
+      : { positionsNotPlayedOff, positionsPlayedOff };
+    if (scopeStructureIds) scopedPositions[structureId] = scoped.positionsPlayedOff;
+
     const result = availablePlayoffProfiles({
-      playoffPositions: positionsNotPlayedOff,
+      playoffPositions: scoped.positionsNotPlayedOff,
       drawDefinition,
       structure,
       matchUps,
@@ -56,7 +66,7 @@ export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: Get
   }
 
   if (structureId) {
-    return { positionsPlayedOff, ...available[structureId] };
+    return { positionsPlayedOff: scopedPositions[structureId] ?? positionsPlayedOff, ...available[structureId] };
   } else {
     return {
       availablePlayoffProfiles: Object.values(available),
