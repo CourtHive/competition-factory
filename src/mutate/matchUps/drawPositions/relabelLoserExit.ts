@@ -1,11 +1,12 @@
 import { carriedExitStatus, withdrawProducedExits } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeOnwardLoserPlacements } from '@Mutate/matchUps/drawPositions/removeOnwardLoserPlacements';
+import { releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { isAnyExit, isDoubleExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
@@ -92,7 +93,21 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
   };
 
   if (args.validExitToPropagate) {
-    if (!carriedHere) return { carry: !hasResult(standing) };
+    if (!carriedHere) {
+      // The loser arrived as a participant and WON a produced exit standing there (RULE 2), and now exits at the
+      // origin. That win is the cascade's own award, not a result a director recorded, so it is taken back and
+      // the carry proceeds: carried in, the exit converges with the produced one, as it does when the exit is
+      // entered first (census w2 9100377, MFIC 16/11 `Consolation|3|2`; the round trip F2 left open). A result the
+      // loser then EARNED onward stands, and the carry is refused as before.
+      if (wonProducedExit(standing, loserParticipantId)) {
+        const onward = winnerPlayedOn(standing, inContextDrawMatchUps, drawDefinition);
+        if (onward.error) return onward;
+        if (onward.playedOn) return {};
+        unawardProducedExit(args, standing, loserParticipantId);
+        return { carry: true };
+      }
+      return { carry: !hasResult(standing) };
+    }
     // An exit re-entered as the OTHER exit, the winner unchanged (WALKOVER <-> DEFAULTED; CA, 2026-10-04,
     // for a walkover or default recorded before the opponent arrives, which the director may change until
     // they do): the carry follows the label. Withdrawn and carried again, under the same guards as a
@@ -104,6 +119,41 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
   }
   if (withdrawable()) withdrawHere();
   return refused ?? {};
+}
+
+/**
+ * The loser stands as the WINNER of a single exit whose other side holds an exit a double exit PRODUCED, with no
+ * carried exit of their own and no score: the award a participant arriving at a pending produced exit is given.
+ */
+function wonProducedExit(standing: HydratedMatchUp, loserParticipantId: string): boolean {
+  if (!isExit(standing.matchUpStatus) || checkScoreHasValue({ score: standing.score })) return false;
+  const loserSide = standing.sides?.find((side) => side?.participantId === loserParticipantId)?.sideNumber;
+  if ((loserSide !== 1 && loserSide !== 2) || standing.winningSide !== loserSide) return false;
+  const own = standing.sideExitProvenance?.[loserSide];
+  const other = standing.sideExitProvenance?.[3 - loserSide];
+  return !carriedExitStatus(own) && !!carriedExitStatus(other) && isDoubleExit(other?.previousMatchUpStatus);
+}
+
+/**
+ * Take back the award: the produced exit stands pending again, and the loser's advancement out of it is released,
+ * round by round and across any winner link, as `releaseAdvancedDrawPosition` releases a position that stopped
+ * winning. The carry that follows converges with the pending exit.
+ */
+function unawardProducedExit(args: RelabelArgs, standing: HydratedMatchUp, loserParticipantId: string) {
+  const stored = args.matchUpsMap?.drawMatchUps?.find((matchUp: MatchUp) => matchUp.matchUpId === standing.matchUpId);
+  const drawPosition = standing.sides?.find((side) => side?.participantId === loserParticipantId)?.drawPosition;
+  if (!stored || !drawPosition || !standing.roundNumber) return;
+  releaseAdvancedDrawPositionAcrossLinks({
+    structureId: standing.structureId as string,
+    fromRoundNumber: standing.roundNumber + 1,
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    matchUpsMap: args.matchUpsMap,
+    occupantLeaving: true,
+    event: args.event,
+    drawPosition,
+  });
+  delete stored.winningSide;
 }
 
 /** the loser's carried exit says WALKOVER where the source now says DEFAULTED, or the reverse */
