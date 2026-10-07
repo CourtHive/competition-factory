@@ -34,6 +34,7 @@ type GeneratePlayoffStructuresArgs = {
   roundOffset?: number;
   structureId?: string;
   exitProfile?: string;
+  roundLimit?: number; // cap the rounds of THIS structure; not propagated to child structures
   drawSize: number;
   idPrefix?: string;
   isMock?: boolean;
@@ -71,6 +72,9 @@ export function generatePlayoffStructures(params: GeneratePlayoffStructuresArgs)
     isMock,
     uuids,
   } = params;
+  // a roundLimit at or beyond the natural depth is no cap at all
+  const naturalRounds = Math.ceil(Math.log(drawSize) / Math.log(2));
+  const roundLimit = params.roundLimit && params.roundLimit < naturalRounds ? params.roundLimit : undefined;
   const generateStructure = !playoffAttributes || !exitProfileLimit || playoffAttributes?.[exitProfile];
 
   if (!generateStructure || drawSize < 2 || (sequenceLimit && stageSequence > sequenceLimit)) return {};
@@ -102,6 +106,7 @@ export function generatePlayoffStructures(params: GeneratePlayoffStructuresArgs)
     idPrefix: idPrefix && `${idPrefix}-${structureName}-RP`,
     finishingPositionOffset,
     matchUpType,
+    roundLimit,
     drawSize,
     isMock,
     uuids,
@@ -117,6 +122,7 @@ export function generatePlayoffStructures(params: GeneratePlayoffStructuresArgs)
     matchUpType,
     roundOffset,
     structureId,
+    roundLimit,
     matchUps,
     stage,
   });
@@ -124,7 +130,8 @@ export function generatePlayoffStructures(params: GeneratePlayoffStructuresArgs)
   allMatchUps.push(...matchUps);
   structures.push(structure);
 
-  const rounds = Math.ceil(Math.log(drawSize) / Math.log(2));
+  // child structures can only play off the losers of rounds that exist
+  const rounds = roundLimit ?? naturalRounds;
   const roundsToPlayOff = roundOffsetLimit
     ? Math.min(roundOffsetLimit - roundOffset, rounds)
     : ((!finishingPositionLimit || finishingPositionsFrom < finishingPositionLimit) && rounds) || 0;
