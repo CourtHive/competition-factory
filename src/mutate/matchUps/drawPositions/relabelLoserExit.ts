@@ -127,12 +127,11 @@ function onlyThisCarry(standing: HydratedMatchUp, loserParticipantId: string, so
   const own = standing.sideExitProvenance?.[loserSide];
   const other = standing.sideExitProvenance?.[loserSide === 1 ? 2 : 1];
   if (own?.sourceMatchUpId !== sourceMatchUpId) return false;
-  // converged: withdrawn only where the kept exit was CARRIED, so the settle has a carrier to direct. One PRODUCED by a
-  // double exit has none, and re-deriving to it awarded the loser a matchUp nothing then advanced them out of (census
-  // w2 9100377, MFIC 16/11 `Consolation|3|2`); that convergence stands, as before (open: OUTCOME_PIPELINE F2)
-  if (carriedExitStatus(other)) {
-    return isDoubleExit(standing.matchUpStatus) && !standing.winningSide && !isDoubleExit(other?.previousMatchUpStatus);
-  }
+  // converged: withdrawn whichever kind the kept exit is. CARRIED, and the settle replays the kept origin's carry;
+  // PRODUCED by a double exit, and the settle replays that origin's production, which the relabelled loser, now a
+  // participant standing opposite a pending produced exit, wins and advances out of (RULE 2; census w2 9100377, MFIC
+  // 16/11 `Consolation|3|2`, which stood as a double exit until F2 was settled, CA 2026-10-07)
+  if (carriedExitStatus(other)) return isDoubleExit(standing.matchUpStatus) && !standing.winningSide;
   return standing.matchUpStatus === own.matchUpStatus && standing.winningSide === (loserSide === 1 ? 2 : 1);
 }
 

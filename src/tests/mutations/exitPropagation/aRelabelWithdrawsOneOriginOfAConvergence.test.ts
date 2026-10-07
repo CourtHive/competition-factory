@@ -191,7 +191,7 @@ it('a relabel that leaves its matchUp undecided withdraws the exit its loser car
   expect(errors()).toEqual([]);
 });
 
-it('a convergence whose other exit was PRODUCED by a double exit stands (census w2 9100377)', () => {
+it('a convergence whose other exit was PRODUCED by a double exit re-runs that production: the loser wins it (census w2 9100377)', () => {
   prepareSeed({
     drawType: MODIFIED_FEED_IN_CHAMPIONSHIP,
     propagateExitStatus: true,
@@ -206,10 +206,44 @@ it('a convergence whose other exit was PRODUCED by a double exit stands (census 
   step('Main|1|2', { winningSide: 1 });
   step('Main|2|1', { matchUpStatus: WALKOVER, winningSide: 1 });
   // CONTROL: the loser's carried walkover converged with the walkover Consolation|2|3's double exit produced
-  expect(byKey('Consolation|3|2').matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  const converged = byKey('Consolation|3|2');
+  expect(converged.matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  const loser = loserOf(byKey('Main|2|1'));
+  const loserSide = converged.sides.find((side: any) => side.participantId === loser)?.sideNumber;
+  expect(loserSide).toBeDefined();
+  // status, winner, positions and occupants; not the codes, a display tenant the two paths leave differently (the
+  // relabel keeps the convergence's `WO` on the exiting side, forward play writes none there)
+  const projection = (k: string) => {
+    const m = byKey(k);
+    return [m.matchUpStatus, m.winningSide, m.drawPositions, occupants(m)];
+  };
 
   step('Main|2|1', { winningSide: 1 });
-  // the settle has no carrier to direct for a produced exit, so the convergence stands rather than strand its winner
-  expect(byKey('Consolation|3|2').matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  // The relabelled loser is a participant standing opposite a PRODUCED exit, pending: by RULE 2 they win it and go on.
+  // The settle replays the kept origin's production rather than a carry (F2, CA 2026-10-07). Until then this
+  // convergence stood, because a produced exit has no carrier for the settle to direct.
+  const settled = byKey('Consolation|3|2');
+  expect(settled.matchUpStatus).toEqual(WALKOVER);
+  expect(settled.winningSide).toEqual(loserSide);
+  expect(settled.sideExitProvenance?.[3 - loserSide]?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
+  expect(occupants(byKey('Consolation|4|1'))).toContain(loser);
+  expect(byKey('Consolation|4|1').matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(errors()).toEqual([]);
+  const relabelled = ['Consolation|3|2', 'Consolation|4|1'].map(projection);
+
+  // and it is the state forward play reaches: the same draw with Main|2|1 entered as a played win from the start
+  prepareSeed({
+    drawType: MODIFIED_FEED_IN_CHAMPIONSHIP,
+    propagateExitStatus: true,
+    participantsCount: 11,
+    seed: 9100377,
+    drawSize: 16,
+  });
+  step('Main|1|4', { winningSide: 2 });
+  step('Main|1|5', { winningSide: 1 });
+  step('Main|2|2', { winningSide: 2 });
+  step('Consolation|2|3', { matchUpStatus: DOUBLE_WALKOVER });
+  step('Main|1|2', { winningSide: 1 });
+  step('Main|2|1', { winningSide: 1 });
+  expect(['Consolation|3|2', 'Consolation|4|1'].map(projection)).toEqual(relabelled);
 });
