@@ -6,7 +6,8 @@ import { expect, it } from 'vitest';
 import { PLAY_OFF, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
-const roundsOf = (structure) => [...new Set(structure.matchUps.map((m) => m.roundNumber))].sort((a, b) => a - b);
+const roundsOf = (structure) =>
+  [...new Set<number>(structure.matchUps.map((m) => m.roundNumber))].sort((a, b) => a - b);
 
 function setup(drawProfile = { drawSize: 32 }) {
   const {
