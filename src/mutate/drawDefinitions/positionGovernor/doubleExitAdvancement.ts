@@ -17,6 +17,7 @@ import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -1786,20 +1787,6 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
 }
 
 /**
- * Does this matchUp hold a draw BYE on one of its positions?
- *
- * Read from the positionAssignment, never from `matchUpStatus` — the same rule
- * `conditionallyAdvanceDrawPosition` and `removeDoubleExit.targetDrawPositionIsBye` follow, because
- * by the time a cascade reaches here the status may already have been overwritten.
- */
-function matchUpHoldsBye({ drawDefinition, matchUp }) {
-  const drawPositions = (matchUp?.drawPositions ?? []).filter(Boolean);
-  if (!drawPositions.length) return false;
-  const { positionAssignments } = getPositionAssignments({ structureId: matchUp.structureId, drawDefinition });
-  return !!positionAssignments?.some((assignment) => assignment.bye && drawPositions.includes(assignment.drawPosition));
-}
-
-/**
  * Carry a produced exit onward from a matchUp that can advance nobody, through as many BYEs as it
  * takes, and write it where it comes to rest.
  *
@@ -2656,46 +2643,6 @@ function crossLinksThroughByes({
   }
 
   return { ...SUCCESS };
-}
-
-function getByeCrossing({
-  inContextDrawMatchUps,
-  drawDefinition,
-  matchUp,
-}: {
-  inContextDrawMatchUps: HydratedMatchUp[];
-  drawDefinition: DrawDefinition;
-  matchUp: HydratedMatchUp;
-}) {
-  if (matchUp.collectionId || !matchUp.winnerMatchUpId) return undefined;
-  const occupants = (matchUp.sides ?? []).filter((side) => side.participantId && !side.bye);
-  if (occupants.length !== 1 || !matchUpHoldsBye({ drawDefinition, matchUp })) return undefined;
-
-  const targetData = positionTargets({
-    matchUpId: matchUp.matchUpId,
-    inContextDrawMatchUps,
-    drawDefinition,
-  });
-  // a crossing whose links cannot be read is refused, never read as "nothing crosses"
-  if (targetData.error) return targetData;
-  const { targetMatchUps, targetLinks } = targetData;
-  const winnerMatchUp = targetMatchUps?.winnerMatchUp;
-  const winnerTargetLink = targetLinks?.winnerTargetLink;
-  if (!winnerMatchUp || !winnerTargetLink || winnerMatchUp.structureId === matchUp.structureId) return undefined;
-  if (winnerMatchUp.winningSide) return undefined;
-
-  const [{ participantId, drawPosition }] = occupants;
-  // asked of the TARGET and not of its structure: in a double elimination they have played there before
-  if (winnerMatchUp.sides?.some((side) => side.participantId === participantId)) return undefined;
-
-  return {
-    winnerMatchUpDrawPositionIndex: targetMatchUps.winnerMatchUpDrawPositionIndex,
-    winnerTargetLink,
-    winnerMatchUp,
-    participantId,
-    drawPosition,
-    matchUp,
-  };
 }
 
 /**

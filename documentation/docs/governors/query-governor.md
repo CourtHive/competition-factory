@@ -739,6 +739,14 @@ one structure, so this is the only check that sees, say, a Backdraw finalist sti
 double-elimination grand final after the Backdraw final lost its result. Since 7.7.0,
 `setMatchUpStatus` releases such a placement once the draw has settled.
 
+`BYE_ADVANCEMENT_MISSING_ACROSS_LINK` is the mirror for a BYE. `BYE_ADVANCEMENT_MISSING` stops at
+the structure; this one reports a participant beside a BYE at the source round of a cross-structure
+`WINNER` link who is not standing in the link's target while that target is still undecided — a
+Backdraw champion left beside a propagated BYE while the grand final waits. It names the
+participant and the `winnerMatchUpId`. The check and the settle that performs the crossing share one
+predicate, so what is reported is exactly a crossing the engine owes and has not made. A decided
+target is left alone.
+
 You can also call it directly against a `drawDefinition` object, without loading a
 tournament into the engine — useful when validating records built outside the factory:
 
