@@ -1,3 +1,5 @@
+# every line must pass; husky runs this under `sh -e`, and `set -e` makes that true under any runner too
+set -e
 pnpm lint-staged
 pnpm check-types
 # The cheap gates CI's `gates` job runs, so a ratchet rise is refused here and not twenty minutes into a CI run
