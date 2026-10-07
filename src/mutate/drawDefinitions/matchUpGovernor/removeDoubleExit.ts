@@ -759,6 +759,13 @@ function getUnwoundState({
   withdrawnSourceIds,
   drawDefinition,
   targetMatchUp,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  pairedPreviousDoubleExit: boolean;
+  withdrawnSourceIds: Set<string>;
+  drawDefinition: DrawDefinition;
+  targetMatchUp: HydratedMatchUp;
+  noContextTargetMatchUp: MatchUp;
 }): { matchUpStatus: MatchUpStatusUnion; winningSide?: number; provenance?: SideExitProvenance } {
   // A BYE STAYS A BYE — the status is never re-derived — but the codes are. The cascade records a
   // produced exit on a BYE matchUp's side, and an unwind that left the status alone AND the codes
@@ -784,8 +791,9 @@ function getUnwoundState({
     // `matchUpStatusCodes: []` onto a matchUp that is still an exit is the residue CA ruled on
     // 2026-09-09: "RE-DERIVE the codes on unwind from the current upstream state instead of writing
     // []". See `knownFailures.ts`, DOUBLE_EXIT_STATUS_CODES_RESIDUE.
+    const status = noContextTargetMatchUp.matchUpStatus;
     return {
-      matchUpStatus: [DOUBLE_DEFAULT, DEFAULTED].includes(noContextTargetMatchUp?.matchUpStatus) ? DEFAULTED : WALKOVER,
+      matchUpStatus: status === DOUBLE_DEFAULT || status === DEFAULTED ? DEFAULTED : WALKOVER,
       provenance: retained,
     };
   }
