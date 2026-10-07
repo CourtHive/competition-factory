@@ -336,6 +336,7 @@ function withdrawExitFromByeChain({
     pairedPreviousDoubleExit: false,
     noContextTargetMatchUp,
     targetMatchUp: fromMatchUp,
+    inContextDrawMatchUps,
     withdrawnSourceIds,
     drawDefinition,
   });
@@ -619,6 +620,7 @@ export function conditionallyRemoveDrawPosition(params) {
   const unwound = getUnwoundState({
     pairedPreviousDoubleExit,
     noContextTargetMatchUp,
+    inContextDrawMatchUps,
     withdrawnSourceIds,
     drawDefinition,
     targetMatchUp,
@@ -753,6 +755,7 @@ function removeLinkedWinner({
 function getUnwoundState({
   pairedPreviousDoubleExit,
   noContextTargetMatchUp,
+  inContextDrawMatchUps,
   withdrawnSourceIds,
   drawDefinition,
   targetMatchUp,
@@ -820,7 +823,13 @@ function getUnwoundState({
       // award on an empty seat. The derivation awards the other side either way, so the award stands only for a
       // carried exit, or where the winning seat holds somebody (as `positionClear`'s `awardStands`). Matrix FMLC 8/8,
       // do/undo: a double exit undone left the pending WALKOVER it had converged with won by a seat nobody had reached.
-      const awarded = producedAwardStands({ rederived, retained, drawDefinition, targetMatchUp });
+      const awarded = producedAwardStands({
+        inContextDrawMatchUps,
+        drawDefinition,
+        targetMatchUp,
+        rederived,
+        retained,
+      });
       return { ...rederived, winningSide: awarded ? rederived.winningSide : undefined, provenance: retained };
     }
   }
@@ -829,19 +838,37 @@ function getUnwoundState({
 }
 
 function producedAwardStands({
-  rederived,
-  retained,
+  inContextDrawMatchUps,
   drawDefinition,
   targetMatchUp,
+  rederived,
+  retained,
 }: {
   rederived: { matchUpStatus: MatchUpStatusUnion; winningSide?: number };
+  inContextDrawMatchUps: HydratedMatchUp[];
   retained?: SideExitProvenance;
   drawDefinition: DrawDefinition;
   targetMatchUp: HydratedMatchUp;
 }): boolean {
   const { winningSide } = rederived;
   if (!winningSide) return false;
-  if (!isDoubleExit(retained?.[3 - winningSide]?.previousMatchUpStatus)) return true;
+  // Produced or carried is a question about the LINK, not the entry: an exit carried over a loser link from a
+  // double exit also records `previousMatchUpStatus: DOUBLE_WALKOVER`, and either kind may have been relayed on
+  // through a BYE holder before it got here, so the source's direct targets do not settle it either. What does is
+  // the exit's FIRST hop (`exitStatusClearing` 2.3: two adjacent WOWOs feed Consolation|1|1, and the one left after
+  // a clear keeps its award).
+  const sourceMatchUpId = retained?.[3 - winningSide]?.sourceMatchUpId;
+  if (!sourceMatchUpId) return true;
+  if (
+    arrivedOverLoserLink({
+      targetMatchUpId: targetMatchUp.matchUpId,
+      inContextDrawMatchUps,
+      sourceMatchUpId,
+      drawDefinition,
+    })
+  ) {
+    return true;
+  }
   const { structure } = findStructure({ drawDefinition, structureId: targetMatchUp.structureId });
   const drawPosition = getSideDrawPosition({
     matchUp: { ...targetMatchUp, sides: undefined },
@@ -851,6 +878,36 @@ function producedAwardStands({
   });
   const assignment = positionAssignmentsOf(structure)?.find((candidate) => candidate.drawPosition === drawPosition);
   return !!(assignment?.participantId || assignment?.qualifier);
+}
+
+/**
+ * Did the exit `sourceMatchUpId` sent to `targetMatchUpId` leave over the LOSER link?
+ *
+ * The first hop decides: from the source's loser target, follow winner targets (a BYE holder sends a held exit on
+ * along them) until the target is reached or the walk runs out. A produced exit's first hop is the winner link, so
+ * this walk never meets it.
+ */
+function arrivedOverLoserLink({
+  inContextDrawMatchUps,
+  targetMatchUpId,
+  sourceMatchUpId,
+  drawDefinition,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  targetMatchUpId: string;
+  sourceMatchUpId: string;
+}): boolean {
+  const targetsOf = (matchUpId: string) =>
+    positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId }).targetMatchUps;
+  const visited = new Set<string>();
+  let next = targetsOf(sourceMatchUpId)?.loserMatchUp;
+  while (next && !visited.has(next.matchUpId)) {
+    if (next.matchUpId === targetMatchUpId) return true;
+    visited.add(next.matchUpId);
+    next = targetsOf(next.matchUpId)?.winnerMatchUp;
+  }
+  return false;
 }
 
 /**
