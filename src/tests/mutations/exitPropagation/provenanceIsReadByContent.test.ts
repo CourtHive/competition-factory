@@ -189,18 +189,37 @@ it('does not record how a participant ARRIVED at a BYE they advanced through', (
   expect(scan(drawId).issueTypes).toEqual([]);
 });
 
-it('still records a BYE that arrived through a BYE', () => {
+/**
+ * Matrix cell 337 (FEED_IN_CHAMPIONSHIP_TO_SF 16/16, DOUBLE_WALKOVER). `Consolation|4|2` holds a produced WALKOVER beside
+ * a seat that later becomes a BYE, and settles to that BYE. CA, 2026-10-04: "BYE holder, exit sent on". So the WALKOVER
+ * travels into `Consolation|5|1`, not the BYE, and meets the WALKOVER `Consolation|4|1`'s double exit produced there:
+ * two exits, nobody arrives, a DOUBLE_WALKOVER. Before, side 2 recorded the BYE's arrival and the exit was lost.
+ */
+it('sends a WALKOVER held by a BYE holder on, where it meets the exit standing there', () => {
   const cell = MATRIX_CELLS.find(({ seed }) => seed === 337) as any;
   expect(playMatrixCell(cell, 'bye-through-bye')).toEqual(true);
 
-  const meeting = (tournamentEngine.allTournamentMatchUps().matchUps ?? []).find(
-    (matchUp: any) =>
-      matchUp.structureName === 'Consolation' && matchUp.roundNumber === 5 && matchUp.roundPosition === 1,
-  );
-  expect(meeting.matchUpStatus).toEqual(BYE);
-  expect(meeting.sideExitProvenance?.[2]).toMatchObject({ previousMatchUpStatus: BYE, matchUpStatus: BYE });
-  // and beside it, the exit the other side carries
-  expect(getExitSides({ matchUp: meeting })).toEqual([1]);
+  const consolation = (roundNumber: number, roundPosition: number) =>
+    (tournamentEngine.allTournamentMatchUps().matchUps ?? []).find(
+      (matchUp: any) =>
+        matchUp.structureName === 'Consolation' &&
+        matchUp.roundNumber === roundNumber &&
+        matchUp.roundPosition === roundPosition,
+    );
+  const holder = consolation(4, 2);
+  // CONTROL: the holder is a BYE, and still records the WALKOVER it was handed
+  expect(holder.matchUpStatus).toEqual(BYE);
+  const held = holder.sideExitProvenance?.[getExitSides({ matchUp: holder })[0]];
+  expect(held?.matchUpStatus).toEqual(WALKOVER);
+
+  const meeting = consolation(5, 1);
+  expect(meeting.matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  expect(getExitSides({ matchUp: meeting })).toEqual([1, 2]);
+  expect(meeting.sideExitProvenance?.[2]).toMatchObject({
+    matchUpStatus: WALKOVER,
+    sourceMatchUpId: held.sourceMatchUpId,
+  });
+  expect(scan('bye-through-bye').issueTypes).toEqual([]);
 });
 
 it('reports an arrival by result stamped on a BYE, and not a BYE that arrived through one', () => {

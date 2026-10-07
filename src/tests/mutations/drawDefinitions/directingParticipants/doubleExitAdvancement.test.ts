@@ -342,12 +342,29 @@ test('doubleExitAdvancement of BYE encountering WALKOVER', () => {
     ['match-2-1', BYE],
   ]);
 
+  /**
+   * TWO propagated exits meet at `match-3-1`: the WALKOVER `match-1-2`'s double walkover produced, held beside the
+   * BYE at `match-2-1` and sent on from there, and the WALKOVER `match-2-2`'s double walkover produced. They
+   * converge to a DOUBLE_WALKOVER, which sends ONE exit on to `match-4-1`.
+   *
+   * CA, 2026-10-06: *"If two propagated exits meet, then they SHOULD result in a DOUBLE_WALKOVER and advance one
+   * exit"*, and a held exit is sent on only where its paired position is present as a BYE, which stays where it is.
+   *
+   * This read `WALKOVER` at `match-3-1`: the held exit was never sent on under the default policy, so the exit
+   * from `match-2-2` stood alone there, awarded to the seat the BYE's position had taken. `match-2-1` still
+   * records the exit it holds (`sideExitProvenance`), and the draw scans clean.
+   */
   matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [3] } }).matchUps;
-  expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus])).toEqual([
-    ['match-3-1', 'WALKOVER'],
-    ['match-3-2', 'TO_BE_PLAYED'],
+  expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus, m.winningSide])).toEqual([
+    ['match-3-1', DOUBLE_WALKOVER, undefined],
+    ['match-3-2', TO_BE_PLAYED, undefined],
   ]);
+  const converged = matchUps.find((m) => m.matchUpId === 'match-3-1');
+  expect(converged.sideExitProvenance[1].sourceMatchUpId).toEqual('match-1-2');
+  expect(converged.sideExitProvenance[2].sourceMatchUpId).toEqual('match-2-2');
 
   matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [4] } }).matchUps;
-  expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus])).toEqual([['match-4-1', 'WALKOVER']]);
+  expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus, m.winningSide])).toEqual([
+    ['match-4-1', 'WALKOVER', undefined],
+  ]);
 });

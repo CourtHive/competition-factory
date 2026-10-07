@@ -7,6 +7,7 @@ import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpSc
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -14,7 +15,6 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { clearDrawPosition } from './positionClear';
-import { instanceCount } from '@Tools/arrays';
 import {
   clearResolvedSideExitProvenance,
   withdrawProducedExits,
@@ -289,16 +289,19 @@ export function removeDirectedWinner({
       structure,
       event,
     });
-    const allDrawPositionInstances = matchUps
-      .map((matchUp) => matchUp.drawPositions)
-      .flat(Infinity)
-      .filter(Boolean);
-    const drawPositionInstanceCount = instanceCount(allDrawPositionInstances);
-    const winnerDrawPositionInstances = winnerDrawPosition ? drawPositionInstanceCount[winnerDrawPosition] : undefined;
+    // The assignment goes only where the link is what put the participant in this structure: their position first
+    // appears in the link's target round (DOUBLE_ELIMINATION's Decider, qualifiers into Main). A participant fed BACK
+    // into a structure they already stand in (the Backdraw champion re-entering the Main final on their own Main
+    // drawPosition) keeps their seat.
+    //
+    // This counted the position's instances across the structure's matchUps and read "one instance" as link-only. By
+    // the time this runs for a cross-link target, `releaseLinkedWinnerAdvancement` can already have taken the
+    // position back out of the target round, and the one instance left was the participant's own first-round seat:
+    // undoing a Backdraw double exit emptied Main drawPosition 5 under a COMPLETED Main|1|3 (census w2 9100389).
+    const { initialRoundNumber } = getInitialRoundNumber({ drawPosition: winnerDrawPosition as number, matchUps });
+    const placedByLink = winnerDrawPosition !== undefined && initialRoundNumber === winnerTargetLink.target.roundNumber;
 
-    if (winnerDrawPositionInstances === 1) {
-      // only remove position assignment if it has a single instance...
-      // if there are multiple instances then a participant has been fed back into a draw
+    if (placedByLink) {
       positionAssignments?.forEach((assignment) => {
         if (assignment.participantId === winnerParticipantId) {
           delete assignment.participantId;
@@ -309,7 +312,7 @@ export function removeDirectedWinner({
       const drawPositionMatchUps = matchUps.filter(({ drawPositions }) => drawPositions?.includes(winnerDrawPosition));
       pushGlobalLog({
         method: 'removeDirectedParticipants',
-        retained: 'position assignment kept: drawPosition instances > 1',
+        retained: 'position assignment kept: the participant stands in this structure before the link target round',
         drawPositionMatchUps,
         winnerTargetLink,
       });

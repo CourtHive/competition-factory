@@ -137,6 +137,26 @@ function checkDirection({ args, route, direction }: CheckArgs & { direction: Dir
   if (direction.winner) checkWinner({ args, route, winner: direction.winner });
 }
 
+/** a feeder of `target` other than the request's own matchUp holds a BYE and a carried exit, with nobody in it */
+function opponentFeederHoldsAnExit(args: BuildViewArgs, target: HydratedMatchUp, excludeMatchUpId: string): boolean {
+  const matchUps =
+    getAllDrawMatchUps({
+      tournamentRecord: args.tournamentRecord,
+      drawDefinition: args.drawDefinition,
+      inContext: true,
+      event: args.event,
+    }).matchUps ?? [];
+  return matchUps.some(
+    (feeder) =>
+      feeder.matchUpId !== excludeMatchUpId &&
+      feeder.matchUpId !== args.request.matchUpId &&
+      (feeder.winnerMatchUpId === target.matchUpId || feeder.loserMatchUpId === target.matchUpId) &&
+      !!feeder.sides?.some((side) => side?.bye) &&
+      !feeder.sides?.some((side) => side?.participantId) &&
+      Object.values(feeder.sideExitProvenance ?? {}).some((entry) => !!carriedExitStatus(entry)),
+  );
+}
+
 /** one matchUp of the draw as it stands after v1 ran, in context */
 function standing(args: BuildViewArgs, matchUpId: string) {
   return getAllDrawMatchUps({
@@ -383,6 +403,10 @@ function checkProducedExit({
   const target = standing(args, produced.matchUpId);
   const opponent = target?.sides?.find((side) => side?.sideNumber === produced.winningSide);
   if (opponent?.bye) return checkProducedPastBye({ args, route, produced, holder: target });
+  // the opponent's seat is fed by a BYE holder holding an exit nobody can take: v1 sends that exit on at the end of
+  // the call (CA, 2026-10-04, "BYE holder, exit sent on"), and the two exits converge here. Not planned: deferred
+  if (target && opponentFeederHoldsAnExit(args, target, produced.matchUpId))
+    return differentialTally(`${route}:produced-meets-held-exit`, 'deferred');
   // CA, 2026-09-20: a produced exit holds NO winningSide until the opponent arrives; the exception
   // (2026-09-25) is an opponent already in place, whose side the winner is read off
   const expectedWinner = opponent?.participantId ? produced.winningSide : undefined;
