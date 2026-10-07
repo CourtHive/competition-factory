@@ -1091,6 +1091,8 @@ const {
 });
 ```
 
+AD_HOC structures only. For an elimination or round robin structure the result is `NOT_IMPLEMENTED` (it was `success` with nothing removed before 7.8.0); a round of an elimination structure is part of its shape, see `pruneDrawDefinition`.
+
 ---
 
 ## removeStructure
