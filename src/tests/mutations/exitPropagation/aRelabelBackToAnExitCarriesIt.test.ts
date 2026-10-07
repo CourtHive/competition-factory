@@ -93,3 +93,21 @@ it('played first, then relabelled a walkover: the award is taken back and the ex
   expect(valid()).toEqual(true);
   expect(['Consolation|3|2', 'Consolation|4|1'].map(projection)).toEqual(walkoverFirst);
 });
+
+it('the full round trip: walkover, played, walkover again ends where the walkover alone ends', () => {
+  play([...base, ['Main|2|1', { matchUpStatus: WALKOVER, winningSide: 1 }]]);
+  const walkoverFirst = ['Consolation|3|2', 'Consolation|4|1'].map(projection);
+
+  play([
+    ...base,
+    ['Main|2|1', { matchUpStatus: WALKOVER, winningSide: 1 }],
+    // F2 (#5275): the loser, no longer exiting, wins the produced walkover and goes on
+    ['Main|2|1', { winningSide: 1 }],
+    // and back (#5276): the award is taken back and the exit carried in again
+    ['Main|2|1', { matchUpStatus: WALKOVER, winningSide: 1 }],
+  ]);
+  expect(find('Consolation|3|2').matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  expect(occupants(find('Consolation|4|1'))).toEqual([]);
+  expect(valid()).toEqual(true);
+  expect(['Consolation|3|2', 'Consolation|4|1'].map(projection)).toEqual(walkoverFirst);
+});
