@@ -40,7 +40,7 @@ export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: Get
   const available = {};
 
   // a QUALIFYING structure's finishing positions are scoped to its own chain of loser-fed structures
-  const scopedPositions = {};
+  const scopedPositions: { [structureId: string]: number[] } = {};
 
   for (const structure of filteredStructures) {
     const structureId = structure?.structureId;
