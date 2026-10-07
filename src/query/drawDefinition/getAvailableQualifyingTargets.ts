@@ -3,12 +3,13 @@ import { getLinkQualifiersCount } from './getQualifiersCount';
 import { isValidForQualifying } from './isValidForQualifying';
 import { getPositionAssignments } from './positionsGetter';
 import { getStructureLinks } from './linkGetter';
+import { structuresOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION, MISSING_STRUCTURE_ID } from '@Constants/errorConditionConstants';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
-import { CONTAINER, LOSER, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { LOSER, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -73,7 +74,7 @@ export function getAvailableQualifyingTargets({
 
   // drawPositions by the round in which they ENTER the structure
   const entryPositionsByRound: { [roundNumber: number]: number[] } = {};
-  if (structure.structureType === CONTAINER || structure.structures) {
+  if (structuresOf(structure)) {
     entryPositionsByRound[1] = positionAssignments.map((pa) => pa.drawPosition);
   } else {
     const { roundProfile } = getStructureRoundProfile({ drawDefinition, structureId });

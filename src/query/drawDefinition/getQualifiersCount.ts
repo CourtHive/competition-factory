@@ -2,11 +2,12 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 
 // Acquire
+import { structuresOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import { CONTAINER, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 
 // types
 import type { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
@@ -43,8 +44,9 @@ export function getLinkQualifiersCount({
   if (structure?.stage !== QUALIFYING) return 0;
 
   const sourceRoundNumber: number = link.source.roundNumber as number;
-  if (structure.structureType === CONTAINER) {
-    const groupCount = structure.structures?.length ?? 0;
+  const groups = structuresOf(structure);
+  if (groups) {
+    const groupCount = groups.length;
     const finishingPositionsCount = link.source.finishingPositions?.length ?? 0;
     return groupCount * finishingPositionsCount;
   }
