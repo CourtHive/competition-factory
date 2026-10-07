@@ -15,11 +15,12 @@ import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { isAnyExit, isExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { isObject } from '@Tools/objects';
 import {
@@ -40,6 +41,7 @@ import type {
   MatchUp,
   MatchUpStatusUnion,
   PositionAssignment,
+  SideExitProvenanceEntry,
   Structure,
 } from '@Types/tournamentTypes';
 
@@ -81,16 +83,44 @@ function exitAwardable(
  * before it is re-entered (a re-scored double exit makes a single exit, not a convergence), so it is
  * not something a new exit converges with.
  */
-function carriedStatuses(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): MatchUpStatusUnion[] {
-  return Object.values(getSideExitProvenance({ matchUp }) ?? {})
-    .filter((entry) => entry?.sourceMatchUpId !== sourceMatchUpId)
-    .map((entry) => carriedExitStatus(entry))
+function carriedStatuses(
+  matchUp?: HydratedMatchUp,
+  sourceMatchUpId?: string,
+  draw?: DrawContext,
+): MatchUpStatusUnion[] {
+  return Object.entries(getSideExitProvenance({ matchUp }) ?? {})
+    .filter(([, entry]) => entry?.sourceMatchUpId !== sourceMatchUpId)
+    .filter(([sideNumber, entry]) => !arrivedByWinning(matchUp, Number(sideNumber), entry, draw))
+    .map(([, entry]) => carriedExitStatus(entry))
     .filter((status): status is MatchUpStatusUnion => !!status);
 }
 
+type DrawContext = { inContextDrawMatchUps: HydratedMatchUp[]; drawDefinition: DrawDefinition };
+
+/**
+ * An entry that records how a side ARRIVED, not an exit standing on it.
+ *
+ * `recordSourceSideProvenance` stamps an arrival with its source's status, so a participant who won a DEFAULTED
+ * carries `{ matchUpStatus: DEFAULTED, previousMatchUpStatus: DEFAULTED }` into the next round: the same shape as
+ * the exit the loser of that DEFAULTED carries over the loser link. Only the link tells them apart. v1's forward
+ * rules read the target's status and never see the entry; this read did, and planned a convergence where a present
+ * participant wins the produced exit (census w2 9100389, DE 8/8, `Main|2|2`).
+ */
+function arrivedByWinning(
+  matchUp: HydratedMatchUp | undefined,
+  sideNumber: number,
+  entry: SideExitProvenanceEntry | undefined,
+  draw?: DrawContext,
+): boolean {
+  if (!draw || !matchUp || !entry?.sourceMatchUpId || isDoubleExit(entry.previousMatchUpStatus)) return false;
+  if (!matchUp.sides?.some((side) => side?.sideNumber === sideNumber && side.participantId)) return false;
+  const { targetMatchUps } = positionTargets({ ...draw, matchUpId: entry.sourceMatchUpId });
+  return targetMatchUps?.winnerMatchUp?.matchUpId === matchUp.matchUpId;
+}
+
 /** an exit standing on a matchUp, other than one this matchUp produced itself */
-function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): MatchUpStatusUnion[] {
-  const carried = carriedStatuses(matchUp, sourceMatchUpId);
+function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string, draw?: DrawContext): MatchUpStatusUnion[] {
+  const carried = carriedStatuses(matchUp, sourceMatchUpId, draw);
   if (carried.length) return carried;
   // the status is this matchUp's own product when an exit entry came from it: judged on EXIT entries
   // only, since a BYE claim on the other side is not an exit (seed 6341103: a BYE claim on side 1 and
@@ -108,19 +138,23 @@ function carriesExitFrom(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): b
   );
 }
 
-function carriesExit(matchUp?: HydratedMatchUp): boolean {
-  return carriedStatuses(matchUp).length > 0;
+function carriesExit(matchUp?: HydratedMatchUp, draw?: DrawContext): boolean {
+  return carriedStatuses(matchUp, undefined, draw).length > 0;
 }
 
-function winnerTarget(winnerMatchUp?: HydratedMatchUp, sourceMatchUpId?: string): OutcomeView['targets']['winner'] {
+function winnerTarget(
+  winnerMatchUp?: HydratedMatchUp,
+  sourceMatchUpId?: string,
+  draw?: DrawContext,
+): OutcomeView['targets']['winner'] {
   if (!winnerMatchUp) return undefined;
   return {
     structureId: winnerMatchUp.structureId,
     roundNumber: winnerMatchUp.roundNumber,
     roundPosition: winnerMatchUp.roundPosition,
     matchUpStatus: winnerMatchUp.matchUpStatus,
-    carriesExit: carriesExit(winnerMatchUp),
-    carriedStatuses: standingExits(winnerMatchUp, sourceMatchUpId),
+    carriesExit: carriesExit(winnerMatchUp, draw),
+    carriedStatuses: standingExits(winnerMatchUp, sourceMatchUpId, draw),
     holdsResult: !!winnerMatchUp.winningSide || !!winnerMatchUp.score?.sets?.length,
   };
 }
@@ -253,6 +287,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const matchUp = matchUpsMap.drawMatchUps.find((m) => m.matchUpId === request.matchUpId);
   const inContextMatchUp = inContextDrawMatchUps?.find((m) => m.matchUpId === request.matchUpId);
   if (!matchUp || !inContextDrawMatchUps) return empty;
+  const draw: DrawContext = { inContextDrawMatchUps, drawDefinition };
 
   const { structure } = findStructure({ drawDefinition, structureId: inContextMatchUp?.structureId });
   const isTeam = isMatchUpEventType(TEAM)(matchUp.matchUpType);
@@ -441,10 +476,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserStructureId: targetData?.targetMatchUps?.loserMatchUp?.structureId,
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
       loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),
-      winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId),
+      winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId, draw),
       source: sourcePlace(inContextDrawMatchUps, inContextMatchUp),
-      loserMatchUpCarriesExit: carriesExit(targetData?.targetMatchUps?.loserMatchUp),
-      loserMatchUpCarriedStatuses: standingExits(targetData?.targetMatchUps?.loserMatchUp, request.matchUpId),
+      loserMatchUpCarriesExit: carriesExit(targetData?.targetMatchUps?.loserMatchUp, draw),
+      loserMatchUpCarriedStatuses: standingExits(targetData?.targetMatchUps?.loserMatchUp, request.matchUpId, draw),
       loserMatchUpCarriesSourceExit: carriesExitFrom(targetData?.targetMatchUps?.loserMatchUp, request.matchUpId),
       loserMatchUpDrawPositions: (targetData?.targetMatchUps?.loserMatchUp?.drawPositions ?? []).filter(
         (position): position is number => typeof position === 'number',

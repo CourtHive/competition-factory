@@ -1,11 +1,12 @@
 import { getDrawMatchUps, clearOutcome } from '@Tests/testHarness/exitPropagation/transitions';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
-import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
-import { expect, it } from 'vitest';
+import { afterEach, expect, it } from 'vitest';
 
 // constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -22,6 +23,8 @@ const drawId = 'backdraw-champion-keeps-main-seat';
 const key = (m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}`;
 const find = (k: string) => getDrawMatchUps(drawId).find((m: any) => key(m) === k);
 
+afterEach(() => setOutcomePipeline());
+
 function score(k: string, outcome: any) {
   const result: any = tournamentEngine.setMatchUpStatus({
     matchUpId: find(k).matchUpId,
@@ -33,6 +36,7 @@ function score(k: string, outcome: any) {
 }
 
 it('undoing the Backdraw double exit that sent the champion to the final leaves their Main seat', () => {
+  setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
   setSubscriptions({});
   const config = {
     drawType: DOUBLE_ELIMINATION,
