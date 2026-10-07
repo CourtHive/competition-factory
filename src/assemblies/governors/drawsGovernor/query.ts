@@ -5,6 +5,7 @@ export { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawT
 export { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/drawDefinition/structureActions';
 export { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 export { predictDrawCompetitiveBands } from '@Query/drawDefinition/predictDrawCompetitiveBands';
+export { getAvailableQualifyingTargets } from '@Query/drawDefinition/getAvailableQualifyingTargets';
 export { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 export { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
 export { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';

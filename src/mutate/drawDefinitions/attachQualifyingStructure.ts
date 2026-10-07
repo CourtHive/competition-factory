@@ -1,6 +1,7 @@
+import { getAvailableQualifyingTargets } from '@Query/drawDefinition/getAvailableQualifyingTargets';
 import { addMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { getLinkQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { resequenceStructures } from './structureGovernor/resequenceStructures';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -8,8 +9,8 @@ import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
 import { DRAW_DEFINITION, OBJECT, OF_TYPE, STRUCTURE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
+import { MISSING_TARGET_LINK, QUALIFYING_CAPACITY_EXCEEDED } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Structure } from '@Types/tournamentTypes';
-import { MISSING_TARGET_LINK } from '@Constants/errorConditionConstants';
 
 // constants
 import { ERROR, SUCCESS } from '@Constants/resultConstants';
@@ -54,6 +55,26 @@ export function attachQualifying(params: AttachQualifyingArgs) {
       context: { targetStructureId },
       result,
     });
+
+  // several qualifying structures may feed one round, but never more qualifiers than it has drawPositions
+  const targetRoundNumber = link.target.roundNumber ?? 1;
+  const targetsResult = getAvailableQualifyingTargets({ drawDefinition, structureId: targetStructureId });
+  if (targetsResult.error) return decorateResult({ result: targetsResult, stack: 'attachQualifyingStructure' });
+  const target = targetsResult.targets?.find((t) => t.roundNumber === targetRoundNumber);
+  const qualifiersCount = getLinkQualifiersCount({ drawDefinition, sourceStructure: structure, link });
+  if (!target || qualifiersCount > target.structuralCapacity) {
+    return decorateResult({
+      result: { error: QUALIFYING_CAPACITY_EXCEEDED },
+      context: {
+        structuralCapacity: target?.structuralCapacity ?? 0,
+        promisedQualifiers: target?.promisedQualifiers,
+        roundNumber: targetRoundNumber,
+        targetStructureId,
+        qualifiersCount,
+      },
+      stack: 'attachQualifyingStructure',
+    });
+  }
 
   drawDefinition.structures ??= [];
   drawDefinition.links ??= [];
