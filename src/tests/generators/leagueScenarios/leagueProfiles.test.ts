@@ -66,18 +66,18 @@ it('can generate Teams and venues from leagueProfiles', () => {
   expect(participants).toBeDefined();
 
   const tournamentRecord = tournamentEngine.getTournament().tournamentRecord;
-  expect(tournamentRecord.events.length).toEqual(leagueProfiles.length);
+  expect(tournamentRecord.events).toHaveLength(leagueProfiles.length);
 
   const teamParticipants = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [TEAM] },
   }).participants;
 
-  expect(teamParticipants.length).toEqual(
+  expect(teamParticipants).toHaveLength(
     leagueProfiles.reduce(
       (count, profile) => count + Math.max(profile.teamsCount ?? 0, profile.teamProfiles?.length ?? 0),
       0,
     ),
   );
 
-  expect(teamParticipants[0].individualParticipantIds.length).toEqual(6); // derived from tieFormat
+  expect(teamParticipants[0].individualParticipantIds).toHaveLength(6); // derived from tieFormat
 });
