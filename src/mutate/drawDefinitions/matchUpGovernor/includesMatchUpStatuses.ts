@@ -40,11 +40,18 @@ export function includesMatchUpStatuses({
   );
   const winnerDrawPosition = sourceMatchUp?.drawPositions?.find((drawPosition) => drawPosition !== loserDrawPosition);
 
-  const winnerMatchUpStatuses = structureMatchUps
+  // How each side REACHED the source matchUp: a later round says nothing about that. The winner of a matchUp being
+  // unwound can still stand in a later round, and a produced exit awarded there (a DEFAULTED opposite a double exit)
+  // read as a first-round walkover, so the FIRST_MATCHUP reservation BYE their first-round win had earned was removed
+  // and never restored (census 20064548, FIRST_MATCH_LOSER_CONSOLATION 8/8: `Main|2|1` re-scored from a played win to a
+  // DOUBLE_DEFAULT stripped `Consolation|2|1`'s BYE, and its consolation participant then waited on nobody).
+  const reachedSource = structureMatchUps.filter((matchUp) => !sourceMatchUp || !isLaterRound(matchUp, sourceMatchUp));
+
+  const winnerMatchUpStatuses = reachedSource
     .filter((matchUp) => holdsDrawPosition(matchUp, winnerDrawPosition))
     .map((matchUp) => matchUp.matchUpStatus);
 
-  const loserMatchUpStatuses = structureMatchUps
+  const loserMatchUpStatuses = reachedSource
     .filter((matchUp) => holdsDrawPosition(matchUp, loserDrawPosition))
     .map((matchUp) => matchUp.matchUpStatus);
 

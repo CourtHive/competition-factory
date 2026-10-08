@@ -23,17 +23,13 @@ import fs from 'fs';
  */
 const OPEN = new Set<string>([
   // allowChangePropagation off
-  'off 20064548', // FIRST_MATCH_LOSER_CONSOLATION 8/8
   'off 20067292', // DOUBLE_ELIMINATION 8/7
   'off 20090234', // CURTIS_CONSOLATION 16/13
-  'off 20099923', // FIRST_MATCH_LOSER_CONSOLATION 8/7
   // allowChangePropagation on
-  'on 20064548', // FIRST_MATCH_LOSER_CONSOLATION 8/8
   'on 20067292', // DOUBLE_ELIMINATION 8/7
   'on 20090234', // CURTIS_CONSOLATION 16/13
   // doubleExitPropagateBye: false
   'policyoff 20062607', // DOUBLE_ELIMINATION 16/11
-  'policyoff 20064548', // FIRST_MATCH_LOSER_CONSOLATION 8/8
   'policyoff 20065694', // FIRST_MATCH_LOSER_CONSOLATION 16/11
   'policyoff 20067292', // DOUBLE_ELIMINATION 8/7
   'policyoff 20068157', // MODIFIED_FEED_IN_CHAMPIONSHIP 8/7
@@ -67,7 +63,6 @@ const OPEN = new Set<string>([
   'policyoff 20099337', // DOUBLE_ELIMINATION 8/6
   'policyoff 20099689', // FIRST_ROUND_LOSER_CONSOLATION 8/7
   'policyoff 20099921', // MODIFIED_FEED_IN_CHAMPIONSHIP 8/7
-  'policyoff 20099923', // FIRST_MATCH_LOSER_CONSOLATION 8/7
 ]);
 
 type Arm = 'off' | 'on' | 'policyoff';
