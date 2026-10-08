@@ -768,7 +768,12 @@ function updateMatchUpStatusAfterRemoval({
       drawPosition: sidePosition,
       drawDefinition,
       structureId,
-    }) ?? sideFedFromPosition({ targetMatchUp, drawPosition: sidePosition, drawDefinition, structureId });
+    }) ??
+    // only for a position this matchUp actually held: one it never held (an FMLC fall-through winner) keeps the
+    // long-standing reading, which clears the origins and takes the award back
+    (initialDrawPositions?.includes(sidePosition)
+      ? sideFedFromPosition({ targetMatchUp, drawPosition: sidePosition, drawDefinition, structureId })
+      : undefined);
   // a matchUp holding NO position, from which none was removed, has nothing a clear can take, so it loses no origin
   // either (census 20030617: a second pass over `West|2|1`, empty by then, erased the produced DEFAULTED kept above).
   // A matchUp that holds a position is still cleared as before: its winner can have arrived without a stored position
@@ -880,10 +885,10 @@ function awardStands({
  * claims survive — the behaviour this call had before the other side's origin was retained.
  */
 /**
- * The side whose recorded origin is the previous-round matchUp holding `drawPosition`. The structural reader orders
+ * The side `drawPosition` held, read from the previous-round matchUp that holds it. The structural reader orders
  * positions from the round profile as it stands, and by the time a removal reaches here the position can already be
- * gone from this round, so it cannot be placed (census 20030617, OLYMPIC 8/8: dp 1 out of `West|2|1`). Provenance
- * names where each side came from, and that answers the same question.
+ * gone from this round, so it cannot be placed (census 20030617, OLYMPIC 8/8: dp 1 out of `West|2|1`). The feeder's
+ * place in its round answers the question; failing that, which side's recorded origin the feeder is.
  */
 function sideFedFromPosition({
   drawDefinition,
@@ -896,15 +901,26 @@ function sideFedFromPosition({
   drawPosition?: number;
   structureId: string;
 }): number | undefined {
-  const provenance = targetMatchUp.sideExitProvenance;
-  const roundNumber = targetMatchUp.roundNumber;
-  if (!provenance || !drawPosition || !roundNumber || roundNumber < 2) return undefined;
+  const { roundNumber, roundPosition } = targetMatchUp;
+  if (!drawPosition || !roundNumber || !roundPosition || roundNumber < 2) return undefined;
   const { structure } = findStructure({ drawDefinition, structureId });
-  const feeder = matchUpsOf(structure)?.find(
+  const matchUps = matchUpsOf(structure) ?? [];
+  const feeder = matchUps.find(
     (matchUp) => matchUp.roundNumber === roundNumber - 1 && matchUp.drawPositions?.includes(drawPosition),
   );
-  if (!feeder) return undefined;
-  return ([1, 2] as const).find((sideNumber) => provenance[sideNumber]?.sourceMatchUpId === feeder.matchUpId);
+  if (!feeder?.roundPosition) return undefined;
+
+  // STRUCTURE FIRST: a round half the size of the one before pairs feeders 2p-1 (side 1) and 2p (side 2); a round the
+  // same size is a feed round, where the position advanced from this structure is side 2 (draw-positions.md rule 4)
+  const previousCount = matchUps.filter((matchUp) => matchUp.roundNumber === roundNumber - 1).length;
+  const currentCount = matchUps.filter((matchUp) => matchUp.roundNumber === roundNumber).length;
+  if (previousCount === 2 * currentCount && Math.ceil(feeder.roundPosition / 2) === roundPosition)
+    return feeder.roundPosition % 2 ? 1 : 2;
+  if (previousCount === currentCount && feeder.roundPosition === roundPosition) return 2;
+
+  // otherwise the side whose recorded origin is that feeder
+  const provenance = targetMatchUp.sideExitProvenance;
+  return ([1, 2] as const).find((sideNumber) => provenance?.[sideNumber]?.sourceMatchUpId === feeder.matchUpId);
 }
 
 function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: number) {

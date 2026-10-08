@@ -91,3 +91,28 @@ it('census 20030617: the loser who passes the remaining BYE wins the produced ex
   expect(corrected).toEqual(direct);
   expect(corrected.stalls).toEqual(0);
 });
+
+it('census 20030617, full schedule: the same when the BYE side carried no origin of its own', () => {
+  // `East|1|1` is a DEFAULTED first and then a DOUBLE_DEFAULT, so the BYE `West|1|1` advances into `West|2|1` arrives
+  // with no provenance entry on its side; the side it held is read from its feeder's place in the round instead
+  const corrected = play([
+    ...LEAD,
+    ['East|1|2', { matchUpStatus: DOUBLE_WALKOVER }],
+    ['East|1|1', { matchUpStatus: DEFAULTED, winningSide: 1 }],
+    ['West|1|2', { matchUpStatus: DOUBLE_DEFAULT }],
+    ['East|1|1', { matchUpStatus: DOUBLE_DEFAULT }],
+    ['East|1|2', { winningSide: 1 }],
+    ['East|3|1', { winningSide: 1 }],
+  ]);
+  const direct = play([
+    ...LEAD,
+    ['West|1|2', { matchUpStatus: DOUBLE_DEFAULT }],
+    ['East|1|1', { matchUpStatus: DOUBLE_DEFAULT }],
+    ['East|1|2', { winningSide: 1 }],
+    ['East|3|1', { winningSide: 1 }],
+  ]);
+
+  expect(direct.west).toMatchObject({ matchUpStatus: DEFAULTED, winningSide: 1 });
+  expect(corrected).toEqual(direct);
+  expect(corrected.stalls).toEqual(0);
+});
