@@ -1,13 +1,13 @@
 import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/removeDoubleExit';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
-import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
-import { positionTargets } from '@Query/matchUp/positionTargets';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
 import {
@@ -315,6 +315,8 @@ function withdrawByeSeats({
   claimantMatchUpId: string;
   event?: Event;
 }) {
+  const claimant = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === claimantMatchUpId);
+  const claimantIsBye = claimant?.matchUpStatus === BYE;
   for (const [structureId, mapped] of Object.entries(matchUpsMap.mappedMatchUps)) {
     const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
     for (const matchUp of mapped.matchUps as MatchUp[]) {
@@ -323,6 +325,7 @@ function withdrawByeSeats({
         if (!claims.includes(claimantMatchUpId)) continue;
         withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
         if (matchUp.sideExitProvenance?.[sideNumber]?.byeClaims?.length) continue;
+        if (claimantIsBye) continue;
         const drawPosition = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber });
         const assignment = positionAssignmentsOf(structure)?.find((entry) => entry.drawPosition === drawPosition);
         if (!assignment?.bye || !assignment.byeFromPropagation) continue;

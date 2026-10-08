@@ -29,10 +29,6 @@ import fs from 'fs';
  */
 const OPEN = new Set([
   'off 20012942', // DOUBLE_ELIMINATION 8/6 — F2's refusal reads a cascade award onward as "played on"
-  'off 20037222', // MODIFIED_FEED_IN_CHAMPIONSHIP 8/8 — a late BYE into a fed consolation round during an unwind
-  'on 20000380', // OLYMPIC 8/8 — an exit met by a BYE that arrives later is not carried past it
-  'on 20030739', // FIRST_MATCH_LOSER_CONSOLATION 8/8 — not yet traced
-  'on 20053188', // OLYMPIC 8/8 — not yet traced
 ]);
 
 type Instance = { arm: 'off' | 'on'; seed: number; config: any; steps: any[] };
