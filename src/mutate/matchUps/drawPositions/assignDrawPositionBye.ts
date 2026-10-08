@@ -947,6 +947,39 @@ function advanceWinner({
     return;
   }
 
+  // AN ARRIVAL ON THE EXITING SIDE TAKES NOTHING. The exit is already awarded to the seat opposite, which holds its
+  // winner — who may have played on. The arrival is that matchUp's loser: seated, and nothing advances. Resolving it
+  // advanced the arrival onward as the walkover's winner, into the seat the next round owed somebody else (census
+  // 20037222, MODIFIED_FEED_IN_CHAMPIONSHIP 8/8 `Consolation|2|2`). The side is STRUCTURAL, read as
+  // `arrivalIntoProvenanceOnlyExit` reads it: a fed round seats the advancing position on side 2, any other round by
+  // its source's place. Ascending drawPosition order does not give sides in a fed structure (`draw-positions.md`).
+  const arrivalSide = winnerMatchUp.feedRound ? 2 : sourceRoundPosition && (sourceRoundPosition % 2 === 1 ? 1 : 2);
+  if (
+    isExit(noContextWinnerMatchUp.matchUpStatus) &&
+    noContextWinnerMatchUp.winningSide &&
+    arrivalSide &&
+    arrivalSide !== noContextWinnerMatchUp.winningSide &&
+    pairedDrawPosition &&
+    !drawPositionIsBye &&
+    !pairedDrawPositionIsBye
+  ) {
+    setMatchUpDrawPositions({
+      structureId: winnerMatchUp?.structureId,
+      matchUp: noContextWinnerMatchUp,
+      drawDefinition,
+      drawPositions,
+    });
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      eventId: event?.eventId,
+      matchUp: noContextWinnerMatchUp,
+      drawDefinition,
+      context: stack,
+      event,
+    });
+    return;
+  }
+
   if (
     isExit(noContextWinnerMatchUp.matchUpStatus) &&
     noContextWinnerMatchUp.winningSide &&
