@@ -1,4 +1,5 @@
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 
 // constants and types
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
@@ -41,8 +42,8 @@ export function getDrawPositionWinCount({
   sourceMatchUps: HydratedMatchUp[];
   drawPosition: number;
 }): number {
-  return sourceMatchUps
-    .filter((matchUp) => !matchUp.collectionId && matchUp.drawPositions?.includes(drawPosition))
+  return teamLevelMatchUps(sourceMatchUps)
+    .filter((matchUp) => matchUp.drawPositions?.includes(drawPosition))
     .filter((matchUp) => {
       const drawPositionSide = matchUp.sides?.find((side) => side.drawPosition === drawPosition);
       const unscoredOutcome = isUnscoredOutcome({ matchUpStatus: matchUp.matchUpStatus, score: matchUp.score });

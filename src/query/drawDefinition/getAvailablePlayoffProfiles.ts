@@ -1,6 +1,7 @@
 import { getPlayoffScopeStructureIds } from './getPlayoffScopeStructureIds';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getPositionsPlayedOff } from './getPositionsPlayedOff';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { getPositionAssignments } from './positionsGetter';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { chunkArray, generateRange } from '@Tools/arrays';
@@ -174,9 +175,8 @@ function availablePlayoffProfiles({
     const targetRoundNumber = link?.target.roundNumber;
     const targetStructureId = link?.target.structureId;
     // a TEAM matchUp's tieMatchUps share its round; only the TEAM matchUp says whether its fed side is open
-    const targetRoundMatchUps = matchUps.filter(
-      ({ roundNumber, structureId, collectionId }) =>
-        !collectionId && structureId === targetStructureId && roundNumber === targetRoundNumber,
+    const targetRoundMatchUps = teamLevelMatchUps(matchUps).filter(
+      ({ roundNumber, structureId }) => structureId === targetStructureId && roundNumber === targetRoundNumber,
     );
     const availableToProgress = targetRoundMatchUps.filter(({ sides }) =>
       sides?.find((side) => side.participantFed && !side.participantId),
