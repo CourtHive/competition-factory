@@ -23,15 +23,12 @@ import fs from 'fs';
  */
 const OPEN = new Set<string>([
   // allowChangePropagation off
-  'off 20067292', // DOUBLE_ELIMINATION 8/7
   'off 20090234', // CURTIS_CONSOLATION 16/13
   // allowChangePropagation on
-  'on 20067292', // DOUBLE_ELIMINATION 8/7
   'on 20090234', // CURTIS_CONSOLATION 16/13
   // doubleExitPropagateBye: false
   'policyoff 20062607', // DOUBLE_ELIMINATION 16/11
   'policyoff 20065694', // FIRST_MATCH_LOSER_CONSOLATION 16/11
-  'policyoff 20067292', // DOUBLE_ELIMINATION 8/7
   'policyoff 20068157', // MODIFIED_FEED_IN_CHAMPIONSHIP 8/7
   'policyoff 20068753', // FEED_IN_CHAMPIONSHIP 8/6
   'policyoff 20072949', // DOUBLE_ELIMINATION 8/6
@@ -56,7 +53,6 @@ const OPEN = new Set<string>([
   'policyoff 20091282', // FEED_IN_CHAMPIONSHIP 8/7
   'policyoff 20092051', // DOUBLE_ELIMINATION 8/7
   'policyoff 20092939', // DOUBLE_ELIMINATION 8/7
-  'policyoff 20095615', // MODIFIED_FEED_IN_CHAMPIONSHIP 8/7
   'policyoff 20096063', // DOUBLE_ELIMINATION 8/5
   'policyoff 20097819', // DOUBLE_ELIMINATION 8/7
   'policyoff 20098707', // DOUBLE_ELIMINATION 8/6
