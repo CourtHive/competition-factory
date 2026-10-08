@@ -22,10 +22,6 @@ import fs from 'fs';
  * entry is removed here — the list only shrinks, and a fix records itself by deleting a line.
  */
 const OPEN = new Set<string>([
-  // allowChangePropagation off
-  'off 20090234', // CURTIS_CONSOLATION 16/13
-  // allowChangePropagation on
-  'on 20090234', // CURTIS_CONSOLATION 16/13
   // doubleExitPropagateBye: false
   'policyoff 20062607', // DOUBLE_ELIMINATION 16/11
   'policyoff 20065694', // FIRST_MATCH_LOSER_CONSOLATION 16/11

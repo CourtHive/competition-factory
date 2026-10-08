@@ -7,8 +7,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { BYE, DOUBLE_DEFAULT, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { BYE, DOUBLE_DEFAULT, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * A LATER-ROUND AWARD IS NOT A FIRST-ROUND WALKOVER — census 20064548 (FIRST_MATCH_LOSER_CONSOLATION 8/8).
