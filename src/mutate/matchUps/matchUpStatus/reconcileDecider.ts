@@ -253,6 +253,8 @@ export function getDeciderSnapshot(drawDefinition?: DrawDefinition): DeciderSnap
     const { structure } = findStructure({ drawDefinition, structureId });
     for (const matchUp of matchUpsOf(structure) ?? []) {
       matchUpIds.add(matchUp.matchUpId);
+      // a TEAM decider's lines: scoring one is a mutation OF the decider, as scoring the dual is
+      for (const tieMatchUp of matchUp.tieMatchUps ?? []) matchUpIds.add(tieMatchUp.matchUpId);
       parts.push(
         [matchUp.matchUpId, matchUp.matchUpStatus, matchUp.winningSide, JSON.stringify(matchUp.drawPositions)].join(
           '|',
