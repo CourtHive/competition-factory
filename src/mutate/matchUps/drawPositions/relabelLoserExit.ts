@@ -1,20 +1,24 @@
+import { removeOnwardLoserPlacements } from '@Mutate/matchUps/drawPositions/removeOnwardLoserPlacements';
+import { releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
+import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import {
   clearSideExitProvenance,
   setSideExitProvenance,
   withdrawProducedExits,
   carriedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { removeOnwardLoserPlacements } from '@Mutate/matchUps/drawPositions/removeOnwardLoserPlacements';
-import { releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
-import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { decorateResult } from '@Functions/global/decorateResult';
-import { positionTargets } from '@Query/matchUp/positionTargets';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
+import { BYE, COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { MappedMatchUps, MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import { LOSER } from '@Constants/drawDefinitionConstants';
+import { HydratedMatchUp } from '@Types/hydrated';
 import {
   DrawDefinition,
   Event,
@@ -23,10 +27,6 @@ import {
   SideExitProvenance,
   Tournament,
 } from '@Types/tournamentTypes';
-import { BYE, COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { MappedMatchUps, MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { LOSER } from '@Constants/drawDefinitionConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
 
 type RelabelArgs = {
   validExitToPropagate: boolean;

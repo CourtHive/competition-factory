@@ -1,6 +1,6 @@
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
-import { getDrawDefinition } from '@Tests/testHarness/exitPropagation/transitions';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
+import { getDrawDefinition } from '@Tests/testHarness/exitPropagation/transitions';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
