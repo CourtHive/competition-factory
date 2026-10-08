@@ -1,4 +1,5 @@
 import { generateSchedule, prepareDraw, randomConfig, replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, test } from 'vitest';
 import fs from 'fs';
@@ -51,8 +52,21 @@ const maxSteps = Number(process.env.MAX_STEPS ?? 30);
 const outPath = process.env.OUT ?? '/tmp/census.jsonl';
 const schedulesOut = process.env.SCHEDULES_OUT;
 const schedulesIn = process.env.SCHEDULES_IN;
+/**
+ * THE POLICY ARM, live. `PROPAGATE_BYE=0` attaches `doubleExitPropagateBye: false`, `PROPAGATE_BYE=1` attaches `true`,
+ * unset attaches nothing — the same contract as `censusProgressionPolicy.test.ts`, which replays frozen windows only.
+ * CA, 2026-10-08: the `doubleExitPropagateBye: false` arm must reach zero `STALLED_POSITION` before it is promoted, and
+ * measuring that at scale needs schedules GENERATED under the policy: `generateSchedule` calls the engine, so a schedule
+ * emitted without the policy is not the policy arm's schedule. Attached at generation and at replay alike, and recorded
+ * on each emitted scenario so a frozen policy window replays under the policy it was emitted under.
+ */
+const propagateByeEnv = process.env.PROPAGATE_BYE;
+const policyDefinitions =
+  propagateByeEnv === '1' || propagateByeEnv === '0'
+    ? { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: propagateByeEnv === '1' } }
+    : undefined;
 
-type Scenario = { seed: number; config: any; steps?: any[]; generationThrow?: string };
+type Scenario = { seed: number; config: any; steps?: any[]; generationThrow?: string; policyDefinitions?: any };
 
 /** Generate each seed's schedule against a fresh draw. */
 function generateScenarios(): Scenario[] {
@@ -62,8 +76,9 @@ function generateScenarios(): Scenario[] {
     const config = randomConfig(seed);
     const drawId = `sweep-${seed}`;
     try {
-      prepareDraw(config, drawId);
-      scenarios.push({ seed, config, steps: generateSchedule(config, drawId, maxSteps) });
+      prepareDraw(config, drawId, policyDefinitions);
+      const steps = generateSchedule(config, drawId, maxSteps);
+      scenarios.push({ seed, config, steps, ...(policyDefinitions ? { policyDefinitions } : {}) });
     } catch (err: any) {
       scenarios.push({ seed, config, generationThrow: String(err?.message ?? err) });
     }
@@ -112,7 +127,12 @@ test.skipIf(!enabled)(
 
       let failure;
       try {
-        failure = replay(config, scenario.steps ?? [], `sweep-${seed}`);
+        failure = replay(
+          config,
+          scenario.steps ?? [],
+          `sweep-${seed}`,
+          scenario.policyDefinitions ?? policyDefinitions,
+        );
       } catch (err: any) {
         failure = { property: 'NO_EXCEPTION_ESCAPES', matchUpId: '-', detail: String(err?.message ?? err) };
       }
