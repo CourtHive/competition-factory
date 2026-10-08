@@ -75,6 +75,7 @@ import { ResultType } from '@Types/factoryTypes';
 export function reconcileDecider({
   winningSideBefore,
   tournamentRecord,
+  deciderChanged,
   drawDefinition,
   matchUpId,
   event,
@@ -82,6 +83,7 @@ export function reconcileDecider({
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   winningSideBefore?: number;
+  deciderChanged?: boolean;
   matchUpId?: string;
   event?: Event;
 }): ResultType {
@@ -90,7 +92,8 @@ export function reconcileDecider({
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
   const final = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
-  if (!final || final.collectionId || final.winningSide === winningSideBefore) return { ...SUCCESS };
+  if (!final || final.collectionId || (final.winningSide === winningSideBefore && !deciderChanged))
+    return { ...SUCCESS };
 
   const targetData = positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId });
   if (targetData.error) return decorateResult({ result: targetData, stack: 'reconcileDecider' });
@@ -183,23 +186,30 @@ export function getDeciderFinals(drawDefinition?: DrawDefinition): Map<string, n
 
 /** Settle the decider of every final whose winner is not what it was — see `reconcileDecider`. */
 export function reconcileDeciders({
+  deciderSnapshotBefore,
+  mutatedMatchUpId,
   tournamentRecord,
   drawDefinition,
   finalsBefore,
   event,
 }: {
   finalsBefore: Map<string, number | undefined>;
+  deciderSnapshotBefore?: DeciderSnapshot;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
+  mutatedMatchUpId?: string;
   event?: Event;
 }): ResultType {
   if (!finalsBefore.size) return { ...SUCCESS };
 
+  const deciderChanged = deciderChangedByCascade({ deciderSnapshotBefore, drawDefinition, mutatedMatchUpId });
+
   for (const [matchUpId, winningSide] of getDeciderFinals(drawDefinition)) {
-    if (winningSide === finalsBefore.get(matchUpId)) continue;
+    if (winningSide === finalsBefore.get(matchUpId) && !deciderChanged) continue;
     const result = reconcileDecider({
       winningSideBefore: finalsBefore.get(matchUpId),
       tournamentRecord,
+      deciderChanged,
       drawDefinition,
       matchUpId,
       event,
@@ -208,6 +218,73 @@ export function reconcileDeciders({
   }
 
   return { ...SUCCESS };
+}
+
+export type DeciderSnapshot = { matchUpIds: Set<string>; state: string };
+
+/**
+ * The decider structures as they stand: the matchUps a final's winner and loser are both sent to.
+ *
+ * Read before a mutation so `reconcileDeciders` can tell whether the CASCADE moved a decider while the final's winner
+ * stayed put. Census 20012480 (DOUBLE_ELIMINATION 8/5): `Backdraw|3|1` re-entered from a DOUBLE_DEFAULT as a
+ * DOUBLE_WALKOVER re-derives the produced exit into the Main final, DEFAULTED to WALKOVER with the same winner, and the
+ * unwind re-seats that winner in the decider as `TO_BE_PLAYED`. The final's `winningSide` never changed, so the decider
+ * was never settled, and its lone occupant stalled.
+ */
+export function getDeciderSnapshot(drawDefinition?: DrawDefinition): DeciderSnapshot {
+  const links = drawDefinition?.links ?? [];
+  const deciderStructureIds = new Set<string>();
+  for (const winnerLink of links.filter((link) => link.linkType === WINNER)) {
+    const targetStructureId = winnerLink.target?.structureId;
+    const feedsBoth = links.some(
+      (link) =>
+        link.linkType === LOSER &&
+        link.source?.structureId === winnerLink.source?.structureId &&
+        link.source?.roundNumber === winnerLink.source?.roundNumber &&
+        link.target?.structureId === targetStructureId,
+    );
+    if (feedsBoth && targetStructureId && targetStructureId !== winnerLink.source?.structureId)
+      deciderStructureIds.add(targetStructureId);
+  }
+
+  const matchUpIds = new Set<string>();
+  const parts: string[] = [];
+  for (const structureId of deciderStructureIds) {
+    const { structure } = findStructure({ drawDefinition, structureId });
+    for (const matchUp of matchUpsOf(structure) ?? []) {
+      matchUpIds.add(matchUp.matchUpId);
+      // a TEAM decider's lines: scoring one is a mutation OF the decider, as scoring the dual is
+      for (const tieMatchUp of matchUp.tieMatchUps ?? []) matchUpIds.add(tieMatchUp.matchUpId);
+      parts.push(
+        [matchUp.matchUpId, matchUp.matchUpStatus, matchUp.winningSide, JSON.stringify(matchUp.drawPositions)].join(
+          '|',
+        ),
+      );
+    }
+    const assignments = getPositionAssignments({ structure }).positionAssignments ?? [];
+    parts.push(
+      JSON.stringify(assignments.map(({ drawPosition, participantId, bye }) => [drawPosition, participantId, bye])),
+    );
+  }
+  return { matchUpIds, state: parts.join(';') };
+}
+
+/**
+ * Did the cascade change a decider? Not when the mutation was OF the decider: clearing a DEAD_RUBBER to play it "just
+ * for fun" is CA's third clause (2026-09-29), and this must never undo it.
+ */
+function deciderChangedByCascade({
+  deciderSnapshotBefore,
+  mutatedMatchUpId,
+  drawDefinition,
+}: {
+  deciderSnapshotBefore?: DeciderSnapshot;
+  drawDefinition?: DrawDefinition;
+  mutatedMatchUpId?: string;
+}): boolean {
+  if (!deciderSnapshotBefore?.matchUpIds.size) return false;
+  if (mutatedMatchUpId && deciderSnapshotBefore.matchUpIds.has(mutatedMatchUpId)) return false;
+  return getDeciderSnapshot(drawDefinition).state !== deciderSnapshotBefore.state;
 }
 
 /**

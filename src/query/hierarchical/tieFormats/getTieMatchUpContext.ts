@@ -79,6 +79,9 @@ export function getTieMatchUpContext({
   const { collectionPosition, drawPositions, collectionId, matchUpTieId, matchUpType } = inContextTieMatchUp;
 
   if (matchUpType && !includesMatchUpEventType([SINGLES, DOUBLES], matchUpType)) return { error: INVALID_MATCHUP };
+  // a SINGLES or DOUBLES matchUp that is not a tieMatchUp has no TEAM matchUp: without this the lineUp mutations read
+  // an undefined dual and refused it for an unrelated reason (team not found, participant not found, missing matchUp)
+  if (!matchUpTieId) return { error: INVALID_MATCHUP };
 
   const { positionAssignments } = getPositionAssignments({ structure });
   const relevantAssignments = positionAssignments?.filter((assignment) =>

@@ -39,6 +39,7 @@ import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
+import { TEAM } from '@Constants/matchUpTypes';
 import {
   DRAW_POSITION_ACTIVE,
   DRAW_POSITION_ASSIGNED,
@@ -308,6 +309,18 @@ export function assignDrawPositionBye({
     }
   });
 
+  removeDisplacedLineUps({
+    displacedParticipantId: assignedParticipantId,
+    isPropagationPlacement,
+    inContextDrawMatchUps,
+    tournamentRecord,
+    drawDefinition,
+    drawPosition,
+    matchUpsMap,
+    structureId,
+    event,
+  });
+
   if (structure.structureType === CONTAINER) {
     assignRoundRobinBYE({
       preserveScheduling,
@@ -522,6 +535,58 @@ function byeTargetMatchUps({
   );
   const target = containing.find((matchUp) => matchUp.roundNumber === furthestRoundNumber);
   return target ? [target] : [];
+}
+
+/**
+ * A BYE that displaces a participant takes nothing of theirs — including the lineUp their TEAM carried onto
+ * the matchUps this drawPosition holds. Left behind, it hydrates the BYE's tieMatchUps with that team's
+ * players: measured on a TEAM FIRST_MATCH_LOSER_CONSOLATION draw, where a round 1 WALKOVER corrected to a
+ * scored win withheld the already-fed loser and its lineUp stayed on the consolation BYE.
+ *
+ * Scoped to this structure: a drawPosition names a position only within its own structure.
+ */
+function removeDisplacedLineUps({
+  displacedParticipantId,
+  isPropagationPlacement,
+  inContextDrawMatchUps,
+  tournamentRecord,
+  drawDefinition,
+  drawPosition,
+  matchUpsMap,
+  structureId,
+  event,
+}: {
+  displacedParticipantId?: string;
+  isPropagationPlacement: boolean;
+  inContextDrawMatchUps: HydratedMatchUp[];
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  drawPosition: number;
+  structureId?: string;
+  event?: Event;
+}) {
+  if (!isPropagationPlacement || !displacedParticipantId) return;
+
+  for (const inContextMatchUp of inContextDrawMatchUps) {
+    if (inContextMatchUp.structureId !== structureId || inContextMatchUp.matchUpType !== TEAM) continue;
+    const sideNumber = inContextMatchUp.sides?.find((side) => side.drawPosition === drawPosition)?.sideNumber;
+    if (!sideNumber) continue;
+
+    const matchUp = matchUpsMap.drawMatchUps.find(({ matchUpId }) => matchUpId === inContextMatchUp.matchUpId);
+    const side = matchUp?.sides?.find((candidate) => candidate.sideNumber === sideNumber);
+    if (!matchUp || !side?.lineUp) continue;
+
+    delete side.lineUp;
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: 'assignDrawPositionBye-TEAM',
+      eventId: event?.eventId,
+      drawDefinition,
+      matchUp,
+      event,
+    });
+  }
 }
 
 function successNotice({
@@ -929,6 +994,39 @@ function advanceWinner({
     !pairedDrawPositionIsBye &&
     !drawPositionToAdvanceAssigment?.participantId &&
     !drawPositionToAdvanceAssigment?.qualifier
+  ) {
+    setMatchUpDrawPositions({
+      structureId: winnerMatchUp?.structureId,
+      matchUp: noContextWinnerMatchUp,
+      drawDefinition,
+      drawPositions,
+    });
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      eventId: event?.eventId,
+      matchUp: noContextWinnerMatchUp,
+      drawDefinition,
+      context: stack,
+      event,
+    });
+    return;
+  }
+
+  // AN ARRIVAL ON THE EXITING SIDE TAKES NOTHING. The exit is already awarded to the seat opposite, which holds its
+  // winner — who may have played on. The arrival is that matchUp's loser: seated, and nothing advances. Resolving it
+  // advanced the arrival onward as the walkover's winner, into the seat the next round owed somebody else (census
+  // 20037222, MODIFIED_FEED_IN_CHAMPIONSHIP 8/8 `Consolation|2|2`). The side is STRUCTURAL, read as
+  // `arrivalIntoProvenanceOnlyExit` reads it: a fed round seats the advancing position on side 2, any other round by
+  // its source's place. Ascending drawPosition order does not give sides in a fed structure (`draw-positions.md`).
+  const arrivalSide = winnerMatchUp.feedRound ? 2 : sourceRoundPosition && (sourceRoundPosition % 2 === 1 ? 1 : 2);
+  if (
+    isExit(noContextWinnerMatchUp.matchUpStatus) &&
+    noContextWinnerMatchUp.winningSide &&
+    arrivalSide &&
+    arrivalSide !== noContextWinnerMatchUp.winningSide &&
+    pairedDrawPosition &&
+    !drawPositionIsBye &&
+    !pairedDrawPositionIsBye
   ) {
     setMatchUpDrawPositions({
       structureId: winnerMatchUp?.structureId,

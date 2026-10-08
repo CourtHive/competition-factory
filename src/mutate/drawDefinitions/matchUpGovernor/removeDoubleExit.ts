@@ -1,19 +1,19 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
+import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { positionTargets } from '@Query/matchUp/positionTargets';
+import { pushGlobalLog } from '@Functions/global/globalLog';
+import { findStructure } from '@Acquire/findStructure';
+import { intersection, overlap } from '@Tools/arrays';
 import {
   getDrawPositionSideNumber,
   getSideDrawPosition,
   getWinningSideDrawPosition,
 } from '@Query/matchUps/getDrawPositionSides';
-import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
-import { decorateResult } from '@Functions/global/decorateResult';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
-import { positionTargets } from '@Query/matchUp/positionTargets';
-import { pushGlobalLog } from '@Functions/global/globalLog';
-import { isDoubleExit, isExit } from '@Validators/isExit';
-import { findStructure } from '@Acquire/findStructure';
-import { intersection, overlap } from '@Tools/arrays';
 import {
   withdrawByeClaimsFrom,
   byeClaimSurvives,
@@ -946,6 +946,10 @@ function codesForUnwound(
   matchUp: MatchUp,
   unwound: { matchUpStatus?: MatchUpStatusUnion; provenance?: SideExitProvenance },
 ) {
+  // unwound to no exit at all — undecided, or a BYE — nothing in the array can still describe one, as
+  // `withdrawProducedExits` already holds when it reverts a matchUp (census w2 9100153, FRLC 16/11: `Consolation|3|1`
+  // kept a `DEF` through its unwind to TO_BE_PLAYED, and it stood on the winner's side once the matchUp was played)
+  if (!isAnyExit(unwound.matchUpStatus)) return [];
   const codes = retainPolicyCodes(matchUp);
   if (!unwound.provenance || !isExit(unwound.matchUpStatus)) return codes;
   return codes.map((code, index) => (carriedExitStatus(unwound.provenance?.[index + 1]) ? code : ''));

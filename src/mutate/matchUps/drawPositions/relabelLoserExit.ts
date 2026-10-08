@@ -1,19 +1,32 @@
-import { carriedExitStatus, withdrawProducedExits } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { removeOnwardLoserPlacements } from '@Mutate/matchUps/drawPositions/removeOnwardLoserPlacements';
 import { releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
+import {
+  clearSideExitProvenance,
+  setSideExitProvenance,
+  withdrawProducedExits,
+  carriedExitStatus,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { BYE, COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MappedMatchUps, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { LOSER } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  SideExitProvenance,
+  Tournament,
+} from '@Types/tournamentTypes';
 
 type RelabelArgs = {
   validExitToPropagate: boolean;
@@ -61,11 +74,17 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
     event: args.event,
   }).matchUps;
   const standing = standingMatchUp(inContextDrawMatchUps, args.targetStructureId, loserParticipantId);
-  if (!standing) return {};
-
-  const carriedHere = standing.sideExitProvenance
+  const carriedHere = standing?.sideExitProvenance
     ? Object.values(standing.sideExitProvenance).some((entry) => entry?.sourceMatchUpId === sourceMatchUpId)
     : false;
+
+  // a withdrawal whose carry STOPPED at a BYE-held matchUp — nothing of it reached where the loser now stands — is
+  // withdrawn there (see `byeHeldCarry`); a carry relayed on past the BYE is the ordinary withdrawal's below
+  if (!args.validExitToPropagate && !carriedHere) {
+    const byeHeld = byeHeldCarry(inContextDrawMatchUps, args.targetStructureId, loserParticipantId, sourceMatchUpId);
+    if (byeHeld) clearByeHeldCarry(args, byeHeld, loserParticipantId);
+  }
+  if (!standing) return {};
 
   // a walk that cannot read the draw's links refuses the relabel rather than reading as "not played on"
   let refused: ResultType | undefined;
@@ -196,6 +215,58 @@ function standingMatchUp(matchUps: HydratedMatchUp[] | undefined, structureId: s
     .sort((a, b) => (a.roundNumber ?? 0) - (b.roundNumber ?? 0))[0];
 }
 
+/**
+ * A BYE-held matchUp of the target structure on whose loser side THIS source's carried exit is still recorded.
+ *
+ * `standingMatchUp` passes over a BYE, because a loser fed opposite a BYE has already gone through it. But a matchUp
+ * can read BYE because a double exit elsewhere CLAIMED its other seat, and the loser's carried exit stays recorded on
+ * their side of it. Census 20030075 (FEED_IN_CHAMPIONSHIP 8/5): `Main|1|3`'s walkover carried into
+ * `Consolation|2|2`, which `Main|2|1`'s double default had made a BYE; relabelling `Main|1|3` as played looked past
+ * it, found no carry one round on, and withdrew nothing. When the claim later went, the stale carry decided
+ * `Consolation|2|2` as a WALKOVER whose winner never advanced, and `Consolation|3|1` stalled.
+ */
+function byeHeldCarry(
+  matchUps: HydratedMatchUp[] | undefined,
+  structureId: string,
+  participantId: string,
+  sourceMatchUpId: string,
+): HydratedMatchUp | undefined {
+  return (matchUps ?? []).find((matchUp) => {
+    if (matchUp.structureId !== structureId || matchUp.matchUpStatus !== BYE) return false;
+    const side = matchUp.sides?.find((candidate) => candidate?.participantId === participantId)?.sideNumber;
+    const entry = side === 1 || side === 2 ? matchUp.sideExitProvenance?.[side] : undefined;
+    return entry?.sourceMatchUpId === sourceMatchUpId && !!carriedExitStatus(entry);
+  });
+}
+
+/**
+ * Remove the stale carry entry from the BYE-held matchUp, and nothing else. A BYE is never re-derived, and the loser has
+ * already been through it, so a cascading withdrawal is wrong here: measured on census de 9301858
+ * (DOUBLE_ELIMINATION 8/6, a structural BYE at `Backdraw|2|2`), `withdrawProducedExits` followed the chain on and
+ * released the loser's own advancement out of `Backdraw|3|1`, leaving `Backdraw|4|1` awarded to an empty seat. The
+ * entry's BYE claims, which belong to the BYE and not to this carry, stay.
+ */
+function clearByeHeldCarry(args: RelabelArgs, byeHeld: HydratedMatchUp, loserParticipantId: string) {
+  const stored = args.matchUpsMap?.drawMatchUps?.find((matchUp: MatchUp) => matchUp.matchUpId === byeHeld.matchUpId);
+  const side = byeHeld.sides?.find((candidate) => candidate?.participantId === loserParticipantId)?.sideNumber;
+  const provenance = stored?.sideExitProvenance;
+  if (!stored || !provenance || (side !== 1 && side !== 2) || !provenance[side]) return;
+  const byeClaims = provenance[side]?.byeClaims;
+  const remaining: SideExitProvenance = { ...provenance };
+  if (byeClaims?.length) remaining[side] = { byeClaims };
+  else delete remaining[side];
+  setSideExitProvenance({ matchUp: stored, provenance: remaining });
+  if (!Object.keys(remaining).length) clearSideExitProvenance(stored);
+  modifyMatchUpNotice({
+    tournamentId: args.tournamentRecord?.tournamentId,
+    drawDefinition: args.drawDefinition,
+    context: 'relabelLoserExit',
+    eventId: args.event?.eventId,
+    event: args.event,
+    matchUp: stored,
+  });
+}
+
 /** a result of its own: a score, or a decided status other than an exit this cascade can still move */
 function hasResult(matchUp: HydratedMatchUp): boolean {
   return (
@@ -222,16 +293,42 @@ function winnerPlayedOn(
   standing: HydratedMatchUp,
   matchUps: HydratedMatchUp[] | undefined,
   drawDefinition: DrawDefinition,
+  depth = 0,
 ): ResultType & { playedOn?: boolean } {
+  // bounded as a draw is: each step moves at least one round on
+  if (depth > 32) return { playedOn: true };
   if (isDoubleExit(standing.matchUpStatus)) {
     const produced = nextPlayable(standing, matchUps, drawDefinition);
     if (produced.error || !produced.next) return produced.error ? produced : { playedOn: false };
-    return winnerPlayedOn(produced.next, matchUps, drawDefinition);
+    return winnerPlayedOn(produced.next, matchUps, drawDefinition, depth + 1);
   }
   if (!standing.winningSide) return { playedOn: false };
   const onward = nextPlayable(standing, matchUps, drawDefinition);
   if (onward.error) return onward;
-  return { playedOn: !!onward.next && hasResult(onward.next) };
+  if (!onward.next || !hasResult(onward.next)) return { playedOn: false };
+  if (hasEarnedResult(onward.next)) return { playedOn: true };
+  // A CASCADE AWARD IS PASSED THROUGH, NOT STOPPED AT: its winner was carried on by it, and may have played on from
+  // where it put them — across a link too (census de 9300887, DOUBLE_ELIMINATION 8/4: the Backdraw final awarded by a
+  // carried walkover, its winner then beaten in the recorded Main final). Asked of the award's own winner, onward.
+  return winnerPlayedOn(onward.next, matchUps, drawDefinition, depth + 1);
+}
+
+/**
+ * A result onward that somebody RECORDED — not one the cascade awarded on arrival.
+ *
+ * `hasResult` counts any exit status, and an exit standing pending until its opponent arrives is the cascade's own
+ * award to whoever arrives: nobody played it and nobody entered it. Counting it as "played on" refused relabels the
+ * draw had every reason to take back. Census 20012942 (DOUBLE_ELIMINATION 8/6): `Main|2|1`'s walkover relabelled as
+ * played left `Backdraw|2|1` a convergence, because the produced exit's winner had then "won" `Backdraw|4|1` by
+ * arriving opposite a carried walkover; the Backdraw stalled. An exit whose exiting side carries an origin is the
+ * cascade's; one a director recorded carries none, and still refuses.
+ */
+function hasEarnedResult(matchUp: HydratedMatchUp): boolean {
+  if (!hasResult(matchUp)) return false;
+  if (checkScoreHasValue({ score: matchUp.score }) || matchUp.matchUpStatus === COMPLETED) return true;
+  if (!isAnyExit(matchUp.matchUpStatus) || !matchUp.winningSide) return true;
+  const exitingSide = 3 - matchUp.winningSide;
+  return !carriedExitStatus(matchUp.sideExitProvenance?.[exitingSide as 1 | 2]);
 }
 
 /** the winner matchUp onward, past any BYEs (bounded, as a draw is); a malformed round link is an error */

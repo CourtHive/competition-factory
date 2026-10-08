@@ -23,23 +23,11 @@
  */
 
 import { removeSubsequentRoundsParticipant } from '@Mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant';
-import {
-  DrawDefinition,
-  Event,
-  MatchUp,
-  MatchUpStatusUnion,
-  PositionAssignment,
-  Tournament,
-} from '@Types/tournamentTypes';
+import { rekeySideFacts, setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { modifyRoundRobinMatchUpsStatus } from '@Mutate/matchUps/matchUpStatus/modifyRoundRobinMatchUpsStatus';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import {
-  getDrawPositionSideNumber,
-  getWinningSideDrawPosition,
-  getSideDrawPosition,
-} from '@Query/matchUps/getDrawPositionSides';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
@@ -47,7 +35,6 @@ import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getE
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
-import { rekeySideFacts, setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -78,6 +65,19 @@ import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import { isExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  PositionAssignment,
+  Tournament,
+} from '@Types/tournamentTypes';
+import {
+  getDrawPositionSideNumber,
+  getWinningSideDrawPosition,
+  getSideDrawPosition,
+} from '@Query/matchUps/getDrawPositionSides';
 import {
   clearResolvedSideExitProvenance,
   isPropagatedExit as sharedIsPropagatedExit,
@@ -524,7 +524,15 @@ function applyPositionToMatchUp({
     : undefined;
   // a produced exit is awarded to the arriving side only when somebody ARRIVES: an empty position reaching it
   // resolves nothing (CA 2026-09-20; Q3, 2026-10-04: census w1 9000477 `South|3|1`, awarded to an empty dp 7)
+  //
+  // THE STRUCTURAL SIDE FIRST. `getExitWinningSide` reads the hydrated view, and here that view predates this
+  // placement: the arriving drawPosition is on no side yet, so on a fed round it falls back to side 1 whatever the
+  // bracket says. On the DOUBLE_ELIMINATION Main final the undefeated winner arrives on side 2 opposite the fed
+  // slot, so the produced exit was awarded to the EMPTY side 1 and the winner was stranded (census de 9300184:
+  // `Main|3|1` corrected from DOUBLE_DEFAULT to WALKOVER left `Main|4|1` DEFAULTED ws=1, then a DOUBLE_WALKOVER).
+  // `advancedExitWinningSide` is read from the updated drawPositions, which already hold the arrival.
   const exitWinningSide =
+    advancedExitWinningSide ||
     (isDoubleExitExit &&
       participantArrivesAtExit &&
       getExitWinningSide({
@@ -532,7 +540,6 @@ function applyPositionToMatchUp({
         drawPosition,
         matchUpId,
       })) ||
-    advancedExitWinningSide ||
     undefined;
 
   // The arrival can move the participant already here to the other side (a lone position sits on its bracket side,
@@ -888,7 +895,7 @@ function assignTeamLineUp({
   }
 }
 
-function propagateConsolationBye({
+export function propagateConsolationBye({
   updatedDrawPositions,
   loserTargetDrawPosition,
   tournamentRecord,

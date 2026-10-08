@@ -1,12 +1,14 @@
+import { reconcileConsolationReservations } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
+import { reconcileMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
 import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
-import { getDeciderFinals, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
+import type { DeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
@@ -21,6 +23,11 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isDoubleExit } from '@Validators/isExit';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
+import {
+  getDeciderFinals,
+  getDeciderSnapshot,
+  reconcileDeciders,
+} from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 
 // constants and types
 import { PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
@@ -124,13 +131,19 @@ function settleExitOrigins({
  * that led there. Each returns its error; neither is allowed to fail quietly.
  */
 function settleDraw({
+  deciderSnapshotBefore,
   finalsBefore,
   params,
 }: {
   finalsBefore: Map<string, number | undefined>;
+  deciderSnapshotBefore?: DeciderSnapshot;
   params: SetMatchUpStatusArgs;
 }): ResultType {
   const { tournamentRecord, drawDefinition, event } = params;
+
+  // a FIRST_MATCHUP consolation seat holds the reservation the settled first round says it should
+  const reserved = reconcileConsolationReservations({ tournamentRecord, drawDefinition, event });
+  if (reserved?.error) return reserved;
 
   // an exit held where nobody can play it is sent on, now that the draw it is decided on is settled
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
@@ -138,7 +151,14 @@ function settleDraw({
   if (settled.error) return settled;
 
   // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
-  return reconcileDeciders({ tournamentRecord, drawDefinition, finalsBefore, event });
+  return reconcileDeciders({
+    mutatedMatchUpId: params.matchUpId,
+    deciderSnapshotBefore,
+    tournamentRecord,
+    drawDefinition,
+    finalsBefore,
+    event,
+  });
 }
 
 export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
@@ -265,6 +285,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   // read BEFORE the mutation: `reconcileDeciders` acts only on a final whose winner has changed
   const finalsBefore = getDeciderFinals(drawDefinition);
+  // and the decider structures themselves: the cascade can re-seat a decider while the final's winner stays the same
+  const deciderSnapshotBefore = getDeciderSnapshot(drawDefinition);
   // ONE map for the whole call. `setMatchUpState` builds this itself unless handed one; building it
   // here instead lets the before-snapshot and the warning below read the same flat array the
   // cascade writes through, so neither walks the draw again. Its matchUps are the live objects.
@@ -395,7 +417,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   });
 
   if (!result.error) {
-    const settled = settleDraw({ finalsBefore, params });
+    // a participant who decided a round feeding another structure is seated there, before the decider is settled
+    reconcileMissedLinkAdvancements({
+      drawDefinition: params.drawDefinition,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+    });
+    const settled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
     if (settled.error) return decorateResult({ result: settled, stack });
     // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
     // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).

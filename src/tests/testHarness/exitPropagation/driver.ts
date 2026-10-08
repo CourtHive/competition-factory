@@ -78,8 +78,25 @@ export type Refusal = {
  * `maxSteps` is a runaway guard, not a coverage bound: it sits above the matchUp count of the
  * largest draw in the matrix, so reaching it means the driver stopped making progress, which is
  * itself worth reporting.
+ *
+ * `winningSideFor` chooses the winner of each scored (non-exit) step; side 1 when absent, which is how every
+ * cell composed before it plays. The TEAM uneven-dual arm uses it to give a dual's eventual loser a rubber.
  */
-export function playForward({ propagateExitStatus, exitOutcome, exitPeriod = 3, maxSteps = 200, drawId }): {
+export function playForward({
+  propagateExitStatus,
+  winningSideFor,
+  exitPeriod = 3,
+  maxSteps = 200,
+  exitOutcome,
+  drawId,
+}: {
+  winningSideFor?: (matchUp: any) => number;
+  propagateExitStatus: boolean;
+  exitPeriod?: number;
+  exitOutcome: any;
+  maxSteps?: number;
+  drawId: string;
+}): {
   failures: PropertyFailure[];
   refusals: Refusal[];
 } {
@@ -100,7 +117,8 @@ export function playForward({ propagateExitStatus, exitOutcome, exitPeriod = 3, 
     const target = firstPlayable(matchUps, skip);
     if (!target) return { failures, refusals };
 
-    const outcome = exitOutcome && taken % exitPeriod === exitPeriod - 1 ? exitOutcome : { winningSide: 1 };
+    const exitStep = exitOutcome && taken % exitPeriod === exitPeriod - 1;
+    const outcome = exitStep ? exitOutcome : { winningSide: winningSideFor?.(target) ?? 1 };
     const observation = observeMutation({
       matchUpId: target.matchUpId,
       propagateExitStatus,

@@ -22,6 +22,10 @@ export interface HydratedMatchUp extends MatchUp {
   drawId: string;
   eventId: string;
   tournamentId: string;
+  // Set on a tieMatchUp only: the matchUpId of its TEAM matchUp. A tieMatchUp also carries `collectionId` (stored)
+  // and its TEAM matchUp's structureId, roundNumber and drawPositions, and the tie-inclusive getters return it beside
+  // that TEAM matchUp. Read such a list through `teamLevelMatchUps` before counting or ranging it.
+  matchUpTieId?: string;
   sides?: HydratedSide[];
 }
 

@@ -6,6 +6,7 @@ import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpSc
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { rereadTargets } from './rereadTargets';
 
 // constants
 import { INVALID_MATCHUP_STATUS, UNRECOGNIZED_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
@@ -147,6 +148,8 @@ export function attemptToSetMatchUpStatus(params) {
 function removeWinningSideAndSetDoubleExit(params) {
   const result = removeDirectedParticipants(params);
   if (result.error) return result;
+  // the removal withdrew what the decided result directed; the advancement writes into the draw it left
+  rereadTargets(params);
   return doubleExitAdvancement(params);
 }
 

@@ -75,7 +75,7 @@
   "src/mutate/venues": 21,
   "src/query": 32,
   "src/query/base": 14,
-  "src/query/drawDefinition": 266,
+  "src/query/drawDefinition": 257,
   "src/query/drawDefinition/avoidance": 99,
   "src/query/drawDefinition/matchUpActions": 69,
   "src/query/drawDefinition/positionActions": 194,

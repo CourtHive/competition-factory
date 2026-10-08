@@ -13,6 +13,7 @@ import { getSourceRounds } from '@Query/drawDefinition/getSourceRounds';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { isConvertableInteger, nextPowerOf2 } from '@Tools/math';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { structuresOf } from '@Acquire/structureMembers';
@@ -21,7 +22,6 @@ import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { generateTieMatchUps } from './tieMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { ensureInt } from '@Tools/ensureInt';
-import { nextPowerOf2 } from '@Tools/math';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -46,7 +46,11 @@ type GenerateAndPopulateArgs = {
   roundOffsetLimit?: number;
   exitProfileLimit?: boolean;
   playoffGroups?: PlayoffGroupConfig[];
+  // cap the rounds generated in each playoff structure (a consolation that plays one or two rounds);
+  // roundLimits keys are SOURCE round numbers and override roundLimit for that structure
+  roundLimits?: { [sourceRoundNumber: number]: number };
   roundNumbers?: number[];
+  roundLimit?: number;
   structureId: string;
   idPrefix?: string;
   isMock?: boolean;
@@ -79,6 +83,8 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     drawDefinition,
     roundProfiles,
     roundNumbers,
+    roundLimits,
+    roundLimit,
     structure,
     idPrefix,
     isMock,
@@ -170,6 +176,7 @@ export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulate
     const sequenceLimit = roundNumber && roundProfile?.[roundNumber] && stageSequence + roundProfile[roundNumber] - 1;
 
     const result = generatePlayoffStructures({
+      roundLimit: roundLimits?.[Number(roundNumber)] ?? roundLimit,
       exitProfile: `0-${roundNumber}`,
       addNameBaseToAttributeName,
       playoffStructureNameBase,
@@ -312,11 +319,21 @@ function resolvePlayoffParams(params: GenerateAndPopulateArgs, stack: string): a
     playoffGroups,
     roundProfiles,
     roundNumbers,
+    roundLimits,
+    roundLimit,
     idPrefix,
     isMock,
     event,
     uuids,
   } = params;
+
+  const limits = [roundLimit, ...Object.values(roundLimits ?? {})].filter((limit) => limit !== undefined);
+  if (limits.some((limit) => !isConvertableInteger(limit) || Number(limit) < 1)) {
+    return {
+      error: true,
+      earlyReturn: decorateResult({ result: { error: INVALID_VALUES }, context: { roundLimit, roundLimits }, stack }),
+    };
+  }
 
   const drawDefinition = makeDeepCopy(params.drawDefinition, false, true);
 
@@ -374,6 +391,8 @@ function resolvePlayoffParams(params: GenerateAndPopulateArgs, stack: string): a
     drawDefinition,
     roundProfiles,
     roundNumbers,
+    roundLimits,
+    roundLimit,
     structure,
     idPrefix,
     isMock,

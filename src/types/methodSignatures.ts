@@ -97,6 +97,7 @@ import type { exportMatchUpJSON, mcpValidator, validateMCPMatch } from '@Validat
 import type { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
 import type { removeDrawPositionAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import type { proAutoSchedule } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proAutoSchedule';
+import type { getAvailableQualifyingTargets } from '@Query/drawDefinition/getAvailableQualifyingTargets';
 import type { alternateDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionAlternate';
 import type { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionQualifier';
 import type { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/removeMatchUpSideParticipant';
@@ -916,6 +917,7 @@ export interface MethodSignatures {
   getAssignedParticipantIds: EngineMethod<typeof getAssignedParticipantIds>;
   getAvailableMatchUpsCount: EngineMethod<typeof getAvailableMatchUpsCount>;
   getAvailablePlayoffProfiles: EngineMethod<typeof getAvailablePlayoffProfiles>;
+  getAvailableQualifyingTargets: EngineMethod<typeof getAvailableQualifyingTargets>;
   getAvailableReports: EngineMethod<typeof getAvailableReports>;
   getAvailableTransitions: EngineMethod<typeof getAvailableTransitions>;
   getAwardPoints: EngineMethod<typeof getAwardPoints>;

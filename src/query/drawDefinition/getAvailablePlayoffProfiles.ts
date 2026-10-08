@@ -1,8 +1,11 @@
+import { getPlayoffScopeStructureIds } from './getPlayoffScopeStructureIds';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getPositionsPlayedOff } from './getPositionsPlayedOff';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { getPositionAssignments } from './positionsGetter';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { chunkArray, generateRange } from '@Tools/arrays';
+import { structuresOf } from '@Acquire/structureMembers';
 import { getSourceRounds } from './getSourceRounds';
 import { getStructureLinks } from './linkGetter';
 import { numericSort } from '@Tools/sorting';
@@ -10,7 +13,8 @@ import { numericSort } from '@Tools/sorting';
 // constants and types
 import { CONTAINER, FIRST_MATCHUP, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import { DrawDefinition } from '@Types/tournamentTypes';
+import { DrawDefinition, Structure } from '@Types/tournamentTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 type GetAvailablePlayoffProfileArgs = {
   drawDefinition: DrawDefinition;
@@ -38,10 +42,19 @@ export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: Get
 
   const available = {};
 
+  // a QUALIFYING structure's finishing positions are scoped to its own chain of loser-fed structures
+  const scopedPositions: { [structureId: string]: number[] } = {};
+
   for (const structure of filteredStructures) {
     const structureId = structure?.structureId;
+    const scopeStructureIds = getPlayoffScopeStructureIds({ drawDefinition, structureId });
+    const scoped = scopeStructureIds
+      ? getPositionsPlayedOff({ structureIds: scopeStructureIds, drawDefinition, matchUpsMap })
+      : { positionsNotPlayedOff, positionsPlayedOff };
+    if (scopeStructureIds) scopedPositions[structureId] = scoped.positionsPlayedOff ?? [];
+
     const result = availablePlayoffProfiles({
-      playoffPositions: positionsNotPlayedOff,
+      playoffPositions: scoped.positionsNotPlayedOff,
       drawDefinition,
       structure,
       matchUps,
@@ -56,7 +69,7 @@ export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: Get
   }
 
   if (structureId) {
-    return { positionsPlayedOff, ...available[structureId] };
+    return { positionsPlayedOff: scopedPositions[structureId] ?? positionsPlayedOff, ...available[structureId] };
   } else {
     return {
       availablePlayoffProfiles: Object.values(available),
@@ -66,21 +79,34 @@ export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: Get
   }
 }
 
-function availablePlayoffProfiles({ playoffPositions, drawDefinition, structure, matchUps }) {
+type AvailablePlayoffProfilesArgs = {
+  playoffPositions?: number[];
+  drawDefinition: DrawDefinition;
+  matchUps?: HydratedMatchUp[];
+  structure: Structure;
+};
+
+function availablePlayoffProfiles({
+  playoffPositions,
+  drawDefinition,
+  structure,
+  matchUps = [],
+}: AvailablePlayoffProfilesArgs) {
   const structureId = structure?.structureId;
   const { links } = getStructureLinks({ drawDefinition, structureId });
 
-  if (structure.structureType === CONTAINER || structure.structures) {
+  const childStructures = structuresOf(structure);
+  if (structure.structureType === CONTAINER || childStructures) {
     const positionsCount = getPositionAssignments({ structure })?.positionAssignments?.length;
 
-    const groupCount = structure.structures.length;
+    const groupCount = childStructures?.length ?? 0;
     const groupSize = (positionsCount ?? 0) / groupCount;
     const finishingPositionsPlayedOff = links.source?.flatMap(({ source }) => source?.finishingPositions ?? []) ?? [];
     const finishingPositionsAvailable = generateRange(1, groupSize + 1).filter(
       (n) => !finishingPositionsPlayedOff.includes(n),
     );
     const positionRange = matchUps.find((m) => m.containerStructureId === structureId && m.finishingPositionRange)
-      ?.finishingPositionRange?.winner || [0, 1];
+      ?.finishingPositionRange?.winner ?? [0, 1];
     const targetStructureIds = links?.source.map(({ target }) => target.structureId);
     const { positionsPlayedOff = [], positionsNotPlayedOff = [] } = getPositionsPlayedOff({
       structureIds: targetStructureIds,
@@ -148,11 +174,12 @@ function availablePlayoffProfiles({ playoffPositions, drawDefinition, structure,
     const link = links?.source.find((link) => link.source.roundNumber === roundNumber);
     const targetRoundNumber = link?.target.roundNumber;
     const targetStructureId = link?.target.structureId;
-    const targetRoundMatchUps = matchUps.filter(
+    // a TEAM matchUp's tieMatchUps share its round; only the TEAM matchUp says whether its fed side is open
+    const targetRoundMatchUps = teamLevelMatchUps(matchUps).filter(
       ({ roundNumber, structureId }) => structureId === targetStructureId && roundNumber === targetRoundNumber,
     );
     const availableToProgress = targetRoundMatchUps.filter(({ sides }) =>
-      sides.find((side) => side.participantFed && !side.participantId),
+      sides?.find((side) => side.participantFed && !side.participantId),
     ).length;
 
     if (playoffRounds && availableToProgress === targetRoundMatchUps.length) {

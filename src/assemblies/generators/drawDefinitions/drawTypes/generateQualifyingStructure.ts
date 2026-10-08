@@ -255,6 +255,7 @@ export function generateQualifyingStructure(params: GenerateQualifyingStructureA
     roundLimit &&
     generateQualifyingLink({
       sourceStructureId: structure.structureId,
+      targetEntryRound: roundTarget,
       sourceRoundNumber: roundLimit,
       targetStructureId,
       finishingPositions,

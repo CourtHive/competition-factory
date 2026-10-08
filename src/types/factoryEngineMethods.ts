@@ -263,6 +263,7 @@ export type FactoryEngineMethod =
   | 'getAuditAuthorityServer'
   | 'getAvailableMatchUpsCount'
   | 'getAvailablePlayoffProfiles'
+  | 'getAvailableQualifyingTargets'
   | 'getAvailableReports'
   | 'getAvailableTransitions'
   | 'getAwardPoints'
@@ -1021,6 +1022,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getAuditAuthorityServer',
   'getAvailableMatchUpsCount',
   'getAvailablePlayoffProfiles',
+  'getAvailableQualifyingTargets',
   'getAvailableReports',
   'getAvailableTransitions',
   'getAwardPoints',

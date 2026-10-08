@@ -12,6 +12,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit } from '@Validators/isExit';
 import { ensureInt } from '@Tools/ensureInt';
@@ -754,13 +755,33 @@ function updateMatchUpStatusAfterRemoval({
   // is stored at index 0 whatever its side (draw-positions.md § 2), so a lone side-2 position was cleared as side 1,
   // taking the OTHER side's origin and keeping its own (census de 9302775, DE 16/11 `Backdraw|3|2`: a produced
   // DEFAULTED from `Backdraw|2|3` erased, a BYE claim left on an undecided matchUp).
-  const clearedSideNumber = getDrawPositionSideNumber({
-    matchUp: { ...targetMatchUp, sides: undefined, drawPositions: initialDrawPositions },
-    drawDefinition,
-    drawPosition,
-    structureId,
-  });
-  const retained = retainProvenanceBesideRemoval(targetMatchUp.sideExitProvenance, clearedSideNumber);
+  //
+  // And it is the position REMOVED FROM THIS MATCHUP, which need not be `drawPosition`. Clearing one of two BYEs that
+  // met in a matchUp takes back the BYE THAT matchUp advanced, under its own number: census 20030617 (OLYMPIC 8/8),
+  // `West|1|1`'s dp 2 claim withdrawn removed dp 1 from `West|2|1`. Asked about dp 2, the side read undefined, and the
+  // other side's produced DEFAULTED from `West|1|2` was dropped with it, so the loser who then arrived met nobody.
+  const sidePosition =
+    initialDrawPositions?.includes(drawPosition) || !removedDrawPosition ? drawPosition : removedDrawPosition;
+  const clearedSideNumber =
+    getDrawPositionSideNumber({
+      matchUp: { ...targetMatchUp, sides: undefined, drawPositions: initialDrawPositions },
+      drawPosition: sidePosition,
+      drawDefinition,
+      structureId,
+    }) ??
+    // only for a position this matchUp actually held: one it never held (an FMLC fall-through winner) keeps the
+    // long-standing reading, which clears the origins and takes the award back
+    (initialDrawPositions?.includes(sidePosition)
+      ? sideFedFromPosition({ targetMatchUp, drawPosition: sidePosition, drawDefinition, structureId })
+      : undefined);
+  // a matchUp holding NO position, from which none was removed, has nothing a clear can take, so it loses no origin
+  // either (census 20030617: a second pass over `West|2|1`, empty by then, erased the produced DEFAULTED kept above).
+  // A matchUp that holds a position is still cleared as before: its winner can have arrived without a stored position
+  // (an FMLC fall-through), and the clear of that winner's origin is what takes the award back.
+  const touchedHere = !!initialDrawPositions?.filter(Boolean).length || !!removedDrawPosition;
+  const retained = touchedHere
+    ? retainProvenanceBesideRemoval(targetMatchUp.sideExitProvenance, clearedSideNumber)
+    : targetMatchUp.sideExitProvenance && { ...targetMatchUp.sideExitProvenance };
   clearSideExitProvenance(targetMatchUp);
   if (retained) targetMatchUp.sideExitProvenance = retained;
 
@@ -863,6 +884,40 @@ function awardStands({
  * was NOT cleared. With no identifiable cleared side (the position was not in the array), only the
  * claims survive — the behaviour this call had before the other side's origin was retained.
  */
+/**
+ * The side `drawPosition` held, read from the previous-round matchUp that holds it. The structural reader orders
+ * positions from the round profile as it stands, and by the time a removal reaches here the position can already be
+ * gone from this round, so it cannot be placed (census 20030617, OLYMPIC 8/8: dp 1 out of `West|2|1`). The feeder's
+ * place in its round answers the question.
+ */
+function sideFedFromPosition({
+  drawDefinition,
+  targetMatchUp,
+  drawPosition,
+  structureId,
+}: {
+  drawDefinition: DrawDefinition;
+  targetMatchUp: MatchUp;
+  drawPosition?: number;
+  structureId: string;
+}): number | undefined {
+  const { roundNumber, roundPosition } = targetMatchUp;
+  if (!drawPosition || !roundNumber || !roundPosition || roundNumber < 2) return undefined;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  const matchUps = matchUpsOf(structure) ?? [];
+  const feeder = matchUps.find(
+    (matchUp) => matchUp.roundNumber === roundNumber - 1 && matchUp.drawPositions?.includes(drawPosition),
+  );
+  if (!feeder?.roundPosition) return undefined;
+
+  // a round half the size of the one before pairs its feeders 2p-1 (side 1) and 2p (side 2). Any other shape (a feed
+  // round, a lucky draw's odd round) is not read here and keeps the long-standing answer: no side, origins cleared
+  const previousCount = matchUps.filter((matchUp) => matchUp.roundNumber === roundNumber - 1).length;
+  const currentCount = matchUps.filter((matchUp) => matchUp.roundNumber === roundNumber).length;
+  if (previousCount !== 2 * currentCount || Math.ceil(feeder.roundPosition / 2) !== roundPosition) return undefined;
+  return feeder.roundPosition % 2 ? 1 : 2;
+}
+
 function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: number) {
   if (!provenance) return undefined;
   if (!clearedSideNumber) return retainByeClaimsOnly(provenance);

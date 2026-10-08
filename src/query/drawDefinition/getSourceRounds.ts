@@ -1,5 +1,6 @@
 import { getFinishingPositionSourceRoundsMap } from '@Query/structure/structureUtils';
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
+import { getPlayoffScopeStructureIds } from './getPlayoffScopeStructureIds';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getPositionsPlayedOff } from './getPositionsPlayedOff';
 import { generateRange } from '@Tools/arrays';
@@ -43,8 +44,10 @@ export function getSourceRounds({
   if (paramsCheck.error) return paramsCheck;
   if (!playoffPositions) return { error: MISSING_VALUE, info: 'missing playoffPositions' };
 
-  // NOTE: in this instance do not pass in structureIds
-  const result = getPositionsPlayedOff({ drawDefinition });
+  // NOTE: structureIds are passed only for a QUALIFYING source, whose finishing positions live in
+  // their own chain; every other source keeps the draw-wide default (see getPlayoffScopeStructureIds)
+  const structureIds = getPlayoffScopeStructureIds({ drawDefinition, structureId });
+  const result = getPositionsPlayedOff({ drawDefinition, structureIds });
 
   if (result.error) return result;
   const positionsPlayedOff = result.positionsPlayedOff;
