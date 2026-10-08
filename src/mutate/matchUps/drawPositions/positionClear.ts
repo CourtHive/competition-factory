@@ -888,7 +888,7 @@ function awardStands({
  * The side `drawPosition` held, read from the previous-round matchUp that holds it. The structural reader orders
  * positions from the round profile as it stands, and by the time a removal reaches here the position can already be
  * gone from this round, so it cannot be placed (census 20030617, OLYMPIC 8/8: dp 1 out of `West|2|1`). The feeder's
- * place in its round answers the question; failing that, which side's recorded origin the feeder is.
+ * place in its round answers the question.
  */
 function sideFedFromPosition({
   drawDefinition,
@@ -910,17 +910,12 @@ function sideFedFromPosition({
   );
   if (!feeder?.roundPosition) return undefined;
 
-  // STRUCTURE FIRST: a round half the size of the one before pairs feeders 2p-1 (side 1) and 2p (side 2); a round the
-  // same size is a feed round, where the position advanced from this structure is side 2 (draw-positions.md rule 4)
+  // a round half the size of the one before pairs its feeders 2p-1 (side 1) and 2p (side 2). Any other shape (a feed
+  // round, a lucky draw's odd round) is not read here and keeps the long-standing answer: no side, origins cleared
   const previousCount = matchUps.filter((matchUp) => matchUp.roundNumber === roundNumber - 1).length;
   const currentCount = matchUps.filter((matchUp) => matchUp.roundNumber === roundNumber).length;
-  if (previousCount === 2 * currentCount && Math.ceil(feeder.roundPosition / 2) === roundPosition)
-    return feeder.roundPosition % 2 ? 1 : 2;
-  if (previousCount === currentCount && feeder.roundPosition === roundPosition) return 2;
-
-  // otherwise the side whose recorded origin is that feeder
-  const provenance = targetMatchUp.sideExitProvenance;
-  return ([1, 2] as const).find((sideNumber) => provenance?.[sideNumber]?.sourceMatchUpId === feeder.matchUpId);
+  if (previousCount !== 2 * currentCount || Math.ceil(feeder.roundPosition / 2) !== roundPosition) return undefined;
+  return feeder.roundPosition % 2 ? 1 : 2;
 }
 
 function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: number) {
