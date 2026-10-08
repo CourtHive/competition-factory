@@ -8,7 +8,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { DEFAULTED, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_ELIMINATION, MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 
 /**
  * AN ARRIVAL ON THE EXITING SIDE TAKES NOTHING — census 20037222 (MODIFIED_FEED_IN_CHAMPIONSHIP 8/8).
@@ -102,4 +102,67 @@ it('the loser who passes the BYE is seated opposite the awarded winner, and noth
   expect(corrected.onward.participants).toEqual(expect.arrayContaining([awarded, byeHolder]));
   expect(corrected.onward.participants).not.toContain(arrived);
   expect(corrected.stalls).toEqual(0);
+});
+
+/**
+ * The same arrival in a Backdraw — census de 9300487 (DOUBLE_ELIMINATION 16/13, `allowChangePropagation`), steps 0–17
+ * of its frozen schedule, replayed as the census replays them: a step is taken only while its matchUp holds two
+ * participants, and a refusal is part of the schedule. `Main|1|2`'s double walkover turns a Backdraw feeder into a
+ * BYE, and the participant passing it lands on the side of `Backdraw|3|1` that DEFAULTED; resolving her as its winner
+ * sent the defaulted side into `Backdraw|4|1` (WINNING_SIDE_ADVANCEMENT_MISMATCH).
+ */
+const DE_STEPS: [string, any][] = [
+  ['Main|1|4', { winningSide: 2 }],
+  ['Main|1|6', { winningSide: 1 }],
+  ['Main|1|7', { winningSide: 2 }],
+  ['Main|1|2', { matchUpStatus: WALKOVER, winningSide: 1 }],
+  ['Main|1|6', { matchUpStatus: DOUBLE_WALKOVER }],
+  ['Main|2|4', { winningSide: 2 }],
+  ['Main|1|7', { matchUpStatus: DOUBLE_WALKOVER }],
+  ['Main|1|4', { matchUpStatus: DOUBLE_WALKOVER }],
+  ['Main|1|2', { winningSide: 2 }],
+  ['Main|1|5', { matchUpStatus: DEFAULTED, winningSide: 1 }],
+  ['Main|2|4', { matchUpStatus: WALKOVER, winningSide: 1 }],
+  ['Main|1|6', { winningSide: 1 }],
+  ['Main|1|4', { matchUpStatus: WALKOVER, winningSide: 2 }],
+  ['Main|1|4', { winningSide: 1 }],
+  ['Main|1|5', { winningSide: 2 }],
+  ['Main|2|2', { matchUpStatus: WALKOVER, winningSide: 2 }],
+  ['Backdraw|1|2', { winningSide: 2 }],
+  ['Main|1|2', { matchUpStatus: DOUBLE_WALKOVER }],
+];
+
+it('census de 9300487: the defaulted side of a Backdraw matchUp is not advanced as its winner', () => {
+  setSubscriptions({});
+  const config = {
+    drawType: DOUBLE_ELIMINATION,
+    propagateExitStatus: true,
+    participantsCount: 13,
+    seed: 9300487,
+    drawSize: 16,
+  };
+  expect(prepareDraw(config, DRAW_ID)).toEqual(true);
+  for (const [key, outcome] of DE_STEPS) {
+    const target = at(key);
+    if ((target?.sides ?? []).filter((side: any) => side?.participantId).length !== 2) continue;
+    tournamentEngine.setMatchUpStatus({
+      matchUpId: target.matchUpId,
+      allowChangePropagation: true,
+      propagateExitStatus: true,
+      drawId: DRAW_ID,
+      outcome,
+    });
+  }
+  const issues = (getDrawInconsistencies({ drawDefinition: getDrawDefinition(DRAW_ID) }).inconsistencies ?? []).map(
+    (inconsistency: any) => inconsistency.issueType,
+  );
+  expect(issues).not.toContain('WINNING_SIDE_ADVANCEMENT_MISMATCH');
+
+  const decided = at('Backdraw|3|1');
+  expect(decided.matchUpStatus).toEqual(DEFAULTED);
+  const winnerId = decided.sides.find((side: any) => side.sideNumber === decided.winningSide)?.participantId;
+  const loserId = decided.sides.find((side: any) => side.sideNumber !== decided.winningSide)?.participantId;
+  const onward = at('Backdraw|4|1').sides.map((side: any) => side.participantId);
+  expect(onward).toContain(winnerId);
+  expect(onward).not.toContain(loserId);
 });
