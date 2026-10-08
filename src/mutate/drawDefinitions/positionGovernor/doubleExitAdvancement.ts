@@ -57,6 +57,7 @@ import type { MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryT
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type {
   SideExitProvenanceEntry,
+  SideExitProvenance,
   MatchUpStatusUnion,
   DrawDefinition,
   Structure,
@@ -1023,11 +1024,15 @@ function conditionallyAdvanceDrawPosition(params) {
   const pairedMatchUpStatus = pairedPreviousMatchUp?.matchUpStatus;
 
   // CODES first-class: the facts, keyed by sideNumber and attributed to their source.
-  const newProvenance = buildSideExitProvenance({
-    pairedMatchUpId: pairedPreviousMatchUp?.matchUpId,
-    sourceMatchUpId: sourceMatchUp?.matchUpId,
-    pairedMatchUpStatus,
-    sourceMatchUpStatus,
+  const newProvenance = keepCarriedExitOnPairedSide({
+    existing: getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
+    built: buildSideExitProvenance({
+      pairedMatchUpId: pairedPreviousMatchUp?.matchUpId,
+      sourceMatchUpId: sourceMatchUp?.matchUpId,
+      pairedMatchUpStatus,
+      sourceMatchUpStatus,
+      sourceSideNumber,
+    }),
     sourceSideNumber,
   });
 
@@ -1411,6 +1416,39 @@ function advanceFromTarget({
   }
 
   return decorateResult({ result: { ...SUCCESS }, stack });
+}
+
+/**
+ * THE PAIRED SIDE'S ENTRY IS AN INFERENCE; A CARRIED EXIT ALREADY ON THAT SIDE IS A FACT.
+ *
+ * `buildSideExitProvenance` stamps a convergence as a pair: the source's side from the source, the other side from
+ * the PAIRED PREVIOUS matchUp in this structure. That is who would have arrived there by advancing — but on a fed
+ * round the occupant can have arrived another way, fed over a link CARRYING an exit, and `progressExitStatus` has
+ * already recorded that exit on the side. Merging the pair replaced it.
+ *
+ * Census 20035463 (FEED_IN_CHAMPIONSHIP 8/5, forward play only): the loser of `Main|2|2`, walked over, is fed into
+ * `Consolation|2|1` and passes its BYE into `Consolation|3|1` carrying the WALKOVER. A DOUBLE_WALKOVER at
+ * `Consolation|2|2` then converges there, and the pair stamp wrote side 1 as `{ BYE }` from `Consolation|2|1` — the
+ * walked-over occupant's exit was erased, and `STALLED_POSITION` reported somebody who had exited as stranded
+ * (CA, 2026-09-29: *"an occupant who exited is not waiting"*).
+ *
+ * So the paired side's entry yields to an existing entry that carries an exit, unless it carries one itself.
+ */
+function keepCarriedExitOnPairedSide({
+  sourceSideNumber,
+  existing,
+  built,
+}: {
+  existing?: SideExitProvenance;
+  built?: SideExitProvenance;
+  sourceSideNumber?: number;
+}): SideExitProvenance | undefined {
+  if (!built || (sourceSideNumber !== 1 && sourceSideNumber !== 2)) return built;
+  const pairedSideNumber = sourceSideNumber === 1 ? 2 : 1;
+  if (!carriedExitStatus(existing?.[pairedSideNumber]) || carriedExitStatus(built[pairedSideNumber])) return built;
+  const kept: SideExitProvenance = { ...built };
+  delete kept[pairedSideNumber];
+  return Object.keys(kept).length ? kept : undefined;
 }
 
 /**
