@@ -1,9 +1,4 @@
-import { getDrawDefinition, getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
-import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
-import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
-import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
-import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
+import { stallsAfterSchedule } from '@Tests/testHarness/exitPropagation/stallCount';
 import { expect, it } from 'vitest';
 import path from 'path';
 import fs from 'fs';
@@ -39,26 +34,12 @@ const INSTANCES: Instance[] = fs
   .filter(Boolean)
   .map((line) => JSON.parse(line));
 
-const key = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
-
-/** the census's replay: a step targets its coordinate, and only while that matchUp holds two participants */
-function stallsAfter({ arm, seed, config, steps }: Instance): number {
-  setSubscriptions({});
-  const drawId = `stall-scale-${arm}-${seed}`;
-  expect(prepareDraw(config, drawId)).toEqual(true);
-  for (const step of steps) {
-    const target = getDrawMatchUps(drawId).find((matchUp: any) => key(matchUp) === key(step));
-    if ((target?.sides ?? []).filter((side: any) => side?.participantId).length !== 2) continue;
-    tournamentEngine.setMatchUpStatus({
-      ...(arm === 'on' ? { allowChangePropagation: true } : {}),
-      propagateExitStatus: config.propagateExitStatus,
-      matchUpId: target.matchUpId,
-      outcome: step.outcome,
-      drawId,
-    });
-  }
-  const inconsistencies = getDrawInconsistencies({ drawDefinition: getDrawDefinition(drawId) }).inconsistencies ?? [];
-  return inconsistencies.filter((inconsistency: any) => inconsistency.issueType === STALLED_POSITION).length;
+/** the census's replay, in the instance's own arm */
+function stallsAfter(instance: Instance): number {
+  const drawId = `stall-scale-${instance.arm}-${instance.seed}`;
+  const stalls = stallsAfterSchedule({ allowChangePropagation: instance.arm === 'on', scenario: instance, drawId });
+  expect(stalls).toBeDefined();
+  return stalls?.length ?? 0;
 }
 
 // CONTROL: an empty or truncated fixture would pass by replaying nothing
