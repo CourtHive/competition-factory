@@ -10,6 +10,10 @@ import { HydratedMatchUp } from '@Types/hydrated';
 // directLoser uses to decide FIRST_MATCH_LOSER_CONSOLATION eligibility (a genuine first-match loser
 // has zero prior wins), extracted so the read-only integrity check reuses identical logic rather than
 // re-inferring feed eligibility from link presence.
+//
+// Only TEAM-level matchUps count. In context, a TEAM matchUp's tieMatchUps carry its drawPositions and
+// side drawPositions, so a rubber won on the way to losing the dual would otherwise read as a prior win
+// and withhold a first-match loser's feed — depending only on whether that rubber was scored first.
 /**
  * Whether an outcome is one that does NOT count as a win.
  *
@@ -38,7 +42,7 @@ export function getDrawPositionWinCount({
   drawPosition: number;
 }): number {
   return sourceMatchUps
-    .filter((matchUp) => matchUp.drawPositions?.includes(drawPosition))
+    .filter((matchUp) => !matchUp.collectionId && matchUp.drawPositions?.includes(drawPosition))
     .filter((matchUp) => {
       const drawPositionSide = matchUp.sides?.find((side) => side.drawPosition === drawPosition);
       const unscoredOutcome = isUnscoredOutcome({ matchUpStatus: matchUp.matchUpStatus, score: matchUp.score });
