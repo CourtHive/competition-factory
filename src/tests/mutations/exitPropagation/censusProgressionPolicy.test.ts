@@ -57,12 +57,22 @@ import fs from 'fs';
 const enabled = process.env.POLICY_CENSUS === '1';
 const schedulesIn = process.env.SCHEDULES_IN;
 const outPath = process.env.OUT ?? '/tmp/census-progression-policy.jsonl';
-const propagateBye = process.env.PROPAGATE_BYE === '1';
+/**
+ * `PROPAGATE_BYE=1` attaches `true`, `PROPAGATE_BYE=0` attaches `false`, unset attaches nothing. Since
+ * the default became `true` (2026-09-29) "unset" no longer means off, so the policy-OFF arm — the one a
+ * consumer reaches by opting out, and the one `STALLED_POSITION` severity is measured against — needs
+ * the explicit `0`.
+ */
+const propagateByeEnv = process.env.PROPAGATE_BYE;
+const propagateBye = propagateByeEnv === '1';
 
 type Scenario = { seed: number; config: ScenarioConfig; steps: Step[] };
 
 /** attached exactly as `doubleExitPropagateBye.test.ts` attaches it — a consumer's own route */
-const policyDefinitions = propagateBye ? { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: true } } : undefined;
+const policyDefinitions =
+  propagateByeEnv === '1' || propagateByeEnv === '0'
+    ? { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: propagateBye } }
+    : undefined;
 
 test.skipIf(!enabled)(
   'doubleExitPropagateBye over a frozen window',

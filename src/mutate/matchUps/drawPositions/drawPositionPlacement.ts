@@ -524,7 +524,15 @@ function applyPositionToMatchUp({
     : undefined;
   // a produced exit is awarded to the arriving side only when somebody ARRIVES: an empty position reaching it
   // resolves nothing (CA 2026-09-20; Q3, 2026-10-04: census w1 9000477 `South|3|1`, awarded to an empty dp 7)
+  //
+  // THE STRUCTURAL SIDE FIRST. `getExitWinningSide` reads the hydrated view, and here that view predates this
+  // placement: the arriving drawPosition is on no side yet, so on a fed round it falls back to side 1 whatever the
+  // bracket says. On the DOUBLE_ELIMINATION Main final the undefeated winner arrives on side 2 opposite the fed
+  // slot, so the produced exit was awarded to the EMPTY side 1 and the winner was stranded (census de 9300184:
+  // `Main|3|1` corrected from DOUBLE_DEFAULT to WALKOVER left `Main|4|1` DEFAULTED ws=1, then a DOUBLE_WALKOVER).
+  // `advancedExitWinningSide` is read from the updated drawPositions, which already hold the arrival.
   const exitWinningSide =
+    advancedExitWinningSide ||
     (isDoubleExitExit &&
       participantArrivesAtExit &&
       getExitWinningSide({
@@ -532,7 +540,6 @@ function applyPositionToMatchUp({
         drawPosition,
         matchUpId,
       })) ||
-    advancedExitWinningSide ||
     undefined;
 
   // The arrival can move the participant already here to the other side (a lone position sits on its bracket side,

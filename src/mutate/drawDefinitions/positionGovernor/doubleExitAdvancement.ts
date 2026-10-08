@@ -57,6 +57,7 @@ import type { MatchUpsMap, PolicyDefinitions, ResultType } from '@Types/factoryT
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type {
   SideExitProvenanceEntry,
+  SideExitProvenance,
   MatchUpStatusUnion,
   DrawDefinition,
   Structure,
@@ -1023,11 +1024,15 @@ function conditionallyAdvanceDrawPosition(params) {
   const pairedMatchUpStatus = pairedPreviousMatchUp?.matchUpStatus;
 
   // CODES first-class: the facts, keyed by sideNumber and attributed to their source.
-  const newProvenance = buildSideExitProvenance({
-    pairedMatchUpId: pairedPreviousMatchUp?.matchUpId,
-    sourceMatchUpId: sourceMatchUp?.matchUpId,
-    pairedMatchUpStatus,
-    sourceMatchUpStatus,
+  const newProvenance = keepCarriedExitOnPairedSide({
+    existing: getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
+    built: buildSideExitProvenance({
+      pairedMatchUpId: pairedPreviousMatchUp?.matchUpId,
+      sourceMatchUpId: sourceMatchUp?.matchUpId,
+      pairedMatchUpStatus,
+      sourceMatchUpStatus,
+      sourceSideNumber,
+    }),
     sourceSideNumber,
   });
 
@@ -1413,6 +1418,64 @@ function advanceFromTarget({
   return decorateResult({ result: { ...SUCCESS }, stack });
 }
 
+/**
+ * THE PAIRED SIDE'S ENTRY IS AN INFERENCE; A CARRIED EXIT ALREADY ON THAT SIDE IS A FACT.
+ *
+ * `buildSideExitProvenance` stamps a convergence as a pair: the source's side from the source, the other side from
+ * the PAIRED PREVIOUS matchUp in this structure. That is who would have arrived there by advancing — but on a fed
+ * round the occupant can have arrived another way, fed over a link CARRYING an exit, and `progressExitStatus` has
+ * already recorded that exit on the side. Merging the pair replaced it.
+ *
+ * Census 20035463 (FEED_IN_CHAMPIONSHIP 8/5, forward play only): the loser of `Main|2|2`, walked over, is fed into
+ * `Consolation|2|1` and passes its BYE into `Consolation|3|1` carrying the WALKOVER. A DOUBLE_WALKOVER at
+ * `Consolation|2|2` then converges there, and the pair stamp wrote side 1 as `{ BYE }` from `Consolation|2|1` — the
+ * walked-over occupant's exit was erased, and `STALLED_POSITION` reported somebody who had exited as stranded
+ * (CA, 2026-09-29: *"an occupant who exited is not waiting"*).
+ *
+ * So the paired side's entry yields to an existing entry that carries an exit, unless it carries one itself.
+ */
+function keepCarriedExitOnPairedSide({
+  sourceSideNumber,
+  existing,
+  built,
+}: {
+  existing?: SideExitProvenance;
+  built?: SideExitProvenance;
+  sourceSideNumber?: number;
+}): SideExitProvenance | undefined {
+  if (!built || (sourceSideNumber !== 1 && sourceSideNumber !== 2)) return built;
+  const pairedSideNumber = sourceSideNumber === 1 ? 2 : 1;
+  if (!carriedExitStatus(existing?.[pairedSideNumber]) || carriedExitStatus(built[pairedSideNumber])) return built;
+  const kept: SideExitProvenance = { ...built };
+  delete kept[pairedSideNumber];
+  return Object.keys(kept).length ? kept : undefined;
+}
+
+/**
+ * The side a drawPosition occupies in a matchUp, read from the STORED matchUp and its structure's assignments — never
+ * from a hydrated view, which a cascade can have outrun. A BYE position occupies no side: `advanceByeAdvancedDrawPosition`
+ * relies on that to refuse an award to a BYE (CA, 2026-09-27: a BYE is never won).
+ */
+function getStructuralOccupiedSide({
+  drawDefinition,
+  drawPosition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition: DrawDefinition;
+  drawPosition?: number;
+  structureId?: string;
+  matchUp: MatchUp;
+}): number | undefined {
+  const structure = findStructure({ drawDefinition, structureId })?.structure;
+  if (!structure) return undefined;
+  const assignment = getPositionAssignments({ structure })?.positionAssignments?.find(
+    (candidate) => candidate.drawPosition === drawPosition,
+  );
+  if (assignment?.bye) return undefined;
+  return getDrawPositionSideNumber({ drawDefinition, drawPosition, structureId, matchUp });
+}
+
 function advanceByeAdvancedDrawPosition({
   nextWinnerMatchUpDrawPositions,
   nextWinnerMatchUpHasDrawPosition,
@@ -1439,11 +1502,26 @@ function advanceByeAdvancedDrawPosition({
     const nextDrawPositionToAdvance = nextWinnerMatchUpDrawPositions.find(Boolean);
 
     // WHICH SIDE THE ADVANCING POSITION OCCUPIES — not which side wins.
-    const occupiedSide = getExitWinningSide({
+    //
+    // READ STRUCTURALLY, from the stored matchUp and the structure's own assignments. `inContextDrawMatchUps` is the
+    // view this cascade started from, and an unwind earlier in the same cascade can have taken positions out of the
+    // target since: census de 9305831 (DOUBLE_ELIMINATION 8/5, `allowChangePropagation`) re-scored `Backdraw|3|1` from
+    // a win to a DOUBLE_DEFAULT, and the view still showed the Main final as `[dp3, dp4]` after dp4 had gone. The
+    // positional fallback then put Ola (dp3, side 2) on side 1, awarded the final to the empty fed slot, and left Ola
+    // alone in the Decider. A BYE position still occupies no side — that refusal is what this gate carries (below).
+    const structuralSide = getStructuralOccupiedSide({
       drawPosition: nextDrawPositionToAdvance,
-      matchUpId: noContextNextWinnerMatchUp.matchUpId,
-      inContextDrawMatchUps,
+      matchUp: noContextNextWinnerMatchUp,
+      structureId: nextWinnerMatchUp.structureId,
+      drawDefinition,
     });
+    const occupiedSide =
+      structuralSide ||
+      getExitWinningSide({
+        drawPosition: nextDrawPositionToAdvance,
+        matchUpId: noContextNextWinnerMatchUp.matchUpId,
+        inContextDrawMatchUps,
+      });
 
     // WHAT ADVANCED THROUGH THE BYE IS AN EXIT, NOT A WINNER.
     //
