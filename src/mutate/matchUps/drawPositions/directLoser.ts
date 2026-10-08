@@ -9,6 +9,7 @@ import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount'
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
 
@@ -69,13 +70,15 @@ export function directLoser(params): ResultType {
   // everything the pipeline spent, most of them for links with no such condition.
   const loserDrawPositionWins = () =>
     getDrawPositionWinCount({
-      sourceMatchUps: getAllStructureMatchUps({
-        afterRecoveryTimes: false,
-        inContext: true,
-        drawDefinition,
-        structure,
-        event,
-      }).matchUps,
+      sourceMatchUps: teamLevelMatchUps(
+        getAllStructureMatchUps({
+          afterRecoveryTimes: false,
+          inContext: true,
+          drawDefinition,
+          structure,
+          event,
+        }).matchUps,
+      ),
       drawPosition: loserDrawPosition,
     });
   const validForConsolation = loserLinkCondition === FIRST_MATCHUP && loserDrawPositionWins() === 0;

@@ -1,4 +1,5 @@
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 
 // constants and types
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
@@ -20,7 +21,12 @@ export function isFedLoserEligible({
   loserTargetLink: DrawLink;
 }): boolean {
   if (loserTargetLink.linkCondition === FIRST_MATCHUP) {
-    return getDrawPositionWinCount({ sourceMatchUps, drawPosition: loserDrawPosition }) === 0;
+    return (
+      getDrawPositionWinCount({
+        sourceMatchUps: teamLevelMatchUps(sourceMatchUps),
+        drawPosition: loserDrawPosition,
+      }) === 0
+    );
   }
   return true;
 }
