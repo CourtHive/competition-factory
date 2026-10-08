@@ -9,18 +9,24 @@ export function includesMatchUpStatuses({
   loserDrawPosition,
   sourceMatchUps,
 }) {
-  const sourceMatchUp = drawPositionMatchUps?.reduce(
+  // Only TEAM-level matchUps. In context a TEAM matchUp's tieMatchUps carry its drawPositions, so a rubber's WALKOVER
+  // read as the team's: clearing a round 2 result whose winner took its round 1 dual with a walkover rubber removed
+  // the FIRST_MATCH_LOSER_CONSOLATION BYE reserved for that slot.
+  const dualMatchUps = drawPositionMatchUps?.filter((matchUp) => !matchUp.collectionId);
+  const structureMatchUps = sourceMatchUps.filter((matchUp) => !matchUp.collectionId);
+
+  const sourceMatchUp = dualMatchUps?.reduce(
     (sourceMatchUp, matchUp) =>
       !sourceMatchUp || matchUp.roundNumber > sourceMatchUp.roundNumber ? matchUp : sourceMatchUp,
     undefined,
   );
   const winnerDrawPosition = sourceMatchUp?.drawPositions?.find((drawPosition) => drawPosition !== loserDrawPosition);
 
-  const winnerMatchUpStatuses = sourceMatchUps
+  const winnerMatchUpStatuses = structureMatchUps
     .filter((matchUp) => matchUp?.drawPositions?.includes(winnerDrawPosition))
     .map((matchUp) => matchUp.matchUpStatus);
 
-  const loserMatchUpStatuses = sourceMatchUps
+  const loserMatchUpStatuses = structureMatchUps
     .filter((matchUp) => matchUp?.drawPositions?.includes(loserDrawPosition))
     .map((matchUp) => matchUp.matchUpStatus);
 
