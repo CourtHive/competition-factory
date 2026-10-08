@@ -7,8 +7,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * A WITHDRAWN BYE LEAVES THE EXIT STANDING BEHIND IT — census 20067292 (DOUBLE_ELIMINATION 8/7).
