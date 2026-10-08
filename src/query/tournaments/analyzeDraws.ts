@@ -73,13 +73,18 @@ export function analyzeDraws({ tournamentRecord }): {
 
       const winningSideCount = matchUpsWithWinningSide.filter(Boolean).length || 0;
 
+      // this structure's own count: the draw's running total, subtracted here, under-counted every structure after
+      // the first (a FIRST_MATCH_LOSER_CONSOLATION 8 with three round 1 results reported 6 matchUps without an
+      // outcome, not 9)
       matchUpsWithWinningSideCount += winningSideCount;
-      matchUpsNoOutcomeCount += inContextStructureMatchUps.length - matchUpsWithWinningSideCount;
+      matchUpsNoOutcomeCount += inContextStructureMatchUps.length - winningSideCount;
 
+      // spread: Math.max of an ARRAY is NaN for two or more values. 0 when no first round matchUp has a winner.
       const maxWinningSideFirstRoundPosition = Math.max(
-        matchUpsWithWinningSide
+        0,
+        ...matchUpsWithWinningSide
           .filter(({ roundNumber }) => roundNumber === 1)
-          .map(({ roundPosition }) => roundPosition),
+          .map(({ roundPosition }) => roundPosition ?? 0),
       );
 
       const { positionAssignments } = getPositionAssignments({ structure });
