@@ -566,12 +566,16 @@ A structure stub carries:
   structureId, structureName, structureType, stage, stageSequence,
   finishingPosition, matchUpFormat, display,
   structureActive,     // boolean - any matchUp played
-  structureCompleted,  // boolean - every matchUp in a completed status
+  structureCompleted,  // boolean - every matchUp in a completed status; in a TEAM structure, every TEAM matchUp
 }
 ```
 
 `structureActive` and `structureCompleted` are included because both reduce `matchUpStatus`, which is
 available on the un-hydrated matchUp — so a structure list still renders a status column for free.
+
+In a TEAM structure `structureCompleted` reads the TEAM matchUps only: a decided dual completes its round
+even when a dead rubber is never played. The stub and `FULL` agree on this (7.8.0; `FULL` used to count the
+unplayed rubbers and report the structure as not completed).
 
 **Absent** from a stub: `roundMatchUps`, `roundProfile`, `participantResults`, `seedAssignments`,
 `positionAssignments` and `report`. None can be produced without the assembly this profile exists to skip.

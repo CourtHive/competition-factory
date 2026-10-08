@@ -67,17 +67,18 @@ This is the simplest consolation format. The consolation bracket is a standard s
 
 ### FIRST_MATCH_LOSER_CONSOLATION
 
-Participants enter the consolation bracket after their first loss, regardless of which main draw round they lose in. Losers from each successive main draw round feed into the corresponding consolation round.
+Participants who lose their **first matchUp** enter the consolation bracket. Round 1 losers always do. A round 2 loser does only if round 2 was their first matchUp: they reached it through a BYE, or through a walkover or a default with no score, none of which counts as a win.
 
 ```text
 Main Draw:
   Round 1 losers --> Consolation Round 1
-  Round 2 losers --> Consolation Round 2
-  Round 3 losers --> Consolation Round 3
-  ...
+  Round 2 losers --> Consolation Round 2, only with no prior win (linkCondition: FIRST_MATCHUP)
+  Round 3+       --> eliminated
 ```
 
-This is often called a "feed-in consolation" because main draw losers are fed into the consolation at each round.
+A round 2 loser who had won in round 1 has already played their first matchUp and is not fed; the consolation drawPosition reserved for that slot is filled with a BYE.
+
+In a TEAM event a prior win is a TEAM matchUp won with a score. Lines won on the way to losing a dual are not wins, so a team that took a rubber in its round 2 loss, after a round 1 BYE, is still a first-match loser (7.8.0).
 
 ### MODIFIED_FEED_IN_CHAMPIONSHIP (MFIC)
 
