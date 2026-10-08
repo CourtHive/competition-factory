@@ -16,7 +16,9 @@ function generate({ completeAllMatchUps }) {
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, eventType: TEAM_EVENT, drawSize: 16 }],
+    drawProfiles: [
+      { drawType: FIRST_MATCH_LOSER_CONSOLATION, eventType: TEAM_EVENT, tieFormatName: 'DOMINANT_DUO', drawSize: 16 },
+    ],
     completeAllMatchUps,
   });
   const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
@@ -46,7 +48,7 @@ it('offers 5-8 from round 2 of a completed TEAM FIRST_MATCH_LOSER_CONSOLATION dr
   tournamentEngine.setState(structuredClone(tournamentRecord));
   let result = tournamentEngine.getAvailablePlayoffProfiles({ structureId, drawId });
   expect(result.playoffRounds).toEqual([2, 3]);
-  expect(result.playoffRoundsRanges).toEqual(expectedRanges); // was 5-44: 40 matchUps counted
+  expect(result.playoffRoundsRanges).toEqual(expectedRanges); // was 5-20: 16 matchUps counted, tieMatchUps included
 
   // a lineUp left on the fed side populates the tieMatchUps' fed side but not the TEAM matchUp's;
   // this was the shape of the reported record, where round 2 was not offered at all
