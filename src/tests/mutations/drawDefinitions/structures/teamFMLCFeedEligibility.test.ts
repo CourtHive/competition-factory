@@ -14,7 +14,6 @@ import { RANKING } from '@Constants/scaleConstants';
 // dual is its first match. DOMINANT_DUO is two singles and a doubles; two rubbers win the dual.
 function setup() {
   const {
-    tournamentRecord,
     drawIds: [drawId],
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
@@ -27,8 +26,8 @@ function setup() {
         drawSize: 8,
       },
     ],
+    setState: true,
   });
-  tournamentEngine.setState(tournamentRecord);
   const result = tournamentEngine.generateLineUps({
     scaleAccessor: { scaleType: RANKING, scaleName: 'U18' },
     useDefaultEventRanking: true,
