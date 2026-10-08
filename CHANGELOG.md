@@ -1,5 +1,31 @@
 # Changelog
 
+## [7.8.0](https://github.com/CourtHive/competition-factory/compare/v7.7.0...v7.8.0) (2026-10-08)
+
+
+### Features
+
+* **playoffs:** a roundLimit caps the rounds of a generated playoff structure ([#5282](https://github.com/CourtHive/competition-factory/issues/5282)) ([02963b3](https://github.com/CourtHive/competition-factory/commit/02963b3c712ebb19de0633f13d26a939f3477bf2))
+* **qualifying:** getAvailableQualifyingTargets, roundTarget on the link, capacity on attach ([#5283](https://github.com/CourtHive/competition-factory/issues/5283)) ([cf4c6af](https://github.com/CourtHive/competition-factory/commit/cf4c6aff2885e458f8775640943f0da6a067bca8))
+
+
+### Bug Fixes
+
+* **analyzeDraws:** count matchUps without an outcome per structure, and spread Math.max ([#5300](https://github.com/CourtHive/competition-factory/issues/5300)) ([8933db1](https://github.com/CourtHive/competition-factory/commit/8933db129191644ac611badd4401379357edd461))
+* **byes:** a BYE that displaces a TEAM takes its lineUp off the matchUps it held ([#5297](https://github.com/CourtHive/competition-factory/issues/5297)) ([0fe57ae](https://github.com/CourtHive/competition-factory/commit/0fe57aeed472b0f9ff26d6b3e427f9255789af22))
+* **decider:** a TEAM decider's lines are a mutation of it, so a result played for fun stands ([#5303](https://github.com/CourtHive/competition-factory/issues/5303)) ([e067af8](https://github.com/CourtHive/competition-factory/commit/e067af8fa8ef788c2898b8008fa21b1dc4d2d64f))
+* **drawData:** a decided TEAM draw is completed though its dead rubbers are unplayed ([#5293](https://github.com/CourtHive/competition-factory/issues/5293)) ([b62bc54](https://github.com/CourtHive/competition-factory/commit/b62bc54b5e04eed23c25537a233413d97b46e495))
+* **exit-propagation:** a cascade award is passed through, not counted as playing on ([#5301](https://github.com/CourtHive/competition-factory/issues/5301)) ([424b374](https://github.com/CourtHive/competition-factory/commit/424b3742c4bd6e350ed9276cbfe4da4d16438161))
+* **exit-propagation:** a double exit advances into the draw its unwind left, policy off ([#5296](https://github.com/CourtHive/competition-factory/issues/5296)) ([80ab1bc](https://github.com/CourtHive/competition-factory/commit/80ab1bc34ba0a1062db621c27e34761a3baa906a))
+* **exit-propagation:** stall families found by the at-scale census ([#5288](https://github.com/CourtHive/competition-factory/issues/5288)) ([f623176](https://github.com/CourtHive/competition-factory/commit/f623176d482b75f3e26af40e09f88f830a763d07))
+* **exit-propagation:** three more stall families, and the de 9300487 regression ([#5292](https://github.com/CourtHive/competition-factory/issues/5292)) ([19d7ad4](https://github.com/CourtHive/competition-factory/commit/19d7ad461b076925fbffdcdcf578c5fbd63e3a0f))
+* **feed:** a rubber won is not a prior win for a TEAM first-match loser ([#5291](https://github.com/CourtHive/competition-factory/issues/5291)) ([39fa8e5](https://github.com/CourtHive/competition-factory/commit/39fa8e50a075ed965fcfedef0375b97103337f8f))
+* **lineUps:** a matchUp that is not a tieMatchUp is INVALID_MATCHUP; teamLevelMatchUps accessor ([#5302](https://github.com/CourtHive/competition-factory/issues/5302)) ([ba8cf5a](https://github.com/CourtHive/competition-factory/commit/ba8cf5a3a4f30b708bfdd4ddda14edc5c2a1b6ba))
+* **playoffs:** a qualifying structure's playoff rounds are scoped to its own chain ([#5281](https://github.com/CourtHive/competition-factory/issues/5281)) ([c2a963c](https://github.com/CourtHive/competition-factory/commit/c2a963cf86f8778b2ea9f8faac6182ad30a62bd2))
+* **playoffs:** a TEAM draw's FMLC round 2 playoff counts only TEAM matchUps ([#5290](https://github.com/CourtHive/competition-factory/issues/5290)) ([c5f1529](https://github.com/CourtHive/competition-factory/commit/c5f15293d42dc5f3d0f5ee06215f1ade679f7ee0))
+* **removal:** a WALKOVER rubber is not a walkover dual when a TEAM result is cleared ([#5299](https://github.com/CourtHive/competition-factory/issues/5299)) ([92dfc58](https://github.com/CourtHive/competition-factory/commit/92dfc5815ce5b041f6342e4ddf6de815cda1adaa))
+* **structures:** removeRoundMatchUps refuses an elimination structure, no false success ([#5284](https://github.com/CourtHive/competition-factory/issues/5284)) ([619b95c](https://github.com/CourtHive/competition-factory/commit/619b95c224ba608c77978cbde9dc02869bb7a2e9))
+
 ## [7.7.0](https://github.com/CourtHive/competition-factory/compare/v7.6.0...v7.7.0) (2026-10-07)
 
 
