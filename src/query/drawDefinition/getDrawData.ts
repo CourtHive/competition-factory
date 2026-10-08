@@ -13,9 +13,9 @@ import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { structureSort } from '@Functions/sorters/structureSort';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findExtension } from '@Acquire/findExtension';
 import { findStructure } from '@Acquire/findStructure';
-import type { HydratedMatchUp } from '@Types/hydrated';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { xa } from '@Tools/extractAttributes';
 
@@ -331,9 +331,9 @@ export function getDrawData(params: GetDrawDataArgs): {
 
         // a decided TEAM matchUp completes its round even when a dead rubber is never played, so only TEAM-level
         // matchUps are read: the same answer as the stub profile (raw matchUps) and isCompletedStructure
-        const structureCompleted = matchUps
-          .filter((matchUp: HydratedMatchUp) => !matchUp.collectionId)
-          .every((matchUp) => [...completedMatchUpStatuses, BYE].includes(matchUp.matchUpStatus));
+        const structureCompleted = teamLevelMatchUps(matchUps).every((matchUp) =>
+          [...completedMatchUpStatuses, BYE].includes(matchUp.matchUpStatus),
+        );
         structureInfo.structureCompleted = structureCompleted;
         completedStructures[structureId] = structureCompleted;
 

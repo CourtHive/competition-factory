@@ -1,3 +1,4 @@
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { overlap } from '@Tools/arrays';
 
 // constants
@@ -12,10 +13,10 @@ export function includesMatchUpStatuses({
   // Only TEAM-level matchUps. In context a TEAM matchUp's tieMatchUps carry its drawPositions, so a rubber's WALKOVER
   // read as the team's: clearing a round 2 result whose winner took its round 1 dual with a walkover rubber removed
   // the FIRST_MATCH_LOSER_CONSOLATION BYE reserved for that slot.
-  const dualMatchUps = drawPositionMatchUps?.filter((matchUp) => !matchUp.collectionId);
-  const structureMatchUps = sourceMatchUps.filter((matchUp) => !matchUp.collectionId);
+  const dualMatchUps = teamLevelMatchUps(drawPositionMatchUps);
+  const structureMatchUps = teamLevelMatchUps(sourceMatchUps);
 
-  const sourceMatchUp = dualMatchUps?.reduce(
+  const sourceMatchUp = dualMatchUps.reduce(
     (sourceMatchUp, matchUp) =>
       !sourceMatchUp || matchUp.roundNumber > sourceMatchUp.roundNumber ? matchUp : sourceMatchUp,
     undefined,

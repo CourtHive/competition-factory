@@ -4,8 +4,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { INVALID_MATCHUP, INVALID_PARTICIPANT_IDS, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
-import { INVALID_PARTICIPANT_IDS, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
@@ -177,4 +177,29 @@ it('assigning a player whose line-up entry has no collection assignments places 
   const tieMatchUp = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { matchUpIds: [tieMatchUpId] } })
     .matchUps[0];
   expect(tieMatchUp.sides.some(({ participant }) => participant?.participantId === first)).toEqual(true);
+});
+
+it('a matchUp that is not a tieMatchUp is refused by each line-up mutation', () => {
+  const {
+    tournamentRecord,
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }], setState: true });
+  const tieMatchUpId = tournamentEngine.allDrawMatchUps({ drawId }).matchUps[0].matchUpId;
+  const [participantId, newParticipantId] = tournamentRecord.participants.map(
+    (participant) => participant.participantId,
+  );
+
+  let result: any = tournamentEngine.assignTieMatchUpParticipantId({ tieMatchUpId, participantId, drawId });
+  expect(result.error).toEqual(INVALID_MATCHUP);
+
+  result = tournamentEngine.replaceTieMatchUpParticipantId({
+    existingParticipantId: participantId,
+    newParticipantId,
+    tieMatchUpId,
+    drawId,
+  });
+  expect(result.error).toEqual(INVALID_MATCHUP);
+
+  result = tournamentEngine.removeTieMatchUpParticipantId({ tieMatchUpId, participantId, drawId });
+  expect(result.error).toEqual(INVALID_MATCHUP);
 });
