@@ -27,9 +27,8 @@ import fs from 'fs';
  * The set of stalling instances must EQUAL this list. A new stall fails; so does one that stops stalling, until its
  * entry is removed here — the list only shrinks, and a fix records itself by deleting a line.
  */
-const OPEN = new Set([
-  'off 20012942', // DOUBLE_ELIMINATION 8/6 — F2's refusal reads a cascade award onward as "played on"
-]);
+// empty since the cascade-award fix (20012942): none of the 53 instances stalls; the list may only stay empty
+const OPEN = new Set<string>([]);
 
 type Instance = { arm: 'off' | 'on'; seed: number; config: any; steps: any[] };
 

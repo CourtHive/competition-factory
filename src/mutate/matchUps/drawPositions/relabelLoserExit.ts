@@ -293,16 +293,42 @@ function winnerPlayedOn(
   standing: HydratedMatchUp,
   matchUps: HydratedMatchUp[] | undefined,
   drawDefinition: DrawDefinition,
+  depth = 0,
 ): ResultType & { playedOn?: boolean } {
+  // bounded as a draw is: each step moves at least one round on
+  if (depth > 32) return { playedOn: true };
   if (isDoubleExit(standing.matchUpStatus)) {
     const produced = nextPlayable(standing, matchUps, drawDefinition);
     if (produced.error || !produced.next) return produced.error ? produced : { playedOn: false };
-    return winnerPlayedOn(produced.next, matchUps, drawDefinition);
+    return winnerPlayedOn(produced.next, matchUps, drawDefinition, depth + 1);
   }
   if (!standing.winningSide) return { playedOn: false };
   const onward = nextPlayable(standing, matchUps, drawDefinition);
   if (onward.error) return onward;
-  return { playedOn: !!onward.next && hasResult(onward.next) };
+  if (!onward.next || !hasResult(onward.next)) return { playedOn: false };
+  if (hasEarnedResult(onward.next)) return { playedOn: true };
+  // A CASCADE AWARD IS PASSED THROUGH, NOT STOPPED AT: its winner was carried on by it, and may have played on from
+  // where it put them — across a link too (census de 9300887, DOUBLE_ELIMINATION 8/4: the Backdraw final awarded by a
+  // carried walkover, its winner then beaten in the recorded Main final). Asked of the award's own winner, onward.
+  return winnerPlayedOn(onward.next, matchUps, drawDefinition, depth + 1);
+}
+
+/**
+ * A result onward that somebody RECORDED — not one the cascade awarded on arrival.
+ *
+ * `hasResult` counts any exit status, and an exit standing pending until its opponent arrives is the cascade's own
+ * award to whoever arrives: nobody played it and nobody entered it. Counting it as "played on" refused relabels the
+ * draw had every reason to take back. Census 20012942 (DOUBLE_ELIMINATION 8/6): `Main|2|1`'s walkover relabelled as
+ * played left `Backdraw|2|1` a convergence, because the produced exit's winner had then "won" `Backdraw|4|1` by
+ * arriving opposite a carried walkover; the Backdraw stalled. An exit whose exiting side carries an origin is the
+ * cascade's; one a director recorded carries none, and still refuses.
+ */
+function hasEarnedResult(matchUp: HydratedMatchUp): boolean {
+  if (!hasResult(matchUp)) return false;
+  if (checkScoreHasValue({ score: matchUp.score }) || matchUp.matchUpStatus === COMPLETED) return true;
+  if (!isAnyExit(matchUp.matchUpStatus) || !matchUp.winningSide) return true;
+  const exitingSide = 3 - matchUp.winningSide;
+  return !carriedExitStatus(matchUp.sideExitProvenance?.[exitingSide as 1 | 2]);
 }
 
 /** the winner matchUp onward, past any BYEs (bounded, as a draw is); a malformed round link is an error */
