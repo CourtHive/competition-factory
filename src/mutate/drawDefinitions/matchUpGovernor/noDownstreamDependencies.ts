@@ -13,6 +13,7 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { removeDoubleExit } from './removeDoubleExit';
 import { removeQualifier } from './removeQualifier';
+import { rereadTargets } from './rereadTargets';
 
 // constants
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
@@ -57,6 +58,13 @@ export function noDownstreamDependencies(params) {
   if (doubleExitCleanup) {
     const result = removeDoubleExit(params);
     if (result.error) return decorateResult({ result, stack });
+    // A double exit re-entered as the OTHER double exit is advanced again below, into the targets the unwind has just
+    // changed: the BYE or produced exit it withdrew is gone from the stored draw, and the hydrated targets read before
+    // the unwind still hold it. Advancing from those wrote the new exit beside a withdrawn one — a "convergence" with
+    // itself (`doubleExitPropagateBye: false`, census w1 9000168, FEED_IN_CHAMPIONSHIP_TO_SF 8/7 `Consolation|1|2`) or
+    // an exit stamped on a fed seat still read as a BYE (w2 9100380, MODIFIED_FEED_IN_CHAMPIONSHIP 8/5
+    // `Consolation|2|2`). The targets are read again, from the draw the unwind left.
+    if (isDoubleExit(matchUpStatus)) rereadTargets(params);
   }
 
   // the same cleanup for the DUAL this tieMatchUp belongs to, whichever branch below the line takes:

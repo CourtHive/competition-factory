@@ -1,13 +1,13 @@
 import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/removeDoubleExit';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
-import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
-import { positionTargets } from '@Query/matchUp/positionTargets';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
 import {
@@ -143,15 +143,22 @@ export function settleRederivedDoubleExit({
     // Only where someone stands here: two double exits producing into one empty matchUp (adjacent double walkovers in
     // Main R1, `exitStatusClearing` 2.3) re-derive to the kept produced exit, pending, as they always did; and a double
     // exit's exit carried here over its LOSER link has no carrier either and is left as re-derived.
-    const produced =
-      isDoubleExit(origin.matchUpStatus) &&
+    //
+    // Over a LOSER link a double exit produces an exit only with `doubleExitPropagateBye: false` (otherwise a BYE).
+    // Where somebody stands opposite it and has been awarded it, they go on as from any produced exit: forward play
+    // advances them (census w2 9100572, MFIC 16/16 `Consolation|1|1`, policy off, where they stood won and unadvanced).
+    const winnerStands = !!inContext?.sides?.some(
+      (side) => side?.sideNumber === inContext.winningSide && side.participantId,
+    );
+    const overLoserLink =
       !!inContextMatchUps &&
-      !arrivedOverLoserLink({
+      arrivedOverLoserLink({
         inContextDrawMatchUps: inContextMatchUps,
         targetMatchUpId: matchUpId,
         sourceMatchUpId: origin.matchUpId,
         drawDefinition,
       });
+    const produced = isDoubleExit(origin.matchUpStatus) && !!inContextMatchUps && (winnerStands || !overLoserLink);
     if (!produced || !inContext || !inContextMatchUps) return undefined;
     // what it produced downstream as a double exit goes first, as for a carrier: the winner target still held the
     // pending exit this convergence produced, and a winner directed into it would have been awarded it on arrival
@@ -161,7 +168,11 @@ export function settleRederivedDoubleExit({
       drawDefinition,
     });
     applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap, event });
-    withdrawByeSeats({ claimantMatchUpId: matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
+    // over a loser link the re-derived matchUp still produces no loser — its losing side is the produced exit — so the
+    // BYE it claimed for its loser target is still owed, and stays (`correctionDivergence`, COMPASS/OLYMPIC, policy off)
+    if (!overLoserLink) {
+      withdrawByeSeats({ claimantMatchUpId: matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
+    }
     return advanceStandingWinner({
       inContextDrawMatchUps: inContextMatchUps,
       tournamentRecord,
