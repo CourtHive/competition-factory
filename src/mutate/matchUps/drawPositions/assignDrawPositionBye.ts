@@ -39,6 +39,7 @@ import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
+import { TEAM } from '@Constants/matchUpTypes';
 import {
   DRAW_POSITION_ACTIVE,
   DRAW_POSITION_ASSIGNED,
@@ -308,6 +309,18 @@ export function assignDrawPositionBye({
     }
   });
 
+  removeDisplacedLineUps({
+    displacedParticipantId: assignedParticipantId,
+    isPropagationPlacement,
+    inContextDrawMatchUps,
+    tournamentRecord,
+    drawDefinition,
+    drawPosition,
+    matchUpsMap,
+    structureId,
+    event,
+  });
+
   if (structure.structureType === CONTAINER) {
     assignRoundRobinBYE({
       preserveScheduling,
@@ -522,6 +535,58 @@ function byeTargetMatchUps({
   );
   const target = containing.find((matchUp) => matchUp.roundNumber === furthestRoundNumber);
   return target ? [target] : [];
+}
+
+/**
+ * A BYE that displaces a participant takes nothing of theirs — including the lineUp their TEAM carried onto
+ * the matchUps this drawPosition holds. Left behind, it hydrates the BYE's tieMatchUps with that team's
+ * players: measured on a TEAM FIRST_MATCH_LOSER_CONSOLATION draw, where a round 1 WALKOVER corrected to a
+ * scored win withheld the already-fed loser and its lineUp stayed on the consolation BYE.
+ *
+ * Scoped to this structure: a drawPosition names a position only within its own structure.
+ */
+function removeDisplacedLineUps({
+  displacedParticipantId,
+  isPropagationPlacement,
+  inContextDrawMatchUps,
+  tournamentRecord,
+  drawDefinition,
+  drawPosition,
+  matchUpsMap,
+  structureId,
+  event,
+}: {
+  displacedParticipantId?: string;
+  isPropagationPlacement: boolean;
+  inContextDrawMatchUps: HydratedMatchUp[];
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  drawPosition: number;
+  structureId?: string;
+  event?: Event;
+}) {
+  if (!isPropagationPlacement || !displacedParticipantId) return;
+
+  for (const inContextMatchUp of inContextDrawMatchUps) {
+    if (inContextMatchUp.structureId !== structureId || inContextMatchUp.matchUpType !== TEAM) continue;
+    const sideNumber = inContextMatchUp.sides?.find((side) => side.drawPosition === drawPosition)?.sideNumber;
+    if (!sideNumber) continue;
+
+    const matchUp = matchUpsMap.drawMatchUps.find(({ matchUpId }) => matchUpId === inContextMatchUp.matchUpId);
+    const side = matchUp?.sides?.find((candidate) => candidate.sideNumber === sideNumber);
+    if (!matchUp || !side?.lineUp) continue;
+
+    delete side.lineUp;
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: 'assignDrawPositionBye-TEAM',
+      eventId: event?.eventId,
+      drawDefinition,
+      matchUp,
+      event,
+    });
+  }
 }
 
 function successNotice({
