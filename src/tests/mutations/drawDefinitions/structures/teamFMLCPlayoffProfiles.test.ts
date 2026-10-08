@@ -46,7 +46,7 @@ it('offers 5-8 from round 2 of a completed TEAM FIRST_MATCH_LOSER_CONSOLATION dr
   expect(consolationR2.length).toEqual(4);
 
   tournamentEngine.setState(structuredClone(tournamentRecord));
-  let result = tournamentEngine.getAvailablePlayoffProfiles({ structureId, drawId });
+  let result: any = tournamentEngine.getAvailablePlayoffProfiles({ structureId, drawId });
   expect(result.playoffRounds).toEqual([2, 3]);
   expect(result.playoffRoundsRanges).toEqual(expectedRanges); // was 5-20: 16 matchUps counted, tieMatchUps included
 
