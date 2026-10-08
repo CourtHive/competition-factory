@@ -58,6 +58,9 @@ export const MATRIX_DRAW_SIZES = [8, 16];
 export const MATRIX_REDUCTIONS = [0, 1, 3];
 export const MATRIX_EXIT_STATUSES = [WALKOVER, DEFAULTED, RETIRED, DOUBLE_WALKOVER, DOUBLE_DEFAULT];
 
+/** which rubber of a dual its eventual loser wins: the first (before the dual is decided) or the third (a dead rubber) */
+export type UnevenDuals = 'early' | 'late';
+
 export type MatrixCell = {
   participantsCount: number;
   propagateExitStatus: boolean;
@@ -70,6 +73,8 @@ export type MatrixCell = {
   eventType?: string;
   /** TEAM cells: attach lineups before play, so the driver scores LINES as well as duals */
   lineUps?: boolean;
+  /** TEAM line cells: the losing side of every dual takes one rubber (see `unevenDualWinningSide`) */
+  unevenDuals?: UnevenDuals;
 };
 
 const composeCells = (drawTypes: string[], drawSizes: number[] = MATRIX_DRAW_SIZES): Omit<MatrixCell, 'seed'>[] =>
@@ -194,6 +199,49 @@ export const TEAM_FORMAT_CELLS: MatrixCell[] = TEAM_FORMATS.flatMap((tieFormatNa
   ),
 ).map((cell, index) => ({ ...cell, seed: TEAM_FORMAT_SEED_BASE + index + 1 }));
 
+/**
+ * THE TEAM ARM, UNEVEN DUALS — 2026-10-08.
+ *
+ * Every other TEAM cell scores side 1 on every line, so a dual's loser never wins a rubber. That hid a
+ * defect class: a TEAM matchUp's tieMatchUps carry its drawPositions in context, so a rubber the loser won
+ * read as a prior win and withheld a FIRST_MATCH_LOSER_CONSOLATION feed — or, won after the dual was
+ * decided, made `getDrawInconsistencies` report a correct feed as INELIGIBLE_PROGRESSION (#5291(factory)).
+ *
+ * The four TEAM draw types, line level, DOMINANT_DUO (three rubbers, two win), drawSize 8, in two modes: the
+ * loser takes the dual's FIRST rubber (2-1, won before the dual is decided) or its THIRD (2-0 then a dead
+ * rubber). From a seed base of its own, so no existing cell moves.
+ */
+export const TEAM_UNEVEN_SEED_BASE = 550000;
+export const UNEVEN_DUAL_MODES: UnevenDuals[] = ['early', 'late'];
+
+/**
+ * The exit schedule of an uneven-dual cell. The matrix's default places an exit on every third step, and a
+ * DOMINANT_DUO dual is three rubbers scored back to back, so the third rubber of every dual was ALWAYS the exit
+ * and the late mode never scored it (measured: every dual 3-0). Four is coprime with three, so the exit
+ * drifts across rubber positions and both modes are played.
+ */
+export const UNEVEN_DUAL_EXIT_PERIOD = 4;
+
+export const TEAM_UNEVEN_CELLS: MatrixCell[] = UNEVEN_DUAL_MODES.flatMap((unevenDuals) =>
+  composeCells(TEAM_MATRIX_DRAW_TYPES, [8]).map((cell) => ({ ...teamCell(cell, true), unevenDuals })),
+).map((cell, index) => ({ ...cell, seed: TEAM_UNEVEN_SEED_BASE + index + 1 }));
+
+/**
+ * The winner of each scored step for an uneven-dual cell: side 2 takes the rubber at the mode's index within
+ * its dual, side 1 everything else, so side 1 still wins every dual. A dual itself, or a non-TEAM matchUp,
+ * goes to side 1 as before. Rubbers are counted in the order the driver scores them.
+ */
+export function unevenDualWinningSide(mode: UnevenDuals): (matchUp: any) => number {
+  const losersRubber = mode === 'early' ? 0 : 2;
+  const scored: Record<string, number> = {};
+  return (matchUp) => {
+    if (!matchUp.matchUpTieId) return 1;
+    const index = scored[matchUp.matchUpTieId] ?? 0;
+    scored[matchUp.matchUpTieId] = index + 1;
+    return index === losersRubber ? 2 : 1;
+  };
+}
+
 export const MATRIX_EXTENSION_CELLS: MatrixCell[] = composeCells(MATRIX_EXTENSION_DRAW_TYPES)
   .map((cell, index) => ({ ...cell, seed: MATRIX_EXTENSION_SEED_BASE + index + 1 }))
   .filter((cell) => !isUnpopulatedLuckyDraw(cell));
@@ -280,6 +328,8 @@ export function runMatrixCell(cell: MatrixCell, drawId: string): PropertyFailure
     failures.push(
       ...playForward({
         propagateExitStatus: cell.propagateExitStatus,
+        winningSideFor: cell.unevenDuals ? unevenDualWinningSide(cell.unevenDuals) : undefined,
+        exitPeriod: cell.unevenDuals ? UNEVEN_DUAL_EXIT_PERIOD : undefined,
         maxSteps: stepGuard(drawId),
         exitOutcome: outcome,
         drawId,

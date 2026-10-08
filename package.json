@@ -158,7 +158,7 @@
     "verify:stall-budget": "STALL_BUDGET=1 TZ=UTC vitest run src/tests/query/stalledPositionBudget.test.ts",
     "verify:route-differential": "ROUTE_DIFF=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/routeDifferential.test.ts",
     "verify:deep-corrections": "DEEP_CORRECTIONS=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/correctionDivergenceDeep.test.ts",
-    "verify:team-arms": "TEAM_ARMS=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/teamMatrixExtensionDual.test.ts src/tests/mutations/exitPropagation/teamMatrixExtensionLine.test.ts src/tests/mutations/exitPropagation/teamMatrixCollegeDefault.test.ts src/tests/mutations/exitPropagation/teamMatrixLaverCup.test.ts",
+    "verify:team-arms": "TEAM_ARMS=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/teamMatrixExtensionDual.test.ts src/tests/mutations/exitPropagation/teamMatrixExtensionLine.test.ts src/tests/mutations/exitPropagation/teamMatrixCollegeDefault.test.ts src/tests/mutations/exitPropagation/teamMatrixLaverCup.test.ts src/tests/mutations/exitPropagation/teamMatrixUnevenDuals.test.ts",
     "verify:server": "vitest run --config vitest.server.config.mts",
     "verify:shakeable": "node scripts/verify/shakeable.mjs",
     "verify:build": "rimraf dist && rollup --config && node postbuild.mjs",
