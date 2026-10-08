@@ -1,11 +1,12 @@
+import { removeSubsequentRoundsParticipant } from '@Mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant';
 import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
-import { removeSubsequentRoundsParticipant } from '@Mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { directLoser } from '@Mutate/matchUps/drawPositions/directLoser';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 
 // constants and types
 import { DrawDefinition, DrawLink, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
@@ -112,7 +113,9 @@ export function fedLoserPlacementRefusal({
 
   if (!flippedRoundNumber) return undefined;
   const winsAfterTheFlip = getDrawPositionWinCount({
-    sourceMatchUps: (sourceMatchUps ?? []).filter((matchUp) => (matchUp.roundNumber ?? 0) < flippedRoundNumber),
+    sourceMatchUps: teamLevelMatchUps(sourceMatchUps).filter(
+      (matchUp) => (matchUp.roundNumber ?? 0) < flippedRoundNumber,
+    ),
     drawPosition: prospectiveLoserDrawPosition,
   });
 

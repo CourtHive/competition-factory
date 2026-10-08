@@ -1,4 +1,5 @@
 import { getDrawPositionWinCount, isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 
 // constants and types
 import { DrawDefinition, MatchUp, MatchUpStatusUnion, Score, Structure } from '@Types/tournamentTypes';
@@ -115,7 +116,9 @@ export function feedEligibilityChange({
    */
   const priorRoundMatchUps = structureMatchUps.filter((candidate) => (candidate.roundNumber ?? 0) < feedingRoundNumber);
   const otherWins = getDrawPositionWinCount({
-    sourceMatchUps: priorRoundMatchUps.filter((candidate) => candidate.matchUpId !== matchUp.matchUpId),
+    sourceMatchUps: teamLevelMatchUps(priorRoundMatchUps).filter(
+      (candidate) => candidate.matchUpId !== matchUp.matchUpId,
+    ),
     drawPosition: winnerDrawPosition,
   });
   if (otherWins > 0) return undefined;

@@ -63,6 +63,14 @@ export default [
           message:
             'Use structuredClone() to deep-copy — JSON.parse(JSON.stringify(x)) drops undefined/functions/Date/Map/Set and throws on cycles. For tournamentRecords use tools.makeDeepCopy, which carries factory extension semantics.',
         },
+        // The TeamLevel brand says a list holds no tieMatchUps. Only `teamLevelMatchUps` may mint it: a cast would
+        // assert what nothing checked, and the functions requiring the brand would count rubbers again.
+        {
+          selector:
+            "TSAsExpression TSTypeReference[typeName.name='TeamLevel'], TSTypeAssertion TSTypeReference[typeName.name='TeamLevel']",
+          message:
+            'Do not cast to TeamLevel. Read the list through teamLevelMatchUps (src/acquire/teamLevelMatchUps.ts), which filters out tieMatchUps.',
+        },
       ],
       'sonarjs/cognitive-complexity': ['warn', 30],
       'sonarjs/no-all-duplicated-branches': 'warn',

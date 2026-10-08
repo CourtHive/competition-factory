@@ -13,14 +13,15 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { isObject } from '@Tools/objects';
 import {
@@ -202,7 +203,7 @@ function priorWins(
   inContextDrawMatchUps: HydratedMatchUp[],
   inContextMatchUp?: HydratedMatchUp,
 ): { 1: number; 2: number } {
-  const sourceMatchUps = inContextDrawMatchUps.filter(
+  const sourceMatchUps = teamLevelMatchUps(inContextDrawMatchUps).filter(
     (m) => m.structureId === inContextMatchUp?.structureId && m.matchUpId !== inContextMatchUp?.matchUpId,
   );
   const wins = (sideNumber: number) => {

@@ -11,6 +11,7 @@ import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
@@ -165,9 +166,9 @@ export function removeDirectedParticipants(params): {
 
   if (loserMatchUp) {
     const { winnerHadMatchUpStatus: winnerHadBye } = includesMatchUpStatuses({
-      drawPositionMatchUps,
+      drawPositionMatchUps: teamLevelMatchUps(drawPositionMatchUps),
+      sourceMatchUps: teamLevelMatchUps(sourceMatchUps),
       loserDrawPosition,
-      sourceMatchUps,
     });
 
     const loserLinkCondition = loserTargetLink.linkCondition;

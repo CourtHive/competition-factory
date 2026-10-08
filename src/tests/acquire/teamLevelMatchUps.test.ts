@@ -1,12 +1,14 @@
+import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
-// constants
+// constants and types
 import { SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 test('in context, a TEAM draw reads as its TEAM matchUps: the rubbers sharing their round are left out', () => {
   const {
@@ -49,4 +51,19 @@ test('a draw with no TEAM matchUps reads unchanged, and a missing list reads as 
   expect(matchUps.every((matchUp) => matchUp.matchUpType === SINGLES_MATCHUP)).toEqual(true);
   expect(teamLevelMatchUps(matchUps)).toEqual(matchUps);
   expect(teamLevelMatchUps(undefined)).toEqual([]);
+});
+
+test('a counting predicate takes only a TEAM-level list: a list straight from a getter does not compile', () => {
+  const {
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ tieFormatName: 'DOMINANT_DUO', eventType: TEAM_EVENT, drawSize: 4 }],
+    setState: true,
+  });
+  const matchUps: HydratedMatchUp[] = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
+
+  // the brand is the enforcement: if it stops rejecting a raw list, this directive is unused and type-checking fails
+  // @ts-expect-error a tie-inclusive list is not TeamLevel
+  expect(getDrawPositionWinCount({ sourceMatchUps: matchUps, drawPosition: 1 })).toEqual(0);
+  expect(getDrawPositionWinCount({ sourceMatchUps: teamLevelMatchUps(matchUps), drawPosition: 1 })).toEqual(0);
 });
