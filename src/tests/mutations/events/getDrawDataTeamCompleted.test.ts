@@ -13,13 +13,12 @@ import { RANKING } from '@Constants/scaleConstants';
 // decided 2-0 on the singles and the doubles, a dead rubber, is never played.
 function decideOnSingles({ skipLastDual = false } = {}) {
   const {
-    tournamentRecord,
     drawIds: [drawId],
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ eventType: TEAM_EVENT, tieFormatName: 'DOMINANT_DUO', drawSize: 4 }],
+    setState: true,
   });
-  tournamentEngine.setState(tournamentRecord);
   const result = tournamentEngine.generateLineUps({
     scaleAccessor: { scaleType: RANKING, scaleName: 'U18' },
     useDefaultEventRanking: true,
