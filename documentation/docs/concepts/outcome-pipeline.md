@@ -215,8 +215,11 @@ After the write, and only on success:
 4. **Stale exit origins are reconciled** once removals, directions and propagation have all settled:
    a carried exit whose origin no longer describes an exit is corrected.
 5. **The draw is settled**: held exits are released (`settleHeldExits`), and a final that feeds a
-   decider settles whether the decider is needed (`reconcileDeciders`), only when a final's winner
-   changed.
+   decider settles whether the decider is needed (`reconcileDeciders`) when a final's winner changed,
+   or when the cascade moved a decider while the final's winner stayed put (7.8.0). A mutation OF the
+   decider never triggers it, so a decider played anyway keeps its result; in a TEAM draw a line of the
+   decider's dual is a mutation of the decider (7.8.0). See
+   [Double Elimination](./draw-types/double-elimination.mdx#the-decider).
 6. **Notifications** (MODIFY_MATCHUP and the draw's topics) are emitted; the factory extension's
    `timeStamp` is written by the engine after the call.
 

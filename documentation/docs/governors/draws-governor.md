@@ -265,6 +265,8 @@ engine.attachQualifyingStructure({
 });
 ```
 
+Refused with `QUALIFYING_CAPACITY_EXCEEDED` (7.8.0) when the qualifiers this structure produces, added to those every other qualifying structure already sends into the same round, exceed the drawPositions that round has. The round is `link.target.roundNumber` (default 1); `getAvailableQualifyingTargets` reports each round's `structuralCapacity`, the limit applied here.
+
 ---
 
 ## automatedPlayoffPositioning
@@ -586,6 +588,8 @@ const { profiles } = engine.getAvailablePlayoffProfiles({
 ```
 
 **Purpose:** Get playoff options for structure.
+
+In a TEAM draw only TEAM matchUps are read: a dual's tieMatchUps share its round, structure and drawPositions, and are never counted as the round's matchUps (7.8.0; a FIRST_MATCH_LOSER_CONSOLATION round 2 was offered with a finishing range inflated by the rubbers, or not offered at all).
 
 ---
 

@@ -141,6 +141,8 @@ engine.assignTieMatchUpParticipantId({
 });
 ```
 
+Refused with `INVALID_MATCHUP` when `tieMatchUpId` names a SINGLES or DOUBLES matchUp that is not a line of a TEAM matchUp (7.8.0; before, the refusal named an unrelated cause: team not found, not found, or missing matchUp). A TEAM matchUp itself is refused the same way.
+
 ---
 
 ## bulkMatchUpStatusUpdate
@@ -747,6 +749,8 @@ engine.replaceTieMatchUpParticipantId({
 });
 ```
 
+Refused with `INVALID_MATCHUP` when `tieMatchUpId` names a SINGLES or DOUBLES matchUp that is not a line of a TEAM matchUp (7.8.0; before, the refusal named an unrelated cause: team not found, not found, or missing matchUp). A TEAM matchUp itself is refused the same way.
+
 ---
 
 ## removeTieMatchUpParticipantId
@@ -758,6 +762,8 @@ engine.removeTieMatchUpParticipantId({
   drawId, // draw within which tieMatchUp is found
 });
 ```
+
+Refused with `INVALID_MATCHUP` when `tieMatchUpId` names a SINGLES or DOUBLES matchUp that is not a line of a TEAM matchUp (7.8.0; before, the refusal named an unrelated cause: team not found, not found, or missing matchUp). A TEAM matchUp itself is refused the same way.
 
 ---
 
