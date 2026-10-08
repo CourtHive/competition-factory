@@ -1,3 +1,4 @@
+import { reconcileConsolationReservations } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
 import { reconcileMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
 import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
@@ -139,6 +140,10 @@ function settleDraw({
   params: SetMatchUpStatusArgs;
 }): ResultType {
   const { tournamentRecord, drawDefinition, event } = params;
+
+  // a FIRST_MATCHUP consolation seat holds the reservation the settled first round says it should
+  const reserved = reconcileConsolationReservations({ tournamentRecord, drawDefinition, event });
+  if (reserved?.error) return reserved;
 
   // an exit held where nobody can play it is sent on, now that the draw it is decided on is settled
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
