@@ -7,6 +7,7 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import type { DeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
+import { reconcileMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
 import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
@@ -411,6 +412,12 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   });
 
   if (!result.error) {
+    // a participant who decided a round feeding another structure is seated there, before the decider is settled
+    reconcileMissedLinkAdvancements({
+      drawDefinition: params.drawDefinition,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+    });
     const settled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
     if (settled.error) return decorateResult({ result: settled, stack });
     // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
