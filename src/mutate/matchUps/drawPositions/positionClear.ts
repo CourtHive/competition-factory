@@ -772,7 +772,8 @@ function updateMatchUpStatusAfterRemoval({
     // only for a position this matchUp actually held: one it never held (an FMLC fall-through winner) keeps the
     // long-standing reading, which clears the origins and takes the award back
     (initialDrawPositions?.includes(sidePosition)
-      ? sideFedFromPosition({ targetMatchUp, drawPosition: sidePosition, drawDefinition, structureId })
+      ? (sideFedFromPosition({ targetMatchUp, drawPosition: sidePosition, drawDefinition, structureId }) ??
+        sideOfRemovedBye({ targetMatchUp, initialDrawPositions, initialMatchUpStatus }))
       : undefined);
   // a matchUp holding NO position, from which none was removed, has nothing a clear can take, so it loses no origin
   // either (census 20030617: a second pass over `West|2|1`, empty by then, erased the produced DEFAULTED kept above).
@@ -916,6 +917,33 @@ function sideFedFromPosition({
   const currentCount = matchUps.filter((matchUp) => matchUp.roundNumber === roundNumber).length;
   if (previousCount !== 2 * currentCount || Math.ceil(feeder.roundPosition / 2) !== roundPosition) return undefined;
   return feeder.roundPosition % 2 ? 1 : 2;
+}
+
+/**
+ * The side of a lone BYE being removed, read from the BYE's own arrival record when the structure can no longer say.
+ *
+ * A BYE advanced into a matchUp holds it alone, and is recorded on its side (`{ matchUpStatus: BYE }`). When it is
+ * taken back, the feeder it came through may already have lost the position, so neither the stored array nor the
+ * feeder reads a side; with no side, every origin was cleared, the OTHER side's produced exit with it. Census 20090234
+ * (CURTIS_CONSOLATION 16/13): `Consolation 1|3|2` held the BYE on dp 9 beside `Consolation 1|2|4`'s produced DEFAULTED;
+ * re-scoring `Main|1|6` from a double walkover took the BYE back and the DEFAULTED with it, so the participant who
+ * then arrived was moved on unawarded and the matchUp stalled. Only for a matchUp that was a BYE holding one position,
+ * and only when exactly one side records the BYE's arrival.
+ */
+function sideOfRemovedBye({
+  initialMatchUpStatus,
+  initialDrawPositions,
+  targetMatchUp,
+}: {
+  initialMatchUpStatus?: MatchUpStatusUnion;
+  initialDrawPositions?: number[];
+  targetMatchUp: MatchUp;
+}): number | undefined {
+  if (initialMatchUpStatus !== BYE || initialDrawPositions?.filter(Boolean).length !== 1) return undefined;
+  const byeSides = ([1, 2] as const).filter(
+    (sideNumber) => targetMatchUp.sideExitProvenance?.[sideNumber]?.matchUpStatus === BYE,
+  );
+  return byeSides.length === 1 ? byeSides[0] : undefined;
 }
 
 function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: number) {
