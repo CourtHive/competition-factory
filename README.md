@@ -148,7 +148,7 @@ Beyond conventional unit and integration tests, the suite includes relational pr
 
 ```bash
 pnpm test          # run all tests (Vitest)
-pnpm coverage      # coverage report (thresholds: 95/95/85/95%)
+pnpm coverage      # coverage report (thresholds: 95/97/87/97.5%)
 ```
 
 ## Contributing

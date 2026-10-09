@@ -78,7 +78,7 @@ pnpm check-types    # tsc --noEmit
 pnpm lint           # eslint, zero warnings tolerated
 pnpm lint:fix       # eslint with auto-fix
 pnpm format         # prettier --write over the formatted target set
-pnpm coverage       # coverage report (thresholds 95/95/85/95)
+pnpm coverage       # coverage report (thresholds 95/97/87/97.5)
 ```
 
 Before pushing, this is usually enough:
