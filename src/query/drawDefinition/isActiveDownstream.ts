@@ -288,14 +288,19 @@ function activeBelow(params, walk: Walk): boolean {
     return true;
   }
 
-  if (
-    !isLoserMatchUpWalkoverWithOnePlayer &&
-    ((loserMatchUp?.winningSide && !loserMatchUpExit) ||
-      recordedWinnerExit ||
-      (winnerMatchUp?.winningSide &&
-        winnerDrawPositionsCount === 2 &&
-        (!isExit(winnerMatchUp?.matchUpStatus) || winnerSideResolved)))
-  ) {
+  // THE ONE-PLAYER WALKOVER IS A LOSER-SIDE CARVE-OUT, and excuses only the loser target. It negated the whole test, so
+  // a source whose loser stood alone in a produced walkover read as inactive whatever its winner had played since.
+  // Census 20072949 (DOUBLE_ELIMINATION 8/6, `doubleExitPropagateBye: false`): `Main|2|1`'s loser held
+  // `Backdraw|2|1`'s produced WALKOVER alone, so its winner's COMPLETED `Main|3|1` was never asked about; flipping
+  // `Main|2|1` was let through to `noDownstreamDependencies`, which unwound the semifinal and was then refused placing
+  // the old winner, already in the Backdraw final, as the new loser — after mutating. With the BYE policy on, the loser
+  // target is a BYE and the same flip is refused up front.
+  const loserSideActive = !!loserMatchUp?.winningSide && !loserMatchUpExit && !isLoserMatchUpWalkoverWithOnePlayer;
+  const winnerSideActive =
+    !!winnerMatchUp?.winningSide &&
+    winnerDrawPositionsCount === 2 &&
+    (!isExit(winnerMatchUp?.matchUpStatus) || winnerSideResolved);
+  if (loserSideActive || recordedWinnerExit || winnerSideActive) {
     return true;
   }
 
