@@ -22,6 +22,7 @@
  * site in the repo was touched.
  */
 
+import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { removeSubsequentRoundsParticipant } from '@Mutate/matchUps/drawPositions/removeSubsequentRoundsParticipant';
 import { rekeySideFacts, setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
@@ -753,9 +754,11 @@ function advanceIntoWinnerMatchUp({
     winnerMatchUpId: winnerMatchUp.matchUpId,
     structureId: structure.structureId,
     sourceMatchUp: matchUp,
+    tournamentRecord,
     drawDefinition,
     drawPosition,
     matchUpsMap,
+    event,
   });
   const result = assignMatchUpDrawPosition({
     matchUpId: winnerMatchUp.matchUpId,
@@ -779,19 +782,23 @@ function advanceIntoWinnerMatchUp({
  * BYE and un-decided `5|1` (MONOTONIC_DECISION). A position that holds a participant is never replaced here.
  */
 function replaceEarlierAdvance({
+  tournamentRecord,
   winnerMatchUpId,
   drawDefinition,
   sourceMatchUp,
   drawPosition,
   matchUpsMap,
   structureId,
+  event,
 }: {
+  tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
   winnerMatchUpId: string;
   drawPosition: number;
   structureId: string;
   sourceMatchUp?: MatchUp;
+  event?: Event;
 }) {
   const stored = matchUpsMap?.drawMatchUps?.find((candidate) => candidate.matchUpId === winnerMatchUpId);
   const held = (stored?.drawPositions ?? []).filter((position): position is number => !!position);
@@ -804,12 +811,31 @@ function replaceEarlierAdvance({
     return !assignment?.participantId;
   });
   if (!earlier) return;
+  const wasHeldByBye = stored.matchUpStatus === BYE;
   setMatchUpDrawPositions({
     drawPositions: (stored.drawPositions ?? []).map((position) => (position === earlier ? undefined : position)),
     matchUp: stored,
     drawDefinition,
     structureId,
   });
+  // A BYE TAKEN BACK TAKES ITS ADVANCE WITH IT. The participant opposite the replaced BYE went on because of it; with
+  // the arrival in its seat the matchUp is to be played, so what they were advanced into is released. Census w2 9100211
+  // (FIRST_MATCH_LOSER_CONSOLATION 32/32, `doubleExitPropagateBye: false`): `Consolation|3|2` held a BYE advanced from
+  // `Consolation|2|4` and carried its occupant into `Consolation|4|1`; when the participant who arrived took the BYE's
+  // seat, the occupant stayed in `4|1`, advanced out of a matchUp with no result (ADVANCED_FROM_UNDECIDED).
+  if (!wasHeldByBye || !positionAssignments?.some((entry) => entry.drawPosition === earlier && entry.bye)) return;
+  for (const position of held.filter((candidate) => candidate !== earlier)) {
+    if (!positionAssignments?.some((entry) => entry.drawPosition === position && entry.participantId)) continue;
+    releaseAdvancedDrawPositionAcrossLinks({
+      fromRoundNumber: (stored.roundNumber ?? 0) + 1,
+      drawPosition: position,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      structureId,
+      event,
+    });
+  }
 }
 
 function advanceDrawPosition(params) {
