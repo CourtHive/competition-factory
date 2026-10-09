@@ -9,18 +9,18 @@ import { getTopics } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
-import {
-  INVALID_ATTRIBUTION,
-  INVALID_VALUES,
-  MISSING_PARTICIPANTS,
-  MISSING_VALUE,
-} from '@Constants/errorConditionConstants';
 import { SIGNED_IN, SIGNED_OUT } from '@Constants/participantConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import type { Attribution } from '@Types/presenceTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
+import {
+  INVALID_ATTRIBUTION,
+  INVALID_VALUES,
+  MISSING_PARTICIPANTS,
+  MISSING_VALUE,
+} from '@Constants/errorConditionConstants';
 
 /**
  * Record arrival at — or departure from — the TOURNAMENT. Distinct from per-matchUp check-in, which is

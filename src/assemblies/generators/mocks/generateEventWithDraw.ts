@@ -128,7 +128,9 @@ function generateEventParticipants({
     scaledParticipantsCount: drawProfile.scaledParticipantsCount || participantsProfile.scaledParticipantsCount,
     participantsCount: individualParticipantCount,
     consideredDate: tournamentRecord?.startDate,
-    sex: gender || participantsProfile?.sex,
+    // An event gender is a person sex only when it is MALE or FEMALE. MIXED and ANY passed through
+    // here gave every generated person sex MIXED or ANY, which `addParticipants` refuses.
+    sex: isGendered(gender) ? gender : participantsProfile?.sex,
     rankingRange: drawProfile.rankingRange,
     uuids: drawProfile.uuids || uuids,
     ratingsParameters,

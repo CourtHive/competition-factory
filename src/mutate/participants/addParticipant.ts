@@ -1,10 +1,10 @@
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
+import { coercePersonSex, isUnrecognizedSex, UNRECOGNIZED_SEX_INFO } from '@Helpers/coercedSex';
 import { normalizePersonNames } from '@Helpers/normalizedPersonName';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { normalizeGender } from '@Helpers/coercedGender';
 import { addNotice } from '@Global/state/globalState';
-import { coercePersonSex } from '@Helpers/coercedSex';
 import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { intersection } from '@Tools/arrays';
@@ -212,6 +212,15 @@ export function addParticipant(params: AddParticipantType) {
     }
     if (pairError) return pairError;
   } else if (participantType === INDIVIDUAL) {
+    // sex is optional, but one that is present must be FEMALE/MALE/OTHER (or F/M/O)
+    if (isUnrecognizedSex(participant.person?.sex)) {
+      return decorateResult({
+        result: { error: INVALID_VALUES },
+        info: UNRECOGNIZED_SEX_INFO,
+        context: { sex: participant.person.sex },
+        stack,
+      });
+    }
     // normalize accepted sex short codes (F/M/O) to the canonical extended form at rest
     coercePersonSex(participant.person);
     // and collapse whitespace runs in the names participantName is composed from,
