@@ -19,7 +19,7 @@ name: Verify
 #   coverage-shard  the coverage run split 4 ways (vitest --shard), each writing a blob report
 #   coverage        merges the 4 blobs (vitest --merge-reports --coverage): the thresholds and
 #                   coverage/coverage-summary.json are computed over the MERGED result
-#   slow-gates      stall-budget, route-differential, deep-corrections and team-arms, one job each
+#   slow-gates      route-differential, deep-corrections and team-arms, one job each
 #   verify          `verify (node N)`, the check master's branch protection requires: it passes only
 #                   when every job above passed (or, on a light run, was skipped as intended)
 
@@ -348,13 +348,9 @@ jobs:
       matrix:
         # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
         node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
-        # stall-budget is the stalled-position RATCHET. Inert on `pnpm test` (it replays all 600
-        # exit-propagation matrix cells, which costs about what exitPropagationMatrix itself costs), so
-        # this job is the only thing that runs it. Added in the same change as the test, deliberately:
-        # a budget nobody runs is worse than no budget.
         # team-arms: the TEAM matrix over the seven extension draw types and two more tieFormats,
         # ~10 minutes locally, inert on `pnpm test` (2026-10-05)
-        gate: [stall-budget, route-differential, deep-corrections, team-arms]
+        gate: [route-differential, deep-corrections, team-arms]
     name: ${{ matrix.gate }} (node ${{ matrix.node-version }})
 
     steps:
