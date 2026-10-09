@@ -23,7 +23,7 @@ import { DrawDefinition, Event, PositionAssignment, Structure, Tournament } from
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
-import { WATERFALL } from '@Constants/drawDefinitionConstants';
+import { MAIN, WATERFALL } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AutomatedPositioningArgs = {
@@ -379,6 +379,11 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
   if (initialError) return handleErrorCondition({ error: initialError }, applyPositioning);
 
   if (!entries?.length && !qualifiersCount) return handleSuccessCondition({ ...SUCCESS }, applyPositioning);
+  // a MAIN with no entries to position yet gets only its qualifier seats: BYEs would fill the positions the
+  // entries still to come will need (CA, 2026-10-09). A later qualifying stage is fed only by the stage
+  // before it and never receives entries, so its BYEs are placed as before.
+  const awaitingEntries = structure.stage === MAIN && !entries?.length;
+  const placeByesNow = placeByes && !awaitingEntries;
 
   const matchUpsMap = params.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
 
@@ -417,7 +422,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
   if (getSeedPattern(structure.seedingProfile || seedingProfile) === WATERFALL) {
     const waterfallResult = handleWaterfall({
       qualifiersCount,
-      placeByes,
+      placeByes: placeByesNow,
       provisionalPositioning,
       tournamentRecord,
       appliedPolicies,
@@ -454,7 +459,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
       matchUpsMap,
       structure,
       event,
-      placeByes,
+      placeByes: placeByesNow,
       seedLimit,
       seedsOnly,
       positioningReport,
