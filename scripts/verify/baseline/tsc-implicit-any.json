@@ -4,7 +4,7 @@
   "src/assemblies/engines/matchUp": 23,
   "src/assemblies/engines/mock": 10,
   "src/assemblies/engines/parts": 50,
-  "src/assemblies/generators/drawDefinitions": 150,
+  "src/assemblies/generators/drawDefinitions": 149,
   "src/assemblies/generators/drawDefinitions/drawTypes": 171,
   "src/assemblies/generators/drawDefinitions/drawTypes/adHoc": 4,
   "src/assemblies/generators/drawDefinitions/drawTypes/adHoc/drawMatic": 50,

@@ -315,6 +315,15 @@ a produced exit on the other side stands, pending, rather than being won by the 
 empty position advanced into a matchUp holding a pending exit takes its seat; it is not moved on as
 that exit's winner.
 
+### A pending exit's reservation goes with it
+
+Since 7.9.0. A pending produced exit can advance an empty seat ahead of it — a reservation for the
+arrival it awaits. When the exit is withdrawn the reservation is released with it, even once a BYE has
+taken the seat, and a BYE-held opponent who was owed that seat goes on as soon as it is free. A
+standing reservation is not disturbed by a double exit re-entered beside it. Pinned by the named tests
+of census seeds 20178071, 20163074 and 20139307 (FEED_IN_CHAMPIONSHIP and FIRST_MATCH_LOSER_CONSOLATION
+8/7 and 8/8).
+
 ### An exit that meets a BYE leaves a BYE behind
 
 Since 7.5.0. An exit carried or produced into a matchUp whose other side is a BYE moves on with the
@@ -325,6 +334,14 @@ Since 7.7.0 the reverse holds too. When that BYE is withdrawn — the double exi
 re-scored, say — the exit comes to rest where the BYE was, pending, and the copy it carried further on
 is withdrawn. A relayed copy keeps its origin's id, so it stands only while every matchUp it passed
 still holds a BYE.
+
+Since 7.9.0 two more cases hold. **A decided holder is still the BYE it holds**: an exit label standing
+beside a BYE with nobody present is settled to `BYE` when the mutation settles, whether or not a winner
+was recorded on it and under either `doubleExitPropagateBye` setting — a BYE is never won. And **a lone
+BYE is never on the exit's side**: when a BYE is taken back from a matchUp holding it alone beside a
+produced or carried exit, the position it held is read as the exit's opposite, because an exit owns no
+position — so the exit survives the removal even where the structure can no longer place the position
+and the BYE's own arrival record is gone (census 20209866, FIRST_MATCH_LOSER_CONSOLATION 8/7).
 
 ### A carried exit is corrected at its origin
 
@@ -355,12 +372,30 @@ then **earned** onward stands, and the carry is refused as before; the relabel i
 origin. The three states (exit first; played then relabelled; exit, played, exit again) are pinned
 equal on status, winner, positions and occupants.
 
+Since 7.9.0 a relabel also withdraws a carry that had passed a pending produced exit, and a double
+exit re-derived to a single one stops producing at once rather than on the next write.
+
 ### A withdrawn exit releases the seat it won
 
 Since 7.5.0. A carried exit awards its seat to whoever stands opposite, and that winner may advance.
 When the origin is re-scored and the exit withdrawn, the advancement is released, including where
 the next matchUp was itself decided by an exit carried in on the other side. The seat is emptied
 and the exit there stands pending the next arrival.
+
+### A carry comes home with its carrier
+
+Since 7.9.0. A loser carrying an exit into a seat beside a BYE is advanced past it, and the carry is
+written where they land — including past a BYE that arrives after them, and past consecutive BYEs.
+When the BYE that advanced them is withdrawn, its double exit re-scored as a played result, the
+carrier comes back and the carry comes with them: it is merged onto the matchUp they return to and
+that matchUp re-derives to the pending state their arrival would have written, so whoever arrives
+next meets an exit, not an ordinary opponent, and two carried exits meeting there converge by the
+rule above. Only a participant's own carry travels this way: a double exit's produced exit stays
+where the double exit put it, and a carry whose origin is itself being relabelled as a played result
+is withdrawn, not re-seated. Before this a carry that stood **pending** a round on was lost on the
+pull-back and its carrier won a match they had walked over (census 20057285,
+FIRST_ROUND_LOSER_CONSOLATION 8/8); a carry that had **decided** its onward matchUp already came
+home.
 
 ### An arrival carrying an exit converges with a pending exit
 
@@ -369,6 +404,12 @@ pending exit, a carried one or one a director recorded before the opponent arriv
 placed and nothing is awarded to it: the two exits converge into a double exit by the rule above.
 The participant who exited never takes the exit standing there. Since 7.7.0 this includes a carrier
 advanced in past a BYE: the convergence stands, rather than reverting to `TO_BE_PLAYED`.
+
+Since 7.9.0 a convergence written by an arrival produces onward exactly as one written by a carried
+exit does; a seat held open for an occupant who is leaving is read before the arrival; a held exit
+that meets a seat a carrier was awarded converges there, and the converged matchUp serves its loser
+link; and a double exit landing in a consolation target withdraws the stale advances its earlier
+state had left standing there, so its re-derived winner goes on.
 
 ### Either origin of a converged double exit clears to the kept origin's draw
 

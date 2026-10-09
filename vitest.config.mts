@@ -56,7 +56,7 @@ export default defineConfig({
         '**/server/**',
         // src/forge is no longer "incubation" — it hosts production-accessible
         // engine surface (engine.q, engine.inspect, engine.on, engine.build).
-        // Subject to the 95/95/85/95 thresholds like everything else.
+        // Subject to the 95/97/87/97.5 thresholds like everything else.
         '**/types/**',
         '**/*.json',
         // deprecated code and data - excluded from coverage
@@ -78,11 +78,14 @@ export default defineConfig({
       provider: 'v8',
       // Two-tier coverage gates:
       //
-      // 1. GLOBAL AGGREGATE — applied across the whole report. Current state
-      //    after the 2026-05-30 coverage push is 95.15 / 86.76 / 97.9 / 97.55
-      //    (stmts / branches / funcs / lines). These thresholds lock in the
-      //    progress without leaving more headroom than the observed ~0.03%
-      //    v8 drift on Node 24.
+      // 1. GLOBAL AGGREGATE — applied across the whole report. Measured
+      //    2026-10-10 on dev bdc5c4b258 (16,064 tests): 95.37 / 87.5 / 98.14 /
+      //    97.94 (stmts / branches / funcs / lines); after the 2026-05-30 push it
+      //    was 95.15 / 86.76 / 97.9 / 97.55. The floors below sit ~0.4–0.5 under
+      //    the measure (branches, functions and lines raised for 7.9.0; statements
+      //    kept at 95 with 0.37 to spare; functions at 97 keeps ~100 items above the
+      //    CI `--min=50` headroom gate), which is more than the observed ~0.03%
+      //    v8 drift on Node 24 and less than a real regression.
       //
       // 2. PER-FILE FLOOR — every individual src file must clear these.
       //    Catches egregious individual-file regressions (a brand-new
@@ -103,9 +106,9 @@ export default defineConfig({
       //    without a glob and cannot be silently downgraded to an aggregate.
       thresholds: {
         statements: 95,
-        functions: 95,
-        branches: 85,
-        lines: 95,
+        functions: 97,
+        branches: 87,
+        lines: 97.5,
         perFile: {
           statements: 50,
           functions: 50,
