@@ -125,7 +125,22 @@ function settleExitOrigins({
     event: params.event,
   });
   // an error already in hand is the answer; a reconciliation that cannot read the draw is the answer otherwise
-  return reconciled?.error && !result.error ? reconciled : undefined;
+  if (reconciled?.error) return result.error ? undefined : reconciled;
+  // The reconciliation can itself re-derive a convergence: a double exit whose produced exit it withdrew because the
+  // origin stopped being one. Settled only before it, that matchUp was still a double exit, and the participant it now
+  // awards stayed where they stood (census policy-off 20177818, CURTIS_CONSOLATION 16/11: `Consolation 1|3|2`,
+  // WINNER_NOT_ADVANCED). Those matchUps, and only those, are settled again on the draw the reconciliation left.
+  const rederivedNow = new Set((reconciled?.rederived ?? []).filter((id) => doubleExitsBefore.has(id)));
+  if (!rederivedNow.size) return undefined;
+  const resettled = settleRederivedDoubleExits({
+    tournamentRecord: params.tournamentRecord,
+    drawDefinition: params.drawDefinition,
+    doubleExitsBefore: rederivedNow,
+    targetMatchUpId: matchUpId,
+    propagateExitStatus,
+    event: params.event,
+  });
+  return resettled?.error && !result.error ? resettled : undefined;
 }
 
 /**

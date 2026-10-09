@@ -19,6 +19,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
@@ -728,6 +729,53 @@ function withdrawOwnAdvancement({
   }
 }
 
+/**
+ * The target's positions that no feeder holds any more, taken back as the source's own stale advances (see the caller),
+ * and the positions the target still holds.
+ */
+function withdrawStaleAdvances({
+  targetMatchUpDrawPositions,
+  inContextDrawMatchUps,
+  staleCandidates,
+  tournamentRecord,
+  drawDefinition,
+  targetMatchUp,
+  matchUpsMap,
+  event,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  targetMatchUpDrawPositions: number[];
+  /** only a double exit's target in the same structure can hold one */
+  staleCandidates: boolean;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  targetMatchUp: HydratedMatchUp;
+  matchUpsMap: MatchUpsMap;
+  event?: Event;
+}): number[] {
+  if (!staleCandidates || !targetMatchUpDrawPositions.length) return targetMatchUpDrawPositions;
+  const feeders = inContextDrawMatchUps.filter((matchUp) => matchUp.winnerMatchUpId === targetMatchUp.matchUpId);
+  const structureMatchUps = matchUpsMap?.mappedMatchUps?.[targetMatchUp.structureId]?.matchUps ?? [];
+  const orphans = targetMatchUpDrawPositions.filter((drawPosition) => {
+    if (feeders.some((feeder) => feeder.drawPositions?.includes(drawPosition))) return false;
+    const { initialRoundNumber } = getInitialRoundNumber({ drawPosition, matchUps: structureMatchUps });
+    return !!initialRoundNumber && initialRoundNumber < (targetMatchUp.roundNumber ?? 0);
+  });
+  if (!orphans.length) return targetMatchUpDrawPositions;
+  withdrawOwnAdvancement({
+    fromRoundNumber: targetMatchUp.roundNumber as number,
+    structureId: targetMatchUp.structureId,
+    targetMatchUpDrawPositions,
+    sourceDrawPositions: orphans,
+    withdrawingExit: true,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
+  return targetMatchUpDrawPositions.filter((drawPosition) => !orphans.includes(drawPosition));
+}
+
 /** the converged matchUp as the cascade now sees it — its status changed a moment ago */
 function inContextLoserMatchUp(inContextDrawMatchUps: HydratedMatchUp[], matchUpId: string) {
   return inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUpId);
@@ -826,6 +874,26 @@ function conditionallyAdvanceDrawPosition(params) {
       (drawPosition) => !sourceDrawPositions.includes(drawPosition),
     );
   }
+
+  /**
+   * ...AND A POSITION NO FEEDER HOLDS ANY MORE IS A STALE ADVANCE OUT OF THIS SOURCE. The test above knows the source's
+   * own positions; it cannot see one the source advanced and has since released — an occupant who took a produced exit
+   * here, went on, and left (the seat is dead: the source has become a double exit). Their position stayed a round on,
+   * held by no feeder, and the exit this double exit now produces for that very seat found the target full (census
+   * policy-off 20177818, CURTIS_CONSOLATION 16/11: `Consolation 1|4|1` refused ERR_EXISTING_POSITION_ASSIGNMENT after
+   * the draw had changed, and the final then stalled). A position every feeder has let go of came from one of them by
+   * a result that no longer stands, and is taken back the same way, as the source's own.
+   */
+  targetMatchUpDrawPositions = withdrawStaleAdvances({
+    staleCandidates: sameStructure && isDoubleExit(params.matchUpStatus),
+    targetMatchUpDrawPositions,
+    inContextDrawMatchUps,
+    event: params.event,
+    tournamentRecord,
+    drawDefinition,
+    targetMatchUp,
+    matchUpsMap,
+  });
 
   // if there are 2 drawPositions in targetMatchUp, something is wrong
   if (sameStructure && targetMatchUpDrawPositions.length > 1)
