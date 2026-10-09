@@ -42,6 +42,19 @@ const { drawDefinition } = engine.generateDrawDefinition({
 
 Feed-in behavior can also be controlled via the [Feed-In Policy](/docs/policies/feedInPolicy).
 
+## As a qualifying structure
+
+Since 7.9.0 a `FEED_IN` structure can be a **qualifying** structure of any `drawSize` — a staggered-entry
+qualifying draw, where later-arriving entrants are fed into later rounds. It produces `qualifyingPositions`
+qualifiers only when that count divides `drawSize` at least twice over, so its final round is never before its
+last fed round: 12 positions give 1, 2, 3, 4 or 6 qualifiers; 13 give only 1; 10 give 1, 2 or 5. Any other
+count is refused with `INVALID_VALUES`. Qualifying seeds take the fed positions first — the lowest seed numbers
+in the latest fed round — and the remaining seeds are spread across round 1.
+[`getFeedInQualifyingPositions`](/docs/governors/draws-governor#getfeedinqualifyingpositions) returns the
+valid counts for a `drawSize`, and `drawType: 'FEED_IN'` is accepted in `qualifyingProfiles[].structureProfiles`
+for [`generateDrawDefinition`](/docs/governors/generation/generateDrawDefinition) and by
+[`addQualifyingStructure`](/docs/governors/draws-governor#addqualifyingstructure).
+
 ## Related
 
 - [Consolation Draws](./consolation-draws.mdx) -- Draw types that use feed-in consolation structures

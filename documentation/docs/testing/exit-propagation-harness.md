@@ -156,6 +156,37 @@ stopped determining the tournament. Three failing seeds then could not be reprod
 If a seed ever again fails in a run but not alone, suspect that class first — the guard is
 `src/tests/mocks/mockTournamentNameReuse.test.ts`.
 
+## The stall census at scale
+
+A **stall** is a `STALLED_POSITION` finding: one participant, no winner, in a matchUp nobody else can
+ever reach. The census reports only a seed's first failing property, so a seed that fails something
+else earlier reads there as "no stall"; `stallCount.test.ts` (`STALL_COUNT=1`) replays every step of a
+schedule file and asks the finished draw directly, whatever the severity of the finding.
+
+```sh
+STALL_COUNT=1 TZ=UTC SCHEDULES_IN=/tmp/schedules.jsonl OUT=/tmp/stalls.jsonl \
+  npx vitest run src/tests/mutations/exitPropagation/stallCount.test.ts
+```
+
+It runs in three arms — `allowChangePropagation` off and on under the default policy, and
+`doubleExitPropagateBye: false` — because each arm reaches states the others do not. At scale (40,000
+seeds per arm per run) the stalling seeds of each run are frozen with the schedules emitted in their
+arm and held by a **shrink-only ratchet**: `stallScaleRegression.test.ts` and its successors assert
+that the set of stalling instances EQUALS an `OPEN` list, so a new stall fails and a seed that stops
+stalling fails too, until its entry is removed — a fix records itself by deleting a line. Every seed
+found by the runs of 2026-10-07 to 2026-10-10 (126 instances across three ratchets) is closed in every
+arm as of 7.9.0; the `OPEN` lists are empty.
+
+Before any fix in this area merges, the eight **frozen census arms** (`sched-w1`, `sched-w2` and
+`sched-de` under each flag, plus the two policy arms) are replayed on the branch and on `dev` and
+diffed by seed: `opened` must be zero. `STALLED_POSITION` stays a `warning` until an at-scale run
+reads zero in all three arms; the rule and the run history are in
+`Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
+
+`OUTCOME_PIPELINE=differential` is a second gate for the same code (see
+[the outcome pipeline § 7.1](/docs/concepts/outcome-pipeline#71-two-implementations-s2)): it runs in
+CI only for pull requests into `master`, so run it locally before a checkpoint.
+
 ## Traps worth knowing before you extend this
 
 Each of these cost real time and produced confident, wholly incorrect results.
@@ -175,6 +206,11 @@ Each of these cost real time and produced confident, wholly incorrect results.
 - **The vitest transform cache goes stale** and starts failing to resolve `@Tests/...` for newly
   created files while committed specs still resolve. It looks exactly like a broken import; clear
   `node_modules/.vitest-cache` and `node_modules/.vite`.
+- **A killed census launcher leaves its lanes running.** `pkill` of the script that launched eight
+  arms stops the script, releases its lock and reverts nothing; the vitest children keep writing. The
+  next run into the same files then double-counts every arm, and a byte-identical duplicate line reads
+  as "opened". One output directory per attempt, and before trusting a summary check that each file
+  holds exactly one `SUMMARY` line (measured twice on 2026-10-10, on Button and locally).
 
 ## Related
 

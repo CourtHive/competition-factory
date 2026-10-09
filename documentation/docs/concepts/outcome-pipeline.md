@@ -278,7 +278,13 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   loser stands past a BYE, or an exit carried into a swap. `getDifferentialTally()` counts compared
   and deferred decisions by route.
 
-`OUTCOME_PIPELINE=differential vitest run` is the gate.
+`OUTCOME_PIPELINE=differential vitest run` is the gate. It runs in CI for pull requests into `master`
+and on `master` itself — every checkpoint — and nowhere else, so a test added since the last checkpoint
+has never run under it until then: run `OUTCOME_PIPELINE=differential TZ=UTC npx vitest run` locally
+before opening one (a plain green suite predicts nothing about it). Since 7.9.0 the view reads a
+BYE-holder occupant's carry where it was written, a round on, so a withdrawn BYE's convergence is
+planned as v1 writes it; and the exit-beside-a-BYE invariant holds under either `doubleExitPropagateBye`
+setting.
 
 ## 8. What the corpus pins
 
