@@ -12,6 +12,8 @@ type FeedInMatchUpsArgs = {
   linkFedFinishingRoundNumbers?: number[];
   finishingPositionOffset?: number;
   linkFedRoundNumbers?: number[];
+  /** a qualifying structure: rounds stop when this many matchUps remain */
+  qualifyingPositions?: number;
   feedsFromFinal?: number;
   isConsolation?: boolean;
   feedRoundsProfile?: number[];
@@ -34,6 +36,7 @@ export function feedInMatchUps(params: FeedInMatchUpsArgs) {
     linkFedFinishingRoundNumbers,
     finishingPositionOffset,
     linkFedRoundNumbers,
+    qualifyingPositions,
     feedsFromFinal,
     isConsolation,
     matchUpType,
@@ -45,7 +48,7 @@ export function feedInMatchUps(params: FeedInMatchUpsArgs) {
   // calculate the number of rounds and the number of matchUps in each round
   // for normal elimination structure
   baseDrawSize = baseDrawSize ?? getBaseDrawSize(drawSize);
-  const baseDrawRounds = roundMatchCounts({ drawSize: baseDrawSize });
+  const baseDrawRounds = roundMatchCounts({ drawSize: baseDrawSize, qualifyingPositions });
   const baseRoundsCount = baseDrawRounds.length;
 
   let positionsFed = 0;
@@ -191,8 +194,14 @@ export function feedInMatchUps(params: FeedInMatchUpsArgs) {
   }
 }
 
-// returns an array of the number of matchUps in each round of an elimination draw
-function roundMatchCounts({ drawSize }) {
+// returns an array of the number of matchUps in each round of an elimination draw;
+// a qualifying elimination stops at the round which has `qualifyingPositions` matchUps
+function roundMatchCounts({ drawSize, qualifyingPositions }: { drawSize: number; qualifyingPositions?: number }) {
+  if (qualifyingPositions) {
+    const counts: number[] = [];
+    for (let count = drawSize / 2; count >= qualifyingPositions; count /= 2) counts.push(count);
+    return counts;
+  }
   const rounds = Math.ceil(Math.log(drawSize) / Math.log(2));
   const range = generateRange(0, rounds).reverse();
   return range.map((r) => Math.pow(2, r));

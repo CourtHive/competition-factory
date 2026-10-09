@@ -4,12 +4,13 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import structureTemplate from '@Generators/templates/structureTemplate';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { coerceEven, isConvertableInteger } from '@Tools/math';
+import { feedInQualifyingMatchUps } from '../feedInQualifying';
 import { generateRoundRobin } from './roundRobin/roundRobin';
 import { constantToString } from '@Tools/strings';
 import { treeMatchUps } from './eliminationTree';
 
 // constants and types
-import { POSITION, QUALIFYING, ROUND_ROBIN, WINNER } from '@Constants/drawDefinitionConstants';
+import { FEED_IN, POSITION, QUALIFYING, ROUND_ROBIN, WINNER } from '@Constants/drawDefinitionConstants';
 import { generateTieMatchUps } from '@Generators/drawDefinitions/tieMatchUps';
 import { DrawLink, Structure, TieFormat } from '@Types/tournamentTypes';
 import { MISSING_DRAW_SIZE } from '@Constants/errorConditionConstants';
@@ -153,13 +154,19 @@ function processStructureProfile({
   links,
   structures,
 }) {
-  let drawSize = coerceEven(structureProfile.drawSize || structureProfile.participantsCount);
   const { qualifyingRoundNumber, structureOptions, matchUpFormat, structureName, structureId, drawType } =
     structureProfile;
+  const isFeedIn = drawType === FEED_IN;
+  // a FEED_IN qualifying structure takes any size: 13 positions is 8 in round 1 with 4 and 1 fed
+  const profileDrawSize = structureProfile.drawSize || structureProfile.participantsCount;
+  let drawSize = isFeedIn ? profileDrawSize : coerceEven(profileDrawSize);
   const matchUpType = structureProfile.matchUpType;
 
+  // a FEED_IN derives its qualifiers from qualifyingRoundNumber itself: its rounds do not all halve
   const qualifyingPositions =
-    structureProfile.qualifyingPositions || deriveQualifyingPositions({ drawSize, qualifyingRoundNumber });
+    structureProfile.qualifyingPositions ||
+    (!isFeedIn && deriveQualifyingPositions({ drawSize, qualifyingRoundNumber })) ||
+    undefined;
 
   if (!isConvertableInteger(drawSize)) {
     return decorateResult({ result: { error: MISSING_DRAW_SIZE }, stack });
@@ -198,7 +205,7 @@ function processStructureProfile({
     structure = rrResult.structures[0];
     finishingPositions = [1];
   } else {
-    ({ drawSize, matchUps, roundLimit } = treeMatchUps({
+    const generated = (isFeedIn ? feedInQualifyingMatchUps : treeMatchUps)({
       qualifyingRoundNumber,
       qualifyingPositions,
       matchUpType,
@@ -206,7 +213,9 @@ function processStructureProfile({
       idPrefix,
       isMock,
       uuids,
-    }));
+    });
+    if ('error' in generated && generated.error) return decorateResult({ result: generated, stack });
+    ({ drawSize, matchUps, roundLimit } = generated);
 
     structure = structureTemplate({
       structureName: structureProfile.structureName || qualifyingStructureName,

@@ -14,11 +14,15 @@ import { FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
  * ONE position goes on from a matchUp, whatever it held when it first advanced.
  *
  * Census w2 9100198 (FEED_IN_CHAMPIONSHIP_TO_SF 16/11), shrunk. `Consolation|4|1` holds only a propagated BYE (dp1)
- * while its other seat waits on a produced exit; that lone position advances into `Consolation|5|1` structurally.
- * When a participant then arrives opposite the BYE and passes it, THEIR position goes on. It was added BESIDE the
- * BYE's, so `5|1` held two positions from one feeder (`[1, 3]`, read as a BYE), and the next arrival from `4|2`
- * evicted the BYE and un-decided `5|1` (MONOTONIC_DECISION). The arrival here comes from undoing and re-entering a
- * convergence's origin; a relabel of it reaches the same advance (S2D F2).
+ * while its other seat waits on a produced exit, and that lone position stood in `Consolation|5|1` as the pending
+ * exit's reservation. When a participant then arrived opposite the BYE and passed it, THEIR position went on. It was
+ * added BESIDE the BYE's, so `5|1` held two positions from one feeder (`[1, 3]`, read as a BYE), and the next arrival
+ * from `4|2` evicted the BYE and un-decided `5|1` (MONOTONIC_DECISION). The arrival here comes from undoing and
+ * re-entering a convergence's origin; a relabel of it reaches the same advance (S2D F2).
+ *
+ * The reservation itself now goes with the exit that made it, when that exit is withdrawn
+ * (`aPendingExitsReservationGoesWithIt`): after the clear, `5|1` holds nothing, as it does in the draw where
+ * `Main|2|4`'s result was never entered. The arrival then goes on alone, as before.
  */
 const drawId = 'bye-holder-advances-one';
 const key = (m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}`;
@@ -58,11 +62,12 @@ it('a participant passing a BYE holder replaces the lone position it had already
   score('Main|2|2', { winningSide: 2 });
   score('Main|2|4', clear);
 
-  // CONTROL: Consolation|4|1 holds only its BYE, and that lone position already stands in 5|1
+  // CONTROL: Consolation|4|1 holds only its BYE; the reservation its withdrawn exit had made in 5|1 went with the exit
   const holder = find('Consolation|4|1');
   expect(holder.matchUpStatus).toEqual(BYE);
   const [byePosition] = holder.drawPositions.filter(Boolean);
-  expect(find('Consolation|5|1').drawPositions).toContain(byePosition);
+  expect(byePosition).toBeDefined();
+  expect((find('Consolation|5|1').drawPositions ?? []).filter(Boolean)).toEqual([]);
 
   score('Main|2|4', { winningSide: 2 });
   const issues = (tournamentEngine.getDrawInconsistencies({ drawId }) as any).inconsistencies ?? [];

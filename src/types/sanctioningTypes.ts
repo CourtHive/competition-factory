@@ -9,6 +9,7 @@ import type {
   IndoorOutdoorUnion,
   MonetaryAmount,
   Organisation,
+  ParticipantRoleUnion,
   PrizeMoney,
   RegistrationEntryFee,
   RegistrationProfile,
@@ -20,6 +21,7 @@ import type {
   UnifiedEventID,
   WheelchairClassUnion,
 } from './tournamentTypes';
+import type { OfficialRoleSubtype } from './officiatingTypes';
 import type { PresenceRules } from './presencePolicyTypes';
 
 // ---------------------------------------------------------------------------
@@ -366,7 +368,8 @@ export interface Coordinates {
 export type EntryFee = RegistrationEntryFee;
 
 export interface OfficialProposal {
-  role: string;
+  /** Matched exactly against `PersonnelRole.roleName`. */
+  role: PersonnelRoleCode;
   personName?: string;
   certificationLevel?: string;
   certificationBody?: string;
@@ -609,8 +612,18 @@ export interface PersonnelRules {
   roles: PersonnelRole[];
 }
 
+/**
+ * The role a personnel rule asks for — a CODE, resolved by exact equality, never by substring.
+ *
+ * `ParticipantRoleUnion` covers the participant-level roles (`DIRECTOR`, `OFFICIAL`, …) and
+ * `OfficialRoleSubtype` the officiating subtypes (`REFEREE`, `DEPUTY_REFEREE`, `CHAIR_UMPIRE`, …).
+ * It was a free display string, substring-matched, so a `'Deputy Referee'` rule was satisfied by the
+ * tournament referee. Labels belong to consumers; the factory keeps codes.
+ */
+export type PersonnelRoleCode = ParticipantRoleUnion | OfficialRoleSubtype;
+
 export interface PersonnelRole {
-  roleName: string;
+  roleName: PersonnelRoleCode;
   required: boolean;
   minimumCount?: number;
   certificationRequired?: string;

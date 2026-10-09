@@ -81,8 +81,8 @@ describe('Policy Fixtures — Engine Integration', () => {
       tournamentDirector: { personName: 'Alice', role: 'Tournament Director' },
       referee: { personName: 'Bob', role: 'Referee', certificationLevel: 'Bronze Badge' },
       officials: [
-        { role: 'Chair Umpire', personName: 'Carol Umpire', certificationLevel: 'White Badge' },
-        { role: 'Chair Umpire', personName: 'Dave Umpire', certificationLevel: 'White Badge' },
+        { role: 'CHAIR_UMPIRE', personName: 'Carol Umpire', certificationLevel: 'White Badge' },
+        { role: 'CHAIR_UMPIRE', personName: 'Dave Umpire', certificationLevel: 'White Badge' },
       ],
       insuranceCertificate: { documentType: 'insurance', verified: true },
       safetyPlan: { documentType: 'safety' },

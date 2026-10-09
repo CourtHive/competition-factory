@@ -160,8 +160,8 @@ describe('Policy Validation — validateProposal', () => {
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
     });
-    const directorIssue = result.errors.find((i: any) => i.field.includes('Tournament Director'));
-    const refereeIssue = result.errors.find((i: any) => i.field.includes('Referee'));
+    const directorIssue = result.errors.find((i: any) => i.field === 'personnel.DIRECTOR');
+    const refereeIssue = result.errors.find((i: any) => i.field === 'personnel.REFEREE');
     expect(directorIssue).toBeDefined();
     expect(refereeIssue).toBeDefined();
   });
@@ -176,8 +176,8 @@ describe('Policy Validation — validateProposal', () => {
         ...POLICY_SANCTIONING_GENERIC,
         personnelRules: {
           roles: [
-            { roleName: 'Referee', required: true, minimumCount: 1, certificationRequired: 'Bronze Badge' },
-            { roleName: 'Tournament Director', required: true, minimumCount: 1 },
+            { roleName: 'REFEREE', required: true, minimumCount: 1, certificationRequired: 'Bronze Badge' },
+            { roleName: 'DIRECTOR', required: true, minimumCount: 1 },
           ],
         },
       },
@@ -198,8 +198,8 @@ describe('Policy Validation — validateProposal', () => {
         ...POLICY_SANCTIONING_GENERIC,
         personnelRules: {
           roles: [
-            { roleName: 'Referee', required: true, minimumCount: 1, certificationRequired: 'Bronze Badge' },
-            { roleName: 'Tournament Director', required: true, minimumCount: 1 },
+            { roleName: 'REFEREE', required: true, minimumCount: 1, certificationRequired: 'Bronze Badge' },
+            { roleName: 'DIRECTOR', required: true, minimumCount: 1 },
           ],
         },
       },
@@ -217,8 +217,8 @@ describe('Policy Validation — validateProposal', () => {
         ...POLICY_SANCTIONING_GENERIC,
         personnelRules: {
           roles: [
-            { roleName: 'Referee', required: true, minimumCount: 1, certificationRequired: 'White Badge' },
-            { roleName: 'Tournament Director', required: true, minimumCount: 1 },
+            { roleName: 'REFEREE', required: true, minimumCount: 1, certificationRequired: 'White Badge' },
+            { roleName: 'DIRECTOR', required: true, minimumCount: 1 },
           ],
         },
       },

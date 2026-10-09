@@ -2,6 +2,7 @@ export { getEligibleVoluntaryConsolationParticipants } from '@Query/drawDefiniti
 export { getAvailableMatchUpsCount } from '@Generators/drawDefinitions/drawTypes/adHoc/getAvailableMatchUpsCount';
 export { getDrawParticipantRepresentativeIds } from '@Query/drawDefinition/getDrawParticipantRepresentativeIds';
 export { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
+export { getFeedInQualifyingPositions } from '@Generators/drawDefinitions/feedInQualifying';
 export { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/drawDefinition/structureActions';
 export { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 export { predictDrawCompetitiveBands } from '@Query/drawDefinition/predictDrawCompetitiveBands';

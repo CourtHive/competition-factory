@@ -570,10 +570,18 @@ let { structure, link } = engine.generateQualifyingStructure({
   structureName, // optional
   roundTarget, // optional: round of the target structure the qualifiers enter; defaults to 1; carried on link.target.roundNumber
   drawSize,
-  drawType, // optional: defaults to SINGLE_ELIMINATION
+  drawType, // optional: SINGLE_ELIMINATION (default), ROUND_ROBIN or FEED_IN
   drawId, // required: draw within which target structure appears
 });
 ```
+
+A `FEED_IN` (staggered entry) qualifying structure takes any `drawSize`. It produces `qualifyingPositions`
+qualifiers only when they divide `drawSize` at least twice over, so its final round is never before its last fed
+round: 12 positions give 4 qualifiers (8 in round 1, 4 fed into round 2), 13 give only 1, and 10 give 5. Anything
+else is refused with `INVALID_VALUES`. Qualifying seeds take the fed positions first, the lowest seed numbers in the
+latest fed round, and the remaining seeds are spread across round 1. See
+[getFeedInQualifyingPositions](./draws-governor.md#getfeedinqualifyingpositions). The same applies to
+`structureProfiles` in `qualifyingProfiles` passed to `generateDrawDefinition`.
 
 ---
 

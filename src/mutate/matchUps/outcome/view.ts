@@ -32,7 +32,7 @@ import {
 
 // constants and types
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -121,9 +121,48 @@ function arrivedByWinning(
   return targetMatchUps?.winnerMatchUp?.matchUpId === matchUp.matchUpId;
 }
 
+/**
+ * The exit an occupant of a BYE-held seat carries, written where they LANDED: since #5331 a carry follows its carrier
+ * to their furthest round, so a holder the carrier merely passed through records only the BYE claim. When this request
+ * withdraws the BYE its double exit placed on the loser target, v1 brings the occupant back and their exit with them
+ * (`reconcileCarriesPastByes` re-carries from the origin record), and the arriving loser's exit converges with it —
+ * census 20178071 (FEED_IN_CHAMPIONSHIP 8/7, `Consolation|2|2`), where this view, reading the holder alone, had
+ * planned the loser's walkover won by the occupant; and census 20057285 (P50), where v1 itself lost the carry until the
+ * origin record was kept on the holder (`progressExitStatus` RULE 1).
+ */
+function carriedOnwardFromHolder(
+  matchUp?: HydratedMatchUp,
+  sourceMatchUpId?: string,
+  draw?: DrawContext,
+): MatchUpStatusUnion[] {
+  if (!draw || !matchUp || !sourceMatchUpId || matchUp.matchUpStatus !== BYE) return [];
+  const provenance = getSideExitProvenance({ matchUp }) ?? {};
+  if (!Object.values(provenance).some((entry) => entry?.byeClaims?.includes(sourceMatchUpId))) return [];
+  const statuses: MatchUpStatusUnion[] = [];
+  for (const side of matchUp.sides ?? []) {
+    if (!side?.participantId) continue;
+    const onward = draw.inContextDrawMatchUps.filter(
+      (candidate) =>
+        candidate.structureId === matchUp.structureId &&
+        (candidate.roundNumber ?? 0) > (matchUp.roundNumber ?? 0) &&
+        candidate.sides?.some((candidateSide) => candidateSide?.participantId === side.participantId),
+    );
+    for (const candidate of onward) {
+      const sideNumber = candidate.sides?.find((s) => s?.participantId === side.participantId)?.sideNumber;
+      const entry = sideNumber ? getSideExitProvenance({ matchUp: candidate })?.[sideNumber] : undefined;
+      const status = carriedExitStatus(entry);
+      if (status && entry?.sourceMatchUpId !== sourceMatchUpId) statuses.push(status);
+    }
+  }
+  return statuses;
+}
+
 /** an exit standing on a matchUp, other than one this matchUp produced itself */
 function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string, draw?: DrawContext): MatchUpStatusUnion[] {
-  const carried = carriedStatuses(matchUp, sourceMatchUpId, draw);
+  const carried = [
+    ...carriedStatuses(matchUp, sourceMatchUpId, draw),
+    ...carriedOnwardFromHolder(matchUp, sourceMatchUpId, draw),
+  ];
   if (carried.length) return carried;
   // the status is this matchUp's own product when an exit entry came from it: judged on EXIT entries
   // only, since a BYE claim on the other side is not an exit (seed 6341103: a BYE claim on side 1 and

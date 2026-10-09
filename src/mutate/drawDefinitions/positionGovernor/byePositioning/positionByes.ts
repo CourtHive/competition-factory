@@ -1,5 +1,6 @@
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { getQualifiersData } from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getSeedOrderByePositions } from './getSeedOrderedByePositions';
 import { getUnseededByePositions } from './getUnseededByePositions';
@@ -153,8 +154,14 @@ export function positionByes({
     pushGlobalLog({ method: 'positionByes', byePositions });
   }
 
-  // then take only the number of required byes
-  const byeDrawPositions = byePositions.slice(0, byesToPlace);
+  // then take only the number of required byes, leaving the qualifiers their room
+  const byeDrawPositions = leaveRoomForQualifiers({
+    drawDefinition,
+    qualifiersCount,
+    byePositions,
+    byesToPlace,
+    structure,
+  });
 
   for (const drawPosition of byeDrawPositions) {
     const result = assignDrawPositionBye({
@@ -171,4 +178,73 @@ export function positionByes({
   }
 
   return { ...SUCCESS, unseededByePositions, byeDrawPositions };
+}
+
+type LeaveRoomForQualifiersArgs = {
+  drawDefinition: DrawDefinition;
+  qualifiersCount?: number;
+  byePositions: number[];
+  byesToPlace: number;
+  structure: Structure;
+};
+
+/**
+ * BYEs are drawn from first-round positions, but qualifiers enter only the round their link targets.
+ * In a FEED_IN the first round holds just some of the drawPositions, so more BYEs than it can spare
+ * left the qualifiers no room (FEED_IN 22 with 8 qualifiers and 4 entrants: 10 BYEs into 16 first
+ * round positions, 6 left for 8 qualifiers). Cap the BYEs in each qualifier target round at what that
+ * round can spare, and place the rest on open positions in rounds no qualifier enters: a feed round's
+ * fed positions, where a BYE carries the previous round's winner through.
+ */
+function leaveRoomForQualifiers({
+  drawDefinition,
+  qualifiersCount,
+  byePositions,
+  byesToPlace,
+  structure,
+}: LeaveRoomForQualifiersArgs): number[] {
+  // positions keyed by round number, not a matchUp's sides
+  const {
+    roundDrawPositions: positionsByRound,
+    unplacedRoundQualifierCounts,
+    positionAssignments,
+  } = getQualifiersData({
+    drawDefinition,
+    qualifiersCount,
+    structure,
+  });
+  const targetRounds = Object.keys(unplacedRoundQualifierCounts).filter(
+    (roundNumber) => unplacedRoundQualifierCounts[roundNumber] > 0,
+  );
+  if (!targetRounds.length) return byePositions.slice(0, byesToPlace);
+
+  const open = new Set<number>(
+    (positionAssignments ?? [])
+      .filter((assignment) => !assignment.participantId && !assignment.bye && !assignment.qualifier)
+      .map((assignment) => assignment.drawPosition),
+  );
+  const spare: Record<string, number> = {};
+  const roundOf: Record<number, string> = {};
+  for (const roundNumber of targetRounds) {
+    const roundPositions: number[] = positionsByRound[roundNumber] ?? [];
+    roundPositions.forEach((drawPosition) => (roundOf[drawPosition] = roundNumber));
+    const openInRound = roundPositions.filter((drawPosition) => open.has(drawPosition)).length;
+    spare[roundNumber] = openInRound - unplacedRoundQualifierCounts[roundNumber];
+  }
+
+  const chosen: number[] = [];
+  for (const drawPosition of byePositions) {
+    if (chosen.length === byesToPlace) break;
+    const roundNumber = roundOf[drawPosition];
+    if (roundNumber && spare[roundNumber] <= 0) continue;
+    if (roundNumber) spare[roundNumber] -= 1;
+    chosen.push(drawPosition);
+  }
+
+  const elsewhere = [...open]
+    .filter((drawPosition) => !roundOf[drawPosition] && !chosen.includes(drawPosition))
+    .sort((a, b) => a - b);
+  while (chosen.length < byesToPlace && elsewhere.length) chosen.push(elsewhere.shift() as number);
+
+  return chosen;
 }

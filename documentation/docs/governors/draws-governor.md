@@ -595,7 +595,7 @@ In a TEAM draw only TEAM matchUps are read: a dual's tieMatchUps share its round
 
 ## getAvailableQualifyingTargets
 
-The rounds of a structure that qualifying structures may feed, and how much room each has. Several qualifying structures may feed the same round as long as the qualifiers they produce, in aggregate, do not exceed the drawPositions that round has; `attachQualifyingStructure` enforces that rule. The rest of the numbers describe the placement state so a client can show "already fed by Qualifying (16)" and clamp its offer.
+The rounds of a structure that qualifying structures may feed, and how much room each has. Several qualifying structures may feed the same round as long as the qualifiers they produce, in aggregate, do not exceed the drawPositions that round has; `attachQualifyingStructure` enforces that rule. The rest of the numbers describe the placement state so a client can show "already fed by Qualifying (16)" and clamp its offer. Clamp on `remainingCapacity`, not `structuralCapacity`: a position holding a participant or a BYE is not room, so a main whose positions are all filled has none, and a qualifier already placed counts once, against the promise it fulfils.
 
 ```js
 const { valid, targets } = engine.getAvailableQualifyingTargets({
@@ -612,11 +612,13 @@ const { valid, targets } = engine.getAvailableQualifyingTargets({
 //     unfilledPositionsCount: 16, // of those, positions with no participant and no bye
 //     qualifierPositionsCount: 16, // of those, positions marked `qualifier` (reserved, with or without a link)
 //     unplacedDirectEntriesCount: 0, // round 1 only: direct entries in the draw not yet positioned
+//     placedQualifiersCount: 0, // of those, positions holding a participant who entered through qualifying
+//     owedQualifiers: 16, // the larger of promised and reserved, less those placed: each still needs an open position
 //     feedingStructures: [{ structureId, structureName: 'Qualifying', qualifiersCount: 16, placeholder: false }],
 //     promisedQualifiers: 16, // qualifiers already sent here by real qualifying structures
 //     reservedQualifiers: 0, // qualifiers a placeholder link reserves; a real structure consumes them
 //     structuralCapacity: 48, // drawPositionsCount - promisedQualifiers: what attach will accept
-//     remainingCapacity: 0, // unfilled - promised - unplaced direct entries: what the draw can hold today
+//     remainingCapacity: 0, // unfilled - owed - unplaced direct entries: the room a new qualifying has today
 //   },
 // ]
 ```
@@ -694,6 +696,22 @@ const { participants } = engine.getEligibleVoluntaryConsolationParticipants({
 ```
 
 **Purpose:** Find participants for consolation draws.
+
+---
+
+## getFeedInQualifyingPositions
+
+Returns the qualifier counts a `FEED_IN` (staggered entry) qualifying structure of `drawSize` positions can
+produce: every count that divides `drawSize` at least twice over.
+
+```js
+const { qualifyingPositions } = engine.getFeedInQualifyingPositions({
+  drawSize, // required
+});
+// drawSize 12 => [1, 2, 3, 4, 6]; 13 => [1]; 10 => [1, 2, 5]
+```
+
+**Purpose:** Offer only valid qualifier counts when a qualifying structure is `FEED_IN`.
 
 ---
 

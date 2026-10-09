@@ -1,6 +1,7 @@
 import { clearOutcome, getDrawDefinition, getDrawMatchUps, hash, observeMutation, stableHash } from './transitions';
 import { decidedMatchUpIds, projectDraw } from './transitions';
 import type { PropertyFailure } from './transitions';
+import { isDoubleExit } from '@Validators/isExit';
 
 /**
  * Relational properties — statements about a mutation and its inverse, which no single-state
@@ -164,9 +165,29 @@ export function checkMonotonicity({ propagateExitStatus, matchUpId, drawId, outc
   const nobodyArrived = (matchUp: any) =>
     !matchUp?.winningSide && !(matchUp?.sides ?? []).some((side: any) => side?.participantId);
 
-  const real = undecided.filter(
-    (id) => !(isProvisionalDecision(priorState.get(id)) && nobodyArrived(laterState.get(id))),
-  );
+  /**
+   * ...or its producer stopped producing it. A pending exit a DOUBLE exit produced is withdrawn when that source is
+   * re-scored as anything else, and the same re-score can send its new winner on into the seat: that is the source
+   * change CA's licence covers, not an arrival clearing an exit still owed. Census w1 policy-off 9000249 (OLYMPIC 32):
+   * `West|1|3`'s convergence produced a WALKOVER, pending, into `West|2|2`; re-scoring `East|1|6` as a played win
+   * dissolved the convergence, its loser won `West|1|3` on the carried walkover and came through to `West|2|2`, which
+   * read TO_BE_PLAYED against the pending `West|1|4` — the draw the same results entered directly reach. Where the
+   * producer still stands (census 9000223), the arrival takes the exit, and clearing it is still reported.
+   */
+  const producerDissolved = (matchUp: any) => {
+    const produced = Object.values(matchUp?.sideExitProvenance ?? {}).filter(
+      (entry: any) => entry?.sourceMatchUpId && isDoubleExit(entry.previousMatchUpStatus),
+    );
+    return (
+      produced.length > 0 &&
+      produced.every((entry: any) => !isDoubleExit(laterState.get(entry.sourceMatchUpId)?.matchUpStatus))
+    );
+  };
+
+  const real = undecided.filter((id) => {
+    const prior = priorState.get(id);
+    return !(isProvisionalDecision(prior) && (nobodyArrived(laterState.get(id)) || producerDissolved(prior)));
+  });
   if (!real.length) return [];
 
   const provisional = undecided.length - real.length;

@@ -4,6 +4,8 @@ import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchU
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
+import { reconcileByeAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileByeAdvancements';
+import { reconcileCarriesPastByes } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
@@ -123,7 +125,22 @@ function settleExitOrigins({
     event: params.event,
   });
   // an error already in hand is the answer; a reconciliation that cannot read the draw is the answer otherwise
-  return reconciled?.error && !result.error ? reconciled : undefined;
+  if (reconciled?.error) return result.error ? undefined : reconciled;
+  // The reconciliation can itself re-derive a convergence: a double exit whose produced exit it withdrew because the
+  // origin stopped being one. Settled only before it, that matchUp was still a double exit, and the participant it now
+  // awards stayed where they stood (census policy-off 20177818, CURTIS_CONSOLATION 16/11: `Consolation 1|3|2`,
+  // WINNER_NOT_ADVANCED). Those matchUps, and only those, are settled again on the draw the reconciliation left.
+  const rederivedNow = new Set((reconciled?.rederived ?? []).filter((id) => doubleExitsBefore.has(id)));
+  if (!rederivedNow.size) return undefined;
+  const resettled = settleRederivedDoubleExits({
+    tournamentRecord: params.tournamentRecord,
+    drawDefinition: params.drawDefinition,
+    doubleExitsBefore: rederivedNow,
+    targetMatchUpId: matchUpId,
+    propagateExitStatus,
+    event: params.event,
+  });
+  return resettled?.error && !result.error ? resettled : undefined;
 }
 
 /**
@@ -144,11 +161,18 @@ function settleDraw({
   // a FIRST_MATCHUP consolation seat holds the reservation the settled first round says it should
   const reserved = reconcileConsolationReservations({ tournamentRecord, drawDefinition, event });
   if (reserved?.error) return reserved;
+  // and an exit a carrier holds past a BYE that arrived after them is written where they landed
+  const carried = reconcileCarriesPastByes({ tournamentRecord, drawDefinition, event });
+  if (carried?.error) return carried;
 
   // an exit held where nobody can play it is sent on, now that the draw it is decided on is settled
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
   const settled = settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinition, event });
   if (settled.error) return settled;
+
+  // and a participant opposite a BYE whose next seat was taken when the BYE landed, and is free now, goes on
+  const advanced = reconcileByeAdvancements({ tournamentRecord, drawDefinition, event });
+  if (advanced?.error) return advanced;
 
   // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
   return reconcileDeciders({

@@ -318,6 +318,7 @@ export type FactoryEngineMethod =
   | 'getEvents'
   | 'getEventStructures'
   | 'getEventTimeItem'
+  | 'getFeedInQualifyingPositions'
   | 'getFlightProfile'
   | 'getHighestSeverity'
   | 'getHomeParticipantId'
@@ -1077,6 +1078,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getEvents',
   'getEventStructures',
   'getEventTimeItem',
+  'getFeedInQualifyingPositions',
   'getFlightProfile',
   'getHighestSeverity',
   'getHomeParticipantId',

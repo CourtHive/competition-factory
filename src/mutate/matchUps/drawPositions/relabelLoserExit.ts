@@ -79,11 +79,12 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
     : false;
 
   // a withdrawal whose carry STOPPED at a BYE-held matchUp — nothing of it reached where the loser now stands — is
-  // withdrawn there (see `byeHeldCarry`); a carry relayed on past the BYE is the ordinary withdrawal's below
-  if (!args.validExitToPropagate && !carriedHere) {
-    const byeHeld = byeHeldCarry(inContextDrawMatchUps, args.targetStructureId, loserParticipantId, sourceMatchUpId);
-    if (byeHeld) clearByeHeldCarry(args, byeHeld, loserParticipantId);
-  }
+  // withdrawn there (see `byeHeldCarry`); a carry relayed on past the BYE is the ordinary withdrawal's below, and the
+  // entry it left on the BYE-held matchUp goes with it
+  const byeHeld = args.validExitToPropagate
+    ? undefined
+    : byeHeldCarry(inContextDrawMatchUps, args.targetStructureId, loserParticipantId, sourceMatchUpId);
+  if (byeHeld && !carriedHere) clearByeHeldCarry(args, byeHeld, loserParticipantId);
   if (!standing) return {};
 
   // a walk that cannot read the draw's links refuses the relabel rather than reading as "not played on"
@@ -136,7 +137,12 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
     withdrawHere();
     return { carry: true };
   }
-  if (withdrawable()) withdrawHere();
+  if (withdrawable()) {
+    withdrawHere();
+    // relayed past a BYE that arrived after the loser did (`carryPastTheBye`): the BYE-held matchUp still records the
+    // entry the loser brought, and it names an exit that is no longer carried (census 20030075)
+    if (byeHeld) clearByeHeldCarry(args, byeHeld, loserParticipantId);
+  }
   return refused ?? {};
 }
 
@@ -326,7 +332,15 @@ function winnerPlayedOn(
 function hasEarnedResult(matchUp: HydratedMatchUp): boolean {
   if (!hasResult(matchUp)) return false;
   if (checkScoreHasValue({ score: matchUp.score }) || matchUp.matchUpStatus === COMPLETED) return true;
-  if (!isAnyExit(matchUp.matchUpStatus) || !matchUp.winningSide) return true;
+  if (!isAnyExit(matchUp.matchUpStatus)) return true;
+  // An exit with no winner yet is the cascade's when it records the exit it was produced or carried from: a double
+  // exit's produced exit, pending until somebody arrives, or two carried exits converged. A director's double exit
+  // records no such origin. Read as earned, a pending produced exit one round on refused the relabel of the walkover
+  // beneath it, and the stale carry then "converged" with the next arrival (census policy-off 20162213,
+  // MODIFIED_FEED_IN_CHAMPIONSHIP 8/5: `Consolation|2|1` kept a walkover its loser no longer carried, `3|1` stalled).
+  if (!matchUp.winningSide) {
+    return !Object.values(matchUp.sideExitProvenance ?? {}).some((entry) => carriedExitStatus(entry));
+  }
   const exitingSide = 3 - matchUp.winningSide;
   return !carriedExitStatus(matchUp.sideExitProvenance?.[exitingSide as 1 | 2]);
 }
