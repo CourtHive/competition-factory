@@ -1,5 +1,27 @@
 # Changelog
 
+## [7.8.1](https://github.com/CourtHive/competition-factory/compare/v7.8.0...v7.8.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* **exit-propagation:** a later-round award no longer reads as a first-round walkover ([#5311](https://github.com/CourtHive/competition-factory/issues/5311)) ([ad35809](https://github.com/CourtHive/competition-factory/commit/ad358091a58e83ecbf6920a09b6c7f78809affb2))
+* **exit-propagation:** a lone loser in a produced walkover no longer excuses the winner's match ([#5316](https://github.com/CourtHive/competition-factory/issues/5316)) ([1342371](https://github.com/CourtHive/competition-factory/commit/1342371cbe8ae609b4b676a67168ff5fd9521ff8))
+* **exit-propagation:** a participant arriving through a bye takes the pending exit opposite ([#5317](https://github.com/CourtHive/competition-factory/issues/5317)) ([eac3a78](https://github.com/CourtHive/competition-factory/commit/eac3a78cce359247c3fd21b8bdbc7158921ffb46))
+* **exit-propagation:** a removed bye keeps the other side's produced exit ([#5313](https://github.com/CourtHive/competition-factory/issues/5313)) ([da0904a](https://github.com/CourtHive/competition-factory/commit/da0904a2a5ceaf0f57e878b9d5dc678ad501afa6))
+* **exit-propagation:** a withdrawn bye leaves the produced exit it stood over standing ([#5312](https://github.com/CourtHive/competition-factory/issues/5312)) ([ea86c63](https://github.com/CourtHive/competition-factory/commit/ea86c63c1d8d81eb07e915164d694c4755ac0366))
+* **exit-propagation:** an arrival opposite a pending exit is judged by the exiting position ([#5320](https://github.com/CourtHive/competition-factory/issues/5320)) ([c4e3730](https://github.com/CourtHive/competition-factory/commit/c4e37303055c7d5adf0374fe662354b86f5d3b0c))
+* **exit-propagation:** an empty seat advanced past a bye leaves the pending exit standing ([#5314](https://github.com/CourtHive/competition-factory/issues/5314)) ([ec8ba8d](https://github.com/CourtHive/competition-factory/commit/ec8ba8d0d909c06bd4b3d646224c4af330dc0fea))
+* **exit-propagation:** two held exits feeding one matchup meet there ([#5318](https://github.com/CourtHive/competition-factory/issues/5318)) ([6705114](https://github.com/CourtHive/competition-factory/commit/6705114ceb7b4c3c304eb7e8a006c3d4c994f379))
+* **participants:** refuse an unrecognized person sex on add, modify and merge ([#5315](https://github.com/CourtHive/competition-factory/issues/5315)) ([25550c0](https://github.com/CourtHive/competition-factory/commit/25550c0d53684fbb03cda48a953ed508ab08e380))
+* **publishing:** a round limit withholds AD_HOC rounds from the draw and structure tiers ([#5323](https://github.com/CourtHive/competition-factory/issues/5323)) ([5ee5757](https://github.com/CourtHive/competition-factory/commit/5ee57576ea99116364fc93a2a8a5accba31a2f7a))
+* **publishing:** honour an explicit unpublish and agree on unlisted structures ([#5319](https://github.com/CourtHive/competition-factory/issues/5319)) ([b2e75d3](https://github.com/CourtHive/competition-factory/commit/b2e75d39d80cd6588b9064c30ab98a265766febd))
+
+
+### Documentation
+
+* 7.8.0 reference updates, the double elimination Decider, and FMLC corrected ([#5307](https://github.com/CourtHive/competition-factory/issues/5307)) ([08288f6](https://github.com/CourtHive/competition-factory/commit/08288f686c32240b58c04d40546a53ca62099f6a))
+
 ## [7.8.0](https://github.com/CourtHive/competition-factory/compare/v7.7.0...v7.8.0) (2026-10-08)
 
 
