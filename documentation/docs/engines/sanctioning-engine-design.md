@@ -390,7 +390,7 @@ interface PersonnelRules {
 }
 
 interface PersonnelRole {
-  roleName: string; // "Tournament Director", "Referee", "Chair Umpire"
+  roleName: PersonnelRoleCode; // ParticipantRoleUnion | OfficialRoleSubtype — e.g. DIRECTOR, REFEREE, CHAIR_UMPIRE; matched exactly
   required: boolean;
   minimumCount?: number;
   certificationRequired?: string;

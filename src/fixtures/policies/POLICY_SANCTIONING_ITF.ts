@@ -147,9 +147,9 @@ export const POLICY_SANCTIONING_ITF: SanctioningPolicy = {
 
   personnelRules: {
     roles: [
-      { roleName: 'Tournament Director', required: true, minimumCount: 1, safeguardingRequired: true },
-      { roleName: 'Referee', required: true, minimumCount: 1, certificationRequired: WHITE_BADGE },
-      { roleName: 'Chair Umpire', required: true, minimumCount: 2 },
+      { roleName: 'DIRECTOR', required: true, minimumCount: 1, safeguardingRequired: true },
+      { roleName: 'REFEREE', required: true, minimumCount: 1, certificationRequired: WHITE_BADGE },
+      { roleName: 'CHAIR_UMPIRE', required: true, minimumCount: 2 },
     ],
   },
 

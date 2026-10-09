@@ -61,9 +61,8 @@ export type PresenceFactRule = {
  * Two axes, both forced:
  *
  * - **Role**, because "which roles must be present" is the question. Keyed by
- *   {@link ParticipantRoleUnion} rather than by the free-string `roleName` that `personnelRules` uses,
- *   so it resolves directly against `participant.participantRole`. ⚠️ That makes two role vocabularies
- *   inside one sanctioning policy; `personnelRules` is the older and looser of the two.
+ *   {@link ParticipantRoleUnion}, so it resolves directly against `participant.participantRole`.
+ *   `personnelRules` keys by the same codes plus the officiating subtypes (`PersonnelRoleCode`).
  * - **Fact**, because D4a established that *signed in* (arrival, tournament-wide, on the participant)
  *   and *checked in* (this matchUp, on the matchUp) are different facts. A policy saying "officials
  *   must check in" is otherwise ambiguous between them — and officials have only the first.

@@ -131,8 +131,8 @@ export const POLICY_SANCTIONING_USTA: SanctioningPolicy = {
 
   personnelRules: {
     roles: [
-      { roleName: 'Tournament Director', required: true, minimumCount: 1, safeguardingRequired: true },
-      { roleName: 'Referee', required: true, minimumCount: 1, certificationRequired: 'Sectional' },
+      { roleName: 'DIRECTOR', required: true, minimumCount: 1, safeguardingRequired: true },
+      { roleName: 'REFEREE', required: true, minimumCount: 1, certificationRequired: 'Sectional' },
     ],
   },
 
