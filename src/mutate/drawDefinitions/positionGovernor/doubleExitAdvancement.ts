@@ -2970,7 +2970,7 @@ function getHeldExit({
   if (!origin?.sourceMatchUpId || !isExit(origin.matchUpStatus)) return undefined;
 
   const target = inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUp.winnerMatchUpId);
-  if (!target || target.winningSide) return undefined;
+  if (!target) return undefined;
 
   const arrivalSideNumber = getExitArrivalSideNumber({
     nextWinnerMatchUp: target,
@@ -2979,6 +2979,15 @@ function getHeldExit({
   });
   if (!arrivalSideNumber) return undefined;
   if (target.sides?.some((side) => side.sideNumber === arrivalSideNumber && side.participantId)) return undefined;
+  // A target already decided is not this exit's — except one decided by a carrier's own exit AWARDING the seat the held
+  // exit travels to: the carrier arrived first and won nobody; the held exit arriving there meets theirs, and the two
+  // converge (RULE 4). Declined, the exit stayed held and the final waited on the empty seat's "winner" (census
+  // policy-off 20161035 and 20117658, FIRST_MATCH_LOSER_CONSOLATION 16/11: `Consolation|3|2`, `4|1` stalled).
+  const awardedToArrivalSeat =
+    target.winningSide === arrivalSideNumber &&
+    isExit(target.matchUpStatus) &&
+    !!target.sides?.some((side) => side.sideNumber !== arrivalSideNumber && side.participantId);
+  if (target.winningSide && !awardedToArrivalSeat) return undefined;
 
   const storedTarget = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === target.matchUpId);
   const targetProvenance = getSideExitProvenance({ matchUp: storedTarget });
