@@ -180,6 +180,14 @@ export function positionByes({
   return { ...SUCCESS, unseededByePositions, byeDrawPositions };
 }
 
+type LeaveRoomForQualifiersArgs = {
+  drawDefinition: DrawDefinition;
+  qualifiersCount?: number;
+  byePositions: number[];
+  byesToPlace: number;
+  structure: Structure;
+};
+
 /**
  * BYEs are drawn from first-round positions, but qualifiers enter only the round their link targets.
  * In a FEED_IN the first round holds just some of the drawPositions, so more BYEs than it can spare
@@ -188,13 +196,6 @@ export function positionByes({
  * round can spare, and place the rest on open positions in rounds no qualifier enters: a feed round's
  * fed positions, where a BYE carries the previous round's winner through.
  */
-type LeaveRoomForQualifiersArgs = {
-  drawDefinition: DrawDefinition;
-  qualifiersCount?: number;
-  byePositions: number[];
-  byesToPlace: number;
-  structure: Structure;
-};
 function leaveRoomForQualifiers({
   drawDefinition,
   qualifiersCount,
