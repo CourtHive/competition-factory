@@ -6,12 +6,12 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
+import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
-import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findExtension } from '@Acquire/findExtension';
@@ -154,7 +154,6 @@ export function getDrawData(params: GetDrawDataArgs): {
   const publishStatus = params?.publishStatus ?? getEventPublishStatus({ event, status });
   const drawDetails = eventPublishState?.status?.drawDetails?.[drawDefinition.drawId];
   const eventPublished = !!eventPublishState?.status?.published;
-  const structureDetails = drawDetails?.structureDetails;
 
   let drawActive = false;
   let participantPlacements = false; // if any positionAssignments include a participantId
@@ -359,18 +358,19 @@ export function getDrawData(params: GetDrawDataArgs): {
     return structures;
   });
 
-  // Legacy publish status carried no discrete structure publishing, so a structure with NO
-  // structureDetail defaults to visible. One that HAS a detail is judged by it.
+  // Stage and structure publishing, judged by the one rule every public reader shares: an unkeyed level
+  // publishes everything (the legacy shape), a keyed level shows only what it lists as visibly published.
   //
-  // This read `... || isVisiblyPublished(...) || true`, which is unconditionally true — the
-  // `isVisiblyPublished` call was dead and discrete structure publishing was not honoured at all.
-  // Measured before the fix on a published COMPASS 16 with one structure marked
-  // `{ published: false }`: all 8 structures were returned, while `isVisiblyPublished` correctly
-  // reported that structure invisible. The predicate had the right answer and discarded it.
+  // This once read `... || isVisiblyPublished(...) || true`, which was unconditionally true, and then
+  // treated a structure with NO detail as visible even when its siblings were keyed — so a structure
+  // added after a selective publish appeared here while `getEventData` withheld it.
   const structures = groupedStructures.flat().filter((structure) => {
     if (!usePublishState) return true;
-    const structureDetail = structureDetails?.[structure?.structureId];
-    return structureDetail ? isVisiblyPublished(structureDetail) : true;
+    return isStructureVisible({
+      structureId: structure?.structureId,
+      stage: structure?.stage,
+      drawDetail: drawDetails,
+    });
   });
 
   drawInfo.drawActive = drawActive;

@@ -2,10 +2,10 @@ import { participantsVersion as computeParticipantsVersion } from '@Query/partic
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
+import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
-import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getVenueData } from '@Query/venues/getVenueData';
@@ -102,18 +102,9 @@ export function getEventData(params: GetEventDataArgs): {
     tournamentRecord,
   });
 
-  const stageFilter = ({ stage, drawId }) => {
+  const structureFilter = ({ structureId, stage, drawId }) => {
     if (!usePublishState) return true;
-    const stageDetails = publishStatus?.drawDetails?.[drawId]?.stageDetails;
-    if (!stageDetails || !Object.keys(stageDetails).length) return true;
-    return isVisiblyPublished(stageDetails[stage]);
-  };
-
-  const structureFilter = ({ structureId, drawId }) => {
-    if (!usePublishState) return true;
-    const structureDetails = publishStatus?.drawDetails?.[drawId]?.structureDetails;
-    if (!structureDetails || !Object.keys(structureDetails).length) return true;
-    return isVisiblyPublished(structureDetails[structureId]);
+    return isStructureVisible({ drawDetail: publishStatus?.drawDetails?.[drawId], structureId, stage });
   };
 
   const drawFilter = ({ drawId }) => {
@@ -218,11 +209,7 @@ export function getEventData(params: GetEventDataArgs): {
       )
       .map(({ structures, ...drawData }) => {
         const filteredStructures = structures
-          ?.filter(
-            ({ stage, structureId }) =>
-              structureFilter({ structureId, drawId: drawData.drawId }) &&
-              stageFilter({ stage, drawId: drawData.drawId }),
-          )
+          ?.filter(({ stage, structureId }) => structureFilter({ structureId, stage, drawId: drawData.drawId }))
           .map((structure) => roundLimitMapper({ drawId: drawData.drawId, drawType: drawData.drawType, structure }));
         return {
           ...drawData,
