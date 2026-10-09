@@ -2,18 +2,15 @@ import { participantsVersion as computeParticipantsVersion } from '@Query/partic
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
+import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
-import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
-import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getVenueData } from '@Query/venues/getVenueData';
 import { findExtension } from '@Acquire/findExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { isConvertableInteger } from '@Tools/math';
 import { findEvent } from '@Acquire/findEvent';
-import { generateRange } from '@Tools/arrays';
 
 // constants and types
 import { PayloadProfileEnum, PayloadProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
@@ -102,18 +99,9 @@ export function getEventData(params: GetEventDataArgs): {
     tournamentRecord,
   });
 
-  const stageFilter = ({ stage, drawId }) => {
+  const structureFilter = ({ structureId, stage, drawId }) => {
     if (!usePublishState) return true;
-    const stageDetails = publishStatus?.drawDetails?.[drawId]?.stageDetails;
-    if (!stageDetails || !Object.keys(stageDetails).length) return true;
-    return isVisiblyPublished(stageDetails[stage]);
-  };
-
-  const structureFilter = ({ structureId, drawId }) => {
-    if (!usePublishState) return true;
-    const structureDetails = publishStatus?.drawDetails?.[drawId]?.structureDetails;
-    if (!structureDetails || !Object.keys(structureDetails).length) return true;
-    return isVisiblyPublished(structureDetails[structureId]);
+    return isStructureVisible({ drawDetail: publishStatus?.drawDetails?.[drawId], structureId, stage });
   };
 
   const drawFilter = ({ drawId }) => {
@@ -121,26 +109,6 @@ export function getEventData(params: GetEventDataArgs): {
       return getDrawIsPublished({ publishStatus, drawId });
     }
     return true;
-  };
-
-  const roundLimitMapper = ({ drawId, drawType, structure }) => {
-    if (!usePublishState) return structure;
-    if (!isAdHocType(drawType)) return structure;
-    const roundLimit = publishStatus?.drawDetails?.[drawId]?.structureDetails?.[structure.structureId]?.roundLimit;
-    if (isConvertableInteger(roundLimit)) {
-      const roundNumbers = generateRange(1, roundLimit + 1);
-      const roundMatchUps = {};
-      const roundProfile = {};
-      for (const roundNumber of roundNumbers) {
-        if (structure.roundMatchUps[roundNumber]) {
-          roundMatchUps[roundNumber] = structure.roundMatchUps[roundNumber];
-          roundProfile[roundNumber] = structure.roundProfile[roundNumber];
-        }
-      }
-      structure.roundMatchUps = roundMatchUps;
-      structure.roundProfile = roundProfile;
-    }
-    return structure;
   };
 
   const drawDefinitions = event.drawDefinitions ?? [];
@@ -218,12 +186,8 @@ export function getEventData(params: GetEventDataArgs): {
       )
       .map(({ structures, ...drawData }) => {
         const filteredStructures = structures
-          ?.filter(
-            ({ stage, structureId }) =>
-              structureFilter({ structureId, drawId: drawData.drawId }) &&
-              stageFilter({ stage, drawId: drawData.drawId }),
-          )
-          .map((structure) => roundLimitMapper({ drawId: drawData.drawId, drawType: drawData.drawType, structure }));
+          // Round limits are applied inside getDrawData, so every tier withholds the same rounds.
+          ?.filter(({ stage, structureId }) => structureFilter({ structureId, stage, drawId: drawData.drawId }));
         return {
           ...drawData,
           structures: filteredStructures,

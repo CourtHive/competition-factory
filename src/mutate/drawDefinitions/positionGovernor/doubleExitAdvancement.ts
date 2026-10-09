@@ -2811,6 +2811,45 @@ function settleHolderToBye({
   return undefined;
 }
 
+/**
+ * TWO HELD EXITS FEEDING ONE MATCHUP MEET THERE (RULE 4), so each is settled by the other.
+ *
+ * A held exit is sent on once its target is settled: somebody, a BYE or an exit stands opposite. Where the OTHER feeder
+ * of the target is a holder too — a BYE with nobody in it and an exit on record — neither side of the target is ever
+ * filled until one of them moves, and each waited on the other: two exits carried past one BYE each, a round short of
+ * meeting, and everything downstream of their convergence stalled. The first is carried in pending; the next pass sees
+ * it standing and the second converges with it. Census 20068753 (FEED_IN_CHAMPIONSHIP 8/6) and 20099337
+ * (DOUBLE_ELIMINATION 8/6), `doubleExitPropagateBye: false`, two first-round double exits and nothing else: the
+ * consolation and Backdraw finals waited on nobody.
+ */
+function opponentFeederHoldsAnExit({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpsMap,
+  holder,
+  target,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  holder: HydratedMatchUp;
+  target: HydratedMatchUp;
+}): boolean {
+  const feeders = inContextDrawMatchUps.filter(
+    (candidate) => candidate.winnerMatchUpId === target.matchUpId && candidate.matchUpId !== holder.matchUpId,
+  );
+  return (
+    feeders.length === 1 &&
+    feeders.every((feeder) => {
+      if (feeder.winningSide || feeder.sides?.some((side) => side.participantId)) return false;
+      if (!matchUpHoldsBye({ drawDefinition, matchUp: feeder })) return false;
+      const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === feeder.matchUpId);
+      const [exitSideNumber] = getExitSides({ matchUp: stored });
+      return !!exitSideNumber && isExit(getSideExitProvenance({ matchUp: stored })?.[exitSideNumber]?.matchUpStatus);
+    })
+  );
+}
+
 type HeldExit = { holder: HydratedMatchUp; origin: SideExitProvenanceEntry };
 
 function getHeldExit({
@@ -2871,7 +2910,8 @@ function getHeldExit({
     convergesAtTarget({
       nextWinnerMatchUp: { ...target, sideExitProvenance: withoutArrival, matchUpStatus: derivedStatus },
       arrivalSideNumber,
-    });
+    }) ||
+    opponentFeederHoldsAnExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, holder: matchUp, target });
   if (!settledNow) return undefined;
 
   return { holder: matchUp, origin };

@@ -1,4 +1,9 @@
-import { carriedExitStatus, participatesInExitCascade } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  deriveExitStateFromProvenance,
+  participatesInExitCascade,
+  carriedExitStatus,
+  blankExitCodes,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { rekeySideFacts } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { releaseLinkedWinnerAdvancement } from './releaseLinkedWinnerAdvancement';
@@ -162,8 +167,24 @@ function removeDrawPosition({
   );
   const matchUpContainsBye = matchUpAssignments.filter((assignment) => assignment.bye).length;
 
+  // A BYE held this matchUp over an exit standing in its provenance: the BYE leaving, the exit is what remains, pending
+  // its arrival, exactly as forward play leaves a produced exit nobody has reached. Census 20067292 (DOUBLE_ELIMINATION
+  // 8/7): `Backdraw|3|1` held a BYE advanced past a double exit and `Backdraw|2|2`'s produced WALKOVER; re-scoring
+  // `Backdraw|1|1` from a double walkover took the BYE back, the matchUp fell to TO_BE_PLAYED, and the participant
+  // arriving opposite the produced exit was moved on without being awarded it (ADVANCED_FROM_UNDECIDED, then a stall).
+  const standingExit =
+    matchUp.matchUpStatus === BYE
+      ? deriveExitStateFromProvenance(matchUp.sideExitProvenance)?.matchUpStatus
+      : undefined;
+
   matchUp.matchUpStatus =
-    (matchUpContainsBye && BYE) || (isExit(matchUp.matchUpStatus) && matchUp.matchUpStatus) || TO_BE_PLAYED;
+    (matchUpContainsBye && BYE) ||
+    (isExit(matchUp.matchUpStatus) && matchUp.matchUpStatus) ||
+    standingExit ||
+    TO_BE_PLAYED;
+  // the codes the BYE carried were stamped for the origins it was advanced past, and one of those is going away: the
+  // standing exit's own are re-stamped on arrival, as when forward play reaches it
+  if (standingExit && !matchUpContainsBye) blankExitCodes(matchUp);
 
   /**
    * The result goes with the participant. Every time, not only on an exit.

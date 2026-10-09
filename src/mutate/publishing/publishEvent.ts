@@ -111,7 +111,13 @@ export function publishEvent(params: PublishEventType): ResultType & { eventData
 
   for (const drawId of eventDrawIds) {
     if (params.drawDetails?.[drawId]) {
-      const result = mergeDrawDetail({ drawDetails, drawId, newDetail: params.drawDetails[drawId], event });
+      const result = mergeDrawDetail({
+        priorPublishingDetail: pubStatus?.drawDetails?.[drawId]?.publishingDetail,
+        newDetail: params.drawDetails[drawId],
+        drawDetails,
+        drawId,
+        event,
+      });
       if (result?.error) return result;
     }
   }
@@ -243,19 +249,63 @@ function applyDrawIdPublishState({
   }
 }
 
-function mergeDrawDetail({ drawDetails, drawId, newDetail, event }) {
+/**
+ * The draw's own publishingDetail after a drawDetails write.
+ *
+ * - Given: used as given, and an explicit `published: false` is honoured. This read
+ *   `if (structureIdsToAdd || stagesToAdd)`, always true because both default to `[]`, so every
+ *   drawDetails write published the draw whatever it said.
+ * - Omitted: the draw's prior detail stands, embargo included. A write that only touches structures
+ *   or stages is not a decision about the draw, and resetting it to `{}` silently lifted the draw
+ *   embargo.
+ *
+ * Keying a draw publishes it unless `published: false` is explicit, and adding structures or stages
+ * always does, as before.
+ */
+type ResolvePublishingDetailArgs = {
+  priorPublishingDetail?: PublishingDetail;
+  newDetail: DrawPublishingDetails;
+  structureIdsToAdd: string[];
+  stagesToAdd: string[];
+};
+
+function resolvePublishingDetail({
+  priorPublishingDetail,
+  structureIdsToAdd,
+  stagesToAdd,
+  newDetail,
+}: ResolvePublishingDetailArgs): PublishingDetail {
+  const publishingDetail = { ...(newDetail.publishingDetail ?? priorPublishingDetail) };
+  if (publishingDetail.published === undefined || structureIdsToAdd.length || stagesToAdd.length) {
+    publishingDetail.published = true;
+  }
+  return publishingDetail;
+}
+
+function mergeDrawDetail({
+  priorPublishingDetail,
+  drawDetails,
+  newDetail,
+  drawId,
+  event,
+}: {
+  priorPublishingDetail?: PublishingDetail;
+  newDetail: DrawPublishingDetails;
+  drawDetails: Record<string, DrawPublishingDetails>;
+  drawId: string;
+  event?: Event;
+}) {
   let structureDetails = newDetail.structureDetails ?? drawDetails[drawId].structureDetails;
   const stageDetails = newDetail.stageDetails ?? drawDetails[drawId].stageDetails ?? {};
 
-  const {
-    structureIdsToRemove = [],
-    structureIdsToAdd = [],
-    publishingDetail = {},
-    stagesToRemove = [],
-    stagesToAdd = [],
-  } = newDetail;
+  const { structureIdsToRemove = [], structureIdsToAdd = [], stagesToRemove = [], stagesToAdd = [] } = newDetail;
 
-  if (structureIdsToAdd || stagesToAdd) publishingDetail.published = true;
+  const publishingDetail = resolvePublishingDetail({
+    priorPublishingDetail,
+    structureIdsToAdd,
+    stagesToAdd,
+    newDetail,
+  });
 
   drawDetails[drawId] = {
     publishingDetail,

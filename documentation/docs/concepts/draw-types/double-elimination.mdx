@@ -15,7 +15,10 @@ In the factory, this draw type is represented by the constant `DOUBLE_ELIMINATIO
 
 - **Main structure**: A standard single elimination bracket.
 - **Consolation structure**: Receives all losers from the main bracket. Losers from each main draw round feed into corresponding consolation rounds.
-- **Championship matchUp**: The consolation winner faces the main draw winner.
+- **Championship matchUp**: The consolation winner faces the main draw winner. It is the main structure's final round.
+- **Decider structure**: A single matchUp fed by both the winner and the loser of the championship matchUp, played only when the main draw winner loses it. See [The Decider](#the-decider).
+
+Generated structures are named `Main`, `Backdraw` (stage `CONSOLATION`) and `Decider` (stage `PLAY_OFF`).
 
 ```text
 Main Draw (MAIN stage)
@@ -95,6 +98,30 @@ A participant must lose twice to be eliminated -- once in the main draw and once
     />
   )}
 </BrowserOnly>
+
+## The Decider
+
+If the main draw winner — undefeated so far — wins the championship matchUp, the consolation winner has lost twice and the event is over. If the main draw winner loses it, both have lost once, and they meet again in the Decider.
+
+The Decider is **played only if it is needed, and says so when it is not**:
+
+| The championship matchUp                        | The Decider                                                                               |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| won by the main draw winner                     | `DEAD_RUBBER`, both participants seated, so clients never show it as waiting to be played |
+| won by the consolation winner                   | `TO_BE_PLAYED`                                                                            |
+| won against an exit (no loser to send)          | `DEAD_RUBBER`                                                                             |
+| changed, so that the Decider becomes needed     | its `DEAD_RUBBER` is cleared                                                              |
+| changed, so that the Decider stops being needed | becomes `DEAD_RUBBER`                                                                     |
+| changed after the Decider was played            | the Decider's result is removed                                                           |
+| cleared                                         | `TO_BE_PLAYED`                                                                            |
+
+A Decider that is not needed may still be played. Clearing its `DEAD_RUBBER` and entering a result, or entering a result directly, is a change to the Decider itself; it is never undone by the settlement above, which reacts only to the championship matchUp's winner and to the cascade from other matchUps. Only a change to the championship matchUp's winner takes it back.
+
+:::note TEAM events
+In a TEAM event the Decider is a dual, played through its lines. A line of the Decider's dual is a change to the Decider itself, so a Decider played through its lines keeps the result they give it (7.8.0).
+
+`DEAD_RUBBER` here means "not needed", which is not the same as a dead rubber inside a dual — a line whose result cannot matter because its dual is already decided. In a TEAM double elimination both can appear: the Decider dual can be `DEAD_RUBBER`, and so can lines of any decided dual.
+:::
 
 ## Use Cases
 

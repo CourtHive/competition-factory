@@ -1066,14 +1066,41 @@ function advanceWinner({
     return;
   }
 
-  // A CONVERGENCE STANDS. When the matchUp already records an exit on BOTH sides, the position advancing in is a
-  // carrier passing a BYE with its exit (a propagated exit meeting a BYE is advanced, CA 2026-09-20), beside an exit
-  // produced for the other seat: the two collapse and nobody wins (RULE 4; #5161, "an arrival carrying an exit
-  // converges, never takes"). Writing TO_BE_PLAYED here lost both while provenance still recorded them (census w2
-  // 9100283, FRLC 32/30 `Consolation|2|3`; de 9301596, DE 16/13 `Backdraw|3|1`: ORIGIN_ON_UNDECIDED_MATCHUP).
-  const standingExit = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp: noContextWinnerMatchUp }));
-  const convergence = standingExit && !standingExit.winningSide ? standingExit.matchUpStatus : undefined;
-  const matchUpStatus = drawPositionIsBye || pairedDrawPositionIsBye ? BYE : (convergence ?? TO_BE_PLAYED);
+  const advancingSide = arrivalOppositePendingExit({
+    assignment: drawPositionToAdvanceAssigment,
+    matchUp: noContextWinnerMatchUp,
+    pairedDrawPositionIsBye,
+    drawPositionToAdvance,
+    drawPositionIsBye,
+    drawDefinition,
+    winnerMatchUp,
+    drawPositions,
+  });
+  if (advancingSide) {
+    resolvePropagatedExitOnAdvance({
+      matchUp: noContextWinnerMatchUp,
+      drawPositionToAdvance,
+      inContextDrawMatchUps,
+      tournamentRecord,
+      drawDefinition,
+      drawPositions,
+      winnerMatchUp,
+      advancingSide,
+      matchUpsMap,
+      event,
+      stack,
+    });
+    return;
+  }
+
+  // an exit standing here, converged or pending, is not the advance's to overwrite (`standingExitStatus`)
+  const matchUpStatus =
+    drawPositionIsBye || pairedDrawPositionIsBye
+      ? BYE
+      : (standingExitStatus({
+          advancesNobody: !drawPositionToAdvanceAssigment?.participantId && !drawPositionToAdvanceIsBye,
+          matchUp: noContextWinnerMatchUp,
+        }) ?? TO_BE_PLAYED);
 
   rekeySideFacts({
     structureId: winnerMatchUp?.structureId,
@@ -1437,4 +1464,81 @@ export function assignFedDrawPositionBye({
     });
     if (result.error) return result;
   }
+}
+
+/**
+ * The exit still standing on a matchUp a position is advanced into past a BYE, which the advance must not overwrite.
+ *
+ * A CONVERGENCE STANDS. When the matchUp already records an exit on BOTH sides, the position advancing in is a carrier
+ * passing a BYE with its exit (a propagated exit meeting a BYE is advanced, CA 2026-09-20), beside an exit produced for
+ * the other seat: the two collapse and nobody wins (RULE 4; #5161, "an arrival carrying an exit converges, never
+ * takes"). Writing TO_BE_PLAYED lost both while provenance still recorded them (census w2 9100283, FRLC 32/30
+ * `Consolation|2|3`; de 9301596, DE 16/13 `Backdraw|3|1`: ORIGIN_ON_UNDECIDED_MATCHUP).
+ *
+ * AND A SINGLE EXIT STANDS TOO, while nobody has come through to be awarded it. An EMPTY position advanced past a BYE
+ * into a matchUp holding a pending exit leaves that exit pending, as forward play wrote it. Census 20092939
+ * (DOUBLE_ELIMINATION 8/7, `doubleExitPropagateBye: false`): `Main|1|2`'s double default carried a DEFAULTED past
+ * `Backdraw|2|2`'s BYE into `Backdraw|3|1`; the empty seat `Backdraw|2|1`'s BYE then advanced beside it reset the matchUp
+ * (PROPAGATED_EXIT_LOST, then a stall). An occupied arrival is the other branches' to resolve.
+ */
+function standingExitStatus({ matchUp, advancesNobody }: { matchUp: MatchUp; advancesNobody: boolean }) {
+  const standingExit = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp }));
+  if (!standingExit) return undefined;
+  if (!standingExit.winningSide) return standingExit.matchUpStatus;
+  return advancesNobody ? standingExit.matchUpStatus : undefined;
+}
+
+/**
+ * The side a PARTICIPANT advanced past a BYE takes, when it arrives opposite a single pending exit standing here.
+ *
+ * A pending exit is awarded to whoever arrives on the side without it (`progressExitStatus` RULE 2; CA 2026-09-20).
+ * `arrivalIntoProvenanceOnlyExit` reads that award only where the matchUp holds no position yet; here the exiting
+ * side already holds one, an empty seat advanced ahead of the exit, and the arrival was written TO_BE_PLAYED over the
+ * exit (PROPAGATED_EXIT_LOST). Census 20076731 (DOUBLE_ELIMINATION 8/7, `doubleExitPropagateBye: false`), forward play:
+ * `Main|1|2`'s double default carried a DEFAULTED past `Backdraw|2|2`'s BYE into `Backdraw|3|1`; `Backdraw|1|1`'s
+ * walkover winner then came through `Backdraw|2|1`'s BYE on side 1 and was never awarded it. An arrival on the
+ * exiting side takes nothing; an empty position is `standingExitStatus`'s.
+ */
+function arrivalOppositePendingExit({
+  pairedDrawPositionIsBye,
+  drawPositionToAdvance,
+  drawPositionIsBye,
+  drawDefinition,
+  winnerMatchUp,
+  drawPositions,
+  assignment,
+  matchUp,
+}: {
+  assignment?: { participantId?: string };
+  pairedDrawPositionIsBye?: boolean;
+  drawDefinition: DrawDefinition;
+  drawPositionIsBye?: boolean;
+  drawPositionToAdvance: number;
+  drawPositions: number[];
+  winnerMatchUp?: HydratedMatchUp;
+  matchUp: MatchUp;
+}): number | undefined {
+  if (!assignment?.participantId || drawPositionIsBye || pairedDrawPositionIsBye) return undefined;
+  if (!isExit(matchUp.matchUpStatus) || matchUp.winningSide) return undefined;
+  const standingExit = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp }));
+  if (!standingExit?.winningSide) return undefined;
+  // the exit is recorded on the side its position held BEFORE this arrival; with both positions present the sides
+  // re-sort (`draw-positions.md` rule 3), so the exiting POSITION is compared, never a side number across the two frames
+  const structureId = winnerMatchUp?.structureId;
+  const exitPosition = getSideDrawPosition({
+    sideNumber: 3 - standingExit.winningSide,
+    drawDefinition,
+    structureId,
+    matchUp,
+  });
+  if (exitPosition === drawPositionToAdvance) return undefined;
+  const side = getDrawPositionSideNumber({
+    matchUp: { ...matchUp, drawPositions },
+    drawPosition: drawPositionToAdvance,
+    drawDefinition,
+    structureId,
+  });
+  // an exit whose side holds no position yet: the arrival takes it only from the other bracket side
+  if (!exitPosition && side !== standingExit.winningSide) return undefined;
+  return side;
 }

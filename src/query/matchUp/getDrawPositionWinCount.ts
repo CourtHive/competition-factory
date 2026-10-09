@@ -4,6 +4,7 @@ import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 // constants and types
 import { DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
+import type { TeamLevel } from '@Acquire/teamLevelMatchUps';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 // Counts the REAL (scored) wins a drawPosition has accrued across a structure's matchUps. BYEs and
@@ -39,7 +40,9 @@ export function getDrawPositionWinCount({
   sourceMatchUps,
   drawPosition,
 }: {
-  sourceMatchUps: HydratedMatchUp[];
+  // TEAM-level by contract (`teamLevelMatchUps`); filtered again so an untyped caller, which the brand cannot see,
+  // still never counts a rubber
+  sourceMatchUps: TeamLevel<HydratedMatchUp>[];
   drawPosition: number;
 }): number {
   return teamLevelMatchUps(sourceMatchUps)

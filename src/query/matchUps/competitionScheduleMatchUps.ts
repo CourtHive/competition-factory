@@ -5,6 +5,7 @@ import { matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeSchedulin
 import { courtGridRows } from '@Assemblies/generators/scheduling/courtGridRows';
 import { isEmbargoed, isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
+import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { getCompetitionMatchUps } from './getCompetitionMatchUps';
 import { getTournamentId } from '@Global/state/globalState';
@@ -310,32 +311,7 @@ function applyCompletedExclusion(params, alwaysReturnCompleted) {
 function filterByPublishState(matchUp, detailsMap) {
   const { drawId, structureId, stage } = matchUp;
   if (!isVisiblyPublished(detailsMap?.[drawId]?.publishingDetail)) return false;
-
-  const stageKeys = Object.keys(detailsMap[drawId].stageDetails ?? {});
-  if (stageKeys.length) {
-    const unpublishedStages = stageKeys.filter((stage) => !isVisiblyPublished(detailsMap[drawId].stageDetails[stage]));
-    const publishedStages = stageKeys.filter((stage) => isVisiblyPublished(detailsMap[drawId].stageDetails[stage]));
-    if (unpublishedStages.length && unpublishedStages.includes(stage)) return false;
-    if (publishedStages.length && publishedStages.includes(stage)) return true;
-    return unpublishedStages.length && !unpublishedStages.includes(stage) && !publishedStages.length;
-  }
-
-  const structureIdKeys = Object.keys(detailsMap[drawId].structureDetails ?? {});
-  if (structureIdKeys.length) {
-    const unpublishedStructureIds = structureIdKeys.filter(
-      (structureId) => !isVisiblyPublished(detailsMap[drawId].structureDetails[structureId]),
-    );
-    const publishedStructureIds = structureIdKeys.filter((structureId) =>
-      isVisiblyPublished(detailsMap[drawId].structureDetails[structureId]),
-    );
-    if (unpublishedStructureIds.length && unpublishedStructureIds.includes(structureId)) return false;
-    if (publishedStructureIds.length && publishedStructureIds.includes(structureId)) return true;
-    return (
-      unpublishedStructureIds.length && !unpublishedStructureIds.includes(structureId) && !publishedStructureIds.length
-    );
-  }
-
-  return true;
+  return isStructureVisible({ drawDetail: detailsMap[drawId], structureId, stage });
 }
 
 function filterByRoundVisibility(matchUp, detailsMap) {

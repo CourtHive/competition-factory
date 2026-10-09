@@ -22,8 +22,9 @@ test('ungendered participants are acceptable when event.gender is ANY', () => {
   }).participants;
   expect(participants.length).toEqual(participantsCount);
 
+  // a profile sex of ANY generates persons with no sex: ANY is an event gender, not a person sex
   const genders = unique(participants.map((participant) => participant.person.sex));
-  expect(genders).toEqual([ANY]);
+  expect(genders).toEqual([undefined]);
 
   let { event } = tournamentEngine.getEvent({ eventId: 'eventId' });
   expect(event.gender).toEqual(ANY);

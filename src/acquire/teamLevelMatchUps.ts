@@ -1,5 +1,14 @@
 import type { MatchUp } from '@Types/tournamentTypes';
 
+declare const teamLevelBrand: unique symbol;
+
+/**
+ * A matchUp read through `teamLevelMatchUps`, so never a tieMatchUp. Only the accessor produces it: a function whose
+ * logic counts or ranges a draw's matchUps asks for `TeamLevel<…>[]`, and a list straight from a tie-inclusive getter
+ * does not compile there. A phantom brand, nothing at runtime. Casting to it is banned by lint outside this file.
+ */
+export type TeamLevel<M> = M & { readonly [teamLevelBrand]: true };
+
 /**
  * The matchUps of a list that are not tieMatchUps.
  *
@@ -13,8 +22,11 @@ import type { MatchUp } from '@Types/tournamentTypes';
  * raw and in-context lists. A draw with no TEAM matchUps has no tieMatchUps: every matchUp is returned.
  *
  * Typed by the LIST so an untyped list stays untyped: a parameter typed by its element infers the bare constraint
- * from `any`, and every caller passing an untyped list would read its matchUps as `MatchUp` from here on.
+ * from `any`, and every caller passing an untyped list would read its matchUps as `MatchUp` from here on. The same
+ * holds for the brand: `TeamLevel<any>` is `any`, so an untyped list is not checked, which is why the functions that
+ * require the brand still filter for themselves.
  */
-export function teamLevelMatchUps<L extends MatchUp[]>(matchUps: L | undefined): L[number][] {
-  return matchUps?.filter((matchUp): matchUp is L[number] => !matchUp.collectionId) ?? [];
+export function teamLevelMatchUps<L extends MatchUp[]>(matchUps: L | undefined): TeamLevel<L[number]>[] {
+  // eslint-disable-next-line no-restricted-syntax -- the one place the brand is minted
+  return (matchUps?.filter((matchUp) => !matchUp.collectionId) ?? []) as TeamLevel<L[number]>[];
 }
