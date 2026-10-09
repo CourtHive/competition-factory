@@ -3008,10 +3008,13 @@ function settleHoldersToBye({
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
 }) {
+  // a winningSide does not exempt a holder: a BYE is never won, and with nobody present there is nobody to win it.
+  // Under `doubleExitPropagateBye: false` a convergence's produced walkover was written into a BYE-held seat as
+  // `WALKOVER ws=2` and stood there decided, past this net (census w2 9100211, FMLC 32/32, `Consolation|2|4`, read by
+  // the outcome pipeline's invariant on the checkpoint differential, #5341)
   const holders = (getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? []).filter(
     (matchUp) =>
       isExit(matchUp.matchUpStatus) &&
-      !matchUp.winningSide &&
       !matchUp.collectionId &&
       !matchUp.sides?.some((side) => side?.participantId) &&
       matchUpHoldsBye({ drawDefinition, matchUp }),
