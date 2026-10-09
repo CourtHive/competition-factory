@@ -25,7 +25,6 @@ import fs from 'fs';
  */
 const OPEN = new Set<string>([
   // doubleExitPropagateBye: false
-  'policyoff 20177818', // CURTIS_CONSOLATION 16/11
 ]);
 
 type Arm = 'off' | 'on' | 'policyoff';

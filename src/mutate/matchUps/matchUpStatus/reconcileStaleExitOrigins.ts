@@ -58,8 +58,10 @@ export function reconcileStaleExitOrigins({
   drawDefinition?: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
   event?: Event;
-}): ResultType | undefined {
+}): (ResultType & { rederived?: string[] }) | undefined {
   if (!drawDefinition) return undefined;
+  // the matchUps this reconciliation re-derived from a double exit to a single one: the caller settles those again
+  const rederived: string[] = [];
 
   // `setMatchUpStatus` only carries a `matchUpsMap` in its result context on the exit-propagation
   // path — measured absent on four of five submissions of the P40 sequence, including the one that
@@ -79,10 +81,13 @@ export function reconcileStaleExitOrigins({
       : getStaleRelays({ drawDefinition, matchUpsMap: resolvedMap });
     if (relays.error) return relays;
     const staleRelays = relays.staleRelays ?? [];
-    if (!staleOrigins.length && !staleRelays.length) return undefined;
+    if (!staleOrigins.length && !staleRelays.length) return rederived.length ? { rederived } : undefined;
 
     for (const { matchUp, structureId, sourceMatchUpId } of staleRelays) {
       const withdrawnExits = withdrawRelayedExit({ matchUp, structureId, sourceMatchUpId, drawDefinition });
+      rederived.push(
+        ...withdrawnExits.filter((withdrawn) => withdrawn.rederived).map((withdrawn) => withdrawn.matchUpId),
+      );
       applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap: resolvedMap, event });
     }
 
@@ -92,10 +97,13 @@ export function reconcileStaleExitOrigins({
         sourceMatchUpId,
         drawDefinition,
       });
+      rederived.push(
+        ...withdrawnExits.filter((withdrawn) => withdrawn.rederived).map((withdrawn) => withdrawn.matchUpId),
+      );
       applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap: resolvedMap, event });
     }
   }
-  return undefined;
+  return rederived.length ? { rederived } : undefined;
 }
 
 /** The sourceMatchUpIds named by a carried-exit entry which no longer describe their source. */
