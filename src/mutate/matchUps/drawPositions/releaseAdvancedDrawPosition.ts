@@ -1,5 +1,8 @@
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
-import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  deriveExitStateFromProvenance,
+  getSideExitProvenance,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
@@ -75,7 +78,12 @@ export function releaseAdvancedDrawPosition({
   matchUpsMap,
   structureId,
   event,
-}: ReleaseAdvancedDrawPositionArgs): { success: boolean; releasedRoundNumbers: number[] } {
+}: ReleaseAdvancedDrawPositionArgs): {
+  success: boolean;
+  releasedRoundNumbers: number[];
+  /** the matchUps a BYE position was released from, with the positions still in them: they advanced past that BYE */
+  vacatedByes: { roundNumber: number; remaining: number[] }[];
+} {
   const resolvedMap = matchUpsMap ?? getMatchUpsMap({ drawDefinition });
   const matchUps = resolvedMap?.mappedMatchUps?.[structureId]?.matchUps ?? [];
   const { initialRoundNumber } = getInitialRoundNumber({ drawPosition, matchUps });
@@ -112,6 +120,7 @@ export function releaseAdvancedDrawPosition({
   );
 
   const releasedRoundNumbers: number[] = [];
+  const vacatedByes: { roundNumber: number; remaining: number[] }[] = [];
   for (const matchUp of matchUps) {
     if (!releasable(matchUp)) continue;
     const heldOpenForArrival =
@@ -140,6 +149,18 @@ export function releaseAdvancedDrawPosition({
     });
     releasedRoundNumbers.push(matchUp.roundNumber);
 
+    if (byeDrawPositions.has(drawPosition)) {
+      // whoever stayed advanced past this BYE on its strength (`yieldSquattingPropagatedBye`), and comes back with it —
+      // the caller's to release, since it crosses rounds and links (`releaseAdvancedDrawPositionAcrossLinks`)
+      const remaining = (matchUp.drawPositions ?? []).filter((position): position is number => !!position);
+      vacatedByes.push({ roundNumber: matchUp.roundNumber, remaining });
+      // and the BYE label went with the BYE position: what remains is the exit the matchUp still records, or undecided
+      if (matchUp.matchUpStatus === BYE && !remaining.some((position) => byeDrawPositions.has(position))) {
+        matchUp.matchUpStatus =
+          deriveExitStateFromProvenance(getSideExitProvenance({ matchUp }))?.matchUpStatus ?? TO_BE_PLAYED;
+      }
+    }
+
     // A PRODUCED exit has no winningSide until a participant arrives (CA, 2026-09-20). Its award was read off the
     // participant who stood in this seat, so with the seat empty again the award goes with them; the exit stands,
     // pending. A CARRIED exit keeps its winningSide on an empty seat by design (exit-propagation.md).
@@ -157,7 +178,7 @@ export function releaseAdvancedDrawPosition({
     });
   }
 
-  return { ...SUCCESS, releasedRoundNumbers };
+  return { ...SUCCESS, releasedRoundNumbers, vacatedByes };
 }
 
 /** the exit standing against this seat came from a double exit (produced), not with a participant (carried) */
@@ -228,7 +249,12 @@ function latestFeeder({ drawPosition, matchUps, matchUp }) {
 function advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp }): boolean {
   const feeder = latestFeeder({ drawPosition, matchUps, matchUp });
   if (!feeder) return false;
-  return (feeder.drawPositions ?? []).some((position) => byeDrawPositions.has(position));
+  const byes = (feeder.drawPositions ?? []).filter((position) => byeDrawPositions.has(position));
+  // The BYE's OWN position advances only beside another BYE (`advanceWinner`: a BYE stays put and its opponent moves).
+  // Found alone in a later round, it was advanced as an EMPTY seat — the reservation a pending produced exit makes for
+  // whoever falls through — and the BYE landed in it afterwards. That advance is the exit's, and goes with it
+  // (census 20178071).
+  return byeDrawPositions.has(drawPosition) ? byes.length === 2 : byes.length > 0;
 }
 
 /**

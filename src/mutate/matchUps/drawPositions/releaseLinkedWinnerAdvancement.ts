@@ -179,6 +179,18 @@ export function releaseAdvancedDrawPositionAcrossLinks({
   ...args
 }: Parameters<typeof releaseAdvancedDrawPosition>[0] & { participantId?: string }) {
   const result = releaseAdvancedDrawPosition(args);
+  // a BYE position released from a matchUp takes with it what advanced past that BYE (census w2 9100211: the BYE's
+  // reservation left `Consolation|3|2`, and the participant who had passed it stayed in `4|1`, ADVANCED_FROM_UNDECIDED)
+  for (const { roundNumber, remaining } of result.vacatedByes) {
+    for (const drawPosition of remaining) {
+      releaseAdvancedDrawPositionAcrossLinks({
+        ...args,
+        participantId,
+        drawPosition,
+        fromRoundNumber: roundNumber + 1,
+      });
+    }
+  }
   for (const roundNumber of result.releasedRoundNumbers) {
     releaseLinkedWinnerAdvancement({
       participantId,
