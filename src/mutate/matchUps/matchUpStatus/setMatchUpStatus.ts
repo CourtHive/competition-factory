@@ -5,6 +5,7 @@ import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settl
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
 import { reconcileByeAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileByeAdvancements';
+import { reconcileCarriesPastByes } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
@@ -145,6 +146,9 @@ function settleDraw({
   // a FIRST_MATCHUP consolation seat holds the reservation the settled first round says it should
   const reserved = reconcileConsolationReservations({ tournamentRecord, drawDefinition, event });
   if (reserved?.error) return reserved;
+  // and an exit a carrier holds past a BYE that arrived after them is written where they landed
+  const carried = reconcileCarriesPastByes({ tournamentRecord, drawDefinition, event });
+  if (carried?.error) return carried;
 
   // an exit held where nobody can play it is sent on, now that the draw it is decided on is settled
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
