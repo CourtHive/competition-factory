@@ -148,6 +148,7 @@ import type { publishEventSeeding, unPublishEventSeeding } from '@Mutate/publish
 import type { getScenarioScheduleView } from '@Query/matchUps/scheduling/getScenarioScheduleView';
 import type { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 import type { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
+import type { getFeedInQualifyingPositions } from '@Generators/drawDefinitions/feedInQualifying';
 import type { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
 import type { addAdditionalSeed } from '@Mutate/drawDefinitions/entryGovernor/addAdditionalSeed';
 import type { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
@@ -971,6 +972,7 @@ export interface MethodSignatures {
   getEvents: EngineMethod<typeof getEvents>;
   getEventStructures: EngineMethod<typeof getEventStructures>;
   getEventTimeItem: EngineMethod<typeof getEventTimeItem>;
+  getFeedInQualifyingPositions: EngineMethod<typeof getFeedInQualifyingPositions>;
   getFlightProfile: EngineMethod<typeof getFlightProfile>;
   getHomeParticipantId: EngineMethod<typeof getHomeParticipantId>;
   getLadderMovement: EngineMethod<typeof getLadderMovement>;

@@ -699,6 +699,22 @@ const { participants } = engine.getEligibleVoluntaryConsolationParticipants({
 
 ---
 
+## getFeedInQualifyingPositions
+
+Returns the qualifier counts a `FEED_IN` (staggered entry) qualifying structure of `drawSize` positions can
+produce: every count that divides `drawSize` at least twice over.
+
+```js
+const { qualifyingPositions } = engine.getFeedInQualifyingPositions({
+  drawSize, // required
+});
+// drawSize 12 => [1, 2, 3, 4, 6]; 13 => [1]; 10 => [1, 2, 5]
+```
+
+**Purpose:** Offer only valid qualifier counts when a qualifying structure is `FEED_IN`.
+
+---
+
 ## getMatchUpsMap
 
 Returns a map of matchUps indexed by matchUpId.

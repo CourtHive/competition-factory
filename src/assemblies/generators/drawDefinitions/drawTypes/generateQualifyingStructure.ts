@@ -6,13 +6,14 @@ import { generateTieMatchUps } from '@Generators/drawDefinitions/tieMatchUps';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { coerceEven, isConvertableInteger } from '@Tools/math';
+import { feedInQualifyingMatchUps } from '../feedInQualifying';
 import { generateRoundRobin } from './roundRobin/roundRobin';
 import { constantToString } from '@Tools/strings';
 import { treeMatchUps } from './eliminationTree';
 
 // constants, fixtures and types
 import { DrawDefinition, DrawLink, DrawTypeUnion, Event, MatchUp, Structure, TieFormat } from '@Types/tournamentTypes';
-import { POSITION, QUALIFYING, ROUND_ROBIN, WINNER } from '@Constants/drawDefinitionConstants';
+import { FEED_IN, POSITION, QUALIFYING, ROUND_ROBIN, WINNER } from '@Constants/drawDefinitionConstants';
 import POLICY_ROUND_NAMING_DEFAULT from '@Fixtures/policies/POLICY_ROUND_NAMING_DEFAULT';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
@@ -109,10 +110,13 @@ function generateRoundRobinStructure(args: Parameters<typeof generateRoundRobin>
   };
 }
 
-// Helper to generate elimination structure
+// Helper to generate elimination structure; a FEED_IN qualifying structure is an elimination with fed rounds
 function generateEliminationStructure(args: any) {
-  let { drawSize, matchUps, roundLimit, roundsCount } = treeMatchUps(args);
-  if (!roundLimit) roundLimit = roundsCount;
+  const generated = args.drawType === FEED_IN ? feedInQualifyingMatchUps(args) : treeMatchUps(args);
+  if ('error' in generated && generated.error) return { error: generated.error };
+  let { roundLimit } = generated;
+  const { drawSize, matchUps } = generated;
+  if (!roundLimit && 'roundsCount' in generated) roundLimit = generated.roundsCount;
 
   const structure = structureTemplate({
     structureName: args.structureName,
@@ -231,6 +235,7 @@ export function generateQualifyingStructure(params: GenerateQualifyingStructureA
       qualifyingRoundNumber,
       qualifyingPositions,
       matchUpType,
+      drawType,
       idPrefix,
       drawSize,
       isMock,
@@ -241,6 +246,7 @@ export function generateQualifyingStructure(params: GenerateQualifyingStructureA
       stageSequence,
       roundTarget,
     });
+    if (eliminationResult.error) return decorateResult({ result: eliminationResult, stack });
     drawSize = eliminationResult.drawSize;
     structure = eliminationResult.structure;
     roundLimit = eliminationResult.roundLimit;
