@@ -394,11 +394,18 @@ function removeDirectedLoser({
   //
   // Every position the loop above emptied is released, not just the first: the deletion is keyed on
   // participantId, and a participant fed back into a draw holds more than one.
+  //
+  // The participant is LEAVING, so an exit awarded to their seat is held open for whoever arrives next rather than kept
+  // as a decided matchUp the release must not touch. Census w2 9100572 (MODIFIED_FEED_IN_CHAMPIONSHIP 16/16): the
+  // loser had taken the walkover a carrier brought to `Consolation|3|2`; removed, the award stayed decided, their seat
+  // was kept there, and the BYE for their vacated position was placed at that furthest advancement, in front of the
+  // participant who should have arrived to take the walkover (BYE_ADVANCEMENT_MISSING).
   if (loserMatchUp?.roundNumber) {
     for (const drawPosition of clearedDrawPositions) {
       releaseAdvancedDrawPositionAcrossLinks({
         fromRoundNumber: loserMatchUp.roundNumber,
         participantId: loserParticipantId,
+        occupantLeaving: true,
         tournamentRecord,
         drawDefinition,
         drawPosition,
