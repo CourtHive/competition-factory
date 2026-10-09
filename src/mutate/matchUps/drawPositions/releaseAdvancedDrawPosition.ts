@@ -87,14 +87,37 @@ export function releaseAdvancedDrawPosition({
     (positionAssignments ?? []).filter(({ bye }) => bye).map(({ drawPosition: position }) => position),
   );
 
+  const releasable = (
+    matchUp: (typeof matchUps)[number],
+  ): matchUp is (typeof matchUps)[number] & { roundNumber: number } =>
+    matchUp.roundNumber !== undefined &&
+    matchUp.roundNumber >= fromRoundNumber &&
+    matchUp.roundNumber !== initialRoundNumber &&
+    !!matchUp.drawPositions?.includes(drawPosition);
+  // WHETHER A SEAT IS HELD OPEN FOR AN ARRIVAL IS ALSO ASKED OF THE DRAW BEFORE THIS PASS TAKES ANYTHING, for the one
+  // case the pass cannot answer itself. It reads which position holds the winning side, and a lone position's side is
+  // read through the feeder that delivered it, which this same pass may already have released. Census de 9301596
+  // (DOUBLE_ELIMINATION 16/13): dp 12, BYE-advanced from `Backdraw|4|2` and awarded `Backdraw|5|1` by a convergence's
+  // produced exit, was released from `4|2` first; `5|1`'s side then read nothing, the award was not seen as one, and
+  // the participant stayed in `5|1`, advanced out of a feeder that no longer held them (ADVANCED_FROM_UNDECIDED). Only
+  // where that read now comes back empty does the earlier answer stand: asked up front throughout, it released a
+  // Backdraw matchUp decided by a carried exit (census de 9300487, `anArrivalOnTheExitingSideTakesNothing`).
+  const heldOpen = new Set(
+    withdrawingExit || occupantLeaving
+      ? matchUps
+          .filter(releasable)
+          .filter((matchUp) => awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp, matchUps }))
+          .map((matchUp) => matchUp.matchUpId)
+      : [],
+  );
+
   const releasedRoundNumbers: number[] = [];
   for (const matchUp of matchUps) {
-    if (matchUp.roundNumber === undefined || matchUp.roundNumber < fromRoundNumber) continue;
-    if (matchUp.roundNumber === initialRoundNumber) continue;
-    if (!matchUp.drawPositions?.includes(drawPosition)) continue;
+    if (!releasable(matchUp)) continue;
     const heldOpenForArrival =
       (withdrawingExit || occupantLeaving) &&
-      awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp, matchUps });
+      (awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp, matchUps }) ||
+        (heldOpen.has(matchUp.matchUpId) && !getWinningSideDrawPosition({ drawDefinition, structureId, matchUp })));
     if (!heldOpenForArrival && (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus))) continue;
     if (advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp })) continue;
     if (!withdrawingExit && advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp })) {

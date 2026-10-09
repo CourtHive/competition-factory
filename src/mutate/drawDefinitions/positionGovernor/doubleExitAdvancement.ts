@@ -2575,11 +2575,97 @@ export function settleHeldExits({
   const sent = sendHeldExitsOn({ tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, event, stack });
   if (sent.error) return sent;
 
+  // a convergence written by an arrival produces onward as one written by a carried exit does
+  const produced = produceStrandedConvergences({
+    tournamentRecord,
+    appliedPolicies,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
+  if (produced?.error) return decorateResult({ result: produced, stack });
+
   // under either policy, an exit label left beside a BYE with nobody in it is the BYE it holds
   const relabelled = settleHoldersToBye({ drawDefinition, matchUpsMap, params: { appliedPolicies } });
   if (relabelled?.error) return decorateResult({ result: relabelled, stack });
 
   return { ...SUCCESS };
+}
+
+/**
+ * A CONVERGENCE PRODUCES AN EXIT FOR ITS WINNER TARGET, whichever route wrote it.
+ *
+ * `convergeCarriedExit` and the double-exit routes end in `advanceConvergedWinner`. A participant carrying an exit who
+ * comes through a BYE into a matchUp holding a pending exit converges there too (`advanceWinner`'s
+ * `standingExitStatus`, RULE 4), but that route only writes the status: the double exit produced nothing, and whoever
+ * stood in its winner target waited on nobody. Census 20080614 (FEED_IN_CHAMPIONSHIP 16/11, `doubleExitPropagateBye:
+ * false`): `Main|1|2`'s double default sent its carrier through a BYE into `Consolation|3|2`, opposite `Main|1|5`'s
+ * produced WALKOVER; the DOUBLE_WALKOVER there never reached `Consolation|4|2`, where the Main semifinal's loser stood.
+ *
+ * Asked of the settled draw: a double exit whose two sides each record a carried exit, with a winner target holding
+ * nothing from it and no result.
+ */
+function produceStrandedConvergences({
+  tournamentRecord,
+  appliedPolicies,
+  drawDefinition,
+  matchUpsMap,
+  event,
+}: {
+  appliedPolicies?: PolicyDefinitions;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  event?: Event;
+}): ResultType | undefined {
+  const produced = new Set<string>();
+  for (let pass = 0; pass < 16; pass++) {
+    const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+    const stranded = inContextDrawMatchUps.find(
+      (matchUp) => !produced.has(matchUp.matchUpId) && strandsItsExit({ inContextDrawMatchUps, matchUpsMap, matchUp }),
+    );
+    if (!stranded) return undefined;
+    produced.add(stranded.matchUpId);
+    const { structure } = findStructure({ drawDefinition, structureId: stranded.structureId });
+    const result = advanceConvergedWinner({
+      params: {
+        tournamentRecord,
+        appliedPolicies,
+        inContextDrawMatchUps,
+        drawDefinition,
+        matchUpsMap,
+        structure,
+        event,
+      },
+      DOUBLE_EXIT: stranded.matchUpStatus,
+      convergedMatchUp: stranded,
+      stack: 'settleHeldExits',
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (result?.error) return result;
+  }
+  return undefined;
+}
+
+function strandsItsExit({
+  inContextDrawMatchUps,
+  matchUpsMap,
+  matchUp,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  matchUpsMap: MatchUpsMap;
+  matchUp: HydratedMatchUp;
+}): boolean {
+  if (matchUp.collectionId || !isDoubleExit(matchUp.matchUpStatus) || !matchUp.winnerMatchUpId) return false;
+  const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUp.matchUpId);
+  const provenance = getSideExitProvenance({ matchUp: stored });
+  if (!carriedExitStatus(provenance?.[1]) || !carriedExitStatus(provenance?.[2])) return false;
+  const target = inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUp.winnerMatchUpId);
+  if (!target || target.winningSide) return false;
+  const storedTarget = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === target.matchUpId);
+  const targetProvenance = getSideExitProvenance({ matchUp: storedTarget }) ?? {};
+  return !Object.values(targetProvenance).some((entry) => entry?.sourceMatchUpId === matchUp.matchUpId);
 }
 
 function sendHeldExitsOn({

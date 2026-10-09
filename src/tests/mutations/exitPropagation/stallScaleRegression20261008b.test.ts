@@ -21,10 +21,7 @@ import fs from 'fs';
  * The set of stalling seeds must EQUAL this list. A new stall fails; so does a seed that stops stalling, until its
  * entry is removed here — the list only shrinks, and a fix records itself by deleting a line.
  */
-const OPEN = new Set<string>([
-  // doubleExitPropagateBye: false
-  'policyoff 20080614', // FEED_IN_CHAMPIONSHIP 16/11
-]);
+const OPEN = new Set<string>([]);
 
 type Arm = 'off' | 'on' | 'policyoff';
 type Instance = { arm: Arm; seed: number; config: any; steps: any[]; policyDefinitions?: any };
