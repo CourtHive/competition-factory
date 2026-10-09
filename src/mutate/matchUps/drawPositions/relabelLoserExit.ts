@@ -332,7 +332,15 @@ function winnerPlayedOn(
 function hasEarnedResult(matchUp: HydratedMatchUp): boolean {
   if (!hasResult(matchUp)) return false;
   if (checkScoreHasValue({ score: matchUp.score }) || matchUp.matchUpStatus === COMPLETED) return true;
-  if (!isAnyExit(matchUp.matchUpStatus) || !matchUp.winningSide) return true;
+  if (!isAnyExit(matchUp.matchUpStatus)) return true;
+  // An exit with no winner yet is the cascade's when it records the exit it was produced or carried from: a double
+  // exit's produced exit, pending until somebody arrives, or two carried exits converged. A director's double exit
+  // records no such origin. Read as earned, a pending produced exit one round on refused the relabel of the walkover
+  // beneath it, and the stale carry then "converged" with the next arrival (census policy-off 20162213,
+  // MODIFIED_FEED_IN_CHAMPIONSHIP 8/5: `Consolation|2|1` kept a walkover its loser no longer carried, `3|1` stalled).
+  if (!matchUp.winningSide) {
+    return !Object.values(matchUp.sideExitProvenance ?? {}).some((entry) => carriedExitStatus(entry));
+  }
   const exitingSide = 3 - matchUp.winningSide;
   return !carriedExitStatus(matchUp.sideExitProvenance?.[exitingSide as 1 | 2]);
 }
