@@ -142,24 +142,29 @@ export function getValidSeedBlocks({
       : 0;
     const chunkSize = firstRoundDrawPositions.length / seedingBlocksCount;
 
-    if (!isFeedIn) {
-      const positioning = getSeedPattern(resolvedProfile);
-      const drawPositionChunks = chunkArray(firstRoundDrawPositions, chunkSize);
-      let groupNumber = 1;
-      const seedGroups = generateRange(0, drawPositionChunks[0].length).map(() => {
-        const seedNumbers = generateRange(groupNumber, groupNumber + drawPositionChunks.length);
-        groupNumber += drawPositionChunks.length;
-        return seedNumbers;
-      });
+    // a FEED_IN qualifying structure seeds as a FEED_IN main does: the lowest seed numbers take the fed
+    // positions, latest round first; the seeds after them are spread across round 1's qualifying sections
+    const fedSeedBlocks = isFeedIn
+      ? seedRangeDrawPositionBlocks.map((block) => ({ seedNumbers: block, drawPositions: block }))
+      : [];
 
-      ({ validSeedBlocks } = getSeedBlockPattern({
-        drawPositionBlocks: drawPositionChunks,
-        nonRandom: resolvedProfile?.nonRandom,
-        positioning,
-        seedGroups,
-        random,
-      }));
-    }
+    const positioning = getSeedPattern(resolvedProfile);
+    const drawPositionChunks = chunkArray(firstRoundDrawPositions, chunkSize);
+    let groupNumber = 1 + fedSeedNumberOffset;
+    const seedGroups = generateRange(0, drawPositionChunks[0].length).map(() => {
+      const seedNumbers = generateRange(groupNumber, groupNumber + drawPositionChunks.length);
+      groupNumber += drawPositionChunks.length;
+      return seedNumbers;
+    });
+
+    const { validSeedBlocks: firstRoundSeedBlocks } = getSeedBlockPattern({
+      drawPositionBlocks: drawPositionChunks,
+      nonRandom: resolvedProfile?.nonRandom,
+      positioning,
+      seedGroups,
+      random,
+    });
+    validSeedBlocks = [...fedSeedBlocks, ...firstRoundSeedBlocks];
   } else if (isContainer) {
     const result = getContainerBlocks({
       nonRandom: resolvedProfile?.nonRandom,
