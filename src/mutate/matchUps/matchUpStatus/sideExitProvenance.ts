@@ -1209,7 +1209,17 @@ function withdrawFromMatchUp(
     // matchUp WALKOVER beside the BYE with nobody opposite (CA, 2026-09-20 and 2026-10-02, "the BYE
     // remains a BYE"; caught by v2's held-exit invariant on sweep seed 6161873, where clearing a West
     // result withdrew one side's entry from a South BYE matchUp whose BYE side still carried an exit).
-    if (holdsBye({ matchUp, structureId, drawDefinition })) return undefined;
+    //
+    // It stays a BYE, and when nothing retained carries an exit the withdrawal is still REPORTED: a pending produced
+    // exit advances the empty seat opposite it as a reservation (`doubleExitAdvancement`, `yieldSquattingPropagatedBye`
+    // names the shape), and a BYE then landing in that seat does not make the reservation the BYE's own. Returned
+    // nothing, the exit went and the reservation stood (census 20178071, FEED_IN_CHAMPIONSHIP 8/7: `Consolation|2|2`'s
+    // produced walkover was withdrawn with the convergence that produced it, and the BYE that had since taken dp 3
+    // stayed advanced in `3|1`, which then met the carrier coming through — TWO_POSITIONS_FROM_ONE_FEEDER).
+    if (holdsBye({ matchUp, structureId, drawDefinition })) {
+      if (deriveExitStateFromProvenance(exitsRetained)) return undefined;
+      return { roundNumber: matchUp.roundNumber, matchUpId: matchUp.matchUpId, structureId };
+    }
     // STAGE 1 EXPERIMENT: re-derive, and report that the matchUp is no longer a double exit
     const derived = deriveExitStateFromProvenance(exitsRetained);
     if (derived && derived.matchUpStatus !== matchUp.matchUpStatus) {
