@@ -1,5 +1,36 @@
 # Changelog
 
+## [7.9.0](https://github.com/CourtHive/competition-factory/compare/v7.8.1...v7.9.0) (2026-10-09)
+
+
+### Features
+
+* **qualifying:** FEED_IN (staggered entry) qualifying structures of any size ([#5342](https://github.com/CourtHive/competition-factory/issues/5342)) ([741911f](https://github.com/CourtHive/competition-factory/commit/741911fd4a376f79ea6c82e7a7ef819f005f67e2))
+* **qualifying:** room counts filled positions, and a QUALIFIER placeholder position action ([#5337](https://github.com/CourtHive/competition-factory/issues/5337)) ([e0e2fee](https://github.com/CourtHive/competition-factory/commit/e0e2feed1156e723ddfed0db9bec26749c7b36c6))
+
+
+### Bug Fixes
+
+* **consolation:** a standing reservation outlives a double exit re-entered beside it ([#5327](https://github.com/CourtHive/competition-factory/issues/5327)) ([8b599a6](https://github.com/CourtHive/competition-factory/commit/8b599a6bfc721a073fb8cafc8eb74fc00d502b83))
+* **exit-propagation:** a bye's opponent goes on once the seat it was owed is free ([#5330](https://github.com/CourtHive/competition-factory/issues/5330)) ([119e747](https://github.com/CourtHive/competition-factory/commit/119e74768f03eeb3dc14157ef186f391d4e9d7f3))
+* **exit-propagation:** a carrier opposite a produced exit converges, and a dissolved convergence leaves its byes ([#5326](https://github.com/CourtHive/competition-factory/issues/5326)) ([8656d49](https://github.com/CourtHive/competition-factory/commit/8656d49de7d47b85e4b7682ed97d12d5d247724b))
+* **exit-propagation:** a double exit's target drops a stale advance; a re-derived winner goes on ([#5336](https://github.com/CourtHive/competition-factory/issues/5336)) ([462ea90](https://github.com/CourtHive/competition-factory/commit/462ea90c9f89c753588c4c836c6edfce028abe7c))
+* **exit-propagation:** a held exit meets an awarded seat; a convergence serves its loser link ([#5333](https://github.com/CourtHive/competition-factory/issues/5333)) ([d8cec9f](https://github.com/CourtHive/competition-factory/commit/d8cec9f965fdc587d076bfc36964eec4ac6524de))
+* **exit-propagation:** a lone bye is never on the exit's side; the exit survives the bye's removal ([#5340](https://github.com/CourtHive/competition-factory/issues/5340)) ([a14a810](https://github.com/CourtHive/competition-factory/commit/a14a8105c734bf31f2aac61232bc96bc7e7181aa))
+* **exit-propagation:** a pending carry comes home with its carrier; the differential reads it ([#5343](https://github.com/CourtHive/competition-factory/issues/5343)) ([bdc5c4b](https://github.com/CourtHive/competition-factory/commit/bdc5c4b258dbb4385dfdc0008ead7f3d36b67aeb))
+* **exit-propagation:** a pending exit's reservation goes with it, even once a bye has taken the seat ([#5329](https://github.com/CourtHive/competition-factory/issues/5329)) ([cb26525](https://github.com/CourtHive/competition-factory/commit/cb265259034fcdda3b4d17c4c7d0af1f0527f279))
+* **exit-propagation:** a relabel withdraws a carry past a pending produced exit ([#5334](https://github.com/CourtHive/competition-factory/issues/5334)) ([c521c0d](https://github.com/CourtHive/competition-factory/commit/c521c0dedf69f1c8487692a1a06cffbba2bab8c5))
+* **exit-propagation:** an arrival's convergence produces onward; a held-open seat is read first ([#5328](https://github.com/CourtHive/competition-factory/issues/5328)) ([bad458e](https://github.com/CourtHive/competition-factory/commit/bad458ea8bf1adbe2941df13c3791aa935902d34))
+* **exit-propagation:** an exit carried past a late bye is written where the carrier lands ([#5331](https://github.com/CourtHive/competition-factory/issues/5331)) ([59a40e0](https://github.com/CourtHive/competition-factory/commit/59a40e00cdfaa51d516e3f03ac12b77d76dba864))
+* **positioning:** qualifiers keep their round from BYEs, and an empty main gets only qualifier seats ([#5339](https://github.com/CourtHive/competition-factory/issues/5339)) ([f39422a](https://github.com/CourtHive/competition-factory/commit/f39422abe1bb2f4c64ba69d762d25b23fc86eab3))
+* **sanctioning:** personnel roles are codes, matched exactly; minimumCount is enforced ([#5335](https://github.com/CourtHive/competition-factory/issues/5335)) ([02bea5f](https://github.com/CourtHive/competition-factory/commit/02bea5f4be8d31fdc8bd5d81a3092ad95d36f61d))
+* **verify:** any-count skips gitignored paths, so a local src/scratch cannot refuse a commit ([#5338](https://github.com/CourtHive/competition-factory/issues/5338)) ([d94d258](https://github.com/CourtHive/competition-factory/commit/d94d258d8f08cbb9103c8de3985787aa4a1cac38))
+
+
+### Documentation
+
+* add AGENTS.md as a pointer to CLAUDE.md for agents that read it ([62232c6](https://github.com/CourtHive/competition-factory/commit/62232c64328a5a379828fbe76c2127e8249b96e1))
+
 ## [7.8.1](https://github.com/CourtHive/competition-factory/compare/v7.8.0...v7.8.1) (2026-10-09)
 
 
