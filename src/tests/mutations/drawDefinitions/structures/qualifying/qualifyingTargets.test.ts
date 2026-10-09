@@ -4,8 +4,8 @@ import { expect, it } from 'vitest';
 
 // constants
 import { MISSING_STRUCTURE_ID, QUALIFYING_CAPACITY_EXCEEDED } from '@Constants/errorConditionConstants';
-import { ASSIGN_QUALIFIER, QUALIFYING_PARTICIPANT } from '@Constants/positionActionConstants';
 import { FEED_IN, FEED_IN_CHAMPIONSHIP, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { ASSIGN_QUALIFIER, QUALIFYING_PARTICIPANT } from '@Constants/positionActionConstants';
 
 function setup(drawProfile) {
   const {

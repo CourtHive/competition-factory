@@ -2,8 +2,8 @@ import { getSourceStructureIdsAndRelevantLinks } from '@Query/structure/getSourc
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
-import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getValidQualifierPlaceholderAction } from './getValidQualifierPlaceholderAction';
+import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getValidModifyAssignedPairAction } from './getValidModifyAssignedPairAction';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { matchUpActions } from '@Query/drawDefinition/matchUpActions/matchUpActions';

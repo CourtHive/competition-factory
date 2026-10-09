@@ -2,8 +2,8 @@ import { getAvailableQualifyingTargets } from '@Query/drawDefinition/getAvailabl
 
 // constants and types
 import { ASSIGN_QUALIFIER, ASSIGN_QUALIFIER_METHOD } from '@Constants/positionActionConstants';
-import { DrawDefinition, PositionAssignment } from '@Types/tournamentTypes';
-import { PositionAction } from './actionPolicyUtils';
+import type { DrawDefinition, PositionAssignment } from '@Types/tournamentTypes';
+import type { PositionAction } from './actionPolicyUtils';
 
 type GetValidQualifierPlaceholderActionArgs = {
   drawPositionInitialRounds: { [drawPosition: number]: number };
