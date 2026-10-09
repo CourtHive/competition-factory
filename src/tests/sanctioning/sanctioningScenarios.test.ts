@@ -55,8 +55,8 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     tournamentDirector: { personName: 'Carlos Mendes', role: 'Tournament Director' },
     referee: { personName: 'Ana Souza', role: 'Referee', certificationLevel: 'Bronze Badge' },
     officials: [
-      { role: 'Chair Umpire', personName: 'Pedro Lima' },
-      { role: 'Chair Umpire', personName: 'Julia Costa' },
+      { role: 'CHAIR_UMPIRE', personName: 'Pedro Lima' },
+      { role: 'CHAIR_UMPIRE', personName: 'Julia Costa' },
     ],
     insuranceCertificate: { documentType: 'liability_insurance', verified: true },
     safetyPlan: { documentType: 'safety_plan' },

@@ -13,26 +13,27 @@ feature tour and the full list of 7.0.0 additions, see [What's New in 7.0.0](./w
 
 ## Breaking changes at a glance
 
-| Change                                                                                            | Who is affected                                                             | Action required   |
-| ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------- |
-| `particicipantsRequiredMatchUpStatuses` renamed to `participantsRequiredMatchUpStatuses`          | Anyone importing that constant by name                                      | Rename the import |
-| Re-applying an identical double exit is now a no-op                                               | Callers relying on re-application to re-run propagation                     | See §2            |
-| A rejected bare `{ winningSide }` no longer unwinds the existing result                           | Callers matching on `ERR_MISSING_ASSIGNMENTS` for this case                 | See §3            |
-| `timeZone` conversions return an error instead of throwing or guessing                            | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC`           | See §4            |
-| `getTimeZoneOffsetMinutes` now returns `number \| undefined`                                      | Anyone reading a zone offset                                                | See §4            |
-| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param                  | Callers passing `matchUpId` / `drawId` and reading the result               | See §5            |
-| `getParticipantResults` refuses any matchUp carrying no `sides`                                   | Callers passing STORED (non-hydrated) matchUps                              | See §5            |
-| `buildDrawHierarchy` is removed                                                                   | Anyone calling it (no consumer was found in any CourtHive repo)             | See §6            |
-| `addFinishingRounds` refuses an absent `matchUps` array                                           | Callers relying on the empty-array return                                   | See §7            |
-| `validateTieFormat` enforces `collectionId` by default                                            | Anyone validating a hand-written or published tieFormat directly            | See §8            |
-| `pressureRating` is typed `boolean`, not `string`                                                 | TypeScript callers of `tallyParticipantResults` / `getParticipantResults`   | See §9            |
-| Three request-shape fields gain real types (`positioning`, `finishingPositionNaming`, `schedule`) | TypeScript callers passing these loosely                                    | See §11           |
-| The SEEDING policy is typed, and two `stage` fields become `StageTypeUnion`                       | TypeScript callers with a wrong-typed seeding-policy field                  | See §11           |
-| `modifyParticipantOtherName` clears on `''` and no longer overwrites on `undefined`               | Anyone calling it to set, clear, or unset `participantOtherName`            | See §13           |
-| A produced exit no longer overwrites `matchUpStatus: BYE` — the BYE stays a BYE                   | Anyone reading `matchUpStatus` to detect an exit at a BYE-held matchUp      | See §19           |
-| A produced exit carries NO `winningSide` until a participant actually arrives                     | Any UI or caller reading `winningSide` to render a produced walkover        | See §20           |
-| A load-bearing outcome can no longer be re-scored while a dependent result stands                 | Anyone correcting a result that has already propagated into a decided match | See §21           |
-| A lone `drawPosition` is stored as `[5]`, never `[undefined, 5]` (7.7.0)                          | Anyone reading a side from `matchUp.drawPositions[0]` / `[1]`               | See §25           |
+| Change                                                                                            | Who is affected                                                                | Action required   |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------- |
+| `particicipantsRequiredMatchUpStatuses` renamed to `participantsRequiredMatchUpStatuses`          | Anyone importing that constant by name                                         | Rename the import |
+| Re-applying an identical double exit is now a no-op                                               | Callers relying on re-application to re-run propagation                        | See §2            |
+| A rejected bare `{ winningSide }` no longer unwinds the existing result                           | Callers matching on `ERR_MISSING_ASSIGNMENTS` for this case                    | See §3            |
+| `timeZone` conversions return an error instead of throwing or guessing                            | Anyone calling `wallClockToUTC`, `utcToWallClock`, `toEmbargoUTC`              | See §4            |
+| `getTimeZoneOffsetMinutes` now returns `number \| undefined`                                      | Anyone reading a zone offset                                                   | See §4            |
+| `checkMatchUpIsComplete` / `getParticipantResults` refuse an absent object param                  | Callers passing `matchUpId` / `drawId` and reading the result                  | See §5            |
+| `getParticipantResults` refuses any matchUp carrying no `sides`                                   | Callers passing STORED (non-hydrated) matchUps                                 | See §5            |
+| `buildDrawHierarchy` is removed                                                                   | Anyone calling it (no consumer was found in any CourtHive repo)                | See §6            |
+| `addFinishingRounds` refuses an absent `matchUps` array                                           | Callers relying on the empty-array return                                      | See §7            |
+| `validateTieFormat` enforces `collectionId` by default                                            | Anyone validating a hand-written or published tieFormat directly               | See §8            |
+| `pressureRating` is typed `boolean`, not `string`                                                 | TypeScript callers of `tallyParticipantResults` / `getParticipantResults`      | See §9            |
+| Three request-shape fields gain real types (`positioning`, `finishingPositionNaming`, `schedule`) | TypeScript callers passing these loosely                                       | See §11           |
+| The SEEDING policy is typed, and two `stage` fields become `StageTypeUnion`                       | TypeScript callers with a wrong-typed seeding-policy field                     | See §11           |
+| `modifyParticipantOtherName` clears on `''` and no longer overwrites on `undefined`               | Anyone calling it to set, clear, or unset `participantOtherName`               | See §13           |
+| A produced exit no longer overwrites `matchUpStatus: BYE` — the BYE stays a BYE                   | Anyone reading `matchUpStatus` to detect an exit at a BYE-held matchUp         | See §19           |
+| A produced exit carries NO `winningSide` until a participant actually arrives                     | Any UI or caller reading `winningSide` to render a produced walkover           | See §20           |
+| A load-bearing outcome can no longer be re-scored while a dependent result stands                 | Anyone correcting a result that has already propagated into a decided match    | See §21           |
+| A lone `drawPosition` is stored as `[5]`, never `[undefined, 5]` (7.7.0)                          | Anyone reading a side from `matchUp.drawPositions[0]` / `[1]`                  | See §25           |
+| `personnelRules.roles[].roleName` is a role code, matched exactly; `minimumCount` is enforced     | Anyone writing a sanctioning policy's `personnelRules` or proposal `officials` | See §26           |
 
 ## 1. `participantsRequiredMatchUpStatuses` — a spelling fix
 
@@ -1411,8 +1412,7 @@ Roles are keyed by `ParticipantRoleUnion`, so they resolve directly against
 `participant.participantRole`. A participant with **no** role resolves as `COMPETITOR` — an absent
 role means a player from an older record, never a person with no part to play.
 
-⚠️ This makes **two role vocabularies** inside one sanctioning policy: `personnelRules.roles[].roleName`
-is a free string (`'Tournament Director'`, `'Referee'`). `presence` is the typed one.
+`personnelRules.roles[].roleName` keys by the same codes, plus the officiating subtypes — see §26.
 
 ### ⚠️ `required` does not mean "block"
 
@@ -1858,3 +1858,45 @@ Treat the stored array as a **set** of positions. Its shape says nothing, as
 They may still hold `[undefined, 5]`, `[5, null]` or `[null]`. The engine reads them correctly as they are, and any
 write to the matchUp compacts it. `migrateTournamentRecord` compacts every stored hole at once, so the record validates
 against `tournament.schema.json`.
+
+## 26. `personnelRules` name roles by code, matched exactly
+
+_Shipped in the release after 7.8.1._
+
+### What changed
+
+`PersonnelRole.roleName` was a free display string (`'Tournament Director'`, `'Referee'`), and
+`validateProposal` matched it by **substring**. A rule for `'Deputy Referee'` was therefore satisfied by
+the tournament referee, and a proposal official was found by `role.includes(roleName)`.
+
+It is now a `PersonnelRoleCode` — `ParticipantRoleUnion | OfficialRoleSubtype` — and resolution is by
+exact equality:
+
+- `DIRECTOR` reads `proposal.tournamentDirector`, `REFEREE` reads `proposal.referee`, and every role,
+  those two included, also reads `proposal.officials` whose `role` equals the code.
+- `OfficialProposal.role` carries the same code.
+- `minimumCount` is now enforced (it was declared and ignored). The ITF policy asks for two chair
+  umpires; a proposal naming one reports `Required role not filled: CHAIR_UMPIRE (1 of 2)`. A person
+  named in a slot and again among the officials counts once.
+- `certificationRequired` applies to every person counted, not only the first found.
+
+The built-in policies (`POLICY_SANCTIONING_GENERIC`, `_USTA`, `_ITF`) use the codes. Issue `field`s
+read `personnel.DIRECTOR`, `personnel.CHAIR_UMPIRE.certification` and so on; render a label from the
+code, the factory carries none.
+
+```js
+// BEFORE
+{ roleName: 'Chair Umpire', required: true, minimumCount: 2 }
+officials: [{ role: 'Chair Umpire', personName: 'Carol' }]
+
+// AFTER
+{ roleName: 'CHAIR_UMPIRE', required: true, minimumCount: 2 }
+officials: [{ role: 'CHAIR_UMPIRE', personName: 'Carol' }]
+```
+
+### Who is affected
+
+Anyone holding a hand-written sanctioning policy or proposal with display-string roles. Such a role
+no longer matches anything, so the requirement reports as unfilled: it fails closed, never silently
+satisfied. No CourtHive consumer writes `personnelRules` or proposal `officials`; courthive-ams selects
+the built-in policies by name.

@@ -5,6 +5,8 @@ import { now as clockNow } from '@Tools/clock';
 
 // constants
 import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctioningConstants';
+import { OfficialRoleSubtypeEnum } from '@Types/officiatingTypes';
+import { DIRECTOR } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // types
@@ -14,6 +16,7 @@ import {
   SanctioningPolicy,
   SanctioningTier,
   PersonnelRole,
+  PersonnelRoleCode,
   PersonReference,
 } from '@Types/sanctioningTypes';
 
@@ -87,25 +90,7 @@ export function validateProposal({ proposal, sanctioningPolicy, sanctioningTier 
   }
 
   // --- Personnel ---
-  if (sanctioningPolicy.personnelRules) {
-    for (const role of sanctioningPolicy.personnelRules.roles) {
-      if (!role.required) continue;
-      const personnelCheck = checkPersonnel(proposal, role);
-      if (!personnelCheck.found) {
-        issues.push({
-          field: `personnel.${role.roleName}`,
-          message: `Required role not filled: ${role.roleName}`,
-          severity: 'error',
-        });
-      } else if (personnelCheck.certificationIssue) {
-        issues.push({
-          field: `personnel.${role.roleName}.certification`,
-          message: personnelCheck.certificationIssue,
-          severity: 'error',
-        });
-      }
-    }
-  }
+  validatePersonnel({ proposal, sanctioningPolicy, issues });
 
   const errors = issues.filter((i) => i.severity === 'error');
   const warnings = issues.filter((i) => i.severity === 'warning');
@@ -285,43 +270,98 @@ function certificationMeetsRequirement(actual?: string, required?: string): bool
   return actualIdx >= requiredIdx;
 }
 
-function findPerson(proposal: TournamentProposal, lowerRole: string): PersonReference | undefined {
-  if (lowerRole.includes('director') && proposal.tournamentDirector?.personName) {
-    return proposal.tournamentDirector;
+function validatePersonnel({
+  proposal,
+  sanctioningPolicy,
+  issues,
+}: {
+  proposal: TournamentProposal;
+  sanctioningPolicy: SanctioningPolicy;
+  issues: ValidationIssue[];
+}) {
+  for (const role of sanctioningPolicy.personnelRules?.roles ?? []) {
+    if (!role.required) continue;
+    const personnelCheck = checkPersonnel(proposal, role);
+    if (!personnelCheck.found) {
+      const { foundCount, minimumCount } = personnelCheck;
+      const shortfall = minimumCount > 1 ? ` (${foundCount} of ${minimumCount})` : '';
+      issues.push({
+        field: `personnel.${role.roleName}`,
+        message: `Required role not filled: ${role.roleName}${shortfall}`,
+        severity: 'error',
+      });
+    } else if (personnelCheck.certificationIssue) {
+      issues.push({
+        field: `personnel.${role.roleName}.certification`,
+        message: personnelCheck.certificationIssue,
+        severity: 'error',
+      });
+    }
   }
-  if (lowerRole.includes('referee') && proposal.referee?.personName) {
-    return proposal.referee;
-  }
-  const official = proposal.officials?.find((o) => o.role.toLowerCase().includes(lowerRole));
-  if (official) {
-    return { personName: official.personName, certificationLevel: official.certificationLevel };
-  }
-  return undefined;
+}
+
+/**
+ * The proposal fields that hold a role in their own right. Every other role is read from `officials`,
+ * and so are these two, so an organiser who lists the referee among the officials is still counted.
+ */
+const DEDICATED_SLOTS: Partial<Record<PersonnelRoleCode, 'tournamentDirector' | 'referee'>> = {
+  [DIRECTOR]: 'tournamentDirector',
+  [OfficialRoleSubtypeEnum.REFEREE]: 'referee',
+};
+
+/**
+ * Every named person the proposal puts in `roleName`, by exact code. A substring match here let a
+ * `DEPUTY_REFEREE` rule be satisfied by the tournament referee. One person named in a slot and again
+ * among the officials is counted once.
+ */
+function findPersons(proposal: TournamentProposal, roleName: PersonnelRoleCode): PersonReference[] {
+  const slot = DEDICATED_SLOTS[roleName];
+  const candidates: PersonReference[] = [
+    ...(slot && proposal[slot] ? [proposal[slot]] : []),
+    ...(proposal.officials ?? [])
+      .filter((official) => official.role === roleName)
+      .map(({ personName, certificationLevel }) => ({ personName, certificationLevel })),
+  ];
+
+  const seen = new Set<string>();
+  return candidates.filter(({ personName }) => {
+    const key = personName?.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function checkPersonnel(
   proposal: TournamentProposal,
   role: PersonnelRole,
-): { found: boolean; certificationIssue?: string } {
-  const lowerRole = role.roleName.toLowerCase();
-  const person = findPerson(proposal, lowerRole);
+): { found: boolean; foundCount: number; minimumCount: number; certificationIssue?: string } {
+  const persons = findPersons(proposal, role.roleName);
+  const minimumCount = role.minimumCount ?? 1;
+  const foundCount = persons.length;
 
-  if (!person?.personName?.trim()) return { found: false };
+  if (foundCount < minimumCount) return { found: false, foundCount, minimumCount };
 
   if (role.certificationRequired) {
-    if (!person.certificationLevel) {
-      return {
-        found: true,
-        certificationIssue: `${role.roleName} requires '${role.certificationRequired}' certification but none specified`,
-      };
-    }
-    if (!certificationMeetsRequirement(person.certificationLevel, role.certificationRequired)) {
-      return {
-        found: true,
-        certificationIssue: `${role.roleName} has '${person.certificationLevel}' but '${role.certificationRequired}' or higher is required`,
-      };
+    for (const person of persons) {
+      if (!person.certificationLevel) {
+        return {
+          found: true,
+          foundCount,
+          minimumCount,
+          certificationIssue: `${role.roleName} requires '${role.certificationRequired}' certification but none specified`,
+        };
+      }
+      if (!certificationMeetsRequirement(person.certificationLevel, role.certificationRequired)) {
+        return {
+          found: true,
+          foundCount,
+          minimumCount,
+          certificationIssue: `${role.roleName} has '${person.certificationLevel}' but '${role.certificationRequired}' or higher is required`,
+        };
+      }
     }
   }
 
-  return { found: true };
+  return { found: true, foundCount, minimumCount };
 }
