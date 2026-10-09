@@ -25,11 +25,6 @@ import fs from 'fs';
  */
 const OPEN = new Set<string>([
   // doubleExitPropagateBye: false
-  'policyoff 20136625', // DOUBLE_ELIMINATION 16/11
-  'policyoff 20117658', // FIRST_MATCH_LOSER_CONSOLATION 16/11
-  'policyoff 20147549', // FEED_IN_CHAMPIONSHIP 16/11
-  'policyoff 20147820', // DOUBLE_ELIMINATION 16/11
-  'policyoff 20161035', // FIRST_MATCH_LOSER_CONSOLATION 16/11
   'policyoff 20162213', // MODIFIED_FEED_IN_CHAMPIONSHIP 8/5
   'policyoff 20168928', // COMPASS 16/13
   'policyoff 20177818', // CURTIS_CONSOLATION 16/11

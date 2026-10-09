@@ -2979,23 +2979,25 @@ function getHeldExit({
   });
   if (!arrivalSideNumber) return undefined;
   if (target.sides?.some((side) => side.sideNumber === arrivalSideNumber && side.participantId)) return undefined;
-  // A target already decided is not this exit's — except one decided by a carrier's own exit AWARDING the seat the held
-  // exit travels to: the carrier arrived first and won nobody; the held exit arriving there meets theirs, and the two
-  // converge (RULE 4). Declined, the exit stayed held and the final waited on the empty seat's "winner" (census
-  // policy-off 20161035 and 20117658, FIRST_MATCH_LOSER_CONSOLATION 16/11: `Consolation|3|2`, `4|1` stalled).
-  const awardedToArrivalSeat =
-    target.winningSide === arrivalSideNumber &&
-    isExit(target.matchUpStatus) &&
-    !!target.sides?.some((side) => side.sideNumber !== arrivalSideNumber && side.participantId);
+  // A target already decided is not this exit's — except one decided only by an exit AWARDING the seat the held exit
+  // travels to: a carrier who arrived first and won nobody (census policy-off 20161035 and 20117658,
+  // FIRST_MATCH_LOSER_CONSOLATION 16/11), or a produced exit standing opposite with nobody behind it (20147820,
+  // DOUBLE_ELIMINATION 16/11, once a correction dissolved the convergence there). The held exit arriving there meets
+  // that exit, and the two converge (RULE 4). Declined, the exit stayed held and the final waited on the empty seat's
+  // "winner". What it meets is `settledNow`'s question below, as for an undecided target.
+  const awardedToArrivalSeat = target.winningSide === arrivalSideNumber && isExit(target.matchUpStatus);
   if (target.winningSide && !awardedToArrivalSeat) return undefined;
 
   const storedTarget = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === target.matchUpId);
   const targetProvenance = getSideExitProvenance({ matchUp: storedTarget });
-  // the BYE's own advancement records an arrival by BYE from this holder; that is the seat the exit travels to, not a
-  // delivery standing in its way (COMPASS and PLAYOFF 16/13, policy off: `West|2|1`, the last six stalled cells)
+  // the holder's own advancement records an arrival from it carrying no exit — by BYE, or the empty seat moved on while
+  // the holder still read its pending exit (census policy-off 20147820, DOUBLE_ELIMINATION 16/11: `Backdraw|2|1`'s seat
+  // reached `3|1` recorded as `DEFAULTED` from the holder); that is the seat the exit travels to, not a delivery
+  // standing in its way (COMPASS and PLAYOFF 16/13, policy off: `West|2|1`, the last six stalled cells). Nobody stands
+  // on that side (checked above), so an entry from the holder can only be the seat.
   const arrivalEntry = targetProvenance?.[arrivalSideNumber];
   const byeArrivalFromHolder =
-    arrivalEntry?.matchUpStatus === BYE &&
+    !!arrivalEntry &&
     !carriedExitStatus(arrivalEntry) &&
     (!arrivalEntry.sourceMatchUpId || arrivalEntry.sourceMatchUpId === matchUp.matchUpId);
   if (arrivalEntry && !byeArrivalFromHolder) return undefined;
