@@ -57,16 +57,19 @@ The following actions can be controlled by this policy:
 
 ### Participant Assignment Actions
 
-| Action        | Constant                 | Method                              | Description                                |
-| ------------- | ------------------------ | ----------------------------------- | ------------------------------------------ |
-| **ASSIGN**    | `ASSIGN_PARTICIPANT`     | `assignDrawPosition`                | Assign a participant to an empty position  |
-| **REMOVE**    | `REMOVE_ASSIGNMENT`      | `removeDrawPositionAssignment`      | Remove a participant from a position       |
-| **WITHDRAW**  | `WITHDRAW_PARTICIPANT`   | `withdrawParticipantAtDrawPosition` | Withdraw a participant (preserves history) |
-| **SWAP**      | `SWAP_PARTICIPANTS`      | `swapDrawPositionAssignments`       | Swap two participants' positions           |
-| **BYE**       | `ASSIGN_BYE`             | `assignDrawPositionBye`             | Assign a BYE to a position                 |
-| **ALTERNATE** | `ALTERNATE_PARTICIPANT`  | `alternateDrawPositionAssignment`   | Assign an alternate to a position          |
-| **LUCKY**     | `LUCKY_PARTICIPANT`      | `luckyLoserDrawPositionAssignment`  | Assign a lucky loser to a position         |
-| **QUALIFIER** | `QUALIFYING_PARTICIPANT` | `qualifierDrawPositionAssignment`   | Assign a qualifier to a position           |
+| Action               | Constant                 | Method                                   | Description                                       |
+| -------------------- | ------------------------ | ---------------------------------------- | ------------------------------------------------- |
+| **ASSIGN**           | `ASSIGN_PARTICIPANT`     | `assignDrawPosition`                     | Assign a participant to an empty position         |
+| **REMOVE**           | `REMOVE_ASSIGNMENT`      | `removeDrawPositionAssignment`           | Remove a participant from a position              |
+| **WITHDRAW**         | `WITHDRAW_PARTICIPANT`   | `withdrawParticipantAtDrawPosition`      | Withdraw a participant (preserves history)        |
+| **SWAP**             | `SWAP_PARTICIPANTS`      | `swapDrawPositionAssignments`            | Swap two participants' positions                  |
+| **BYE**              | `ASSIGN_BYE`             | `assignDrawPositionBye`                  | Assign a BYE to a position                        |
+| **ALTERNATE**        | `ALTERNATE_PARTICIPANT`  | `alternateDrawPositionAssignment`        | Assign an alternate to a position                 |
+| **LUCKY**            | `LUCKY_PARTICIPANT`      | `luckyLoserDrawPositionAssignment`       | Assign a lucky loser to a position                |
+| **QUALIFIER**        | `QUALIFYING_PARTICIPANT` | `qualifierDrawPositionAssignment`        | Assign a qualifier to a position                  |
+| **ASSIGN_QUALIFIER** | `ASSIGN_QUALIFIER`       | `assignDrawPosition` (`qualifier: true`) | Mark an empty position as a QUALIFIER placeholder |
+
+**ASSIGN_QUALIFIER** is offered on an empty position (no participant, BYE or placeholder) only while the round it enters is fed by qualifying that still owes more qualifiers than it has positions marked for them (`owedQualifiers` from [getAvailableQualifyingTargets](/docs/governors/draws-governor#getavailablequalifyingtargets)). Its payload carries `qualifier: true`; call `engine[action.method](action.payload)`.
 
 ### Seeding Actions
 
@@ -100,7 +103,7 @@ const { POLICY_POSITION_ACTIONS_DEFAULT } = fixtures.policies;
 
 // Default policy:
 // - All actions enabled for QUALIFYING and MAIN stage 1
-// - Limited actions (SEED_VALUE, ADD_NICKNAME, ADD_PENALTY, QUALIFYING_PARTICIPANT) for other stages
+// - Limited actions (SEED_VALUE, ADD_NICKNAME, ADD_PENALTY, QUALIFYING_PARTICIPANT, ASSIGN_QUALIFIER) for other stages
 {
   positionActions: {
     policyName: 'positionActionsDefault',
@@ -119,6 +122,7 @@ const { POLICY_POSITION_ACTIONS_DEFAULT } = fixtures.policies;
           'ADD_NICKNAME',
           'ADD_PENALTY',
           'QUALIFYING_PARTICIPANT',
+          'ASSIGN_QUALIFIER',
           'SEED_VALUE'
         ],
         disabledActions: []
