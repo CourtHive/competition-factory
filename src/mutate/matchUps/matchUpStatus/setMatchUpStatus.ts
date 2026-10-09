@@ -4,6 +4,7 @@ import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchU
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
+import { reconcileByeAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileByeAdvancements';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
@@ -149,6 +150,10 @@ function settleDraw({
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
   const settled = settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinition, event });
   if (settled.error) return settled;
+
+  // and a participant opposite a BYE whose next seat was taken when the BYE landed, and is free now, goes on
+  const advanced = reconcileByeAdvancements({ tournamentRecord, drawDefinition, event });
+  if (advanced?.error) return advanced;
 
   // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
   return reconcileDeciders({
