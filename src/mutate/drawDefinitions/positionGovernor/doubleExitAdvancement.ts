@@ -2425,7 +2425,84 @@ function convergeCarriedExit({
     stack,
   });
   if (onward?.error) return decorateResult({ result: onward, stack });
+
+  // A double exit serves BOTH its links, and a convergence is one: nobody wins it, and nobody loses it to go on over the
+  // loser link either. `doubleExitAdvancement` gives a director's double exit's loser target a BYE or a produced exit
+  // (`handleLoserMatchUp`); a convergence written here served only its winner target, and the seat its loser link
+  // feeds waited for nobody (census policy-off 20168928, COMPASS 16/13: two produced exits met in `West|2|1`, and
+  // `Southwest|1|1` stalled). Served the same way, for a seat that holds nothing yet.
+  const served = serveConvergedLoserLink({
+    convergedMatchUp: nextWinnerMatchUp,
+    params: { ...params, matchUpStatus: DOUBLE_EXIT, inContextDrawMatchUps, drawDefinition, matchUpsMap, structure },
+    drawDefinition,
+    matchUpsMap,
+    stack,
+  });
+  if (served?.error) return decorateResult({ result: served, stack });
   return decorateResult({ result: { ...SUCCESS }, stack });
+}
+
+/** a convergence's loser target, where its seat holds nothing yet, is given what a double exit's loser target gets */
+function serveConvergedLoserLink({
+  convergedMatchUp,
+  drawDefinition,
+  matchUpsMap,
+  params,
+  stack,
+}: {
+  convergedMatchUp: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  params: {
+    inContextDrawMatchUps: HydratedMatchUp[];
+    matchUpStatus?: MatchUpStatusUnion;
+    appliedPolicies?: PolicyDefinitions;
+    tournamentRecord?: Tournament;
+    drawDefinition: DrawDefinition;
+    matchUpsMap: MatchUpsMap;
+    structure?: Structure;
+    event?: Event;
+  };
+  stack: string;
+}): ResultType | undefined {
+  const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+  const targetData = positionTargets({
+    matchUpId: convergedMatchUp.matchUpId,
+    inContextDrawMatchUps: refreshed,
+    drawDefinition,
+  });
+  if (targetData.error) return decorateResult({ result: targetData, stack });
+  const { loserMatchUp, loserTargetDrawPosition } = targetData.targetMatchUps ?? {};
+  const { loserTargetLink } = targetData.targetLinks ?? {};
+  if (!loserMatchUp || loserTargetDrawPosition === undefined || !loserTargetLink) return undefined;
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId });
+  const seat = positionAssignments?.find((a) => a.drawPosition === loserTargetDrawPosition);
+  if (seat?.participantId || seat?.bye || seat?.qualifier) return undefined;
+  // already served: the seat's side records an exit from this convergence
+  const storedLoser = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === loserMatchUp.matchUpId);
+  const alreadyServed = Object.values(getSideExitProvenance({ matchUp: storedLoser }) ?? {}).some(
+    (entry) => entry?.sourceMatchUpId === convergedMatchUp.matchUpId,
+  );
+  if (alreadyServed) return undefined;
+
+  const sourceMatchUp = refreshed.find((candidate) => candidate.matchUpId === convergedMatchUp.matchUpId);
+  const loserMatchUpIsEmptyExit =
+    isExit(loserMatchUp.matchUpStatus) && !loserMatchUp.sides?.some((side) => side.participantId);
+  return handleLoserMatchUp({
+    loserMatchUpIsDoubleExit: isDoubleExit(loserMatchUp.matchUpStatus),
+    appliedPolicies: params.appliedPolicies,
+    tournamentRecord: params.tournamentRecord,
+    targetLinks: targetData.targetLinks,
+    loserMatchUpIsEmptyExit,
+    loserTargetDrawPosition,
+    event: params.event,
+    drawDefinition,
+    sourceMatchUp,
+    loserMatchUp,
+    matchUpsMap,
+    params,
+    stack,
+  });
 }
 
 function directExitWinnerAcrossLink({

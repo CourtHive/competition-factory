@@ -26,7 +26,6 @@ import fs from 'fs';
 const OPEN = new Set<string>([
   // doubleExitPropagateBye: false
   'policyoff 20162213', // MODIFIED_FEED_IN_CHAMPIONSHIP 8/5
-  'policyoff 20168928', // COMPASS 16/13
   'policyoff 20177818', // CURTIS_CONSOLATION 16/11
 ]);
 
