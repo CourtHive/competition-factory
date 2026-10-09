@@ -938,8 +938,19 @@ function conditionallyAdvanceDrawPosition(params) {
       matchUpId: targetMatchUp.matchUpId,
       inContextDrawMatchUps,
     }) !== noContextTargetMatchUp.winningSide;
+  // THE OCCUPANT OPPOSITE CARRIES AN EXIT, so the exit produced here meets it and converges (RULE 4) rather than
+  // awarding them. Read off provenance on the occupant's side: the fed seat the exit arrives on can still be listed
+  // (a first-round seat stays in the array once its participant is removed), so a count of one position does not
+  // describe it. Census 20099689 (FIRST_ROUND_LOSER_CONSOLATION 8/7, `doubleExitPropagateBye: false`): `Main|1|4`
+  // re-scored from a played win to a DOUBLE_DEFAULT produced a DEFAULTED onto its old loser's seat in
+  // `Consolation|1|2`, opposite `Main|1|3`'s walkover loser carrying their WALKOVER, and awarded it to that loser.
+  const occupantCarriesExit =
+    isExit(noContextTargetMatchUp.matchUpStatus) &&
+    !!params.walkoverWinningSide &&
+    !!carriedExitStatus(getSideExitProvenance({ matchUp: noContextTargetMatchUp })?.[params.walkoverWinningSide]);
   const existingExit =
-    isExit(noContextTargetMatchUp.matchUpStatus) && (!drawPositions.length || recordedExitAwaitingThisSeat);
+    (isExit(noContextTargetMatchUp.matchUpStatus) && (!drawPositions.length || recordedExitAwaitingThisSeat)) ||
+    occupantCarriesExit;
 
   // Derived HERE, not at the top of the function, because this is where the other origin is known:
   // `existingExit` means the target already carries the exit the first arrival produced. See
