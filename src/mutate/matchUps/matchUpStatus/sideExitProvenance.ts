@@ -1236,6 +1236,14 @@ function withdrawFromMatchUp(
   if (holdsBye({ matchUp, structureId, drawDefinition })) {
     clearSideExitProvenance(matchUp);
     matchUp.matchUpStatusCodes = [];
+    // and an exit LABEL beside the BYE goes with the exit it described: a BYE is never won. Census w2 9100211
+    // (FIRST_MATCH_LOSER_CONSOLATION 32/32, `doubleExitPropagateBye: false`): `Consolation|1|4`'s convergence produced
+    // a WALKOVER into `Consolation|2|4` beside its BYE; when the convergence dissolved, the withdrawal left
+    // `WALKOVER ws=2` over an empty seat, and the participant who then came through was moved on past it.
+    if (isAnyExit(matchUp.matchUpStatus)) {
+      matchUp.matchUpStatus = BYE;
+      delete matchUp.winningSide;
+    }
     return { roundNumber: matchUp.roundNumber, matchUpId: matchUp.matchUpId, structureId };
   }
 
