@@ -12,7 +12,9 @@
  * Per DIRECTORY, non-recursively (a directory's own `.ts` files), across non-test `src/`:
  *   `: any`, `: any[]`, `as any`, `<any>` and a bare `any[]`.
  * Not counted: `Record<string, any>` and other open-map index types (the deliberate idiom, as
- * `check:request-shapes` also treats it), comments, test files (`src/tests/**`, `*.test.ts`, `*.spec.ts`).
+ * `check:request-shapes` also treats it), comments, test files (`src/tests/**`, `*.test.ts`, `*.spec.ts`),
+ * and paths `.gitignore` ignores — a local `src/scratch/` is excluded by tsconfig and never committed, so it
+ * must not fail the gate in the checkout that holds it (2026-10-10: it refused a Markdown-only commit).
  * Counting per directory keeps the baseline one line per directory, so parallel PRs that tighten
  * different areas do not conflict over it.
  *
@@ -28,6 +30,7 @@
  */
 import { readFileSync, readdirSync, writeFileSync, existsSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 
@@ -49,12 +52,43 @@ export function countAny(source) {
   return stripComments(source).match(ANY)?.length ?? 0;
 }
 
+const toPosix = (path) => path.split(sep).join('/');
+
+/**
+ * The untracked paths under `srcDir` that `.gitignore` ignores, relative to `rootDir` as git prints them
+ * (`/` separators, a trailing `/` on a directory). Tracked files are never ignored, so they are always counted.
+ * Outside a git checkout nothing is ignored.
+ */
+export function gitIgnored(rootDir, srcDir) {
+  try {
+    const out = execFileSync(
+      'git',
+      [
+        'ls-files',
+        '-z',
+        '--others',
+        '--ignored',
+        '--exclude-standard',
+        '--directory',
+        toPosix(relative(rootDir, srcDir)) || '.',
+      ],
+      { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    );
+    return new Set(out.split('\0').filter(Boolean));
+  } catch {
+    return new Set();
+  }
+}
+
 /** `{ 'src/dir': count }` for every directory under `srcDir` holding a counted `any`. */
 export function countByDirectory(rootDir, srcDir = join(rootDir, 'src')) {
   const counts = {};
+  const ignored = gitIgnored(rootDir, srcDir);
   const walk = (dir) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name);
+      const rel = toPosix(relative(rootDir, full));
+      if (ignored.has(rel) || ignored.has(`${rel}/`)) continue;
       if (entry.isDirectory()) {
         if (!isTestPath(relative(rootDir, full) + sep)) walk(full);
       } else if (entry.name.endsWith('.ts') && !isTestPath(relative(rootDir, full))) {
@@ -153,9 +187,16 @@ function selfTest() {
     writeFileSync(join(dir, 'src', 'area', 'a.ts'), 'let a: any; let b = c as any;');
     writeFileSync(join(dir, 'src', 'area', 'a.test.ts'), 'let skipped: any;');
     writeFileSync(join(dir, 'src', 'tests', 't.ts'), 'let skipped: any;');
+    expect('outside a checkout nothing is ignored', gitIgnored(dir, join(dir, 'src')).size, 0);
+    // an ignored directory is not walked; an untracked file that is NOT ignored still is
+    execFileSync('git', ['init', '-q'], { cwd: dir, stdio: 'ignore' });
+    writeFileSync(join(dir, '.gitignore'), 'scratch\n');
+    mkdirSync(join(dir, 'src', 'scratch'), { recursive: true });
+    writeFileSync(join(dir, 'src', 'scratch', 's.ts'), 'let ignored: any; let alsoIgnored: any;');
     const counts = countByDirectory(dir);
     expect('directory count excludes tests', counts['src/area'], 2);
     expect('tests directory is not walked', counts['src/tests'], undefined);
+    expect('a gitignored directory is not walked', counts['src/scratch'], undefined);
     expect('a rise FIRES', rises({ 'src/area': 3 }, { 'src/area': 2 }).length, 1);
     expect('a fall is quiet', rises({ 'src/area': 1 }, { 'src/area': 2 }).length, 0);
     expect('equal is quiet', rises({ 'src/area': 2 }, { 'src/area': 2 }).length, 0);
@@ -169,7 +210,9 @@ function selfTest() {
     for (const failure of failures) console.error(`  ${failure}`);
     return 1;
   }
-  console.log('[verify:any-count] self-test OK — fires on a rise, quiet on a fall, comments and tests excluded');
+  console.log(
+    '[verify:any-count] self-test OK — fires on a rise, quiet on a fall; comments, tests and gitignored paths excluded',
+  );
   return 0;
 }
 
