@@ -1,18 +1,35 @@
+import { coercePersonSex, isUnrecognizedSex, UNRECOGNIZED_SEX_INFO } from '@Helpers/coercedSex';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { addNotice, getTopics } from '@Global/state/globalState';
 import { xa } from '@Tools/extractAttributes';
 import { deepMerge } from '@Tools/deepMerge';
 
 // constants and types
+import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { ADD_PARTICIPANTS, MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
 
-export function mergeParticipants({ participants: incomingParticipants = [], tournamentRecord, arraysToMerge }) {
+export function mergeParticipants({
+  participants: incomingParticipants = [] as Participant[],
+  tournamentRecord,
+  arraysToMerge,
+}) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   tournamentRecord.participants ??= [];
+
+  // Checked before anything is merged, so one bad person refuses the whole merge
+  // rather than leaving the record half-written.
+  const unrecognizedSex = incomingParticipants.find((p) => isUnrecognizedSex(p?.person?.sex));
+  if (unrecognizedSex) {
+    return {
+      error: INVALID_VALUES,
+      info: UNRECOGNIZED_SEX_INFO,
+      context: { participantId: unrecognizedSex.participantId, sex: unrecognizedSex.person?.sex },
+    };
+  }
+  incomingParticipants.forEach((p) => coercePersonSex(p?.person));
 
   const mappedParticipants = incomingParticipants
     .filter(xa(PARTICIPANT_ID))

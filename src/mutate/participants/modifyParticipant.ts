@@ -1,19 +1,19 @@
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
+import { coercedSex, isUnrecognizedSex, UNRECOGNIZED_SEX_INFO } from '@Helpers/coercedSex';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { addIndividualParticipantIds } from './addIndividualParticipantIds';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { isClearRequest } from '@Mutate/participants/isClearRequest';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { participantRoles } from '@Constants/participantRoles';
-import { isClearRequest } from '@Mutate/participants/isClearRequest';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isValidDateString } from '@Tools/dateTime';
 import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addParticipant } from './addParticipant';
 import { countries } from '@Fixtures/countryData';
-import { coercedSex } from '@Helpers/coercedSex';
 import { isString } from '@Tools/objects';
 import { now } from '@Tools/clock';
 
@@ -27,6 +27,7 @@ import {
   CANNOT_MODIFY_PARTICIPANT_TYPE,
   INVALID_DATE,
   INVALID_PARTICIPANT_IDS,
+  INVALID_VALUES,
 } from '@Constants/errorConditionConstants';
 
 export function modifyParticipant(params) {
@@ -223,8 +224,16 @@ function updatePerson({ updateParticipantName, existingParticipant, newValues, p
   // the whole person object" contract above — omitting `contacts` leaves the existing list untouched,
   // while `[]` clears it.
   if (Array.isArray(contacts)) newPersonValues.contacts = contacts;
-  const canonicalSex = coercedSex(sex);
-  if (canonicalSex) newPersonValues.sex = canonicalSex;
+  // An unrecognized sex used to be skipped without a word, so the caller believed it saved.
+  // It is refused now, before anything is written; '' clears it, since sex is optional.
+  if (isClearRequest(sex)) {
+    clearedKeys.push('sex');
+  } else if (isUnrecognizedSex(sex)) {
+    return { error: INVALID_VALUES, info: UNRECOGNIZED_SEX_INFO, context: { sex } };
+  } else {
+    const canonicalSex = coercedSex(sex);
+    if (canonicalSex) newPersonValues.sex = canonicalSex;
+  }
 
   let personNameModified;
   if (isString(personId)) newPersonValues.personId = personId;

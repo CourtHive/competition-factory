@@ -17,10 +17,25 @@ export function coercedSex(sex: any): string | undefined {
   return undefined;
 }
 
+// A person's sex is optional, but a value that is present must be in the sex vocabulary.
+// Absent (undefined/null) and the clear request ('') are not unrecognized. ANY and MIXED
+// are valid genders and still unrecognized here: a person stored with sex ANY cannot be
+// entered into a FEMALE or MALE event, and nothing said so until the entry was refused.
+export const UNRECOGNIZED_SEX_INFO = 'person.sex must be FEMALE, MALE or OTHER';
+
+export function isUnrecognizedSex(sex: unknown): boolean {
+  return sex !== undefined && sex !== null && sex !== '' && !coercedSex(sex);
+}
+
 // Mutate a person in place, rewriting a recognized `sex` to its canonical extended
-// form. No-op when the person is absent or its sex is unrecognized (left untouched).
+// form and dropping an empty one. Callers refuse an unrecognized sex before this runs.
 export function coercePersonSex(person?: { sex?: any }): void {
-  if (!person) return;
-  const canonical = coercedSex(person.sex);
-  if (canonical) person.sex = canonical;
+  if (!person) return undefined;
+  if (person.sex === '' || person.sex === null) {
+    delete person.sex;
+  } else {
+    const canonical = coercedSex(person.sex);
+    if (canonical) person.sex = canonical;
+  }
+  return undefined;
 }

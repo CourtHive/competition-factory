@@ -2,6 +2,7 @@ import { generateRange, randomMember, randomPop, shuffleArray } from '@Tools/arr
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { generatePersonData } from './generatePersonData';
+import { coercedSex } from '@Helpers/coercedSex';
 import { isFemale } from '@Validators/isFemale';
 import { dateFromDay } from '@Tools/dateTime';
 import { ensureInt } from '@Tools/ensureInt';
@@ -25,6 +26,10 @@ export function generatePersons(params?) {
     sex,
   } = params ?? {};
   if (Number.isNaN(Number(count))) return { error: INVALID_VALUES };
+
+  // A sex outside the sex vocabulary (an event gender such as ANY or MIXED) asks for ungendered
+  // persons: they are generated with no sex at all, since `addParticipants` refuses ANY or MIXED.
+  const ungendered = !!sex && !coercedSex(sex);
 
   const maleCount = gendersCount?.[MALE] || (isMale(sex) && count) || 0;
   const femaleCount = gendersCount?.[FEMALE] || (isFemale(sex) && count) || 0;
@@ -124,7 +129,7 @@ export function generatePersons(params?) {
       const person = {
         firstName,
         lastName,
-        sex: personSex,
+        ...(!ungendered && { sex: personSex }),
         nationalityCode,
       };
       shuffledPersons.push(person);
