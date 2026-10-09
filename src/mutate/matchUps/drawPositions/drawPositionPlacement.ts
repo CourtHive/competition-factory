@@ -921,6 +921,36 @@ function assignTeamLineUp({
   }
 }
 
+/**
+ * Whether the `FIRST_MATCHUP` reservation for the loser of the matchUp between `drawPositions` stands: every first-round
+ * matchUp feeding it has produced a scored win, so whoever loses there will have a prior win and may not enter.
+ *
+ * `propagateConsolationBye` places and withdraws the reservation on this answer, and `removeDoubleExit` asks it before
+ * taking back a marked BYE: a reservation that stands was not put there by the double exit being unwound.
+ *
+ * A feeder counts toward the reservation when it has produced a WIN — which is the authority's
+ * question, not a status question. `[COMPLETED, RETIRED]` restated it and drifted: a scored
+ * `DEFAULTED` is a win to `getDrawPositionWinCount`, the predicate `directLoser` actually uses to
+ * decide the eligibility this reservation is predicting, but was absent from the list. The
+ * reservation was therefore placed late for that outcome — `Consolation|2|1` read `TO_BE_PLAYED`
+ * until the round-2 result arrived and `directLoser` placed the BYE on the authority's terms.
+ * `isUnscoredOutcome`'s own docblock names this failure: a guard that restates the rule and drifts
+ * from it is worse than none.
+ */
+export function firstRoundFeedersWon({
+  drawPositions,
+  structureId,
+  matchUpsMap,
+}: {
+  drawPositions?: number[];
+  structureId: string;
+  matchUpsMap: MatchUpsMap;
+}): boolean {
+  return getMappedStructureMatchUps({ structureId, matchUpsMap })
+    .filter(({ drawPositions: fed, roundNumber }) => roundNumber === 1 && overlap(fed, drawPositions))
+    .every(({ matchUpStatus, winningSide, score }) => !!winningSide && !isUnscoredOutcome({ matchUpStatus, score }));
+}
+
 export function propagateConsolationBye({
   updatedDrawPositions,
   loserTargetDrawPosition,
@@ -941,27 +971,7 @@ export function propagateConsolationBye({
     return undefined;
   }
 
-  const structureMatchUps = getMappedStructureMatchUps({
-    structureId,
-    matchUpsMap,
-  });
-
-  const firstRoundMatchUps = structureMatchUps.filter(
-    ({ drawPositions, roundNumber }) => roundNumber === 1 && overlap(drawPositions, updatedDrawPositions),
-  );
-  /**
-   * A feeder counts toward the reservation when it has produced a WIN — which is the authority's
-   * question, not a status question. `[COMPLETED, RETIRED]` restated it and drifted: a scored
-   * `DEFAULTED` is a win to `getDrawPositionWinCount`, the predicate `directLoser` actually uses to
-   * decide the eligibility this reservation is predicting, but was absent from the list. The
-   * reservation was therefore placed late for that outcome — `Consolation|2|1` read `TO_BE_PLAYED`
-   * until the round-2 result arrived and `directLoser` placed the BYE on the authority's terms.
-   * `isUnscoredOutcome`'s own docblock names this failure: a guard that restates the rule and drifts
-   * from it is worse than none.
-   */
-  const byePropagation = firstRoundMatchUps.every(
-    ({ matchUpStatus, winningSide, score }) => !!winningSide && !isUnscoredOutcome({ matchUpStatus, score }),
-  );
+  const byePropagation = firstRoundFeedersWon({ drawPositions: updatedDrawPositions, structureId, matchUpsMap });
   if (byePropagation && loserMatchUp) {
     const { structureId } = loserMatchUp;
     const result = assignDrawPositionBye({

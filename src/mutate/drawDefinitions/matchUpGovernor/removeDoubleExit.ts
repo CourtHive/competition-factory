@@ -1,5 +1,6 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
+import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
@@ -29,9 +30,10 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import type { DrawDefinition, MatchUp, MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
+import type { DrawDefinition, DrawLink, MatchUp, MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
@@ -133,7 +135,8 @@ export function removeDoubleExit(params) {
   // correct for anything this engine touches and inert for stored draws that predate it.
   const byeProvenance = findPropagatedBye({ drawDefinition, loserMatchUp, loserTargetDrawPosition });
 
-  const byePropagatedToLoserMatchUp = loserMatchUp?.matchUpStatus === BYE && !!byeProvenance;
+  const byePropagatedToLoserMatchUp =
+    loserMatchUp?.matchUpStatus === BYE && !!byeProvenance && !reservationStands({ params, loserTargetLink });
 
   /**
    * This cascade is being unwound, so its own BYE claim goes — on EVERY path.
@@ -916,6 +919,31 @@ export function arrivedOverLoserLink({
     next = targetsOf(next.matchUpId)?.winnerMatchUp;
   }
   return false;
+}
+
+/**
+ * A marked BYE on the loser target that is a STANDING `FIRST_MATCHUP` reservation is not this double exit's to take back.
+ *
+ * `propagateConsolationBye` marks its reservation `byeFromPropagation` so that its own withdrawal can recognise it, and
+ * the marker reads the same here as a BYE this cascade placed. The reservation is placed once both first-round feeders
+ * have produced a scored win, before the round-2 matchUp holds any result, and nothing the double exit does changes
+ * those feeders. Unwound, it was removed regardless, and `reconcileConsolationReservations` does not put it back
+ * beside a standing exit: an FMLC `Main|2|2` re-entered from DOUBLE_DEFAULT to DOUBLE_WALKOVER left `Consolation|2|2`
+ * waiting on a fed seat nobody can fill (census 20163074, FIRST_MATCH_LOSER_CONSOLATION 8/8, propagation off).
+ */
+function reservationStands({
+  loserTargetLink,
+  params,
+}: {
+  params: { inContextDrawMatchUps?: HydratedMatchUp[]; matchUpsMap: MatchUpsMap; matchUp: MatchUp };
+  loserTargetLink?: DrawLink;
+}): boolean {
+  if (loserTargetLink?.linkCondition !== FIRST_MATCHUP) return false;
+  const { inContextDrawMatchUps, matchUpsMap, matchUp } = params;
+  const inContextMatchUp = inContextDrawMatchUps?.find((candidate) => candidate.matchUpId === matchUp.matchUpId);
+  const drawPositions = (inContextMatchUp?.drawPositions ?? []).filter(Boolean);
+  if (drawPositions.length !== 2 || !inContextMatchUp?.structureId) return false;
+  return firstRoundFeedersWon({ structureId: inContextMatchUp.structureId, drawPositions, matchUpsMap });
 }
 
 /**
