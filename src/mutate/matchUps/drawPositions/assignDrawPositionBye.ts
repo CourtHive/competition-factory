@@ -1522,11 +1522,23 @@ function arrivalOppositePendingExit({
   if (!isExit(matchUp.matchUpStatus) || matchUp.winningSide) return undefined;
   const standingExit = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp }));
   if (!standingExit?.winningSide) return undefined;
+  // the exit is recorded on the side its position held BEFORE this arrival; with both positions present the sides
+  // re-sort (`draw-positions.md` rule 3), so the exiting POSITION is compared, never a side number across the two frames
+  const structureId = winnerMatchUp?.structureId;
+  const exitPosition = getSideDrawPosition({
+    sideNumber: 3 - standingExit.winningSide,
+    drawDefinition,
+    structureId,
+    matchUp,
+  });
+  if (exitPosition === drawPositionToAdvance) return undefined;
   const side = getDrawPositionSideNumber({
-    structureId: winnerMatchUp?.structureId,
     matchUp: { ...matchUp, drawPositions },
     drawPosition: drawPositionToAdvance,
     drawDefinition,
+    structureId,
   });
-  return side === standingExit.winningSide ? side : undefined;
+  // an exit whose side holds no position yet: the arrival takes it only from the other bracket side
+  if (!exitPosition && side !== standingExit.winningSide) return undefined;
+  return side;
 }

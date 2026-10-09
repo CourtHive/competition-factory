@@ -23,7 +23,6 @@ import fs from 'fs';
  */
 const OPEN = new Set<string>([
   // doubleExitPropagateBye: false
-  'policyoff 20076847', // FEED_IN_CHAMPIONSHIP 16/11
   'policyoff 20077082', // FEED_IN_CHAMPIONSHIP 16/14
   'policyoff 20080614', // FEED_IN_CHAMPIONSHIP 16/11
   'policyoff 20099689', // FIRST_ROUND_LOSER_CONSOLATION 8/7
