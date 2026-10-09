@@ -60,7 +60,7 @@ it('can generate COMPASS and properly place BYEs in consolation structures 32/25
     matchUpsCount: 72,
     byeMatchUpsCount: 43,
   });
-});
+}, 180_000); // 10 s alone under OUTCOME_PIPELINE=differential; a checkpoint's coverage shard crossed 30 s (#5341)
 
 function compassByesTest({ expectations, drawSize, participantsCount, matchUpsCount, byeMatchUpsCount }) {
   const drawProfiles = [
