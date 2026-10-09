@@ -14,7 +14,7 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
-import { isDoubleExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { ensureInt } from '@Tools/ensureInt';
 import { overlap } from '@Tools/arrays';
 import {
@@ -27,6 +27,7 @@ import {
   clearSideExitProvenance,
   withoutWinnersOrigins,
   retainByeClaimsOnly,
+  carriedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -929,6 +930,12 @@ function sideFedFromPosition({
  * re-scoring `Main|1|6` from a double walkover took the BYE back and the DEFAULTED with it, so the participant who
  * then arrived was moved on unawarded and the matchUp stalled. Only for a matchUp that was a BYE holding one position,
  * and only when exactly one side records the BYE's arrival.
+ *
+ * Or when exactly one side records an EXIT. An exit owns no position — a produced or carried exit is an empty side —
+ * so a BYE holding the lone position sat on the other side. Census 20209866 (FIRST_MATCH_LOSER_CONSOLATION 8/7): the
+ * BYE's own arrival record had not survived a re-write of the double exit that advanced it, the feeder had already
+ * lost the position, and with no side the produced walkover waiting beside the BYE was cleared; the loser who then
+ * arrived through the BYE chain met an undecided, empty final that nothing could ever fill.
  */
 function sideOfRemovedBye({
   initialMatchUpStatus,
@@ -943,7 +950,13 @@ function sideOfRemovedBye({
   const byeSides = ([1, 2] as const).filter(
     (sideNumber) => targetMatchUp.sideExitProvenance?.[sideNumber]?.matchUpStatus === BYE,
   );
-  return byeSides.length === 1 ? byeSides[0] : undefined;
+  if (byeSides.length === 1) return byeSides[0];
+  const exitSides = ([1, 2] as const).filter((sideNumber) => {
+    const entry = targetMatchUp.sideExitProvenance?.[sideNumber];
+    return !!entry && (isAnyExit(entry.matchUpStatus) || !!carriedExitStatus(entry));
+  });
+  if (exitSides.length !== 1) return undefined;
+  return exitSides[0] === 1 ? 2 : 1;
 }
 
 function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: number) {
