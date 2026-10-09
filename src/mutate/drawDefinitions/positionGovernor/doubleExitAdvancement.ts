@@ -3067,6 +3067,14 @@ function getHeldExit({
 
   const storedTarget = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === target.matchUpId);
   const targetProvenance = getSideExitProvenance({ matchUp: storedTarget });
+  // an exit that has ALREADY reached the target is not owed to it again: the relay past the holder recorded it there,
+  // on whichever side it landed, and a target decided by that same exit is not one the holder's copy may meet —
+  // it would converge with itself (frozen census de 9303366, DOUBLE_ELIMINATION 8/8: `Backdraw|3|1` was made a
+  // DOUBLE_WALKOVER by the walkover it already held, and the result then recorded at `4|1` was never applied)
+  const alreadyThere = Object.values(targetProvenance ?? {}).some(
+    (entry) => !!entry?.sourceMatchUpId && entry.sourceMatchUpId === origin.sourceMatchUpId && carriedExitStatus(entry),
+  );
+  if (alreadyThere) return undefined;
   // the holder's own advancement records an arrival from it carrying no exit — by BYE, or the empty seat moved on while
   // the holder still read its pending exit (census policy-off 20147820, DOUBLE_ELIMINATION 16/11: `Backdraw|2|1`'s seat
   // reached `3|1` recorded as `DEFAULTED` from the holder); that is the seat the exit travels to, not a delivery
