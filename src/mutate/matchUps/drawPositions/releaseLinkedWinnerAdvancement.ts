@@ -1,4 +1,5 @@
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
+import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
@@ -112,9 +113,18 @@ export function releaseLinkedWinnerAdvancement({
 
   const resolvedMap = matchUpsMap ?? getMatchUpsMap({ drawDefinition });
   const targetMatchUps = resolvedMap?.mappedMatchUps?.[targetStructure.structureId]?.matchUps ?? [];
-  const advancedWithinTarget = targetMatchUps.some(
+  // ...unless that prior-round matchUp was decided AGAINST the position: DOUBLE_ELIMINATION's Backdraw winner re-enters
+  // the Main final under their own Main position, which is present in the Main semi-final they LOST there (census de
+  // 9305625: the finalist stayed in the Main final after the Backdraw final they had won by a stale produced exit was
+  // un-decided). Present and undecided, or present and won, is an advance within the structure; present and lost is
+  // the link's.
+  const prior = targetMatchUps.find(
     (matchUp) => matchUp.roundNumber === targetRoundNumber - 1 && matchUp.drawPositions?.includes(targetDrawPosition),
   );
+  const priorWinner =
+    prior?.winningSide &&
+    getWinningSideDrawPosition({ drawDefinition, structureId: targetStructure.structureId, matchUp: prior });
+  const advancedWithinTarget = !!prior && (!prior.winningSide || priorWinner === targetDrawPosition);
   if (advancedWithinTarget) return;
 
   /**

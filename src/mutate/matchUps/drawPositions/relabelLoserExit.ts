@@ -79,11 +79,12 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
     : false;
 
   // a withdrawal whose carry STOPPED at a BYE-held matchUp — nothing of it reached where the loser now stands — is
-  // withdrawn there (see `byeHeldCarry`); a carry relayed on past the BYE is the ordinary withdrawal's below
-  if (!args.validExitToPropagate && !carriedHere) {
-    const byeHeld = byeHeldCarry(inContextDrawMatchUps, args.targetStructureId, loserParticipantId, sourceMatchUpId);
-    if (byeHeld) clearByeHeldCarry(args, byeHeld, loserParticipantId);
-  }
+  // withdrawn there (see `byeHeldCarry`); a carry relayed on past the BYE is the ordinary withdrawal's below, and the
+  // entry it left on the BYE-held matchUp goes with it
+  const byeHeld = args.validExitToPropagate
+    ? undefined
+    : byeHeldCarry(inContextDrawMatchUps, args.targetStructureId, loserParticipantId, sourceMatchUpId);
+  if (byeHeld && !carriedHere) clearByeHeldCarry(args, byeHeld, loserParticipantId);
   if (!standing) return {};
 
   // a walk that cannot read the draw's links refuses the relabel rather than reading as "not played on"
@@ -136,7 +137,12 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
     withdrawHere();
     return { carry: true };
   }
-  if (withdrawable()) withdrawHere();
+  if (withdrawable()) {
+    withdrawHere();
+    // relayed past a BYE that arrived after the loser did (`carryPastTheBye`): the BYE-held matchUp still records the
+    // entry the loser brought, and it names an exit that is no longer carried (census 20030075)
+    if (byeHeld) clearByeHeldCarry(args, byeHeld, loserParticipantId);
+  }
   return refused ?? {};
 }
 

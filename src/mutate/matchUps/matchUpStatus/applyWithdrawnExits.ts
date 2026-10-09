@@ -1,4 +1,6 @@
+import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { isDoubleExit } from '@Validators/isExit';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import {
   releaseAdvancedDrawPositionAcrossLinks,
@@ -7,7 +9,7 @@ import {
 
 // constants and types
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { WithdrawnExit } from './sideExitProvenance';
+import { WithdrawnExit, withdrawProducedExits } from './sideExitProvenance';
 import { MatchUpsMap } from '@Types/factoryTypes';
 
 /**
@@ -83,6 +85,37 @@ export function applyWithdrawnExits({
 
     const withdrawnMatchUp = matchUpsMap?.drawMatchUps?.find((m) => m.matchUpId === withdrawnExit.matchUpId);
     if (!withdrawnMatchUp) continue;
+
+    /**
+     * A DOUBLE exit re-derived to a single one stops producing exits at once, and what it produced goes now.
+     *
+     * `reconcileStaleExitOrigins` withdraws them at the end of the mutation, by the same test. Between the two, the
+     * forward direction of the same mutation still read them as live: census de 9305625 (DOUBLE_ELIMINATION 8/7), a
+     * relabel of `Main|2|1` dissolved `Backdraw|2|1`'s convergence, `3|1` re-derived to the DEFAULTED its carrier still
+     * holds, and the arriving winner took that, went on into `4|1`, won it by the walkover `3|1` had produced as a
+     * double exit, and was sent into a Main final that was full (ERR_EXISTING_POSITION_ASSIGNMENT after mutating).
+     * The one exception is the reconciliation's own: a re-derived exit whose winning seat is a BYE still relays.
+     */
+    if (withdrawnExit.rederived && !isDoubleExit(withdrawnMatchUp.matchUpStatus)) {
+      const winnerDrawPosition = getWinningSideDrawPosition({
+        structureId: withdrawnExit.structureId,
+        matchUp: withdrawnMatchUp,
+        drawDefinition,
+      });
+      const { positionAssignments } = getPositionAssignments({
+        drawDefinition,
+        structureId: withdrawnExit.structureId,
+      });
+      const winnerSeatIsBye = !!positionAssignments?.find((a) => a.drawPosition === winnerDrawPosition)?.bye;
+      if (!winnerSeatIsBye) {
+        const produced = withdrawProducedExits({
+          mappedMatchUps: matchUpsMap?.mappedMatchUps,
+          sourceMatchUpId: withdrawnExit.matchUpId,
+          drawDefinition,
+        });
+        applyWithdrawnExits({ withdrawnExits: produced, tournamentRecord, drawDefinition, matchUpsMap, event });
+      }
+    }
 
     /**
      * A PENDING produced exit has no winner, and its lone seat may still have been ADVANCED: an empty position
