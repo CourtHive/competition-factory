@@ -1066,14 +1066,14 @@ function advanceWinner({
     return;
   }
 
-  // A CONVERGENCE STANDS. When the matchUp already records an exit on BOTH sides, the position advancing in is a
-  // carrier passing a BYE with its exit (a propagated exit meeting a BYE is advanced, CA 2026-09-20), beside an exit
-  // produced for the other seat: the two collapse and nobody wins (RULE 4; #5161, "an arrival carrying an exit
-  // converges, never takes"). Writing TO_BE_PLAYED here lost both while provenance still recorded them (census w2
-  // 9100283, FRLC 32/30 `Consolation|2|3`; de 9301596, DE 16/13 `Backdraw|3|1`: ORIGIN_ON_UNDECIDED_MATCHUP).
-  const standingExit = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp: noContextWinnerMatchUp }));
-  const convergence = standingExit && !standingExit.winningSide ? standingExit.matchUpStatus : undefined;
-  const matchUpStatus = drawPositionIsBye || pairedDrawPositionIsBye ? BYE : (convergence ?? TO_BE_PLAYED);
+  // an exit standing here, converged or pending, is not the advance's to overwrite (`standingExitStatus`)
+  const matchUpStatus =
+    drawPositionIsBye || pairedDrawPositionIsBye
+      ? BYE
+      : (standingExitStatus({
+          advancesNobody: !drawPositionToAdvanceAssigment?.participantId && !drawPositionToAdvanceIsBye,
+          matchUp: noContextWinnerMatchUp,
+        }) ?? TO_BE_PLAYED);
 
   rekeySideFacts({
     structureId: winnerMatchUp?.structureId,
@@ -1437,4 +1437,26 @@ export function assignFedDrawPositionBye({
     });
     if (result.error) return result;
   }
+}
+
+/**
+ * The exit still standing on a matchUp a position is advanced into past a BYE, which the advance must not overwrite.
+ *
+ * A CONVERGENCE STANDS. When the matchUp already records an exit on BOTH sides, the position advancing in is a carrier
+ * passing a BYE with its exit (a propagated exit meeting a BYE is advanced, CA 2026-09-20), beside an exit produced for
+ * the other seat: the two collapse and nobody wins (RULE 4; #5161, "an arrival carrying an exit converges, never
+ * takes"). Writing TO_BE_PLAYED lost both while provenance still recorded them (census w2 9100283, FRLC 32/30
+ * `Consolation|2|3`; de 9301596, DE 16/13 `Backdraw|3|1`: ORIGIN_ON_UNDECIDED_MATCHUP).
+ *
+ * AND A SINGLE EXIT STANDS TOO, while nobody has come through to be awarded it. An EMPTY position advanced past a BYE
+ * into a matchUp holding a pending exit leaves that exit pending, as forward play wrote it. Census 20092939
+ * (DOUBLE_ELIMINATION 8/7, `doubleExitPropagateBye: false`): `Main|1|2`'s double default carried a DEFAULTED past
+ * `Backdraw|2|2`'s BYE into `Backdraw|3|1`; the empty seat `Backdraw|2|1`'s BYE then advanced beside it reset the matchUp
+ * (PROPAGATED_EXIT_LOST, then a stall). An occupied arrival is the other branches' to resolve.
+ */
+function standingExitStatus({ matchUp, advancesNobody }: { matchUp: MatchUp; advancesNobody: boolean }) {
+  const standingExit = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp }));
+  if (!standingExit) return undefined;
+  if (!standingExit.winningSide) return standingExit.matchUpStatus;
+  return advancesNobody ? standingExit.matchUpStatus : undefined;
 }

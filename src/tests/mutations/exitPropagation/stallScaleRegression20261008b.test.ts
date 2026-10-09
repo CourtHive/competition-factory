@@ -48,7 +48,6 @@ const OPEN = new Set<string>([
   'policyoff 20091112', // FEED_IN_CHAMPIONSHIP 8/6
   'policyoff 20091282', // FEED_IN_CHAMPIONSHIP 8/7
   'policyoff 20092051', // DOUBLE_ELIMINATION 8/7
-  'policyoff 20092939', // DOUBLE_ELIMINATION 8/7
   'policyoff 20096063', // DOUBLE_ELIMINATION 8/5
   'policyoff 20097819', // DOUBLE_ELIMINATION 8/7
   'policyoff 20098707', // DOUBLE_ELIMINATION 8/6
