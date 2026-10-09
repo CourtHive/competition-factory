@@ -1066,6 +1066,33 @@ function advanceWinner({
     return;
   }
 
+  const advancingSide = arrivalOppositePendingExit({
+    assignment: drawPositionToAdvanceAssigment,
+    matchUp: noContextWinnerMatchUp,
+    pairedDrawPositionIsBye,
+    drawPositionToAdvance,
+    drawPositionIsBye,
+    drawDefinition,
+    winnerMatchUp,
+    drawPositions,
+  });
+  if (advancingSide) {
+    resolvePropagatedExitOnAdvance({
+      matchUp: noContextWinnerMatchUp,
+      drawPositionToAdvance,
+      inContextDrawMatchUps,
+      tournamentRecord,
+      drawDefinition,
+      drawPositions,
+      winnerMatchUp,
+      advancingSide,
+      matchUpsMap,
+      event,
+      stack,
+    });
+    return;
+  }
+
   // an exit standing here, converged or pending, is not the advance's to overwrite (`standingExitStatus`)
   const matchUpStatus =
     drawPositionIsBye || pairedDrawPositionIsBye
@@ -1459,4 +1486,47 @@ function standingExitStatus({ matchUp, advancesNobody }: { matchUp: MatchUp; adv
   if (!standingExit) return undefined;
   if (!standingExit.winningSide) return standingExit.matchUpStatus;
   return advancesNobody ? standingExit.matchUpStatus : undefined;
+}
+
+/**
+ * The side a PARTICIPANT advanced past a BYE takes, when it arrives opposite a single pending exit standing here.
+ *
+ * A pending exit is awarded to whoever arrives on the side without it (`progressExitStatus` RULE 2; CA 2026-09-20).
+ * `arrivalIntoProvenanceOnlyExit` reads that award only where the matchUp holds no position yet; here the exiting
+ * side already holds one, an empty seat advanced ahead of the exit, and the arrival was written TO_BE_PLAYED over the
+ * exit (PROPAGATED_EXIT_LOST). Census 20076731 (DOUBLE_ELIMINATION 8/7, `doubleExitPropagateBye: false`), forward play:
+ * `Main|1|2`'s double default carried a DEFAULTED past `Backdraw|2|2`'s BYE into `Backdraw|3|1`; `Backdraw|1|1`'s
+ * walkover winner then came through `Backdraw|2|1`'s BYE on side 1 and was never awarded it. An arrival on the
+ * exiting side takes nothing; an empty position is `standingExitStatus`'s.
+ */
+function arrivalOppositePendingExit({
+  pairedDrawPositionIsBye,
+  drawPositionToAdvance,
+  drawPositionIsBye,
+  drawDefinition,
+  winnerMatchUp,
+  drawPositions,
+  assignment,
+  matchUp,
+}: {
+  assignment?: { participantId?: string };
+  pairedDrawPositionIsBye?: boolean;
+  drawDefinition: DrawDefinition;
+  drawPositionIsBye?: boolean;
+  drawPositionToAdvance: number;
+  drawPositions: number[];
+  winnerMatchUp?: HydratedMatchUp;
+  matchUp: MatchUp;
+}): number | undefined {
+  if (!assignment?.participantId || drawPositionIsBye || pairedDrawPositionIsBye) return undefined;
+  if (!isExit(matchUp.matchUpStatus) || matchUp.winningSide) return undefined;
+  const standingExit = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp }));
+  if (!standingExit?.winningSide) return undefined;
+  const side = getDrawPositionSideNumber({
+    structureId: winnerMatchUp?.structureId,
+    matchUp: { ...matchUp, drawPositions },
+    drawPosition: drawPositionToAdvance,
+    drawDefinition,
+  });
+  return side === standingExit.winningSide ? side : undefined;
 }
