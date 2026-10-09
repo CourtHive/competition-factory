@@ -8,6 +8,7 @@ export const MODIFY_PAIR_ASSIGNMENT_METHOD = 'modifyPairAssignment';
 export const SWAP_ADHOC_PARTICIPANT_METHOD = 'adHocPositionSwap';
 export const ADD_NICKNAME_METHOD = 'modifyParticipantOtherName';
 export const ASSIGN_PARTICIPANT_METHOD = 'assignDrawPosition';
+export const ASSIGN_QUALIFIER_METHOD = 'assignDrawPosition';
 export const REMOVE_SEED_METHOD = 'removeSeededParticipant';
 export const ASSIGN_BYE_METHOD = 'assignDrawPositionBye';
 export const SEED_VALUE_METHOD = 'modifySeedAssignment';
@@ -19,6 +20,7 @@ export const QUALIFYING_PARTICIPANT = 'QUALIFIER';
 export const ALTERNATE_PARTICIPANT = 'ALTERNATE';
 export const WITHDRAW_PARTICIPANT = 'WITHDRAW';
 export const ASSIGN_PARTICIPANT = 'ASSIGN';
+export const ASSIGN_QUALIFIER = 'ASSIGN_QUALIFIER'; // a QUALIFIER placeholder: the seat a qualifier will take
 export const REMOVE_ASSIGNMENT = 'REMOVE';
 export const LUCKY_PARTICIPANT = 'LUCKY';
 export const REMOVE_SEED = 'REMOVE_SEED';
@@ -35,6 +37,7 @@ export const positionActionConstants = {
   ALTERNATE_PARTICIPANT,
   WITHDRAW_PARTICIPANT,
   ASSIGN_PARTICIPANT,
+  ASSIGN_QUALIFIER,
   LUCKY_PARTICIPANT,
   REMOVE_ASSIGNMENT,
   SWAP_PARTICIPANTS,

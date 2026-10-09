@@ -19,11 +19,13 @@ export type QualifyingTarget = {
   unfilledPositionsCount: number; // of those, positions with neither participant nor bye
   qualifierPositionsCount: number; // of those, positions marked `qualifier` (reserved for qualifiers, link or no link)
   unplacedDirectEntriesCount: number; // round 1 only: direct entries in the draw not yet positioned
+  placedQualifiersCount: number; // of those, positions already holding a participant who entered through qualifying
+  owedQualifiers: number; // the larger of promised and reserved, less those placed: each still needs an open position
   feedingStructures: { structureId: string; structureName?: string; qualifiersCount: number; placeholder: boolean }[];
   promisedQualifiers: number; // sent into this round by real qualifying structures
   reservedQualifiers: number; // reserved by placeholder links (source round 0); a real structure consumes them
   structuralCapacity: number; // drawPositionsCount - promisedQualifiers: the rule attachQualifyingStructure enforces
-  remainingCapacity: number; // unfilled - promised - unplaced direct entries: what the draw can hold as placed today
+  remainingCapacity: number; // unfilled - owed - unplaced direct entries: the positions a new qualifier could take today
 };
 
 type GetAvailableQualifyingTargetsArgs = {
@@ -36,8 +38,12 @@ type GetAvailableQualifyingTargetsArgs = {
  *
  * Several qualifying structures may feed the same round as long as the qualifiers they produce, in
  * aggregate, do not exceed the drawPositions that round has (CA, 2026-10-07). Round 1 is always a
- * candidate; a feed round is a candidate unless a LOSER link already fills it. The placement-state
- * numbers are reported so a client can show what already feeds a round and clamp its offer.
+ * candidate; a feed round is a candidate unless a LOSER link already fills it.
+ *
+ * `structuralCapacity` is the rule `attachQualifyingStructure` enforces. `remainingCapacity` is the room a
+ * new qualifying structure actually has today: a position holding a participant or a bye is not room
+ * (CA, 2026-10-09: a main whose positions are all filled has no space for qualifiers), and a qualifier
+ * already placed is counted once, against the promise it fulfils, not again as an occupied position.
  */
 export function getAvailableQualifyingTargets({
   drawDefinition,
@@ -62,6 +68,17 @@ export function getAvailableQualifyingTargets({
     positionAssignments.filter((pa) => drawPositions.includes(pa.drawPosition) && !pa.participantId && !pa.bye).length;
   const qualifierMarked = (drawPositions: number[]) =>
     positionAssignments.filter((pa) => drawPositions.includes(pa.drawPosition) && pa.qualifier).length;
+
+  // a placed qualifier keeps the QUALIFYING entry it qualified through; no MAIN entry is added for it
+  const qualifyingEntrantIds = new Set(
+    (drawDefinition.entries ?? [])
+      .filter((entry) => entry.entryStage === QUALIFYING)
+      .map((entry) => entry.participantId),
+  );
+  const placedQualifiers = (drawPositions: number[]) =>
+    positionAssignments.filter(
+      (pa) => drawPositions.includes(pa.drawPosition) && pa.participantId && qualifyingEntrantIds.has(pa.participantId),
+    ).length;
 
   const stage = structure.stage;
   const unplacedDirectEntriesCount = (drawDefinition.entries ?? []).filter(
@@ -117,12 +134,17 @@ export function getAvailableQualifyingTargets({
         .filter((f) => f.placeholder)
         .reduce((sum, f) => sum + f.qualifiersCount, 0);
       const unfilledPositionsCount = unfilled(drawPositions);
+      const placedQualifiersCount = placedQualifiers(drawPositions);
+      // a real structure consumes a placeholder's reservation, so the two never add
+      const owedQualifiers = Math.max(0, Math.max(promisedQualifiers, reservedQualifiers) - placedQualifiersCount);
       const unplaced = roundNumber === 1 ? unplacedDirectEntriesCount : 0;
       return {
-        remainingCapacity: Math.max(0, unfilledPositionsCount - promisedQualifiers - unplaced),
+        remainingCapacity: Math.max(0, unfilledPositionsCount - owedQualifiers - unplaced),
         structuralCapacity: Math.max(0, drawPositions.length - promisedQualifiers),
         qualifierPositionsCount: qualifierMarked(drawPositions),
         unplacedDirectEntriesCount: unplaced,
+        placedQualifiersCount,
+        owedQualifiers,
         drawPositionsCount: drawPositions.length,
         unfilledPositionsCount,
         promisedQualifiers,

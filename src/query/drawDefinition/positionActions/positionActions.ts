@@ -3,6 +3,7 @@ import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureD
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { getValidQualifierPlaceholderAction } from './getValidQualifierPlaceholderAction';
 import { getValidModifyAssignedPairAction } from './getValidModifyAssignedPairAction';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { matchUpActions } from '@Query/drawDefinition/matchUpActions/matchUpActions';
@@ -55,6 +56,7 @@ import {
   WITHDRAW_PARTICIPANT_METHOD,
   WITHDRAW_PARTICIPANT,
   QUALIFYING_PARTICIPANT,
+  ASSIGN_QUALIFIER,
   MODIFY_PAIR_ASSIGNMENT,
   REMOVE_SEED,
   REMOVE_SEED_METHOD,
@@ -165,6 +167,18 @@ function addQualifyingActions({
       drawId,
     });
     validAssignmentActions?.forEach((action) => validActions.push(action));
+  }
+
+  if (isAvailableAction({ policyActions, action: ASSIGN_QUALIFIER }) && !isActiveDrawPosition && positionAssignments) {
+    const { validQualifierPlaceholderAction } = getValidQualifierPlaceholderAction({
+      drawPositionInitialRounds,
+      positionAssignments,
+      drawDefinition,
+      drawPosition,
+      structureId,
+      drawId,
+    });
+    if (validQualifierPlaceholderAction) validActions.push(validQualifierPlaceholderAction);
   }
 }
 
