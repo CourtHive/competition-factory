@@ -12,6 +12,7 @@ import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
+import { applyRoundLimit } from '@Query/publishing/applyRoundLimit';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findExtension } from '@Acquire/findExtension';
@@ -364,14 +365,21 @@ export function getDrawData(params: GetDrawDataArgs): {
   // This once read `... || isVisiblyPublished(...) || true`, which was unconditionally true, and then
   // treated a structure with NO detail as visible even when its siblings were keyed — so a structure
   // added after a selective publish appeared here while `getEventData` withheld it.
-  const structures = groupedStructures.flat().filter((structure) => {
-    if (!usePublishState) return true;
-    return isStructureVisible({
-      structureId: structure?.structureId,
-      stage: structure?.stage,
-      drawDetail: drawDetails,
+  const structures = groupedStructures
+    .flat()
+    .filter((structure) => {
+      if (!usePublishState) return true;
+      return isStructureVisible({
+        structureId: structure?.structureId,
+        stage: structure?.stage,
+        drawDetail: drawDetails,
+      });
+    })
+    .map((structure) => {
+      if (!usePublishState) return structure;
+      const structureDetail = drawDetails?.structureDetails?.[structure?.structureId];
+      return applyRoundLimit({ structure, structureDetail, drawType });
     });
-  });
 
   drawInfo.drawActive = drawActive;
   drawInfo.participantPlacements = participantPlacements;

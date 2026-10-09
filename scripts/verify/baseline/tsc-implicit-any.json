@@ -80,7 +80,7 @@
   "src/query/drawDefinition/matchUpActions": 69,
   "src/query/drawDefinition/positionActions": 194,
   "src/query/entries": 23,
-  "src/query/event": 65,
+  "src/query/event": 59,
   "src/query/events": 31,
   "src/query/extensions": 8,
   "src/query/extensions/matchUpFormatTiming": 19,

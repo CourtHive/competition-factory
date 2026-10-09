@@ -7,13 +7,10 @@ import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
-import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getVenueData } from '@Query/venues/getVenueData';
 import { findExtension } from '@Acquire/findExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { isConvertableInteger } from '@Tools/math';
 import { findEvent } from '@Acquire/findEvent';
-import { generateRange } from '@Tools/arrays';
 
 // constants and types
 import { PayloadProfileEnum, PayloadProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
@@ -114,26 +111,6 @@ export function getEventData(params: GetEventDataArgs): {
     return true;
   };
 
-  const roundLimitMapper = ({ drawId, drawType, structure }) => {
-    if (!usePublishState) return structure;
-    if (!isAdHocType(drawType)) return structure;
-    const roundLimit = publishStatus?.drawDetails?.[drawId]?.structureDetails?.[structure.structureId]?.roundLimit;
-    if (isConvertableInteger(roundLimit)) {
-      const roundNumbers = generateRange(1, roundLimit + 1);
-      const roundMatchUps = {};
-      const roundProfile = {};
-      for (const roundNumber of roundNumbers) {
-        if (structure.roundMatchUps[roundNumber]) {
-          roundMatchUps[roundNumber] = structure.roundMatchUps[roundNumber];
-          roundProfile[roundNumber] = structure.roundProfile[roundNumber];
-        }
-      }
-      structure.roundMatchUps = roundMatchUps;
-      structure.roundProfile = roundProfile;
-    }
-    return structure;
-  };
-
   const drawDefinitions = event.drawDefinitions ?? [];
 
   /**
@@ -209,8 +186,8 @@ export function getEventData(params: GetEventDataArgs): {
       )
       .map(({ structures, ...drawData }) => {
         const filteredStructures = structures
-          ?.filter(({ stage, structureId }) => structureFilter({ structureId, stage, drawId: drawData.drawId }))
-          .map((structure) => roundLimitMapper({ drawId: drawData.drawId, drawType: drawData.drawType, structure }));
+          // Round limits are applied inside getDrawData, so every tier withholds the same rounds.
+          ?.filter(({ stage, structureId }) => structureFilter({ structureId, stage, drawId: drawData.drawId }));
         return {
           ...drawData,
           structures: filteredStructures,
