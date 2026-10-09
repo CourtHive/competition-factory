@@ -18,6 +18,10 @@ import fs from 'fs';
  * engine, so the arm changes the schedule itself). A `policyoff` line carries the `policyDefinitions` it was emitted
  * under, and the replay attaches them.
  *
+ * 2026-10-10, THE SIXTH RUN (seeds 20,180,001–20,220,000, from dev 462ea90c9f with every seed above closed): one
+ * instance in each default arm, the same seed — 20209866, FIRST_MATCH_LOSER_CONSOLATION 8/7 — and none under the
+ * policy. Its two instances are appended to the fixture and replay clean (`aLoneByeIsNeverOnTheExitsSide`).
+ *
  * ## OPEN — the seeds that still stall, by arm
  *
  * The set of stalling seeds must EQUAL this list. A new stall fails; so does a seed that stops stalling, until its
@@ -47,11 +51,11 @@ function stallsAfter(instance: Instance): number {
 
 // CONTROL: an empty or truncated fixture would pass by replaying nothing, and a policy-off line without its policy
 // would replay in the default arm
-it('holds all 28 instances, 4 flag-off, 4 flag-on and 20 policy-off, each policy-off line under its policy', () => {
+it('holds all 30 instances, 5 flag-off, 5 flag-on and 20 policy-off, each policy-off line under its policy', () => {
   const byArm = (arm: Arm) => INSTANCES.filter((instance) => instance.arm === arm);
-  expect(INSTANCES.length).toEqual(28);
-  expect(byArm('off').length).toEqual(4);
-  expect(byArm('on').length).toEqual(4);
+  expect(INSTANCES.length).toEqual(30);
+  expect(byArm('off').length).toEqual(5);
+  expect(byArm('on').length).toEqual(5);
   expect(byArm('policyoff').length).toEqual(20);
   expect(
     byArm('policyoff').every((instance) => instance.policyDefinitions?.progression?.doubleExitPropagateBye === false),
