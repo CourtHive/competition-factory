@@ -23,16 +23,9 @@ import fs from 'fs';
  */
 const OPEN = new Set<string>([
   // doubleExitPropagateBye: false
-  'policyoff 20062607', // DOUBLE_ELIMINATION 16/11
-  'policyoff 20065694', // FIRST_MATCH_LOSER_CONSOLATION 16/11
-  'policyoff 20068753', // FEED_IN_CHAMPIONSHIP 8/6
   'policyoff 20076847', // FEED_IN_CHAMPIONSHIP 16/11
-  'policyoff 20076968', // DOUBLE_ELIMINATION 8/6
   'policyoff 20077082', // FEED_IN_CHAMPIONSHIP 16/14
   'policyoff 20080614', // FEED_IN_CHAMPIONSHIP 16/11
-  'policyoff 20091112', // FEED_IN_CHAMPIONSHIP 8/6
-  'policyoff 20092051', // DOUBLE_ELIMINATION 8/7
-  'policyoff 20099337', // DOUBLE_ELIMINATION 8/6
   'policyoff 20099689', // FIRST_ROUND_LOSER_CONSOLATION 8/7
 ]);
 
