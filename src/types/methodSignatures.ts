@@ -72,6 +72,7 @@ import type { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/dra
 import type { getScenarioScheduleProjection } from '@Query/matchUps/scheduling/getScenarioScheduleProjection';
 import type { swapAdHocRounds } from '@Mutate/drawDefinitions/structureGovernor/adHocRounds/swapAdHocRounds';
 import type { getCompetitionLeaderboard } from '@Query/drawDefinition/competition/getCompetitionLeaderboard';
+import type { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 import type { getEligibleEvents, getParticipantEligibility } from '@Query/entries/getParticipantEligibility';
 import type { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
 import type { modifyParticipantsPaymentStatus } from '@Mutate/participants/modifyParticipantsPaymentStatus';
@@ -1049,6 +1050,7 @@ export interface MethodSignatures {
   getRandomQualifierList: EngineMethod<typeof getRandomQualifierList>;
   getRegistrationProfile: EngineMethod<typeof getRegistrationProfile>;
   getResultAttestation: EngineMethod<typeof getResultAttestation>;
+  getRotatingPartnerScoringPolicy: EngineMethod<typeof getRotatingPartnerScoringPolicy>;
   getRoundMatchUps: EngineMethod<typeof getRoundMatchUps>;
   getRounds: EngineMethod<typeof getRounds>;
   getRoundVisibilityState: EngineMethod<typeof getRoundVisibilityState>;

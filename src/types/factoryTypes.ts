@@ -1,5 +1,6 @@
+import { ValidPolicyTypes, POLICY_TYPE_SEEDING, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
-import { ValidPolicyTypes, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
+import type { RotatingPartnerScoringPolicies } from './rotatingPartnerScoring';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
@@ -397,6 +398,7 @@ export type PolicyDefinitions = {
   [key in ValidPolicyTypes]?: { [key: string]: any };
 } & {
   [POLICY_TYPE_SEEDING]?: SeedingPolicy;
+  [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
 };
 
 export type QueueMethod = {
