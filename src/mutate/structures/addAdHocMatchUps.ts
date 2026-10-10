@@ -1,3 +1,4 @@
+import { isRotatingPartnerDraw, validateRotatingPartnerMatchUps } from '@Validators/rotatingPartnerDraw';
 import { addMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getMatchUpId } from '@Functions/global/extractors';
@@ -47,6 +48,11 @@ export function addAdHocMatchUps(params: AddAdHocMatchUpsParams): ResultType {
 
   if (structure.structures || structureHasRoundPositions || structure.finishingPosition === ROUND_OUTCOME) {
     return { error: INVALID_STRUCTURE };
+  }
+
+  if (isRotatingPartnerDraw(drawDefinition, event)) {
+    const validation = validateRotatingPartnerMatchUps({ drawDefinition, tournamentRecord, matchUps });
+    if (validation.error) return validation;
   }
 
   const existingMatchUpIds =

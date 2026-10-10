@@ -2,6 +2,7 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
@@ -106,6 +107,7 @@ function getValidParticipantIds({
 }
 
 function getTypedParticipantIdsHelper({
+  rotatingPartners,
   tournamentRecord,
   participantIds,
   event,
@@ -113,6 +115,7 @@ function getTypedParticipantIdsHelper({
   genderEnforced,
   mismatchedGender,
 }: {
+  rotatingPartners: boolean;
   tournamentRecord?: Tournament;
   participantIds: string[];
   event: Event;
@@ -189,6 +192,13 @@ function getTypedParticipantIdsHelper({
         // would break entry for existing tournaments. The hole being closed is a participant carrying a
         // NON-competitor role; an absent role stays permitted.
         if (participant.participantRole && participant.participantRole !== COMPETITOR) return false;
+
+        if (rotatingPartners) {
+          return (
+            participant.participantType === INDIVIDUAL &&
+            isValidSinglesGender(participant, event, genderEnforced, mismatchedGender)
+          );
+        }
 
         if (isValidSinglesParticipant(participant, event, entryStatus)) {
           return isValidSinglesGender(participant, event, genderEnforced, mismatchedGender);
@@ -528,7 +538,10 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
   const mismatchedGender: any[] = [];
   let info;
 
+  const rotatingPartners =
+    !!drawId && drawId === drawDefinition?.drawId && isRotatingPartnerDraw(drawDefinition, event);
   let typedParticipantIds = getTypedParticipantIdsHelper({
+    rotatingPartners,
     tournamentRecord,
     participantIds,
     event,
@@ -553,6 +566,14 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
     typedParticipantIds,
     checkTypedParticipants,
   });
+
+  if (rotatingPartners && validParticipantIds.length !== participantIds.length) {
+    return decorateResult({
+      result: { error: INVALID_PARTICIPANT_IDS },
+      stack,
+      context: { mismatchedGender, categoryRejections },
+    });
+  }
 
   event.entries ??= [];
   const existingIds = new Set(event.entries.map((e: any) => e.participantId || e.participant?.participantId));

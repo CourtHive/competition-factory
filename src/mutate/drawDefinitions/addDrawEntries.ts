@@ -1,4 +1,5 @@
 import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
+import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
 import { addDrawEntries as addEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { refreshEntryPositions } from '@Mutate/entries/refreshEntryPositions';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
@@ -37,6 +38,11 @@ export function addDrawEntries({
   if (!participantIds?.length) return { error: MISSING_PARTICIPANT_IDS };
   if (!event) return { error: EVENT_NOT_FOUND };
   if (!drawId) return { error: MISSING_DRAW_ID };
+
+  if (isRotatingPartnerDraw(drawDefinition, event)) {
+    const validation = validateRotatingPartnerEntrants({ participantIds, tournamentRecord });
+    if (validation.error) return validation;
+  }
 
   const eventEnteredParticipantIds = (event.entries ?? []).map(getParticipantId);
   const missingEventEntries = participantIds.filter(
