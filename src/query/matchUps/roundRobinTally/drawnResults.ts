@@ -7,6 +7,7 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { MatchUp } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 
 export function validateDrawTallyOptions(policy?: RoundRobinTallyPolicy): ResultType {
   if (
@@ -31,7 +32,7 @@ export function validateDrawTallyOptions(policy?: RoundRobinTallyPolicy): Result
       policy.tallyDirectives.some((directive) => directive?.attribute === 'standingsPoints'));
   if (usesStandingsPoints && !policy?.outcomePoints)
     return { error: INVALID_VALUES, info: 'standingsPoints ranking requires outcomePoints' };
-  return {};
+  return { ...SUCCESS };
 }
 
 /** Only a complete tie permitted by the scoring contract is a drawn result. */

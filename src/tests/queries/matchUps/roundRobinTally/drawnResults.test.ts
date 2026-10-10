@@ -304,3 +304,92 @@ it('uses signed and fractional outcome points without changing rally totals or e
   });
   expect(result.participantResults.p1.standingsPoints).toBe(-1);
 });
+
+it.each(['v1', 'v2', 'differential'] as const)('a partial score stays IN_PROGRESS (%s)', (pipeline) => {
+  setOutcomePipeline(pipeline);
+  const { drawId } = setup();
+  const matchUpId = tournamentEngine.allTournamentMatchUps().matchUps[0].matchUpId;
+  let result: any = tournamentEngine.setMatchUpStatus({
+    drawId,
+    matchUpId,
+    outcome: { score: { sets: [{ setNumber: 1, side1Score: 10, side2Score: 8 }] } },
+  });
+  expect(result.error).toBeUndefined();
+  const current = tournamentEngine.allTournamentMatchUps().matchUps.find((match) => match.matchUpId === matchUpId);
+  expect(current.matchUpStatus).toBe(IN_PROGRESS);
+  expect(current.winningSide).toBeUndefined();
+  expect(current.score.sets).toMatchObject([{ side1Score: 10, side2Score: 8 }]);
+  result = tournamentEngine.tallyParticipantResults({ matchUps: tournamentEngine.allTournamentMatchUps().matchUps });
+  expect(result.bracketComplete).toBe(false);
+  expect(
+    Object.values(result.participantResults).every(
+      (row: any) => row.matchUpsCancelled === 0 && row.matchUpsDrawn === 0,
+    ),
+  ).toBe(true);
+});
+
+it.each(['v1', 'v2', 'differential'] as const)('a score-only clear returns to TO_BE_PLAYED (%s)', (pipeline) => {
+  setOutcomePipeline(pipeline);
+  const { drawId } = setup();
+  const matchUpId = tournamentEngine.allTournamentMatchUps().matchUps[0].matchUpId;
+  expect(
+    tournamentEngine.setMatchUpStatus({
+      drawId,
+      matchUpId,
+      outcome: { score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } },
+    }).error,
+  ).toBeUndefined();
+  let result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome: { score: { sets: [] } } });
+  expect(result.error).toBeUndefined();
+  const current = tournamentEngine.allTournamentMatchUps().matchUps.find((match) => match.matchUpId === matchUpId);
+  expect(current.matchUpStatus).toBe('TO_BE_PLAYED');
+  expect(current.winningSide).toBeUndefined();
+  expect(current.score?.sets?.length ?? 0).toBe(0);
+  result = tournamentEngine.tallyParticipantResults({ matchUps: tournamentEngine.allTournamentMatchUps().matchUps });
+  expect(result.bracketComplete).toBe(false);
+});
+
+it.each(['v1', 'v2', 'differential'] as const)(
+  'an invalid attached policy is refused without a write (%s)',
+  (pipeline) => {
+    setOutcomePipeline(pipeline);
+    const { drawId } = setup();
+    const matchUpId = tournamentEngine.allTournamentMatchUps().matchUps[0].matchUpId;
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        drawId,
+        matchUpId,
+        outcome: {
+          winningSide: 1,
+          score: { sets: [{ setNumber: 1, side1Score: 17, side2Score: 15, winningSide: 1 }] },
+        },
+      }).error,
+    ).toBeUndefined();
+    const before = tournamentEngine.getState();
+    expect(
+      tournamentEngine.attachPolicies({
+        drawId,
+        policyDefinitions: { [POLICY_TYPE_ROUND_ROBIN_TALLY]: { drawCredit: 2 } },
+      }).error,
+    ).toBe(INVALID_VALUES);
+    expect(tournamentEngine.getState()).toEqual(before);
+    // Externally supplied records can bypass attachment validation; the score writer must preflight them too.
+    const corrupted = structuredClone(before);
+    const record = Object.values(corrupted.tournamentRecords)[0] as import('@Types/tournamentTypes').Tournament;
+    const draw = record
+      .events!.flatMap((event) => event.drawDefinitions ?? [])
+      .find((candidate) => candidate.drawId === drawId)!;
+    draw.extensions ??= [];
+    draw.extensions = draw.extensions.filter((extension) => extension.name !== 'appliedPolicies');
+    draw.extensions.push({ name: 'appliedPolicies', value: { roundRobinTally: { drawCredit: 2 } } });
+    tournamentEngine.setState(corrupted.tournamentRecords);
+    const invalidBefore = tournamentEngine.getState();
+    let result: any = tournamentEngine.setMatchUpStatus({
+      drawId,
+      matchUpId,
+      outcome: { winningSide: 2, score: { sets: [{ setNumber: 1, side1Score: 15, side2Score: 17, winningSide: 2 }] } },
+    });
+    expect(result.error).toBe(INVALID_VALUES);
+    expect(tournamentEngine.getState()).toEqual(invalidBefore);
+  },
+);

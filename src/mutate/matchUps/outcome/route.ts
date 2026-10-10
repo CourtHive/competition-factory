@@ -1,5 +1,5 @@
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
-import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
+import { isDrawnResult } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
@@ -9,6 +9,7 @@ import {
   ABANDONED,
   BYE,
   CANCELLED,
+  COMPLETED,
   IN_PROGRESS,
   INCOMPLETE,
   SUSPENDED,
@@ -79,7 +80,18 @@ function noDownstreamRoute(request: OutcomeRequest, view: OutcomeView): Route {
 export function chooseRoute(request: OutcomeRequest, view: OutcomeView): Route {
   const { winningSide, matchUpStatus, flags } = request;
   const { existing, line } = view;
-  if (!view.activeDownstream && !winningSide && (view.draw.rotatingPartners || view.draw.combinedPointRoundRobin))
+  if (
+    !view.activeDownstream &&
+    !winningSide &&
+    (view.draw.rotatingPartners || view.draw.combinedPointRoundRobin) &&
+    isDrawnResult({
+      matchUpId: request.matchUpId ?? '',
+      matchUpStatus: matchUpStatus ?? COMPLETED,
+      winningSide,
+      score: request.score,
+      matchUpFormat: request.matchUpFormat ?? existing.matchUpFormat,
+    })
+  )
     return APPLY_VALUES;
   const dualChange = dualWinningSideChange(request, view);
   const validSwap =

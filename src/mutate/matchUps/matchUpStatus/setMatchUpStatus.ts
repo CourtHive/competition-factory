@@ -10,6 +10,7 @@ import { reconcileCarriesPastByes } from '@Mutate/matchUps/matchUpStatus/reconci
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import type { DeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
@@ -34,11 +35,11 @@ import {
 
 // constants and types
 import { PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
+import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { SCHEDULE_PRESERVED_ON_EXIT } from '@Constants/scheduleConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 
 /**
@@ -220,13 +221,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   // DECISION: Accept matchUpFormat from either direct param or nested in outcome
   // WHY: Provides flexibility in how API is called - format can be set along with status/score
-  const rotating = resolveRotatingPartnerOutcome({
-    drawDefinition,
-    event,
-    matchUpId,
-    ...params.outcome,
-    matchUpFormat: requestedMatchUpFormat(params),
-  });
+  const rotating = preflightOutcome(params);
   if (rotating.error) return rotating;
   params = { ...params, ...rotating, outcome: params.outcome && { ...params.outcome, ...rotating } };
   const matchUpFormat = requestedMatchUpFormat(params);
@@ -542,4 +537,25 @@ function requestedMatchUpFormat(params: SetMatchUpStatusArgs) {
 
 function resolveScoreFormat(params: SetMatchUpStatusArgs) {
   return params.matchUpFormat ?? getMatchUpFormat(params)?.matchUpFormat;
+}
+
+/** A tally failure must be discovered before the score or stored position tallies are changed. */
+function preflightTallyPolicy(params: SetMatchUpStatusArgs): ResultType {
+  const { tournamentRecord, drawDefinition, event, policyDefinitions } = params;
+  const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
+  const inherited = validateDrawTallyOptions(appliedPolicies?.[POLICY_TYPE_ROUND_ROBIN_TALLY]);
+  return inherited.error ? inherited : validateDrawTallyOptions(policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY]);
+}
+
+function preflightOutcome(params: SetMatchUpStatusArgs) {
+  const tallyValidation = preflightTallyPolicy(params);
+  if (tallyValidation.error) return tallyValidation;
+  const { drawDefinition, event, matchUpId } = params;
+  return resolveRotatingPartnerOutcome({
+    drawDefinition,
+    event,
+    matchUpId,
+    ...params.outcome,
+    matchUpFormat: requestedMatchUpFormat(params),
+  });
 }

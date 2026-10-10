@@ -1,6 +1,7 @@
 import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
 import { isPropagatedExit, rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { isDrawnResult, validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
@@ -9,7 +10,6 @@ import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligib
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -41,7 +41,6 @@ import { nowIso } from '@Tools/clock';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
 // constants and types
-import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
@@ -88,6 +87,11 @@ import {
   Structure,
   Tournament,
 } from '@Types/tournamentTypes';
+import {
+  POLICY_TYPE_PROGRESSION,
+  POLICY_TYPE_SCORING,
+  POLICY_TYPE_ROUND_ROBIN_TALLY,
+} from '@Constants/policyConstants';
 
 // Reverting a validated-COMPLETED matchUp to one of these "still live / paused"
 // statuses (without providing a new outcome) would silently strip its result and
@@ -307,15 +311,9 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     if (result.error) return result;
   }
 
-  const appliedPolicies =
-    getAppliedPolicies({
-      policyTypes: [POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING],
-      tournamentRecord,
-      drawDefinition,
-      event,
-    })?.appliedPolicies ?? {};
-
-  if (isObject(params.policyDefinitions)) Object.assign(appliedPolicies, params.policyDefinitions);
+  const appliedPolicies = outcomePolicies(params);
+  const tallyValidation = validateDrawTallyOptions(appliedPolicies[POLICY_TYPE_ROUND_ROBIN_TALLY]);
+  if (tallyValidation.error) return tallyValidation;
 
   const participantCheck = checkParticipants({
     propagatingExit: params.propagatingExit,
@@ -1225,10 +1223,29 @@ function isUndirectedPointOutcome(
   return (
     !activeDownstream &&
     !params.winningSide &&
-    (combinedRoundRobin || isRotatingPartnerDraw(params.drawDefinition, params.event))
+    (combinedRoundRobin || isRotatingPartnerDraw(params.drawDefinition, params.event)) &&
+    isDrawnResult({
+      matchUpId: params.matchUpId ?? '',
+      matchUpStatus: params.matchUpStatus ?? COMPLETED,
+      score: params.score,
+      winningSide: params.winningSide,
+      matchUpFormat: format,
+    })
   );
 }
 
 function isWalkoverStatus(status?: string) {
   return !!status && [WALKOVER, DOUBLE_WALKOVER].includes(status);
+}
+
+function outcomePolicies(params: SetMatchUpStateArgs): PolicyDefinitions {
+  const { tournamentRecord, drawDefinition, event } = params;
+  const { appliedPolicies = {} } = getAppliedPolicies({
+    policyTypes: [POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY],
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+  if (isObject(params.policyDefinitions)) Object.assign(appliedPolicies, params.policyDefinitions);
+  return appliedPolicies;
 }
