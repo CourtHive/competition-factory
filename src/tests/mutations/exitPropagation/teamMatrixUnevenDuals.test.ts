@@ -1,11 +1,12 @@
 import { TEAM_UNEVEN_CELLS, runMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
+import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants and types
+import { completedMatchUpStatuses, COMPLETED, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { UnevenDuals } from '@Tests/testHarness/exitPropagation/matrixCells';
-import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -99,6 +100,52 @@ test.for(['early', 'late'] as UnevenDuals[])('in %s mode a decided dual is won 2
     .filter((matchUp) => matchUp.matchUpType === TEAM_MATCHUP && matchUp.matchUpStatus === COMPLETED)
     .map((matchUp) => matchUp.score?.scoreStringSide1);
   expect(scores).toContain('2-1');
+});
+
+/**
+ * CONTROL: a dual no score can decide is decided, not abandoned. In early mode a DOUBLE_WALKOVER rubber
+ * leaves DOMINANT_DUO at 1-1 with every rubber finished: neither team can reach the value goal, and the
+ * round it feeds waits forever. That is the director's decision (`setMatchUpStatus` with a `winningSide`
+ * on the dual), which the driver now takes once nothing else is playable. Before it did (2026-10-11), the
+ * audit passed only because `STALLED_POSITION` was a warning: as an error, 16 of these cells reported the
+ * next round's lone occupant stranded. Asserted on the inconsistency itself, so it holds under either
+ * severity.
+ */
+test('an undecidable dual is decided by the director, not left to strand the next round', () => {
+  const cell = TEAM_UNEVEN_CELLS.find(
+    (candidate) =>
+      candidate.unevenDuals === 'early' &&
+      candidate.drawType === SINGLE_ELIMINATION &&
+      candidate.participantsCount === 8 &&
+      candidate.exitStatus === DOUBLE_WALKOVER &&
+      candidate.propagateExitStatus,
+  );
+  expect(cell).toBeDefined();
+  if (!cell) return;
+
+  const drawId = `team-${cell.seed}`;
+  expect(runMatrixCell(cell, drawId)).toEqual([]);
+
+  const duals = tournamentEngine
+    .allDrawMatchUps({ drawId, inContext: true })
+    .matchUps.filter((matchUp) => matchUp.matchUpType === TEAM_MATCHUP);
+  const finished = (rubber: any) => rubber.winningSide || completedMatchUpStatuses.includes(rubber.matchUpStatus);
+
+  // the shape was reached: a dual decided at 1-1, which no rubber can produce
+  expect(duals.filter((dual) => dual.winningSide && dual.score?.scoreStringSide1 === '1-1').length).toBeGreaterThan(0);
+  // and no populated dual is left undecided with every rubber finished
+  const abandoned = duals.filter(
+    (dual) =>
+      !dual.winningSide &&
+      (dual.sides ?? []).filter((side) => side.participantId).length === 2 &&
+      (dual.tieMatchUps ?? []).every(finished),
+  );
+  expect(abandoned.map((dual) => `${dual.roundNumber}|${dual.roundPosition}`)).toEqual([]);
+
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const integrity: any = getDrawInconsistencies({ drawDefinition, drawId });
+  const stalls = (integrity.inconsistencies ?? []).filter((issue: any) => issue.issueType === 'STALLED_POSITION');
+  expect(stalls).toEqual([]);
 });
 
 test.skipIf(!enabled).for(TEAM_UNEVEN_CELLS)(

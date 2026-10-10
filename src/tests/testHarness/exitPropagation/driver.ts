@@ -2,7 +2,7 @@ import { checkErrorAtomicity, checkInvariants, getDrawMatchUps, observeMutation 
 import type { PropertyFailure } from './transitions';
 
 // constants
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { completedMatchUpStatuses, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**
  * Deterministic forward driver.
@@ -44,6 +44,34 @@ function isPlayable(matchUp: any): boolean {
 
 export function firstPlayable(matchUps: any[], skip: Set<string> = new Set()): any {
   return matchUps.filter((matchUp: any) => isPlayable(matchUp) && !skip.has(matchUp.matchUpId)).sort(canonicalOrder)[0];
+}
+
+/**
+ * A TEAM dual no score can decide: both sides present, no winner, every rubber finished. DOMINANT_DUO
+ * at 1-1 with its third rubber a DOUBLE_WALKOVER is the shape — neither team can reach the value goal,
+ * nothing in the dual is playable, and the round it feeds waits forever. That is the director's call,
+ * not the engine's: `matchUpActions` offers STATUS and SCORE on such a dual and `setMatchUpStatus` with
+ * a `winningSide` records it COMPLETED 1-1 and advances the winner (measured on the uneven-dual arm's
+ * cell 550007, 2026-10-11).
+ *
+ * The driver used to stop here, leaving the draw in a state no director would, and then audited it.
+ * With `STALLED_POSITION` a warning that audit passed vacuously; as an error it reported the next
+ * round's lone occupant stranded on all 16 early-mode DOUBLE_WALKOVER / DOUBLE_DEFAULT cells — a true
+ * reading of a draw the harness itself had abandoned. The driver now decides the dual as a director
+ * would (`winningSideFor`, side 1 by default), and only once nothing else is playable.
+ */
+function isUndecidableDual(matchUp: any): boolean {
+  const rubbers = matchUp.tieMatchUps ?? [];
+  if (!rubbers.length || matchUp.winningSide) return false;
+  const assigned = (matchUp.sides ?? []).filter((side: any) => side?.participantId).length;
+  if (assigned !== 2) return false;
+  return rubbers.every((rubber: any) => rubber.winningSide || completedMatchUpStatuses.includes(rubber.matchUpStatus));
+}
+
+export function firstUndecidableDual(matchUps: any[], skip: Set<string> = new Set()): any {
+  return matchUps
+    .filter((matchUp: any) => isUndecidableDual(matchUp) && !skip.has(matchUp.matchUpId))
+    .sort(canonicalOrder)[0];
 }
 
 export function nextPlayable(drawId: string, skip: Set<string> = new Set()): any {
@@ -114,10 +142,12 @@ export function playForward({
   let matchUps: any[] = getDrawMatchUps(drawId);
 
   for (let taken = 0; taken < maxSteps; taken++) {
-    const target = firstPlayable(matchUps, skip);
+    const playable = firstPlayable(matchUps, skip);
+    const target = playable ?? firstUndecidableDual(matchUps, skip);
     if (!target) return { failures, refusals };
 
-    const exitStep = exitOutcome && taken % exitPeriod === exitPeriod - 1;
+    // a director's decision on an undecidable dual is a result, never an exit
+    const exitStep = playable && exitOutcome && taken % exitPeriod === exitPeriod - 1;
     const outcome = exitStep ? exitOutcome : { winningSide: winningSideFor?.(target) ?? 1 };
     const observation = observeMutation({
       matchUpId: target.matchUpId,
