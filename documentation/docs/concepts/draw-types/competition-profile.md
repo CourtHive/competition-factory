@@ -101,10 +101,16 @@ separate deciding phases and tally rules will be added with round materializatio
 ## Individual entrants and partnership sides
 
 For a configured Americano or Mexicano draw, pass `drawId` to `addEventEntries` to enter individual
-competitors directly into its doubles event and draw. Standard doubles entry behavior remains unchanged
+competitors into its doubles event as `UNGROUPED` (or explicitly `UNPAIRED`) and into the rotating
+draw with an accepted status. `DIRECT_ACCEPTANCE` belongs only to the rotating draw, never the doubles
+event. Standard doubles entry behavior remains unchanged
 when no rotating draw is targeted. Gender/category checks remain in force. An invalid mixed batch is
 refused before event or draw entry writes; PAIRs, unknown IDs and non-competitor roles are refused.
-`checkValidEntries` recognizes individual rosters scoped to these draws and their event entries.
+`checkValidEntries` recognizes the individual roster only in the targeted rotating draw. Event
+validation uses the existing ungrouped-status convention. Ordinary draws cannot accept these
+individuals as doubles competitors; existing loose, ungrouped AD_HOC entries remain supported.
+Deleting the rotating draw retains valid ungrouped event entries. Remove its individual draw entries
+before removing its competitionProfile.
 
 Match sides remain PAIR participants. `addAdHocMatchUps` accepts partnerships outside the draw entry
 list when each has two distinct individual entrants. It requires positive logical round numbers and

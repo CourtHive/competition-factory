@@ -24,10 +24,10 @@ import {
 
 // constants and types
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
+import { DIRECT_ACCEPTANCE, UNGROUPED, UNPAIRED } from '@Constants/entryStatusConstants';
 import { DOUBLES_EVENT, HYBRID_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
-import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
@@ -418,8 +418,13 @@ function removeUngroupedParticipantIdsHelper({
         .map((participant) => participant.individualParticipantIds)
         .flat(Infinity),
     );
-    const ungroupedParticipantIdsToRemove = ungroupedIndividualParticipantIds.filter((participantId) =>
-      groupedIndividualParticipantIds.has(participantId),
+    const rotatingRosterIds = new Set(
+      (event.drawDefinitions ?? [])
+        .filter((draw) => isRotatingPartnerDraw(draw, event))
+        .flatMap((draw) => (draw.entries ?? []).map((entry) => entry.participantId)),
+    );
+    const ungroupedParticipantIdsToRemove = ungroupedIndividualParticipantIds.filter(
+      (participantId) => groupedIndividualParticipantIds.has(participantId) && !rotatingRosterIds.has(participantId),
     );
     if (ungroupedParticipantIdsToRemove.length) {
       removedEntries.push(...ungroupedParticipantIdsToRemove);
@@ -490,6 +495,18 @@ function validateExtensions(extensions?: Extension[], extension?: Extension, sta
     });
   }
   return null;
+}
+
+function updateUngroupedEntryStatuses(event: Event, participantIds: string[], status: EntryStatusUnion): number {
+  const selectedIds = new Set(participantIds);
+  let updated = 0;
+  for (const entry of event.entries ?? []) {
+    if (selectedIds.has(entry.participantId) && !isUngrouped(entry.entryStatus)) {
+      entry.entryStatus = status;
+      updated++;
+    }
+  }
+  return updated;
 }
 
 export function addEventEntries(params: AddEventEntriesArgs): ResultType {
@@ -567,7 +584,7 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
     checkTypedParticipants,
   });
 
-  if (rotatingPartners && validParticipantIds.length !== participantIds.length) {
+  if (rotatingPartners && (!checkTypedParticipants || validParticipantIds.length !== participantIds.length)) {
     return decorateResult({
       result: { error: INVALID_PARTICIPANT_IDS },
       stack,
@@ -578,10 +595,16 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
   event.entries ??= [];
   const existingIds = new Set(event.entries.map((e: any) => e.participantId || e.participant?.participantId));
 
+  const ungroupedStatus = entryStatus === UNPAIRED ? UNPAIRED : UNGROUPED;
+  const eventEntryStatus = rotatingPartners ? ungroupedStatus : entryStatus;
+  const updatedEntryStatuses = rotatingPartners
+    ? updateUngroupedEntryStatuses(event, validParticipantIds, eventEntryStatus)
+    : 0;
+
   createEntriesHelper({
     validParticipantIds,
     existingIds,
-    entryStatus,
+    entryStatus: eventEntryStatus,
     entryStage,
     extensions,
     extension,
@@ -600,7 +623,7 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
       entryStageSequence,
       ignoreStageSpace,
       drawDefinition,
-      entryStatus,
+      entryStatus: rotatingPartners && isUngrouped(entryStatus) ? DIRECT_ACCEPTANCE : entryStatus,
       roundTarget,
       entryStage,
       extension,
@@ -641,7 +664,7 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
 
   // event.entries changed → dispatch MODIFY_EVENT_ENTRIES so projections and the
   // record's modified flag reflect the roster change.
-  if (addedEntriesCount || removedEntriesCount) {
+  if (addedEntriesCount || removedEntriesCount || updatedEntryStatuses) {
     modifyEventEntriesNotice({ event, tournamentId: tournamentRecord?.tournamentId });
   }
 

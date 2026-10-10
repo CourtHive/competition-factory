@@ -73,6 +73,8 @@ export function removeCompetitionProfile({ drawDefinition, tournamentRecord, eve
   if (!drawDefinition.competitionProfile) return { ...SUCCESS };
   if (hasMatchUps(drawDefinition))
     return { error: EXISTING_MATCHUPS, info: 'competitionProfile is locked once matchUps exist' };
+  if (drawDefinition.competitionProfile.format !== 'LADDER' && drawDefinition.entries?.length)
+    return { error: INVALID_VALUES, info: 'remove individual draw entries before removing the rotating profile' };
   delete drawDefinition.competitionProfile;
   modifyDrawNotice({ drawDefinition, tournamentId: tournamentRecord?.tournamentId, eventId: event?.eventId });
   return { ...SUCCESS };
