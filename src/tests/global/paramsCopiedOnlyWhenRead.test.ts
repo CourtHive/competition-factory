@@ -1,5 +1,5 @@
-import { setDevContext, setInvokeObserver } from '@Global/state/globalState';
-import { paramsMayBeLogged } from '@Global/state/engineLogging';
+import { setDevContext, setGlobalLog, setInvokeObserver } from '@Global/state/globalState';
+import { engineLogging, paramsMayBeLogged } from '@Global/state/engineLogging';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
@@ -11,6 +11,7 @@ import { afterEach, expect, it } from 'vitest';
 afterEach(() => {
   setInvokeObserver();
   setDevContext(false);
+  setGlobalLog();
 });
 
 // A nested param the method never reads. Nested, because the engine spreads its params (which
@@ -74,4 +75,42 @@ it('decides per method', () => {
 
   setDevContext(true);
   expect(paramsMayBeLogged('getParticipantRest')).toEqual(false);
+});
+
+/**
+ * The two functions ask the same rules (shared helpers in `engineLogging.ts`), and this pins that they agree across
+ * every shape of dev context: for a call that errs, params are printed exactly when `paramsMayBeLogged` said they might
+ * be; for a call that succeeds, printing them implies it did. Either half failing means a call can print params that
+ * were never copied, or copies them for nothing.
+ */
+it('agrees with what engineLogging prints, across dev contexts', () => {
+  const methods = ['getMatchUpReadiness', 'getParticipantRest'];
+  const choices = [undefined, false, true, ['getMatchUpReadiness']];
+  const contexts: any[] = [true, false];
+  for (const params of choices)
+    for (const errors of choices)
+      for (const result of choices)
+        for (const exclude of [undefined, ['getMatchUpReadiness']])
+          contexts.push({ params, errors, result, exclude, perf: 0 });
+
+  const printed: any[] = [];
+  setGlobalLog(({ log }) => printed.push(log));
+  const paramsPrinted = (methodName: string, erred: boolean) => {
+    printed.length = 0;
+    const result: any = erred ? { error: { code: 'ERR' } } : { success: true };
+    engineLogging({ engineType: 'sync', methodName, elapsed: 1, params: { sentinel: true }, result });
+    return printed.some((log) => log.params?.sentinel);
+  };
+
+  let checked = 0;
+  for (const devContext of contexts) {
+    setDevContext(devContext);
+    for (const methodName of methods) {
+      const mayBe = paramsMayBeLogged(methodName);
+      expect(paramsPrinted(methodName, true), JSON.stringify({ devContext, methodName })).toEqual(mayBe);
+      if (paramsPrinted(methodName, false)) expect(mayBe, JSON.stringify({ devContext, methodName })).toEqual(true);
+      checked += 1;
+    }
+  }
+  expect(checked).toEqual(contexts.length * methods.length);
 });
