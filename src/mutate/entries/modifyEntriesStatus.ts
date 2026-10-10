@@ -133,8 +133,8 @@ export function modifyEntriesStatus({
 
   const entryPositionsExist =
     event?.entries?.find(({ entryPosition }) => entryPosition) ??
-    (flight?.drawEntries?.find(({ entryPosition }) => entryPosition) ||
-      drawDefinition?.entries?.find(({ entryPosition }) => entryPosition));
+    flight?.drawEntries?.find(({ entryPosition }) => entryPosition) ??
+    drawDefinition?.entries?.find(({ entryPosition }) => entryPosition);
 
   if (autoEntryPositions && !entryPositionsExist) autoPosition({ flight, drawDefinition });
 
