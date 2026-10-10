@@ -1582,7 +1582,13 @@ function convergeWithStandingExit({
   params,
   stack,
 }: {
-  params: Parameters<typeof convergeCarriedExit>[0]['params'] & { sourceMatchUp?: { matchUpId?: string } };
+  params: {
+    sourceMatchUp?: { matchUpId?: string };
+    matchUpStatus?: MatchUpStatusUnion;
+    appliedPolicies?: PolicyDefinitions;
+    tournamentRecord?: Tournament;
+    event?: Event;
+  };
   inContextDrawMatchUps: HydratedMatchUp[];
   nextWinnerMatchUp: HydratedMatchUp;
   drawDefinition: DrawDefinition;
