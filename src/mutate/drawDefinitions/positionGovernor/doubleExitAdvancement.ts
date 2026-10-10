@@ -1390,6 +1390,11 @@ function advanceFromTarget({
     });
     return doubleExitAdvancement({
       ...params,
+      // derived for the matchUp the exit ARRIVED in; it names a different seat in the next one (as for
+      // advanceConvergedWinner). Carried into the recursion it awarded the onward produced exit to its own exiting side:
+      // census 20349817 (COMPASS 16/11, `doubleExitPropagateBye: false`), `North|2|1` WALKOVER won by side 2, the side
+      // the exit came in on, and the participant arriving on side 1 was then never awarded it.
+      walkoverWinningSide: undefined,
       matchUpStatus,
       targetData,
     });
