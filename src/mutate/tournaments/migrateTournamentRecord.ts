@@ -149,8 +149,9 @@ const TOURNAMENT_GROUP_PROMOTIONS: GroupExtensionPromotion[] = [
 const EVENT_PROMOTIONS: ExtensionPromotion[] = [{ name: FLIGHT_PROFILE, attribute: 'flightProfile' }];
 const ENTRY_PROMOTIONS: ExtensionPromotion[] = [{ name: ROUND_TARGET, attribute: 'roundTarget' }];
 
+// No FLIGHT_PROFILE here: a flight profile lives on the EVENT only. Nothing ever wrote one on a draw (0 of 428 corpus
+// records, 0 of 16 CODES fixtures); a stray draw-level extension stays an extension, which nothing reads either.
 const DRAW_DEFINITION_PROMOTIONS: ExtensionPromotion[] = [
-  { name: FLIGHT_PROFILE, attribute: 'flightProfile' },
   { name: LINEUPS, attribute: 'lineUps' },
   { name: DRAFT_STATE, attribute: 'draftState' },
   { name: COMPETITION_STATE, attribute: 'competitionState' },

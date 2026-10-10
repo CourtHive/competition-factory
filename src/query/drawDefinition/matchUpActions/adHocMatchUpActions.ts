@@ -19,6 +19,9 @@ import {
   SWAP_PARTICIPANTS,
 } from '@Constants/positionActionConstants';
 
+// entries that hold no place in another flight
+const NOT_IN_FLIGHT_STATUSES = new Set<string | undefined>([WITHDRAWN, UNGROUPED, UNPAIRED]);
+
 export function adHocMatchUpActions({
   tournamentParticipants,
   matchUpParticipantIds,
@@ -122,7 +125,7 @@ export function adHocMatchUpActions({
       ?.filter((flight) => flight.drawId !== drawId)
       .flatMap((flight) =>
         flight.drawEntries
-          .filter((entry) => entry.participantId && ![WITHDRAWN, UNGROUPED, UNPAIRED].includes(entry.entryStatus))
+          .filter((entry) => entry.participantId && !NOT_IN_FLIGHT_STATUSES.has(entry.entryStatus))
           .map(({ participantId }) => participantId),
       )
       .filter(Boolean);

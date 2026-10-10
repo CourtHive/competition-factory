@@ -411,7 +411,7 @@
           "type": "string"
         },
         "flightProfile": {
-          "type": "object"
+          "$ref": "#/definitions/FlightProfile"
         },
         "createdAt": {
           "type": ["string", "object"],
@@ -749,9 +749,6 @@
     "DrawDefinition": {
       "type": "object",
       "properties": {
-        "flightProfile": {
-          "type": "object"
-        },
         "lineUps": {
           "type": "object"
         },
@@ -4436,7 +4433,111 @@
       },
       "required": ["amount", "currencyCode", "unit", "finishingPosition"],
       "additionalProperties": false
+    },
+    "FlightProfile": {
+      "$comment": "Stored as event.flightProfile (CODES first-class; the flightProfile extension on older records). A draw's flight is the entry in flights whose drawId matches it; the draw carries only its flightNumber.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flights"],
+      "properties": {
+        "scaleAttributes": {
+          "$ref": "#/definitions/FlightScaleAttributes"
+        },
+        "splitMethod": {
+          "type": "string"
+        },
+        "flights": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Flight"
+          }
+        },
+        "links": {
+          "$comment": "LEGACY: flight-based voluntary consolation (removed 2022-04-13); nothing writes it now.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FlightLink"
+          }
+        }
+      }
+    },
+    "Flight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["drawEntries", "flightNumber", "drawId"],
+      "properties": {
+        "manuallyAdded": {
+          "type": "boolean"
+        },
+        "drawEntries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Entry"
+          }
+        },
+        "flightNumber": {
+          "type": "number"
+        },
+        "drawName": {
+          "type": "string"
+        },
+        "drawId": {
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/definitions/StageTypeEnum"
+        },
+        "qualifyingPositions": {
+          "type": "number"
+        }
+      }
+    },
+    "FlightLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "drawId": {
+              "type": "string"
+            }
+          }
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "drawId": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "FlightScaleAttributes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scaleType"],
+      "properties": {
+        "eventType": {
+          "$ref": "#/definitions/EventTypeEnum"
+        },
+        "scaleName": {
+          "type": "string"
+        },
+        "scaleType": {
+          "type": "string"
+        },
+        "accessor": {
+          "type": "string"
+        },
+        "ascending": {
+          "type": "boolean"
+        }
+      }
     }
   },
-  "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. 51 of 55 definitions are closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one — the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. Four definitions are open; each carries a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."
+  "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. Every definition but the four open ones is closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one — the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. Four definitions are open; each carries a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."
 }

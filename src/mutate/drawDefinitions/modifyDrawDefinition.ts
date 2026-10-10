@@ -48,12 +48,12 @@ export function modifyDrawDefinition({
     return { error: MISSING_DRAW_DEFINITION };
   }
 
-  if (flight) {
+  if (flight && flightProfile) {
     setFirstClassOrExtension({
       element: event,
       attribute: 'flightProfile',
       name: FLIGHT_PROFILE,
-      value: { ...flightProfile, flights: flightProfile.flights },
+      value: { ...flightProfile },
     });
   }
 

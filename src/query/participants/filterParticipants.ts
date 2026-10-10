@@ -30,7 +30,7 @@ export function filterParticipants({
 
   const {
     accessorValues,
-    drawEntryStatuses, // {string[]} participantIds that are in draw.entries or flightProfile.flights[].drawEnteredParticipantIds with entryStatuses
+    drawEntryStatuses, // {string[]} participantIds that are in draw.entries or flightProfile.flights[].drawEntries with entryStatuses
     positionedParticipants, // boolean - participantIds that are included in any structure.positionAssignments
     eventEntryStatuses, // {string[]} participantIds that are in entry.entries with entryStatuses
     participantRoles,
@@ -173,11 +173,11 @@ function isValidFilterArray(filter) {
 }
 
 function getDrawEntries({ drawEntryStatuses, tournamentEvents }) {
-  const statusFilter = ({ entryStatus }) =>
+  const statusFilter = ({ entryStatus }: { entryStatus?: string }) =>
     Array.isArray(drawEntryStatuses) ? drawEntryStatuses.includes(entryStatus) : true;
 
   return unique(
-    tournamentEvents.reduce((entries, event) => {
+    tournamentEvents.reduce((entries: string[], event) => {
       const { flightProfile } = getFlightProfile({ event });
       const flightEntries =
         flightProfile?.flights?.flatMap(({ drawEntries }) =>

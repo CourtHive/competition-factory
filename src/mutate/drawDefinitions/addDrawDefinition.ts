@@ -122,7 +122,7 @@ export function addDrawDefinition(
   const flightNumbers =
     flightProfile?.flights
       ?.map(({ flightNumber }) => !Number.isNaN(Number(flightNumber)) && ensureInt(flightNumber))
-      ?.filter(Boolean) ?? [];
+      ?.filter((flightNumber): flightNumber is number => !!flightNumber) ?? [];
 
   const drawOrders =
     (event.drawDefinitions.map(({ drawOrder }) => drawOrder && ensureInt(drawOrder))?.filter(Boolean) as number[]) ||
@@ -133,14 +133,11 @@ export function addDrawDefinition(
   const flight = flightProfile?.flights?.find((flight) => flight.drawId === drawId);
 
   let value;
-  if (flight) {
+  if (flight && flightProfile) {
     // if this drawId was defined in a flightProfile...
     // ...update the flight.drawName with the drawName in the drawDefinition
     flight.drawName = drawDefinition.drawName;
-    value = {
-      ...flightProfile,
-      flights: flightProfile.flights,
-    };
+    value = { ...flightProfile };
 
     const flightNumber = flight.flightNumber;
     if (flightNumber && !drawOrders.includes(flightNumber)) {
@@ -153,7 +150,8 @@ export function addDrawDefinition(
     flights.push({
       manuallyAdded: true, // this drawDefinition was not part of automated split
       flightNumber: drawOrder,
-      drawEntries,
+      // a draw added without entries still gets an array, as `addFlight` gives one: readers map over it
+      drawEntries: drawEntries ?? [],
       drawName,
       drawId,
     });
