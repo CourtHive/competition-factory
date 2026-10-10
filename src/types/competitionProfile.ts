@@ -1,3 +1,5 @@
+import type { RotatingPartnerScoringVariant } from './rotatingPartnerScoring';
+
 /** Versioned draw-level configuration. MatchUps, scores and standings state live separately. */
 type RotatingPartnerProfile = {
   version: 1;
@@ -5,6 +7,7 @@ type RotatingPartnerProfile = {
   matchUpType: 'DOUBLES';
   scoring: {
     combinedPointTotal: number;
+    selectedVariant?: RotatingPartnerScoringVariant;
   };
   standings: { metric: 'SIDE_POINTS'; attribution: 'EACH_INDIVIDUAL' };
 };

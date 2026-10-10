@@ -393,6 +393,7 @@ export type FactoryEngineMethod =
   | 'getRandomQualifierList'
   | 'getRegistrationProfile'
   | 'getResultAttestation'
+  | 'getRotatingPartnerScoringContract'
   | 'getRotatingPartnerScoringPolicy'
   | 'getRoundMatchUps'
   | 'getRounds'
@@ -680,6 +681,7 @@ export type FactoryEngineMethod =
   | 'setPracticeDefaultCapacity'
   | 'setRandomSource'
   | 'setRegistrationProfile'
+  | 'setRotatingPartnerScoring'
   | 'setSchedulingProfile'
   | 'setState'
   | 'setStructureOrder'
@@ -1159,6 +1161,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getRandomQualifierList',
   'getRegistrationProfile',
   'getResultAttestation',
+  'getRotatingPartnerScoringContract',
   'getRotatingPartnerScoringPolicy',
   'getRoundMatchUps',
   'getRounds',
@@ -1446,6 +1449,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setPracticeDefaultCapacity',
   'setRandomSource',
   'setRegistrationProfile',
+  'setRotatingPartnerScoring',
   'setSchedulingProfile',
   'setState',
   'setStructureOrder',

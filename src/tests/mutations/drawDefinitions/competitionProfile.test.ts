@@ -1,4 +1,5 @@
-import { setCompetitionProfile, removeCompetitionProfile } from '@Mutate/drawDefinitions/competitionProfile';
+import { getRotatingPartnerScoringContract } from '@Query/drawDefinition/getRotatingPartnerScoringContract';
+
 import { setSubscriptions, deleteNotices, getPayloads } from '@Global/state/globalState';
 import { getCompetitionProfile } from '@Query/drawDefinition/getCompetitionProfile';
 import { isCompetitionProfile } from '@Validators/competitionProfile';
@@ -7,6 +8,11 @@ import schema from '@Global/schema/tournament.schema.json';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import Ajv from 'ajv';
+import {
+  setCompetitionProfile,
+  removeCompetitionProfile,
+  setRotatingPartnerScoring,
+} from '@Mutate/drawDefinitions/competitionProfile';
 
 // constants and types
 
@@ -14,6 +20,7 @@ import type { CompetitionProfile, MexicanoCompetitionProfile } from '@Types/comp
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
+import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import {
   INVALID_VALUES,
   EXISTING_MATCHUPS,
@@ -221,5 +228,118 @@ describe('competition profile mutation locks', () => {
     ).toBe(true);
     expect(tournamentEngine.setCompetitionProfile({ drawId, competitionProfile: americano }).success).toBe(true);
     expect(tournamentEngine.removeCompetitionProfile({ drawId }).success).toBe(true);
+  });
+});
+
+describe('persisted policy-approved scoring choices', () => {
+  it.each([
+    { tieResolution: 'ALLOW' as const },
+    { tieResolution: 'DECIDING_POINT' as const },
+    { tieResolution: 'WIN_BY_MARGIN' as const, winningMargin: 2 },
+  ])('saves and reloads %j with schema agreement', (selectedVariant) => {
+    const profile = { ...mexicano, scoring: { combinedPointTotal: 32, selectedVariant } };
+    expect(isCompetitionProfile(profile)).toBe(true);
+    expect(validateSchema(profile)).toBe(true);
+    const drawDefinition = draw();
+    expect(setCompetitionProfile({ drawDefinition, competitionProfile: profile }).success).toBe(true);
+    const saved = JSON.stringify(drawDefinition);
+    const restored = JSON.parse(saved) as DrawDefinition;
+    expect(getRotatingPartnerScoringContract({ drawDefinition: restored }).contract).toEqual({
+      combinedPointTotal: 32,
+      ...selectedVariant,
+    });
+  });
+
+  it.each([
+    { tieResolution: 'UNKNOWN' },
+    { tieResolution: 'WIN_BY_MARGIN', winningMargin: 1 },
+    { tieResolution: 'WIN_BY_MARGIN', winningMargin: 2.5 },
+    { tieResolution: 'ALLOW', winningMargin: 2 },
+    { tieResolution: 'ALLOW', extra: true },
+  ])('rejects malformed persisted choices %j in both validators', (selectedVariant) => {
+    const profile = { ...mexicano, scoring: { combinedPointTotal: 32, selectedVariant } };
+    expect(isCompetitionProfile(profile)).toBe(false);
+    expect(validateSchema(profile)).toBe(false);
+  });
+
+  it('persists the default and freezes its interpretation across policy edits', () => {
+    const drawDefinition = draw();
+    setCompetitionProfile({ drawDefinition, competitionProfile: mexicano });
+    expect(getRotatingPartnerScoringContract({ drawDefinition }).error).toBe(INVALID_VALUES);
+    expect(setRotatingPartnerScoring({ drawDefinition }).success).toBe(true);
+    const before = JSON.stringify(drawDefinition);
+    const contract = getRotatingPartnerScoringContract({ drawDefinition }).contract;
+    drawDefinition.extensions = [
+      {
+        name: APPLIED_POLICIES,
+        value: {
+          scoring: {
+            rotatingPartners: {
+              MEXICANO: {
+                defaultVariant: { tieResolution: 'DECIDING_POINT' },
+                permittedVariants: [{ tieResolution: 'DECIDING_POINT' }],
+              },
+            },
+          },
+        },
+      },
+    ];
+    expect(getRotatingPartnerScoringContract({ drawDefinition }).contract).toEqual(contract);
+    const after = copy(drawDefinition);
+    expect(setRotatingPartnerScoring({ drawDefinition }).success).toBe(true);
+    expect(drawDefinition).toEqual(after);
+    expect(JSON.parse(before).competitionProfile.scoring.selectedVariant).toEqual({ tieResolution: 'ALLOW' });
+    contract!.tieResolution = 'DECIDING_POINT';
+    expect(getRotatingPartnerScoringContract({ drawDefinition }).contract?.tieResolution).toBe('ALLOW');
+  });
+
+  it('refuses a policy-prohibited direct profile write without changing the draw', () => {
+    const drawDefinition = draw();
+    drawDefinition.extensions = [
+      {
+        name: APPLIED_POLICIES,
+        value: {
+          scoring: {
+            rotatingPartners: {
+              MEXICANO: { defaultVariant: { tieResolution: 'ALLOW' }, permittedVariants: [{ tieResolution: 'ALLOW' }] },
+            },
+          },
+        },
+      },
+    ];
+    const before = copy(drawDefinition);
+    expect(
+      setCompetitionProfile({
+        drawDefinition,
+        competitionProfile: {
+          ...mexicano,
+          scoring: { combinedPointTotal: 32, selectedVariant: { tieResolution: 'DECIDING_POINT' } },
+        },
+      }).error,
+    ).toBe(INVALID_VALUES);
+    expect(drawDefinition).toEqual(before);
+  });
+
+  it('locks changed choices after matchUps exist and supports engine DRAWS locks', () => {
+    const drawDefinition = draw();
+    drawDefinition.competitionProfile = copy(mexicano);
+    tournamentEngine.setState({
+      tournamentId: 'scoring-t',
+      events: [{ eventId: 'scoring-e', drawDefinitions: [drawDefinition] }],
+    });
+    expect(tournamentEngine.setRotatingPartnerScoring({ drawId: drawDefinition.drawId }).success).toBe(true);
+    expect(tournamentEngine.getRotatingPartnerScoringContract({ drawId: drawDefinition.drawId }).contract).toEqual({
+      combinedPointTotal: 32,
+      tieResolution: 'ALLOW',
+    });
+    expect(
+      tournamentEngine.addMutationLock({ scope: 'DRAWS', drawId: drawDefinition.drawId, lockToken: 'scoring' }).success,
+    ).toBe(true);
+    expect(tournamentEngine.setRotatingPartnerScoring({ drawId: drawDefinition.drawId }).error).toBe(MUTATION_LOCKED);
+    const loaded = copy(drawDefinition);
+    loaded.matchUps = [{ matchUpId: 'played' }];
+    expect(
+      setRotatingPartnerScoring({ drawDefinition: loaded, selectedVariant: { tieResolution: 'DECIDING_POINT' } }).error,
+    ).toBe(EXISTING_MATCHUPS);
   });
 });

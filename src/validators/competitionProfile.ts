@@ -1,3 +1,5 @@
+import { isRotatingPartnerScoringVariant } from './rotatingPartnerScoringPolicy';
+
 // constants and types
 import type { CompetitionProfile } from '@Types/competitionProfile';
 
@@ -39,7 +41,11 @@ export function isCompetitionProfile(value: unknown): value is CompetitionProfil
 }
 
 function validScoring(value: unknown): boolean {
-  return objectWithKeys(value, ['combinedPointTotal']) && positiveInteger(value.combinedPointTotal);
+  return (
+    objectWithKeys(value, ['combinedPointTotal'], ['selectedVariant']) &&
+    positiveInteger(value.combinedPointTotal) &&
+    (value.selectedVariant === undefined || isRotatingPartnerScoringVariant(value.selectedVariant))
+  );
 }
 
 function validStandings(value: unknown): boolean {

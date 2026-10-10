@@ -54,7 +54,7 @@ export function getRotatingPartnerScoringPolicy(params: {
   const scoringPolicy = hasConfigured ? configured : defaultPolicy;
   if (!isRotatingPartnerScoringPolicy(scoringPolicy))
     return { error: INVALID_VALUES, info: 'invalid rotating-partner scoring policy' };
-  const selectedVariant = params.selectedVariant ?? scoringPolicy.defaultVariant;
+  const selectedVariant = params.selectedVariant ?? profile.scoring.selectedVariant ?? scoringPolicy.defaultVariant;
   if (
     !isRotatingPartnerScoringVariant(selectedVariant) ||
     !scoringPolicy.permittedVariants.some((variant) => sameScoringVariant(variant, selectedVariant))

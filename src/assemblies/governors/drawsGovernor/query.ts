@@ -1,3 +1,4 @@
+export { getRotatingPartnerScoringContract } from '@Query/drawDefinition/getRotatingPartnerScoringContract';
 export { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 export { getEligibleVoluntaryConsolationParticipants } from '@Query/drawDefinition/getEligibleVoluntaryConsolationParticipants';
 export { getAvailableMatchUpsCount } from '@Generators/drawDefinitions/drawTypes/adHoc/getAvailableMatchUpsCount';
