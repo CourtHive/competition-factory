@@ -86,6 +86,7 @@ import type { remapDrawDefinitionMatchUpIds } from '@Mutate/drawDefinitions/rema
 import type { removeMatchUpCourtAssignment } from '@Mutate/matchUps/schedule/removeMatchUpCourtAssignment';
 import type { proColumnResolve } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proColumnResolve';
 import type { createTeamsFromParticipantAttributes } from '@Mutate/participants/createTeamsFromAttributes';
+import type { getRotatingPartnerRoundPreview } from '@Query/drawDefinition/getRotatingPartnerRoundPreview';
 import type { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import type { getScheduleScenarioStatus } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
 import type { getSetScoreString, validateMatchUp, validateSet } from '@Validators/scoring/validateMatchUp';
@@ -99,6 +100,7 @@ import type { addTournamentOtherId, setTournamentOtherIds } from '@Mutate/tourna
 import type { getTournamentActionableMatchUps } from '@Query/tournaments/getTournamentActionableMatchUps';
 import type { exportMatchUpJSON, mcpValidator, validateMCPMatch } from '@Validators/scoring/mcpValidator';
 import type { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
+import type { generateRotatingPartnerRound } from '@Mutate/drawDefinitions/generateRotatingPartnerRound';
 import type { removeDrawPositionAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import type { proAutoSchedule } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proAutoSchedule';
 import type { getAvailableQualifyingTargets } from '@Query/drawDefinition/getAvailableQualifyingTargets';
@@ -910,6 +912,7 @@ export interface MethodSignatures {
   generateQualifyingStructure: EngineMethod<typeof generateQualifyingStructure>;
   generateRankingList: EngineMethod<typeof generateRankingList>;
   generateReport: EngineMethod<typeof generateReport>;
+  generateRotatingPartnerRound: EngineMethod<typeof generateRotatingPartnerRound>;
   generateScoreString: EngineMethod<typeof generateScoreString>;
   generateSeedingScaleItems: EngineMethod<typeof generateSeedingScaleItems>;
   generateStatCrew: EngineMethod<typeof generateStatCrew>;
@@ -1055,6 +1058,7 @@ export interface MethodSignatures {
   getRandomQualifierList: EngineMethod<typeof getRandomQualifierList>;
   getRegistrationProfile: EngineMethod<typeof getRegistrationProfile>;
   getResultAttestation: EngineMethod<typeof getResultAttestation>;
+  getRotatingPartnerRoundPreview: EngineMethod<typeof getRotatingPartnerRoundPreview>;
   getRotatingPartnerScoringContract: EngineMethod<typeof getRotatingPartnerScoringContract>;
   getRotatingPartnerScoringPolicy: EngineMethod<typeof getRotatingPartnerScoringPolicy>;
   getRoundMatchUps: EngineMethod<typeof getRoundMatchUps>;

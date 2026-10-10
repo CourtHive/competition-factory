@@ -118,11 +118,17 @@ engine.addEventEntryPairs({
 
 ## checkValidEntries
 
+Validates entry participant types and event gender constraints. By default, `eventId` validates the event's
+entries; supplying `drawId` validates that draw's entries instead. `consideredEntries` overrides either
+source, including when it is an empty array. A supplied draw also determines which format-specific
+admission rules apply: accepted individuals are eligible only in a configured rotating-partner draw.
+
 ```js
-const { error, success } = engine.checkValidEntries({
-  consideredEntries, // optional array of entries to check
-  enforceGender, // optional boolean - defaults to true
-  eventId, // required
+const { valid, error, invalidParticipantIds } = engine.checkValidEntries({
+  eventId, // required unless drawId identifies the event
+  drawId, // optional - use this draw's entries and admission rules
+  consideredEntries, // optional - explicit entries to validate instead
+  enforceGender, // optional - override the applicable gender-enforcement policy
 });
 ```
 

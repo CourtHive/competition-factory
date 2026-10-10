@@ -1,3 +1,4 @@
+export { generateRotatingPartnerRound } from '@Mutate/drawDefinitions/generateRotatingPartnerRound';
 export { setDrawParticipantRepresentativeIds } from '@Mutate/drawDefinitions/setDrawParticipantRepresentativeIds';
 export { resetVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/resetVoluntaryConsolationStructure';
 export { withdrawParticipantAtDrawPosition } from '@Mutate/drawDefinitions/withdrawParticipantAtDrawPosition';

@@ -244,6 +244,7 @@ export type FactoryEngineMethod =
   | 'generateQualifyingStructure'
   | 'generateRankingList'
   | 'generateReport'
+  | 'generateRotatingPartnerRound'
   | 'generateScoreString'
   | 'generateSeedingScaleItems'
   | 'generateStatCrew'
@@ -393,6 +394,7 @@ export type FactoryEngineMethod =
   | 'getRandomQualifierList'
   | 'getRegistrationProfile'
   | 'getResultAttestation'
+  | 'getRotatingPartnerRoundPreview'
   | 'getRotatingPartnerScoringContract'
   | 'getRotatingPartnerScoringPolicy'
   | 'getRoundMatchUps'
@@ -1012,6 +1014,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'generateQualifyingStructure',
   'generateRankingList',
   'generateReport',
+  'generateRotatingPartnerRound',
   'generateScoreString',
   'generateSeedingScaleItems',
   'generateStatCrew',
@@ -1161,6 +1164,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getRandomQualifierList',
   'getRegistrationProfile',
   'getResultAttestation',
+  'getRotatingPartnerRoundPreview',
   'getRotatingPartnerScoringContract',
   'getRotatingPartnerScoringPolicy',
   'getRoundMatchUps',

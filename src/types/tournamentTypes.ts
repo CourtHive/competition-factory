@@ -1,3 +1,4 @@
+import type { RotatingPartnerRoundRecord } from './rotatingPartnerRound';
 import type { CompetitionProfile } from './competitionProfile';
 import type { competitionFormat } from './competitionFormat';
 import type { PresenceAttestation } from './presenceTypes';
@@ -377,6 +378,7 @@ export type CategoryUnion = `${CategoryEnum}`;
 export interface DrawDefinition {
   /** Versioned format configuration; competition lifecycle state is stored separately. */
   competitionProfile?: CompetitionProfile;
+  competitionRounds?: RotatingPartnerRoundRecord[];
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
   automated?: boolean;
   competitionFormat?: competitionFormat;

@@ -882,6 +882,10 @@
         },
         "competitionProfile": {
           "$ref": "#/definitions/CompetitionProfile"
+        },
+        "competitionRounds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/RotatingPartnerRoundRecord" }
         }
       },
       "required": ["drawId"],
@@ -4540,6 +4544,130 @@
           "type": "boolean"
         }
       }
+    },
+    "RotatingPartnerRoundRecord": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "roundNumber": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "structureId": {
+          "type": "string"
+        },
+        "format": {
+          "enum": ["AMERICANO", "MEXICANO"]
+        },
+        "algorithmVersion": {
+          "const": 1
+        },
+        "baseSeed": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "seedUsed": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "participantIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "matchUpIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "pairings": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "scoringContract": {
+          "type": "object",
+          "properties": {
+            "combinedPointTotal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "tieResolution": {
+              "enum": ["ALLOW", "DECIDING_POINT", "WIN_BY_MARGIN"]
+            },
+            "winningMargin": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": ["combinedPointTotal", "tieResolution"],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "tieResolution": {
+                    "const": "WIN_BY_MARGIN"
+                  }
+                }
+              },
+              "then": {
+                "required": ["winningMargin"]
+              },
+              "else": {
+                "not": {
+                  "required": ["winningMargin"]
+                }
+              }
+            }
+          ]
+        },
+        "sourceFingerprint": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "requestId",
+        "roundNumber",
+        "structureId",
+        "format",
+        "algorithmVersion",
+        "baseSeed",
+        "seedUsed",
+        "participantIds",
+        "matchUpIds",
+        "pairings",
+        "scoringContract",
+        "sourceFingerprint"
+      ],
+      "additionalProperties": false
     },
     "CompetitionProfileScoring": {
       "type": "object",

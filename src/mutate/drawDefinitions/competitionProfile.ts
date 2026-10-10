@@ -28,7 +28,7 @@ function structureHasMatchUps(structure: Structure): boolean {
 }
 
 function hasMatchUps(draw: DrawDefinition): boolean {
-  return !!draw.matchUps?.length || !!draw.structures?.some(structureHasMatchUps);
+  return !!draw.competitionRounds?.length || !!draw.matchUps?.length || !!draw.structures?.some(structureHasMatchUps);
 }
 
 export function setCompetitionProfile(params: ProfileContext & { competitionProfile: CompetitionProfile }): ResultType {

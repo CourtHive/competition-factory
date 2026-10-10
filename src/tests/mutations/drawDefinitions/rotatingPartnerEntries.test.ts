@@ -342,3 +342,34 @@ it('keeps placement-oriented withDraws behavior consistent for unplaced AD_HOC e
   expect(participants.find((participant) => participant.participantId === 'p0').draws).toHaveLength(0);
   expect(participants.find((participant) => participant.participantId === 'pair').draws).toHaveLength(0);
 });
+
+it('public checkValidEntries selects event or draw entries and honours explicit overrides', () => {
+  const context = setup();
+  context.event.entries = [{ participantId: 'p0', entryStatus: 'DIRECT_ACCEPTANCE' }];
+  const plain: DrawDefinition = {
+    drawId: 'plain',
+    drawType: 'AD_HOC',
+    matchUpType: 'DOUBLES',
+    entries: [{ participantId: 'pair', entryStatus: 'DIRECT_ACCEPTANCE' }],
+    structures: [],
+  };
+  context.event.drawDefinitions!.push(plain);
+  context.drawDefinition.entries = [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' }];
+  tournamentEngine.setState(context.tournamentRecord);
+
+  expect(tournamentEngine.checkValidEntries({ eventId: context.event.eventId })).toMatchObject({
+    error: INVALID_ENTRIES,
+    invalidParticipantIds: ['p0'],
+  });
+  expect(tournamentEngine.checkValidEntries({ drawId: plain.drawId })).toMatchObject({ valid: true });
+  expect(tournamentEngine.checkValidEntries({ drawId: context.drawId })).toMatchObject({ valid: true });
+  expect(
+    tournamentEngine.checkValidEntries({ drawId: plain.drawId, consideredEntries: context.event.entries }),
+  ).toMatchObject({ error: INVALID_ENTRIES, invalidParticipantIds: ['p0'] });
+  expect(tournamentEngine.checkValidEntries({ eventId: context.event.eventId, consideredEntries: [] })).toMatchObject({
+    valid: true,
+  });
+  expect(tournamentEngine.checkValidEntries({ drawId: plain.drawId, consideredEntries: [] })).toMatchObject({
+    valid: true,
+  });
+});

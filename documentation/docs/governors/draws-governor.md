@@ -354,17 +354,19 @@ engine.setParticipantScaleItems({
 
 ## checkValidEntries
 
-Validates that entries are eligible for a draw based on event category constraints.
+Validates entry participant types and event gender constraints. By default, `eventId` validates the event's
+entries; supplying `drawId` validates that draw's entries instead. `consideredEntries` overrides either
+source, including when it is an empty array. A supplied draw also determines which format-specific
+admission rules apply: accepted individuals are eligible only in a configured rotating-partner draw.
 
 ```js
-const { valid, errors } = engine.checkValidEntries({
-  eventId, // required
-  drawId, // optional
-  entries, // optional - validate specific entries
+const { valid, error, invalidParticipantIds } = engine.checkValidEntries({
+  eventId, // required unless drawId identifies the event
+  drawId, // optional - use this draw's entries and admission rules
+  consideredEntries, // optional - explicit entries to validate instead
+  enforceGender, // optional - override the applicable gender-enforcement policy
 });
 ```
-
-**Purpose:** Validate entry eligibility before draw generation.
 
 ---
 
@@ -1484,3 +1486,28 @@ engine.addDrawDefinitionExtension({
 ```
 
 ---
+
+## getRotatingPartnerRoundPreview
+
+Returns individual side memberships, the saved scoring contract, seed and source fingerprint for the
+next logical round without creating participants. See [Competition Profile](/docs/concepts/draw-types/competition-profile).
+
+```js
+const preview = engine.getRotatingPartnerRoundPreview({ drawId, structureId, roundNumber });
+```
+
+## generateRotatingPartnerRound
+
+Atomically reuses/creates PAIR participants, inserts matchUps and saves applied-round provenance.
+Pass the preview fingerprint and a unique request ID; repeating the same successful request is idempotent.
+Americano rotation and Mexicano round one are supported; later Mexicano rounds await individual standings.
+
+```js
+const result = engine.generateRotatingPartnerRound({
+  drawId,
+  structureId, // optional for a single-structure draw
+  roundNumber,
+  requestId,
+  expectedFingerprint: preview.sourceFingerprint,
+});
+```

@@ -13,3 +13,5 @@ export * from './factoryTypes';
 export * from './reportTypes';
 export * from './swissTypes';
 export * from './hydrated';
+
+export * from './rotatingPartnerRound';

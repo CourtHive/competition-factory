@@ -54,6 +54,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   // DRAWS — drawsGovernor/mutate
   setCompetitionProfile: 'DRAWS',
   setRotatingPartnerScoring: 'DRAWS',
+  generateRotatingPartnerRound: 'DRAWS',
   removeCompetitionProfile: 'DRAWS',
   setDrawParticipantRepresentativeIds: 'DRAWS',
   resetVoluntaryConsolationStructure: 'DRAWS',

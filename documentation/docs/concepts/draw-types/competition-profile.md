@@ -1,6 +1,6 @@
 # Competition Profile
 
-`drawDefinition.competitionProfile` is a first-class, versioned configuration attribute. It describes the competition format; matchUps, scores and lifecycle state remain in their existing record locations. It is separate from `competitionFormat`, which describes how a sport is played.
+`drawDefinition.competitionProfile` is a first-class, versioned configuration attribute. It describes the competition format; matchUps, scores and applied-round provenance live separately. It is separate from `competitionFormat`, which describes how a sport is played.
 
 ## Configure a rotating-partner draw
 
@@ -29,7 +29,7 @@ const result = tournamentEngine.setCompetitionProfile({
 
 For Americano, use `format: 'AMERICANO'`, `pairing: { seed, algorithmVersion: 1 }` and `completion: { kind: 'PARTNERSHIP_COVERAGE' }`. Store the Americano generator's `seedUsed` or Mexicano's `baseSeed`. Seeds must be safe integers; combined point totals and round counts must be positive safe integers. Version and pairing algorithm version are currently `1`.
 
-Tie resolution belongs to the governing scoring policy, rather than the profile. This increment stores configuration only: it does not implement fixed-total scoring, tied completion, individual standings, participant admission or round application. Those capabilities must be implemented before these profiles can drive complete competitions.
+Tie resolution belongs to the governing scoring policy, rather than the profile. Profiles store configuration; individual admission and round application use the APIs below. Manual/live fixed-total scoring and individual standings remain outstanding.
 
 ## Read, change and remove
 
@@ -95,8 +95,8 @@ policy query remains the preview of current governing rules. Changing inherited 
 rewrite the saved contract. Repeating an identical write succeeds without effect; changing or removing
 the profile is refused once any matchUps exist. The new mutation also respects DRAWS locks.
 
-This stores the draw-level match contract only. Per-round provenance, future-round amendments,
-separate deciding phases and tally rules will be added with round materialization and standings.
+The draw-level match contract is captured in each applied round. Future-round amendments,
+separate deciding phases and tally rules remain outstanding.
 
 ## Individual entrants and partnership sides
 
@@ -115,5 +115,39 @@ before removing its competitionProfile.
 Match sides remain PAIR participants. `addAdHocMatchUps` accepts partnerships outside the draw entry
 list when each has two distinct individual entrants. It requires positive logical round numbers and
 refuses any individual appearing twice within a round, including matchUps already inserted. Repeating
-people across different rounds is permitted. These guards do not create partnerships or apply rounds;
-atomic round materialization is the next increment.
+people across different rounds is permitted. These insertion guards also apply to the atomic round API below.
+
+## Preview and apply a round
+
+```js
+const preview = tournamentEngine.getRotatingPartnerRoundPreview({
+  drawId,
+  structureId, // optional when the draw has exactly one structure
+  roundNumber: 1,
+});
+if (!preview.error) {
+  const result = tournamentEngine.generateRotatingPartnerRound({
+    drawId,
+    structureId: preview.structureId,
+    roundNumber: 1,
+    requestId, // unique application identifier; retain for retries
+    expectedFingerprint: preview.sourceFingerprint,
+  });
+}
+```
+
+Preview creates no participants or matchUps. Application recomputes the preview, refuses stale source
+state and stages PAIR creation and match insertion before committing. Existing partnerships are reused;
+new participants and matchUps have IDs derived from the draw, request and round for server/client replay.
+Successful retries with the same request return the stored round without additional writes. Changed
+request arguments, removed matches or edited PAIR membership are refused.
+
+Applied provenance lives in `drawDefinition.competitionRounds`, separate from configuration. Each record
+captures the roster, side memberships, matchUp IDs, algorithm version, base/round seeds, scoring contract
+and source fingerprint. Treat the fingerprint as opaque. Do not edit PAIR memberships after application.
+
+Americano supports sequential application of its complete saved rotation. Mexicano currently supports
+seeded round one; later rounds are refused until authoritative individual standings are available.
+The roster must stay fixed after application. The round API honours DRAWS locks and participant locks
+when adding PAIRs. Court allocation uses existing scheduling methods. MatchUps do not yet carry a
+fixed-total `matchUpFormat`: manual/live scoring integration remains a separate increment.
