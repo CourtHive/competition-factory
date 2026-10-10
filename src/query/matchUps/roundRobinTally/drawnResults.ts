@@ -1,4 +1,4 @@
-import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
+import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants and types
@@ -37,15 +37,15 @@ export function validateDrawTallyOptions(policy?: RoundRobinTallyPolicy): Result
 
 /** Only a complete tie permitted by the scoring contract is a drawn result. */
 export function isDrawnResult(matchUp: MatchUp, fallbackFormat?: string): boolean {
-  if (matchUp.matchUpStatus !== COMPLETED || matchUp.winningSide !== undefined || matchUp.score?.sets?.length !== 1)
-    return false;
-  const setFormat = parse(matchUp.matchUpFormat ?? fallbackFormat ?? '')?.setFormat;
-  if (!setFormat?.combinedPointTotal || setFormat.tieResolution !== 'ALLOW') return false;
-  const result = analyzeCombinedPointSet(matchUp.score.sets[0], {
-    combinedPointTotal: setFormat.combinedPointTotal,
-    tieResolution: 'ALLOW',
-  });
-  return !!(result.valid && result.complete && result.tied);
+  return (
+    matchUp.matchUpStatus === COMPLETED &&
+    isCompletedCombinedPointTie({
+      score: matchUp.score,
+      winningSide: matchUp.winningSide,
+      matchUpStatus: matchUp.matchUpStatus,
+      matchUpFormat: matchUp.matchUpFormat ?? fallbackFormat,
+    })
+  );
 }
 
 export function isCombinedPointFormat(format?: string): boolean {

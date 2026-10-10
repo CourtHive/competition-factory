@@ -1,5 +1,6 @@
 import { getRotatingPartnerScoringContract } from '@Query/drawDefinition/getRotatingPartnerScoringContract';
 import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
+import { validRotatingPartnerSettlementHistory } from './rotatingPartnerSettlement';
 import { isRotatingPartnerTallyPolicy } from './rotatingPartnerTallyPolicy';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -17,6 +18,7 @@ export function appliedRotatingPartnerRoundsAreIntact({
   drawDefinition: DrawDefinition;
   tournamentRecord: Tournament;
 }): boolean {
+  if (!validRotatingPartnerSettlementHistory(drawDefinition)) return false;
   const rounds = drawDefinition.competitionRounds ?? [];
   if (rounds.length && !drawDefinition.competitionRoster?.length) return false;
   const profile = drawDefinition.competitionProfile;

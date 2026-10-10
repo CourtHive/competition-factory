@@ -1,3 +1,4 @@
+import type { RotatingPartnerSettlement } from './rotatingPartnerSettlement';
 import type { RotatingPartnerRoundRecord } from './rotatingPartnerRound';
 import type { CompetitionProfile } from './competitionProfile';
 import type { competitionFormat } from './competitionFormat';
@@ -380,6 +381,7 @@ export interface DrawDefinition {
   competitionProfile?: CompetitionProfile;
   competitionRoster?: string[];
   competitionRounds?: RotatingPartnerRoundRecord[];
+  competitionSettlements?: RotatingPartnerSettlement[];
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
   automated?: boolean;
   competitionFormat?: competitionFormat;
@@ -1298,7 +1300,6 @@ export interface TallyResult {
   gamesWon?: number;
   groupOrder?: number;
   matchUpsCancelled?: number;
-  matchUpsDrawn?: number;
   matchUpsLost?: number;
   matchUpsPct?: number;
   matchUpsWon?: number;
@@ -1314,7 +1315,6 @@ export interface TallyResult {
   setsPct?: number;
   setsWon?: number;
   subOrder?: number;
-  standingsPoints?: number;
   tieDoublesLost?: number;
   tieDoublesWon?: number;
   tieMatchUpsLost?: number;

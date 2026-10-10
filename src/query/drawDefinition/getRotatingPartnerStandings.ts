@@ -2,18 +2,23 @@ import { appliedRotatingPartnerRoundsAreIntact } from '@Validators/appliedRotati
 import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isRotatingPartnerTallyPolicy } from '@Validators/rotatingPartnerTallyPolicy';
+import { settlementMatches } from '@Validators/rotatingPartnerSettlement';
 import { validateScore } from '@Validators/validateScore';
 import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
-import type { RotatingPartnerContribution, RotatingPartnerStanding } from '@Types/rotatingPartnerTally';
 import { INVALID_VALUES, INVALID_SCORE } from '@Constants/errorConditionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import type { RotatingPartnerRoundRecord } from '@Types/rotatingPartnerRound';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import type {
+  RotatingPartnerContribution,
+  RotatingPartnerStanding,
+  RotatingPartnerStatusTreatment,
+} from '@Types/rotatingPartnerTally';
 
 export function getRotatingPartnerStandings(params: {
   tournamentRecord: Tournament;
@@ -25,6 +30,7 @@ export function getRotatingPartnerStandings(params: {
   contributions?: RotatingPartnerContribution[];
   unresolved?: { matchUpId: string; roundNumber: number; matchUpStatus: MatchUpStatusUnion }[];
   throughRoundNumber?: number;
+  staleSettlementIds?: string[];
 } {
   const { drawDefinition, tournamentRecord, event } = params;
   if (!isRotatingPartnerDraw(drawDefinition, event)) return { error: INVALID_VALUES };
@@ -57,6 +63,7 @@ export function getRotatingPartnerStandings(params: {
       },
     ]),
   );
+  const staleSettlementIds: string[] = [];
   const contributions: RotatingPartnerContribution[] = [];
   const unresolved: { matchUpId: string; roundNumber: number; matchUpStatus: MatchUpStatusUnion }[] = [];
   for (const round of rounds.filter((candidate) => candidate.roundNumber <= cutoff)) {
@@ -66,7 +73,8 @@ export function getRotatingPartnerStandings(params: {
     const matches = new Map((matchUpsOf(structure) ?? []).map((matchUp) => [matchUp.matchUpId, matchUp]));
     for (const [index, matchUpId] of round.matchUpIds.entries()) {
       const matchUp = matches.get(matchUpId)!;
-      const result = tallyMatch(matchUp, round, index);
+      const result = settledTallyMatch(drawDefinition, matchUp, round, index);
+      if (result.staleSettlementId) staleSettlementIds.push(result.staleSettlementId);
       if (result.error) return { error: result.error, info: result.info };
       if (result.unresolved)
         unresolved.push({
@@ -83,28 +91,22 @@ export function getRotatingPartnerStandings(params: {
       }
     }
   }
-  const standings = [...rows.values()].sort((a, b) => {
-    if (a.pointsScored !== b.pointsScored) return b.pointsScored - a.pointsScored;
-    if (a.participantId === b.participantId) return 0;
-    return a.participantId < b.participantId ? -1 : 1;
-  });
-  standings.forEach((row, index) => {
-    row.rank = index && row.pointsScored === standings[index - 1].pointsScored ? standings[index - 1].rank : index + 1;
-  });
-  return { ...SUCCESS, standings, contributions, unresolved, throughRoundNumber: cutoff };
+  const standings = rankStandings([...rows.values()]);
+  return { ...SUCCESS, standings, contributions, unresolved, throughRoundNumber: cutoff, staleSettlementIds };
 }
 
 function tallyMatch(
   matchUp: MatchUp,
   round: RotatingPartnerRoundRecord,
   index: number,
+  override?: RotatingPartnerStatusTreatment,
 ): ResultType & {
   contributions?: RotatingPartnerContribution[];
   unresolved?: boolean;
 } {
   const status = matchUp.matchUpStatus ?? TO_BE_PLAYED;
   const treatment =
-    status === COMPLETED ? { kind: 'COMPLETED' as const } : round.tallyContract.statusTreatments[status];
+    override ?? (status === COMPLETED ? { kind: 'COMPLETED' as const } : round.tallyContract.statusTreatments[status]);
   if (!treatment || treatment.kind === 'UNRESOLVED') return { unresolved: true };
   if (treatment.kind === 'EXCLUDE') return {};
   const credit = treatment.kind === 'CREDIT';
@@ -169,4 +171,33 @@ function accumulate(row: RotatingPartnerStanding, contribution: RotatingPartnerC
 function outcome(matchUp: MatchUp, side: number): { outcome?: 'WON' | 'LOST' | 'TIED' } {
   if (matchUp.winningSide) return { outcome: side + 1 === matchUp.winningSide ? 'WON' : 'LOST' };
   return matchUp.matchUpStatus === COMPLETED ? { outcome: 'TIED' } : {};
+}
+
+function rankStandings(rows: RotatingPartnerStanding[]): RotatingPartnerStanding[] {
+  const standings = rows.toSorted((a, b) => {
+    if (a.pointsScored !== b.pointsScored) return b.pointsScored - a.pointsScored;
+    if (a.participantId === b.participantId) return 0;
+    return a.participantId < b.participantId ? -1 : 1;
+  });
+  standings.forEach((row, index) => {
+    row.rank = index && row.pointsScored === standings[index - 1].pointsScored ? standings[index - 1].rank : index + 1;
+  });
+  return standings;
+}
+
+function settledTallyMatch(draw: DrawDefinition, matchUp: MatchUp, round: RotatingPartnerRoundRecord, index: number) {
+  const settlement = draw.competitionSettlements?.findLast((record) => record.matchUpId === matchUp.matchUpId);
+  const stale = !!settlement && !settlementMatches(settlement, matchUp);
+  let override = settlement?.treatment;
+  if (stale) override = { kind: 'UNRESOLVED' };
+  // A genuine completed score restores the ordinary contract; adjudication never overrides it.
+  if (matchUp.matchUpStatus === COMPLETED) override = undefined;
+  const result = tallyMatch(matchUp, round, index, override);
+  return {
+    ...result,
+    staleSettlementId: stale ? settlement.requestId : undefined,
+    contributions: result.contributions?.map((contribution) =>
+      settlement && !stale ? { ...contribution, settlementRequestId: settlement.requestId } : contribution,
+    ),
+  };
 }

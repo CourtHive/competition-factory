@@ -690,6 +690,7 @@ export type FactoryEngineMethod =
   | 'setState'
   | 'setStructureOrder'
   | 'setSubOrder'
+  | 'settleRotatingPartnerResult'
   | 'setTournamentCategories'
   | 'setTournamentDates'
   | 'setTournamentEndDate'
@@ -1462,6 +1463,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setState',
   'setStructureOrder',
   'setSubOrder',
+  'settleRotatingPartnerResult',
   'setTournamentCategories',
   'setTournamentDates',
   'setTournamentEndDate',

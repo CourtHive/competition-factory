@@ -15,6 +15,7 @@ export type RotatingPartnerTallyPolicy = {
 };
 
 export type RotatingPartnerContribution = {
+  settlementRequestId?: string;
   participantId: string;
   partnerId: string;
   opponentIds: string[];

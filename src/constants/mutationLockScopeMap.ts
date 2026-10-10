@@ -55,6 +55,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   setCompetitionProfile: 'DRAWS',
   setRotatingPartnerScoring: 'DRAWS',
   generateRotatingPartnerRound: 'DRAWS',
+  settleRotatingPartnerResult: 'DRAWS',
   removeCompetitionProfile: 'DRAWS',
   setDrawParticipantRepresentativeIds: 'DRAWS',
   resetVoluntaryConsolationStructure: 'DRAWS',

@@ -1,10 +1,13 @@
+import { settlementOutcome, isRotatingPartnerSettlement } from '@Validators/rotatingPartnerSettlement';
 import { getRotatingPartnerRoundPreview } from '@Query/drawDefinition/getRotatingPartnerRoundPreview';
 import { generateRotatingPartnerRound } from '@Mutate/drawDefinitions/generateRotatingPartnerRound';
 import { getRotatingPartnerTallyPolicy } from '@Query/drawDefinition/getRotatingPartnerTallyPolicy';
+import { settleRotatingPartnerResult } from '@Mutate/drawDefinitions/settleRotatingPartnerResult';
 import { getRotatingPartnerStandings } from '@Query/drawDefinition/getRotatingPartnerStandings';
 import { isRotatingPartnerTallyPolicy } from '@Validators/rotatingPartnerTallyPolicy';
 import schema from '@Global/schema/tournament.schema.json';
 import tournamentEngine from '@Engines/syncEngine';
+import addFormats from 'ajv-formats';
 import { expect, it } from 'vitest';
 import Ajv from 'ajv';
 
@@ -404,4 +407,179 @@ it('separates awarded credits from an actual partial score kept on a retirement'
     pointsScored: 20,
   });
   expect(result.standings?.[0].matchesPlayed).toBe(1);
+});
+
+function settlementRequest(context: ReturnType<typeof setup>, requestId = 'settlement-1') {
+  const match = context.drawDefinition.structures![0].matchUps![0];
+  return {
+    ...context,
+    matchUpId: match.matchUpId,
+    requestId,
+    expectedOutcome: settlementOutcome(match),
+    treatment: { kind: 'EXCLUDE' as const },
+    reason: 'Director excludes unplayed match',
+    recordedBy: 'director-1',
+    recordedAt: '2026-10-10T20:00:00.000Z',
+  };
+}
+
+it('audited settlement unlocks Mexicano without rewriting round contracts or later snapshots', () => {
+  const context = setup('MEXICANO');
+  apply(context);
+  settle(context);
+  const match = context.drawDefinition.structures![0].matchUps![0];
+  match.matchUpStatus = 'WALKOVER';
+  delete match.score;
+  const contract = structuredClone(context.drawDefinition.competitionRounds![0].tallyContract);
+  expect(getRotatingPartnerRoundPreview({ ...context, roundNumber: 2 }).error).toBeDefined();
+  const request = settlementRequest(context);
+  const result = settleRotatingPartnerResult(request);
+  expect(result.success).toBe(true);
+  expect(settleRotatingPartnerResult(request).existingSettlement).toBe(true);
+  expect(context.drawDefinition.competitionSettlements).toHaveLength(1);
+  expect(context.drawDefinition.competitionRounds![0].tallyContract).toEqual(contract);
+  const next = apply({ ...context, roundNumber: 2 });
+  const snapshot = structuredClone(next.result.roundRecord!.standingsSnapshot);
+  const revised = {
+    ...request,
+    requestId: 'settlement-2',
+    supersedesRequestId: request.requestId,
+    treatment: { kind: 'CREDIT' as const, winningPoints: 20, losingPoints: 12 },
+  };
+  expect(settleRotatingPartnerResult(revised).success).toBe(true);
+  expect(context.drawDefinition.competitionRounds![1].standingsSnapshot).toEqual(snapshot);
+  expect(context.drawDefinition.competitionSettlements).toHaveLength(2);
+  const standings = getRotatingPartnerStandings({ ...context, throughRoundNumber: 1 });
+  expect(standings.contributions?.filter((row) => row.matchUpId === match.matchUpId)).toHaveLength(4);
+  expect(standings.contributions?.find((row) => row.matchUpId === match.matchUpId)?.settlementRequestId).toBe(
+    'settlement-2',
+  );
+});
+
+it('settlement corrections become stale and require explicit supersession or audited revocation', () => {
+  const context = setup('MEXICANO');
+  apply(context);
+  settle(context);
+  const match = context.drawDefinition.structures![0].matchUps![0];
+  match.matchUpStatus = 'RETIRED';
+  match.score = { sets: [{ setNumber: 1, side1Score: 8, side2Score: 6 }] };
+  const request = { ...settlementRequest(context), treatment: { kind: 'PLAYED_POINTS' as const } };
+  expect(settleRotatingPartnerResult(request).success).toBe(true);
+  expect(getRotatingPartnerStandings(context).unresolved).toHaveLength(0);
+  match.score.sets![0].side1Score = 9;
+  expect(getRotatingPartnerStandings(context).staleSettlementIds).toEqual([request.requestId]);
+  expect(getRotatingPartnerStandings(context).unresolved).toHaveLength(1);
+  const before = structuredClone(context.tournamentRecord);
+  expect(
+    settleRotatingPartnerResult({ ...request, requestId: 'stale', supersedesRequestId: request.requestId }).error,
+  ).toBeDefined();
+  expect(context.tournamentRecord).toEqual(before);
+  const fresh = {
+    ...request,
+    requestId: 'fresh',
+    supersedesRequestId: request.requestId,
+    expectedOutcome: settlementOutcome(match),
+  };
+  expect(settleRotatingPartnerResult(fresh).success).toBe(true);
+  expect(settleRotatingPartnerResult({ ...fresh, reason: 'conflicting retry' }).error).toBeDefined();
+  const revoke = {
+    ...fresh,
+    requestId: 'revoke',
+    supersedesRequestId: 'fresh',
+    treatment: { kind: 'UNRESOLVED' as const },
+  };
+  expect(settleRotatingPartnerResult(revoke).success).toBe(true);
+  expect(getRotatingPartnerStandings(context).unresolved).toHaveLength(1);
+  expect(context.drawDefinition.competitionSettlements).toHaveLength(3);
+});
+
+it('invalid settlements and corrupt audit history refuse without a write', () => {
+  const context = setup();
+  apply(context);
+  settle(context);
+  const match = context.drawDefinition.structures![0].matchUps![0];
+  expect(settleRotatingPartnerResult(settlementRequest(context)).error).toBeDefined();
+  match.matchUpStatus = 'DEFAULTED';
+  delete match.winningSide;
+  const request = settlementRequest(context);
+  const before = structuredClone(context.tournamentRecord);
+  expect(
+    settleRotatingPartnerResult({ ...request, treatment: { kind: 'CREDIT', winningPoints: 20, losingPoints: 12 } })
+      .error,
+  ).toBeDefined();
+  expect(settleRotatingPartnerResult({ ...request, reason: ' ' }).error).toBeDefined();
+  expect(settleRotatingPartnerResult({ ...request, supersedesRequestId: 'missing' }).error).toBeDefined();
+  expect(context.tournamentRecord).toEqual(before);
+  expect(settleRotatingPartnerResult(request).success).toBe(true);
+  context.drawDefinition.competitionSettlements!.push(
+    structuredClone(context.drawDefinition.competitionSettlements![0]),
+  );
+  expect(getRotatingPartnerStandings(context).error).toBeDefined();
+});
+
+it.each(['draw', 'event', 'tournament'])('settlement engine API respects a DRAWS lock at %s scope', (level) => {
+  const context = setup();
+  apply(context);
+  settle(context);
+  context.drawDefinition.structures![0].matchUps![0].matchUpStatus = 'WALKOVER';
+  const { tournamentRecord, drawDefinition, event, roundNumber, ...request } = settlementRequest(context);
+  tournamentEngine.setState(tournamentRecord);
+  const scopeParams: { drawId?: string; eventId?: string } = {};
+  if (level === 'draw') scopeParams.drawId = 'd';
+  if (level === 'event') scopeParams.eventId = 'e';
+  expect(
+    tournamentEngine.addMutationLock({ ...scopeParams, scope: 'DRAWS', lockToken: 'settlement-lock' }).success,
+  ).toBe(true);
+  const before = structuredClone(tournamentEngine.getState().tournamentRecords);
+  expect(tournamentEngine.settleRotatingPartnerResult({ drawId: 'd', ...request }).error).toBeDefined();
+  expect(tournamentEngine.getState().tournamentRecords).toEqual(before);
+  expect(
+    tournamentEngine.settleRotatingPartnerResult({ drawId: 'd', ...request, lockToken: 'settlement-lock' }).success,
+  ).toBe(true);
+});
+
+it('settlement runtime and closed schema validators agree', () => {
+  const context = setup();
+  apply(context);
+  context.drawDefinition.structures![0].matchUps![0].matchUpStatus = 'WALKOVER';
+  const result = settleRotatingPartnerResult(settlementRequest(context));
+  expect(result.success).toBe(true);
+  const ajv = new Ajv({ strict: false });
+  addFormats(ajv);
+  ajv.addSchema(schema, 'tournament');
+  const validate = ajv.compile({ $ref: 'tournament#/definitions/RotatingPartnerSettlement' });
+  const valid = result.settlement!;
+  for (const record of [
+    valid,
+    { ...valid, reason: ' ' },
+    { ...valid, extra: 1 },
+    { ...valid, recordedAt: 'bad' },
+    { ...valid, treatment: { kind: 'CREDIT', winningPoints: -1, losingPoints: 0 } },
+    { ...valid, expectedOutcome: { matchUpStatus: 'IN_PROGRESS' } },
+  ]) {
+    expect(isRotatingPartnerSettlement(record)).toBe(!!validate(record));
+  }
+});
+
+it('a valid completed correction supersedes exit settlement and resumes the ordinary tally contract', () => {
+  const context = setup('MEXICANO');
+  apply(context);
+  settle(context);
+  const match = context.drawDefinition.structures![0].matchUps![0];
+  match.matchUpStatus = 'RETIRED';
+  match.score = { sets: [{ setNumber: 1, side1Score: 8, side2Score: 6 }] };
+  const request = { ...settlementRequest(context), treatment: { kind: 'PLAYED_POINTS' as const } };
+  expect(settleRotatingPartnerResult(request).success).toBe(true);
+  match.matchUpStatus = 'COMPLETED';
+  match.score = { sets: [{ setNumber: 1, side1Score: 20, side2Score: 12, winningSide: 1 }] };
+  match.winningSide = 1;
+  const standings = getRotatingPartnerStandings(context);
+  expect(standings.success).toBe(true);
+  expect(standings.unresolved).toHaveLength(0);
+  expect(standings.staleSettlementIds).toEqual([request.requestId]);
+  const contributions = standings.contributions!.filter((row) => row.matchUpId === match.matchUpId);
+  expect(contributions.map((row) => row.pointsScored).toSorted((a, b) => a - b)).toEqual([12, 12, 20, 20]);
+  expect(contributions.every((row) => row.treatment === 'COMPLETED' && !row.settlementRequestId)).toBe(true);
+  expect(getRotatingPartnerRoundPreview({ ...context, roundNumber: 2 }).success).toBe(true);
+  expect(context.drawDefinition.competitionSettlements).toHaveLength(1);
 });

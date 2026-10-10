@@ -884,6 +884,7 @@
           "$ref": "#/definitions/CompetitionProfile"
         },
         "competitionRoster": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "competitionSettlements": { "type": "array", "items": { "$ref": "#/definitions/RotatingPartnerSettlement" } },
         "competitionRounds": {
           "type": "array",
           "items": { "$ref": "#/definitions/RotatingPartnerRoundRecord" }
@@ -4625,6 +4626,57 @@
       },
       "required": ["version", "decidingPoints", "overtimePoints", "statusTreatments"],
       "additionalProperties": false
+    },
+    "RotatingPartnerSettlement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "requestId",
+        "matchUpId",
+        "roundNumber",
+        "expectedOutcome",
+        "treatment",
+        "reason",
+        "recordedBy",
+        "recordedAt"
+      ],
+      "properties": {
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "matchUpId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "roundNumber": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "expectedOutcome": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["matchUpStatus"],
+          "properties": {
+            "matchUpStatus": {
+              "enum": [
+                "ABANDONED",
+                "CANCELLED",
+                "DEAD_RUBBER",
+                "DEFAULTED",
+                "DOUBLE_DEFAULT",
+                "DOUBLE_WALKOVER",
+                "RETIRED",
+                "WALKOVER"
+              ]
+            },
+            "winningSide": { "enum": [1, 2] },
+            "score": { "$ref": "#/definitions/Score" }
+          }
+        },
+        "treatment": { "$ref": "#/definitions/RotatingPartnerStatusTreatment" },
+        "reason": { "type": "string", "pattern": "\\S" },
+        "recordedBy": { "type": "string", "pattern": "\\S" },
+        "recordedAt": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+          "format": "date-time"
+        },
+        "supersedesRequestId": { "type": "string", "pattern": "\\S" }
+      }
     },
     "RotatingPartnerRoundRecord": {
       "type": "object",

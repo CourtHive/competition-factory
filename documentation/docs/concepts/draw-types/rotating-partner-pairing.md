@@ -101,3 +101,23 @@ Mexicano previews require every prior result to be settled. Application saves th
 `standingsSnapshot` and `standingsThroughRoundNumber`. Changed scores invalidate approval when they
 change pairings; unchanged approved pairings remain eligible. The scoring contract is checked too.
 Request-ID retries return the original applied round and its historical source standings.
+
+## Audited settlement of exit results
+
+`settleRotatingPartnerResult` settles individual tally attribution for a non-completed terminal result
+in an applied round. It never changes the score, sporting winner or saved round policy. Supply `drawId`,
+`matchUpId`, unique `requestId`, `expectedOutcome` (current status, score and winningSide), `treatment`,
+`reason`, `recordedBy` and a canonical UTC `recordedAt`, such as `2026-10-10T20:00:00.000Z`.
+
+Choose `PLAYED_POINTS` to count validated recorded play, `EXCLUDE` to settle without points, or `CREDIT`
+to award `winningPoints` and `losingPoints` using the result's recorded winningSide. `UNRESOLVED` revokes
+an adjudication. Live and ordinary completed results are refused. A replacement requires
+`supersedesRequestId` identifying the latest adjudication for that match.
+
+The draw's append-only `competitionSettlements` retains every decision. Duplicate identical requests
+return the existing settlement; stale outcomes or conflicting retries refuse without writes. Later
+score/status/winner corrections make the latest settlement stale: standings report `staleSettlementIds`
+and a non-completed result remains unresolved until re-settled. A valid COMPLETED correction resumes the ordinary tally contract and retains the old settlement as historical audit. Contributions identify their `settlementRequestId`.
+A settled result can unlock the next Mexicano round; existing later rounds retain their source snapshots.
+DRAWS locks apply. `recordedBy` is caller-supplied audit metadata; the server authenticates and authorizes
+operators. TMX should preview individual credits and require a reason before submitting this mutation.

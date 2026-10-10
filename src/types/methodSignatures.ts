@@ -115,6 +115,7 @@ import type { generateOutcomeFromScoreString } from '@Generators/mocks/generateO
 import type { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import type { resetCompetitionState } from '@Mutate/drawDefinitions/competition/resetCompetitionState';
 import type { modifySeedAssignment } from '@Mutate/drawDefinitions/entryGovernor/modifySeedAssignment';
+import type { settleRotatingPartnerResult } from '@Mutate/drawDefinitions/settleRotatingPartnerResult';
 import type { modifyMatchUpFormatTiming } from '@Mutate/extensions/matchUps/modifyMatchUpFormatTiming';
 import type { bulkUpdateCourtAssignments } from '@Mutate/matchUps/schedule/bulkUpdateCourtAssignments';
 import type { transitionCertificationStatus } from '@Mutate/officiating/transitionCertificationStatus';
@@ -1321,6 +1322,7 @@ export interface MethodSignatures {
   setSchedulingProfile: EngineMethod<typeof setSchedulingProfile>;
   setStructureOrder: EngineMethod<typeof setStructureOrder>;
   setSubOrder: EngineMethod<typeof setSubOrder>;
+  settleRotatingPartnerResult: EngineMethod<typeof settleRotatingPartnerResult>;
   setTournamentCategories: EngineMethod<typeof setTournamentCategories>;
   setTournamentDates: EngineMethod<typeof setTournamentDates>;
   setTournamentEndDate: EngineMethod<typeof setTournamentEndDate>;
