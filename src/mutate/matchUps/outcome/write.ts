@@ -186,7 +186,7 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
       return applyScoreAndStatus({ ...asIs, removeScore: true }, request, view);
     case 'apply-values': {
       const removeWinningSide =
-        (!!view.draw.rotatingPartners && !!score && !winningSide) ||
+        ((view.draw.rotatingPartners || view.draw.combinedPointRoundRobin) && !!score && !winningSide) ||
         (!!view.line && !!view.existing.winningSide && !winningSide && !checkScoreHasValue({ score }));
       const lineStatus = removeWinningSide ? TO_BE_PLAYED : decidedOrIncomplete(winningSide);
       const status = matchUpStatus ?? (view.line ? lineStatus : COMPLETED);

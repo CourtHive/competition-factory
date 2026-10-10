@@ -1,3 +1,4 @@
+import { isDrawnResult, isCombinedPointFormat, validateDrawTallyOptions } from './drawnResults';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { calculatePressureRatings } from './calculatePressureRatings';
 import { countGames, countSets, countPoints } from './scoreCounters';
@@ -9,6 +10,8 @@ import { isExit } from '@Validators/isExit';
 // constants and types
 import { completedMatchUpStatuses, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { INVALID_MATCHUP, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
+import type { MatchUp, MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
+import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -61,13 +64,16 @@ export function getParticipantResults({
     };
   }
 
+  const policyValidation = validateDrawTallyOptions(tallyPolicy);
+  if (policyValidation.error) return { error: policyValidation.error, info: policyValidation.info };
+
   const participantResults = {};
 
   const excludeMatchUpStatuses = tallyPolicy?.excludeMatchUpStatuses ?? [];
 
   const filteredMatchUps = filterMatchUps({ matchUps, excludeMatchUpStatuses, participantIds });
 
-  const { totalSets, totalGames } = computeTotals({ filteredMatchUps, excludeMatchUpStatuses });
+  const { totalSets, totalGames } = computeTotals({ filteredMatchUps, excludeMatchUpStatuses, matchUpFormat });
 
   for (const matchUp of filteredMatchUps ?? []) {
     const { matchUpStatus, tieMatchUps, tieFormat, score, winningSide, sides } = matchUp;
@@ -84,6 +90,9 @@ export function getParticipantResults({
       perPlayer = processNoWinnerMatchUp({
         participantResults,
         manualGamesOverride,
+        matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
+        isDrawn: isDrawnResult(matchUp, matchUpFormat),
+        tallyPolicy,
         matchUpStatus,
         tieMatchUps,
         perPlayer,
@@ -100,7 +109,7 @@ export function getParticipantResults({
         manualGamesOverride,
         participantResults,
         pressureRating,
-        matchUpFormat,
+        matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
         matchUpStatus,
         tieMatchUps,
         tallyPolicy,
@@ -140,7 +149,15 @@ function filterMatchUps({ matchUps, excludeMatchUpStatuses, participantIds }) {
   });
 }
 
-function computeTotals({ filteredMatchUps, excludeMatchUpStatuses }) {
+function computeTotals({
+  filteredMatchUps,
+  excludeMatchUpStatuses,
+  matchUpFormat,
+}: {
+  filteredMatchUps: HydratedMatchUp[];
+  excludeMatchUpStatuses: (MatchUpStatusUnion | undefined)[];
+  matchUpFormat?: string;
+}) {
   const allSetsCount = filteredMatchUps?.flatMap(({ score, tieMatchUps }) =>
     tieMatchUps
       ? tieMatchUps
@@ -150,14 +167,16 @@ function computeTotals({ filteredMatchUps, excludeMatchUpStatuses }) {
   );
   const totalSets = allSetsCount?.reduce((a, b) => a + b, 0);
 
-  const getGames = (score) =>
-    score?.sets?.reduce((total, set) => total + (set?.side1Score ?? 0) + (set?.side2Score ?? 0), 0) ?? 0;
-  const allGamesCount = filteredMatchUps?.flatMap(({ score, tieMatchUps }) =>
+  const getGames = (score?: Score, format?: string) =>
+    isCombinedPointFormat(format ?? matchUpFormat)
+      ? 0
+      : (score?.sets?.reduce((total, set) => total + (set?.side1Score ?? 0) + (set?.side2Score ?? 0), 0) ?? 0);
+  const allGamesCount = filteredMatchUps?.flatMap(({ score, tieMatchUps, matchUpFormat: format }) =>
     tieMatchUps
       ? tieMatchUps
           .filter(({ matchUpStatus }) => !excludeMatchUpStatuses.includes(matchUpStatus))
-          .flatMap(({ score }) => getGames(score))
-      : getGames(score),
+          .flatMap(({ score, matchUpFormat }) => getGames(score, matchUpFormat))
+      : getGames(score, format),
   );
   const totalGames = allGamesCount?.reduce((a, b) => a + b, 0);
 
@@ -165,6 +184,9 @@ function computeTotals({ filteredMatchUps, excludeMatchUpStatuses }) {
 }
 
 function processNoWinnerMatchUp({
+  matchUpFormat,
+  tallyPolicy,
+  isDrawn,
   participantResults,
   manualGamesOverride,
   matchUpStatus,
@@ -172,8 +194,49 @@ function processNoWinnerMatchUp({
   perPlayer,
   score,
   sides,
+}: {
+  participantResults: Record<
+    string,
+    {
+      matchUpsDrawn: number;
+      matchUpsCancelled: number;
+      setsWon: number;
+      setsLost: number;
+      gamesWon: number;
+      gamesLost: number;
+      pointsWon: number;
+      pointsLost: number;
+      [key: string]: unknown;
+    }
+  >;
+  manualGamesOverride?: boolean;
+  matchUpFormat?: string;
+  tallyPolicy?: RoundRobinTallyPolicy;
+  isDrawn: boolean;
+  matchUpStatus?: MatchUpStatusUnion;
+  tieMatchUps?: MatchUp[];
+  perPlayer?: number;
+  score?: Score;
+  sides: NonNullable<HydratedMatchUp['sides']>;
 }) {
-  if (matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus)) {
+  if (isDrawn) {
+    const sets = countSets({ score, matchUpFormat, matchUpStatus, tallyPolicy });
+    const games = countGames({ score: score ?? {}, matchUpFormat, matchUpStatus, tallyPolicy });
+    const { pointsTally } = countPoints({ score: score ?? {}, matchUpFormat });
+    sides.forEach((side, index) => {
+      const participantId = side.participantId;
+      if (!participantId) return;
+      checkInitializeParticipant(participantResults, participantId);
+      const result = participantResults[participantId];
+      result.matchUpsDrawn += 1;
+      result.setsWon += sets[index];
+      result.setsLost += sets[1 - index];
+      result.gamesWon += games[index];
+      result.gamesLost += games[1 - index];
+      result.pointsWon += pointsTally[index];
+      result.pointsLost += pointsTally[1 - index];
+    });
+  } else if (matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus)) {
     const participantIdSide1 = getSideId({ sides }, 0);
     const participantIdSide2 = getSideId({ sides }, 1);
     if (participantIdSide1) {
@@ -384,6 +447,7 @@ function checkInitializeParticipant(participantResults, participantId) {
       gamesLost: 0,
       gamesWon: 0,
       matchUpsCancelled: 0,
+      matchUpsDrawn: 0,
       matchUpsLost: 0,
       matchUpsWon: 0,
       pointsLost: 0,

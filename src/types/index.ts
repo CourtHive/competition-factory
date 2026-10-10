@@ -1,4 +1,5 @@
 export * from './rotatingPartnerTally';
+export * from './roundRobinTallyPolicy';
 export * from './rotatingPartnerScoring';
 export * from './competitionProfile';
 export * from './formatWizardTypes';

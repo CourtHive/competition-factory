@@ -21,6 +21,7 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { matchUpsOf } from '@Acquire/structureMembers';
@@ -35,6 +36,7 @@ import {
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
+import { WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import type {
@@ -541,6 +543,9 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         allAssignments.some((assignment) => assignment.bye && assignment.drawPosition === position),
       ),
       rotatingPartners: isRotatingPartnerDraw(drawDefinition, event),
+      combinedPointRoundRobin:
+        structure?.finishingPosition === WIN_RATIO &&
+        !!parse(incomingFormat ?? storedFormat ?? '')?.setFormat?.combinedPointTotal,
       timedTie: !!(inContextMatchUp?.collectionId && lastSetFormatIsTimed({ ...inContextMatchUp })),
     },
   };

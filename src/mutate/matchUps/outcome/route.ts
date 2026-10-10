@@ -79,12 +79,7 @@ function noDownstreamRoute(request: OutcomeRequest, view: OutcomeView): Route {
 export function chooseRoute(request: OutcomeRequest, view: OutcomeView): Route {
   const { winningSide, matchUpStatus, flags } = request;
   const { existing, line } = view;
-  if (
-    !view.activeDownstream &&
-    !winningSide &&
-    view.draw.rotatingPartners &&
-    isCompletedCombinedPointTie({ ...request, matchUpFormat: request.matchUpFormat ?? existing.matchUpFormat })
-  )
+  if (!view.activeDownstream && !winningSide && (view.draw.rotatingPartners || view.draw.combinedPointRoundRobin))
     return APPLY_VALUES;
   const dualChange = dualWinningSideChange(request, view);
   const validSwap =

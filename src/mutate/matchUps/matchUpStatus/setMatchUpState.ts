@@ -42,9 +42,9 @@ import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatus
 
 // constants and types
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
-import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -725,7 +725,7 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
   }
 
   let result;
-  if (isUndirectedRotatingOutcome(params, activeDownstream)) {
+  if (isUndirectedPointOutcome(params, activeDownstream)) {
     result = applyMatchUpValues(params);
   } else if (!activeDownstream || !hasPropagated) {
     result = noDownstreamDependencies(params);
@@ -965,7 +965,9 @@ function winningSideWithDownstreamDependencies(params) {
 function applyMatchUpValues(params) {
   const { tournamentRecord, matchUp, event } = params;
   const combinedPointCorrection =
-    !!parse(params.matchUpFormat)?.setFormat?.combinedPointTotal && !!params.score && !params.winningSide;
+    !!parse(resolveScoringFormat({ ...params, incoming: params.matchUpFormat }) ?? '')?.setFormat?.combinedPointTotal &&
+    !!params.score &&
+    !params.winningSide;
   const removeWinningSide =
     combinedPointCorrection ||
     (params.isCollectionMatchUp &&
@@ -1212,16 +1214,18 @@ function checkParticipants({
   return { ...SUCCESS };
 }
 
-/** Winnerless rotating results carry a score without invoking removal of directed positions. */
-function isUndirectedRotatingOutcome(params: SetMatchUpStateArgs, activeDownstream: boolean): boolean {
+/** Point-total RR and rotating results retain a score without removing directed positions. */
+function isUndirectedPointOutcome(
+  params: SetMatchUpStateArgs & { structure?: Structure; matchUp?: MatchUp; inContextMatchUp?: MatchUp },
+  activeDownstream: boolean,
+): boolean {
+  const format = resolveScoringFormat({ ...params, incoming: params.matchUpFormat });
+  const combinedRoundRobin =
+    params.structure?.finishingPosition === WIN_RATIO && !!parse(format ?? '')?.setFormat?.combinedPointTotal;
   return (
     !activeDownstream &&
     !params.winningSide &&
-    isRotatingPartnerDraw(params.drawDefinition, params.event) &&
-    isCompletedCombinedPointTie({
-      ...params,
-      matchUpFormat: resolveScoringFormat({ ...params, incoming: params.matchUpFormat }),
-    })
+    (combinedRoundRobin || isRotatingPartnerDraw(params.drawDefinition, params.event))
   );
 }
 

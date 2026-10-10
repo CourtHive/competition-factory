@@ -2,6 +2,7 @@ import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConsta
 import type { RotatingPartnerScoringPolicies } from './rotatingPartnerScoring';
 import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
+import type { RoundRobinTallyPolicy } from './roundRobinTallyPolicy';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
@@ -37,6 +38,7 @@ import {
   POLICY_TYPE_SEEDING,
   POLICY_TYPE_SCORING,
   POLICY_TYPE_ROTATING_PARTNER_TALLY,
+  POLICY_TYPE_ROUND_ROBIN_TALLY,
 } from '@Constants/policyConstants';
 
 export type FactoryEngine = {
@@ -405,6 +407,7 @@ export type PolicyDefinitions = {
 } & {
   [POLICY_TYPE_ROTATING_PARTNER_TALLY]?: RotatingPartnerTallyPolicy;
   [POLICY_TYPE_SEEDING]?: SeedingPolicy;
+  [POLICY_TYPE_ROUND_ROBIN_TALLY]?: RoundRobinTallyPolicy;
   [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
 };
 

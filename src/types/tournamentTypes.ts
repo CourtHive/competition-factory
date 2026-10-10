@@ -1298,6 +1298,7 @@ export interface TallyResult {
   gamesWon?: number;
   groupOrder?: number;
   matchUpsCancelled?: number;
+  matchUpsDrawn?: number;
   matchUpsLost?: number;
   matchUpsPct?: number;
   matchUpsWon?: number;
@@ -1313,6 +1314,7 @@ export interface TallyResult {
   setsPct?: number;
   setsWon?: number;
   subOrder?: number;
+  standingsPoints?: number;
   tieDoublesLost?: number;
   tieDoublesWon?: number;
   tieMatchUpsLost?: number;

@@ -93,7 +93,7 @@ export function countGames({
 
       const { side1Score, side2Score } = set;
 
-      if (isGamesBased(based) && !isTiebreakSet) {
+      if (isGamesBased(based) && !isTiebreakSet && !parsedMatchUpFormat?.[whichFormat]?.combinedPointTotal) {
         gamesTally[0].push(ensureInt(side1Score || 0));
         gamesTally[1].push(ensureInt(side2Score || 0));
       }
@@ -164,7 +164,7 @@ export function countPoints({ matchUpFormat, score }: { matchUpFormat?: string; 
     const whichFormat = setNumber > setsToWin && parsedMatchUpFormat?.finalSetFormat ? 'finalSetFormat' : 'setFormat';
     const based = parsedMatchUpFormat?.[whichFormat]?.based;
 
-    if (isPointsBased(based)) {
+    if (isPointsBased(based) || parsedMatchUpFormat?.[whichFormat]?.combinedPointTotal) {
       const { side1Score, side2Score } = set;
       if (side1Score) pointsTally[0] += ensureInt(side1Score || 0);
       if (side2Score) pointsTally[1] += ensureInt(side2Score || 0);
