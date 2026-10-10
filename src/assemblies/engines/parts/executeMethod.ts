@@ -1,4 +1,4 @@
-import { engineLogging } from '@Global/state/engineLogging';
+import { engineLogging, paramsMayBeLogged } from '@Global/state/engineLogging';
 import { checkMutationLock } from './checkMutationLock';
 import { paramsMiddleware } from './paramsMiddleware';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -39,14 +39,18 @@ export function executeFunction(
     }) ||
     getTournamentRecords();
 
-  // ENSURE that logged params are not mutated by middleware
-  const paramsToLog = params ? makeDeepCopy(params, undefined, true) : undefined;
+  // ENSURE that logged params are not mutated by middleware. The copy is taken only when something
+  // will read it: copied unconditionally it was ~90% of a query handed the tournament's hydrated
+  // matchUps (8.8ms of 9.7ms at 504 matchUps), paid on every call with logging off.
+  const observer = getInvokeObserver();
+  const paramsToLog =
+    params && (observer || paramsMayBeLogged(methodName)) ? makeDeepCopy(params, undefined, true) : undefined;
   // `before` is reported here, on the one path every call takes. `after` is reported by the
   // engine entry points (engineInvoke, executionQueue, their async twins) once their own
   // post-processing has run, because that post-processing writes into the record too (the
   // factory extension's timeStamp): an observer that captured state here would attribute that
   // write to the NEXT call.
-  getInvokeObserver()?.({ phase: 'before', methodName, engineType, params: paramsToLog });
+  observer?.({ phase: 'before', methodName, engineType, params: paramsToLog });
 
   const result = resolve({ method, params, methodName, tournamentRecords, tournamentRecord });
   const elapsed = Date.now() - start;
