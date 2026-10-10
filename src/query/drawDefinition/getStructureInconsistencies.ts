@@ -792,6 +792,16 @@ function getStalledPositionInconsistencies(
      */
     const occupantSideNumber = present[0].sideNumber;
     if (occupantSideNumber && getExitSides({ matchUp }).includes(occupantSideNumber)) continue;
+    /**
+     * A DOUBLE EXIT STRANDS NOBODY. Both of its sides have exited, so a lone occupant in it is somebody who
+     * walked over or was defaulted, not somebody waiting. The exemption above reads the occupant's exit from
+     * provenance, which a DIRECTLY recorded exit never writes: a DEFAULTED recorded against a participant alone in
+     * the matchUp, later met by a produced exit on the empty side and collapsed into a DOUBLE_WALKOVER, left no
+     * trace of who exited — and the detector flagged them (census 9700004, COMPASS 8/7, the early-exit arm;
+     * `aDoubleExitStrandsNobody.test.ts`). Measured over every stall the 2026-10 campaign fixed, replayed on the
+     * pre-fix dev 5ee57576ea: 69 of 69 were TO_BE_PLAYED with one occupant, none a double exit — this hides none.
+     */
+    if (isDoubleExit(matchUp.matchUpStatus)) continue;
 
     inconsistencies.push({
       matchUpId: matchUp.matchUpId,
