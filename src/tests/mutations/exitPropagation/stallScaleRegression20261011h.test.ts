@@ -21,6 +21,11 @@ import fs from 'fs';
  * written, so when the BYE was withdrawn the carrier stood as an ordinary participant (P51,
  * `aCarryPastAFinalByeSurvivesItsWithdrawal`).
  *
+ * 2026-10-11, THE TENTH RUN (dev 8ed7117f0f, seeds 20,340,001–20,380,000): the default arms read zero; three seeds under
+ * `doubleExitPropagateBye: false` — 20346401 DOUBLE_ELIMINATION 8/8, 20349817 COMPASS 16/11, 20352232
+ * FIRST_MATCH_LOSER_CONSOLATION 16/13 — appended here. An exit carried on from a convergence took the winning side
+ * derived for the matchUp the exit arrived in (`aRecursedExitCarriesNoStaleWinningSide`).
+ *
  * Each seed replays in the arm it was found in, from the schedule EMITTED IN THAT ARM; a `policyoff` line carries the
  * `policyDefinitions` it was emitted under, and the replay attaches them. The planning record is
  * `Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
@@ -52,13 +57,16 @@ function stallsAfter(instance: Instance): number {
 
 // CONTROL: an empty or truncated fixture would pass by replaying nothing, and a policy-off line without its policy
 // would replay in the default arm
-it('holds all five instances, each policy-off line under its policy', () => {
+it('holds all eight instances, each policy-off line under its policy', () => {
   expect(INSTANCES.map((instance) => `${instance.arm}:${instance.seed}`)).toEqual([
     'off:20267598',
     'policyoff:20278127',
     'off:20318646',
     'on:20318646',
     'policyoff:20318646',
+    'policyoff:20346401',
+    'policyoff:20349817',
+    'policyoff:20352232',
   ]);
   for (const instance of INSTANCES) {
     expect(instance.policyDefinitions).toEqual(
