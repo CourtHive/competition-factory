@@ -16,6 +16,11 @@ import fs from 'fs';
  *  - 20278127 FIRST_MATCH_LOSER_CONSOLATION 16/16 (policy-off): a RULE 2 reservation that had crossed a BYE into a
  *    PENDING exit stayed when its exit was withdrawn — #5354 (`aReservationGoesPastTheByeItCrossed`).
  *
+ * 2026-10-11, THE NINTH RUN (dev 777de4ebdc, seeds 20,300,001–20,340,000): one seed in every arm — 20318646 COMPASS 8/8
+ * — appended here. A carried default met a BYE in the South FINAL; with nowhere further to carry it, nothing was
+ * written, so when the BYE was withdrawn the carrier stood as an ordinary participant (P51,
+ * `aCarryPastAFinalByeSurvivesItsWithdrawal`).
+ *
  * Each seed replays in the arm it was found in, from the schedule EMITTED IN THAT ARM; a `policyoff` line carries the
  * `policyDefinitions` it was emitted under, and the replay attaches them. The planning record is
  * `Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
@@ -47,15 +52,19 @@ function stallsAfter(instance: Instance): number {
 
 // CONTROL: an empty or truncated fixture would pass by replaying nothing, and a policy-off line without its policy
 // would replay in the default arm
-it('holds both instances, one flag-off and one policy-off, the policy-off line under its policy', () => {
+it('holds all five instances, each policy-off line under its policy', () => {
   expect(INSTANCES.map((instance) => `${instance.arm}:${instance.seed}`)).toEqual([
     'off:20267598',
     'policyoff:20278127',
+    'off:20318646',
+    'on:20318646',
+    'policyoff:20318646',
   ]);
-  expect(INSTANCES.find((instance) => instance.arm === 'policyoff')?.policyDefinitions).toEqual({
-    progression: { doubleExitPropagateBye: false },
-  });
-  expect(INSTANCES.find((instance) => instance.arm === 'off')?.policyDefinitions).toBeUndefined();
+  for (const instance of INSTANCES) {
+    expect(instance.policyDefinitions).toEqual(
+      instance.arm === 'policyoff' ? { progression: { doubleExitPropagateBye: false } } : undefined,
+    );
+  }
 });
 
 it('the seeds that stall are exactly the OPEN list', () => {
