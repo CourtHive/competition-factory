@@ -20,6 +20,7 @@ export function generateAmericanoPairings(params: GenerateAmericanoPairingsArgs)
   expectedRounds?: number;
   completeCoverage?: boolean;
   seedUsed?: number;
+  opponentBalance?: { minEncounters: number; maxEncounters: number; unseenPairs: number };
 } {
   const { participantIds, roundsCount, seed } = params ?? {};
   if (!validIndividualIds(participantIds) || (seed !== undefined && !Number.isSafeInteger(seed))) {
@@ -29,7 +30,10 @@ export function generateAmericanoPairings(params: GenerateAmericanoPairingsArgs)
     };
   }
 
-  const orderedIds = [...participantIds];
+  const orderedIds = participantIds.toSorted((a, b) => {
+    if (a === b) return 0;
+    return a < b ? -1 : 1;
+  });
   const seedUsed = seed ?? Math.floor((params.random ?? randomSource())() * 2 ** 32);
   const random = createSeededRandom(seedUsed);
   for (let i = orderedIds.length - 1; i > 0; i--) {
@@ -43,7 +47,15 @@ export function generateAmericanoPairings(params: GenerateAmericanoPairingsArgs)
   const opponents = new Map<string, Map<string, number>>();
   const rounds = (result.rounds ?? []).map((partnerships) => pairPartnerships(partnerships, opponents));
   const expectedRounds = participantIds.length - 1;
-  return { rounds, expectedRounds, seedUsed, completeCoverage: rounds.length === expectedRounds };
+  const encounters = participantIds.flatMap((player, index) =>
+    participantIds.slice(index + 1).map((opponent) => opponents.get(player)?.get(opponent) ?? 0),
+  );
+  const opponentBalance = {
+    minEncounters: Math.min(...encounters),
+    maxEncounters: Math.max(...encounters),
+    unseenPairs: encounters.filter((count) => count === 0).length,
+  };
+  return { rounds, expectedRounds, seedUsed, opponentBalance, completeCoverage: rounds.length === expectedRounds };
 }
 
 function pairPartnerships(partnerships: string[][], opponents: Map<string, Map<string, number>>): RotatingPartnerRound {

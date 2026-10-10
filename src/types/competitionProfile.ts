@@ -5,8 +5,6 @@ type RotatingPartnerProfile = {
   matchUpType: 'DOUBLES';
   scoring: {
     combinedPointTotal: number;
-    /** Metadata only until fixed-total/tied scoring support is implemented. */
-    tiedResult?: 'ALLOW' | 'SUDDEN_DEATH';
   };
   standings: { metric: 'SIDE_POINTS'; attribution: 'EACH_INDIVIDUAL' };
 };

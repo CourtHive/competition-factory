@@ -14,9 +14,7 @@ type GenerateMexicanoPairingsArgs = {
 };
 
 /** Pure next-round pairing: adjacent standings groups, first/fourth versus second/third. */
-export function generateMexicanoPairings(
-  params: GenerateMexicanoPairingsArgs,
-): ResultType & {
+export function generateMexicanoPairings(params: GenerateMexicanoPairingsArgs): ResultType & {
   round?: RotatingPartnerRound;
   orderedParticipantIds?: string[];
   seedUsed?: number;

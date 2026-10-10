@@ -195,3 +195,35 @@ describe('Mexicano round-specific seeds', () => {
     expect(generateMexicanoPairings({ standings, roundNumber }).error).toBe(INVALID_VALUES);
   });
 });
+
+it.each([8, 12, 16])('replays Americano independent of roster order for %i players', (count) => {
+  const participantIds = individualIds(count);
+  for (let seed = 0; seed < 50; seed++) {
+    expect(generateAmericanoPairings({ participantIds: [...participantIds].reverse(), seed })).toEqual(
+      generateAmericanoPairings({ participantIds, seed }),
+    );
+  }
+});
+
+it.each([undefined, 1])('reports measured opponent encounters for roundsCount %s', (roundsCount) => {
+  const participantIds = individualIds(8);
+  const result = generateAmericanoPairings({ participantIds, seed: 42, roundsCount });
+  const counts = participantIds.flatMap((a, index) =>
+    participantIds
+      .slice(index + 1)
+      .map(
+        (b) =>
+          (result.rounds ?? [])
+            .flat()
+            .filter(
+              ([first, second]) =>
+                (new Set(first).has(a) && new Set(second).has(b)) || (new Set(first).has(b) && new Set(second).has(a)),
+            ).length,
+      ),
+  );
+  expect(result.opponentBalance).toEqual({
+    minEncounters: Math.min(...counts),
+    maxEncounters: Math.max(...counts),
+    unseenPairs: counts.filter((count) => count === 0).length,
+  });
+});

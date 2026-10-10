@@ -4548,9 +4548,6 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 9007199254740991
-        },
-        "tiedResult": {
-          "enum": ["ALLOW", "SUDDEN_DEATH"]
         }
       },
       "required": ["combinedPointTotal"],
