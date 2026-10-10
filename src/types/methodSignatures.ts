@@ -45,13 +45,13 @@ import type { getDrawParticipantRepresentativeIds } from '@Query/drawDefinition/
 import type { getEventMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getEventMatchUpFormatTiming';
 import type { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming';
 import type { withdrawParticipantAtDrawPosition } from '@Mutate/drawDefinitions/withdrawParticipantAtDrawPosition';
-import type { removeCompetitionProfile, setCompetitionProfile } from '@Mutate/drawDefinitions/competitionProfile';
 import type { declineEndorsement, endorseApplication, requestEndorsement } from '@Mutate/sanctioning/endorsement';
 import type { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
 import type { generateDrawStructuresAndLinks } from '@Generators/drawDefinitions/generateDrawStructuresAndLinks';
 import type { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 import type { initializeCompetitionState } from '@Mutate/drawDefinitions/competition/initializeCompetitionState';
 import type { luckyLoserDrawPositionAssignment } from '@Mutate/drawDefinitions/luckyLoserDrawPositionAssignment';
+import type { getRotatingPartnerScoringContract } from '@Query/drawDefinition/getRotatingPartnerScoringContract';
 import type { assignMatchUpSideParticipant } from '@Mutate/matchUps/drawPositions/assignMatchUpSideParticipant';
 import type { calculateScheduleTimes } from '@Mutate/matchUps/schedule/scheduleMatchUps/calculateScheduleTimes';
 import type { linkTournaments, unlinkTournament, unlinkTournaments } from '@Mutate/tournaments/tournamentLinks';
@@ -645,6 +645,11 @@ import type {
   shotSplitter,
 } from '@Validators/scoring/mcpParser';
 import type {
+  removeCompetitionProfile,
+  setCompetitionProfile,
+  setRotatingPartnerScoring,
+} from '@Mutate/drawDefinitions/competitionProfile';
+import type {
   removeIndividualParticipantIds,
   removeParticipantIdsFromAllTeams,
 } from '@Mutate/participants/removeIndividualParticipantIds';
@@ -1050,6 +1055,7 @@ export interface MethodSignatures {
   getRandomQualifierList: EngineMethod<typeof getRandomQualifierList>;
   getRegistrationProfile: EngineMethod<typeof getRegistrationProfile>;
   getResultAttestation: EngineMethod<typeof getResultAttestation>;
+  getRotatingPartnerScoringContract: EngineMethod<typeof getRotatingPartnerScoringContract>;
   getRotatingPartnerScoringPolicy: EngineMethod<typeof getRotatingPartnerScoringPolicy>;
   getRoundMatchUps: EngineMethod<typeof getRoundMatchUps>;
   getRounds: EngineMethod<typeof getRounds>;
@@ -1303,6 +1309,7 @@ export interface MethodSignatures {
   setPositionAssignments: EngineMethod<typeof setPositionAssignments>;
   setPracticeDefaultCapacity: EngineMethod<typeof setPracticeDefaultCapacity>;
   setRegistrationProfile: EngineMethod<typeof setRegistrationProfile>;
+  setRotatingPartnerScoring: EngineMethod<typeof setRotatingPartnerScoring>;
   setSchedulingProfile: EngineMethod<typeof setSchedulingProfile>;
   setStructureOrder: EngineMethod<typeof setStructureOrder>;
   setSubOrder: EngineMethod<typeof setSubOrder>;

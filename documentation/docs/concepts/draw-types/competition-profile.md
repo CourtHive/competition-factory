@@ -78,6 +78,22 @@ of at least two; other variants prohibit a margin. Point totals must be positive
 when restricted, belong to `permittedPointTotals`.
 
 The engine default permits `ALLOW`, `DECIDING_POINT`, and `WIN_BY_MARGIN` with margin two,
-defaulting to `ALLOW`. This query validates and previews configuration; it does not persist the
-selection or change manual/live scoring. Resolved rules must be captured when applying a round.
+defaulting to `ALLOW`. This query validates and previews configuration; use the persistence mutation below to save a
+selection. Neither method changes manual/live scoring yet. Resolved rules must be captured when applying a round.
 Separate deciding phases, extra-point tally attribution and individual standings remain open work.
+
+## Persisting the scoring choice
+
+Call `setRotatingPartnerScoring({ drawId, selectedVariant? })` before generating matchUps. Omitting
+`selectedVariant` saves the approved policy default. The mutation stores the choice in
+`competitionProfile.scoring.selectedVariant`; point total and selected variant together define the
+resolved match contract. Direct profile writes validate these choices against the governing policy.
+
+`getRotatingPartnerScoringContract({ drawId })` reads that saved contract without consulting current
+policies. It refuses an unconfigured profile. This is the query historical scoring must use; the
+policy query remains the preview of current governing rules. Changing inherited policies cannot
+rewrite the saved contract. Repeating an identical write succeeds without effect; changing or removing
+the profile is refused once any matchUps exist. The new mutation also respects DRAWS locks.
+
+This stores the draw-level match contract only. Per-round provenance, future-round amendments,
+separate deciding phases and tally rules will be added with round materialization and standings.

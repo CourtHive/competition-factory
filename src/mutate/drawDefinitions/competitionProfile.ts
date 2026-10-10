@@ -1,3 +1,5 @@
+import { isRotatingPartnerScoringVariant, sameScoringVariant } from '@Validators/rotatingPartnerScoringPolicy';
+import { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { isCompetitionProfile } from '@Validators/competitionProfile';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
@@ -7,6 +9,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 // constants and types
 import { MISSING_DRAW_DEFINITION, INVALID_VALUES, EXISTING_MATCHUPS } from '@Constants/errorConditionConstants';
 import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
+import type { RotatingPartnerScoringVariant } from '@Types/rotatingPartnerScoring';
 import type { CompetitionProfile } from '@Types/competitionProfile';
 import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
 import type { ResultType } from '@Types/factoryTypes';
@@ -44,6 +47,14 @@ export function setCompetitionProfile(params: ProfileContext & { competitionProf
     return { ...SUCCESS };
   if (hasMatchUps(drawDefinition))
     return { error: EXISTING_MATCHUPS, info: 'competitionProfile is locked once matchUps exist' };
+  if (competitionProfile.format !== 'LADDER') {
+    const validation = getRotatingPartnerScoringPolicy({
+      tournamentRecord,
+      event,
+      drawDefinition: { ...drawDefinition, competitionProfile },
+    });
+    if (validation.error) return validation;
+  }
   drawDefinition.competitionProfile = makeDeepCopy(competitionProfile, undefined, true);
   modifyDrawNotice({ drawDefinition, tournamentId: tournamentRecord?.tournamentId, eventId: event?.eventId });
   return { ...SUCCESS };
@@ -57,4 +68,33 @@ export function removeCompetitionProfile({ drawDefinition, tournamentRecord, eve
   delete drawDefinition.competitionProfile;
   modifyDrawNotice({ drawDefinition, tournamentId: tournamentRecord?.tournamentId, eventId: event?.eventId });
   return { ...SUCCESS };
+}
+
+/** Save a policy-approved default or explicit choice before matchUps exist. */
+export function setRotatingPartnerScoring(
+  params: ProfileContext & {
+    selectedVariant?: RotatingPartnerScoringVariant;
+  },
+): ResultType {
+  const { drawDefinition } = params;
+  const existing = drawDefinition?.competitionProfile;
+  if (
+    isCompetitionProfile(existing) &&
+    existing.format !== 'LADDER' &&
+    existing.scoring.selectedVariant &&
+    (params.selectedVariant === undefined ||
+      (isRotatingPartnerScoringVariant(params.selectedVariant) &&
+        sameScoringVariant(existing.scoring.selectedVariant, params.selectedVariant)))
+  ) {
+    return setCompetitionProfile({ ...params, competitionProfile: existing });
+  }
+  const resolved = getRotatingPartnerScoringPolicy(params);
+  if (resolved.error) return resolved;
+  const profile = drawDefinition?.competitionProfile;
+  if (!profile || profile.format === 'LADDER' || !resolved.contract) return { error: INVALID_VALUES };
+  const { combinedPointTotal, ...selectedVariant } = resolved.contract;
+  return setCompetitionProfile({
+    ...params,
+    competitionProfile: { ...profile, scoring: { combinedPointTotal, selectedVariant } },
+  });
 }

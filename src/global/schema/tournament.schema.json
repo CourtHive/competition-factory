@@ -4548,6 +4548,9 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 9007199254740991
+        },
+        "selectedVariant": {
+          "$ref": "#/definitions/RotatingPartnerScoringVariant"
         }
       },
       "required": ["combinedPointTotal"],
@@ -4712,6 +4715,35 @@
         },
         {
           "$ref": "#/definitions/LadderCompetitionProfile"
+        }
+      ]
+    },
+    "RotatingPartnerScoringVariant": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "tieResolution": {
+              "enum": ["ALLOW", "DECIDING_POINT"]
+            }
+          },
+          "required": ["tieResolution"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "tieResolution": {
+              "const": "WIN_BY_MARGIN"
+            },
+            "winningMargin": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": ["tieResolution", "winningMargin"],
+          "additionalProperties": false
         }
       ]
     }
