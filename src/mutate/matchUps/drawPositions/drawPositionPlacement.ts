@@ -428,19 +428,34 @@ export function assignMatchUpDrawPosition({
     });
   }
 
-  // if FIRST_MATCH_LOSER_CONSOLATION, check whether a BYE should be placed in consolation feed
-  const byeResult = propagateConsolationBye({
-    updatedDrawPositions,
-    loserTargetDrawPosition,
-    tournamentRecord,
-    loserTargetLink,
-    drawDefinition,
-    structureId: structure.structureId,
-    isByeMatchUp,
-    loserMatchUp,
-    matchUpsMap,
-    event,
-  });
+  /**
+   * FIRST_MATCH_LOSER_CONSOLATION: should a BYE reserve the consolation seat this matchUp's loser would take?
+   *
+   * THE RESERVATION IS A PREDICTION ABOUT AN UNDECIDED MATCHUP, so it is not asked of one that already has a winner.
+   * Once decided, the loser is known and `directLoser` has answered the eligibility question for that person —
+   * placed the BYE if they had a prior win, directed them if not. Re-asking the prediction here withdrew a correct
+   * answer: a WALKOVER recorded against Tillich while he stood alone in `Main|2|1` made `directLoser` place the BYE
+   * (he had won round 1); when Crane then arrived — taking the walkover and going on — this call found Crane's
+   * round-1 DEFAULTED unscored (no prior win, so the prospective loser "might" be eligible) and took the BYE back,
+   * leaving `Consolation|2|1` a seat nobody could ever fill (census 9700084, FIRST_MATCH_LOSER_CONSOLATION 8/8, the
+   * early-exit arm; `anIneligibleLosersByeSurvivesTheArrival.test.ts`). `reconcileConsolationReservations` asks
+   * only undecided matchUps for the same reason — "a decided matchUp's loser is `directLoser`'s" — and the forward
+   * path now agrees with it.
+   */
+  const byeResult = matchUp?.winningSide
+    ? undefined
+    : propagateConsolationBye({
+        updatedDrawPositions,
+        loserTargetDrawPosition,
+        tournamentRecord,
+        loserTargetLink,
+        drawDefinition,
+        structureId: structure.structureId,
+        isByeMatchUp,
+        loserMatchUp,
+        matchUpsMap,
+        event,
+      });
   if (byeResult?.error) return byeResult;
 
   // P39 — a loser target that can never be filled, because the side that would lose has exited.
