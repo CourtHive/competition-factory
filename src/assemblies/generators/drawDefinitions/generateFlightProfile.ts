@@ -101,6 +101,9 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
     splitEntries = chunkByNth(flightEntries, flightsCount, true);
   }
 
+  // A flight's entries, ordered by scale value. No `seedNumber` is written onto them: they are the event's own entry
+  // objects, `Entry` has no such field (the CODES schema refuses it), nothing reads it, and seeding is the draw's
+  // `seedAssignments`.
   function getDrawEntries(entriesChunk) {
     return (entriesChunk ?? [])
       .map(({ participantId, scaleValue }) => {
@@ -108,11 +111,7 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
         if (entry?.scaleValue && scaleValue) entry.scaleValue = scaleValue;
         return entry;
       })
-      .sort((a, b) => a.scaleValue - b.scaleValue)
-      .map((entry, i) => {
-        if (entry.scaleValue) entry.seedNumber = i + 1;
-        return entry;
-      });
+      .sort((a, b) => a.scaleValue - b.scaleValue);
   }
 
   const flights = generateRange(0, flightsCount).map((index) => {

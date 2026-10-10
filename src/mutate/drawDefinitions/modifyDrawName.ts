@@ -14,7 +14,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 type ModifyDrawNameArgs = {
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
-  flightProfile: FlightProfile;
+  flightProfile?: FlightProfile;
   drawName: string;
   drawId: string;
   event: Event;
@@ -33,19 +33,17 @@ export function modifyDrawName({
       context: { drawName },
     });
 
-  if (!flightProfile) {
-    flightProfile = getFlightProfile({ event }).flightProfile;
-  }
+  flightProfile ??= getFlightProfile({ event }).flightProfile;
 
   const flight = flightProfile?.flights?.find((flight) => flight.drawId === drawId);
 
-  if (flight) {
+  if (flight && flightProfile) {
     flight.drawName = drawName;
     setFirstClassOrExtension({
       element: event,
       attribute: 'flightProfile',
       name: FLIGHT_PROFILE,
-      value: { ...flightProfile, flights: flightProfile.flights },
+      value: { ...flightProfile },
     });
     // event.flightProfile was mutated — cover the event change.
     modifyEventNotice({ tournamentId: tournamentRecord?.tournamentId, event });

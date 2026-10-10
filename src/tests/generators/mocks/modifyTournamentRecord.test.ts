@@ -138,7 +138,7 @@ test('mocksEngine can modify existing tournamentRecords', () => {
 
   let event = tournamentRecord.events[0];
   let { flightProfile } = getFlightProfile({ event });
-  expect(flightProfile.flights.length).toEqual(1);
+  expect(flightProfile?.flights.length).toEqual(1);
 
   expect(tournamentRecord.participants.length).toEqual(232); // 220 + 3 * 4 = 232
 
@@ -155,7 +155,7 @@ test('mocksEngine can modify existing tournamentRecords', () => {
 
   event = tournamentRecord.events[0];
   ({ flightProfile } = getFlightProfile({ event }));
-  expect(flightProfile.flights.length).toEqual(2);
+  expect(flightProfile?.flights.length).toEqual(2);
 
   expect(tournamentRecord.participants.length).toEqual(256); // 232 + 3 * 8 = 256
 

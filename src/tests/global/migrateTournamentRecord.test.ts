@@ -129,7 +129,11 @@ describe('migrateTournamentRecord — promotion coverage', () => {
 
     // drawDefinition
     const dd = record.events[0].drawDefinitions[0];
-    expect(dd.flightProfile).toEqual({ flights: [{ drawId: 'd1' }] });
+    // a flight profile lives on the EVENT only: a stray draw-level extension is left as it was, not promoted
+    expect((dd as any).flightProfile).toBeUndefined();
+    expect(dd.extensions?.find((extension) => extension.name === FLIGHT_PROFILE)?.value).toEqual({
+      flights: [{ drawId: 'd1' }],
+    });
     expect(dd.lineUps).toEqual({ 'team-1': [] });
     expect(dd.draftState).toEqual({ status: 'SEEDS_PLACED' });
     expect(dd.competitionState).toEqual({ roundStates: {} });
@@ -211,7 +215,7 @@ describe('migrateTournamentRecord — promotion coverage', () => {
     expect(result.promoted?.tournament).toBe(5); // factory + linkedTournamentIds + 3 scheduling
     expect(result.promoted?.events).toBe(1);
     expect(result.promoted?.entries).toBe(2);
-    expect(result.promoted?.drawDefinitions).toBe(4);
+    expect(result.promoted?.drawDefinitions).toBe(3); // lineUps + draftState + competitionState; flightProfile is the event's
     expect(result.promoted?.structures).toBe(1);
     expect(result.promoted?.positionAssignments).toBe(3);
     expect(result.promoted?.matchUps).toBe(2);
