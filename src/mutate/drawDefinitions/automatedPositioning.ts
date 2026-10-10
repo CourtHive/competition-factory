@@ -1,3 +1,4 @@
+import { getSeedsCountAndStageEntries, seeding, SeededParticipant } from '@Mutate/drawDefinitions/structureSeeding';
 import { positionUnseededParticipants } from '@Mutate/matchUps/drawPositions/positionUnseededParticipants';
 import { getSeedPattern, getValidSeedBlocks, SeedBlockInfo } from '@Query/drawDefinition/seedGetter';
 import { positionQualifiers } from '@Mutate/matchUps/drawPositions/positionQualifiers';
@@ -19,15 +20,27 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { PolicyDefinitions, SeedBlock, SeedingProfile, MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { DrawDefinition, Event, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
+import {
+  DrawDefinition,
+  Event,
+  PositionAssignment,
+  SeedAssignment,
+  Structure,
+  Tournament,
+} from '@Types/tournamentTypes';
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
-import { MAIN, WATERFALL } from '@Constants/drawDefinitionConstants';
+import { WATERFALL } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AutomatedPositioningArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
+  seededParticipants?: SeededParticipant[];
+  enforcePolicyLimits?: boolean;
+  seedingScaleName?: string;
+  seedByRanking?: boolean;
+  seedsCount?: number;
   participants?: HydratedParticipant[];
   appliedPolicies?: PolicyDefinitions;
   provisionalPositioning?: boolean;
@@ -339,8 +352,32 @@ function handleQualifiersAndUnseeded({
   return {};
 }
 
+/** A structure generated before its entries (a shell) has no seeds: with `seedsCount`, nobody yet positioned in it
+ *  and no seeds of its own, it is seeded from the entries present now, within the seeding policy. */
+function seedUnpositionedStructure(params: AutomatedPositioningArgs & { structure: Structure }) {
+  const { drawDefinition, structure, seedsCount } = params;
+  // seeds chosen when the structure was generated (Manual creation with entries) are kept
+  if (seedsCount === undefined || structure.seedAssignments?.some(({ participantId }) => participantId)) return;
+  const { positionAssignments = [] } = getPositionAssignments({ drawDefinition, structure });
+  if (positionAssignments.some(({ participantId }) => participantId)) return;
+
+  const seedingParams = {
+    ...params,
+    drawSize: positionAssignments.length,
+    entries: drawDefinition.entries ?? [],
+    stageSequence: structure.stageSequence,
+    structureId: structure.structureId,
+    stage: structure.stage,
+  };
+  const { seedsCount: structureSeedsCount } = getSeedsCountAndStageEntries(seedingParams);
+  if (params.seededParticipants || params.event || params.seedingScaleName) {
+    seeding({ ...seedingParams, seedsCount: structureSeedsCount });
+  }
+}
+
 export function automatedPositioning(params: AutomatedPositioningArgs): ResultType & {
   positionAssignments?: PositionAssignment[];
+  seedAssignments?: SeedAssignment[];
   positioningReport?: { [key: string]: any }[];
   success?: boolean;
   conflicts?: any[];
@@ -379,11 +416,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
   if (initialError) return handleErrorCondition({ error: initialError }, applyPositioning);
 
   if (!entries?.length && !qualifiersCount) return handleSuccessCondition({ ...SUCCESS }, applyPositioning);
-  // a MAIN with no entries to position yet gets only its qualifier seats: BYEs would fill the positions the
-  // entries still to come will need (CA, 2026-10-09). A later qualifying stage is fed only by the stage
-  // before it and never receives entries, so its BYEs are placed as before.
-  const awaitingEntries = structure.stage === MAIN && !entries?.length;
-  const placeByesNow = placeByes && !awaitingEntries;
+  seedUnpositionedStructure({ ...params, appliedPolicies, drawDefinition, structure });
 
   const matchUpsMap = params.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
 
@@ -422,7 +455,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
   if (getSeedPattern(structure.seedingProfile || seedingProfile) === WATERFALL) {
     const waterfallResult = handleWaterfall({
       qualifiersCount,
-      placeByes: placeByesNow,
+      placeByes,
       provisionalPositioning,
       tournamentRecord,
       appliedPolicies,
@@ -459,7 +492,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
       matchUpsMap,
       structure,
       event,
-      placeByes: placeByesNow,
+      placeByes,
       seedLimit,
       seedsOnly,
       positioningReport,
@@ -506,5 +539,6 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
 
   if (!applyPositioning) enableNotifications();
 
-  return { positionAssignments, conflicts, ...SUCCESS, positioningReport };
+  const seedAssignments = structure.seedAssignments;
+  return { positionAssignments, seedAssignments, conflicts, ...SUCCESS, positioningReport };
 }

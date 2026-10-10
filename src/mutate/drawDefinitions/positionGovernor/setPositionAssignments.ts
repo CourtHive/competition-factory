@@ -6,6 +6,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { intersection } from '@Tools/arrays';
 
 // constants
@@ -25,7 +26,7 @@ export function setPositionAssignments({
   const stack = 'setPositionAssignments';
 
   for (const structureAssignments of structurePositionAssignments) {
-    const { structureId, positionAssignments } = structureAssignments;
+    const { structureId, positionAssignments, seedAssignments } = structureAssignments;
     if (!positionAssignments) continue;
 
     const result = findStructure({ drawDefinition, structureId });
@@ -44,6 +45,13 @@ export function setPositionAssignments({
         info: 'drawPositions do not match',
         stack,
       });
+    }
+
+    // a structure seeded when it was positioned (a draw generated before its entries) carries its seeds with its
+    // positions, so a positioning computed apart (applyPositioning: false) is replayed whole
+    if (Array.isArray(seedAssignments)) {
+      structure.seedAssignments = makeDeepCopy(seedAssignments, false, true);
+      structure.seedLimit = seedAssignments.length;
     }
 
     const matchUpsMap = getMatchUpsMap({ drawDefinition });

@@ -15,8 +15,11 @@ import { SINGLES_EVENT } from '@Constants/eventConstants';
  * Two causes. BYEs are drawn only from first-round positions, and a FEED_IN's first round holds just some
  * of its drawPositions (16 of 22; 16 of 31), so the BYEs took the room the qualifiers' link needed there.
  * And with no MAIN entries yet, Automated filled every non-qualifier position with a BYE, leaving none
- * for the entries still to come. Now BYEs leave the qualifiers their room and spill onto fed positions,
- * and with no entries only the qualifier seats are placed (CA's choice).
+ * for the entries still to come. Now BYEs leave the qualifiers their room and spill onto fed positions.
+ *
+ * With no entries, nothing is placed, qualifier seats included (CA, 2026-10-09: "the slots for qualifiers
+ * shouldn't be reserved in advance at all, those qualifying placeholders or the qualifiers themselves get placed
+ * when the draw positioning is generated"). This replaced the morning's choice of placing only the qualifier seats.
  */
 const QUALIFIERS = 8;
 
@@ -74,18 +77,20 @@ function populateFeedInMain(mainEntriesCount: number, drawSize: number) {
 }
 
 describe('FEED_IN main populated after qualifying-first', () => {
-  it('with no MAIN entries, Automated places the qualifier seats and leaves the rest open', () => {
+  it('with no MAIN entries, Automated places nothing until the main is positioned', () => {
     const { result, main, firstRound, eventId, drawId } = populateFeedInMain(0, 22);
     expect(result.success).toEqual(true);
-    const qualifierSeats = main.positionAssignments.filter((pa: any) => pa.qualifier);
-    expect(qualifierSeats.length).toEqual(QUALIFIERS);
-    // the link sends the qualifiers into round 1
-    expect(qualifierSeats.every((pa: any) => firstRound.has(pa.drawPosition))).toEqual(true);
-    expect(main.positionAssignments.filter((pa: any) => pa.bye).length).toEqual(0);
-    expect(main.positionAssignments.filter((pa: any) => !pa.qualifier && !pa.participantId).length).toEqual(14);
+    expect(main.positionAssignments.every((pa: any) => !pa.qualifier && !pa.bye && !pa.participantId)).toEqual(true);
 
     tournamentEngine.addDrawDefinition({ eventId, drawDefinition: result.drawDefinition, allowReplacement: true });
     expect(tournamentEngine.getStructureInconsistencies({ drawId }).valid).toEqual(true);
+
+    // positioned, the qualifier seats are placed where the link sends the qualifiers: round 1
+    const positioned: any = tournamentEngine.automatedPositioning({ structureId: main.structureId, drawId });
+    expect(positioned.success).toEqual(true);
+    const qualifierSeats = positioned.positionAssignments.filter((pa: any) => pa.qualifier);
+    expect(qualifierSeats.length).toEqual(QUALIFIERS);
+    expect(qualifierSeats.every((pa: any) => firstRound.has(pa.drawPosition))).toEqual(true);
   });
 
   it('BYEs leave the qualifiers their round-1 room and spill onto fed positions', () => {
