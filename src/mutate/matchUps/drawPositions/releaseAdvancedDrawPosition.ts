@@ -127,7 +127,19 @@ export function releaseAdvancedDrawPosition({
       (withdrawingExit || occupantLeaving) &&
       (awaitsArrivalOnSide({ drawDefinition, structureId, drawPosition, matchUp, matchUps }) ||
         (heldOpen.has(matchUp.matchUpId) && !getWinningSideDrawPosition({ drawDefinition, structureId, matchUp })));
-    if (!heldOpenForArrival && (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus))) continue;
+    // A PENDING exit is undecided: "a produced exit has no winningSide until a participant arrives" (CA, 2026-09-20).
+    // Scope 2 read its exit status as a recorded result and kept the array, so a reservation advanced into it past a
+    // BYE stayed when the exit that made it was withdrawn: census 20278127 (FIRST_MATCH_LOSER_CONSOLATION 16/16,
+    // `doubleExitPropagateBye: false`), dp 7 — an empty fed seat RULE 2 had awarded `Consolation|1|2` — left `2|2` and
+    // not `3|1`, where a produced walkover waited; the walkover then arriving opposite could not converge with it, and
+    // the seat it fed waited forever (`aReservationGoesPastTheByeItCrossed`). The exit itself stands, for whoever arrives.
+    const pendingExit = withdrawingExit && !matchUp.winningSide && isExit(matchUp.matchUpStatus);
+    if (
+      !heldOpenForArrival &&
+      !pendingExit &&
+      (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus))
+    )
+      continue;
     if (advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp })) continue;
     if (!withdrawingExit && advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp })) {
       continue;
