@@ -26,6 +26,11 @@ import fs from 'fs';
  * FIRST_MATCH_LOSER_CONSOLATION 16/13 — appended here. An exit carried on from a convergence took the winning side
  * derived for the matchUp the exit arrived in (`aRecursedExitCarriesNoStaleWinningSide`).
  *
+ * 2026-10-10, THE ELEVENTH RUN (dev df2924e211, seeds 20,380,001–20,420,000): off 0, on 0, policy-off 1 — 20380227
+ * FEED_IN_CHAMPIONSHIP 8/7, appended here. A correction carried an exit past a BYE to a seat where an exit already stood,
+ * and wrote it as one more pending exit instead of converging the two
+ * (`anExitPastAByeConvergesWithAStandingExit`).
+ *
  * Each seed replays in the arm it was found in, from the schedule EMITTED IN THAT ARM; a `policyoff` line carries the
  * `policyDefinitions` it was emitted under, and the replay attaches them. The planning record is
  * `Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
@@ -57,7 +62,7 @@ function stallsAfter(instance: Instance): number {
 
 // CONTROL: an empty or truncated fixture would pass by replaying nothing, and a policy-off line without its policy
 // would replay in the default arm
-it('holds all eight instances, each policy-off line under its policy', () => {
+it('holds all nine instances, each policy-off line under its policy', () => {
   expect(INSTANCES.map((instance) => `${instance.arm}:${instance.seed}`)).toEqual([
     'off:20267598',
     'policyoff:20278127',
@@ -67,6 +72,7 @@ it('holds all eight instances, each policy-off line under its policy', () => {
     'policyoff:20346401',
     'policyoff:20349817',
     'policyoff:20352232',
+    'policyoff:20380227',
   ]);
   for (const instance of INSTANCES) {
     expect(instance.policyDefinitions).toEqual(

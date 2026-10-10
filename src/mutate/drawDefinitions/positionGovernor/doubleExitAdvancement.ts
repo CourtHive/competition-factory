@@ -1560,6 +1560,58 @@ function getStructuralOccupiedSide({
   return getDrawPositionSideNumber({ drawDefinition, drawPosition, structureId, matchUp });
 }
 
+/**
+ * A PENDING EXIT ALREADY STANDS OPPOSITE: TWO EXITS MEET, AND THEY CONVERGE (RULE 4).
+ *
+ * `pending` waits for an opponent to arrive on the other side. When that side already carries an exit of its own,
+ * nobody can, and the target is a convergence — the one `carryExitOnward` resolves when the exits meet in the other
+ * order. Census policy-off 20380227 (FEED_IN_CHAMPIONSHIP 8/7, `doubleExitPropagateBye: false`): `Main|1|4`
+ * re-scored from a win to a WALKOVER with the same winner sent its loser's walkover into `Consolation|1|2`, whose
+ * double exit passed `Consolation|2|2`'s BYE and reached `Consolation|3|1` beside the WALKOVER standing there for
+ * `Main|1|2`'s double exit. Written as one more pending WALKOVER, it produced nothing, and the consolation final's
+ * occupant waited for nobody. Recorded directly, the same walkover converged `Consolation|3|1` and the occupant won.
+ */
+function convergeWithStandingExit({
+  inContextDrawMatchUps,
+  arrivalSideNumber,
+  nextWinnerMatchUp,
+  storedMatchUp,
+  drawDefinition,
+  matchUpsMap,
+  pending,
+  params,
+  stack,
+}: {
+  params: {
+    sourceMatchUp?: { matchUpId?: string };
+    matchUpStatus?: MatchUpStatusUnion;
+    appliedPolicies?: PolicyDefinitions;
+    tournamentRecord?: Tournament;
+    event?: Event;
+  };
+  inContextDrawMatchUps: HydratedMatchUp[];
+  nextWinnerMatchUp: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  arrivalSideNumber: number;
+  storedMatchUp: MatchUp;
+  matchUpsMap: MatchUpsMap;
+  pending: boolean;
+  stack: string;
+}): ResultType | undefined {
+  // the stored matchUp says what stands there now; the hydrated view can be one write behind
+  if (!pending || !convergesAtTarget({ nextWinnerMatchUp: storedMatchUp, arrivalSideNumber })) return undefined;
+  return convergeCarriedExit({
+    originMatchUpId: params.sourceMatchUp?.matchUpId,
+    inContextDrawMatchUps,
+    arrivalSideNumber,
+    nextWinnerMatchUp,
+    drawDefinition,
+    matchUpsMap,
+    params,
+    stack,
+  });
+}
+
 function advanceByeAdvancedDrawPosition({
   nextWinnerMatchUpDrawPositions,
   nextWinnerMatchUpHasDrawPosition,
@@ -1705,6 +1757,20 @@ function advanceByeAdvancedDrawPosition({
      * winner to advance yet.
      */
     const pending = !advancingParticipantId && !!occupiedSide && !opponentPresent;
+
+    const converged = convergeWithStandingExit({
+      storedMatchUp: noContextNextWinnerMatchUp,
+      arrivalSideNumber: exitSideNumber,
+      inContextDrawMatchUps,
+      nextWinnerMatchUp,
+      drawDefinition,
+      matchUpsMap,
+      pending,
+      params,
+      stack,
+    });
+    if (converged) return converged;
+
     let winningSide: number | undefined;
     if (advancingParticipantId || !occupiedSide) winningSide = occupiedSide;
     else if (!pending) winningSide = 3 - exitSideNumber;
@@ -2338,7 +2404,7 @@ function convergesAtTarget({
   nextWinnerMatchUp,
   arrivalSideNumber,
 }: {
-  nextWinnerMatchUp: HydratedMatchUp;
+  nextWinnerMatchUp: HydratedMatchUp | MatchUp;
   arrivalSideNumber: number;
 }): boolean {
   if (!isExit(nextWinnerMatchUp.matchUpStatus) || isDoubleExit(nextWinnerMatchUp.matchUpStatus)) return false;
