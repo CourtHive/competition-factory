@@ -58,7 +58,12 @@ export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs)
   );
   const validation = checkValidEntries({ tournamentRecord, drawDefinition, event, consideredEntries: entries });
   if (validation.error) return validation;
-  const participantIds = entries.map((entry) => entry.participantId).sort((a, b) => a.localeCompare(b));
+  const participantIds = entries
+    .map((entry) => entry.participantId)
+    .sort((a, b) => {
+      if (a === b) return 0;
+      return a < b ? -1 : 1;
+    });
   if (participantIds.length > 128) return { error: INVALID_VALUES, info: 'round exceeds the 32-matchUp cap' };
   const entrants = validateRotatingPartnerEntrants({ tournamentRecord, participantIds });
   if (entrants.error) return entrants;

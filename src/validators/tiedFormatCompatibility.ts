@@ -67,6 +67,8 @@ export function checkDrawFormatCompatibility(params: {
   const rounds = (drawDefinition.competitionRounds ?? []).filter(
     (round) => selectedIds.has(round.structureId) && (!matchUpId || round.matchUpIds.includes(matchUpId)),
   );
+  // force strips matchUp-level formats in the writer, even when the requested format is unchanged.
+  // Applied rounds keep their historical contract; force cannot erase that persisted format.
   if (
     rounds.some((round) => force || matchUpFormat !== `SET1-S:${stringifyCombinedPointFormat(round.scoringContract)}`)
   )

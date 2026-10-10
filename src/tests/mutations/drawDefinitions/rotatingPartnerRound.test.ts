@@ -6,7 +6,7 @@ import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
 import schema from '@Global/schema/tournament.schema.json';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import tournamentEngine from '@Engines/syncEngine';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import Ajv from 'ajv';
 
 // constants and types
@@ -419,4 +419,43 @@ it('retry identity includes pairings and score rules, and force cannot strip an 
       force: true,
     }).error,
   ).toBeTruthy();
+});
+
+it('uses code-unit roster ordering and identical saved rounds across English and Danish locales', () => {
+  const participantIds = ['aa', 'ab', 'ac', 'ad', 'ae', 'af', 'a0', 'b0'].map(
+    (prefix) => `${prefix}000000-0000-4000-8000-000000000001`,
+  );
+  const expected = participantIds.toSorted((a, b) => {
+    if (a === b) return 0;
+    return a < b ? -1 : 1;
+  });
+  expect(participantIds.toSorted((a, b) => a.localeCompare(b, 'da'))).not.toEqual(expected);
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-10-10T00:00:00Z'));
+  const originalCompare = String.prototype.localeCompare;
+  const compare = vi.spyOn(String.prototype, 'localeCompare');
+  try {
+    const outcomes = ['en', 'da'].map((locale) => {
+      compare.mockImplementation(function (this: string, other: string) {
+        return originalCompare.call(this, other, locale);
+      });
+      const context = setup();
+      context.drawDefinition.entries!.forEach((entry, index) => (entry.participantId = participantIds[index]));
+      context.event.entries!.forEach((entry, index) => (entry.participantId = participantIds[index]));
+      context.tournamentRecord.participants!.forEach(
+        (participant, index) => (participant.participantId = participantIds[index]),
+      );
+      const preview = getRotatingPartnerRoundPreview(context);
+      expect(preview.participantIds).toEqual(expected);
+      expect(generateRotatingPartnerRound(request(context)).error).toBeUndefined();
+      context.roundNumber = 2;
+      expect(generateRotatingPartnerRound(request(context)).error).toBeUndefined();
+      expect(context.drawDefinition.competitionRoster).toEqual(expected);
+      return context.tournamentRecord;
+    });
+    expect(outcomes[0]).toEqual(outcomes[1]);
+  } finally {
+    compare.mockRestore();
+    vi.useRealTimers();
+  }
 });
