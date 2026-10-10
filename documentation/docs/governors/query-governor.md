@@ -709,15 +709,21 @@ audit found — which is what an operator-facing audit usually wants. Gate on `v
 the question is specifically "is this draw sound enough to act on".
 
 The default severity is `error`, so a check is blocking unless it deliberately opts down.
-`STALLED_POSITION` — a participant facing a seat that can never be filled, reported once
-nothing in the draw is playable — is the first `warning`: the stored draw is internally
-consistent, so it is not an error, but somebody is stranded and a director should see it.
 
-Three states are not reported, because nobody in them is waiting:
+`STALLED_POSITION` — a participant facing a seat that can never be filled, reported once
+nothing in the draw is playable — is an `error` **since 7.10.0**, so a stalled draw is not
+`valid`. It shipped as a `warning` and was promoted once randomised play at scale (40,000
+scenarios per arm, three arms) and the early-exit census both read zero.
+
+Four states are not reported, because nobody in them is waiting:
 
 - a matchUp that is `DEAD_RUBBER`, `CANCELLED` or `ABANDONED` — it will never be played;
 - any matchUp one of those feeds, all the way downstream;
-- a lone occupant whose own side carries an exit in `sideExitProvenance` — they withdrew.
+- a lone occupant whose own side carries an exit in `sideExitProvenance` — they withdrew;
+- a `DOUBLE_WALKOVER` or `DOUBLE_DEFAULT` holding one participant (since 7.10.0) — a double
+  exit produces onward, so the seat it leaves is a produced exit, not a wait. This is the
+  shape left when an exit is recorded against a lone occupant and the other side later
+  carries in an exit of its own.
 
 :::
 
@@ -1178,12 +1184,33 @@ const { structures, stageStructures } = engine.getEventStructures({
 
 ## getFlightProfile
 
-A `flightProfile` is an extension on an `event` detailing the parameters that will be used to generate `drawDefinitions` within the `event`. There is an array of `flights` which specify attributes of a draw such as `drawEntries, drawName, drawId, flightNumber` as well as `stage`, which is significant for flights which are only intended to reflect VOLUNTARY_CONSOLATION structures. A Voluntary Consolation flight is "linked" to the flight from which competitors originate and will be automatically deleted if the source flight is deleted. See examples: [Creating Draws from Flight Profiles](../concepts/events/flights.mdx#creating-draws-from-flight-profiles).
+A `flightProfile` lives on the **event** — `event.flightProfile`, or the `flightProfile` extension on records written before the CODES first-class attributes — and details the parameters used to generate the event's `drawDefinitions`. A draw carries no flight profile of its own: its flight is the entry in `flights` whose `drawId` matches it, and the draw records that flight's `flightNumber`. See examples: [Creating Draws from Flight Profiles](../concepts/events/flights.mdx#creating-draws-from-flight-profiles).
 
-If a `flight` has already been used to generate a draw, the `drawDefinition` will be returned with the profile.
+Called through an engine, `getFlightProfile` returns a **copy** in which each flight that has already been used to generate a draw carries that `drawDefinition` (`HydratedFlightProfile`). The stored profile never holds draws.
 
 ```js
 const { flightProfile } = engine.getFlightProfile({ eventId });
+```
+
+Since 7.10.0 the shape is typed (`FlightProfile`, exported from `tods-competition-factory`) and validated by the CODES schema:
+
+```ts
+type FlightProfile = {
+  flights: Flight[];
+  scaleAttributes?: ScaleAttributes; // how entries were ordered for the split, when they were
+  splitMethod?: string; // e.g. SPLIT_LEVEL_BASED, SPLIT_WATERFALL, SPLIT_SHUTTLE
+  links?: FlightLink[]; // legacy (flight-based voluntary consolation, removed 2022)
+};
+
+type Flight = {
+  flightNumber: number;
+  drawId: string; // the draw this flight generates (or generated)
+  drawEntries: Entry[]; // always an array, possibly empty
+  drawName?: string;
+  manuallyAdded?: boolean; // added with a draw rather than by an automated split
+  stage?: StageTypeUnion;
+  qualifyingPositions?: number;
+};
 ```
 
 ---

@@ -50,6 +50,8 @@ The walker visits the tournament record, every event, every draw definition, eve
 | `tournamentRecord.extensions[{name: 'SCHEDULE_TIMING'}].value`           | `tournamentRecord.scheduling.timing`                      | 5     |
 | `tournamentRecord.extensions[{name: 'LINKED_TOURNAMENTS'}]`              | `tournamentRecord.linkedTournamentIds` (shape-translated) | 7     |
 
+A `flightProfile` extension on a **draw definition** is not promoted (since 7.10.0): a flight profile belongs to the event, nothing ever wrote one on a draw, and a stray draw-level extension is left as an extension.
+
 For lifecycle timeItems (`START_TIME` / `STOP_TIME` / `RESUME_TIME` / `END_TIME`) — these are **not** promoted; they remain an ordered history that `matchUpDuration()` walks.
 
 ## `clearLegacy` flag

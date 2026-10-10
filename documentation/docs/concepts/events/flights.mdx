@@ -100,6 +100,31 @@ flightProfile.flights.forEach((flight) => {
 });
 ```
 
+## The shape of a flight profile
+
+A flight profile lives on the event, never on a draw: a draw's flight is the entry whose `drawId` matches it. Since 7.10.0 it is typed and schema-validated:
+
+```ts
+type FlightProfile = {
+  flights: Flight[];
+  scaleAttributes?: ScaleAttributes; // how entries were ordered for the split, when they were
+  splitMethod?: string; // e.g. SPLIT_LEVEL_BASED, SPLIT_WATERFALL, SPLIT_SHUTTLE
+  links?: FlightLink[]; // legacy (flight-based voluntary consolation, removed 2022)
+};
+
+type Flight = {
+  flightNumber: number;
+  drawId: string; // the draw this flight generates (or generated)
+  drawEntries: Entry[]; // always an array, possibly empty
+  drawName?: string;
+  manuallyAdded?: boolean; // added with a draw rather than by an automated split
+  stage?: StageTypeUnion;
+  qualifyingPositions?: number;
+};
+```
+
+A split ordered by `scaleAttributes` sorts each flight's `drawEntries` by scale value; it writes nothing else onto the entries. Seeding is decided when a draw is generated, in its `seedAssignments`.
+
 ## Flight Management
 
 ### Delete Individual Flight

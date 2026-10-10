@@ -324,6 +324,15 @@ standing reservation is not disturbed by a double exit re-entered beside it. Pin
 of census seeds 20178071, 20163074 and 20139307 (FEED_IN_CHAMPIONSHIP and FIRST_MATCH_LOSER_CONSOLATION
 8/7 and 8/8).
 
+Since 7.10.0 two more cases hold. **A reservation goes with its exit past a BYE it crossed**: a
+reservation advanced through a BYE into a matchUp still holding a pending exit (an exit status and no
+winner yet) is released from that matchUp too when its exit is withdrawn; the pending exit itself
+stands for whoever arrives (census 20278127, FIRST_MATCH_LOSER_CONSOLATION 16/16,
+`doubleExitPropagateBye: false`). And **an ineligible loser's BYE survives the opponent's arrival**:
+in FIRST_MATCH_LOSER_CONSOLATION the BYE placed for a round-2 loser who already holds a win (and so
+cannot be fed) is a decision about a decided matchUp, and is no longer withdrawn when that loser's
+opponent arrives afterwards and takes the walkover (census 9700053 and 9700084, the early-exit arm).
+
 ### An exit that meets a BYE leaves a BYE behind
 
 Since 7.5.0. An exit carried or produced into a matchUp whose other side is a BYE moves on with the
@@ -397,6 +406,14 @@ pull-back and its carrier won a match they had walked over (census 20057285,
 FIRST_ROUND_LOSER_CONSOLATION 8/8); a carry that had **decided** its onward matchUp already came
 home.
 
+Since 7.10.0 two more cases hold. **A carry past a BYE in a structure's last round survives the
+BYE's withdrawal**: there is nowhere further for the carrier to land, so the carried exit is recorded
+beside the BYE, and when the BYE is withdrawn the matchUp re-derives to the exit the carrier holds
+rather than becoming an ordinary match (census 20318646, COMPASS 8/8 — the South final). Both arrival
+orders, carrier first or BYE first, now reach the same state. And **a carry written past a late BYE
+names the exit's origin**, as every other hop does, not the BYE matchUp it passed, so a convergence it
+later dissolves still re-advances its winner (census 20267598, FEED_IN_CHAMPIONSHIP_TO_SF 16/15).
+
 ### An arrival carrying an exit converges with a pending exit
 
 Since 7.5.0. A loser carrying a `WALKOVER` or `DEFAULTED` can reach a matchUp that already holds a
@@ -410,6 +427,13 @@ exit does; a seat held open for an occupant who is leaving is read before the ar
 that meets a seat a carrier was awarded converges there, and the converged matchUp serves its loser
 link; and a double exit landing in a consolation target withdraws the stale advances its earlier
 state had left standing there, so its re-derived winner goes on.
+
+Since 7.10.0 **an exit carried on from a convergence names no stale winner**. With
+`doubleExitPropagateBye: false` a double exit produces an exit over its loser link; where that exit
+meets one already standing, the target converges and carries an exit onward. The onward matchUp is
+awarded by RULE 2 (the side without the exit wins), never to the side the exit came in on, so the
+participant who arrives there takes it (census 20346401, 20349817 and 20352232 — DOUBLE_ELIMINATION
+8/8, COMPASS 16/11, FIRST_MATCH_LOSER_CONSOLATION 16/13).
 
 ### Either origin of a converged double exit clears to the kept origin's draw
 

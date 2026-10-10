@@ -374,7 +374,7 @@ const { events } = engine.getEvents({ context });
 
 ## getFlightProfile
 
-Returns the flight profile extension from an event.
+Returns the event's flight profile (`event.flightProfile`, or the legacy extension), as a copy whose flights carry any draw already generated from them. See [getFlightProfile](/docs/governors/query-governor#getflightprofile) for the shape.
 
 ```js
 const { flightProfile } = engine.getFlightProfile({ eventId });

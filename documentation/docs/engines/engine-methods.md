@@ -312,13 +312,24 @@ contextCriteria: boolean | {
 }
 ```
 
+**What gets printed.** Only an **object** context prints anything. `devContext(true)` prints nothing on its own: it
+switches the engine into development behaviour — a method that throws is no longer caught and turned into an error
+result, so the exception surfaces where it happened, and a few methods return extra diagnostics (for example
+`generateFlightProfile` returns `splitEntries`). To log, pass an object; any truthy context also enables the
+development behaviour.
+
+**Cost.** A call's params are deep-copied before the method runs, so the log shows them as the caller passed them,
+only when something will read the copy: a context that prints this method's params (`params`) or its errors
+(`errors`), or an attached invoke observer. With logging off, or with `{ perf }` / `{ result }` only, no copy is taken
+(since 7.10.0; the copy had been most of the cost of queries handed large hydrated arrays).
+
 **Examples:**
 
 ```js
-// Enable all logging
+// Development behaviour (thrown errors surface; extra diagnostics) — prints nothing by itself
 engine.devContext(true);
 
-// Log only errors
+// Log only errors, with the params each erring call was given
 engine.devContext({ errors: true });
 
 // Log params and results for specific methods
