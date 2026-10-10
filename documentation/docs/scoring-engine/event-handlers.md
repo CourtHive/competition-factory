@@ -106,6 +106,8 @@ const engine = new ScoringEngine({
 
 The `competitionFormat` interface allows you to pass a full competition profile that goes beyond the matchUpFormat string. This is used by sports and organizations that need penalty profiles, timer configurations, substitution rules, and other gameplay metadata.
 
+`competitionFormat` describes how a sport is played (timers, penalties and substitutions); the separate draw-level [`competitionProfile`](../concepts/draw-types/competition-profile.md) describes its competition format, such as Americano or Mexicano.
+
 ### Passing a competitionFormat
 
 ```js

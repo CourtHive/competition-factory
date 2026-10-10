@@ -6,6 +6,10 @@ title: Generation Governor
 import { generationGovernor } from 'tods-competition-factory';
 ```
 
+## Rotating Partner Pairings
+
+`generateAmericanoPairings({ participantIds, seed, roundsCount })` returns a deterministic individual partnership rotation as doubles-side memberships. `generateMexicanoPairings({ standings, seed })` returns one round grouped by individual points scored. Both are pure generators; see [Rotating Partner Pairing](../concepts/draw-types/rotating-partner-pairing.md) for guarantees, inputs and integration limits.
+
 ## drawMatic
 
 **[drawMatic](/docs/concepts/draw-types/drawmatic)** is a dynamic round generator for AD_HOC draws which produces participant pairings with previous opponent and team member avoidance.

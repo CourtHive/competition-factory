@@ -20,6 +20,7 @@ export { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsisten
 export { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 export { getRandomQualifierList } from '@Query/drawDefinition/getRandomQualifierList';
 export { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPlayedOff';
+export { getCompetitionProfile } from '@Query/drawDefinition/getCompetitionProfile';
 export { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
 export { isValidForQualifying } from '@Query/drawDefinition/isValidForQualifying';
 export { getPositionAssignments } from '@Query/structure/getPositionAssignments';

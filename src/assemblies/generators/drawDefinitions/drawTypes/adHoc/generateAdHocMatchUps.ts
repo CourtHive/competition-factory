@@ -49,23 +49,39 @@ export function generateAdHocMatchUps(params: GenerateAdHocMatchUpsArgs): {
   if (typeof drawDefinition !== 'object') return { error: MISSING_DRAW_DEFINITION };
   let { participantIdPairings, matchUpsCount } = params;
 
+  // Explicit pairings describe the output, not the size of the candidate entry pool.
+  // Overlapping PAIR entries can number C(n, 2) while a legal round has only n / 4 matches.
+  if (participantIdPairings !== undefined) {
+    if (!Array.isArray(participantIdPairings)) {
+      return { error: INVALID_VALUES, info: 'matchUpsCount or pairings error' };
+    }
+    if (matchUpsCount !== undefined && matchUpsCount !== participantIdPairings.length) {
+      return decorateResult({
+        result: { error: INVALID_VALUES, info: 'matchUpsCount and pairings disagree' },
+        context: { matchUpsCount, pairingsCount: participantIdPairings.length },
+      });
+    }
+    matchUpsCount = participantIdPairings.length;
+  }
+
   const availableResult = getAvailableMatchUpsCount(params);
   if (availableResult.error) return decorateResult({ result: availableResult });
 
   const { lastRoundNumber, availableMatchUpsCount = 0, roundMatchUpsCount = 0 } = availableResult;
 
-  if (!matchUpsCount) {
+  const inferCount = participantIdPairings === undefined;
+  const restrictCount = params.restrictMatchUpsCount !== false;
+  if (inferCount && !matchUpsCount) {
     if (newRound) {
       matchUpsCount = roundMatchUpsCount;
     } else if (availableMatchUpsCount > 0) matchUpsCount = availableMatchUpsCount;
-  } else if (matchUpsCount > roundMatchUpsCount && params.restrictMatchUpsCount !== false) {
+  } else if (inferCount && matchUpsCount! > roundMatchUpsCount && restrictCount) {
     return decorateResult({
       result: { error: INVALID_VALUES, info: 'matchUpsCount error', context: { roundMatchUpsCount } },
     });
   }
 
   if (
-    (participantIdPairings && !Array.isArray(participantIdPairings)) ||
     (matchUpsCount && !isConvertableInteger(matchUpsCount)) ||
     (matchUpIds && !Array.isArray(matchUpIds)) ||
     (!participantIdPairings && !matchUpsCount)
@@ -73,7 +89,7 @@ export function generateAdHocMatchUps(params: GenerateAdHocMatchUpsArgs): {
     return { error: INVALID_VALUES, info: 'matchUpsCount or pairings error' };
   }
 
-  if (matchUpsCount && params.restrictMatchUpsCount !== false && matchUpsCount > 32) {
+  if (matchUpsCount && restrictCount && matchUpsCount > 32) {
     return { error: INVALID_VALUES, info: 'matchUpsCount must be less than 33' };
   }
 
