@@ -1,5 +1,6 @@
 import { isRotatingPartnerScoringVariant, sameScoringVariant } from '@Validators/rotatingPartnerScoringPolicy';
 import { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
+import { validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { isCompetitionProfile } from '@Validators/competitionProfile';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
@@ -45,6 +46,13 @@ export function setCompetitionProfile(params: ProfileContext & { competitionProf
     canonicalJson(drawDefinition.competitionProfile) === canonicalJson(competitionProfile)
   )
     return { ...SUCCESS };
+  if (competitionProfile.format !== 'LADDER' && drawDefinition.entries?.length) {
+    const validation = validateRotatingPartnerEntrants({
+      participantIds: drawDefinition.entries.map((entry) => entry.participantId),
+      tournamentRecord,
+    });
+    if (validation.error) return validation;
+  }
   if (hasMatchUps(drawDefinition))
     return { error: EXISTING_MATCHUPS, info: 'competitionProfile is locked once matchUps exist' };
   if (competitionProfile.format !== 'LADDER') {

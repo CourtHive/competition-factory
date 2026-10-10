@@ -97,3 +97,17 @@ the profile is refused once any matchUps exist. The new mutation also respects D
 
 This stores the draw-level match contract only. Per-round provenance, future-round amendments,
 separate deciding phases and tally rules will be added with round materialization and standings.
+
+## Individual entrants and partnership sides
+
+For a configured Americano or Mexicano draw, pass `drawId` to `addEventEntries` to enter individual
+competitors directly into its doubles event and draw. Standard doubles entry behavior remains unchanged
+when no rotating draw is targeted. Gender/category checks remain in force. An invalid mixed batch is
+refused before event or draw entry writes; PAIRs, unknown IDs and non-competitor roles are refused.
+`checkValidEntries` recognizes individual rosters scoped to these draws and their event entries.
+
+Match sides remain PAIR participants. `addAdHocMatchUps` accepts partnerships outside the draw entry
+list when each has two distinct individual entrants. It requires positive logical round numbers and
+refuses any individual appearing twice within a round, including matchUps already inserted. Repeating
+people across different rounds is permitted. These guards do not create partnerships or apply rounds;
+atomic round materialization is the next increment.

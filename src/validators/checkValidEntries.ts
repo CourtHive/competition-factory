@@ -1,3 +1,4 @@
+import { isRotatingPartnerDraw, isRotatingPartnerEntrant } from './rotatingPartnerDraw';
 import { expectedParticipantType } from '@Query/event/participantTypeForEvent';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { isUngrouped } from '@Query/entries/isUngrouped';
@@ -9,8 +10,8 @@ import { isAny } from './isAny';
 
 // constants, fixtures and types
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
+import { DrawDefinition, Entry, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { DOUBLES_EVENT, HYBRID_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
-import { Entry, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { ParticipantMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
@@ -31,9 +32,11 @@ type CheckValidEntriesArgs = {
   participants?: Participant[];
   consideredEntries?: Entry[];
   enforceGender?: boolean;
+  drawDefinition?: DrawDefinition;
   event: Event;
 };
 export function checkValidEntries({
+  drawDefinition,
   consideredEntries,
   policyDefinitions,
   tournamentRecord,
@@ -64,9 +67,25 @@ export function checkValidEntries({
   const isDoubles = eventType === DOUBLES_EVENT;
   const participantType = expectedParticipantType(eventType);
 
+  const rotatingDraw = isRotatingPartnerDraw(drawDefinition, event);
+  const rotatingEntrantIds = new Set(
+    (event.drawDefinitions ?? [])
+      .filter((draw) => isRotatingPartnerDraw(draw, event))
+      .flatMap((draw) => (draw.entries ?? []).map((entry) => entry.participantId)),
+  );
+  const entries = consideredEntries ?? (rotatingDraw ? drawDefinition?.entries : event.entries) ?? [];
+  if (rotatingDraw) for (const entry of entries) rotatingEntrantIds.add(entry.participantId);
+
+  const known = new Map(participants.map((participant) => [participant.participantId, participant]));
+  const invalidRotatingIds = entries
+    .filter((entry) => rotatingEntrantIds.has(entry.participantId))
+    .map((entry) => entry.participantId)
+    .filter((id) => !isRotatingPartnerEntrant(known.get(id)));
+  if (invalidRotatingIds.length) return { error: INVALID_ENTRIES, invalidParticipantIds: invalidRotatingIds };
+
   const entryStatusMap = Object.assign(
     {},
-    ...(consideredEntries ?? event.entries ?? []).map((entry) => ({
+    ...entries.map((entry) => ({
       [entry.participantId]: entry.entryStatus,
     })),
   );
@@ -77,7 +96,10 @@ export function checkValidEntries({
   );
 
   const invalidEntries = enteredParticipants.filter((participant) => {
-    const mismatch = getMisMatch({ participant, participantType, eventType, entryStatusMap });
+    const rotatingEntrant = rotatingEntrantIds.has(participant.participantId);
+    const mismatch = rotatingEntrant
+      ? participant.participantType !== INDIVIDUAL
+      : getMisMatch({ participant, participantType, eventType, entryStatusMap });
     const validGender = getValidGender({
       genderEnforced,
       participantMap,
