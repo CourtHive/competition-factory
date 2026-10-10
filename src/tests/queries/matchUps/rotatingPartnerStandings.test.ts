@@ -554,6 +554,16 @@ it('settlement runtime and closed schema validators agree', () => {
     { ...valid, reason: ' ' },
     { ...valid, extra: 1 },
     { ...valid, recordedAt: 'bad' },
+    { ...valid, expectedOutcome: { matchUpStatus: 'RETIRED', score: { sets: 'bad' } } },
+    { ...valid, expectedOutcome: { matchUpStatus: 'RETIRED', score: { sets: [null] } } },
+    ...[
+      '2026-10-10T12:00:00Z',
+      '2026-10-10T12:00:00.123456789Z',
+      '2026-10-10T12:00:00+05:30',
+      '2026-02-30T12:00:00Z',
+      '2026-10-10T24:00:00Z',
+      '2026-10-10T12:00:00',
+    ].map((recordedAt) => ({ ...valid, recordedAt })),
     { ...valid, treatment: { kind: 'CREDIT', winningPoints: -1, losingPoints: 0 } },
     { ...valid, expectedOutcome: { matchUpStatus: 'IN_PROGRESS' } },
   ]) {
@@ -583,3 +593,35 @@ it('a valid completed correction supersedes exit settlement and resumes the ordi
   expect(getRotatingPartnerRoundPreview({ ...context, roundNumber: 2 }).success).toBe(true);
   expect(context.drawDefinition.competitionSettlements).toHaveLength(1);
 });
+
+it('settlement freshness and retries ignore score display strings but retain sporting scores', () => {
+  const context = setup('MEXICANO');
+  apply(context);
+  settle(context);
+  const match = context.drawDefinition.structures![0].matchUps![0];
+  match.matchUpStatus = 'RETIRED';
+  match.score = { sets: [{ setNumber: 1, side1Score: 8, side2Score: 6 }], scoreStringSide1: '8-6' };
+  const request = { ...settlementRequest(context), treatment: { kind: 'PLAYED_POINTS' as const } };
+  expect(settleRotatingPartnerResult(request).success).toBe(true);
+  match.score.scoreStringSide1 = '8–6';
+  expect(getRotatingPartnerStandings(context).unresolved).toHaveLength(0);
+  expect(getRotatingPartnerStandings(context).staleSettlementIds ?? []).toHaveLength(0);
+  expect(
+    settleRotatingPartnerResult({ ...request, expectedOutcome: settlementOutcome(match) }).existingSettlement,
+  ).toBe(true);
+  expect(context.drawDefinition.competitionSettlements).toHaveLength(1);
+  match.score.sets![0].side2Score = 7;
+  expect(getRotatingPartnerStandings(context).staleSettlementIds).toEqual([request.requestId]);
+});
+
+it.each(['2026-10-10T12:00:00Z', '2026-10-10T12:00:00.123456789Z', '2026-10-10T12:00:00+05:30'])(
+  'preserves settlement instant %s without losing precision or offset',
+  (recordedAt) => {
+    const context = setup();
+    apply(context);
+    context.drawDefinition.structures![0].matchUps![0].matchUpStatus = 'WALKOVER';
+    expect(settleRotatingPartnerResult({ ...settlementRequest(context), recordedAt }).settlement?.recordedAt).toBe(
+      recordedAt,
+    );
+  },
+);

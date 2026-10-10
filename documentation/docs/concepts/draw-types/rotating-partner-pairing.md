@@ -107,7 +107,7 @@ Request-ID retries return the original applied round and its historical source s
 `settleRotatingPartnerResult` settles individual tally attribution for a non-completed terminal result
 in an applied round. It never changes the score, sporting winner or saved round policy. Supply `drawId`,
 `matchUpId`, unique `requestId`, `expectedOutcome` (current status, score and winningSide), `treatment`,
-`reason`, `recordedBy` and a canonical UTC `recordedAt`, such as `2026-10-10T20:00:00.000Z`.
+`reason`, `recordedBy` and an ISO instant `recordedAt`, such as `2026-10-10T20:00:00Z` (offsets and up to nine fractional digits are preserved).
 
 Choose `PLAYED_POINTS` to count validated recorded play, `EXCLUDE` to settle without points, or `CREDIT`
 to award `winningPoints` and `losingPoints` using the result's recorded winningSide. `UNRESOLVED` revokes
@@ -121,3 +121,7 @@ and a non-completed result remains unresolved until re-settled. A valid COMPLETE
 A settled result can unlock the next Mexicano round; existing later rounds retain their source snapshots.
 DRAWS locks apply. `recordedBy` is caller-supplied audit metadata; the server authenticates and authorizes
 operators. TMX should preview individual credits and require a reason before submitting this mutation.
+
+Both `recordedBy` and `recordedAt` are self-reported metadata in the factory API; they are not proof of identity or time. A trusted server must stamp them from the authenticated actor and server clock, and deliver the same stamped command to clients for deterministic replay. Offline callers must label their metadata as self-reported. Factory validation does not implement that server integration.
+
+Settlement freshness compares status, winning side and numeric set scores. Reformatting score display strings does not invalidate an approved settlement.

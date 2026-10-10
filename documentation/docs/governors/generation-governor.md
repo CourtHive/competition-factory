@@ -51,7 +51,7 @@ const { matchUps, participantIdPairings, iterations, candidatesCount, modifiedSc
 
 ## generateAdHocMatchUps
 
-Draws with `{ drawType: AD_HOC }` allow `matchUps` to be dynamically added. In this type of draw there is no automatic participant progression between rounds. Participant assignment to `matchUps` is done manually, or via **[drawMatic](/docs/concepts/draw-types/drawmatic)**. The only restriction is that a participant may appear once per round.
+Draws with `{ drawType: AD_HOC }` allow `matchUps` to be dynamically added. In this type of draw there is no automatic participant progression between rounds. Participant assignment to `matchUps` is done manually, or via **[drawMatic](/docs/concepts/draw-types/drawmatic)**. A playable round should use each individual at most once. `drawMatic` enforces this when choosing pairings. For compatibility, `generateAdHocMatchUps` treats caller-supplied `participantIdPairings` as explicit output: it uses their actual count, bypasses entry-count capacity estimates, and does not enforce cross-match participant uniqueness. Callers supplying ordinary AD_HOC pairings must enforce that themselves. Rotating-partner round application validates individual uniqueness before inserting matchUps. The default output cap remains 32; a conflicting explicit `matchUpsCount` is refused.
 
 ```js
 const { matchUps } = engine.generateAdHocMatchUps({

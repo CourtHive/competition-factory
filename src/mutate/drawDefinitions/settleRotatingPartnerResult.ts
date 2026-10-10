@@ -8,6 +8,7 @@ import {
   validRotatingPartnerSettlementHistory,
   isRotatingPartnerSettlement,
   settlementMatches,
+  sportingOutcome,
 } from '@Validators/rotatingPartnerSettlement';
 
 // constants and types
@@ -60,7 +61,10 @@ export function settleRotatingPartnerResult(params: {
     return { error: INVALID_VALUES, info: 'invalid settlement contract or terminal outcome' };
   const prior = drawDefinition.competitionSettlements?.find((record) => record.requestId === params.requestId);
   if (prior) {
-    if (canonicalJson(prior) !== canonicalJson(settlement))
+    if (
+      canonicalJson({ ...prior, expectedOutcome: sportingOutcome(prior.expectedOutcome) }) !==
+      canonicalJson({ ...settlement, expectedOutcome: sportingOutcome(settlement.expectedOutcome) })
+    )
       return { error: INVALID_VALUES, info: 'requestId already used for a different settlement' };
     return { ...SUCCESS, settlement: structuredClone(prior), existingSettlement: true };
   }
