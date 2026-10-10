@@ -1,3 +1,4 @@
+export * from './competitionProfile';
 export * from './formatWizardTypes';
 export * from './competitionFormat';
 export * from './readModelTypes';

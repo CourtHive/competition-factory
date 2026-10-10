@@ -1,6 +1,7 @@
 export { setDrawParticipantRepresentativeIds } from '@Mutate/drawDefinitions/setDrawParticipantRepresentativeIds';
 export { resetVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/resetVoluntaryConsolationStructure';
 export { withdrawParticipantAtDrawPosition } from '@Mutate/drawDefinitions/withdrawParticipantAtDrawPosition';
+export { setCompetitionProfile, removeCompetitionProfile } from '@Mutate/drawDefinitions/competitionProfile';
 export { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 export { luckyLoserDrawPositionAssignment } from '@Mutate/drawDefinitions/luckyLoserDrawPositionAssignment';
 export { shiftAdHocRounds } from '@Mutate/drawDefinitions/structureGovernor/adHocRounds/shiftAdHocRounds';

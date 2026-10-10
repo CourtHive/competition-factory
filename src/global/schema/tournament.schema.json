@@ -879,6 +879,9 @@
         },
         "tieFormatId": {
           "type": "string"
+        },
+        "competitionProfile": {
+          "$ref": "#/definitions/CompetitionProfile"
         }
       },
       "required": ["drawId"],
@@ -4537,6 +4540,183 @@
           "type": "boolean"
         }
       }
+    },
+    "CompetitionProfileScoring": {
+      "type": "object",
+      "properties": {
+        "combinedPointTotal": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "tiedResult": {
+          "enum": ["ALLOW", "SUDDEN_DEATH"]
+        }
+      },
+      "required": ["combinedPointTotal"],
+      "additionalProperties": false
+    },
+    "CompetitionProfileStandings": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "const": "SIDE_POINTS"
+        },
+        "attribution": {
+          "const": "EACH_INDIVIDUAL"
+        }
+      },
+      "required": ["metric", "attribution"],
+      "additionalProperties": false
+    },
+    "AmericanoCompetitionProfilePairing": {
+      "type": "object",
+      "properties": {
+        "seed": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "algorithmVersion": {
+          "const": 1
+        }
+      },
+      "required": ["seed", "algorithmVersion"],
+      "additionalProperties": false
+    },
+    "MexicanoCompetitionProfilePairing": {
+      "type": "object",
+      "properties": {
+        "seed": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "algorithmVersion": {
+          "const": 1
+        },
+        "groupBy": {
+          "const": "ADJACENT_STANDINGS"
+        },
+        "partners": {
+          "const": "FIRST_FOURTH_SECOND_THIRD"
+        }
+      },
+      "required": ["seed", "algorithmVersion", "groupBy", "partners"],
+      "additionalProperties": false
+    },
+    "AmericanoCompetitionProfileCompletion": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "PARTNERSHIP_COVERAGE"
+        }
+      },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
+    "MexicanoCompetitionProfileCompletion": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "ROUND_COUNT"
+        },
+        "rounds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": ["kind", "rounds"],
+      "additionalProperties": false
+    },
+    "AmericanoCompetitionProfile": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "entrantScope": {
+          "const": "INDIVIDUAL"
+        },
+        "matchUpType": {
+          "const": "DOUBLES"
+        },
+        "scoring": {
+          "$ref": "#/definitions/CompetitionProfileScoring"
+        },
+        "standings": {
+          "$ref": "#/definitions/CompetitionProfileStandings"
+        },
+        "format": {
+          "const": "AMERICANO"
+        },
+        "pairing": {
+          "$ref": "#/definitions/AmericanoCompetitionProfilePairing"
+        },
+        "completion": {
+          "$ref": "#/definitions/AmericanoCompetitionProfileCompletion"
+        }
+      },
+      "required": ["version", "entrantScope", "matchUpType", "scoring", "standings", "format", "pairing", "completion"],
+      "additionalProperties": false
+    },
+    "MexicanoCompetitionProfile": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "entrantScope": {
+          "const": "INDIVIDUAL"
+        },
+        "matchUpType": {
+          "const": "DOUBLES"
+        },
+        "scoring": {
+          "$ref": "#/definitions/CompetitionProfileScoring"
+        },
+        "standings": {
+          "$ref": "#/definitions/CompetitionProfileStandings"
+        },
+        "format": {
+          "const": "MEXICANO"
+        },
+        "pairing": {
+          "$ref": "#/definitions/MexicanoCompetitionProfilePairing"
+        },
+        "completion": {
+          "$ref": "#/definitions/MexicanoCompetitionProfileCompletion"
+        }
+      },
+      "required": ["version", "entrantScope", "matchUpType", "scoring", "standings", "format", "pairing", "completion"],
+      "additionalProperties": false
+    },
+    "LadderCompetitionProfile": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "format": {
+          "const": "LADDER"
+        }
+      },
+      "required": ["version", "format"],
+      "additionalProperties": false
+    },
+    "CompetitionProfile": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/AmericanoCompetitionProfile"
+        },
+        {
+          "$ref": "#/definitions/MexicanoCompetitionProfile"
+        },
+        {
+          "$ref": "#/definitions/LadderCompetitionProfile"
+        }
+      ]
     }
   },
   "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. Every definition but the four open ones is closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one — the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. Four definitions are open; each carries a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."

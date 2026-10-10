@@ -20,6 +20,8 @@
 
 import type { EngineMethod } from './factoryTypes';
 
+import type { generateAmericanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateAmericanoPairings';
+import type { generateMexicanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateMexicanoPairings';
 import type { getEligibleVoluntaryConsolationParticipants } from '@Query/drawDefinition/getEligibleVoluntaryConsolationParticipants';
 import type { generateDrawTypeAndModifyDrawDefinition } from '@Generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import type { generateAndPopulatePlayoffStructures } from '@Generators/drawDefinitions/generateAndPopulatePlayoffStructures';
@@ -43,6 +45,7 @@ import type { getDrawParticipantRepresentativeIds } from '@Query/drawDefinition/
 import type { getEventMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getEventMatchUpFormatTiming';
 import type { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming';
 import type { withdrawParticipantAtDrawPosition } from '@Mutate/drawDefinitions/withdrawParticipantAtDrawPosition';
+import type { removeCompetitionProfile, setCompetitionProfile } from '@Mutate/drawDefinitions/competitionProfile';
 import type { declineEndorsement, endorseApplication, requestEndorsement } from '@Mutate/sanctioning/endorsement';
 import type { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
 import type { generateDrawStructuresAndLinks } from '@Generators/drawDefinitions/generateDrawStructuresAndLinks';
@@ -256,6 +259,7 @@ import type { addConflictDeclaration } from '@Mutate/officiating/addConflictDecl
 import type { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
 import type { unPublishTournamentInfo } from '@Mutate/timeItems/unPublishTournamentInfo';
 import type { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
+import type { getCompetitionProfile } from '@Query/drawDefinition/getCompetitionProfile';
 import type { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPlayedOff';
 import type { getTournamentPenalties } from '@Query/participants/getTournamentPenalties';
 import type { getPracticeRegistrations } from '@Query/practice/getPracticeRegistrations';
@@ -880,6 +884,7 @@ export interface MethodSignatures {
   flagComplianceIssues: EngineMethod<typeof flagComplianceIssues>;
   generateAdHocMatchUps: EngineMethod<typeof generateAdHocMatchUps>;
   generateAdHocRounds: EngineMethod<typeof generateAdHocRounds>;
+  generateAmericanoPairings: EngineMethod<typeof generateAmericanoPairings>;
   generateAndPopulatePlayoffStructures: EngineMethod<typeof generateAndPopulatePlayoffStructures>;
   generateBookings: EngineMethod<typeof generateBookings>;
   generateConsolationStructure: EngineMethod<typeof generateConsolationStructure>;
@@ -892,6 +897,7 @@ export interface MethodSignatures {
   generateEventWithDraw: EngineMethod<typeof generateEventWithDraw>;
   generateFlightProfile: EngineMethod<typeof generateFlightProfile>;
   generateLineUps: EngineMethod<typeof generateLineUps>;
+  generateMexicanoPairings: EngineMethod<typeof generateMexicanoPairings>;
   generateOutcome: EngineMethod<typeof generateOutcome>;
   generateOutcomeFromScoreString: EngineMethod<typeof generateOutcomeFromScoreString>;
   generateParticipants: EngineMethod<typeof generateParticipants>;
@@ -935,6 +941,7 @@ export interface MethodSignatures {
   getCompetitionParticipantState: EngineMethod<typeof getCompetitionParticipantState>;
   getCompetitionPenalties: EngineMethod<typeof getCompetitionPenalties>;
   getCompetitionPolicy: EngineMethod<typeof getCompetitionPolicy>;
+  getCompetitionProfile: EngineMethod<typeof getCompetitionProfile>;
   getCompetitionState: EngineMethod<typeof getCompetitionState>;
   getCompetitionVenues: EngineMethod<typeof getCompetitionVenues>;
   getCompetitiveProfile: EngineMethod<typeof getCompetitiveProfile>;
@@ -1201,6 +1208,7 @@ export interface MethodSignatures {
   removeCertification: EngineMethod<typeof removeCertification>;
   removeCollectionDefinition: EngineMethod<typeof removeCollectionDefinition>;
   removeCollectionGroup: EngineMethod<typeof removeCollectionGroup>;
+  removeCompetitionProfile: EngineMethod<typeof removeCompetitionProfile>;
   removeConflictDeclaration: EngineMethod<typeof removeConflictDeclaration>;
   removeCourtGridBooking: EngineMethod<typeof removeCourtGridBooking>;
   removeDelegatedOutcome: EngineMethod<typeof removeDelegatedOutcome>;
@@ -1269,6 +1277,7 @@ export interface MethodSignatures {
   scheduleProfileRounds: EngineMethod<typeof scheduleProfileRounds>;
   ScoringEngine: EngineMethod<typeof ScoringEngine>;
   seedWithdrawalCascade: EngineMethod<typeof seedWithdrawalCascade>;
+  setCompetitionProfile: EngineMethod<typeof setCompetitionProfile>;
   setDelegatedOutcome: EngineMethod<typeof setDelegatedOutcome>;
   setDrawOtherIds: EngineMethod<typeof setDrawOtherIds>;
   setDrawParticipantRepresentativeIds: EngineMethod<typeof setDrawParticipantRepresentativeIds>;
