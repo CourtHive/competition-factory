@@ -4,6 +4,7 @@ import { instanceCount } from '@Tools/arrays';
 import { analyzeSet } from './analyzeSet';
 
 // constants and types
+import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { Set as SetType } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
@@ -43,7 +44,8 @@ export function analyzeMatchUp(params?): ResultType & {
       sets.length === 1
         ? analyzeCombinedPointSet(sets[0], matchUpScoringFormat.setFormat)
         : { valid: false, complete: false, winningSide: undefined };
-    const validWinner = matchUp.winningSide === analysis.winningSide;
+    const irregular = new Set([DEFAULTED, RETIRED, WALKOVER]).has(matchUp.matchUpStatus);
+    const validWinner = irregular || matchUp.winningSide === analysis.winningSide;
     return {
       isCompletedMatchUp: analysis.complete,
       calculatedWinningSide: analysis.winningSide,

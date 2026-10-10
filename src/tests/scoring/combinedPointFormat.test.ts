@@ -320,3 +320,15 @@ it.each(['v1', 'v2', 'differential'] as const)(
     expect(current.score?.sets?.length ?? 0).toBe(0);
   },
 );
+
+it.each(['DEFAULTED', 'RETIRED', 'WALKOVER'] as const)(
+  'combined-point readers honor the awarded winner for %s rather than the point leader',
+  (matchUpStatus) => {
+    const score = { sets: [{ setNumber: 1, side1Score: 20, side2Score: 12, winningSide: 1 }] };
+    const matchUp = { matchUpFormat: 'SET1-S:P32', matchUpStatus, score, winningSide: 2 };
+    expect(analyzeScore(matchUp).valid).toBe(true);
+    expect(analyzeMatchUp({ matchUp }).validMatchUpWinningSide).toBe(true);
+    expect(analyzeScore({ ...matchUp, matchUpStatus: 'COMPLETED' }).valid).toBe(false);
+    expect(analyzeMatchUp({ matchUp: { ...matchUp, matchUpStatus: 'COMPLETED' } }).validMatchUpWinningSide).toBe(false);
+  },
+);
