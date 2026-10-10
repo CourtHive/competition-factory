@@ -39,11 +39,7 @@ export function isCompetitionProfile(value: unknown): value is CompetitionProfil
 }
 
 function validScoring(value: unknown): boolean {
-  return (
-    objectWithKeys(value, ['combinedPointTotal'], ['tiedResult']) &&
-    positiveInteger(value.combinedPointTotal) &&
-    (value.tiedResult === undefined || value.tiedResult === 'ALLOW' || value.tiedResult === 'SUDDEN_DEATH')
-  );
+  return objectWithKeys(value, ['combinedPointTotal']) && positiveInteger(value.combinedPointTotal);
 }
 
 function validStandings(value: unknown): boolean {

@@ -74,7 +74,7 @@ describe('closed competition profile validation and CODES schema parity', () => 
     { ...mexicano, scoring: { combinedPointTotal: 0 } },
     { ...mexicano, scoring: { combinedPointTotal: 1.5 } },
     { ...mexicano, scoring: { combinedPointTotal: Number.MAX_SAFE_INTEGER + 1 } },
-    { ...mexicano, scoring: { combinedPointTotal: 32, tiedResult: 'UNKNOWN' } },
+    { ...mexicano, scoring: { combinedPointTotal: 32, tiedResult: 'ALLOW' } },
     { ...mexicano, standings: { metric: 'WINS', attribution: 'EACH_INDIVIDUAL' } },
     { ...mexicano, pairing: { ...mexicano.pairing, seed: 1.5 } },
     { ...mexicano, pairing: { ...mexicano.pairing, algorithmVersion: 2 } },

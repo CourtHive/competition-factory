@@ -29,7 +29,7 @@ const result = tournamentEngine.setCompetitionProfile({
 
 For Americano, use `format: 'AMERICANO'`, `pairing: { seed, algorithmVersion: 1 }` and `completion: { kind: 'PARTNERSHIP_COVERAGE' }`. Store the Americano generator's `seedUsed` or Mexicano's `baseSeed`. Seeds must be safe integers; combined point totals and round counts must be positive safe integers. Version and pairing algorithm version are currently `1`.
 
-An optional `scoring.tiedResult` can declare `ALLOW` or `SUDDEN_DEATH`. This increment stores configuration only: it does not implement fixed-total scoring, tied completion, individual standings, participant admission or round application. Those capabilities must be implemented before these profiles can drive complete competitions.
+Tie resolution belongs to the governing scoring policy, rather than the profile. This increment stores configuration only: it does not implement fixed-total scoring, tied completion, individual standings, participant admission or round application. Those capabilities must be implemented before these profiles can drive complete competitions.
 
 ## Read, change and remove
 
