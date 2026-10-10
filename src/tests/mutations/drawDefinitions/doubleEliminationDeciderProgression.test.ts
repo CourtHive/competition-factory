@@ -95,9 +95,8 @@ describe.each([DOUBLE_WALKOVER, DOUBLE_DEFAULT])(
 
       // the repo's own integrity checker agrees the draw is whole
       const integrity: any = getDrawInconsistencies({ drawDefinition, drawId });
-      // ERRORS only. `STALLED_POSITION` ships as a `warning` (see `hasErrorSeverity`), and this
-      // assertion is about the draw being structurally sound rather than about advisory findings —
-      // the stall population is ratcheted separately in `stalledPositionBudget.test.ts`.
+      // ERRORS only — and since 2026-10-10 `STALLED_POSITION` is one (promoted from `warning` once its
+      // population reached zero), so a stranded participant fails this assertion like any other error.
       expect((integrity.inconsistencies ?? []).filter((i: any) => i.severity === 'error')).toEqual([]);
     });
   },

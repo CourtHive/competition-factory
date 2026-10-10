@@ -808,21 +808,23 @@ function getStalledPositionInconsistencies(
       structureId: matchUp.structureId,
       issueType: STALLED_POSITION,
       /**
-       * THE FIRST ADVISORY CHECK IN THIS FILE, and the reason the rule can ship at all.
+       * AN ERROR SINCE 2026-10-10 — promoted from the `warning` it shipped as.
        *
-       * A stranded participant is a real defect and worth telling a director about, and it is NOT a
-       * claim that the stored draw is structurally corrupt — the state is internally consistent, it
-       * is the propagation that fell short. Reporting it as an `error` made `valid` false on 93 of the
-       * 600 exit-propagation matrix cells, which is why this rule sat parked on a branch for days:
-       * every caller of `valid` went red at once, including the census oracle.
+       * A stranded participant is a real defect: somebody is waiting for an opponent who can never
+       * arrive, and a draw in that state cannot be completed. The rule shipped advisory because
+       * reporting it as an `error` made `valid` false on 93 of the 600 exit-propagation matrix cells,
+       * and every caller of `valid` would have gone red at once. The population was then ratcheted
+       * down to zero (`stalledPositionBudget.test.ts`, deleted with the promotion as its header
+       * instructed) and driven to zero at scale: seven randomised censuses of 40,000 scenarios per arm
+       * in three arms (`allowChangePropagation` off and on, `doubleExitPropagateBye: false`), the
+       * last of them (`dev` bdc5c4b258, 7.9.0) reading 0 / 0 / 0, with the eight frozen census
+       * windows at zero and the shrink-only ratchets' OPEN lists empty. CA's rule for the promotion
+       * was exactly that reading; the history is `Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
        *
-       * As a `warning` it is still returned, routed, fingerprinted and rendered — TMX's audit prints
-       * every finding — while `valid` continues to mean "no error". See `hasErrorSeverity`.
-       *
-       * PROMOTE IT TO `error` WHEN THE POPULATION REACHES ZERO. The count is ratcheted by
-       * `src/tests/query/stalledPositionBudget.test.ts`, which may only ever be lowered.
+       * So `valid` is now false for a draw holding a stall, and the ordinary `valid` assertions
+       * across the suite are the guard — strictly better than a budget.
        */
-      severity: 'warning',
+      severity: 'error',
       message:
         `side ${present[0].sideNumber} holds a participant whose opponent can never arrive — ` +
         `no matchUp in the draw is playable`,

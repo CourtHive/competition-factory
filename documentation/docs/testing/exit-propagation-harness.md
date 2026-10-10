@@ -21,7 +21,7 @@ whether the result was right.
 | `exitPropagationMatrixExtension.test.ts` | the same body over the seven draw types the 600 never exercised — round robin (with and without playoff), the FIC `TO_QF`/`TO_R16` variants, lucky draw, feed-in, playoff — 400 cells from a separate seed range. Added in 7.4.0; clean on first contact.            |
 | `correctionDivergence.test.ts`           | 192 cells: a first-round mistake corrected, against the direct entry of the right outcome.                                                                                                                                                                           |
 | `correctionDivergenceDeep.test.ts`       | 1,600 cells: the mistake is the deepest exit of a twelve-step prefix. Buckets each cell as identical / provenance-only / incomparable / refused / severe and ratchets the counts; the baseline is severe 0. Runs under `pnpm verify` (`DEEP_CORRECTIONS=1`), ~5 min. |
-| `stalledPositionBudget.test.ts`          | replays all 1,000 matrix cells and counts `STALLED_POSITION` findings against a budget that only falls. Currently 0.                                                                                                                                                 |
+| `stalledPositionBudget.test.ts`          | **Deleted 2026-10-10.** It replayed all 1,000 matrix cells and ratcheted `STALLED_POSITION` findings down to zero; at zero the rule was promoted to an `error` and, as its header instructed, the ordinary `valid` assertions became the guard.                      |
 | `routeDifferential.test.ts`              | the same outcome entered with and without `allowChangePropagation`, compared.                                                                                                                                                                                        |
 | `transitionProperties.test.ts`           | do/undo identity, idempotence, monotonicity — properties of a _mutation_, not of a state.                                                                                                                                                                            |
 | `derivationAgreement.test.ts`            | asserts that `matchUpActions` and `setMatchUpStatus` agree about what is permitted.                                                                                                                                                                                  |
@@ -179,8 +179,9 @@ arm as of 7.9.0; the `OPEN` lists are empty.
 
 Before any fix in this area merges, the eight **frozen census arms** (`sched-w1`, `sched-w2` and
 `sched-de` under each flag, plus the two policy arms) are replayed on the branch and on `dev` and
-diffed by seed: `opened` must be zero. `STALLED_POSITION` stays a `warning` until an at-scale run
-reads zero in all three arms; the rule and the run history are in
+diffed by seed: `opened` must be zero. `STALLED_POSITION` shipped as a `warning` and was promoted to an
+`error` once an at-scale run read zero in all three arms — the seventh run, on 7.9.0 (`dev`
+`bdc5c4b258`), did — so a stalled draw is no longer `valid`; the rule and the run history are in
 `Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
 
 `OUTCOME_PIPELINE=differential` is a second gate for the same code (see
