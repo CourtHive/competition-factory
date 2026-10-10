@@ -1489,7 +1489,7 @@ engine.addDrawDefinitionExtension({
 
 ## getRotatingPartnerRoundPreview
 
-Returns individual side memberships, the saved scoring contract, seed and source fingerprint for the
+Returns individual side memberships, the saved scoring contract and seed for the
 next logical round without creating participants. See [Competition Profile](/docs/concepts/draw-types/competition-profile).
 
 ```js
@@ -1499,8 +1499,8 @@ const preview = engine.getRotatingPartnerRoundPreview({ drawId, structureId, rou
 ## generateRotatingPartnerRound
 
 Atomically reuses/creates PAIR participants, inserts matchUps and saves applied-round provenance.
-Pass the preview fingerprint and a unique request ID; repeating the same successful request is idempotent.
-Americano rotation and Mexicano round one are supported; later Mexicano rounds await individual standings.
+Pass the approved preview pairings, scoring contract and a unique request ID; repeating the same successful request is idempotent.
+Americano rotation and all Mexicano rounds are supported. Later Mexicano rounds require every earlier result to be resolved and retain the source standings snapshot.
 
 ```js
 const result = engine.generateRotatingPartnerRound({
@@ -1508,6 +1508,13 @@ const result = engine.generateRotatingPartnerRound({
   structureId, // optional for a single-structure draw
   roundNumber,
   requestId,
-  expectedFingerprint: preview.sourceFingerprint,
+  expectedPairings: preview.round,
+  expectedScoringContract: preview.scoringContract,
 });
 ```
+
+### Ordinary doubles draw admission
+
+`addDrawEntries` refuses accepted INDIVIDUAL entrants in ordinary DOUBLES events with `INVALID_ENTRIES`, without changing the record. Submit PAIR participant IDs for playable entrants. Individual placeholders may use `UNGROUPED` or `UNPAIRED`; they are not accepted doubles competitors. Rotating-partner draws explicitly configured by `competitionProfile` are the exception: their draw-level roster accepts individuals while event-level entries remain ungrouped.
+
+This adds a refusal to the public API. Consumers that previously submitted individuals as `DIRECT_ACCEPTANCE` must create/select a PAIR or use an ungrouped status. TMX's unified entries overlay offers “Add to draw” only for accepted or qualifying selections, excluding the ungrouped segment.
