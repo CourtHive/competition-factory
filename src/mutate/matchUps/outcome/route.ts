@@ -24,6 +24,7 @@ import {
  * order, which the spec's table states.
  */
 
+const APPLY_VALUES: Route = 'apply-values';
 const PRESERVE_SCORE = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, CANCELLED, ABANDONED, INCOMPLETE]);
 
 export function dualWinningSideChange(request: OutcomeRequest, view: OutcomeView): boolean {
@@ -77,6 +78,7 @@ function noDownstreamRoute(request: OutcomeRequest, view: OutcomeView): Route {
 export function chooseRoute(request: OutcomeRequest, view: OutcomeView): Route {
   const { winningSide, matchUpStatus, flags } = request;
   const { existing, line } = view;
+  if (!view.activeDownstream && !winningSide && view.draw.rotatingPartners) return APPLY_VALUES;
   const dualChange = dualWinningSideChange(request, view);
   const validSwap =
     !view.isTeam && !dualChange && !!winningSide && !!existing.winningSide && existing.winningSide !== winningSide;
@@ -87,7 +89,7 @@ export function chooseRoute(request: OutcomeRequest, view: OutcomeView): Route {
 
   const projected = view.isTeam && flags.enableAutoCalc ? view.dualProjection?.projectedWinningSide : undefined;
   const matchUpWinner = (winningSide && !view.matchUpTieId) || line?.projectedWinningSide || projected;
-  if (matchUpWinner) return 'apply-values'; // the refusal function has already let this through
-  if (isDirectingMatchUpStatus({ matchUpStatus }) || line?.autoCalcDisabled) return 'apply-values';
+  if (matchUpWinner) return APPLY_VALUES; // the refusal function has already let this through
+  if (isDirectingMatchUpStatus({ matchUpStatus }) || line?.autoCalcDisabled) return APPLY_VALUES;
   return 'refused';
 }

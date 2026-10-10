@@ -192,3 +192,24 @@ The undo/redo system handles mixed-mode seamlessly — undoing through set bound
 - **[Overview](./scoring-engine-overview.md)** — Introduction and architecture
 - **[Core API Reference](./scoring-engine-api.md)** — Complete method reference
 - **[Event Handlers & Integration](./event-handlers.md)** — Event system and competitionFormat profiles
+
+## Rotating-Partner Rally Totals
+
+Americano and Mexicano matches use one segment whose two scores add up to a fixed rally total:
+
+| Code            | Completion rule                                                      |
+| --------------- | -------------------------------------------------------------------- |
+| `SET1-S:P32`    | Finish after 32 rallies; 16–16 is a completed tie.                   |
+| `SET1-S:P32DP`  | Finish after 32 rallies, or one deciding rally if tied.              |
+| `SET1-S:P32WB2` | Finish after 32 rallies; if tied, continue until a two-point margin. |
+
+These are combined totals, unlike a tiebreak's first-to target. Each rally increments
+`side1Score` or `side2Score`. Live `getScore()` displays numeric points and no tennis games;
+undo/redo replays the same completion rules. Supply server information explicitly. Multipliers
+and score increments other than one are unsupported for this segment.
+
+`generateRotatingPartnerRound` assigns the format from the saved round scoring contract.
+Manual `setMatchUpStatus` refuses a conflicting format or illegal score even when generic
+score validation is disabled. A tied result uses `COMPLETED` without `winningSide`.
+Live completion fires `onMatchTie` for a tie and `onMatchComplete` for a winner.
+Individual standings and separate deciding-phase records are subsequent work.

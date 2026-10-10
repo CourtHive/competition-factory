@@ -522,6 +522,10 @@ export interface MatchUpConstraintStructure {
  * 4. Outs-based set: has outs (e.g., S:O3 — baseball/wiffle ball innings)
  */
 export interface SetFormatStructure {
+  // Combined rally-total segment (SET1-S:P32, P32DP, P32WB2)
+  combinedPointTotal?: number;
+  tieResolution?: 'ALLOW' | 'DECIDING_POINT' | 'WIN_BY_MARGIN';
+  winningMargin?: number;
   // Standard set
   setTo?: number;
   tiebreakAt?: number | string;

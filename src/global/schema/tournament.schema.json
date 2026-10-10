@@ -883,6 +883,7 @@
         "competitionProfile": {
           "$ref": "#/definitions/CompetitionProfile"
         },
+        "competitionRoster": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
         "competitionRounds": {
           "type": "array",
           "items": { "$ref": "#/definitions/RotatingPartnerRoundRecord" }
@@ -4579,13 +4580,6 @@
           "minimum": -9007199254740991,
           "maximum": 9007199254740991
         },
-        "participantIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "uniqueItems": true
-        },
         "matchUpIds": {
           "type": "array",
           "items": {
@@ -4607,6 +4601,15 @@
                 "type": "string"
               }
             }
+          }
+        },
+        "standingsSnapshot": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "participantId": { "type": "string" }, "pointsScored": { "type": "number", "minimum": 0 } },
+            "required": ["participantId", "pointsScored"],
+            "additionalProperties": false
           }
         },
         "scoringContract": {
@@ -4647,9 +4650,6 @@
               }
             }
           ]
-        },
-        "sourceFingerprint": {
-          "type": "string"
         }
       },
       "required": [
@@ -4661,13 +4661,14 @@
         "algorithmVersion",
         "baseSeed",
         "seedUsed",
-        "participantIds",
         "matchUpIds",
         "pairings",
-        "scoringContract",
-        "sourceFingerprint"
+        "scoringContract"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        { "if": { "properties": { "format": { "const": "MEXICANO" } } }, "then": { "required": ["standingsSnapshot"] } }
+      ]
     },
     "CompetitionProfileScoring": {
       "type": "object",

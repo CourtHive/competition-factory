@@ -1,3 +1,4 @@
+import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { instanceCount } from '@Tools/arrays';
 import { analyzeSet } from './analyzeSet';
@@ -36,6 +37,23 @@ export function analyzeMatchUp(params?): ResultType & {
 
   matchUpFormat = matchUpFormat || matchUp?.matchUpFormat;
   const matchUpScoringFormat = parse(matchUpFormat);
+  if (matchUpScoringFormat?.setFormat?.combinedPointTotal) {
+    const sets = matchUp.score?.sets ?? [];
+    const analysis =
+      sets.length === 1
+        ? analyzeCombinedPointSet(sets[0], matchUpScoringFormat.setFormat)
+        : { valid: false, complete: false, winningSide: undefined };
+    const validWinner = matchUp.winningSide === analysis.winningSide;
+    return {
+      isCompletedMatchUp: analysis.complete,
+      calculatedWinningSide: analysis.winningSide,
+      validMatchUpWinningSide: analysis.valid && validWinner,
+      validMatchUpOutcome: analysis.valid && analysis.complete && validWinner,
+      completedSetsHaveValidOutcomes: analysis.valid,
+      completedSetsCount: Number(analysis.complete),
+      matchUpScoringFormat,
+    };
+  }
   const isCompletedMatchUp = !!matchUp?.winningSide;
 
   const sets = matchUp.score?.sets;

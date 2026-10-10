@@ -4,6 +4,7 @@ import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchU
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
+import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { reconcileByeAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileByeAdvancements';
 import { reconcileCarriesPastByes } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
@@ -219,7 +220,16 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   // DECISION: Accept matchUpFormat from either direct param or nested in outcome
   // WHY: Provides flexibility in how API is called - format can be set along with status/score
-  const matchUpFormat = params.matchUpFormat || params.outcome?.matchUpFormat;
+  const rotating = resolveRotatingPartnerOutcome({
+    drawDefinition,
+    event,
+    matchUpId,
+    ...params.outcome,
+    matchUpFormat: requestedMatchUpFormat(params),
+  });
+  if (rotating.error) return rotating;
+  params = { ...params, ...rotating, outcome: params.outcome && { ...params.outcome, ...rotating } };
+  const matchUpFormat = requestedMatchUpFormat(params);
 
   // DECISION: Look up scoring policy for this tournament/event
   // WHY: Policies control validation rules and behavior (e.g., whether to require participants for scoring)
@@ -291,10 +301,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     // render it as [10-8]. The format usually lives on the matchUp, not on the outcome, so spreading
     // outcome alone left it undefined and the deciding set rendered as a plain game score.
     // Resolution failure yields undefined — the same format-less rendering as before, never worse.
-    const formatResult = matchUpFormat
-      ? undefined
-      : getMatchUpFormat({ tournamentRecord, drawDefinition, matchUpId, event });
-    const effectiveMatchUpFormat = matchUpFormat ?? formatResult?.matchUpFormat;
+    const effectiveMatchUpFormat = resolveScoreFormat({
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+      event,
+      matchUpFormat,
+    });
 
     const { score: scoreObject } = matchUpScore({
       ...outcome,
@@ -521,4 +534,12 @@ function schedulePreservedWarnings({
     )
     .map((matchUp) => matchUp.matchUpId);
   return matchUpIds.length ? [{ code: SCHEDULE_PRESERVED_ON_EXIT, matchUpIds }] : [];
+}
+
+function requestedMatchUpFormat(params: SetMatchUpStatusArgs) {
+  return params.matchUpFormat || params.outcome?.matchUpFormat;
+}
+
+function resolveScoreFormat(params: SetMatchUpStatusArgs) {
+  return params.matchUpFormat ?? getMatchUpFormat(params)?.matchUpFormat;
 }

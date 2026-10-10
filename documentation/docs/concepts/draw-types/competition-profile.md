@@ -131,23 +131,25 @@ if (!preview.error) {
     structureId: preview.structureId,
     roundNumber: 1,
     requestId, // unique application identifier; retain for retries
-    expectedFingerprint: preview.sourceFingerprint,
+    expectedPairings: preview.round,
+    expectedScoringContract: preview.scoringContract,
   });
 }
 ```
 
-Preview creates no participants or matchUps. Application recomputes the preview, refuses stale source
-state and stages PAIR creation and match insertion before committing. Existing partnerships are reused;
+Preview creates no participants or matchUps. Application recomputes the preview, refuses changed approved pairings or scoring rules and stages PAIR creation and match insertion before committing. Existing partnerships are reused;
 new participants and matchUps have IDs derived from the draw, request and round for server/client replay.
 Successful retries with the same request return the stored round without additional writes. Changed
 request arguments, removed matches or edited PAIR membership are refused.
 
-Applied provenance lives in `drawDefinition.competitionRounds`, separate from configuration. Each record
-captures the roster, side memberships, matchUp IDs, algorithm version, base/round seeds, scoring contract
-and source fingerprint. Treat the fingerprint as opaque. Do not edit PAIR memberships after application.
+Applied provenance lives in `drawDefinition.competitionRounds`, separate from configuration. Each round record
+captures side memberships, matchUp IDs, algorithm version, base/round seeds and scoring contract.
+The frozen roster is stored once in `drawDefinition.competitionRoster`; Mexicano records also capture
+the source standings snapshot. No freshness token is persisted. Do not edit PAIR memberships after application.
 
 Americano supports sequential application of its complete saved rotation. Mexicano currently supports
 seeded round one; later rounds are refused until authoritative individual standings are available.
 The roster must stay fixed after application. The round API honours DRAWS locks and participant locks
-when adding PAIRs. Court allocation uses existing scheduling methods. MatchUps do not yet carry a
-fixed-total `matchUpFormat`: manual/live scoring integration remains a separate increment.
+when adding PAIRs. Court allocation uses existing scheduling methods. Each matchUp carries a fixed-total `matchUpFormat` derived from the saved round scoring contract.
+Applied round formats cannot be changed through matchUp, structure, draw or event scope. Scheduling
+edits and unrelated PAIR additions do not invalidate approved pairings.

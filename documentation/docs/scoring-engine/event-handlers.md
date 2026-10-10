@@ -13,6 +13,7 @@ interface ScoringEventHandlers {
   onPoint?: (context: ScoringEventContext) => void;
   onGameComplete?: (context: ScoringEventContext & { gameWinner: 0 | 1 }) => void;
   onSetComplete?: (context: ScoringEventContext & { setWinner: 0 | 1 }) => void;
+  onMatchTie?: (context: ScoringEventContext) => void;
   onMatchComplete?: (context: ScoringEventContext & { matchWinner: 0 | 1 }) => void;
   onUndo?: (context: ScoringEventContext) => void;
   onRedo?: (context: ScoringEventContext) => void;
@@ -332,3 +333,10 @@ When `scoreValue` is specified, it bypasses the normal point value resolution (i
 - **[Core API Reference](./scoring-engine-api.md)** — Complete method reference
 - **[Multi-Sport Format Support](./format-support.md)** — Format strings for different sports
 - **[Visualization Applications](./visualization-applications.md)** — Building visualizations with ScoringEngine data
+
+### Combined-point completion
+
+For a combined-point segment such as `SET1-S:P32`, `onMatchTie` fires when the final
+score is tied. `onMatchComplete` continues to require a winner. Rally increments do
+not fire `onGameComplete`; a tied segment does not fire the winner-bearing `onSetComplete`.
+Undo and redo retain their existing callbacks.

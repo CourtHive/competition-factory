@@ -173,6 +173,7 @@ export type OutcomeView = {
     includesBye: boolean;
     /** a line whose last set format is timed: the score survives a status that would otherwise remove it */
     timedTie: boolean;
+    rotatingPartners?: boolean;
   };
 };
 

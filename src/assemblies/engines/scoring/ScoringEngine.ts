@@ -16,6 +16,7 @@
  */
 
 import { finalSetGoverns, openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
 import { resolveSetType } from '@Tools/scoring/scoringUtilities';
@@ -145,7 +146,9 @@ export interface ScoringEventHandlers {
   onGameComplete?: (context: ScoringEventContext & { gameWinner: 0 | 1 }) => void;
   /** Fired when a set completes (within addPoint) */
   onSetComplete?: (context: ScoringEventContext & { setWinner: 0 | 1 }) => void;
-  /** Fired when the match completes */
+  /** A combined-point segment completed without a winner. */
+  onMatchTie?: (context: ScoringEventContext) => void;
+  /** Fired when the match completes with a winner. */
   onMatchComplete?: (context: ScoringEventContext & { matchWinner: 0 | 1 }) => void;
 }
 
@@ -349,7 +352,7 @@ export class ScoringEngine {
         (sum, s) => sum + (s.side1Score || 0) + (s.side2Score || 0),
         0,
       );
-      if (curTotalGames > prevTotalGames) {
+      if (curTotalGames > prevTotalGames && !this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
         this.eventHandlers.onGameComplete?.({ ...ctx, gameWinner: options.winner! });
       }
 
@@ -363,10 +366,14 @@ export class ScoringEngine {
 
       // Detect match completion
       if (!prevComplete && this.state.matchUpStatus === COMPLETED) {
-        const matchWinner = this.state.winningSide === 1 ? 0 : 1;
-        this.eventHandlers.onMatchComplete?.({ ...ctx, matchWinner });
+        this.notifyMatchComplete(ctx);
       }
     }
+  }
+
+  private notifyMatchComplete(ctx: ScoringEventContext): void {
+    if (this.state.winningSide === undefined) this.eventHandlers?.onMatchTie?.(ctx);
+    else this.eventHandlers?.onMatchComplete?.({ ...ctx, matchWinner: this.state.winningSide === 1 ? 0 : 1 });
   }
 
   /**
@@ -403,6 +410,7 @@ export class ScoringEngine {
    * @param options - Game result data
    */
   addGame(options: AddGameOptions): void {
+    this.requireGameOrTimedSegment();
     this.applyAddGame(options);
 
     // Record entry in unified timeline
@@ -425,6 +433,7 @@ export class ScoringEngine {
    * @param options - Segment options
    */
   endSegment(options?: EndSegmentOptions): void {
+    this.requireGameOrTimedSegment();
     this.applyEndSegment(options);
 
     // Record entry in unified timeline
@@ -446,6 +455,12 @@ export class ScoringEngine {
    * @param options - Initial score state
    */
   setInitialScore(options: InitialScoreOptions): void {
+    if (this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
+      const sets = options.sets.map((set, index) => ({ ...set, setNumber: index + 1 }));
+      if (options.currentGameScore) throw new Error('Combined-point formats have no game score');
+      if (options.currentSetScore) sets.push({ ...options.currentSetScore, setNumber: sets.length + 1 });
+      this.validateCombinedScore(sets);
+    }
     this.initialScore = options;
     this.redoStack = [];
 
@@ -1258,6 +1273,14 @@ export class ScoringEngine {
    * Apply a set score to the current state (no entry recording)
    */
   private applyAddSet(options: AddSetOptions): void {
+    if (this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
+      if (this.state.score.sets.length) throw new Error('Combined-point formats have one segment');
+      const sets = [{ ...options, setNumber: 1 }];
+      this.validateCombinedScore(sets);
+      this.state.score.sets = sets;
+      this.completeCombinedScore();
+      return;
+    }
     const { side1Score, side2Score, side1TiebreakScore, side2TiebreakScore } = options;
 
     // Infer winningSide if not provided
@@ -1385,9 +1408,38 @@ export class ScoringEngine {
     this.checkMatchCompletion();
   }
 
-  /**
-   * Check and apply set completion for a given set
-   */
+  /** Prevent game/timer inputs from creating invalid rally totals. */
+  private requireGameOrTimedSegment(): void {
+    if (this.cachedFormatStructure?.setFormat?.combinedPointTotal)
+      throw new Error('Combined-point segments accept rally or score inputs, not game or timer inputs');
+  }
+
+  private validateCombinedScore(sets: SetScore[]): void {
+    const format = this.cachedFormatStructure?.setFormat;
+    if (
+      !format ||
+      sets.length !== 1 ||
+      !analyzeCombinedPointSet(sets[0], {
+        combinedPointTotal: format.combinedPointTotal!,
+        tieResolution: format.tieResolution!,
+        winningMargin: format.winningMargin,
+      }).valid
+    )
+      throw new Error('Invalid combined-point score');
+  }
+
+  private completeCombinedScore(matchUp: MatchUp = this.state): void {
+    const format = this.cachedFormatStructure!.setFormat!;
+    const analysis = analyzeCombinedPointSet(matchUp.score.sets[0], {
+      combinedPointTotal: format.combinedPointTotal!,
+      tieResolution: format.tieResolution!,
+      winningMargin: format.winningMargin,
+    });
+    matchUp.score.sets[0].winningSide = analysis.winningSide;
+    matchUp.winningSide = analysis.winningSide;
+    matchUp.matchUpStatus = analysis.complete ? COMPLETED : IN_PROGRESS;
+  }
+
   private checkSetCompletion(currentSet: SetScore): void {
     const formatStructure = parse(this.state.matchUpFormat);
     if (!formatStructure) return;
@@ -1604,6 +1656,14 @@ export class ScoringEngine {
    * Apply initial score to matchUp state
    */
   private applyInitialScore(matchUp: MatchUp, options: InitialScoreOptions): void {
+    if (this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
+      const sets = options.sets.map((set, index) => ({ ...set, setNumber: index + 1 }));
+      if (options.currentSetScore) sets.push({ ...options.currentSetScore, setNumber: sets.length + 1 });
+      this.validateCombinedScore(sets);
+      matchUp.score.sets = sets;
+      this.completeCombinedScore(matchUp);
+      return;
+    }
     matchUp.score.sets = [];
     for (let i = 0; i < options.sets.length; i++) {
       const setData = options.sets[i];

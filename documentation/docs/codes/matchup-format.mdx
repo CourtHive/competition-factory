@@ -455,3 +455,20 @@ SET5-S:5WB1-G:3C
 ```
 
 This expresses: best of 5 sets, sets to 5 games (first to 5 wins, e.g. `1–5`, `4–5`, `5–4`), 3 consecutive points per game.
+
+## Combined Rally Totals
+
+`SET1-S:P32` represents one segment ending when both sides' rally scores total 32.
+`P32DP` adds a deciding rally only after a tied base segment; `P32WB2` continues from
+that tie until a two-point margin. An unequal result at the base total is complete
+under every variant. Plain `P32` permits a completed 16–16 without a winner.
+
+Even totals with the tie-allowed rule are refused in elimination structures that
+advance a match winner, both during draw generation and format changes. Odd totals,
+`DP` and `WB` cannot end tied. A winnerless `COMPLETED` result is also refused in
+winner-advancing structures. Ordinary round-robin tie tally semantics remain
+a separate policy decision.
+
+The `P` segment is restricted to `SET1`, without final-set, game, aggregate or timed
+modifiers. Scores use `side1Score` and `side2Score`; mixed tiebreak or game-point fields
+are refused. See [live scoring support](/docs/scoring-engine/format-support).

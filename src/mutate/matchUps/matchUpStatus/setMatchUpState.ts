@@ -2,6 +2,7 @@ import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGoverno
 import { isPropagatedExit, rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
+import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
@@ -19,6 +20,7 @@ import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -27,6 +29,7 @@ import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { validateScore } from '@Validators/validateScore';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
@@ -44,16 +47,6 @@ import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
-import {
-  DrawDefinition,
-  Event,
-  MatchUp,
-  MatchUpStatusUnion,
-  PositionAssignment,
-  Score,
-  Structure,
-  Tournament,
-} from '@Types/tournamentTypes';
 import {
   CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_WINNING_SIDE,
@@ -84,6 +77,16 @@ import {
   validMatchUpStatuses,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  PositionAssignment,
+  Score,
+  Structure,
+  Tournament,
+} from '@Types/tournamentTypes';
 
 // Reverting a validated-COMPLETED matchUp to one of these "still live / paused"
 // statuses (without providing a new outcome) would silently strip its result and
@@ -135,8 +138,12 @@ type SetMatchUpStateArgs = {
 export function setMatchUpState(params: SetMatchUpStateArgs): any {
   const stack = 'setMatchUpStatus';
 
+  const rotating = resolveRotatingPartnerOutcome(params);
+  if (rotating.error) return rotating;
+  params = { ...params, ...rotating };
+
   // always clear score if DOUBLE_WALKOVER or WALKOVER
-  if (params.matchUpStatus && [WALKOVER, DOUBLE_WALKOVER].includes(params.matchUpStatus)) params.score = undefined;
+  if (isWalkoverStatus(params.matchUpStatus)) params.score = undefined;
 
   const {
     disableScoreValidation,
@@ -717,7 +724,9 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
   }
 
   let result;
-  if (!activeDownstream || !hasPropagated) {
+  if (isUndirectedRotatingOutcome(params, activeDownstream)) {
+    result = applyMatchUpValues(params);
+  } else if (!activeDownstream || !hasPropagated) {
     result = noDownstreamDependencies(params);
   } else if (matchUpWinner) {
     result = winningSideWithDownstreamDependencies(params);
@@ -954,11 +963,14 @@ function winningSideWithDownstreamDependencies(params) {
 
 function applyMatchUpValues(params) {
   const { tournamentRecord, matchUp, event } = params;
+  const combinedPointCorrection =
+    !!parse(params.matchUpFormat)?.setFormat?.combinedPointTotal && !!params.score && !params.winningSide;
   const removeWinningSide =
-    params.isCollectionMatchUp &&
-    matchUp.winningSide &&
-    !params.winningSide &&
-    !checkScoreHasValue({ score: params.score });
+    combinedPointCorrection ||
+    (params.isCollectionMatchUp &&
+      matchUp.winningSide &&
+      !params.winningSide &&
+      !checkScoreHasValue({ score: params.score }));
   const newMatchUpStatus = params.isCollectionMatchUp
     ? params.matchUpStatus || (removeWinningSide && TO_BE_PLAYED) || (params.winningSide && COMPLETED) || INCOMPLETE
     : params.matchUpStatus || COMPLETED;
@@ -1197,4 +1209,13 @@ function checkParticipants({
   }
 
   return { ...SUCCESS };
+}
+
+/** Winnerless rotating results carry a score without invoking removal of directed positions. */
+function isUndirectedRotatingOutcome(params: SetMatchUpStateArgs, activeDownstream: boolean): boolean {
+  return !activeDownstream && !params.winningSide && isRotatingPartnerDraw(params.drawDefinition, params.event);
+}
+
+function isWalkoverStatus(status?: string) {
+  return !!status && [WALKOVER, DOUBLE_WALKOVER].includes(status);
 }

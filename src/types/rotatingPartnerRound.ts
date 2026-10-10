@@ -10,9 +10,8 @@ export type RotatingPartnerRoundRecord = {
   algorithmVersion: 1;
   baseSeed: number;
   seedUsed: number;
-  participantIds: string[];
   matchUpIds: string[];
   pairings: [[string, string], [string, string]][];
   scoringContract: RotatingPartnerScoreContract;
-  sourceFingerprint: string;
+  standingsSnapshot?: { participantId: string; pointsScored: number }[];
 };

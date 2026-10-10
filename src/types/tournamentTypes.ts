@@ -378,6 +378,7 @@ export type CategoryUnion = `${CategoryEnum}`;
 export interface DrawDefinition {
   /** Versioned format configuration; competition lifecycle state is stored separately. */
   competitionProfile?: CompetitionProfile;
+  competitionRoster?: string[];
   competitionRounds?: RotatingPartnerRoundRecord[];
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
   automated?: boolean;

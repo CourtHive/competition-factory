@@ -61,7 +61,7 @@ function setup(count = 8) {
 function request(context: ReturnType<typeof setup>, requestId = `round-${context.roundNumber}`) {
   const preview = getRotatingPartnerRoundPreview(context);
   expect(preview.error).toBeUndefined();
-  return { ...context, requestId, expectedFingerprint: preview.sourceFingerprint! };
+  return { ...context, requestId, expectedPairings: preview.round!, expectedScoringContract: preview.scoringContract! };
 }
 afterEach(() => {
   setSubscriptions({ subscriptions: {} });
@@ -80,8 +80,8 @@ writeModeMatrix(() => {
     const snapshot = structuredClone(context.tournamentRecord);
     expect(generateRotatingPartnerRound(first)).toMatchObject({ success: true, existingRound: true });
     expect(context.tournamentRecord).toEqual(snapshot);
-    applied.roundRecord!.participantIds.push('external');
-    expect(context.drawDefinition.competitionRounds![0].participantIds).not.toContain('external');
+    applied.roundRecord!.pairings[0][0].push('external');
+    expect(context.drawDefinition.competitionRounds![0].pairings[0][0]).not.toContain('external');
     for (let roundNumber = 2; roundNumber <= 7; roundNumber++) {
       context.roundNumber = roundNumber;
       expect(generateRotatingPartnerRound(request(context)).error).toBeUndefined();
@@ -207,7 +207,8 @@ it('round provenance passes the closed schema and survives serialized reload', (
       drawId: context.drawDefinition.drawId,
       roundNumber: 1,
       requestId: args.requestId,
-      expectedFingerprint: args.expectedFingerprint,
+      expectedPairings: args.expectedPairings,
+      expectedScoringContract: args.expectedScoringContract,
     }),
   ).toMatchObject({ success: true, existingRound: true });
 });
@@ -228,7 +229,8 @@ it.each(['draw', 'event', 'tournament'])('public materialization honours DRAWS l
       drawId,
       roundNumber: 1,
       requestId: 'locked',
-      expectedFingerprint: preview.sourceFingerprint!,
+      expectedPairings: preview.round!,
+      expectedScoringContract: preview.scoringContract!,
     }).error,
   ).toBe(MUTATION_LOCKED);
 });
@@ -274,7 +276,13 @@ it('respects participant locks while creating scaffolding, with an explicit toke
   const drawId = context.drawDefinition.drawId;
   const preview = tournamentEngine.getRotatingPartnerRoundPreview({ drawId, roundNumber: 1 });
   expect(tournamentEngine.addMutationLock({ scope: 'PARTICIPANTS', lockToken: 'pair-lock' }).success).toBe(true);
-  const params = { drawId, roundNumber: 1, requestId: 'locked-pairs', expectedFingerprint: preview.sourceFingerprint! };
+  const params = {
+    drawId,
+    roundNumber: 1,
+    requestId: 'locked-pairs',
+    expectedPairings: preview.round!,
+    expectedScoringContract: preview.scoringContract!,
+  };
   expect(tournamentEngine.generateRotatingPartnerRound(params).error).toBe(MUTATION_LOCKED);
   expect(tournamentEngine.generateRotatingPartnerRound({ ...params, lockToken: 'pair-lock' }).success).toBe(true);
 });
@@ -293,4 +301,122 @@ it('applied provenance keeps the profile locked even after generic match removal
   matchUpsOf(context.drawDefinition.structures![0])!.length = 0;
   context.drawDefinition.entries = [];
   expect(removeCompetitionProfile(context).error).toBe(EXISTING_MATCHUPS);
+});
+
+it.each(['matchUp', 'structure', 'draw', 'event'] as const)('locks applied round formats at %s scope', (scope) => {
+  const context = setup();
+  const applied = generateRotatingPartnerRound(request(context));
+  tournamentEngine.setState(context.tournamentRecord);
+  const params =
+    scope === 'event'
+      ? { eventId: context.event.eventId }
+      : {
+          drawId: context.drawDefinition.drawId,
+          ...(scope === 'structure' ? { structureId: applied.roundRecord!.structureId } : {}),
+          ...(scope === 'matchUp' ? { matchUpId: applied.matchUps![0].matchUpId } : {}),
+        };
+  const before = tournamentEngine.getTournament().tournamentRecord;
+  expect(tournamentEngine.setMatchUpFormat({ ...params, matchUpFormat: 'SET3-S:6/TB7' }).error).toBeTruthy();
+  const after = tournamentEngine.getTournament().tournamentRecord;
+  expect(after.events).toEqual(before.events);
+  expect(after.participants).toEqual(before.participants);
+  context.drawDefinition.structures![0].matchUps![0].matchUpFormat = 'SET3-S:6/TB7';
+  expect(getRotatingPartnerRoundPreview({ ...context, roundNumber: 2 }).error).toBeTruthy();
+});
+
+it('irrelevant scheduling and unrelated pairs do not invalidate approved pairings', () => {
+  const context = setup();
+  const first = generateRotatingPartnerRound(request(context));
+  context.roundNumber = 2;
+  const approved = request(context);
+  first.matchUps![0].timeItems = [{ itemType: 'SCHEDULE.DATE', itemValue: '2026-10-12' }];
+  context.drawDefinition.structures![0].matchUps![0].timeItems = first.matchUps![0].timeItems;
+  context.tournamentRecord.participants!.push({
+    participantId: 'other-pair',
+    participantType: 'PAIR',
+    individualParticipantIds: ['p0', 'p1'],
+  });
+  expect(generateRotatingPartnerRound(approved).error).toBeUndefined();
+});
+
+it('the scoring contract is part of approval even when pairings are unchanged', () => {
+  const context = setup();
+  const approved = request(context);
+  if (context.drawDefinition.competitionProfile!.format !== 'LADDER')
+    context.drawDefinition.competitionProfile!.scoring.combinedPointTotal = 24;
+  const before = structuredClone(context.tournamentRecord);
+  expect(generateRotatingPartnerRound(approved).error).toBeTruthy();
+  expect(context.tournamentRecord).toEqual(before);
+});
+
+it('round record growth is bounded and linear for a full 32-player rotation', () => {
+  const context = setup(32);
+  const mapping = new Map(
+    context.tournamentRecord.participants!.map((participant, index) => [
+      participant.participantId,
+      `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+    ]),
+  );
+  for (const participant of context.tournamentRecord.participants!)
+    participant.participantId = mapping.get(participant.participantId)!;
+  for (const entry of [...context.event.entries!, ...context.drawDefinition.entries!])
+    entry.participantId = mapping.get(entry.participantId)!;
+  const sizes: number[] = [];
+  for (let roundNumber = 1; roundNumber <= 31; roundNumber++) {
+    context.roundNumber = roundNumber;
+    const applied = generateRotatingPartnerRound(request(context));
+    expect(applied.error).toBeUndefined();
+    sizes.push(JSON.stringify(applied.roundRecord).length);
+    expect(applied.roundRecord).not.toHaveProperty('sourceFingerprint');
+    expect(applied.roundRecord).not.toHaveProperty('participantIds');
+  }
+  expect(context.drawDefinition.competitionRoster).toHaveLength(32);
+  expect(Math.max(...sizes)).toBeLessThan(4096);
+  expect(Math.max(...sizes)).toBeLessThan(Math.min(...sizes) * 1.2);
+  expect(JSON.stringify(context.drawDefinition.competitionRounds).length).toBeLessThan(31 * 4096);
+});
+
+it('300 unrelated partnerships have no effect on full-rotation round record size', () => {
+  const baseline = setup(16);
+  const unrelated = setup(16);
+  for (let index = 0; index < 300; index++) {
+    const ids = [`other-${index}-a`, `other-${index}-b`];
+    unrelated.tournamentRecord.participants!.push(
+      ...ids.map((participantId) => ({
+        participantId,
+        participantType: 'INDIVIDUAL' as const,
+        participantRole: 'COMPETITOR' as const,
+      })),
+      { participantId: `other-pair-${index}`, participantType: 'PAIR', individualParticipantIds: ids },
+    );
+  }
+  for (let roundNumber = 1; roundNumber <= 15; roundNumber++) {
+    baseline.roundNumber = unrelated.roundNumber = roundNumber;
+    expect(generateRotatingPartnerRound(request(baseline)).error).toBeUndefined();
+    expect(generateRotatingPartnerRound(request(unrelated)).error).toBeUndefined();
+  }
+  expect(unrelated.drawDefinition.competitionRounds).toEqual(baseline.drawDefinition.competitionRounds);
+});
+
+it('retry identity includes pairings and score rules, and force cannot strip an applied format', () => {
+  const context = setup();
+  const approved = request(context);
+  generateRotatingPartnerRound(approved);
+  const changed = structuredClone(approved.expectedPairings);
+  changed[0].reverse();
+  expect(generateRotatingPartnerRound({ ...approved, expectedPairings: changed }).error).toBeTruthy();
+  expect(
+    generateRotatingPartnerRound({
+      ...approved,
+      expectedScoringContract: { ...approved.expectedScoringContract, combinedPointTotal: 24 },
+    }).error,
+  ).toBeTruthy();
+  tournamentEngine.setState(context.tournamentRecord);
+  expect(
+    tournamentEngine.setMatchUpFormat({
+      drawId: context.drawDefinition.drawId,
+      matchUpFormat: 'SET1-S:P32',
+      force: true,
+    }).error,
+  ).toBeTruthy();
 });

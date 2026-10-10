@@ -1,6 +1,7 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMatchUpEventType';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { checkDrawFormatCompatibility } from '@Validators/tiedFormatCompatibility';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
@@ -92,6 +93,9 @@ export function setMatchUpFormat(params: SetMatchUpStatusArgs) {
       stack,
     });
   }
+
+  const compatibility = checkSelectedDrawFormats(params, { structureIds, eventIds, drawIds });
+  if (compatibility.error) return compatibility;
 
   if (drawId && matchUpId && drawDefinition) {
     const result = applyMatchUpFormat({
@@ -251,4 +255,43 @@ function applyFormatToStructures({
   }
 
   return { modifiedStructureIds, modificationsCount };
+}
+
+function checkSelectedDrawFormats(
+  params: SetMatchUpStatusArgs,
+  selectors: { structureIds: string[]; eventIds: string[]; drawIds: string[] },
+): ReturnType<typeof checkDrawFormatCompatibility> {
+  const { tournamentRecord, eventType, stages, stageSequences, matchUpFormat, matchUpId, force } = params;
+  const { structureIds, eventIds, drawIds } = selectors;
+  // Validate every selected draw before bulk operations can mutate any of them.
+  for (const evt of tournamentRecord?.events ?? []) {
+    if ((eventIds.length && !eventIds.includes(evt.eventId)) || (eventType && evt.eventType !== eventType)) continue;
+    for (const dd of evt.drawDefinitions ?? []) {
+      if (drawIds.length && !drawIds.includes(dd.drawId)) continue;
+      const selectedStructures = dd.structures
+        ?.filter(
+          (structure) =>
+            (!stages || stages.includes(structure.stage!)) &&
+            (!stageSequences || stageSequences.includes(structure.stageSequence!)) &&
+            (!structureIds.length || structureIds.includes(structure.structureId)),
+        )
+        .map((structure) => structure.structureId);
+      const writesDrawFormat =
+        !structureIds.length ||
+        !dd.structures?.some(
+          (structure) =>
+            selectedStructures?.includes(structure.structureId) && structure.matchUpFormat !== matchUpFormat,
+        );
+      const check = checkDrawFormatCompatibility({
+        drawDefinition: dd,
+        matchUpFormat,
+        structureIds: writesDrawFormat ? undefined : selectedStructures,
+        matchUpId: writesDrawFormat ? undefined : matchUpId,
+        force,
+      });
+      if (check.error) return check;
+    }
+  }
+
+  return {};
 }

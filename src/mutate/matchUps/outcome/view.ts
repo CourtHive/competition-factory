@@ -12,6 +12,7 @@ import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -539,6 +540,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       includesBye: !!matchUp.drawPositions?.some((position) =>
         allAssignments.some((assignment) => assignment.bye && assignment.drawPosition === position),
       ),
+      rotatingPartners: isRotatingPartnerDraw(drawDefinition, event),
       timedTie: !!(inContextMatchUp?.collectionId && lastSetFormatIsTimed({ ...inContextMatchUp })),
     },
   };

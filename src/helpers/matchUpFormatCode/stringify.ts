@@ -1,4 +1,5 @@
 import { SET, NOAD, CONSECUTIVE, TRADITIONAL } from '@Constants/matchUpFormatConstants';
+import { stringifyCombinedPointFormat } from './combinedPointFormat';
 import { isObject } from '@Tools/objects';
 
 export function stringify(matchUpFormatObject, preserveRedundant?: boolean) {
@@ -44,6 +45,19 @@ function stringifyGameFormat(gameFormat) {
 }
 
 function getSetFormat(matchUpFormatObject, preserveRedundant?: boolean) {
+  if (matchUpFormatObject.finalSetFormat?.combinedPointTotal) return undefined;
+  if (
+    matchUpFormatObject.setFormat?.combinedPointTotal &&
+    (matchUpFormatObject.bestOf !== 1 ||
+      matchUpFormatObject.exactly ||
+      matchUpFormatObject.aggregate ||
+      matchUpFormatObject.matchMods?.length ||
+      matchUpFormatObject.finalSetFormat ||
+      matchUpFormatObject.gameFormat ||
+      matchUpFormatObject.matchUpConstraint ||
+      (matchUpFormatObject.matchRoot && matchUpFormatObject.matchRoot !== SET))
+  )
+    return undefined;
   const bestOfValue = getNumber(matchUpFormatObject.bestOf) || undefined;
   const exactly = getNumber(matchUpFormatObject.exactly) || undefined;
   const setLimit = bestOfValue || exactly;
@@ -101,6 +115,7 @@ function emitsParseableSetCount(matchUpFormatObject, setLimit?: number, exactly?
 
 function stringifySet(setObject, preserveRedundant) {
   if (typeof setObject === 'object' && Object.keys(setObject).length) {
+    if (setObject.combinedPointTotal) return stringifyCombinedPointFormat(setObject);
     if (setObject.timed) return timedSetFormat(setObject);
     if (setObject.outs) return `O${setObject.outs}`;
     if (setObject.tiebreakSet) return tiebreakFormat(setObject.tiebreakSet);

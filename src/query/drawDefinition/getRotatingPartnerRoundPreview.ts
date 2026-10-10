@@ -2,9 +2,11 @@ import { generateAmericanoPairings } from '@Generators/drawDefinitions/drawTypes
 import { generateMexicanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateMexicanoPairings';
 import { getAvailableMatchUpsCount } from '@Generators/drawDefinitions/drawTypes/adHoc/getAvailableMatchUpsCount';
 import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
+import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { getRotatingPartnerScoringContract } from './getRotatingPartnerScoringContract';
 import { checkValidEntries } from '@Validators/checkValidEntries';
 import { matchUpsOf } from '@Acquire/structureMembers';
+import { PAIR } from '@Constants/participantConstants';
 import { canonicalJson } from '@Tools/canonicalJson';
 
 // constants and types
@@ -26,7 +28,7 @@ export type RotatingPartnerRoundArgs = {
 
 export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs): ResultType & {
   round?: RotatingPartnerRound;
-  sourceFingerprint?: string;
+  standingsSnapshot?: { participantId: string; pointsScored: number }[];
   scoringContract?: RotatingPartnerScoreContract;
   participantIds?: string[];
   seedUsed?: number;
@@ -56,11 +58,11 @@ export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs)
   );
   const validation = checkValidEntries({ tournamentRecord, drawDefinition, event, consideredEntries: entries });
   if (validation.error) return validation;
-  const participantIds = entries.map((entry) => entry.participantId).sort();
+  const participantIds = entries.map((entry) => entry.participantId).sort((a, b) => a.localeCompare(b));
   if (participantIds.length > 128) return { error: INVALID_VALUES, info: 'round exceeds the 32-matchUp cap' };
   const entrants = validateRotatingPartnerEntrants({ tournamentRecord, participantIds });
   if (entrants.error) return entrants;
-  const priorRoster = drawDefinition.competitionRounds?.[0]?.participantIds;
+  const priorRoster = drawDefinition.competitionRoster;
   if (priorRoster && canonicalJson(priorRoster) !== canonicalJson(participantIds))
     return { error: INVALID_VALUES, info: 'roster differs from the applied competition roster' };
   if (
@@ -92,22 +94,14 @@ export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs)
   if (!round || (profile.format === 'MEXICANO' && roundNumber > profile.completion.rounds))
     return { error: INVALID_VALUES, info: 'competition round limit reached' };
   if (round.length > 32) return { error: INVALID_VALUES, info: 'round exceeds the 32-matchUp cap' };
-  // Exact canonical source text avoids treating a non-cryptographic hash collision as freshness.
-  const sourceFingerprint = canonicalJson({
-    drawId: drawDefinition.drawId,
-    structureId,
-    roundNumber,
-    profile,
-    participantIds,
-    existing,
-    pairs: (tournamentRecord.participants ?? []).filter((participant) => participant.participantType === 'PAIR'),
-  });
   return {
     ...SUCCESS,
     round,
     structureId,
     participantIds,
-    sourceFingerprint,
+    ...(profile.format === 'MEXICANO'
+      ? { standingsSnapshot: participantIds.map((participantId) => ({ participantId, pointsScored: 0 })) }
+      : {}),
     scoringContract: scoring.contract,
     seedUsed: generated.seedUsed,
   };
@@ -119,6 +113,7 @@ export function appliedRotatingPartnerRoundsAreIntact({
   tournamentRecord,
 }: Pick<RotatingPartnerRoundArgs, 'drawDefinition' | 'tournamentRecord'>): boolean {
   const rounds = drawDefinition.competitionRounds ?? [];
+  if (rounds.length && !drawDefinition.competitionRoster?.length) return false;
   const profile = drawDefinition.competitionProfile;
   const scoring = getRotatingPartnerScoringContract({ drawDefinition });
   if (rounds.length && (!profile || profile.format === 'LADDER' || scoring.error)) return false;
@@ -140,12 +135,13 @@ export function appliedRotatingPartnerRoundsAreIntact({
     for (const [index, id] of round.matchUpIds.entries()) {
       const matchUp = matches.get(id);
       if (matchUp?.roundNumber !== round.roundNumber || matchUp.sides?.length !== 2) return false;
+      if (matchUp.matchUpFormat !== `SET1-S:${stringifyCombinedPointFormat(round.scoringContract)}`) return false;
       for (let sideNumber = 1; sideNumber <= 2; sideNumber++) {
         const side = matchUp.sides.find((candidate) => candidate.sideNumber === sideNumber);
         const pair = participants.get(side?.participantId ?? '');
         const members = pair?.individualParticipantIds;
         if (
-          pair?.participantType !== 'PAIR' ||
+          pair?.participantType !== PAIR ||
           !Array.isArray(members) ||
           canonicalJson(members.toSorted()) !== canonicalJson(round.pairings[index][sideNumber - 1].toSorted())
         )
