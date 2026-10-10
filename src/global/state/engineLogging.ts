@@ -16,21 +16,38 @@ type EngineLoggingArgs = {
   dryRun?: boolean;
 };
 
+type DevContextObject = Exclude<DevContextType, boolean>;
+
+/**
+ * THE RULES FOR WHAT THE DEV LOG PRINTS, stated once. `engineLogging` applies them after a call;
+ * `paramsMayBeLogged` asks them before it, to decide whether params must be copied (#5356). Two copies
+ * of the same rule drift: a logging option added to one and not the other either drops params from
+ * the log or brings back the copy on every call.
+ */
+const excludes = (devContext: DevContextObject, methodName: string): boolean =>
+  Array.isArray(devContext.exclude) && devContext.exclude.includes(methodName);
+
+/** params are printed for every method (`params: true`) or for the methods listed */
+const printsParams = (devContext: DevContextObject, methodName: string): boolean =>
+  Array.isArray(devContext.params) ? devContext.params.includes(methodName) : !!devContext.params;
+
+/** an error is printed, with its params and result, for every method (`errors: true`) or for the methods listed */
+const printsErrors = (devContext: DevContextObject, methodName: string): boolean =>
+  devContext.errors === true || (Array.isArray(devContext.errors) && devContext.errors.includes(methodName));
+
 export function engineLogging({ engineType, methodName, elapsed, params, result, dryRun }: EngineLoggingArgs) {
   const devContext: DevContextType = getDevContext();
   if (typeof devContext !== 'object') return;
 
   const log: any = { method: methodName };
   if (dryRun) log.dryRun = true;
-  const logError =
-    result?.error &&
-    (devContext.errors === true || (Array.isArray(devContext.errors) && devContext.errors.includes(methodName)));
+  const logError = !!result?.error && printsErrors(devContext, methodName);
 
-  const specifiedMethodParams = Array.isArray(devContext.params) && devContext.params?.includes(methodName);
+  const specifiedMethodParams = Array.isArray(devContext.params) && devContext.params.includes(methodName);
 
-  const logParams = (devContext.params && !Array.isArray(devContext.params)) || specifiedMethodParams;
+  const logParams = printsParams(devContext, methodName);
 
-  const exclude = Array.isArray(devContext.exclude) && devContext.exclude.includes(methodName);
+  const exclude = excludes(devContext, methodName);
 
   if (
     !exclude &&
@@ -70,10 +87,6 @@ export function engineLogging({ engineType, methodName, elapsed, params, result,
 export function paramsMayBeLogged(methodName: string): boolean {
   const devContext: DevContextType = getDevContext();
   if (typeof devContext !== 'object') return false;
-  if (Array.isArray(devContext.exclude) && devContext.exclude.includes(methodName)) return false;
-
-  const { params, errors } = devContext;
-  const forParams = Array.isArray(params) ? params.includes(methodName) : !!params;
-  const forErrors = errors === true || (Array.isArray(errors) && errors.includes(methodName));
-  return forParams || forErrors;
+  if (excludes(devContext, methodName)) return false;
+  return printsParams(devContext, methodName) || printsErrors(devContext, methodName);
 }
