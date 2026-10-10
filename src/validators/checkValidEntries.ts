@@ -68,17 +68,11 @@ export function checkValidEntries({
   const participantType = expectedParticipantType(eventType);
 
   const rotatingDraw = isRotatingPartnerDraw(drawDefinition, event);
-  const rotatingEntrantIds = new Set(
-    (event.drawDefinitions ?? [])
-      .filter((draw) => isRotatingPartnerDraw(draw, event))
-      .flatMap((draw) => (draw.entries ?? []).map((entry) => entry.participantId)),
-  );
-  const entries = consideredEntries ?? (rotatingDraw ? drawDefinition?.entries : event.entries) ?? [];
-  if (rotatingDraw) for (const entry of entries) rotatingEntrantIds.add(entry.participantId);
+  const entries = consideredEntries ?? drawDefinition?.entries ?? event.entries ?? [];
 
   const known = new Map(participants.map((participant) => [participant.participantId, participant]));
   const invalidRotatingIds = entries
-    .filter((entry) => rotatingEntrantIds.has(entry.participantId))
+    .filter(() => rotatingDraw)
     .map((entry) => entry.participantId)
     .filter((id) => !isRotatingPartnerEntrant(known.get(id)));
   if (invalidRotatingIds.length) return { error: INVALID_ENTRIES, invalidParticipantIds: invalidRotatingIds };
@@ -96,7 +90,7 @@ export function checkValidEntries({
   );
 
   const invalidEntries = enteredParticipants.filter((participant) => {
-    const rotatingEntrant = rotatingEntrantIds.has(participant.participantId);
+    const rotatingEntrant = rotatingDraw;
     const mismatch = rotatingEntrant
       ? participant.participantType !== INDIVIDUAL
       : getMisMatch({ participant, participantType, eventType, entryStatusMap });
