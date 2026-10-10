@@ -11,3 +11,18 @@ export type RotatingPartnerScoreAnalysis = {
   tied?: boolean;
   winningSide?: 1 | 2;
 };
+
+export type RotatingPartnerScoringVariant = {
+  tieResolution: RotatingPartnerScoreContract['tieResolution'];
+  winningMargin?: number;
+};
+
+/** A singleton permitted list locks organizer choice; no UI-only enforcement. */
+export type RotatingPartnerScoringPolicy = {
+  defaultVariant: RotatingPartnerScoringVariant;
+  permittedVariants: RotatingPartnerScoringVariant[];
+  /** Omit to allow any positive safe-integer total. */
+  permittedPointTotals?: number[];
+};
+
+export type RotatingPartnerScoringPolicies = Partial<Record<'AMERICANO' | 'MEXICANO', RotatingPartnerScoringPolicy>>;

@@ -393,6 +393,7 @@ export type FactoryEngineMethod =
   | 'getRandomQualifierList'
   | 'getRegistrationProfile'
   | 'getResultAttestation'
+  | 'getRotatingPartnerScoringPolicy'
   | 'getRoundMatchUps'
   | 'getRounds'
   | 'getRoundVisibilityState'
@@ -1158,6 +1159,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getRandomQualifierList',
   'getRegistrationProfile',
   'getResultAttestation',
+  'getRotatingPartnerScoringPolicy',
   'getRoundMatchUps',
   'getRounds',
   'getRoundVisibilityState',

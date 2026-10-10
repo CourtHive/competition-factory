@@ -47,3 +47,37 @@ Once any matchUps exist in the draw or its nested structures, attaching, changin
 A LADDER draw accepts `{ version: 1, format: 'LADDER' }`. This identifies its format without changing existing ladder policy resolution. Challenge eligibility, movement and validation rules remain in the inherited ladder policy.
 
 Rank standings are stored in structure position assignments; rating standings are derived from participant rating scales. Challenges and result attestations use matchUps and their timeItems, while dated participant scale items preserve standing history. Neither those records nor mutable standings belong in a policy or this configuration attribute. A later ladder normalization can add explicit configuration fields without copying its existing state here.
+
+## Governing scoring policy
+
+`getRotatingPartnerScoringPolicy({ drawId, structureId?, selectedVariant? })` returns the resolved
+`contract`, `scoringPolicy` and `selectionLocked`. It reads the existing `scoring` policy's
+`rotatingPartners.AMERICANO` or `rotatingPartners.MEXICANO` section. Policy precedence is
+structure → draw → event → tournament; a nearer scoring policy replaces the whole scoring policy,
+rather than merging nested fields. Missing format rules use the engine default; malformed rules fail.
+
+```typescript
+const policyDefinitions = {
+  scoring: {
+    rotatingPartners: {
+      AMERICANO: {
+        defaultVariant: { tieResolution: 'ALLOW' },
+        permittedVariants: [{ tieResolution: 'ALLOW' }, { tieResolution: 'DECIDING_POINT' }],
+        permittedPointTotals: [24, 32],
+      },
+    },
+  },
+};
+tournamentEngine.attachPolicies({ drawId, policyDefinitions });
+const result = tournamentEngine.getRotatingPartnerScoringPolicy({ drawId });
+```
+
+A singleton permitted list locks the organizer's choice. Otherwise the selected variant must match
+one of the permitted variants exactly. `WIN_BY_MARGIN` requires a safe-integer `winningMargin`
+of at least two; other variants prohibit a margin. Point totals must be positive safe integers and,
+when restricted, belong to `permittedPointTotals`.
+
+The engine default permits `ALLOW`, `DECIDING_POINT`, and `WIN_BY_MARGIN` with margin two,
+defaulting to `ALLOW`. This query validates and previews configuration; it does not persist the
+selection or change manual/live scoring. Resolved rules must be captured when applying a round.
+Separate deciding phases, extra-point tally attribution and individual standings remain open work.
