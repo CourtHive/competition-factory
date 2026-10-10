@@ -11,7 +11,7 @@
   "src/assemblies/generators/drawDefinitions/drawTypes/adHoc/roundRobinPairing": 2,
   "src/assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss": 1,
   "src/assemblies/generators/drawDefinitions/drawTypes/roundRobin": 31,
-  "src/assemblies/generators/drawDefinitions/generateDrawDefinition": 89,
+  "src/assemblies/generators/drawDefinitions/generateDrawDefinition": 70,
   "src/assemblies/generators/drawDefinitions/links": 18,
   "src/assemblies/generators/events": 8,
   "src/assemblies/generators/matchUps": 10,

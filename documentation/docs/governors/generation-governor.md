@@ -181,7 +181,7 @@ const drawDefinitionValues = {
   seedingProfile, // optional { positioning, groupSeedingThreshold }
 
   qualifyingPlaceholder, // optional boolean - generate a placeholder qualifying structure if qualifiersCount and no qualifyingProfiles
-  qualifiersCount, // optional - how many positionsAssignments will have { qualifier: true }
+  qualifiersCount, // optional - how many positionsAssignments will have { qualifier: true }; with qualifying or a placeholder, a MAIN with no entries places them when it is positioned
   qualifyingOnly, // optional boolean - generate only qualifying structures with MAIN placeholder; drawEntries with entryStage: QUALIFYING are included
   qualifyingProfiles, // optional array [{ roundTarget, structureProfiles: [{ drawSize, seedsCount, seedingScaleName, qualifyingPositions }]}]
 

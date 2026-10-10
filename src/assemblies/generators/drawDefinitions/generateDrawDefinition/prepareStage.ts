@@ -1,23 +1,16 @@
-import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/positionGovernor/initializeSeedAssignments';
+import { getSeedsCountAndStageEntries, seeding } from '@Mutate/drawDefinitions/structureSeeding';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { positionPagePlayoff } from '@Mutate/drawDefinitions/positionPagePlayoff';
-import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
-import { getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
+import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
-import { getScaledEntries } from '@Query/event/getScaledEntries';
-import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getDrawStructures } from '@Acquire/findStructure';
-import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
-import { PAGE_PLAYOFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { MAIN, PAGE_PLAYOFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { Entry, PositionAssignment } from '@Types/tournamentTypes';
-import { ROUND_TARGET } from '@Constants/extensionConstants';
-import { RANKING, SEEDING } from '@Constants/scaleConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 export function prepareStage(params): ResultType & {
@@ -48,12 +41,29 @@ export function prepareStage(params): ResultType & {
     seeding({ ...params, seedsCount, structure, structureId });
   }
 
+  // a MAIN generated before its entries is a shell: nothing is placed, qualifier seats included, until its
+  // positioning is generated (CA, 2026-10-09: "the slots for qualifiers shouldn't be reserved in advance at all,
+  // those qualifying placeholders or the qualifiers themselves get placed when the draw positioning is generated")
+  const awaitingEntries = params.stage === MAIN && !stageEntries.length;
+  // a bare qualifiersCount, with no qualifying structure or placeholder link to record it, is recorded only by the
+  // qualifier seats it places: those are placed, and nothing else
+  const { qualifiersCount: linkedQualifiersCount = 0 } = getQualifiersCount({
+    stageSequence: structure.stageSequence,
+    stage: structure.stage,
+    drawDefinition,
+    structureId,
+  });
+  const unrecordedQualifiers = awaitingEntries && (params.qualifiersCount ?? 0) > linkedQualifiersCount;
   const doPositioning =
     params.automated !== false &&
+    (!awaitingEntries || unrecordedQualifiers) &&
     !isAdHocType(params.drawType) &&
     !(params.qualifyingOnly && params.stage !== QUALIFYING);
   const multipleStructures = (structures?.length || 0) > 1;
-  const positioningResult = doPositioning ? positioning({ ...params, multipleStructures, seedLimit, structureId }) : {};
+  const placeByes = unrecordedQualifiers ? false : params.placeByes;
+  const positioningResult = doPositioning
+    ? positioning({ ...params, multipleStructures, placeByes, seedLimit, structureId })
+    : {};
   if (positioningResult?.error) return decorateResult({ result: positioningResult, stack });
 
   // For ad-hoc/Swiss draws where full positioning is skipped, still mark qualifier positions
@@ -76,22 +86,6 @@ export function prepareStage(params): ResultType & {
   };
 }
 
-function getStageEntries({ entries, stage, stageSequence, roundTarget }) {
-  return entries.filter((entry) => {
-    const entryRoundTarget = findExtension({
-      name: ROUND_TARGET,
-      element: entry,
-    })?.extension?.value;
-
-    return (
-      (!entry.entryStage || entry.entryStage === stage) &&
-      (!stageSequence || !entry.entryStageSequence || entry.entryStageSequence === stageSequence) &&
-      (!roundTarget || !entryRoundTarget || entryRoundTarget === roundTarget) &&
-      DIRECT_ENTRY_STATUSES.includes(entry.entryStatus)
-    );
-  });
-}
-
 function positioning(
   params,
 ): ResultType & { conflicts?: any[]; positionAssignments?: PositionAssignment[]; positioningReport?: any } {
@@ -105,177 +99,4 @@ function positioning(
   const positioningReport = result?.positioningReport;
 
   return { conflicts: result.conflicts, positionAssignments, positioningReport };
-}
-
-function seeding(params) {
-  const { seededParticipants, seedingScaleName, entries, event } = params;
-  const enteredParticipantIds = entries.map(getParticipantId);
-
-  if (seededParticipants) {
-    processSeededParticipants({ ...params, enteredParticipantIds });
-  } else if (event || seedingScaleName) {
-    // if no seededParticipants have been defined, seed by seeding scale or ranking scale, if present
-    scaledEntriesSeeding({ ...params, enteredParticipantIds });
-  }
-}
-
-function processSeededParticipants(params) {
-  const {
-    provisionalPositioning,
-    enteredParticipantIds,
-    seededParticipants,
-    tournamentRecord,
-    appliedPolicies,
-    drawDefinition,
-    seedingProfile,
-    structureId,
-    structure,
-    event,
-  } = params;
-
-  const seedBlockInfo = structure
-    ? getValidSeedBlocks({
-        provisionalPositioning,
-        appliedPolicies,
-        drawDefinition,
-        seedingProfile,
-        structure,
-      })
-    : undefined;
-
-  seededParticipants
-    .filter(({ participantId }) => enteredParticipantIds.includes(participantId))
-    .filter(
-      (seededParticipant) => !seededParticipant.seedNumber || seededParticipant.seedNumber <= seededParticipants.length,
-    )
-    .sort((a, b) => {
-      if (a.seedNumber < b.seedNumber) return -1;
-      if (a.seedNumber < b.seedNumber) return 1;
-      return 0;
-    })
-    .forEach((seededParticipant) => {
-      const { participantId, seedNumber, seedValue } = seededParticipant;
-      assignSeed({
-        provisionalPositioning,
-        tournamentRecord,
-        drawDefinition,
-        seedingProfile,
-        participantId,
-        seedBlockInfo,
-        structureId,
-        seedNumber,
-        seedValue,
-        event,
-      });
-    });
-}
-
-function scaledEntriesSeeding(params) {
-  let seedsCount = params.seedsCount;
-  const {
-    provisionalPositioning,
-    enteredParticipantIds,
-    seedAssignmentProfile, // mainly used by mocksEngine for scenario testing
-    assignSeedsCount, // used for testing bye placement next to seeds
-    tournamentRecord,
-    drawDefinition,
-    seedByRanking,
-    seedingProfile,
-    structureId,
-    event,
-  } = params;
-
-  const { categoryName, ageCategoryCode } = event?.category ?? {};
-  const eventType = event?.eventType;
-
-  const scaledEntries =
-    getSeedingScaleEntries({ ...params, ageCategoryCode, categoryName, eventType }) ??
-    (seedByRanking && getRankingScaleEntries({ ...params, ageCategoryCode, categoryName, eventType }));
-
-  const scaledEntriesCount = scaledEntries?.length ?? 0;
-  if (scaledEntriesCount < seedsCount) seedsCount = scaledEntriesCount;
-
-  scaledEntries
-    ?.filter(({ participantId }) => enteredParticipantIds.includes(participantId))
-    .slice(0, assignSeedsCount || seedsCount)
-    .forEach((scaledEntry, index) => {
-      const seedNumber = index + 1;
-      const { participantId, scaleValue } = scaledEntry;
-      const seedValue = seedAssignmentProfile?.[seedNumber] || scaleValue || seedNumber;
-      assignSeed({
-        provisionalPositioning,
-        tournamentRecord,
-        drawDefinition,
-        seedingProfile,
-        participantId,
-        structureId,
-        seedNumber,
-        seedValue,
-        event,
-      });
-    });
-}
-
-function getSeedingScaleEntries(params) {
-  const { tournamentRecord, seedingScaleName, stageSequence, entries, stage, event } = params;
-
-  const { categoryName, ageCategoryCode } = event?.category ?? {};
-  const eventType = event?.eventType;
-
-  const seedingScaleAttributes = {
-    scaleName: seedingScaleName || categoryName || ageCategoryCode || event.eventId,
-    scaleType: SEEDING,
-    eventType,
-  };
-
-  return getScaledEntries({
-    scaleAttributes: seedingScaleAttributes,
-    tournamentRecord,
-    stageSequence,
-    entries,
-    stage,
-  }).scaledEntries;
-}
-
-function getRankingScaleEntries(params) {
-  const { tournamentRecord, stageSequence, event, entries, stage } = params;
-  const { categoryName, ageCategoryCode } = event?.category ?? {};
-  const eventType = event?.eventType;
-
-  const rankingScaleAttributes = {
-    scaleName: categoryName || ageCategoryCode,
-    scaleType: RANKING,
-    eventType,
-  };
-
-  return getScaledEntries({
-    scaleAttributes: rankingScaleAttributes,
-    tournamentRecord,
-    stageSequence,
-    entries,
-    stage,
-  }).scaledEntries;
-}
-
-function getSeedsCountAndStageEntries(params) {
-  let { seedsCount } = params;
-  if (params.seededParticipants) seedsCount = params.seededParticipants.length;
-  if (seedsCount > params.drawSize) seedsCount = params.drawSize;
-
-  const stageEntries = getStageEntries(params);
-  if (seedsCount > stageEntries.length) seedsCount = stageEntries.length;
-
-  const { seedLimit } = initializeStructureSeedAssignments({
-    enforcePolicyLimits: params.enforcePolicyLimits ?? true,
-    appliedPolicies: params.appliedPolicies,
-    participantsCount: stageEntries.length,
-    seedingProfile: params.seedingProfile,
-    drawDefinition: params.drawDefinition,
-    structureId: params.structureId,
-    seedsCount,
-  });
-
-  if (seedLimit && seedLimit < seedsCount) seedsCount = seedLimit;
-
-  return { seedsCount, stageEntries, seedLimit };
 }

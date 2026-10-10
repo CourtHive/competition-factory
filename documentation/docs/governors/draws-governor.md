@@ -301,6 +301,28 @@ into a success. Re-running on a positioned structure succeeds and returns the ex
 the structure and refused, not partially placed, when they do not fit; later-round qualifiers are placed
 before first-round ones; a standalone `PAGE_PLAYOFF` positions both entry structures.
 
+### Positioning a draw generated before its entries
+
+A MAIN generated with no entries places nothing, qualifier positions included: they are placed when the draw is
+positioned. `automatedPositioning` then places the entries present, the qualifier positions and the BYEs. With
+`seedsCount`, a structure that nobody is placed in and that has no seeds yet is seeded first, from the entries present
+now and within the seeding policy; seeds chosen when the draw was generated are kept.
+
+```js
+const { positionAssignments, seedAssignments } = engine.automatedPositioning({
+  seedingScaleName, // optional - the seeding scale; defaults to the event's category name, age category or eventId
+  seedByRanking, // optional boolean - with no seeding, seed by the event category's ranking
+  enforcePolicyLimits, // optional - defaults to true: the seeding policy caps seedsCount for the entries present
+  applyPositioning: false, // optional - compute without applying: see setPositionAssignments
+  seedsCount, // optional - seeds to choose when the structure has none
+  structureId,
+  drawId,
+});
+```
+
+Positioning is random: a client computes it with `applyPositioning: false` and sends the result, seeds included, with
+[setPositionAssignments](#setpositionassignments), so the client and the server apply the same draw.
+
 ---
 
 ## autoSeeding
@@ -1275,6 +1297,23 @@ result = engine.setPositionAssignments({
 Since 7.7.0 a qualifier in the submitted assignments is placed in the **structure's** assignments (the
 caller's array is left as given); before, the qualifier branch marked the submitted array and the engine
 reported success with no qualifier in the structure.
+
+Each entry of `structurePositionAssignments` may carry `seedAssignments`, as returned by `automatedPositioning`
+with `applyPositioning: false`; they replace the structure's seeds before its positions are set, so a structure seeded
+when it was positioned is replayed whole.
+
+```js
+const { positionAssignments, seedAssignments } = engine.automatedPositioning({
+  applyPositioning: false,
+  seedsCount,
+  structureId,
+  drawId,
+});
+engine.setPositionAssignments({
+  structurePositionAssignments: [{ structureId, positionAssignments, seedAssignments }],
+  drawId,
+});
+```
 
 ---
 

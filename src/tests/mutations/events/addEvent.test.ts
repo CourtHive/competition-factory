@@ -81,7 +81,19 @@ it('can generate an event with a draw and attach it to a tournamentRecord', () =
   // should equal (8 + 4) + (8 + 4) => 24
   expect(qualifyingStageTwo.length).toEqual(24);
 
-  const mainStructure = event.drawDefinitions[0].structures.find(({ stage }) => stage === MAIN);
+  // generated with no entries, the main places nothing until it is positioned (CA, 2026-10-09: "the slots for
+  // qualifiers shouldn't be reserved in advance at all, those qualifying placeholders or the qualifiers themselves get
+  // placed when the draw positioning is generated")
+  const generatedMain = event.drawDefinitions[0].structures.find(({ stage }) => stage === MAIN);
+  expect(generatedMain.positionAssignments.filter(({ qualifier }) => qualifier).length).toEqual(0);
+  const drawId = drawDefinition.drawId;
+  result = tournamentEngine.automatedPositioning({ structureId: generatedMain.structureId, placeByes: false, drawId });
+  expect(result.success).toEqual(true);
+
+  // the qualifiers are placed in the round their qualifying profile targets
+  const mainStructure = tournamentEngine
+    .getEvent({ drawId })
+    .drawDefinition.structures.find(({ stage }) => stage === MAIN);
 
   const firstRoundQualifiersCount = mainStructure.positionAssignments
     .filter((assignment) => assignment.drawPosition > 16)
