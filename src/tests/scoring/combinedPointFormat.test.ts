@@ -299,3 +299,24 @@ it.each(['v1', 'v2', 'differential'] as const)(
     });
   },
 );
+
+it.each(['v1', 'v2', 'differential'] as const)(
+  'a rotating score-only clear returns to TO_BE_PLAYED (%s)',
+  (pipeline) => {
+    setOutcomePipeline(pipeline);
+    const context = setup();
+    expect(
+      tournamentEngine.setMatchUpStatus({
+        ...context,
+        outcome: { score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } },
+      }).error,
+    ).toBeUndefined();
+    expect(tournamentEngine.setMatchUpStatus({ ...context, outcome: { score: { sets: [] } } }).error).toBeUndefined();
+    const current = tournamentEngine
+      .allTournamentMatchUps()
+      .matchUps.find((matchUp) => matchUp.matchUpId === context.matchUpId);
+    expect(current.matchUpStatus).toBe('TO_BE_PLAYED');
+    expect(current.winningSide).toBeUndefined();
+    expect(current.score?.sets?.length ?? 0).toBe(0);
+  },
+);

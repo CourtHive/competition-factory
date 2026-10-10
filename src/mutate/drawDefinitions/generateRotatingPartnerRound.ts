@@ -132,8 +132,14 @@ export function generateRotatingPartnerRound(
     seedUsed: preview.seedUsed!,
     pairings: preview.round!,
     matchUpIds: matchUps.map((matchUp) => matchUp.matchUpId),
+    tallyContract: preview.tallyContract!,
     scoringContract: preview.scoringContract!,
-    ...(preview.standingsSnapshot ? { standingsSnapshot: preview.standingsSnapshot } : {}),
+    ...(preview.standingsSnapshot
+      ? {
+          standingsSnapshot: preview.standingsSnapshot,
+          standingsThroughRoundNumber: preview.standingsThroughRoundNumber,
+        }
+      : {}),
   };
   // All fallible validation ran against isolated state. Commit once, then publish notices.
   const participants = staged.participants!.slice(originalCount);

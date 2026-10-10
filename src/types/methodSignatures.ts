@@ -104,6 +104,7 @@ import type { generateRotatingPartnerRound } from '@Mutate/drawDefinitions/gener
 import type { removeDrawPositionAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import type { proAutoSchedule } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proAutoSchedule';
 import type { getAvailableQualifyingTargets } from '@Query/drawDefinition/getAvailableQualifyingTargets';
+import type { getRotatingPartnerTallyPolicy } from '@Query/drawDefinition/getRotatingPartnerTallyPolicy';
 import type { alternateDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionAlternate';
 import type { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionQualifier';
 import type { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/removeMatchUpSideParticipant';
@@ -125,6 +126,7 @@ import type { addSchedulingProfileRound } from '@Mutate/matchUps/schedule/addSch
 import type { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
 import type { getAdditionalSeedsAllowance } from '@Query/drawDefinition/getAdditionalSeedsAllowance';
 import type { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
+import type { getRotatingPartnerStandings } from '@Query/drawDefinition/getRotatingPartnerStandings';
 import type { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 import type { predictDrawCompetitiveBands } from '@Query/drawDefinition/predictDrawCompetitiveBands';
 import type { getAppliedPolicies, getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
@@ -1061,6 +1063,8 @@ export interface MethodSignatures {
   getRotatingPartnerRoundPreview: EngineMethod<typeof getRotatingPartnerRoundPreview>;
   getRotatingPartnerScoringContract: EngineMethod<typeof getRotatingPartnerScoringContract>;
   getRotatingPartnerScoringPolicy: EngineMethod<typeof getRotatingPartnerScoringPolicy>;
+  getRotatingPartnerStandings: EngineMethod<typeof getRotatingPartnerStandings>;
+  getRotatingPartnerTallyPolicy: EngineMethod<typeof getRotatingPartnerTallyPolicy>;
   getRoundMatchUps: EngineMethod<typeof getRoundMatchUps>;
   getRounds: EngineMethod<typeof getRounds>;
   getRoundVisibilityState: EngineMethod<typeof getRoundVisibilityState>;

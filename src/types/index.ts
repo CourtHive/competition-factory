@@ -1,3 +1,4 @@
+export * from './rotatingPartnerTally';
 export * from './rotatingPartnerScoring';
 export * from './competitionProfile';
 export * from './formatWizardTypes';

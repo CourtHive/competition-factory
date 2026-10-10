@@ -1,4 +1,5 @@
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
+import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
@@ -78,7 +79,13 @@ function noDownstreamRoute(request: OutcomeRequest, view: OutcomeView): Route {
 export function chooseRoute(request: OutcomeRequest, view: OutcomeView): Route {
   const { winningSide, matchUpStatus, flags } = request;
   const { existing, line } = view;
-  if (!view.activeDownstream && !winningSide && view.draw.rotatingPartners) return APPLY_VALUES;
+  if (
+    !view.activeDownstream &&
+    !winningSide &&
+    view.draw.rotatingPartners &&
+    isCompletedCombinedPointTie({ ...request, matchUpFormat: request.matchUpFormat ?? existing.matchUpFormat })
+  )
+    return APPLY_VALUES;
   const dualChange = dualWinningSideChange(request, view);
   const validSwap =
     !view.isTeam && !dualChange && !!winningSide && !!existing.winningSide && existing.winningSide !== winningSide;

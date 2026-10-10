@@ -397,6 +397,8 @@ export type FactoryEngineMethod =
   | 'getRotatingPartnerRoundPreview'
   | 'getRotatingPartnerScoringContract'
   | 'getRotatingPartnerScoringPolicy'
+  | 'getRotatingPartnerStandings'
+  | 'getRotatingPartnerTallyPolicy'
   | 'getRoundMatchUps'
   | 'getRounds'
   | 'getRoundVisibilityState'
@@ -1167,6 +1169,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getRotatingPartnerRoundPreview',
   'getRotatingPartnerScoringContract',
   'getRotatingPartnerScoringPolicy',
+  'getRotatingPartnerStandings',
+  'getRotatingPartnerTallyPolicy',
   'getRoundMatchUps',
   'getRounds',
   'getRoundVisibilityState',

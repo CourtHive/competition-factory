@@ -4546,6 +4546,86 @@
         }
       }
     },
+    "RotatingPartnerStatusTreatment": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": ["UNRESOLVED", "EXCLUDE", "PLAYED_POINTS"]
+            }
+          },
+          "required": ["kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "CREDIT"
+            },
+            "winningPoints": {
+              "type": "integer",
+              "maximum": 9007199254740991,
+              "minimum": 0
+            },
+            "losingPoints": {
+              "type": "integer",
+              "maximum": 9007199254740991,
+              "minimum": 0
+            }
+          },
+          "required": ["kind", "winningPoints", "losingPoints"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RotatingPartnerTallyPolicy": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "decidingPoints": {
+          "enum": ["INCLUDE", "EXCLUDE"]
+        },
+        "overtimePoints": {
+          "enum": ["INCLUDE", "EXCLUDE"]
+        },
+        "statusTreatments": {
+          "type": "object",
+          "properties": {
+            "ABANDONED": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "CANCELLED": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "DEAD_RUBBER": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "DEFAULTED": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "DOUBLE_DEFAULT": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "DOUBLE_WALKOVER": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "RETIRED": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "WALKOVER": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["version", "decidingPoints", "overtimePoints", "statusTreatments"],
+      "additionalProperties": false
+    },
     "RotatingPartnerRoundRecord": {
       "type": "object",
       "properties": {
@@ -4603,11 +4683,16 @@
             }
           }
         },
+        "tallyContract": { "$ref": "#/definitions/RotatingPartnerTallyPolicy" },
+        "standingsThroughRoundNumber": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
         "standingsSnapshot": {
           "type": "array",
           "items": {
             "type": "object",
-            "properties": { "participantId": { "type": "string" }, "pointsScored": { "type": "number", "minimum": 0 } },
+            "properties": {
+              "participantId": { "type": "string" },
+              "pointsScored": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+            },
             "required": ["participantId", "pointsScored"],
             "additionalProperties": false
           }
@@ -4663,11 +4748,15 @@
         "seedUsed",
         "matchUpIds",
         "pairings",
-        "scoringContract"
+        "scoringContract",
+        "tallyContract"
       ],
       "additionalProperties": false,
       "allOf": [
-        { "if": { "properties": { "format": { "const": "MEXICANO" } } }, "then": { "required": ["standingsSnapshot"] } }
+        {
+          "if": { "properties": { "format": { "const": "MEXICANO" } } },
+          "then": { "required": ["standingsSnapshot", "standingsThroughRoundNumber"] }
+        }
       ]
     },
     "CompetitionProfileScoring": {

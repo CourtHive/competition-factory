@@ -29,7 +29,7 @@ const result = tournamentEngine.setCompetitionProfile({
 
 For Americano, use `format: 'AMERICANO'`, `pairing: { seed, algorithmVersion: 1 }` and `completion: { kind: 'PARTNERSHIP_COVERAGE' }`. Store the Americano generator's `seedUsed` or Mexicano's `baseSeed`. Seeds must be safe integers; combined point totals and round counts must be positive safe integers. Version and pairing algorithm version are currently `1`.
 
-Tie resolution belongs to the governing scoring policy, rather than the profile. Profiles store configuration; individual admission and round application use the APIs below. Manual/live fixed-total scoring and individual standings remain outstanding.
+Tie resolution belongs to the governing scoring policy, rather than the profile. Profiles store configuration; individual admission and round application use the APIs below. Manual/live fixed-total scoring and individual standings use the historical contracts saved with applied rounds.
 
 ## Read, change and remove
 
@@ -80,7 +80,7 @@ when restricted, belong to `permittedPointTotals`.
 The engine default permits `ALLOW`, `DECIDING_POINT`, and `WIN_BY_MARGIN` with margin two,
 defaulting to `ALLOW`. This query validates and previews configuration; use the persistence mutation below to save a
 selection. Neither method changes manual/live scoring yet. Resolved rules must be captured when applying a round.
-Separate deciding phases, extra-point tally attribution and individual standings remain open work.
+Separate deciding phases remain open work; inline extra-point attribution and individual standings are supported by the rotating-partner tally policy.
 
 ## Persisting the scoring choice
 
@@ -143,13 +143,16 @@ Successful retries with the same request return the stored round without additio
 request arguments, removed matches or edited PAIR membership are refused.
 
 Applied provenance lives in `drawDefinition.competitionRounds`, separate from configuration. Each round record
-captures side memberships, matchUp IDs, algorithm version, base/round seeds and scoring contract.
+captures side memberships, matchUp IDs, algorithm version, base/round seeds and scoring/tally contracts.
 The frozen roster is stored once in `drawDefinition.competitionRoster`; Mexicano records also capture
-the source standings snapshot. No freshness token is persisted. Do not edit PAIR memberships after application.
+the source standings snapshot and round cutoff. No freshness token is persisted. Do not edit PAIR memberships after application.
 
-Americano supports sequential application of its complete saved rotation. Mexicano currently supports
-seeded round one; later rounds are refused until authoritative individual standings are available.
+Americano supports sequential application of its complete saved rotation. Mexicano starts from zero
+points and uses authoritative individual standings for subsequent rounds. Every prior result must be
+settled under its saved tally contract before the next Mexicano round can be previewed.
 The roster must stay fixed after application. The round API honours DRAWS locks and participant locks
 when adding PAIRs. Court allocation uses existing scheduling methods. Each matchUp carries a fixed-total `matchUpFormat` derived from the saved round scoring contract.
 Applied round formats cannot be changed through matchUp, structure, draw or event scope. Scheduling
 edits and unrelated PAIR additions do not invalidate approved pairings.
+
+Individual standings and tally policies are documented in [Rotating Partner Pairing](./rotating-partner-pairing.md#individual-standings-and-later-rounds).

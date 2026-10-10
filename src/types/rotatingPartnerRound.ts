@@ -1,3 +1,4 @@
+import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
 import type { RotatingPartnerScoreContract } from './rotatingPartnerScoring';
 
 /** Applied-round provenance, separate from competitionProfile configuration. */
@@ -12,6 +13,8 @@ export type RotatingPartnerRoundRecord = {
   seedUsed: number;
   matchUpIds: string[];
   pairings: [[string, string], [string, string]][];
+  tallyContract: RotatingPartnerTallyPolicy;
+  standingsThroughRoundNumber?: number;
   scoringContract: RotatingPartnerScoreContract;
   standingsSnapshot?: { participantId: string; pointsScored: number }[];
 };

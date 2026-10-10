@@ -9,6 +9,7 @@ import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligib
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -1213,7 +1214,15 @@ function checkParticipants({
 
 /** Winnerless rotating results carry a score without invoking removal of directed positions. */
 function isUndirectedRotatingOutcome(params: SetMatchUpStateArgs, activeDownstream: boolean): boolean {
-  return !activeDownstream && !params.winningSide && isRotatingPartnerDraw(params.drawDefinition, params.event);
+  return (
+    !activeDownstream &&
+    !params.winningSide &&
+    isRotatingPartnerDraw(params.drawDefinition, params.event) &&
+    isCompletedCombinedPointTie({
+      ...params,
+      matchUpFormat: resolveScoringFormat({ ...params, incoming: params.matchUpFormat }),
+    })
+  );
 }
 
 function isWalkoverStatus(status?: string) {

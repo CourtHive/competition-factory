@@ -1,18 +1,20 @@
 import { generateAmericanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateAmericanoPairings';
 import { generateMexicanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateMexicanoPairings';
 import { getAvailableMatchUpsCount } from '@Generators/drawDefinitions/drawTypes/adHoc/getAvailableMatchUpsCount';
+import { appliedRotatingPartnerRoundsAreIntact } from '@Validators/appliedRotatingPartnerRoundsAreIntact';
 import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
-import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { getRotatingPartnerScoringContract } from './getRotatingPartnerScoringContract';
+import { getRotatingPartnerTallyPolicy } from './getRotatingPartnerTallyPolicy';
+import { getRotatingPartnerStandings } from './getRotatingPartnerStandings';
 import { checkValidEntries } from '@Validators/checkValidEntries';
 import { matchUpsOf } from '@Acquire/structureMembers';
-import { PAIR } from '@Constants/participantConstants';
 import { canonicalJson } from '@Tools/canonicalJson';
 
 // constants and types
 import type { RotatingPartnerRound } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/rotatingPartnerTypes';
 import type { RotatingPartnerScoreContract } from '@Types/rotatingPartnerScoring';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import type { RotatingPartnerTallyPolicy } from '@Types/rotatingPartnerTally';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import type { ResultType } from '@Types/factoryTypes';
@@ -29,6 +31,8 @@ export type RotatingPartnerRoundArgs = {
 export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs): ResultType & {
   round?: RotatingPartnerRound;
   standingsSnapshot?: { participantId: string; pointsScored: number }[];
+  tallyContract?: RotatingPartnerTallyPolicy;
+  standingsThroughRoundNumber?: number;
   scoringContract?: RotatingPartnerScoreContract;
   participantIds?: string[];
   seedUsed?: number;
@@ -79,16 +83,25 @@ export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs)
     return { error: INVALID_VALUES, info: 'existing matches have no rotating-partner provenance' };
   const scoring = getRotatingPartnerScoringContract({ drawDefinition });
   if (scoring.error) return scoring;
-  if (profile.format === 'MEXICANO' && roundNumber > 1)
-    return {
-      error: INVALID_VALUES,
-      info: 'later Mexicano rounds require authoritative individual standings (not yet available)',
-    };
+  const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
+  const tally = getRotatingPartnerTallyPolicy({ ...params, structure });
+  if (tally.error) return tally;
+  let standingsSnapshot = participantIds.map((participantId) => ({ participantId, pointsScored: 0 }));
+  if (profile.format === 'MEXICANO' && roundNumber > 1) {
+    const standings = getRotatingPartnerStandings({ ...params, throughRoundNumber: roundNumber - 1 });
+    if (standings.error) return standings;
+    if (standings.unresolved?.length)
+      return { error: INVALID_VALUES, info: 'prior Mexicano rounds have unresolved results' };
+    standingsSnapshot = standings.standings!.map(({ participantId, pointsScored }) => ({
+      participantId,
+      pointsScored,
+    }));
+  }
   const generated =
     profile.format === 'AMERICANO'
       ? generateAmericanoPairings({ participantIds, seed: profile.pairing.seed })
       : generateMexicanoPairings({
-          standings: participantIds.map((participantId) => ({ participantId, pointsScored: 0 })),
+          standings: standingsSnapshot,
           seed: profile.pairing.seed,
           roundNumber,
         });
@@ -104,55 +117,11 @@ export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs)
     round,
     structureId,
     participantIds,
-    ...(profile.format === 'MEXICANO'
-      ? { standingsSnapshot: participantIds.map((participantId) => ({ participantId, pointsScored: 0 })) }
-      : {}),
+    ...(profile.format === 'MEXICANO' ? { standingsSnapshot, standingsThroughRoundNumber: roundNumber - 1 } : {}),
+    tallyContract: tally.tallyPolicy,
     scoringContract: scoring.contract,
     seedUsed: generated.seedUsed,
   };
 }
 
-/** Membership snapshots prevent deleted or edited rounds from silently changing the rotation. */
-export function appliedRotatingPartnerRoundsAreIntact({
-  drawDefinition,
-  tournamentRecord,
-}: Pick<RotatingPartnerRoundArgs, 'drawDefinition' | 'tournamentRecord'>): boolean {
-  const rounds = drawDefinition.competitionRounds ?? [];
-  if (rounds.length && !drawDefinition.competitionRoster?.length) return false;
-  const profile = drawDefinition.competitionProfile;
-  const scoring = getRotatingPartnerScoringContract({ drawDefinition });
-  if (rounds.length && (!profile || profile.format === 'LADDER' || scoring.error)) return false;
-  const participants = new Map(
-    (tournamentRecord.participants ?? []).map((participant) => [participant.participantId, participant]),
-  );
-  for (const round of rounds) {
-    if (
-      !profile ||
-      profile.format === 'LADDER' ||
-      round.format !== profile.format ||
-      round.baseSeed !== profile.pairing.seed ||
-      canonicalJson(round.scoringContract) !== canonicalJson(scoring.contract)
-    )
-      return false;
-    const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === round.structureId);
-    const matches = new Map((matchUpsOf(structure) ?? []).map((matchUp) => [matchUp.matchUpId, matchUp]));
-    if (!Array.isArray(round.pairings) || round.matchUpIds.length !== round.pairings.length) return false;
-    for (const [index, id] of round.matchUpIds.entries()) {
-      const matchUp = matches.get(id);
-      if (matchUp?.roundNumber !== round.roundNumber || matchUp.sides?.length !== 2) return false;
-      if (matchUp.matchUpFormat !== `SET1-S:${stringifyCombinedPointFormat(round.scoringContract)}`) return false;
-      for (let sideNumber = 1; sideNumber <= 2; sideNumber++) {
-        const side = matchUp.sides.find((candidate) => candidate.sideNumber === sideNumber);
-        const pair = participants.get(side?.participantId ?? '');
-        const members = pair?.individualParticipantIds;
-        if (
-          pair?.participantType !== PAIR ||
-          !Array.isArray(members) ||
-          canonicalJson(members.toSorted()) !== canonicalJson(round.pairings[index][sideNumber - 1].toSorted())
-        )
-          return false;
-      }
-    }
-  }
-  return true;
-}
+export { appliedRotatingPartnerRoundsAreIntact } from '@Validators/appliedRotatingPartnerRoundsAreIntact';
