@@ -61,3 +61,19 @@ export function engineLogging({ engineType, methodName, elapsed, params, result,
   const hasContent = Object.keys(log).some((key) => key !== 'method' && key !== 'dryRun');
   if (hasContent) globalLog(log, engineType);
 }
+
+/**
+ * Whether `engineLogging` could print this method's params — for params on request, or for an
+ * error it is set to report. The caller copies params before the method runs only when this is
+ * true; the error case cannot wait for the result, because by then the method may have changed them.
+ */
+export function paramsMayBeLogged(methodName: string): boolean {
+  const devContext: DevContextType = getDevContext();
+  if (typeof devContext !== 'object') return false;
+  if (Array.isArray(devContext.exclude) && devContext.exclude.includes(methodName)) return false;
+
+  const { params, errors } = devContext;
+  const forParams = Array.isArray(params) ? params.includes(methodName) : !!params;
+  const forErrors = errors === true || (Array.isArray(errors) && errors.includes(methodName));
+  return forParams || forErrors;
+}
