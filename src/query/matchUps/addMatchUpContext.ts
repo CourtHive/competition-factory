@@ -1,6 +1,7 @@
 import { stripCheckInAttribution, strippedParticipant } from '@Query/participants/participantPrivacy';
 import { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
+import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
@@ -415,7 +416,15 @@ export function addMatchUpContext({
 
   const hasParticipants = matchUpWithContext.sides?.filter((side) => side?.participantId).length === 2;
   const hasNoWinner = !matchUpWithContext.winningSide;
-  const readyToScore = scoringActive && hasParticipants && hasNoWinner;
+  // A combined-point total that allows a tie can end COMPLETED with no winner (16–16 of SET1-S:P32): finished,
+  // not waiting for a score. The same predicate the round-robin tally counts as a drawn result.
+  const completedTie = isCompletedCombinedPointTie({
+    matchUpStatus: matchUpWithContext.matchUpStatus,
+    winningSide: matchUpWithContext.winningSide,
+    score: matchUpWithContext.score,
+    matchUpFormat,
+  });
+  const readyToScore = scoringActive && hasParticipants && hasNoWinner && !completedTie;
   Object.assign(matchUpWithContext, { readyToScore, hasContext: true });
 
   if (hasParticipants) {
