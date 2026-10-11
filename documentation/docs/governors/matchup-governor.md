@@ -389,13 +389,16 @@ const { matchUps } = engine.getAllStructureMatchUps({
 
 ## getCheckedInParticipantIds
 
-Returns participant IDs that have checked in for a matchUp.
+Returns the ids checked in for a hydrated matchUp. A side is counted as checked in when all its individuals
+are, and a side checked in (from a record predating 7.0.0) checks in its individuals. Every hydrated matchUp
+already carries `checkedInParticipantIds` and `allParticipantsCheckedIn`. For the desk's view, with names and
+counts, see `getMatchUpCheckInState`.
 
 ```js
-const { participantIds } = engine.getCheckedInParticipantIds({
-  matchUpId, // required
-  drawId, // required
-});
+const { checkedInParticipantIds, allParticipantsCheckedIn, allRelevantParticipantIds } =
+  engine.getCheckedInParticipantIds({
+    matchUp, // required — hydrated ({ inContext: true })
+  });
 ```
 
 ---
@@ -426,6 +429,25 @@ const { eventMatchUpFormatTiming } = engine.getEventMatchUpFormatTiming({
 ```
 
 See [queryGovernor.getEventMatchUpFormatTiming](/docs/governors/query-governor#geteventmatchupformattiming) for category resolution details.
+
+---
+
+## getMatchUpCheckInState
+
+Who is at the desk for a matchUp: each individual who may check in (an INDIVIDUAL side, or each member of a
+PAIR or TEAM side; never the PAIR or TEAM itself), whether they have, and the counts. One call for a check-in
+desk, so a client does not re-derive the membership rule. Who attested a check-in is not included; that is
+`getMatchUpCheckInHistory`'s, which a server can gate on its own.
+
+```js
+const { participants, total, checkedInCount, allCheckedIn, partial } = engine.getMatchUpCheckInState({
+  matchUpId, // required unless matchUp is given
+  drawId, // optional; resolved from matchUpId when absent
+  matchUp, // optional — a hydrated matchUp, used as is
+});
+// participants: [{ participantId, participantName, sideNumber, checkedIn }], side 1 first
+// allCheckedIn is false when there is nobody to check in; partial means some but not all
+```
 
 ---
 
@@ -548,6 +570,21 @@ const { timing } = engine.getMatchUpFormatTimingUpdate({
   modifications, // required
 });
 ```
+
+---
+
+## getMatchUpParticipantIds
+
+The ids of a hydrated matchUp's participants. `individualParticipantIds` is who may check in.
+
+```js
+const { individualParticipantIds, sideParticipantIds, nestedIndividualParticipantIds, allRelevantParticipantIds } =
+  engine.getMatchUpParticipantIds({
+    matchUp, // required — hydrated ({ inContext: true })
+  });
+```
+
+Potential participants (the possible winners of a feeding matchUp) are not included.
 
 ---
 

@@ -280,6 +280,7 @@ import type { proposeAmendment, reviewAmendment } from '@Mutate/sanctioning/amen
 import type { checkInParticipant } from '@Mutate/timeItems/matchUps/checkInParticipant';
 import type { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
 import type { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInHistory';
+import type { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
 import type { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import type { getParticipantRest } from '@Query/matchUps/scheduling/getParticipantRest';
 import type { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
@@ -336,6 +337,7 @@ import type { removeCourtGridBooking } from '@Mutate/venues/removeCourtGridBooki
 import type { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
 import type { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
 import type { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
+import type { getMatchUpCheckInState } from '@Query/matchUp/getMatchUpCheckInState';
 import type { getProfileRounds } from '@Query/matchUps/scheduling/getProfileRounds';
 import type { getEvaluationSummary } from '@Query/officiating/getEvaluationSummary';
 import type { getOfficialConflicts } from '@Query/officiating/getOfficialConflicts';
@@ -1002,6 +1004,7 @@ export interface MethodSignatures {
   getLinkedTournamentIds: EngineMethod<typeof getLinkedTournamentIds>;
   getLuckyDrawRoundStatus: EngineMethod<typeof getLuckyDrawRoundStatus>;
   getMatchUpCheckInHistory: EngineMethod<typeof getMatchUpCheckInHistory>;
+  getMatchUpCheckInState: EngineMethod<typeof getMatchUpCheckInState>;
   getMatchUpCompetitiveProfile: EngineMethod<typeof getMatchUpCompetitiveProfile>;
   getMatchUpContextIds: EngineMethod<typeof getMatchUpContextIds>;
   getMatchUpDailyLimits: EngineMethod<typeof getMatchUpDailyLimits>;
@@ -1012,6 +1015,7 @@ export interface MethodSignatures {
   getMatchUpFormatTimingUpdate: EngineMethod<typeof getMatchUpFormatTimingUpdate>;
   getMatchUpFormatVariance: EngineMethod<typeof getMatchUpFormatVariance>;
   getMatchUpOfficialConflicts: EngineMethod<typeof getMatchUpOfficialConflicts>;
+  getMatchUpParticipantIds: EngineMethod<typeof getMatchUpParticipantIds>;
   getMatchUpRatingDelta: EngineMethod<typeof getMatchUpRatingDelta>;
   getMatchUpReadiness: EngineMethod<typeof getMatchUpReadiness>;
   getMatchUpScheduleDetails: EngineMethod<typeof getMatchUpScheduleDetails>;

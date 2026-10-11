@@ -30,7 +30,6 @@ type ToggleParticipantCheckInStateArgs = {
   activeTournamentId?: string;
   participantId: string;
   tournamentId?: string;
-  matchUpIds?: string[];
   matchUpId: string;
 };
 
