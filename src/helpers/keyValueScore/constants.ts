@@ -75,7 +75,9 @@ export const SIDE1KEYS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].conc
 export const SIDE2KEYS = SIDE1KEYS.map((key) => `shift+${key}`);
 export const MODIFIERS = [SCORE_JOINER, BACKSPACE].concat(CLOSERS, ALTERNATE_JOINERS);
 export const VALID_VALUE_KEYS = [SIDE1KEYS, SIDE2KEYS, MODIFIERS].join(',');
-export const HOTKEYS = [VALID_VALUE_KEYS, MOVEUP, MOVEDOWN, TEST].join(',');
+// Each key once: MODIFIERS already carries MOVEUP and MOVEDOWN (through CLOSERS), and a hotkey library that
+// registers every occurrence runs its handler twice for a key named twice.
+export const HOTKEYS = [...new Set([VALID_VALUE_KEYS, MOVEUP, MOVEDOWN, TEST].join(',').split(','))].join(',');
 
 // for testing purposes; side keys overrepresented
 export const SCORE_TEST_KEYS = [].concat(
