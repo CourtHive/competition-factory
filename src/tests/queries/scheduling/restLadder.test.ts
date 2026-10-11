@@ -127,7 +127,8 @@ describe('the ladder reports which rung it read, and what it passed over', () =>
 });
 
 describe('a participant on court is never given a rest figure', () => {
-  const live = singles('live', ['alice', 'bob'], { scheduledTime: '11:30' });
+  // on a court: a matchUp placed by its scheduled time alone is under way only if it holds one
+  const live = singles('live', ['alice', 'bob'], { scheduledTime: '11:30', courtId: 'court-1' });
   const target = singles('target', ['alice', 'chen'], { scheduledTime: '14:00' });
 
   it('projects a readyAt while the match is inside its expected window', () => {

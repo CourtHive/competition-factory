@@ -469,6 +469,11 @@ Because rest is measured rather than assumed, every row reports **which rung** p
 carries `anchorUnreliable` rather than a measured-looking zero, and a row for a player still out
 there carries `onCourt` with no `restMinutes` at all.
 
+A player is `onCourt` only for an unfinished matchUp that is really under way: one with a `startTime`
+or a `calledAt`, or, failing both, one that **holds a court** and whose `scheduledTime` has passed. A
+matchUp on no court, or one scheduled at or after the matchUp being asked about, is not counted
+against it until it is called or started.
+
 Rest is scoped to one day — the matchUp's own `scheduledDate`, or a `scheduledDate` the caller names
 for a matchUp that has not been scheduled yet. For the whole-tournament, across-days view, see the
 Participant Recovery report, which spans overnight turnaround this deliberately does not.
