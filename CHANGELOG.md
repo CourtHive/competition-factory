@@ -1,5 +1,54 @@
 # Changelog
 
+## [7.10.0](https://github.com/CourtHive/competition-factory/compare/v7.9.0...v7.10.0) (2026-10-11)
+
+
+### Features
+
+* **draws:** add rotating-partner pairing and competition profiles ([67a8a90](https://github.com/CourtHive/competition-factory/commit/67a8a90a8b259d732f9333241eef9887b3362bda))
+* **draws:** admit individual rotating-partner entrants ([aa0b25d](https://github.com/CourtHive/competition-factory/commit/aa0b25d813cbc3ca91011a3e6bb1f95c83b7cccf))
+* **draws:** americano/mexicano rotating-partner draws and drawn round-robin tallies ([1049a63](https://github.com/CourtHive/competition-factory/commit/1049a6373e8d297af47da8cde6f5fd6a14d21302))
+* **draws:** support audited rotating-partner settlements ([e70fd73](https://github.com/CourtHive/competition-factory/commit/e70fd738cd5aa7c0c38b922bee178f05417a6f82))
+* **draws:** tally rotating partners and generate later Mexicano rounds ([f2faa49](https://github.com/CourtHive/competition-factory/commit/f2faa4971c545556716bfa9b82f225d6faaf62a8))
+* **integrity:** a stalled position is an error; the budget that ratcheted it to zero is deleted ([#5351](https://github.com/CourtHive/competition-factory/issues/5351)) ([dcc232f](https://github.com/CourtHive/competition-factory/commit/dcc232f9d2c0098ea393d14ebcbd92ff32f20a25))
+* materialize rotating-partner rounds atomically ([3c4cd50](https://github.com/CourtHive/competition-factory/commit/3c4cd50a54abae103ab1993f789d1402949f7f98))
+* **positioning:** a draw generated before its entries is positioned, and seeded, when they arrive ([#5350](https://github.com/CourtHive/competition-factory/issues/5350)) ([90ac4dd](https://github.com/CourtHive/competition-factory/commit/90ac4dd5ca05905ea0b2688b3e09544bbb5d9f40))
+* **scoring:** add rotating-partner completion analysis ([6ffbeac](https://github.com/CourtHive/competition-factory/commit/6ffbeacfb8cd94b08d39f5a2d2c647fe02a198f5))
+* **scoring:** integrate rotating-partner results and protect round contracts ([adfe889](https://github.com/CourtHive/competition-factory/commit/adfe88901215d96039b6cbf514fd408222041fa3))
+* **scoring:** persist policy-approved rotating-partner choices ([002bd58](https://github.com/CourtHive/competition-factory/commit/002bd58b8fc8b8136e64329d678c2cc7f0cd28b3))
+* **scoring:** resolve rotating-partner policy contracts ([c7477a0](https://github.com/CourtHive/competition-factory/commit/c7477a0d31cf6c07f7c0e94b2a5bcced868d67d7))
+* **tally:** support drawn round-robin results and outcome credits ([19fd9a8](https://github.com/CourtHive/competition-factory/commit/19fd9a82ae09e7639ba74f248cb3e4a15252d05f))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.9.0 ([#5347](https://github.com/CourtHive/competition-factory/issues/5347)) ([e71627c](https://github.com/CourtHive/competition-factory/commit/e71627c3a0f6b6c8d4251013f9190d551011345b))
+* **draws:** compare settlement results and preserve ISO instants ([cefa221](https://github.com/CourtHive/competition-factory/commit/cefa221cf12adb137f1e0e1d9b35b9f8318f6680))
+* **draws:** make rotating roster persistence independent of locale ([db82f1b](https://github.com/CourtHive/competition-factory/commit/db82f1bb2ff1ec9e7d3deed2df1543f2bb81d0e6))
+* **draws:** stabilize rotating-partner replay and profile rules ([2157378](https://github.com/CourtHive/competition-factory/commit/2157378544af683e8306ea277882ffc56aaac258))
+* **entries:** keep rotating individuals ungrouped in doubles events ([e755c3d](https://github.com/CourtHive/competition-factory/commit/e755c3d82abd4bc7251a93aa5187da29fb21c644))
+* **events:** a flight profile is typed, lives on the event, and writes no seedNumber ([#5359](https://github.com/CourtHive/competition-factory/issues/5359)) ([7bf8092](https://github.com/CourtHive/competition-factory/commit/7bf8092d1d197fd64aaac0eca5335a0e03fccd6e))
+* **exit-propagation:** a carry past a bye in a structure's last round survives its withdrawal ([#5357](https://github.com/CourtHive/competition-factory/issues/5357)) ([8ed7117](https://github.com/CourtHive/competition-factory/commit/8ed7117f0fcf0ff6a1d99a679f2e28057d7e220c))
+* **exit-propagation:** a carry written past a late bye names the exit's origin ([#5353](https://github.com/CourtHive/competition-factory/issues/5353)) ([82f75b2](https://github.com/CourtHive/competition-factory/commit/82f75b2e87cd19aa1d5dcbc7d19a0ffea78f4a44))
+* **exit-propagation:** a reservation goes with the exit that made it, past the bye it crossed ([#5354](https://github.com/CourtHive/competition-factory/issues/5354)) ([777de4e](https://github.com/CourtHive/competition-factory/commit/777de4ebdcc516b50e568f7db32d74f1eb3d3dac))
+* **exit-propagation:** an exit carried on from a convergence carries no stale winning side ([#5360](https://github.com/CourtHive/competition-factory/issues/5360)) ([df2924e](https://github.com/CourtHive/competition-factory/commit/df2924e211b7836243869d64c0de5ad96ba5ec47))
+* **exit-propagation:** an exit carried past a bye converges with the exit standing there ([#5362](https://github.com/CourtHive/competition-factory/issues/5362)) ([23f37e2](https://github.com/CourtHive/competition-factory/commit/23f37e2e14106174f7b8b9e37ffaf64ebde059ad))
+* **exit-propagation:** an ineligible loser's bye survives the opponent's arrival ([#5349](https://github.com/CourtHive/competition-factory/issues/5349)) ([b679437](https://github.com/CourtHive/competition-factory/commit/b6794371453b9b56efce36ad178c980f2346ee7d))
+* **integrity:** a double exit strands nobody ([#5348](https://github.com/CourtHive/competition-factory/issues/5348)) ([7be9fae](https://github.com/CourtHive/competition-factory/commit/7be9faefe545f394fe944511f803b1765e0b003f))
+* **scoring:** honor awarded combined-point winners ([6cfce4f](https://github.com/CourtHive/competition-factory/commit/6cfce4f2c33ee51aeed8a8438636d798d172cf7a))
+* **scoring:** preserve incomplete results and preflight tally policies ([d944e9c](https://github.com/CourtHive/competition-factory/commit/d944e9ce8967c4da960ffe6c38e03920e5b596d0))
+* **types:** restore drawn results and standings points on tally results ([88b4623](https://github.com/CourtHive/competition-factory/commit/88b4623baff277d69bc95bed43e6ab667f4c9620))
+
+
+### Performance
+
+* **engine:** copy a call's params only when the dev log or the observer will read them ([#5356](https://github.com/CourtHive/competition-factory/issues/5356)) ([69800b0](https://github.com/CourtHive/competition-factory/commit/69800b04570d0067b1a648e2a2b3f24ce20149df))
+
+
+### Documentation
+
+* 7.10.0 documentation ahead of the release ([#5361](https://github.com/CourtHive/competition-factory/issues/5361)) ([80e9a45](https://github.com/CourtHive/competition-factory/commit/80e9a45170d6b9317e7da2b8e582f43521e2ef65))
+
 ## [7.9.0](https://github.com/CourtHive/competition-factory/compare/v7.8.1...v7.9.0) (2026-10-09)
 
 
