@@ -182,10 +182,14 @@ export function fedLoserPlacementRefusal({
  * leaving the reconciliation to revert a slot nobody has played from. Measured with
  * `swapPathEquivalence.test.ts`: 17 of the 20 path violations remaining on #4908 were this shape.
  */
-function departingLoserPathRefusal({
+export function departingLoserPathRefusal({
   departingLoserParticipantId,
   targetStructureId,
   drawDefinition,
+}: {
+  departingLoserParticipantId?: string;
+  drawDefinition: DrawDefinition;
+  targetStructureId: string;
 }): ResultType | undefined {
   if (!departingLoserParticipantId) return undefined;
   const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: targetStructureId });

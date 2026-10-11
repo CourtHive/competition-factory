@@ -16,3 +16,38 @@ test('null empty or undefined attributes can be stripped out of JSON', () => {
     defined: 'defined',
   });
 });
+
+test('an array inside an array stays an array, at every depth', () => {
+  const example = {
+    pairs: [
+      ['a', 'b'],
+      ['c', 'd'],
+    ],
+    rounds: [
+      [
+        [
+          ['x', 'y'],
+          ['z', 'w'],
+        ],
+      ],
+    ],
+    mixed: [1, [2, undefined], { inner: [[3]], dropped: undefined }],
+  };
+  expect(definedAttributes(example)).toEqual({
+    pairs: [
+      ['a', 'b'],
+      ['c', 'd'],
+    ],
+    rounds: [
+      [
+        [
+          ['x', 'y'],
+          ['z', 'w'],
+        ],
+      ],
+    ],
+    // undefined array elements are kept, as before; objects inside arrays are still cleaned
+    mixed: [1, [2, undefined], { inner: [[3]] }],
+  });
+  expect(Array.isArray(definedAttributes(example).pairs[0])).toEqual(true);
+});

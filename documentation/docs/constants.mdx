@@ -268,6 +268,7 @@ const {
   CONFLICT_COURT_DOUBLE_BOOKING,
   CONFLICT_BYE_SCHEDULED,
   CONFLICT_EXIT_SCHEDULED,
+  CONFLICT_COURT_TIME_ORDER,
   SCHEDULE_PRESERVED_ON_EXIT,
   SCHEDULE_CONFLICT,
   SCHEDULE_WARNING,
@@ -276,6 +277,9 @@ const {
 
 - `CONFLICT_EXIT_SCHEDULED` (`'exitScheduledOnCourt'`) - a matchUp the exit cascade decided (a produced `WALKOVER` or
   `DEFAULTED`) is holding a court it can never use. Added in 7.5.0.
+- `CONFLICT_COURT_TIME_ORDER` (`'courtTimeOrderConflict'`) - a court's times out of step with its order of play: a
+  later `courtOrder` at a time equal to or earlier than the matchUp before it. A `SCHEDULE_WARNING`; a matchUp that
+  uses no court time (a walkover, cancellation or BYE) is left out. Added in the release after 7.10.0.
 - `SCHEDULE_PRESERVED_ON_EXIT` - the mutation payload's warning that a BYE or a produced exit was left holding a court
   or a time. Added in 7.5.0.
 

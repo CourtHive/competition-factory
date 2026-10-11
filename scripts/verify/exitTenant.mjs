@@ -84,6 +84,8 @@ const ALLOWED = {
   'assemblies/generators/mocks/generateEventWithDraw.ts': 'PLUMBING — mock outcome',
   'mutate/drawDefinitions/matchUpGovernor/attemptToModifyScore.ts': 'PLUMBING',
   'mutate/matchUps/drawPositions/directParticipants.ts': 'PLUMBING — sourceMatchUpStatusCodes',
+  'mutate/matchUps/drawPositions/relabelledPathFeeds.ts':
+    'PLUMBING — sourceMatchUpStatusCodes of the later loss it re-feeds, to directLoser and the exit context',
   'mutate/matchUps/matchUpStatus/setMatchUpState.ts': 'PLUMBING — the param type',
   'mutate/matchUps/matchUpStatus/setMatchUpStatus.ts': 'PLUMBING — outcome passthrough',
   'mutate/matchUps/outcome/differential.ts':

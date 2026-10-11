@@ -53,7 +53,7 @@ Consolation Stage:
 
 The convenience method `engine.generateDrawDefinition()` generates the following draw types:
 
-- **[AD_HOC](./draw-types/ad-hoc.md)** - An arbitrary number of matchUps may be added to an arbitrary number of rounds. Supports automated pairing via [DrawMatic](./draw-types/drawmatic.md).
+- **[AD_HOC](./draw-types/ad-hoc.md)** - An arbitrary number of matchUps may be added to an arbitrary number of rounds. Supports automated pairing via [DrawMatic](./draw-types/drawmatic.md) and rotating-partner rounds ([Americano and Mexicano](./draw-types/rotating-partner-pairing.md)).
 - **[COMPASS](./draw-types/compass.mdx)** - Includes up to 8 structures; ensures participants a minimum of 3 matchUps.
 - **CURTIS** - Includes 2 consolation structures, each fed by 2 main structure rounds, and a 3-4 playoff.
 - **[DOUBLE_ELIMINATION](./draw-types/double-elimination.mdx)** - Main structure losers feed into consolation; consolation winner plays main structure winner.

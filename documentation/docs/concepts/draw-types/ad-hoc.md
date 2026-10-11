@@ -61,9 +61,20 @@ const { drawDefinition } = engine.generateDrawDefinition({
 Unlike DrawMatic, a shape guarantees that every entrant meets every other entrant, and supports partial
 schedules via `roundsCount`.
 
+## Rotating Partners (Americano and Mexicano)
+
+In an **Americano** or **Mexicano** draw, individuals change partner every round. A draw-level
+**[competition profile](./competition-profile.md)** stores the format, scoring contract and pairing seed, and the
+factory generates each round deterministically. Americano rotates partners so that each player partners every other player exactly once; Mexicano
+pairs each round from the individual standings of the rounds before it. See
+**[Rotating Partner Pairing](./rotating-partner-pairing.md)** for previews, applying rounds, individual standings and
+audited settlements.
+
 ## Related
 
 - [Round Robin Pairing](./round-robin-pairing.md) -- Deterministic pairing shapes for Ad Hoc draws
 - [DrawMatic](./drawmatic.md) -- Automated pairing algorithm for Ad Hoc draws
+- [Rotating Partner Pairing](./rotating-partner-pairing.md) -- Americano and Mexicano rounds, standings and settlements
+- [Competition Profile](./competition-profile.md) -- The draw-level configuration for rotating-partner draws
 - [Draw Types Overview](../draw-types.md) -- List of all pre-defined draw types
 - [Generation Governor](/docs/governors/generation-governor) -- API reference for draw generation
