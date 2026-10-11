@@ -38,6 +38,10 @@ Finishing positions within each group are determined by the `roundRobinTallyPoli
 
 The tally policy is configurable. See the [Round Robin Tally Policy](/docs/policies/roundRobinTallyPolicy) documentation.
 
+A combined-point format that permits a tie (for example `SET1-S:P32`) can complete without a winner. Such a match
+counts as **drawn**, with configurable draw credit and optional standings points; see
+[Drawn Matches and Standings Points](/docs/policies/tallyPolicy#drawn-matches-and-standings-points).
+
 ## Use Cases
 
 - Group stages of larger tournaments that feed into playoff brackets.
