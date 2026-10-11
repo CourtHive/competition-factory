@@ -15,6 +15,9 @@ export const CONFLICT_POSITION_LINK = 'positionLinkConflict';
 export const CONFLICT_BYE_SCHEDULED = 'byeScheduledOnCourt';
 // a matchUp the exit cascade decided - a produced WALKOVER or DEFAULTED - holding a court it can never use
 export const CONFLICT_EXIT_SCHEDULED = 'exitScheduledOnCourt';
+// a court's times out of step with its order of play: a later courtOrder at a time equal to or earlier than
+// the matchUp before it. WARNING only — the grid still sequences by courtOrder — and nothing schedules by it.
+export const CONFLICT_COURT_TIME_ORDER = 'courtTimeOrderConflict';
 // the mutation payload's warning: a BYE or a produced exit left holding a court or a time
 export const SCHEDULE_PRESERVED_ON_EXIT = 'SCHEDULE_PRESERVED_ON_EXIT';
 export const SCHEDULE_ISSUE_IDS = 'ISSUE_IDS';
@@ -44,6 +47,7 @@ export const scheduleConstants = {
   CONFLICT_POSITION_LINK,
   CONFLICT_BYE_SCHEDULED,
   CONFLICT_EXIT_SCHEDULED,
+  CONFLICT_COURT_TIME_ORDER,
   SCHEDULE_PRESERVED_ON_EXIT,
   SCHEDULE_ISSUE_IDS,
   SCHEDULE_CONFLICT,
