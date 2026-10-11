@@ -22,58 +22,17 @@ import fs from 'fs';
  * Each schedule was EMITTED IN THE `on` ARM and replays there: `generateSchedule` calls the engine, so a schedule
  * emitted without `allowChangePropagation` is a different schedule.
  *
+ * **Closed, all 45 (and all 265 of the run), by `relabelledPathFeeds`** (`aFlipReFeedsTheLossItRelabels`): a winner
+ * change relabels the old winner's later losses onto the old loser, and the `FIRST_MATCHUP` feed of such a loss was
+ * never re-asked about its new occupant, whose first win is the flipped matchUp. None exposes another property behind
+ * it.
+ *
  * ## OPEN — the seeds whose end state still fails the FMLC feed rule
  *
  * The set of seeds failing with an F1 issue must EQUAL this list. A new failure fails; so does a seed that stops
  * failing, until its entry is removed here — the list only shrinks, and a fix records itself by deleting a line.
  */
-const OPEN = new Set<string>([
-  'on:20460202', // 8/8 DROPPED_PROGRESSION
-  'on:20460410', // 8/7 INELIGIBLE_PROGRESSION
-  'on:20460458', // 8/8 DROPPED_PROGRESSION
-  'on:20460840', // 32/29 DROPPED_PROGRESSION
-  'on:20460841', // 32/30 DROPPED_PROGRESSION
-  'on:20460860', // 8/7 DROPPED_PROGRESSION
-  'on:20461319', // 16/14 DROPPED_PROGRESSION
-  'on:20461937', // 16/15 DROPPED_PROGRESSION
-  'on:20462268', // 32/31 DROPPED_PROGRESSION
-  'on:20463468', // 8/5 DROPPED_PROGRESSION
-  'on:20463476', // 16/16 DROPPED_PROGRESSION
-  'on:20463511', // 8/6 DROPPED_PROGRESSION
-  'on:20463622', // 32/27 DROPPED_PROGRESSION
-  'on:20463803', // 32/29 INELIGIBLE_PROGRESSION + DROPPED_PROGRESSION
-  'on:20463941', // 16/13 DROPPED_PROGRESSION
-  'on:20464044', // 32/32 DROPPED_PROGRESSION
-  'on:20464366', // 16/11 DROPPED_PROGRESSION
-  'on:20469209', // 16/16 INELIGIBLE_PROGRESSION
-  'on:20470000', // 16/16 INELIGIBLE_PROGRESSION
-  'on:20470676', // 16/16 INELIGIBLE_PROGRESSION
-  'on:20470928', // 8/5 INELIGIBLE_PROGRESSION
-  'on:20473585', // 16/14 INELIGIBLE_PROGRESSION
-  'on:20473867', // 16/14 INELIGIBLE_PROGRESSION
-  'on:20473873', // 8/8 INELIGIBLE_PROGRESSION
-  'on:20474622', // 16/11 INELIGIBLE_PROGRESSION
-  'on:20476188', // 8/6 INELIGIBLE_PROGRESSION
-  'on:20478629', // 16/11 INELIGIBLE_PROGRESSION
-  'on:20480001', // 16/16 INELIGIBLE_PROGRESSION
-  'on:20480841', // 16/11 INELIGIBLE_PROGRESSION
-  'on:20482053', // 16/16 INELIGIBLE_PROGRESSION
-  'on:20483283', // 16/13 INELIGIBLE_PROGRESSION + DROPPED_PROGRESSION
-  'on:20483602', // 8/8 INELIGIBLE_PROGRESSION
-  'on:20483976', // 16/13 INELIGIBLE_PROGRESSION
-  'on:20486619', // 16/14 INELIGIBLE_PROGRESSION
-  'on:20486683', // 32/29 INELIGIBLE_PROGRESSION
-  'on:20486698', // 16/13 INELIGIBLE_PROGRESSION
-  'on:20489845', // 16/14 INELIGIBLE_PROGRESSION
-  'on:20492035', // 16/11 INELIGIBLE_PROGRESSION
-  'on:20492728', // 32/30 INELIGIBLE_PROGRESSION
-  'on:20494512', // 32/27 INELIGIBLE_PROGRESSION
-  'on:20494692', // 32/30 INELIGIBLE_PROGRESSION
-  'on:20495518', // 32/30 INELIGIBLE_PROGRESSION
-  'on:20495541', // 16/15 INELIGIBLE_PROGRESSION
-  'on:20498417', // 32/27 INELIGIBLE_PROGRESSION
-  'on:20498521', // 8/7 INELIGIBLE_PROGRESSION
-]);
+const OPEN = new Set<string>([]);
 
 /**
  * ## BEHIND — what a seed fails once its F1 finding is gone
