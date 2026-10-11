@@ -12,6 +12,10 @@ import {
   reconcileFedLoserEligibility,
   fedLoserPlacementRefusal,
 } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
+import {
+  reconcileRelabelledPathFeeds,
+  relabelledPathFeedRefusal,
+} from '@Mutate/matchUps/drawPositions/relabelledPathFeeds';
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
@@ -97,6 +101,21 @@ export function swapWinnerLoser(params) {
     event,
   });
   if (placementRefusal?.error) return placementRefusal;
+
+  // the same question for the later losses the flip relabels onto the old loser — see `relabelledPathFeeds`
+  const pathFeedRefusal = relabelledPathFeedRefusal({
+    inContextDrawMatchUps: params.inContextDrawMatchUps,
+    flippedRoundNumber: matchUpRoundNumber,
+    matchUpStatus: params.matchUpStatus,
+    existingWinnerDrawPosition,
+    existingLoserDrawPosition,
+    score: params.score,
+    drawDefinition,
+    structure,
+    matchUp,
+    event,
+  });
+  if (pathFeedRefusal?.error) return pathFeedRefusal;
 
   const { matchUps } = getAllStructureMatchUps(params);
   /**
@@ -308,6 +327,20 @@ export function swapWinnerLoser(params) {
   });
   if (reconciliation?.error) return reconciliation;
 
+  // the old loser now holds the old winner's path, and with it any later loss that feeds `FIRST_MATCHUP`
+  const pathReconciliation = reconcileRelabelledPathFeeds({
+    propagateRetirementAsExit: params.propagateRetirementAsExit,
+    propagateExitStatus: params.propagateExitStatus,
+    drawPosition: existingLoserDrawPosition,
+    flippedRoundNumber: matchUpRoundNumber,
+    matchUpsMap: params.matchUpsMap,
+    tournamentRecord,
+    drawDefinition,
+    structure,
+    event,
+  });
+  if (pathReconciliation?.error) return pathReconciliation;
+
   // A placement can land an exit on the target matchUp, and the exit then has to continue. The
   // context is what `setMatchUpStatus` drives its propagation loop from, so it is carried out of
   // here exactly as `attemptToSetWinningSide` carries it out of `directParticipants` — a swap that
@@ -326,6 +359,8 @@ export function swapWinnerLoser(params) {
       },
     };
   }
+  // a placement on the relabelled path carries its own source: the later loss, not the flipped matchUp
+  if (pathReconciliation?.context?.progressExitStatus) return { ...scoreResult, context: pathReconciliation.context };
 
   return scoreResult;
 }
