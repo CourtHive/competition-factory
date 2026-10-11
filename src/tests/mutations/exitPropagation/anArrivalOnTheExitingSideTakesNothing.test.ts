@@ -7,7 +7,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DEFAULTED, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DEFAULTED, DOUBLE_WALKOVER, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION, MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -157,12 +157,19 @@ it('census de 9300487: the defaulted side of a Backdraw matchUp is not advanced 
     (inconsistency: any) => inconsistency.issueType,
   );
   expect(issues).not.toContain('WINNING_SIDE_ADVANCEMENT_MISMATCH');
+  expect(issues).toEqual([]);
 
-  const decided = at('Backdraw|3|1');
-  expect(decided.matchUpStatus).toEqual(DEFAULTED);
-  const winnerId = decided.sides.find((side: any) => side.sideNumber === decided.winningSide)?.participantId;
-  const loserId = decided.sides.find((side: any) => side.sideNumber !== decided.winningSide)?.participantId;
-  const onward = at('Backdraw|4|1').sides.map((side: any) => side.participantId);
-  expect(onward).toContain(winnerId);
-  expect(onward).not.toContain(loserId);
+  // P53 (CA, 2026-10-11, approved change of assertion). This used to assert `Backdraw|3|1` DEFAULTED: that default was
+  // Hedges', stranded there when `Main|1|6`'s double walkover was re-scored and he went back to `Backdraw|1|2` without
+  // it, and it then decided `3|1` against Ahern, who never defaulted. The carry now comes home with its carrier
+  // (`aCarryPastTwoByesComesHomeWhenOneGoes`): it decides `1|2`, and the two participants who reached `3|1` meet there.
+  const surnames = (coordinates: string) =>
+    at(coordinates)
+      .sides.map((side: any) => side.participant?.participantName?.split(' ').pop())
+      .filter(Boolean)
+      .sort((a: string, b: string) => a.localeCompare(b));
+  expect(at('Backdraw|1|2').matchUpStatus).toEqual(DEFAULTED);
+  expect(at('Backdraw|3|1').matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(surnames('Backdraw|3|1')).toEqual(['Ahern', 'Wormwood']);
+  expect(surnames('Backdraw|4|1')).toEqual([]);
 });

@@ -404,7 +404,11 @@ where the double exit put it, and a carry whose origin is itself being relabelle
 is withdrawn, not re-seated. Before this a carry that stood **pending** a round on was lost on the
 pull-back and its carrier won a match they had walked over (census 20057285,
 FIRST_ROUND_LOSER_CONSOLATION 8/8); a carry that had **decided** its onward matchUp already came
-home.
+home. This holds however far the carrier went: a carrier who passed more than one BYE is taken back out of every
+round those BYEs moved them through, and the carry comes home from wherever it was written. Before this, a carry written
+two BYEs on stayed there, decided over an empty seat, and decided the matchUp against whoever arrived (census de
+9300487, DOUBLE_ELIMINATION 16/13: a default carried past two Backdraw BYEs stayed in `Backdraw|3|1` and was charged to
+a participant who never defaulted).
 
 Since 7.10.0 two more cases hold. **A carry past a BYE in a structure's last round survives the
 BYE's withdrawal**: there is nowhere further for the carrier to land, so the carried exit is recorded
