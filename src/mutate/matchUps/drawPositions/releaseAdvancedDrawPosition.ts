@@ -1,7 +1,9 @@
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
+import { bringCarryHome, carryLeavingWith } from '@Mutate/matchUps/drawPositions/carryHome';
 import {
   deriveExitStateFromProvenance,
   getSideExitProvenance,
+  withdrawRelayedExit,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -119,6 +121,21 @@ export function releaseAdvancedDrawPosition({
       : [],
   );
 
+  // the exit the released participant carried into each round, read up front for the same reason: its side is read
+  // through the feeder that delivered the position, which this pass releases first (see the carry home, below)
+  const carriesLeaving = new Map(
+    matchUps.filter(releasable).map((matchUp) => [
+      matchUp.matchUpId,
+      carryLeavingWith({
+        positionAssignments: positionAssignments ?? [],
+        drawDefinition,
+        drawPosition,
+        structureId,
+        matchUp,
+      }),
+    ]),
+  );
+
   const releasedRoundNumbers: number[] = [];
   const vacatedByes: { roundNumber: number; remaining: number[] }[] = [];
   for (const matchUp of matchUps) {
@@ -144,6 +161,8 @@ export function releaseAdvancedDrawPosition({
     if (!withdrawingExit && advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp })) {
       continue;
     }
+
+    const carry = carriesLeaving.get(matchUp.matchUpId);
 
     // Removal, not substitution: mapping a position to `undefined` preserves ascending order.
     // Any writer that SUBSTITUTES must re-sort — see the canonical statement in
@@ -178,6 +197,20 @@ export function releaseAdvancedDrawPosition({
     // pending. A CARRIED exit keeps its winningSide on an empty seat by design (exit-propagation.md).
     if (heldOpenForArrival && awardedByProducedExit({ drawPosition, matchUps, matchUp })) {
       matchUp.winningSide = undefined;
+    }
+
+    /**
+     * A CARRY GOES HOME WITH ITS CARRIER (P53). An exit carried past BYEs is written where the carrier lands; when a
+     * BYE they passed is withdrawn, this release takes them back out of the rounds the BYE had moved them through — and
+     * the carry stayed behind, a decided exit over an empty seat that the next arrival "lost" (census de 9300487:
+     * Hedges' default, carried past two BYEs into `Backdraw|3|1`, stayed there when `Main|1|6`'s double walkover was
+     * re-scored and he went back to `Backdraw|1|2`). `removeSubsequentRoundsParticipant` brings a carry home on the
+     * removal path (P50); this is the release path. The carrier's own side only: an exit carried by the OPPONENT keeps
+     * its winningSide on the emptied seat, as above.
+     */
+    if (carry?.sourceMatchUpId) {
+      withdrawRelayedExit({ sourceMatchUpId: carry.sourceMatchUpId, drawDefinition, structureId, matchUp });
+      bringCarryHome({ carry, from: matchUp, drawPosition, matchUps, drawDefinition, structureId });
     }
 
     modifyMatchUpNotice({
