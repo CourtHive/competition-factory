@@ -1,5 +1,25 @@
 # Changelog
 
+## [7.11.0](https://github.com/CourtHive/competition-factory/compare/v7.10.0...v7.11.0) (2026-10-11)
+
+
+### Features
+
+* **scheduling:** proConflicts reports a court's times out of step with its order of play ([#5373](https://github.com/CourtHive/competition-factory/issues/5373)) ([fe5b9d5](https://github.com/CourtHive/competition-factory/commit/fe5b9d51d85e7cde0514ccaea5346ebdd82889aa))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.10.0 ([#5369](https://github.com/CourtHive/competition-factory/issues/5369)) ([64938f8](https://github.com/CourtHive/competition-factory/commit/64938f8f466406bf9b756fd7104f87220c677392))
+* **exit-propagation:** re-ask the first-match feed of the later loss a flip relabels ([#5372](https://github.com/CourtHive/competition-factory/issues/5372)) ([8a0b2d7](https://github.com/CourtHive/competition-factory/commit/8a0b2d77c0644cb6388c8d33eb27bd303cb868c3))
+* **matchUps:** a completed combined-point tie is not ready to score ([#5374](https://github.com/CourtHive/competition-factory/issues/5374)) ([f01aa5d](https://github.com/CourtHive/competition-factory/commit/f01aa5d4ea1d9bbfb70059e8f40ece212d9dae9c))
+* **queries:** getEvent keeps a rotating round's pairings as nested arrays ([#5371](https://github.com/CourtHive/competition-factory/issues/5371)) ([0402e80](https://github.com/CourtHive/competition-factory/commit/0402e80317d2a6f6118167ef0c86f21ec4ba604d))
+
+
+### Documentation
+
+* put the rotating-partner pages in the draw-types nav and link drawn round-robin results ([#5365](https://github.com/CourtHive/competition-factory/issues/5365)) ([8748e86](https://github.com/CourtHive/competition-factory/commit/8748e868bd76db668cc17baf4e778b2b1fc6d843))
+
 ## [7.10.0](https://github.com/CourtHive/competition-factory/compare/v7.9.0...v7.10.0) (2026-10-11)
 
 
