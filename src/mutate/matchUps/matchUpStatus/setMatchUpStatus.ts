@@ -97,18 +97,21 @@ function resolveDrawDefinition(params: SetMatchUpStatusArgs, tournamentRecords: 
 /**
  * A convergence that lost one of its origins goes where the kept origin alone puts it; then every carried
  * exit's ORIGIN is asked whether it still describes one (`reconcileStaleExitOrigins`).
+ *
+ * Asked of the DRAW, never of a map carried in the call's context. The reconciliation is a question about the
+ * settled draw, and a map taken earlier in the call can describe an earlier draw: handed the exit-propagation
+ * context's map while `decorateResult` deep-copied it, it read the draw as the direction left it and wrote to
+ * detached objects, so a stale origin stood until the NEXT call repaired it (census F2, 2026-10-11).
  */
 function settleExitOrigins({
   propagateExitStatus,
   doubleExitsBefore,
   matchUpId,
   params,
-  result,
 }: {
   params: SetMatchUpStatusArgs;
   doubleExitsBefore: Set<string>;
   propagateExitStatus?: boolean;
-  result: ResultType;
   matchUpId: string;
 }): ResultType | undefined {
   const settled = settleRederivedDoubleExits({
@@ -121,13 +124,11 @@ function settleExitOrigins({
   });
   if (settled?.error) return settled;
   const reconciled = reconcileStaleExitOrigins({
-    matchUpsMap: result.context?.matchUpsMap,
     drawDefinition: params.drawDefinition,
     tournamentRecord: params.tournamentRecord,
     event: params.event,
   });
-  // an error already in hand is the answer; a reconciliation that cannot read the draw is the answer otherwise
-  if (reconciled?.error) return result.error ? undefined : reconciled;
+  if (reconciled?.error) return reconciled;
   // The reconciliation can itself re-derive a convergence: a double exit whose produced exit it withdrew because the
   // origin stopped being one. Settled only before it, that matchUp was still a double exit, and the participant it now
   // awards stayed where they stood (census policy-off 20177818, CURTIS_CONSOLATION 16/11: `Consolation 1|3|2`,
@@ -142,7 +143,7 @@ function settleExitOrigins({
     propagateExitStatus,
     event: params.event,
   });
-  return resettled?.error && !result.error ? resettled : undefined;
+  return resettled?.error ? resettled : undefined;
 }
 
 /**
@@ -393,10 +394,17 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       return decorateResult({ result: propagated, stack });
     }
   }
+  // A REFUSAL CHANGES NOTHING, so nothing below it runs: no step here may repair, on a refused call, what an earlier
+  // call left (census F2, 2026-10-11: the settle step ran after `setMatchUpState` refused, and its reconciliation
+  // was the refused call's only write in 55 of 92 refusals after a write).
+  if (result.error) {
+    v2.compare?.(result);
+    return decorateResult({ result, stack });
+  }
   // Everything has settled — removals, directions and exit propagation — which is the earliest point
   // at which a carried exit's ORIGIN can be asked whether it still describes one. See
   // `reconcileStaleExitOrigins` for the two corrections that pull the timing in opposite directions.
-  const settled = settleExitOrigins({ params, result, matchUpId, propagateExitStatus, doubleExitsBefore });
+  const settled = settleExitOrigins({ params, matchUpId, propagateExitStatus, doubleExitsBefore });
   if (settled?.error) {
     v2.compare?.(settled);
     return decorateResult({ result: settled, stack });
@@ -409,28 +417,26 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event: params.event,
   });
 
-  if (!result.error) {
-    // a participant who decided a round feeding another structure is seated there, before the decider is settled
-    reconcileMissedLinkAdvancements({
-      drawDefinition: params.drawDefinition,
-      tournamentRecord: params.tournamentRecord,
-      event: params.event,
-    });
-    const settled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
-    if (settled.error) return decorateResult({ result: settled, stack });
-    // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
-    // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
-    reconcileLinkAdvancements({
-      drawDefinition: params.drawDefinition,
-      tournamentRecord: params.tournamentRecord,
-      event: params.event,
-    });
-    const warnings = [
-      ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
-      ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
-    ];
-    if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
-  }
+  // a participant who decided a round feeding another structure is seated there, before the decider is settled
+  reconcileMissedLinkAdvancements({
+    drawDefinition: params.drawDefinition,
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+  });
+  const drawSettled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
+  if (drawSettled.error) return decorateResult({ result: drawSettled, stack });
+  // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
+  // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
+  reconcileLinkAdvancements({
+    drawDefinition: params.drawDefinition,
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+  });
+  const warnings = [
+    ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
+    ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
+  ];
+  if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
 
   v2.compare?.(result);
 

@@ -30,6 +30,11 @@ import fs from 'fs';
  * `Mentat/fixtures/exit-propagation-census/census-fails-s1{3,4}.jsonl`; the planning record is
  * `Mentat/planning/CENSUS_FAILURE_FAMILIES.md`. Each schedule replays in the arm it was emitted in.
  *
+ * **SETTLE-A and SETTLE-B closed, all 24 here** (and all 55 of the two runs): `setMatchUpStatus` runs nothing after
+ * a refusal, the settle step reads the draw rather than a map carried in the context, and `decorateResult` no longer
+ * deep-copies a context (`aSettleReadsTheDrawItLeft`). None exposes another property behind it. SETTLE-B's two seeds
+ * close as refusals; the held exits that fail to converge there are recorded in the planning record.
+ *
  * ## OPEN — the instances that still refuse after writing, by group
  *
  * The instances failing `ERROR_IMPLIES_NO_MUTATION` with their recorded code must EQUAL these lists, each in its own
@@ -37,31 +42,8 @@ import fs from 'fs';
  * until its entry is removed here — the lists only shrink, and a fix records itself by deleting a line.
  */
 const OPEN: Record<string, Set<string>> = {
-  'SETTLE-A': new Set([
-    'off:20464093',
-    'off:20474808',
-    'off:20479243',
-    'off:20482909',
-    'off:20491844',
-    'off:20493725',
-    'off:20504956',
-    'off:20523724',
-    'off:20525665',
-    'on:20464093',
-    'on:20474808',
-    'on:20475707',
-    'on:20476774',
-    'on:20479243',
-    'on:20491844',
-    'policyoff:20460127',
-    'policyoff:20464093',
-    'policyoff:20467840',
-    'policyoff:20470455',
-    'policyoff:20493725',
-    'policyoff:20500175',
-    'policyoff:20525665',
-  ]),
-  'SETTLE-B': new Set(['policyoff:20496326', 'policyoff:20515211']),
+  'SETTLE-A': new Set([]),
+  'SETTLE-B': new Set([]),
   OTHER: new Set([
     'off:20460396',
     'off:20496331',
