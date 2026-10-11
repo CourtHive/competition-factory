@@ -625,3 +625,35 @@ it.each(['2026-10-10T12:00:00Z', '2026-10-10T12:00:00.123456789Z', '2026-10-10T1
     );
   },
 );
+
+it.each([
+  ['recordedAt', '2026-10-11T21:00:00Z'],
+  ['recordedBy', 'different-director'],
+])('a settlement retry with different %s preserves the original audit record', (field, value) => {
+  const context = setup();
+  apply(context);
+  const match = context.drawDefinition.structures![0].matchUps![0];
+  match.matchUpStatus = 'WALKOVER';
+  const request = settlementRequest(context);
+  const initial = settleRotatingPartnerResult(request);
+  expect(initial.success).toBe(true);
+  const before = structuredClone(context.tournamentRecord);
+  const retry = settleRotatingPartnerResult({ ...request, [field]: value });
+  expect(retry.existingSettlement).toBe(true);
+  expect(retry.settlement).toEqual(initial.settlement);
+  expect(context.tournamentRecord).toEqual(before);
+});
+
+it('a settlement retry with different sporting intent is refused without a write', () => {
+  const context = setup();
+  apply(context);
+  const match = context.drawDefinition.structures![0].matchUps![0];
+  match.matchUpStatus = 'WALKOVER';
+  const request = settlementRequest(context);
+  expect(settleRotatingPartnerResult(request).success).toBe(true);
+  const before = structuredClone(context.tournamentRecord);
+  const retry = settleRotatingPartnerResult({ ...request, treatment: { kind: 'PLAYED_POINTS' } });
+  expect(retry.error).toBe(INVALID_VALUES);
+  expect(retry.info).toBe('requestId already used for a different settlement');
+  expect(context.tournamentRecord).toEqual(before);
+});

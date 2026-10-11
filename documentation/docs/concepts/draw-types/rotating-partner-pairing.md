@@ -125,3 +125,7 @@ operators. TMX should preview individual credits and require a reason before sub
 Both `recordedBy` and `recordedAt` are self-reported metadata in the factory API; they are not proof of identity or time. A trusted server must stamp them from the authenticated actor and server clock, and deliver the same stamped command to clients for deterministic replay. Offline callers must label their metadata as self-reported. Factory validation does not implement that server integration.
 
 Settlement freshness compares status, winning side and numeric set scores. Reformatting score display strings does not invalidate an approved settlement.
+
+### Settlement retries
+
+A repeated requestId returns the original settlement with existingSettlement: true when all intent fields match, normalizing expectedOutcome to its sporting result and excluding recordedBy/recordedAt from the comparison. Original attribution and time remain unchanged even when another operator retries. A different sporting result, treatment, reason or supersession is refused without a write. New requests still require valid actor/time metadata.
