@@ -133,11 +133,9 @@ describe('getMatchUpParticipantIds is exported', () => {
     const { matchUp } = tournamentEngine.findMatchUp({ drawId: firstRound.drawId, matchUpId: firstRound.matchUpId });
     const result: any = tournamentEngine.getMatchUpParticipantIds({ matchUp });
     expect(result.success).toEqual(true);
-    expect(result.individualParticipantIds.sort()).toEqual(
-      state(firstRound)
-        .participants.map((p: any) => p.participantId)
-        .sort(),
-    );
+    const byId = (a: string, b: string) => a.localeCompare(b);
+    const listed = state(firstRound).participants.map((p: any) => p.participantId);
+    expect([...result.individualParticipantIds].sort(byId)).toEqual([...listed].sort(byId));
     expect(result.sideParticipantIds).toHaveLength(2);
   });
 });
