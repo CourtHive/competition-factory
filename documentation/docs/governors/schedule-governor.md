@@ -1030,13 +1030,35 @@ engine.proAutoSchedule({
 
 ### proConflicts
 
-Detects scheduling conflicts in pro grid scheduling.
+Detects scheduling conflicts in pro grid scheduling: the grid's rows are `courtOrder`, its columns courts.
 
 ```js
-const { conflicts } = engine.proConflicts({
-  scheduleDate, // required
+const { courtIssues, rowIssues } = engine.proConflicts({
+  matchUps, // required — the day's court-placed matchUps, { inContext: true, nextMatchUps: true }
+  useDeepDependencies, // optional — also check dependencies beyond adjacent rows
 });
 ```
+
+`courtIssues` is keyed by `courtId`, `rowIssues` by row index; each issue is
+`{ matchUpId, issue, issueType, issueIds }`, where `issue` is the severity (`SCHEDULE_ERROR`,
+`SCHEDULE_CONFLICT`, `SCHEDULE_ISSUE`, `SCHEDULE_WARNING`) and `issueIds` names the matchUps it is with.
+A matchUp carries one issue, the first and most severe found. The `issueType`s are `scheduleConstants`:
+
+- `CONFLICT_PARTICIPANTS`, `CONFLICT_POTENTIAL_PARTICIPANTS` — the same participant, or one who may
+  advance there, in two matchUps of one row;
+- `CONFLICT_MATCHUP_ORDER` — a matchUp in the same row as, or earlier than, a matchUp that feeds it;
+- `CONFLICT_COURT_DOUBLE_BOOKING` — two matchUps in the same court and `courtOrder`;
+- `CONFLICT_BYE_SCHEDULED`, `CONFLICT_EXIT_SCHEDULED` — a court held by a matchUp that will never be
+  played (see below);
+- `CONFLICT_POSITION_LINK` — with `useDeepDependencies`, a matchUp whose position-linked source is
+  not on the grid;
+- `CONFLICT_COURT_TIME_ORDER` — a court's times out of step with its order of play: a later
+  `courtOrder` at a time equal to or earlier than the matchUp before it. A `SCHEDULE_WARNING`, the
+  lowest severity, so it never stands in front of another issue on the same matchUp. A matchUp that
+  uses no court time (`WALKOVER`, `DOUBLE_WALKOVER`, `CANCELLED`, `DEAD_RUBBER`, a BYE, or an exit
+  the cascade produced) is left out, so the matchUp a director puts on a walkover's court at the same
+  time is not reported. `DEFAULTED`, `DOUBLE_DEFAULT` and `ABANDONED` still count: each can come after
+  play has begun. Nothing schedules by this warning; `proAutoSchedule` does not read `proConflicts`.
 
 ---
 

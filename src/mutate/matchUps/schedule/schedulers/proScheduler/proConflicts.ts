@@ -2,6 +2,7 @@ import { matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeSchedulin
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { generateRange, instanceCount, unique } from '@Tools/arrays';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
+import { courtTimeOrderConflicts } from './courtTimeOrder';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { ensureInt } from '@Tools/ensureInt';
 
@@ -24,6 +25,7 @@ import {
   CONFLICT_BYE_SCHEDULED,
   CONFLICT_EXIT_SCHEDULED,
   CONFLICT_POSITION_LINK,
+  CONFLICT_COURT_TIME_ORDER,
 } from '@Constants/scheduleConstants';
 
 // NOTE: matchUps are assumed to be { inContext: true, nextMatchUps: true }
@@ -462,6 +464,12 @@ export function proConflicts({
         }
       });
     }
+  }
+
+  // Last, so it is the lowest-severity annotation: `annotate` keeps the first issue a matchUp receives,
+  // and a court-time ordering note must never stand in front of a conflict or an error on the same matchUp.
+  for (const { matchUpId, earlierMatchUpId } of courtTimeOrderConflicts(sortedFiltered)) {
+    annotate(matchUpId, SCHEDULE_WARNING, CONFLICT_COURT_TIME_ORDER, [earlierMatchUpId]);
   }
 
   return { courtIssues, rowIssues };
