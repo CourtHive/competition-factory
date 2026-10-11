@@ -193,6 +193,17 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
       });
   }
 
+  // row 22, asked where v1 asks it: just before row 12 (P52; CA, 2026-10-11)
+  if (view.correctionKindBlockedBy)
+    return refuse(22, CANNOT_CHANGE_OUTCOME, {
+      info: 'a result recorded downstream fixes whether this outcome is an exit or a played result',
+      context: {
+        currentMatchUpStatus: view.existing.matchUpStatus,
+        blockingMatchUpId: view.correctionKindBlockedBy,
+        matchUpStatus,
+      },
+    });
+
   if (view.feedEligibilityBlockedBy)
     return refuse(12, CANNOT_CHANGE_FEED_ELIGIBILITY, {
       info: 'the loser of the linked round has already been directed under the previous outcome',

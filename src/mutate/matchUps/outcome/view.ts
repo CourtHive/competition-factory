@@ -1,6 +1,7 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
+import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
@@ -417,6 +418,22 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     score: request.score,
   });
 
+  // the same predicate v1 asks: one rule, read by both pipelines (P52)
+  const kind = request.flags.propagatingExit
+    ? undefined
+    : correctionKindChange({
+        propagateRetirementAsExit: request.flags.propagateRetirementAsExit,
+        propagateExitStatus: request.flags.propagateExitStatus,
+        loserTargetLink: targetData?.targetLinks?.loserTargetLink,
+        matchUpStatus: request.matchUpStatus,
+        winningSide: request.winningSide,
+        inContextDrawMatchUps,
+        inContextMatchUp,
+        score: request.score,
+        drawDefinition,
+        matchUp,
+      });
+
   let line: OutcomeView['line'];
   if (matchUpTieId) {
     const { matchUp: dualMatchUp } = findDrawMatchUp({
@@ -497,6 +514,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       requireForScoring,
     },
     feedEligibilityBlockedBy: feed?.sourceRoundMatchUpId,
+    correctionKindBlockedBy: kind?.blockingMatchUpId,
     line,
     dualProjection,
     targets: {

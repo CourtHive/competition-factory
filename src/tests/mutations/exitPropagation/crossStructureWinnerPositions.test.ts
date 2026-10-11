@@ -136,6 +136,10 @@ describe('census reproductions — cross-structure advancement never refuses ove
         ['Main', 3, 1, { matchUpStatus: DEFAULTED, winningSide: 1 }],
       ],
       reaches: [{ after: 5, statuses: { 'Backdraw|4|1': DOUBLE_WALKOVER, 'Main|4|1': WALKOVER } }],
+      // P52 (CA, 2026-10-11, approved change of assertion): step 6 used to be accepted. The semifinal's loser stands in
+      // a Backdraw final a director recorded as a DOUBLE_WALKOVER, and a recorded result downstream, played or not,
+      // fixes the kind of the semifinal's outcome: turning its played result into a default is refused.
+      refusals: [6],
     },
     {
       // census 9100555's opening, then the Backdraw semifinal is CLEARED: its winner had passed
