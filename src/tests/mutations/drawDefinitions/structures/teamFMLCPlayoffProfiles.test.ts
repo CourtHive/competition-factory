@@ -37,7 +37,10 @@ it('offers 5-8 from round 2 of an unplayed TEAM FIRST_MATCH_LOSER_CONSOLATION dr
   expect(playoffRoundsRanges).toEqual(expectedRanges);
 });
 
-it('offers 5-8 from round 2 of a completed TEAM FIRST_MATCH_LOSER_CONSOLATION draw', () => {
+// Completing a 16-team DOMINANT_DUO draw takes ~2.8s alone and took 30.2s in a Node 22 coverage
+// shard, past the 30s default, which failed #5377's CI. Generous rather than tuned, like the suite's
+// other heavy generators.
+it('offers 5-8 from round 2 of a completed TEAM FIRST_MATCH_LOSER_CONSOLATION draw', { timeout: 180_000 }, () => {
   const { tournamentRecord, drawDefinition, structureId, drawId } = generate({ completeAllMatchUps: true });
 
   // a completed draw with no byes feeds nobody into consolation round 2: 4 TEAM matchUps, 12 tieMatchUps
