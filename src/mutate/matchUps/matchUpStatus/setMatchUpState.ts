@@ -7,6 +7,7 @@ import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRota
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
+import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
@@ -79,6 +80,7 @@ import {
 } from '@Constants/matchUpStatusConstants';
 import {
   DrawDefinition,
+  DrawLink,
   Event,
   MatchUp,
   MatchUpStatusUnion,
@@ -365,27 +367,25 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
    * property `ERROR_IMPLIES_NO_MUTATION` asserts, and the reason this is not inside
    * `winningSideWithDownstreamDependencies` where an earlier attempt put it.
    */
-  const eligibilityChange = feedEligibilityChange({
-    inContextDrawMatchUps,
-    drawDefinition,
-    matchUpStatus,
-    winningSide,
-    structure,
-    matchUp,
-    score,
-  });
-  if (eligibilityChange) {
-    return decorateResult({
-      result: { error: CANNOT_CHANGE_FEED_ELIGIBILITY },
-      info: 'the loser of the linked round has already been directed under the previous outcome',
-      context: {
-        currentMatchUpStatus: matchUp.matchUpStatus,
-        blockingMatchUpId: eligibilityChange.sourceRoundMatchUpId,
-        matchUpStatus,
-      },
-      stack: 'feedEligibility',
+  // row 22 (P52), then row 12: both ask about the loser's path before anything is written
+  const preWriteRefusal =
+    correctionKindRefusal({
+      loserTargetLink: targetData?.targetLinks?.loserTargetLink,
+      inContextDrawMatchUps,
+      inContextMatchUp,
+      matchUp,
+      params,
+    }) ??
+    feedEligibilityRefusal({
+      inContextDrawMatchUps,
+      drawDefinition,
+      matchUpStatus,
+      winningSide,
+      structure,
+      matchUp,
+      score,
     });
-  }
+  if (preWriteRefusal) return preWriteRefusal;
 
   const downstreamError = checkDownstreamCompatibility({
     matchUpTieId,
@@ -1248,4 +1248,64 @@ function outcomePolicies(params: SetMatchUpStateArgs): PolicyDefinitions {
   });
   if (isObject(params.policyDefinitions)) Object.assign(appliedPolicies, params.policyDefinitions);
   return appliedPolicies;
+}
+
+/**
+ * A recorded result downstream fixes the KIND of this outcome (P52; CA, 2026-10-11): a correction from an exit to a
+ * played result, or the reverse, is refused above every mutation when the loser's path holds one. The cascade's own
+ * writes are not corrections and are not asked.
+ */
+function correctionKindRefusal({
+  inContextDrawMatchUps,
+  inContextMatchUp,
+  loserTargetLink,
+  matchUp,
+  params,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  inContextMatchUp?: HydratedMatchUp;
+  loserTargetLink?: DrawLink;
+  params: SetMatchUpStateArgs;
+  matchUp: MatchUp;
+}) {
+  if (params.propagatingExit) return undefined;
+  const kindChange = correctionKindChange({
+    propagateRetirementAsExit: params.propagateRetirementAsExit,
+    loserTargetLink,
+    propagateExitStatus: params.propagateExitStatus,
+    matchUpStatus: params.matchUpStatus,
+    winningSide: params.winningSide,
+    inContextDrawMatchUps,
+    score: params.score,
+    inContextMatchUp,
+    drawDefinition: params.drawDefinition,
+    matchUp,
+  });
+  if (!kindChange) return undefined;
+  return decorateResult({
+    result: { error: CANNOT_CHANGE_OUTCOME },
+    info: 'a result recorded downstream fixes whether this outcome is an exit or a played result',
+    context: {
+      currentMatchUpStatus: matchUp.matchUpStatus,
+      blockingMatchUpId: kindChange.blockingMatchUpId,
+      matchUpStatus: params.matchUpStatus,
+    },
+    stack: 'correctionKind',
+  });
+}
+
+/** the loser of the linked round has already been directed under the previous outcome (row 12) */
+function feedEligibilityRefusal(args: Parameters<typeof feedEligibilityChange>[0]) {
+  const eligibilityChange = feedEligibilityChange(args);
+  if (!eligibilityChange) return undefined;
+  return decorateResult({
+    result: { error: CANNOT_CHANGE_FEED_ELIGIBILITY },
+    info: 'the loser of the linked round has already been directed under the previous outcome',
+    context: {
+      currentMatchUpStatus: args.matchUp?.matchUpStatus,
+      blockingMatchUpId: eligibilityChange.sourceRoundMatchUpId,
+      matchUpStatus: args.matchUpStatus,
+    },
+    stack: 'feedEligibility',
+  });
 }

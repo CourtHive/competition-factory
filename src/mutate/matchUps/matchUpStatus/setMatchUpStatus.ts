@@ -384,52 +384,13 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event,
     notes,
   });
-  // DECISION: Check if exit status propagation is needed
-  // WHY: When a participant exits via WALKOVER/DEFAULTED/RETIRED, their opponent advances
-  // and the exited participant may need to be placed in a consolation draw with the exit status
-  // The progressExitStatus flag in context signals this scenario occurred
-  if (result.context?.progressExitStatus) {
-    // DECISION: Use iterative loop instead of recursion for multi-level propagation
-    // WHY: In structures like COMPASS draws, exit status may propagate through multiple levels
-    // (e.g., East → West → South → Southeast). Iteration is safer than deep recursion.
-    // Failsafe prevents infinite loops if there's a circular reference or bug
-    let iterate = true;
-    let failsafe = 0;
-    while (iterate && failsafe < 10) {
-      iterate = false;
-      failsafe += 1;
-
-      // DECISION: Call progressExitStatus to set status on consolation matchUp
-      // WHY: Participant has been directed to consolation matchUp by directLoser,
-      // now we need to set that matchUp's status (e.g., WALKOVER if only one participant)
-      const progressResult = progressExitStatus({
-        sourceMatchUpStatusCodes: result.context.sourceMatchUpStatusCodes,
-        sourceMatchUpStatus: result.context.sourceMatchUpStatus,
-        sourceWinningSide: result.context.sourceWinningSide,
-        loserParticipantId: result.context.loserParticipantId,
-        sourceMatchUpId: result.context.sourceMatchUpId,
-        propagateExitStatus,
-        tournamentRecord: params.tournamentRecord,
-        loserMatchUp: result.context.loserMatchUp,
-        matchUpsMap: result.context.matchUpsMap,
-        drawDefinition: params.drawDefinition,
-        event: params.event,
-      });
-
-      // A REFUSED WRITE IS RETURNED, never dropped (F3). The loop used to read only `context`, so a
-      // refusal here reported success over a draw the cascade had left half-written.
-      if (progressResult.error) {
-        v2.compare?.(progressResult);
-        return decorateResult({ result: progressResult, stack });
-      }
-
-      // DECISION: Continue iterating if there's another level of consolation
-      // WHY: The consolation matchUp itself might feed into another consolation level
-      // If progressResult returns another loserMatchUp, we need to process that too
-      if (progressResult.context?.loserMatchUp) {
-        Object.assign(result.context, progressResult.context);
-        iterate = true;
-      }
+  // Exit propagation: the context a direction (or a swap) returned, then any carry it queued behind it
+  for (const context of [result.context, ...(result.context?.queuedExitContexts ?? [])]) {
+    if (!context?.progressExitStatus) continue;
+    const propagated = propagateExitFrom({ context, params, propagateExitStatus });
+    if (propagated?.error) {
+      v2.compare?.(propagated);
+      return decorateResult({ result: propagated, stack });
     }
   }
   // Everything has settled — removals, directions and exit propagation — which is the earliest point
@@ -558,4 +519,51 @@ function preflightOutcome(params: SetMatchUpStatusArgs) {
     ...params.outcome,
     matchUpFormat: requestedMatchUpFormat(params),
   });
+}
+
+/**
+ * DECISION: Use iterative loop instead of recursion for multi-level propagation
+ * WHY: In structures like COMPASS draws, exit status may propagate through multiple levels
+ * (e.g., East → West → South → Southeast). Iteration is safer than deep recursion.
+ * Failsafe prevents infinite loops if there's a circular reference or bug.
+ *
+ * A REFUSED WRITE IS RETURNED, never dropped (F3). The loop used to read only `context`, so a
+ * refusal here reported success over a draw the cascade had left half-written.
+ */
+function propagateExitFrom({
+  propagateExitStatus,
+  context,
+  params,
+}: {
+  context: NonNullable<ResultType['context']>;
+  propagateExitStatus?: boolean;
+  params: SetMatchUpStatusArgs;
+}): ResultType | undefined {
+  let iterate = true;
+  let failsafe = 0;
+  while (iterate && failsafe < 10) {
+    iterate = false;
+    failsafe += 1;
+    // set the consolation matchUp's status (e.g. WALKOVER when only one participant has arrived)
+    const progressResult = progressExitStatus({
+      sourceMatchUpStatusCodes: context.sourceMatchUpStatusCodes,
+      sourceMatchUpStatus: context.sourceMatchUpStatus,
+      sourceWinningSide: context.sourceWinningSide,
+      loserParticipantId: context.loserParticipantId,
+      sourceMatchUpId: context.sourceMatchUpId,
+      propagateExitStatus,
+      tournamentRecord: params.tournamentRecord,
+      loserMatchUp: context.loserMatchUp,
+      matchUpsMap: context.matchUpsMap,
+      drawDefinition: params.drawDefinition,
+      event: params.event,
+    });
+    if (progressResult.error) return progressResult;
+    // the consolation matchUp itself may feed another level of consolation
+    if (progressResult.context?.loserMatchUp) {
+      Object.assign(context, progressResult.context);
+      iterate = true;
+    }
+  }
+  return undefined;
 }

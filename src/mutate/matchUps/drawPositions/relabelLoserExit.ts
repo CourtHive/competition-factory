@@ -196,7 +196,7 @@ function relabelsTheCarry(standing: HydratedMatchUp, loserParticipantId: string,
  * side (withdrawing this origin re-derives the matchUp to the other, and the settle directs its winner).
  * Anything else is a result a director recorded over the carry.
  */
-function onlyThisCarry(standing: HydratedMatchUp, loserParticipantId: string, sourceMatchUpId: string): boolean {
+export function onlyThisCarry(standing: HydratedMatchUp, loserParticipantId: string, sourceMatchUpId: string): boolean {
   const loserSide = standing.sides?.find((side) => side?.participantId === loserParticipantId)?.sideNumber;
   if (loserSide !== 1 && loserSide !== 2) return false;
   const own = standing.sideExitProvenance?.[loserSide];
@@ -210,7 +210,7 @@ function onlyThisCarry(standing: HydratedMatchUp, loserParticipantId: string, so
   return standing.matchUpStatus === own.matchUpStatus && standing.winningSide === (loserSide === 1 ? 2 : 1);
 }
 
-function standingMatchUp(matchUps: HydratedMatchUp[] | undefined, structureId: string, participantId: string) {
+export function standingMatchUp(matchUps: HydratedMatchUp[] | undefined, structureId: string, participantId: string) {
   return (matchUps ?? [])
     .filter(
       (matchUp) =>
@@ -295,7 +295,7 @@ function hasResult(matchUp: HydratedMatchUp): boolean {
  * `Consolation|2|1`'s produced walkover won, then `Consolation|3|1` played). A clear of the origin is refused
  * there, and the relabel leaves the convergence as it stands.
  */
-function winnerPlayedOn(
+export function winnerPlayedOn(
   standing: HydratedMatchUp,
   matchUps: HydratedMatchUp[] | undefined,
   drawDefinition: DrawDefinition,
@@ -329,7 +329,7 @@ function winnerPlayedOn(
  * arriving opposite a carried walkover; the Backdraw stalled. An exit whose exiting side carries an origin is the
  * cascade's; one a director recorded carries none, and still refuses.
  */
-function hasEarnedResult(matchUp: HydratedMatchUp): boolean {
+export function hasEarnedResult(matchUp: HydratedMatchUp): boolean {
   if (!hasResult(matchUp)) return false;
   if (checkScoreHasValue({ score: matchUp.score }) || matchUp.matchUpStatus === COMPLETED) return true;
   if (!isAnyExit(matchUp.matchUpStatus)) return true;
@@ -375,7 +375,7 @@ function nextPlayable(
  * matchUp holding them in a structure fed, link after link, from the one they stand in. Withdrawing the
  * exit would leave them in two structures at once, since a result they earned onward is not released.
  */
-function loserPlayedOn(
+export function loserPlayedOn(
   standing: HydratedMatchUp,
   matchUps: HydratedMatchUp[] | undefined,
   drawDefinition: DrawDefinition,

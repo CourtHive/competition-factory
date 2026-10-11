@@ -6,6 +6,7 @@ import { expect, it } from 'vitest';
 // constants
 import { COMPLETED, DEFAULTED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { CONSOLATION, COMPASS, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
+import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
 
 /**
  * A RELABEL CARRIES THE EXIT, BOTH WAYS (CA, 2026-10-02).
@@ -92,7 +93,9 @@ it('a DEFAULTED re-entered as COMPLETED withdraws it too', () => {
   expect(at(CONSOLATION, 1, 1).matchUpStatus).toEqual(TO_BE_PLAYED);
 });
 
-it('carries nothing where the loser has already played their next matchUp', () => {
+// P52 (CA, 2026-10-11, approved change of assertion): this relabel used to be ACCEPTED, carrying nothing. A result
+// recorded where the loser went means they really played, so a played result may not become an exit: REFUSED.
+it('refuses relabelling to an exit where the loser has already played their next matchUp', () => {
   setup();
   enter(at(MAIN, 1, 1), played(1), true);
   enter(at(MAIN, 1, 2), played(1), true);
@@ -100,7 +103,14 @@ it('carries nothing where the loser has already played their next matchUp', () =
   enter(at(CONSOLATION, 1, 1), played(1), true);
   const before = at(CONSOLATION, 1, 1);
 
-  enter(at(MAIN, 1, 1), { matchUpStatus: WALKOVER, winningSide: 1 }, true);
+  const result: any = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
+    matchUpId: at(MAIN, 1, 1).matchUpId,
+    propagateExitStatus: true,
+    drawId: DRAW_ID,
+  });
+  expect(result.error?.code).toEqual(CANNOT_CHANGE_OUTCOME.code);
+  expect(at(MAIN, 1, 1).matchUpStatus).toEqual(COMPLETED);
 
   const after = at(CONSOLATION, 1, 1);
   expect(after.matchUpStatus).toEqual(COMPLETED);
