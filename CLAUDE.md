@@ -47,9 +47,9 @@ Full rationale and the CI/release compatibility table:
 pnpm install
 pnpm build                # Rollup + esbuild → dist/
 pnpm start                # Rollup watch mode
-pnpm test                 # Vitest (3600+ tests)
+pnpm test                 # Vitest (16,000+ tests)
 pnpm tui                  # Vitest interactive UI
-pnpm coverage             # Coverage report (thresholds: 95/95/85/95%)
+pnpm coverage             # Coverage report (thresholds: 95/97/87/97.5%)
 pnpm lint                 # ESLint — non-mutating, fails on any warning
 pnpm lint:fix             # ESLint with auto-fix (rewrites source)
 pnpm check-types          # tsc --noEmit
@@ -67,7 +67,7 @@ pnpm check-types          # tsc --noEmit
   - `src/fixtures/` — policies, scoring formats, rating parameters
   - `src/types/` — TypeScript type definitions
 - **Path aliases** in tsconfig: `@Generators`, `@Assemblies`, `@Validators`, `@Constants`, `@Functions`, `@Fixtures`, `@Helpers`, `@Global`, `@Mutate`, `@Query`, `@Tests`, `@Tools`, `@Types`.
-- **TypeScript strict mode** is ON. Coverage thresholds (95/95/85/95) are enforced. Husky pre-commit runs ESLint + Prettier + type check.
+- **TypeScript strict mode** is ON. Coverage thresholds (95/97/87/97.5, statements/functions/branches/lines) are enforced. Husky pre-commit runs ESLint + Prettier + type check.
 - **Cognitive complexity threshold**: 30. Zero violations is the standing rule.
 
 ## Code Style

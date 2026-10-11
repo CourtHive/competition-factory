@@ -1,6 +1,8 @@
 import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
-import { ValidPolicyTypes, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
+import type { RotatingPartnerScoringPolicies } from './rotatingPartnerScoring';
+import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
+import type { RoundRobinTallyPolicy } from './roundRobinTallyPolicy';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
@@ -31,6 +33,13 @@ import {
   Structure,
   MatchUp,
 } from './tournamentTypes';
+import {
+  ValidPolicyTypes,
+  POLICY_TYPE_SEEDING,
+  POLICY_TYPE_SCORING,
+  POLICY_TYPE_ROTATING_PARTNER_TALLY,
+  POLICY_TYPE_ROUND_ROBIN_TALLY,
+} from '@Constants/policyConstants';
 
 export type FactoryEngine = {
   [key: string]: any;
@@ -351,6 +360,7 @@ export type ScaleAttributes = {
   scaleName?: string;
   scaleType: string;
   accessor?: string; // optional - string determining how to access attribute if scaleValue is an object
+  ascending?: boolean; // optional - `false` sorts scaled entries highest first (`getScaledEntries`)
 };
 
 export type ScaleItem = {
@@ -362,23 +372,43 @@ export type ScaleItem = {
 };
 
 export type Flight = {
-  manuallyAdded?: boolean;
+  manuallyAdded?: boolean; // added with a draw (`addDrawDefinition`) rather than by an automated split
   drawEntries: Entry[]; // entries allocated to target draw
   flightNumber: number;
-  drawName: string; // custom name for generated draw
+  // custom name for the generated draw; a draw added without a name leaves it unset (`addDrawDefinition`)
+  drawName?: string;
   drawId: string; // unique identifier for generating drawDefinitions
+  stage?: StageTypeUnion; // set by `addFlight`
+  qualifyingPositions?: number; // set by `addFlight`
 };
 
+/**
+ * LEGACY: links between flights, from flight-based voluntary consolation (removed 2022-04-13). Nothing writes them
+ * now; `addDrawDefinition` still refuses a draw whose linked source draw is missing.
+ */
+export type FlightLink = { source?: { drawId?: string }; target?: { drawId?: string } };
+
+/** Stored as `event.flightProfile` (CODES first-class; the `flightProfile` extension on older records). */
 export type FlightProfile = {
   scaleAttributes?: ScaleAttributes;
   splitMethod?: string;
   flights: Flight[];
+  links?: FlightLink[];
 };
+
+/** A flight as `getFlightProfile` returns it through an engine: a copy, with the draw generated for it attached. */
+export type HydratedFlight = Flight & { drawDefinition?: DrawDefinition };
+
+/** `getFlightProfile`'s return through an engine (called with `eventId`): a deep copy whose flights carry their draws. */
+export type HydratedFlightProfile = Omit<FlightProfile, 'flights'> & { flights: HydratedFlight[] };
 
 export type PolicyDefinitions = {
   [key in ValidPolicyTypes]?: { [key: string]: any };
 } & {
+  [POLICY_TYPE_ROTATING_PARTNER_TALLY]?: RotatingPartnerTallyPolicy;
   [POLICY_TYPE_SEEDING]?: SeedingPolicy;
+  [POLICY_TYPE_ROUND_ROBIN_TALLY]?: RoundRobinTallyPolicy;
+  [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
 };
 
 export type QueueMethod = {
@@ -416,7 +446,7 @@ export type ParticipantFilters = {
   signInStatus?: SignedInStatusUnion;
   positionedParticipants?: boolean; // boolean - participantIds that are included in any structure.positionAssignments
   eventEntryStatuses?: string[]; // {string[]} participantIds that are in entry.entries with entryStatuses
-  drawEntryStatuses?: string[]; // {string[]} participantIds that are in draw.entries or flightProfile.flights[].drawEnteredParticipantIds with entryStatuses
+  drawEntryStatuses?: string[]; // {string[]} participantIds that are in draw.entries or flightProfile.flights[].drawEntries with entryStatuses
   enableOrFiltering?: boolean;
   participantIds?: string[];
   genders?: GenderUnion[];

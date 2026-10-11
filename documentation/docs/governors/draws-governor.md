@@ -301,6 +301,28 @@ into a success. Re-running on a positioned structure succeeds and returns the ex
 the structure and refused, not partially placed, when they do not fit; later-round qualifiers are placed
 before first-round ones; a standalone `PAGE_PLAYOFF` positions both entry structures.
 
+### Positioning a draw generated before its entries
+
+A MAIN generated with no entries places nothing, qualifier positions included: they are placed when the draw is
+positioned. `automatedPositioning` then places the entries present, the qualifier positions and the BYEs. With
+`seedsCount`, a structure that nobody is placed in and that has no seeds yet is seeded first, from the entries present
+now and within the seeding policy; seeds chosen when the draw was generated are kept.
+
+```js
+const { positionAssignments, seedAssignments } = engine.automatedPositioning({
+  seedingScaleName, // optional - the seeding scale; defaults to the event's category name, age category or eventId
+  seedByRanking, // optional boolean - with no seeding, seed by the event category's ranking
+  enforcePolicyLimits, // optional - defaults to true: the seeding policy caps seedsCount for the entries present
+  applyPositioning: false, // optional - compute without applying: see setPositionAssignments
+  seedsCount, // optional - seeds to choose when the structure has none
+  structureId,
+  drawId,
+});
+```
+
+Positioning is random: a client computes it with `applyPositioning: false` and sends the result, seeds included, with
+[setPositionAssignments](#setpositionassignments), so the client and the server apply the same draw.
+
 ---
 
 ## autoSeeding
@@ -332,17 +354,19 @@ engine.setParticipantScaleItems({
 
 ## checkValidEntries
 
-Validates that entries are eligible for a draw based on event category constraints.
+Validates entry participant types and event gender constraints. By default, `eventId` validates the event's
+entries; supplying `drawId` validates that draw's entries instead. `consideredEntries` overrides either
+source, including when it is an empty array. A supplied draw also determines which format-specific
+admission rules apply: accepted individuals are eligible only in a configured rotating-partner draw.
 
 ```js
-const { valid, errors } = engine.checkValidEntries({
-  eventId, // required
-  drawId, // optional
-  entries, // optional - validate specific entries
+const { valid, error, invalidParticipantIds } = engine.checkValidEntries({
+  eventId, // required unless drawId identifies the event
+  drawId, // optional - use this draw's entries and admission rules
+  consideredEntries, // optional - explicit entries to validate instead
+  enforceGender, // optional - override the applicable gender-enforcement policy
 });
 ```
-
-**Purpose:** Validate entry eligibility before draw generation.
 
 ---
 
@@ -1276,6 +1300,23 @@ Since 7.7.0 a qualifier in the submitted assignments is placed in the **structur
 caller's array is left as given); before, the qualifier branch marked the submitted array and the engine
 reported success with no qualifier in the structure.
 
+Each entry of `structurePositionAssignments` may carry `seedAssignments`, as returned by `automatedPositioning`
+with `applyPositioning: false`; they replace the structure's seeds before its positions are set, so a structure seeded
+when it was positioned is replayed whole.
+
+```js
+const { positionAssignments, seedAssignments } = engine.automatedPositioning({
+  applyPositioning: false,
+  seedsCount,
+  structureId,
+  drawId,
+});
+engine.setPositionAssignments({
+  structurePositionAssignments: [{ structureId, positionAssignments, seedAssignments }],
+  drawId,
+});
+```
+
 ---
 
 ## setSubOrder
@@ -1445,3 +1486,35 @@ engine.addDrawDefinitionExtension({
 ```
 
 ---
+
+## getRotatingPartnerRoundPreview
+
+Returns individual side memberships, the saved scoring contract and seed for the
+next logical round without creating participants. See [Competition Profile](/docs/concepts/draw-types/competition-profile).
+
+```js
+const preview = engine.getRotatingPartnerRoundPreview({ drawId, structureId, roundNumber });
+```
+
+## generateRotatingPartnerRound
+
+Atomically reuses/creates PAIR participants, inserts matchUps and saves applied-round provenance.
+Pass the approved preview pairings, scoring contract and a unique request ID; repeating the same successful request is idempotent.
+Americano rotation and all Mexicano rounds are supported. Later Mexicano rounds require every earlier result to be resolved and retain the source standings snapshot.
+
+```js
+const result = engine.generateRotatingPartnerRound({
+  drawId,
+  structureId, // optional for a single-structure draw
+  roundNumber,
+  requestId,
+  expectedPairings: preview.round,
+  expectedScoringContract: preview.scoringContract,
+});
+```
+
+### Ordinary doubles draw admission
+
+`addDrawEntries` refuses accepted INDIVIDUAL entrants in ordinary DOUBLES events with `INVALID_ENTRIES`, without changing the record. Submit PAIR participant IDs for playable entrants. Individual placeholders may use `UNGROUPED` or `UNPAIRED`; they are not accepted doubles competitors. Rotating-partner draws explicitly configured by `competitionProfile` are the exception: their draw-level roster accepts individuals while event-level entries remain ungrouped.
+
+This adds a refusal to the public API. Consumers that previously submitted individuals as `DIRECT_ACCEPTANCE` must create/select a PAIR or use an ungrouped status. TMX's unified entries overlay offers “Add to draw” only for accepted or qualifying selections, excluding the ungrouped segment.

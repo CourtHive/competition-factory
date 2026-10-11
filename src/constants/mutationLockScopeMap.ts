@@ -52,6 +52,11 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   addMatchUpScheduleItems: 'SCHEDULING',
 
   // DRAWS — drawsGovernor/mutate
+  setCompetitionProfile: 'DRAWS',
+  setRotatingPartnerScoring: 'DRAWS',
+  generateRotatingPartnerRound: 'DRAWS',
+  settleRotatingPartnerResult: 'DRAWS',
+  removeCompetitionProfile: 'DRAWS',
   setDrawParticipantRepresentativeIds: 'DRAWS',
   resetVoluntaryConsolationStructure: 'DRAWS',
   withdrawParticipantAtDrawPosition: 'DRAWS',

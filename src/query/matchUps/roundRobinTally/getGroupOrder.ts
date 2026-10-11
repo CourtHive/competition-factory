@@ -76,6 +76,8 @@ export function getGroupOrder(params) {
     'tieSinglesWon',
     'tieDoublesWon',
     'matchUpsWon',
+    'matchUpsDrawn',
+    'standingsPoints',
     'pointsWon',
     'gamesWon',
     'setsWon',
@@ -196,7 +198,9 @@ export function getGroupOrder(params) {
 function isComplete({ participantResults, participantsCount }) {
   const resultsArray = getResultsArray({ participantResults });
   const participantsFinished = resultsArray.filter(
-    (r) => participantsCount - 1 === r.results.matchUpsWon + r.results.matchUpsLost + r.results.matchUpsCancelled,
+    (r) =>
+      participantsCount - 1 ===
+      r.results.matchUpsWon + r.results.matchUpsLost + (r.results.matchUpsDrawn ?? 0) + r.results.matchUpsCancelled,
   );
   return participantsCount === participantsFinished.length;
 }
@@ -314,7 +318,7 @@ function groupSubSort({ participantResults, disableHeadToHead, participantIds, m
     return !result.order;
   });
 
-  if (result.order) return { order: result.order, report };
+  if (result?.order) return { order: result.order, report };
 
   return {
     order: participantIds?.map((participantId) => ({ participantId })),

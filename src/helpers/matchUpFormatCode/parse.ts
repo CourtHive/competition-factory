@@ -1,3 +1,5 @@
+import type { RotatingPartnerScoreContract } from '@Types/rotatingPartnerScoring';
+import { parseCombinedPointFormat } from './combinedPointFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isConvertableInteger } from '@Tools/math';
 import { isString } from '@Tools/objects';
@@ -34,6 +36,9 @@ type SetFormat = {
   setTo?: number;
   winBy?: number;
   outs?: number;
+  combinedPointTotal?: number;
+  tieResolution?: RotatingPartnerScoreContract['tieResolution'];
+  winningMargin?: number;
 };
 
 type SetFormatResult = SetFormat | undefined | false;
@@ -296,6 +301,19 @@ function buildParsedFormat({
   bestOf,
   exactly,
 }): ParsedFormat | undefined {
+  if (finalSetFormat?.combinedPointTotal) return undefined;
+  if (
+    setFormat?.combinedPointTotal &&
+    (matchRoot !== SET ||
+      bestOf !== 1 ||
+      exactly ||
+      aggregate ||
+      matchMods.length ||
+      finalSetFormat ||
+      gameFormat ||
+      matchUpConstraint)
+  )
+    return undefined;
   const timed = (setFormat && setFormat.timed) || (finalSetFormat && finalSetFormat.timed);
 
   if (matchRoot === SET) {
@@ -327,6 +345,7 @@ function buildParsedFormat({
 }
 
 function parseSetFormatString(formatstring: string, setFormatString: string): SetFormatResult {
+  if (setFormatString.startsWith('P')) return parseCombinedPointFormat(setFormatString);
   if (setFormatString.startsWith('TB')) {
     return parseTiebreakSetFormat(setFormatString);
   }

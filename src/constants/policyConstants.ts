@@ -1,3 +1,4 @@
+export const POLICY_TYPE_ROTATING_PARTNER_TALLY = 'rotatingPartnerTally';
 export const POLICY_TYPE_VOLUNTARY_CONSOLATION = 'voluntaryConsolation';
 export const POLICY_TYPE_COMPETITIVE_BANDS = 'competitiveBands';
 export const POLICY_TYPE_ROUND_ROBIN_TALLY = 'roundRobinTally';
@@ -23,6 +24,7 @@ export const POLICY_TYPE_DRAWS = 'draws';
 export const POLICY_TYPE_PRINT = 'print';
 
 export type ValidPolicyTypes =
+  | typeof POLICY_TYPE_ROTATING_PARTNER_TALLY
   | typeof POLICY_TYPE_VOLUNTARY_CONSOLATION
   | typeof POLICY_TYPE_COMPETITIVE_BANDS
   | typeof POLICY_TYPE_ROUND_ROBIN_TALLY
@@ -47,6 +49,7 @@ export type ValidPolicyTypes =
   | typeof POLICY_TYPE_PRINT;
 
 export const policyConstants = {
+  POLICY_TYPE_ROTATING_PARTNER_TALLY,
   POLICY_TYPE_VOLUNTARY_CONSOLATION,
   POLICY_TYPE_COMPETITIVE_BANDS,
   POLICY_TYPE_ROUND_ROBIN_TALLY,

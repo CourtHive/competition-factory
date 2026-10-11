@@ -847,7 +847,8 @@ function stampCarriedExitOnArrival({
   // a CARRIER is a participant: a produced exit relayed past a BYE holder is `sendHeldExitsOn`'s to deliver, and it
   // writes the origin's own entry (`byeAdvancesIntoPendingDoubleExit`: both sides then read DOUBLE_WALKOVER)
   if (!feeder.sides?.some((side) => side?.sideNumber === carrierSide && side.participantId)) return;
-  const carried = carriedExitStatus(getSideExitProvenance({ matchUp: feeder })?.[carrierSide]);
+  const feederEntry = getSideExitProvenance({ matchUp: feeder })?.[carrierSide];
+  const carried = carriedExitStatus(feederEntry);
   if (!carried) return;
   // the side the lone arrival takes: structurally where the round profile can place it, else its bracket side, as
   // `arrivalIntoProvenanceOnlyExit` reads it (a fed round seats the fed position on side 1, the arrival on side 2)
@@ -864,7 +865,12 @@ function stampCarriedExitOnArrival({
     provenance: buildCarriedExitProvenance({
       // the feeder WAS this exit before the BYE settled it; the entry reads as the presumptive stamp did
       previousMatchUpStatus: carried,
-      sourceMatchUpId: feeder.matchUpId,
+      // ...and names the exit's ORIGIN, as every other hop does (`progressExitStatus` RULE 1 carries the source on;
+      // `reconcileCarriesPastByes` replays from the BYE matchUp's own entry). Named the BYE matchUp instead, the entry
+      // read downstream as no live exit: `settleRederivedDoubleExit` asks the kept entry's source whether it is still an
+      // exit, found a BYE, and never settled a convergence this carry had dissolved — its winner stood unadvanced
+      // (census 20267598, FEED_IN_CHAMPIONSHIP_TO_SF 16/15, `aLateByesCarryNamesItsOrigin`).
+      sourceMatchUpId: feederEntry?.sourceMatchUpId ?? feeder.matchUpId,
       exitingSideNumber: arrivalSide,
       matchUpStatus: carried,
     }),

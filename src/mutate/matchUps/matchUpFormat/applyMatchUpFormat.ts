@@ -1,5 +1,6 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { checkDrawFormatCompatibility } from '@Validators/tiedFormatCompatibility';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findStructure } from '@Acquire/findStructure';
@@ -45,6 +46,11 @@ export function applyMatchUpFormat(params: ApplyMatchUpFormatArgs): {
   if (paramsCheck.error) return paramsCheck;
 
   if (!isValidMatchUpFormat({ matchUpFormat })) return { error: UNRECOGNIZED_MATCHUP_FORMAT };
+  const compatibility = checkDrawFormatCompatibility({
+    ...params,
+    structureIds: params.structureIds ?? (structureId ? [structureId] : undefined),
+  });
+  if (compatibility.error) return compatibility;
   // DELIBERATELY still the PUBLIC entry point's name, not this function's. `stack` is surfaced in
   // decorated errors, and `setMatchUpFormat` is the only one of the two a consumer can call or
   // recognise. Not a missed rename.
@@ -114,6 +120,8 @@ export function checkMatchUpFormatApplication(params: {
 
   if (!isValidMatchUpFormat({ matchUpFormat })) return { error: UNRECOGNIZED_MATCHUP_FORMAT };
 
+  const compatibility = checkDrawFormatCompatibility(params);
+  if (compatibility.error) return compatibility;
   const result = findDrawMatchUp({ drawDefinition, matchUpId, event });
   if (result.error) return { error: result.error };
 

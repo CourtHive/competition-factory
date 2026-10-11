@@ -195,9 +195,9 @@ it('reports nothing on a draw that completes cleanly', () => {
  * THE DETECTOR MUST STILL BE ABLE TO FIRE, and after P39 nothing in the default suite proved it.
  *
  * Both COMPASS cases above now report zero, which is the right answer and leaves a hole: a rule that
- * reports nothing anywhere is indistinguishable from a rule that has been switched off. The budget in
- * `stalledPositionBudget.test.ts` does assert a non-empty population, but it is INERT on `pnpm test`
- * and runs only under `pnpm verify` — so on an ordinary local run there would be no evidence at all.
+ * reports nothing anywhere is indistinguishable from a rule that has been switched off. The stall budget
+ * that once asserted a non-empty population (`stalledPositionBudget.test.ts`) reached zero and was
+ * deleted with the promotion to `error`, so this built chain is the evidence the rule still fires.
  *
  * This is the other half of the pair the verification discipline asks for: one case where the rule is
  * silent because the draw is sound, and one where it speaks because the draw is not.
@@ -240,9 +240,9 @@ it('still fires where a stall remains — the built stalled chain', () => {
   const found = (result.inconsistencies ?? []).filter((i: any) => i.issueType === STALLED_POSITION);
 
   expect(found.length).toEqual(4);
-  // advisory, never an error — the severity tier is what let this rule ship at all
-  expect(found.every((i: any) => i.severity === 'warning')).toEqual(true);
-  expect(result.valid).toEqual(true);
+  // an error since the population reached zero (2026-10-10): a stalled draw is not a valid draw
+  expect(found.every((i: any) => i.severity === 'error')).toEqual(true);
+  expect(result.valid).toEqual(false);
 
   // each is one participant, no winner, in a matchUp nobody else can reach
   const matchUps = tournamentEngine.allDrawMatchUps({ inContext: true, drawId }).matchUps ?? [];

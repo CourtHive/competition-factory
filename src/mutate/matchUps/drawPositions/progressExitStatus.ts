@@ -145,6 +145,35 @@ export function progressExitStatus({
     carriedReasonSide = loserParticipantSide.sideNumber;
     sourceCodeForSide = sourceCode;
 
+    /**
+     * A CARRY PAST A BYE IN THE STRUCTURE'S LAST ROUND IS RECORDED BESIDE THE BYE (P51).
+     *
+     * RULE 1 re-propagates the exit onto wherever the carrier lands. In a structure's last round there is nowhere
+     * further, and nothing was written: the BYE matchUp kept no entry for the exit its carrier held. A BYE placed by a
+     * double exit is withdrawn when that double exit is re-scored, and the carrier was then left as an ordinary
+     * participant who could be played (census 20318646, COMPASS 8/8: Zoe's DEFAULTED met a BYE in the South final,
+     * the BYE went, `South|1|1` was played, which made `West|1|2`'s downstream active and refused the convergence a
+     * later walkover brought there — after the direction had written — stranding its winner).
+     *
+     * Recorded as the BYE's own carried entry, the shape `reconcileCarriesPastByes` and `writeCarryPastLateBye`
+     * already read on a BYE matchUp: the matchUp stays a BYE while the BYE stands, and when it is withdrawn what is
+     * retained re-derives it to the exit the carrier holds (RULE 2: the side without the exit wins).
+     */
+    const recordCarryBesideFinalBye = () => {
+      const stored = getMatchUpsMap({ drawDefinition })?.drawMatchUps?.find(
+        (m) => m.matchUpId === loserMatchUp.matchUpId,
+      );
+      mergeSideExitProvenance({
+        provenance: buildCarriedExitProvenance({
+          exitingSideNumber: loserParticipantSide.sideNumber,
+          previousMatchUpStatus: sourceMatchUpStatus,
+          matchUpStatus: carryOverMatchUpStatus,
+          sourceMatchUpId,
+        }),
+        matchUp: stored,
+      });
+    };
+
     // RULE 1 — opponent is a BYE: the participant advances through it (the BYE
     // cascade has already moved them forward), so this matchUp stays a BYE and we
     // re-propagate the exit onto wherever the participant landed. NOT a WALKOVER.
@@ -157,6 +186,7 @@ export function progressExitStatus({
         from: updatedLoserMatchUp.matchUpId?.slice(0, 8),
         to: advancementMatchUp?.matchUpId?.slice(0, 8) ?? 'none',
       });
+      if (!advancementMatchUp) recordCarryBesideFinalBye();
       const context = advancementMatchUp
         ? { progressExitStatus: true, loserMatchUp: advancementMatchUp, loserParticipantId }
         : { progressExitStatus: true };

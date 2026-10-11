@@ -1,5 +1,9 @@
+import type { RotatingPartnerSettlement } from './rotatingPartnerSettlement';
+import type { RotatingPartnerRoundRecord } from './rotatingPartnerRound';
+import type { CompetitionProfile } from './competitionProfile';
 import type { competitionFormat } from './competitionFormat';
 import type { PresenceAttestation } from './presenceTypes';
+import type { FlightProfile } from './factoryTypes';
 
 export interface Tournament {
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
@@ -216,8 +220,9 @@ export interface Event {
   eventTier?: TierClassification;
   eventType?: EventTypeUnion;
   extensions?: Extension[];
-  // CODES first-class: previously stored as `flightProfile` extension
-  flightProfile?: any;
+  // CODES first-class: previously stored as `flightProfile` extension. Lives on the EVENT only: a draw's flight is
+  // the `flights[]` entry whose `drawId` matches it, and the draw carries its `flightNumber`.
+  flightProfile?: FlightProfile;
   gender?: GenderUnion;
   indoorOutdoor?: IndoorOutdoorUnion;
   isMock?: boolean;
@@ -372,6 +377,11 @@ export enum CategoryEnum {
 export type CategoryUnion = `${CategoryEnum}`;
 
 export interface DrawDefinition {
+  /** Versioned format configuration; competition lifecycle state is stored separately. */
+  competitionProfile?: CompetitionProfile;
+  competitionRoster?: string[];
+  competitionRounds?: RotatingPartnerRoundRecord[];
+  competitionSettlements?: RotatingPartnerSettlement[];
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
   automated?: boolean;
   competitionFormat?: competitionFormat;
@@ -392,8 +402,6 @@ export interface DrawDefinition {
   competitionState?: any;
   // CODES first-class: previously stored as `draftState` extension
   draftState?: any;
-  // CODES first-class: previously stored as `flightProfile` extension
-  flightProfile?: any;
   // Per-flight ordering number, sourced from the parent event's flightProfile
   // (`flightProfile.flights[].flightNumber`) when a draw was generated as part
   // of a multi-flight event. Optional because legacy + single-flight draws
@@ -1292,6 +1300,7 @@ export interface TallyResult {
   gamesWon?: number;
   groupOrder?: number;
   matchUpsCancelled?: number;
+  matchUpsDrawn?: number;
   matchUpsLost?: number;
   matchUpsPct?: number;
   matchUpsWon?: number;
@@ -1307,6 +1316,7 @@ export interface TallyResult {
   setsPct?: number;
   setsWon?: number;
   subOrder?: number;
+  standingsPoints?: number;
   tieDoublesLost?: number;
   tieDoublesWon?: number;
   tieMatchUpsLost?: number;

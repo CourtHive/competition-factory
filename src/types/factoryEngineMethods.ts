@@ -223,6 +223,7 @@ export type FactoryEngineMethod =
   | 'formatConflicts'
   | 'generateAdHocMatchUps'
   | 'generateAdHocRounds'
+  | 'generateAmericanoPairings'
   | 'generateAndPopulatePlayoffStructures'
   | 'generateBookings'
   | 'generateCapacityCurve'
@@ -236,12 +237,14 @@ export type FactoryEngineMethod =
   | 'generateEventWithDraw'
   | 'generateFlightProfile'
   | 'generateLineUps'
+  | 'generateMexicanoPairings'
   | 'generateOutcome'
   | 'generateOutcomeFromScoreString'
   | 'generateParticipants'
   | 'generateQualifyingStructure'
   | 'generateRankingList'
   | 'generateReport'
+  | 'generateRotatingPartnerRound'
   | 'generateScoreString'
   | 'generateSeedingScaleItems'
   | 'generateStatCrew'
@@ -280,6 +283,7 @@ export type FactoryEngineMethod =
   | 'getCompetitionParticipantState'
   | 'getCompetitionPenalties'
   | 'getCompetitionPolicy'
+  | 'getCompetitionProfile'
   | 'getCompetitionState'
   | 'getCompetitionVenues'
   | 'getCompetitiveProfile'
@@ -390,6 +394,11 @@ export type FactoryEngineMethod =
   | 'getRandomQualifierList'
   | 'getRegistrationProfile'
   | 'getResultAttestation'
+  | 'getRotatingPartnerRoundPreview'
+  | 'getRotatingPartnerScoringContract'
+  | 'getRotatingPartnerScoringPolicy'
+  | 'getRotatingPartnerStandings'
+  | 'getRotatingPartnerTallyPolicy'
   | 'getRoundMatchUps'
   | 'getRounds'
   | 'getRoundVisibilityState'
@@ -571,6 +580,7 @@ export type FactoryEngineMethod =
   | 'removeCertification'
   | 'removeCollectionDefinition'
   | 'removeCollectionGroup'
+  | 'removeCompetitionProfile'
   | 'removeConflictDeclaration'
   | 'removeCourtGridBooking'
   | 'removeDelegatedOutcome'
@@ -650,6 +660,7 @@ export type FactoryEngineMethod =
   | 'ScoringEngine'
   | 'seedWithdrawalCascade'
   | 'setClock'
+  | 'setCompetitionProfile'
   | 'setDelegatedOutcome'
   | 'setDrawOtherIds'
   | 'setDrawParticipantRepresentativeIds'
@@ -674,10 +685,12 @@ export type FactoryEngineMethod =
   | 'setPracticeDefaultCapacity'
   | 'setRandomSource'
   | 'setRegistrationProfile'
+  | 'setRotatingPartnerScoring'
   | 'setSchedulingProfile'
   | 'setState'
   | 'setStructureOrder'
   | 'setSubOrder'
+  | 'settleRotatingPartnerResult'
   | 'setTournamentCategories'
   | 'setTournamentDates'
   | 'setTournamentEndDate'
@@ -983,6 +996,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'formatConflicts',
   'generateAdHocMatchUps',
   'generateAdHocRounds',
+  'generateAmericanoPairings',
   'generateAndPopulatePlayoffStructures',
   'generateBookings',
   'generateCapacityCurve',
@@ -996,12 +1010,14 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'generateEventWithDraw',
   'generateFlightProfile',
   'generateLineUps',
+  'generateMexicanoPairings',
   'generateOutcome',
   'generateOutcomeFromScoreString',
   'generateParticipants',
   'generateQualifyingStructure',
   'generateRankingList',
   'generateReport',
+  'generateRotatingPartnerRound',
   'generateScoreString',
   'generateSeedingScaleItems',
   'generateStatCrew',
@@ -1040,6 +1056,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getCompetitionParticipantState',
   'getCompetitionPenalties',
   'getCompetitionPolicy',
+  'getCompetitionProfile',
   'getCompetitionState',
   'getCompetitionVenues',
   'getCompetitiveProfile',
@@ -1150,6 +1167,11 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getRandomQualifierList',
   'getRegistrationProfile',
   'getResultAttestation',
+  'getRotatingPartnerRoundPreview',
+  'getRotatingPartnerScoringContract',
+  'getRotatingPartnerScoringPolicy',
+  'getRotatingPartnerStandings',
+  'getRotatingPartnerTallyPolicy',
   'getRoundMatchUps',
   'getRounds',
   'getRoundVisibilityState',
@@ -1331,6 +1353,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'removeCertification',
   'removeCollectionDefinition',
   'removeCollectionGroup',
+  'removeCompetitionProfile',
   'removeConflictDeclaration',
   'removeCourtGridBooking',
   'removeDelegatedOutcome',
@@ -1410,6 +1433,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'ScoringEngine',
   'seedWithdrawalCascade',
   'setClock',
+  'setCompetitionProfile',
   'setDelegatedOutcome',
   'setDrawOtherIds',
   'setDrawParticipantRepresentativeIds',
@@ -1434,10 +1458,12 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setPracticeDefaultCapacity',
   'setRandomSource',
   'setRegistrationProfile',
+  'setRotatingPartnerScoring',
   'setSchedulingProfile',
   'setState',
   'setStructureOrder',
   'setSubOrder',
+  'settleRotatingPartnerResult',
   'setTournamentCategories',
   'setTournamentDates',
   'setTournamentEndDate',

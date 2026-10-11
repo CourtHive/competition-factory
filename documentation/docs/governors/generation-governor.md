@@ -6,6 +6,10 @@ title: Generation Governor
 import { generationGovernor } from 'tods-competition-factory';
 ```
 
+## Rotating Partner Pairings
+
+`generateAmericanoPairings({ participantIds, seed, roundsCount })` returns a deterministic individual partnership rotation as doubles-side memberships. `generateMexicanoPairings({ standings, seed })` returns one round grouped by individual points scored. Both are pure generators; see [Rotating Partner Pairing](../concepts/draw-types/rotating-partner-pairing.md) for guarantees, inputs and integration limits.
+
 ## drawMatic
 
 **[drawMatic](/docs/concepts/draw-types/drawmatic)** is a dynamic round generator for AD_HOC draws which produces participant pairings with previous opponent and team member avoidance.
@@ -47,7 +51,7 @@ const { matchUps, participantIdPairings, iterations, candidatesCount, modifiedSc
 
 ## generateAdHocMatchUps
 
-Draws with `{ drawType: AD_HOC }` allow `matchUps` to be dynamically added. In this type of draw there is no automatic participant progression between rounds. Participant assignment to `matchUps` is done manually, or via **[drawMatic](/docs/concepts/draw-types/drawmatic)**. The only restriction is that a participant may appear once per round.
+Draws with `{ drawType: AD_HOC }` allow `matchUps` to be dynamically added. In this type of draw there is no automatic participant progression between rounds. Participant assignment to `matchUps` is done manually, or via **[drawMatic](/docs/concepts/draw-types/drawmatic)**. A playable round should use each individual at most once. `drawMatic` enforces this when choosing pairings. For compatibility, `generateAdHocMatchUps` treats caller-supplied `participantIdPairings` as explicit output: it uses their actual count, bypasses entry-count capacity estimates, and does not enforce cross-match participant uniqueness. Callers supplying ordinary AD_HOC pairings must enforce that themselves. Rotating-partner round application validates individual uniqueness before inserting matchUps. The default output cap remains 32; a conflicting explicit `matchUpsCount` is refused.
 
 ```js
 const { matchUps } = engine.generateAdHocMatchUps({
@@ -181,7 +185,7 @@ const drawDefinitionValues = {
   seedingProfile, // optional { positioning, groupSeedingThreshold }
 
   qualifyingPlaceholder, // optional boolean - generate a placeholder qualifying structure if qualifiersCount and no qualifyingProfiles
-  qualifiersCount, // optional - how many positionsAssignments will have { qualifier: true }
+  qualifiersCount, // optional - how many positionsAssignments will have { qualifier: true }; with qualifying or a placeholder, a MAIN with no entries places them when it is positioned
   qualifyingOnly, // optional boolean - generate only qualifying structures with MAIN placeholder; drawEntries with entryStage: QUALIFYING are included
   qualifyingProfiles, // optional array [{ roundTarget, structureProfiles: [{ drawSize, seedsCount, seedingScaleName, qualifyingPositions }]}]
 

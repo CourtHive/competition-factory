@@ -1,3 +1,8 @@
+export * from './roundRobinTallyPolicy';
+export * from './rotatingPartnerSettlement';
+export * from './rotatingPartnerTally';
+export * from './rotatingPartnerScoring';
+export * from './competitionProfile';
 export * from './formatWizardTypes';
 export * from './competitionFormat';
 export * from './readModelTypes';
@@ -11,3 +16,5 @@ export * from './factoryTypes';
 export * from './reportTypes';
 export * from './swissTypes';
 export * from './hydrated';
+
+export * from './rotatingPartnerRound';

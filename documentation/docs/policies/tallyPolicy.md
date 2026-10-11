@@ -82,3 +82,58 @@ The algorithm relies on the values availble in the calculated `participantResult
 - groups of two participants are resolved by head-to-head (if not disabled/if participants faced each other)
 - groups of three or more search for an attribute that will separate them into smaller groups
 - participantResults scoped to the members of a group and recalculated when `{ idsFilter: true }`
+
+## Drawn Matches and Standings Points
+
+A legitimate completed tie counts as `matchUpsDrawn` for both competitors, with neither
+a win nor a loss. It is distinct from `matchUpsCancelled`. Currently this applies to
+a completed equal score under an even combined-rally total such as `SET1-S:P32`;
+16–16 completes that format, while the same score does not complete `P32DP` or `P32WB2`.
+Incomplete scores and unsupported winnerless records are not inferred to be draws.
+
+`drawCredit` controls the fraction of a win credited in `matchUpsPct`, defaults to **0.5**,
+and must be between zero and one:
+
+```text
+matchUpsPct = (matchUpsWon + drawCredit × matchUpsDrawn)
+              / (matchUpsWon + matchUpsLost + matchUpsDrawn)
+```
+
+One win and one draw therefore yield 0.75 with the default credit. A cancellation
+does not enter this denominator. Existing precision rounding still applies. The
+legacy `result` string retains its wins/losses notation; use `matchUpsDrawn` separately.
+
+An optional `outcomePoints` table adds `standingsPoints`, separate from scored rally
+points (`pointsWon`/`pointsLost`). All three entries must be finite numbers; zero,
+fractional and negative credits are supported. Points follow counted wins, draws
+and losses, including wins/losses by walkover, default or retirement; existing
+status exclusion and disqualification policies still apply. No standings-points
+field is produced without the table.
+
+```js
+const roundRobinTally = {
+  groupOrderKey: 'standingsPoints',
+  drawCredit: 0.5,
+  outcomePoints: { win: 3, draw: 1, loss: 0 },
+  tallyDirectives: [
+    { attribute: 'pointsWon', idsFilter: false },
+    { attribute: 'pointsPct', idsFilter: true },
+  ],
+};
+engine.attachPolicies({ policyDefinitions: { roundRobinTally } });
+```
+
+This table gives one win and one draw four standings points. Set `groupOrderKey`
+to `standingsPoints` to rank by that table, `matchUpsPct` for weighted win percentage,
+or `pointsWon` for actual points scored. The default remains `matchUpsWon`.
+`standingsPoints` is also usable in tally directives, including the existing
+`idsFilter` restriction to matches among tied competitors. Ranking by standings
+points requires an `outcomePoints` table; invalid credit/table settings return
+`INVALID_VALUES` from tally queries.
+
+Scores from a tied combined-point match contribute rally points to each side but
+do not become games or won sets. A drawn head-to-head establishes no winner;
+configured directives resolve the ranking, or competitors retain shared ranks.
+Corrections, score clears and policy changes recompute the tally from current
+results. This policy does not change scoring completion or permit ties in
+winner-advancing elimination structures.

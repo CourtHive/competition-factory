@@ -1,7 +1,9 @@
 import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
 import { isPropagatedExit, rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { isDrawnResult, validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
+import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
@@ -19,6 +21,7 @@ import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -27,6 +30,7 @@ import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { validateScore } from '@Validators/validateScore';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
@@ -37,23 +41,12 @@ import { nowIso } from '@Tools/clock';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
 // constants and types
-import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
-import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
-import {
-  DrawDefinition,
-  Event,
-  MatchUp,
-  MatchUpStatusUnion,
-  PositionAssignment,
-  Score,
-  Structure,
-  Tournament,
-} from '@Types/tournamentTypes';
 import {
   CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_WINNING_SIDE,
@@ -84,6 +77,21 @@ import {
   validMatchUpStatuses,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
+import {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  MatchUpStatusUnion,
+  PositionAssignment,
+  Score,
+  Structure,
+  Tournament,
+} from '@Types/tournamentTypes';
+import {
+  POLICY_TYPE_PROGRESSION,
+  POLICY_TYPE_SCORING,
+  POLICY_TYPE_ROUND_ROBIN_TALLY,
+} from '@Constants/policyConstants';
 
 // Reverting a validated-COMPLETED matchUp to one of these "still live / paused"
 // statuses (without providing a new outcome) would silently strip its result and
@@ -135,8 +143,12 @@ type SetMatchUpStateArgs = {
 export function setMatchUpState(params: SetMatchUpStateArgs): any {
   const stack = 'setMatchUpStatus';
 
+  const rotating = resolveRotatingPartnerOutcome(params);
+  if (rotating.error) return rotating;
+  params = { ...params, ...rotating };
+
   // always clear score if DOUBLE_WALKOVER or WALKOVER
-  if (params.matchUpStatus && [WALKOVER, DOUBLE_WALKOVER].includes(params.matchUpStatus)) params.score = undefined;
+  if (isWalkoverStatus(params.matchUpStatus)) params.score = undefined;
 
   const {
     disableScoreValidation,
@@ -299,15 +311,9 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
     if (result.error) return result;
   }
 
-  const appliedPolicies =
-    getAppliedPolicies({
-      policyTypes: [POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING],
-      tournamentRecord,
-      drawDefinition,
-      event,
-    })?.appliedPolicies ?? {};
-
-  if (isObject(params.policyDefinitions)) Object.assign(appliedPolicies, params.policyDefinitions);
+  const appliedPolicies = outcomePolicies(params);
+  const tallyValidation = validateDrawTallyOptions(appliedPolicies[POLICY_TYPE_ROUND_ROBIN_TALLY]);
+  if (tallyValidation.error) return tallyValidation;
 
   const participantCheck = checkParticipants({
     propagatingExit: params.propagatingExit,
@@ -717,7 +723,9 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
   }
 
   let result;
-  if (!activeDownstream || !hasPropagated) {
+  if (isUndirectedPointOutcome(params, activeDownstream)) {
+    result = applyMatchUpValues(params);
+  } else if (!activeDownstream || !hasPropagated) {
     result = noDownstreamDependencies(params);
   } else if (matchUpWinner) {
     result = winningSideWithDownstreamDependencies(params);
@@ -954,11 +962,16 @@ function winningSideWithDownstreamDependencies(params) {
 
 function applyMatchUpValues(params) {
   const { tournamentRecord, matchUp, event } = params;
+  const combinedPointCorrection =
+    !!parse(resolveScoringFormat({ ...params, incoming: params.matchUpFormat }) ?? '')?.setFormat?.combinedPointTotal &&
+    !!params.score &&
+    !params.winningSide;
   const removeWinningSide =
-    params.isCollectionMatchUp &&
-    matchUp.winningSide &&
-    !params.winningSide &&
-    !checkScoreHasValue({ score: params.score });
+    combinedPointCorrection ||
+    (params.isCollectionMatchUp &&
+      matchUp.winningSide &&
+      !params.winningSide &&
+      !checkScoreHasValue({ score: params.score }));
   const newMatchUpStatus = params.isCollectionMatchUp
     ? params.matchUpStatus || (removeWinningSide && TO_BE_PLAYED) || (params.winningSide && COMPLETED) || INCOMPLETE
     : params.matchUpStatus || COMPLETED;
@@ -1197,4 +1210,42 @@ function checkParticipants({
   }
 
   return { ...SUCCESS };
+}
+
+/** Point-total RR and rotating results retain a score without removing directed positions. */
+function isUndirectedPointOutcome(
+  params: SetMatchUpStateArgs & { structure?: Structure; matchUp?: MatchUp; inContextMatchUp?: MatchUp },
+  activeDownstream: boolean,
+): boolean {
+  const format = resolveScoringFormat({ ...params, incoming: params.matchUpFormat });
+  const combinedRoundRobin =
+    params.structure?.finishingPosition === WIN_RATIO && !!parse(format ?? '')?.setFormat?.combinedPointTotal;
+  return (
+    !activeDownstream &&
+    !params.winningSide &&
+    (combinedRoundRobin || isRotatingPartnerDraw(params.drawDefinition, params.event)) &&
+    isDrawnResult({
+      matchUpId: params.matchUpId ?? '',
+      matchUpStatus: params.matchUpStatus ?? COMPLETED,
+      score: params.score,
+      winningSide: params.winningSide,
+      matchUpFormat: format,
+    })
+  );
+}
+
+function isWalkoverStatus(status?: string) {
+  return !!status && [WALKOVER, DOUBLE_WALKOVER].includes(status);
+}
+
+function outcomePolicies(params: SetMatchUpStateArgs): PolicyDefinitions {
+  const { tournamentRecord, drawDefinition, event } = params;
+  const { appliedPolicies = {} } = getAppliedPolicies({
+    policyTypes: [POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY],
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+  if (isObject(params.policyDefinitions)) Object.assign(appliedPolicies, params.policyDefinitions);
+  return appliedPolicies;
 }

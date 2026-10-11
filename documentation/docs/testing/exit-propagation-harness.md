@@ -21,7 +21,7 @@ whether the result was right.
 | `exitPropagationMatrixExtension.test.ts` | the same body over the seven draw types the 600 never exercised — round robin (with and without playoff), the FIC `TO_QF`/`TO_R16` variants, lucky draw, feed-in, playoff — 400 cells from a separate seed range. Added in 7.4.0; clean on first contact.            |
 | `correctionDivergence.test.ts`           | 192 cells: a first-round mistake corrected, against the direct entry of the right outcome.                                                                                                                                                                           |
 | `correctionDivergenceDeep.test.ts`       | 1,600 cells: the mistake is the deepest exit of a twelve-step prefix. Buckets each cell as identical / provenance-only / incomparable / refused / severe and ratchets the counts; the baseline is severe 0. Runs under `pnpm verify` (`DEEP_CORRECTIONS=1`), ~5 min. |
-| `stalledPositionBudget.test.ts`          | replays all 1,000 matrix cells and counts `STALLED_POSITION` findings against a budget that only falls. Currently 0.                                                                                                                                                 |
+| `stalledPositionBudget.test.ts`          | **Deleted 2026-10-10.** It replayed all 1,000 matrix cells and ratcheted `STALLED_POSITION` findings down to zero; at zero the rule was promoted to an `error` and, as its header instructed, the ordinary `valid` assertions became the guard.                      |
 | `routeDifferential.test.ts`              | the same outcome entered with and without `allowChangePropagation`, compared.                                                                                                                                                                                        |
 | `transitionProperties.test.ts`           | do/undo identity, idempotence, monotonicity — properties of a _mutation_, not of a state.                                                                                                                                                                            |
 | `derivationAgreement.test.ts`            | asserts that `matchUpActions` and `setMatchUpStatus` agree about what is permitted.                                                                                                                                                                                  |
@@ -156,6 +156,65 @@ stopped determining the tournament. Three failing seeds then could not be reprod
 If a seed ever again fails in a run but not alone, suspect that class first — the guard is
 `src/tests/mocks/mockTournamentNameReuse.test.ts`.
 
+## The stall census at scale
+
+A **stall** is a `STALLED_POSITION` finding: one participant, no winner, in a matchUp nobody else can
+ever reach. The census reports only a seed's first failing property, so a seed that fails something
+else earlier reads there as "no stall"; `stallCount.test.ts` (`STALL_COUNT=1`) replays every step of a
+schedule file and asks the finished draw directly, whatever the severity of the finding.
+
+```sh
+STALL_COUNT=1 TZ=UTC SCHEDULES_IN=/tmp/schedules.jsonl OUT=/tmp/stalls.jsonl \
+  npx vitest run src/tests/mutations/exitPropagation/stallCount.test.ts
+```
+
+It runs in three arms — `allowChangePropagation` off and on under the default policy, and
+`doubleExitPropagateBye: false` — because each arm reaches states the others do not. At scale (40,000
+seeds per arm per run) the stalling seeds of each run are frozen with the schedules emitted in their
+arm and held by a **shrink-only ratchet**: `stallScaleRegression.test.ts` and its successors assert
+that the set of stalling instances EQUALS an `OPEN` list, so a new stall fails and a seed that stops
+stalling fails too, until its entry is removed — a fix records itself by deleting a line. Every seed
+found by the runs of 2026-10-07 to 2026-10-10 (126 instances across three ratchets) is closed in every
+arm as of 7.9.0; the `OPEN` lists are empty. Runs 8 to 10 (2026-10-11, after 7.9.0) found 1 / 0 / 1,
+1 / 1 / 1 and 0 / 0 / 3 (off / on / policy-off); every one of those seeds also stalls on 7.9.0 — the
+runs sample fresh seeds, not new code — and all are closed in 7.10.0, held by
+`stallScaleRegression20261011h.test.ts` (8 instances, `OPEN` empty).
+
+**Classify a stall before tracing it.** Replay the seed with and without `rollbackOnError: true` and
+count refusals that changed the draw. A stall that exists only without rollback is the downstream
+effect of a refusal-after-write (`ERROR_IMPLIES_NO_MUTATION`); TMX and the server call with rollback
+on, so production sees a clean refusal, but the root is still in the pipeline. Then ask why an exit
+did not travel as far as its participant would have: run 9's only stall looked like a RULE 4 refusal
+and was a carried exit dropped at a BYE in a structure's last round, two steps earlier.
+
+**Census failures are not stalls.** Each run also reports scenarios failing any OTHER property
+(`DRAW_INCONSISTENCY`, `ERROR_IMPLIES_NO_MUTATION`, `MONOTONIC_DECISION`, …). That count has never been
+zero and is flat across runs 7–10 (roughly 60 / 300 / 125 per 40,000 seeds); a release's
+"0 / 0 / 0" is the stall count.
+
+**The early-exit arm.** The at-scale census only scores matchUps with both participants present, so it
+never records an exit before the opponent arrives. `exitBeforeArrivalCensus.test.ts` (120 seeds) does,
+and it was the last promotion criterion: it showed 7 end-state stalls when `STALLED_POSITION` first ran
+as an error, closed by a detector exemption (a lone occupant inside a double exit) and an FMLC
+reservation fix.
+
+Before any fix in this area merges, the eight **frozen census arms** (`sched-w1`, `sched-w2` and
+`sched-de` under each flag, plus the two policy arms) are replayed on the branch and on `dev` and
+diffed by seed: `opened` must be zero. `STALLED_POSITION` shipped as a `warning` and was promoted to an
+`error` once an at-scale run read zero in all three arms — the seventh run, on 7.9.0 (`dev`
+`bdc5c4b258`), did — so a stalled draw is no longer `valid`; the rule and the run history are in
+`Mentat/planning/STALLED_POSITION_AT_SCALE.md`.
+
+The TEAM arms (`pnpm verify:team-arms`) drive duals line by line. In the uneven-dual arm a double exit
+on one rubber can leave a DOMINANT_DUO dual at 1-1 with every rubber finished: no score can decide it.
+That is the director's decision (`setMatchUpStatus` with a `winningSide` on the dual), and since
+7.10.0 the driver takes it once nothing else is playable instead of abandoning the draw — the
+promotion to `error` is what exposed that the arm had been auditing abandoned draws.
+
+`OUTCOME_PIPELINE=differential` is a second gate for the same code (see
+[the outcome pipeline § 7.1](/docs/concepts/outcome-pipeline#71-two-implementations-s2)): it runs in
+CI only for pull requests into `master`, so run it locally before a checkpoint.
+
 ## Traps worth knowing before you extend this
 
 Each of these cost real time and produced confident, wholly incorrect results.
@@ -175,6 +234,11 @@ Each of these cost real time and produced confident, wholly incorrect results.
 - **The vitest transform cache goes stale** and starts failing to resolve `@Tests/...` for newly
   created files while committed specs still resolve. It looks exactly like a broken import; clear
   `node_modules/.vitest-cache` and `node_modules/.vite`.
+- **A killed census launcher leaves its lanes running.** `pkill` of the script that launched eight
+  arms stops the script, releases its lock and reverts nothing; the vitest children keep writing. The
+  next run into the same files then double-counts every arm, and a byte-identical duplicate line reads
+  as "opened". One output directory per attempt, and before trusting a summary check that each file
+  holds exactly one `SUMMARY` line (measured twice on 2026-10-10, on Button and locally).
 
 ## Related
 

@@ -17,6 +17,9 @@ import {
   ASSIGN_PARTICIPANT,
 } from '@Constants/positionActionConstants';
 
+// entries that hold no place in another flight
+const NOT_IN_FLIGHT_STATUSES = new Set<string | undefined>([WITHDRAWN, UNGROUPED, UNPAIRED]);
+
 type GetValidAlternatesActionArgs = {
   positionAssignments: PositionAssignment[];
   tournamentParticipants?: Participant[];
@@ -110,7 +113,7 @@ export function getValidAlternatesAction({
           .filter(
             (entry) =>
               entry.participantId &&
-              ![WITHDRAWN, UNGROUPED, UNPAIRED].includes(entry.entryStatus) &&
+              !NOT_IN_FLIGHT_STATUSES.has(entry.entryStatus) &&
               !drawEnteredParticipantIds.includes(entry.participantId),
           )
           .map(({ participantId }) => participantId),

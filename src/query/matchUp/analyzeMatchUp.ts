@@ -1,8 +1,10 @@
+import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { instanceCount } from '@Tools/arrays';
 import { analyzeSet } from './analyzeSet';
 
 // constants and types
+import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { Set as SetType } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
@@ -36,6 +38,24 @@ export function analyzeMatchUp(params?): ResultType & {
 
   matchUpFormat = matchUpFormat || matchUp?.matchUpFormat;
   const matchUpScoringFormat = parse(matchUpFormat);
+  if (matchUpScoringFormat?.setFormat?.combinedPointTotal) {
+    const sets = matchUp.score?.sets ?? [];
+    const analysis =
+      sets.length === 1
+        ? analyzeCombinedPointSet(sets[0], matchUpScoringFormat.setFormat)
+        : { valid: false, complete: false, winningSide: undefined };
+    const irregular = new Set([DEFAULTED, RETIRED, WALKOVER]).has(matchUp.matchUpStatus);
+    const validWinner = irregular || matchUp.winningSide === analysis.winningSide;
+    return {
+      isCompletedMatchUp: analysis.complete,
+      calculatedWinningSide: analysis.winningSide,
+      validMatchUpWinningSide: analysis.valid && validWinner,
+      validMatchUpOutcome: analysis.valid && analysis.complete && validWinner,
+      completedSetsHaveValidOutcomes: analysis.valid,
+      completedSetsCount: Number(analysis.complete),
+      matchUpScoringFormat,
+    };
+  }
   const isCompletedMatchUp = !!matchUp?.winningSide;
 
   const sets = matchUp.score?.sets;

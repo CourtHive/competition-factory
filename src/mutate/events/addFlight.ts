@@ -50,7 +50,7 @@ export function addFlight({
   const flightNumbers =
     flightProfile?.flights
       ?.map(({ flightNumber }) => !Number.isNaN(Number(flightNumber)) && ensureInt(flightNumber))
-      ?.filter(Boolean) ?? [];
+      ?.filter((flightNumber): flightNumber is number => !!flightNumber) ?? [];
 
   const flightNumber = Math.max(0, ...flightNumbers) + 1;
 
