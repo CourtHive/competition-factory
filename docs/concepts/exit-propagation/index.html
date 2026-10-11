@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Exit Propagation | Competition Factory</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Exit Propagation | Competition Factory"><meta data-rh="true" name="description" content="Overview"><meta data-rh="true" property="og:description" content="Overview"><link data-rh="true" rel="icon" href="/competition-factory/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation" hreflang="en"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Exit Propagation","item":"https://courthive.github.io/competition-factory/docs/concepts/exit-propagation"}]}</script><link rel="stylesheet" href="/competition-factory/assets/css/styles.0b7248e0.css">
-<script src="/competition-factory/assets/js/runtime~main.cfc474dd.js" defer="defer"></script>
-<script src="/competition-factory/assets/js/main.979f69b7.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/runtime~main.41c440fa.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/main.a4b4828a.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -247,6 +247,14 @@ taken the seat, and a BYE-held opponent who was owed that seat goes on as soon a
 standing reservation is not disturbed by a double exit re-entered beside it. Pinned by the named tests
 of census seeds 20178071, 20163074 and 20139307 (FEED_IN_CHAMPIONSHIP and FIRST_MATCH_LOSER_CONSOLATION
 8/7 and 8/8).</p>
+<p>Since 7.10.0 two more cases hold. <strong>A reservation goes with its exit past a BYE it crossed</strong>: a
+reservation advanced through a BYE into a matchUp still holding a pending exit (an exit status and no
+winner yet) is released from that matchUp too when its exit is withdrawn; the pending exit itself
+stands for whoever arrives (census 20278127, FIRST_MATCH_LOSER_CONSOLATION 16/16,
+<code>doubleExitPropagateBye: false</code>). And <strong>an ineligible loser&#x27;s BYE survives the opponent&#x27;s arrival</strong>:
+in FIRST_MATCH_LOSER_CONSOLATION the BYE placed for a round-2 loser who already holds a win (and so
+cannot be fed) is a decision about a decided matchUp, and is no longer withdrawn when that loser&#x27;s
+opponent arrives afterwards and takes the walkover (census 9700053 and 9700084, the early-exit arm).</p>
 <h3 class="anchor anchorTargetStickyNavbar_SIHU" id="an-exit-that-meets-a-bye-leaves-a-bye-behind">An exit that meets a BYE leaves a BYE behind<a href="#an-exit-that-meets-a-bye-leaves-a-bye-behind" class="hash-link" aria-label="Direct link to An exit that meets a BYE leaves a BYE behind" title="Direct link to An exit that meets a BYE leaves a BYE behind" translate="no">​</a></h3>
 <p>Since 7.5.0. An exit carried or produced into a matchUp whose other side is a BYE moves on with the
 BYE&#x27;s advancement; the matchUp it leaves reads <code>BYE</code>, not <code>WALKOVER</code> or <code>DEFAULTED</code> beside a BYE
@@ -307,6 +315,13 @@ is withdrawn, not re-seated. Before this a carry that stood <strong>pending</str
 pull-back and its carrier won a match they had walked over (census 20057285,
 FIRST_ROUND_LOSER_CONSOLATION 8/8); a carry that had <strong>decided</strong> its onward matchUp already came
 home.</p>
+<p>Since 7.10.0 two more cases hold. <strong>A carry past a BYE in a structure&#x27;s last round survives the
+BYE&#x27;s withdrawal</strong>: there is nowhere further for the carrier to land, so the carried exit is recorded
+beside the BYE, and when the BYE is withdrawn the matchUp re-derives to the exit the carrier holds
+rather than becoming an ordinary match (census 20318646, COMPASS 8/8 — the South final). Both arrival
+orders, carrier first or BYE first, now reach the same state. And <strong>a carry written past a late BYE
+names the exit&#x27;s origin</strong>, as every other hop does, not the BYE matchUp it passed, so a convergence it
+later dissolves still re-advances its winner (census 20267598, FEED_IN_CHAMPIONSHIP_TO_SF 16/15).</p>
 <h3 class="anchor anchorTargetStickyNavbar_SIHU" id="an-arrival-carrying-an-exit-converges-with-a-pending-exit">An arrival carrying an exit converges with a pending exit<a href="#an-arrival-carrying-an-exit-converges-with-a-pending-exit" class="hash-link" aria-label="Direct link to An arrival carrying an exit converges with a pending exit" title="Direct link to An arrival carrying an exit converges with a pending exit" translate="no">​</a></h3>
 <p>Since 7.5.0. A loser carrying a <code>WALKOVER</code> or <code>DEFAULTED</code> can reach a matchUp that already holds a
 pending exit, a carried one or one a director recorded before the opponent arrived. The arrival is
@@ -318,6 +333,12 @@ exit does; a seat held open for an occupant who is leaving is read before the ar
 that meets a seat a carrier was awarded converges there, and the converged matchUp serves its loser
 link; and a double exit landing in a consolation target withdraws the stale advances its earlier
 state had left standing there, so its re-derived winner goes on.</p>
+<p>Since 7.10.0 <strong>an exit carried on from a convergence names no stale winner</strong>. With
+<code>doubleExitPropagateBye: false</code> a double exit produces an exit over its loser link; where that exit
+meets one already standing, the target converges and carries an exit onward. The onward matchUp is
+awarded by RULE 2 (the side without the exit wins), never to the side the exit came in on, so the
+participant who arrives there takes it (census 20346401, 20349817 and 20352232 — DOUBLE_ELIMINATION
+8/8, COMPASS 16/11, FIRST_MATCH_LOSER_CONSOLATION 16/13).</p>
 <h3 class="anchor anchorTargetStickyNavbar_SIHU" id="either-origin-of-a-converged-double-exit-clears-to-the-kept-origins-draw">Either origin of a converged double exit clears to the kept origin&#x27;s draw<a href="#either-origin-of-a-converged-double-exit-clears-to-the-kept-origins-draw" class="hash-link" aria-label="Direct link to Either origin of a converged double exit clears to the kept origin&#x27;s draw" title="Direct link to Either origin of a converged double exit clears to the kept origin&#x27;s draw" translate="no">​</a></h3>
 <p>Since 7.5.0. When two exits have converged into a double exit and nothing downstream is active,
 either origin can be cleared, and the draw afterwards is the draw the kept origin alone would have
