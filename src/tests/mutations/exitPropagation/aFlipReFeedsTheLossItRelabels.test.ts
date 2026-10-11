@@ -13,10 +13,12 @@ import { DRAW_POSITION_ACTIVE } from '@Constants/errorConditionConstants';
 /**
  * A FLIP RE-FEEDS THE LATER LOSS IT RELABELS (census family F1, P48).
  *
- * FIRST_MATCH_LOSER_CONSOLATION feeds a round-2 loser only when that was their first match: zero prior SCORED wins.
- * A winner change under `allowChangePropagation` relabels the old winner's path, so a round-2 loss the old winner
- * had suffered is now the old loser's — and the feed rule has to be asked about them. Their first win is the flipped
- * matchUp itself. Until this was asked, only the flipped matchUp's own loser was reconciled:
+ * FIRST_MATCH_LOSER_CONSOLATION feeds every round-1 loser, and a round-2 loser only when round 2 was their first match:
+ * zero prior SCORED wins (a BYE, a walkover or an unscored default in round 1). Only the round-2 link carries that
+ * condition (`FIRST_MATCHUP`). A winner change under `allowChangePropagation` relabels the old winner's path, so a
+ * round-2 loss the old winner had suffered is now the old loser's — and the feed rule has to be asked about them.
+ * Their first win is the flipped matchUp itself. Until this was asked, only the flipped matchUp's own loser was
+ * reconciled:
  *
  * - flipped to a walkover or an unscored default, the new round-2 loser is eligible where the old winner was not,
  *   and the BYE placed for the old winner stood — `DROPPED_PROGRESSION`, 235 of run 13's 265 F1 seeds;
