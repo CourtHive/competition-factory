@@ -1,6 +1,8 @@
 import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
-import { ValidPolicyTypes, POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
+import type { RotatingPartnerScoringPolicies } from './rotatingPartnerScoring';
+import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
+import type { RoundRobinTallyPolicy } from './roundRobinTallyPolicy';
 import type { FactoryEngineMethod } from './factoryEngineMethods';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
@@ -31,6 +33,13 @@ import {
   Structure,
   MatchUp,
 } from './tournamentTypes';
+import {
+  ValidPolicyTypes,
+  POLICY_TYPE_SEEDING,
+  POLICY_TYPE_SCORING,
+  POLICY_TYPE_ROTATING_PARTNER_TALLY,
+  POLICY_TYPE_ROUND_ROBIN_TALLY,
+} from '@Constants/policyConstants';
 
 export type FactoryEngine = {
   [key: string]: any;
@@ -396,7 +405,10 @@ export type HydratedFlightProfile = Omit<FlightProfile, 'flights'> & { flights: 
 export type PolicyDefinitions = {
   [key in ValidPolicyTypes]?: { [key: string]: any };
 } & {
+  [POLICY_TYPE_ROTATING_PARTNER_TALLY]?: RotatingPartnerTallyPolicy;
   [POLICY_TYPE_SEEDING]?: SeedingPolicy;
+  [POLICY_TYPE_ROUND_ROBIN_TALLY]?: RoundRobinTallyPolicy;
+  [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
 };
 
 export type QueueMethod = {

@@ -33,8 +33,10 @@ export function calculatePercentages({
 
     const matchUpsWon = participantResults[participantId].matchUpsWon;
     const matchUpsLost = participantResults[participantId].matchUpsLost;
-    const matchUpsTotal = matchUpsWon + matchUpsLost;
-    let matchUpsPct = Math.round((matchUpsWon / matchUpsTotal) * precision) / precision;
+    const matchUpsDrawn = participantResults[participantId].matchUpsDrawn ?? 0;
+    const matchUpsTotal = matchUpsWon + matchUpsLost + matchUpsDrawn;
+    const matchUpsCredit = matchUpsWon + matchUpsDrawn * (tallyPolicy?.drawCredit ?? 0.5);
+    let matchUpsPct = Math.round((matchUpsCredit / matchUpsTotal) * precision) / precision;
     if (matchUpsPct === Infinity || Number.isNaN(matchUpsPct)) matchUpsPct = matchUpsWon;
 
     const gamesWon = participantResults[participantId].gamesWon || 0;
@@ -57,6 +59,11 @@ export function calculatePercentages({
     participantResults[participantId].tieMatchUpsWon = tieMatchUpsWon;
     participantResults[participantId].tieMatchUpsPct = tieMatchUpsPct;
     participantResults[participantId].matchUpsPct = matchUpsPct;
+    if (tallyPolicy?.outcomePoints) {
+      const { win, draw, loss } = tallyPolicy.outcomePoints;
+      participantResults[participantId].standingsPoints =
+        matchUpsWon * win + matchUpsDrawn * draw + matchUpsLost * loss;
+    }
     participantResults[participantId].gamesWon = gamesWon;
     participantResults[participantId].gamesLost = gamesLost;
     participantResults[participantId].gamesPct = gamesPct;

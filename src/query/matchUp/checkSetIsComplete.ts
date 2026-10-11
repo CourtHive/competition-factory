@@ -1,4 +1,5 @@
 import { readTiebreakSet, withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
+import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isTiebreakWon, reachedTiebreak } from '@Query/matchUp/tiebreakAtRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
@@ -28,6 +29,7 @@ export function checkSetIsComplete({
   matchUpScoringFormat = matchUpScoringFormat || (matchUpFormat && parse(matchUpFormat));
 
   const setFormat = (isDecidingSet && matchUpScoringFormat.finalSetFormat) || (matchUpScoringFormat?.setFormat ?? {});
+  if (setFormat.combinedPointTotal) return analyzeCombinedPointSet(set, setFormat).complete;
   // A tiebreak-only set's points are read from wherever they are, so a set that carried them in its game
   // fields (a format-aware parse) is the same set as one that carries them beside the 1-0 marker
   const reading = readTiebreakSet(set, setFormat);

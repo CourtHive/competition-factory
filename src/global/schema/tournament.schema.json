@@ -879,6 +879,15 @@
         },
         "tieFormatId": {
           "type": "string"
+        },
+        "competitionProfile": {
+          "$ref": "#/definitions/CompetitionProfile"
+        },
+        "competitionRoster": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "competitionSettlements": { "type": "array", "items": { "$ref": "#/definitions/RotatingPartnerSettlement" } },
+        "competitionRounds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/RotatingPartnerRoundRecord" }
         }
       },
       "required": ["drawId"],
@@ -4537,6 +4546,476 @@
           "type": "boolean"
         }
       }
+    },
+    "RotatingPartnerStatusTreatment": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": ["UNRESOLVED", "EXCLUDE", "PLAYED_POINTS"]
+            }
+          },
+          "required": ["kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "CREDIT"
+            },
+            "winningPoints": {
+              "type": "integer",
+              "maximum": 9007199254740991,
+              "minimum": 0
+            },
+            "losingPoints": {
+              "type": "integer",
+              "maximum": 9007199254740991,
+              "minimum": 0
+            }
+          },
+          "required": ["kind", "winningPoints", "losingPoints"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RotatingPartnerTallyPolicy": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "decidingPoints": {
+          "enum": ["INCLUDE", "EXCLUDE"]
+        },
+        "overtimePoints": {
+          "enum": ["INCLUDE", "EXCLUDE"]
+        },
+        "statusTreatments": {
+          "type": "object",
+          "properties": {
+            "ABANDONED": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "CANCELLED": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "DEAD_RUBBER": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "DEFAULTED": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "DOUBLE_DEFAULT": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "DOUBLE_WALKOVER": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "RETIRED": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            },
+            "WALKOVER": {
+              "$ref": "#/definitions/RotatingPartnerStatusTreatment"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["version", "decidingPoints", "overtimePoints", "statusTreatments"],
+      "additionalProperties": false
+    },
+    "RotatingPartnerSettlement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "requestId",
+        "matchUpId",
+        "roundNumber",
+        "expectedOutcome",
+        "treatment",
+        "reason",
+        "recordedBy",
+        "recordedAt"
+      ],
+      "properties": {
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "matchUpId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "roundNumber": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "expectedOutcome": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["matchUpStatus"],
+          "properties": {
+            "matchUpStatus": {
+              "enum": [
+                "ABANDONED",
+                "CANCELLED",
+                "DEAD_RUBBER",
+                "DEFAULTED",
+                "DOUBLE_DEFAULT",
+                "DOUBLE_WALKOVER",
+                "RETIRED",
+                "WALKOVER"
+              ]
+            },
+            "winningSide": { "enum": [1, 2] },
+            "score": { "$ref": "#/definitions/Score" }
+          }
+        },
+        "treatment": { "$ref": "#/definitions/RotatingPartnerStatusTreatment" },
+        "reason": { "type": "string", "pattern": "\\S" },
+        "recordedBy": { "type": "string", "pattern": "\\S" },
+        "recordedAt": {
+          "type": "string",
+          "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])T([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d{1,9})?(?:Z|[+-](?:[01]\\d|2[0-3]):[0-5]\\d)$",
+          "format": "date-time"
+        },
+        "supersedesRequestId": { "type": "string", "pattern": "\\S" }
+      }
+    },
+    "RotatingPartnerRoundRecord": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "roundNumber": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "structureId": {
+          "type": "string"
+        },
+        "format": {
+          "enum": ["AMERICANO", "MEXICANO"]
+        },
+        "algorithmVersion": {
+          "const": 1
+        },
+        "baseSeed": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "seedUsed": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "matchUpIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "pairings": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "tallyContract": { "$ref": "#/definitions/RotatingPartnerTallyPolicy" },
+        "standingsThroughRoundNumber": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "standingsSnapshot": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "participantId": { "type": "string" },
+              "pointsScored": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+            },
+            "required": ["participantId", "pointsScored"],
+            "additionalProperties": false
+          }
+        },
+        "scoringContract": {
+          "type": "object",
+          "properties": {
+            "combinedPointTotal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "tieResolution": {
+              "enum": ["ALLOW", "DECIDING_POINT", "WIN_BY_MARGIN"]
+            },
+            "winningMargin": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": ["combinedPointTotal", "tieResolution"],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "tieResolution": {
+                    "const": "WIN_BY_MARGIN"
+                  }
+                }
+              },
+              "then": {
+                "required": ["winningMargin"]
+              },
+              "else": {
+                "not": {
+                  "required": ["winningMargin"]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "requestId",
+        "roundNumber",
+        "structureId",
+        "format",
+        "algorithmVersion",
+        "baseSeed",
+        "seedUsed",
+        "matchUpIds",
+        "pairings",
+        "scoringContract",
+        "tallyContract"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "format": { "const": "MEXICANO" } } },
+          "then": { "required": ["standingsSnapshot", "standingsThroughRoundNumber"] }
+        }
+      ]
+    },
+    "CompetitionProfileScoring": {
+      "type": "object",
+      "properties": {
+        "combinedPointTotal": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "selectedVariant": {
+          "$ref": "#/definitions/RotatingPartnerScoringVariant"
+        }
+      },
+      "required": ["combinedPointTotal"],
+      "additionalProperties": false
+    },
+    "CompetitionProfileStandings": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "const": "SIDE_POINTS"
+        },
+        "attribution": {
+          "const": "EACH_INDIVIDUAL"
+        }
+      },
+      "required": ["metric", "attribution"],
+      "additionalProperties": false
+    },
+    "AmericanoCompetitionProfilePairing": {
+      "type": "object",
+      "properties": {
+        "seed": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "algorithmVersion": {
+          "const": 1
+        }
+      },
+      "required": ["seed", "algorithmVersion"],
+      "additionalProperties": false
+    },
+    "MexicanoCompetitionProfilePairing": {
+      "type": "object",
+      "properties": {
+        "seed": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "algorithmVersion": {
+          "const": 1
+        },
+        "groupBy": {
+          "const": "ADJACENT_STANDINGS"
+        },
+        "partners": {
+          "const": "FIRST_FOURTH_SECOND_THIRD"
+        }
+      },
+      "required": ["seed", "algorithmVersion", "groupBy", "partners"],
+      "additionalProperties": false
+    },
+    "AmericanoCompetitionProfileCompletion": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "PARTNERSHIP_COVERAGE"
+        }
+      },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
+    "MexicanoCompetitionProfileCompletion": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "ROUND_COUNT"
+        },
+        "rounds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": ["kind", "rounds"],
+      "additionalProperties": false
+    },
+    "AmericanoCompetitionProfile": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "entrantScope": {
+          "const": "INDIVIDUAL"
+        },
+        "matchUpType": {
+          "const": "DOUBLES"
+        },
+        "scoring": {
+          "$ref": "#/definitions/CompetitionProfileScoring"
+        },
+        "standings": {
+          "$ref": "#/definitions/CompetitionProfileStandings"
+        },
+        "format": {
+          "const": "AMERICANO"
+        },
+        "pairing": {
+          "$ref": "#/definitions/AmericanoCompetitionProfilePairing"
+        },
+        "completion": {
+          "$ref": "#/definitions/AmericanoCompetitionProfileCompletion"
+        }
+      },
+      "required": ["version", "entrantScope", "matchUpType", "scoring", "standings", "format", "pairing", "completion"],
+      "additionalProperties": false
+    },
+    "MexicanoCompetitionProfile": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "entrantScope": {
+          "const": "INDIVIDUAL"
+        },
+        "matchUpType": {
+          "const": "DOUBLES"
+        },
+        "scoring": {
+          "$ref": "#/definitions/CompetitionProfileScoring"
+        },
+        "standings": {
+          "$ref": "#/definitions/CompetitionProfileStandings"
+        },
+        "format": {
+          "const": "MEXICANO"
+        },
+        "pairing": {
+          "$ref": "#/definitions/MexicanoCompetitionProfilePairing"
+        },
+        "completion": {
+          "$ref": "#/definitions/MexicanoCompetitionProfileCompletion"
+        }
+      },
+      "required": ["version", "entrantScope", "matchUpType", "scoring", "standings", "format", "pairing", "completion"],
+      "additionalProperties": false
+    },
+    "LadderCompetitionProfile": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "format": {
+          "const": "LADDER"
+        }
+      },
+      "required": ["version", "format"],
+      "additionalProperties": false
+    },
+    "CompetitionProfile": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/AmericanoCompetitionProfile"
+        },
+        {
+          "$ref": "#/definitions/MexicanoCompetitionProfile"
+        },
+        {
+          "$ref": "#/definitions/LadderCompetitionProfile"
+        }
+      ]
+    },
+    "RotatingPartnerScoringVariant": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "tieResolution": {
+              "enum": ["ALLOW", "DECIDING_POINT"]
+            }
+          },
+          "required": ["tieResolution"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "tieResolution": {
+              "const": "WIN_BY_MARGIN"
+            },
+            "winningMargin": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": ["tieResolution", "winningMargin"],
+          "additionalProperties": false
+        }
+      ]
     }
   },
   "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. Every definition but the four open ones is closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one — the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. Four definitions are open; each carries a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."

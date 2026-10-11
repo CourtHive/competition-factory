@@ -1,3 +1,4 @@
+import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 /**
  * Validate matchUp score against matchUpFormat
  *
@@ -400,6 +401,12 @@ export function validateSetScore(
   const setFormat = isDecidingSet && parsed.finalSetFormat ? parsed.finalSetFormat : parsed.setFormat;
   if (!setFormat) return { isValid: true };
 
+  if (setFormat.combinedPointTotal) {
+    const analysis = analyzeCombinedPointSet(set, setFormat);
+    return analysis.valid && (allowIncomplete || analysis.complete)
+      ? { isValid: true }
+      : { isValid: false, error: 'Invalid or unfinished combined-point score' };
+  }
   // Handle timed sets (based: 'P'/'G' or timed: true)
   if (setFormat.timed) return validateTimedSet(set, setFormat, allowIncomplete);
 

@@ -1,3 +1,4 @@
+import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -5,10 +6,17 @@ import { addExtension } from '@Mutate/extensions/addExtension';
 
 // constants and types
 import { PolicyDefinitions, TournamentRecords, ResultType } from '@Types/factoryTypes';
+import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { isObject, isString } from '@Tools/objects';
+import {
+  EXISTING_POLICY_TYPE,
+  INVALID_VALUES,
+  MISSING_POLICY_DEFINITION,
+  MISSING_TOURNAMENT_RECORD,
+} from '@Constants/errorConditionConstants';
 import {
   DRAW_DEFINITION,
   EVENT,
@@ -16,12 +24,6 @@ import {
   TOURNAMENT_RECORD,
   TOURNAMENT_RECORDS,
 } from '@Constants/attributeConstants';
-import {
-  EXISTING_POLICY_TYPE,
-  INVALID_VALUES,
-  MISSING_POLICY_DEFINITION,
-  MISSING_TOURNAMENT_RECORD,
-} from '@Constants/errorConditionConstants';
 
 type AttachPoliciesArgs = {
   tournamentRecords?: TournamentRecords;
@@ -46,6 +48,8 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
     },
   ]);
   if (checkParams.error) return checkParams;
+  const tallyValidation = validateDrawTallyOptions(params.policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY]);
+  if (tallyValidation.error) return tallyValidation;
 
   const applied: string[] = [];
 

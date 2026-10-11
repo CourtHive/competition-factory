@@ -21,6 +21,7 @@ import { calculatePointsTo } from './pointsToCalculator';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { resolvePointValue } from './resolvePointValue';
 import { inferServeSide } from './serveSideCalculator';
+import { addCombinedPoint } from './addCombinedPoint';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 import type {
@@ -84,6 +85,12 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   if (!formatStructure) {
     throw new Error(`Invalid matchUpFormat: ${matchUp.matchUpFormat}`);
   }
+  if (formatStructure.setFormat?.combinedPointTotal)
+    return addCombinedPoint(matchUp, options, winner, server, {
+      combinedPointTotal: formatStructure.setFormat.combinedPointTotal,
+      tieResolution: formatStructure.setFormat.tieResolution!,
+      winningMargin: formatStructure.setFormat.winningMargin,
+    });
   const bestOf = formatStructure.exactly || formatStructure.bestOf || 3;
   const setsToWin = Math.ceil(bestOf / 2);
 

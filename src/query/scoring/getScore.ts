@@ -10,6 +10,7 @@ import { resolveSetType, isLiveDecidingSet } from '@Tools/scoring/scoringUtiliti
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { deriveServer, formatGameScore } from '@Mutate/scoring/addPoint';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
+import { getCombinedPointScore } from './getCombinedPointScore';
 import { RALLY } from '@Constants/matchUpFormatConstants';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
@@ -28,6 +29,8 @@ export interface GetScoreOptions {
  * @returns Score information with pointDisplay and situation
  */
 export function getScore(matchUp: MatchUp, options?: GetScoreOptions): ScoreResult {
+  const combined = parse(matchUp.matchUpFormat)?.setFormat;
+  if (combined?.combinedPointTotal) return getCombinedPointScore(matchUp, combined);
   const sets = matchUp.score.sets;
 
   // Build score string

@@ -1,4 +1,5 @@
 import { isTiebreakGamesScore, isTiebreakWon, tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
+import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { isTiebreakMarker, readTiebreakSet } from './tiebreakSetShape';
 import { getSetWinningSide } from './getSetWinningSide';
@@ -24,6 +25,23 @@ export function analyzeSet(params) {
     !!(setNumber && maxSetNumber && setNumber === maxSetNumber),
   );
   const setFormat = (isDecidingSet && matchUpScoringFormat?.finalSetFormat) || matchUpScoringFormat?.setFormat;
+  if (setFormat?.combinedPointTotal) {
+    const analysis = analyzeCombinedPointSet(setObject, setFormat);
+    return {
+      isCompletedSet: analysis.complete,
+      isValidSet: analysis.valid,
+      isValidSetOutcome: analysis.valid && analysis.complete,
+      isValidSetNumber: setNumber === 1,
+      winningSide: analysis.winningSide,
+      setFormat,
+      sideGameScores: [setObject.side1Score, setObject.side2Score],
+      sidePointScores: [setObject.side1Score, setObject.side2Score],
+      sideTiebreakScores: [],
+      expectTiebreakSet: false,
+      expectTimedSet: false,
+      isTiebreakSet: false,
+    };
+  }
   const expectTiebreakSet = !!setFormat?.tiebreakSet;
   const expectTimedSet = !!setFormat?.timed;
   const expectStandardSet = !expectTiebreakSet && !expectTimedSet;

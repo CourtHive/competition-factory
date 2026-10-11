@@ -1,3 +1,4 @@
+import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { timedSetWinnerContradicts } from '@Validators/timedSetWinner';
@@ -164,6 +165,15 @@ export function analyzeScore({
   const losingSideSetsCount = matchUpLosingSideIndex !== undefined && setsWinCounts[matchUpLosingSideIndex];
 
   const matchUpScoringFormat = matchUpFormat ? parse(matchUpFormat) : undefined;
+  if (matchUpScoringFormat?.setFormat?.combinedPointTotal) {
+    if (sets.length !== 1) return { valid: false };
+    const analysis = analyzeCombinedPointSet(sets[0], matchUpScoringFormat.setFormat);
+    const status = matchUpStatus ?? existingMatchUpStatus;
+    const irregular = !!status && [DEFAULTED, RETIRED, WALKOVER].includes(status);
+    const validWinner = irregular || winningSide === analysis.winningSide;
+    const validStatus = status !== COMPLETED || analysis.complete;
+    return { valid: analysis.valid && validWinner && validStatus };
+  }
   const maxSetsCount = Math.max(...setsWinCounts);
   const maxSetsInstances = instanceCount(setsWinCounts)[maxSetsCount];
   const timed = matchUpScoringFormat?.setFormat?.timed || matchUpScoringFormat?.finalSetFormat?.timed;

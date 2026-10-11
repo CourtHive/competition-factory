@@ -1,15 +1,19 @@
 import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
+import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
 import { addDrawEntries as addEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { refreshEntryPositions } from '@Mutate/entries/refreshEntryPositions';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
+import { isUngrouped } from '@Query/entries/isUngrouped';
 
 // constants and types
 import { DIRECT_ACCEPTANCE, DIRECT_ENTRY_STATUSES, LUCKY_LOSER } from '@Constants/entryStatusConstants';
 import { MAIN, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { EntryStatusUnion } from '@Types/tournamentTypes';
+import { EntryStatusUnion, Participant, Entry } from '@Types/tournamentTypes';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { DOUBLES } from '@Constants/eventConstants';
 import { Flight } from '@Types/factoryTypes';
 import {
   SHARED_INDIVIDUAL_PARTICIPANT,
@@ -17,6 +21,7 @@ import {
   EVENT_NOT_FOUND,
   MISSING_DRAW_ID,
   MISSING_ENTRIES,
+  INVALID_ENTRIES,
 } from '@Constants/errorConditionConstants';
 
 export function addDrawEntries({
@@ -37,6 +42,27 @@ export function addDrawEntries({
   if (!participantIds?.length) return { error: MISSING_PARTICIPANT_IDS };
   if (!event) return { error: EVENT_NOT_FOUND };
   if (!drawId) return { error: MISSING_DRAW_ID };
+
+  if (isRotatingPartnerDraw(drawDefinition, event)) {
+    const validation = validateRotatingPartnerEntrants({ participantIds, tournamentRecord });
+    if (validation.error) return validation;
+  }
+
+  // Event-level ungrouped individuals are not ordinary doubles draw entrants.
+  if (event.eventType === DOUBLES && !isRotatingPartnerDraw(drawDefinition, event) && !isUngrouped(entryStatus)) {
+    const requested = new Set(participantIds);
+    if (
+      tournamentRecord?.participants?.some(
+        (participant: Participant) =>
+          requested.has(participant.participantId) && participant.participantType === INDIVIDUAL,
+      ) ||
+      (!tournamentRecord &&
+        (event.entries ?? []).some(
+          (entry: Entry) => requested.has(entry.participantId) && isUngrouped(entry.entryStatus),
+        ))
+    )
+      return { error: INVALID_ENTRIES };
+  }
 
   const eventEnteredParticipantIds = (event.entries ?? []).map(getParticipantId);
   const missingEventEntries = participantIds.filter(
