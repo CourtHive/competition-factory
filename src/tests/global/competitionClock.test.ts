@@ -87,6 +87,22 @@ it('a provider that cannot answer refuses the engine call before anything is wri
   expect(JSON.stringify(tournamentEngine.getTournament().tournamentRecord)).toEqual(before);
 });
 
+it('a finite but unrepresentable instant is refused like a non-finite one, before any write', () => {
+  mocksEngine.generateTournamentRecord({ setState: true });
+  const before = JSON.stringify(tournamentEngine.getTournament().tournamentRecord);
+  for (const ms of [1e20, -1e20, 8.64e15 + 1]) {
+    setCompetitionClock({ nowMs: () => ms });
+    const result: any = tournamentEngine.addTournamentTimeItem(note('a'));
+    expect(result.error).toEqual(INVALID_DATE);
+    expect(() => competitionNow()).toThrow(/invalid instant/);
+  }
+  setCompetitionClock();
+  expect(JSON.stringify(tournamentEngine.getTournament().tournamentRecord)).toEqual(before);
+  // the edge of the representable range is still an instant
+  setCompetitionClock({ nowMs: () => 8.64e15 });
+  expect(competitionNow().getTime()).toEqual(8.64e15);
+});
+
 it('outside an engine call a failing provider throws, and junk is refused at install', () => {
   setCompetitionClock({
     nowMs: () => {

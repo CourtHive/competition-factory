@@ -120,7 +120,9 @@ function readCompetition(provider: CompetitionTimeProvider): { ms: number } | Cl
     const reason = err instanceof Error ? err.message : String(err);
     return { error: INVALID_DATE, message: `the competition clock threw: ${reason}` };
   }
-  if (typeof ms !== 'number' || !Number.isFinite(ms)) {
+  // representable, not just finite: Date holds ±8.64e15 ms, and 1e20 passed a finiteness check, let a
+  // mutation succeed, then threw on the first toISOString()
+  if (typeof ms !== 'number' || Number.isNaN(new Date(ms).getTime())) {
     return { error: INVALID_DATE, message: 'the competition clock returned an invalid instant' };
   }
   return { ms };
