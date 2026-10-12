@@ -284,6 +284,10 @@ Three rules fell out of making this hold, each a defect that only the order of e
 - **A produced exit arrives on the side its seat already holds.** Where fed seat numbers
   interleave with advanced ones, feeder order predicts the wrong side; when the target already
   holds both seats, the seat's own side is read.
+- **A re-score that keeps the winner rewrites what that winner's arrival says.** A winner who reached a
+  produced exit records how they won the matchUp they came from. Correcting that matchUp to another
+  result for the same winner (a default to a played win, say) rewrites the record, so it reads what
+  entering the played win directly would have written (census 20500008, COMPASS 16/16).
 
 ### A team dual's double exit is unwound by its lines, or protected from them
 
@@ -456,6 +460,28 @@ When the origin is re-scored and the exit withdrawn, the advancement is released
 the next matchUp was itself decided by an exit carried in on the other side. The seat is emptied
 and the exit there stands pending the next arrival.
 
+The release follows the award across its own winner link. In DOUBLE_ELIMINATION the Backdraw final's
+winner goes on into the Main structure; when the exit that decided the Backdraw final for them is
+withdrawn, they are taken back out of the seat the link gave them too, so the re-derived winner can
+take it (census 20506968, DOUBLE_ELIMINATION 8/6).
+
+### A clear takes back only the side it cleared
+
+Clearing a position takes back what that position's side carried, and nothing from the other side.
+When the cleared position was never in the matchUp and nothing was removed from it, the matchUp
+can only lose what stood on the side holding no position. The side holding a position keeps its
+carried exit, and the matchUp re-derives to the pending exit that carry gives it. Before this, an
+unknown side was cleared as both: a relabel through a DOUBLE_ELIMINATION Backdraw dropped a carried
+`WALKOVER` from the occupied side, and the produced exit that arrived next was awarded to the
+participant carrying it (census 20490105, DOUBLE_ELIMINATION 16/13).
+
+### The decider holds the final's finalists
+
+In DOUBLE_ELIMINATION the decider is seated from the final as it stands: its first seat holds the
+final's winner and its second the final's loser, or nobody when the final was an exit with no
+loser to seat. A participant left there from an earlier result of the final is replaced, so a
+corrected final seats its decider without refusing (census 20477784, DOUBLE_ELIMINATION 8/4).
+
 ### A carry comes home with its carrier
 
 Since 7.9.0. A loser carrying an exit into a seat beside a BYE is advanced past it, and the carry is
@@ -503,6 +529,11 @@ meets one already standing, the target converges and carries an exit onward. The
 awarded by RULE 2 (the side without the exit wins), never to the side the exit came in on, so the
 participant who arrives there takes it (census 20346401, 20349817 and 20352232 — DOUBLE_ELIMINATION
 8/8, COMPASS 16/11, FIRST_MATCH_LOSER_CONSOLATION 16/13).
+
+A position advanced past a BYE that arrives opposite a carrier converges by the same rule rather
+than being awarded the seat (census 20460396, DOUBLE_ELIMINATION 16/14). Whether the occupant carries
+an exit is read from the side the advancement actually reaches, not the side the caller named
+(census 20522496, DOUBLE_ELIMINATION 8/7).
 
 ### Either origin of a converged double exit clears to the kept origin's draw
 

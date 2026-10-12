@@ -294,6 +294,37 @@ export function setSideExitProvenance({
 }
 
 /**
+ * A source re-scored with the SAME winner rewrites the arrival that winner left onward.
+ *
+ * An arrival entry (`previousMatchUpStatus` and no exit status: the side won its way here) is written once, when the
+ * winner lands. A re-score that keeps the winner re-directs into the seat they already hold, so nothing rewrote it,
+ * and a DEFAULTED win corrected to a played one still read DEFAULTED onward: an exit code on the winning side of the
+ * produced exit it arrived at (census policy-off 20500008, COMPASS 16/16 `West|2|2`), where the same result entered
+ * directly reads COMPLETED. Only arrivals are touched: a carried exit naming this source is the LOSER's, and is
+ * settled by the relabel of the exit it carries.
+ */
+export function refreshArrivalsFrom({
+  matchUpStatus,
+  matchUpId,
+  matchUps,
+}: {
+  matchUpStatus?: MatchUpStatusUnion;
+  matchUps?: MatchUp[];
+  matchUpId?: string;
+}): void {
+  if (!matchUpId || !matchUpStatus || !writeNativeEnabled()) return;
+  for (const matchUp of matchUps ?? []) {
+    const provenance = matchUp.sideExitProvenance;
+    if (!provenance) continue;
+    for (const sideNumber of [1, 2] as const) {
+      const entry = provenance[sideNumber];
+      if (entry?.sourceMatchUpId !== matchUpId || carriedExitStatus(entry) || !entry.previousMatchUpStatus) continue;
+      entry.previousMatchUpStatus = matchUpStatus;
+    }
+  }
+}
+
+/**
  * Remove provenance from a matchUp.
  *
  * NOT gated on the write mode. Every site that blanks `matchUpStatusCodes` must also clear this, or

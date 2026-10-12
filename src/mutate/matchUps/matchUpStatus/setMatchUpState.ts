@@ -4,6 +4,7 @@ import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/
 import { isDrawnResult, validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
+import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
@@ -966,6 +967,7 @@ function winningSideWithDownstreamDependencies(params) {
     const relabel = !!winningSide && winningSide === matchUp.winningSide && !params.isCollectionMatchUp;
     const result = applyMatchUpValues(params);
     if (result.error || !relabel) return result;
+    refreshArrivals(params);
     // a RELABEL with the winner already played on: nothing here directs the loser, so the exit it now
     // carries (or no longer carries) is settled on its own (CA, 2026-10-02)
     const relabelled = relabelWithoutDirection({

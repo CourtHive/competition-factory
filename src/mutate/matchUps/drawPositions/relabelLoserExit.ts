@@ -1,5 +1,4 @@
 import { removeOnwardLoserPlacements } from '@Mutate/matchUps/drawPositions/removeOnwardLoserPlacements';
-import { releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -13,6 +12,10 @@ import {
   withdrawProducedExits,
   carriedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  releaseAdvancedDrawPositionAcrossLinks,
+  releaseLinkedWinnerAdvancement,
+} from './releaseLinkedWinnerAdvancement';
 
 // constants and types
 import { BYE, COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
@@ -175,6 +178,21 @@ function unawardProducedExit(args: RelabelArgs, standing: HydratedMatchUp, loser
     drawDefinition: args.drawDefinition,
     matchUpsMap: args.matchUpsMap,
     occupantLeaving: true,
+    event: args.event,
+    drawPosition,
+  });
+  // ...AND ACROSS THE AWARD'S OWN WINNER LINK. The release above starts at the next round of this structure and asks a
+  // link only for the rounds it released; an award in a structure's LAST round releases none, so its winner stayed where
+  // the link had put them (census F2, DOUBLE_ELIMINATION 8/6, 20506968: Darwin won the Backdraw final by arriving at a
+  // pending produced walkover and crossed into the Main final; relabelled from RETIRED to DEFAULTED, his carry converged
+  // the Backdraw final, and he stayed in the Main final until a later correction was refused placing its real winner).
+  releaseLinkedWinnerAdvancement({
+    participantId: loserParticipantId,
+    tournamentRecord: args.tournamentRecord,
+    structureId: standing.structureId as string,
+    roundNumber: standing.roundNumber,
+    drawDefinition: args.drawDefinition,
+    matchUpsMap: args.matchUpsMap,
     event: args.event,
     drawPosition,
   });

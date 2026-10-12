@@ -1012,10 +1012,14 @@ function conditionallyAdvanceDrawPosition(params) {
   // describe it. Census 20099689 (FIRST_ROUND_LOSER_CONSOLATION 8/7, `doubleExitPropagateBye: false`): `Main|1|4`
   // re-scored from a played win to a DOUBLE_DEFAULT produced a DEFAULTED onto its old loser's seat in
   // `Consolation|1|2`, opposite `Main|1|3`'s walkover loser carrying their WALKOVER, and awarded it to that loser.
+  // The occupant's side as derived above, not only as a caller passed it: a double exit producing straight into its
+  // winner target passes none, and the carrier there was awarded the exit (census F2, DOUBLE_ELIMINATION 8/7,
+  // 20522496: Julian carried `Main|1|2`'s walkover into `Backdraw|3|1`, `Backdraw|2|1`'s double walkover then produced
+  // onto the other side, and Julian went on; a later correction was refused placing the real winner after him).
   const occupantCarriesExit =
     isExit(noContextTargetMatchUp.matchUpStatus) &&
-    !!params.walkoverWinningSide &&
-    !!carriedExitStatus(getSideExitProvenance({ matchUp: noContextTargetMatchUp })?.[params.walkoverWinningSide]);
+    !!walkoverWinningSide &&
+    !!carriedExitStatus(getSideExitProvenance({ matchUp: noContextTargetMatchUp })?.[walkoverWinningSide]);
   const existingExit =
     (isExit(noContextTargetMatchUp.matchUpStatus) && (!drawPositions.length || recordedExitAwaitingThisSeat)) ||
     occupantCarriesExit;
@@ -1612,6 +1616,22 @@ function convergeWithStandingExit({
   });
 }
 
+// the advancing position's occupant stands opposite the arriving exit and carries an exit of their own
+function occupantOppositeCarriesExit({
+  advancingParticipantId,
+  exitSideNumber,
+  occupiedSide,
+  matchUp,
+}: {
+  advancingParticipantId?: string;
+  exitSideNumber?: number;
+  occupiedSide?: number;
+  matchUp: MatchUp;
+}): boolean {
+  if (!advancingParticipantId || !exitSideNumber || occupiedSide !== 3 - exitSideNumber) return false;
+  return !!carriedExitStatus(getSideExitProvenance({ matchUp })?.[occupiedSide]);
+}
+
 function advanceByeAdvancedDrawPosition({
   nextWinnerMatchUpDrawPositions,
   nextWinnerMatchUpHasDrawPosition,
@@ -1757,15 +1777,27 @@ function advanceByeAdvancedDrawPosition({
      * winner to advance yet.
      */
     const pending = !advancingParticipantId && !!occupiedSide && !opponentPresent;
+    // ...OR THE PARTICIPANT STANDING OPPOSITE IS A CARRIER. Somebody who arrived carrying an exit of their own (RULE 2: the
+    // matchUp was decided for the seat awaiting them) has not won anything here; the exit arriving now meets theirs, and
+    // the two converge (RULE 4) exactly as on an empty seat. Read as an ordinary participant they were awarded the
+    // produced exit and advanced: census F2, DOUBLE_ELIMINATION 16/14 (20460396), Cimorene carried `Main|1|2`'s walkover
+    // into `Backdraw|3|2`, `Backdraw|1|3`'s double walkover then arrived past a BYE, she went on into `4|2`, and a later
+    // correction was refused seating the real winner there after the draw had been written.
+    const opponentCarriesExit = occupantOppositeCarriesExit({
+      matchUp: noContextNextWinnerMatchUp,
+      advancingParticipantId,
+      exitSideNumber,
+      occupiedSide,
+    });
 
     const converged = convergeWithStandingExit({
+      pending: pending || opponentCarriesExit,
       storedMatchUp: noContextNextWinnerMatchUp,
       arrivalSideNumber: exitSideNumber,
       inContextDrawMatchUps,
       nextWinnerMatchUp,
       drawDefinition,
       matchUpsMap,
-      pending,
       params,
       stack,
     });

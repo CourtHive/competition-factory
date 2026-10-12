@@ -1,7 +1,9 @@
 import { removeDirectedParticipants } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
+import { refreshArrivalsFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
 import { checkConnectedStructures } from './checkConnectedStructures';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { attemptToModifyScore } from './attemptToModifyScore';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { replaceQualifier } from './replaceQualifier';
@@ -10,6 +12,10 @@ import { placeQualifier } from './placeQualifier';
 // constants
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+
+// types
+import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import type { MatchUpsMap } from '@Types/factoryTypes';
 
 export function attemptToSetWinningSide(params) {
   const stack = 'attemptToSetWinningSide';
@@ -43,6 +49,7 @@ export function attemptToSetWinningSide(params) {
   const result = directParticipants(params);
   if (result.context?.progressExitStatus) Object.assign(context, result.context);
   if (result.error) return decorateResult({ result, stack });
+  if (matchUp.winningSide === winningSide) refreshArrivals(params);
 
   let qualifierReplaced, qualifierPlaced;
   if (params.qualifierChanging && appliedPolicies?.[POLICY_TYPE_PROGRESSION]?.autoReplaceQualifiers) {
@@ -74,4 +81,19 @@ export function attemptToSetWinningSide(params) {
     ),
     stack,
   });
+}
+
+// the same winner, re-directed into the seat they hold: the arrival they left onward follows the new result
+export function refreshArrivals({
+  drawDefinition,
+  matchUpsMap,
+  matchUp,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  matchUp: MatchUp;
+}): void {
+  const matchUps = (matchUpsMap ?? getMatchUpsMap({ drawDefinition }))?.drawMatchUps;
+  const stored = matchUps?.find((m) => m.matchUpId === matchUp.matchUpId);
+  refreshArrivalsFrom({ matchUpId: matchUp.matchUpId, matchUpStatus: stored?.matchUpStatus, matchUps });
 }
