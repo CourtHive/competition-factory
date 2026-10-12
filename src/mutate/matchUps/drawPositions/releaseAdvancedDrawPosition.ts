@@ -1,16 +1,16 @@
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { bringCarryHome, carryLeavingWith } from '@Mutate/matchUps/drawPositions/carryHome';
-import {
-  deriveExitStateFromProvenance,
-  getSideExitProvenance,
-  withdrawRelayedExit,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { isDoubleExit, isExit } from '@Validators/isExit';
+import {
+  deriveExitStateFromProvenance,
+  getSideExitProvenance,
+  withdrawRelayedExit,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
@@ -21,6 +21,9 @@ import { SUCCESS } from '@Constants/resultConstants';
 const RELEASABLE_STATUSES: (string | undefined)[] = [undefined, TO_BE_PLAYED, BYE];
 
 type ReleaseAdvancedDrawPositionArgs = {
+  /** the BYE this position passed has been taken back (`releaseHoldersByeFromTarget`): a matchUp onward decided only by
+   *  the carry leaving with the position, for a seat nobody holds, is released with it */
+  passedByeReleased?: boolean;
   /** the participant in this position has left it (see `releaseLinkedWinnerAdvancement`), so an exit awarded to
    *  their seat is held open for whoever arrives next, as it is for `withdrawingExit` */
   occupantLeaving?: boolean;
@@ -71,6 +74,7 @@ type ReleaseAdvancedDrawPositionArgs = {
  * compacting it does not move it.
  */
 export function releaseAdvancedDrawPosition({
+  passedByeReleased,
   occupantLeaving,
   tournamentRecord,
   fromRoundNumber,
@@ -151,9 +155,23 @@ export function releaseAdvancedDrawPosition({
     // not `3|1`, where a produced walkover waited; the walkover then arriving opposite could not converge with it, and
     // the seat it fed waited forever (`aReservationGoesPastTheByeItCrossed`). The exit itself stands, for whoever arrives.
     const pendingExit = withdrawingExit && !matchUp.winningSide && isExit(matchUp.matchUpStatus);
+    // ...and, once the BYE this position passed has been taken back, a matchUp decided ONLY by the carry leaving with it,
+    // for a seat nobody occupies yet, is no result of its own: RULE 2 awarded the empty seat because this occupant arrived carrying an exit, and nobody has gone on
+    // from it. The carry goes home below, and the decision with it (census F2, FEED_IN_CHAMPIONSHIP_TO_SF 16/16,
+    // 20501324: `Consolation|4|1` DEFAULTED for its empty fed seat by the default Jane carried past a BYE that has since
+    // gone). An award to a seat somebody holds is left alone: they may have gone on from it, which is a
+    // withdrawn exit's release (`releaseLinkedWinnerAdvancement`), not this one's.
+    const awardedPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
+    const decidedByLeavingCarry =
+      passedByeReleased &&
+      !!matchUp.winningSide &&
+      !!carriesLeaving.get(matchUp.matchUpId) &&
+      awardedPosition !== drawPosition &&
+      !(positionAssignments ?? []).find((assignment) => assignment.drawPosition === awardedPosition)?.participantId;
     if (
       !heldOpenForArrival &&
       !pendingExit &&
+      !decidedByLeavingCarry &&
       (matchUp.winningSide || !RELEASABLE_STATUSES.includes(matchUp.matchUpStatus))
     )
       continue;

@@ -371,6 +371,15 @@ that BYE from deciding anything:
 The two exits then converge into a double exit with an origin recorded on each side, and its produced exit waits in
 the next round with no position of its own, whichever of the two arrived first.
 
+### A carry past a BYE a holder takes back comes back with it
+
+CA's rule "the BYE stays; the exit travels" lets a holder's BYE position stand one round on until the exit it holds
+is sent there. Meanwhile a participant carrying an exit can meet that BYE and pass it (RULE 1). When the holder's
+exit is sent on and its BYE is taken back, whoever passed that BYE comes back with it, as with any BYE released from
+a matchUp. A matchUp onward that their carry alone decided, for a seat nobody occupies yet, is released with them:
+it was no result of its own. An award to a seat somebody holds is left alone, since they may have gone on from it;
+that is the withdrawn exit's own release.
+
 ### A carried exit is corrected at its origin
 
 Since 7.5.0. A carried or produced exit is not a result anybody recorded at the matchUp it reached,

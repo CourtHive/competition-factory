@@ -2500,6 +2500,25 @@ function releaseHoldersByeFromTarget({
   const derived = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp: stored }));
   stored.matchUpStatus = derived?.matchUpStatus ?? TO_BE_PLAYED;
   delete stored.winningSide;
+  // AND WHOEVER PASSED THAT BYE COMES BACK WITH IT, as for any BYE position released from a matchUp
+  // (`releaseAdvancedDrawPositionAcrossLinks`, `vacatedByes`). Standing opposite the other seat, the BYE made the target a
+  // BYE matchUp, and its occupant went on through it carrying their exit (RULE 1). The target now has no winner, so that
+  // advance had no result behind it. Census F2, FEED_IN_CHAMPIONSHIP_TO_SF 16/16 (20501324): Jane, carrying a default,
+  // passed the BYE in `Consolation|3|1` into `4|1`; the held exit took the seat back and the two exits converged, but she
+  // stayed in `4|1`, and the correction that later re-derived `3|1` was refused placing its real winner there.
+  for (const drawPosition of (stored.drawPositions ?? []).filter((position): position is number => !!position)) {
+    releaseAdvancedDrawPositionAcrossLinks({
+      fromRoundNumber: (nextWinnerMatchUp.roundNumber ?? 0) + 1,
+      structureId: fromMatchUp.structureId,
+      tournamentRecord: params.tournamentRecord,
+      passedByeReleased: true,
+      withdrawingExit: true,
+      event: params.event,
+      drawDefinition,
+      drawPosition,
+      matchUpsMap,
+    });
+  }
   modifyMatchUpNotice({
     tournamentId: params.tournamentRecord?.tournamentId,
     context: 'releaseHoldersByeFromTarget',
