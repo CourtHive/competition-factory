@@ -169,6 +169,10 @@ it('can SWAP assignment.bye with assignment.participantId with 32 drawSize', () 
 
   expect(assignmentNotifications.length).toEqual(2);
   expect(drawModifications).toEqual(2);
+
+  // remove the subscriber: left installed, it fired in every later test and compared updatedAt across
+  // different, freshly generated draws, an ordering the stamp never promised (only per draw)
+  globalState.setSubscriptions({ subscriptions: {} });
 });
 
 it('can SWAP assignment.bye with assignment.participantId', () => {
