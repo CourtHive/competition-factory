@@ -844,6 +844,21 @@ engine.setClock(); // default
 
 ---
 
+## setCompetitionClock
+
+Installs a **competition clock**: the source of "now" for the reads that decide something against it, such as whether an embargo has lifted, the live duration of a matchUp, and "today" for age-category and certification eligibility. Record stamps are not affected; they stay on [`setClock`](#setclock).
+
+Pass `{ nowMs: () => number }`; no argument removes it. Junk is refused with `INVALID_VALUES`. With none installed, competition time **is** record time, so nothing changes until a host installs one. A demo binds both to one source.
+
+Like `setClock`, each engine call reads it once before any method runs, and a provider that throws or returns a non-finite number refuses the call with `{ error: INVALID_DATE }` before anything is written. "Today" is the tournament's calendar day, in the zone `getTournamentTimeZone` resolves (UTC when it names none). An explicit `consideredDate` / `asOfDate` / `asOf` still wins.
+
+```js
+engine.setCompetitionClock({ nowMs: () => demoClock.now() });
+engine.setCompetitionClock(); // competition time follows setClock again
+```
+
+---
+
 ## outcomePipeline
 
 Chooses which implementation of the outcome pipeline (`setMatchUpStatus`) decides. `'v1'` is the original pipeline and the default. `'v2'` is the clean-room re-implementation written from the [outcome pipeline spec](/docs/concepts/outcome-pipeline#71-two-implementations-s2). `'differential'` runs both: v2 decides first, v1 runs, and a disagreement throws before anything is written.

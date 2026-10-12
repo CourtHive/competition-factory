@@ -76,6 +76,7 @@ export type ImplemtationGlobalStateTypes = {
   notices: Notice[];
   modified: boolean;
   capturedClock?: number; // epoch ms an outer engine call captured; see tools/clock.ts
+  capturedCompetitionClock?: number; // likewise, when a competition provider is installed
 };
 
 const globalState: GlobalStateTypes = {
@@ -280,6 +281,19 @@ export function getCapturedClock(): number | undefined {
 
 export function setCapturedClock(timeStamp?: number) {
   _globalStateProvider.setCapturedClock?.(timeStamp);
+}
+
+/**
+ * The competition instant an outer engine call captured, held only while a competition provider is
+ * installed (tools/clock.ts `setCompetitionClock`). Optional hooks like the two above; a provider
+ * without them makes competition reads go to the provider at each call.
+ */
+export function getCapturedCompetitionClock(): number | undefined {
+  return _globalStateProvider.getCapturedCompetitionClock?.();
+}
+
+export function setCapturedCompetitionClock(timeStamp?: number) {
+  _globalStateProvider.setCapturedCompetitionClock?.(timeStamp);
 }
 
 export function setSchemaWriteMode(mode?: SchemaWriteMode): {

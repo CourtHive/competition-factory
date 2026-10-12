@@ -1,7 +1,8 @@
+import { competitionUtcDate } from '@Query/tournaments/competitionToday';
+
 // Constants
 import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord, CertificationRequirement } from '@Types/officiatingTypes';
@@ -29,7 +30,8 @@ export function getOfficialEligibility({
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
 
   const reasons: string[] = [];
-  const checkDate = asOfDate ?? nowIso().split('T')[0];
+  // no tournament in scope (officiating runs in its own engine), so the competition's UTC date
+  const checkDate = asOfDate ?? competitionUtcDate();
 
   // Check for active suspensions
   const activeSuspensions = officialRecord.suspensions.filter((s) => {
