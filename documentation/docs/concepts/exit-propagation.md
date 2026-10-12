@@ -405,6 +405,22 @@ winning side is not._
   result, for the new loser of a winner change as for a status-only correction: an exit that is now one is
   carried, one that no longer is is withdrawn, and the draw is the one forward play reaches.
 
+### Two carried exits converge over what they carried
+
+CA, 2026-10-11 (census F2, P51). A carried exit decides the matchUp it reaches for the seat still awaiting its
+opponent (RULE 2), and its carrier goes on as that matchUp's loser, carrying the exit into the next structure
+and beyond. When the awaited participant then arrives carrying an exit of their own, the two exits meet (RULE 4):
+the matchUp becomes a double exit, and what the first exit carried onward is re-derived.
+
+Whether anything downstream blocks that convergence is asked the way a clear asks it (CA, 2026-09-25: only
+**genuinely active** downstream blocks, never **advanced active**), with one difference: a carried exit downstream
+is inert **even when its loser carried it on further**. Only a result somebody recorded below the meeting blocks it.
+Until 2026-10-11 a carry that went one hop further read as a played match, and the second walkover, a main-draw
+result, was refused although nobody had played anything below it.
+
+The result is the draw that recording the two exits in the other order leaves. A CLEAR of either exit's origin
+keeps the stricter reading: an origin whose carried walkover an unrelated arrival has since won is not clearable.
+
 ### A withdrawn exit releases the seat it won
 
 Since 7.5.0. A carried exit awards its seat to whoever stands opposite, and that winner may advance.

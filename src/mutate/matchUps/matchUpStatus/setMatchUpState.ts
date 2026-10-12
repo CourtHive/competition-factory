@@ -237,7 +237,13 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   }
 
   // the matchUp's targets and what depends on it; a malformed round link in either is the answer (CA, 2026-10-06)
-  const targets = getTargetsDownstream({ matchUpId: matchUpTieId || matchUpId, inContextDrawMatchUps, drawDefinition });
+  const targets = downstreamOf({
+    propagatingExit: params.propagatingExit,
+    matchUpId: matchUpTieId || matchUpId,
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpStatus,
+  });
   if (targets.error) return decorateResult({ result: targets, stack });
   const { targetData, activeDownstream } = targets;
 
@@ -604,6 +610,27 @@ function resolveMatchUpAndContext({
     matchUp,
     isTeam,
   };
+}
+
+/**
+ * The matchUp's targets and what depends on it. The cascade converging two exits asks only whether somebody PLAYED
+ * downstream (see `getTargetsDownstream`).
+ */
+function downstreamOf({
+  inContextDrawMatchUps,
+  propagatingExit,
+  drawDefinition,
+  matchUpStatus,
+  matchUpId,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  propagatingExit?: boolean;
+  matchUpStatus?: MatchUpStatusUnion;
+  matchUpId: string;
+}) {
+  const convergence = !!propagatingExit && isDoubleExit(matchUpStatus);
+  return getTargetsDownstream({ convergence, matchUpId, inContextDrawMatchUps, drawDefinition });
 }
 
 function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpStatus, winningSide, matchUp }) {
