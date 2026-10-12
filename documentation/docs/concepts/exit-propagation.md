@@ -352,6 +352,25 @@ produced or carried exit, the position it held is read as the exit's opposite, b
 position — so the exit survives the removal even where the structure can no longer place the position
 and the BYE's own arrival record is gone (census 20209866, FIRST_MATCH_LOSER_CONSOLATION 8/7).
 
+### Two held exits meet past their own BYEs
+
+CA, 2026-10-11 (P54). A held exit is one standing beside a BYE with nobody in it, waiting to be sent on. When the two
+feeders of a matchUp are both holders, their exits meet there (RULE 4) and the double exit produces onward. A
+holder's own BYE position can already stand in that matchUp, advanced there while its seat was empty. Two rules keep
+that BYE from deciding anything:
+
+- **A BYE the other holder left is not one this exit passes.** The exit behind that BYE is coming to the same seat
+  (the BYE stays; the exit travels), so the first exit lands there pending rather than being carried through into the
+  next round.
+- **The target is read again once the holder's BYE has gone.** With both positions present a side is read as the
+  lower drawPosition ([drawPositions](./draw-positions.md)); when the arriving holder's BYE is taken out, the position
+  that stays reads its own side and carries its entry with it. The arriving exit's side, who stands opposite it and
+  whether that opponent is awarded the exit are all read from the target as the release left it: a participant who
+  stands there wins the exit at once, as on any arrival.
+
+The two exits then converge into a double exit with an origin recorded on each side, and its produced exit waits in
+the next round with no position of its own, whichever of the two arrived first.
+
 ### A carried exit is corrected at its origin
 
 Since 7.5.0. A carried or produced exit is not a result anybody recorded at the matchUp it reached,
