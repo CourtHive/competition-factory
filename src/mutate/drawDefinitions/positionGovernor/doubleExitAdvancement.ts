@@ -2180,8 +2180,10 @@ function carryExitOnward({
    * `isAnyExit` is retained unchanged: two exits MEETING is a convergence, which
    * `progressExitStatus` RULE 4 owns rather than this carrier.
    */
+  // occupied by somebody other than the holder's own occupant, who passed its BYE and takes the exit with them
+  const holderOccupantId = fromMatchUp.sides?.find((side) => side.participantId)?.participantId;
   const arrivingSideOccupied = !!nextWinnerMatchUp.sides?.some(
-    (side) => side?.sideNumber === arrivalSideNumber && side?.participantId,
+    (side) => side?.sideNumber === arrivalSideNumber && side?.participantId && side.participantId !== holderOccupantId,
   );
   if (!arrivingSideOccupied) {
     const released = releaseHoldersByeFromTarget({
@@ -3252,6 +3254,29 @@ function opponentFeederHoldsAnExit({
 }
 
 type HeldExit = { holder: HydratedMatchUp; origin: SideExitProvenanceEntry };
+/** the held entry's origin is, right now, a double exit: what it produced is still owed onward */
+function originStillProduces({ origin, matchUpsMap }: { origin: SideExitProvenanceEntry; matchUpsMap: MatchUpsMap }) {
+  const source = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === origin.sourceMatchUpId);
+  return isDoubleExit(source?.matchUpStatus);
+}
+
+/** the holder's occupant now stands at the target's arrival seat, and records no exit of their own there */
+function passedCarryingNothing({
+  arrivalSideNumber,
+  matchUpsMap,
+  occupantId,
+  target,
+}: {
+  arrivalSideNumber: number;
+  target: HydratedMatchUp;
+  matchUpsMap: MatchUpsMap;
+  occupantId: string;
+}): boolean {
+  const seated = target.sides?.find((side) => side.sideNumber === arrivalSideNumber)?.participantId;
+  if (seated !== occupantId) return false;
+  const storedTarget = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === target.matchUpId);
+  return !carriedExitStatus(getSideExitProvenance({ matchUp: storedTarget })?.[arrivalSideNumber]);
+}
 
 function getHeldExit({
   inContextDrawMatchUps,
@@ -3265,7 +3290,7 @@ function getHeldExit({
   matchUp: HydratedMatchUp;
 }): HeldExit | undefined {
   if (matchUp.collectionId || matchUp.winningSide || !matchUp.winnerMatchUpId) return undefined;
-  if (matchUp.sides?.some((side) => side.participantId)) return undefined;
+  const occupantId = matchUp.sides?.find((side) => side.participantId)?.participantId;
   if (!matchUpHoldsBye({ drawDefinition, matchUp })) return undefined;
 
   const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === matchUp.matchUpId);
@@ -3282,7 +3307,18 @@ function getHeldExit({
     inContextDrawMatchUps,
   });
   if (!arrivalSideNumber) return undefined;
-  if (target.sides?.some((side) => side.sideNumber === arrivalSideNumber && side.participantId)) return undefined;
+  const seated = target.sides?.find((side) => side.sideNumber === arrivalSideNumber)?.participantId;
+  // A participant who has already passed the BYE carrying no exit of their own takes the held exit with them: the BYE
+  // stays and the exit travels to the seat, whoever reaches it first (CA, "the BYE stays; the exit travels"). Declined,
+  // the order of arrival decided the draw: a carry that passed the BYE and was later withdrawn took the held exit's
+  // place at the seat, and the exit never travelled (census policy-off 20500008, COMPASS 16/16 `South|1|2`: River's
+  // default relabelled as played left `South|2|1` a single WALKOVER where entering the win directly converges it).
+  if (occupantId && !passedCarryingNothing({ target, arrivalSideNumber, occupantId, matchUpsMap })) return undefined;
+  // ...and what travels with them is a double exit's produced exit, still produced: an entry the occupant's own carry
+  // left beside the BYE names an origin of theirs, and once that origin is played it is nothing to relay (census
+  // 20267598, `aLateByesCarryNamesItsOrigin`: Evelyn's withdrawn walkover re-converged `Consolation|3|2`)
+  if (occupantId && !originStillProduces({ origin, matchUpsMap })) return undefined;
+  if (seated && seated !== occupantId) return undefined;
   // A target already decided is not this exit's — except one decided only by an exit AWARDING the seat the held exit
   // travels to: a carrier who arrived first and won nobody (census policy-off 20161035 and 20117658,
   // FIRST_MATCH_LOSER_CONSOLATION 16/11), or a produced exit standing opposite with nobody behind it (20147820,

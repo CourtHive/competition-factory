@@ -284,6 +284,15 @@ Three rules fell out of making this hold, each a defect that only the order of e
 - **A produced exit arrives on the side its seat already holds.** Where fed seat numbers
   interleave with advanced ones, feeder order predicts the wrong side; when the target already
   holds both seats, the seat's own side is read.
+- **A convergence a correction dissolves settles as the kept exit alone would leave it.** Re-entering
+  an exit as a played win for the same winner withdraws the loser's carried exit, and a double exit it
+  had converged into falls back to the other exit. The withdrawn side's reason code goes with its exit;
+  the kept side's stays. A kept produced exit that reached the matchUp **past a BYE**, with nobody yet
+  in the seat it would be awarded to, lands pending as it does on the direct path (no winner until
+  somebody arrives); one that came straight down its link keeps its award to that seat. And a
+  participant who has already passed a BYE, carrying no exit of their own, takes the exit that BYE
+  holds with them, whichever reached the seat first: the BYE stays, the exit travels (census policy-off
+  20466254, 20488568, 20500008 and 20520641 — COMPASS, OLYMPIC and CURTIS_CONSOLATION).
 - **A re-score that keeps the winner rewrites what that winner's arrival says.** A winner who reached a
   produced exit records how they won the matchUp they came from. Correcting that matchUp to another
   result for the same winner (a default to a played win, say) rewrites the record, so it reads what
