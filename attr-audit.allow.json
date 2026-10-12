@@ -23,6 +23,7 @@
   "LIGHT",
   "LOCKED",
   "loserMatchUpIds",
+  "loserSides",
   "matchups",
   "matchUpStats",
   "modifyParticipant",

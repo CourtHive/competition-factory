@@ -432,10 +432,28 @@ winning side is not._
 - **Refused, over an untouched draw** (`CANNOT_CHANGE_OUTCOME`, row 22 of the outcome pipeline): a correction
   from an exit to a played result or the reverse, by a winner change or a status-only correction alike,
   once the loser's path holds a recorded result.
+- **One structure on.** Where the loser's loss carried their exit into a matchUp it decided for whoever
+  stood opposite, a result that winner then recorded onward counts as recorded on the loser's path. Census
+  20496362 (OLYMPIC 16/16): Italo's walkover carried into `South|1|2` was Uhura's award, and Uhura then beat
+  Nicole in `South|2|1`. Re-entering `East|1|7` as a played win is refused; before, it withdrew the carry
+  and left Uhura in a recorded result over an undecided matchUp.
+- **A bare win is played.** A correction naming the same winner with no status and no score records
+  COMPLETED, so a walkover re-entered that way changes its kind, and the guard reads it so.
 - **Accepted**: a winner change that keeps the kind — the recorded result becomes the new loser's — and any
   correction where nothing downstream is recorded. Then the carried exit is re-derived from the corrected
   result, for the new loser of a winner change as for a status-only correction: an exit that is now one is
   carried, one that no longer is is withdrawn, and the draw is the one forward play reaches.
+
+### An exit arriving at a seat already decided for it is carried past
+
+CA, 2026-10-11 (P51 group 2): a participant carrying an exit into a matchUp that another exit has already
+decided for the seat awaiting them is carried past it. Two exits meeting would ordinarily converge (RULE 4),
+but where a result somebody recorded stands below that matchUp, the convergence would take it back. So the
+arrival takes the seat the decided exit was awaiting, goes on to that matchUp's winner matchUp, and carries
+their own exit on from there, as past a BYE (RULE 1). The decided matchUp and the results below it stand.
+Where nothing recorded stands below, the two exits converge as before. Census 20496362 (OLYMPIC 16/16,
+`allowChangePropagation`): America's walkover arriving at `West|1|4`, decided by Italo's walkover, was
+refused after the draw had been written.
 
 ### Two carried exits converge over what they carried
 

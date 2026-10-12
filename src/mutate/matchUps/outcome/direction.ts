@@ -1,6 +1,7 @@
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import {
   BYE,
   DEAD_RUBBER,
@@ -11,7 +12,6 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 
 import type { DirectionPlan, OutcomeRequest, OutcomeView, Route, WithdrawnCarry } from './types';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
@@ -62,8 +62,12 @@ function planLoser(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2)
   const carried = arrives ? carriedExit(request, view) : undefined;
   // the carried exit meets one already there (its status, or carried in on the other side): they converge
   const standing = view.targets.loserMatchUpCarriedStatuses; // this matchUp's own product excluded
-  const exit = carried && standing.length ? undefined : carried;
-  const converged = carried && standing.length ? convergence([carried, ...standing]) : undefined;
+  // ...unless the exit standing there decided the seat awaiting the loser, over a result recorded below: the
+  // arrival takes that seat and carries their exit past it (P51 group 2)
+  const carriedPast = carried && view.targets.loserMatchUpDecidedForArrival ? carried : undefined;
+  const meets = !carriedPast && standing.length > 0;
+  const exit = carriedPast || meets ? undefined : carried;
+  const converged = carried && meets ? convergence([carried, ...standing]) : undefined;
   const withdrawn = arrives && !carried ? withdrawnCarry(request, view) : undefined;
   return {
     matchUpId,
@@ -72,6 +76,7 @@ function planLoser(request: OutcomeRequest, view: OutcomeView, loserSide: 1 | 2)
     ...(bye ? { bye } : {}),
     ...(exit ? { exit } : {}),
     ...(converged ? { converged } : {}),
+    ...(carriedPast ? { carriedPast } : {}),
     ...(withdrawn ? { withdrawn } : {}),
   };
 }
@@ -172,7 +177,7 @@ function planProducedExit(request: OutcomeRequest, view: OutcomeView): Direction
 function planSwap(request: OutcomeRequest, view: OutcomeView): DirectionPlan | undefined {
   const plan = planDirection(request, view, 'winner');
   if (!plan?.loser) return plan;
-  const { exit: _exit, converged: _converged, ...loser } = plan.loser;
+  const { exit: _exit, converged: _converged, carriedPast: _carriedPast, ...loser } = plan.loser;
   return { ...plan, loser };
 }
 

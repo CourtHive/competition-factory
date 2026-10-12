@@ -207,7 +207,14 @@ After the write, and only on success:
    withdraws the exit it carried there. Where that matchUp already has a result a director recorded, or
    the winner of the carried exit has played on from it (counting past any BYEs they were advanced
    through), the correction is refused before anything is written (row 22, P52): a recorded result
-   downstream fixes whether the origin's outcome is an exit or a played result. A **winner change**
+   downstream fixes whether the origin's outcome is an exit or a played result. The same holds one
+   structure on: where the loser's loss carried their exit into a matchUp it decided for whoever stood
+   opposite, a result that winner has recorded onward counts too (census 20496362). A correction that
+   names the same winner with no status and no score is a played result (COMPLETED), as the write
+   records it, so re-entering a walkover as a bare win changes its kind. An exit carried into a
+   matchUp that another exit already decided for the seat awaiting the loser, with a result recorded
+   below it, is **carried past** that matchUp as past a BYE: the loser takes the seat, goes on to its
+   winner matchUp, and carries the exit on from there (P51 group 2, CA 2026-10-11). A **winner change**
    (a flip) relabels the old loser's place onto the new loser, and their carried exit is re-derived
    from the corrected result in the same way, so a corrected draw is the one forward play reaches. Both apply whether or not the relabelled matchUp's own winner has
    played on since. Where the carried exit had converged with another, only this origin's entry is

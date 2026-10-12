@@ -1305,7 +1305,6 @@ function correctionKindRefusal({
     matchUpStatus: params.matchUpStatus,
     winningSide: params.winningSide,
     inContextDrawMatchUps,
-    score: params.score,
     inContextMatchUp,
     drawDefinition: params.drawDefinition,
     matchUp,

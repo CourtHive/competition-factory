@@ -416,8 +416,25 @@ export function loserPlayedOn(
       onward.has(matchUp.structureId as string) &&
       matchUp.sides?.some((side) => side?.participantId === participantId) &&
       hasResult(matchUp) &&
-      !carriedFrom(matchUp, participantId),
+      (!carriedFrom(matchUp, participantId) || carryPlayedOn(matchUp, matchUps, drawDefinition)),
   );
+}
+
+/**
+ * Where the participant only CARRIED an exit in, the matchUp is the cascade's award to whoever stood opposite, and
+ * that winner may have gone on and recorded a result: the same question the matchUp the loser stands in is asked
+ * (`winnerPlayedOn`), one structure on. Census 20496362 (OLYMPIC 16/16, `allowChangePropagation`): Italo's walkover
+ * carried through `West|1|4` into `South|1|2` was Uhura's award, and Uhura then beat Nicole in `South|2|1`.
+ * Relabelling `East|1|7`'s walkover as played withdrew the carry and left her standing in a recorded result over
+ * an undecided matchUp. A walk that cannot read the draw counts as played on, as the guard reads it.
+ */
+function carryPlayedOn(
+  matchUp: HydratedMatchUp,
+  matchUps: HydratedMatchUp[] | undefined,
+  drawDefinition: DrawDefinition,
+) {
+  const onward = winnerPlayedOn(matchUp, matchUps, drawDefinition);
+  return !!onward.error || !!onward.playedOn;
 }
 
 /** the participant's own side of this matchUp was carried in: the exit is the cascade's, not a result they earned */
