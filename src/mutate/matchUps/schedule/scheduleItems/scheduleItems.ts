@@ -20,9 +20,9 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findParticipant } from '@Acquire/findParticipant';
 import { isConvertableInteger } from '@Tools/math';
+import { competitionNow } from '@Tools/clock';
 import { ensureInt } from '@Tools/ensureInt';
 import { isString } from '@Tools/objects';
-import { now } from '@Tools/clock';
 import {
   convertTime,
   dateStringDaysChange,
@@ -89,7 +89,7 @@ function allocatedCourtIds(value: MatchUpSchedule['allocatedCourts']): string[] 
 
 function timeDate(value, scheduledDate) {
   const time = validTimeString.test(value) ? value : extractTime(value);
-  const date = extractDate(value) || extractDate(scheduledDate) || formatDate(now());
+  const date = extractDate(value) || extractDate(scheduledDate) || formatDate(competitionNow());
 
   // doesn't matter if this is invalid due to undefined time because this is used for sorting only
   return new Date(`${date}T${time}`).getTime();

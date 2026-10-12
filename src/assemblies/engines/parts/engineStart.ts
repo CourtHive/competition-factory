@@ -1,5 +1,6 @@
 import { buildQueryFacade, buildFacade, createEventBus, inspect, dryRun, explain } from '@Forge/index';
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
+import { setClock, setCompetitionClock, type CompetitionTimeProvider } from '@Tools/clock';
 import { methodImporter } from '@Assemblies/engines/parts/methodImporter';
 import { processResult } from '@Assemblies/engines/parts/processResult';
 import { factoryVersion } from '@Functions/global/factoryVersion';
@@ -32,7 +33,6 @@ import {
 // constants and types
 import { SUCCESS } from '@Constants/resultConstants';
 import { FactoryEngine } from '@Types/factoryTypes';
-import { setClock } from '@Tools/clock';
 
 export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
   engine.importMethods = (methods, collections, depth, global) =>
@@ -81,6 +81,10 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
   };
   engine.setClock = (clock) => {
     const result = setClock(clock);
+    return processResult(engine, result);
+  };
+  engine.setCompetitionClock = (provider?: CompetitionTimeProvider) => {
+    const result = setCompetitionClock(provider);
     return processResult(engine, result);
   };
   engine.newTournamentRecord = (params = {}) => {

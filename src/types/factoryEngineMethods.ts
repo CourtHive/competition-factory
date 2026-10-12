@@ -662,6 +662,7 @@ export type FactoryEngineMethod =
   | 'ScoringEngine'
   | 'seedWithdrawalCascade'
   | 'setClock'
+  | 'setCompetitionClock'
   | 'setCompetitionProfile'
   | 'setDelegatedOutcome'
   | 'setDrawOtherIds'
@@ -1437,6 +1438,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'ScoringEngine',
   'seedWithdrawalCascade',
   'setClock',
+  'setCompetitionClock',
   'setCompetitionProfile',
   'setDelegatedOutcome',
   'setDrawOtherIds',

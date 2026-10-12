@@ -1,4 +1,9 @@
-import { getCapturedClock, setCapturedClock } from '@Global/state/globalState';
+import {
+  getCapturedClock,
+  getCapturedCompetitionClock,
+  setCapturedClock,
+  setCapturedCompetitionClock,
+} from '@Global/state/globalState';
 
 // constants
 import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -79,22 +84,85 @@ function readSource(): { ms: number } | ClockError {
 }
 
 /**
+ * Competition time — "now" at the competition, for the reads that DECIDE something against it
+ * (live duration, embargoes, publication windows, "today" for eligibility), as opposed to the
+ * stamps written into records above. Slice 0-d.1 of Mentat/planning/COMPETITION_CLOCK_INSTRUMENTATION.md.
+ *
+ * With no provider installed (the default, and every run today) competition time IS record time:
+ * `competitionNow()` returns exactly what `now()` returns, captured instant included. A host that
+ * installs one with `setCompetitionClock({ nowMs })` moves only the competition reads; record stamps
+ * stay on `setClock`. A demo binds both to one source. The two disagreeing in a live mutation
+ * session is not supported (see the plan's activation gate).
+ *
+ * Synchronous and numeric on purpose: the plan's provider contract is `{ nowMs(): number }`, so a
+ * Temporal migration changes nothing here.
+ */
+export type CompetitionTimeProvider = { nowMs(): number };
+
+let competitionProvider: CompetitionTimeProvider | undefined;
+
+export function setCompetitionClock(provider?: CompetitionTimeProvider): { success?: boolean; error?: ErrorType } {
+  if (provider === undefined) {
+    competitionProvider = undefined;
+    return { ...SUCCESS };
+  }
+  if (typeof provider?.nowMs !== 'function') return { error: INVALID_VALUES };
+  competitionProvider = provider;
+  return { ...SUCCESS };
+}
+
+// One validated read of the installed competition provider. Never throws.
+function readCompetition(provider: CompetitionTimeProvider): { ms: number } | ClockError {
+  let ms: unknown;
+  try {
+    ms = provider.nowMs();
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return { error: INVALID_DATE, message: `the competition clock threw: ${reason}` };
+  }
+  if (typeof ms !== 'number' || !Number.isFinite(ms)) {
+    return { error: INVALID_DATE, message: 'the competition clock returned an invalid instant' };
+  }
+  return { ms };
+}
+
+/**
+ * Read and validate every configured source ONCE, and hold the instants for the call: record time
+ * always, competition time when a provider is installed. `release` restores "nothing captured".
+ */
+function beginCapture(): { timeStamp: number; release: () => void } | ClockError {
+  const record = readSource();
+  if ('error' in record) return record;
+  const competition = competitionProvider && readCompetition(competitionProvider);
+  if (competition && 'error' in competition) return competition;
+
+  setCapturedClock(record.ms);
+  if (competition) setCapturedCompetitionClock(competition.ms);
+  return {
+    timeStamp: record.ms,
+    release: () => {
+      setCapturedClock(undefined);
+      setCapturedCompetitionClock(undefined);
+    },
+  };
+}
+
+/**
  * Run `fn` at one captured instant, passed to it as `timeStamp`. Nested calls reuse the outer
  * instant; the outermost call restores "nothing captured" when `fn` returns or throws. A source
- * that cannot produce a valid instant is refused before `fn` runs.
+ * that cannot produce a valid instant is refused before `fn` runs, and so is an installed
+ * competition provider that cannot.
  */
 export function withCapturedClock<T>(fn: (timeStamp: number) => T): T | ClockError {
   const captured = getCapturedClock();
   if (captured !== undefined) return fn(captured);
 
-  const read = readSource();
-  if ('error' in read) return read;
-
-  setCapturedClock(read.ms);
+  const capture = beginCapture();
+  if ('error' in capture) return capture;
   try {
-    return fn(read.ms);
+    return fn(capture.timeStamp);
   } finally {
-    setCapturedClock(undefined);
+    capture.release();
   }
 }
 
@@ -103,14 +171,12 @@ export async function withCapturedClockAsync<T>(fn: (timeStamp: number) => Promi
   const captured = getCapturedClock();
   if (captured !== undefined) return fn(captured);
 
-  const read = readSource();
-  if ('error' in read) return read;
-
-  setCapturedClock(read.ms);
+  const capture = beginCapture();
+  if ('error' in capture) return capture;
   try {
-    return await fn(read.ms);
+    return await fn(capture.timeStamp);
   } finally {
-    setCapturedClock(undefined);
+    capture.release();
   }
 }
 
@@ -132,4 +198,24 @@ export function nowIso(): string {
 /** The current instant as epoch milliseconds, for sites that compare or bump timestamps. */
 export function nowMs(): number {
   return now().getTime();
+}
+
+/**
+ * "Now" at the competition: the instant captured for the engine call when a competition provider is
+ * installed, else the provider read at the call, else exactly `now()`. Outside an engine call, a
+ * provider that cannot produce a valid instant throws, as `now()` does for its own source.
+ */
+export function competitionNow(): Date {
+  const captured = getCapturedCompetitionClock();
+  if (captured !== undefined) return new Date(captured);
+  if (!competitionProvider) return now();
+
+  const read = readCompetition(competitionProvider);
+  if ('error' in read) throw new Error(read.message);
+  return new Date(read.ms);
+}
+
+/** Competition time as epoch milliseconds, for comparisons. */
+export function competitionNowMs(): number {
+  return competitionNow().getTime();
 }

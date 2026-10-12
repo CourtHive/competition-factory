@@ -34,6 +34,8 @@ export default {
   cycleMutationStatus,
   getCapturedClock,
   setCapturedClock,
+  getCapturedCompetitionClock,
+  setCapturedCompetitionClock,
   deleteNotice,
   deleteNotices,
   disableNotifications,
@@ -60,6 +62,14 @@ export function getCapturedClock(): number | undefined {
 
 export function setCapturedClock(timeStamp?: number): void {
   syncGlobalState.capturedClock = timeStamp;
+}
+
+export function getCapturedCompetitionClock(): number | undefined {
+  return syncGlobalState.capturedCompetitionClock;
+}
+
+export function setCapturedCompetitionClock(timeStamp?: number): void {
+  syncGlobalState.capturedCompetitionClock = timeStamp;
 }
 
 export function disableNotifications(): void {
