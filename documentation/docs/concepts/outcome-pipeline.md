@@ -219,7 +219,8 @@ After the write, and only on success:
    from the corrected result in the same way, so a corrected draw is the one forward play reaches. Both apply whether or not the relabelled matchUp's own winner has
    played on since. Where the carried exit had converged with another, only this origin's entry is
    withdrawn and the matchUp re-derives to the kept exit (its carrier directed on, or — a produced
-   exit — won by the relabelled loser, who goes on); and a loser who had won a produced exit on
+   exit — won by the relabelled loser, who goes on; a produced exit relayed past a BYE, with nobody in the
+   seat it would be awarded to, stays pending, and the withdrawn side's reason code goes with its exit); and a loser who had won a produced exit on
    arrival has that award taken back when the origin becomes an exit again, so the exit converges as
    it would have at first entry (7.7.0; [exit propagation](./exit-propagation.md#a-relabel-out-of-a-convergence-and-back-into-one)).
 3. **Round robin tally** is recomputed when the matchUp is in a group (`updateTallyIfNeeded`).
@@ -230,7 +231,9 @@ After the write, and only on success:
    5 run only when the call was accepted (§ 6). Until 2026-10-11 the reconciliation read a deep copy
    carried in the call's context: what it wrote was lost, and the next call repaired the origin, a
    refused call included (census family F2).
-5. **The draw is settled**: held exits are released (`settleHeldExits`), and a final that feeds a
+5. **The draw is settled**: held exits are released (`settleHeldExits`), including to a participant
+   who already passed the BYE holding them and carries no exit of their own (only an exit whose
+   origin is still a double exit travels this way), and a final that feeds a
    decider settles whether the decider is needed (`reconcileDeciders`) when a final's winner changed,
    or when the cascade moved a decider while the final's winner stayed put (7.8.0). A mutation OF the
    decider never triggers it, so a decider played anyway keeps its result; in a TEAM draw a line of the

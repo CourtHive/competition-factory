@@ -400,6 +400,21 @@ export function blankExitCodes(matchUp: MatchUp): void {
 }
 
 /**
+ * Blank ONE side's exit reason code — its slot in the positional `matchUpStatusCodes` and its `sideStatusCodes` entry —
+ * for a side whose exit was withdrawn while the other side's still stands. The kept exit's code stays where it is
+ * (`aWithdrawnExitTakesItsCode`).
+ */
+export function blankSideExitCode(matchUp: MatchUp, sideNumber: number): void {
+  const codes = matchUp.matchUpStatusCodes;
+  if (codes?.[sideNumber - 1] !== undefined) codes[sideNumber - 1] = '';
+  if (codes?.every((code) => !code)) matchUp.matchUpStatusCodes = [];
+  const sideCodes = matchUp.sideStatusCodes;
+  if (sideCodes?.[sideNumber] === undefined) return;
+  delete sideCodes[sideNumber];
+  if (!Object.keys(sideCodes).length) delete matchUp.sideStatusCodes;
+}
+
+/**
  * Clear provenance ONLY when the matchUp is no longer an exit.
  *
  * `clearSideExitProvenance` is unconditional, which is right where the caller has just collapsed the
