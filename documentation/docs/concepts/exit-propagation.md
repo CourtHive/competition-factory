@@ -464,6 +464,11 @@ Where nothing recorded stands below, the two exits converge as before. Census 20
 `allowChangePropagation`): America's walkover arriving at `West|1|4`, decided by Italo's walkover, was
 refused after the draw had been written.
 
+The carry past comes back with its origin. Re-entering the carrier's own exit as a played result
+withdraws their carry from where it was written, the winner matchUp they went on to, not from the
+decided matchUp they passed; the draw is then the one the played result entered first leaves (in the
+same seed, `West|2|2` returns to a match to be played and its walkover's winner is released onward).
+
 ### Two carried exits converge over what they carried
 
 CA, 2026-10-11 (census F2, P51). A carried exit decides the matchUp it reaches for the seat still awaiting its

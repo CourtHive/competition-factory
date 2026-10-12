@@ -6,8 +6,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
-import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OLYMPIC } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -29,8 +29,15 @@ import { OLYMPIC } from '@Constants/drawDefinitionConstants';
  * over an undecided `South|1|2`. The result recorded by the winner of the loser's carried award, one structure on,
  * blocks a change of kind exactly as one recorded where the loser stands does: refused, over an untouched draw.
  *
+ * And the carry past comes back with its origin. Re-entering America's `East|1|8` walkover as a played loss withdraws
+ * her carry, and it was written where she carried it, in `West|2|2`, not in `West|1|4`, which she passed. Looked for
+ * only in the earliest matchUp holding her, it was never withdrawn: `West|2|2` stayed a WALKOVER for Nikola, who stood
+ * on in `West|3|1`, though America no longer walked over anything. The corrected draw is now the one the played loss
+ * entered first leaves (`carriedPastStanding`).
+ *
  * Falsified: without `carryPastDecidedMatchUp` the walkover is refused after writing; without `carryPlayedOn` the
- * relabel is accepted and leaves Uhura advanced from an undecided matchUp.
+ * relabel is accepted and leaves Uhura advanced from an undecided matchUp; without `carriedPastStanding` the carry
+ * stays in `West|2|2`.
  */
 const key = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
 const CONFIG = { drawType: OLYMPIC, propagateExitStatus: true, participantsCount: 16, drawSize: 16, seed: 20496362 };
@@ -99,4 +106,28 @@ it('a relabel that would take back an award whose winner played on is refused ov
   expect(refused.error).toEqual(CANNOT_CHANGE_OUTCOME);
   expect(refused.mutated).toEqual(false);
   consistent('relabel');
+});
+
+it('a carry past a decided seat is withdrawn where it was written when its origin is played', () => {
+  const summary = (drawId: string) =>
+    ['West|1|4', 'West|2|2', 'West|3|1'].map((coordinates) => {
+      const matchUp = at(drawId, coordinates);
+      return [matchUp.matchUpStatus, matchUp.winningSide, participantIds(matchUp)];
+    });
+
+  play('entered');
+  expect(apply('entered', ['East|1|8', { winningSide: 1 }]).error).toBeUndefined();
+  const entered = summary('entered');
+
+  play('withdrawn');
+  expect(apply('withdrawn', ['East|1|8', { matchUpStatus: WALKOVER, winningSide: 1 }]).error).toBeUndefined();
+  expect(at('withdrawn', 'West|2|2').matchUpStatus).toEqual(WALKOVER);
+  const relabelled = apply('withdrawn', ['East|1|8', { winningSide: 1 }]);
+  expect(relabelled.error).toBeUndefined();
+
+  const twoTwo = at('withdrawn', 'West|2|2');
+  expect(twoTwo.matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(twoTwo.winningSide).toBeUndefined();
+  expect(summary('withdrawn')).toEqual(entered);
+  consistent('withdrawn');
 });
