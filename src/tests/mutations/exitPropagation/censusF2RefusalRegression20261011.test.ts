@@ -42,6 +42,11 @@ import fs from 'fs';
  * deep-copies a context (`aSettleReadsTheDrawItLeft`). None exposes another property behind it. SETTLE-B's two seeds
  * close as refusals; the held exits that fail to converge there are recorded in the planning record.
  *
+ * **OTHER: both FEED_IN_CHAMPIONSHIP_TO_SF instances and DOUBLE_ELIMINATION 20496331 closed** (2026-10-12): a carried
+ * exit that passed a BYE a holder later took back comes back with it, and a matchUp onward decided only by that carry,
+ * for an unoccupied seat, is released with it (`releaseHoldersByeFromTarget`, `passedByeReleased`;
+ * `aCarryPastAReleasedByeComesBack`). None exposes another property behind it.
+ *
  * ## OPEN — the instances that still refuse after writing, by group
  *
  * The instances failing `ERROR_IMPLIES_NO_MUTATION` with their recorded code must EQUAL these lists, each in its own
@@ -54,14 +59,10 @@ const OPEN: Record<string, Set<string>> = {
   'P51-CONVERGENCE': new Set([]),
   OTHER: new Set([
     'off:20460396',
-    'off:20496331',
-    'off:20501324',
     'on:20480411',
     'on:20490105',
     'policyoff:20460396',
-    'policyoff:20473821',
     'policyoff:20477784',
-    'policyoff:20496331',
     'policyoff:20506968',
     'policyoff:20522496',
     'policyoff:20537779',
