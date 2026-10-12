@@ -28,13 +28,14 @@ import fs from 'fs';
  * - **P51-CONVERGENCE** (10 seeds, 24 instances, one per seed held here): nothing below the convergence was played;
  *   only carried exits stood there. Closed by the 2026-09-25 rule applied to convergence
  *   (`aConvergenceIsNotBlockedByWhatItCarried`).
- * - **P51-PLAYED** (1 seed, OLYMPIC `on`:20496362): a match recorded with two participants stands below. Not held
- *   here: under the checkpoint differential it throws a divergence, not a refusal, so it joins with CA's (b) — the
- *   arrival is carried past the matchUp the exit decided while awaiting it.
+ * - **P51-PLAYED** (1 seed, OLYMPIC `on`:20496362): a match recorded with two participants stands below. Held here
+ *   since CA's (b) landed in v1 and v2 alike: the arrival is carried past the matchUp the exit decided while
+ *   awaiting it (`aCarryIsCarriedPastADecidedSeat`), and the P52 guard behind it reads a result recorded by the
+ *   winner of the loser's carried award, one structure on. It replays clean.
  *
  * This fixture holds 47, sized for CI: every SETTLE-B and OTHER instance, up to three SETTLE-A instances per draw type
- * (the smallest), seeds 20504956 and 20523724, and one instance of each P51-CONVERGENCE seed. All 92 are in
- * `Mentat/fixtures/exit-propagation-census/census-fails-s1{3,4}.jsonl`; the planning record is
+ * (the smallest), seeds 20504956 and 20523724, one instance of each P51-CONVERGENCE seed, and the P51-PLAYED instance.
+ * All 92 are in `Mentat/fixtures/exit-propagation-census/census-fails-s1{3,4}.jsonl`; the planning record is
  * `Mentat/planning/CENSUS_FAILURE_FAMILIES.md`. Each schedule replays in the arm it was emitted in.
  *
  * **SETTLE-A and SETTLE-B closed, all 24 here** (and all 55 of the two runs): `setMatchUpStatus` runs nothing after
@@ -63,6 +64,7 @@ const OPEN: Record<string, Set<string>> = {
   'SETTLE-A': new Set([]),
   'SETTLE-B': new Set([]),
   'P51-CONVERGENCE': new Set([]),
+  'P51-PLAYED': new Set([]),
   OTHER: new Set([]),
 };
 
@@ -75,7 +77,7 @@ const OPEN: Record<string, Set<string>> = {
 const BEHIND: Record<string, string> = {};
 
 type Arm = 'off' | 'on' | 'policyoff';
-type Group = 'SETTLE-A' | 'SETTLE-B' | 'OTHER' | 'P51-CONVERGENCE';
+type Group = 'SETTLE-A' | 'SETTLE-B' | 'OTHER' | 'P51-CONVERGENCE' | 'P51-PLAYED';
 type Instance = { arm: Arm; seed: number; run: string; group: Group; code: string; config: any; steps: any[] };
 
 const FIXTURE = path.join(__dirname, '../../fixtures/exitPropagation/censusF2RefusalSchedules20261011.jsonl');
@@ -116,9 +118,9 @@ function classify(instance: Instance): string | undefined {
 }
 
 // CONTROL: an empty or truncated fixture would pass by replaying nothing
-it('holds all 46 instances, each listed in its own group at most once', () => {
-  expect(INSTANCES.length).toEqual(46);
-  expect(new Set(INSTANCES.map(key)).size).toEqual(46);
+it('holds all 47 instances, each listed in its own group at most once', () => {
+  expect(INSTANCES.length).toEqual(47);
+  expect(new Set(INSTANCES.map(key)).size).toEqual(47);
   for (const instance of INSTANCES) {
     expect(['off', 'on', 'policyoff']).toContain(instance.arm);
     expect(instance.config.seed).toEqual(instance.seed);

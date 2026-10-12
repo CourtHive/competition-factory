@@ -138,6 +138,11 @@ export type OutcomeView = {
     /** a side of the loserMatchUp already carries an exit in: a second one there makes a double exit */
     loserMatchUpCarriesExit: boolean;
     loserMatchUpCarriedStatuses: string[];
+    /**
+     * P51 group 2: the loserMatchUp is a single exit already decided for the seat the loser arrives in, with a result
+     * recorded below it. A carried exit arriving there is carried past it, as past a BYE, rather than converging.
+     */
+    loserMatchUpDecidedForArrival: boolean;
     /** a side of the loserMatchUp carries THIS matchUp's exit in: a relabel to a played result withdraws it (F2) */
     loserMatchUpCarriesSourceExit: boolean;
     /** the winnerMatchUp, for what a double exit produces there (S2c) */
@@ -243,6 +248,8 @@ export type DirectionPlan = {
     exit?: MatchUpStatusUnion;
     /** S2c: the double exit the carried exit makes where an exit already stands */
     converged?: MatchUpStatusUnion;
+    /** P51 group 2: the exit the loser carries past a matchUp already decided for their seat, onward */
+    carriedPast?: MatchUpStatusUnion;
     /**
      * F2: a relabel to a played result withdraws the exit this matchUp carried there. Alone, the target is left
      * undecided; CONVERGED with another exit, it re-derives to that exit, which the loser now wins.

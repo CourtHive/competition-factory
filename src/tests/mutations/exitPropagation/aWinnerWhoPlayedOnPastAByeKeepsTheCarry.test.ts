@@ -6,6 +6,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -17,6 +18,11 @@ import { WALKOVER } from '@Constants/matchUpStatusConstants';
  * 2026-10-02 ruling, `relabelLoserExit`). `winnerPlayedOn` looked one matchUp on, found the BYE, which is passed and
  * not played, and withdrew the carry, releasing the winner from `Consolation|4|1`, a round they had reached by
  * that result (WINNER_NOT_ADVANCED). It now follows the winner past BYEs to their next real matchUp.
+ *
+ * Since P52 (CA, 2026-10-11) the relabel itself is refused: a walkover re-entered as a bare win for the same winner is
+ * a played result, a change of kind, and the carry's winner recorded a result onward (`correctionKindChange`). It was
+ * accepted until the guard read a bare win as keeping its status; the write recorded COMPLETED while the walkover
+ * stayed carried. Refused over an untouched draw, the winner stays where the result took them, as before.
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
@@ -53,15 +59,17 @@ it('the winner of Consolation|3|1 stays in the round that result took them to', 
   setSubscriptions({});
   prepareDraw(config, drawId);
   const find = (coordinate: string) => getDrawMatchUps(drawId).find((matchUp) => key(matchUp) === coordinate);
-  for (const step of steps) {
-    const result: any = tournamentEngine.setMatchUpStatus({
+  const apply = (step: Step) =>
+    tournamentEngine.setMatchUpStatus({
       propagateExitStatus: config.propagateExitStatus,
       matchUpId: find(key(step)).matchUpId,
       outcome: step.outcome,
       drawId,
     });
-    expect(result.success).toEqual(true);
-  }
+  for (const step of steps.slice(0, -1)) expect(apply(step).success).toEqual(true);
+  const before = JSON.stringify(tournamentEngine.getEvent({ drawId }).drawDefinition);
+  expect(apply(steps.at(-1) as Step).error).toEqual(CANNOT_CHANGE_OUTCOME);
+  expect(JSON.stringify(tournamentEngine.getEvent({ drawId }).drawDefinition)).toEqual(before);
   const won = find('Consolation|3|1');
   // CONTROL: the shape is reached, a played result in Consolation|3|1
   expect(won.winningSide).toBeDefined();
