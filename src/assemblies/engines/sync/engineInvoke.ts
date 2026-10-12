@@ -8,10 +8,10 @@ import { isFunction, isObject, isString } from '@Tools/objects';
 import { getMethods } from '@Global/state/syncGlobalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { createSeededRandom } from '@Tools/prng';
+import { withCapturedClock } from '@Tools/clock';
 
 // constants
 import { INVALID_VALUES, METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { nowMs } from '@Tools/clock';
 
 export function engineInvoke(engine: { [key: string]: any }, args: any) {
   if (!isObject(args)) return { error: INVALID_VALUES, message: 'args must be an object' };
@@ -41,28 +41,30 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
     delete params.nonRandom;
   }
 
-  const snapshot = params.rollbackOnError && makeDeepCopy(getTournamentRecords(), false, true);
-
   const method = passedMethod || engine[methodName] || getMethods()[methodName];
   if (!method) return logMethodNotFound({ methodName, params });
 
-  const result = executeFunction(engine, method, params, methodName, 'sync') ?? {};
+  // one instant for the whole call, captured before anything is written; see tools/clock.ts
+  return withCapturedClock((timeStamp) => {
+    const snapshot = params.rollbackOnError && makeDeepCopy(getTournamentRecords(), false, true);
 
-  if (result?.error && snapshot) setState(snapshot);
+    const result = executeFunction(engine, method, params, methodName, 'sync') ?? {};
 
-  const timeStamp = nowMs(); // reaches the record via the factory extension
-  const mutationStatus = getMutationStatus({ timeStamp });
+    if (result?.error && snapshot) setState(snapshot);
 
-  const notify = result?.success && params?.delayNotify !== true && params?.doNotNotify !== true;
-  if (notify)
-    notifySubscribers({
-      directives: [{ method, params }],
-      mutationStatus,
-      timeStamp,
-    });
-  if (notify || !result?.success || params?.doNotNotify) deleteNotices();
+    const mutationStatus = getMutationStatus({ timeStamp }); // timeStamp reaches the record via the factory extension
 
-  getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'sync', params, result });
+    const notify = result?.success && params?.delayNotify !== true && params?.doNotNotify !== true;
+    if (notify)
+      notifySubscribers({
+        directives: [{ method, params }],
+        mutationStatus,
+        timeStamp,
+      });
+    if (notify || !result?.success || params?.doNotNotify) deleteNotices();
 
-  return result;
+    getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'sync', params, result });
+
+    return result;
+  });
 }

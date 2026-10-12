@@ -75,6 +75,7 @@ export type ImplemtationGlobalStateTypes = {
   tournamentId?: string;
   notices: Notice[];
   modified: boolean;
+  capturedClock?: number; // epoch ms an outer engine call captured; see tools/clock.ts
 };
 
 const globalState: GlobalStateTypes = {
@@ -258,6 +259,19 @@ export function setInvokeObserver(observer?: InvokeObserver): { success?: boolea
 
 export function getInvokeObserver(): InvokeObserver | undefined {
   return invokeObserver;
+}
+
+/**
+ * The instant an outer engine call captured (tools/clock.ts `withCapturedClock`). Optional provider
+ * hooks: a provider without them captures nothing. Deliberately NOT a process-wide fallback, which
+ * would hand one request's instant to every request running concurrently with it.
+ */
+export function getCapturedClock(): number | undefined {
+  return _globalStateProvider.getCapturedClock?.();
+}
+
+export function setCapturedClock(timeStamp?: number) {
+  _globalStateProvider.setCapturedClock?.(timeStamp);
 }
 
 export function setSchemaWriteMode(mode?: SchemaWriteMode): {

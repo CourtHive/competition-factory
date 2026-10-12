@@ -832,7 +832,9 @@ Two generations of a mocks tournament under the same seed are byte-identical, id
 
 Fixes the engine's notion of "now" for every timestamp a mutation writes into a record: `schedule.scoredTime` on a first score, `timeItem.createdAt`, `extension.createdAt`, a draft's `resolvedAt`, a point's `timestamp`, a mutation lock's `lockedAt`. Timing and notification timestamps that never reach a stored record are not affected.
 
-Pass an ISO string, epoch milliseconds, a `Date`, or a function returning any of those. No argument restores the wall clock. An unparseable instant is refused with `INVALID_DATE`.
+Pass an ISO string, epoch milliseconds, a `Date`, or a function returning any of those. No argument restores the wall clock. An unparseable instant is refused with `INVALID_DATE`. A fixed instant is copied: mutating the `Date` you passed, or one the clock returned, does not move it.
+
+Each engine call reads the clock **once**, before any method runs: every stamp the call writes, in nested calls and in the notification `timeStamp` too, carries that one instant. A function that throws or returns an invalid instant is refused there, with `{ error: INVALID_DATE }`, before anything is written. It is no longer replaced by the wall clock. A server supplying its own async state provider scopes the instant per request through the provider's optional `getCapturedClock`/`setCapturedClock` hooks; without them, nested reads go to the clock each time.
 
 ```js
 engine.setClock('2026-10-01T12:00:00.000Z'); // frozen

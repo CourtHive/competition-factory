@@ -4,6 +4,7 @@ import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { createSeededRandom } from '@Tools/prng';
+import { withCapturedClock } from '@Tools/clock';
 
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { FactoryEngine } from '@Types/factoryTypes';
@@ -30,8 +31,12 @@ export const mocksEngine = (() => {
 
   // enable Middleware
   function engineInvoke(method, params) {
-    const result = method({ ...params });
-    if (!result?.error) notifySubscribers();
+    // one instant per generation, captured before anything is written; see tools/clock.ts
+    const result = withCapturedClock(() => {
+      const generated = method({ ...params });
+      if (!generated?.error) notifySubscribers();
+      return generated;
+    });
     deleteNotices();
 
     // cleanup if set on invocation

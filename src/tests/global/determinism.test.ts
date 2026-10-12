@@ -119,9 +119,10 @@ it('the clock accepts an instant, a function, or nothing, and refuses junk', () 
   expect(nowIso()).toEqual('2026-10-03T00:00:00.000Z');
   expect(nowIso()).toEqual('2026-10-03T00:00:01.000Z');
 
-  // a configured clock FUNCTION that returns junk falls back to the wall clock rather than throwing
+  // a configured clock FUNCTION that returns junk is accepted, and refused when read: it no longer
+  // falls back to the wall clock (capturedClock.test.ts covers the refusal at the engine boundary)
   expect(setClock(() => 'junk' as any).success).toEqual(true);
-  expect(Math.abs(now().getTime() - Date.now())).toBeLessThan(5_000);
+  expect(() => now()).toThrow(/invalid instant/);
 
   expect(setClock('not a date').error).toEqual(INVALID_DATE);
   expect(setClock({} as any).error).toEqual(INVALID_VALUES);

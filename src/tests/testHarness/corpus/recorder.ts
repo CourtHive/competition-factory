@@ -10,6 +10,7 @@ import Ajv from 'ajv';
 import fs from 'fs';
 import path from 'path';
 import {
+  getCapturedClock,
   getInvokeObserver,
   getSchemaWriteMode,
   getTournamentRecords,
@@ -144,9 +145,7 @@ function coordinatesFor(record: any, matchUpId: unknown) {
 export class CorpusRecorder {
   private readonly outDir: string;
   private stepBase = 0;
-  private ticks = 0;
   private lastRead = 0;
-  private inStep = false;
   private closed: any[] = [];
   private readonly previous: ReturnType<typeof getInvokeObserver>;
   private inObserver = false;
@@ -178,19 +177,16 @@ export class CorpusRecorder {
     this.closed = [];
     this.pending = undefined;
     this.skipReason = undefined;
-    // Between steps the engine reads the live wall clock, which is whatever the test has made it
-    // (fake timers included), so clock-relative assertions stay true. Within a step the clock is
-    // frozen at the step's base and advances one millisecond per read, so successive stamps stay
-    // distinct and a replay that starts each step at its recorded base sees identical values. The
-    // recorder's own queries run with ticking suspended. Each step's base is at least one
-    // millisecond after the previous step's last read, so stamps never go backwards.
+    // An engine call reads the clock ONCE, as it begins (tools/clock.ts captures the instant), and
+    // every stamp in the call shares it. Each read here is the live wall clock (fake timers
+    // included, so clock-relative assertions stay true), held at least one millisecond after the
+    // previous read so stamps never go backwards. `before` records the captured instant as the
+    // step's base, and a replay that starts the step there reads the same value.
     this.stepBase = 0;
-    this.ticks = 0;
     this.lastRead = 0;
     setClock(() => {
-      if (!this.inStep) return new Date();
-      const value = this.stepBase + (this.inObserver ? this.ticks : this.ticks++);
-      this.lastRead = Math.max(this.lastRead, value);
+      const value = Math.max(Date.now(), this.lastRead + 1);
+      this.lastRead = value;
       return new Date(value);
     });
     const file = this.statsFor(test.file);
@@ -227,7 +223,6 @@ export class CorpusRecorder {
     this.test = undefined;
     this.open = undefined;
     this.closed = [];
-    this.inStep = false;
     setClock();
   }
 
@@ -299,9 +294,8 @@ export class CorpusRecorder {
     // (queries, mocks), and a replay makes none of those calls. So each step records where the
     // clock and the random stream stood as the call began, and a replay restores both.
     const live = randomSource() as SeededRandom;
-    this.stepBase = Math.max(Date.now(), this.lastRead + 1);
-    this.ticks = 0;
-    this.inStep = true;
+    // the instant this call captured before the observer saw it; outside a capture, the next read
+    this.stepBase = getCapturedClock() ?? Math.max(Date.now(), this.lastRead + 1);
     this.pending = {
       directive: { method: event.methodName, params: directiveParams(event.params) },
       coordinates: coordinatesFor(this.open.state, event.params?.matchUpId),
@@ -311,7 +305,6 @@ export class CorpusRecorder {
   }
 
   private after(event: InvokeEvent): void {
-    this.inStep = false;
     const open = this.open;
     if (!open) return;
     const pending = this.pending;

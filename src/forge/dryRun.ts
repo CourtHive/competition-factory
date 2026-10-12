@@ -46,6 +46,7 @@ import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { generatePatch, JsonPatch } from './jsonPatch';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { withCapturedClock } from '@Tools/clock';
 import {
   deleteNotices,
   getDevContext,
@@ -80,6 +81,20 @@ export type DryRunResult = {
 };
 
 export function dryRun(engine: FactoryEngine, directives: Directives): DryRunResult {
+  // one instant for the whole run, as the real executionQueue would capture; see tools/clock.ts
+  const run = withCapturedClock(() => dryRunAt(engine, directives));
+  if ('wouldSucceed' in run) return run;
+  return {
+    wouldSucceed: false,
+    results: [],
+    patch: [],
+    willEmitNotices: [],
+    error: { ...run.error, message: run.message },
+    rolledBack: true,
+  };
+}
+
+function dryRunAt(engine: FactoryEngine, directives: Directives): DryRunResult {
   if (!Array.isArray(directives)) {
     return {
       wouldSucceed: false,
