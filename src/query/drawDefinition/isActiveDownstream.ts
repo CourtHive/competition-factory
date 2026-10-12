@@ -11,7 +11,11 @@ import { DrawDefinition } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 /** one walk: the answers already given, and the first refusal met (a malformed round link downstream) */
-type Walk = { seen: Map<string, boolean>; refused?: ResultType };
+/**
+ * `carriedExitsAreInert`: the walk asks only whether somebody PLAYED downstream (CA, 2026-10-11, census F2's P51
+ * group). See `getTargetsDownstream`.
+ */
+type Walk = { seen: Map<string, boolean>; refused?: ResultType; carriedExitsAreInert?: boolean };
 
 /**
  * Whether anything downstream of the matchUp is active, as a boolean. A downstream structure whose
@@ -31,11 +35,13 @@ export function isActiveDownstream(params): boolean {
 export function getTargetsDownstream(params: {
   inContextDrawMatchUps?: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
+  /** the cascade converging two exits here: only a result somebody PLAYED downstream is active */
+  convergence?: boolean;
   matchUpId: string;
 }): ResultType & { targetData?: ReturnType<typeof positionTargets>; activeDownstream?: boolean } {
   const targetData = positionTargets(params);
   if (targetData.error) return decorateResult({ result: targetData, stack: 'isActiveDownstream' });
-  const walk: Walk = { seen: new Map() };
+  const walk: Walk = { seen: new Map(), carriedExitsAreInert: !!params.convergence };
   const activeDownstream = activeBelow({ ...params, targetData }, walk);
   if (walk.refused) return walk.refused;
   return { targetData, activeDownstream };
@@ -163,8 +169,18 @@ function activeBelow(params, walk: Walk): boolean {
    * states: *a status blocks only when it was earned at this matchUp, never when it was propagated
    * into it.*
    */
+  //
+  // ONE EXCEPTION, for a CONVERGENCE (CA, 2026-10-11): the cascade bringing a second carried exit into a matchUp an
+  // exit already decided. There a carried exit downstream is inert even when its loser carried it on further — a carry
+  // that went one hop further was read as a played match, and the convergence was refused although nobody had played
+  // anything below it (census F2's P51 group: 24 of 25 instances, all COMPASS). The 2026-09-25 rule — only GENUINELY
+  // active downstream blocks, never ADVANCED active — applied to convergence. The walk still recurses, so a result
+  // somebody played further down still blocks. A CLEAR keeps the stricter reading (`isActiveDownstream.test.ts`: the
+  // origin of a carried walkover that an unrelated arrival has since won is not clearable).
   const loserMatchUpExit =
-    isLoserMatchUpWO && !propagatedLoserParticipant && isPropagatedExit({ matchUp: loserMatchUp });
+    isLoserMatchUpWO &&
+    (walk.carriedExitsAreInert || !propagatedLoserParticipant) &&
+    isPropagatedExit({ matchUp: loserMatchUp });
 
   //to identify a propagated exit (WO/DEFAULT) for matches that are WO/DEFAULT, have a winning side,
   //and have only one participant (the WO/DF player).
