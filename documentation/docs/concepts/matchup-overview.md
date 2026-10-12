@@ -487,7 +487,9 @@ Every matchUp carries an `updatedAt` field stamped with an ISO UTC timestamp at 
 }
 ```
 
-The stamp is **monotonic**: if two mutations land in the same millisecond, the later one is bumped by 1ms so consumers always see strictly-increasing values. Both string and `Date` previous values are tolerated.
+The stamp is **monotonic**. When the record clock reads the same millisecond as the previous stamp, or an earlier one, the new stamp is the previous stamp plus 1ms, so consumers always see strictly increasing values. That covers a clock that is frozen or moved backward (see [`setClock`](/docs/engines/engine-methods#setclock)). The same rule applies to the drawDefinition's and structures' `updatedAt`. Both string and `Date` previous values are tolerated.
+
+Under a frozen or rewound clock, `updatedAt` therefore runs ahead of the clock. It is an ordering value, not the instant a change happened. See [Clocks and Competition Time](/docs/concepts/competition-clock#ordering-stamps-when-time-stands-still-or-runs-backward).
 
 `updatedAt` flows through hydrated views (`tournamentMatchUps`, `allTournamentMatchUps`, `getAllDrawMatchUps`) automatically. Deletion does not stamp the deleted matchUp; the `inContextMatchUp` derived view also skips stamping since it's not canonical state.
 

@@ -438,12 +438,14 @@ const instant = tools.now();
 
 "Now" at the competition as a `Date`: the competition clock's instant when
 [`setCompetitionClock`](#setcompetitionclock) has installed one (captured once per engine call), otherwise
-exactly [`now`](#now). Used by the reads that decide against "now"; record stamps use `now`.
+exactly [`now`](#now). Used by the reads that decide against "now"; record stamps use `now`. Outside an engine call, a
+provider that throws or returns an unusable instant makes `competitionNow` throw. See
+[Clocks and Competition Time](/docs/concepts/competition-clock). Added in 7.13.0.
 
 ### setCompetitionClock
 
-Installs the competition clock, `{ nowMs: () => number }`; no argument removes it. The same as
-[`engine.setCompetitionClock`](../engines/engine-methods.md#setcompetitionclock).
+Installs the competition clock, `{ nowMs: () => number }`; no argument removes it. Process-wide. The same as
+[`engine.setCompetitionClock`](../engines/engine-methods.md#setcompetitionclock). Added in 7.13.0.
 
 ### nowIso
 

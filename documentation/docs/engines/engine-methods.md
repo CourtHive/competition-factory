@@ -830,9 +830,11 @@ Two generations of a mocks tournament under the same seed are byte-identical, id
 
 ## setClock
 
-Fixes the engine's notion of "now" for every timestamp a mutation writes into a record: `schedule.scoredTime` on a first score, `timeItem.createdAt`, `extension.createdAt`, a draft's `resolvedAt`, a point's `timestamp`, a mutation lock's `lockedAt`. Timing and notification timestamps that never reach a stored record are not affected.
+Fixes the engine's notion of "now" for every timestamp a mutation writes into a record: `schedule.scoredTime` on a first score, `timeItem.createdAt`, `extension.createdAt`, a draft's `resolvedAt`, a point's `timestamp`, a mutation lock's `lockedAt`. Timing and notification timestamps that never reach a stored record are not affected. This is **record time**; see [Clocks and Competition Time](/docs/concepts/competition-clock) for how it relates to competition and operational time.
 
-Pass an ISO string, epoch milliseconds, a `Date`, or a function returning any of those. No argument restores the wall clock. An unparseable instant is refused with `INVALID_DATE`. A fixed instant is copied: mutating the `Date` you passed, or one the clock returned, does not move it.
+Process-wide: one configuration covers every tournament and request the process holds.
+
+Pass an ISO string, epoch milliseconds, a `Date`, or a function returning any of those. No argument restores the wall clock. An unparseable instant, or one outside the range a `Date` can represent, is refused with `INVALID_DATE`; a value of any other type with `INVALID_VALUES`. A fixed instant is copied: mutating the `Date` you passed, or one the clock returned, does not move it.
 
 Each engine call reads the clock **once**, before any method runs: every stamp the call writes, in nested calls and in the notification `timeStamp` too, carries that one instant. A function that throws or returns an invalid instant is refused there, with `{ error: INVALID_DATE }`, before anything is written. It is no longer replaced by the wall clock. A server supplying its own async state provider scopes the instant per request through the provider's optional `getCapturedClock`/`setCapturedClock` hooks; without them, nested reads go to the clock each time.
 
@@ -846,11 +848,19 @@ engine.setClock(); // default
 
 ## setCompetitionClock
 
-Installs a **competition clock**: the source of "now" for the reads that decide something against it, such as whether an embargo has lifted, the live duration of a matchUp, and "today" for age-category and certification eligibility. Record stamps are not affected; they stay on [`setClock`](#setclock).
+Installs a **competition clock**: the source of "now" for the reads that decide something against it, such as whether an embargo has lifted, the live duration of a matchUp, and "today" for age-category and certification eligibility. Record stamps are not affected; they stay on [`setClock`](#setclock). [Clocks and Competition Time](/docs/concepts/competition-clock) lists every read that uses it and explains the roles. Added in 7.13.0.
 
-Pass `{ nowMs: () => number }`; no argument removes it. Junk is refused with `INVALID_VALUES`. With none installed, competition time **is** record time, so nothing changes until a host installs one. A demo binds both to one source.
+Pass `{ nowMs: () => number }`; no argument removes it. Anything without a `nowMs` function is refused with `INVALID_VALUES`. With none installed, competition time **is** record time, so nothing changes until a host installs one. A demo binds both to one source. Process-wide: one provider covers every tournament the process holds, so a simulated day needs its own process.
 
-Like `setClock`, each engine call reads it once before any method runs, and a provider that throws or returns a non-finite number refuses the call with `{ error: INVALID_DATE }` before anything is written. "Today" is the tournament's calendar day, in the zone `getTournamentTimeZone` resolves (UTC when it names none). An explicit `consideredDate` / `asOfDate` / `asOf` still wins.
+Like `setClock`, each engine call reads it once before any method runs. A provider is refused with `{ error: INVALID_DATE }`, before anything is written, if it:
+
+- throws;
+- returns something that is not a number, or `NaN` or `±Infinity`;
+- returns a finite number outside the range a `Date` can represent (beyond ±8.64e15 ms, such as `1e20`).
+
+Outside an engine call the same failures throw. A server with its own async state provider scopes the captured competition instant per request through the optional `getCapturedCompetitionClock`/`setCapturedCompetitionClock` hooks.
+
+"Today" is the tournament's calendar day, in the zone [`getTournamentTimeZone`](/docs/governors/tournament-governor#gettournamenttimezone) resolves. It is the UTC day when no zone resolves, and a zone error is returned as the error. An explicit `consideredDate` / `asOf` still wins.
 
 ```js
 engine.setCompetitionClock({ nowMs: () => demoClock.now() });
