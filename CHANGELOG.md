@@ -1,5 +1,28 @@
 # Changelog
 
+## [7.13.0](https://github.com/CourtHive/competition-factory/compare/v7.12.0...v7.13.0) (2026-10-12)
+
+
+### Features
+
+* **clock:** a competition clock for the reads that decide against "now" ([#5402](https://github.com/CourtHive/competition-factory/issues/5402)) ([75e12a0](https://github.com/CourtHive/competition-factory/commit/75e12a0b632e98530cd76533c829e3ffadb606f8))
+
+
+### Bug Fixes
+
+* **clock:** a fixed clock cannot be moved by a Date, and draw stamps always advance ([#5398](https://github.com/CourtHive/competition-factory/issues/5398)) ([c257c03](https://github.com/CourtHive/competition-factory/commit/c257c033a04a5e6a75b99866dffe2835a6d9ede0))
+* **clock:** each engine call reads the clock once, before anything is written ([#5399](https://github.com/CourtHive/competition-factory/issues/5399)) ([440525a](https://github.com/CourtHive/competition-factory/commit/440525a15740cbf0ee781658d19b0d9c1e5ebb80))
+* **clock:** refuse a competition instant that Date cannot represent ([#5405](https://github.com/CourtHive/competition-factory/issues/5405)) ([0694703](https://github.com/CourtHive/competition-factory/commit/0694703b90e4c6f431c497c4e609a72225db87fb))
+* **deps:** update tods-competition-factory to 7.12.0 ([#5394](https://github.com/CourtHive/competition-factory/issues/5394)) ([13039d9](https://github.com/CourtHive/competition-factory/commit/13039d916fd469a7fbe7aea95bd071df054f2d4b))
+* **duration:** a live duration reads one competition instant ([#5408](https://github.com/CourtHive/competition-factory/issues/5408)) ([4a590b0](https://github.com/CourtHive/competition-factory/commit/4a590b00ccb3d8fc53b19dfaf1a6783e47c82a55))
+* **exit-propagation:** a carry past a BYE a holder takes back comes back with it ([#5400](https://github.com/CourtHive/competition-factory/issues/5400)) ([54e0e64](https://github.com/CourtHive/competition-factory/commit/54e0e640f6e383d72e0b9a7575a81ec506275c12))
+* **exit-propagation:** a carry past a decided seat comes back with its origin ([#5407](https://github.com/CourtHive/competition-factory/issues/5407)) ([32ad1aa](https://github.com/CourtHive/competition-factory/commit/32ad1aaa7a6cc413e8447235af1ed2ede3d9bdc0))
+* **exit-propagation:** a convergence a correction dissolves settles as entered ([#5406](https://github.com/CourtHive/competition-factory/issues/5406)) ([5907826](https://github.com/CourtHive/competition-factory/commit/5907826309ed99e10ef36afb63daea1990c0dc47))
+* **exit-propagation:** a convergence is not blocked by what its own carried exits decided ([#5396](https://github.com/CourtHive/competition-factory/issues/5396)) ([1095eb5](https://github.com/CourtHive/competition-factory/commit/1095eb5d17ee7bdfbea0df2ea92753fe4531e8bb))
+* **exit-propagation:** an exit arriving at a seat already decided for it is carried past ([#5404](https://github.com/CourtHive/competition-factory/issues/5404)) ([b79c3e4](https://github.com/CourtHive/competition-factory/commit/b79c3e4c041142fe3ba57cf950c4ef8e40a443eb))
+* **exit-propagation:** double elimination corrections are no longer refused after writing ([#5403](https://github.com/CourtHive/competition-factory/issues/5403)) ([c8494ba](https://github.com/CourtHive/competition-factory/commit/c8494bafab2190839b014a4a547f9f6eac1dfc94))
+* **exit-propagation:** two held exits meet past their own BYEs ([#5397](https://github.com/CourtHive/competition-factory/issues/5397)) ([98b0dc2](https://github.com/CourtHive/competition-factory/commit/98b0dc267ebdc66841025714e782524648ca943c))
+
 ## [7.12.0](https://github.com/CourtHive/competition-factory/compare/v7.11.0...v7.12.0) (2026-10-12)
 
 
