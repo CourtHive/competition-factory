@@ -4,22 +4,22 @@ import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedP
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
+import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
+import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
-import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
@@ -2112,7 +2112,7 @@ function carryExitOnward({
    * `drawDefinition.structures` by the time the write returns"* — and at `mergeSideExitProvenance`.
    * A propagation decision may only be taken on state derived after the writes that precede it.
    */
-  const currentDrawMatchUps =
+  let currentDrawMatchUps =
     getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? inContextDrawMatchUps;
 
   const fromTargets = positionTargets({
@@ -2124,7 +2124,7 @@ function carryExitOnward({
   let nextWinnerMatchUp = fromTargets.targetMatchUps?.winnerMatchUp;
   if (!nextWinnerMatchUp?.matchUpId) return decorateResult({ result: { ...SUCCESS }, stack });
 
-  const arrivalSideNumber = getExitArrivalSideNumber({
+  let arrivalSideNumber = getExitArrivalSideNumber({
     inContextDrawMatchUps: currentDrawMatchUps,
     sourceMatchUp: fromMatchUp,
     nextWinnerMatchUp,
@@ -2161,13 +2161,30 @@ function carryExitOnward({
       params,
     });
     if (released) {
-      nextWinnerMatchUp = {
+      // THE TARGET IS READ AGAIN ONCE THE HOLDER'S BYE HAS GONE (P54): its side, who stands opposite and the award are
+      // all read off the draw as the release left it. With both positions present the side was read from that BYE's
+      // seat (`draw-positions.md` rule 3: side 1 is the lower drawPosition); with it released, the position that
+      // stays reads its own side and what it carries moves with it. Read before the release, the arrival took the side
+      // the staying position now holds, and two exits meeting there were read as one (census F2 SETTLE-B,
+      // FIRST_MATCH_LOSER_CONSOLATION 16 policy-off: `Consolation|3|1` held `[2, 6]`, the BYE dp2 on side 1); and an
+      // opponent read from the stale sides was the BYE, so a participant standing there was never awarded the exit
+      // (stall census 20147549, FEED_IN_CHAMPIONSHIP 16/11, `Consolation|5|1`).
+      currentDrawMatchUps =
+        getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? currentDrawMatchUps;
+      const refreshed = currentDrawMatchUps.find((matchUp) => matchUp.matchUpId === nextWinnerMatchUp?.matchUpId);
+      nextWinnerMatchUp = refreshed ?? {
         ...nextWinnerMatchUp,
         sideExitProvenance: released.sideExitProvenance,
         matchUpStatus: released.matchUpStatus,
         drawPositions: released.drawPositions,
         winningSide: undefined,
       };
+      arrivalSideNumber =
+        getExitArrivalSideNumber({
+          inContextDrawMatchUps: currentDrawMatchUps,
+          sourceMatchUp: fromMatchUp,
+          nextWinnerMatchUp,
+        }) ?? arrivalSideNumber;
     }
   }
   if (!arrivingSideOccupied && convergesAtTarget({ nextWinnerMatchUp, arrivalSideNumber })) {
@@ -2201,10 +2218,27 @@ function carryExitOnward({
   // A BYE-HELD TARGET KEEPS ITS BYE and the exit keeps travelling. The arriving side is recorded so
   // the record says where the exit went; the status is not touched, because a BYE is a fact about
   // the DRAW rather than about this cascade.
-  const holdsBye = matchUpHoldsBye({ drawDefinition, matchUp: nextWinnerMatchUp });
+  /**
+   * A BYE THE OTHER HOLDER LEFT HERE IS NOT ONE THIS EXIT PASSES (P54, CA 2026-10-11). The other feeder is a holder too —
+   * a BYE with nobody in it and an exit on record — and the BYE position standing opposite is its own, advanced while
+   * it was empty. Its exit is coming to that seat (the BYE stays; the exit travels), so this one lands PENDING and the
+   * two meet when it arrives (RULE 4; `opponentFeederHoldsAnExit`, `twoHeldExitsMeet`). Read as a BYE, this exit was
+   * carried straight through and on into the next round, taking its seat with it, and the other exit found the
+   * matchUp already passed and stayed held: census F2 SETTLE-B, FIRST_MATCH_LOSER_CONSOLATION 16 under
+   * `doubleExitPropagateBye: false` (20515211, 20496326), `Consolation|3|1`.
+   */
+  const awaitsHeldExit = opponentFeederHoldsAnExit({
+    inContextDrawMatchUps: currentDrawMatchUps,
+    target: nextWinnerMatchUp,
+    holder: fromMatchUp,
+    drawDefinition,
+    matchUpsMap,
+  });
+  const holdsBye = !awaitsHeldExit && matchUpHoldsBye({ drawDefinition, matchUp: nextWinnerMatchUp });
 
   if (
     !holdsBye &&
+    !awaitsHeldExit &&
     !opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, sourceMatchUp: fromMatchUp })
   ) {
     logAdvancement(stack, {
