@@ -8,6 +8,7 @@ import { afterEach, expect, it } from 'vitest';
 
 // constants
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
+import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -118,7 +119,10 @@ it('the reverse label follows on a convergence: DOUBLE_DEFAULT becomes a DOUBLE_
   expect(errors()).toEqual([]);
 });
 
-it('leaves the convergence standing where the winner of what it produced has played on', () => {
+// P52 (CA, 2026-10-11, approved change of assertion): this relabel used to be ACCEPTED and leave the convergence
+// standing. A result recorded downstream of the exit (the produced walkover's winner has played the final) fixes the
+// kind of Main|1|1's outcome, so turning its walkover into a played result is now REFUSED over an untouched draw.
+it('refuses relabelling the origin where the winner of what the convergence produced has played on', () => {
   setup();
   enter(at(MAIN, 1, 1), { matchUpStatus: WALKOVER, winningSide: 1 });
   enter(at(MAIN, 1, 2), { matchUpStatus: WALKOVER, winningSide: 1 });
@@ -134,15 +138,21 @@ it('leaves the convergence standing where the winner of what it produced has pla
   enter(at(CONSOLATION, 3, 1), played(1));
   expect(occupants(at(CONSOLATION, 3, 1))).toContain(advanced);
 
-  enter(at(MAIN, 1, 1), played(1));
+  const before = JSON.stringify(tournamentEngine.getEvent({ drawId: DRAW_ID }).drawDefinition);
+  const result: any = tournamentEngine.setMatchUpStatus({
+    matchUpId: at(MAIN, 1, 1).matchUpId,
+    propagateExitStatus: true,
+    outcome: played(1),
+    drawId: DRAW_ID,
+  });
+  expect(result.error?.code).toEqual(CANNOT_CHANGE_OUTCOME.code);
+  expect(JSON.stringify(tournamentEngine.getEvent({ drawId: DRAW_ID }).drawDefinition)).toEqual(before);
 
+  expect(at(MAIN, 1, 1).matchUpStatus).toEqual(WALKOVER);
   expect(at(CONSOLATION, 1, 1).matchUpStatus).toEqual(DOUBLE_WALKOVER);
   expect(at(CONSOLATION, 2, 1).matchUpStatus).toEqual(WALKOVER);
   expect(at(CONSOLATION, 2, 1).winningSide).toEqual(produced.winningSide);
   expect(errors()).toEqual([]);
-  // Main|1|1's winner has played Main|2|1, whose loser feeds Consolation|2|1, so this relabel directs nobody (the
-  // `apply-values` route, `relabelWithoutDirection`) and v2 plans no direction for it
-  expect(getDifferentialTally()['apply-values:direction']).toEqual({ compared: 0, deferred: 1 });
 });
 
 const byKey = (k: string): any =>

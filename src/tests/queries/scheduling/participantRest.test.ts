@@ -132,6 +132,7 @@ describe('getParticipantRest — the ladder and the interval', () => {
         { drawSize: 4, drawType: SINGLE_ELIMINATION, eventName: 'A', uniqueParticipants: false },
         { drawSize: 4, drawType: SINGLE_ELIMINATION, eventName: 'B', uniqueParticipants: false },
       ],
+      venueProfiles: [{ courtsCount: 2 }],
       endDate: '2026-09-15',
       // `uniqueParticipants: false` shares a field across the two draws, which is the point of the
       // scenario — but without a seed it also randomises WHICH participants are shared. The final
@@ -156,7 +157,9 @@ describe('getParticipantRest — the ladder and the interval', () => {
     );
     expect(other).toBeDefined();
 
-    schedule(live, '09:00');
+    // on a court: placed by its scheduled time alone, a matchUp is under way only if it holds one
+    const [court] = tournamentEngine.getVenuesAndCourts().courts;
+    schedule(live, '09:00', { courtId: court.courtId, venueId: court.venueId });
     schedule(other, '11:00');
 
     const rest = restFor(other.matchUpId, at('09:30'));

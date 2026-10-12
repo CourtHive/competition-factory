@@ -290,7 +290,8 @@ function resolveAnchor(times: NormalizedTimes, timing: SchedulingTiming): Anchor
 
 /**
  * True when the matchUp is under way at `asOfMs` — started (or due) and not yet
- * finished.
+ * finished. Started means a start or call time; failing both, a scheduled time
+ * that has passed, but only for a matchUp that holds a court.
  *
  * Deliberately **unbounded above**. Closing the window at
  * `start + averageMinutes` meant a match that ran long stopped counting as under
@@ -300,8 +301,28 @@ function resolveAnchor(times: NormalizedTimes, timing: SchedulingTiming): Anchor
  */
 function isUnderWay(matchUp: HydratedMatchUp, times: NormalizedTimes, asOfMs: number): boolean {
   if (isFinished(matchUp)) return false;
-  const start = times.startMs ?? times.calledMs ?? times.scheduledMs;
-  return start !== null && start <= asOfMs;
+  const evidence = times.startMs ?? times.calledMs;
+  if (evidence !== null) return evidence <= asOfMs;
+  // Placed by its scheduled time alone, a matchUp can be on court only if it holds a court: one that is on no
+  // grid cell is not being played (CA, 2026-10-11, BOBOCA: two unplaced R16s read as "on court now").
+  if (!matchUp.schedule?.courtId) return false;
+  return times.scheduledMs !== null && times.scheduledMs <= asOfMs;
+}
+
+/**
+ * True when the only thing placing an unfinished matchUp in time is a scheduled time at or after the target's.
+ *
+ * `isUnderWay` reads a matchUp nobody has called or started as under way from its scheduled time, so rest errs
+ * toward "on court" for a venue that does not call matches (the August choice, kept). But the schedule is then
+ * the only evidence of order, and it says this matchUp comes after the one being inspected, so it is not load
+ * already spent before it. BOBOCA, 2026-10-11: two R16s scheduled 15:30, never called, read as "on court now —
+ * ready 18:00" against the 14:30 doubles quarterfinal the same players were waiting for (CA chose this rule).
+ * A call or a start is evidence the matchUp is really under way, and keeps it whatever its scheduled time.
+ */
+function placedOnlyAfter(matchUp: HydratedMatchUp, times: NormalizedTimes, targetScheduledMs: number | null): boolean {
+  if (isFinished(matchUp) || times.startMs !== null || times.calledMs !== null) return false;
+  if (targetScheduledMs === null || times.scheduledMs === null) return false;
+  return times.scheduledMs >= targetScheduledMs;
 }
 
 /** Recovery owed after `prior`, accounting for a singles ↔ doubles change into `target`. */
@@ -342,6 +363,7 @@ type RestContext = {
  */
 function collectPriorMatchUps(target: HydratedMatchUp, context: RestContext): PriorMatchUp[] {
   const results: PriorMatchUp[] = [];
+  const targetScheduledMs = normalizeTimes(target, context.frame).scheduledMs;
 
   for (const matchUp of context.matchUps) {
     if (matchUp.matchUpId === target.matchUpId) continue;
@@ -358,6 +380,7 @@ function collectPriorMatchUps(target: HydratedMatchUp, context: RestContext): Pr
     const timing = context.timingFor(matchUp);
     const underWay = isUnderWay(matchUp, times, context.asOfMs);
     if (!isFinished(matchUp) && !underWay) continue;
+    if (placedOnlyAfter(matchUp, times, targetScheduledMs)) continue;
     results.push({
       individuals: new Set(individualIds(matchUp)),
       normalizedTimes: times,

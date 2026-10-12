@@ -1,6 +1,7 @@
 import type { MatchUpWrite, Refusal } from './types';
 import {
   DRAW_POSITION_ASSIGNED,
+  DRAW_POSITION_OCCUPIED,
   DRAW_POSITION_ACTIVE,
   INVALID_MATCHUP_STATUS,
   INVALID_MATCHUP_STATUS_BYE,
@@ -32,6 +33,9 @@ export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // a refusal raised INSIDE the exit cascade, which `setMatchUpStatus` now returns rather than drops (F3,
   // CA 2026-10-04); v2 does not yet plan the cascade writes that raise it ("an exit carried into a swap")
   DRAW_POSITION_ASSIGNED.code,
+  // its sibling from the same cascade: `directLoser` placing a loser on a seat another participant holds (census F2,
+  // policy-off DOUBLE_ELIMINATION 8: 20477784 and 20537779 — a refusal after the direction wrote, not yet planned by v2)
+  DRAW_POSITION_OCCUPIED.code,
 ]);
 
 export class OutcomePipelineDivergence extends Error {

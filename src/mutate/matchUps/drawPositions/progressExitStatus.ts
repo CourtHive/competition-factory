@@ -327,9 +327,10 @@ export function progressExitStatus({
     // stamped AFTER the state write: setMatchUpState clears provenance wherever it blanks the codes
     // the provenance describes (#4816), so writing first would be undone.
     // The map is rebuilt here rather than reusing the `matchUpsMap` threaded through the
-    // propagation context: that one predates the `setMatchUpState` above, and the objects it holds
-    // can be detached from `drawDefinition.structures` by the time the write returns. Measured —
-    // stamping onto the context map wrote to an object no subsequent read could see.
+    // propagation context. Measured — stamping onto the context map wrote to an object no
+    // subsequent read could see: `decorateResult` deep-copied every context until 2026-10-11
+    // (census F2), so that map held copies. Contexts now carry the live map; the stamp still
+    // reads the draw, which is what it writes to.
     const drawMatchUps = getMatchUpsMap({ drawDefinition })?.drawMatchUps ?? [];
     const noContextLoserMatchUp = drawMatchUps.find((m) => m.matchUpId === loserMatchUp.matchUpId);
     mergeSideExitProvenance({ matchUp: noContextLoserMatchUp, provenance: exitProvenance });

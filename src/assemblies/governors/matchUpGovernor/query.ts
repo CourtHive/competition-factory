@@ -12,6 +12,8 @@ export { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetiti
 export { getMatchUpRatingDelta } from '@Query/matchUp/getMatchUpRatingDelta';
 export { getCompetitiveProfile } from '@Query/matchUps/getCompetitiveProfile';
 export { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
+export { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
+export { getMatchUpCheckInState } from '@Query/matchUp/getMatchUpCheckInState';
 export { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 export { matchUpActions } from '@Query/drawDefinition/matchUpActions/matchUpActions';
 export { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';

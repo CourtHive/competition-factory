@@ -97,18 +97,21 @@ function resolveDrawDefinition(params: SetMatchUpStatusArgs, tournamentRecords: 
 /**
  * A convergence that lost one of its origins goes where the kept origin alone puts it; then every carried
  * exit's ORIGIN is asked whether it still describes one (`reconcileStaleExitOrigins`).
+ *
+ * Asked of the DRAW, never of a map carried in the call's context. The reconciliation is a question about the
+ * settled draw, and a map taken earlier in the call can describe an earlier draw: handed the exit-propagation
+ * context's map while `decorateResult` deep-copied it, it read the draw as the direction left it and wrote to
+ * detached objects, so a stale origin stood until the NEXT call repaired it (census F2, 2026-10-11).
  */
 function settleExitOrigins({
   propagateExitStatus,
   doubleExitsBefore,
   matchUpId,
   params,
-  result,
 }: {
   params: SetMatchUpStatusArgs;
   doubleExitsBefore: Set<string>;
   propagateExitStatus?: boolean;
-  result: ResultType;
   matchUpId: string;
 }): ResultType | undefined {
   const settled = settleRederivedDoubleExits({
@@ -121,13 +124,11 @@ function settleExitOrigins({
   });
   if (settled?.error) return settled;
   const reconciled = reconcileStaleExitOrigins({
-    matchUpsMap: result.context?.matchUpsMap,
     drawDefinition: params.drawDefinition,
     tournamentRecord: params.tournamentRecord,
     event: params.event,
   });
-  // an error already in hand is the answer; a reconciliation that cannot read the draw is the answer otherwise
-  if (reconciled?.error) return result.error ? undefined : reconciled;
+  if (reconciled?.error) return reconciled;
   // The reconciliation can itself re-derive a convergence: a double exit whose produced exit it withdrew because the
   // origin stopped being one. Settled only before it, that matchUp was still a double exit, and the participant it now
   // awards stayed where they stood (census policy-off 20177818, CURTIS_CONSOLATION 16/11: `Consolation 1|3|2`,
@@ -142,7 +143,7 @@ function settleExitOrigins({
     propagateExitStatus,
     event: params.event,
   });
-  return resettled?.error && !result.error ? resettled : undefined;
+  return resettled?.error ? resettled : undefined;
 }
 
 /**
@@ -384,58 +385,26 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event,
     notes,
   });
-  // DECISION: Check if exit status propagation is needed
-  // WHY: When a participant exits via WALKOVER/DEFAULTED/RETIRED, their opponent advances
-  // and the exited participant may need to be placed in a consolation draw with the exit status
-  // The progressExitStatus flag in context signals this scenario occurred
-  if (result.context?.progressExitStatus) {
-    // DECISION: Use iterative loop instead of recursion for multi-level propagation
-    // WHY: In structures like COMPASS draws, exit status may propagate through multiple levels
-    // (e.g., East → West → South → Southeast). Iteration is safer than deep recursion.
-    // Failsafe prevents infinite loops if there's a circular reference or bug
-    let iterate = true;
-    let failsafe = 0;
-    while (iterate && failsafe < 10) {
-      iterate = false;
-      failsafe += 1;
-
-      // DECISION: Call progressExitStatus to set status on consolation matchUp
-      // WHY: Participant has been directed to consolation matchUp by directLoser,
-      // now we need to set that matchUp's status (e.g., WALKOVER if only one participant)
-      const progressResult = progressExitStatus({
-        sourceMatchUpStatusCodes: result.context.sourceMatchUpStatusCodes,
-        sourceMatchUpStatus: result.context.sourceMatchUpStatus,
-        sourceWinningSide: result.context.sourceWinningSide,
-        loserParticipantId: result.context.loserParticipantId,
-        sourceMatchUpId: result.context.sourceMatchUpId,
-        propagateExitStatus,
-        tournamentRecord: params.tournamentRecord,
-        loserMatchUp: result.context.loserMatchUp,
-        matchUpsMap: result.context.matchUpsMap,
-        drawDefinition: params.drawDefinition,
-        event: params.event,
-      });
-
-      // A REFUSED WRITE IS RETURNED, never dropped (F3). The loop used to read only `context`, so a
-      // refusal here reported success over a draw the cascade had left half-written.
-      if (progressResult.error) {
-        v2.compare?.(progressResult);
-        return decorateResult({ result: progressResult, stack });
-      }
-
-      // DECISION: Continue iterating if there's another level of consolation
-      // WHY: The consolation matchUp itself might feed into another consolation level
-      // If progressResult returns another loserMatchUp, we need to process that too
-      if (progressResult.context?.loserMatchUp) {
-        Object.assign(result.context, progressResult.context);
-        iterate = true;
-      }
+  // Exit propagation: the context a direction (or a swap) returned, then any carry it queued behind it
+  for (const context of [result.context, ...(result.context?.queuedExitContexts ?? [])]) {
+    if (!context?.progressExitStatus) continue;
+    const propagated = propagateExitFrom({ context, params, propagateExitStatus });
+    if (propagated?.error) {
+      v2.compare?.(propagated);
+      return decorateResult({ result: propagated, stack });
     }
+  }
+  // A REFUSAL CHANGES NOTHING, so nothing below it runs: no step here may repair, on a refused call, what an earlier
+  // call left (census F2, 2026-10-11: the settle step ran after `setMatchUpState` refused, and its reconciliation
+  // was the refused call's only write in 55 of 92 refusals after a write).
+  if (result.error) {
+    v2.compare?.(result);
+    return decorateResult({ result, stack });
   }
   // Everything has settled — removals, directions and exit propagation — which is the earliest point
   // at which a carried exit's ORIGIN can be asked whether it still describes one. See
   // `reconcileStaleExitOrigins` for the two corrections that pull the timing in opposite directions.
-  const settled = settleExitOrigins({ params, result, matchUpId, propagateExitStatus, doubleExitsBefore });
+  const settled = settleExitOrigins({ params, matchUpId, propagateExitStatus, doubleExitsBefore });
   if (settled?.error) {
     v2.compare?.(settled);
     return decorateResult({ result: settled, stack });
@@ -448,28 +417,26 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event: params.event,
   });
 
-  if (!result.error) {
-    // a participant who decided a round feeding another structure is seated there, before the decider is settled
-    reconcileMissedLinkAdvancements({
-      drawDefinition: params.drawDefinition,
-      tournamentRecord: params.tournamentRecord,
-      event: params.event,
-    });
-    const settled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
-    if (settled.error) return decorateResult({ result: settled, stack });
-    // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
-    // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
-    reconcileLinkAdvancements({
-      drawDefinition: params.drawDefinition,
-      tournamentRecord: params.tournamentRecord,
-      event: params.event,
-    });
-    const warnings = [
-      ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
-      ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
-    ];
-    if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
-  }
+  // a participant who decided a round feeding another structure is seated there, before the decider is settled
+  reconcileMissedLinkAdvancements({
+    drawDefinition: params.drawDefinition,
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+  });
+  const drawSettled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
+  if (drawSettled.error) return decorateResult({ result: drawSettled, stack });
+  // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
+  // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
+  reconcileLinkAdvancements({
+    drawDefinition: params.drawDefinition,
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+  });
+  const warnings = [
+    ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
+    ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
+  ];
+  if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
 
   v2.compare?.(result);
 
@@ -558,4 +525,51 @@ function preflightOutcome(params: SetMatchUpStatusArgs) {
     ...params.outcome,
     matchUpFormat: requestedMatchUpFormat(params),
   });
+}
+
+/**
+ * DECISION: Use iterative loop instead of recursion for multi-level propagation
+ * WHY: In structures like COMPASS draws, exit status may propagate through multiple levels
+ * (e.g., East → West → South → Southeast). Iteration is safer than deep recursion.
+ * Failsafe prevents infinite loops if there's a circular reference or bug.
+ *
+ * A REFUSED WRITE IS RETURNED, never dropped (F3). The loop used to read only `context`, so a
+ * refusal here reported success over a draw the cascade had left half-written.
+ */
+function propagateExitFrom({
+  propagateExitStatus,
+  context,
+  params,
+}: {
+  context: NonNullable<ResultType['context']>;
+  propagateExitStatus?: boolean;
+  params: SetMatchUpStatusArgs;
+}): ResultType | undefined {
+  let iterate = true;
+  let failsafe = 0;
+  while (iterate && failsafe < 10) {
+    iterate = false;
+    failsafe += 1;
+    // set the consolation matchUp's status (e.g. WALKOVER when only one participant has arrived)
+    const progressResult = progressExitStatus({
+      sourceMatchUpStatusCodes: context.sourceMatchUpStatusCodes,
+      sourceMatchUpStatus: context.sourceMatchUpStatus,
+      sourceWinningSide: context.sourceWinningSide,
+      loserParticipantId: context.loserParticipantId,
+      sourceMatchUpId: context.sourceMatchUpId,
+      propagateExitStatus,
+      tournamentRecord: params.tournamentRecord,
+      loserMatchUp: context.loserMatchUp,
+      matchUpsMap: context.matchUpsMap,
+      drawDefinition: params.drawDefinition,
+      event: params.event,
+    });
+    if (progressResult.error) return progressResult;
+    // the consolation matchUp itself may feed another level of consolation
+    if (progressResult.context?.loserMatchUp) {
+      Object.assign(context, progressResult.context);
+      iterate = true;
+    }
+  }
+  return undefined;
 }

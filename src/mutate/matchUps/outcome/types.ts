@@ -105,6 +105,8 @@ export type OutcomeView = {
   };
   /** § 2 row 12: the loser of the linked round has already been directed under the previous outcome */
   feedEligibilityBlockedBy?: string;
+  /** § 2 row 22: a result recorded downstream fixes whether this outcome is an exit or a played result (P52) */
+  correctionKindBlockedBy?: string;
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
     dualMatchUpId: string;

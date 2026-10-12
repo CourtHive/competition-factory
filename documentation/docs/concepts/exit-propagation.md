@@ -377,12 +377,33 @@ exit, and what the double exit had produced downstream is withdrawn:
 The reverse holds too. A loser who won a produced exit on arrival and is then relabelled as exiting at
 the origin has that win **taken back** — it was the cascade's award, not a result a director recorded —
 and the exit is carried in, converging as it would have had it been entered first. A result the loser
-then **earned** onward stands, and the carry is refused as before; the relabel is still accepted at the
-origin. The three states (exit first; played then relabelled; exit, played, exit again) are pinned
+then **earned** onward stands, and the relabel itself is now refused: see the next section. The three states (exit first; played then relabelled; exit, played, exit again) are pinned
 equal on status, winner, positions and occupants.
 
 Since 7.9.0 a relabel also withdraws a carry that had passed a pending produced exit, and a double
 exit re-derived to a single one stops producing at once rather than on the next write.
+
+### A recorded result downstream fixes the kind of a correction
+
+CA, 2026-10-11 (P52): _a result someone recorded in the consolation implies something was really played,
+and it shouldn't be removed; the person who recorded it simply didn't realise the wrong player had been
+advanced. Changing the upstream match to a different KIND of outcome is invalid; simply changing the
+winning side is not._
+
+- **The kind** of an outcome is whether it carries an exit downstream under the draw's settings: WALKOVER
+  and DEFAULTED do, RETIRED only under `propagateRetirementAsExit`; any other decided result is played. With
+  `propagateExitStatus` off nothing is carried, every outcome is the same kind, and nothing here applies.
+- **A recorded result** is one a director entered, played or not (a recorded double walkover counts), as
+  opposed to what the cascade derived (a carried exit, or the award it gives whoever arrives at a pending
+  exit). It counts in the matchUp the loser stands in, onward from there in a structure their loss there
+  fed, and — when the outcome being corrected is a carried exit — onward from the matchUp that exit decided.
+- **Refused, over an untouched draw** (`CANNOT_CHANGE_OUTCOME`, row 22 of the outcome pipeline): a correction
+  from an exit to a played result or the reverse, by a winner change or a status-only correction alike,
+  once the loser's path holds a recorded result.
+- **Accepted**: a winner change that keeps the kind — the recorded result becomes the new loser's — and any
+  correction where nothing downstream is recorded. Then the carried exit is re-derived from the corrected
+  result, for the new loser of a winner change as for a status-only correction: an exit that is now one is
+  carried, one that no longer is is withdrawn, and the draw is the one forward play reaches.
 
 ### A withdrawn exit releases the seat it won
 
@@ -404,7 +425,11 @@ where the double exit put it, and a carry whose origin is itself being relabelle
 is withdrawn, not re-seated. Before this a carry that stood **pending** a round on was lost on the
 pull-back and its carrier won a match they had walked over (census 20057285,
 FIRST_ROUND_LOSER_CONSOLATION 8/8); a carry that had **decided** its onward matchUp already came
-home.
+home. This holds however far the carrier went: a carrier who passed more than one BYE is taken back out of every
+round those BYEs moved them through, and the carry comes home from wherever it was written. Before this, a carry written
+two BYEs on stayed there, decided over an empty seat, and decided the matchUp against whoever arrived (census de
+9300487, DOUBLE_ELIMINATION 16/13: a default carried past two Backdraw BYEs stayed in `Backdraw|3|1` and was charged to
+a participant who never defaulted).
 
 Since 7.10.0 two more cases hold. **A carry past a BYE in a structure's last round survives the
 BYE's withdrawal**: there is nowhere further for the carrier to land, so the carried exit is recorded

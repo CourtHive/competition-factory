@@ -61,10 +61,7 @@ export function settleRotatingPartnerResult(params: {
     return { error: INVALID_VALUES, info: 'invalid settlement contract or terminal outcome' };
   const prior = drawDefinition.competitionSettlements?.find((record) => record.requestId === params.requestId);
   if (prior) {
-    if (
-      canonicalJson({ ...prior, expectedOutcome: sportingOutcome(prior.expectedOutcome) }) !==
-      canonicalJson({ ...settlement, expectedOutcome: sportingOutcome(settlement.expectedOutcome) })
-    )
+    if (canonicalJson(settlementIntent(prior)) !== canonicalJson(settlementIntent(settlement)))
       return { error: INVALID_VALUES, info: 'requestId already used for a different settlement' };
     return { ...SUCCESS, settlement: structuredClone(prior), existingSettlement: true };
   }
@@ -81,4 +78,9 @@ export function settleRotatingPartnerResult(params: {
   drawDefinition.competitionSettlements.push(structuredClone(settlement));
   modifyDrawNotice({ drawDefinition, tournamentId: tournamentRecord.tournamentId, eventId: event?.eventId });
   return { ...SUCCESS, settlement: structuredClone(settlement) };
+}
+
+function settlementIntent(settlement: RotatingPartnerSettlement) {
+  const { recordedBy: _recordedBy, recordedAt: _recordedAt, ...intent } = settlement;
+  return { ...intent, expectedOutcome: sportingOutcome(intent.expectedOutcome) };
 }

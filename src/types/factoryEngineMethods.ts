@@ -334,6 +334,7 @@ export type FactoryEngineMethod =
   | 'getLinkedTournamentIds'
   | 'getLuckyDrawRoundStatus'
   | 'getMatchUpCheckInHistory'
+  | 'getMatchUpCheckInState'
   | 'getMatchUpCompetitiveProfile'
   | 'getMatchUpContextIds'
   | 'getMatchUpDailyLimits'
@@ -344,6 +345,7 @@ export type FactoryEngineMethod =
   | 'getMatchUpFormatTimingUpdate'
   | 'getMatchUpFormatVariance'
   | 'getMatchUpOfficialConflicts'
+  | 'getMatchUpParticipantIds'
   | 'getMatchUpRatingDelta'
   | 'getMatchUpReadiness'
   | 'getMatchUpScheduleDetails'
@@ -1107,6 +1109,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getLinkedTournamentIds',
   'getLuckyDrawRoundStatus',
   'getMatchUpCheckInHistory',
+  'getMatchUpCheckInState',
   'getMatchUpCompetitiveProfile',
   'getMatchUpContextIds',
   'getMatchUpDailyLimits',
@@ -1117,6 +1120,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getMatchUpFormatTimingUpdate',
   'getMatchUpFormatVariance',
   'getMatchUpOfficialConflicts',
+  'getMatchUpParticipantIds',
   'getMatchUpRatingDelta',
   'getMatchUpReadiness',
   'getMatchUpScheduleDetails',

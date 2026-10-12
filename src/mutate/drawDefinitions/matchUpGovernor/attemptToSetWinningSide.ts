@@ -57,15 +57,21 @@ export function attemptToSetWinningSide(params) {
     qualifierPlaced = placed.qualifierPlaced;
   }
 
+  // shallow: the context holds the live matchUps map the exit propagation reads (see `decorateResult`)
   return decorateResult({
-    result: definedAttributes({
-      ...SUCCESS,
-      ...result, // capture attributes from directParticipants
-      connectedStructures,
-      qualifierReplaced,
-      qualifierPlaced,
-      context,
-    }),
+    result: definedAttributes(
+      {
+        ...SUCCESS,
+        ...result, // capture attributes from directParticipants
+        connectedStructures,
+        qualifierReplaced,
+        qualifierPlaced,
+        context,
+      },
+      false,
+      false,
+      true,
+    ),
     stack,
   });
 }

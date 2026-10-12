@@ -1,5 +1,6 @@
 import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
+import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 import { getDownstreamStructureIds } from '@Query/matchUps/getDownstreamStructureIds';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
@@ -341,28 +342,53 @@ export function swapWinnerLoser(params) {
   });
   if (pathReconciliation?.error) return pathReconciliation;
 
+  /**
+   * The new loser's carried exit, re-derived from the corrected result (P52; CA, 2026-10-11).
+   *
+   * A flip relabels the old loser's place in the target structure onto the new loser, and nothing re-asked what that
+   * place should hold for HOW the new loser lost: a default was not carried, and an old walkover carry decided a
+   * matchUp nobody walked over. Forward play carries the exit of the result as it now stands, so this applies the
+   * relabel rule (`relabelWithoutDirection`) to the flipped matchUp: carry an exit that is now one, withdraw one that
+   * no longer is. A change of kind over a recorded result never reaches here: `correctionKindChange` refused it.
+   * Not asked when the flipped matchUp's own loser was just PLACED: `directLoser` carried that exit already.
+   */
+  const relabelled = reconciliation?.context?.progressExitStatus
+    ? undefined
+    : relabelWithoutDirection({
+        propagateRetirementAsExit: params.propagateRetirementAsExit,
+        propagateExitStatus: params.propagateExitStatus,
+        matchUpId: inContextMatchUp.matchUpId,
+        matchUpStatus: matchUp?.matchUpStatus,
+        winningSide: params.winningSide,
+        matchUpsMap: params.matchUpsMap,
+        tournamentRecord,
+        drawDefinition,
+        event,
+      });
+  if (relabelled?.error) return relabelled;
+
   // A placement can land an exit on the target matchUp, and the exit then has to continue. The
   // context is what `setMatchUpStatus` drives its propagation loop from, so it is carried out of
   // here exactly as `attemptToSetWinningSide` carries it out of `directParticipants` — a swap that
   // placed a participant must progress that participant's exit for the same reason an ordinary
-  // direction does.
-  if (reconciliation?.context?.progressExitStatus) {
-    return {
-      ...scoreResult,
-      context: {
-        ...reconciliation.context,
-        sourceMatchUpStatusCodes: matchUp?.matchUpStatusCodes ?? [],
-        sourceMatchUpStatus: matchUp?.matchUpStatus,
-        sourceMatchUpId: inContextMatchUp.matchUpId,
-        loserMatchUp: params.targetData?.targetMatchUps?.loserMatchUp,
-        matchUpsMap: params.matchUpsMap,
-      },
-    };
-  }
-  // a placement on the relabelled path carries its own source: the later loss, not the flipped matchUp
-  if (pathReconciliation?.context?.progressExitStatus) return { ...scoreResult, context: pathReconciliation.context };
-
-  return scoreResult;
+  // direction does. A flip can start more than one carry (its own loser's, and a later loss it
+  // re-fed); the first is the context, the rest are queued for the same loop.
+  const carries = [
+    reconciliation?.context?.progressExitStatus && {
+      ...reconciliation.context,
+      sourceMatchUpStatusCodes: matchUp?.matchUpStatusCodes ?? [],
+      sourceMatchUpStatus: matchUp?.matchUpStatus,
+      sourceMatchUpId: inContextMatchUp.matchUpId,
+      loserMatchUp: params.targetData?.targetMatchUps?.loserMatchUp,
+      matchUpsMap: params.matchUpsMap,
+    },
+    relabelled?.context?.progressExitStatus && relabelled.context,
+    // a placement on the relabelled path carries its own source: the later loss, not the flipped matchUp
+    pathReconciliation?.context?.progressExitStatus && pathReconciliation.context,
+  ].filter(Boolean);
+  if (!carries.length) return scoreResult;
+  const [first, ...queued] = carries;
+  return { ...scoreResult, context: { ...first, ...(queued.length ? { queuedExitContexts: queued } : {}) } };
 }
 
 /**
