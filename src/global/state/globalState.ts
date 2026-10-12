@@ -75,6 +75,7 @@ export type ImplemtationGlobalStateTypes = {
   tournamentId?: string;
   notices: Notice[];
   modified: boolean;
+  capturedClock?: number; // epoch ms an outer engine call captured; see tools/clock.ts
 };
 
 const globalState: GlobalStateTypes = {
@@ -125,6 +126,14 @@ export function setStateProvider(globalStateProvider?: { [key: string]: any }) {
       throw new Error('Global state provider is missing required methods');
     } else {
       _globalStateProvider = globalStateProvider;
+      // optional, so a provider that predates them still installs; but without them an engine call
+      // cannot hold one instant (tools/clock.ts), and that must not degrade silently
+      if (!isFunction(globalStateProvider.getCapturedClock) || !isFunction(globalStateProvider.setCapturedClock)) {
+        console.warn(
+          '[globalState] the state provider has no getCapturedClock/setCapturedClock: engine calls will read ' +
+            'the clock per call site instead of capturing one instant per call. See tools/clock.ts.',
+        );
+      }
       return { success: true };
     }
   }
@@ -258,6 +267,19 @@ export function setInvokeObserver(observer?: InvokeObserver): { success?: boolea
 
 export function getInvokeObserver(): InvokeObserver | undefined {
   return invokeObserver;
+}
+
+/**
+ * The instant an outer engine call captured (tools/clock.ts `withCapturedClock`). Optional provider
+ * hooks: a provider without them captures nothing. Deliberately NOT a process-wide fallback, which
+ * would hand one request's instant to every request running concurrently with it.
+ */
+export function getCapturedClock(): number | undefined {
+  return _globalStateProvider.getCapturedClock?.();
+}
+
+export function setCapturedClock(timeStamp?: number) {
+  _globalStateProvider.setCapturedClock?.(timeStamp);
 }
 
 export function setSchemaWriteMode(mode?: SchemaWriteMode): {

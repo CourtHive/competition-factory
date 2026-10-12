@@ -2,6 +2,7 @@ import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { isFunction, isObject, isString } from '@Tools/objects';
 import { getMethods } from '@Global/state/syncGlobalState';
+import { withCapturedClock } from '@Tools/clock';
 
 // constants
 import { INVALID_VALUES, METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -26,5 +27,6 @@ export function askInvoke(engine: { [key: string]: any }, args: any) {
   const method = passedMethod || engine[methodName] || getMethods()[methodName];
   if (!method) return logMethodNotFound({ methodName, params });
 
-  return executeFunction(engine, method, params, methodName, 'ask');
+  // a query reads "now" (durations, windows) at one instant too; see tools/clock.ts
+  return withCapturedClock(() => executeFunction(engine, method, params, methodName, 'ask'));
 }

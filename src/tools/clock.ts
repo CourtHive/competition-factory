@@ -1,3 +1,5 @@
+import { getCapturedClock, setCapturedClock } from '@Global/state/globalState';
+
 // constants
 import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -11,12 +13,29 @@ import { SUCCESS } from '@Constants/resultConstants';
  * byte-for-byte. Default is the wall clock; `setClock()` with no argument restores it.
  *
  * Accepts a fixed instant (ISO string or epoch milliseconds) or a function returning one, so a
- * test can freeze time or advance it deliberately. Timing and notification timestamps that never
- * reach a stored record are NOT routed through here; only writes into records are.
+ * test can freeze time or advance it deliberately. Elapsed-time measurement and logging never
+ * route through here. Record stamps do, and so do some reads that compare against "now"
+ * (mutation-lock expiry, publication windows, report generatedAt); those are not writes.
  *
  * Process-wide on purpose, like `schemaWriteMode`: it is a run configuration, not request state.
+ *
+ * ONE INSTANT PER ENGINE CALL. An engine entry point (invoke, executionQueue, their async twins, ask,
+ * dry run, the mocks and declaration engines) captures the source ONCE, before any method runs, via
+ * `withCapturedClock`. Every `now()` inside that call, nested engine calls and the notification
+ * timeStamp included, returns that instant. A source that throws or returns an invalid instant is
+ * refused there, as `{ error: INVALID_DATE }`, before anything is written.
+ *
+ * The captured instant lives in the global state provider (`getCapturedClock`/`setCapturedClock`),
+ * so an async provider scopes it per request. An async provider without those optional hooks
+ * captures nothing: nested reads then go to the source each time, as they did before capture.
+ *
+ * Outside an engine call (a governor or helper called directly) there is nothing to capture into:
+ * every `now()` reads the source, and an invalid source THROWS. It used to fall back to the wall
+ * clock silently, which stamped a record with a time nobody configured.
  */
 type ClockSource = () => Date | string | number;
+
+type ClockError = { error: ErrorType; message: string };
 
 let configuredClock: ClockSource | undefined;
 
@@ -45,10 +64,64 @@ export function setClock(clock?: ClockSource | Date | string | number): { succes
   return { ...SUCCESS };
 }
 
-/** The current instant as a Date. Read at the call, never captured at import. */
+// One validated read of the source. Never throws: a throwing or invalid source becomes a ClockError.
+function readSource(): { ms: number } | ClockError {
+  if (!configuredClock) return { ms: Date.now() };
+  let date: Date | undefined;
+  try {
+    date = toDate(configuredClock());
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return { error: INVALID_DATE, message: `the configured clock threw: ${reason}` };
+  }
+  if (!date) return { error: INVALID_DATE, message: 'the configured clock returned an invalid instant' };
+  return { ms: date.getTime() };
+}
+
+/**
+ * Run `fn` at one captured instant, passed to it as `timeStamp`. Nested calls reuse the outer
+ * instant; the outermost call restores "nothing captured" when `fn` returns or throws. A source
+ * that cannot produce a valid instant is refused before `fn` runs.
+ */
+export function withCapturedClock<T>(fn: (timeStamp: number) => T): T | ClockError {
+  const captured = getCapturedClock();
+  if (captured !== undefined) return fn(captured);
+
+  const read = readSource();
+  if ('error' in read) return read;
+
+  setCapturedClock(read.ms);
+  try {
+    return fn(read.ms);
+  } finally {
+    setCapturedClock(undefined);
+  }
+}
+
+/** `withCapturedClock` for an async `fn`: the capture is released only once `fn` settles. */
+export async function withCapturedClockAsync<T>(fn: (timeStamp: number) => Promise<T>): Promise<T | ClockError> {
+  const captured = getCapturedClock();
+  if (captured !== undefined) return fn(captured);
+
+  const read = readSource();
+  if ('error' in read) return read;
+
+  setCapturedClock(read.ms);
+  try {
+    return await fn(read.ms);
+  } finally {
+    setCapturedClock(undefined);
+  }
+}
+
+/** The current instant as a Date: the captured one inside an engine call, else read at the call. */
 export function now(): Date {
-  if (!configuredClock) return new Date();
-  return toDate(configuredClock()) ?? new Date();
+  const captured = getCapturedClock();
+  if (captured !== undefined) return new Date(captured);
+
+  const read = readSource();
+  if ('error' in read) throw new Error(read.message);
+  return new Date(read.ms);
 }
 
 /** The current instant as an ISO 8601 string, the form every record timestamp takes. */

@@ -427,7 +427,8 @@ const dates = tools.generateDateRange('2024-01-01', '2024-01-05');
 ### now
 
 The engine's current instant as a `Date`: the configured clock if [`setClock`](#setclock) has fixed one, otherwise the
-wall clock. Added in 7.5.0.
+wall clock. Inside an engine call it is the instant that call captured as it began. Always a fresh `Date`. Outside an
+engine call, a configured clock that throws or returns an invalid instant makes `now` throw. Added in 7.5.0.
 
 ```js
 const instant = tools.now();
