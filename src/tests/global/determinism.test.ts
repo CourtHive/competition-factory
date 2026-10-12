@@ -131,6 +131,30 @@ it('the clock accepts an instant, a function, or nothing, and refuses junk', () 
   expect(Math.abs(now().getTime() - before)).toBeLessThan(5_000);
 });
 
+it('a fixed clock is not moved by mutating the Date that configured it or a Date it returned', () => {
+  const configured = new Date('2026-10-01T12:00:00.000Z');
+  expect(setClock(configured).success).toEqual(true);
+
+  configured.setUTCFullYear(1999);
+  expect(nowIso()).toEqual('2026-10-01T12:00:00.000Z');
+
+  const returned = now();
+  returned.setUTCFullYear(2001);
+  expect(nowIso()).toEqual('2026-10-01T12:00:00.000Z');
+
+  // every read is a fresh Date, never the same object twice
+  expect(now()).not.toBe(now());
+});
+
+it('a Date returned by a clock function is copied, so mutating what now() returns cannot reach it', () => {
+  const held = new Date('2026-10-01T12:00:00.000Z');
+  expect(setClock(() => held).success).toEqual(true);
+
+  now().setUTCFullYear(2001);
+  expect(held.toISOString()).toEqual('2026-10-01T12:00:00.000Z');
+  expect(nowIso()).toEqual('2026-10-01T12:00:00.000Z');
+});
+
 it('the random source refuses junk and resets with no argument', () => {
   expect(setRandomSource('seed' as any).error).toEqual(INVALID_VALUES);
   expect(setRandomSource(Number.NaN).error).toEqual(INVALID_VALUES);

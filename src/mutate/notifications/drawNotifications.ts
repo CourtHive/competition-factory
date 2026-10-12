@@ -27,7 +27,12 @@ function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) 
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   let timeStamp = nowMs();
-  if (drawDefinition.updatedAt && timeStamp === new Date(drawDefinition.updatedAt).getTime()) timeStamp += 1;
+  if (drawDefinition.updatedAt) {
+    // strictly greater than the previous stamp, as stampMatchUpUpdatedAt does: under a fixed or
+    // backward clock an equality-only bump gave T, T+1, T. An ordering value, not an event instant.
+    const prevMs = new Date(drawDefinition.updatedAt).getTime();
+    if (!Number.isNaN(prevMs) && timeStamp <= prevMs) timeStamp = prevMs + 1;
+  }
   const updatedAt = new Date(timeStamp).toISOString();
 
   const relevantStructureIds = structureIds?.filter(Boolean);

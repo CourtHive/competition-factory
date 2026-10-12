@@ -20,8 +20,9 @@ type ClockSource = () => Date | string | number;
 
 let configuredClock: ClockSource | undefined;
 
+// always a NEW Date: neither a caller's Date nor one handed out by `now()` is ever shared with the clock
 function toDate(value: Date | string | number): Date | undefined {
-  const date = value instanceof Date ? value : new Date(value);
+  const date = new Date(value instanceof Date ? value.getTime() : value);
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
@@ -37,8 +38,9 @@ export function setClock(clock?: ClockSource | Date | string | number): { succes
   if (typeof clock !== 'string' && typeof clock !== 'number' && !(clock instanceof Date)) {
     return { error: INVALID_VALUES };
   }
-  const fixed = toDate(clock);
-  if (!fixed) return { error: INVALID_DATE };
+  const fixed = toDate(clock)?.getTime();
+  if (fixed === undefined) return { error: INVALID_DATE };
+  // a fixed instant is kept as epoch ms, so mutating the Date that configured it cannot move it
   configuredClock = () => fixed;
   return { ...SUCCESS };
 }
