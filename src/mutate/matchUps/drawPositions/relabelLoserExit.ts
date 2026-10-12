@@ -76,7 +76,12 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
     drawDefinition,
     event: args.event,
   }).matchUps;
-  const standing = standingMatchUp(inContextDrawMatchUps, args.targetStructureId, loserParticipantId);
+  const standing = carriedPastStanding({
+    standing: standingMatchUp(inContextDrawMatchUps, args.targetStructureId, loserParticipantId),
+    matchUps: inContextDrawMatchUps,
+    loserParticipantId,
+    sourceMatchUpId,
+  });
   const carriedHere = standing?.sideExitProvenance
     ? Object.values(standing.sideExitProvenance).some((entry) => entry?.sourceMatchUpId === sourceMatchUpId)
     : false;
@@ -226,6 +231,40 @@ export function onlyThisCarry(standing: HydratedMatchUp, loserParticipantId: str
   // 16/11 `Consolation|3|2`, which stood as a double exit until F2 was settled, CA 2026-10-07)
   if (carriedExitStatus(other)) return isDoubleExit(standing.matchUpStatus) && !standing.winningSide;
   return standing.matchUpStatus === own.matchUpStatus && standing.winningSide === (loserSide === 1 ? 2 : 1);
+}
+
+/**
+ * Where a CARRIED-PAST loser's carry stands. A loser carrying an exit into a matchUp another exit had already decided for
+ * the seat awaiting them, over a result recorded below, is carried past it (P51 group 2, `carryPastDecidedMatchUp`):
+ * they win that matchUp by the exit standing there and carry their own exit on from its winner matchUp, and nothing of
+ * theirs is written on the matchUp they passed. That is the earliest matchUp holding them, so the relabel looked there,
+ * found no carry, and withdrew nothing: re-entering the origin as played left the carry deciding the matchUp onward
+ * (census 20496362, OLYMPIC 16/16: America's walkover, carried past `West|1|4`, still won `West|2|2` for Nikola once
+ * `East|1|8` was played). The carry is withdrawn where it was written.
+ */
+function carriedPastStanding({
+  loserParticipantId,
+  sourceMatchUpId,
+  standing,
+  matchUps,
+}: {
+  matchUps: HydratedMatchUp[] | undefined;
+  standing?: HydratedMatchUp;
+  loserParticipantId: string;
+  sourceMatchUpId: string;
+}): HydratedMatchUp | undefined {
+  if (!standing || !isExit(standing.matchUpStatus)) return standing;
+  const loserSide = standing.sides?.find((side) => side?.participantId === loserParticipantId)?.sideNumber;
+  // they won it by the exit standing there, and it records nothing from this source
+  if (!loserSide || loserSide !== standing.winningSide) return standing;
+  const recordsSource = Object.values(standing.sideExitProvenance ?? {}).some(
+    (entry) => entry?.sourceMatchUpId === sourceMatchUpId,
+  );
+  if (recordsSource) return standing;
+  const onward = (matchUps ?? []).find((matchUp) => matchUp.matchUpId === standing.winnerMatchUpId);
+  const onwardSide = onward?.sides?.find((side) => side?.participantId === loserParticipantId)?.sideNumber;
+  const entry = onwardSide ? onward?.sideExitProvenance?.[onwardSide] : undefined;
+  return entry?.sourceMatchUpId === sourceMatchUpId && carriedExitStatus(entry) ? onward : standing;
 }
 
 export function standingMatchUp(matchUps: HydratedMatchUp[] | undefined, structureId: string, participantId: string) {
