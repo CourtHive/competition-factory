@@ -892,7 +892,7 @@ function expectResolvedExitUnwound(consolationMatchUp, consolationMatchUps, exit
 
 test('FMLC: resetting the fall-through source is ALLOWED while the consolation exit is merely DERIVED', () => {
   setSubscriptions({});
-  const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, advPlayerId } =
+  const { drawId, mainMatchUp, consolationMatchUps, consolationMatchUp, exitMatchUpId, advPlayerId, woPlayerId } =
     buildAutoResolveCascade();
 
   // sanity: before the reset, the exit is a RESOLVED walkover the fall-through (pAdv) won
@@ -905,7 +905,20 @@ test('FMLC: resetting the fall-through source is ALLOWED while the consolation e
   const result = resetToTBP(drawId, mainMatchUp(2, 1).matchUpId);
   expect(result.error).toBeUndefined();
 
-  expectResolvedExitUnwound(consolationMatchUp, consolationMatchUps, exitMatchUpId, advPlayerId);
+  // The fall-through is taken back and the matchUp returns to the state forward play left it in before `Main|2|1`
+  // was played: pWo's carried walkover still stands, awarded to the empty seat awaiting an opponent (RULE 2). The
+  // reset clears a position this matchUp never stored, so it takes nothing from the side that holds one; it used to
+  // drop pWo's carry with it, leaving TO_BE_PLAYED (census 20490105 is the same clear).
+  const exit = consolationMatchUp(exitMatchUpId);
+  expect(exit.matchUpStatus).toEqual(WALKOVER);
+  const carrier = exit.sides.find((s) => s.participantId === woPlayerId);
+  expect(carrier?.sideNumber).toBeDefined();
+  expect(exit.winningSide).toEqual(3 - carrier.sideNumber);
+  expect(exit.sides.find((s) => s.sideNumber === exit.winningSide)?.participantId).toBeUndefined();
+  const beyond = consolationMatchUps().filter(
+    (m) => m.roundNumber > exit.roundNumber && m.sides?.some((s) => s.participantId === advPlayerId),
+  );
+  expect(beyond.length).toEqual(0);
   expect(tournamentEngine.getDrawInconsistencies({ drawId }).inconsistencies).toEqual([]);
 });
 

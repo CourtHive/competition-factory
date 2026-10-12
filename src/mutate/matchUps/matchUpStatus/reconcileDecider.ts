@@ -109,7 +109,7 @@ export function reconcileDecider({
   const winnerId = participantOn(final.winningSide);
   const loserId = final.winningSide ? participantOn(3 - final.winningSide) : undefined;
 
-  if (winnerId && loserId) {
+  if (winnerId) {
     seatFinalists({ structureId: winnerMatchUp.structureId, drawDefinition, winnerId, loserId });
   }
 
@@ -290,7 +290,13 @@ function deciderChangedByCascade({
 /**
  * The final's winner takes the decider's first seat and its loser the second — which is where the
  * links put them when a result is entered, measured in both directions on DOUBLE_ELIMINATION 8/8.
- * Both are already in the structure; only which of them sits where can be out of date.
+ *
+ * AND NOBODY ELSE SITS THERE (census F2, 2026-10-12). A final won against an exit has no loser, and a correction that
+ * changes WHO won it — on the same side — re-seats the new winner through the link without taking the old one out:
+ * DOUBLE_ELIMINATION 8/4, seed 20477784, Valentina won the Main final by a produced walkover, `Main|2|1` was corrected so
+ * Chris won it, and the decider read `[Valentina, Chris]`. Valentina stayed after Chris left, and the final's real
+ * result was later refused seating its loser (`ERR_OCCUPIED_DRAW_POSITION`) after the draw had been written. So the
+ * decider's two seats are written from the final: winner first, loser (or nobody) second.
  */
 function seatFinalists({
   drawDefinition,
@@ -301,14 +307,17 @@ function seatFinalists({
   drawDefinition: DrawDefinition;
   structureId: string;
   winnerId: string;
-  loserId: string;
+  loserId?: string;
 }) {
   const { structure } = findStructure({ drawDefinition, structureId });
-  const assignments = (getPositionAssignments({ structure }).positionAssignments ?? [])
-    .filter((assignment) => assignment.participantId === winnerId || assignment.participantId === loserId)
-    .sort((a, b) => a.drawPosition - b.drawPosition);
-  if (assignments.length !== 2 || assignments[0].participantId === winnerId) return;
+  const assignments = [...(getPositionAssignments({ structure }).positionAssignments ?? [])].sort(
+    (a, b) => a.drawPosition - b.drawPosition,
+  );
+  // a decider is one matchUp between two seats; any other shape is left as the links made it
+  if (assignments.length !== 2 || assignments.some((assignment) => assignment.bye)) return;
+  if (assignments[0].participantId === winnerId && assignments[1].participantId === loserId) return;
 
   assignments[0].participantId = winnerId;
-  assignments[1].participantId = loserId;
+  if (loserId) assignments[1].participantId = loserId;
+  else delete assignments[1].participantId;
 }

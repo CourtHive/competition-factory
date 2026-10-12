@@ -47,6 +47,12 @@ import fs from 'fs';
  * for an unoccupied seat, is released with it (`releaseHoldersByeFromTarget`, `passedByeReleased`;
  * `aCarryPastAReleasedByeComesBack`). None exposes another property behind it.
  *
+ * **OTHER: the remaining eight DOUBLE_ELIMINATION instances closed** (2026-10-12), by five fixes, one per shape
+ * (`doubleEliminationRefusalsThatWrote`): the decider is seated from the final that stands; an exit arriving opposite
+ * a carrier converges; an award taken back is released across its own winner link; an occupant carrying an exit is
+ * read from the side the advancement derived; and a clear of a position the matchUp never held keeps the held side's
+ * carry. None exposes another property behind it.
+ *
  * ## OPEN — the instances that still refuse after writing, by group
  *
  * The instances failing `ERROR_IMPLIES_NO_MUTATION` with their recorded code must EQUAL these lists, each in its own
@@ -57,16 +63,7 @@ const OPEN: Record<string, Set<string>> = {
   'SETTLE-A': new Set([]),
   'SETTLE-B': new Set([]),
   'P51-CONVERGENCE': new Set([]),
-  OTHER: new Set([
-    'off:20460396',
-    'on:20480411',
-    'on:20490105',
-    'policyoff:20460396',
-    'policyoff:20477784',
-    'policyoff:20506968',
-    'policyoff:20522496',
-    'policyoff:20537779',
-  ]),
+  OTHER: new Set([]),
 };
 
 /**

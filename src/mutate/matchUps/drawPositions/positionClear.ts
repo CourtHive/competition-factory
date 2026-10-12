@@ -12,10 +12,10 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
-import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { ensureInt } from '@Tools/ensureInt';
 import { overlap } from '@Tools/arrays';
 import {
@@ -785,7 +785,8 @@ function updateMatchUpStatusAfterRemoval({
     (initialDrawPositions?.includes(sidePosition)
       ? (sideFedFromPosition({ targetMatchUp, drawPosition: sidePosition, drawDefinition, structureId }) ??
         sideOfRemovedBye({ targetMatchUp, initialDrawPositions, initialMatchUpStatus }))
-      : undefined);
+      : undefined) ??
+    sideBesideHeldPosition({ targetMatchUp, initialDrawPositions, removedDrawPosition, drawDefinition, structureId });
   // a matchUp holding NO position, from which none was removed, has nothing a clear can take, so it loses no origin
   // either (census 20030617: a second pass over `West|2|1`, empty by then, erased the produced DEFAULTED kept above).
   // A matchUp that holds a position is still cleared as before: its winner can have arrived without a stored position
@@ -967,6 +968,35 @@ function sideOfRemovedBye({
   });
   if (exitSides.length !== 1) return undefined;
   return exitSides[0] === 1 ? 2 : 1;
+}
+
+// A position this matchUp never held, and none removed from it, says nothing about the side that HOLDS one: only the
+// unheld side can be what the clear takes back (an FMLC fall-through winner arrived there without a stored position).
+// Census 20490105 (DE 16/13, `on`): relabelling `Main|1|6` cleared dp 11 through `Backdraw|2|2`, which held only
+// dp 5, and the blanket clear erased dp 5's carried WALKOVER; the produced exit that then arrived was awarded to the
+// exit-carrier, who advanced into an occupied seat.
+function sideBesideHeldPosition({
+  targetMatchUp,
+  initialDrawPositions,
+  removedDrawPosition,
+  drawDefinition,
+  structureId,
+}: {
+  initialDrawPositions?: number[];
+  removedDrawPosition?: number;
+  drawDefinition: DrawDefinition;
+  targetMatchUp: MatchUp;
+  structureId?: string;
+}): number | undefined {
+  const held = initialDrawPositions?.filter(Boolean) ?? [];
+  if (removedDrawPosition || held.length !== 1) return undefined;
+  const heldSideNumber = getDrawPositionSideNumber({
+    matchUp: { ...targetMatchUp, sides: undefined, drawPositions: initialDrawPositions },
+    drawPosition: held[0],
+    drawDefinition,
+    structureId,
+  });
+  return heldSideNumber ? 3 - heldSideNumber : undefined;
 }
 
 function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: number) {
