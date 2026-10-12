@@ -126,6 +126,14 @@ export function setStateProvider(globalStateProvider?: { [key: string]: any }) {
       throw new Error('Global state provider is missing required methods');
     } else {
       _globalStateProvider = globalStateProvider;
+      // optional, so a provider that predates them still installs; but without them an engine call
+      // cannot hold one instant (tools/clock.ts), and that must not degrade silently
+      if (!isFunction(globalStateProvider.getCapturedClock) || !isFunction(globalStateProvider.setCapturedClock)) {
+        console.warn(
+          '[globalState] the state provider has no getCapturedClock/setCapturedClock: engine calls will read ' +
+            'the clock per call site instead of capturing one instant per call. See tools/clock.ts.',
+        );
+      }
       return { success: true };
     }
   }

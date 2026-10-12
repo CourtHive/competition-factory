@@ -5,7 +5,7 @@ import officiatingEngine from '@Assemblies/engines/officiating';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import askEngine from '@Assemblies/engines/ask';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 
 // constants
 import { INVALID_DATE } from '@Constants/errorConditionConstants';
@@ -165,5 +165,23 @@ it('overlapping async requests each keep their own captured instant', async () =
     expect(fast.timeStamp).not.toEqual(slow.timeStamp);
   } finally {
     setStateProvider(previous);
+  }
+});
+
+it('installing a provider without the capture hooks is announced, not silent', () => {
+  const previous = getProvider();
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  try {
+    const { getCapturedClock: _get, setCapturedClock: _set, ...withoutHooks } = previous;
+    expect(setStateProvider(withoutHooks).success).toEqual(true);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/getCapturedClock\/setCapturedClock/);
+
+    warn.mockClear();
+    expect(setStateProvider(previous).success).toEqual(true);
+    expect(warn).not.toHaveBeenCalled();
+  } finally {
+    setStateProvider(previous);
+    warn.mockRestore();
   }
 });
