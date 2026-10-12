@@ -1,5 +1,23 @@
 # Changelog
 
+## [7.12.0](https://github.com/CourtHive/competition-factory/compare/v7.11.0...v7.12.0) (2026-10-12)
+
+
+### Features
+
+* **check-in:** getMatchUpCheckInState says who is at the desk; export getMatchUpParticipantIds ([#5381](https://github.com/CourtHive/competition-factory/issues/5381)) ([47b10b2](https://github.com/CourtHive/competition-factory/commit/47b10b27efe18f226bbabb2e956cde58d809a39a))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.11.0 ([#5378](https://github.com/CourtHive/competition-factory/issues/5378)) ([48cd8f8](https://github.com/CourtHive/competition-factory/commit/48cd8f8c0997de26825ff0aeb2f1b5c94c47b033))
+* **draws:** preserve settlement audit metadata across retries ([#5382](https://github.com/CourtHive/competition-factory/issues/5382)) ([69d05ce](https://github.com/CourtHive/competition-factory/commit/69d05ce4620dd4c7081e41704e9a607d9429515b))
+* **exit-propagation:** a carry past several BYEs comes home when one of them goes ([#5380](https://github.com/CourtHive/competition-factory/issues/5380)) ([1d70b3a](https://github.com/CourtHive/competition-factory/commit/1d70b3a5eb33ce0a896acf3f90ffbd8a3723e8f4))
+* **exit-propagation:** a recorded result downstream fixes the kind of a correction ([#5384](https://github.com/CourtHive/competition-factory/issues/5384)) ([43ced17](https://github.com/CourtHive/competition-factory/commit/43ced17b72803f91b1f408732c187fc08beb91d5))
+* **outcome:** a refusal settles nothing, and the settle step reads the draw the call left ([#5388](https://github.com/CourtHive/competition-factory/issues/5388)) ([07b171c](https://github.com/CourtHive/competition-factory/commit/07b171cf5eb9f724d9241f101f6d17e906e249ef))
+* **rest:** a player is on court only for a matchUp that holds a court and comes before ([#5386](https://github.com/CourtHive/competition-factory/issues/5386)) ([136841d](https://github.com/CourtHive/competition-factory/commit/136841d9cb0fde7af26e6dab2690cf03f471b128))
+* **scoring:** keyValueConstants.HOTKEYS names each key once ([#5385](https://github.com/CourtHive/competition-factory/issues/5385)) ([98f1073](https://github.com/CourtHive/competition-factory/commit/98f107301f0529d8e3c005b1f6c83fea59b995c1))
+
 ## [7.11.0](https://github.com/CourtHive/competition-factory/compare/v7.10.0...v7.11.0) (2026-10-11)
 
 
