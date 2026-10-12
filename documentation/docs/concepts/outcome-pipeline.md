@@ -217,7 +217,12 @@ After the write, and only on success:
    it would have at first entry (7.7.0; [exit propagation](./exit-propagation.md#a-relabel-out-of-a-convergence-and-back-into-one)).
 3. **Round robin tally** is recomputed when the matchUp is in a group (`updateTallyIfNeeded`).
 4. **Stale exit origins are reconciled** once removals, directions and propagation have all settled:
-   a carried exit whose origin no longer describes an exit is corrected.
+   a carried exit whose origin no longer describes an exit is corrected. The reconciliation is asked of
+   the draw **as it stands at that point**, read afresh, never of a view of the draw taken earlier in the
+   call: such a view describes the draw as the direction left it, before propagation wrote. Steps 4 and
+   5 run only when the call was accepted (§ 6). Until 2026-10-11 the reconciliation read a deep copy
+   carried in the call's context: what it wrote was lost, and the next call repaired the origin, a
+   refused call included (census family F2).
 5. **The draw is settled**: held exits are released (`settleHeldExits`), and a final that feeds a
    decider settles whether the decider is needed (`reconcileDeciders`) when a final's winner changed,
    or when the cascade moved a decider while the final's winner stayed put (7.8.0). A mutation OF the
@@ -231,7 +236,14 @@ After the write, and only on success:
 
 - **A refusal changes nothing** (`ERROR_IMPLIES_NO_MUTATION`). The checks in § 2 run above every
   write; the two that used to run late (participants on a bare winner, feed eligibility) were moved
-  up after each was measured leaving a destroyed previous result behind a refusal.
+  up after each was measured leaving a destroyed previous result behind a refusal. **Nothing of § 5
+  after propagation runs on a refused call**: no reconciliation, no settling, no `scoredTime`
+  clean-up. A refusal must not repair, as a side effect, what an earlier call left; that repair is the
+  next accepted call's to make (2026-10-11: the settle step ran after a refusal and was the refused
+  call's only write in 55 of 92 census refusals after a write).
+- **What one step hands the next is the draw itself.** A context passed between steps carries
+  references to the stored matchUps, never copies: the engine's deep-copy setting governs what is
+  RETURNED to a caller, never what a mutation reads or writes.
 - **Asking for the state a matchUp is already in is satisfied, not repeated.** A second identical
   double exit is a no-op success; without this, the cascade read its own earlier work as a second
   source and escalated a WALKOVER to a DOUBLE_WALKOVER. Scoped to double exits only.
@@ -276,7 +288,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   a loser carries, the exit a double exit produces, two exits converging, the swap, a decider's
   settlement, TEAM auto-calc and the direction of a dual its lines decide, and an exit that meets a
   BYE (none may be left labelled an exit beside it). A refusal v1 raises at the apply stage, where
-  v2 does not reach (`APPLY_STAGE_CODES`: an invalid time, an active or assigned drawPosition, a
+  v2 does not reach (`APPLY_STAGE_CODES`: an invalid time, an active, assigned or occupied drawPosition, a
   mutation lock, `ERR_FORCED`, and the status and assignment checks a write makes), is recorded as
   deferred rather than a divergence; so is a step v2 does not yet plan, such as a relabel whose
   loser stands past a BYE, or an exit carried into a swap. `getDifferentialTally()` counts compared
