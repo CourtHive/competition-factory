@@ -1,4 +1,5 @@
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { withCapturedClock } from '@Tools/clock';
 
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -31,38 +32,45 @@ export function executeDeclarationQueue<R>({
 } {
   if (!Array.isArray(directives)) return { error: INVALID_VALUES, context: { message: 'directives must be an array' } };
 
-  const snapshot = rollbackOnError ? makeDeepCopy(getRecords(), false, true) : undefined;
+  // one instant for the whole queue, captured before any directive runs; see tools/clock.ts
+  return withCapturedClock(() => {
+    const snapshot = rollbackOnError ? makeDeepCopy(getRecords(), false, true) : undefined;
 
-  const results: any[] = [];
-  for (const directive of directives) {
-    if (typeof directive !== 'object')
-      return { error: INVALID_VALUES, context: { message: 'directive must be an object' } };
+    const results: any[] = [];
+    for (const directive of directives) {
+      if (typeof directive !== 'object')
+        return { error: INVALID_VALUES, context: { message: 'directive must be an object' } };
 
-    const { method: methodName, pipe } = directive;
-    const params: { [key: string]: unknown } = directive.params ? { ...directive.params } : {};
+      const { method: methodName, pipe } = directive;
+      const params: { [key: string]: unknown } = directive.params ? { ...directive.params } : {};
 
-    const method = engine[methodName];
-    if (!method) {
-      if (snapshot) setRecords(snapshot);
-      return { error: INVALID_VALUES, context: { message: `Method not found: ${methodName}` }, rolledBack: !!snapshot };
-    }
-
-    if (pipe && results.length) {
-      const lastResult = results.at(-1);
-      for (const pipeKey of Object.keys(pipe)) {
-        if (lastResult[pipeKey] !== undefined) params[pipeKey] = lastResult[pipeKey];
+      const method = engine[methodName];
+      if (!method) {
+        if (snapshot) setRecords(snapshot);
+        return {
+          error: INVALID_VALUES,
+          context: { message: `Method not found: ${methodName}` },
+          rolledBack: !!snapshot,
+        };
       }
+
+      if (pipe && results.length) {
+        const lastResult = results.at(-1);
+        for (const pipeKey of Object.keys(pipe)) {
+          if (lastResult[pipeKey] !== undefined) params[pipeKey] = lastResult[pipeKey];
+        }
+      }
+
+      const result = method(params);
+      if (result?.error) {
+        if (snapshot) setRecords(snapshot);
+        return { ...result, rolledBack: !!snapshot };
+      }
+
+      results.push({ ...result, methodName });
     }
 
-    const result = method(params);
-    if (result?.error) {
-      if (snapshot) setRecords(snapshot);
-      return { ...result, rolledBack: !!snapshot };
-    }
-
-    results.push({ ...result, methodName });
-  }
-
-  const success = results.every((r) => r.success);
-  return { success, results };
+    const success = results.every((r) => r.success);
+    return { success, results };
+  });
 }

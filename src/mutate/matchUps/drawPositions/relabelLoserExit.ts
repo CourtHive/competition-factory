@@ -1,5 +1,4 @@
 import { removeOnwardLoserPlacements } from '@Mutate/matchUps/drawPositions/removeOnwardLoserPlacements';
-import { releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -13,6 +12,10 @@ import {
   withdrawProducedExits,
   carriedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  releaseAdvancedDrawPositionAcrossLinks,
+  releaseLinkedWinnerAdvancement,
+} from './releaseLinkedWinnerAdvancement';
 
 // constants and types
 import { BYE, COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
@@ -73,7 +76,12 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
     drawDefinition,
     event: args.event,
   }).matchUps;
-  const standing = standingMatchUp(inContextDrawMatchUps, args.targetStructureId, loserParticipantId);
+  const standing = carriedPastStanding({
+    standing: standingMatchUp(inContextDrawMatchUps, args.targetStructureId, loserParticipantId),
+    matchUps: inContextDrawMatchUps,
+    loserParticipantId,
+    sourceMatchUpId,
+  });
   const carriedHere = standing?.sideExitProvenance
     ? Object.values(standing.sideExitProvenance).some((entry) => entry?.sourceMatchUpId === sourceMatchUpId)
     : false;
@@ -178,6 +186,21 @@ function unawardProducedExit(args: RelabelArgs, standing: HydratedMatchUp, loser
     event: args.event,
     drawPosition,
   });
+  // ...AND ACROSS THE AWARD'S OWN WINNER LINK. The release above starts at the next round of this structure and asks a
+  // link only for the rounds it released; an award in a structure's LAST round releases none, so its winner stayed where
+  // the link had put them (census F2, DOUBLE_ELIMINATION 8/6, 20506968: Darwin won the Backdraw final by arriving at a
+  // pending produced walkover and crossed into the Main final; relabelled from RETIRED to DEFAULTED, his carry converged
+  // the Backdraw final, and he stayed in the Main final until a later correction was refused placing its real winner).
+  releaseLinkedWinnerAdvancement({
+    participantId: loserParticipantId,
+    tournamentRecord: args.tournamentRecord,
+    structureId: standing.structureId as string,
+    roundNumber: standing.roundNumber,
+    drawDefinition: args.drawDefinition,
+    matchUpsMap: args.matchUpsMap,
+    event: args.event,
+    drawPosition,
+  });
   delete stored.winningSide;
 }
 
@@ -208,6 +231,40 @@ export function onlyThisCarry(standing: HydratedMatchUp, loserParticipantId: str
   // 16/11 `Consolation|3|2`, which stood as a double exit until F2 was settled, CA 2026-10-07)
   if (carriedExitStatus(other)) return isDoubleExit(standing.matchUpStatus) && !standing.winningSide;
   return standing.matchUpStatus === own.matchUpStatus && standing.winningSide === (loserSide === 1 ? 2 : 1);
+}
+
+/**
+ * Where a CARRIED-PAST loser's carry stands. A loser carrying an exit into a matchUp another exit had already decided for
+ * the seat awaiting them, over a result recorded below, is carried past it (P51 group 2, `carryPastDecidedMatchUp`):
+ * they win that matchUp by the exit standing there and carry their own exit on from its winner matchUp, and nothing of
+ * theirs is written on the matchUp they passed. That is the earliest matchUp holding them, so the relabel looked there,
+ * found no carry, and withdrew nothing: re-entering the origin as played left the carry deciding the matchUp onward
+ * (census 20496362, OLYMPIC 16/16: America's walkover, carried past `West|1|4`, still won `West|2|2` for Nikola once
+ * `East|1|8` was played). The carry is withdrawn where it was written.
+ */
+function carriedPastStanding({
+  loserParticipantId,
+  sourceMatchUpId,
+  standing,
+  matchUps,
+}: {
+  matchUps: HydratedMatchUp[] | undefined;
+  standing?: HydratedMatchUp;
+  loserParticipantId: string;
+  sourceMatchUpId: string;
+}): HydratedMatchUp | undefined {
+  if (!standing || !isExit(standing.matchUpStatus)) return standing;
+  const loserSide = standing.sides?.find((side) => side?.participantId === loserParticipantId)?.sideNumber;
+  // they won it by the exit standing there, and it records nothing from this source
+  if (!loserSide || loserSide !== standing.winningSide) return standing;
+  const recordsSource = Object.values(standing.sideExitProvenance ?? {}).some(
+    (entry) => entry?.sourceMatchUpId === sourceMatchUpId,
+  );
+  if (recordsSource) return standing;
+  const onward = (matchUps ?? []).find((matchUp) => matchUp.matchUpId === standing.winnerMatchUpId);
+  const onwardSide = onward?.sides?.find((side) => side?.participantId === loserParticipantId)?.sideNumber;
+  const entry = onwardSide ? onward?.sideExitProvenance?.[onwardSide] : undefined;
+  return entry?.sourceMatchUpId === sourceMatchUpId && carriedExitStatus(entry) ? onward : standing;
 }
 
 export function standingMatchUp(matchUps: HydratedMatchUp[] | undefined, structureId: string, participantId: string) {
@@ -398,8 +455,25 @@ export function loserPlayedOn(
       onward.has(matchUp.structureId as string) &&
       matchUp.sides?.some((side) => side?.participantId === participantId) &&
       hasResult(matchUp) &&
-      !carriedFrom(matchUp, participantId),
+      (!carriedFrom(matchUp, participantId) || carryPlayedOn(matchUp, matchUps, drawDefinition)),
   );
+}
+
+/**
+ * Where the participant only CARRIED an exit in, the matchUp is the cascade's award to whoever stood opposite, and
+ * that winner may have gone on and recorded a result: the same question the matchUp the loser stands in is asked
+ * (`winnerPlayedOn`), one structure on. Census 20496362 (OLYMPIC 16/16, `allowChangePropagation`): Italo's walkover
+ * carried through `West|1|4` into `South|1|2` was Uhura's award, and Uhura then beat Nicole in `South|2|1`.
+ * Relabelling `East|1|7`'s walkover as played withdrew the carry and left her standing in a recorded result over
+ * an undecided matchUp. A walk that cannot read the draw counts as played on, as the guard reads it.
+ */
+function carryPlayedOn(
+  matchUp: HydratedMatchUp,
+  matchUps: HydratedMatchUp[] | undefined,
+  drawDefinition: DrawDefinition,
+) {
+  const onward = winnerPlayedOn(matchUp, matchUps, drawDefinition);
+  return !!onward.error || !!onward.playedOn;
 }
 
 /** the participant's own side of this matchUp was carried in: the exit is the cascade's, not a result they earned */

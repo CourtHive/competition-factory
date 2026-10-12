@@ -15,16 +15,24 @@ import {
   getSideExitProvenance,
   withdrawProducedExits,
   setSideExitProvenance,
+  blankSideExitCode,
   withdrawByeClaim,
   blankExitCodes,
   getExitSides,
 } from './sideExitProvenance';
 
 // constants and types
-import type { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import type {
+  SideExitProvenanceEntry,
+  MatchUpStatusUnion,
+  DrawDefinition,
+  Tournament,
+  MatchUp,
+  Event,
+} from '@Types/tournamentTypes';
 
 type SettleArgs = {
   tournamentRecord?: Tournament;
@@ -159,6 +167,21 @@ export function settleRederivedDoubleExit({
         drawDefinition,
       });
     const produced = isDoubleExit(origin.matchUpStatus) && !!inContextMatchUps && (winnerStands || !overLoserLink);
+    // carried over a loser link with nobody standing opposite: nothing to replay or advance, but the exit still reads
+    // as the kept double exit alone produced it, pending
+    if (!produced && isDoubleExit(origin.matchUpStatus) && overLoserLink && !winnerStands) {
+      settleProducedExit({
+        stored,
+        keptSide,
+        keptEntry,
+        winnerStands,
+        matchUpsMap,
+        tournamentRecord,
+        drawDefinition,
+        event,
+      });
+      return undefined;
+    }
     if (!produced || !inContext || !inContextMatchUps) return undefined;
     // what it produced downstream as a double exit goes first, as for a carrier: the winner target still held the
     // pending exit this convergence produced, and a winner directed into it would have been awarded it on arrival
@@ -173,6 +196,16 @@ export function settleRederivedDoubleExit({
     if (!overLoserLink) {
       withdrawByeSeats({ claimantMatchUpId: matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
     }
+    settleProducedExit({
+      stored,
+      keptSide,
+      keptEntry,
+      winnerStands,
+      matchUpsMap,
+      tournamentRecord,
+      drawDefinition,
+      event,
+    });
     return advanceStandingWinner({
       inContextDrawMatchUps: inContextMatchUps,
       tournamentRecord,
@@ -232,6 +265,69 @@ export function settleRederivedDoubleExit({
     drawDefinition,
     event,
   });
+}
+
+/**
+ * A re-derived produced exit reads as the kept double exit alone would have produced it. The withdrawn side's code goes
+ * with its exit, the kept side's stays (`aWithdrawnExitTakesItsCode`). And a produced exit RELAYED PAST A BYE, with
+ * nobody standing on the side it would be awarded to, lands PENDING until somebody arrives (CA 2026-10-03, Q3), as on
+ * the direct path; one that arrived straight down its link keeps the award to the seat that will receive the next
+ * arrival (`exitStatusClearing` 2.3, CA 2026-09-19). Left as the re-derivation wrote it, a relabel to a played result
+ * kept the converged codes on the winner's side and awarded a relayed exit to an empty seat: census policy-off 20466254
+ * (COMPASS 32/27, `South|3|1`) and 20488568 (OLYMPIC 32/29, `South|2|1`), and the codes alone in 20520641
+ * (CURTIS_CONSOLATION 16/11, `Consolation 1|3|1`); each an exit code on the winning side.
+ */
+function settleProducedExit({
+  tournamentRecord,
+  drawDefinition,
+  winnerStands,
+  matchUpsMap,
+  keptEntry,
+  keptSide,
+  stored,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  keptEntry: SideExitProvenanceEntry;
+  matchUpsMap: MatchUpsMap;
+  winnerStands: boolean;
+  keptSide: number;
+  stored: MatchUp;
+  event?: Event;
+}): void {
+  blankSideExitCode(stored, 3 - keptSide);
+  if (!winnerStands && relayedPastBye({ stored, keptEntry, drawMatchUps: matchUpsMap.drawMatchUps })) {
+    delete stored.winningSide;
+  }
+  modifyMatchUpNotice({
+    tournamentId: tournamentRecord?.tournamentId,
+    context: 'settleRederivedDoubleExit',
+    eventId: event?.eventId,
+    matchUp: stored,
+    drawDefinition,
+    event,
+  });
+}
+
+/** a BYE feeding this matchUp holds the kept exit's origin: the exit reached here relayed past it, not down its link */
+function relayedPastBye({
+  drawMatchUps,
+  keptEntry,
+  stored,
+}: {
+  keptEntry: SideExitProvenanceEntry;
+  drawMatchUps: MatchUp[];
+  stored: MatchUp;
+}): boolean {
+  return drawMatchUps.some(
+    (feeder) =>
+      feeder.winnerMatchUpId === stored.matchUpId &&
+      feeder.matchUpStatus === BYE &&
+      Object.values(getSideExitProvenance({ matchUp: feeder }) ?? {}).some(
+        (entry) => entry?.sourceMatchUpId === keptEntry.sourceMatchUpId,
+      ),
+  );
 }
 
 /**

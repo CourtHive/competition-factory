@@ -14,8 +14,8 @@ import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addParticipant } from './addParticipant';
 import { countries } from '@Fixtures/countryData';
+import { competitionNow } from '@Tools/clock';
 import { isString } from '@Tools/objects';
-import { now } from '@Tools/clock';
 
 // constants
 import { GROUP, INDIVIDUAL, PAIR, participantTypes } from '@Constants/participantConstants';
@@ -278,7 +278,7 @@ function updatePerson({ updateParticipantName, existingParticipant, newValues, p
   } else if (birthDate) {
     if (!isValidDateString(birthDate)) return { error: INVALID_DATE };
     const birthYear = new Date(birthDate).getFullYear();
-    if (new Date(birthDate) > now() || birthYear < 1900) {
+    if (new Date(birthDate) > competitionNow() || birthYear < 1900) {
       return { error: INVALID_DATE, info: 'birthDate must be a past date' };
     }
     newPersonValues.birthDate = birthDate;

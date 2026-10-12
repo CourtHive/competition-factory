@@ -53,7 +53,7 @@ export { constantToString } from '@Tools/strings';
 export { numericSort } from '@Tools/sorting';
 export { UUID, UUIDS } from '@Tools/UUID';
 export { createSeededRandom, randomSource, setRandomSource } from '@Tools/prng';
-export { nowIso, now, setClock } from '@Tools/clock';
+export { competitionNow, nowIso, now, setClock, setCompetitionClock } from '@Tools/clock';
 export { canonicalizeJsonText, canonicalJson } from '@Tools/canonicalJson';
 export { timeZone } from '@Tools/timeZone';
 // The zoned intent, completing plainDate / plainTime / zonedDateTime. `timeZone`

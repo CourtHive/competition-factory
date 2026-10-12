@@ -1,11 +1,11 @@
-import { dateStringDaysChange, extractDate, isValidDateString, zeroPad } from '@Tools/dateTime';
+import { dateStringDaysChange, isValidDateString, zeroPad } from '@Tools/dateTime';
+import { competitionToday } from '@Query/tournaments/competitionToday';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isNumeric } from '@Tools/math';
-import { now } from '@Tools/clock';
 
 // constants and types
 import { INVALID_CATEGORY, INVALID_DATE } from '@Constants/errorConditionConstants';
-import { Category } from '@Types/tournamentTypes';
+import { Category, Tournament } from '@Types/tournamentTypes';
 
 const typeMatch = (arr, type) => arr.filter(Boolean).every((i) => typeof i === type);
 const allNumeric = (arr) => arr.filter(Boolean).every(isNumeric);
@@ -13,6 +13,8 @@ const allNumeric = (arr) => arr.filter(Boolean).every(isNumeric);
 type ParseArgs = {
   consideredDate?: string;
   category?: Category;
+  /** Supplied by the engine; frames "today" when no `consideredDate` is given. */
+  tournamentRecord?: Tournament;
 };
 function constructedDate(y: number, df: string) {
   return `${y}-${df}`;
@@ -33,7 +35,10 @@ export function getCategoryAgeDetails(params: ParseArgs) {
 
   if (!isValidCategory) return { error: INVALID_CATEGORY };
 
-  const consideredDate = params.consideredDate ?? extractDate(now().toLocaleDateString('sv'));
+  // "today" is the tournament's calendar day (UTC when it names no zone), never the host's
+  const today = params.consideredDate ? undefined : competitionToday({ tournamentRecord: params.tournamentRecord });
+  if (today?.error) return { error: today.error };
+  const consideredDate = params.consideredDate ?? today?.date;
   if (!consideredDate || !isValidDateString(consideredDate)) return { error: INVALID_DATE };
 
   const [consideredYear] = consideredDate

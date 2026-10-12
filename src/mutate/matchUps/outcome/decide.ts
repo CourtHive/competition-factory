@@ -196,6 +196,8 @@ function checkLoser({ args, route, loser }: CheckArgs & { loser: NonNullable<Dir
   if (loser.exit && present) checkCarriedExit({ args, route, exit: loser.exit, target, loserSide });
   if (loser.converged && present)
     checkConverged({ args, route, matchUpId: loser.matchUpId, matchUpStatus: loser.converged });
+  if (loser.carriedPast && present)
+    checkCarriedPastDecided({ args, route, exit: loser.carriedPast, holder: target, loserSide });
   if (loser.bye) checkPropagatedBye({ args, route, bye: loser.bye });
   if (loser.withdrawn && present) checkWithdrawnCarry({ args, route, withdrawn: loser.withdrawn, target, loserSide });
 }
@@ -267,18 +269,58 @@ function checkCarriedPastBye({
       `${holder.matchUpId} is ${holder.matchUpStatus} won by side ${holder.winningSide}`,
       `planned the holder a BYE with no winner, the exit sent on past it`,
     );
+  checkCarriedOnward({ args, route, exit, holder, loserSide, passed: 'bye' });
+}
+
+/**
+ * A carried exit arriving at a seat an exit already decided, over a result recorded below (P51 group 2; CA,
+ * 2026-10-11): the holder stands as it was, an exit won by the seat the loser now occupies, and the loser goes on to
+ * its winner matchUp carrying their exit, which is then checked as an exit carried past a BYE is.
+ */
+function checkCarriedPastDecided({
+  args,
+  route,
+  exit,
+  holder,
+  loserSide,
+}: CheckArgs & { exit: string; holder?: HydratedMatchUp; loserSide?: number }) {
+  if (!holder || !args.drawDefinition) return differentialTally(`${route}:loser-exit-past-decided`, 'deferred');
+  if (!isExit(holder.matchUpStatus) || holder.winningSide !== loserSide)
+    diverge(
+      args,
+      `${holder.matchUpId} is ${holder.matchUpStatus} won by side ${holder.winningSide}`,
+      `planned the holder to stand, an exit won by the loser's seat, the exit carried past it`,
+    );
+  checkCarriedOnward({ args, route, exit, holder, loserSide, passed: 'decided' });
+}
+
+/** the onward half of a carry past a holder: the loser stands in the holder's winner matchUp, and their exit there */
+function checkCarriedOnward({
+  args,
+  route,
+  exit,
+  holder,
+  loserSide,
+  passed,
+}: CheckArgs & { exit: string; holder: HydratedMatchUp; loserSide?: number; passed: 'bye' | 'decided' }) {
+  const tally = `${route}:loser-exit-past-${passed}`;
   const loserId = holder.sides?.find((side) => side?.sideNumber === loserSide)?.participantId;
   const onward = onwardMatchUp(args, holder);
-  if (!onward) return differentialTally(`${route}:loser-exit-past-bye-final`, 'compared');
+  if (!onward) return differentialTally(`${tally}-final`, 'compared');
   const onwardId = onward.matchUpId;
   const onwardSide = onward?.sides?.find((side) => side?.participantId === loserId)?.sideNumber;
-  if (!onwardSide) diverge(args, `loser ${loserId} not in ${onwardId}`, `planned the loser on past the BYE into it`);
+  if (!onwardSide)
+    diverge(
+      args,
+      `loser ${loserId} not in ${onwardId}`,
+      `planned the loser on past the ${passed === 'bye' ? 'BYE' : 'decided matchUp'} into it`,
+    );
   // by NUMBER: a side nobody has reached is an in-context `{}` with no sideNumber, and a pending exit
   // produced there by a double exit holds no drawPosition, so only its provenance says it stands (a BYE
   // claimed there is not an exit)
   const otherSide = 3 - (onwardSide ?? 0);
   const other = onward?.sides?.find((side) => side?.sideNumber === otherSide);
-  if (other?.bye) return differentialTally(`${route}:loser-exit-past-bye-again`, 'deferred');
+  if (other?.bye) return differentialTally(`${tally}-again`, 'deferred');
   const standingExit = onward?.sideExitProvenance?.[otherSide]?.matchUpStatus;
   if (standingExit && standingExit !== BYE)
     return checkPastByeConvergence({ args, route, exit, standingExit, onward, loserId });
@@ -287,9 +329,9 @@ function checkCarriedPastBye({
     diverge(
       args,
       `${onwardId} is ${onward?.matchUpStatus} won by side ${onward?.winningSide}`,
-      `planned ${exit} won by side ${expectedWinner}, opposite the loser who passed the BYE`,
+      `planned ${exit} won by side ${expectedWinner}, opposite the loser who passed it`,
     );
-  differentialTally(`${route}:loser-exit-past-bye`, 'compared');
+  differentialTally(tally, 'compared');
 }
 
 /**

@@ -22,18 +22,37 @@ import fs from 'fs';
  * - **OTHER** (12, DOUBLE_ELIMINATION 10, FEED_IN_CHAMPIONSHIP_TO_SF 2): the direction writes, and a position
  *   assignment refuses after it (`ERR_EXISTING_POSITION_ASSIGNMENT`, `ERR_OCCUPIED_DRAW_POSITION`).
  *
- * The other 25 are P51's RULE 4 meeting (`progressExitStatus` refusing a convergence onto a matchUp an exit already
- * decided, with active downstream), which waits on a ruling and is not held here.
+ * The other 25 (11 seeds) are P51's RULE 4 meeting: `progressExitStatus` refusing a convergence onto a matchUp an exit
+ * already decided, with active downstream. CA, 2026-10-11, in two groups:
  *
- * This fixture holds 36, sized for CI: every SETTLE-B and OTHER instance, and up to three SETTLE-A instances per draw
- * type (the smallest), plus seeds 20504956 and 20523724. All 92 are in
- * `Mentat/fixtures/exit-propagation-census/census-fails-s1{3,4}.jsonl`; the planning record is
+ * - **P51-CONVERGENCE** (10 seeds, 24 instances, one per seed held here): nothing below the convergence was played;
+ *   only carried exits stood there. Closed by the 2026-09-25 rule applied to convergence
+ *   (`aConvergenceIsNotBlockedByWhatItCarried`).
+ * - **P51-PLAYED** (1 seed, OLYMPIC `on`:20496362): a match recorded with two participants stands below. Held here
+ *   since CA's (b) landed in v1 and v2 alike: the arrival is carried past the matchUp the exit decided while
+ *   awaiting it (`aCarryIsCarriedPastADecidedSeat`), and the P52 guard behind it reads a result recorded by the
+ *   winner of the loser's carried award, one structure on. It replays clean.
+ *
+ * This fixture holds 47, sized for CI: every SETTLE-B and OTHER instance, up to three SETTLE-A instances per draw type
+ * (the smallest), seeds 20504956 and 20523724, one instance of each P51-CONVERGENCE seed, and the P51-PLAYED instance.
+ * All 92 are in `Mentat/fixtures/exit-propagation-census/census-fails-s1{3,4}.jsonl`; the planning record is
  * `Mentat/planning/CENSUS_FAILURE_FAMILIES.md`. Each schedule replays in the arm it was emitted in.
  *
  * **SETTLE-A and SETTLE-B closed, all 24 here** (and all 55 of the two runs): `setMatchUpStatus` runs nothing after
  * a refusal, the settle step reads the draw rather than a map carried in the context, and `decorateResult` no longer
  * deep-copies a context (`aSettleReadsTheDrawItLeft`). None exposes another property behind it. SETTLE-B's two seeds
  * close as refusals; the held exits that fail to converge there are recorded in the planning record.
+ *
+ * **OTHER: both FEED_IN_CHAMPIONSHIP_TO_SF instances and DOUBLE_ELIMINATION 20496331 closed** (2026-10-12): a carried
+ * exit that passed a BYE a holder later took back comes back with it, and a matchUp onward decided only by that carry,
+ * for an unoccupied seat, is released with it (`releaseHoldersByeFromTarget`, `passedByeReleased`;
+ * `aCarryPastAReleasedByeComesBack`). None exposes another property behind it.
+ *
+ * **OTHER: the remaining eight DOUBLE_ELIMINATION instances closed** (2026-10-12), by five fixes, one per shape
+ * (`doubleEliminationRefusalsThatWrote`): the decider is seated from the final that stands; an exit arriving opposite
+ * a carrier converges; an award taken back is released across its own winner link; an occupant carrying an exit is
+ * read from the side the advancement derived; and a clear of a position the matchUp never held keeps the held side's
+ * carry. None exposes another property behind it.
  *
  * ## OPEN — the instances that still refuse after writing, by group
  *
@@ -44,20 +63,9 @@ import fs from 'fs';
 const OPEN: Record<string, Set<string>> = {
   'SETTLE-A': new Set([]),
   'SETTLE-B': new Set([]),
-  OTHER: new Set([
-    'off:20460396',
-    'off:20496331',
-    'off:20501324',
-    'on:20480411',
-    'on:20490105',
-    'policyoff:20460396',
-    'policyoff:20473821',
-    'policyoff:20477784',
-    'policyoff:20496331',
-    'policyoff:20506968',
-    'policyoff:20522496',
-    'policyoff:20537779',
-  ]),
+  'P51-CONVERGENCE': new Set([]),
+  'P51-PLAYED': new Set([]),
+  OTHER: new Set([]),
 };
 
 /**
@@ -69,7 +77,7 @@ const OPEN: Record<string, Set<string>> = {
 const BEHIND: Record<string, string> = {};
 
 type Arm = 'off' | 'on' | 'policyoff';
-type Group = 'SETTLE-A' | 'SETTLE-B' | 'OTHER';
+type Group = 'SETTLE-A' | 'SETTLE-B' | 'OTHER' | 'P51-CONVERGENCE' | 'P51-PLAYED';
 type Instance = { arm: Arm; seed: number; run: string; group: Group; code: string; config: any; steps: any[] };
 
 const FIXTURE = path.join(__dirname, '../../fixtures/exitPropagation/censusF2RefusalSchedules20261011.jsonl');
@@ -110,9 +118,9 @@ function classify(instance: Instance): string | undefined {
 }
 
 // CONTROL: an empty or truncated fixture would pass by replaying nothing
-it('holds all 36 instances, each listed in its own group at most once', () => {
-  expect(INSTANCES.length).toEqual(36);
-  expect(new Set(INSTANCES.map(key)).size).toEqual(36);
+it('holds all 47 instances, each listed in its own group at most once', () => {
+  expect(INSTANCES.length).toEqual(47);
+  expect(new Set(INSTANCES.map(key)).size).toEqual(47);
   for (const instance of INSTANCES) {
     expect(['off', 'on', 'policyoff']).toContain(instance.arm);
     expect(instance.config.seed).toEqual(instance.seed);

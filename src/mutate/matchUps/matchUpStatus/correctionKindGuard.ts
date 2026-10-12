@@ -1,4 +1,3 @@
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import {
   hasEarnedResult,
   loserPlayedOn,
@@ -8,7 +7,7 @@ import {
 } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
 
 // constants and types
-import type { DrawDefinition, DrawLink, MatchUp, MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
+import type { DrawDefinition, DrawLink, MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 
@@ -46,7 +45,6 @@ export function correctionKindChange(params: {
   loserTargetLink?: DrawLink;
   winningSide?: number;
   matchUp?: MatchUp;
-  score?: Score;
 }): { blockingMatchUpId: string } | undefined {
   const { matchUp, winningSide, inContextMatchUp, drawDefinition, inContextDrawMatchUps } = params;
   // a decided result replaced by another decided result, on a matchUp that directs a loser
@@ -54,10 +52,12 @@ export function correctionKindChange(params: {
 
   const carries = (status?: string) =>
     status === WALKOVER || status === DEFAULTED || (status === RETIRED && !!params.propagateRetirementAsExit);
-  // the resulting record: a flip with no status keeps the status it had; a score with no status is a played result
+  // the resulting record: a flip with no status keeps the status it had; the same winner with no status is a played
+  // result, scored or not. Read as keeping its status, a walkover re-entered as a bare win for the same winner passed
+  // as no change of kind, while the write made it COMPLETED: the carried walkover stayed standing from a match now
+  // played (census 20496362, OLYMPIC 16/16, `East|1|7`, with Uhura's recorded `South|2|1` onward).
   const flip = winningSide !== matchUp.winningSide;
-  const resultingStatus =
-    params.matchUpStatus ?? (flip || !checkScoreHasValue({ score: params.score }) ? matchUp.matchUpStatus : COMPLETED);
+  const resultingStatus = params.matchUpStatus ?? (flip ? matchUp.matchUpStatus : COMPLETED);
   const wasCarried = carries(matchUp.matchUpStatus);
   if (wasCarried === carries(resultingStatus)) return undefined;
 

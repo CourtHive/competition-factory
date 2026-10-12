@@ -6,8 +6,8 @@ import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { isFunction, isObject, isString } from '@Tools/objects';
 import { getMethods } from '@Global/state/syncGlobalState';
+import { withCapturedClockAsync } from '@Tools/clock';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { nowMs } from '@Tools/clock';
 
 // constants
 import { INVALID_VALUES, METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -29,29 +29,31 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
   const { [methodName]: passedMethod, ...remainingArgs } = args;
   const params = args?.params ? { ...args.params } : { ...remainingArgs };
 
-  const snapshot = params.rollbackOnError && makeDeepCopy(getTournamentRecords(), false, true);
-
   const method = passedMethod || engine[methodName] || getMethods()[methodName];
   if (!method) return logMethodNotFound({ methodName, params });
 
-  const result = (await executeFunction(engine, method, params, methodName, 'async')) ?? {};
+  // one instant for the whole call, captured before anything is written; see tools/clock.ts
+  return withCapturedClockAsync(async (timeStamp) => {
+    const snapshot = params.rollbackOnError && makeDeepCopy(getTournamentRecords(), false, true);
 
-  if (result?.error && snapshot) setState(snapshot);
+    const result = (await executeFunction(engine, method, params, methodName, 'async')) ?? {};
 
-  const timeStamp = nowMs(); // reaches the record via the factory extension
-  const mutationStatus = getMutationStatus({ timeStamp });
+    if (result?.error && snapshot) setState(snapshot);
 
-  const notify = result?.success && params?.delayNotify !== true && params?.doNotNotify !== true;
+    const mutationStatus = getMutationStatus({ timeStamp }); // timeStamp reaches the record via the factory extension
 
-  if (notify)
-    await notifySubscribersAsync({
-      directives: [{ method, params }],
-      mutationStatus,
-      timeStamp,
-    });
-  if (notify || !result?.success || params?.doNotNotify) deleteNotices();
+    const notify = result?.success && params?.delayNotify !== true && params?.doNotNotify !== true;
 
-  getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
+    if (notify)
+      await notifySubscribersAsync({
+        directives: [{ method, params }],
+        mutationStatus,
+        timeStamp,
+      });
+    if (notify || !result?.success || params?.doNotNotify) deleteNotices();
 
-  return result;
+    getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
+
+    return result;
+  });
 }

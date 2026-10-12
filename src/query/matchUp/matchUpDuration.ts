@@ -1,6 +1,6 @@
 import { getUTCdateString, dateStringDaysChange } from '@Tools/dateTime';
 import { validTimeString } from '@Validators/regex';
-import { nowMs } from '@Tools/clock';
+import { competitionNowMs } from '@Tools/clock';
 
 // constants
 import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME, END_DATE, SCHEDULED_DATE } from '@Constants/timeItemConstants';
@@ -27,7 +27,10 @@ export function matchUpDuration({ matchUp }) {
   // END_DATE marks a match that crossed midnight, the END_TIME item is anchored
   // that many calendar days later so the series sorts and the duration computes
   // correctly. Absent END_DATE, all items share the reference day (unchanged).
-  const refDate = getUTCdateString();
+  // Use the same competition instant for the reference day and the live interval,
+  // even when record timestamps are configured on a different clock.
+  const competitionTime = competitionNowMs();
+  const refDate = getUTCdateString(new Date(competitionTime));
   const endOffsetDays = endDate && scheduledDate ? daysBetween(scheduledDate, endDate) : 0;
   const endRefDate = endOffsetDays ? dateStringDaysChange(refDate, endOffsetDays) : refDate;
   const timeDate = (value, itemType) => {
@@ -84,7 +87,7 @@ export function matchUpDuration({ matchUp }) {
   );
 
   if ([START_TIME, RESUME_TIME].includes(elapsed.lastType)) {
-    const interval = nowMs() - timeDate(elapsed.lastValue, elapsed.lastType).getTime();
+    const interval = competitionTime - timeDate(elapsed.lastValue, elapsed.lastType).getTime();
     elapsed.milliseconds += interval;
   }
 

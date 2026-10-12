@@ -177,6 +177,33 @@ function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string, draw
   return isExit(matchUp?.matchUpStatus) && !own ? [matchUp?.matchUpStatus as MatchUpStatusUnion] : [];
 }
 
+/**
+ * P51 group 2 (CA, 2026-10-11): an exit decided this matchUp for the seat still awaiting its second participant, and a
+ * result recorded below it would be taken back by a convergence there. The arrival carrying an exit of their own takes
+ * that seat and carries the exit on from its winner matchUp, as past a BYE. Asked as v1's \`carryPastDecidedMatchUp\`
+ * asks it: a single exit won by an empty side, a winner matchUp to go on to, and active downstream read as a
+ * convergence reads it.
+ */
+function decidedForArrival({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUp,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUp?: HydratedMatchUp;
+}): boolean {
+  if (!matchUp || !isExit(matchUp.matchUpStatus) || !matchUp.winningSide) return false;
+  if (matchUp.sides?.find((side) => side?.sideNumber === matchUp.winningSide)?.participantId) return false;
+  const downstream = getTargetsDownstream({
+    matchUpId: matchUp.matchUpId,
+    inContextDrawMatchUps,
+    convergence: true,
+    drawDefinition,
+  });
+  return !downstream.error && !!downstream.activeDownstream && !!downstream.targetData?.targetMatchUps?.winnerMatchUp;
+}
+
 /** an exit carried in from this source stands on a side of the matchUp */
 function carriesExitFrom(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): boolean {
   return Object.values(getSideExitProvenance({ matchUp }) ?? {}).some(
@@ -316,6 +343,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpCarriesExit: false,
       loserMatchUpCarriedStatuses: [],
       loserMatchUpCarriesSourceExit: false,
+      loserMatchUpDecidedForArrival: false,
       source: { roundMatchUpCount: 0, nextRoundMatchUpCount: 0 },
     },
   };
@@ -429,7 +457,6 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         winningSide: request.winningSide,
         inContextDrawMatchUps,
         inContextMatchUp,
-        score: request.score,
         drawDefinition,
         matchUp,
       });
@@ -544,6 +571,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpCarriesExit: carriesExit(targetData?.targetMatchUps?.loserMatchUp, draw),
       loserMatchUpCarriedStatuses: standingExits(targetData?.targetMatchUps?.loserMatchUp, request.matchUpId, draw),
       loserMatchUpCarriesSourceExit: carriesExitFrom(targetData?.targetMatchUps?.loserMatchUp, request.matchUpId),
+      loserMatchUpDecidedForArrival: decidedForArrival({
+        matchUp: targetData?.targetMatchUps?.loserMatchUp,
+        inContextDrawMatchUps,
+        drawDefinition,
+      }),
       loserMatchUpDrawPositions: (targetData?.targetMatchUps?.loserMatchUp?.drawPositions ?? []).filter(
         (position): position is number => typeof position === 'number',
       ),

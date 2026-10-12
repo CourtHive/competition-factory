@@ -4,6 +4,7 @@ import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/
 import { isDrawnResult, validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
+import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
@@ -237,7 +238,13 @@ export function setMatchUpState(params: SetMatchUpStateArgs): any {
   }
 
   // the matchUp's targets and what depends on it; a malformed round link in either is the answer (CA, 2026-10-06)
-  const targets = getTargetsDownstream({ matchUpId: matchUpTieId || matchUpId, inContextDrawMatchUps, drawDefinition });
+  const targets = downstreamOf({
+    propagatingExit: params.propagatingExit,
+    matchUpId: matchUpTieId || matchUpId,
+    inContextDrawMatchUps,
+    drawDefinition,
+    matchUpStatus,
+  });
   if (targets.error) return decorateResult({ result: targets, stack });
   const { targetData, activeDownstream } = targets;
 
@@ -606,6 +613,27 @@ function resolveMatchUpAndContext({
   };
 }
 
+/**
+ * The matchUp's targets and what depends on it. The cascade converging two exits asks only whether somebody PLAYED
+ * downstream (see `getTargetsDownstream`).
+ */
+function downstreamOf({
+  inContextDrawMatchUps,
+  propagatingExit,
+  drawDefinition,
+  matchUpStatus,
+  matchUpId,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  propagatingExit?: boolean;
+  matchUpStatus?: MatchUpStatusUnion;
+  matchUpId: string;
+}) {
+  const convergence = !!propagatingExit && isDoubleExit(matchUpStatus);
+  return getTargetsDownstream({ convergence, matchUpId, inContextDrawMatchUps, drawDefinition });
+}
+
 function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpStatus, winningSide, matchUp }) {
   const directingMatchUpStatus = isDirectingMatchUpStatus({ matchUpStatus });
 
@@ -939,6 +967,7 @@ function winningSideWithDownstreamDependencies(params) {
     const relabel = !!winningSide && winningSide === matchUp.winningSide && !params.isCollectionMatchUp;
     const result = applyMatchUpValues(params);
     if (result.error || !relabel) return result;
+    refreshArrivals(params);
     // a RELABEL with the winner already played on: nothing here directs the loser, so the exit it now
     // carries (or no longer carries) is settled on its own (CA, 2026-10-02)
     const relabelled = relabelWithoutDirection({
@@ -1276,7 +1305,6 @@ function correctionKindRefusal({
     matchUpStatus: params.matchUpStatus,
     winningSide: params.winningSide,
     inContextDrawMatchUps,
-    score: params.score,
     inContextMatchUp,
     drawDefinition: params.drawDefinition,
     matchUp,

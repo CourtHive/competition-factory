@@ -119,9 +119,10 @@ it('the clock accepts an instant, a function, or nothing, and refuses junk', () 
   expect(nowIso()).toEqual('2026-10-03T00:00:00.000Z');
   expect(nowIso()).toEqual('2026-10-03T00:00:01.000Z');
 
-  // a configured clock FUNCTION that returns junk falls back to the wall clock rather than throwing
+  // a configured clock FUNCTION that returns junk is accepted, and refused when read: it no longer
+  // falls back to the wall clock (capturedClock.test.ts covers the refusal at the engine boundary)
   expect(setClock(() => 'junk' as any).success).toEqual(true);
-  expect(Math.abs(now().getTime() - Date.now())).toBeLessThan(5_000);
+  expect(() => now()).toThrow(/invalid instant/);
 
   expect(setClock('not a date').error).toEqual(INVALID_DATE);
   expect(setClock({} as any).error).toEqual(INVALID_VALUES);
@@ -129,6 +130,30 @@ it('the clock accepts an instant, a function, or nothing, and refuses junk', () 
   expect(setClock().success).toEqual(true);
   const before = Date.now();
   expect(Math.abs(now().getTime() - before)).toBeLessThan(5_000);
+});
+
+it('a fixed clock is not moved by mutating the Date that configured it or a Date it returned', () => {
+  const configured = new Date('2026-10-01T12:00:00.000Z');
+  expect(setClock(configured).success).toEqual(true);
+
+  configured.setUTCFullYear(1999);
+  expect(nowIso()).toEqual('2026-10-01T12:00:00.000Z');
+
+  const returned = now();
+  returned.setUTCFullYear(2001);
+  expect(nowIso()).toEqual('2026-10-01T12:00:00.000Z');
+
+  // every read is a fresh Date, never the same object twice
+  expect(now()).not.toBe(now());
+});
+
+it('a Date returned by a clock function is copied, so mutating what now() returns cannot reach it', () => {
+  const held = new Date('2026-10-01T12:00:00.000Z');
+  expect(setClock(() => held).success).toEqual(true);
+
+  now().setUTCFullYear(2001);
+  expect(held.toISOString()).toEqual('2026-10-01T12:00:00.000Z');
+  expect(nowIso()).toEqual('2026-10-01T12:00:00.000Z');
 });
 
 it('the random source refuses junk and resets with no argument', () => {

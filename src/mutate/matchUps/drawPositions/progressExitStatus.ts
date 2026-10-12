@@ -1,5 +1,7 @@
+import { assignMatchUpDrawPosition, directWinner } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { getSideStatusCode } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
+import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -15,9 +17,12 @@ import {
   placeCodeAtSide,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
-// constants
+// constants and types
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // After a participant advances through a BYE, find the matchUp they advanced
@@ -254,6 +259,19 @@ export function progressExitStatus({
       winningSide = opponentSideNumber;
       placeCodeAtSide(statusCodes, loserParticipantSide.sideNumber, sourceCode);
     } else {
+      // RULE 4, CARRIED PAST (CA's (b), 2026-10-11): see `carryPastDecidedMatchUp`
+      const carried = carryPastDecidedMatchUp({
+        arrivingSideNumber: loserParticipantSide.sideNumber,
+        matchUp: updatedLoserMatchUp,
+        inContextMatchUps,
+        loserParticipantId,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+        event,
+      });
+      if (carried) return carried;
+
       // RULE 4 — the opponent has itself already exited: the two exits MEET and this matchUp
       // becomes a double exit. Nobody wins it.
       //
@@ -337,4 +355,94 @@ export function progressExitStatus({
   }
 
   return decorateResult({ result, stack, context: { progressExitStatus: true } });
+}
+
+/**
+ * RULE 4, CARRIED PAST (CA, 2026-10-11; census F2, P51 group 2).
+ *
+ * An exit decided this matchUp while it awaited its second participant: the seat still to be filled was awarded it.
+ * The awaited participant now arrives carrying an exit of their own. RULE 4 would collapse the two into a double
+ * exit — but where a match recorded with two participants stands below this matchUp, that convergence would take
+ * back a result somebody played, and it is refused. CA: *"is the 'carried exit' a participant carrying an exit
+ * into an exit that was awaiting the 2nd participant in which case carry it past makes sense."*
+ *
+ * So the arrival takes what was awaiting them: they win this matchUp by the exit already decided here, advance
+ * into its winner target, and carry their own exit on from there — as an exit is carried past a BYE (RULE 1). The
+ * decided matchUp is left as it was; nothing is stamped on it for the arrival, whose exit is not met here. The
+ * result below stands. Returned as RULE 1's context, so the cascade carries the exit on from where they landed.
+ *
+ * Only this shape: a single exit with the ARRIVAL's seat as its winning side, and something played below it
+ * (asked as a convergence asks it: `getTargetsDownstream({ convergence: true })`). Anything else converges.
+ */
+function carryPastDecidedMatchUp({
+  arrivingSideNumber,
+  loserParticipantId,
+  inContextMatchUps,
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  matchUp,
+  event,
+}: {
+  inContextMatchUps?: HydratedMatchUp[];
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  arrivingSideNumber: number;
+  matchUpsMap?: MatchUpsMap;
+  loserParticipantId?: string;
+  matchUp: HydratedMatchUp;
+  event?: Event;
+}): ResultType | undefined {
+  if (!isExit(matchUp.matchUpStatus) || matchUp.winningSide !== arrivingSideNumber) return undefined;
+
+  const downstream = getTargetsDownstream({
+    inContextDrawMatchUps: inContextMatchUps,
+    matchUpId: matchUp.matchUpId,
+    convergence: true,
+    drawDefinition,
+  });
+  if (downstream.error) return decorateResult({ result: downstream, stack: 'progressExitStatus' });
+  if (!downstream.activeDownstream) return undefined;
+
+  const targetData = downstream.targetData;
+  const winnerMatchUp = targetData?.targetMatchUps?.winnerMatchUp;
+  const drawPosition = matchUp.sides?.find((side) => side.sideNumber === arrivingSideNumber)?.drawPosition;
+  if (!winnerMatchUp || !drawPosition) return undefined;
+
+  const advanced =
+    winnerMatchUp.structureId === matchUp.structureId
+      ? assignMatchUpDrawPosition({
+          matchUpId: winnerMatchUp.matchUpId,
+          inContextDrawMatchUps: inContextMatchUps ?? [],
+          arrivesWithExit: true,
+          tournamentRecord,
+          drawDefinition,
+          drawPosition,
+          matchUpsMap,
+          event,
+        })
+      : directWinner({
+          winnerMatchUpDrawPositionIndex: targetData?.targetMatchUps?.winnerMatchUpDrawPositionIndex,
+          winnerTargetLink: targetData?.targetLinks?.winnerTargetLink,
+          inContextDrawMatchUps: inContextMatchUps,
+          sourceMatchUpId: matchUp.matchUpId,
+          winningDrawPosition: drawPosition,
+          projectedWinningSide: undefined,
+          sourceMatchUpStatus: undefined,
+          dualMatchUp: undefined,
+          tournamentRecord,
+          drawDefinition,
+          winnerMatchUp,
+          matchUpsMap,
+          event,
+        });
+  if (advanced?.error) return decorateResult({ result: advanced, stack: 'progressExitStatus' });
+
+  const landed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps?.find(
+    (candidate) => candidate.matchUpId === winnerMatchUp.matchUpId,
+  );
+  const context = landed
+    ? { progressExitStatus: true, loserMatchUp: landed, loserParticipantId }
+    : { progressExitStatus: true };
+  return decorateResult({ result: { ...SUCCESS }, stack: 'progressExitStatus', context });
 }

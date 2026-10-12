@@ -207,12 +207,20 @@ After the write, and only on success:
    withdraws the exit it carried there. Where that matchUp already has a result a director recorded, or
    the winner of the carried exit has played on from it (counting past any BYEs they were advanced
    through), the correction is refused before anything is written (row 22, P52): a recorded result
-   downstream fixes whether the origin's outcome is an exit or a played result. A **winner change**
+   downstream fixes whether the origin's outcome is an exit or a played result. The same holds one
+   structure on: where the loser's loss carried their exit into a matchUp it decided for whoever stood
+   opposite, a result that winner has recorded onward counts too (census 20496362). A correction that
+   names the same winner with no status and no score is a played result (COMPLETED), as the write
+   records it, so re-entering a walkover as a bare win changes its kind. An exit carried into a
+   matchUp that another exit already decided for the seat awaiting the loser, with a result recorded
+   below it, is **carried past** that matchUp as past a BYE: the loser takes the seat, goes on to its
+   winner matchUp, and carries the exit on from there (P51 group 2, CA 2026-10-11). A **winner change**
    (a flip) relabels the old loser's place onto the new loser, and their carried exit is re-derived
    from the corrected result in the same way, so a corrected draw is the one forward play reaches. Both apply whether or not the relabelled matchUp's own winner has
    played on since. Where the carried exit had converged with another, only this origin's entry is
    withdrawn and the matchUp re-derives to the kept exit (its carrier directed on, or — a produced
-   exit — won by the relabelled loser, who goes on); and a loser who had won a produced exit on
+   exit — won by the relabelled loser, who goes on; a produced exit relayed past a BYE, with nobody in the
+   seat it would be awarded to, stays pending, and the withdrawn side's reason code goes with its exit); and a loser who had won a produced exit on
    arrival has that award taken back when the origin becomes an exit again, so the exit converges as
    it would have at first entry (7.7.0; [exit propagation](./exit-propagation.md#a-relabel-out-of-a-convergence-and-back-into-one)).
 3. **Round robin tally** is recomputed when the matchUp is in a group (`updateTallyIfNeeded`).
@@ -223,7 +231,9 @@ After the write, and only on success:
    5 run only when the call was accepted (§ 6). Until 2026-10-11 the reconciliation read a deep copy
    carried in the call's context: what it wrote was lost, and the next call repaired the origin, a
    refused call included (census family F2).
-5. **The draw is settled**: held exits are released (`settleHeldExits`), and a final that feeds a
+5. **The draw is settled**: held exits are released (`settleHeldExits`), including to a participant
+   who already passed the BYE holding them and carries no exit of their own (only an exit whose
+   origin is still a double exit travels this way), and a final that feeds a
    decider settles whether the decider is needed (`reconcileDeciders`) when a final's winner changed,
    or when the cascade moved a decider while the final's winner stayed put (7.8.0). A mutation OF the
    decider never triggers it, so a decider played anyway keeps its result; in a TEAM draw a line of the

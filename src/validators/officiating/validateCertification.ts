@@ -1,7 +1,8 @@
+import { competitionUtcDate } from '@Query/tournaments/competitionToday';
+
 // Constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { nowIso } from '@Tools/clock';
 import {
   MISSING_OFFICIAL_RECORD,
   CERTIFICATION_NOT_FOUND,
@@ -32,7 +33,8 @@ export function validateCertification({ officialRecord, certificationId, asOfDat
   if (!certification) return { error: CERTIFICATION_NOT_FOUND, context: { certificationId } };
 
   const reasons: string[] = [];
-  const checkDate = asOfDate ?? nowIso().split('T')[0];
+  // no tournament in scope (officiating runs in its own engine), so the competition's UTC date
+  const checkDate = asOfDate ?? competitionUtcDate();
 
   if (certification.status !== 'ACTIVE') {
     reasons.push(`Certification status is ${certification.status}`);

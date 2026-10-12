@@ -112,6 +112,10 @@ export default {
   runWithInstanceState,
   implicitContextCreations,
   cycleMutationStatus,
+  getCapturedClock,
+  setCapturedClock,
+  getCapturedCompetitionClock,
+  setCapturedCompetitionClock,
   deleteNotice,
   deleteNotices,
   disableNotifications,
@@ -131,6 +135,24 @@ export default {
   setTournamentRecords,
   handleCaughtError,
 };
+
+// Per request, like every other field of the instance state: two overlapping requests capture
+// their own instants. The read does not create a store, so it cannot trigger the implicit-state net.
+export function getCapturedClock(): number | undefined {
+  return asyncLocalStorage.getStore()?.capturedClock;
+}
+
+export function setCapturedClock(timeStamp?: number) {
+  getInstanceState().capturedClock = timeStamp;
+}
+
+export function getCapturedCompetitionClock(): number | undefined {
+  return asyncLocalStorage.getStore()?.capturedCompetitionClock;
+}
+
+export function setCapturedCompetitionClock(timeStamp?: number) {
+  getInstanceState().capturedCompetitionClock = timeStamp;
+}
 
 export function disableNotifications() {
   const instanceState = getInstanceState();
