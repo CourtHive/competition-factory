@@ -590,10 +590,10 @@ Potential participants (the possible winners of a feeding matchUp) are not inclu
 
 ## getMatchUpScheduleDetails
 
-Returns detailed schedule information for a matchUp.
+Returns detailed schedule information for a matchUp, including its live duration as `schedule.time` and `schedule.milliseconds` (read at [competition time](/docs/concepts/competition-clock#live-matchup-duration)). See [`getMatchUpScheduleDetails`](/docs/governors/query-governor#getmatchupscheduledetails) for the full shape.
 
 ```js
-const { details } = engine.getMatchUpScheduleDetails({
+const { schedule } = engine.getMatchUpScheduleDetails({
   matchUpId, // required
   drawId, // required
 });
