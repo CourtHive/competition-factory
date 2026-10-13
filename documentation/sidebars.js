@@ -133,6 +133,7 @@ module.exports = {
             'concepts/pro-scheduling',
             'concepts/scheduling-conflicts',
             'concepts/date-time-handling',
+            'concepts/competition-clock',
           ],
         },
         {

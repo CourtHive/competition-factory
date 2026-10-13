@@ -378,6 +378,7 @@ on the wire remain ISO strings. Two internal things improve:
 
 ## Related Documentation
 
+- **[Clocks and Competition Time](/docs/concepts/competition-clock)** — Which clock answers "now": competition, record and operational time
 - **[Time Items](/docs/concepts/timeItems)** — Temporal records on CODES document elements
 - **[Embargo and Scheduled Rounds](/docs/concepts/publishing/publishing-embargo)** — Time-based visibility gates
 - **[Scheduling Overview](/docs/concepts/scheduling-overview)** — Match scheduling concepts

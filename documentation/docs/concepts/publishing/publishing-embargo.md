@@ -4,7 +4,7 @@ title: Embargo and Scheduled Rounds
 
 ## Embargo
 
-**Embargo** is a time-based visibility gate that extends the publishing system. When an embargo timestamp is set on any publishable element, the element is stored as `published: true` but remains **hidden from public-facing queries** until the embargo time passes. No additional mutation or cron job is needed — visibility changes automatically when the system clock passes the embargo timestamp.
+**Embargo** is a time-based visibility gate that extends the publishing system. When an embargo timestamp is set on any publishable element, the element is stored as `published: true` but remains **hidden from public-facing queries** until the embargo time passes. No additional mutation or cron job is needed — visibility changes automatically when [competition time](/docs/concepts/competition-clock) passes the embargo timestamp.
 
 ### Why Embargo?
 
@@ -248,7 +248,7 @@ See [Date and Time Handling](/docs/concepts/date-time-handling) for the complete
 
 ### Embargo Expiry
 
-Embargoes are evaluated at query time — there is no background process. When the system clock passes the embargo timestamp, the content automatically becomes visible on the next query. This means:
+Embargoes are evaluated at query time — there is no background process. When competition time passes the embargo timestamp, the content automatically becomes visible on the next query. Competition time is the wall clock unless a host has installed a [competition clock](/docs/concepts/competition-clock), as a demo does. This means:
 
 - **No cron jobs needed** — visibility is always current
 - **No second mutation needed** — the embargo is self-resolving
