@@ -64,7 +64,7 @@ it('matchUps returned with context cannot modify original', () => {
   const { matchUps } = getAllStructureMatchUps({ structure });
 
   // no matchUp should include a drawId
-  matchUps.forEach((matchUp) => expect(matchUp.drawId).toEqual(undefined));
+  matchUps.forEach((matchUp) => expect('drawId' in matchUp ? matchUp.drawId : undefined).toEqual(undefined));
 
   const matchUp = matchUps[0];
   const { matchUpId } = matchUp;

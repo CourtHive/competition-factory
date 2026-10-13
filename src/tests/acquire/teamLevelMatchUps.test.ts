@@ -1,4 +1,5 @@
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
+import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -66,4 +67,39 @@ test('a counting predicate takes only a TEAM-level list: a list straight from a 
   // @ts-expect-error a tie-inclusive list is not TeamLevel
   expect(getDrawPositionWinCount({ sourceMatchUps: matchUps, drawPosition: 1 })).toEqual(0);
   expect(getDrawPositionWinCount({ sourceMatchUps: teamLevelMatchUps(matchUps), drawPosition: 1 })).toEqual(0);
+});
+
+test('the structure getter stays tie-inclusive in raw and contextual modes', () => {
+  const {
+    tournamentRecord,
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    nonRandom: 1,
+    drawProfiles: [{ tieFormatName: 'DOMINANT_DUO', eventType: TEAM_EVENT, drawSize: 4 }],
+    setState: true,
+  });
+  const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });
+  const structure = drawDefinition.structures[0];
+  const stored = matchUpsOf(structure) ?? [];
+  const expectedIds = stored
+    .flatMap((matchUp) => [matchUp.matchUpId, ...(matchUp.tieMatchUps ?? []).map((tie) => tie.matchUpId)])
+    .sort();
+  for (const inContext of [false, true]) {
+    const result = getAllStructureMatchUps({ structure, drawDefinition, tournamentRecord, event, inContext });
+    expect(result.matchUps.map((matchUp) => matchUp.matchUpId).sort()).toEqual(expectedIds);
+    expect(result.matchUps.some((matchUp) => !!matchUp.collectionId)).toBe(true);
+    expect(
+      teamLevelMatchUps(result.matchUps)
+        .map((matchUp) => matchUp.matchUpId)
+        .sort(),
+    ).toEqual(stored.map((matchUp) => matchUp.matchUpId).sort());
+  }
+});
+
+test('the structure getter keeps empty result collections on refusal', () => {
+  const result = getAllStructureMatchUps({});
+  expect(result.error).toBeDefined();
+  expect(result.matchUps).toEqual([]);
+  expect(result.roundMatchUps).toEqual({});
+  expect(result.collectionPositionMatchUps).toEqual({});
 });

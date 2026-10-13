@@ -15,6 +15,7 @@ import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import type { MatchUp } from '@Types/tournamentTypes';
 import { clearDrawPosition } from './positionClear';
 import {
   clearResolvedSideExitProvenance,
@@ -122,7 +123,7 @@ export function removeDirectedParticipants(params): {
       { winnerParticipantId: undefined, loserParticipantId: undefined },
     ) ?? {};
 
-  const drawPositionMatchUps = sourceMatchUps.filter((matchUp) => matchUp.drawPositions?.includes(loserDrawPosition));
+  const drawPositionMatchUps = sourceMatchUps.filter((matchUp) => includesDrawPosition(matchUp, loserDrawPosition));
 
   // Take back the exits THIS matchUp produced — BEFORE the link-directed removals below.
   //
@@ -310,7 +311,7 @@ export function removeDirectedWinner({
       });
     } else {
       // a TEAM structure's lines carry no drawPositions
-      const drawPositionMatchUps = matchUps.filter(({ drawPositions }) => drawPositions?.includes(winnerDrawPosition));
+      const drawPositionMatchUps = matchUps.filter((matchUp) => includesDrawPosition(matchUp, winnerDrawPosition));
       pushGlobalLog({
         method: 'removeDirectedParticipants',
         retained: 'position assignment kept: the participant stands in this structure before the link target round',
@@ -550,4 +551,10 @@ export function removeDirectedBye({
   });
 
   return decorateResult({ result, stack });
+}
+
+// Preserve includes(undefined), including an unfilled slot, without claiming the position is a number.
+function includesDrawPosition(matchUp: MatchUp, drawPosition?: number): boolean | undefined {
+  const positions: readonly (number | undefined)[] | undefined = matchUp.drawPositions;
+  return positions?.includes(drawPosition);
 }

@@ -137,11 +137,12 @@ function collectEliminationQualifiers({
     });
 
     for (const matchUp of matchUps) {
-      const winningSide = matchUp.sides.find((side) => side?.sideNumber === matchUp.winningSide);
-      const relevantSide = matchUp.matchUpStatus === BYE && matchUp.sides?.find(({ participantId }) => participantId);
+      const winningSide = matchUp.sides?.find((side) => side?.sideNumber === matchUp.winningSide);
+      const relevantSide =
+        matchUp.matchUpStatus === BYE ? matchUp.sides?.find(({ participantId }) => participantId) : undefined;
 
       if (winningSide || relevantSide) {
-        const { participantId, participant } = winningSide || (relevantSide ?? {});
+        const { participantId, participant } = winningSide ?? relevantSide ?? {};
         if (participantId && !assignedParticipantIds.has(participantId)) {
           if (participant && returnParticipants) qualifyingParticipants.push(participant);
           qualifyingParticipantIds.push(participantId);

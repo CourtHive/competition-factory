@@ -4,7 +4,7 @@ import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
-import { DrawDefinition, Event, Participant, Structure, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, Participant, Structure, Tournament } from '@Types/tournamentTypes';
 import { ABANDONED, upcomingMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -29,12 +29,12 @@ import {
   *AND* where both drawPositions map to assigned participantIds
 */
 
-type GroupsMatchUpsResult = {
-  abandonedMatchUps?: HydratedMatchUp[];
-  completedMatchUps?: HydratedMatchUp[];
-  upcomingMatchUps?: HydratedMatchUp[];
-  pendingMatchUps?: HydratedMatchUp[];
-  byeMatchUps?: HydratedMatchUp[];
+type GroupsMatchUpsResult<M extends MatchUp = MatchUp> = {
+  abandonedMatchUps?: M[];
+  completedMatchUps?: M[];
+  upcomingMatchUps?: M[];
+  pendingMatchUps?: M[];
+  byeMatchUps?: M[];
   includesTeamMatchUps?: boolean;
   structure?: Structure;
 };
@@ -66,6 +66,12 @@ type GetStructureMatchUpsArgs = {
   event?: Event;
 };
 
+export function getStructureMatchUps(
+  params: GetStructureMatchUpsArgs & { inContext: true },
+): ResultType & GroupsMatchUpsResult<HydratedMatchUp>;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function getStructureMatchUps(params: GetStructureMatchUpsArgs): ResultType & GroupsMatchUpsResult;
+// eslint-disable-next-line no-redeclare -- TypeScript overload implementation
 export function getStructureMatchUps({
   requireParticipants = true,
   scheduleVisibilityFilters,
@@ -121,11 +127,11 @@ export function getStructureMatchUps({
     event,
   });
 
-  const abandonedMatchUps: HydratedMatchUp[] = [];
-  const completedMatchUps: HydratedMatchUp[] = [];
-  const upcomingMatchUps: HydratedMatchUp[] = [];
-  const pendingMatchUps: HydratedMatchUp[] = [];
-  const byeMatchUps: HydratedMatchUp[] = [];
+  const abandonedMatchUps: MatchUp[] = [];
+  const completedMatchUps: MatchUp[] = [];
+  const upcomingMatchUps: MatchUp[] = [];
+  const pendingMatchUps: MatchUp[] = [];
+  const byeMatchUps: MatchUp[] = [];
 
   if (result.error) return result;
   const { matchUps } = result;
@@ -166,7 +172,8 @@ export function getStructureMatchUps({
         !isCollectionMatchUp &&
         matchUp.drawPositions?.find((drawPosition) => byeAssignedDrawPositions?.includes(drawPosition));
 
-      const validUpcomingMatchUpStatus = upcomingMatchUpStatuses.includes(matchUp.matchUpStatus);
+      const validUpcomingMatchUpStatus =
+        matchUp.matchUpStatus !== undefined && upcomingMatchUpStatuses.includes(matchUp.matchUpStatus);
       const isUpcomingMatchUp =
         validUpcomingMatchUpStatus &&
         (collectionSidesAssigned || (drawPositionsFilled && (!requireParticipants || drawPositionsAssigned)));

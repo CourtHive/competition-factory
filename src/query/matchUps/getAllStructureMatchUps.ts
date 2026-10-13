@@ -18,9 +18,10 @@ import { filterMatchUps } from '@Query/filterMatchUps';
 import { getRoundMatchUps } from './getRoundMatchUps';
 
 // constants and types
-import { Participant, Tournament, Event, Structure, DrawDefinition, SeedAssignment } from '@Types/tournamentTypes';
+import type { ErrorType } from '@Constants/errorConditionConstants';
 import { MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import {
   ContextContent,
   ContextProfile,
@@ -30,9 +31,19 @@ import {
   ParticipantMap,
   ParticipantsProfile,
   PolicyDefinitions,
+  RoundProfile,
   ScheduleTiming,
   ScheduleVisibilityFilters,
 } from '@Types/factoryTypes';
+import {
+  Participant,
+  Tournament,
+  Event,
+  Structure,
+  DrawDefinition,
+  SeedAssignment,
+  MatchUp,
+} from '@Types/tournamentTypes';
 
 /*
   return all matchUps within a structure and its child structures
@@ -74,7 +85,24 @@ type GetAllStructureMatchUps = {
   event?: Event;
 };
 
-export function getAllStructureMatchUps(params: GetAllStructureMatchUps) {
+/** Tie-inclusive in both modes: only teamLevelMatchUps removes collection matchUps. */
+export type AllStructureMatchUpsResult<M extends MatchUp = MatchUp> = {
+  matchUps: M[];
+  roundMatchUps: Record<number, M[]>;
+  collectionPositionMatchUps: Record<number, M[]>;
+  roundProfile?: RoundProfile;
+  matchUpsMap?: MatchUpsMap;
+  isRoundRobin?: boolean;
+  error?: ErrorType;
+};
+
+export function getAllStructureMatchUps(
+  params: GetAllStructureMatchUps & { inContext: true },
+): AllStructureMatchUpsResult<HydratedMatchUp>;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function getAllStructureMatchUps(params: GetAllStructureMatchUps): AllStructureMatchUpsResult;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function getAllStructureMatchUps(params: GetAllStructureMatchUps): AllStructureMatchUpsResult {
   const {
     provisionalPositioning,
     tournamentRecord,
@@ -90,8 +118,8 @@ export function getAllStructureMatchUps(params: GetAllStructureMatchUps) {
 
   let { seedAssignments, contextContent, exitProfiles, matchUpsMap } = params;
 
-  let collectionPositionMatchUps = {},
-    roundMatchUps = {};
+  let collectionPositionMatchUps: Record<number, MatchUp[]> = {};
+  let roundMatchUps: Record<number, MatchUp[]> = {};
 
   if (!structure) {
     return {
@@ -289,11 +317,11 @@ export function getAllStructureMatchUps(params: GetAllStructureMatchUps) {
   };
 }
 
-function appendTieMatchUps(matchUps) {
+function appendTieMatchUps(matchUps: MatchUp[]): MatchUp[] {
   const matchUpTies = matchUps?.filter((matchUp) => Array.isArray(matchUp.tieMatchUps));
   let result = matchUps;
   matchUpTies.forEach((matchUpTie) => {
-    result = result.concat(...matchUpTie.tieMatchUps);
+    result = result.concat(...(matchUpTie.tieMatchUps ?? []));
   });
   return result;
 }

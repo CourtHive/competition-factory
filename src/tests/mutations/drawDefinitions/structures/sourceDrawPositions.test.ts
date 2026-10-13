@@ -128,7 +128,7 @@ test.each(scenarios)('FEED_IN_CHAMPIONSHIP to RSF has proper sourceDrawPositionR
   for (const finishingRound of finishingRounds) {
     const finishingRoundMatchUps = matchUps.filter((matchUp) => matchUp.finishingRound === finishingRound);
     const rsr = finishingRoundMatchUps.flatMap((matchUp) =>
-      matchUp.sides.map((side) => side.sourceDrawPositionRange).filter(Boolean),
+      (matchUp.sides ?? []).map((side) => side.sourceDrawPositionRange).filter(Boolean),
     );
     if (rsr.length) {
       roundSourceRanges[finishingRound] = rsr;
