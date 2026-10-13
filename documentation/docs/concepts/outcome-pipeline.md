@@ -220,7 +220,9 @@ After the write, and only on success:
    played on since. Where the carried exit had converged with another, only this origin's entry is
    withdrawn and the matchUp re-derives to the kept exit (its carrier directed on, or — a produced
    exit — won by the relabelled loser, who goes on; a produced exit relayed past a BYE, with nobody in the
-   seat it would be awarded to, stays pending, and the withdrawn side's reason code goes with its exit); and a loser who had won a produced exit on
+   seat it would be awarded to, stays pending, and the withdrawn side's reason code goes with its exit). Where
+   the kept exit is awarded to the other side than the award that stood, the old winner's advancement is released
+   with it (census S4, DOUBLE_ELIMINATION 20617910); a pending exit stays pending. A loser who had won a produced exit on
    arrival has that award taken back when the origin becomes an exit again, so the exit converges as
    it would have at first entry (7.7.0; [exit propagation](./exit-propagation.md#a-relabel-out-of-a-convergence-and-back-into-one)).
 3. **Round robin tally** is recomputed when the matchUp is in a group (`updateTallyIfNeeded`).

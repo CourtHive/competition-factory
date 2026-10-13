@@ -37,7 +37,9 @@ import fs from 'fs';
  *   outside the s13/s14 range. `ERR_INCOMPATIBLE_MATCHUP_STATUS` and `ERR_EXISTING_POSITION_ASSIGNMENT` after writing.
  *   RUN16-INCOMPATIBLE closed: `progressExitStatus` built its view without the tournament record, so the carry-past
  *   check read a result recorded below as inert and fell through to a convergence `setMatchUpState` refused
- *   (`aCarryPastSeesARecordedResultBelow`).
+ *   (`aCarryPastSeesARecordedResultBelow`). RUN16-ASSIGNMENT `on`:20617910 closed: a withdrawal that left the kept
+ *   exit awarded to the OTHER side compared status alone, kept the stale award and never released what it had
+ *   advanced (`aWithdrawnExitReleasesTheAwardItMoved`).
  *
  * This fixture holds 51: the four run-16 instances, and 47 from s13/s14 sized for CI — sized for CI: every SETTLE-B and OTHER instance, up to three SETTLE-A instances per draw type
  * (the smallest), seeds 20504956 and 20523724, one instance of each P51-CONVERGENCE seed, and the P51-PLAYED instance.
@@ -73,7 +75,7 @@ const OPEN: Record<string, Set<string>> = {
   'P51-PLAYED': new Set([]),
   OTHER: new Set([]),
   'RUN16-INCOMPATIBLE': new Set([]),
-  'RUN16-ASSIGNMENT': new Set(['on:20617910', 'policyoff:20586104']),
+  'RUN16-ASSIGNMENT': new Set(['policyoff:20586104']),
 };
 
 /**
