@@ -22,6 +22,7 @@ import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -41,7 +42,6 @@ import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
-import { isDeciderStructure } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 
 // constants and types
 import { QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';

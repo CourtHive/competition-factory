@@ -1,3 +1,4 @@
+import { getDeciderFinals, getDeciderStructureIds } from '@Query/drawDefinition/deciderStructures';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -11,7 +12,6 @@ import { isAnyExit } from '@Validators/isExit';
 // constants and types
 import { BYE, DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -159,56 +159,6 @@ export function reconcileDecider({
  * A draw with no such pair of links returns nothing, which is every draw type but one, so the cost
  * to `setMatchUpStatus` of asking is a scan of the links.
  */
-/**
- * The links that make a Decider: one round of a structure sends its winner AND its loser to the same OTHER structure.
- * A DOUBLE_ELIMINATION's Main final does exactly that. Read from the links, never the structure's display name.
- */
-function deciderFeeds(drawDefinition?: DrawDefinition) {
-  const links = drawDefinition?.links ?? [];
-  return links
-    .filter((link) => link.linkType === WINNER)
-    .map((winnerLink) => ({
-      structureId: winnerLink.source?.structureId,
-      roundNumber: winnerLink.source?.roundNumber,
-      targetStructureId: winnerLink.target?.structureId,
-    }))
-    .filter(
-      ({ structureId, roundNumber, targetStructureId }) =>
-        targetStructureId !== structureId &&
-        links.some(
-          (link) =>
-            link.linkType === LOSER &&
-            link.source?.structureId === structureId &&
-            link.source?.roundNumber === roundNumber &&
-            link.target?.structureId === targetStructureId,
-        ),
-    );
-}
-
-/** Is this the structure a Decider is played in? */
-export function isDeciderStructure({
-  drawDefinition,
-  structureId,
-}: {
-  drawDefinition?: DrawDefinition;
-  structureId?: string;
-}): boolean {
-  return !!structureId && deciderFeeds(drawDefinition).some((feed) => feed.targetStructureId === structureId);
-}
-
-export function getDeciderFinals(drawDefinition?: DrawDefinition): Map<string, number | undefined> {
-  const finals = new Map<string, number | undefined>();
-
-  for (const { structureId, roundNumber } of deciderFeeds(drawDefinition)) {
-    const { structure } = findStructure({ drawDefinition, structureId });
-    for (const matchUp of matchUpsOf(structure) ?? []) {
-      if (matchUp.roundNumber === roundNumber) finals.set(matchUp.matchUpId, matchUp.winningSide);
-    }
-  }
-
-  return finals;
-}
-
 /** Settle the decider of every final whose winner is not what it was — see `reconcileDecider`. */
 export function reconcileDeciders({
   deciderSnapshotBefore,
@@ -257,20 +207,7 @@ export type DeciderSnapshot = { matchUpIds: Set<string>; state: string };
  * was never settled, and its lone occupant stalled.
  */
 export function getDeciderSnapshot(drawDefinition?: DrawDefinition): DeciderSnapshot {
-  const links = drawDefinition?.links ?? [];
-  const deciderStructureIds = new Set<string>();
-  for (const winnerLink of links.filter((link) => link.linkType === WINNER)) {
-    const targetStructureId = winnerLink.target?.structureId;
-    const feedsBoth = links.some(
-      (link) =>
-        link.linkType === LOSER &&
-        link.source?.structureId === winnerLink.source?.structureId &&
-        link.source?.roundNumber === winnerLink.source?.roundNumber &&
-        link.target?.structureId === targetStructureId,
-    );
-    if (feedsBoth && targetStructureId && targetStructureId !== winnerLink.source?.structureId)
-      deciderStructureIds.add(targetStructureId);
-  }
+  const deciderStructureIds = getDeciderStructureIds(drawDefinition);
 
   const matchUpIds = new Set<string>();
   const parts: string[] = [];

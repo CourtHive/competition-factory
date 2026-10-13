@@ -1,6 +1,7 @@
 import { reconcileConsolationReservations } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
 import { reconcileMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
 import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
+import { getDeciderSnapshot, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
@@ -17,6 +18,7 @@ import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitS
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
+import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 import { tiebreakPointsWarnings } from '@Validators/validateScore';
@@ -27,11 +29,6 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isDoubleExit } from '@Validators/isExit';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
-import {
-  getDeciderFinals,
-  getDeciderSnapshot,
-  reconcileDeciders,
-} from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 
 // constants and types
 import { PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
