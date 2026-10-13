@@ -816,13 +816,15 @@ const version = engine.version();
 
 Makes a run reproducible. Every place the engine draws randomness (ids from `UUID`, BYE and qualifier placement, draw positions, lucky-draw advancement, draft resolution, drawMatic pairings, the mocks' scores) reads from one process-wide source. A call's own `random` parameter (what `nonRandom: <seed>` on a directive supplies) still wins; the configured source is the fallback; `Math.random` is the default.
 
-Pass a seed (a finite number) or a `() => number`. No argument restores `Math.random`. Process-wide, like `schemaWriteMode`: a run configuration, not request state.
+Pass a seed (a finite number) or a `() => number` in `[0, 1)`. A function must vary: ids are drawn from it too, so a constant mints duplicate ids and generation fails. No argument restores `Math.random`. Process-wide, like `schemaWriteMode`: a run configuration, not request state.
 
 ```js
 engine.setRandomSource(7); // seeded mulberry32
-engine.setRandomSource(() => 0.5); // any function
+engine.setRandomSource(() => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32); // any varying function
 engine.setRandomSource(); // back to Math.random
 ```
+
+`nonRandom: <seed>` on a single call, or in a directive, is honoured by every engine entry point, synchronous and asynchronous, so a server and a client replaying the same directive agree. See [Randomness and Reproducible Draws](/docs/concepts/randomness#worked-examples) for worked examples.
 
 Two generations of a mocks tournament under the same seed are byte-identical, ids included. This is what the [golden corpus](/docs/concepts/outcome-pipeline#8-what-the-corpus-pins) relies on to regenerate itself.
 
