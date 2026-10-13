@@ -6,6 +6,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { ABANDONED, CANCELLED, DEAD_RUBBER } from '@Constants/matchUpStatusConstants';
+import { MATCHUP_STATUS_OUT_OF_SCOPE } from '@Constants/errorConditionConstants';
 
 /**
  * A MATCHUP THAT WILL NEVER BE PLAYED STRANDS NOBODY, and neither does anything it feeds.
@@ -55,13 +56,34 @@ function play() {
   playStalledChain(DRAW_ID);
 }
 
+/**
+ * DEAD_RUBBER is refused on a SINGLE_ELIMINATION matchUp since CA, 2026-10-13 (a rubber of a team tie or a
+ * DOUBLE_ELIMINATION Decider only). The detector's rule above still holds for a record that carries it — one stored
+ * before the scope existed — so the status is written into the stored record directly, after asserting the refusal.
+ */
+function writeStoredStatus(matchUpId: string, matchUpStatus: string) {
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  const stored = tournamentRecord.events
+    .flatMap((event: any) => event.drawDefinitions ?? [])
+    .flatMap((drawDefinition: any) => drawDefinition.structures ?? [])
+    .flatMap((structure: any) => structure.matchUps ?? [])
+    .find((matchUp: any) => matchUp.matchUpId === matchUpId);
+  stored.matchUpStatus = matchUpStatus;
+  tournamentEngine.setState(tournamentRecord);
+}
+
 function setStatus(matchUp: any, matchUpStatus: string) {
   const result: any = tournamentEngine.setMatchUpStatus({
     outcome: { matchUpStatus },
     matchUpId: matchUp.matchUpId,
     drawId: DRAW_ID,
   });
-  expect(result.success).toEqual(true);
+  if (matchUpStatus === DEAD_RUBBER) {
+    expect(result.error).toEqual(MATCHUP_STATUS_OUT_OF_SCOPE);
+    writeStoredStatus(matchUp.matchUpId, matchUpStatus);
+  } else {
+    expect(result.success).toEqual(true);
+  }
   expect(matchUps().find((m) => m.matchUpId === matchUp.matchUpId).matchUpStatus).toEqual(matchUpStatus);
 }
 

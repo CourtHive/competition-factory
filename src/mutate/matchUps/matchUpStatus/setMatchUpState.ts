@@ -41,6 +41,7 @@ import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
+import { isDeciderStructure } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 
 // constants and types
 import { QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
@@ -586,6 +587,15 @@ function resolveMatchUpAndContext({
   const inContextMatchUp = inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
 
   if (!matchUp || !inContextDrawMatchUps) return { error: MATCHUP_NOT_FOUND };
+
+  // A tie-scoped status needs the matchUp, so it is checked here rather than with the drawType scope above: DEAD_RUBBER
+  // belongs to a rubber of a team tie or to a DOUBLE_ELIMINATION Decider (outcome-pipeline.md § 2 row 7).
+  const tieScopeViolation = getMatchUpStatusScopeViolation({
+    isDeciderMatchUp: isDeciderStructure({ drawDefinition, structureId: inContextMatchUp?.structureId }),
+    isTieMatchUp: !!matchUp.collectionId,
+    matchUpStatus,
+  });
+  if (tieScopeViolation) return { error: MATCHUP_STATUS_OUT_OF_SCOPE, info: tieScopeViolation };
 
   if ((matchUp.winningSide || winningSide) && matchUpStatus === BYE) {
     return {

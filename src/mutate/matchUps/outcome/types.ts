@@ -65,6 +65,8 @@ export type OutcomeView = {
   isTeam: boolean;
   /** this matchUp is a line of a TEAM dual; the dual's id */
   matchUpTieId?: string;
+  /** the matchUp is played in a DOUBLE_ELIMINATION Decider structure (read from the links); set once found */
+  isDeciderMatchUp?: boolean;
   existing: {
     matchUpStatus?: MatchUpStatusUnion;
     matchUpStatusCodes?: MatchUpStatusCodeElement[];

@@ -3,6 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { MATCHUP_STATUS_OUT_OF_SCOPE } from '@Constants/errorConditionConstants';
 import {
   ABANDONED,
   CANCELLED,
@@ -162,7 +163,9 @@ it('supports entering SUSPENDED matchUpStatus with incomplete score', () => {
   expect(matchUp.matchUpStatus).toEqual(SUSPENDED);
 });
 
-it('supports entering DEAD_RUBBER matchUpStatus', () => {
+// CA, 2026-10-13: DEAD_RUBBER belongs to a rubber of a team tie or a DOUBLE_ELIMINATION Decider (deadRubberScope.test.ts);
+// on a singles elimination matchUp it is refused, where before this it was accepted
+it('refuses DEAD_RUBBER matchUpStatus outside a tie or a Decider', () => {
   const drawProfiles = [{ drawSize: 8 }];
   const {
     drawIds: [drawId],
@@ -177,10 +180,10 @@ it('supports entering DEAD_RUBBER matchUpStatus', () => {
     matchUpId,
     drawId,
   });
-  expect(result.success).toEqual(true);
+  expect(result.error).toEqual(MATCHUP_STATUS_OUT_OF_SCOPE);
 
   const { matchUp } = tournamentEngine.findMatchUp({ drawId, matchUpId });
-  expect(matchUp.matchUpStatus).toEqual(DEAD_RUBBER);
+  expect(matchUp.matchUpStatus).not.toEqual(DEAD_RUBBER);
 });
 
 it('supports entering NOT_PLAYED matchUpStatus', () => {

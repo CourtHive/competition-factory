@@ -3,6 +3,7 @@ import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagated
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
+import { isDeciderStructure } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
@@ -516,6 +517,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     found: true,
     isTeam,
     matchUpTieId,
+    isDeciderMatchUp: isDeciderStructure({ drawDefinition, structureId: structure?.structureId }),
     existing: {
       matchUpStatus: matchUp.matchUpStatus,
       matchUpStatusCodes: matchUp.matchUpStatusCodes,

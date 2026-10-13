@@ -159,22 +159,47 @@ export function reconcileDecider({
  * A draw with no such pair of links returns nothing, which is every draw type but one, so the cost
  * to `setMatchUpStatus` of asking is a scan of the links.
  */
+/**
+ * The links that make a Decider: one round of a structure sends its winner AND its loser to the same OTHER structure.
+ * A DOUBLE_ELIMINATION's Main final does exactly that. Read from the links, never the structure's display name.
+ */
+function deciderFeeds(drawDefinition?: DrawDefinition) {
+  const links = drawDefinition?.links ?? [];
+  return links
+    .filter((link) => link.linkType === WINNER)
+    .map((winnerLink) => ({
+      structureId: winnerLink.source?.structureId,
+      roundNumber: winnerLink.source?.roundNumber,
+      targetStructureId: winnerLink.target?.structureId,
+    }))
+    .filter(
+      ({ structureId, roundNumber, targetStructureId }) =>
+        targetStructureId !== structureId &&
+        links.some(
+          (link) =>
+            link.linkType === LOSER &&
+            link.source?.structureId === structureId &&
+            link.source?.roundNumber === roundNumber &&
+            link.target?.structureId === targetStructureId,
+        ),
+    );
+}
+
+/** Is this the structure a Decider is played in? */
+export function isDeciderStructure({
+  drawDefinition,
+  structureId,
+}: {
+  drawDefinition?: DrawDefinition;
+  structureId?: string;
+}): boolean {
+  return !!structureId && deciderFeeds(drawDefinition).some((feed) => feed.targetStructureId === structureId);
+}
+
 export function getDeciderFinals(drawDefinition?: DrawDefinition): Map<string, number | undefined> {
   const finals = new Map<string, number | undefined>();
-  const links = drawDefinition?.links ?? [];
 
-  for (const winnerLink of links.filter((link) => link.linkType === WINNER)) {
-    const { structureId, roundNumber } = winnerLink.source ?? {};
-    const targetStructureId = winnerLink.target?.structureId;
-    const feedsBoth = links.some(
-      (link) =>
-        link.linkType === LOSER &&
-        link.source?.structureId === structureId &&
-        link.source?.roundNumber === roundNumber &&
-        link.target?.structureId === targetStructureId,
-    );
-    if (!feedsBoth || targetStructureId === structureId) continue;
-
+  for (const { structureId, roundNumber } of deciderFeeds(drawDefinition)) {
     const { structure } = findStructure({ drawDefinition, structureId });
     for (const matchUp of matchUpsOf(structure) ?? []) {
       if (matchUp.roundNumber === roundNumber) finals.set(matchUp.matchUpId, matchUp.winningSide);
