@@ -1,6 +1,7 @@
 import { deleteNotices, getInvokeObserver, getMethods, getTournamentRecords } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
+import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
@@ -28,6 +29,8 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
       const { method: methodName, pipe } = directive;
       const params = directive.params ? { ...directive.params } : {};
       if (!methods[methodName]) return logMethodNotFound({ methodName, start, params });
+
+      seedRandomParam(params); // nonRandom: <seed> middleware
 
       if (pipe) {
         const lastResult = results.at(-1);
