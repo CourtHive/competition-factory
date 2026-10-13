@@ -222,7 +222,9 @@ After the write, and only on success:
    exit — won by the relabelled loser, who goes on; a produced exit relayed past a BYE, with nobody in the
    seat it would be awarded to, stays pending, and the withdrawn side's reason code goes with its exit). Where
    the kept exit is awarded to the other side than the award that stood, the old winner's advancement is released
-   with it (census S4, DOUBLE_ELIMINATION 20617910); a pending exit stays pending. A loser who had won a produced exit on
+   with it (census S4, DOUBLE_ELIMINATION 20617910); a pending exit stays pending. A double exit re-derived to a single
+   one keeps only its winner's position in the next round: its carrier, now the loser, is released from it (census S4,
+   COMPASS 20586104, `doubleExitPropagateBye: false`). A loser who had won a produced exit on
    arrival has that award taken back when the origin becomes an exit again, so the exit converges as
    it would have at first entry (7.7.0; [exit propagation](./exit-propagation.md#a-relabel-out-of-a-convergence-and-back-into-one)).
 3. **Round robin tally** is recomputed when the matchUp is in a group (`updateTallyIfNeeded`).

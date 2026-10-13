@@ -1,0 +1,59 @@
+{
+  "config": {
+    "participantsCount": 14,
+    "propagateExitStatus": true,
+    "drawSize": 16,
+    "drawType": "COMPASS",
+    "seed": 20586104
+  },
+  "steps": [
+    {
+      "structureName": "East",
+      "roundNumber": 1,
+      "roundPosition": 7,
+      "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 1 }
+    },
+    { "structureName": "East", "roundNumber": 1, "roundPosition": 2, "outcome": { "matchUpStatus": "DOUBLE_DEFAULT" } },
+    {
+      "structureName": "East",
+      "roundNumber": 1,
+      "roundPosition": 3,
+      "outcome": { "matchUpStatus": "DEFAULTED", "winningSide": 1 }
+    },
+    {
+      "structureName": "East",
+      "roundNumber": 1,
+      "roundPosition": 5,
+      "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 1 }
+    },
+    {
+      "structureName": "East",
+      "roundNumber": 1,
+      "roundPosition": 6,
+      "outcome": { "matchUpStatus": "DEFAULTED", "winningSide": 1 }
+    },
+    {
+      "structureName": "East",
+      "roundNumber": 1,
+      "roundPosition": 4,
+      "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 1 }
+    },
+    {
+      "structureName": "East",
+      "roundNumber": 1,
+      "roundPosition": 2,
+      "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 1 }
+    },
+    { "structureName": "East", "roundNumber": 1, "roundPosition": 5, "outcome": { "winningSide": 1 } },
+    {
+      "structureName": "East",
+      "roundNumber": 1,
+      "roundPosition": 4,
+      "outcome": {
+        "matchUpStatus": "RETIRED",
+        "winningSide": 1,
+        "score": { "sets": [{ "side1Score": 6, "side2Score": 3 }] }
+      }
+    }
+  ]
+}
