@@ -85,7 +85,13 @@ function refuseStatus(request: OutcomeRequest, view: OutcomeView): Refusal | und
     return refuse(5, INVALID_VALUES, { context: { matchUpStatus, winningSide } });
   if (matchUpStatus !== undefined && !validMatchUpStatuses.includes(matchUpStatus))
     return refuse(6, INVALID_MATCHUP_STATUS, { info: 'matchUpStatus does not exist' });
-  const scope = getMatchUpStatusScopeViolation({ drawType: view.drawType, matchUpStatus });
+  // the tie scope needs the matchUp: before it is found both flags are undefined and nothing is refused on them
+  const scope = getMatchUpStatusScopeViolation({
+    isDeciderMatchUp: view.found ? !!view.isDeciderMatchUp : undefined,
+    isTieMatchUp: view.found ? !!view.existing.collectionId : undefined,
+    drawType: view.drawType,
+    matchUpStatus,
+  });
   if (scope) return refuse(7, MATCHUP_STATUS_OUT_OF_SCOPE, { info: scope });
   if (!view.found) return refuse(8, MATCHUP_NOT_FOUND);
   return undefined;

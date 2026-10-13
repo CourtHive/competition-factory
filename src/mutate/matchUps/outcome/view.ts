@@ -9,6 +9,7 @@ import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount'
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -516,6 +517,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     found: true,
     isTeam,
     matchUpTieId,
+    isDeciderMatchUp: isDeciderStructure({ drawDefinition, structureId: structure?.structureId }),
     existing: {
       matchUpStatus: matchUp.matchUpStatus,
       matchUpStatusCodes: matchUp.matchUpStatusCodes,
