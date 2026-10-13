@@ -32,8 +32,18 @@ import fs from 'fs';
  *   since CA's (b) landed in v1 and v2 alike: the arrival is carried past the matchUp the exit decided while
  *   awaiting it (`aCarryIsCarriedPastADecidedSeat`), and the P52 guard behind it reads a result recorded by the
  *   winner of the loser's carried award, one structure on. It replays clean.
+ * - **RUN16-INCOMPATIBLE** (COMPASS 20599089, `off` and `policyoff`) and **RUN16-ASSIGNMENT** (DOUBLE_ELIMINATION
+ *   `on`:20617910, COMPASS `policyoff`:20586104): the sixteenth at-scale run's four instances (census S4, 2026-10-13),
+ *   outside the s13/s14 range. `ERR_INCOMPATIBLE_MATCHUP_STATUS` and `ERR_EXISTING_POSITION_ASSIGNMENT` after writing.
+ *   RUN16-INCOMPATIBLE closed: `progressExitStatus` built its view without the tournament record, so the carry-past
+ *   check read a result recorded below as inert and fell through to a convergence `setMatchUpState` refused
+ *   (`aCarryPastSeesARecordedResultBelow`). RUN16-ASSIGNMENT `on`:20617910 closed: a withdrawal that left the kept
+ *   exit awarded to the OTHER side compared status alone, kept the stale award and never released what it had
+ *   advanced (`aWithdrawnExitReleasesTheAwardItMoved`); `policyoff`:20586104 closed: a double exit
+ *   re-derived to a single one left its carrier's structurally advanced seat in the next round
+ *   (`aDissolvedDoubleExitReleasesItsLoser`). All four run-16 instances replay clean.
  *
- * This fixture holds 47, sized for CI: every SETTLE-B and OTHER instance, up to three SETTLE-A instances per draw type
+ * This fixture holds 51: the four run-16 instances, and 47 from s13/s14 sized for CI — sized for CI: every SETTLE-B and OTHER instance, up to three SETTLE-A instances per draw type
  * (the smallest), seeds 20504956 and 20523724, one instance of each P51-CONVERGENCE seed, and the P51-PLAYED instance.
  * All 92 are in `Mentat/fixtures/exit-propagation-census/census-fails-s1{3,4}.jsonl`; the planning record is
  * `Mentat/planning/CENSUS_FAILURE_FAMILIES.md`. Each schedule replays in the arm it was emitted in.
@@ -66,6 +76,8 @@ const OPEN: Record<string, Set<string>> = {
   'P51-CONVERGENCE': new Set([]),
   'P51-PLAYED': new Set([]),
   OTHER: new Set([]),
+  'RUN16-INCOMPATIBLE': new Set([]),
+  'RUN16-ASSIGNMENT': new Set([]),
 };
 
 /**
@@ -77,7 +89,8 @@ const OPEN: Record<string, Set<string>> = {
 const BEHIND: Record<string, string> = {};
 
 type Arm = 'off' | 'on' | 'policyoff';
-type Group = 'SETTLE-A' | 'SETTLE-B' | 'OTHER' | 'P51-CONVERGENCE' | 'P51-PLAYED';
+type Group =
+  'SETTLE-A' | 'SETTLE-B' | 'OTHER' | 'P51-CONVERGENCE' | 'P51-PLAYED' | 'RUN16-INCOMPATIBLE' | 'RUN16-ASSIGNMENT';
 type Instance = { arm: Arm; seed: number; run: string; group: Group; code: string; config: any; steps: any[] };
 
 const FIXTURE = path.join(__dirname, '../../fixtures/exitPropagation/censusF2RefusalSchedules20261011.jsonl');
@@ -118,9 +131,9 @@ function classify(instance: Instance): string | undefined {
 }
 
 // CONTROL: an empty or truncated fixture would pass by replaying nothing
-it('holds all 47 instances, each listed in its own group at most once', () => {
-  expect(INSTANCES.length).toEqual(47);
-  expect(new Set(INSTANCES.map(key)).size).toEqual(47);
+it('holds all 51 instances, each listed in its own group at most once', () => {
+  expect(INSTANCES.length).toEqual(51);
+  expect(new Set(INSTANCES.map(key)).size).toEqual(51);
   for (const instance of INSTANCES) {
     expect(['off', 'on', 'policyoff']).toContain(instance.arm);
     expect(instance.config.seed).toEqual(instance.seed);

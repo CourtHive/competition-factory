@@ -74,7 +74,20 @@ export function progressExitStatus({
 
   // get the updated inContext matchUps so we have current sides/positions
   // (the participant has already been fed/advanced by directLoser at this point)
-  const inContextMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps;
+  /**
+   * HYDRATED, as `setMatchUpState`'s view is. The downstream walk asks whether a match was PLAYED from
+   * `side.participant`, which only a view built with the tournament record carries; without it every side reads
+   * empty and a recorded result below reads as inert. Census s16 COMPASS 20599089 (F2): `carryPastDecidedMatchUp`
+   * read nothing active below `West|1|7` on this view and declined to carry, and the convergence it fell through to
+   * was refused by `setMatchUpState`, which saw the result recorded below — after the arrival had been written.
+   */
+  const inContextMatchUps = getAllDrawMatchUps({
+    inContext: true,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  })?.matchUps;
   const updatedLoserMatchUp = inContextMatchUps?.find((m) => m.matchUpId === loserMatchUp?.matchUpId);
   const sourceMatchUp = inContextMatchUps?.find((m) => m.matchUpId === sourceMatchUpId);
 
