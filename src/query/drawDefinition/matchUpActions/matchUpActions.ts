@@ -1,5 +1,6 @@
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
+import { getDisabledMatchUpStatuses } from '@Query/matchUps/getDisabledMatchUpStatuses';
 import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
@@ -337,6 +338,11 @@ function addStandardActions({
       info: 'set outcome and winningSide',
       method: SCHEDULE_METHOD,
       type: SCORE,
+      disabledMatchUpStatuses: getDisabledMatchUpStatuses({
+        drawDefinition,
+        structureId: structure?.structureId,
+        matchUp,
+      }),
       payload: {
         drawId,
         matchUpId,

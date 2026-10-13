@@ -17,6 +17,33 @@ The **MatchUp Actions Policy** (`POLICY_TYPE_MATCHUP_ACTIONS`) controls which ac
 
 ---
 
+## SCORE status-scope metadata
+
+When `matchUpActions()` offers a `SCORE` action, the action includes
+`disabledMatchUpStatuses: MatchUpStatusUnion[]` beside `type` and `payload`:
+
+```ts
+{
+  type: 'SCORE',
+  disabledMatchUpStatuses: ['CHALLENGED'],
+  payload: { /* existing scoring mutation parameters */ },
+}
+```
+
+The factory derives this list from the status-scope registry and the same checker
+used by mutation validation, with the draw type and explicit tie-rubber/Decider
+context. Deciders are identified through draw links. Only registered scoped
+statuses can appear; the list is sorted and is `[]` when none are restricted.
+
+This predicts **scope refusals only**. An unlisted status may still be refused for
+an invalid score, missing participants, downstream dependencies or another rule.
+The metadata does not change whether SCORE is offered and is not a mutation
+parameter. No SCORE action means no scoring permission; omitted metadata means
+an older producer supplied no scope information.
+
+Hosts pass this list to score-entry controls to withhold scoped statuses before
+submission. The engine remains authoritative when the outcome is submitted.
+
 ## Policy Structure
 
 ```ts

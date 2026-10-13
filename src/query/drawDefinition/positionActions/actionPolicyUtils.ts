@@ -1,8 +1,8 @@
 // constants, fixtures and types
+import { DrawDefinition, MatchUpStatusUnion, PositionAssignment, Structure } from '@Types/tournamentTypes';
 import { POLICY_TYPE_POSITION_ACTIONS, POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { POLICY_POSITION_ACTIONS_DEFAULT } from '@Fixtures/policies/POLICY_POSITION_ACTIONS_DEFAULT';
 import { POLICY_MATCHUP_ACTIONS_DEFAULT } from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
-import { DrawDefinition, PositionAssignment, Structure } from '@Types/tournamentTypes';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 
@@ -71,6 +71,8 @@ type SideAvailability<T> = { participants?: T[]; sideNumber: number };
 
 /** An entry of `matchUpActions`' `validActions`, with the options each action type offers. */
 export type MatchUpAction = ValidActionBase & {
+  /** SCORE-only metadata: statuses refused by scope, not a guarantee that other outcomes succeed. */
+  disabledMatchUpStatuses?: MatchUpStatusUnion[];
   availableParticipants?: HydratedParticipant[] | SideAvailability<HydratedParticipant>[];
   availableParticipantIds?: string[] | SideAvailability<string>[];
   participantsAvailable?: HydratedParticipant[];
