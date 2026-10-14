@@ -500,6 +500,12 @@ winner goes on into the Main structure; when the exit that decided the Backdraw 
 withdrawn, they are taken back out of the seat the link gave them too, so the re-derived winner can
 take it (census 20506968, DOUBLE_ELIMINATION 8/6).
 
+It also takes back the BYE the award placed. A matchUp won over a carried exit has that exit as its
+loser, and where the loser link leads to another structure the seat there becomes a BYE nobody can
+fill. When the withdrawal leaves that matchUp undecided, its loser is a participant again, and the
+BYE goes unless another exit still claims it (census run-17 baseline, COMPASS 16/13 under
+`doubleExitPropagateBye: false`).
+
 ### A clear takes back only the side it cleared
 
 Clearing a position takes back what that position's side carried, and nothing from the other side.

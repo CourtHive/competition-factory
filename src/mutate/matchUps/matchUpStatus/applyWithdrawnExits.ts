@@ -1,6 +1,8 @@
-import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isDoubleExit } from '@Validators/isExit';
 import {
   releaseAdvancedDrawPositionAcrossLinks,
@@ -8,8 +10,9 @@ import {
 } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 
 // constants and types
-import { WithdrawnExit, withdrawProducedExits } from './sideExitProvenance';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { WithdrawnExit, withdrawProducedExits, withdrawByeClaim } from './sideExitProvenance';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
 
 /**
@@ -246,5 +249,39 @@ function releaseFromNextRound({
       matchUpsMap,
       event,
     });
+  }
+}
+
+/** Withdraw a matchUp's BYE claims, clearing each propagated BYE seat no other claim still holds. */
+export function withdrawByeSeats({
+  claimantMatchUpId,
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  claimantMatchUpId: string;
+  event?: Event;
+}) {
+  const claimant = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === claimantMatchUpId);
+  const claimantIsBye = claimant?.matchUpStatus === BYE;
+  for (const [structureId, mapped] of Object.entries(matchUpsMap.mappedMatchUps)) {
+    const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
+    for (const matchUp of mapped.matchUps as MatchUp[]) {
+      for (const sideNumber of [1, 2]) {
+        const claims = matchUp.sideExitProvenance?.[sideNumber]?.byeClaims ?? [];
+        if (!claims.includes(claimantMatchUpId)) continue;
+        withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
+        if (matchUp.sideExitProvenance?.[sideNumber]?.byeClaims?.length) continue;
+        if (claimantIsBye) continue;
+        const drawPosition = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber });
+        const assignment = positionAssignmentsOf(structure)?.find((entry) => entry.drawPosition === drawPosition);
+        if (!assignment?.bye || !assignment.byeFromPropagation) continue;
+        clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
+      }
+    }
   }
 }

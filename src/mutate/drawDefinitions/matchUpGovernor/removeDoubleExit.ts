@@ -1,6 +1,7 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
+import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
@@ -376,6 +377,17 @@ function withdrawExitFromByeChain({
   // stamped explicitly rather than inferred from what survived. Same reason as
   // `conditionallyRemoveDrawPosition`'s own stamp.
   setSideExitProvenance({ provenance: unwound.provenance, matchUp: noContextTargetMatchUp });
+
+  /**
+   * A matchUp the withdrawal leaves UNDECIDED produces no loser, so the BYE it claimed at its loser target for the exit
+   * it was won over is no longer owed (`propagateUnfillableLoserBye`). Census run-17 baseline, COMPASS 16/13 seeds
+   * 20653852, 20633592, 20650012 and 20660566, policy off: `West|2|2`, won by WALKOVER over the exit `East|1|5`'s double
+   * walkover carried past `West|1|3`'s BYE, claimed `Southwest|1|1`'s seat; `East|1|5` corrected to a single WALKOVER
+   * withdrew the exit here, and the BYE stood where forward play has a seat waiting on `West|2|2`'s loser.
+   */
+  if (unwound.winningSide === undefined && !isAnyExit(unwound.matchUpStatus)) {
+    withdrawByeSeats({ claimantMatchUpId: fromMatchUp.matchUpId, drawDefinition, matchUpsMap });
+  }
 
   const fromTargets = positionTargets({
     matchUpId: fromMatchUp.matchUpId,
