@@ -522,6 +522,15 @@ exit is re-derived to a single exit, the exit it produced is withdrawn and so is
 BYE at the re-derived matchUp's own loser seat stays, because its losing side is still the produced
 exit (census run-17 baseline, COMPASS 16/13 and 16/14 under `doubleExitPropagateBye: false`).
 
+### A loser who is nobody holds no seat
+
+A matchUp an exit decided for an empty seat has nobody on its losing side. When that matchUp becomes a
+double exit, the loser it had sent on is taken back, and there is no participant to take. Before this
+the removal looked for a participant with no id, which matched every BYE and open seat in the loser
+structure: each BYE's advancement there was released while the BYEs themselves stood, and an unfilled
+seed slot was dropped (census run 17, COMPASS 32/30 under `doubleExitPropagateBye: false`: the BYE two
+BYEs had sent on into `South|3|1` was taken back).
+
 ### A clear takes back only the side it cleared
 
 Clearing a position takes back what that position's side carried, and nothing from the other side.
@@ -565,6 +574,14 @@ rather than becoming an ordinary match (census 20318646, COMPASS 8/8 — the Sou
 orders, carrier first or BYE first, now reach the same state. And **a carry written past a late BYE
 names the exit's origin**, as every other hop does, not the BYE matchUp it passed, so a convergence it
 later dissolves still re-advances its winner (census 20267598, FEED_IN_CHAMPIONSHIP_TO_SF 16/15).
+
+**A carrier passing a BYE onto a side a dissolved double exit decided brings its own exit.** Two
+carriers can converge in a matchUp whose produced exit then decides the next one for the participant
+opposite. When one of them is replaced by a BYE, the convergence dissolves and the other passes the BYE
+onto the side that double exit had decided. That side now records the carrier's own exit, naming its
+origin, as it does when the BYE comes first. Before this it kept only the dissolved double exit's
+record, which was then withdrawn, and the matchUp went back to TO_BE_PLAYED with a defaulted participant
+in it (census run 17, OLYMPIC 16/16 under `doubleExitPropagateBye: false`).
 
 ### An arrival carrying an exit converges with a pending exit
 

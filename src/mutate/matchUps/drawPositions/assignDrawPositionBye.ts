@@ -837,12 +837,19 @@ export function advanceDrawPosition({
  * The feeder is the matchUp of the round before that holds the advancing position (`sourceRoundPosition`); the carrier
  * is the side of it that records a carried exit and did not win it. The entry names the feeder, as
  * the presumptive stamp did, so nothing keyed by source identity moves.
+ *
+ * `ontoExitingSide`: the matchUp is already awarded to the other side and the carrier arrives on the side whose exit
+ * decided it — an exit the FEEDER produced while it was a double exit, which a BYE has since dissolved. The carrier's
+ * own exit is then that side's record, as it is when the BYE comes first (census run 17 F3, OLYMPIC 16/16 seed
+ * 20738091, policy off: `South|1|1`'s double default took a BYE, and the side of `South|2|1` it had decided kept only
+ * the double default's entry, which settle voided, re-opening the matchUp beneath the defaulted carrier).
  */
 function stampCarriedExitOnArrival({
   inContextDrawMatchUps,
   noContextWinnerMatchUp,
   drawPositionToAdvance,
   sourceRoundPosition,
+  ontoExitingSide,
   drawDefinition,
   drawPositions,
   winnerMatchUp,
@@ -855,9 +862,10 @@ function stampCarriedExitOnArrival({
   winnerMatchUp: HydratedMatchUp;
   drawPositionToAdvance: number;
   sourceRoundPosition?: number;
+  ontoExitingSide?: boolean;
   structureId?: string;
 }): void {
-  if (!isExit(noContextWinnerMatchUp.matchUpStatus) || noContextWinnerMatchUp.winningSide) return;
+  if (!isExit(noContextWinnerMatchUp.matchUpStatus) || (!ontoExitingSide && noContextWinnerMatchUp.winningSide)) return;
   const feeder = inContextDrawMatchUps.find(
     (candidate) =>
       candidate.structureId === structureId &&
@@ -891,6 +899,10 @@ function stampCarriedExitOnArrival({
       drawDefinition,
       structureId,
     }) ?? bracketSide;
+  if (ontoExitingSide) {
+    const standing = getSideExitProvenance({ matchUp: noContextWinnerMatchUp })?.[arrivalSide as 1 | 2];
+    if (arrivalSide === noContextWinnerMatchUp.winningSide || standing?.sourceMatchUpId !== feeder.matchUpId) return;
+  }
   mergeSideExitProvenance({
     matchUp: noContextWinnerMatchUp,
     provenance: buildCarriedExitProvenance({
@@ -1065,6 +1077,17 @@ function advanceWinner({
     !drawPositionIsBye &&
     !pairedDrawPositionIsBye
   ) {
+    stampCarriedExitOnArrival({
+      ontoExitingSide: true,
+      inContextDrawMatchUps,
+      noContextWinnerMatchUp,
+      drawPositionToAdvance,
+      sourceRoundPosition,
+      drawDefinition,
+      drawPositions,
+      winnerMatchUp,
+      structureId,
+    });
     setMatchUpDrawPositions({
       structureId: winnerMatchUp?.structureId,
       matchUp: noContextWinnerMatchUp,

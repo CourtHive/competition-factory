@@ -368,12 +368,17 @@ function removeDirectedLoser({
   const { structure } = findStructure({ drawDefinition, structureId });
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
   const { positionAssignments } = structureAssignedDrawPositions({ structure });
-  const relevantDrawPosition = positionAssignments?.find(
-    (assignment) => assignment.participantId === loserParticipantId,
-  )?.drawPosition;
+  // A LOSER WHO IS NOBODY HOLDS NO SEAT. A matchUp an exit decided towards an empty seat has no participant on its losing
+  // side, and an undefined id matched every assignment holding none — each BYE and open seat of the target structure —
+  // so their advancements were released and an empty seed slot dropped (census run 17 F3, COMPASS 32/30 seed 20733408,
+  // policy off: `West|1|2`'s produced walkover converged, and the BYE that two BYEs had sent on to `South|3|1` was taken
+  // back while both still stood).
+  const isLoser = (assignment: { participantId?: string }) =>
+    !!loserParticipantId && assignment.participantId === loserParticipantId;
+  const relevantDrawPosition = positionAssignments?.find(isLoser)?.drawPosition;
   const clearedDrawPositions: number[] = [];
   positionAssignments?.forEach((assignment) => {
-    if (assignment.participantId === loserParticipantId) {
+    if (isLoser(assignment)) {
       delete assignment.participantId;
       clearedDrawPositions.push(assignment.drawPosition);
     }
@@ -478,9 +483,7 @@ function removeDirectedLoser({
   }
 
   // remove participant from seedAssignments
-  structure.seedAssignments = (structure.seedAssignments ?? []).filter(
-    (assignment) => assignment.participantId !== loserParticipantId,
-  );
+  structure.seedAssignments = (structure.seedAssignments ?? []).filter((assignment) => !isLoser(assignment));
 
   if (dualMatchUp) {
     // remove propagated lineUp
