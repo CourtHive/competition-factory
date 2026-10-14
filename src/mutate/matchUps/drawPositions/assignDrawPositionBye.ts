@@ -1,7 +1,11 @@
 import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { releaseHoldersByeFromTarget } from '@Mutate/drawDefinitions/positionGovernor/releaseHoldersByeFromTarget';
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
-import { rekeySideFacts, setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
+import {
+  arrivalMovesOccupant,
+  rekeySideFacts,
+  setMatchUpDrawPositions,
+} from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
@@ -1062,9 +1066,21 @@ function stampCarriedExitOnArrival({
       drawDefinition,
       structureId,
     }) ?? bracketSide;
+  // The record is still keyed as the matchUp stands BEFORE this arrival, and every path that follows re-keys it as the
+  // positions are written. When the arrival moves the participant already here across (a lone position sits on its
+  // bracket side, two sort ascending), the arrival's seat is the OTHER key until then: written at `arrivalSide`, the
+  // carry overwrote the occupant's own entry and the re-keying moved it onto the occupant's side (census run 18,
+  // FEED_IN_CHAMPIONSHIP 8/5 seed 20753100, policy off: `Consolation|3|1` held dp 3 alone on side 2 with
+  // `Main|2|1`'s relayed walkover; the walkover carrier arriving at dp 5 replaced it, landed on side 1 as dp 3's exit,
+  // and won the matchUp on the walkover it had brought).
+  const recordSide =
+    arrivalSide &&
+    (arrivalMovesOccupant({ matchUp: noContextWinnerMatchUp, drawPositions, drawDefinition, structureId })
+      ? 3 - arrivalSide
+      : arrivalSide);
   if (ontoExitingSide || replacesStanding) {
-    if (ontoExitingSide && arrivalSide === noContextWinnerMatchUp.winningSide) return;
-    const standing = getSideExitProvenance({ matchUp: noContextWinnerMatchUp })?.[arrivalSide as 1 | 2];
+    if (ontoExitingSide && recordSide === noContextWinnerMatchUp.winningSide) return;
+    const standing = getSideExitProvenance({ matchUp: noContextWinnerMatchUp })?.[recordSide as 1 | 2];
     const standingSource = matchUpsMap?.drawMatchUps?.find(
       (candidate) => candidate.matchUpId === standing?.sourceMatchUpId,
     );
@@ -1088,7 +1104,7 @@ function stampCarriedExitOnArrival({
       // exit, found a BYE, and never settled a convergence this carry had dissolved — its winner stood unadvanced
       // (census 20267598, FEED_IN_CHAMPIONSHIP_TO_SF 16/15, `aLateByesCarryNamesItsOrigin`).
       sourceMatchUpId: feederEntry?.sourceMatchUpId ?? feeder.matchUpId,
-      exitingSideNumber: arrivalSide,
+      exitingSideNumber: recordSide,
       matchUpStatus: carried,
     }),
   });
