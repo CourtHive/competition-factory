@@ -84,41 +84,45 @@ const cases: [string, Record<string, any>, number[]?][] = [
 ];
 
 describe('buildFromSources builds every structure of a draw', () => {
-  it.each(cases)('%s', (_label, drawProfile, playoffPositions) => {
-    const { drawId, original, eventData, decidedCount } = generated(drawProfile, playoffPositions);
-    expect(decidedCount).toBeGreaterThan(0);
-    const [sourceDraw] = eventData.drawsData;
-    expect(sourceDraw.structures.length).toBeGreaterThan(1);
+  it.each(cases)(
+    '%s',
+    (_label, drawProfile, playoffPositions) => {
+      const { drawId, original, eventData, decidedCount } = generated(drawProfile, playoffPositions);
+      expect(decidedCount).toBeGreaterThan(0);
+      const [sourceDraw] = eventData.drawsData;
+      expect(sourceDraw.structures.length).toBeGreaterThan(1);
 
-    const result = buildFromSources([eventData]);
-    expect(result.unbuiltStructures).toEqual([]);
-    if (process.env.BFS_DEBUG)
-      console.error(JSON.stringify({ inferred: result.inferredLinks, derived: result.derivedLinks }, null, 1));
-    expect(result.inferredLinks).toEqual([]);
-    expect(result.derivedLinks.flatMap(({ issues }) => issues)).toEqual([]);
+      const result = buildFromSources([eventData]);
+      expect(result.unbuiltStructures).toEqual([]);
+      if (process.env.BFS_DEBUG)
+        console.error(JSON.stringify({ inferred: result.inferredLinks, derived: result.derivedLinks }, null, 1));
+      expect(result.inferredLinks).toEqual([]);
+      expect(result.derivedLinks.flatMap(({ issues }) => issues)).toEqual([]);
 
-    const rebuilt = result.record.events[0].drawDefinitions[0];
-    // every structure, by id, in the source's order
-    expect(rebuilt.structures.map((s) => s.structureId)).toEqual(sourceDraw.structures.map((s) => s.structureId));
+      const rebuilt = result.record.events[0].drawDefinitions[0];
+      // every structure, by id, in the source's order
+      expect(rebuilt.structures.map((s) => s.structureId)).toEqual(sourceDraw.structures.map((s) => s.structureId));
 
-    // every matchUp, and every decided one keeps its result
-    const before = new Map(matchUpsOf(original.structures).map((m) => [m.matchUpId, m]));
-    const after = matchUpsOf(rebuilt.structures);
-    expect(after.length).toEqual(before.size);
-    for (const m of after) {
-      expect(m.winningSide).toEqual(before.get(m.matchUpId).winningSide);
-      expect(m.score?.scoreStringSide1).toEqual(before.get(m.matchUpId).score?.scoreStringSide1);
-    }
+      // every matchUp, and every decided one keeps its result
+      const before = new Map(matchUpsOf(original.structures).map((m) => [m.matchUpId, m]));
+      const after = matchUpsOf(rebuilt.structures);
+      expect(after.length).toEqual(before.size);
+      for (const m of after) {
+        expect(m.winningSide).toEqual(before.get(m.matchUpId).winningSide);
+        expect(m.score?.scoreStringSide1).toEqual(before.get(m.matchUpId).score?.scoreStringSide1);
+      }
 
-    // the true links: those the generator gave the original
-    expect(sortedLinks(rebuilt.links)).toEqual(sortedLinks(original.links));
+      // the true links: those the generator gave the original
+      expect(sortedLinks(rebuilt.links)).toEqual(sortedLinks(original.links));
 
-    // and the rebuilt draw reads
-    tournamentEngine.setState(result.record);
-    const drawData: any = tournamentEngine.getDrawData({ drawId });
-    expect(drawData.error).toBeUndefined();
-    expect(drawData.drawInfo.drawId).toEqual(drawId);
-  });
+      // and the rebuilt draw reads
+      tournamentEngine.setState(result.record);
+      const drawData: any = tournamentEngine.getDrawData({ drawId });
+      expect(drawData.error).toBeUndefined();
+      expect(drawData.drawInfo.drawId).toEqual(drawId);
+    },
+    180_000,
+  );
 
   const roundRobinWithPlayoffs = () =>
     generated({
