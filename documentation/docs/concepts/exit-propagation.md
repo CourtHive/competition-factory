@@ -583,6 +583,14 @@ origin, as it does when the BYE comes first. Before this it kept only the dissol
 record, which was then withdrawn, and the matchUp went back to TO_BE_PLAYED with a defaulted participant
 in it (census run 17, OLYMPIC 16/16 under `doubleExitPropagateBye: false`).
 
+The same holds when the matchUp the carrier lands in is held by a BYE or by a double exit rather
+than decided by one: the side the carrier takes records the carrier's own exit, replacing the record
+a dissolved double exit left there. The carrier's origin is read from the stored draw, not from the
+view the cascade started with, so a carrier crossing two BYEs in one cascade still names the
+matchUp they exited. Before this the South final went back to TO_BE_PLAYED when the late entry came
+last, and to a walkover when it came first (census run 17, OLYMPIC 32 with 29 and 30 participants,
+under `doubleExitPropagateBye: false`).
+
 ### An arrival carrying an exit converges with a pending exit
 
 Since 7.5.0. A loser carrying a `WALKOVER` or `DEFAULTED` can reach a matchUp that already holds a

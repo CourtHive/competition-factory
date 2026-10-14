@@ -21,7 +21,7 @@ import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { findStructure } from '@Acquire/findStructure';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { numericSort } from '@Tools/sorting';
-import { isExit } from '@Validators/isExit';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import {
   deriveExitStateFromProvenance,
   buildCarriedExitProvenance,
@@ -843,6 +843,14 @@ export function advanceDrawPosition({
  * own exit is then that side's record, as it is when the BYE comes first (census run 17 F3, OLYMPIC 16/16 seed
  * 20738091, policy off: `South|1|1`'s double default took a BYE, and the side of `South|2|1` it had decided kept only
  * the double default's entry, which settle voided, re-opening the matchUp beneath the defaulted carrier).
+ *
+ * A BYE-held matchUp the carrier passes through, or a convergence it arrives into, is the same question one round
+ * earlier: the side it arrives on records the dissolved double exit's produced exit, and the carrier's own replaces it
+ * there too, so the next hop has a carry to relay or the convergence keeps both its exits. In every case the standing
+ * entry is replaced only when it came from the feeder or from a double exit that is one no longer — a live exit
+ * standing there is RULE 4's (census run 17 F3, OLYMPIC 32 policy off, 20651826, 20689242, 20740054: `West|1|6`
+ * converged, `South|1|3`'s double walkover dissolved into a BYE, and its walkover carrier went on through `South|2|2`
+ * into the South final as a live participant).
  */
 function stampCarriedExitOnArrival({
   inContextDrawMatchUps,
@@ -853,6 +861,7 @@ function stampCarriedExitOnArrival({
   drawDefinition,
   drawPositions,
   winnerMatchUp,
+  matchUpsMap,
   structureId,
 }: {
   drawPositions: (number | undefined)[];
@@ -863,16 +872,28 @@ function stampCarriedExitOnArrival({
   drawPositionToAdvance: number;
   sourceRoundPosition?: number;
   ontoExitingSide?: boolean;
+  matchUpsMap?: MatchUpsMap;
   structureId?: string;
 }): void {
-  if (!isExit(noContextWinnerMatchUp.matchUpStatus) || (!ontoExitingSide && noContextWinnerMatchUp.winningSide)) return;
-  const feeder = inContextDrawMatchUps.find(
-    (candidate) =>
-      candidate.structureId === structureId &&
-      candidate.roundNumber === (winnerMatchUp.roundNumber ?? 0) - 1 &&
-      (sourceRoundPosition ? candidate.roundPosition === sourceRoundPosition : true) &&
-      candidate.drawPositions?.includes(drawPositionToAdvance),
-  );
+  // BYE-held, or a convergence one of whose exits came from a double exit the carrier's BYE has dissolved
+  const replacesStanding =
+    noContextWinnerMatchUp.matchUpStatus === BYE || isDoubleExit(noContextWinnerMatchUp.matchUpStatus);
+  if (!isExit(noContextWinnerMatchUp.matchUpStatus) && !replacesStanding) return;
+  if (!ontoExitingSide && !replacesStanding && noContextWinnerMatchUp.winningSide) return;
+  const isFeeder = (candidate: {
+    roundNumber?: number;
+    roundPosition?: number;
+    drawPositions?: (number | undefined)[];
+  }) =>
+    candidate.roundNumber === (winnerMatchUp.roundNumber ?? 0) - 1 &&
+    (sourceRoundPosition ? candidate.roundPosition === sourceRoundPosition : true) &&
+    !!candidate.drawPositions?.includes(drawPositionToAdvance);
+  // the STORED feeder, not the hydrated view: a carrier passing more than one BYE in one cascade was written into the
+  // feeder a hop earlier, and only the store has it (census run 17 F3, OLYMPIC 32 policy off, 20651826)
+  const storedFeeder = structureId ? matchUpsMap?.mappedMatchUps?.[structureId]?.matchUps?.find(isFeeder) : undefined;
+  const feeder =
+    storedFeeder ??
+    inContextDrawMatchUps.find((candidate) => candidate.structureId === structureId && isFeeder(candidate));
   if (!feeder) return;
   // The feeder is read by PROVENANCE, not status: by the time the carrier passes, the BYE has settled it to BYE
   // (#5158), and its exit side still records the exit the carrier holds.
@@ -884,8 +905,13 @@ function stampCarriedExitOnArrival({
   });
   if (!carrierSide || carrierSide === feeder.winningSide) return;
   // a CARRIER is a participant: a produced exit relayed past a BYE holder is `sendHeldExitsOn`'s to deliver, and it
-  // writes the origin's own entry (`byeAdvancesIntoPendingDoubleExit`: both sides then read DOUBLE_WALKOVER)
-  if (!feeder.sides?.some((side) => side?.sideNumber === carrierSide && side.participantId)) return;
+  // writes the origin's own entry (`byeAdvancesIntoPendingDoubleExit`: both sides then read DOUBLE_WALKOVER). The
+  // carrier is the advancing position, so its assignment answers, as the stored feeder has no hydrated sides.
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId });
+  const carrierAssignment = positionAssignments?.find(
+    (assignment) => assignment.drawPosition === drawPositionToAdvance,
+  );
+  if (!carrierAssignment?.participantId) return;
   const feederEntry = getSideExitProvenance({ matchUp: feeder })?.[carrierSide];
   const carried = carriedExitStatus(feederEntry);
   if (!carried) return;
@@ -899,9 +925,15 @@ function stampCarriedExitOnArrival({
       drawDefinition,
       structureId,
     }) ?? bracketSide;
-  if (ontoExitingSide) {
+  if (ontoExitingSide || replacesStanding) {
+    if (ontoExitingSide && arrivalSide === noContextWinnerMatchUp.winningSide) return;
     const standing = getSideExitProvenance({ matchUp: noContextWinnerMatchUp })?.[arrivalSide as 1 | 2];
-    if (arrivalSide === noContextWinnerMatchUp.winningSide || standing?.sourceMatchUpId !== feeder.matchUpId) return;
+    const standingSource = matchUpsMap?.drawMatchUps?.find(
+      (candidate) => candidate.matchUpId === standing?.sourceMatchUpId,
+    );
+    const fromDissolvedDoubleExit =
+      isDoubleExit(standing?.previousMatchUpStatus) && !!standingSource && !isDoubleExit(standingSource.matchUpStatus);
+    if (standing?.sourceMatchUpId !== feeder.matchUpId && !fromDissolvedDoubleExit) return;
   }
   mergeSideExitProvenance({
     matchUp: noContextWinnerMatchUp,
@@ -997,6 +1029,7 @@ function advanceWinner({
     drawDefinition,
     drawPositions,
     winnerMatchUp,
+    matchUpsMap,
     structureId,
   });
   const drawPositionIsBye = positionAssignments?.find(
@@ -1086,6 +1119,7 @@ function advanceWinner({
       drawDefinition,
       drawPositions,
       winnerMatchUp,
+      matchUpsMap,
       structureId,
     });
     setMatchUpDrawPositions({
