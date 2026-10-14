@@ -320,6 +320,6 @@ function getRemovedMatchUpIds({ idBeingRemoved, drawDefinition }) {
     structureId: idBeingRemoved,
     drawDefinition,
   });
-  const matchUps: HydratedMatchUp[] = getAllStructureMatchUps({ structure }).matchUps;
+  const matchUps = getAllStructureMatchUps({ structure }).matchUps;
   return getMatchUpIds(matchUps);
 }

@@ -29,12 +29,6 @@ import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
-  ErrorType,
-  INVALID_VALUES,
-  MISSING_DRAW_DEFINITION,
-  UNLINKED_STRUCTURES,
-} from '@Constants/errorConditionConstants';
-import {
   BYE,
   CANCELLED,
   COMPLETED,
@@ -46,6 +40,12 @@ import {
   RETIRED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
+import {
+  ErrorType,
+  INVALID_VALUES,
+  MISSING_DRAW_DEFINITION,
+  UNLINKED_STRUCTURES,
+} from '@Constants/errorConditionConstants';
 
 /**
  * Arguments for {@link getDrawData}.
@@ -316,23 +316,19 @@ export function getDrawData(params: GetDrawDataArgs): {
         structureInfo.positionAssignments = positionAssignments;
 
         structureInfo.structureActive = matchUps.reduce((active, matchUp) => {
-          const structureActiveStatuses = [
-            DOUBLE_WALKOVER,
-            DOUBLE_DEFAULT,
-            IN_PROGRESS,
-            COMPLETED,
-            CANCELLED,
-            DEFAULTED,
-            RETIRED,
-            WALKOVER,
-          ].includes(matchUp.matchUpStatus);
+          const structureActiveStatuses =
+            matchUp.matchUpStatus !== undefined &&
+            [DOUBLE_WALKOVER, DOUBLE_DEFAULT, IN_PROGRESS, COMPLETED, CANCELLED, DEFAULTED, RETIRED, WALKOVER].includes(
+              matchUp.matchUpStatus,
+            );
           return active || structureActiveStatuses || !!matchUp.winningSide || !!matchUp.score?.scoreStringSide1;
         }, false);
 
         // a decided TEAM matchUp completes its round even when a dead rubber is never played, so only TEAM-level
         // matchUps are read: the same answer as the stub profile (raw matchUps) and isCompletedStructure
-        const structureCompleted = teamLevelMatchUps(matchUps).every((matchUp) =>
-          [...completedMatchUpStatuses, BYE].includes(matchUp.matchUpStatus),
+        const structureCompleted = teamLevelMatchUps(matchUps).every(
+          (matchUp) =>
+            matchUp.matchUpStatus !== undefined && [...completedMatchUpStatuses, BYE].includes(matchUp.matchUpStatus),
         );
         structureInfo.structureCompleted = structureCompleted;
         completedStructures[structureId] = structureCompleted;

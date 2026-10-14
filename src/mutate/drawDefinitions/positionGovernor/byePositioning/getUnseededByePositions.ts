@@ -126,12 +126,12 @@ export function getUnseededByePositions({
   const matchUpPairedDrawPositions = relevantMatchUps
     .map((matchUp) => matchUp.drawPositions)
     .map((pair) => pair?.sort((a, b) => a - b))
-    .filter((pair) => pair?.[0] + 1 === pair?.[1]);
+    .filter((pair): pair is number[] => !!pair && pair[0] + 1 === pair[1]);
 
-  const findDrawPositionPair = (drawPosition) => {
-    return matchUpPairedDrawPositions.reduce((pair, candidate) => {
+  const findDrawPositionPair = (drawPosition: number) => {
+    return matchUpPairedDrawPositions.reduce<number | undefined>((pair, candidate) => {
       return candidate.includes(drawPosition)
-        ? candidate.reduce((p, c) => (c === drawPosition ? p : c), undefined)
+        ? candidate.reduce<number | undefined>((p, c) => (c === drawPosition ? p : c), undefined)
         : pair;
     }, undefined);
   };

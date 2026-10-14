@@ -327,7 +327,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
     drawDefinition,
     structureId,
   });
-  expect(matchUp.drawPositions.filter(Boolean)).toMatchObject([]);
+  expect(matchUp.drawPositions?.filter(Boolean)).toMatchObject([]);
   assignDrawPositionBye({
     drawPosition: unassignedPositions?.[1].drawPosition,
     drawDefinition,
@@ -368,7 +368,7 @@ it('advances paired drawPosition if BYE is assigned second', () => {
     drawDefinition,
     structureId,
   }));
-  expect(matchUp.drawPositions.filter(Boolean)).toMatchObject([]);
+  expect(matchUp.drawPositions?.filter(Boolean)).toMatchObject([]);
 
   assignDrawPositionBye({
     drawPosition: unassignedPositions?.[6].drawPosition,

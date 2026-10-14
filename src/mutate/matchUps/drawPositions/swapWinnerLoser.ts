@@ -137,6 +137,7 @@ export function swapWinnerLoser(params) {
    */
   const existingWinnerSubsequentMatchUps = matchUps.filter(
     ({ drawPositions, roundNumber }) =>
+      roundNumber !== undefined &&
       roundNumber > matchUpRoundNumber &&
       (drawPositions?.includes(existingWinnerDrawPosition) ||
         (existingLoserDrawPosition && drawPositions?.includes(existingLoserDrawPosition))),

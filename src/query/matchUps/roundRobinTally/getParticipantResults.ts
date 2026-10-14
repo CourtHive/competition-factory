@@ -13,10 +13,9 @@ import { INVALID_MATCHUP, MISSING_MATCHUPS } from '@Constants/errorConditionCons
 import type { MatchUp, MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
-import { HydratedMatchUp } from '@Types/hydrated';
 
 type GetParticipantResultsArgs = {
-  matchUps: HydratedMatchUp[];
+  matchUps: MatchUp[];
   participantIds?: string[];
   pressureRating?: boolean;
   groupingTotal?: string; // attribute being processed for group totals
@@ -154,7 +153,7 @@ function computeTotals({
   excludeMatchUpStatuses,
   matchUpFormat,
 }: {
-  filteredMatchUps: HydratedMatchUp[];
+  filteredMatchUps: MatchUp[];
   excludeMatchUpStatuses: (MatchUpStatusUnion | undefined)[];
   matchUpFormat?: string;
 }) {
@@ -217,7 +216,7 @@ function processNoWinnerMatchUp({
   tieMatchUps?: MatchUp[];
   perPlayer?: number;
   score?: Score;
-  sides: NonNullable<HydratedMatchUp['sides']>;
+  sides: NonNullable<MatchUp['sides']>;
 }) {
   if (isDrawn) {
     const sets = countSets({ score, matchUpFormat, matchUpStatus, tallyPolicy });

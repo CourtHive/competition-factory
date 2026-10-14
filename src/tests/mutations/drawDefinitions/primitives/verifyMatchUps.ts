@@ -5,6 +5,7 @@ import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { parseScoreString } from '@Tools/parseScoreString';
 import { findStructure } from '@Acquire/findStructure';
+import type { MatchUp } from '@Types/tournamentTypes';
 import { expect } from 'vitest';
 
 // constants
@@ -42,9 +43,10 @@ export function findMatchUpByRoundNumberAndPosition(params) {
     inContext,
     event,
   });
-  const matchUp = matchUps.reduce((matchUp, candidate) => {
+  const matchUp = matchUps.reduce<MatchUp | undefined>((matchUp, candidate) => {
     return candidate.roundNumber === roundNumber && candidate.roundPosition === roundPosition ? candidate : matchUp;
   }, undefined);
+  if (!matchUp) throw new Error('Fixture matchUp not found at the requested coordinates');
   return { matchUp };
 }
 

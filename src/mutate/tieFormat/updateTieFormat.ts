@@ -91,7 +91,7 @@ export function updateTieFormat({
     return instanceMap;
   }, {});
 
-  const matchingCollections = ({ tieFormat }) => {
+  const matchingCollections = ({ tieFormat }: Pick<MatchUp, 'tieFormat'>) => {
     const cMap = tieFormat?.collectionDefinitions.reduce((instanceMap, def) => {
       instanceMap[def.collectionId] = (instanceMap[def.collectionId] || 0) + def.matchUpCount;
       return instanceMap;

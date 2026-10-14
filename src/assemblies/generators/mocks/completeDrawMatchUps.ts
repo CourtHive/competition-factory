@@ -178,7 +178,9 @@ function completeStructureMatchUps({
 
     const targetMatchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
 
-    const isDoubleExit = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(targetMatchUp.matchUpStatus);
+    const isDoubleExit =
+      targetMatchUp?.matchUpStatus !== undefined &&
+      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(targetMatchUp.matchUpStatus);
 
     if (targetMatchUp?.readyToScore && !isDoubleExit) {
       const winningSide = !randomWinningSide && 1;
