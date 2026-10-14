@@ -2044,6 +2044,12 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
      * can see, while refusing leaves no trace at all.
      */
     if (feeder.matchUpStatus === BYE) return !!feeder.sides?.some((side) => side && !side.participantId && !side.bye);
+    // An exit already awarded to a seat nobody has reached yet delivers whoever reaches it. Read as finished, a held
+    // exit opposite it was never sent on, and the matchUp they both feed read TO_BE_PLAYED only when the exit came last
+    // (census run 17 Class A, COMPASS and OLYMPIC 32 policy off: 20630712 `Southeast|1|2` won by `South|1|4`'s loser).
+    const awaitedWinner = feeder.sides?.find((side) => side.sideNumber === feeder.winningSide);
+    if (isExit(feeder.matchUpStatus) && awaitedWinner && !awaitedWinner.participantId && !awaitedWinner.bye)
+      return true;
     return !isAnyExit(feeder.matchUpStatus);
   });
 }
