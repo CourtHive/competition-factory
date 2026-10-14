@@ -1,9 +1,9 @@
 import { deleteNotices, setDevContext, setDeepCopy, getDevContext } from '@Global/state/globalState';
+import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { createSeededRandom } from '@Tools/prng';
 import { withCapturedClock } from '@Tools/clock';
 
 import { setState } from '@Assemblies/engines/parts/stateMethods';
@@ -58,9 +58,7 @@ export const mocksEngine = (() => {
 
   function createEngineMethod(governor, method) {
     return (params) => {
-      if (typeof params?.nonRandom === 'number') {
-        params = { ...params, random: createSeededRandom(params.nonRandom) };
-      }
+      if (typeof params?.nonRandom === 'number') params = seedRandomParam({ ...params });
       if (getDevContext()) {
         const invocationResult = engineInvoke(governor[method], params);
         if (!invocationResult?.error && params?.setState && invocationResult?.tournamentRecord) {

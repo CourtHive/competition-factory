@@ -1,11 +1,11 @@
 import { deleteNotices, getInvokeObserver, getMethods, getTournamentRecords } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
+import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { createSeededRandom } from '@Tools/prng';
 import { withCapturedClock } from '@Tools/clock';
 
 // constants and types
@@ -32,11 +32,7 @@ export function executionQueue(engine: FactoryEngine, directives: Directives, ro
       const params = directive.params ? { ...directive.params } : {};
       if (!methods[methodName]) return logMethodNotFound({ methodName, start, params });
 
-      // nonRandom: <seed> middleware — see engineInvoke.ts for the rationale.
-      if (typeof params.nonRandom === 'number') {
-        params.random = createSeededRandom(params.nonRandom);
-        delete params.nonRandom;
-      }
+      seedRandomParam(params); // nonRandom: <seed> middleware
 
       if (pipe) {
         const lastResult = results.at(-1);

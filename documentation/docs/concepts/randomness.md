@@ -36,16 +36,23 @@ takes effect on the next call.
   their own, for example one backed by `crypto.getRandomValues`.
 - **No argument** restores `Math.random`. Anything else is refused with `INVALID_VALUES`.
 
+A function source must actually vary. Ids are drawn from the source too, so a constant (`() => 0.5`) or a short cycle
+mints the same id again and again, and generating a draw under it fails.
+
 ### `nonRandom` on a single call
 
 Passing `nonRandom: <seed>` to a method call turns the seed into that call's own `random` function, so one mutation
 is deterministic regardless of the configured source. `mocksEngine` accepts `nonRandom` for the same purpose when it
 generates tournaments.
 
-Where it is applied, at the time of writing: the synchronous engine's `engineInvoke` and `executionQueue`, and
-`mocksEngine`. The asynchronous engine's invoke and execution queue do not transform `nonRandom`, so a server built on
-it draws such a call from its configured source. Do not rely on `nonRandom` to make a server and a client agree until
-that is resolved.
+Where it is applied: every engine entry point, synchronous and asynchronous — `engineInvoke` and `executionQueue`,
+their async twins, and `mocksEngine` — through one shared transform. A server running the asynchronous engine and a
+client replaying the same directive with the synchronous engine therefore draw the same result from the same seed
+(see [the async engine](#the-async-engine) below). The transform removes `nonRandom` from the params once it has
+become `random`, so a nested dispatch does not start a second stream.
+
+A method's own `random` function can also be passed directly: to a named engine method, through `execute`, or in a
+directive.
 
 ## Process-wide, not per request
 
@@ -79,6 +86,144 @@ relies on this to regenerate itself.
 What a seed reproduces is the **order of draws**, not a description of the result. If a change to the factory adds,
 removes or reorders a random step, the same seed produces a different draw. A seed recorded to audit a draw is
 therefore meaningful together with the factory version that consumed it.
+
+## Worked examples
+
+Each example below is a test in `src/tests/global/randomnessExamples.test.ts`, and a test there checks that the page
+shows exactly these blocks, so the two cannot drift apart. The comment on each block names its test. The examples
+share an event with no draw yet, and compare draws by what they place where:
+
+```ts
+// randomnessExamples.test.ts › shared helpers
+// what a draw IS, minus the ids it mints and the time it was made
+const placements = (drawDefinition: any) =>
+  drawDefinition.structures[0].positionAssignments.map(
+    ({ drawPosition, participantId, bye, qualifier }: any) =>
+      `${drawPosition}:${participantId ?? (bye && 'BYE') ?? (qualifier && 'QUALIFIER')}`,
+  );
+
+// one event of 25 entered participants and no draw yet, loaded fresh by each example
+const fixture = mocksEngine.generateTournamentRecord({
+  eventProfiles: [{ participantsProfile: { participantsCount: 25 } }],
+  nonRandom: 1,
+}).tournamentRecord;
+const eventId = fixture.events[0].eventId;
+const loadEvent = (engine: any = tournamentEngine) => engine.setState(structuredClone(fixture));
+```
+
+### A reproducible draw
+
+A seed configured before generation reproduces the draw: positions, BYEs, qualifier slots, and the ids it mints.
+
+```ts
+// randomnessExamples.test.ts › a seeded source regenerates the same draw: positions, byes, qualifiers and ids
+const drawProfiles = [{ drawSize: 32, participantsCount: 25, qualifiersCount: 2 }];
+const seed = 20261013;
+
+tournamentEngine.setRandomSource(seed);
+const first = mocksEngine.generateTournamentRecord({ drawProfiles }).tournamentRecord;
+
+tournamentEngine.setRandomSource(seed);
+const second = mocksEngine.generateTournamentRecord({ drawProfiles }).tournamentRecord;
+
+const [drawA] = first.events[0].drawDefinitions;
+const [drawB] = second.events[0].drawDefinitions;
+expect(drawB.drawId).toEqual(drawA.drawId);
+expect(placements(drawB)).toEqual(placements(drawA));
+```
+
+### A function source
+
+A deterministic stub is used as given; a cryptographic source is a one-line function.
+
+```ts
+// randomnessExamples.test.ts › a deterministic stub is used as given
+let n = 1;
+const stub = () => (n = (n * 16807) % 2147483647) / 2147483647; // Park–Miller: deterministic, never 1
+tournamentEngine.setRandomSource(stub);
+expect(tools.randomSource()).toBe(stub);
+```
+
+```ts
+// randomnessExamples.test.ts › a crypto.getRandomValues-backed source is accepted and yields values in [0, 1)
+const cryptoRandom = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+tournamentEngine.setRandomSource(cryptoRandom);
+```
+
+### nonRandom outranks the configured source
+
+```ts
+// randomnessExamples.test.ts › the same call gives the same draw under two sources with nonRandom, and different draws without it
+const drawUnder = (source: number, params: object) => {
+  tournamentEngine.setRandomSource(source);
+  return tournamentEngine.generateDrawDefinition({ eventId, drawSize: 32, ...params }).drawDefinition;
+};
+
+loadEvent();
+const seededA = drawUnder(101, { nonRandom: 5 });
+const seededB = drawUnder(202, { nonRandom: 5 });
+expect(placements(seededB)).toEqual(placements(seededA)); // the call's seed decides
+
+const unseededA = drawUnder(101, {});
+const unseededB = drawUnder(202, {});
+expect(placements(unseededB)).not.toEqual(placements(unseededA)); // the configured source decides
+```
+
+### Resetting the source
+
+```ts
+// randomnessExamples.test.ts › setRandomSource() restores Math.random, so a seed no longer repeats
+tournamentEngine.setRandomSource(7);
+const seeded = tools.randomSource()();
+tournamentEngine.setRandomSource(7);
+expect(tools.randomSource()()).toEqual(seeded); // seeded: the stream restarts
+
+tournamentEngine.setRandomSource();
+expect(tools.randomSource()).toBe(Math.random);
+```
+
+### Auditing a published seed
+
+Publish the seed with the factory version that consumed it. Anyone holding the same entries can re-derive the draw,
+whatever source their process has configured.
+
+```ts
+// randomnessExamples.test.ts › a draw made with nonRandom is re-derived from the recorded seed and factory version
+loadEvent();
+const seed = 731;
+const { drawDefinition } = tournamentEngine.generateDrawDefinition({ eventId, drawSize: 32, nonRandom: seed });
+const published = { seed, factoryVersion: tournamentEngine.version(), placements: placements(drawDefinition) };
+
+// later, anywhere: same entries, same factory version, same seed, whatever source is configured
+tournamentEngine.setRandomSource(999);
+expect(tournamentEngine.version()).toEqual(published.factoryVersion);
+const rederived = tournamentEngine.generateDrawDefinition({ eventId, drawSize: 32, nonRandom: published.seed });
+expect(placements(rederived.drawDefinition)).toEqual(published.placements);
+```
+
+### What a seed does not promise
+
+A seed reproduces an order of draws. One extra draw before the same steps, which is what a factory change that adds a
+random step amounts to, gives a different draw.
+
+```ts
+// randomnessExamples.test.ts › one extra draw before the same seeded steps gives a different draw
+loadEvent();
+tournamentEngine.setRandomSource(42);
+const before = tournamentEngine.generateDrawDefinition({ eventId, drawSize: 32 }).drawDefinition;
+
+tournamentEngine.setRandomSource(42);
+tools.UUID(); // one more random step, as a factory change might add
+const after = tournamentEngine.generateDrawDefinition({ eventId, drawSize: 32 }).drawDefinition;
+
+expect(placements(after)).not.toEqual(placements(before));
+```
+
+### The async engine
+
+The same directive carrying `nonRandom` produces the same draw on the asynchronous engine as on the synchronous one,
+through `executionQueue`, `execute` and a named method, whatever source each process has configured. Before the shared
+transform the asynchronous engine ignored `nonRandom` and drew from its configured source.
 
 ## A seed is not a fairness guarantee
 
