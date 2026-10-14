@@ -124,7 +124,10 @@ function activeBelow(params, walk: Walk): boolean {
     const byeWinnerDecided =
       byeWinnerMatchUp?.winningSide &&
       !!byeWinnerMatchUp.sides?.find((s: HydratedSide) => s?.sideNumber === byeWinnerMatchUp.winningSide)?.participant;
-    if (!byeWinnerDecided) return false;
+    // ...and a double exit two participants EARNED there is as decided as a win, though it has no winningSide (census
+    // run-17 baseline, FIRST_MATCH_LOSER_CONSOLATION 8/7 seed 20642361: `Consolation|3|1` RETIRED then DOUBLE_DEFAULT,
+    // and a winner change at `Main|2|1` fed its loser into the reservation, leaving it TO_BE_PLAYED with its score)
+    if (!byeWinnerDecided && !contestedDoubleExit(byeWinnerMatchUp)) return false;
   }
 
   const {
@@ -190,39 +193,6 @@ function activeBelow(params, walk: Walk): boolean {
     loserMatchUp?.winningSide && isLoserMatchUpWO && loserMatchUpParticipantsCount === 1;
 
   const winnerDrawPositionsCount = winnerMatchUp?.drawPositions?.filter(Boolean).length || 0;
-
-  /**
-   * A double exit that was EARNED here — not carried here — is active, and both tests below are
-   * blind to it BY CONSTRUCTION.
-   *
-   * `DOUBLE_WALKOVER` and `DOUBLE_DEFAULT` never carry a `winningSide`, because neither side
-   * advances. Each test below opens with `matchUp?.winningSide`, so no double exit could ever
-   * satisfy either one however real it was.
-   *
-   * Two conditions separate a real result from a derived one, and BOTH are needed:
-   *
-   *  1. **Two occupied sides.** A double exit with one occupant or none is the PENDING shape the
-   *     cascade deposits ahead of an arrival. It must stay inert — that is the invariant
-   *     `pendingDoubleExitNotActive.test.ts` pins, and widening to it re-blocks everything the
-   *     carve-outs below exist to unblock.
-   *  2. **At least one side NOT carried by propagation.** A convergence — two propagated exits
-   *     arriving from different sources and collapsing into a double exit — has two occupants who
-   *     never played it, and `sideExitProvenance` records BOTH sides as carried. Such a matchUp is
-   *     wholly derived from upstream, so unwinding that upstream must remain permitted and this
-   *     guard must stay transparent to it. Measured in `pendingDoubleExitNotActive.test.ts`: a
-   *     Backdraw convergence with provenance on both sides, alongside a natively-recorded
-   *     Consolation double exit with none.
-   *
-   * The distinction is the general one this guard already needs everywhere: a status blocks only
-   * when it was earned at this matchUp, never when it was propagated into it.
-   */
-  const contestedDoubleExit = (candidate?: HydratedMatchUp) => {
-    if (!isDoubleExit(candidate?.matchUpStatus)) return false;
-    const occupiedSides = (candidate?.sides ?? []).filter((side) => side?.participant);
-    if (occupiedSides.length !== 2) return false;
-    const provenance = getSideExitProvenance({ matchUp: candidate });
-    return !occupiedSides.every((side: any) => provenance?.[side.sideNumber]);
-  };
 
   // A propagated exit whose winning side has been RESOLVED — a real participant fell
   // through into the empty winner slot and advanced — is genuinely active and must
@@ -344,4 +314,38 @@ function activeBelow(params, walk: Walk): boolean {
       walk,
     })
   );
+}
+
+/**
+ * A double exit that was EARNED here — not carried here — is active, and `activeBelow`'s result
+ * tests (`winnerSideResolved`, the FIRST_MATCHUP BYE's `byeWinnerDecided`) are blind to it BY
+ * CONSTRUCTION.
+ *
+ * `DOUBLE_WALKOVER` and `DOUBLE_DEFAULT` never carry a `winningSide`, because neither side
+ * advances. Each of those tests opens with `matchUp?.winningSide`, so no double exit could ever
+ * satisfy one however real it was.
+ *
+ * Two conditions separate a real result from a derived one, and BOTH are needed:
+ *
+ *  1. **Two occupied sides.** A double exit with one occupant or none is the PENDING shape the
+ *     cascade deposits ahead of an arrival. It must stay inert — that is the invariant
+ *     `pendingDoubleExitNotActive.test.ts` pins, and widening to it re-blocks everything the
+ *     carve-outs in `activeBelow` exist to unblock.
+ *  2. **At least one side NOT carried by propagation.** A convergence — two propagated exits
+ *     arriving from different sources and collapsing into a double exit — has two occupants who
+ *     never played it, and `sideExitProvenance` records BOTH sides as carried. Such a matchUp is
+ *     wholly derived from upstream, so unwinding that upstream must remain permitted and this
+ *     guard must stay transparent to it. Measured in `pendingDoubleExitNotActive.test.ts`: a
+ *     Backdraw convergence with provenance on both sides, alongside a natively-recorded
+ *     Consolation double exit with none.
+ *
+ * The distinction is the general one this guard already needs everywhere: a status blocks only
+ * when it was earned at this matchUp, never when it was propagated into it.
+ */
+function contestedDoubleExit(candidate?: HydratedMatchUp): boolean {
+  if (!isDoubleExit(candidate?.matchUpStatus)) return false;
+  const occupiedSides = (candidate?.sides ?? []).filter((side) => side?.participant);
+  if (occupiedSides.length !== 2) return false;
+  const provenance = getSideExitProvenance({ matchUp: candidate });
+  return !occupiedSides.every((side: any) => provenance?.[side.sideNumber]);
 }
