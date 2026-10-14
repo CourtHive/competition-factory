@@ -1176,6 +1176,12 @@
         "notes": {
           "type": "string"
         },
+        "onlineResources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OnlineResource"
+          }
+        },
         "timeItems": {
           "type": "array",
           "items": {

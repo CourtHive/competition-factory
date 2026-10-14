@@ -74,10 +74,30 @@ engine.addOnlineResource({
   organisationId, // optional
   participantId, // optional
   personId, // optional
+  matchUpId, // optional - with drawId
   courtId, // optional
   venueId, // optional
   eventId, // optional
   drawId, // optional
+});
+```
+
+A matchUp's recording, stream or stats page belongs on the matchUp: pass `matchUpId` with the `drawId` that
+contains it (tieMatchUps included). The resource is merged as on every other element (one with the same `name`
+or `identifier` is replaced), and a `modifyMatchUp` notice is emitted so subscribers refresh. Public projections
+(`getEventData`, published or not) carry it on the matchUp.
+
+```js
+engine.addOnlineResource({
+  onlineResource: {
+    identifier: 'https://…/recording/rec-1',
+    resourceType: 'URL',
+    resourceSubType: 'VIDEO',
+    name: 'matchVideo',
+    provider: 'MatchTennisApp',
+  },
+  matchUpId,
+  drawId,
 });
 ```
 
@@ -475,6 +495,7 @@ engine.removeOnlineResource({
   organisationId, // optional
   participantId, // optional
   personId, // optional
+  matchUpId, // optional - with drawId; emits modifyMatchUp
   courtId, // optional
   venueId, // optional
   eventId, // optional
