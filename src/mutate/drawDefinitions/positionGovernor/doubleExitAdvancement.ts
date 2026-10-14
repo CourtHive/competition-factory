@@ -1,6 +1,7 @@
 import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
@@ -10,7 +11,6 @@ import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getE
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -2946,6 +2946,35 @@ function advanceByeToLoserMatchUp(params) {
       sideNumber: claimSide ?? 1,
       claimantMatchUpId: params.sourceMatchUp?.matchUpId,
       matchUp: noContextLoserMatchUp,
+    });
+  }
+
+  /**
+   * A SEAT THAT BECOMES A BYE KEEPS NOTHING IT WAS AWARDED. A BYE is never won (CA, 2026-09-27), yet a seat its occupant
+   * has just left can still stand a round on, advanced there by a produced exit awarded to it, and `assignDrawPositionBye`
+   * places the BYE at the position's furthest advancement: that matchUp read BYE in front of the seat owed to its other
+   * feeder, and the fed matchUp kept the award. So the advancement goes first, as an exit's own does (`withdrawingExit`),
+   * and the BYE lands in the fed matchUp beside the exit it now holds. A BYE advancement is still never released
+   * (`releaseAdvancedDrawPosition`). Census run 18, MODIFIED_FEED_IN_CHAMPIONSHIP 32/29 under `doubleExitPropagateBye:
+   * false` (20655968): `Main|2|1` re-scored to a double default left its loser's dp 8 in `Consolation|3|4` as a BYE.
+   */
+  const vacated = getPositionAssignments({ structure }).positionAssignments?.find(
+    (assignment) => assignment.drawPosition === loserTargetDrawPosition,
+  );
+  const awardedToVacated =
+    !!noContextLoserMatchUp &&
+    getWinningSideDrawPosition({ drawDefinition, structureId, matchUp: noContextLoserMatchUp }) ===
+      loserTargetDrawPosition;
+  if (vacated && !vacated.participantId && !vacated.bye && awardedToVacated && loserMatchUp?.roundNumber) {
+    releaseAdvancedDrawPositionAcrossLinks({
+      fromRoundNumber: loserMatchUp.roundNumber + 1,
+      drawPosition: loserTargetDrawPosition,
+      withdrawingExit: true,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      structureId,
+      event,
     });
   }
 

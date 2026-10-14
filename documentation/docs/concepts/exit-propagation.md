@@ -549,6 +549,13 @@ exit is re-derived to a single exit, the exit it produced is withdrawn and so is
 BYE at the re-derived matchUp's own loser seat stays, because its losing side is still the produced
 exit (census run-17 baseline, COMPASS 16/13 and 16/14 under `doubleExitPropagateBye: false`).
 
+A seat that becomes a BYE keeps nothing it was awarded. When a correction takes a fed loser back out and the seat they
+held becomes the BYE nobody can fill, an advancement a produced exit gave that seat is taken back first, and the BYE
+lands in the fed matchUp beside the exit it now holds; a BYE is never won. Before this the BYE was placed a round on,
+where the award had carried the seat, in front of the seat owed to the other feeder (census run 18,
+MODIFIED_FEED_IN_CHAMPIONSHIP 32/29 under `doubleExitPropagateBye: false`: `Main|2|1` re-scored as a double default
+left `Consolation|3|4` a BYE).
+
 ### A loser who is nobody holds no seat
 
 A matchUp an exit decided for an empty seat has nobody on its losing side. When that matchUp becomes a
