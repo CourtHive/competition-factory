@@ -1,3 +1,4 @@
+import { isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { overlap } from '@Tools/arrays';
 
@@ -20,6 +21,17 @@ const isLaterRound = (matchUp: HydratedMatchUp, than: HydratedMatchUp) =>
 // `some`, not `includes`: with no drawPosition it matches an open slot, exactly as `includes(undefined)` did untyped
 const holdsDrawPosition = (matchUp: HydratedMatchUp, drawPosition?: number) =>
   !!matchUp.drawPositions?.some((position) => position === drawPosition);
+
+/**
+ * A DEFAULTED is a bye only when nothing was played: DEFAULTED and DEFAULTED 6-3 are different results (CA,
+ * 2026-10-13, for FIRST_MATCH_LOSER_CONSOLATION, following USTA Reg. II.B.5.a). Forward play already asks
+ * `isUnscoredOutcome` — `directLoser` through `getDrawPositionWinCount`, and the reservation through
+ * `firstRoundFeedersWon` — so the unwind asks it too. Read by status alone, a scored DEFAULTED looked like a free pass,
+ * and withdrawing a round-2 result took back the reservation BYE that the scored win had placed, which nothing then
+ * restored (census FMLC 8/8 seed 20754793: `Consolation|2|2` stalled).
+ */
+const byeLikeStatus = (matchUp: HydratedMatchUp) =>
+  matchUp.matchUpStatus === DEFAULTED && !isUnscoredOutcome(matchUp) ? undefined : matchUp.matchUpStatus;
 
 export function includesMatchUpStatuses({
   matchUpStatuses = [BYE, WALKOVER, DEFAULTED],
@@ -49,11 +61,11 @@ export function includesMatchUpStatuses({
 
   const winnerMatchUpStatuses = reachedSource
     .filter((matchUp) => holdsDrawPosition(matchUp, winnerDrawPosition))
-    .map((matchUp) => matchUp.matchUpStatus);
+    .map(byeLikeStatus);
 
   const loserMatchUpStatuses = reachedSource
     .filter((matchUp) => holdsDrawPosition(matchUp, loserDrawPosition))
-    .map((matchUp) => matchUp.matchUpStatus);
+    .map(byeLikeStatus);
 
   const winnerHadMatchUpStatus = overlap(winnerMatchUpStatuses ?? [], matchUpStatuses);
 

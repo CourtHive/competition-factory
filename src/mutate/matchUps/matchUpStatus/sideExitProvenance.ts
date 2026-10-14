@@ -1237,7 +1237,15 @@ function withdrawFromMatchUp(
   const exitsRetained = withoutWinnersOrigins({ provenance: retained, matchUp, structureId, drawDefinition });
   const retainsAnExit = !!deriveExitStateFromProvenance(exitsRetained) || !isAnyExit(matchUp.matchUpStatus);
 
-  if (Object.keys(retained).length && retainsAnExit) {
+  // On a BYE matchUp a BYE-status entry only ever accompanies a carried exit (the convergence that relays an exit past
+  // the BYE records both sides). With every exit gone it describes nothing: the matchUp is simply a BYE again, as forward
+  // play leaves it, and is handled as the last carried entry withdrawn below (census run-17 baseline, DOUBLE_ELIMINATION
+  // 8/5 seed 20622028, policy off: `Backdraw|3|1` kept `{2: BYE from Backdraw|2|2}` after the exit it relayed went).
+  const onlyByeEntriesLeft =
+    holdsBye({ matchUp, structureId, drawDefinition }) &&
+    Object.values(retained).every((entry) => entry?.matchUpStatus === BYE);
+
+  if (Object.keys(retained).length && retainsAnExit && !onlyByeEntriesLeft) {
     // A side carried here by a DIFFERENT source is still true, so the matchUp remains an exit and
     // only the withdrawn side's entry is dropped.
     //

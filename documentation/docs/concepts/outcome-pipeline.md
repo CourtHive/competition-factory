@@ -224,7 +224,9 @@ After the write, and only on success:
    the kept exit is awarded to the other side than the award that stood, the old winner's advancement is released
    with it (census S4, DOUBLE_ELIMINATION 20617910); a pending exit stays pending. A double exit re-derived to a single
    one keeps only its winner's position in the next round: its carrier, now the loser, is released from it (census S4,
-   COMPASS 20586104, `doubleExitPropagateBye: false`). A loser who had won a produced exit on
+   COMPASS 20586104, `doubleExitPropagateBye: false`); from a structure's last round that release crosses the link, as a
+   winner's does (DOUBLE_ELIMINATION 20622028). A BYE matchUp left holding only the BYE-status entry a convergence
+   recorded beside it is a plain BYE again. A loser who had won a produced exit on
    arrival has that award taken back when the origin becomes an exit again, so the exit converges as
    it would have at first entry (7.7.0; [exit propagation](./exit-propagation.md#a-relabel-out-of-a-convergence-and-back-into-one)).
 3. **Round robin tally** is recomputed when the matchUp is in a group (`updateTallyIfNeeded`).
@@ -314,7 +316,9 @@ has never run under it until then: run `OUTCOME_PIPELINE=differential TZ=UTC npx
 before opening one (a plain green suite predicts nothing about it). Since 7.9.0 the view reads a
 BYE-holder occupant's carry where it was written, a round on, so a withdrawn BYE's convergence is
 planned as v1 writes it; and the exit-beside-a-BYE invariant holds under either `doubleExitPropagateBye`
-setting.
+setting. An exit arriving at a BYE in its structure's last round meets the exit held beside the BYE that fed
+it, and v2 plans the two converging, as v1's settle step converges them (census run-17 baseline, DOUBLE_ELIMINATION
+8/5 under `doubleExitPropagateBye: false`).
 
 ## 8. What the corpus pins
 

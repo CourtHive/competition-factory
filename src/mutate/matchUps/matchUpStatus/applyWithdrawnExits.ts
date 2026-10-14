@@ -233,5 +233,18 @@ function releaseFromNextRound({
       matchUpsMap,
       event,
     });
+    // ...and across the link at the withdrawn round itself, as the winner's release above does: from a structure's last
+    // round the next round is in another structure, which a release keyed on this structure's rounds never reaches
+    // (census run-17 baseline, DOUBLE_ELIMINATION 8/5 seeds 20622028 and 20630577, policy off: `Backdraw|4|1`'s double
+    // walkover had advanced its carrier's seat into `Main|4|1`, and re-derived it stood there).
+    releaseLinkedWinnerAdvancement({
+      roundNumber: withdrawnExit.roundNumber,
+      structureId: withdrawnExit.structureId,
+      tournamentRecord,
+      drawDefinition,
+      drawPosition,
+      matchUpsMap,
+      event,
+    });
   }
 }
