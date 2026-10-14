@@ -19,6 +19,7 @@
 //   { tournamentParticipants: { participants } }
 //   The unwrapped factory shapes are accepted too.
 
+import { deriveSourceLinks, DerivedLink, SourceDraw, SourceStructure } from './deriveSourceLinks';
 import { inferDrawLinks, InferredLink } from '@Mutate/drawDefinitions/links/inferDrawLinks';
 
 // ------------------------------------------------------------------- types
@@ -60,6 +61,25 @@ export interface BuildTournamentRecordArgs {
    * by a new wrapper, and one that wants the report opts in by handing over an array.
    */
   unplaced?: UnplacedMatchUp[];
+  /** Optional collector for source structures that could not be built — same opt-in as `unplaced`. */
+  unbuilt?: UnbuiltStructure[];
+  /** Optional collector for the links derived for each multi-structure draw — same opt-in as `unplaced`. */
+  derivedLinks?: DerivedLinksReport[];
+}
+
+/** A source structure the assembler could not build, and why. */
+export interface UnbuiltStructure {
+  drawId?: string;
+  structureId?: string;
+  structureName?: string;
+  reason: string;
+}
+
+/** The links given to one rebuilt draw, how each was derived, and anything the source disagreed with. */
+export interface DerivedLinksReport {
+  drawId?: string;
+  derived: DerivedLink[];
+  issues: string[];
 }
 
 /** A matchUp the assembler could not place, and enough identity to find it in the source. */
@@ -89,6 +109,18 @@ export interface BuildFromSourcesResult {
    * rather than dropped: a shorter draw with no complaint is the hardest loss to notice.
    */
   unplacedMatchUps: UnplacedMatchUp[];
+  /**
+   * Source structures that could not be built. Empty in the ordinary case. Every structure of a draw is
+   * built — consolations, playoffs, every COMPASS direction — and one that cannot be is reported here.
+   */
+  unbuiltStructures: UnbuiltStructure[];
+  /**
+   * For each draw with more than one structure, the links derived for it: from a generated draw of the same
+   * `drawType` and size, or for an added playoff from its source structure. `issues` lists every place the
+   * source's own record (`loserMatchUpId`, who reached a playoff) disagrees. Links still missing after this are
+   * added by `inferDrawLinks` and reported in `inferredLinks`.
+   */
+  derivedLinks: DerivedLinksReport[];
 }
 
 // ----------------------------------------------------------------- wrappers
@@ -489,7 +521,79 @@ function buildGroupStructures(
 // CFS responses include only the CONTAINER structure with `roundMatchUps`
 // keyed by round number; the per-group ITEM structures must be derived
 // from the matchUps' own `structureId`s.
-function buildDrawDefinitionFromDrawData(draw) {
+function buildDrawDefinitionFromDrawData(draw: SourceDraw, report?: BuildReport) {
+  const drawDefinition: Record<string, any> = buildFirstStructure(draw);
+  if ((draw.structures?.length ?? 0) < 2) return drawDefinition;
+
+  const builtIds = new Set<string>();
+  walkStructures(drawDefinition.structures, (s: SourceStructure) => builtIds.add(s.structureId));
+  for (const source of (draw.structures ?? []).slice(1)) {
+    const reason = unbuildableReason(source, builtIds);
+    if (reason) {
+      report?.unbuilt.push({
+        drawId: draw.drawId,
+        structureId: source?.structureId,
+        structureName: source?.structureName,
+        reason,
+      });
+      continue;
+    }
+    builtIds.add(source.structureId);
+    drawDefinition.structures.push(buildSiblingStructure(source, draw.matchUpFormat));
+  }
+
+  const { links, derived, issues } = deriveSourceLinks({ draw });
+  if (links.length) drawDefinition.links = links;
+  report?.derivedLinks.push({ drawId: draw.drawId, derived, issues });
+  return drawDefinition;
+}
+
+type BuildReport = { unbuilt: UnbuiltStructure[]; derivedLinks: DerivedLinksReport[] };
+
+function unbuildableReason(source: SourceStructure | null | undefined, builtIds: Set<string>) {
+  if (source === null || typeof source !== 'object') return 'not a structure';
+  if (!source.structureId) return 'no structureId';
+  if (builtIds.has(source.structureId)) return 'repeats a structureId already built';
+  return undefined;
+}
+
+/**
+ * Every structure after the first, built from its own `roundMatchUps`. A CONTAINER (the round robin stage of
+ * ROUND_ROBIN_WITH_PLAYOFF) derives its groups exactly as a first-structure container does; anything else is
+ * one structure holding its own matchUps.
+ */
+function buildSiblingStructure(source: SourceStructure, drawMatchUpFormat?: string) {
+  const matchUpFormat = source.matchUpFormat ?? drawMatchUpFormat;
+  const matchUps = collectRoundMatchUps(source);
+  if (source.structureType === 'CONTAINER') {
+    const { groupStructures, containerPositions } = buildGroupStructures(
+      bucketMatchUpsByStructure(matchUps),
+      matchUpFormat,
+      source.structureId,
+      source,
+    );
+    return makeContainerNode({
+      containerPositionAssignments: preferredContainerPositions(source, containerPositions),
+      containerId: source.structureId,
+      container: source,
+      groupStructures,
+      matchUpFormat,
+    });
+  }
+  return {
+    structureId: source.structureId,
+    structureName: source.structureName,
+    structureType: source.structureType ?? 'ITEM',
+    stage: source.stage ?? 'MAIN',
+    stageSequence: source.stageSequence ?? 1,
+    matchUpFormat,
+    positionAssignments: positionMapToAssignments(collectPositionsFromMatchUps(matchUps)),
+    matchUps: matchUps.map(cleanMatchUp),
+  };
+}
+
+// The first structure, exactly as it has always been built: for a one-structure draw this IS the draw.
+function buildFirstStructure(draw: SourceDraw) {
   const container = draw.structures?.[0];
   const matchUpFormat = draw.matchUpFormat;
   const allMatchUps = collectRoundMatchUps(container);
@@ -653,14 +757,21 @@ function buildEvents({
   eventDataDocs,
   matchUps,
   unplaced,
+  unbuilt,
+  derivedLinks,
 }: {
   eventDataDocs: EventDataDoc[];
   matchUps: any[];
   unplaced?: UnplacedMatchUp[];
+  unbuilt?: UnbuiltStructure[];
+  derivedLinks?: DerivedLinksReport[];
 }) {
   const events = new Map();
   seedEventsFromTournamentInfo(events, eventDataDocs);
-  ingestDrawsDataIntoEvents(events, eventDataDocs);
+  const report: BuildReport = { unbuilt: [], derivedLinks: [] };
+  ingestDrawsDataIntoEvents(events, eventDataDocs, report);
+  unbuilt?.push(...report.unbuilt);
+  derivedLinks?.push(...report.derivedLinks);
   if (matchUps.length > 0) {
     // NOT `unplaced?.push(...ingest(...))` — optional chaining short-circuits the WHOLE expression,
     // so with no collector the ingest itself never runs and every matchUp silently disappears. The
@@ -689,7 +800,7 @@ function seedEventsFromTournamentInfo(events, eventDataDocs) {
   }
 }
 
-function ingestDrawsDataIntoEvents(events, eventDataDocs) {
+function ingestDrawsDataIntoEvents(events, eventDataDocs, report: BuildReport) {
   for (const ed of eventDataDocs) {
     const info = ed.eventInfo;
     if (!info?.eventId) continue;
@@ -698,7 +809,7 @@ function ingestDrawsDataIntoEvents(events, eventDataDocs) {
     for (const draw of ed.drawsData ?? []) {
       if (!draw?.drawId) continue;
       if (!event.drawDefinitions.some((d) => d.drawId === draw.drawId)) {
-        event.drawDefinitions.push(buildDrawDefinitionFromDrawData(draw));
+        event.drawDefinitions.push(buildDrawDefinitionFromDrawData(draw, report));
       }
     }
   }
@@ -861,13 +972,15 @@ export function buildTournamentRecord({
   matchUpDocs = [],
   participantDocs = [],
   unplaced,
+  unbuilt,
+  derivedLinks,
 }: BuildTournamentRecordArgs = {}) {
   const record: Record<string, any> = buildTournamentMetadata(eventDataDocs, matchUpDocs);
   const participants = mergeParticipants({ participantDocs, eventDataDocs, matchUps: matchUpDocs });
   const venues = buildVenues(eventDataDocs);
   const events =
     eventDataDocs.length > 0 || matchUpDocs.length > 0
-      ? buildEvents({ eventDataDocs, matchUps: matchUpDocs, unplaced })
+      ? buildEvents({ eventDataDocs, matchUps: matchUpDocs, unplaced, unbuilt, derivedLinks })
       : [];
 
   if (participants.length > 0) record.participants = participants;
@@ -902,9 +1015,18 @@ export function buildFromSources(sources?: any[]): BuildFromSourcesResult {
   }
 
   const unplacedMatchUps: UnplacedMatchUp[] = [];
-  const record = buildTournamentRecord({ eventDataDocs, matchUpDocs, participantDocs, unplaced: unplacedMatchUps });
+  const unbuiltStructures: UnbuiltStructure[] = [];
+  const derivedLinks: DerivedLinksReport[] = [];
+  const record = buildTournamentRecord({
+    unplaced: unplacedMatchUps,
+    unbuilt: unbuiltStructures,
+    eventDataDocs,
+    participantDocs,
+    derivedLinks,
+    matchUpDocs,
+  });
   // Repair before returning: a reconstructed draw that cannot be read is not a usable result, and
   // the caller should not have to know to ask.
   const inferredLinks = repairDrawLinks(record);
-  return { record, classification, unknownCount, inferredLinks, unplacedMatchUps };
+  return { record, classification, unknownCount, inferredLinks, unplacedMatchUps, unbuiltStructures, derivedLinks };
 }

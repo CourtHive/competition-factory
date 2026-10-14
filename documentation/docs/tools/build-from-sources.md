@@ -28,6 +28,8 @@ interface BuildFromSourcesResult {
   unknownCount: number;
   inferredLinks: { drawId?: string; inferred: InferredLink[]; issues: string[] }[];
   unplacedMatchUps: UnplacedMatchUp[];
+  unbuiltStructures: UnbuiltStructure[];
+  derivedLinks: { drawId?: string; derived: DerivedLink[]; issues: string[] }[];
 }
 
 type SourceKind = 'event-data' | 'matchups' | 'participants' | 'unknown';
@@ -43,15 +45,17 @@ const { record, classification, unknownCount, inferredLinks, unplacedMatchUps } 
 // classification: [{ index: 0, kind: 'event-data' }, { index: 1, kind: 'matchups' }, ...]
 ```
 
-**Nothing is dropped silently.** Three of the five returned keys exist only so the caller can see
-what the assembler could not do:
+**Nothing is dropped silently.** Five of the seven returned keys exist only so the caller can see
+what the assembler could not do, or how it decided:
 
-| key                | reports                                                                   |
-| ------------------ | ------------------------------------------------------------------------- |
-| `classification`   | what each input was taken to be, by index — so a caller can show its work |
-| `unknownCount`     | inputs matching no known shape. Reported rather than discarded            |
-| `inferredLinks`    | links added to make reconstructed draws readable, with confidence         |
-| `unplacedMatchUps` | matchUps naming a structure their draw does not contain                   |
+| key                 | reports                                                                   |
+| ------------------- | ------------------------------------------------------------------------- |
+| `classification`    | what each input was taken to be, by index — so a caller can show its work |
+| `unknownCount`      | inputs matching no known shape. Reported rather than discarded            |
+| `inferredLinks`     | links added to make reconstructed draws readable, with confidence         |
+| `unplacedMatchUps`  | matchUps naming a structure their draw does not contain                   |
+| `unbuiltStructures` | source structures that could not be built, and why                        |
+| `derivedLinks`      | the links given to each multi-structure draw, how, and any disagreement   |
 
 A caller that would rather refuse than accept a repaired or lossy record inspects these and decides.
 
@@ -90,6 +94,51 @@ const { unplacedMatchUps } = tools.buildFromSources(sources);
 Each entry carries enough identity to find the matchUp in the source. An empty array is the
 ordinary case.
 
+### Every structure of a draw
+
+Each `drawsData` entry carries every structure of its draw: the main structure and its consolations,
+playoffs and every COMPASS direction. All of them are built. The first is built exactly as it always has
+been, so a one-structure draw is unchanged. Each later structure is built from its own `roundMatchUps`; a
+`CONTAINER` (the round robin of `ROUND_ROBIN_WITH_PLAYOFF`) derives its groups as a first-structure
+container does.
+
+Until this was fixed only the first structure was read, and the rest were dropped without a word. Measured
+2026-10-14 across two ingest corpora, 12,603 of 33,221 matchUps were lost that way.
+
+A structure that cannot be built (no `structureId`, or one already built) is reported, not dropped:
+
+```js
+const { unbuiltStructures } = tools.buildFromSources(sources);
+// [{ drawId, structureId, structureName, reason }]
+```
+
+### Links from the drawType
+
+The projection carries no links, and links cannot be recovered from structure shape alone (see
+[inferDrawLinks](#inferdrawlinks)). It does carry the `drawType`, so a multi-structure draw gets its links
+from the generator that knows them:
+
+1. **`drawType`** — the same `drawType` is generated at the same size, its structures are mapped onto the
+   source's (stage + stageSequence + size, else name + size), and every link whose ends both map is copied.
+   Generating the template draws nothing from the random source.
+2. **`playoff`** — a structure the template lacks, added to an elimination draw (`Playoff 3-4`,
+   `Playoff 5-8`), is fed by the losers of the round of its source structure that has as many matchUps as
+   the playoff has positions, `TOP_DOWN`, as `addPlayoffStructures` generates it.
+3. **`roundRobinPlayoff`** — a round robin playoff takes the finishing positions its participants held in
+   their groups, by `POSITION` with `feedProfile: DRAW`. A playoff nobody has reached yet takes the number at
+   the end of its name instead, reported as **`roundRobinPlayoffByName`**.
+
+Each link is then checked against the source wherever the source can speak to it. A `loserMatchUpId` that
+lands outside the link's target, a source pointer no link covers, and a decided loser missing from an added
+playoff are each reported in `issues`, never resolved silently:
+
+```js
+const { derivedLinks } = tools.buildFromSources(sources);
+// [{ drawId, derived: [{ linkType, sourceStructureId, targetStructureId, basis }], issues: [] }]
+```
+
+Anything still unlinked is joined by [`repairDrawLinks`](#repairdrawlinks) and reported in `inferredLinks`.
+
 ## buildTournamentRecord
 
 The lower-level assembler, for a caller that has already separated its sources.
@@ -100,6 +149,8 @@ function buildTournamentRecord(args?: {
   matchUpDocs?: any[];
   participantDocs?: any[];
   unplaced?: UnplacedMatchUp[];
+  unbuilt?: UnbuiltStructure[];
+  derivedLinks?: { drawId?: string; derived: DerivedLink[]; issues: string[] }[];
 }): Record<string, any>;
 ```
 
@@ -107,10 +158,11 @@ function buildTournamentRecord(args?: {
 const record = tools.buildTournamentRecord({ eventDataDocs, matchUpDocs, participantDocs });
 ```
 
-**It does not repair links**, deliberately: a caller assembling a record by hand keeps exactly its
-previous behaviour and opts in via `repairDrawLinks`. Unplaced matchUps are collected only if the
-caller hands over an array to collect them into, so the function's shape is unchanged for callers
-that do not want the report.
+It builds every structure and derives links from the `drawType` as above, because a draw with more than
+one structure is unreadable without them. **It does not repair links**, deliberately: a caller assembling
+a record by hand opts in to inference via `repairDrawLinks`. Unplaced matchUps, unbuilt structures and
+derived links are collected only if the caller hands over an array to collect them into, so the
+function's shape is unchanged for callers that do not want the report.
 
 ## Link repair
 
@@ -165,7 +217,8 @@ The rule is read from the data rather than assumed: a `CONTAINER` source (round 
 feeds `MAIN` by position — matching `generateQualifyingLink`.
 
 A caller that knows the `drawType` and wants the true feed pattern should **generate** the draw
-properly rather than repair it here.
+properly rather than repair it here. `buildFromSources` does exactly that for draws whose `drawType` it is
+given — see [Links from the drawType](#links-from-the-drawtype) — and repairs only what remains.
 
 ### repairDrawLinks
 
