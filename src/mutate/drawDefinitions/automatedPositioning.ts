@@ -1,7 +1,7 @@
 import { getSeedsCountAndStageEntries, seeding, SeededParticipant } from '@Mutate/drawDefinitions/structureSeeding';
 import { positionUnseededParticipants } from '@Mutate/matchUps/drawPositions/positionUnseededParticipants';
+import { positionQualifiers, getQualifiersData } from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { getSeedPattern, getValidSeedBlocks, SeedBlockInfo } from '@Query/drawDefinition/seedGetter';
-import { positionQualifiers } from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { disableNotifications, enableNotifications } from '@Global/state/globalState';
 import { positionSeedBlocks } from '@Mutate/matchUps/drawPositions/positionSeeds';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -20,6 +20,12 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { PolicyDefinitions, SeedBlock, SeedingProfile, MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
+import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
+import { WATERFALL } from '@Constants/drawDefinitionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
+
 import {
   DrawDefinition,
   Event,
@@ -28,11 +34,6 @@ import {
   Structure,
   Tournament,
 } from '@Types/tournamentTypes';
-import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
-import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
-import { WATERFALL } from '@Constants/drawDefinitionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 
 type AutomatedPositioningArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
@@ -304,52 +305,108 @@ function handleQualifiersAndUnseeded({
   random,
 }) {
   if (seedsOnly) return {};
-  let result: any = positionQualifiers({
-    inContextDrawMatchUps,
-    tournamentRecord,
-    appliedPolicies,
-    validSeedBlocks,
+  const qualifiersLast = qualifiersCanFollowUnseeded({
+    provisionalPositioning,
     drawDefinition,
     qualifiersCount,
-    seedBlockInfo,
-    participants,
-    matchUpsMap,
     structure,
-    random,
-  });
-  if (result.error) {
-    return { error: result.error };
-  }
-  if (result.conflicts) conflicts.qualifierConflicts = result.conflicts;
-  positioningReport.push({
-    action: 'positionQualifiers',
-    qualifierDrawPositions: result.qualifierDrawPositions,
   });
 
-  result = positionUnseededParticipants({
-    provisionalPositioning,
-    inContextDrawMatchUps,
-    unseededByePositions,
-    multipleStructures,
-    tournamentRecord,
-    drawDefinition,
-    seedBlockInfo,
-    participants,
-    matchUpsMap,
-    structureId,
-    structure,
-    drawSize,
-    random,
-    event,
-  });
+  const placeQualifiers = () => {
+    const result = positionQualifiers({
+      inContextDrawMatchUps,
+      tournamentRecord,
+      appliedPolicies,
+      validSeedBlocks,
+      drawDefinition,
+      qualifiersCount,
+      seedBlockInfo,
+      participants,
+      matchUpsMap,
+      structure,
+      random,
+    });
+    if (result.error) {
+      return { error: result.error };
+    }
+    if (result.conflicts) conflicts.qualifierConflicts = result.conflicts;
+    positioningReport.push({
+      action: 'positionQualifiers',
+      qualifierDrawPositions: result.qualifierDrawPositions,
+    });
 
-  if (result.error) {
-    return { error: result.error };
+    return {};
+  };
+
+  const placeUnseeded = () => {
+    const result = positionUnseededParticipants({
+      provisionalPositioning,
+      inContextDrawMatchUps,
+      unseededByePositions,
+      multipleStructures,
+      tournamentRecord,
+      drawDefinition,
+      seedBlockInfo,
+      participants,
+      matchUpsMap,
+      structureId,
+      structure,
+      randomizePositions: qualifiersLast,
+      drawSize,
+      random,
+      event,
+    });
+
+    if (result.error) {
+      return { error: result.error };
+    }
+    if (result.conflicts) conflicts.unseededConflicts = result.conflicts;
+    positioningReport.push({ action: 'positionUnseededParticipants' });
+
+    return {};
+  };
+
+  const steps = qualifiersLast ? [placeUnseeded, placeQualifiers] : [placeQualifiers, placeUnseeded];
+  for (const step of steps) {
+    const result = step();
+    if (result.error) return result;
   }
-  if (result.conflicts) conflicts.unseededConflicts = result.conflicts;
-  positioningReport.push({ action: 'positionUnseededParticipants' });
 
   return {};
+}
+
+/** Anonymous first-round qualifiers occupy the space left by direct entrants. Later-round and feed-in
+ * reservations retain their existing priority: unrestricted entrants could otherwise consume their only seats. */
+function qualifiersCanFollowUnseeded(params: {
+  provisionalPositioning?: boolean;
+  drawDefinition: DrawDefinition;
+  qualifiersCount?: number;
+  structure: Structure;
+}) {
+  if (!params.qualifiersCount) return false;
+  const { unplacedRoundQualifierCounts, positionAssignments, roundDrawPositions } = getQualifiersData(params);
+  const pendingRounds = Object.entries(unplacedRoundQualifierCounts).filter(([, count]) => Number(count) > 0);
+  if (pendingRounds.length !== 1 || pendingRounds[0][0] !== '1') return false;
+
+  const available = positionAssignments.filter(
+    (assignment) => !assignment.participantId && !assignment.qualifier && !assignment.bye,
+  );
+  const firstRoundPositions = new Set(roundDrawPositions[1] ?? []);
+  if (!available.every(({ drawPosition }) => firstRoundPositions.has(drawPosition))) return false;
+
+  const { structure, drawDefinition, provisionalPositioning } = params;
+  const assignedIds = new Set(positionAssignments.map(({ participantId }) => participantId).filter(Boolean));
+  const entries = getStageEntries({
+    entryStatuses: DIRECT_ENTRY_STATUSES,
+    stageSequence: structure.stageSequence,
+    structureId: structure.structureId,
+    stage: structure.stage,
+    provisionalPositioning,
+    drawDefinition,
+  });
+  const unplacedEntries = entries.filter(({ participantId }) => !assignedIds.has(participantId)).length;
+  // Keep the original refusal path if entrants plus placeholders cannot fit; do not write entrants first.
+  return unplacedEntries + Number(pendingRounds[0][1]) <= available.length;
 }
 
 /** A structure generated before its entries (a shell) has no seeds: with `seedsCount`, nobody yet positioned in it

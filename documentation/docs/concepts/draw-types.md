@@ -154,6 +154,29 @@ Main Draw Structure (32 positions):
     └─ Positions 7-8: Qualifiers from Qualifying C (late entry)
 ```
 
+## Anonymous qualifier placement
+
+Qualifier placeholders represent unseeded entries whose identities are not yet known. They are not seeds,
+and random placement can put multiple qualifiers in adjacent positions or opposite each other.
+
+During automated positioning, seeds and byes are placed first. When outstanding qualifiers enter round one
+and every available position belongs to that round, the factory places direct entrants before filling the
+remaining positions with anonymous qualifier placeholders. This lets participant avoidance use the full
+available pool. There is no qualifier balancing policy or guarantee of one qualifier per match or section.
+
+Later-round qualifying links and structures with open feed-in positions retain qualifier-first placement,
+because direct entrants could otherwise occupy the only positions eligible for those qualifiers. Existing
+assignments are preserved, and requests with insufficient space retain the original refusal path.
+
+Placement of placeholders is separate from drawing qualified participants into them. `getRandomQualifierList`
+uses the factory's injectable random source through `shuffleArray`; callers replay the resulting concrete list
+rather than drawing independently on client and server. School or other identity-based avoidance cannot be
+applied to an anonymous placeholder; it applies to identified participants under the applicable event rules.
+
+The changed first-round positioning order and identity shuffle can change outputs for the same deterministic
+seed. Existing stored draws are not repositioned by upgrading the factory. Calls without outstanding qualifier
+placeholders retain their positioning order and random consumption.
+
 ## Related Documentation
 
 - **[Draw Links](./draw-links.mdx)** - How links connect structures and define participant flow

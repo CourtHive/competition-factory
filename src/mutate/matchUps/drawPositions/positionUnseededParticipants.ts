@@ -30,6 +30,7 @@ export function positionUnseededParticipants({
   matchUpsMap,
   structureId,
   structure,
+  randomizePositions = false,
   drawSize,
   event,
   random,
@@ -40,6 +41,9 @@ export function positionUnseededParticipants({
   if (!structureId) ({ structureId } = structure);
 
   const { positionAssignments } = structureAssignedDrawPositions({ structure });
+  // The shell-positioning API may omit drawSize. With anonymous placeholders following entrants,
+  // derive it so direct entrants are shuffled instead of filling the lowest positions sequentially.
+  const effectiveDrawSize = randomizePositions ? (drawSize ?? positionAssignments.length) : drawSize;
   const { seedAssignments } = getStructureSeedAssignments({
     provisionalPositioning,
     drawDefinition,
@@ -122,7 +126,7 @@ export function positionUnseededParticipants({
       matchUpsMap,
       structureId,
       avoidance,
-      drawSize,
+      drawSize: effectiveDrawSize,
       entries,
       random,
     });
@@ -138,8 +142,9 @@ export function positionUnseededParticipants({
       seedBlockInfo,
       structureId,
       matchUpsMap,
-      drawSize,
+      drawSize: effectiveDrawSize,
       event,
+      randomizePositions,
       random,
     });
   }
@@ -156,13 +161,14 @@ function randomUnseededDistribution({
   seedBlockInfo,
   matchUpsMap,
   structureId,
+  randomizePositions = false,
   drawSize,
   event,
   random,
 }) {
-  // when { drawSize: 2 } reverse the order so that popping results in equivalent order
+  // Preserve the two-entrant ordering except when anonymous qualifier placeholders follow this pass.
   const shuffledDrawPositions =
-    drawSize > 2 ? shuffleArray(unfilledDrawPositions, random) : unfilledDrawPositions.reverse();
+    drawSize > 2 || randomizePositions ? shuffleArray(unfilledDrawPositions, random) : unfilledDrawPositions.reverse();
 
   for (const participantId of unseededParticipantIds) {
     const drawPosition = shuffledDrawPositions.pop();
