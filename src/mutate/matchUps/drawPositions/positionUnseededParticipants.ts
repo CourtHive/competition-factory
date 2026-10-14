@@ -41,9 +41,9 @@ export function positionUnseededParticipants({
   if (!structureId) ({ structureId } = structure);
 
   const { positionAssignments } = structureAssignedDrawPositions({ structure });
-  // The shell-positioning API may omit drawSize. With anonymous placeholders following entrants,
-  // derive it so direct entrants are shuffled instead of filling the lowest positions sequentially.
-  const effectiveDrawSize = randomizePositions ? (drawSize ?? positionAssignments.length) : drawSize;
+  // Callers may omit drawSize (TMX positions a structure without it; so do playoff and voluntary consolation
+  // positioning). The structure knows its own size: without it, entrants filled positions in entry order.
+  const effectiveDrawSize = drawSize ?? positionAssignments.length;
   const { seedAssignments } = getStructureSeedAssignments({
     provisionalPositioning,
     drawDefinition,

@@ -301,6 +301,11 @@ into a success. Re-running on a positioned structure succeeds and returns the ex
 the structure and refused, not partially placed, when they do not fit; later-round qualifiers are placed
 before first-round ones; a standalone `PAGE_PLAYOFF` positions both entry structures.
 
+The structure's size is read from the structure, so `drawSize` need not be passed. Until this was fixed, positioning
+without it placed unseeded entrants in entry order, the same for every seed. When every outstanding qualifier
+enters round one, unseeded entrants are placed before the qualifier positions; see
+[Anonymous qualifier placement](../concepts/draw-types.md#anonymous-qualifier-placement).
+
 ### Positioning a draw generated before its entries
 
 A MAIN generated with no entries places nothing, qualifier positions included: they are placed when the draw is
