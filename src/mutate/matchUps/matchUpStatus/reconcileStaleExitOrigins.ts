@@ -1,4 +1,3 @@
-import { getSideExitProvenance, withdrawProducedExits, withdrawRelayedExit } from './sideExitProvenance';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -6,13 +5,20 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
-import { isDoubleExit } from '@Validators/isExit';
+import {
+  carriedExitStatus,
+  getSideExitProvenance,
+  withdrawProducedExits,
+  withdrawRelayedExit,
+} from './sideExitProvenance';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * Withdraw carried exits whose ORIGIN has stopped being a double exit, unless its winning seat is a BYE.
@@ -221,7 +227,44 @@ function getStaleRelays({
     }
     return true;
   });
-  return refused ?? { staleRelays };
+  return refused ?? { staleRelays: [...staleRelays, ...strandedCarries({ inContextDrawMatchUps, byId })] };
+}
+
+/**
+ * A CARRIED exit — a participant's own walkover or default, sent on as their loss — stands only where its carrier
+ * stands. It is written in the loser seat they land in, and in each matchUp they are carried into past a BYE, always
+ * beside them. When a BYE they passed is taken back and they come home, a copy left where they no longer stand describes
+ * nobody, and decides that matchUp for whoever arrives there next (census run 18, MODIFIED_FEED_IN_CHAMPIONSHIP 16/14
+ * seed 20685332: a walkover carried past `Consolation|1|3` and `2|3` stayed in `3|2` when `Main|1|5`'s double walkover
+ * was relabelled and its loser took the BYE's seat; that loser then won `3|2` on the stale walkover and reached `4|1`
+ * beside the participant `3|2` had already sent there — TWO_POSITIONS_FROM_ONE_FEEDER).
+ */
+function strandedCarries({
+  inContextDrawMatchUps,
+  byId,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  byId: Map<string, { matchUp: MatchUp; structureId: string }>;
+}): Relay[] {
+  const hydrated = new Map(inContextDrawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  const stranded: Relay[] = [];
+  for (const { matchUp, structureId } of byId.values()) {
+    if (matchUp.collectionId) continue;
+    const provenance = getSideExitProvenance({ matchUp });
+    for (const sideNumber of [1, 2] as const) {
+      const entry = provenance?.[sideNumber];
+      const sourceMatchUpId = entry?.sourceMatchUpId;
+      if (!sourceMatchUpId || !carriedExitStatus(entry) || isDoubleExit(entry?.previousMatchUpStatus)) continue;
+      const source = hydrated.get(sourceMatchUpId);
+      if (!source || !isExit(source.matchUpStatus) || !source.winningSide || source.collectionId) continue;
+      const carrierId = source.sides?.find((side) => side.sideNumber === 3 - (source.winningSide ?? 0))?.participantId;
+      if (!carrierId) continue;
+      const here = hydrated.get(matchUp.matchUpId);
+      if (here?.sides?.some((side) => side.participantId === carrierId)) continue;
+      stranded.push({ matchUp, structureId, sourceMatchUpId });
+    }
+  }
+  return stranded;
 }
 
 /**

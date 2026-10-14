@@ -331,6 +331,14 @@ the side nobody had reached stays awarded when the empty position reaches that s
 empty position arrives first, and the loser it sent on stays where it went (census run-17 baseline,
 COMPASS under `doubleExitPropagateBye: false`).
 
+An award kept this way names a seat, not a side. In a fed round a lone position sits on its
+bracket side and two positions sort by drawPosition, so the empty position's arrival can move the
+participant already there to the other side; the award moves with the seat. Before this it stayed on
+its old side and named the participant who had walked over, whose win was then read as never
+advanced (census run 18, FEED_IN_CHAMPIONSHIP, CURTIS_CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION and
+DOUBLE_ELIMINATION: WINNER_NOT_ADVANCED, and a result refused after it had written when the
+reservation behind that seat was later withdrawn).
+
 ### A pending exit's reservation goes with it
 
 Since 7.9.0. A pending produced exit can advance an empty seat ahead of it — a reservation for the
@@ -599,6 +607,15 @@ view the cascade started with, so a carrier crossing two BYEs in one cascade sti
 matchUp they exited. Before this the South final went back to TO_BE_PLAYED when the late entry came
 last, and to a walkover when it came first (census run 17, OLYMPIC 32 with 29 and 30 participants,
 under `doubleExitPropagateBye: false`).
+
+**A carried exit stands only where its carrier stands.** A participant's own walkover or default is
+written in the loser seat they land in and in each matchUp they are carried into past a BYE, always
+beside them. When a BYE they passed is replaced — a double exit relabelled as a played result, its
+loser taking the BYE's seat — they come home, and a copy left where they no longer stand is
+withdrawn when the mutation settles, with whatever it had decided. Before this the copy stayed and
+decided that matchUp for whoever arrived next (census run 18, FEED_IN_CHAMPIONSHIP_TO_SF and
+MODIFIED_FEED_IN_CHAMPIONSHIP 16/14: a result refused after it had written, and two positions sent on
+by one matchUp).
 
 ### An arrival carrying an exit converges with a pending exit
 
