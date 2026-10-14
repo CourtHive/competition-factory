@@ -816,7 +816,7 @@ const version = engine.version();
 
 Makes a run reproducible. Every place the engine draws randomness (ids from `UUID`, BYE and qualifier placement, draw positions, lucky-draw advancement, draft resolution, drawMatic pairings, the mocks' scores) reads from one process-wide source. A call's own `random` parameter (what `nonRandom: <seed>` on a directive supplies) still wins; the configured source is the fallback; `Math.random` is the default.
 
-Pass a seed (a finite number) or a `() => number` in `[0, 1)`. A function must vary: ids are drawn from it too, so a constant mints duplicate ids and generation fails. No argument restores `Math.random`. Process-wide, like `schemaWriteMode`: a run configuration, not request state.
+Pass a seed (a finite number) or a `() => number` in `[0, 1)`. A function must vary: ids are drawn from it too, so a source that repeats an id within its stream, or returns a value outside `[0, 1)`, is refused with an error starting `DEGENERATE_RANDOM_SOURCE` (an engine call returns it as `{ error }`). Setting the source again starts a new stream. See [a source that repeats is refused](/docs/concepts/randomness#a-source-that-repeats-is-refused). No argument restores `Math.random`. Process-wide, like `schemaWriteMode`: a run configuration, not request state.
 
 ```js
 engine.setRandomSource(7); // seeded mulberry32
