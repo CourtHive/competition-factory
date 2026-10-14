@@ -68,15 +68,18 @@ function occupantChangesSide({ matchUp, before, after, drawDefinition, structure
   if (stayed.length !== 1 || held(before).length === held(after).length) return false;
 
   const [drawPosition] = stayed;
-  const sideAt = (drawPositions: (number | undefined)[]) =>
+  const sideAt = (drawPositions: (number | undefined)[], asGiven?: boolean) =>
     getDrawPositionSideNumber({
       matchUp: { ...matchUp, sides: undefined, drawPositions },
       drawDefinition,
       drawPosition,
       structureId,
+      asGiven,
     });
   const sideBefore = sideAt(before);
-  const sideAfter = sideAt(after);
+  // ...and the state being written is read AS written: the round profile is built from the structure's matchUps, where
+  // this one still holds the position that is leaving (census run-17 F2 20751564, `aSeatThatEmptiesReadsItsOwnSide`)
+  const sideAfter = sideAt(after, true);
   return !!sideBefore && !!sideAfter && sideBefore !== sideAfter;
 }
 

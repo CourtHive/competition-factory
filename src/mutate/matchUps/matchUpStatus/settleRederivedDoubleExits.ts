@@ -188,10 +188,22 @@ export function settleRederivedDoubleExit({
     });
     applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap, event });
     // over a loser link the re-derived matchUp still produces no loser — its losing side is the produced exit — so the
-    // BYE it claimed for its loser target is still owed, and stays (`correctionDivergence`, COMPASS/OLYMPIC, policy off)
-    if (!overLoserLink) {
-      withdrawByeSeats({ claimantMatchUpId: matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
-    }
+    // BYE it claimed for its loser target is still owed, and stays (`correctionDivergence`, COMPASS/OLYMPIC, policy off).
+    // Only that one: what its produced exit decided further on has just been withdrawn above, and a BYE claimed for the
+    // loser of that goes with it (census run-17 baseline F3, COMPASS 16/14 20731395 and siblings, policy off:
+    // `West|2|2`'s produced walkover went, and the BYE claimed in `Southwest|1|1` for its loser stood).
+    const ownLoserTargetId = overLoserLink
+      ? positionTargets({ matchUpId, inContextDrawMatchUps: inContextMatchUps, drawDefinition }).targetMatchUps
+          ?.loserMatchUp?.matchUpId
+      : undefined;
+    withdrawByeSeats({
+      claimantMatchUpId: matchUpId,
+      keepAt: ownLoserTargetId,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    });
     settleProducedExit({
       stored,
       keptSide,

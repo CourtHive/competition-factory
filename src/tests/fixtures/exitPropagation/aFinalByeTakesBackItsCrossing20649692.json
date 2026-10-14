@@ -1,0 +1,9 @@
+{
+  "config": {
+    "participantsCount": 5,
+    "propagateExitStatus": true,
+    "drawSize": 8,
+    "drawType": "DOUBLE_ELIMINATION",
+    "seed": 20649692
+  }
+}

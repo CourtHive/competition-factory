@@ -503,11 +503,24 @@ winner goes on into the Main structure; when the exit that decided the Backdraw 
 withdrawn, they are taken back out of the seat the link gave them too, so the re-derived winner can
 take it (census 20506968, DOUBLE_ELIMINATION 8/6).
 
+A BYE in the Backdraw final follows the link too. A BYE there carries the other finalist into the
+Main structure, and when it is taken back (a double exit corrected, its loser arriving for the seat)
+the finalist it carried is taken back out of the Main final with it (census run-17 baseline,
+DOUBLE_ELIMINATION 8/5). A Backdraw finalist in the Main final under the Main position of a semi-final
+that now has no result came across the link, not by advancing within Main, and is taken back the same
+way (DOUBLE_ELIMINATION 8/4).
+
 It also takes back the BYE the award placed. A matchUp won over a carried exit has that exit as its
 loser, and where the loser link leads to another structure the seat there becomes a BYE nobody can
 fill. When the withdrawal leaves that matchUp undecided, its loser is a participant again, and the
 BYE goes unless another exit still claims it (census run-17 baseline, COMPASS 16/13 under
 `doubleExitPropagateBye: false`).
+
+A BYE claimed further on goes the same way. A double exit's produced exit can decide a matchUp a round
+on, and the BYE claimed for that matchUp's loser stands on the double exit's account. When the double
+exit is re-derived to a single exit, the exit it produced is withdrawn and so is that BYE. Only the
+BYE at the re-derived matchUp's own loser seat stays, because its losing side is still the produced
+exit (census run-17 baseline, COMPASS 16/13 and 16/14 under `doubleExitPropagateBye: false`).
 
 ### A clear takes back only the side it cleared
 

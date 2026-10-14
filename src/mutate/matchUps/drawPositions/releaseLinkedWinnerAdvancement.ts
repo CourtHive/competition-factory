@@ -116,15 +116,18 @@ export function releaseLinkedWinnerAdvancement({
   // ...unless that prior-round matchUp was decided AGAINST the position: DOUBLE_ELIMINATION's Backdraw winner re-enters
   // the Main final under their own Main position, which is present in the Main semi-final they LOST there (census de
   // 9305625: the finalist stayed in the Main final after the Backdraw final they had won by a stale produced exit was
-  // un-decided). Present and undecided, or present and won, is an advance within the structure; present and lost is
-  // the link's.
+  // un-decided). Present and won is an advance within the structure, and so is present beside a BYE or an exit still
+  // pending; present and lost is the link's, and so is present and TO_BE_PLAYED: a matchUp with no result advances
+  // nobody (census run-17 20650786, DOUBLE_ELIMINATION 8/4: `Main|3|1` cleared left its loser in the Main final, where
+  // they had crossed from the Backdraw final they took by a produced default; `anUndecidedSemiFinalAdvancesNobody`).
   const prior = targetMatchUps.find(
     (matchUp) => matchUp.roundNumber === targetRoundNumber - 1 && matchUp.drawPositions?.includes(targetDrawPosition),
   );
   const priorWinner =
     prior?.winningSide &&
     getWinningSideDrawPosition({ drawDefinition, structureId: targetStructure.structureId, matchUp: prior });
-  const advancedWithinTarget = !!prior && (!prior.winningSide || priorWinner === targetDrawPosition);
+  const advancedWithinTarget =
+    !!prior && (priorWinner === targetDrawPosition || (!prior.winningSide && prior.matchUpStatus !== TO_BE_PLAYED));
   if (advancedWithinTarget) return;
 
   /**
