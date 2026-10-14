@@ -563,7 +563,7 @@ function applyPositionToMatchUp({
   // The arrival can move the participant already here to the other side (a lone position sits on its bracket side,
   // two sort ascending). Everything recorded by side moves with them; `winningSide` is assigned below from the side
   // the arrival takes, so it is left to that (CA, 2026-10-05: `setMatchUpDrawPositions`).
-  rekeySideFacts({
+  const { sideChanged } = rekeySideFacts({
     structureId: inContextMatchUp?.structureId,
     drawPositions: updatedDrawPositions,
     rekeyWinningSide: false,
@@ -653,7 +653,12 @@ function applyPositionToMatchUp({
     // across its loser link (census run-17 baseline, COMPASS 16/15 seeds 20709099 and 20729822 and 32-draw siblings,
     // policy off: `West|2|1`, DEFAULTED to the vacant side, reached by the empty position of `East|1|3`'s double
     // default, left its loser in `Southwest|1|1` — ADVANCED_ACROSS_LINK_FROM_UNDECIDED; the other order kept the award).
-    winningSide: exitWinningSide ?? (holdsStandingExit && emptyArrival ? matchUp.winningSide : undefined),
+    // The award names a SEAT, so it changes side with the sides re-keyed above when the empty position's arrival moves
+    // the occupant across (census run 18 F2, FEED_IN_CHAMPIONSHIP 8/7 seed 20698096: `Consolation|3|1` awarded to the
+    // seat dp 3 then reached, kept as side 2 once dp 3 sorted to side 1, so it named the carrier who walked over; the
+    // reservation could not be released when its exit was withdrawn, and the real winner was refused the seat).
+    winningSide:
+      exitWinningSide ?? (holdsStandingExit && emptyArrival ? keptAward(matchUp.winningSide, sideChanged) : undefined),
     // We keep the current status if it is already marked as WO. Deliberately the BROADER flag: an
     // empty drawPosition arriving delivers no participant and so gives no reason to change
     // anything, but it was clearing the exit outright (SIGNAL 1, census 2026-09-20).
@@ -1759,4 +1764,10 @@ function addDrawPositionToMatchUps({
       });
   }
   return { ...SUCCESS };
+}
+
+/** a standing award, on the side its seat holds once the arrival's re-keying has moved the occupant across */
+function keptAward(winningSide: number | undefined, sideChanged: boolean): number | undefined {
+  if (!sideChanged || (winningSide !== 1 && winningSide !== 2)) return winningSide;
+  return 3 - winningSide;
 }
