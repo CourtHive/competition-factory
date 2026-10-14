@@ -1,0 +1,9 @@
+{
+  "config": {
+    "participantsCount": 13,
+    "propagateExitStatus": false,
+    "drawSize": 16,
+    "drawType": "COMPASS",
+    "seed": 20653852
+  }
+}

@@ -1237,7 +1237,15 @@ function withdrawFromMatchUp(
   const exitsRetained = withoutWinnersOrigins({ provenance: retained, matchUp, structureId, drawDefinition });
   const retainsAnExit = !!deriveExitStateFromProvenance(exitsRetained) || !isAnyExit(matchUp.matchUpStatus);
 
-  if (Object.keys(retained).length && retainsAnExit) {
+  // On a BYE matchUp a BYE-status entry only ever accompanies a carried exit (the convergence that relays an exit past
+  // the BYE records both sides). With every exit gone it describes nothing: the matchUp is simply a BYE again, as forward
+  // play leaves it, and is handled as the last carried entry withdrawn below (census run-17 baseline, DOUBLE_ELIMINATION
+  // 8/5 seed 20622028, policy off: `Backdraw|3|1` kept `{2: BYE from Backdraw|2|2}` after the exit it relayed went).
+  const onlyByeEntriesLeft =
+    holdsBye({ matchUp, structureId, drawDefinition }) &&
+    Object.values(retained).every((entry) => entry?.matchUpStatus === BYE);
+
+  if (Object.keys(retained).length && retainsAnExit && !onlyByeEntriesLeft) {
     // A side carried here by a DIFFERENT source is still true, so the matchUp remains an exit and
     // only the withdrawn side's entry is dropped.
     //
@@ -1267,8 +1275,18 @@ function withdrawFromMatchUp(
       return { roundNumber: matchUp.roundNumber, matchUpId: matchUp.matchUpId, structureId };
     }
     // STAGE 1 EXPERIMENT: re-derive, and report that the matchUp is no longer a double exit
+    //
+    // ...or that the same exit now goes to the OTHER side. A WALKOVER awarded to a participant standing opposite a
+    // produced exit re-derives, once that exit is withdrawn, to a WALKOVER awarded to the empty seat (RULE 2): the
+    // status is unchanged and the winner is not. Compared on status alone, the stale award stood and the participant
+    // it had advanced stayed one round on (census S4 run 16, DOUBLE_ELIMINATION 16/14 seed 20617910 `on`:
+    // `Backdraw|3|2` kept ws 2 when `Backdraw|2|3`'s double walkover dissolved, and the arrival forward play sends
+    // into `Backdraw|4|2` was refused ERR_EXISTING_POSITION_ASSIGNMENT after the correction had written).
     const derived = deriveExitStateFromProvenance(exitsRetained);
-    if (derived && derived.matchUpStatus !== matchUp.matchUpStatus) {
+    // Only an award that STOOD is re-read: a pending exit (no winningSide) is left pending, as forward play leaves it;
+    // whether one waiting exit should have two representations is not this function's to settle (S4, CA 2026-10-12).
+    const winnerChanged = !!derived && !!matchUp.winningSide && derived.winningSide !== matchUp.winningSide;
+    if (derived && (derived.matchUpStatus !== matchUp.matchUpStatus || winnerChanged)) {
       // read structurally, as the undecided branch below does: a lone position sits at index 0 whatever its side
       const previousWinnerDrawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
       matchUp.matchUpStatus = derived.matchUpStatus as any;

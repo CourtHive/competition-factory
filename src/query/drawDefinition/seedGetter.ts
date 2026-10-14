@@ -85,8 +85,8 @@ export function getValidSeedBlocks({
     .map((roundNumber) => {
       const roundDrawPositions: number[] = roundMatchUps[roundNumber]
         .map((matchUp) => matchUp.drawPositions)
-        .flat(Infinity)
-        .filter(Boolean);
+        .flat()
+        .filter((position): position is number => !!position);
       const uniqueRoundDrawPositions = roundDrawPositions.filter(
         (drawPosition) => !allDrawPositions.includes(drawPosition),
       );

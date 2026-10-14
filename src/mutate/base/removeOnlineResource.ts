@@ -1,10 +1,11 @@
+import { findOnlineResourceMatchUp, onlineResourceMatchUpNotice } from './onlineResourceMatchUp';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
 
 // constants and types
 import { IDENTIFIER, RESOURCE_SUB_TYPE, RESOURCE_TYPE } from '@Constants/resourceConstants';
-import { DrawDefinition, OnlineResource, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, OnlineResource, Tournament } from '@Types/tournamentTypes';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -22,6 +23,7 @@ type RemoveOnlineResourceArgs = {
   organisationId?: string;
   participantId?: string;
   personId?: string;
+  matchUpId?: string;
   courtId?: string;
   venueId?: string;
   event?: Event;
@@ -30,13 +32,19 @@ export function removeOnlineResource(params: RemoveOnlineResourceArgs) {
   const paramsCheck = checkRequiredParameters(params, [{ tournamentRecord: true, onlineResource: true }]);
   if (paramsCheck.error) return paramsCheck;
 
-  const { tournamentRecord, onlineResource, organisationId, participantId, personId, courtId, venueId } = params;
+  const { tournamentRecord, onlineResource, organisationId, participantId, personId, courtId, venueId, matchUpId } =
+    params;
 
   if (organisationId) {
     if (tournamentRecord.parentOrganisation?.parentOrganisationId !== organisationId) {
       return decorateResult({ result: { error: NOT_FOUND } });
     }
     removeResource({ element: tournamentRecord.parentOrganisation, onlineResource });
+  } else if (matchUpId) {
+    const { matchUp, error } = findOnlineResourceMatchUp({ drawDefinition: params.drawDefinition, matchUpId });
+    if (!matchUp) return decorateResult({ result: { error } });
+    removeResource({ element: matchUp, onlineResource });
+    onlineResourceMatchUpNotice({ ...params, matchUp, context: 'removeOnlineResource' });
   } else if (participantId || personId) {
     const participant = (tournamentRecord.participants ?? []).find(
       (p) => (personId && p.person?.personId === personId) || p.participantId === participantId,

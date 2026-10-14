@@ -61,6 +61,10 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
       '`availableTargetMatchUpDrawPositions[0]` is not a matchUp array: it is built from positionAssignments ' +
       'filtered to unfilled seats, and `[0]` is the first such seat',
   },
+  'mutate/drawDefinitions/automatedPositioning.ts': {
+    count: 1,
+    why: '`roundDrawPositions[1]` is the qualifier-eligibility map keyed by round number, not a matchUp side array',
+  },
   'mutate/matchUps/drawPositions/positionQualifiers.ts': {
     count: 2,
     why: '`roundDrawPositions[roundNumber]` is a map from roundNumber to positions, not a matchUp array',

@@ -107,11 +107,11 @@ export function swapDrawPositionAssignments({ tournamentRecord, drawDefinition, 
 
     inContextTargetMatchUps.forEach((inContextTargetMatchUp) => {
       (inContextTargetMatchUp.sides ?? []).forEach((inContextSide) => {
-        const drawPosition: number = inContextSide?.drawPosition;
-        if (drawPositions.includes(drawPosition)) {
+        const drawPosition = inContextSide?.drawPosition;
+        if (drawPosition !== undefined && drawPositions.includes(drawPosition)) {
           const teamParticipantId = inContextSide.participantId;
-          const matchUp = structureMatchUps.find(({ matchUpId }) => matchUpId === inContextTargetMatchUp.matchUpId);
-          const drawPositionSideIndex = inContextTargetMatchUp?.sides?.reduce(
+          const matchUp = structureMatchUps.find(({ matchUpId }) => matchUpId === inContextTargetMatchUp.matchUpId)!; // same structure and TEAM filter
+          const drawPositionSideIndex = inContextTargetMatchUp?.sides?.reduce<number | undefined>(
             (index, side, i) => (side.drawPosition === drawPosition ? i : index),
             undefined,
           );

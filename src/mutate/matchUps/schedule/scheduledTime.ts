@@ -9,7 +9,7 @@ import { mustBeAnArray } from '@Tools/mustBeAnArray';
 // constants and types
 import { MUTUALLY_EXCLUSIVE_TIME_MODIFIERS, SCHEDULED_TIME, TIME_MODIFIERS } from '@Constants/timeItemConstants';
 import { INVALID_TIME, INVALID_VALUES, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
-import { DrawDefinition, MatchUp, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AddScheduleAttributeArgs = {

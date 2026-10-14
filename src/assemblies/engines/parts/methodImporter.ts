@@ -14,10 +14,9 @@ export function methodImporter(engine, engineInvoke, submittedMethods, traverse,
   methodNames.forEach((methodName) => {
     engine[methodName] = (params) => {
       const invoke = () =>
-        engineInvoke(engine, {
-          [methodName]: methods[methodName],
-          ...params,
-        });
+        // params nested, never spread beside the method: a function-valued param (a call's own
+        // `random`) would otherwise count as a second method and be refused
+        engineInvoke(engine, { [methodName]: methods[methodName], params: { ...params } });
 
       if (getDevContext()) {
         return invoke();

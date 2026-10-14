@@ -665,8 +665,13 @@ const id = tools.UUID();
 // Result: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
 
 const prefixed = tools.UUID('PREFIX');
-// Result: 'PREFIX-a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+// Result: 'PREFIX_a1b2c3d4e5f67890abcdef1234567890'
 ```
+
+Drawn from [`randomSource`](#randomsource), or from the `random` function passed as the second argument. An id that the
+same stream has already minted is refused: `UUID` throws an error starting `DEGENERATE_RANDOM_SOURCE`, because only a
+source that repeats can produce one (see
+[a source that repeats is refused](../concepts/randomness.md#a-source-that-repeats-is-refused)).
 
 ### UUIDS
 
@@ -712,7 +717,8 @@ const value = random();
 ### setRandomSource
 
 Sets the engine's process-wide source of randomness, which `UUID` and every placement or generation step read. Pass a
-seed (a finite number, for a seeded mulberry32) or a `() => number`; no argument restores `Math.random`. A call's own
+seed (a finite number, for a seeded mulberry32) or a `() => number`; no argument restores `Math.random`. A function is
+checked at every draw, and a value outside `[0, 1)` throws `DEGENERATE_RANDOM_SOURCE`. A call's own
 `random` parameter still takes precedence. Returns `{ success }`, or `{ error: INVALID_VALUES }` for anything else. The
 same as [`engine.setRandomSource`](../engines/engine-methods.md#setrandomsource). Added in 7.5.0.
 

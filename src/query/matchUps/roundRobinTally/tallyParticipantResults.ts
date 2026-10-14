@@ -13,7 +13,7 @@ import { INVALID_VALUES, MISSING_MATCHUPS } from '@Constants/errorConditionConst
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
-import { HydratedMatchUp } from '@Types/hydrated';
+import type { MatchUp } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/matchUpTypes';
 
 type TallyParticipantResultsArgs = {
@@ -28,7 +28,7 @@ type TallyParticipantResultsArgs = {
   matchUpFormat?: string;
   perPlayer?: number;
   subOrderMap?: any;
-  matchUps: HydratedMatchUp[];
+  matchUps: (MatchUp & { structureId?: string })[];
 };
 
 type TallyResultType = {

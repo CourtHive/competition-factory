@@ -1,13 +1,13 @@
+import { deleteNotices, getInvokeObserver, getTournamentRecords } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
-import { deleteNotices, getInvokeObserver, getTournamentRecords } from '@Global/state/globalState';
+import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { isFunction, isObject, isString } from '@Tools/objects';
 import { getMethods } from '@Global/state/syncGlobalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { createSeededRandom } from '@Tools/prng';
 import { withCapturedClock } from '@Tools/clock';
 
 // constants
@@ -30,16 +30,9 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
   const { [methodName]: passedMethod, ...remainingArgs } = args;
   const params = args?.params ? { ...args.params } : { ...remainingArgs };
 
-  // nonRandom: <seed> middleware. Mirrors mocksEngine's
-  // src/assemblies/engines/mock/index.ts:55-57 — transforms a numeric seed into
-  // a seeded `random` function so callers can make stochastic mutations
-  // deterministic without hand-patching Math.random around the call site. Done
-  // on `params` (not `args`) so we stay clear of the function-count guard
-  // above, which is load-bearing for method dispatch.
-  if (typeof params.nonRandom === 'number') {
-    params.random = createSeededRandom(params.nonRandom);
-    delete params.nonRandom;
-  }
+  // nonRandom: <seed> middleware, applied to `params` (not `args`) so it stays clear of the
+  // function-count guard above, which is load-bearing for method dispatch.
+  seedRandomParam(params);
 
   const method = passedMethod || engine[methodName] || getMethods()[methodName];
   if (!method) return logMethodNotFound({ methodName, params });

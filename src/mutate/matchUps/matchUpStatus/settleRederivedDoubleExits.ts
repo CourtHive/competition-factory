@@ -1,22 +1,18 @@
 import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/removeDoubleExit';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
-import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
-import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { applyWithdrawnExits } from './applyWithdrawnExits';
+import { applyWithdrawnExits, withdrawByeSeats } from './applyWithdrawnExits';
 import {
   clearSideExitProvenance,
   getSideExitProvenance,
   withdrawProducedExits,
   setSideExitProvenance,
   blankSideExitCode,
-  withdrawByeClaim,
   blankExitCodes,
   getExitSides,
 } from './sideExitProvenance';
@@ -192,10 +188,22 @@ export function settleRederivedDoubleExit({
     });
     applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap, event });
     // over a loser link the re-derived matchUp still produces no loser — its losing side is the produced exit — so the
-    // BYE it claimed for its loser target is still owed, and stays (`correctionDivergence`, COMPASS/OLYMPIC, policy off)
-    if (!overLoserLink) {
-      withdrawByeSeats({ claimantMatchUpId: matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
-    }
+    // BYE it claimed for its loser target is still owed, and stays (`correctionDivergence`, COMPASS/OLYMPIC, policy off).
+    // Only that one: what its produced exit decided further on has just been withdrawn above, and a BYE claimed for the
+    // loser of that goes with it (census run-17 baseline F3, COMPASS 16/14 20731395 and siblings, policy off:
+    // `West|2|2`'s produced walkover went, and the BYE claimed in `Southwest|1|1` for its loser stood).
+    const ownLoserTargetId = overLoserLink
+      ? positionTargets({ matchUpId, inContextDrawMatchUps: inContextMatchUps, drawDefinition }).targetMatchUps
+          ?.loserMatchUp?.matchUpId
+      : undefined;
+    withdrawByeSeats({
+      claimantMatchUpId: matchUpId,
+      keepAt: ownLoserTargetId,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    });
     settleProducedExit({
       stored,
       keptSide,
@@ -406,38 +414,4 @@ export function carryExitOnward({
     current = progressResult?.context?.loserMatchUp ? { ...current, ...progressResult.context } : undefined;
   }
   return undefined;
-}
-
-/** Withdraw a matchUp's BYE claims, clearing each propagated BYE seat no other claim still holds. */
-function withdrawByeSeats({
-  claimantMatchUpId,
-  tournamentRecord,
-  drawDefinition,
-  matchUpsMap,
-  event,
-}: {
-  tournamentRecord?: Tournament;
-  drawDefinition: DrawDefinition;
-  matchUpsMap: MatchUpsMap;
-  claimantMatchUpId: string;
-  event?: Event;
-}) {
-  const claimant = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === claimantMatchUpId);
-  const claimantIsBye = claimant?.matchUpStatus === BYE;
-  for (const [structureId, mapped] of Object.entries(matchUpsMap.mappedMatchUps)) {
-    const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
-    for (const matchUp of mapped.matchUps as MatchUp[]) {
-      for (const sideNumber of [1, 2]) {
-        const claims = matchUp.sideExitProvenance?.[sideNumber]?.byeClaims ?? [];
-        if (!claims.includes(claimantMatchUpId)) continue;
-        withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
-        if (matchUp.sideExitProvenance?.[sideNumber]?.byeClaims?.length) continue;
-        if (claimantIsBye) continue;
-        const drawPosition = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber });
-        const assignment = positionAssignmentsOf(structure)?.find((entry) => entry.drawPosition === drawPosition);
-        if (!assignment?.bye || !assignment.byeFromPropagation) continue;
-        clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
-      }
-    }
-  }
 }

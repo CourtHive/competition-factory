@@ -1,0 +1,50 @@
+{
+  "config": {
+    "participantsCount": 14,
+    "propagateExitStatus": true,
+    "drawSize": 16,
+    "drawType": "DOUBLE_ELIMINATION",
+    "seed": 20617910
+  },
+  "steps": [
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 7,
+      "outcome": { "matchUpStatus": "DOUBLE_WALKOVER" }
+    },
+    { "structureName": "Main", "roundNumber": 1, "roundPosition": 6, "outcome": { "winningSide": 2 } },
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 5,
+      "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 1 }
+    },
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 4,
+      "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 2 }
+    },
+    {
+      "structureName": "Main",
+      "roundNumber": 2,
+      "roundPosition": 3,
+      "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 2 }
+    },
+    { "structureName": "Main", "roundNumber": 1, "roundPosition": 3, "outcome": { "matchUpStatus": "DOUBLE_DEFAULT" } },
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 2,
+      "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 2 }
+    },
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 3,
+      "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 2 }
+    },
+    { "structureName": "Main", "roundNumber": 2, "roundPosition": 3, "outcome": { "winningSide": 2 } }
+  ]
+}

@@ -9,10 +9,10 @@ import { HydratedMatchUp } from '@Types/hydrated';
 
 type UpdateSideLineUpArgs = {
   inContextTargetMatchUp?: HydratedMatchUp;
-  drawPositionSideIndex: number;
+  drawPositionSideIndex?: number;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
-  teamParticipantId: string;
+  teamParticipantId?: string;
   matchUp: MatchUp;
   event?: Event;
 };
@@ -27,13 +27,16 @@ export function updateSideLineUp({
   event,
 }: UpdateSideLineUpArgs) {
   // update matchUp.sides to include lineUps
-  const drawPositionSideNumber = inContextTargetMatchUp?.sides?.[drawPositionSideIndex]?.sideNumber;
+  const drawPositionSideNumber =
+    drawPositionSideIndex === undefined
+      ? undefined
+      : inContextTargetMatchUp?.sides?.[drawPositionSideIndex]?.sideNumber;
 
   const sideExists =
     drawPositionSideNumber && matchUp.sides?.find((side) => side.sideNumber === drawPositionSideNumber);
 
   const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
-  const lineUp = makeDeepCopy(lineUps[teamParticipantId], false, true);
+  const lineUp = makeDeepCopy(lineUps[String(teamParticipantId)], false, true);
 
   if (sideExists) {
     matchUp?.sides?.forEach((side) => {

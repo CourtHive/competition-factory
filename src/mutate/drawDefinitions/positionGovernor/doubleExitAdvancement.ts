@@ -1,5 +1,6 @@
 import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
@@ -10,12 +11,13 @@ import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdra
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -2042,6 +2044,12 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
      * can see, while refusing leaves no trace at all.
      */
     if (feeder.matchUpStatus === BYE) return !!feeder.sides?.some((side) => side && !side.participantId && !side.bye);
+    // An exit already awarded to a seat nobody has reached yet delivers whoever reaches it. Read as finished, a held
+    // exit opposite it was never sent on, and the matchUp they both feed read TO_BE_PLAYED only when the exit came last
+    // (census run 17 Class A, COMPASS and OLYMPIC 32 policy off: 20630712 `Southeast|1|2` won by `South|1|4`'s loser).
+    const awaitedWinner = feeder.sides?.find((side) => side.sideNumber === feeder.winningSide);
+    if (isExit(feeder.matchUpStatus) && awaitedWinner && !awaitedWinner.participantId && !awaitedWinner.bye)
+      return true;
     return !isAnyExit(feeder.matchUpStatus);
   });
 }
@@ -2703,7 +2711,26 @@ function serveConvergedLoserLink({
   if (!loserMatchUp || loserTargetDrawPosition === undefined || !loserTargetLink) return undefined;
   const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId });
   const seat = positionAssignments?.find((a) => a.drawPosition === loserTargetDrawPosition);
-  if (seat?.participantId || seat?.bye || seat?.qualifier) return undefined;
+  /**
+   * The converged matchUp's FIRST carrier, sent on as its loser when their exit alone decided it (RULE 2), no longer
+   * loses anything: a double exit has no loser. Released, so the seat is served as forward play serves it — the order
+   * the two exits were recorded in does not change the draw (census run-17 baseline F3, COMPASS 16/13 seed 20632071,
+   * policy off: `East|1|2`'s walkover then `East|1|4`'s double walkover left d4e82f in `Southwest|1|1`, where the other
+   * order leaves the convergence's produced exit).
+   */
+  const carrier = seat?.participantId;
+  const convergedSides = convergedMatchUp.sides ?? [];
+  if (carrier && convergedSides.some((side) => side?.participantId === carrier)) {
+    const released = releaseCarrier({
+      loserTargetDrawPosition,
+      drawDefinition,
+      loserMatchUp,
+      matchUpsMap,
+      params,
+      seat,
+    });
+    if (released?.error) return decorateResult({ result: released, stack });
+  } else if (seat?.participantId || seat?.bye || seat?.qualifier) return undefined;
   // already served: the seat's side records an exit from this convergence
   const storedLoser = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === loserMatchUp.matchUpId);
   const alreadyServed = Object.values(getSideExitProvenance({ matchUp: storedLoser }) ?? {}).some(
@@ -2729,6 +2756,64 @@ function serveConvergedLoserLink({
     params,
     stack,
   });
+}
+
+/**
+ * Take the converged matchUp's first carrier back out of its loser seat. Where nothing has been PLAYED there — the seat's
+ * matchUp is undecided, or decided only by the exits carried into it — nobody advanced out of it on a result of theirs,
+ * so the participant leaves and the seat stays, to be served as the convergence's loser target. A position clear refuses
+ * that seat as active once the exits there have awarded it (census s14 policy off, COMPASS 32/27 seeds 20517704 and
+ * 20521746: `West|2|3` and `West|2|4`'s carriers converged in `Southwest|1|2`; `East|1|13`'s double default then
+ * converged at `West|2|4`, whose withdrawn exit left the walkover there awarded to its carrier, and the clear was refused
+ * ERR_ACTIVE_DRAW_POSITION after the draw had moved). A seat whose matchUp has a played result, or whose carrier went on
+ * from it, is cleared as before.
+ */
+function releaseCarrier({
+  loserTargetDrawPosition,
+  drawDefinition,
+  loserMatchUp,
+  matchUpsMap,
+  params,
+  seat,
+}: {
+  params: { tournamentRecord?: Tournament; event?: Event };
+  loserTargetDrawPosition: number;
+  drawDefinition: DrawDefinition;
+  loserMatchUp: HydratedMatchUp;
+  matchUpsMap: MatchUpsMap;
+  seat: { participantId?: string };
+}): ResultType | undefined {
+  const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === loserMatchUp.matchUpId);
+  const decidedByExitsOnly =
+    !!stored && isAnyExit(stored.matchUpStatus) && !checkScoreHasValue({ score: stored.score });
+  // and they went no further: a carrier the exits there sent on is taken back by the clear, which unwinds that
+  const wentOn = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps?.some(
+    (candidate) =>
+      candidate.structureId === loserMatchUp.structureId &&
+      (candidate.roundNumber ?? 0) > (loserMatchUp.roundNumber ?? 0) &&
+      candidate.sides?.some((side) => side?.participantId === seat.participantId),
+  );
+  if (!decidedByExitsOnly || wentOn) {
+    return clearDrawPosition({
+      drawPosition: loserTargetDrawPosition,
+      structureId: loserMatchUp.structureId,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+  }
+  const carrierSide = loserMatchUp.sides?.find((side) => side?.participantId === seat.participantId)?.sideNumber;
+  delete seat.participantId;
+  if (stored.winningSide && stored.winningSide === carrierSide) delete stored.winningSide;
+  const { structure } = findStructure({ drawDefinition, structureId: loserMatchUp.structureId });
+  modifyPositionAssignmentsNotice({
+    tournamentId: params.tournamentRecord?.tournamentId,
+    event: params.event,
+    drawDefinition,
+    structure,
+  });
+  return undefined;
 }
 
 function directExitWinnerAcrossLink({

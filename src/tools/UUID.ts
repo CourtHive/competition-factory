@@ -4,7 +4,7 @@
   https://stackoverflow.com/questions/105034/how-to-create-guid-uuid?rq=1
 */
 
-import { randomSource } from '@Tools/prng';
+import { DEGENERATE_RANDOM_SOURCE, randomSource, type RandomFunction } from '@Tools/prng';
 import { generateRange } from './arrays';
 
 // constants
@@ -53,6 +53,34 @@ export function UUIDS(count = 1, pre?, random?: () => number) {
   return generateRange(0, count).map(() => UUID(pre, random));
 }
 
+/**
+ * A SOURCE THAT REPEATS IS REFUSED, AT THE MINT.
+ *
+ * Every lookup in the factory assumes ids are unique, so a source that repeats mints ids that are
+ * not. Measured 2026-10-14 under `setRandomSource(() => 0.5)`: every matchUpId of a draw was the
+ * same, `positionTargets` resolved a matchUp's winner matchUp to the matchUp itself, and BYE
+ * advancement (advanceDrawPosition <-> assignDrawPositionBye) recursed until the stack overflowed.
+ * A longer cycle need not crash: it can collide two ids and build a wrong draw silently.
+ *
+ * A working source never repeats four 32-bit draws, so a repeat within one stream is proof, with no
+ * false positives. The window is per stream (per function): a restarted stream, a new seed, or
+ * `nonRandom` on a call is a new function and repeats its ids legitimately — that is what
+ * reproducibility means. Bounded, so a long-lived process does not grow it without limit.
+ */
+const REPEAT_WINDOW = 4096;
+const recentIds = new WeakMap<RandomFunction, Set<string>>();
+
+function refuseRepeatedId(rng: RandomFunction, uuid: string) {
+  let recent = recentIds.get(rng);
+  if (!recent) {
+    recent = new Set();
+    recentIds.set(rng, recent);
+  }
+  if (recent.has(uuid)) throw new Error(`${DEGENERATE_RANDOM_SOURCE}: the random source minted ${uuid} twice`);
+  recent.add(uuid);
+  if (recent.size > REPEAT_WINDOW) recent.delete(recent.values().next().value as string);
+}
+
 export function UUID(pre?, random?: () => number) {
   const rng = random ?? randomSource();
   const lut: string[] = [];
@@ -90,6 +118,8 @@ export function UUID(pre?, random?: () => number) {
     lut[(d3 >> 8) & 0xff] +
     lut[(d3 >> 16) & 0xff] +
     lut[(d3 >> 24) & 0xff];
+
+  refuseRepeatedId(rng, uuid);
 
   return typeof pre === 'string' ? `${pre}_${uuid.replaceAll('-', '')}` : uuid;
 }

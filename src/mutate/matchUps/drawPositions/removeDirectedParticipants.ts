@@ -15,6 +15,7 @@ import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import type { MatchUp } from '@Types/tournamentTypes';
 import { clearDrawPosition } from './positionClear';
 import {
   clearResolvedSideExitProvenance,
@@ -122,7 +123,7 @@ export function removeDirectedParticipants(params): {
       { winnerParticipantId: undefined, loserParticipantId: undefined },
     ) ?? {};
 
-  const drawPositionMatchUps = sourceMatchUps.filter((matchUp) => matchUp.drawPositions?.includes(loserDrawPosition));
+  const drawPositionMatchUps = sourceMatchUps.filter((matchUp) => includesDrawPosition(matchUp, loserDrawPosition));
 
   // Take back the exits THIS matchUp produced — BEFORE the link-directed removals below.
   //
@@ -310,7 +311,7 @@ export function removeDirectedWinner({
       });
     } else {
       // a TEAM structure's lines carry no drawPositions
-      const drawPositionMatchUps = matchUps.filter(({ drawPositions }) => drawPositions?.includes(winnerDrawPosition));
+      const drawPositionMatchUps = matchUps.filter((matchUp) => includesDrawPosition(matchUp, winnerDrawPosition));
       pushGlobalLog({
         method: 'removeDirectedParticipants',
         retained: 'position assignment kept: the participant stands in this structure before the link target round',
@@ -368,12 +369,17 @@ function removeDirectedLoser({
   const { structure } = findStructure({ drawDefinition, structureId });
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
   const { positionAssignments } = structureAssignedDrawPositions({ structure });
-  const relevantDrawPosition = positionAssignments?.find(
-    (assignment) => assignment.participantId === loserParticipantId,
-  )?.drawPosition;
+  // A LOSER WHO IS NOBODY HOLDS NO SEAT. A matchUp an exit decided towards an empty seat has no participant on its losing
+  // side, and an undefined id matched every assignment holding none — each BYE and open seat of the target structure —
+  // so their advancements were released and an empty seed slot dropped (census run 17 F3, COMPASS 32/30 seed 20733408,
+  // policy off: `West|1|2`'s produced walkover converged, and the BYE that two BYEs had sent on to `South|3|1` was taken
+  // back while both still stood).
+  const isLoser = (assignment: { participantId?: string }) =>
+    !!loserParticipantId && assignment.participantId === loserParticipantId;
+  const relevantDrawPosition = positionAssignments?.find(isLoser)?.drawPosition;
   const clearedDrawPositions: number[] = [];
   positionAssignments?.forEach((assignment) => {
-    if (assignment.participantId === loserParticipantId) {
+    if (isLoser(assignment)) {
       delete assignment.participantId;
       clearedDrawPositions.push(assignment.drawPosition);
     }
@@ -478,9 +484,7 @@ function removeDirectedLoser({
   }
 
   // remove participant from seedAssignments
-  structure.seedAssignments = (structure.seedAssignments ?? []).filter(
-    (assignment) => assignment.participantId !== loserParticipantId,
-  );
+  structure.seedAssignments = (structure.seedAssignments ?? []).filter((assignment) => !isLoser(assignment));
 
   if (dualMatchUp) {
     // remove propagated lineUp
@@ -547,4 +551,10 @@ export function removeDirectedBye({
   });
 
   return decorateResult({ result, stack });
+}
+
+// Preserve includes(undefined), including an unfilled slot, without claiming the position is a number.
+function includesDrawPosition(matchUp: MatchUp, drawPosition?: number): boolean | undefined {
+  const positions: readonly (number | undefined)[] | undefined = matchUp.drawPositions;
+  return positions?.includes(drawPosition);
 }

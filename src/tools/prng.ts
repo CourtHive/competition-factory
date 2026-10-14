@@ -3,6 +3,9 @@ import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export type RandomFunction = () => number;
+
+/** Thrown, never returned: a draw has no result to carry an error. An engine call reports it as `{ error }`. */
+export const DEGENERATE_RANDOM_SOURCE = 'DEGENERATE_RANDOM_SOURCE';
 export type SeededRandom = RandomFunction & { seed?: number; state?: () => number };
 
 // mulberry32: a fast, simple seeded 32-bit PRNG with good distribution
@@ -57,7 +60,14 @@ export function setRandomSource(source?: RandomFunction | number): {
     return { ...SUCCESS };
   }
   if (typeof source === 'function') {
-    configuredSource = source;
+    // Wrapped, so a value outside [0, 1) is refused at the draw instead of becoming a wrong index,
+    // and so each call starts a new stream: re-setting the same function restarts UUID's repeat
+    // window with it (see refuseRepeatedId in UUID.ts).
+    configuredSource = () => {
+      const value = source();
+      if (!(value >= 0 && value < 1)) throw new Error(`${DEGENERATE_RANDOM_SOURCE}: returned ${value}, not in [0, 1)`);
+      return value;
+    };
     return { ...SUCCESS };
   }
   return { error: INVALID_VALUES, info: 'random source must be a seed (finite number) or a () => number' };

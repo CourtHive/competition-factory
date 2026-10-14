@@ -1,3 +1,4 @@
+import { findOnlineResourceMatchUp, onlineResourceMatchUpNotice } from './onlineResourceMatchUp';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
 
@@ -23,6 +24,7 @@ type AddOnlineResourceArgs = {
   organisationId?: string;
   participantId?: string;
   personId?: string;
+  matchUpId?: string;
   courtId?: string;
   venueId?: string;
   event?: Event;
@@ -32,13 +34,19 @@ export function addOnlineResource(params: AddOnlineResourceArgs): ResultType {
   const paramsCheck = checkRequiredParameters(params, [{ tournamentRecord: true, onlineResource: true }]);
   if (paramsCheck.error) return paramsCheck;
 
-  const { tournamentRecord, onlineResource, organisationId, participantId, personId, courtId, venueId } = params;
+  const { tournamentRecord, onlineResource, organisationId, participantId, personId, courtId, venueId, matchUpId } =
+    params;
 
   if (organisationId) {
     if (tournamentRecord.parentOrganisation?.parentOrganisationId !== organisationId) {
       return decorateResult({ result: { error: NOT_FOUND } });
     }
     mergeResource({ element: tournamentRecord.parentOrganisation, onlineResource });
+  } else if (matchUpId) {
+    const { matchUp, error } = findOnlineResourceMatchUp({ drawDefinition: params.drawDefinition, matchUpId });
+    if (!matchUp) return decorateResult({ result: { error } });
+    mergeResource({ element: matchUp, onlineResource });
+    onlineResourceMatchUpNotice({ ...params, matchUp, context: 'addOnlineResource' });
   } else if (participantId && personId && participantId !== personId) {
     return decorateResult({ result: { error: INVALID_PARTICIPANT } });
   } else if (participantId || personId) {

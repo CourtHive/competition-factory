@@ -1,0 +1,37 @@
+{
+  "config": {
+    "participantsCount": 8,
+    "propagateExitStatus": true,
+    "drawSize": 8,
+    "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+    "seed": 20754793
+  },
+  "steps": [
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 3,
+      "outcome": {
+        "matchUpStatus": "RETIRED",
+        "winningSide": 1,
+        "score": { "sets": [{ "side1Score": 6, "side2Score": 3 }] }
+      }
+    },
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 3,
+      "outcome": { "matchUpStatus": "DEFAULTED", "winningSide": 1 }
+    },
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 2,
+      "outcome": { "matchUpStatus": "DEFAULTED", "winningSide": 1 }
+    },
+    { "structureName": "Main", "roundNumber": 1, "roundPosition": 4, "outcome": { "winningSide": 1 } },
+    { "structureName": "Main", "roundNumber": 2, "roundPosition": 2, "outcome": { "winningSide": 1 } },
+    { "structureName": "Main", "roundNumber": 2, "roundPosition": 2, "outcome": { "matchUpStatus": "DOUBLE_DEFAULT" } },
+    { "structureName": "Main", "roundNumber": 1, "roundPosition": 1, "outcome": { "matchUpStatus": "DOUBLE_DEFAULT" } }
+  ]
+}

@@ -61,6 +61,7 @@ it('can add drawPositionsRange to inContext matchUps in a SINGLE_ELIMINATION str
   matchUps.forEach((matchUp) => {
     const { drawPositions, drawPositionsRange, roundNumber, roundPosition } = matchUp;
 
+    if (roundNumber === undefined || roundPosition === undefined) throw new Error('Missing fixture round coordinates');
     const expectation = expectations?.[roundNumber][roundPosition];
     if (expectation) {
       expect(expectation).toEqual(drawPositionsRange.firstRoundDrawPositionsRange);
@@ -106,6 +107,7 @@ it('can add drawPositionsRange to inContext matchUps in a FEED_IN_CHAMPIONSHIP_T
   matchUps.forEach((matchUp) => {
     const { drawPositions, drawPositionsRange, roundNumber, roundPosition } = matchUp;
 
+    if (roundNumber === undefined || roundPosition === undefined) throw new Error('Missing fixture round coordinates');
     const expectation = expectations?.[roundNumber][roundPosition];
     if (expectation) {
       expect(expectation).toEqual(drawPositionsRange.firstRoundDrawPositionsRange);

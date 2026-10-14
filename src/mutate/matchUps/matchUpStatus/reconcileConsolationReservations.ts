@@ -1,5 +1,6 @@
-import { propagateConsolationBye } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
+import { firstRoundFeedersWon, propagateConsolationBye } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
@@ -9,8 +10,9 @@ import { isAnyExit } from '@Validators/isExit';
 // constants and types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
-import type { ResultType } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * Ask the `FIRST_MATCHUP` reservation of every UNDECIDED matchUp whose loser feeds over such a link, on the draw as it
@@ -86,6 +88,81 @@ export function reconcileConsolationReservations({
       });
       if (result?.error) return result;
     }
+
+    // A matchUp a correction has left with ONE drawPosition is not asked above, yet a reservation placed while both its
+    // feeders had scored wins may still stand at its loser's seat. It stands only on both wins, so it goes.
+    const partial = structureMatchUps.filter(
+      (matchUp: MatchUp) =>
+        matchUp.roundNumber === roundNumber &&
+        !matchUp.collectionId &&
+        !matchUp.winningSide &&
+        matchUp.matchUpStatus !== BYE &&
+        !isAnyExit(matchUp.matchUpStatus) &&
+        (matchUp.drawPositions ?? []).filter(Boolean).length < 2,
+    );
+    for (const matchUp of partial) {
+      const withdrawn = withdrawStaleReservation({
+        inContextDrawMatchUps,
+        structureMatchUps,
+        tournamentRecord,
+        drawDefinition,
+        structureId,
+        matchUpsMap,
+        matchUp,
+        event,
+      });
+      if (withdrawn?.error) return withdrawn;
+    }
   }
   return undefined;
+}
+
+/**
+ * The reservation at a round-2 matchUp's loser seat, asked of its first-round FEEDERS (by `winnerMatchUpId`), not of the
+ * drawPositions it holds now: with a feeder's result taken back it holds one, and `firstRoundFeedersWon` asked of that
+ * one would read the remaining scored win as the whole answer. Census run-17 baseline, F3: FIRST_MATCH_LOSER_CONSOLATION
+ * 16/15 seed 20714203 — `Main|1|5` cleared and `Main|1|6` corrected from RETIRED to WALKOVER left `Consolation|2|3`'s
+ * reservation BYE standing; forward play never places it, and a later result took it back as an un-decided BYE.
+ */
+function withdrawStaleReservation({
+  inContextDrawMatchUps,
+  structureMatchUps,
+  tournamentRecord,
+  drawDefinition,
+  structureId,
+  matchUpsMap,
+  matchUp,
+  event,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  structureMatchUps: MatchUp[];
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  structureId: string;
+  matchUpsMap: MatchUpsMap;
+  matchUp: MatchUp;
+  event?: Event;
+}): ResultType | undefined {
+  const targetData = positionTargets({ matchUpId: matchUp.matchUpId, inContextDrawMatchUps, drawDefinition });
+  const { loserMatchUp, loserTargetDrawPosition } = targetData?.targetMatchUps ?? {};
+  if (!loserMatchUp || loserTargetDrawPosition === undefined) return undefined;
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId });
+  const reserved = positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition);
+  if (!reserved?.bye || !reserved.byeFromPropagation) return undefined;
+
+  const feederPositions = structureMatchUps
+    .filter((feeder) => feeder.winnerMatchUpId === matchUp.matchUpId)
+    .flatMap((feeder) => feeder.drawPositions ?? [])
+    .filter(Boolean);
+  if (feederPositions.length < 2) return undefined;
+  if (firstRoundFeedersWon({ drawPositions: feederPositions, structureId, matchUpsMap })) return undefined;
+
+  return clearDrawPosition({
+    drawPosition: loserTargetDrawPosition,
+    structureId: loserMatchUp.structureId,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
 }

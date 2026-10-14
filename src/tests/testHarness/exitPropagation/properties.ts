@@ -75,18 +75,23 @@ export function checkIdempotence({ propagateExitStatus, matchUpId, drawId, outco
 /**
  * A PROVISIONAL decision — one that exists only because of what happened upstream.
  *
- * It holds a propagation record and nothing of its own: **no participant on any side, and no
- * `winningSide`**. Its entire claim to being "decided" is that an exit was carried into it.
+ * CA, 2026-09-21: *propagated, holding nobody, awarded to nobody.* It holds a propagation record and nothing of its
+ * own. Its entire claim to being "decided" is that an exit was carried into it.
  *
- * The moment either of those is false it stops being provisional. A propagated exit whose opponent
- * has arrived carries a `winningSide` awarded to a real participant — that is a resolved result, not
- * a placeholder, and un-deciding it destroys something a TD can see.
+ * "Awarded to nobody" is read as written, not as "no `winningSide`" (CA, 2026-10-12). A produced walkover is awarded
+ * to the side without the exit even while that side is still EMPTY (exit-propagation RULE 2), so it carries a
+ * `winningSide` and nobody to receive it; relayed past a BYE, the SAME waiting walkover is written pending, with no
+ * `winningSide`. Both mean "a produced exit waiting for an arrival", and both are provisional. An award to a side
+ * that holds a participant is a resolved result a TD can see, and is not.
  */
-function isProvisionalDecision(matchUp: any): boolean {
+export function isProvisionalDecision(matchUp: any): boolean {
   if (!matchUp) return false;
+  const sides = matchUp.sides ?? [];
   const propagated = !!matchUp.sideExitProvenance || !!matchUp.matchUpStatusCodes?.length;
-  const holdsParticipant = (matchUp.sides ?? []).some((side: any) => side?.participantId);
-  return propagated && !matchUp.winningSide && !holdsParticipant;
+  const holdsParticipant = sides.some((side: any) => side?.participantId);
+  const awardedToSomebody =
+    !!matchUp.winningSide && !!sides.find((side: any) => side?.sideNumber === matchUp.winningSide)?.participantId;
+  return propagated && !awardedToSomebody && !holdsParticipant;
 }
 
 /**
@@ -103,7 +108,9 @@ function isProvisionalDecision(matchUp: any): boolean {
  *
  * Both halves of that are load-bearing, and both are enforced:
  *
- * 1. **provisional** — {@link isProvisionalDecision}: propagated, holding nobody, awarded to nobody.
+ * 1. **provisional** — {@link isProvisionalDecision}: propagated, holding nobody, awarded to nobody. "Awarded to
+ *    nobody" includes an award to a side that holds nobody (CA, 2026-10-12): RULE 2's produced walkover awarded to an
+ *    empty seat is the same waiting exit as one written pending, so both may vanish.
  * 2. **valid to change the source** — a source change that is NOT valid is now refused outright by
  *    `isActiveDownstream` -> `CANNOT_CHANGE_OUTCOME`, and this function returns early on
  *    `applied.error`. So an invalid change never reaches the comparison at all.

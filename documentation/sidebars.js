@@ -134,6 +134,7 @@ module.exports = {
             'concepts/scheduling-conflicts',
             'concepts/date-time-handling',
             'concepts/competition-clock',
+            'concepts/randomness',
           ],
         },
         {

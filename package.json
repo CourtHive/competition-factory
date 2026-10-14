@@ -1,6 +1,6 @@
 {
   "name": "tods-competition-factory",
-  "packageManager": "pnpm@12.9.1",
+  "packageManager": "pnpm@12.11.2",
   "author": "Charles Allen <charles@CourtHive.com> (CourtHive.com)",
   "description": "Create and mutate TODS compliant tournament objects",
   "keywords": [
@@ -143,10 +143,11 @@
     "check:request-shapes:self-test": "node scripts/verify/requestShapes.mjs --self-test",
     "verify:generated": "pnpm check:enum-constants && pnpm check:enum-exports && pnpm check:governors && pnpm check:engine-methods && pnpm check:method-signatures && pnpm check:request-shapes:self-test && pnpm check:request-shapes && pnpm verify:any-count --self-test && pnpm verify:any-count",
     "verify:lockfile": "node scripts/verify/lockfile.mjs",
-    "verify:types": "tsc --noEmit && node scripts/verify/tscRatchet.mjs --self-test && pnpm verify:test-types && pnpm verify:implicit-any && pnpm verify:hard-union",
+    "verify:types": "tsc --noEmit && node scripts/verify/tscRatchet.mjs --self-test && pnpm verify:test-types && pnpm verify:implicit-any && pnpm verify:hard-union && pnpm verify:shadowed-types",
     "verify:test-types": "node scripts/verify/tscRatchet.mjs test-types",
     "verify:implicit-any": "node scripts/verify/tscRatchet.mjs implicit-any",
     "verify:hard-union": "node scripts/verify/tscRatchet.mjs hard-union",
+    "verify:shadowed-types": "node scripts/verify/shadowedDomainTypes.mjs --self-test && node scripts/verify/shadowedDomainTypes.mjs",
     "verify:lint": "eslint src --cache --max-warnings 0",
     "verify:format": "pnpm format:check",
     "verify:corpus-manifest": "pnpm corpus:authored && pnpm corpus:grammar && pnpm corpus:scoring && node scripts/verify/corpus-manifest.mjs",
@@ -180,7 +181,7 @@
     }
   },
   "devDependencies": {
-    "@babel/core": "8.0.6",
+    "@babel/core": "8.0.7",
     "@commitlint/cli": "21.2.3",
     "@commitlint/config-conventional": "21.2.3",
     "@dep-tree/cli": "0.23.4",
@@ -202,10 +203,10 @@
     "@rollup/plugin-terser": "1.0.0",
     "@rollup/plugin-typescript": "12.3.0",
     "@swc/core": "^1.16.1",
-    "@types/node": "24.19.1",
+    "@types/node": "24.19.2",
     "@types/supertest": "7.2.1",
-    "@typescript-eslint/eslint-plugin": "8.71.0",
-    "@typescript-eslint/parser": "8.71.0",
+    "@typescript-eslint/eslint-plugin": "8.71.1",
+    "@typescript-eslint/parser": "8.71.1",
     "@vitest/coverage-v8": "5.0.3",
     "@vitest/ui": "5.0.3",
     "agadoo": "^3.0.0",
@@ -226,7 +227,7 @@
     "prettier": "3.9.9",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.3",
-    "rollup": "4.64.0",
+    "rollup": "4.64.4",
     "rollup-plugin-dts": "6.5.1",
     "rxjs": "7.8.2",
     "semver": "7.8.5",
@@ -235,7 +236,7 @@
     "typescript": "^6.0.2",
     "unplugin-swc": "^2.0.0",
     "variable-diff": "2.0.2",
-    "vite": "8.3.2",
+    "vite": "8.3.4",
     "vitest": "5.0.3"
   },
   "lint-staged": {

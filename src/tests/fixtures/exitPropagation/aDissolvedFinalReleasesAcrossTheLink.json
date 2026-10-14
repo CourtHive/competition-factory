@@ -1,0 +1,64 @@
+[
+  {
+    "seed": 20622028,
+    "config": {
+      "participantsCount": 5,
+      "propagateExitStatus": true,
+      "drawSize": 8,
+      "drawType": "DOUBLE_ELIMINATION",
+      "seed": 20622028
+    },
+    "steps": [
+      {
+        "structureName": "Main",
+        "roundNumber": 2,
+        "roundPosition": 1,
+        "outcome": { "matchUpStatus": "DEFAULTED", "winningSide": 1 }
+      },
+      {
+        "structureName": "Main",
+        "roundNumber": 1,
+        "roundPosition": 3,
+        "outcome": { "matchUpStatus": "DOUBLE_WALKOVER" }
+      },
+      {
+        "structureName": "Main",
+        "roundNumber": 3,
+        "roundPosition": 1,
+        "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 2 }
+      },
+      { "structureName": "Main", "roundNumber": 2, "roundPosition": 1, "outcome": { "winningSide": 1 } }
+    ]
+  },
+  {
+    "seed": 20630577,
+    "config": {
+      "participantsCount": 5,
+      "propagateExitStatus": true,
+      "drawSize": 8,
+      "drawType": "DOUBLE_ELIMINATION",
+      "seed": 20630577
+    },
+    "steps": [
+      {
+        "structureName": "Main",
+        "roundNumber": 2,
+        "roundPosition": 2,
+        "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 1 }
+      },
+      {
+        "structureName": "Main",
+        "roundNumber": 1,
+        "roundPosition": 2,
+        "outcome": { "matchUpStatus": "DOUBLE_WALKOVER" }
+      },
+      {
+        "structureName": "Main",
+        "roundNumber": 3,
+        "roundPosition": 1,
+        "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 2 }
+      },
+      { "structureName": "Main", "roundNumber": 2, "roundPosition": 2, "outcome": { "winningSide": 1 } }
+    ]
+  }
+]
