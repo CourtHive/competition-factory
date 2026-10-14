@@ -142,14 +142,18 @@ Full documentation with interactive examples: **[courthive.github.io/competition
 
 ## Testing
 
-**16,000+ tests** covering draw generation and exit propagation, scheduling, scoring, participants and entries, team competition, publishing and embargo, ranking points and ratings, officiating and sanctioning.
+**18,000+ tests** run on every change (16,800+ in the default suite, plus 1,500+ TEAM-competition arms), covering draw generation and exit propagation, scheduling, scoring, participants and entries, team competition, publishing and embargo, ranking points and ratings, officiating and sanctioning.
 
 Beyond conventional unit and integration tests, the suite includes relational property suites (do/undo, idempotence, monotonicity), agreement oracles, and an at-scale randomized sweep with delta-debugging for exit propagation — added because full branch coverage of a propagation guard proved compatible with hundreds of wrong answers.
 
 ```bash
-pnpm test          # run all tests (Vitest)
-pnpm coverage      # coverage report (thresholds: 95/97/87/97.5%)
+pnpm test                  # the default suite (Vitest)
+pnpm coverage              # coverage report (thresholds: 95/97/87/97.5%)
+pnpm verify:team-arms      # the TEAM-competition arms, which the default suite skips
 ```
+
+CI runs all of them on every pull request, with the at-scale exit-propagation sweeps (`verify:deep-corrections`,
+`verify:route-differential`) beside them.
 
 ## Contributing
 
