@@ -183,9 +183,9 @@ export function drawPositionRemovals({
     }).positionAssignments ?? [];
 
   // read BEFORE the assignment is emptied: the link releases below must know who left (mode D)
-  const clearedParticipantId = positionAssignments.find(
-    (assignment) => assignment.drawPosition === drawPosition,
-  )?.participantId;
+  const clearedAssignment = positionAssignments.find((assignment) => assignment.drawPosition === drawPosition);
+  const clearedParticipantId = clearedAssignment?.participantId;
+  const clearedBye = !!clearedAssignment?.bye;
   const drawPositionCleared = positionAssignments.some((assignment) => {
     if (assignment.drawPosition === drawPosition) {
       delete assignment.participantId;
@@ -261,6 +261,27 @@ export function drawPositionRemovals({
       event,
     });
     if (removed?.error) return removed;
+  }
+
+  // A BYE in the structure's LAST round advanced its pair out of the structure, across the WINNER link: the round walk
+  // above takes back what a BYE advanced only into a next round of this structure, and here there is none. Census
+  // run-17 20649692 (DOUBLE_ELIMINATION 8/5, allow-change-propagation): `Main|3|1`'s double walkover put a BYE in the
+  // Backdraw final that carried its finalist into the Main final; re-scored to a result, its loser took the BYE's seat
+  // and won the Backdraw final by the finalist's carried walkover, but the finalist stayed in the Main final
+  // (WINNING_SIDE_ADVANCEMENT_MISMATCH, `aFinalByeTakesBackItsCrossing`).
+  if (clearedBye) {
+    for (const { roundNumber, pairedDrawPosition } of pairingDetails ?? []) {
+      if (!pairedDrawPosition || roundProfile?.[roundNumber + 1]) continue;
+      releaseLinkedWinnerAdvancement({
+        drawPosition: pairedDrawPosition,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+        structureId,
+        roundNumber,
+        event,
+      });
+    }
   }
 
   // The participant left this structure. Whatever a WINNER link carried for them out of it comes back, including
