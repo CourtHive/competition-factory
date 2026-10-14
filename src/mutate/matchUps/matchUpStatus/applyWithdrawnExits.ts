@@ -3,7 +3,7 @@ import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear'
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
-import { isDoubleExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import {
   releaseAdvancedDrawPositionAcrossLinks,
   releaseLinkedWinnerAdvancement,
@@ -88,6 +88,21 @@ export function applyWithdrawnExits({
 
     const withdrawnMatchUp = matchUpsMap?.drawMatchUps?.find((m) => m.matchUpId === withdrawnExit.matchUpId);
     if (!withdrawnMatchUp) continue;
+
+    // A matchUp the withdrawal left undecided, with no exit of its own, produces no loser by exit any more, so the BYE
+    // it claimed for its loser's seat goes with the exit, as it does where a double exit is unwound
+    // (`withdrawExitFromByeChain`). Census run-17 baseline F3, COMPASS 16/14 20731395 and siblings, policy off:
+    // `West|1|3`'s double walkover, re-derived to the default `East|1|6`'s correction left, withdrew the walkover it had
+    // produced at `West|2|2`, and the BYE `West|2|2` had claimed in `Southwest|1|1` stood until `West|2|2` was played.
+    if (matchUpsMap && !withdrawnMatchUp.winningSide && !isAnyExit(withdrawnMatchUp.matchUpStatus)) {
+      withdrawByeSeats({
+        claimantMatchUpId: withdrawnMatchUp.matchUpId,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+        event,
+      });
+    }
 
     /**
      * A DOUBLE exit re-derived to a single one stops producing exits at once, and what it produced goes now.
@@ -252,15 +267,20 @@ function releaseFromNextRound({
   }
 }
 
-/** Withdraw a matchUp's BYE claims, clearing each propagated BYE seat no other claim still holds. */
+/**
+ * Withdraw a matchUp's BYE claims, clearing each propagated BYE seat no other claim still holds. A claim in `keepAt`
+ * (the claimant's own loser target, where its BYE is still owed) is left standing.
+ */
 export function withdrawByeSeats({
   claimantMatchUpId,
   tournamentRecord,
   drawDefinition,
   matchUpsMap,
+  keepAt,
   event,
 }: {
   tournamentRecord?: Tournament;
+  keepAt?: string;
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
   claimantMatchUpId: string;
@@ -273,7 +293,7 @@ export function withdrawByeSeats({
     for (const matchUp of mapped.matchUps as MatchUp[]) {
       for (const sideNumber of [1, 2]) {
         const claims = matchUp.sideExitProvenance?.[sideNumber]?.byeClaims ?? [];
-        if (!claims.includes(claimantMatchUpId)) continue;
+        if (!claims.includes(claimantMatchUpId) || matchUp.matchUpId === keepAt) continue;
         withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
         if (matchUp.sideExitProvenance?.[sideNumber]?.byeClaims?.length) continue;
         if (claimantIsBye) continue;
