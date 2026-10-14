@@ -841,6 +841,8 @@ export interface MatchUp {
   sideStatusCodes?: Record<number, string>;
   matchUpType?: EventTypeUnion;
   notes?: string;
+  /** a recording, stream or stats page of THIS matchUp — resources belong to every element, matchUps included */
+  onlineResources?: OnlineResource[];
   orderOfFinish?: number;
   processCodes?: string[];
   roundName?: string;
