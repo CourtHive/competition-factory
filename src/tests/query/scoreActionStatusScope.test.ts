@@ -1,8 +1,8 @@
 import { getDisabledMatchUpStatuses } from '@Query/matchUps/getDisabledMatchUpStatuses';
 import { getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
@@ -155,6 +155,16 @@ function scoreAction(drawId: string, matchUpId: string) {
   expect(action, 'the fixture must actually offer SCORE').toBeDefined();
   return action;
 }
+
+/**
+ * The Decider fixtures are reached by completing a whole draw, and the TEAM one completes every COLLEGE_D3 dual of a
+ * DOUBLE_ELIMINATION 8: ~16 s alone, 39.5 s under CI coverage contention (#5420's coverage shard 3), past the 30 s
+ * per-test budget of whichever test first asked for it. Built once here, outside any one test's budget.
+ */
+beforeAll(() => {
+  fixture('decider');
+  fixture('teamDecider');
+}, 180_000);
 
 afterEach(() => {
   setOutcomePipeline();
