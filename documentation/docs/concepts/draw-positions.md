@@ -68,6 +68,12 @@ safe. Substituting one **in place** does not: a positional `map` that writes a h
 the first slot produces `[7, 5]`. That is a real defect this codebase has shipped, reported as
 `DRAW_POSITIONS_NOT_SORTED`.
 
+When a seat fills or empties, the participant who stays can change side, and whatever the matchUp
+records by side (`winningSide`, `sideExitProvenance`, the status codes) moves with them. The side the
+stayer takes is read from the state being written, not the stored one: read against a stored pair
+that still holds the leaving position, a lone survivor sat on the wrong side and an award went on
+naming the participant the exit was against (census run-17 baseline, DOUBLE_ELIMINATION 16/14).
+
 ## 3. When both positions are present, side 1 is the LOWER drawPosition
 
 A consequence of the ascending-storage rule in § 2. It holds even where fed positions meet

@@ -28,9 +28,12 @@ export type DrawPositionSide = { drawPosition: number; sideNumber: number };
 export function getDrawPositionSides({
   drawDefinition,
   structureId,
+  asGiven,
   matchUp,
 }: {
   drawDefinition?: DrawDefinition;
+  /** build the round profile with `matchUp` as given in place of its stored copy (see `setMatchUpDrawPositions`) */
+  asGiven?: boolean;
   structureId?: string;
   matchUp?: MatchUp;
 }): DrawPositionSide[] | undefined {
@@ -43,7 +46,14 @@ export function getDrawPositionSides({
   const structure = findStructure(drawDefinition.structures, structureId);
   if (!matchUpsOf(structure)?.length) return undefined;
 
-  const { roundProfile } = getRoundMatchUps({ matchUps: matchUpsOf(structure) });
+  const structureMatchUps = matchUpsOf(structure);
+  const { roundProfile } = getRoundMatchUps({
+    matchUps: asGiven
+      ? structureMatchUps?.map((stored) =>
+          stored.matchUpId === matchUp?.matchUpId ? { ...stored, ...matchUp } : stored,
+        )
+      : structureMatchUps,
+  });
   if (!roundProfile) return undefined;
 
   const { orderedDrawPositions } = getOrderedDrawPositions({
@@ -151,10 +161,12 @@ export function getDrawPositionSideNumber({
   drawDefinition,
   drawPosition,
   structureId,
+  asGiven,
   matchUp,
 }: {
   drawDefinition?: DrawDefinition;
   drawPosition?: number;
+  asGiven?: boolean;
   structureId?: string;
   matchUp?: any;
 }): number | undefined {
@@ -166,7 +178,7 @@ export function getDrawPositionSideNumber({
   const side = matchUp?.sides?.find((candidate: any) => candidate?.drawPosition === drawPosition);
   if (side?.sideNumber) return side.sideNumber;
 
-  return getDrawPositionSides({ drawDefinition, structureId, matchUp })?.find(
+  return getDrawPositionSides({ drawDefinition, structureId, asGiven, matchUp })?.find(
     (side) => side.drawPosition === drawPosition,
   )?.sideNumber;
 }
