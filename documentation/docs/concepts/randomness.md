@@ -51,6 +51,11 @@ it again does not, and its repeated ids are refused. The repeat check covers sou
 and a call's own `random`; the range check covers configured functions. Neither judges whether a source is fair (see
 below).
 
+A record built elsewhere can still arrive with repeated ids, and the factory does not check every incoming record for
+them, because that check would cost time on every load. Where repeated ids would send BYE advancement backwards, which
+is the path that used to recurse, the engine refuses with an `INVALID_MATCHUP` error saying the record's matchUpIds are
+not unique. Advancement must reach a later round of the same structure, or another structure.
+
 ### `nonRandom` on a single call
 
 Passing `nonRandom: <seed>` to a method call turns the seed into that call's own `random` function, so one mutation

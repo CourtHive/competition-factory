@@ -43,6 +43,7 @@ import { TEAM } from '@Constants/matchUpTypes';
 import {
   DRAW_POSITION_ACTIVE,
   DRAW_POSITION_ASSIGNED,
+  INVALID_MATCHUP,
   LUCKY_DRAW_BYE_LIMIT,
   MATCHUP_HAS_SCHEDULING,
   MISSING_DRAW_DEFINITION,
@@ -678,6 +679,35 @@ function assignRoundRobinBYE({
   });
 }
 
+/**
+ * ADVANCEMENT MOVES FORWARD: to a later round of the same structure, or into another structure.
+ *
+ * The target is checked AS ITS ID RESOLVES, because that is what the next step reads and writes.
+ * `positionTargets` finds the right matchUp by position; `advanceWinner` and the next
+ * `advanceDrawPosition` then look it up again by id. In a record whose ids repeat, that lookup
+ * returns an earlier matchUp, and BYE advancement recursed until the stack overflowed (measured
+ * 2026-10-14: every matchUpId of a draw identical under a constant random source). A target id equal
+ * to the source's resolves to the source itself, same round, so it is refused here too.
+ *
+ * Thrown, not returned: two of the callers on this path discard results ("error conditions are
+ * ignored"), and a malformed record must not come back as a success. The engine returns it as
+ * `{ error }`. The factory no longer mints repeated ids (`UUID`), so only a record built elsewhere
+ * reaches this.
+ */
+function refuseNonForwardAdvance(
+  source: HydratedMatchUp | undefined,
+  targetMatchUpId: string,
+  inContextDrawMatchUps: HydratedMatchUp[],
+): void {
+  const target = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === targetMatchUpId);
+  if (!source || !target || target.structureId !== source.structureId) return;
+  if ((target.roundNumber ?? 0) > (source.roundNumber ?? 0)) return;
+  throw new Error(
+    `${INVALID_MATCHUP.code}: advancing from ${source.matchUpId} (round ${source.roundNumber}) resolves to round ` +
+      `${target.roundNumber} of the same structure; the record's matchUpIds are not unique`,
+  );
+}
+
 // Looks to see whether a given matchUp has a winnerMatchup or a loserMatchUp
 // and if so advances the appropriate drawPosition into the targetMatchUp
 type AdvanceDrawPositionType = {
@@ -743,6 +773,7 @@ export function advanceDrawPosition({
 
   // only handling situation where winningMatchUp is in same structure
   if (winnerMatchUp && winnerMatchUp.structureId === structure?.structureId && (!isLuckyDraw || !isPreFeedRound)) {
+    refuseNonForwardAdvance(inContextMatchUp, winnerMatchUp.matchUpId, inContextDrawMatchUps);
     // NOTE: error conditions are ignored
     advanceWinner({
       sourceRoundPosition: matchUp?.roundPosition,
