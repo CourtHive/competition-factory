@@ -79,3 +79,19 @@ it('the same re-score before the reservation is played on withdraws it', () => {
   expect(byCoordinate['Main|1|2'].matchUpStatus).toEqual('WALKOVER');
   expect(byCoordinate['Consolation|2|1'].matchUpStatus).toEqual('TO_BE_PLAYED');
 });
+
+it('under allowChangePropagation, a swapped winner re-scored to a walkover is refused the same way', () => {
+  // seeds 20701220 and 20750479: the swap takes the reservation back exactly as the relabel does
+  const previous = process.env.ALLOW_CHANGE_PROPAGATION;
+  process.env.ALLOW_CHANGE_PROPAGATION = '1';
+  try {
+    const swap = { at: 'Main|1|2', outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 } };
+    const { observed, byCoordinate } = play([...SCHEDULE, CONSOLATION_FINAL, swap], 'played-on-swap');
+    expect(observed.at(-1)?.error).toEqual(CANNOT_CHANGE_FEED_ELIGIBILITY);
+    expect(byCoordinate['Main|1|2'].winningSide).toEqual(2);
+    expect(byCoordinate['Consolation|3|1'].matchUpStatus).toEqual('RETIRED');
+  } finally {
+    if (previous === undefined) delete process.env.ALLOW_CHANGE_PROPAGATION;
+    else process.env.ALLOW_CHANGE_PROPAGATION = previous;
+  }
+});

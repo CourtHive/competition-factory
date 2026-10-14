@@ -76,8 +76,8 @@ export function feedEligibilityChange({
   if (!matchUp || matchUp.collectionId) return undefined;
   // nothing to flip unless a decided result is being replaced by another decided result
   if (!matchUp.winningSide || !winningSide) return undefined;
-  // a winner CHANGE is `CANNOT_CHANGE_WINNING_SIDE`'s question, not this one
-  if (winningSide !== matchUp.winningSide) return undefined;
+  // a winner CHANGE is `CANNOT_CHANGE_WINNING_SIDE`'s question, not this one — except the reservation's, below
+  const winnerChange = winningSide !== matchUp.winningSide;
 
   const feedLink = (drawDefinition?.links ?? []).find(
     (link) =>
@@ -118,6 +118,7 @@ export function feedEligibilityChange({
       score,
     });
   }
+  if (winnerChange) return undefined;
   const feedingWinnerDrawPosition = sideDrawPosition(feedingMatchUp, feedingMatchUp.winningSide);
   if (feedingWinnerDrawPosition === winnerDrawPosition) return undefined;
 
@@ -159,11 +160,13 @@ export function feedEligibilityChange({
  * The same flip with the feeding round UNDECIDED changes no directed loser, but it can still withdraw the `FIRST_MATCHUP`
  * reservation: the BYE placed in the consolation seat once both first-round feeders produced a scored win
  * (`propagateConsolationBye`), taken back when one of them is re-scored to a walkover or an unscored default
- * (`reconcileConsolationReservations`). Where the participant that BYE advanced has already played on, the withdrawal
- * takes them back out of a decided consolation matchUp and leaves its result standing on an undecided one — a main-draw
- * change percolating into a backdraw that has started, which is refused (CA 2026-09-22). Census run-17 baseline,
- * FIRST_MATCH_LOSER_CONSOLATION 8/8 seed 20624031, every arm: `Main|1|2` re-scored from a played win to a WALKOVER by
- * the same winner left `Consolation|3|1` TO_BE_PLAYED holding its RETIRED 6-3.
+ * (`reconcileConsolationReservations`), by the same winner or, under `allowChangePropagation`, by a swapped one. Where
+ * the participant that BYE advanced has already played on, the withdrawal takes them back out of a decided consolation
+ * matchUp and leaves its result standing on an undecided one — a main-draw change percolating into a backdraw that has
+ * started, which is refused (CA 2026-09-22). Census run-17 baseline, FIRST_MATCH_LOSER_CONSOLATION 8/8 seed 20624031,
+ * every arm: `Main|1|2` re-scored from a played win to a WALKOVER by the same winner left `Consolation|3|1` TO_BE_PLAYED
+ * holding its RETIRED 6-3; seeds 20701220 (8/8) and 20750479 (8/7), `allowChangePropagation`: the same with the winner
+ * swapped.
  */
 function reservationPlayedOn({
   inContextDrawMatchUps,
