@@ -42,8 +42,12 @@ import fs from 'fs';
  *   advanced (`aWithdrawnExitReleasesTheAwardItMoved`); `policyoff`:20586104 closed: a double exit
  *   re-derived to a single one left its carrier's structurally advanced seat in the next round
  *   (`aDissolvedDoubleExitReleasesItsLoser`). All four run-16 instances replay clean.
+ * - **RUN17B-ASSIGNMENT** (DOUBLE_ELIMINATION 8/5 `policyoff`:20622028 and 20630577, the run-17 baseline): the same
+ *   release, from a structure's LAST round, where the next round is across the link; and the BYE-status entry a
+ *   convergence left beside a BYE outlived the exit it accompanied (`aDissolvedFinalReleasesAcrossTheLink`). Closed.
  *
- * This fixture holds 51: the four run-16 instances, and 47 from s13/s14 sized for CI — sized for CI: every SETTLE-B and OTHER instance, up to three SETTLE-A instances per draw type
+ * This fixture holds 53: these two, the four run-16 instances, and 47 from s13/s14 sized for CI: every SETTLE-B and OTHER
+ * instance, up to three SETTLE-A instances per draw type
  * (the smallest), seeds 20504956 and 20523724, one instance of each P51-CONVERGENCE seed, and the P51-PLAYED instance.
  * All 92 are in `Mentat/fixtures/exit-propagation-census/census-fails-s1{3,4}.jsonl`; the planning record is
  * `Mentat/planning/CENSUS_FAILURE_FAMILIES.md`. Each schedule replays in the arm it was emitted in.
@@ -78,6 +82,7 @@ const OPEN: Record<string, Set<string>> = {
   OTHER: new Set([]),
   'RUN16-INCOMPATIBLE': new Set([]),
   'RUN16-ASSIGNMENT': new Set([]),
+  'RUN17B-ASSIGNMENT': new Set([]),
 };
 
 /**
@@ -131,9 +136,9 @@ function classify(instance: Instance): string | undefined {
 }
 
 // CONTROL: an empty or truncated fixture would pass by replaying nothing
-it('holds all 51 instances, each listed in its own group at most once', () => {
-  expect(INSTANCES.length).toEqual(51);
-  expect(new Set(INSTANCES.map(key)).size).toEqual(51);
+it('holds all 53 instances, each listed in its own group at most once', () => {
+  expect(INSTANCES.length).toEqual(53);
+  expect(new Set(INSTANCES.map(key)).size).toEqual(53);
   for (const instance of INSTANCES) {
     expect(['off', 'on', 'policyoff']).toContain(instance.arm);
     expect(instance.config.seed).toEqual(instance.seed);
