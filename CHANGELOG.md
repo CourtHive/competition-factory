@@ -1,5 +1,39 @@
 # Changelog
 
+## [7.14.0](https://github.com/CourtHive/competition-factory/compare/v7.13.0...v7.14.0) (2026-10-14)
+
+
+### Features
+
+* **matchUps:** onlineResources on a matchUp; verify:shadowed-types ([#5431](https://github.com/CourtHive/competition-factory/issues/5431)) ([7005fbc](https://github.com/CourtHive/competition-factory/commit/7005fbceef77a0d1465311d939ee49a791b07e1c))
+* **query:** advertise scoped status refusals on SCORE actions ([#5417](https://github.com/CourtHive/competition-factory/issues/5417)) ([4aec8a2](https://github.com/CourtHive/competition-factory/commit/4aec8a2d077bf02e4c588dfa293cda0e21e6dc63))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.13.0 ([#5413](https://github.com/CourtHive/competition-factory/issues/5413)) ([a74481d](https://github.com/CourtHive/competition-factory/commit/a74481d3af7cf2d688f2e85812e0fc9a3687855f))
+* **draws:** automatedPositioning without drawSize takes the size from the structure ([#5429](https://github.com/CourtHive/competition-factory/issues/5429)) ([e76551e](https://github.com/CourtHive/competition-factory/commit/e76551e1cb146dc3644abc78f982f7014b8d25e9))
+* **draws:** qualifier identity shuffle, and first-round qualifiers placed after unseeded entrants ([#5428](https://github.com/CourtHive/competition-factory/issues/5428)) ([36b07ae](https://github.com/CourtHive/competition-factory/commit/36b07ae522d2918c360017e0b1da5a47af65a73e))
+* **engine:** async engine applies nonRandom; randomness worked examples as tests ([#5422](https://github.com/CourtHive/competition-factory/issues/5422)) ([0025a4f](https://github.com/CourtHive/competition-factory/commit/0025a4f1c88ae58a9c78d4e3f2a93e8f2f049d67))
+* **exit-propagation:** census F2 run 16, four refusals after a write to zero ([#5419](https://github.com/CourtHive/competition-factory/issues/5419)) ([223fe37](https://github.com/CourtHive/competition-factory/commit/223fe37b7256bcd3ec57dcae53ef2912e2e96e66))
+* **exit-propagation:** census run 17, a carrier through a dissolved exit and a loser who is nobody ([#5427](https://github.com/CourtHive/competition-factory/issues/5427)) ([415a081](https://github.com/CourtHive/competition-factory/commit/415a08180be9f158aa352ac838d769f7f69809d9))
+* **exit-propagation:** census run 17, BYE crossings, an undecided semi-final and BYE claims ([#5426](https://github.com/CourtHive/competition-factory/issues/5426)) ([d81a171](https://github.com/CourtHive/competition-factory/commit/d81a1713a09b74e9aa528636437069d08116c066))
+* **exit-propagation:** census run-17 F3, UNDECIDED_WITH_SCORE and across-link groups ([#5425](https://github.com/CourtHive/competition-factory/issues/5425)) ([37bbb8d](https://github.com/CourtHive/competition-factory/commit/37bbb8d3b419dff9c869d1f1fe813fe99e72efb7))
+* **exit-propagation:** run-17 baseline — FMLC stalls, DE F2 across the link, v2 mirror ([#5424](https://github.com/CourtHive/competition-factory/issues/5424)) ([8223c21](https://github.com/CourtHive/competition-factory/commit/8223c21f16e63ba9f44c49b73773bfd634c5b749))
+* **exitPropagation:** a carrier through a BYE-held matchUp keeps its own exit ([#5435](https://github.com/CourtHive/competition-factory/issues/5435)) ([1315f27](https://github.com/CourtHive/competition-factory/commit/1315f27766038e23a6a74087b93cc8051b203ff5))
+* **exitPropagation:** a held exit goes on to a seat awaiting its arrival ([#5437](https://github.com/CourtHive/competition-factory/issues/5437)) ([17f9ed4](https://github.com/CourtHive/competition-factory/commit/17f9ed4dacbb553086db94e2cd071855924d6074))
+* **matchUpStatus:** scope DEAD_RUBBER to a tie rubber or a DOUBLE_ELIMINATION Decider ([#5416](https://github.com/CourtHive/competition-factory/issues/5416)) ([e5222ef](https://github.com/CourtHive/competition-factory/commit/e5222ef20bb7a61b12af65d4cc91ddf837d03f2d))
+* **random:** refuse a degenerate random source, and BYE advancement that resolves backwards ([#5423](https://github.com/CourtHive/competition-factory/issues/5423)) ([f06b92a](https://github.com/CourtHive/competition-factory/commit/f06b92a4dbb20e5f4305767d782d4945dbab42f2))
+* **tools:** buildFromSources builds every structure of a draw, with its links ([#5430](https://github.com/CourtHive/competition-factory/issues/5430)) ([4442432](https://github.com/CourtHive/competition-factory/commit/4442432423308bef4fbb5b40ad62de3601eb7996))
+* type tie-inclusive structure matchup results ([#5434](https://github.com/CourtHive/competition-factory/issues/5434)) ([7e8706d](https://github.com/CourtHive/competition-factory/commit/7e8706d6f1ed81aa566d003465263e17f7378693))
+
+
+### Documentation
+
+* 18,000+ tests run on every change (default suite plus the TEAM arms) ([#5433](https://github.com/CourtHive/competition-factory/issues/5433)) ([0108177](https://github.com/CourtHive/competition-factory/commit/0108177ccb73b792426ea9771376d9e2f686dcaf))
+* **clock:** a guide to competition, record and operational time ([#5412](https://github.com/CourtHive/competition-factory/issues/5412)) ([129f311](https://github.com/CourtHive/competition-factory/commit/129f311e0c5151bad3b0dc5e0734703ea73f733b))
+* **concepts:** randomness and reproducible draws ([#5420](https://github.com/CourtHive/competition-factory/issues/5420)) ([b6cf787](https://github.com/CourtHive/competition-factory/commit/b6cf787395be032e7f1fd8f312e144c6c322f4bc))
+
 ## [7.13.0](https://github.com/CourtHive/competition-factory/compare/v7.12.0...v7.13.0) (2026-10-12)
 
 
