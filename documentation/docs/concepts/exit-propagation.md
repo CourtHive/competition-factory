@@ -482,7 +482,10 @@ is inert **even when its loser carried it on further**. Only a result somebody r
 Until 2026-10-11 a carry that went one hop further read as a played match, and the second walkover, a main-draw
 result, was refused although nobody had played anything below it.
 
-The result is the draw that recording the two exits in the other order leaves. A CLEAR of either exit's origin
+The result is the draw that recording the two exits in the other order leaves. A convergence recorded after the first exit's carrier
+was already sent on as that matchUp's loser takes that loss back: a double exit has no loser, so the carrier leaves the
+loser seat and the seat is served as a double exit's loser target is (census run-17 baseline, COMPASS 16/13 under
+`doubleExitPropagateBye: false`). A CLEAR of either exit's origin
 keeps the stricter reading: an origin whose carried walkover an unrelated arrival has since won is not clearable.
 
 ### A withdrawn exit releases the seat it won

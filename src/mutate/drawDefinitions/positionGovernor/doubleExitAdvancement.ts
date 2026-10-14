@@ -10,6 +10,7 @@ import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdra
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
@@ -2703,7 +2704,26 @@ function serveConvergedLoserLink({
   if (!loserMatchUp || loserTargetDrawPosition === undefined || !loserTargetLink) return undefined;
   const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId });
   const seat = positionAssignments?.find((a) => a.drawPosition === loserTargetDrawPosition);
-  if (seat?.participantId || seat?.bye || seat?.qualifier) return undefined;
+  /**
+   * The converged matchUp's FIRST carrier, sent on as its loser when their exit alone decided it (RULE 2), no longer
+   * loses anything: a double exit has no loser. Released, so the seat is served as forward play serves it — the order
+   * the two exits were recorded in does not change the draw (census run-17 baseline F3, COMPASS 16/13 seed 20632071,
+   * policy off: `East|1|2`'s walkover then `East|1|4`'s double walkover left d4e82f in `Southwest|1|1`, where the other
+   * order leaves the convergence's produced exit).
+   */
+  const carrier = seat?.participantId;
+  const convergedSides = convergedMatchUp.sides ?? [];
+  if (carrier && convergedSides.some((side) => side?.participantId === carrier)) {
+    const released = clearDrawPosition({
+      drawPosition: loserTargetDrawPosition,
+      structureId: loserMatchUp.structureId,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (released.error) return decorateResult({ result: released, stack });
+  } else if (seat?.participantId || seat?.bye || seat?.qualifier) return undefined;
   // already served: the seat's side records an exit from this convergence
   const storedLoser = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === loserMatchUp.matchUpId);
   const alreadyServed = Object.values(getSideExitProvenance({ matchUp: storedLoser }) ?? {}).some(
