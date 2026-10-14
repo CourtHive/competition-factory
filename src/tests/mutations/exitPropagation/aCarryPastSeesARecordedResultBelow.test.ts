@@ -46,13 +46,19 @@ function play(step: any) {
 it('carries the defaulted arrival past West|1|7 and leaves the recorded South|3|1 standing', () => {
   setSubscriptions({});
   expect(prepareDraw(config, DRAW_ID)).toBe(true);
-  for (const step of steps.slice(0, -1)) expect(play(step).error).toBeUndefined();
+  for (const step of steps.slice(0, -1)) {
+    const played: any = play(step);
+    expect(played.error).toBeUndefined();
+    // a divergence the differential pipeline throws is caught into `thrown`, not `error`
+    expect(played.thrown).toBeUndefined();
+  }
 
   const southFinal = JSON.stringify(at('South|3|1'));
   const arrival = participantAt('East|1|14', 2);
 
   const last: any = play(steps.at(-1));
   expect(last.error).toBeUndefined();
+  expect(last.thrown).toBeUndefined();
 
   // the decided seat stands, its walkover now won by the arrival
   expect(at('West|1|7')).toMatchObject({ matchUpStatus: WALKOVER, winningSide: 2 });

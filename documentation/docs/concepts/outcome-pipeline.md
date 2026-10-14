@@ -316,7 +316,9 @@ has never run under it until then: run `OUTCOME_PIPELINE=differential TZ=UTC npx
 before opening one (a plain green suite predicts nothing about it). Since 7.9.0 the view reads a
 BYE-holder occupant's carry where it was written, a round on, so a withdrawn BYE's convergence is
 planned as v1 writes it; and the exit-beside-a-BYE invariant holds under either `doubleExitPropagateBye`
-setting.
+setting. An exit arriving at a BYE in its structure's last round meets the exit held beside the BYE that fed
+it, and v2 plans the two converging, as v1's settle step converges them (census run-17 baseline, DOUBLE_ELIMINATION
+8/5 under `doubleExitPropagateBye: false`).
 
 ## 8. What the corpus pins
 

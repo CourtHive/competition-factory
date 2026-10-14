@@ -163,10 +163,37 @@ function carriedOnwardFromHolder(
 }
 
 /** an exit standing on a matchUp, other than one this matchUp produced itself */
+/**
+ * An exit HELD beside a BYE one round back, reached through that BYE in the structure's LAST round. v1 carries an
+ * arriving exit past a BYE, and in the last round, with nowhere further, records it beside the BYE
+ * (`recordCarryBesideFinalBye`); the settle step then converges it with the exit the feeding BYE matchUp holds (RULE 4).
+ * So that held exit stands for the arrival to meet (census run-17 baseline, DOUBLE_ELIMINATION 8/5 seeds 20622028 and
+ * 20630577, policy off: `Backdraw|2|1`'s double walkover relayed past `Backdraw|3|1`'s BYE, and the Main final's walkover
+ * loser reaching `Backdraw|4|1` converged with it, where v2 had planned a walkover awarded to the BYE's seat).
+ */
+function heldBesideFeederBye(
+  matchUp?: HydratedMatchUp,
+  sourceMatchUpId?: string,
+  draw?: DrawContext,
+): MatchUpStatusUnion[] {
+  if (!draw || !matchUp || matchUp.matchUpStatus !== BYE) return [];
+  const structureMatchUps = draw.inContextDrawMatchUps.filter(
+    (candidate) => candidate.structureId === matchUp.structureId,
+  );
+  if (structureMatchUps.some((candidate) => (candidate.roundNumber ?? 0) > (matchUp.roundNumber ?? 0))) return [];
+  return structureMatchUps
+    .filter((feeder) => feeder.winnerMatchUpId === matchUp.matchUpId && feeder.matchUpStatus === BYE)
+    .flatMap((feeder) => Object.values(getSideExitProvenance({ matchUp: feeder }) ?? {}))
+    .filter((entry) => entry?.sourceMatchUpId !== sourceMatchUpId)
+    .map((entry) => carriedExitStatus(entry))
+    .filter((status): status is MatchUpStatusUnion => !!status);
+}
+
 function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string, draw?: DrawContext): MatchUpStatusUnion[] {
   const carried = [
     ...carriedStatuses(matchUp, sourceMatchUpId, draw),
     ...carriedOnwardFromHolder(matchUp, sourceMatchUpId, draw),
+    ...heldBesideFeederBye(matchUp, sourceMatchUpId, draw),
   ];
   if (carried.length) return carried;
   // the status is this matchUp's own product when an exit entry came from it: judged on EXIT entries

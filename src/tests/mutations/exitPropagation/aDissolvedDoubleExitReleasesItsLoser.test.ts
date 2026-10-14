@@ -46,6 +46,8 @@ function play(schedule: any[], drawId: string) {
       drawId,
     });
     expect(observed.error).toBeUndefined();
+    // a divergence the differential pipeline throws is caught into `thrown`, not `error`
+    expect(observed.thrown).toBeUndefined();
   }
   // read before the next draw is prepared: preparing replaces engine state
   const names = new Map(matchUps().map((matchUp) => [matchUp.matchUpId, coordinate(matchUp)]));
