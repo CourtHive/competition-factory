@@ -1,9 +1,8 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { generateRange, shuffleArray } from '@Tools/arrays';
 import { DrawDefinition } from '@Types/tournamentTypes';
-import { generateRange } from '@Tools/arrays';
-import { randomSource } from '@Tools/prng';
 
 // constants
 import { MISSING_MAIN_STRUCTURE } from '@Constants/errorConditionConstants';
@@ -32,6 +31,5 @@ export const getRandomQualifierList = ({ drawDefinition, random }: GetRandomQual
     qualifierPositions: { drawPosition: number; qualifier: boolean }[];
   } = structureAssignedDrawPositions({ structure: mainStructure });
 
-  const rng = random ?? randomSource();
-  return generateRange(0, qualifierPositions.length).sort(() => rng() - 0.5);
+  return shuffleArray(generateRange(0, qualifierPositions.length), random);
 };
