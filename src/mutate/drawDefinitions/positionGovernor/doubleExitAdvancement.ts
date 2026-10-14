@@ -1648,6 +1648,34 @@ function occupantOppositeCarriesExit({
   return !!carriedExitStatus(getSideExitProvenance({ matchUp })?.[occupiedSide]);
 }
 
+/**
+ * A POSITION THAT CAME OUT OF THIS TARGET IS NOT AN OPPONENT WAITING IN THE NEXT ONE.
+ *
+ * The lone position in the next winner matchUp is read as the opponent the produced exit is awarded to, and moved on.
+ * When it is the target's OWN position (its BYE, sent on before the exit arrived), the exit would be awarded to the
+ * seat it is travelling from, and that BYE carried a round further over a side still owed to its other feeder. The
+ * BYE stays; the exit travels (CA, 2026-09-20 and 2026-10-04): it is carried on as onto an empty target, and
+ * `carryExitOnward` takes the holder's BYE back out first (`releaseHoldersByeFromTarget`). Census run 18,
+ * DOUBLE_ELIMINATION 16/14 (20625526): `Backdraw|4|1`'s BYE stood alone in `Backdraw|5|1` when `Backdraw|3|1`'s
+ * convergence produced its exit into `4|1`; the BYE went on into the Backdraw final and the Main final's loser across
+ * the link into the decider, while `Backdraw|3|2` was still to be played.
+ */
+function sentOnFromTarget({
+  nextWinnerMatchUpHasDrawPosition,
+  nextWinnerMatchUpDrawPositions,
+  targetMatchUp,
+  matchUpsMap,
+  EXIT,
+}): boolean {
+  if (!nextWinnerMatchUpHasDrawPosition || !isExit(EXIT)) return false;
+  const storedTarget = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === targetMatchUp.matchUpId);
+  return !!storedTarget?.drawPositions?.includes(nextWinnerMatchUpDrawPositions.find(Boolean));
+}
+
+function exitTravelsToEmptyTarget({ nextWinnerMatchUpDrawPositions, nextWinnerMatchUp, EXIT }): boolean {
+  return isExit(EXIT) && !nextWinnerMatchUpDrawPositions?.length && !isAnyExit(nextWinnerMatchUp.matchUpStatus);
+}
+
 function advanceByeAdvancedDrawPosition({
   nextWinnerMatchUpDrawPositions,
   nextWinnerMatchUpHasDrawPosition,
@@ -1670,7 +1698,15 @@ function advanceByeAdvancedDrawPosition({
   });
   if (nextTargetData.error) return decorateResult({ result: nextTargetData, stack });
 
-  if (nextWinnerMatchUpHasDrawPosition) {
+  const ownPositionOnward = sentOnFromTarget({
+    nextWinnerMatchUpHasDrawPosition,
+    nextWinnerMatchUpDrawPositions,
+    targetMatchUp,
+    matchUpsMap,
+    EXIT,
+  });
+
+  if (nextWinnerMatchUpHasDrawPosition && !ownPositionOnward) {
     const nextDrawPositionToAdvance = nextWinnerMatchUpDrawPositions.find(Boolean);
 
     // WHICH SIDE THE ADVANCING POSITION OCCUPIES — not which side wins.
@@ -1917,7 +1953,10 @@ function advanceByeAdvancedDrawPosition({
       targetData: nextTargetData,
     });
     if (result.error) return decorateResult({ result, stack });
-  } else if (isExit(EXIT) && !nextWinnerMatchUpDrawPositions?.length && !isAnyExit(nextWinnerMatchUp.matchUpStatus)) {
+  } else if (
+    ownPositionOnward ||
+    exitTravelsToEmptyTarget({ nextWinnerMatchUpDrawPositions, nextWinnerMatchUp, EXIT })
+  ) {
     // NOBODY ADVANCES, AND THE EXIT STILL TRAVELS.
     //
     // The branch above carries the exit onward by ADVANCING A POSITION — the opponent who already
