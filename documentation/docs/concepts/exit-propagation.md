@@ -339,6 +339,17 @@ advanced (census run 18, FEED_IN_CHAMPIONSHIP, CURTIS_CONSOLATION, FIRST_MATCH_L
 DOUBLE_ELIMINATION: WINNER_NOT_ADVANCED, and a result refused after it had written when the
 reservation behind that seat was later withdrawn).
 
+The same holds for every fact written before the positions it describes. A carrier arriving past a
+BYE beside a lone position records its exit for the seat it takes, in the frame the matchUp is still
+in, so that the re-keying of the arrival carries it there; written in the new frame, it overwrote the
+lone position's own exit and was then moved onto that position's side, so the carrier won the matchUp
+on the walkover it had brought (census run 18, FEED_IN_CHAMPIONSHIP 8/5 under
+`doubleExitPropagateBye: false`: WINNING_SIDE_ADVANCEMENT_MISMATCH). And a removal clears the side the
+removed position held in the frame the record is in after the position has gone: read in the frame
+before, a produced exit leaving with its position was kept as the survivor's, the matchUp stayed a
+pending exit, and the seat the exit had awarded stayed in the next round (census run 18,
+FIRST_MATCH_LOSER_CONSOLATION 16/11: ADVANCED_FROM_UNDECIDED).
+
 ### A pending exit's reservation goes with it
 
 Since 7.9.0. A pending produced exit can advance an empty seat ahead of it — a reservation for the

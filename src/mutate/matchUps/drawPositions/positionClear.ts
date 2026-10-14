@@ -444,6 +444,7 @@ function removeDrawPosition({
     drawPosition,
   });
 
+  let rekeyed = false;
   if (
     !keepsByeAdvancement &&
     targetMatchUp.roundNumber &&
@@ -454,14 +455,14 @@ function removeDrawPosition({
     // Settled through `normalizeDrawPositions`, which stores the positions present (a lone survivor
     // alone, its side read structurally) and an empty result as `[]`.
     // The participant who stays can change side as the seat empties; what is recorded by side goes with them.
-    setMatchUpDrawPositions({
+    ({ sideChanged: rekeyed } = setMatchUpDrawPositions({
       drawPositions: (targetMatchUp.drawPositions ?? []).map((currentDrawPosition) =>
         currentDrawPosition === drawPosition ? undefined : currentDrawPosition,
       ),
       structureId: structure.structureId,
       matchUp: targetMatchUp,
       drawDefinition,
-    });
+    }));
 
     // AND ACROSS THE LINK. This removal walked the rounds of one structure and stopped at its edge.
     // Measured 2026-09-30 by `correctionDivergenceDeep` on DOUBLE_ELIMINATION 8/5: a double exit's
@@ -510,6 +511,7 @@ function removeDrawPosition({
 
   const matchUpContainsBye = updateMatchUpStatusAfterRemoval({
     initialDrawPositions,
+    rekeyed,
     initialMatchUpStatus,
     initialWinningSide,
     positionAssignments,
@@ -734,12 +736,15 @@ function updateMatchUpStatusAfterRemoval({
   targetMatchUp,
   drawPosition,
   structureId,
+  rekeyed,
   event,
   stack,
 }: {
   initialMatchUpStatus?: MatchUpStatusUnion;
   positionAssignments: PositionAssignment[];
   initialDrawPositions?: number[];
+  /** the removal moved the participant who stays to the other side, and what is recorded by side went with them */
+  rekeyed?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   initialWinningSide?: number;
@@ -813,8 +818,15 @@ function updateMatchUpStatusAfterRemoval({
   // A matchUp that holds a position is still cleared as before: its winner can have arrived without a stored position
   // (an FMLC fall-through), and the clear of that winner's origin is what takes the award back.
   const touchedHere = !!initialDrawPositions?.filter(Boolean).length || !!removedDrawPosition;
+  // The cleared side is read in the frame the matchUp stood in; the record was re-keyed as the position left, so when
+  // the occupant crossed, the cleared seat is the other key now. Read across the two frames, the removed position's
+  // exit was kept as the occupant's and the occupant's dropped (census run 18, FIRST_MATCH_LOSER_CONSOLATION 16/11
+  // seed 20704784, policy off: `Consolation|3|2` [4, 9], awarded to the empty dp 4 by `Main|1|5`'s produced walkover
+  // relayed in at dp 9; re-scoring `Main|1|5` took dp 9 out, dp 4 crossed to its bracket side 2, and the walkover was
+  // kept on side 1 — a pending exit, so the award's advance of dp 4 into `4|1` was never released).
+  const clearedSideNow = rekeyed && clearedSideNumber ? 3 - clearedSideNumber : clearedSideNumber;
   const retained = touchedHere
-    ? retainProvenanceBesideRemoval(targetMatchUp.sideExitProvenance, clearedSideNumber)
+    ? retainProvenanceBesideRemoval(targetMatchUp.sideExitProvenance, clearedSideNow)
     : targetMatchUp.sideExitProvenance && { ...targetMatchUp.sideExitProvenance };
   clearSideExitProvenance(targetMatchUp);
   if (retained) targetMatchUp.sideExitProvenance = retained;
