@@ -366,7 +366,11 @@ and nobody.
 Since 7.7.0 the reverse holds too. When that BYE is withdrawn — the double exit that placed it is
 re-scored, say — the exit comes to rest where the BYE was, pending, and the copy it carried further on
 is withdrawn. A relayed copy keeps its origin's id, so it stands only while every matchUp it passed
-still holds a BYE.
+still holds a BYE. That includes a `FIRST_MATCHUP` consolation reservation withdrawn when the mutation settles: the
+relays are asked again once it has gone, so the copy beyond its seat goes too (census run 18,
+FIRST_MATCH_LOSER_CONSOLATION 32/32 under `allowChangePropagation`: a first-round winner flipped by a walkover took
+the reservation in `Consolation|2|1` back, and the DEFAULTED relayed past it into `3|1` stood until the next arrival
+there cleared it).
 
 Since 7.9.0 two more cases hold. **A decided holder is still the BYE it holds**: an exit label standing
 beside a BYE with nobody present is settled to `BYE` when the mutation settles, whether or not a winner
@@ -394,6 +398,12 @@ that BYE from deciding anything:
 
 The two exits then converge into a double exit with an origin recorded on each side, and its produced exit waits in
 the next round with no position of its own, whichever of the two arrived first.
+
+The same holds one round on. A holder's BYE that already stands alone in the matchUp its produced exit is sent to is
+not an opponent there: the exit is not awarded to it and the BYE is not moved on again. It is taken back, and the exit
+waits there pending for whoever arrives on the other side (census run 18, DOUBLE_ELIMINATION 16/14: the BYE in
+`Backdraw|4|1` went on through `Backdraw|5|1` into the Backdraw final, and the Main final's loser across the link into
+the decider, while `Backdraw|3|2` had still to be played).
 
 ### A held exit goes on to a seat awaiting its arrival
 

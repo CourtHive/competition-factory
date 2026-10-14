@@ -8,7 +8,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
-import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, DrawLink, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
@@ -42,9 +42,10 @@ export function reconcileConsolationReservations({
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   event?: Event;
-}): ResultType | undefined {
+}): (ResultType & { withdrawn?: boolean }) | undefined {
   const links = (drawDefinition?.links ?? []).filter((link) => link.linkCondition === FIRST_MATCHUP);
   if (!drawDefinition || !links.length) return undefined;
+  const reservationsBefore = reservedSeats({ drawDefinition, links });
 
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
@@ -114,7 +115,18 @@ export function reconcileConsolationReservations({
       if (withdrawn?.error) return withdrawn;
     }
   }
-  return undefined;
+  const reservationsAfter = new Set(reservedSeats({ drawDefinition, links }));
+  return reservationsBefore.some((seat) => !reservationsAfter.has(seat)) ? { withdrawn: true } : undefined;
+}
+
+/** The propagated BYEs standing in the seats `FIRST_MATCHUP` links feed, as `structureId|drawPosition` */
+function reservedSeats({ drawDefinition, links }: { drawDefinition: DrawDefinition; links: DrawLink[] }): string[] {
+  const targetStructureIds = new Set(links.map((link) => link.target?.structureId).filter(Boolean));
+  return [...targetStructureIds].flatMap((structureId) =>
+    (getPositionAssignments({ drawDefinition, structureId }).positionAssignments ?? [])
+      .filter((assignment) => assignment.bye && assignment.byeFromPropagation)
+      .map((assignment) => `${structureId}|${assignment.drawPosition}`),
+  );
 }
 
 /**
