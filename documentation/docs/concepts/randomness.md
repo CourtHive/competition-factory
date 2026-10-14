@@ -36,8 +36,25 @@ takes effect on the next call.
   their own, for example one backed by `crypto.getRandomValues`.
 - **No argument** restores `Math.random`. Anything else is refused with `INVALID_VALUES`.
 
-A function source must actually vary. Ids are drawn from the source too, so a constant (`() => 0.5`) or a short cycle
-mints the same id again and again, and generating a draw under it fails.
+A function source must actually vary, and the factory refuses one that does not. Ids are drawn from the source too,
+and every lookup assumes ids are unique, so a source that repeats would build a broken draw. A constant used to send
+BYE advancement into endless recursion: every matchUp's winner matchUp resolved to itself. So:
+
+- `UUID` refuses an id that the same stream has already minted (it remembers the last 4,096 per stream). A working
+  source never repeats four 32-bit draws, so this has no false positives.
+- A configured function is checked at every draw: a value outside `[0, 1)` is refused.
+
+Both throw an error whose message starts `DEGENERATE_RANDOM_SOURCE`. An engine call catches it and returns it as
+`{ error }`. A restarted stream may repeat its ids, because that is what reproducing means. Setting the source again,
+a new seed, or `nonRandom` on a call each begins a new stream. Restarting a function's internal state without setting
+it again does not, and its repeated ids are refused. The repeat check covers sources configured with `setRandomSource`
+and a call's own `random`; the range check covers configured functions. Neither judges whether a source is fair (see
+below).
+
+A record built elsewhere can still arrive with repeated ids, and the factory does not check every incoming record for
+them, because that check would cost time on every load. Where repeated ids would send BYE advancement backwards, which
+is the path that used to recurse, the engine refuses with an `INVALID_MATCHUP` error saying the record's matchUpIds are
+not unique. Advancement must reach a later round of the same structure, or another structure.
 
 ### `nonRandom` on a single call
 
@@ -141,7 +158,7 @@ A deterministic stub is used as given; a cryptographic source is a one-line func
 let n = 1;
 const stub = () => (n = (n * 16807) % 2147483647) / 2147483647; // Park–Miller: deterministic, never 1
 tournamentEngine.setRandomSource(stub);
-expect(tools.randomSource()).toBe(stub);
+expect(tools.randomSource()()).toEqual(16807 / 2147483647); // the stub's first value
 ```
 
 ```ts
@@ -217,6 +234,32 @@ tools.UUID(); // one more random step, as a factory change might add
 const after = tournamentEngine.generateDrawDefinition({ eventId, drawSize: 32 }).drawDefinition;
 
 expect(placements(after)).not.toEqual(placements(before));
+```
+
+### A source that repeats is refused
+
+```ts
+// randomnessExamples.test.ts › a constant source is refused at its first repeated id, and a draw reports it as an error
+tournamentEngine.setRandomSource(() => 0.5); // a constant: every draw is the same number
+tools.UUID();
+expect(() => tools.UUID()).toThrow('DEGENERATE_RANDOM_SOURCE'); // the same id, minted twice
+
+loadEvent();
+const result = tournamentEngine.generateDrawDefinition({ eventId, drawSize: 32 });
+expect(result.error).toContain('DEGENERATE_RANDOM_SOURCE');
+```
+
+```ts
+// randomnessExamples.test.ts › a short cycle is refused too
+let n = 0;
+tournamentEngine.setRandomSource(() => (n++ % 10) / 10); // 0, 0.1, … 0.9, then again
+expect(() => tools.UUIDS(10)).toThrow('DEGENERATE_RANDOM_SOURCE');
+```
+
+```ts
+// randomnessExamples.test.ts › a value outside [0, 1) is refused at the draw
+tournamentEngine.setRandomSource(() => 1);
+expect(() => tools.randomSource()()).toThrow('DEGENERATE_RANDOM_SOURCE');
 ```
 
 ### The async engine

@@ -1,3 +1,4 @@
+import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -73,13 +74,17 @@ describe('Worked examples › A function source', () => {
     let n = 1;
     const stub = () => (n = (n * 16807) % 2147483647) / 2147483647; // Park–Miller: deterministic, never 1
     tournamentEngine.setRandomSource(stub);
-    expect(tools.randomSource()).toBe(stub);
+    expect(tools.randomSource()()).toEqual(16807 / 2147483647); // the stub's first value
     // end of page example
 
-    // and the engine draws from it: two generations from a restarted stub are identical
+    // and the engine draws from it: two generations from a restarted stub are identical. Restarting
+    // a stream means setting it again, which also restarts the repeated-id check
     loadEvent();
+    n = 1;
+    tournamentEngine.setRandomSource(stub);
     const first = tournamentEngine.generateDrawDefinition({ eventId, drawSize: 32 }).drawDefinition;
     n = 1;
+    tournamentEngine.setRandomSource(stub);
     const second = tournamentEngine.generateDrawDefinition({ eventId, drawSize: 32 }).drawDefinition;
     expect(placements(second)).toEqual(placements(first));
   });
@@ -90,7 +95,6 @@ describe('Worked examples › A function source', () => {
     tournamentEngine.setRandomSource(cryptoRandom);
     // end of page example
 
-    expect(tools.randomSource()).toBe(cryptoRandom);
     for (let i = 0; i < 1000; i++) {
       const value = tools.randomSource()();
       expect(value >= 0 && value < 1).toEqual(true);
@@ -223,6 +227,53 @@ describe('Worked examples › Where it is applied: the async engine', () => {
   );
 });
 
+describe('Worked examples › A source that repeats is refused', () => {
+  useEngineCatch(); // what a consumer sees: the engine catches the throw and returns { error }
+
+  it('a constant source is refused at its first repeated id, and a draw reports it as an error', () => {
+    // page: "A source that repeats is refused"
+    tournamentEngine.setRandomSource(() => 0.5); // a constant: every draw is the same number
+    tools.UUID();
+    expect(() => tools.UUID()).toThrow('DEGENERATE_RANDOM_SOURCE'); // the same id, minted twice
+
+    loadEvent();
+    const result = tournamentEngine.generateDrawDefinition({ eventId, drawSize: 32 });
+    expect(result.error).toContain('DEGENERATE_RANDOM_SOURCE');
+    // end of page example
+  });
+
+  it('a short cycle is refused too', () => {
+    // page: "A source that repeats is refused"
+    let n = 0;
+    tournamentEngine.setRandomSource(() => (n++ % 10) / 10); // 0, 0.1, … 0.9, then again
+    expect(() => tools.UUIDS(10)).toThrow('DEGENERATE_RANDOM_SOURCE');
+    // end of page example
+  });
+
+  it('a value outside [0, 1) is refused at the draw', () => {
+    // page: "A source that repeats is refused"
+    tournamentEngine.setRandomSource(() => 1);
+    expect(() => tools.randomSource()()).toThrow('DEGENERATE_RANDOM_SOURCE');
+    // end of page example
+  });
+
+  it('a restarted stream repeats its ids legitimately: setting the source again starts a new window', () => {
+    let n = 1;
+    const stub = () => (n = (n * 16807) % 2147483647) / 2147483647;
+    tournamentEngine.setRandomSource(stub);
+    const first = tools.UUIDS(5);
+    n = 1;
+    tournamentEngine.setRandomSource(stub);
+    expect(tools.UUIDS(5)).toEqual(first);
+
+    // and so does a seed, and nonRandom on a call: each is a new stream
+    tournamentEngine.setRandomSource(7);
+    const seeded = tools.UUIDS(5);
+    tournamentEngine.setRandomSource(7);
+    expect(tools.UUIDS(5)).toEqual(seeded);
+  });
+});
+
 describe('Worked examples › the page shows exactly these examples', () => {
   const page = fs.readFileSync('documentation/docs/concepts/randomness.md', 'utf8');
   const source = fs.readFileSync('src/tests/global/randomnessExamples.test.ts', 'utf8');
@@ -236,7 +287,7 @@ describe('Worked examples › the page shows exactly these examples', () => {
   const pageBlocks = [...page.matchAll(/```ts\n\/\/ randomnessExamples\.test\.ts › ([^\n]+)\n([\s\S]*?)\n```/g)];
 
   it('every marked example appears verbatim on the page, and the page shows no other', () => {
-    expect(examples.length).toEqual(8);
+    expect(examples.length).toEqual(11);
     expect(pageBlocks.length).toEqual(examples.length);
     for (const { section, code } of examples) {
       const block = pageBlocks.find(([, , body]) => body === code);
