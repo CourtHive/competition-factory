@@ -1,0 +1,9 @@
+{
+  "config": {
+    "participantsCount": 8,
+    "propagateExitStatus": false,
+    "drawSize": 8,
+    "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+    "seed": 20624031
+  }
+}

@@ -1,5 +1,8 @@
 import { getDrawPositionWinCount, isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
+import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, MatchUp, MatchUpStatusUnion, Score, Structure } from '@Types/tournamentTypes';
@@ -105,7 +108,16 @@ export function feedEligibilityChange({
     (candidate) =>
       candidate.roundNumber === feedingRoundNumber && candidate.drawPositions?.includes(winnerDrawPosition),
   );
-  if (!feedingMatchUp?.winningSide) return undefined;
+  if (!feedingMatchUp?.winningSide) {
+    return reservationPlayedOn({
+      inContextDrawMatchUps,
+      feedingMatchUp,
+      drawDefinition,
+      matchUpStatus,
+      matchUp,
+      score,
+    });
+  }
   const feedingWinnerDrawPosition = sideDrawPosition(feedingMatchUp, feedingMatchUp.winningSide);
   if (feedingWinnerDrawPosition === winnerDrawPosition) return undefined;
 
@@ -141,4 +153,59 @@ export function feedEligibilityChange({
   if (wasUnscored === willBeUnscored) return undefined;
 
   return { participantDrawPosition: winnerDrawPosition, sourceRoundMatchUpId: feedingMatchUp.matchUpId };
+}
+
+/**
+ * The same flip with the feeding round UNDECIDED changes no directed loser, but it can still withdraw the `FIRST_MATCHUP`
+ * reservation: the BYE placed in the consolation seat once both first-round feeders produced a scored win
+ * (`propagateConsolationBye`), taken back when one of them is re-scored to a walkover or an unscored default
+ * (`reconcileConsolationReservations`). Where the participant that BYE advanced has already played on, the withdrawal
+ * takes them back out of a decided consolation matchUp and leaves its result standing on an undecided one — a main-draw
+ * change percolating into a backdraw that has started, which is refused (CA 2026-09-22). Census run-17 baseline,
+ * FIRST_MATCH_LOSER_CONSOLATION 8/8 seed 20624031, every arm: `Main|1|2` re-scored from a played win to a WALKOVER by
+ * the same winner left `Consolation|3|1` TO_BE_PLAYED holding its RETIRED 6-3.
+ */
+function reservationPlayedOn({
+  inContextDrawMatchUps,
+  feedingMatchUp,
+  drawDefinition,
+  matchUpStatus,
+  matchUp,
+  score,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition?: DrawDefinition;
+  matchUpStatus?: MatchUpStatusUnion;
+  feedingMatchUp?: HydratedMatchUp;
+  matchUp: MatchUp;
+  score?: Score;
+}): { participantDrawPosition: number; sourceRoundMatchUpId?: string } | undefined {
+  if (!feedingMatchUp || !drawDefinition || isAnyExit(feedingMatchUp.matchUpStatus)) return undefined;
+  // only a scored win becoming an unscored one withdraws a reservation
+  if (isUnscoredOutcome({ matchUpStatus: matchUp.matchUpStatus, score: matchUp.score })) return undefined;
+  if (!isUnscoredOutcome({ matchUpStatus: matchUpStatus ?? COMPLETED, score: score ?? matchUp.score }))
+    return undefined;
+
+  const targetData = positionTargets({ matchUpId: feedingMatchUp.matchUpId, inContextDrawMatchUps, drawDefinition });
+  const { loserMatchUp, loserTargetDrawPosition } = targetData?.targetMatchUps ?? {};
+  if (!loserMatchUp || loserTargetDrawPosition === undefined) return undefined;
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId });
+  const reserved = positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition);
+  if (!reserved?.bye || !reserved.byeFromPropagation) return undefined;
+
+  // the participant the reservation advanced, and whether any later matchUp of theirs has a result
+  const advancedDrawPosition = (loserMatchUp.drawPositions ?? []).find(
+    (drawPosition) => drawPosition && drawPosition !== loserTargetDrawPosition,
+  );
+  if (!advancedDrawPosition) return undefined;
+  const playedOn = (inContextDrawMatchUps ?? []).find(
+    (candidate) =>
+      candidate.structureId === loserMatchUp.structureId &&
+      (candidate.roundNumber ?? 0) > (loserMatchUp.roundNumber ?? 0) &&
+      candidate.drawPositions?.includes(advancedDrawPosition) &&
+      (!!candidate.winningSide || isAnyExit(candidate.matchUpStatus)),
+  );
+  if (!playedOn) return undefined;
+
+  return { participantDrawPosition: advancedDrawPosition, sourceRoundMatchUpId: playedOn.matchUpId };
 }
