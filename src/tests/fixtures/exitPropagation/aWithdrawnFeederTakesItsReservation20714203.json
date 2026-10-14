@@ -1,0 +1,35 @@
+{
+  "config": {
+    "participantsCount": 15,
+    "propagateExitStatus": false,
+    "drawSize": 16,
+    "drawType": "FIRST_MATCH_LOSER_CONSOLATION",
+    "seed": 20714203
+  },
+  "steps": [
+    { "structureName": "Main", "roundNumber": 1, "roundPosition": 5, "outcome": { "winningSide": 2 } },
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 6,
+      "outcome": {
+        "matchUpStatus": "RETIRED",
+        "winningSide": 1,
+        "score": { "sets": [{ "side1Score": 6, "side2Score": 3 }] }
+      }
+    },
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 5,
+      "outcome": { "score": { "scoreStringSide1": "", "scoreStringSide2": "" }, "matchUpStatus": "TO_BE_PLAYED" }
+    },
+    { "structureName": "Main", "roundNumber": 1, "roundPosition": 4, "outcome": { "winningSide": 2 } },
+    {
+      "structureName": "Main",
+      "roundNumber": 1,
+      "roundPosition": 6,
+      "outcome": { "matchUpStatus": "WALKOVER", "winningSide": 1 }
+    }
+  ]
+}

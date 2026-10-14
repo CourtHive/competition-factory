@@ -111,7 +111,11 @@ function activeBelow(params, walk: Walk): boolean {
     // this BYE into a downstream walkover that has since been RESOLVED — a real
     // participant fell through into the empty winner slot and advanced. That downstream
     // is genuinely active, so do NOT short-circuit; fall through to the recursion.
-    const byeWinnerMatchUp = targetData?.targetMatchUps?.winnerMatchUp;
+    const byeWinnerMatchUp = beyondByes({
+      matchUp: targetData?.targetMatchUps?.winnerMatchUp,
+      inContextDrawMatchUps,
+      drawDefinition,
+    });
     // DECIDED, not merely "a resolved exit". This tested `isExit(status)`, which is
     // `[DEFAULTED, WALKOVER, RETIRED]` — so a propagated walkover downstream of the BYE blocked the
     // re-score while a match two participants had actually PLAYED did not. The severity was
@@ -124,7 +128,10 @@ function activeBelow(params, walk: Walk): boolean {
     const byeWinnerDecided =
       byeWinnerMatchUp?.winningSide &&
       !!byeWinnerMatchUp.sides?.find((s: HydratedSide) => s?.sideNumber === byeWinnerMatchUp.winningSide)?.participant;
-    if (!byeWinnerDecided) return false;
+    // ...and a double exit two participants EARNED there is as decided as a win, though it has no winningSide (census
+    // run-17 baseline, FIRST_MATCH_LOSER_CONSOLATION 8/7 seed 20642361: `Consolation|3|1` RETIRED then DOUBLE_DEFAULT,
+    // and a winner change at `Main|2|1` fed its loser into the reservation, leaving it TO_BE_PLAYED with its score)
+    if (!byeWinnerDecided && !contestedDoubleExit(byeWinnerMatchUp)) return false;
   }
 
   const {
@@ -190,39 +197,6 @@ function activeBelow(params, walk: Walk): boolean {
     loserMatchUp?.winningSide && isLoserMatchUpWO && loserMatchUpParticipantsCount === 1;
 
   const winnerDrawPositionsCount = winnerMatchUp?.drawPositions?.filter(Boolean).length || 0;
-
-  /**
-   * A double exit that was EARNED here — not carried here — is active, and both tests below are
-   * blind to it BY CONSTRUCTION.
-   *
-   * `DOUBLE_WALKOVER` and `DOUBLE_DEFAULT` never carry a `winningSide`, because neither side
-   * advances. Each test below opens with `matchUp?.winningSide`, so no double exit could ever
-   * satisfy either one however real it was.
-   *
-   * Two conditions separate a real result from a derived one, and BOTH are needed:
-   *
-   *  1. **Two occupied sides.** A double exit with one occupant or none is the PENDING shape the
-   *     cascade deposits ahead of an arrival. It must stay inert — that is the invariant
-   *     `pendingDoubleExitNotActive.test.ts` pins, and widening to it re-blocks everything the
-   *     carve-outs below exist to unblock.
-   *  2. **At least one side NOT carried by propagation.** A convergence — two propagated exits
-   *     arriving from different sources and collapsing into a double exit — has two occupants who
-   *     never played it, and `sideExitProvenance` records BOTH sides as carried. Such a matchUp is
-   *     wholly derived from upstream, so unwinding that upstream must remain permitted and this
-   *     guard must stay transparent to it. Measured in `pendingDoubleExitNotActive.test.ts`: a
-   *     Backdraw convergence with provenance on both sides, alongside a natively-recorded
-   *     Consolation double exit with none.
-   *
-   * The distinction is the general one this guard already needs everywhere: a status blocks only
-   * when it was earned at this matchUp, never when it was propagated into it.
-   */
-  const contestedDoubleExit = (candidate?: HydratedMatchUp) => {
-    if (!isDoubleExit(candidate?.matchUpStatus)) return false;
-    const occupiedSides = (candidate?.sides ?? []).filter((side) => side?.participant);
-    if (occupiedSides.length !== 2) return false;
-    const provenance = getSideExitProvenance({ matchUp: candidate });
-    return !occupiedSides.every((side: any) => provenance?.[side.sideNumber]);
-  };
 
   // A propagated exit whose winning side has been RESOLVED — a real participant fell
   // through into the empty winner slot and advanced — is genuinely active and must
@@ -344,4 +318,64 @@ function activeBelow(params, walk: Walk): boolean {
       walk,
     })
   );
+}
+
+/**
+ * A double exit that was EARNED here — not carried here — is active, and `activeBelow`'s result
+ * tests (`winnerSideResolved`, the FIRST_MATCHUP BYE's `byeWinnerDecided`) are blind to it BY
+ * CONSTRUCTION.
+ *
+ * `DOUBLE_WALKOVER` and `DOUBLE_DEFAULT` never carry a `winningSide`, because neither side
+ * advances. Each of those tests opens with `matchUp?.winningSide`, so no double exit could ever
+ * satisfy one however real it was.
+ *
+ * Two conditions separate a real result from a derived one, and BOTH are needed:
+ *
+ *  1. **Two occupied sides.** A double exit with one occupant or none is the PENDING shape the
+ *     cascade deposits ahead of an arrival. It must stay inert — that is the invariant
+ *     `pendingDoubleExitNotActive.test.ts` pins, and widening to it re-blocks everything the
+ *     carve-outs in `activeBelow` exist to unblock.
+ *  2. **At least one side NOT carried by propagation.** A convergence — two propagated exits
+ *     arriving from different sources and collapsing into a double exit — has two occupants who
+ *     never played it, and `sideExitProvenance` records BOTH sides as carried. Such a matchUp is
+ *     wholly derived from upstream, so unwinding that upstream must remain permitted and this
+ *     guard must stay transparent to it. Measured in `pendingDoubleExitNotActive.test.ts`: a
+ *     Backdraw convergence with provenance on both sides, alongside a natively-recorded
+ *     Consolation double exit with none.
+ *
+ * The distinction is the general one this guard already needs everywhere: a status blocks only
+ * when it was earned at this matchUp, never when it was propagated into it.
+ */
+function contestedDoubleExit(candidate?: HydratedMatchUp): boolean {
+  if (!isDoubleExit(candidate?.matchUpStatus)) return false;
+  const occupiedSides = (candidate?.sides ?? []).filter((side) => side?.participant);
+  if (occupiedSides.length !== 2) return false;
+  const provenance = getSideExitProvenance({ matchUp: candidate });
+  return !occupiedSides.every((side: any) => provenance?.[side.sideNumber]);
+}
+
+/**
+ * The first matchUp at or beyond this one that is not a BYE, following winner targets. A BYE the cascade placed can sit
+ * in front of another, and whoever the second carried on played where the chain ends (census run-17 baseline,
+ * FIRST_MATCH_LOSER_CONSOLATION 16/11 seed 20653720, `allowChangePropagation`: `Main|2|4`'s double default reserved
+ * `Consolation|2|4`, a BYE beside a BYE, which went on into `Consolation|3|2`'s BYE, and the participant opposite it
+ * played `Consolation|4|1`; re-scoring the double default to a win fed its loser into the seat and left that matchUp
+ * TO_BE_PLAYED with its score).
+ */
+function beyondByes({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUp,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUp?: HydratedMatchUp;
+}): HydratedMatchUp | undefined {
+  let current = matchUp;
+  // a chain of winner targets is no longer than the draw
+  for (let guard = inContextDrawMatchUps?.length ?? 0; current?.matchUpStatus === BYE && guard > 0; guard--) {
+    const next = positionTargets({ matchUpId: current.matchUpId, inContextDrawMatchUps, drawDefinition });
+    current = next.error ? undefined : next.targetMatchUps?.winnerMatchUp;
+  }
+  return current;
 }

@@ -351,6 +351,7 @@ export function assignMatchUpDrawPosition({
 
   if (matchUp && (positionAdded || resolvesPendingExit)) {
     applyPositionToMatchUp({
+      emptyArrival: !arrivingParticipantId,
       updatedDrawPositions,
       holdsStandingExit,
       sourceMatchUpStatus,
@@ -488,6 +489,7 @@ function resolveMatchUpStatus({ isByeMatchUp, matchUpStatus, isDoubleExitExit, m
 
 function applyPositionToMatchUp({
   updatedDrawPositions,
+  emptyArrival,
   sourceMatchUpStatus,
   holdsStandingExit,
   participantArrivesAtExit,
@@ -645,7 +647,13 @@ function applyPositionToMatchUp({
   // only in the case of "Double Exit" produced "Exit" can a winningSide be assigned at the same time as a position
   Object.assign(matchUp, {
     drawPositions: normalizeDrawPositions(updatedDrawPositions),
-    winningSide: exitWinningSide,
+    // ...and an EMPTY position arriving at an exit already awarded to its side leaves the award as it stood, as it
+    // leaves the status: it resolves nothing, so it un-decides nothing either (a participant arriving with an exit of
+    // their own converges instead, and is no empty arrival). Clearing it stranded the loser the exit had already sent
+    // across its loser link (census run-17 baseline, COMPASS 16/15 seeds 20709099 and 20729822 and 32-draw siblings,
+    // policy off: `West|2|1`, DEFAULTED to the vacant side, reached by the empty position of `East|1|3`'s double
+    // default, left its loser in `Southwest|1|1` — ADVANCED_ACROSS_LINK_FROM_UNDECIDED; the other order kept the award).
+    winningSide: exitWinningSide ?? (holdsStandingExit && emptyArrival ? matchUp.winningSide : undefined),
     // We keep the current status if it is already marked as WO. Deliberately the BROADER flag: an
     // empty drawPosition arriving delivers no participant and so gives no reason to change
     // anything, but it was clearing the exit outright (SIGNAL 1, census 2026-09-20).

@@ -326,7 +326,10 @@ arriving does not resolve it. 7.5.0 applied this past a BYE; since 7.6.0 it hold
 that writes a produced exit. Since 7.7.0 it also holds when a position is cleared out of a matchUp:
 a produced exit on the other side stands, pending, rather than being won by the emptied seat. And an
 empty position advanced into a matchUp holding a pending exit takes its seat; it is not moved on as
-that exit's winner.
+that exit's winner. Nor does it take back an award already standing there: a carried exit awarded to
+the side nobody had reached stays awarded when the empty position reaches that side, as it is when the
+empty position arrives first, and the loser it sent on stays where it went (census run-17 baseline,
+COMPASS under `doubleExitPropagateBye: false`).
 
 ### A pending exit's reservation goes with it
 
@@ -482,7 +485,10 @@ is inert **even when its loser carried it on further**. Only a result somebody r
 Until 2026-10-11 a carry that went one hop further read as a played match, and the second walkover, a main-draw
 result, was refused although nobody had played anything below it.
 
-The result is the draw that recording the two exits in the other order leaves. A CLEAR of either exit's origin
+The result is the draw that recording the two exits in the other order leaves. A convergence recorded after the first exit's carrier
+was already sent on as that matchUp's loser takes that loss back: a double exit has no loser, so the carrier leaves the
+loser seat and the seat is served as a double exit's loser target is (census run-17 baseline, COMPASS 16/13 under
+`doubleExitPropagateBye: false`). A CLEAR of either exit's origin
 keeps the stricter reading: an origin whose carried walkover an unrelated arrival has since won is not clearable.
 
 ### A withdrawn exit releases the seat it won
@@ -496,6 +502,12 @@ The release follows the award across its own winner link. In DOUBLE_ELIMINATION 
 winner goes on into the Main structure; when the exit that decided the Backdraw final for them is
 withdrawn, they are taken back out of the seat the link gave them too, so the re-derived winner can
 take it (census 20506968, DOUBLE_ELIMINATION 8/6).
+
+It also takes back the BYE the award placed. A matchUp won over a carried exit has that exit as its
+loser, and where the loser link leads to another structure the seat there becomes a BYE nobody can
+fill. When the withdrawal leaves that matchUp undecided, its loser is a participant again, and the
+BYE goes unless another exit still claims it (census run-17 baseline, COMPASS 16/13 under
+`doubleExitPropagateBye: false`).
 
 ### A clear takes back only the side it cleared
 
