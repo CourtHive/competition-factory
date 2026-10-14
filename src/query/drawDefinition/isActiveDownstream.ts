@@ -111,7 +111,11 @@ function activeBelow(params, walk: Walk): boolean {
     // this BYE into a downstream walkover that has since been RESOLVED — a real
     // participant fell through into the empty winner slot and advanced. That downstream
     // is genuinely active, so do NOT short-circuit; fall through to the recursion.
-    const byeWinnerMatchUp = targetData?.targetMatchUps?.winnerMatchUp;
+    const byeWinnerMatchUp = beyondByes({
+      matchUp: targetData?.targetMatchUps?.winnerMatchUp,
+      inContextDrawMatchUps,
+      drawDefinition,
+    });
     // DECIDED, not merely "a resolved exit". This tested `isExit(status)`, which is
     // `[DEFAULTED, WALKOVER, RETIRED]` — so a propagated walkover downstream of the BYE blocked the
     // re-score while a match two participants had actually PLAYED did not. The severity was
@@ -348,4 +352,30 @@ function contestedDoubleExit(candidate?: HydratedMatchUp): boolean {
   if (occupiedSides.length !== 2) return false;
   const provenance = getSideExitProvenance({ matchUp: candidate });
   return !occupiedSides.every((side: any) => provenance?.[side.sideNumber]);
+}
+
+/**
+ * The first matchUp at or beyond this one that is not a BYE, following winner targets. A BYE the cascade placed can sit
+ * in front of another, and whoever the second carried on played where the chain ends (census run-17 baseline,
+ * FIRST_MATCH_LOSER_CONSOLATION 16/11 seed 20653720, `allowChangePropagation`: `Main|2|4`'s double default reserved
+ * `Consolation|2|4`, a BYE beside a BYE, which went on into `Consolation|3|2`'s BYE, and the participant opposite it
+ * played `Consolation|4|1`; re-scoring the double default to a win fed its loser into the seat and left that matchUp
+ * TO_BE_PLAYED with its score).
+ */
+function beyondByes({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUp,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUp?: HydratedMatchUp;
+}): HydratedMatchUp | undefined {
+  let current = matchUp;
+  // a chain of winner targets is no longer than the draw
+  for (let guard = inContextDrawMatchUps?.length ?? 0; current?.matchUpStatus === BYE && guard > 0; guard--) {
+    const next = positionTargets({ matchUpId: current.matchUpId, inContextDrawMatchUps, drawDefinition });
+    current = next.error ? undefined : next.targetMatchUps?.winnerMatchUp;
+  }
+  return current;
 }
