@@ -350,6 +350,13 @@ before, a produced exit leaving with its position was kept as the survivor's, th
 pending exit, and the seat the exit had awarded stayed in the next round (census run 18,
 FIRST_MATCH_LOSER_CONSOLATION 16/11: ADVANCED_FROM_UNDECIDED).
 
+The side a removed position held is read before the removal takes anything. A lone position's side
+is read through the feeder that delivered it, and the removal walks the rounds in order, releasing
+that feeder first; read afterwards, the side came back empty and the removal dropped the exit standing
+on the other side as well (census run 18, MODIFIED_FEED_IN_CHAMPIONSHIP 32/27 under
+`allowChangePropagation`: a produced walkover lost from a matchUp its arrival then passed undecided,
+ADVANCED_FROM_UNDECIDED).
+
 ### A pending exit's reservation goes with it
 
 Since 7.9.0. A pending produced exit can advance an empty seat ahead of it — a reservation for the
