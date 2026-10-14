@@ -387,6 +387,15 @@ that BYE from deciding anything:
 The two exits then converge into a double exit with an origin recorded on each side, and its produced exit waits in
 the next round with no position of its own, whichever of the two arrived first.
 
+### A held exit goes on to a seat awaiting its arrival
+
+A held exit is sent on once the matchUp it feeds can be played, and that includes a matchUp whose
+other feeder is an exit already awarded to a seat nobody has reached yet: whoever reaches that seat
+is delivered, so the held exit goes on and waits for them, pending. Before this such a feeder was
+read as finished, the exit stayed beside its BYE, and the matchUp read TO_BE_PLAYED when the exit
+came last but held the pending exit when it came first (census run 17, COMPASS and OLYMPIC 32 under
+`doubleExitPropagateBye: false`).
+
 ### A carry past a BYE a holder takes back comes back with it
 
 CA's rule "the BYE stays; the exit travels" lets a holder's BYE position stand one round on until the exit it holds
