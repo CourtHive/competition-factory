@@ -1,13 +1,13 @@
 import { methodScopeMap } from '@Constants/mutationLockScopeMap';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { findExtension } from '@Acquire/findExtension';
-import { findVenue } from '@Query/venues/findVenue';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { MutationLock, MutationLocksValue } from '@Types/mutationLockTypes';
 import { MUTATION_LOCKED } from '@Constants/errorConditionConstants';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
+import type { Venue } from '@Types/tournamentTypes';
 
 // Returns an error result if the method is blocked by a mutation lock, or undefined if allowed.
 export function checkMutationLock(
@@ -37,11 +37,13 @@ export function checkMutationLock(
   if (params.event) {
     elements.push({ element: params.event, label: `event:${params.event.eventId}` });
   }
-  // For venue-scoped methods, resolve the venue
+  // For venue-scoped methods, resolve the venue on this record only. A direct scan, not findVenue:
+  // findVenue's param check pulls tieFormat/matchUpFormat validation into every engine bundle.
   if (params.venueId) {
-    const venueResult = findVenue({ tournamentRecord, venueId: params.venueId });
-    if (venueResult.venue) {
-      elements.push({ element: venueResult.venue, label: `venue:${params.venueId}` });
+    const venues: Venue[] = tournamentRecord.venues ?? [];
+    const venue = venues.filter((v) => v.venueId === params.venueId).pop();
+    if (venue) {
+      elements.push({ element: venue, label: `venue:${params.venueId}` });
     }
   }
   // Always check tournament level (hierarchical: blocks all children)
