@@ -8,7 +8,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { ContextContent, ContextProfile, MatchUpsMap, ParticipantsProfile } from '@Types/factoryTypes';
-import { DrawDefinition, Event, Participant, Structure } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Participant, Structure, Tournament } from '@Types/tournamentTypes';
 import { ErrorType, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -30,6 +30,7 @@ type FindDrawMatchUpArgs = {
   contextContent?: ContextContent;
   contextProfile?: ContextProfile;
   afterRecoveryTimes?: boolean;
+  tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
   inContext?: boolean;
@@ -49,6 +50,7 @@ export function findDrawMatchUp(params: FindDrawMatchUpArgs): {
     tournamentParticipants,
     participantsProfile,
     afterRecoveryTimes,
+    tournamentRecord,
     contextProfile,
     drawDefinition,
     matchUpId,
@@ -91,6 +93,7 @@ export function findDrawMatchUp(params: FindDrawMatchUpArgs): {
       tournamentParticipants,
       participantsProfile,
       afterRecoveryTimes,
+      tournamentRecord,
       contextContent,
       drawDefinition,
       contextProfile,
