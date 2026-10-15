@@ -5,7 +5,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
-import { INDIVIDUAL } from '@Constants/participantConstants';
+import { GROUP, INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { COMPETITOR, OTHER } from '@Constants/participantRoles';
+import { RANKING } from '@Constants/scaleConstants';
 
 /**
  * Workstream D-scenarios (slice 2). A data-driven catalog that runs each mutation
@@ -187,6 +189,20 @@ function seededContext(): Ctx {
 }
 
 /** The first structure of the seed's draw, read live (reads dispatch no notices). */
+let freePair: any; // the PAIR a scenario's setup created, for its run
+
+/** Adds individuals that no entry, draw or grouping references yet, so they can be deleted freely. */
+function addFreeIndividuals(count: number): string[] {
+  const participants = Array.from({ length: count }, (_, index) => ({
+    participantType: INDIVIDUAL,
+    participantRole: COMPETITOR,
+    person: { standardGivenName: `Free${index}`, standardFamilyName: 'Individual' },
+  }));
+  const result: any = tournamentEngine.addParticipants({ participants, returnParticipants: true });
+  expect(result.success).toEqual(true);
+  return result.participants.map(({ participantId }) => participantId);
+}
+
 function firstStructure(ctx: Ctx): any {
   const record = tournamentEngine.getTournament().tournamentRecord;
   const drawDefinition = record.events
@@ -887,6 +903,85 @@ const scenarios: Scenario[] = [
       const result = tournamentEngine.addVoluntaryConsolationStructure({
         drawId: ctx.drawId,
         structureName: 'Voluntary Consolation',
+      });
+      expect(result.success).toEqual(true);
+    },
+  },
+
+  // ── gaps found by the whole-suite measurement (testHarness/noticeCoverage), closed ──
+  {
+    // the factory mints the eventId: the ADD_EVENT notice must carry it, from the stored event
+    name: 'addEvent without an eventId',
+    expectation: 'covered',
+    run: () => {
+      const result = tournamentEngine.addEvent({ event: { eventName: 'Minted', gender: 'M' } });
+      expect(result.success).toEqual(true);
+    },
+  },
+  {
+    // a PAIR goes with its deleted individual although only the individual was requested
+    name: 'deleteParticipants removes the PAIR of a deleted individual',
+    expectation: 'covered',
+    setup: () => {
+      const pair: any = tournamentEngine.addParticipant({
+        participant: {
+          participantType: PAIR,
+          participantRole: COMPETITOR,
+          individualParticipantIds: addFreeIndividuals(2),
+        },
+        returnParticipant: true,
+      });
+      expect(pair.success).toEqual(true);
+      freePair = pair.participant;
+    },
+    run: () => {
+      const result = tournamentEngine.deleteParticipants({ participantIds: [freePair.individualParticipantIds[0]] });
+      expect(result.success).toEqual(true);
+      const { participants } = tournamentEngine.getParticipants({
+        participantFilters: { participantIds: [freePair.participantId] },
+      });
+      expect(participants).toEqual([]);
+    },
+  },
+  {
+    // a GROUP that lists a deleted individual as a member and as a contact is pruned, so modified
+    name: 'deleteParticipants prunes a GROUP',
+    expectation: 'covered',
+    setup: () => {
+      const ids = addFreeIndividuals(3);
+      const created: any = tournamentEngine.createGroupParticipant({
+        individualParticipantIds: ids,
+        groupName: 'Pruned group',
+        participantRole: OTHER,
+      });
+      expect(created.success).toEqual(true);
+      const group = created.participant;
+      expect(group.participantType).toEqual(GROUP);
+      const modified: any = tournamentEngine.modifyParticipant({
+        participant: { participantId: group.participantId, contactParticipantIds: [ids[0]] },
+      });
+      expect(modified.success).toEqual(true);
+    },
+    run: () => {
+      const { participants } = tournamentEngine.getParticipants({ participantFilters: { participantTypes: [GROUP] } });
+      const [memberId] = participants[0].individualParticipantIds;
+      const result = tournamentEngine.deleteParticipants({ participantIds: [memberId] });
+      expect(result.success).toEqual(true);
+    },
+  },
+  {
+    // reassigns the event's teams: every team it rebuilt is a modified participant
+    name: 'scaledTeamAssignment',
+    expectation: 'covered',
+    seed: teamContext,
+    run: (ctx) => {
+      const { participants } = tournamentEngine.getParticipants({
+        participantFilters: { participantTypes: [INDIVIDUAL] },
+      });
+      const result: any = tournamentEngine.scaledTeamAssignment({
+        scaleAttributes: { scaleName: 'WTN', scaleType: RANKING, eventType: 'SINGLES' },
+        individualParticipantIds: participants.slice(0, 8).map(({ participantId }) => participantId),
+        eventId: ctx.eventId,
       });
       expect(result.success).toEqual(true);
     },

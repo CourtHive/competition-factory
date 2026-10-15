@@ -270,6 +270,7 @@ export function removeParticipantIdsFromAllTeams({
   });
 
   let modifications = 0;
+  const modified: Participant[] = [];
   tournamentParticipants
     .filter((participant) => {
       return (
@@ -287,7 +288,10 @@ export function removeParticipantIdsFromAllTeams({
         participants,
       });
       if (removed) modifications++;
+      if (removed?.length) modified.push(grouping);
     });
+
+  modifyParticipantsNotice({ tournamentId: tournamentRecord.tournamentId, participants: modified });
 
   return modifications ? SUCCESS : { error: NO_PARTICIPANT_REMOVED };
 }
