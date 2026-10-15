@@ -1,5 +1,6 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { findMatchUp } from '@Acquire/findMatchUp';
 import queryEngine from '@Engines/queryEngine';
 import { expect, it } from 'vitest';
 
@@ -46,3 +47,39 @@ it('resolves allocatedCourt venueName across multiple venues', () => {
   // courts span both venues → both venueNames resolved
   expect(new Set(allocatedCourts.map((ac) => ac.venueName)).size).toEqual(2);
 });
+
+// The bare-id lookup used to hydrate the whole tournament first, and that hydration wrote venueName onto the
+// STORED allocatedCourts; the draw-level hydration that produced the result had no tournamentRecord and read the
+// leaked names. It now hydrates only the hit, with the record, so the names come from the venues themselves.
+it.each([false, true])(
+  'a fresh record resolves allocatedCourt venueNames by bare id (nextMatchUps %s)',
+  (nextMatchUps) => {
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 8 }],
+      venueProfiles: [
+        { venueName: 'Venue Alpha', courtsCount: 2 },
+        { venueName: 'Venue Beta', courtsCount: 2 },
+      ],
+      startDate: '2023-03-15',
+      endDate: '2023-03-22',
+      setState: true,
+    });
+    const { matchUpId, drawId } = queryEngine.allTournamentMatchUps({
+      matchUpFilters: { matchUpTypes: [TEAM_MATCHUP] },
+    }).matchUps[0];
+    const courtIds = queryEngine.getVenuesAndCourts().courts.map((c) => c.courtId);
+    let result: any = tournamentEngine.allocateTeamMatchUpCourts({ matchUpId, courtIds, drawId });
+    expect(result.success).toEqual(true);
+
+    // a fresh copy: nothing has hydrated it, so nothing has written onto it
+    const record = tournamentEngine.getTournament().tournamentRecord;
+    result = findMatchUp({ tournamentRecord: record, matchUpId, inContext: true, nextMatchUps });
+    const venueNames = result.matchUp.schedule.allocatedCourts.map((ac) => ac.venueName);
+    expect(venueNames.toSorted((a, b) => a.localeCompare(b))).toEqual([
+      'Venue Alpha',
+      'Venue Alpha',
+      'Venue Beta',
+      'Venue Beta',
+    ]);
+  },
+);
