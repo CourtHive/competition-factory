@@ -4,10 +4,14 @@ title: Global State
 
 ## devContext
 
-Setting devContext(true) bypasses **try {} catch (err) {}** code block and in some cases enables enhanced logging
+Setting a truthy devContext (`true` or an object) bypasses the **try {} catch (err) {}** block around method
+invocation, so an exception thrown inside a method propagates to the caller; an object value also configures logging.
+`setDevContext` sets the value; `getDevContext` only reads it.
 
 ```js
-getDevContext(true);
+setDevContext(true);
+getDevContext(); // true
+getDevContext({ errors: true }); // the devContext object if every given key matches, otherwise false
 ```
 
 ---
@@ -15,6 +19,8 @@ getDevContext(true);
 ## getState
 
 Returns a deep copy of `tournamentRecords` which have been loaded, along with currently selected `tournamentId`.
+With deep copy disabled (`setDeepCopy(false)`, or `setState(records, false)`), `tournamentRecords` holds the live loaded
+objects rather than copies.
 
 ```js
 const { tournamentId, tournamentRecords } = getState({
@@ -43,25 +49,37 @@ Loads tournament records into [Global State](/docs/engines/global-state); suppor
 const tournamentRecords = [tournamentRecord];
 // or const tournamentRecords = { [tournamentId]: tournamentRecord }
 
-setsState(tournamentRecords, deepCopy, deepCopyConfig);
+setState(tournamentRecords, deepCopy, deepCopyConfig);
 ```
 
 :::info
-By default a deep copy of the `tournamentRecords` is made so that mutations do not affect the source objects. An optional boolean parameter, _deepCopy_ can be set to false to override this default behavior.
+By default a deep copy of the `tournamentRecords` is made so that mutations do not affect the source objects. An optional
+boolean parameter, _deepCopy_, can be set to false to override this default behavior. The boolean is written to the
+process-wide setting (`setDeepCopy`), so it also governs later copies: with deep copy disabled the engine works on the
+caller's own objects, and `getState` / `getTournament` return those same objects rather than copies.
 :::
 
-:::note
-`deepCopyConfig` is an optional configuration for `makeDeepCopy`. In server configurations when `deepCopy` is FALSE and `tournamentRecords` are retrieved from Mongo, for instance, there are scenarios where nodes of the JSON structure contain prototypes which cannot be converted.
-:::
+`deepCopyConfig` is an optional configuration for `makeDeepCopy`, installed process-wide through `setDeepCopy`. These are
+the only attributes it accepts:
 
 ```js
 const deepCopyConfig = {
-  ignore, // optional - either an array of attributes to ignore or a function which processes attributes to determine whether to ignore them
-  toJSON, // optional - an array of attributes to convert to JSON if the attribute in question is an object with .toJSON property
-  stringify, // optional - an array of attributes to stringify
-  modulate, // optional - function to process every attribute and return custom values, or undefined, which continues normal processing
+  threshold, // optional - depth beyond which the original (uncopied) references are kept
+  ignore, // optional - an array of attribute names to leave out of the engine's internal copies
+  toJSON, // optional - an array of attribute names whose values are replaced by value.toJSON(), when present
+  stringify, // optional - an array of attribute names whose values are converted to strings
 };
 ```
+
+`ignore` applies to the engine's internal copies only (rollback snapshots, previews, copied query results), not to the
+copy `setState` makes or to the copies `getState` / `getTournament` return.
+
+### Why copying is configurable
+
+Records loaded from a document database can carry driver-internal objects — identifier and decimal classes, objects with
+prototypes — that cannot be walked as plain JSON. `ignore`, `toJSON`, `stringify` and `threshold` keep those values out of
+the walk. As an escape hatch, a state provider may supply its own `makeDeepCopy`, which the engine then uses for every
+copy in place of the built-in one.
 
 ---
 

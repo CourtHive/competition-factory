@@ -18,8 +18,9 @@
  * 1. A bare `engine.` is AMBIGUOUS. The docs use it for the availability engine and the ScoringEngine
  *    as well as a factory engine, so resolving it to `tournamentEngine` invented 127 failures out of
  *    213. Only explicitly named engines are checked; nothing is guessed.
- * 2. `asyncEngine` exposes ZERO enumerable keys — it is a proxy. A surface with no enumerable keys is
- *    SKIPPED and reported as skipped, because failing against it would mark every call missing.
+ * 2. `asyncEngine` exposes ZERO enumerable keys — the export is an uninstantiated factory function,
+ *    not an engine. A surface with no enumerable keys is SKIPPED and reported as skipped, because
+ *    failing against it would mark every call missing.
  *
  * It reads the built package, so it measures what a consumer gets rather than what source implies.
  */

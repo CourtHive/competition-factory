@@ -1,9 +1,9 @@
 /**
- * Forge namespace — staging area for new factory functionality before it
- * graduates to a governor or query module. See `forge.md` for the original
- * 2.x vision.
+ * Forge namespace — the developer-facing facades layered over the engines.
+ * Production code: exported from the package root (`src/index.ts`). See
+ * `forge.md`.
  *
- * Currently hosts the developer-JOY prototype facades:
+ * Hosts the developer-JOY facades:
  *  - `engine.q.*` — the unwrap query facade (see `q.ts`, #2 silent-fallback)
  *  - `unwrap(result)` — the throwing variant that pairs with #7's typed
  *    error hierarchy (see `unwrap.ts`)

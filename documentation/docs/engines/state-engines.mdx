@@ -7,7 +7,8 @@ title: State Engines
 All factory engines provide logging and middleware services which resolve parameters such as `events` and `drawDefinitions` from identifiers.
 Mutation engines provide subscription/notification functionality.
 
-- **askEngine**: used to _synchronously_ query `tournamentRecords` held in state.
+- **askEngine**: used to _synchronously_ query `tournamentRecords` held in state. It does not notify subscribers, but it does not
+  enforce read-only use either: it runs whatever method it is given.
 - **syncEngine**: used to _synchronously_ mutate `tournamentRecords` held in state.
 - **asyncEngine**: used to _asynchronously_ mutate `tournamentRecords` held in state.
 
@@ -24,9 +25,12 @@ By default, a "deep copy" of `tournamentRecords` is made as they are loaded into
 
 This behavior can be overridden such that engines operate directly on loaded tournamentRecords.
 
-- `engine.setState(tournamentRecord, deepCopyOptions)`
+- `engine.setState(records, deepCopyOption?: boolean, deepCopyAttributes?: object)`
 
-**deepCopyOptions** can be either a boolean or an object which configures the behavior of the deep copy.
+**deepCopyOption** is a boolean; `false` loads the caller's own objects without copying. It is also
+written to the process-wide deep-copy setting, so it affects later copies too — see
+[Global State](/docs/engines/global-state#setstate). **deepCopyAttributes** configures how copies are
+made (`threshold`, `ignore`, `toJSON`, `stringify`).
 
 ## Invoking Factory Functions
 
@@ -64,6 +68,8 @@ const { participants } = askEngine.execute({ getParticipants, ...params });
 
 Function is imported and invoked as an engine attribute.
 
+{/* doc-methods:ignore — getParticipants is imported into askEngine on the line above */}
+
 ```js
 askEngine.importMethods({ getParticipants });
 const { participants } = askEngine.getParticipants({ withIndividualParticipants: true });
@@ -97,30 +103,45 @@ syncEngine.importMethods({ getParticipants });
 const result = syncEngine.executionQueue([
   { method: 'getParticipants', params: { participantFilters: { participantTypes: [INDIVIDUAL] } } },
 ]);
-const { participants } = result[0];
+// { success, results } — or an error object if any directive failed
+if (result.error) throw new Error(result.error.message);
+const { participants } = result.results[0];
 ```
 
 ## devContext
 
-**devConext** is a property of engine state which is used to store any data which is useful for development purposes.
+**devContext** is a property of engine state which is used to store any data which is useful for development purposes.
 
-- The devContext value can be either a boolean or an object.
-- When there is a devContext value present, the `try {} catch {}` block is **NOT** used in method invocation.
-- When devContext is an object it is used to configure engine logging.
+- The devContext value can be either a boolean or an object. It is unset by default.
+- When the devContext value is truthy (`true` or any object), the `try {} catch {}` block is **NOT** used in method invocation:
+  an exception thrown inside a method propagates to the caller.
+- When devContext is unset or `false`, an exception is caught and returned as an `{ error }` result.
+- When devContext is an object it is also used to configure engine logging.
 
 ```js
-askEngine.devContext(true); // default
-askEngine.devContext(false); // do not catch internal errors
+askEngine.devContext(true); // errors are THROWN
+askEngine.devContext(false); // default behaviour: errors are caught and returned
 ```
 
 ## Bypassing State
 
-Passing `tournamentRecord` as a parameter to any engine method will operate directly on the passed `tournamentRecord`.
+Passing `tournamentRecord` as a parameter makes the passed record the only record in scope for that call: a temporary
+`{ [tournamentId]: tournamentRecord }` replaces the loaded `tournamentRecords`, which are not referenced.
+
+{/* doc-methods:ignore — getParticipants is imported into askEngine in the examples above */}
 
 ```js
 askEngine.getParticipants({ tournamentRecord });
 ```
 
-:::info
-When `tournamentRecord` is passed as a parameter, a temporary `tournamentRecords` object is created and any `tournamentRecords` in state are not referenced.
-:::
+It is not an unconditional bypass. The parameter middleware then resolves the call in this order:
+
+1. `_middleware: false` — params are passed through untouched, and the method receives the supplied record.
+2. `params.tournamentId`, if given, must be the supplied record's id; otherwise `MISSING_TOURNAMENT_RECORD`.
+3. `drawId` / `eventId` are resolved against the supplied record only (an unknown `eventId` is `EVENT_NOT_FOUND`).
+4. The effective tournamentId is `params.tournamentId` (or the one found via `drawId` / `eventId`), else the engine's
+   **active** tournamentId. If that id is not the supplied record's, the call fails with `MISSING_TOURNAMENT_RECORD`.
+   If there is no effective tournamentId, or it is the supplied record's, the method receives the supplied record.
+
+So with a different tournament active in the engine, pass `tournamentId` (or a `drawId` / `eventId` inside the supplied
+record) alongside `tournamentRecord`.
