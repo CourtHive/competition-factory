@@ -457,6 +457,26 @@ read as finished, the exit stayed beside its BYE, and the matchUp read TO_BE_PLA
 came last but held the pending exit when it came first (census run 17, COMPASS and OLYMPIC 32 under
 `doubleExitPropagateBye: false`).
 
+More generally, a held exit goes on at once, pending, whenever the matchUp it feeds can still receive an
+opponent: its other feeder is still to be played, or is an exit awarded to a seat nobody has reached. CA,
+2026-09-24: a produced walkover that meets a BYE "SHOULD then propagate" while the opponent's feeder is
+pending. This holds whichever arrived first, the exit or the BYE beside it, and whether the exit is sent on as
+it arrives or when the mutation settles; until census S6 the settle held it back until the other side was
+decided, so the same results left a pending exit in one order and a TO_BE_PLAYED matchUp with the exit held
+behind a BYE in another (census s14, COMPASS 32/27, 20521366: `North|2|1`; across every order of the results
+that pin these shapes, three end states became one). Under `doubleExitPropagateBye: false` a double exit's
+loser seat receives the produced exit and never a BYE, in either order of the two exits that converged there;
+the BYE opposite stays, and the exit travels on. An entry left on a side that is itself a BYE is no held
+exit: its carrier went home when the BYE took the seat (census run-17 Class B, COMPASS 32/27, 20641116:
+entered last, the probe left `Southwest|2|1` TO_BE_PLAYED with the exit held back; entered first, the loser
+seat became a BYE; both now leave the pending walkover).
+
+A correction that re-derives a double exit to the exit it kept applies the same rule as the direct path: a
+kept exit that reached the matchUp relayed past a BYE lands pending, unless somebody already stands on the
+seat it would be awarded to. Awarded instead to the empty seat, it was taken by a loser arriving there with an
+exit of their own, who should have converged with it, and the seat their win would have fed became a BYE
+nobody could fill (the same seed, `East|1|13` corrected from a double walkover to a walkover).
+
 ### A carry past a BYE a holder takes back comes back with it
 
 CA's rule "the BYE stays; the exit travels" lets a holder's BYE position stand one round on until the exit it holds
@@ -717,6 +737,31 @@ Since 7.5.0. When two exits have converged into a double exit and nothing downst
 either origin can be cleared, and the draw afterwards is the draw the kept origin alone would have
 produced: the double exit and whatever it produced downstream are unwound, and the kept origin's
 carried exit is replayed forward.
+
+### Rules settled by the census in S6 (2026-10-15)
+
+Each held across every entry order of the census history that exposed it, under `doubleExitPropagateBye: false`
+unless stated.
+
+- **A loser seat already holding a BYE is settled, and nothing is produced onto it.** A produced walkover awarded to an
+  empty seat claims the BYE its loser would have taken; when a carrier later converges that matchUp, the double exit's
+  loser seat is that BYE. Owing the seat the produced exit instead was measured and rejected: it opened census seeds
+  and a new order dependence (COMPASS 32/30, 20694910). The BYE a matchUp claimed while it was a single exit, and alone,
+  is taken back when a correction makes it a double exit, and its loser seat receives the produced exit.
+- **A withdrawn origin leaves the kept exit its own label.** A mixed convergence is stored as a DOUBLE_WALKOVER; once
+  the walkover side is withdrawn, the double default's produced exit is a DEFAULTED, as direct entry writes it
+  (COMPASS 32/27, 20521366).
+- **A carry's own exit relabels the matchUp whose entry it replaces**, and **a participant brought home past a BYE
+  takes only their own carry**: the carry whose source matchUp they played in (COMPASS and OLYMPIC 32, 20715025,
+  20779675, 20865978).
+- **A carrier is not carried past a holder's BYE when the draw settles**: a BYE the other holder left is not one an
+  exit passes, as for a held exit (FEED_IN_CHAMPIONSHIP 16/14, 20833621, a refusal after a write).
+- **An unwind does not walk on through a result it leaves standing**; **a holder's BYE leaves every round it reached**;
+  **a dissolved convergence takes back the BYEs it claimed onward, and a re-derived one keeps the BYE claims of others**;
+  **a relabel into an exit takes back an award over a carried exit too**; **a convergence produces onto a seat an exit
+  has awarded**; **a loser-link award survives the withdrawal of its seat's BYE**; and **a removal walks on only
+  through a real partner** (a hole is not a drawPosition, [drawPositions](./draw-positions.md) § 5). Census s13, s14,
+  s16 and run 19 residuals; each pinned by a named test.
 
 ### Nothing to do is success, not failure
 

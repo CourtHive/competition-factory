@@ -1108,6 +1108,13 @@ function stampCarriedExitOnArrival({
       matchUpStatus: carried,
     }),
   });
+  // the label is the record's: a single exit replaced by the carrier's own reads as theirs (census run 18, COMPASS 32/30,
+  // 20715025: with `East|1|9`'s double walkover last, `South|3|1` kept the dissolved convergence's WALKOVER beside the
+  // carrier's DEFAULTED entry, where every other order records DEFAULTED)
+  if (isExit(noContextWinnerMatchUp.matchUpStatus)) {
+    const derived = deriveExitStateFromProvenance(getSideExitProvenance({ matchUp: noContextWinnerMatchUp }));
+    if (derived && isExit(derived.matchUpStatus)) noContextWinnerMatchUp.matchUpStatus = derived.matchUpStatus;
+  }
   if (supersedesProducedExit)
     releaseProducedExitReservation({
       matchUp: noContextWinnerMatchUp,

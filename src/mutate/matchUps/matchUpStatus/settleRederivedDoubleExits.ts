@@ -24,6 +24,7 @@ import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type {
   SideExitProvenanceEntry,
+  SideExitProvenance,
   MatchUpStatusUnion,
   DrawDefinition,
   Tournament,
@@ -167,6 +168,15 @@ export function settleRederivedDoubleExit({
     // carried over a loser link with nobody standing opposite: nothing to replay or advance, but the exit still reads
     // as the kept double exit alone produced it, pending
     if (!produced && isDoubleExit(origin.matchUpStatus) && overLoserLink && !winnerStands) {
+      // a double exit no longer, it claims no BYE further on; only its own loser target's is still owed (below)
+      withdrawByeSeats({
+        keepAt: ownLoserTarget({ matchUpId, inContextMatchUps, drawDefinition }),
+        claimantMatchUpId: matchUpId,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+        event,
+      });
       settleProducedExit({
         stored,
         keptSide,
@@ -194,8 +204,7 @@ export function settleRederivedDoubleExit({
     // loser of that goes with it (census run-17 baseline F3, COMPASS 16/14 20731395 and siblings, policy off:
     // `West|2|2`'s produced walkover went, and the BYE claimed in `Southwest|1|1` for its loser stood).
     const ownLoserTargetId = overLoserLink
-      ? positionTargets({ matchUpId, inContextDrawMatchUps: inContextMatchUps, drawDefinition }).targetMatchUps
-          ?.loserMatchUp?.matchUpId
+      ? ownLoserTarget({ matchUpId, inContextMatchUps, drawDefinition })
       : undefined;
     withdrawByeSeats({
       claimantMatchUpId: matchUpId,
@@ -242,8 +251,12 @@ export function settleRederivedDoubleExit({
   // through a BYE rather than as the origin's loser, the replay below has no other way to restore it
   // (sweep seed 6141627: a South final became a BYE, its kept entry was cleared and never re-stamped).
   // It is kept at the carrier's CURRENT side, where the replay stamps it too, never at its old key.
+  const claims = byeClaimsOf(getSideExitProvenance({ matchUp: stored }));
   clearSideExitProvenance(stored);
-  setSideExitProvenance({ provenance: { [carrierSide]: keptEntry }, matchUp: stored });
+  setSideExitProvenance({
+    provenance: { ...claims, [carrierSide]: { ...claims[carrierSide], ...keptEntry } },
+    matchUp: stored,
+  });
   if (stored.matchUpStatus !== BYE) stored.matchUpStatus = TO_BE_PLAYED;
   delete stored.winningSide;
   blankExitCodes(stored);
@@ -348,6 +361,37 @@ function settleProducedExit({
     drawDefinition,
     event,
   });
+}
+
+/** the matchUp this one's loser link feeds, whose BYE a produced exit's empty losing side still owes */
+function ownLoserTarget({
+  inContextMatchUps,
+  drawDefinition,
+  matchUpId,
+}: {
+  inContextMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpId: string;
+}): string | undefined {
+  if (!inContextMatchUps) return undefined;
+  return positionTargets({ matchUpId, inContextDrawMatchUps: inContextMatchUps, drawDefinition }).targetMatchUps
+    ?.loserMatchUp?.matchUpId;
+}
+
+/**
+ * The BYE claims a matchUp holds, by side. A claim leaves when its claimant withdraws it, never as a side effect of the
+ * matchUp it stands on being re-derived (`positionClear`'s rule). Dropped with the dissolved convergence's provenance,
+ * the claim a matchUp made on the seat its loser can never fill was lost, and when a correction later gave that loser
+ * back nothing could withdraw the BYE (census run 19, COMPASS 16/13 policy-off 20849541: `Southwest|1|1` dp 1, claimed
+ * by `West|2|1` while it was won over a produced exit, stood after `East|1|2` was corrected to a played result).
+ */
+function byeClaimsOf(provenance?: SideExitProvenance): SideExitProvenance {
+  const claims: SideExitProvenance = {};
+  for (const sideNumber of [1, 2] as const) {
+    const byeClaims = provenance?.[sideNumber]?.byeClaims;
+    if (byeClaims?.length) claims[sideNumber] = { byeClaims: [...byeClaims] };
+  }
+  return claims;
 }
 
 /** a BYE feeding this matchUp holds the kept exit's origin: the exit reached here relayed past it, not down its link */

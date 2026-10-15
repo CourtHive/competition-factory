@@ -1,4 +1,5 @@
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import {
@@ -40,8 +41,38 @@ export function carriedEntryAt({
     (side) => carriedExitStatus(provenance[side]) && !isDoubleExit(provenance[side]?.previousMatchUpStatus),
   );
   const structural = carried.find((side) => side === sideNumber);
-  const side = structural ?? (carried.length === 1 ? carried[0] : undefined);
+  // read off the side when it can be; otherwise the carry is the one this position's participant brought, identified
+  // by its source: a carry belongs to the loser of the matchUp it came from. "The one carried entry" alone handed a
+  // participant brought back past a withdrawn BYE the carry of the participant opposite, and the matchUp they came
+  // home to read two exits (census run 19, OLYMPIC 32/29 20779675 and COMPASS 32/31 20865978, policy off)
+  const side =
+    structural ??
+    carried.find((carriedSide) =>
+      sourceHeld({ drawDefinition, participantId: held.participantId, entry: provenance[carriedSide] }),
+    );
   return side ? provenance[side] : undefined;
+}
+
+/** the participant stood in the matchUp an entry names as its source, and so is the one who carried its exit on */
+function sourceHeld({
+  drawDefinition,
+  participantId,
+  entry,
+}: {
+  entry?: SideExitProvenanceEntry;
+  drawDefinition: DrawDefinition;
+  participantId?: string;
+}): boolean {
+  if (!participantId || !entry?.sourceMatchUpId) return false;
+  for (const structure of drawDefinition.structures ?? []) {
+    const source = matchUpsOf(structure)?.find((matchUp) => matchUp.matchUpId === entry.sourceMatchUpId);
+    if (!source) continue;
+    const positions = new Set((source.drawPositions ?? []).filter(Boolean));
+    return !!positionAssignmentsOf(structure)?.some(
+      (assignment) => positions.has(assignment.drawPosition) && assignment.participantId === participantId,
+    );
+  }
+  return false;
 }
 
 /**

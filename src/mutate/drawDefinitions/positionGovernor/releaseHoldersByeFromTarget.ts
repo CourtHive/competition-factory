@@ -76,7 +76,11 @@ export function releaseHoldersByeFromTarget({
   // advance had no result behind it. Census F2, FEED_IN_CHAMPIONSHIP_TO_SF 16/16 (20501324): Jane, carrying a default,
   // passed the BYE in `Consolation|3|1` into `4|1`; the held exit took the seat back and the two exits converged, but she
   // stayed in `4|1`, and the correction that later re-derived `3|1` was refused placing its real winner there.
-  for (const drawPosition of (stored.drawPositions ?? []).filter((position): position is number => !!position)) {
+  // the holder's BYE position itself may have gone on past the target, which was held by a BYE as well: it leaves every
+  // round it reached, so the matchUp beyond receives one position from that feeder (census s14 FIRST_MATCH_LOSER_CONSOLATION
+  // 16/14 and 16/13, 20515211 and 20532322: `Consolation|2|2`'s BYE stood in `4|1` beside the participant who passed it)
+  const released = [holdersBye, ...(stored.drawPositions ?? [])];
+  for (const drawPosition of released.filter((position): position is number => !!position)) {
     releaseAdvancedDrawPositionAcrossLinks({
       fromRoundNumber: (nextWinnerMatchUp.roundNumber ?? 0) + 1,
       structureId: fromMatchUp.structureId,

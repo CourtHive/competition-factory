@@ -5,8 +5,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_ROUND_LOSER_CONSOLATION, DOUBLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * A WITHDRAWN EXIT TAKES ITS SIDE'S CODE WITH IT.
@@ -32,6 +32,10 @@ const CASES = [
     config: { drawType: FIRST_ROUND_LOSER_CONSOLATION, drawSize: 32, participantsCount: 32, seed: 9000276 },
     propagateExitStatus: true,
     converged: 'Main|2|8',
+    // No code on the losing side: entering the same results directly (the double default, then the played win) leaves
+    // none, and since the kept exit is labelled from what it retains (census S6 20521366) the correction leaves none too.
+    // Before, it left ['', 'DEF'], a code only the correction path wrote.
+    loserCoded: false,
     steps: [
       at('Main|1|16', double(DOUBLE_DEFAULT)),
       at('Main|1|15', double(DOUBLE_WALKOVER)),
@@ -44,6 +48,10 @@ const CASES = [
     config: { drawType: COMPASS, drawSize: 16, participantsCount: 14, seed: 9000517 },
     propagateExitStatus: false,
     converged: 'East|2|2',
+    // No code on the losing side: entering the same results directly (the double default, then the played win) leaves
+    // none, and since the kept exit is labelled from what it retains (census S6 20521366) the correction leaves none too.
+    // Before, it left ['', 'DEF'], a code only the correction path wrote.
+    loserCoded: false,
     steps: [
       at('East|1|4', double(DOUBLE_DEFAULT)),
       at('East|1|3', double(DOUBLE_WALKOVER)),
