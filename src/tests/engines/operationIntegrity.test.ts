@@ -40,9 +40,18 @@ const methods = {
     throw new Error('boom');
   },
   read: () => ({ success: true }),
+  writeExtra: ({ tournamentRecord, name }) => {
+    tournamentRecord.extra.nested.name = name;
+    return { success: true };
+  },
 };
 syncEngine.importMethods(methods);
 asyncEngine.importMethods(methods);
+
+class StoredDocument {
+  tournamentId = 'T';
+  tournamentName = 'original';
+}
 
 const engines = [
   ['sync', syncEngine],
@@ -50,7 +59,7 @@ const engines = [
 ] as const;
 
 const records = () => [
-  { tournamentId: 'T', tournamentName: 'original' },
+  { tournamentId: 'T', tournamentName: 'original', extra: { nested: { name: 'before' } } },
   { tournamentId: 'U', tournamentName: 'other' },
   { tournamentId: 'V', tournamentName: 'third' },
 ];
@@ -194,8 +203,10 @@ describe.each(engines)('%s queue: a refused queue with rollbackOnError restores 
   });
 
   it('refuses BEFORE any directive runs when the snapshot could not be restored', async () => {
-    // `ignore` is honoured for internal copies, so a snapshot made under it lacks the key
-    setDeepCopy(true, { ignore: ['tournamentId'] });
+    // the engine works on the caller's object (deep copy off), and that object is a class instance
+    // (as a database document is): the factory cannot copy it, and no provider hook restores it
+    const doc = new StoredDocument();
+    await engine.setState(doc, false);
     let result: any = await engine.executionQueue(
       [{ method: 'write', params: { name: 'never written' } }, { method: 'refuse' }],
       true,
@@ -206,9 +217,21 @@ describe.each(engines)('%s queue: a refused queue with rollbackOnError restores 
     result = await engine.execute({ write: methods.write, name: 'never written', rollbackOnError: true });
     expect(result.error).toEqual(ROLLBACK_UNAVAILABLE);
 
-    setDeepCopy(true, { ignore: [] });
-    expect(nameOf(engine)).toEqual('original');
+    expect(doc.tournamentName).toEqual('original');
     expect(getNotices({ topic: TOPIC })).toEqual([]);
+  });
+
+  it('copies a subtree listed in `ignore`, so a rollback restores it rather than dropping it', async () => {
+    setDeepCopy(true, { ignore: ['extra', 'tournamentId'] });
+    const result: any = await engine.executionQueue(
+      [{ method: 'writeExtra', params: { name: 'refused' } }, { method: 'refuse' }],
+      true,
+    );
+    setDeepCopy(true, { ignore: [] });
+    expect(result.rolledBack).toEqual(true);
+    const record = engine.getTournament({ tournamentId: 'T' }).tournamentRecord;
+    expect(record.extra).toEqual({ nested: { name: 'before' } });
+    expect(record.tournamentId).toEqual('T');
   });
 
   it('without rollbackOnError, reports rolledBack: false and keeps the write', async () => {
