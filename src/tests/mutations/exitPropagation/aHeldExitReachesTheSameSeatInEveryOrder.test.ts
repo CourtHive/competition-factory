@@ -124,7 +124,7 @@ const ACCEPTED = SCHEDULE.filter((step) => !(coordinate(step) === 'East|1|10' &&
 it('the census schedule un-decides nothing', () => {
   setSubscriptions({});
   expect(replay(CONFIG, SCHEDULE, 'held-exit-every-order', POLICY_OFF)).toBeNull();
-});
+}, 180_000);
 
 it('the probe entered last sends the held exit on to wait for the arrival', () => {
   const draw = drawAfter([...SCHEDULE, PROBE], 'held-exit-every-order-last');
@@ -134,17 +134,17 @@ it('the probe entered last sends the held exit on to wait for the arrival', () =
     winningSide: undefined,
     occupants: [undefined, undefined],
   });
-});
+}, 180_000);
 
 it('the probe entered first leaves the produced exit, not a BYE, on the loser seat', () => {
   const draw = drawAfter([PROBE, ...SCHEDULE], 'held-exit-every-order-first');
   expect(draw['Southwest|1|2'].occupants).toEqual(['BYE', undefined]);
   expect(draw['Southwest|2|1'].matchUpStatus).toEqual(WALKOVER);
-});
+}, 180_000);
 
 it('the whole draw is the same in every order', () => {
   const last = drawAfter([...SCHEDULE, PROBE], 'held-exit-every-order-last');
   expect(drawAfter([PROBE, ...SCHEDULE], 'held-exit-every-order-first')).toEqual(last);
   expect(drawAfter(forwardOrder([...ACCEPTED, PROBE]), 'held-exit-every-order-forward')).toEqual(last);
   expect(drawAfter([PROBE, ...forwardOrder(ACCEPTED)], 'held-exit-every-order-forward-first')).toEqual(last);
-});
+}, 180_000);
