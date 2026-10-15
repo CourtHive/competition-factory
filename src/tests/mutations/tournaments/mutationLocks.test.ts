@@ -445,6 +445,29 @@ describe('Mutation Locks', () => {
     expect(drawLock.drawId).toEqual(drawId);
   });
 
+  it('venue-level lock blocks venue-scoped mutations on that venue only', () => {
+    mocksEngine.generateTournamentRecord({ setState: true });
+    const venueId = tournamentEngine.addVenue({ venue: { venueName: 'Locked Venue' } }).venue.venueId;
+    const otherVenueId = tournamentEngine.addVenue({ venue: { venueName: 'Open Venue' } }).venue.venueId;
+
+    tournamentEngine.addMutationLock({ scope: 'VENUES', lockToken: 'venue-token', venueId });
+
+    let result: any = tournamentEngine.addCourts({ venueId, courtsCount: 1 });
+    expect(result.error).toEqual(MUTATION_LOCKED);
+
+    // lockToken is read by the engine's lock check, not declared on addCourts' own params
+    const withToken = { venueId, courtsCount: 1, lockToken: 'venue-token' };
+    result = tournamentEngine.addCourts(withToken);
+    expect(result.success).toEqual(true);
+
+    result = tournamentEngine.addCourts({ venueId: otherVenueId, courtsCount: 1 });
+    expect(result.success).toEqual(true);
+
+    // an unknown venueId resolves no venue, so no venue lock applies
+    result = tournamentEngine.addCourts({ venueId: 'unknown-venue', courtsCount: 1 });
+    expect(result.error).not.toEqual(MUTATION_LOCKED);
+  });
+
   it('getMutationLocks filters by scope', () => {
     mocksEngine.generateTournamentRecord({ setState: true });
 
