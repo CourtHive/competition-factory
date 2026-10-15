@@ -71,8 +71,8 @@ const deepCopyConfig = {
 };
 ```
 
-`ignore` applies to the engine's internal copies only (rollback snapshots, previews, copied query results), not to the
-copy `setState` makes or to the copies `getState` / `getTournament` return.
+`ignore` applies to the engine's internal copies (copied query results), not to the copy `setState` makes, to the copies
+`getState` / `getTournament` return, or to rollback and preview snapshots (see below).
 
 ### Why copying is configurable
 
@@ -80,6 +80,46 @@ Records loaded from a document database can carry driver-internal objects — id
 prototypes — that cannot be walked as plain JSON. `ignore`, `toJSON`, `stringify` and `threshold` keep those values out of
 the walk. As an escape hatch, a state provider may supply its own `makeDeepCopy`, which the engine then uses for every
 copy in place of the built-in one.
+
+### Rollback and preview snapshots
+
+A `rollbackOnError` call, a rolled-back `executionQueue` and `dryRun` / `explain` take a **snapshot** of the loaded
+records, which is not an outward copy and does not use the configuration above:
+
+- plain objects and arrays are always copied, including those under `ignore`, `toJSON` or `stringify` keys: a plain
+  object is copyable, and the operation may change it;
+- every other value (a class instance, such as a database driver's identifier or decimal type) is kept **by reference**.
+  The factory never writes into a value whose shape it does not know; a `Date` is copied;
+- `null` stays `null`, and no `threshold` applies.
+
+With deep copy disabled the engine works on your own objects, so a snapshot is written back **into** them: after a
+rollback or a preview your objects, including nested objects the operation replaced or deleted, are the same objects with
+their original values, and the engine still holds them.
+
+The snapshot is checked **before** the first method runs. When it could not be restored, the call is refused with
+`ROLLBACK_UNAVAILABLE` and nothing is written: for example, a record whose root is a class instance (a mapping-library
+document) that the factory can neither copy nor restore.
+
+A state provider can take over both halves:
+
+```js
+const provider = {
+  ...stateProviderMethods,
+  // called with { purpose: 'snapshot' } for a snapshot; any other call is an outward copy
+  makeDeepCopy: (source, convertExtensions, internalUse, removeExtensions, options) => {
+    /* ... */
+  },
+  // writes a snapshot back into records the engine does not own (deep copy disabled)
+  restoreSnapshot: (liveRecords, snapshot) => {
+    /* ... */
+  },
+};
+```
+
+A snapshot must be a set of plain records keyed by `tournamentId`, distinct from the live records. With deep copy disabled,
+a provider snapshot also needs `restoreSnapshot`; without it the call is refused. Values alone may not be the whole of a
+restore: a mapping library that tracks changes needs its tracking put back as well, which only `restoreSnapshot` can do.
+A `makeDeepCopy` hook that ignores `purpose` keeps working, but whether its snapshot is faithful is then up to the hook.
 
 ---
 

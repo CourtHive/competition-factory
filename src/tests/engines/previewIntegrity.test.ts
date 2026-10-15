@@ -114,12 +114,18 @@ describe('a preview leaves the engine exactly as it found it', () => {
   });
 
   it('refuses before running when the snapshot could not be restored', () => {
-    setDeepCopy(true, { ignore: ['tournamentId'] });
+    // the caller's own object (deep copy off) is a class instance the factory cannot copy or restore
+    class StoredDocument {
+      tournamentId = 'D';
+      tournamentName = 'stored';
+    }
+    const doc = new StoredDocument();
+    syncEngine.setState(doc, false);
     const result: any = syncEngine.dryRun([{ method: 'write', params: { name: 'previewed' } }]);
-    setDeepCopy(true, { ignore: [] });
+    syncEngine.setState({ tournamentId: 'T', tournamentName: 'original' }, true);
     expect(result.wouldSucceed).toEqual(false);
     expect(result.error).toEqual(ROLLBACK_UNAVAILABLE);
-    expect(syncEngine.getTournament().tournamentRecord.tournamentName).toEqual('delayed'); // as beforeEach left it
+    expect(doc.tournamentName).toEqual('stored');
   });
 });
 
