@@ -57,15 +57,16 @@ pnpm check-types          # tsc --noEmit
 
 ## Architecture Notes
 
-- **Engine variants**: `syncEngine` (client), `asyncEngine` (server, uses Node.js `async_hooks` for per-request state isolation), plus `ask`, `mock`, `matchUp`, `scale`, `temporal` variants in `src/assemblies/engines/`.
+- **Engine variants**: `syncEngine` (client), `asyncEngine` (server, uses Node.js `async_hooks` for per-request state isolation), plus `ask`, `availability`, `matchUp`, `mock`, `officiating`, `sanctioning`, `scale`, `scoring` variants in `src/assemblies/engines/`.
 - **Source organization** mirrors operation type:
   - `src/mutate/` — state mutations by entity (drawDefinitions, matchUps, participants, scoring, …)
   - `src/query/` — read-only queries by entity
-  - `src/assemblies/governors/` — 18 business-rule governors
+  - `src/assemblies/governors/` — 24 business-rule governors
   - `src/assemblies/generators/` — draw/event/schedule/template generation
-  - `src/constants/` — 42 constant modules
+  - `src/constants/` — 65 constant modules plus `index.ts`
   - `src/fixtures/` — policies, scoring formats, rating parameters
   - `src/types/` — TypeScript type definitions
+  - `src/forge/` — developer-facing facades (`dryRun`, `explain`, `unwrap`, the query/build facades, the event bus); production code, exported from `src/index.ts`
 - **Path aliases** in tsconfig: `@Generators`, `@Assemblies`, `@Validators`, `@Constants`, `@Functions`, `@Fixtures`, `@Helpers`, `@Global`, `@Mutate`, `@Query`, `@Tests`, `@Tools`, `@Types`.
 - **TypeScript strict mode** is ON. Coverage thresholds (95/97/87/97.5, statements/functions/branches/lines) are enforced. Husky pre-commit runs ESLint + Prettier + type check.
 - **Cognitive complexity threshold**: 30. Zero violations is the standing rule.

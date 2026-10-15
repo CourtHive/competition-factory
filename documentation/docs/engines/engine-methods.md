@@ -117,9 +117,9 @@ const utr = customEngine.calculateUTR({ matchHistory: [...] });
 
 ## getTournament
 
-Returns a deep copy of a specific tournament record from engine state.
+Returns a deep copy of a specific tournament record from engine state (while deep copy is enabled, the default).
 
-**Purpose:** Retrieve a tournament record without modifying the internal engine state. The returned copy is safe to modify without affecting the engine's internal state.
+**Purpose:** Retrieve a tournament record without modifying the internal engine state. While deep copy is enabled the returned copy is safe to modify without affecting the engine's internal state.
 
 **When to Use:**
 
@@ -132,7 +132,7 @@ Returns a deep copy of a specific tournament record from engine state.
 ```ts
 {
   tournamentId?: string;       // Optional - specific tournament ID (defaults to current active tournament)
-  convertExtensions?: boolean; // Optional - convert extension objects to JSON strings
+  convertExtensions?: boolean; // Optional - replace `extensions` with `_<name>: value` attributes
   removeExtensions?: boolean;  // Optional - strip all extensions from the copy
 }
 ```
@@ -165,7 +165,7 @@ const { tournamentRecord } = engine.getTournament({
 **Notes:**
 
 - Returns `{}` if no tournamentId is provided and no tournament is active
-- The returned object is a deep copy, so modifications won't affect engine state
+- The returned object is a deep copy only while deep copy is enabled. With `setDeepCopy(false)` (or `setState(records, false)`) it is the live record held in state, and modifying it modifies engine state (`convertExtensions` / `removeExtensions` then have no effect)
 - Use `removeExtensions: true` when serializing for storage to reduce size
 
 ---
@@ -187,7 +187,7 @@ Returns all tournament records currently loaded in engine state along with the a
 
 ```ts
 {
-  convertExtensions?: boolean; // Optional - convert extension objects to JSON strings
+  convertExtensions?: boolean; // Optional - replace `extensions` with `_<name>: value` attributes
   removeExtensions?: boolean;  // Optional - strip all extensions from copies
 }
 ```
@@ -222,7 +222,7 @@ localStorage.setItem('engineState', JSON.stringify(state));
 
 **Notes:**
 
-- Returns deep copies of all tournament records
+- Returns deep copies of all tournament records while deep copy is enabled; with `setDeepCopy(false)` it returns the live records, and `convertExtensions` / `removeExtensions` have no effect
 - Useful for implementing undo/redo functionality
 - See [Global State](/docs/engines/global-state) for more on multi-tournament management
 

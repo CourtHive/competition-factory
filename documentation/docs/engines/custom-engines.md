@@ -2,28 +2,49 @@
 title: Custom Engines
 ---
 
-Factory engines are lightweight, method-free containers until you import the specific functionality you need. This architecture enables **tree-shaking** and **code splitting**, allowing you to create custom engines with only the methods required for your use case.
+Factory engines carry only their core methods (`setState`, `getState`, `executionQueue` and the
+like) until you import the functionality you need. In a bundled client that lets the bundler drop
+every governor you never import — see [Bundle Size](#bundle-size) for what that saves, and for the
+import pattern that defeats it.
 
 **Benefits:**
 
-- Reduced bundle size for client-side applications
-- Faster load times by including only needed functionality
-- Clear separation between query and mutation operations
-- Modular architecture for microservices
-- Type-safe method imports with full IntelliSense support
+- Smaller client bundles, when governors are imported by name
+- An explicit, auditable list of the methods an application calls
 
 :::info
-The `tournamentEngine` and `competitionEngine` exports are pre-configured custom engines provided for backwards compatibility with Competition Factory v1.x. They include all governors and methods.
+The `tournamentEngine` and `competitionEngine` exports are pre-configured engines provided for backwards compatibility with Competition Factory v1.x. They include all governors and methods.
 :::
 
-:::warning Engine Singleton Behavior
-`syncEngine` is a singleton - importing it in multiple files returns the same instance. Methods imported into syncEngine are available everywhere it's imported. For truly independent engines in the same application, use different engine types:
+## Engine Lifetimes and Shared State
 
-- `syncEngine` for one configuration
-- `askEngine` for read-only operations
-- `matchUpEngine` for matchUp-specific operations
+`syncEngine`, `askEngine` and `matchUpEngine` are each a **singleton**: importing one in several
+files returns the same instance. Choosing a different engine type does **not** give you
+independent state:
 
-Do not import methods into `syncEngine` in multiple places, as they will accumulate. Configure your custom engine once at application startup.
+- `syncEngine` and `askEngine` read and write the **same** tournament state — the one installed
+  global state provider — and the same method registry. A record loaded through one is visible
+  to the other, and methods imported into either are registered for both.
+- `askEngine` dispatches without notifications: it never notifies subscribers, takes no
+  `rollbackOnError` snapshot and has no `executionQueue`. It does **not** restrict itself to
+  queries — it runs whatever method you import or pass, so a mutation imported into it changes
+  the shared state silently.
+- `matchUpEngine` keeps its **own** matchUp state, separate from the tournament state, but shares
+  the process-wide settings (`devContext`, deep-copy configuration).
+- `asyncEngine` is a factory function, not a singleton. Each instance reads and writes the state
+  the async provider binds to the current execution context — see
+  [Mutation Engines](/docs/engines/mutation-engines#asynchronous-state-provider).
+
+Methods imported into an engine accumulate for the life of the process. Configure your custom
+engine once at application startup rather than importing methods into it from several places.
+
+:::caution `tournamentEngine` is `syncEngine`
+`tournamentEngine` and `competitionEngine` are the same instance as `syncEngine`, with every
+governor imported when the module that defines them is evaluated. In Node, or anywhere the
+package is loaded without a bundler, that happens on import, so `syncEngine` already carries
+every method. A bundler that drops unused modules (the package declares `"sideEffects": false`)
+leaves `syncEngine` bare only as long as nothing in the application imports `tournamentEngine`
+or `competitionEngine`.
 :::
 
 ---
@@ -32,14 +53,15 @@ Do not import methods into `syncEngine` in multiple places, as they will accumul
 
 ### Minimal Query Engine
 
-Create a read-only engine with just query methods. Since `syncEngine` is a singleton, configure it once and export:
+Create an engine with just query methods. Import the governor by **name** from the package root —
+see [Bundle Size](#bundle-size) for why `governors.queryGovernor` costs far more:
 
 ```js
 // queryEngine.ts
-import { governors, syncEngine } from 'tods-competition-factory';
+import { syncEngine, queryGovernor } from 'tods-competition-factory';
 
 // Import only query methods
-syncEngine.importMethods(governors.queryGovernor);
+syncEngine.importMethods(queryGovernor);
 
 export { syncEngine as queryEngine };
 ```
@@ -55,32 +77,26 @@ queryEngine.setState(tournamentRecord);
 const { participants } = queryEngine.getParticipants();
 const { matchUps } = queryEngine.allTournamentMatchUps();
 
-// Mutation methods NOT available
-queryEngine.addEvent({ event }); // ❌ TypeError: addEvent is not a function
+// Not imported, and not otherwise loaded (see the caution above)
+queryEngine.addEvent; // undefined
 ```
-
-**Bundle Size:** ~60% smaller than full tournamentEngine
-
-:::caution
-Do not import `syncEngine` in other files and add more methods - they will be added to the same singleton. Configure once at app startup.
-:::
 
 ---
 
 ### Minimal Mutation Engine
 
-Create a write-only engine for specific operations. Use `askEngine` for an independent instance:
+Create an engine for specific operations. Import the method from its named governor:
 
 ```js
 // scoringEngine.ts
-import { governors, askEngine } from 'tods-competition-factory';
+import { syncEngine, matchUpGovernor } from 'tods-competition-factory';
 
 // Import only scoring-related mutation methods
-askEngine.importMethods({
-  setMatchUpStatus: governors.matchUpGovernor.setMatchUpStatus,
+syncEngine.importMethods({
+  setMatchUpStatus: matchUpGovernor.setMatchUpStatus,
 });
 
-export { askEngine as scoringEngine };
+export { syncEngine as scoringEngine };
 ```
 
 **Usage:**
@@ -90,14 +106,17 @@ import { scoringEngine } from './scoringEngine';
 
 scoringEngine.setState(tournamentRecord);
 
-// Only scoring methods available
-scoringEngine.setMatchUpStatus({
+const result = scoringEngine.setMatchUpStatus({
   matchUpId: 'match-1',
   outcome: { score: { sets: [{ side1Score: 6, side2Score: 4 }] } },
-}); // ✅ Works
-
-scoringEngine.generateDrawDefinition({ drawSize: 32 }); // ❌ Not available
+});
+if (result.error) {
+  // errors are returned, not thrown
+}
 ```
+
+Use `syncEngine` rather than `askEngine` for mutations: only `syncEngine` (and `asyncEngine`)
+notify subscribers and honour `rollbackOnError`.
 
 ---
 
@@ -108,7 +127,7 @@ The `importMethods` function can traverse nested objects to import all methods:
 ```js
 import { governors, syncEngine } from 'tods-competition-factory';
 
-// Import all methods from all governors (full engine)
+// Import all methods from all governors (full engine — every governor is bundled)
 syncEngine.importMethods(governors, true, 1);
 // Parameters: (object, traverse=true, maxDepth=1)
 
@@ -127,34 +146,29 @@ export { syncEngine as fullEngine };
 
 ### Client-Side Scoring App
 
-Minimize bundle for browser-based live scoring:
+Minimize bundle for browser-based live scoring. `setState` and `getState` are core engine
+methods — every engine has them without importing anything:
 
 ```js
 // src/engines/clientEngine.ts
-import { governors, syncEngine } from 'tods-competition-factory';
+import { syncEngine, queryGovernor, matchUpGovernor, scoreGovernor } from 'tods-competition-factory';
 
 // Only import what's needed for live scoring UI
 syncEngine.importMethods({
-  // State management
-  setState: governors.queryGovernor.setState,
-  getState: governors.queryGovernor.getState,
-
   // Queries for display
-  allTournamentMatchUps: governors.queryGovernor.allTournamentMatchUps,
-  getMatchUp: governors.queryGovernor.getMatchUp,
+  allTournamentMatchUps: queryGovernor.allTournamentMatchUps,
+  findMatchUp: matchUpGovernor.findMatchUp,
 
   // Score entry
-  setMatchUpStatus: governors.matchUpGovernor.setMatchUpStatus,
+  setMatchUpStatus: matchUpGovernor.setMatchUpStatus,
 
   // Score validation
-  validateSetScore: governors.scoreGovernor.validateSetScore,
-  validateMatchUpScore: governors.scoreGovernor.validateMatchUpScore,
+  validateSetScore: scoreGovernor.validateSetScore,
+  validateMatchUpScore: scoreGovernor.validateMatchUpScore,
 });
 
 export { syncEngine as clientEngine };
 ```
-
-**Result:** 75% smaller bundle than full tournamentEngine
 
 ---
 
@@ -192,20 +206,17 @@ Create engines tailored to specific microservices:
 
 ```js
 // scheduling-service/engine.ts - Only scheduling methods
-import { governors, syncEngine } from 'tods-competition-factory';
+import { syncEngine, queryGovernor, scheduleGovernor } from 'tods-competition-factory';
 
 syncEngine.importMethods({
-  // State
-  setState: governors.queryGovernor.setState,
-
   // Queries
-  allTournamentMatchUps: governors.queryGovernor.allTournamentMatchUps,
-  getVenuesAndCourts: governors.queryGovernor.getVenuesAndCourts,
+  allTournamentMatchUps: queryGovernor.allTournamentMatchUps,
+  getVenuesAndCourts: queryGovernor.getVenuesAndCourts,
 
   // Scheduling mutations
-  bulkScheduleTournamentMatchUps: governors.scheduleGovernor.bulkScheduleTournamentMatchUps,
-  scheduleMatchUps: governors.scheduleGovernor.scheduleMatchUps,
-  clearScheduledMatchUps: governors.scheduleGovernor.clearScheduledMatchUps,
+  bulkScheduleTournamentMatchUps: scheduleGovernor.bulkScheduleTournamentMatchUps,
+  scheduleMatchUps: scheduleGovernor.scheduleMatchUps,
+  clearScheduledMatchUps: scheduleGovernor.clearScheduledMatchUps,
 });
 
 export { syncEngine as schedulingEngine };
@@ -214,13 +225,12 @@ export { syncEngine as schedulingEngine };
 ```js
 // draw-generation-service/engine.ts - Only draw generation
 // Use syncEngine singleton configured once at startup
-import { governors, syncEngine } from 'tods-competition-factory';
+import { syncEngine, eventGovernor, generationGovernor, drawsGovernor } from 'tods-competition-factory';
 
 syncEngine.importMethods({
-  setState: governors.queryGovernor.setState,
-  addEvent: governors.eventGovernor.addEvent,
-  generateDrawDefinition: governors.generationGovernor.generateDrawDefinition,
-  automatedPositioning: governors.drawsGovernor.automatedPositioning,
+  addEvent: eventGovernor.addEvent,
+  generateDrawDefinition: generationGovernor.generateDrawDefinition,
+  automatedPositioning: drawsGovernor.automatedPositioning,
 });
 
 export { syncEngine as drawEngine };
@@ -235,16 +245,17 @@ export { syncEngine as drawEngine };
 Explicitly list needed methods for maximum control:
 
 ```js
+import { syncEngine, queryGovernor, eventGovernor } from 'tods-competition-factory';
+
 syncEngine.importMethods({
-  setState: governors.queryGovernor.setState,
-  getParticipants: governors.queryGovernor.getParticipants,
-  addEvent: governors.eventGovernor.addEvent,
+  getParticipants: queryGovernor.getParticipants,
+  addEvent: eventGovernor.addEvent,
 });
 ```
 
 **Pros:**
 
-- Smallest bundle size
+- Retains at most the governors you name
 - Clear dependencies
 - Easy to audit what's included
 
@@ -258,22 +269,23 @@ syncEngine.importMethods({
 Import entire governor for related functionality:
 
 ```js
+import { syncEngine, queryGovernor, eventGovernor } from 'tods-competition-factory';
+
 // Import all query methods
-syncEngine.importMethods(governors.queryGovernor);
+syncEngine.importMethods(queryGovernor);
 
 // Import all event methods
-syncEngine.importMethods(governors.eventGovernor);
+syncEngine.importMethods(eventGovernor);
 ```
 
 **Pros:**
 
-- Balanced bundle size
 - Related methods grouped
 - Less maintenance
 
 **Cons:**
 
-- May include unused methods from governor
+- Includes every method of each governor imported
 
 ### Full Import
 
@@ -298,37 +310,48 @@ syncEngine.importMethods(governors, true, 1);
 
 ## TypeScript Support
 
-Custom engines maintain full type safety:
+`syncEngine` is typed `FactoryEngine`, which is an open record (`{ [key: string]: any }`). Importing
+a subset of methods does not narrow that type: an unimported method is **not** a TypeScript error,
+and calling one fails only at runtime. To get typed signatures, cast to `FactoryEngineTyped` — but
+that type describes the **full** engine surface, every method `tournamentEngine` carries, so it does
+not reflect a selective import either.
 
 ```ts
-import { governors, syncEngine } from 'tods-competition-factory';
-import type { FactoryEngine } from 'tods-competition-factory';
+import { syncEngine, queryGovernor } from 'tods-competition-factory';
+import type { FactoryEngineTyped } from 'tods-competition-factory';
 
-// Type-safe custom engine
-syncEngine.importMethods(governors.queryGovernor);
+syncEngine.importMethods(queryGovernor);
 
-export { syncEngine as queryEngine };
+export const queryEngine = syncEngine as FactoryEngineTyped;
 
-// IntelliSense works for imported methods
-queryEngine.getParticipants(); // ✅ Autocomplete available
-queryEngine.addEvent({}); // ❌ TypeScript error: method not imported
+queryEngine.getParticipants(); // typed
+queryEngine.addEvent({}); // also typed — the type does not know what was imported
 ```
 
 ---
 
-## Performance Comparison
+## Bundle Size
 
-Bundle sizes for different import strategies (gzipped):
+Measured with esbuild (bundle, minify, tree shaking; ESM output; gzip) against factory 7.14.0 on
+Node 26:
 
-| Engine Configuration       | Bundle Size | Use Case               |
-| -------------------------- | ----------- | ---------------------- |
-| Selective (5 methods)      | ~15 KB      | Minimal client app     |
-| Query Governor             | ~45 KB      | Read-only display      |
-| Mutation Governor          | ~60 KB      | Specific mutations     |
-| Full Engine                | ~180 KB     | Complete functionality |
-| Pre-built tournamentEngine | ~180 KB     | Backward compatibility |
+| What the application imports                                          | Bundle (gzip) |
+| --------------------------------------------------------------------- | ------------- |
+| `syncEngine` alone                                                    | ≈ 27 KB       |
+| `syncEngine` + `import { queryGovernor }` (named root export)         | ≈ 199 KB      |
+| `syncEngine` + `governors.queryGovernor` (via the `governors` object) | ≈ 523 KB      |
+| `tournamentEngine`                                                    | ≈ 523 KB      |
 
-**Recommendation:** Start with selective imports and add methods as needed.
+The third row is the trap. `governors` is an aggregate object holding every governor; once the
+application touches it — even to read a single property — the bundler must retain all of them, so
+`governors.queryGovernor` costs the same as the full `tournamentEngine`. Import each governor by
+name from the package root:
+
+```js
+import { syncEngine, queryGovernor } from 'tods-competition-factory'; // retains queryGovernor only
+```
+
+**Recommendation:** Start with named governor imports and add methods as needed.
 
 ---
 

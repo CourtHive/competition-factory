@@ -3,7 +3,9 @@ import { isDateObject } from './dateTime';
 import { isFunction } from './objects';
 
 export function makeDeepCopy(
-  sourceObject, // arbitrary JSON object; functions will be stripped.
+  // arbitrary JSON-like value. Functions are returned unchanged (not stripped); null attribute values become
+  // undefined; Date objects become ISO strings; beyond `threshold` depth the original (aliased) references are returned.
+  sourceObject,
   convertExtensions?, // optional - all extension objects converted to attributes ._key
   internalUse?, // disregard deepCopy being disabled within the engine - necessary for query results
   removeExtensions?, // optional - strip all extension attributes

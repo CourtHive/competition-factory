@@ -200,8 +200,10 @@ export type FactoryEngineTyped = MethodSignatures &
      *
      * Run an `executionQueue` against the loaded state, capture the
      * would-be diff (RFC 6902 JSON patch) and the topic/payload notices
-     * the real call would emit, then restore the snapshot. State is
-     * never persisted; subscribers are never notified.
+     * the real call would emit, then restore the engine's state (records,
+     * selected tournament, notice buffer, modification flag) in every case,
+     * including a method that throws under a truthy `devContext`.
+     * Subscribers are never notified. See `src/forge/dryRun.ts`.
      *
      *   const { wouldSucceed, patch, willEmitNotices } = engine.dryRun([
      *     { method: 'deleteDrawDefinition', params: { drawId } },

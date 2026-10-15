@@ -1,12 +1,11 @@
 {
   "comment": "Documented engine calls that do not exist on the engine. Shrink this by fixing them — never grow it to silence a finding. Regenerate: pnpm verify:docs-methods --update-baseline",
   "generated": "node scripts/verify/docMethods.mjs --update-baseline",
-  "count": 26,
+  "count": 25,
   "entries": [
     "[\"documentation/docs/concepts/draw-links.mdx\",\"tournamentEngine.generateStructure()\"]",
     "[\"documentation/docs/concepts/venues-courts.md\",\"tournamentEngine.getCourt()\"]",
     "[\"documentation/docs/concepts/venues-courts.md\",\"tournamentEngine.getCourtMatchUps()\"]",
-    "[\"documentation/docs/engines/state-engines.mdx\",\"askEngine.getParticipants()\"]",
     "[\"documentation/docs/governors/score-governor.md\",\"mocksEngine.parseScoreString()\"]",
     "[\"documentation/docs/policies/seedingPolicy.md\",\"tournamentEngine.assignSeed()\"]",
     "[\"documentation/docs/policies/seedingPolicy.md\",\"tournamentEngine.clearDrawSeeding()\"]",
