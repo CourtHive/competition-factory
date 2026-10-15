@@ -121,7 +121,7 @@ it('migrateTournamentRecord rewrites stored legacy labels to codes, and a second
 
   const result: any = migrateTournamentRecord({ tournamentRecord });
   expect(result.success).toEqual(true);
-  expect(result.promoted.penaltyTypes).toEqual(3);
+  expect(result.promoted.penaltyLabels).toEqual(3);
   expect(first.penalties.map((p: any) => p.penaltyType)).toEqual([
     penaltyConstants.BALL_ABUSE,
     penaltyConstants.PUNCTUALITY,
@@ -133,5 +133,5 @@ it('migrateTournamentRecord rewrites stored legacy labels to codes, and a second
   ]);
 
   const again: any = migrateTournamentRecord({ tournamentRecord, clearLegacy: false });
-  expect(again.promoted.penaltyTypes).toEqual(0);
+  expect(again.promoted.penaltyLabels).toEqual(0);
 });

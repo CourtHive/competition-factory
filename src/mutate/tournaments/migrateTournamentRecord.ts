@@ -186,7 +186,7 @@ type MigrationCounts = {
   matchUpCheckIns: number;
   drawPositions: number;
   participantPresence: number;
-  penaltyTypes: number;
+  penaltyLabels: number;
   venues: number;
   courts: number;
 };
@@ -235,7 +235,7 @@ function migrateTournamentLevel(record: Tournament, counts: MigrationCounts, cle
   counts.tournament += applyGroupPromotions(record, TOURNAMENT_GROUP_PROMOTIONS, clearLegacy);
   for (const participant of record.participants ?? []) {
     counts.participantPresence += promoteParticipantPresence(participant, clearLegacy);
-    counts.penaltyTypes += normalizePenaltyTypes(participant);
+    counts.penaltyLabels += normalizePenaltyTypes(participant);
   }
 }
 
@@ -290,7 +290,7 @@ export function migrateTournamentRecord({
     matchUpCheckIns: 0,
     drawPositions: 0,
     participantPresence: 0,
-    penaltyTypes: 0,
+    penaltyLabels: 0,
     venues: 0,
     courts: 0,
   };
