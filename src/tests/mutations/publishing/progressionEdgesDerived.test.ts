@@ -4,6 +4,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 import { cast } from '@Query/readModel/cast';
 
+// constants
+import { FIRST_ROUND_LOSER_CONSOLATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+
 /**
  * The edges are STORED on drawDefinition matchUps, but only for draws generated after
  * they were materialised. Older records — and TODS files not produced by the factory —
@@ -44,7 +47,7 @@ const counts = (rows: any[]) => ({
 
 describe('cast() derives progression edges rather than only reading stored ones', () => {
   it('recovers BOTH edges for a stripped consolation draw', () => {
-    const record = seed('FIRST_ROUND_LOSER_CONSOLATION');
+    const record = seed(FIRST_ROUND_LOSER_CONSOLATION);
     const intact: any = cast({ tournamentRecord: record })?.rows;
     const before = counts(intact.match_ups);
     expect(before.loser).toBeGreaterThan(0); // the fixture must genuinely have feeds
@@ -64,7 +67,7 @@ describe('cast() derives progression edges rather than only reading stored ones'
   });
 
   it('invents no loser edges for a draw type that has no feed', () => {
-    const record = seed('SINGLE_ELIMINATION');
+    const record = seed(SINGLE_ELIMINATION);
     stripEdges(record);
     const rows: any = cast({ tournamentRecord: record })?.rows;
     const c = counts(rows.match_ups);
@@ -73,7 +76,7 @@ describe('cast() derives progression edges rather than only reading stored ones'
   });
 
   it('leaves the tournamentRecord unmutated — cast() stays pure', () => {
-    const record = seed('FIRST_ROUND_LOSER_CONSOLATION');
+    const record = seed(FIRST_ROUND_LOSER_CONSOLATION);
     stripEdges(record);
     const snapshot = JSON.stringify(record);
     cast({ tournamentRecord: record });
@@ -81,7 +84,7 @@ describe('cast() derives progression edges rather than only reading stored ones'
   });
 
   it('applyProgressionEdges prefers DERIVED over a stale stored edge', () => {
-    const record = seed('FIRST_ROUND_LOSER_CONSOLATION');
+    const record = seed(FIRST_ROUND_LOSER_CONSOLATION);
     tournamentEngine.setState(record);
     const drawDefinition = record.events[0].drawDefinitions[0];
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId: drawDefinition.drawId, inContext: true });

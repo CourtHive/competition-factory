@@ -5,6 +5,7 @@ import * as tools from '@Assemblies/tools';
 import { expect, it } from 'vitest';
 
 // constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
@@ -275,7 +276,7 @@ it('getStructureReports for a draw with PLAY_OFF returns 2 structures when first
   const drawProfiles = [
     {
       eventName: `SINGLES MAIN DRAW`,
-      drawType: 'SINGLE_ELIMINATION',
+      drawType: SINGLE_ELIMINATION,
       category: { categoryName: '18U' },
       generate: true,
       seedsCount: 4,

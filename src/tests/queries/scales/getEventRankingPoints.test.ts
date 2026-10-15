@@ -5,7 +5,7 @@ import { expect, it, describe } from 'vitest';
 // constants and fixtures
 import { MISSING_EVENT, MISSING_POLICY_DEFINITION } from '@Constants/errorConditionConstants';
 import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLE_ELIMINATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 
 const policyDefinitions = POLICY_RANKING_POINTS_BASIC;
@@ -226,12 +226,12 @@ describe('getEventRankingPoints', () => {
     const someParticipantIds = event.entries.slice(0, 2).map((e: any) => e.participantId);
     tournamentEngine.addFlight({
       eventId,
-      stage: 'MAIN',
+      stage: MAIN,
       drawName: 'Flight 2',
       drawEntries: someParticipantIds.map((participantId: string) => ({
         participantId,
         entryStatus: 'DIRECT_ACCEPTANCE',
-        entryStage: 'MAIN',
+        entryStage: MAIN,
       })),
     });
 

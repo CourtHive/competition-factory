@@ -19,6 +19,7 @@ import type {
 } from '@Types/sanctioningTypes';
 
 // constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POST_EVENT } from '@Constants/sanctioningConstants';
 
 // ---------------------------------------------------------------------------
@@ -48,7 +49,7 @@ function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentPro
     tournamentName: 'Coverage Open',
     proposedStartDate: futureDate(20),
     proposedEndDate: futureDate(21),
-    events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: 'SINGLE_ELIMINATION' }],
+    events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: SINGLE_ELIMINATION }],
     ...overrides,
   };
 }

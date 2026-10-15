@@ -22,6 +22,7 @@ import {
   MAIN,
   VOLUNTARY_CONSOLATION,
   SINGLE_ELIMINATION,
+  ROUND_ROBIN_WITH_PLAYOFF,
 } from '@Constants/drawDefinitionConstants';
 
 // ----------------------------------------------------------------
@@ -320,7 +321,7 @@ describe('generateAndPopulatePlayoffStructures guard branches', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 8, drawType: 'ROUND_ROBIN_WITH_PLAYOFF' }],
+      drawProfiles: [{ drawSize: 8, drawType: ROUND_ROBIN_WITH_PLAYOFF }],
     });
 
     tournamentEngine.setState(tournamentRecord);

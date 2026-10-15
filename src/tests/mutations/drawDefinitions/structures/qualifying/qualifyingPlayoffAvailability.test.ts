@@ -8,6 +8,7 @@ import {
   PLAY_OFF,
   QUALIFYING,
   SINGLE_ELIMINATION,
+  MAIN,
 } from '@Constants/drawDefinitionConstants';
 
 // A 64 qualifying's round-1 losers finish 33–64 in the QUALIFYING chain. A 64 FMLC main's consolation
@@ -61,7 +62,7 @@ test.each(scenarios)(
 it('the MAIN structure of an FMLC draw keeps its draw-wide answer', () => {
   const { drawId } = generate(scenarios[1]);
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === 'MAIN');
+  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
   const result: any = tournamentEngine.getAvailablePlayoffProfiles({ drawId, structureId: mainStructure.structureId });
   // the consolation already plays off round 1 and the (first-matchUp) round 2 losers
   expect(result.playoffRounds).not.toContain(1);

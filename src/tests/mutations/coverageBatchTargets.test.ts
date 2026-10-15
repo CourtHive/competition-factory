@@ -16,6 +16,8 @@ import {
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
+  CONSOLATION,
+  MAIN,
 } from '@Constants/drawDefinitionConstants';
 
 // ============================================================================
@@ -482,7 +484,7 @@ describe('getSourceDrawPositionRanges additional coverage', () => {
     });
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const consolationStructure = drawDefinition.structures.find((s: any) => s.stage === 'CONSOLATION');
+    const consolationStructure = drawDefinition.structures.find((s: any) => s.stage === CONSOLATION);
     expect(consolationStructure).toBeDefined();
 
     const matchUpsMap = tournamentEngine.getMatchUpsMap({ drawId });
@@ -506,7 +508,7 @@ describe('getSourceDrawPositionRanges additional coverage', () => {
     });
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const mainStructure = drawDefinition.structures.find((s: any) => s.stage === 'MAIN');
+    const mainStructure = drawDefinition.structures.find((s: any) => s.stage === MAIN);
     const matchUpsMap = tournamentEngine.getMatchUpsMap({ drawId });
 
     let result: any = getSourceDrawPositionRanges({
@@ -527,7 +529,7 @@ describe('getSourceDrawPositionRanges additional coverage', () => {
     });
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const consolationStructure = drawDefinition.structures.find((s: any) => s.stage === 'CONSOLATION');
+    const consolationStructure = drawDefinition.structures.find((s: any) => s.stage === CONSOLATION);
     const matchUpsMap = tournamentEngine.getMatchUpsMap({ drawId });
 
     let result: any = getSourceDrawPositionRanges({

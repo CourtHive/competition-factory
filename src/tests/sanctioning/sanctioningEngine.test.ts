@@ -10,6 +10,7 @@ import {
 
 // constants
 import { DRAFT, SUBMITTED, WITHDRAWN, APPROVED } from '@Constants/sanctioningConstants';
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 // types
@@ -27,7 +28,7 @@ const testEventProposal: EventProposal = {
   eventType: 'SINGLES',
   gender: 'MALE',
   drawSize: 32,
-  drawType: 'SINGLE_ELIMINATION',
+  drawType: SINGLE_ELIMINATION,
 };
 
 const testProposal: TournamentProposal = {

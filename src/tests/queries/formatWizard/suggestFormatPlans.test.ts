@@ -4,6 +4,7 @@ import { expect, it, describe } from 'vitest';
 // constants and types
 import { WizardConstraints, WizardParticipant } from '@Types/formatWizardTypes';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 function pool(ratings: number[]): WizardParticipant[] {
   return ratings.map((rating, i) => ({ participantId: `p${i}`, rating }));
@@ -111,11 +112,11 @@ describe('suggestFormatPlans — governance', () => {
     const result = suggestFormatPlans({
       participants: pool([4, 4.2, 4.5, 4.7, 5, 5.3, 5.5, 5.8]),
       constraints: baseConstraints,
-      governance: { allowedDrawTypes: ['ROUND_ROBIN'] },
+      governance: { allowedDrawTypes: [ROUND_ROBIN] },
     });
     for (const plan of result.plans) {
       for (const fs of plan.flightStructures) {
-        expect(fs.structure.kind).toEqual('ROUND_ROBIN');
+        expect(fs.structure.kind).toEqual(ROUND_ROBIN);
       }
     }
   });

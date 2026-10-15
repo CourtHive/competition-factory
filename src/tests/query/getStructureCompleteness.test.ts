@@ -5,7 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
 // constants
-import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION, PLAY_OFF } from '@Constants/drawDefinitionConstants';
 
 test('a fully-completed draw reports complete with nothing outstanding', () => {
   setSubscriptions({});
@@ -67,7 +67,7 @@ test('structureId scopes the completeness scan to a single structure', () => {
   });
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
   // the playoff structure is a sibling leaf; scoping to it must exclude the group matchUps
-  const playoff = drawDefinition.structures.find((s) => s.stage === 'PLAY_OFF');
+  const playoff = drawDefinition.structures.find((s) => s.stage === PLAY_OFF);
   const result: any = tournamentEngine.getStructureCompleteness({ drawId, structureId: playoff.structureId });
   const reported = result.completeness.structures.map((s) => s.structureId);
   expect(reported.every((id) => id === playoff.structureId)).toEqual(true);

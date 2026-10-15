@@ -13,6 +13,7 @@ import Ajv from 'ajv';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { ADD_PARTICIPANTS, ADD_MATCHUPS } from '@Constants/topicConstants';
 import type { CompetitionProfile } from '@Types/competitionProfile';
+import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import {
   EXISTING_MATCHUP_ID,
   EXISTING_MATCHUPS,
@@ -34,7 +35,7 @@ function setup(count = 8) {
   const participantIds = Array.from({ length: count }, (_, index) => `p${index}`);
   const drawDefinition: DrawDefinition = {
     drawId: 'rotating',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     matchUpType: 'DOUBLES',
     competitionProfile: structuredClone(profile),
     entries: participantIds.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' })),

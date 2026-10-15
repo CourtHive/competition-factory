@@ -10,7 +10,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { ADAPTIVE } from '@Constants/drawDefinitionConstants';
+import { ADAPTIVE, MAIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 const DRAW_SIZE = 14;
@@ -73,7 +73,7 @@ function verifyStructureCompletion(allMatchUps: any[], structures: any[]) {
 function verifyResetState(resetDD: any) {
   for (const structure of resetDD.structures) {
     const assignments = structure.positionAssignments || [];
-    const isMainFirst = structure.stage === 'MAIN' && structure.stageSequence === 1;
+    const isMainFirst = structure.stage === MAIN && structure.stageSequence === 1;
 
     if (isMainFirst) {
       const r1Positions = new Set(

@@ -4,6 +4,19 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import {
+  ROUND_ROBIN_WITH_PLAYOFF,
+  SINGLE_ELIMINATION,
+  FEED_IN_CHAMPIONSHIP_TO_QF,
+  FEED_IN_CHAMPIONSHIP_TO_R16,
+  FEED_IN_CHAMPIONSHIP,
+  CURTIS_CONSOLATION,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  FIRST_ROUND_LOSER_CONSOLATION,
+} from '@Constants/drawDefinitionConstants';
+
 /**
  * buildFromSources builds EVERY structure of a draw, and gives the draw its true links.
  *
@@ -30,7 +43,7 @@ function generated(drawProfile: Record<string, any>, playoffPositions?: number[]
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     // a round robin's playoffs are positioned only as the groups complete, so complete it as it is generated
-    completeAllMatchUps: drawProfile.drawType === 'ROUND_ROBIN_WITH_PLAYOFF',
+    completeAllMatchUps: drawProfile.drawType === ROUND_ROBIN_WITH_PLAYOFF,
     drawProfiles: [drawProfile],
     setState: true,
     nonRandom: 1,
@@ -59,21 +72,21 @@ function generated(drawProfile: Record<string, any>, playoffPositions?: number[]
 }
 
 const cases: [string, Record<string, any>, number[]?][] = [
-  ['SINGLE_ELIMINATION + Playoff 3-4', { drawType: 'SINGLE_ELIMINATION', drawSize: 16 }, [3, 4]],
-  ['SINGLE_ELIMINATION + Playoff 3-4 and 5-8', { drawType: 'SINGLE_ELIMINATION', drawSize: 16 }, [3, 4, 5, 6, 7, 8]],
-  ['FEED_IN_CHAMPIONSHIP_TO_QF', { drawType: 'FEED_IN_CHAMPIONSHIP_TO_QF', drawSize: 32 }],
-  ['FEED_IN_CHAMPIONSHIP_TO_R16', { drawType: 'FEED_IN_CHAMPIONSHIP_TO_R16', drawSize: 32 }],
-  ['FEED_IN_CHAMPIONSHIP', { drawType: 'FEED_IN_CHAMPIONSHIP', drawSize: 16 }],
+  ['SINGLE_ELIMINATION + Playoff 3-4', { drawType: SINGLE_ELIMINATION, drawSize: 16 }, [3, 4]],
+  ['SINGLE_ELIMINATION + Playoff 3-4 and 5-8', { drawType: SINGLE_ELIMINATION, drawSize: 16 }, [3, 4, 5, 6, 7, 8]],
+  [FEED_IN_CHAMPIONSHIP_TO_QF, { drawType: FEED_IN_CHAMPIONSHIP_TO_QF, drawSize: 32 }],
+  [FEED_IN_CHAMPIONSHIP_TO_R16, { drawType: FEED_IN_CHAMPIONSHIP_TO_R16, drawSize: 32 }],
+  [FEED_IN_CHAMPIONSHIP, { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 16 }],
   ['COMPASS', { drawType: 'COMPASS', drawSize: 32 }],
-  ['CURTIS_CONSOLATION', { drawType: 'CURTIS_CONSOLATION', drawSize: 64 }],
-  ['FIRST_MATCH_LOSER_CONSOLATION', { drawType: 'FIRST_MATCH_LOSER_CONSOLATION', drawSize: 32 }],
-  ['MODIFIED_FEED_IN_CHAMPIONSHIP', { drawType: 'MODIFIED_FEED_IN_CHAMPIONSHIP', drawSize: 16 }],
-  ['FIRST_ROUND_LOSER_CONSOLATION', { drawType: 'FIRST_ROUND_LOSER_CONSOLATION', drawSize: 16 }],
+  [CURTIS_CONSOLATION, { drawType: CURTIS_CONSOLATION, drawSize: 64 }],
+  [FIRST_MATCH_LOSER_CONSOLATION, { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 32 }],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, { drawType: MODIFIED_FEED_IN_CHAMPIONSHIP, drawSize: 16 }],
+  [FIRST_ROUND_LOSER_CONSOLATION, { drawType: FIRST_ROUND_LOSER_CONSOLATION, drawSize: 16 }],
   ['OLYMPIC', { drawType: 'OLYMPIC', drawSize: 16 }],
   [
     'ROUND_ROBIN_WITH_PLAYOFF, a playoff per finishing position',
     {
-      drawType: 'ROUND_ROBIN_WITH_PLAYOFF',
+      drawType: ROUND_ROBIN_WITH_PLAYOFF,
       drawSize: 16,
       structureOptions: {
         groupSize: 4,
@@ -126,7 +139,7 @@ describe('buildFromSources builds every structure of a draw', () => {
 
   const roundRobinWithPlayoffs = () =>
     generated({
-      drawType: 'ROUND_ROBIN_WITH_PLAYOFF',
+      drawType: ROUND_ROBIN_WITH_PLAYOFF,
       drawSize: 16,
       structureOptions: {
         groupSize: 4,
@@ -171,7 +184,7 @@ describe('buildFromSources builds every structure of a draw', () => {
   });
 
   it('a one-structure draw is built as before: no links, one structure', () => {
-    const { eventData } = generated({ drawType: 'SINGLE_ELIMINATION', drawSize: 16 });
+    const { eventData } = generated({ drawType: SINGLE_ELIMINATION, drawSize: 16 });
     const result = buildFromSources([eventData]);
     const rebuilt = result.record.events[0].drawDefinitions[0];
     expect(rebuilt.structures.length).toEqual(1);
@@ -180,7 +193,7 @@ describe('buildFromSources builds every structure of a draw', () => {
   });
 
   it('a structure that cannot be built is reported, not dropped', () => {
-    const { eventData } = generated({ drawType: 'FEED_IN_CHAMPIONSHIP_TO_QF', drawSize: 16 });
+    const { eventData } = generated({ drawType: FEED_IN_CHAMPIONSHIP_TO_QF, drawSize: 16 });
     const [draw] = eventData.drawsData;
     draw.structures.push({ structureName: 'nameless' }, { ...draw.structures[1] });
     const result = buildFromSources([eventData]);
@@ -191,7 +204,7 @@ describe('buildFromSources builds every structure of a draw', () => {
   });
 
   it('a source that says losers went elsewhere is reported', () => {
-    const { eventData } = generated({ drawType: 'FEED_IN_CHAMPIONSHIP_TO_QF', drawSize: 16 });
+    const { eventData } = generated({ drawType: FEED_IN_CHAMPIONSHIP_TO_QF, drawSize: 16 });
     const [draw] = eventData.drawsData;
     // a third structure the losers of round 1 claim to reach
     const elsewhere = { ...draw.structures[1], structureId: 'elsewhere', structureName: 'Elsewhere' };

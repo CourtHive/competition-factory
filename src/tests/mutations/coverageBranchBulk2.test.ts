@@ -31,6 +31,7 @@ import { getCourts } from '@Query/venues/getCourts';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import {
   INVALID_VALUES,
   MISSING_COURT_ID,
@@ -214,13 +215,13 @@ describe('resetVoluntaryConsolationStructure branch coverage', () => {
     const drawDefinition = {
       drawId: 'd1',
       entries: [
-        { participantId: 'p1', entryStage: 'VOLUNTARY_CONSOLATION' },
+        { participantId: 'p1', entryStage: VOLUNTARY_CONSOLATION },
         { participantId: 'p2', entryStage: 'MAIN' },
       ],
       structures: [
         {
           structureId: 's1',
-          stage: 'VOLUNTARY_CONSOLATION',
+          stage: VOLUNTARY_CONSOLATION,
           positionAssignments: [{ drawPosition: 1, participantId: 'p1' }],
           seedAssignments: [],
           matchUps: [{ matchUpId: 'm1' }],

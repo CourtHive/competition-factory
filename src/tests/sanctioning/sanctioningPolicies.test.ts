@@ -9,6 +9,9 @@ import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_IT
 // types
 import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
 
+// constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+
 const testApplicant: Applicant = {
   organisationId: 'org-001',
   organisationName: 'Test Club',
@@ -95,7 +98,7 @@ describe('Policy Fixtures — Engine Integration', () => {
           eventType: 'SINGLES',
           gender: 'FEMALE',
           drawSize: 32,
-          drawType: 'SINGLE_ELIMINATION',
+          drawType: SINGLE_ELIMINATION,
           matchUpFormat: 'SET3-S:6/TB7',
           qualifyingDrawSize: 16,
         },

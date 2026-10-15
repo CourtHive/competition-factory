@@ -9,7 +9,7 @@ import { expect, it } from 'vitest';
 
 // constants and fixtures
 import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
-import { DRAW, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { DRAW, MAIN, QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLES } from '@Constants/matchUpTypes';
 import {
@@ -317,21 +317,21 @@ it('does what Jeff wants it to', () => {
           structureProfiles: [
             {
               structureOptions: { groupSize: 8 },
-              drawType: 'ROUND_ROBIN',
+              drawType: ROUND_ROBIN,
               qualifyingPositions: 2,
               stageSequence: 1,
               drawSize: 16,
             },
             {
               structureOptions: { groupSize: 6 },
-              drawType: 'ROUND_ROBIN',
+              drawType: ROUND_ROBIN,
               qualifyingPositions: 2,
               stageSequence: 2,
               drawSize: 12,
             },
             {
               structureOptions: { groupSize: 10, groupSizeLimit: 10 },
-              drawType: 'ROUND_ROBIN',
+              drawType: ROUND_ROBIN,
               qualifyingPositions: 2,
               stageSequence: 3,
               drawSize: 20,

@@ -21,6 +21,8 @@ import {
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
 import {
   INVALID_MATCHUP,
@@ -922,7 +924,7 @@ describe('positionAssignment uncovered paths', () => {
       drawProfiles: [
         {
           drawSize: 8,
-          drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+          drawType: FIRST_MATCH_LOSER_CONSOLATION,
           seedsCount: 2,
           completeAllMatchUps: true,
         },
@@ -933,7 +935,7 @@ describe('positionAssignment uncovered paths', () => {
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: result.drawIds[0] });
     // Consolation structure should exist
-    const consolation = drawDefinition?.structures?.find((s) => s.stage === 'CONSOLATION');
+    const consolation = drawDefinition?.structures?.find((s) => s.stage === CONSOLATION);
     expect(consolation).toBeDefined();
     // completion feeds first-match losers into the consolation and completes it too
     const consolationMatchUps = tournamentEngine

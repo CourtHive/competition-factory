@@ -6,7 +6,7 @@ import { expect, test, describe } from 'vitest';
 
 // constants
 import { INVALID_DRAW_SIZE } from '@Constants/errorConditionConstants';
-import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
+import { LUCKY_DRAW, MAIN, LOSER, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import {
   ASSIGN_BYE,
   REMOVE_ASSIGNMENT,
@@ -677,7 +677,7 @@ describe('luckyDrawAdvancement — stale positionAssignment cleanup', () => {
       structures: [
         {
           structureId: 'test-structure',
-          stage: 'MAIN',
+          stage: MAIN,
           stageSequence: 1,
           matchUps: [...round1MatchUps, ...round2MatchUps, ...round3MatchUps, finalMatchUp],
           positionAssignments: [...round1Assignments, ...staleAssignments, ...emptyAssignments],
@@ -717,7 +717,7 @@ describe('luckyDrawAdvancement — stale positionAssignment cleanup', () => {
       structures: [
         {
           structureId: 'test-structure',
-          stage: 'MAIN',
+          stage: MAIN,
           stageSequence: 1,
           matchUps: [...round1MatchUps, ...round2MatchUps, ...round3MatchUps, finalMatchUp],
           positionAssignments: [...round1Assignments, ...emptyAssignments],
@@ -1317,10 +1317,10 @@ describe('consolidation structure — via withPlayoffs', () => {
     expect(drawDefinition.links.length).toBe(1);
 
     const link = drawDefinition.links[0];
-    expect(link.linkType).toBe('LOSER');
+    expect(link.linkType).toBe(LOSER);
     expect(link.source.roundNumber).toBe(1);
     expect(link.target.roundNumber).toBe(1);
-    expect(link.target.feedProfile).toBe('TOP_DOWN');
+    expect(link.target.feedProfile).toBe(TOP_DOWN);
   });
 
   test('getLuckyDrawRoundStatus returns consolidationLinks from withPlayoffs structure', () => {
@@ -1351,7 +1351,7 @@ describe('consolidation structure — via withPlayoffs', () => {
 
     const consolidationLink = round1!.consolidationLinks![0];
     expect(consolidationLink.targetRoundNumber).toBe(1);
-    expect(consolidationLink.feedProfile).toBe('TOP_DOWN');
+    expect(consolidationLink.feedProfile).toBe(TOP_DOWN);
     expect(consolidationLink.losersPlaced).toBe(false);
   });
 
@@ -1507,7 +1507,7 @@ describe('consolidation structure — via addPlayoffStructures', () => {
 
     // Find the LOSER link from main structure R1 to the playoff structure
     const mainLoserLink = withPlayoff.links.find(
-      (l: any) => l.linkType === 'LOSER' && l.source.structureId === structureId && l.source.roundNumber === 1,
+      (l: any) => l.linkType === LOSER && l.source.structureId === structureId && l.source.roundNumber === 1,
     );
     expect(mainLoserLink).toBeDefined();
 

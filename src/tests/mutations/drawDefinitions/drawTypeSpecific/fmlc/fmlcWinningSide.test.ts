@@ -3,12 +3,12 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 it('can complete FMLC consolation with BYE before main', () => {
   const winningSide = 1;
   const roundNumber = 1;
-  const stage = 'CONSOLATION';
+  const stage = CONSOLATION;
   const drawProfiles = [
     {
       drawSize: 16,

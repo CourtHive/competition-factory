@@ -9,6 +9,7 @@ import { expect, it } from 'vitest';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { AD_HOC, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import type { CompetitionProfile } from '@Types/competitionProfile';
 import {
   INVALID_ENTRIES,
@@ -30,7 +31,7 @@ const profile: CompetitionProfile = {
 function setup() {
   const drawDefinition: DrawDefinition = {
     drawId: 'rotating',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     matchUpType: 'DOUBLES',
     competitionProfile: structuredClone(profile),
     entries: [],
@@ -245,7 +246,7 @@ it('refuses rotating individuals in an ordinary draw in the same doubles event',
   addEventEntries({ ...context, participantIds: Array.from({ length: 8 }, (_, index) => `p${index}`) });
   const plain: DrawDefinition = {
     drawId: 'plain',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     matchUpType: 'DOUBLES',
     entries: [],
     structures: [],
@@ -265,7 +266,7 @@ it('refuses rotating individuals in an ordinary draw in the same doubles event',
   ).toMatchObject({ valid: true });
   const generated = tournamentEngine.generateDrawDefinition({
     eventId: context.event.eventId,
-    drawType: 'SINGLE_ELIMINATION',
+    drawType: SINGLE_ELIMINATION,
     drawSize: 8,
   });
   // An ordinary generator may create an empty bracket, but cannot select ungrouped people.
@@ -328,7 +329,7 @@ it('keeps placement-oriented withDraws behavior consistent for unplaced AD_HOC e
   addEventEntries({ ...context, participantIds: ['p0', 'p1'] });
   const plain: DrawDefinition = {
     drawId: 'plain',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     matchUpType: 'DOUBLES',
     entries: [],
     structures: [],
@@ -348,7 +349,7 @@ it('public checkValidEntries selects event or draw entries and honours explicit 
   context.event.entries = [{ participantId: 'p0', entryStatus: 'DIRECT_ACCEPTANCE' }];
   const plain: DrawDefinition = {
     drawId: 'plain',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     matchUpType: 'DOUBLES',
     entries: [{ participantId: 'pair', entryStatus: 'DIRECT_ACCEPTANCE' }],
     structures: [],

@@ -13,7 +13,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 
 describe('generateDrawDefinition with cross-stage drawEntries', () => {
@@ -57,7 +57,7 @@ describe('generateDrawDefinition with cross-stage drawEntries', () => {
     const result: any = tournamentEngine.generateDrawDefinition({
       drawEntries,
       drawSize: 32,
-      drawType: 'SINGLE_ELIMINATION',
+      drawType: SINGLE_ELIMINATION,
       qualifiersCount: 16,
       qualifyingPlaceholder: true,
       eventId,

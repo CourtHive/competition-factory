@@ -9,6 +9,7 @@ import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditi
 import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import type { RotatingPartnerScoringPolicy } from '@Types/rotatingPartnerScoring';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
+import { AD_HOC } from '@Constants/drawDefinitionConstants';
 
 const locked: RotatingPartnerScoringPolicy = {
   defaultVariant: { tieResolution: 'DECIDING_POINT' },
@@ -17,7 +18,7 @@ const locked: RotatingPartnerScoringPolicy = {
 };
 const draw = (): DrawDefinition => ({
   drawId: 'rotating-draw',
-  drawType: 'AD_HOC',
+  drawType: AD_HOC,
   matchUpType: 'DOUBLES',
   structures: [],
   competitionProfile: {

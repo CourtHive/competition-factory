@@ -5,6 +5,7 @@ import { cast } from '@Query/readModel/cast';
 
 // constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 describe('cast — singles (STANDARD)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -360,7 +361,7 @@ describe('cast — guard', () => {
 describe('cast — round-robin nested group structures', () => {
   it('projects each group sub-structure so every matchUp structure_id resolves (no orphans)', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 8, drawType: 'ROUND_ROBIN', eventName: 'RR' }],
+      drawProfiles: [{ drawSize: 8, drawType: ROUND_ROBIN, eventName: 'RR' }],
       nonRandom: 1,
     });
     const { rows } = cast({ tournamentRecord });

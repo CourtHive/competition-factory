@@ -4,7 +4,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { SCHEDULE_CONFLICT_DOUBLE_BOOKING } from '@Constants/errorConditionConstants';
-import { ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { ROUND_ROBIN_WITH_PLAYOFF, PLAY_OFF } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import {
@@ -721,7 +721,7 @@ describe('proConflicts - Comprehensive Conflict Detection', () => {
 
     // RR_WITH_PLAYOFF has structures: RR groups (stage=MAIN) and a playoff bracket (stage=PLAY_OFF)
     // Playoff matchUps depend on all RR matchUps via POSITION links
-    const playoffMatchUps = matchUps.filter((m) => m.stage === 'PLAY_OFF');
+    const playoffMatchUps = matchUps.filter((m) => m.stage === PLAY_OFF);
     expect(playoffMatchUps.length).toBeGreaterThan(0);
 
     // Schedule only ONE playoff matchUp on a single row to isolate Pass D behavior.

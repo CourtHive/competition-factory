@@ -19,6 +19,9 @@ import {
   StructureRowContext,
 } from '@Query/readModel/readModelRows';
 
+// constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+
 const ctx: MatchUpRowContext = { tournamentId: 't1', providerId: 'PROV', published: false, embargo: null };
 
 describe('eventRow', () => {
@@ -190,7 +193,7 @@ describe('drawRow', () => {
   it('maps draw attributes, nulling optional ones on a bare draw', () => {
     expect(
       drawRow(
-        { drawId: 'd1', drawName: 'Main', drawType: 'SINGLE_ELIMINATION', matchUpFormat: 'SET3-S:6/TB7' },
+        { drawId: 'd1', drawName: 'Main', drawType: SINGLE_ELIMINATION, matchUpFormat: 'SET3-S:6/TB7' },
         't1',
         'e1',
         'PROV',
@@ -201,7 +204,7 @@ describe('drawRow', () => {
       event_id: 'e1',
       provider_id: 'PROV',
       draw_name: 'Main',
-      draw_type: 'SINGLE_ELIMINATION',
+      draw_type: SINGLE_ELIMINATION,
       match_up_format: 'SET3-S:6/TB7',
       origin_organisation_id: null,
       origin_tournament_id: null,

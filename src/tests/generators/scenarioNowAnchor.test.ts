@@ -2,6 +2,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+
 /**
  * An example is only demonstrable if its clock means something at the moment it is opened.
  *
@@ -28,7 +31,7 @@ function generate(
   return mocksEngine.generateTournamentRecord({
     startDate,
     endDate,
-    drawProfiles: [{ drawId: DRAW, drawSize: 16, drawType: 'SINGLE_ELIMINATION' }],
+    drawProfiles: [{ drawId: DRAW, drawSize: 16, drawType: SINGLE_ELIMINATION }],
     venueProfiles: [{ venueId: VENUE, courtsCount: 6, ...venueHours }],
     schedulingProfile: [
       {

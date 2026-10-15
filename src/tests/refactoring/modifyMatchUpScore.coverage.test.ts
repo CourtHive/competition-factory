@@ -9,6 +9,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   DEFAULTED,
@@ -181,7 +182,7 @@ describe('modifyMatchUpScore coverage', () => {
   });
 
   it('handles TEAM matchUp score modification', () => {
-    const drawProfiles = [{ drawSize: 4, drawType: 'ROUND_ROBIN' }];
+    const drawProfiles = [{ drawSize: 4, drawType: ROUND_ROBIN }];
     const eventProfiles = [{ eventType: TEAM_EVENT, drawProfiles }];
 
     mocksEngine.generateTournamentRecord({

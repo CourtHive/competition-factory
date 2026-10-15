@@ -87,12 +87,12 @@ it('can generateDrawDefinition a main structure, then generate a qualifying stru
     ...mainParticipantIds.map((p, i) => ({
       entryStatus: 'DIRECT_ACCEPTANCE',
       entryPosition: i + 1,
-      entryStage: 'MAIN',
+      entryStage: MAIN,
       participantId: p,
     })),
     ...qualifyingParticipantIds.slice(0, 2).map((p, i) => ({
       entryStatus: 'DIRECT_ACCEPTANCE',
-      entryStage: 'QUALIFYING',
+      entryStage: QUALIFYING,
       entryPosition: i + 1,
       participantId: p,
     })),

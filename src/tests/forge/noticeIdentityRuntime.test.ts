@@ -5,6 +5,13 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import * as topicConstants from '@Constants/topicConstants';
+import {
+  SINGLE_ELIMINATION,
+  ROUND_ROBIN,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  FEED_IN_CHAMPIONSHIP,
+} from '@Constants/drawDefinitionConstants';
 
 /**
  * RUNTIME notice-identity conformance.
@@ -105,12 +112,12 @@ function collectNotices(drawType: string) {
 }
 
 const DRAW_TYPES = [
-  'SINGLE_ELIMINATION',
+  SINGLE_ELIMINATION,
   'COMPASS',
-  'ROUND_ROBIN',
-  'FIRST_MATCH_LOSER_CONSOLATION',
-  'ROUND_ROBIN_WITH_PLAYOFF',
-  'FEED_IN_CHAMPIONSHIP',
+  ROUND_ROBIN,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  FEED_IN_CHAMPIONSHIP,
 ];
 
 describe('notice identity — runtime conformance', () => {

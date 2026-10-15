@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest';
 // types
 import type { CategoryAggregationRule } from '@Types/rankingTypes';
 
+// constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+
 /**
  * The CARRY path of `generateRankingList` — how a category-aggregation rule selects source awards,
  * windows them, and rebuilds them for the target list. `generateRankingList.crossCategory.test.ts`
@@ -103,7 +106,7 @@ describe('generateRankingList — what a carry rule takes as its source', () => 
     const pointAwards = [
       award({ personId: 'consolation', drawType: 'FEED_IN', points: 100 }),
       award({ personId: 'tier', eventTier: 'LOCAL', points: 100 }),
-      award({ personId: 'kept', drawType: 'SINGLE_ELIMINATION', eventTier: 'NATIONAL', points: 100 }),
+      award({ personId: 'kept', drawType: SINGLE_ELIMINATION, eventTier: 'NATIONAL', points: 100 }),
     ];
     const entries = list14U(
       pointAwards,

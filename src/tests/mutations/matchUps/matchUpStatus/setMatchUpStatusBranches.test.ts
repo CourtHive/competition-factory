@@ -5,7 +5,7 @@ import { expect, test, describe } from 'vitest';
 
 // constants
 import { MISSING_DRAW_DEFINITION, MISSING_MATCHUP_ID, INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
-import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 
@@ -374,7 +374,7 @@ describe('setMatchUpStatus branch coverage', () => {
 
     // Verify the loser was placed in consolation with exit status
     const { matchUps } = tournamentEngine.allTournamentMatchUps({ inContext: true });
-    const consolationMatchUps = matchUps.filter((m) => m.structureName !== 'MAIN' && m.structureName !== 'Main');
+    const consolationMatchUps = matchUps.filter((m) => m.structureName !== MAIN && m.structureName !== 'Main');
     // At least one consolation matchUp should exist
     expect(consolationMatchUps.length).toBeGreaterThan(0);
   });

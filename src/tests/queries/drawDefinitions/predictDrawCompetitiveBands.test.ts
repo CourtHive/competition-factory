@@ -52,7 +52,7 @@ describe('predictDrawCompetitiveBands — projection modes', () => {
 
   it('Round-robin projects every pair within the group — C(N,2) matchUps', () => {
     const result = predictDrawCompetitiveBands({ ratings: tightRatings.slice(0, 4), drawType: ROUND_ROBIN });
-    expect(result.projectionMode).toEqual('ROUND_ROBIN');
+    expect(result.projectionMode).toEqual(ROUND_ROBIN);
     expect(result.expectedMatchCount).toEqual(6);
   });
 

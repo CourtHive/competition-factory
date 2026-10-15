@@ -5,6 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { UNLINKED_STRUCTURES } from '@Constants/errorConditionConstants';
 
 /**
@@ -18,7 +19,7 @@ import { UNLINKED_STRUCTURES } from '@Constants/errorConditionConstants';
  *     (`insertMatchUpIntoStructure`, `makeEmptyGroupNode`) and is exactly what a caller does when
  *     they paste one network response rather than three.
  */
-function seededTournament(drawType = 'FIRST_MATCH_LOSER_CONSOLATION') {
+function seededTournament(drawType = FIRST_MATCH_LOSER_CONSOLATION) {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8, drawType }],
     nonRandom: 1,
@@ -76,7 +77,7 @@ describe('repairDrawLinks', () => {
 
 describe('buildFromSources — matchUp-only path', () => {
   it('builds a record from a schedule response alone, and materialises its structures', () => {
-    seededTournament('ROUND_ROBIN');
+    seededTournament(ROUND_ROBIN);
     const scheduleResponse: any = tournamentEngine.competitionScheduleMatchUps();
 
     const result: any = buildFromSources([scheduleResponse]);
@@ -95,7 +96,7 @@ describe('buildFromSources — matchUp-only path', () => {
   });
 
   it('surfaces link repairs it performed while assembling', () => {
-    seededTournament('FIRST_MATCH_LOSER_CONSOLATION');
+    seededTournament(FIRST_MATCH_LOSER_CONSOLATION);
     const scheduleResponse: any = tournamentEngine.competitionScheduleMatchUps();
     const result: any = buildFromSources([scheduleResponse]);
 

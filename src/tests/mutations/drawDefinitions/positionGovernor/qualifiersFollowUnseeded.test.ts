@@ -8,11 +8,12 @@ import { setRandomSource } from '@Tools/prng';
 
 // constants and types
 import { NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS } from '@Constants/errorConditionConstants';
+import { LUCKY_DRAW, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import type { PositionAssignment } from '@Types/tournamentTypes';
 
-const drawTypes = ['LUCKY_DRAW', 'SINGLE_ELIMINATION'];
+const drawTypes = [LUCKY_DRAW, SINGLE_ELIMINATION];
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -119,7 +120,7 @@ describe('anonymous qualifier placeholders follow unseeded entrants', () => {
       nonRandom: 1,
       drawProfiles: [
         {
-          drawType: 'SINGLE_ELIMINATION',
+          drawType: SINGLE_ELIMINATION,
           drawSize: 2,
           participantsCount: 1,
           seedsCount: 0,

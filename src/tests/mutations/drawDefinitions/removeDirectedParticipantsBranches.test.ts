@@ -4,7 +4,7 @@ import { expect, test, describe } from 'vitest';
 
 // constants
 import { DOUBLE_WALKOVER, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, MAIN, AD_HOC, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
 describe('removeDirectedParticipants - uncovered branches', () => {
@@ -185,7 +185,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
       drawProfiles: [
         {
           drawSize: 4,
-          drawType: 'AD_HOC',
+          drawType: AD_HOC,
         },
       ],
       setState: true,
@@ -235,7 +235,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
     });
 
     let { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const qualifyingMatchUps = matchUps.filter((m) => m.stage === 'QUALIFYING' && m.roundNumber === 1);
+    const qualifyingMatchUps = matchUps.filter((m) => m.stage === QUALIFYING && m.roundNumber === 1);
 
     // Complete qualifying matchUps
     for (const matchUp of qualifyingMatchUps) {
@@ -255,7 +255,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
 
     // Remove the qualifying result - exercises cross-structure winner removal
     ({ matchUps } = tournamentEngine.allTournamentMatchUps());
-    const completedQualifying = matchUps.find((m) => m.stage === 'QUALIFYING' && m.matchUpStatus === COMPLETED);
+    const completedQualifying = matchUps.find((m) => m.stage === QUALIFYING && m.matchUpStatus === COMPLETED);
     if (completedQualifying) {
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: completedQualifying.matchUpId,
