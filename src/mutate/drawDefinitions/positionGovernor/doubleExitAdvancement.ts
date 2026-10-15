@@ -3568,7 +3568,9 @@ function getHeldExit({
       arrivalSideNumber,
     }) ||
     opponentFeederHoldsAnExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, holder: matchUp, target }) ||
-    (!exitSideIsBye && opponentFeederAwaitsArrival({ inContextDrawMatchUps, holder: matchUp, target }));
+    (!exitSideIsBye && opponentFeederAwaitsArrival({ inContextDrawMatchUps, holder: matchUp, target })) ||
+    (!exitSideIsBye &&
+      opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp: target, sourceMatchUp: matchUp }));
   if (!settledNow) return undefined;
 
   return { holder: matchUp, origin };
