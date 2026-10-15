@@ -3,12 +3,12 @@ import { releaseHoldersByeFromTarget } from '@Mutate/drawDefinitions/positionGov
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
+import { applyWithdrawnExits, withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
-import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
@@ -67,6 +67,49 @@ import type {
   Event,
 } from '@Types/tournamentTypes';
 
+/**
+ * A SINGLE EXIT'S BYE CLAIM DOES NOT SURVIVE ITS BECOMING A DOUBLE EXIT under `doubleExitPropagateBye: false`.
+ *
+ * A matchUp won over a produced exit has nobody to lose, so its loser seat in the connected structure becomes a BYE
+ * nobody can fill, claimed by that matchUp (`propagateUnfillableLoserBye`). When a correction then sends a loser
+ * carrying an exit onto its winner's seat, the matchUp converges: a double exit, whose loser target receives a produced
+ * exit under the policy off, never a BYE (`progressionPolicy`). The BYE stood, the seat's matchUp read BYE, and the
+ * produced exit the other order writes there was never recorded (census S6 Class B 20694910, COMPASS 32/30 policy-off:
+ * `East|1|11` re-scored as a walkover converged `West|1|6`, and `South|1|3` kept `West|1|6`'s BYE on dp 6).
+ *
+ * Only a BYE this matchUp alone claims, on a seat that is not a reserved feed (whose BYE a double exit places anyway).
+ */
+function reclaimSingleExitBye({
+  tournamentRecord,
+  drawDefinition,
+  sourceMatchUp,
+  loserMatchUp,
+  matchUpsMap,
+  event,
+}: {
+  loserMatchUp?: HydratedMatchUp;
+  sourceMatchUp?: HydratedMatchUp;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  event?: Event;
+}): boolean {
+  if (!sourceMatchUp?.matchUpId || !loserMatchUp?.matchUpId || loserMatchUp.hasFedDrawPosition) return false;
+  const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === loserMatchUp.matchUpId);
+  const claimedAlone = Object.values(getSideExitProvenance({ matchUp: stored }) ?? {}).some(
+    (entry) => entry?.byeClaims?.length === 1 && entry.byeClaims[0] === sourceMatchUp.matchUpId,
+  );
+  if (!claimedAlone) return false;
+  withdrawByeSeats({
+    claimantMatchUpId: sourceMatchUp.matchUpId,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
+  return true;
+}
+
 function logAdvancement(method, details) {
   pushGlobalLog({ method, ...details });
 }
@@ -79,6 +122,17 @@ export function doubleExitAdvancement(params) {
 
   const { matchUp: sourceMatchUp, targetMatchUps, targetLinks } = targetData;
   const { loserMatchUp, winnerMatchUp, loserTargetDrawPosition } = targetMatchUps;
+
+  // the BYE this matchUp claimed while it was a single exit is not what a double exit leaves under the policy off
+  if (
+    !propagatesByeOnDoubleExit(appliedPolicies) &&
+    reclaimSingleExitBye({ tournamentRecord, drawDefinition, matchUpsMap, sourceMatchUp, loserMatchUp, event })
+  ) {
+    const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+    const refreshed = positionTargets({ matchUpId: sourceMatchUp.matchUpId, inContextDrawMatchUps, drawDefinition });
+    if (refreshed.error) return decorateResult({ result: refreshed, stack });
+    return doubleExitAdvancement({ ...params, targetData: { ...targetData, ...refreshed, matchUp: sourceMatchUp } });
+  }
 
   // if the loserMatchUp is a WALKOVER or DEFAULTED and has no participants assigned, then it is an 'empty' exit
   // an 'empty' exit is an exit propagated by a double walkover or double default
