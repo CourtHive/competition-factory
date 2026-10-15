@@ -3138,10 +3138,35 @@ function strandsItsExit({
   const provenance = getSideExitProvenance({ matchUp: stored });
   if (!carriedExitStatus(provenance?.[1]) || !carriedExitStatus(provenance?.[2])) return false;
   const target = inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUp.winnerMatchUpId);
-  if (!target || target.winningSide) return false;
+  if (!target) return false;
+  // a target decided only by an exit awarded to the seat this convergence feeds is still owed its produced exit: the
+  // two meet there (RULE 4), as when the convergence came first (census s16 DOUBLE_ELIMINATION 16/11, 20605236:
+  // `Backdraw|4|2` held `Main|3|1`'s carried walkover, awarded to the seat `Backdraw|3|2` feeds, and stalled)
+  if (target.winningSide && !awardedToFedSeat({ inContextDrawMatchUps, feeder: matchUp, target })) return false;
   const storedTarget = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === target.matchUpId);
   const targetProvenance = getSideExitProvenance({ matchUp: storedTarget }) ?? {};
   return !Object.values(targetProvenance).some((entry) => entry?.sourceMatchUpId === matchUp.matchUpId);
+}
+
+/** the target is decided only by an exit awarded to the side `feeder` delivers to, and nobody sits there */
+function awardedToFedSeat({
+  inContextDrawMatchUps,
+  feeder,
+  target,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  feeder: HydratedMatchUp;
+  target: HydratedMatchUp;
+}): boolean {
+  if (!isExit(target.matchUpStatus) || checkScoreHasValue({ score: target.score })) return false;
+  const arrivalSideNumber = getExitArrivalSideNumber({
+    nextWinnerMatchUp: target,
+    sourceMatchUp: feeder,
+    inContextDrawMatchUps,
+  });
+  if (!arrivalSideNumber || target.winningSide !== arrivalSideNumber) return false;
+  const seat = target.sides?.find((side) => side.sideNumber === arrivalSideNumber);
+  return !seat?.participantId && !seat?.bye;
 }
 
 function sendHeldExitsOn({
