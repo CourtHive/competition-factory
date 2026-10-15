@@ -48,6 +48,8 @@ const MIRRORED = Symbol('noticeCoverageMirror');
 export class NoticeCoverageCollector {
   private readonly outFile: string;
   private readonly tally = new Map<string, MethodTally>();
+  // every dispatch, whatever its result or provider: which engine methods the suite reaches at all
+  private readonly invoked = new Map<string, number>();
   private readonly stack: Open[] = [];
   private buffered: (CapturedNotice & { key?: string })[] = [];
   private previous: ((event: InvokeEvent) => void) | undefined;
@@ -107,7 +109,12 @@ export class NoticeCoverageCollector {
 
   private readonly observer = (event: InvokeEvent) => {
     try {
+      if (event.phase === 'before') this.invoked.set(event.methodName, (this.invoked.get(event.methodName) ?? 0) + 1);
       if (this.measured()) this.observe(event);
+    } catch {
+      // a record the harness cannot copy (one holding a function): that call goes unmeasured, and the
+      // test it belongs to must not see the harness's failure
+      this.stack.length = 0;
     } finally {
       this.previous?.(event);
     }
@@ -171,8 +178,12 @@ export class NoticeCoverageCollector {
   }
 
   flush() {
-    if (!this.tally.size) return;
-    const line = JSON.stringify({ file: this.testFile, methods: Object.fromEntries(this.tally) });
+    if (!this.tally.size && !this.invoked.size) return;
+    const line = JSON.stringify({
+      file: this.testFile,
+      methods: Object.fromEntries(this.tally),
+      invoked: Object.fromEntries(this.invoked),
+    });
     fs.appendFileSync(this.outFile, line + '\n');
   }
 }
