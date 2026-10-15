@@ -24,7 +24,7 @@ describe('a point the scorer ignores records nothing', () => {
     const { engine, onPoint } = completedMatch();
     const before = engine.getState();
 
-    engine.addPoint({ winner: 1, penaltyType: 'Ball Abuse' });
+    engine.addPoint({ winner: 1, penaltyType: 'BALL_ABUSE' });
 
     const after = engine.getState();
     expect(after.history?.points.length).toEqual(5);
@@ -49,7 +49,7 @@ describe('a point the scorer ignores records nothing', () => {
     const engine = new ScoringEngine({ matchUpFormat: FORMAT });
     engine.addPoint({ winner: 0 });
 
-    engine.addPoint({ penaltyType: 'Ball Abuse' });
+    engine.addPoint({ penaltyType: 'BALL_ABUSE' });
 
     expect(engine.getState().history?.entries?.length).toEqual(1);
     expect(points(engine)[0].penaltyType).toBeUndefined();
@@ -61,9 +61,9 @@ describe('a completed match takes per-point corrections', () => {
     const { engine } = completedMatch();
     const score = engine.getState().score;
 
-    engine.editPoint(1, { penaltyType: 'Coaching' });
+    engine.editPoint(1, { penaltyType: 'COACHING' });
 
-    expect(points(engine)[1].penaltyType).toEqual('Coaching');
+    expect(points(engine)[1].penaltyType).toEqual('COACHING');
     expect(engine.getState().matchUpStatus).toEqual(COMPLETED);
     expect(engine.getState().score).toEqual(score);
   });
@@ -71,10 +71,10 @@ describe('a completed match takes per-point corrections', () => {
   test('a decoration survives a later recalculating edit', () => {
     const { engine } = completedMatch();
 
-    engine.decoratePoint(2, { penaltyType: 'Ball Abuse', annotation: 'racquet thrown' });
+    engine.decoratePoint(2, { penaltyType: 'BALL_ABUSE', annotation: 'racquet thrown' });
     engine.editPoint(3, { rallyLength: 9 });
 
-    expect(points(engine)[2].penaltyType).toEqual('Ball Abuse');
+    expect(points(engine)[2].penaltyType).toEqual('BALL_ABUSE');
     expect(points(engine)[2].annotation).toEqual('racquet thrown');
   });
 
@@ -88,13 +88,13 @@ describe('a completed match takes per-point corrections', () => {
 
   test('a correction survives undo and redo', () => {
     const { engine } = completedMatch();
-    engine.editPoint(0, { penaltyType: 'Coaching' });
+    engine.editPoint(0, { penaltyType: 'COACHING' });
     engine.decoratePoint(1, { annotation: 'challenged' });
 
     engine.undo();
     engine.redo();
 
-    expect(points(engine)[0].penaltyType).toEqual('Coaching');
+    expect(points(engine)[0].penaltyType).toEqual('COACHING');
     expect(points(engine)[1].annotation).toEqual('challenged');
     expect(engine.getState().matchUpStatus).toEqual(COMPLETED);
   });
@@ -102,10 +102,10 @@ describe('a completed match takes per-point corrections', () => {
   test('an edit made without recalculating is applied by the next rebuild', () => {
     const { engine } = completedMatch();
 
-    engine.editPoint(0, { penaltyType: 'Coaching' }, { recalculate: false });
+    engine.editPoint(0, { penaltyType: 'COACHING' }, { recalculate: false });
     engine.editPoint(4, { rallyLength: 3 });
 
-    expect(points(engine)[0].penaltyType).toEqual('Coaching');
+    expect(points(engine)[0].penaltyType).toEqual('COACHING');
   });
 });
 
@@ -138,10 +138,10 @@ describe('a matchUp loaded without a timeline', () => {
 
     const engine = new ScoringEngine({ matchUpFormat: FORMAT });
     engine.setState(matchUp);
-    engine.editPoint(1, { penaltyType: 'Coaching' });
+    engine.editPoint(1, { penaltyType: 'COACHING' });
     engine.editPoint(3, { rallyLength: 9 });
 
-    expect(points(engine)[1].penaltyType).toEqual('Coaching');
+    expect(points(engine)[1].penaltyType).toEqual('COACHING');
     expect(points(engine)[3].rallyLength).toEqual(9);
     expect(engine.getState().matchUpStatus).toEqual(COMPLETED);
   });

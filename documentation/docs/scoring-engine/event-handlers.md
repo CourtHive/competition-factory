@@ -154,6 +154,8 @@ const engine = new ScoringEngine({
 });
 ```
 
+A `penaltyProfile` names the penalty types of its own format, and they need not be [`PenaltyTypeEnum`](../enums.mdx) codes: `TIME_VIOLATION` is one, while `CODE_VIOLATION` is a value this INTENNSE profile defines for itself. Use an enum code where one fits, since that is the vocabulary a tournament record's penalties store and `@courthive/i18n` labels (`penalties.<CODE>`); the `label` in a profile entry is the format's own display text.
+
 When a `competitionFormat` is provided, the engine automatically extracts the `matchUpFormat`, `pointMultipliers`, and `serverRule` from it.
 
 ### Profile Accessors

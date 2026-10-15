@@ -274,7 +274,7 @@ const { startDate, endDate } = engine.getCompetitionDateRange({
 
 ## getCompetitionPenalties
 
-Returns all penalties across multiple tournaments in a competition.
+Returns all penalties across multiple tournaments in a competition. `penaltyType` is returned as stored: a penalty written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until the record is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified.
 
 ```js
 const { penalties } = engine.getCompetitionPenalties({
@@ -349,7 +349,7 @@ Only that last case admits a fallback. The factory's own reads, such as "today" 
 
 ## getTournamentPenalties
 
-Returns all penalties issued in the tournament.
+Returns all penalties issued in the tournament. `penaltyType` is returned as stored: a penalty written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until the record is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified.
 
 ```js
 const { penalties } = engine.getTournamentPenalties();
