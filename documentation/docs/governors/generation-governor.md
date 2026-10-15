@@ -627,19 +627,20 @@ const { scaleItemsWithParticipantIds } = engine.generateSeedingScaleItems({
 Generates XML output in StatCrew format for college tennis scoring systems.
 
 ```js
-const { xml } = engine.generateStatCrew({
+const { xml, json } = engine.generateStatCrew({
   tournamentRecord, // required - tournament to export
 });
 
-// Save to file for StatCrew import
-fs.writeFileSync('statcrew-export.xml', xml);
+// one <tngame> per team matchUp: save each for StatCrew import
+xml.forEach((game, index) => fs.writeFileSync(`statcrew-game-${index + 1}.xml`, game));
 ```
 
 **Returns:**
 
 ```ts
 {
-  xml: string; // StatCrew-formatted XML
+  xml: string[]; // one StatCrew <tngame> document per team matchUp
+  json: object[]; // the same games before XML conversion
   success: boolean;
 }
 ```
@@ -665,6 +666,8 @@ fs.writeFileSync('statcrew-export.xml', xml);
 
 - Specifically designed for college tennis workflows
 - Handles both tournament and dual match formats
+- Each game reports ONE team matchUp: a team's `score`, its singles/doubles totals and its players' won/lost
+  records count only that matchUp's tieMatchUps, so a team that won none scores 0
 - Includes participant and matchUp mappings
 - XML format matches StatCrew import specifications
 
