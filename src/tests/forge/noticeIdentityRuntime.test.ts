@@ -34,8 +34,10 @@ import * as topicConstants from '@Constants/topicConstants';
  * On the MUTATION path (scoring, advancement, publishing) an unattributable notice has a measured
  * cost: CFS cannot narrow its cache eviction and sweeps a whole tier. That path is asserted strictly.
  *
- * The one remaining generation-phase gap is `ADD_DRAW_DEFINITION`, emitted while the draw is still
- * being built and genuinely not yet attached to an event.
+ * The last generation-phase gap was `ADD_DRAW_DEFINITION`, believed to be emitted while the draw was
+ * still being built and not yet attached to an event. It came from `addEvent`, which announced each draw
+ * of the event it was adding without the eventId it already had. Its notices are now built from the
+ * stored event (2026-10-15), and the ledger below is empty.
  *
  * `MODIFY_DRAW_DEFINITION` used to sit here too, and why it no longer does is the useful part: it was
  * never "a caller forgot an eventId". Keyed notices de-duplicate, and a later notice with the same
@@ -49,10 +51,7 @@ import * as topicConstants from '@Constants/topicConstants';
  * fails, and so does a FIX that removes the last emitter of a listed topic — which is precisely how
  * the de-dup fix above forced this list to shrink.
  */
-const GENERATION_KNOWN_GAPS: Record<string, string> = {
-  // emitted while the draw is still being built, before it is attached to an event
-  [topicConstants.ADD_DRAW_DEFINITION]: 'draw not yet attached to an event when emitted',
-};
+const GENERATION_KNOWN_GAPS: Record<string, string> = {};
 
 function hasDrawGrain(p: any) {
   return !!(p?.drawId || p?.drawDefinition || p?.matchUp);
