@@ -57,6 +57,10 @@ By default a deep copy of the `tournamentRecords` is made so that mutations do n
 boolean parameter, _deepCopy_, can be set to false to override this default behavior. The boolean is written to the
 process-wide setting (`setDeepCopy`), so it also governs later copies: with deep copy disabled the engine works on the
 caller's own objects, and `getState` / `getTournament` return those same objects rather than copies.
+
+**Omitting `deepCopy` leaves the process-wide setting as it is**; it does not restore the default. After
+`setDeepCopy(false)` (or an earlier `setState(records, false)`), `setState(records)` borrows the records as well, and
+`getTournament()` returns that same object.
 :::
 
 `deepCopyConfig` is an optional configuration for `makeDeepCopy`, installed process-wide through `setDeepCopy`. These are
@@ -73,6 +77,12 @@ const deepCopyConfig = {
 
 `ignore` applies to the engine's internal copies (copied query results), not to the copy `setState` makes, to the copies
 `getState` / `getTournament` return, or to rollback and preview snapshots (see below).
+
+`toJSON` and `stringify` reach the same internal copies and no further. With copying disabled and a record whose ids are
+driver objects, the in-context participants on matchUp sides and the participants in `getEventData` carry the converted
+(string) values, while the loaded record itself, `getTournament()` and `getParticipants()` keep the driver objects.
+
+Each call merges per attribute: an attribute you leave out keeps the value an earlier call gave it.
 
 ### Why copying is configurable
 
