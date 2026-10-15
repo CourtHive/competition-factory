@@ -5,6 +5,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { MAIN } from '@Constants/drawDefinitionConstants';
 
 /**
  * Ranking policy with tierToLevel mapping.
@@ -139,7 +140,7 @@ describe('tierToLevel — numericRank fallback', () => {
         {
           profileName: 'leveled',
           eventTypes: ['SINGLES'],
-          stages: ['MAIN'],
+          stages: [MAIN],
           category: { ageCategoryCodes: ['U18'] },
           finishingPositionRanges: { 1: { level: { 2: 500, 5: 60 } } },
         },

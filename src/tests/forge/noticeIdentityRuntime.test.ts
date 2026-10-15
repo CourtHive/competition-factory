@@ -11,6 +11,7 @@ import {
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN_WITH_PLAYOFF,
   FEED_IN_CHAMPIONSHIP,
+  COMPASS,
 } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -113,7 +114,7 @@ function collectNotices(drawType: string) {
 
 const DRAW_TYPES = [
   SINGLE_ELIMINATION,
-  'COMPASS',
+  COMPASS,
   ROUND_ROBIN,
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN_WITH_PLAYOFF,
@@ -160,7 +161,7 @@ describe('notice identity — runtime conformance', () => {
 
   it('the harness observes draw-grain notices at all (guards against a vacuous pass)', () => {
     // Without this, deleting every emission would make the suite green.
-    const { captured } = collectNotices('COMPASS');
+    const { captured } = collectNotices(COMPASS);
     const drawGrain = captured.filter(({ payload }) => hasDrawGrain(payload));
     expect(drawGrain.length).toBeGreaterThan(10);
     expect(captured.filter(({ payload }) => payload?.matchUp).length).toBeGreaterThan(5);

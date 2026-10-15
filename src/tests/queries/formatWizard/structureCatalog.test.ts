@@ -10,6 +10,9 @@ import {
   LUCKY_DRAW,
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
+  COMPASS,
+  ADAPTIVE,
+  FEED_IN,
 } from '@Constants/drawDefinitionConstants';
 
 describe('getStructureRecommendations — appetite filtering', () => {
@@ -19,7 +22,7 @@ describe('getStructureRecommendations — appetite filtering', () => {
     expect(kinds.has(SINGLE_ELIMINATION)).toBe(true);
     expect(kinds.has(FIRST_MATCH_LOSER_CONSOLATION)).toBe(false);
     expect(kinds.has(FIRST_ROUND_LOSER_CONSOLATION)).toBe(false);
-    expect(kinds.has('COMPASS')).toBe(false);
+    expect(kinds.has(COMPASS)).toBe(false);
   });
 
   it('LIGHT adds FMLC, RR_WITH_PLAYOFF, DE but not full cascading', () => {
@@ -28,16 +31,16 @@ describe('getStructureRecommendations — appetite filtering', () => {
     expect(kinds.has(FIRST_MATCH_LOSER_CONSOLATION)).toBe(true);
     expect(kinds.has(DOUBLE_ELIMINATION)).toBe(true);
     expect(kinds.has(FIRST_ROUND_LOSER_CONSOLATION)).toBe(false);
-    expect(kinds.has('COMPASS')).toBe(false);
+    expect(kinds.has(COMPASS)).toBe(false);
   });
 
   it('FULL includes all consolation kinds including COMPASS / ADAPTIVE / FEED_IN', () => {
     const recs = getStructureRecommendations({ flightSize: 8, consolationAppetite: 'FULL' });
     const kinds = new Set(recs.map((r) => r.kind));
     expect(kinds.has(FIRST_ROUND_LOSER_CONSOLATION)).toBe(true);
-    expect(kinds.has('COMPASS')).toBe(true);
-    expect(kinds.has('ADAPTIVE')).toBe(true);
-    expect(kinds.has('FEED_IN')).toBe(true);
+    expect(kinds.has(COMPASS)).toBe(true);
+    expect(kinds.has(ADAPTIVE)).toBe(true);
+    expect(kinds.has(FEED_IN)).toBe(true);
   });
 });
 
@@ -45,13 +48,13 @@ describe('getStructureRecommendations — FEED_IN family', () => {
   it('only emits FEED_IN when singleFlight is true', () => {
     const single = getStructureRecommendations({ flightSize: 16, consolationAppetite: 'NONE', singleFlight: true });
     const multi = getStructureRecommendations({ flightSize: 16, consolationAppetite: 'NONE', singleFlight: false });
-    expect(single.some((r) => r.kind === 'FEED_IN')).toBe(true);
-    expect(multi.some((r) => r.kind === 'FEED_IN')).toBe(false);
+    expect(single.some((r) => r.kind === FEED_IN)).toBe(true);
+    expect(multi.some((r) => r.kind === FEED_IN)).toBe(false);
   });
 
   it('emits the bare FEED_IN variant plus FIC family at flightSize 16', () => {
     const recs = getStructureRecommendations({ flightSize: 16, consolationAppetite: 'NONE', singleFlight: true });
-    const variants = recs.filter((r) => r.kind === 'FEED_IN').map((r) => r.variantId);
+    const variants = recs.filter((r) => r.kind === FEED_IN).map((r) => r.variantId);
     expect(variants.some((v) => v?.startsWith('FEED_IN_'))).toBe(true);
     expect(variants).toContain('FIC_R16');
     expect(variants).toContain('FIC');
@@ -62,7 +65,7 @@ describe('getStructureRecommendations — FEED_IN family', () => {
 
   it('FEED_IN minMatchesPerPlayer is integer', () => {
     const recs = getStructureRecommendations({ flightSize: 16, consolationAppetite: 'NONE', singleFlight: true });
-    for (const rec of recs.filter((r) => r.kind === 'FEED_IN')) {
+    for (const rec of recs.filter((r) => r.kind === FEED_IN)) {
       expect(Number.isInteger(rec.minMatchesPerPlayer)).toBe(true);
     }
   });
@@ -112,13 +115,13 @@ describe('getStructureRecommendations — voluntaryConsolation', () => {
 describe('getStructureRecommendations — sizing', () => {
   it('Compass appears at sizes 7-8 and 13-16, not at size 4', () => {
     expect(
-      getStructureRecommendations({ flightSize: 4, consolationAppetite: 'FULL' }).some((r) => r.kind === 'COMPASS'),
+      getStructureRecommendations({ flightSize: 4, consolationAppetite: 'FULL' }).some((r) => r.kind === COMPASS),
     ).toBe(false);
     expect(
-      getStructureRecommendations({ flightSize: 8, consolationAppetite: 'FULL' }).some((r) => r.kind === 'COMPASS'),
+      getStructureRecommendations({ flightSize: 8, consolationAppetite: 'FULL' }).some((r) => r.kind === COMPASS),
     ).toBe(true);
     expect(
-      getStructureRecommendations({ flightSize: 16, consolationAppetite: 'FULL' }).some((r) => r.kind === 'COMPASS'),
+      getStructureRecommendations({ flightSize: 16, consolationAppetite: 'FULL' }).some((r) => r.kind === COMPASS),
     ).toBe(true);
   });
 
@@ -153,7 +156,7 @@ describe('getStructureRecommendations — governance gating', () => {
     const kinds = new Set(recs.map((r) => r.kind));
     expect(kinds.has(SINGLE_ELIMINATION)).toBe(true);
     expect(kinds.has(ROUND_ROBIN)).toBe(true);
-    expect(kinds.has('COMPASS')).toBe(false);
+    expect(kinds.has(COMPASS)).toBe(false);
     expect(kinds.has(FIRST_MATCH_LOSER_CONSOLATION)).toBe(false);
   });
 

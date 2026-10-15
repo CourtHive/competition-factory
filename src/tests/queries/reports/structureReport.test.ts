@@ -5,7 +5,7 @@ import * as tools from '@Assemblies/tools';
 import { expect, it } from 'vitest';
 
 // constants
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
@@ -204,7 +204,7 @@ it('can generate structureReports for a COMPASS draw', () => {
     {
       eventName: `COMPASS DRAW SINGLES`,
       category: { categoryName: '18U' },
-      drawType: 'COMPASS',
+      drawType: COMPASS,
       generate: true,
       seedsCount: 4,
       drawSize: 16,
@@ -268,7 +268,7 @@ it('can generate structureReports for a COMPASS draw', () => {
 
   expect(participantEntryReports.length).toEqual(individualParticipantsWithEvents.length);
 
-  expect(structureReports.map((r) => r.drawType)).toEqual(['COMPASS']);
+  expect(structureReports.map((r) => r.drawType)).toEqual([COMPASS]);
 });
 
 it('getStructureReports for a draw with PLAY_OFF returns 2 structures when firstStageSequenceOnly: false', () => {

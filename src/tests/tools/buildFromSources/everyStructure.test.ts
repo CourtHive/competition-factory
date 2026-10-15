@@ -15,6 +15,8 @@ import {
   FIRST_MATCH_LOSER_CONSOLATION,
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_ROUND_LOSER_CONSOLATION,
+  COMPASS,
+  OLYMPIC,
 } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -77,12 +79,12 @@ const cases: [string, Record<string, any>, number[]?][] = [
   [FEED_IN_CHAMPIONSHIP_TO_QF, { drawType: FEED_IN_CHAMPIONSHIP_TO_QF, drawSize: 32 }],
   [FEED_IN_CHAMPIONSHIP_TO_R16, { drawType: FEED_IN_CHAMPIONSHIP_TO_R16, drawSize: 32 }],
   [FEED_IN_CHAMPIONSHIP, { drawType: FEED_IN_CHAMPIONSHIP, drawSize: 16 }],
-  ['COMPASS', { drawType: 'COMPASS', drawSize: 32 }],
+  [COMPASS, { drawType: COMPASS, drawSize: 32 }],
   [CURTIS_CONSOLATION, { drawType: CURTIS_CONSOLATION, drawSize: 64 }],
   [FIRST_MATCH_LOSER_CONSOLATION, { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 32 }],
   [MODIFIED_FEED_IN_CHAMPIONSHIP, { drawType: MODIFIED_FEED_IN_CHAMPIONSHIP, drawSize: 16 }],
   [FIRST_ROUND_LOSER_CONSOLATION, { drawType: FIRST_ROUND_LOSER_CONSOLATION, drawSize: 16 }],
-  ['OLYMPIC', { drawType: 'OLYMPIC', drawSize: 16 }],
+  [OLYMPIC, { drawType: OLYMPIC, drawSize: 16 }],
   [
     'ROUND_ROBIN_WITH_PLAYOFF, a playoff per finishing position',
     {
@@ -218,7 +220,7 @@ describe('buildFromSources builds every structure of a draw', () => {
   });
 
   it('deriving links draws nothing from the random source', () => {
-    const { eventData } = generated({ drawType: 'COMPASS', drawSize: 16 });
+    const { eventData } = generated({ drawType: COMPASS, drawSize: 16 });
     setRandomSource(42);
     const first = randomSource()();
     setRandomSource(42);

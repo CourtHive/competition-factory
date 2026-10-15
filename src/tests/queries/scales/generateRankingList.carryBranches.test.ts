@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { CategoryAggregationRule } from '@Types/rankingTypes';
 
 // constants
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLE_ELIMINATION, FEED_IN } from '@Constants/drawDefinitionConstants';
 
 /**
  * The CARRY path of `generateRankingList` — how a category-aggregation rule selects source awards,
@@ -104,13 +104,13 @@ describe('generateRankingList — what a carry rule takes as its source', () => 
 
   it('excludes source awards by draw type and by event tier, and keeps those the filter does not name', () => {
     const pointAwards = [
-      award({ personId: 'consolation', drawType: 'FEED_IN', points: 100 }),
+      award({ personId: 'consolation', drawType: FEED_IN, points: 100 }),
       award({ personId: 'tier', eventTier: 'LOCAL', points: 100 }),
       award({ personId: 'kept', drawType: SINGLE_ELIMINATION, eventTier: 'NATIONAL', points: 100 }),
     ];
     const entries = list14U(
       pointAwards,
-      carryTo14U({ excludedSourceFilters: [{ drawTypes: ['FEED_IN'] }, { eventTiers: ['LOCAL'] }] as any }),
+      carryTo14U({ excludedSourceFilters: [{ drawTypes: [FEED_IN] }, { eventTiers: ['LOCAL'] }] as any }),
     );
     expect(entries.map((entry: any) => entry.personId)).toEqual(['kept']);
   });

@@ -9,7 +9,7 @@ import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditi
 import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import type { RotatingPartnerScoringPolicy } from '@Types/rotatingPartnerScoring';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
-import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
 
 const locked: RotatingPartnerScoringPolicy = {
   defaultVariant: { tieResolution: 'DECIDING_POINT' },
@@ -109,7 +109,7 @@ it('resolves by drawId through the public engine query', () => {
 it('refuses missing or unsupported profiles', () => {
   expect(getRotatingPartnerScoringPolicy({}).error).toBe(MISSING_DRAW_DEFINITION);
   const drawDefinition = draw();
-  drawDefinition.competitionProfile = { version: 1, format: 'LADDER' };
+  drawDefinition.competitionProfile = { version: 1, format: LADDER };
   expect(getRotatingPartnerScoringPolicy({ drawDefinition }).error).toBe(INVALID_VALUES);
 });
 

@@ -9,7 +9,7 @@ import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
 import type { TierClassification } from '@Types/tournamentTypes';
 
 // constants
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -106,7 +106,7 @@ describe('Policy Validation — validateProposal', () => {
 
   it('flags disallowed draw type', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: 'COMPASS' }],
+      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: COMPASS }],
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { cast } from '@Query/readModel/cast';
 
 // constants
-import { FIRST_ROUND_LOSER_CONSOLATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { FIRST_ROUND_LOSER_CONSOLATION, SINGLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
  * The edges are STORED on drawDefinition matchUps, but only for draws generated after
@@ -58,7 +58,7 @@ describe('cast() derives progression edges rather than only reading stored ones'
   });
 
   it('recovers edges for a COMPASS draw (many loser feeds)', () => {
-    const record = seed('COMPASS');
+    const record = seed(COMPASS);
     const before = counts((cast({ tournamentRecord: record })?.rows as any).match_ups);
     expect(before.loser).toBeGreaterThan(10);
 

@@ -35,6 +35,7 @@ import { disableVenues } from '@Mutate/venues/disableVenues';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import {
   INVALID_VALUES,
   MATCHUP_NOT_FOUND,
@@ -369,10 +370,10 @@ describe('getMaxEntryPosition branch coverage', () => {
   it('filters by stage when provided', () => {
     const result = getMaxEntryPosition({
       entries: [
-        { entryPosition: 3, entryStage: 'MAIN' },
-        { entryPosition: 5, entryStage: 'QUALIFYING' },
+        { entryPosition: 3, entryStage: MAIN },
+        { entryPosition: 5, entryStage: QUALIFYING },
       ],
-      stage: 'MAIN',
+      stage: MAIN,
     });
     expect(result).toBe(3);
   });
