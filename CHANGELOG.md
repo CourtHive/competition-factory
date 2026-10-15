@@ -1,5 +1,25 @@
 # Changelog
 
+## [7.14.1](https://github.com/CourtHive/competition-factory/compare/v7.14.0...v7.14.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.14.0 ([#5442](https://github.com/CourtHive/competition-factory/issues/5442)) ([0a7d53e](https://github.com/CourtHive/competition-factory/commit/0a7d53ebcfa94fa13c6185809153787ba27c48ff))
+* **engines:** a refused operation restores everything it touched, and is refused before it writes ([#5446](https://github.com/CourtHive/competition-factory/issues/5446)) ([fba15a4](https://github.com/CourtHive/competition-factory/commit/fba15a41576353c86480daaf9f7d7a1eda23bee1))
+* **engines:** a rollback snapshot is faithful, and restores into the caller's own objects ([#5449](https://github.com/CourtHive/competition-factory/issues/5449)) ([319414c](https://github.com/CourtHive/competition-factory/commit/319414c45b729cd43922799599df2bbc3ad41cf7))
+* **exitPropagation:** a produced exit supersedes a stale relay on its own side ([#5445](https://github.com/CourtHive/competition-factory/issues/5445)) ([79831af](https://github.com/CourtHive/competition-factory/commit/79831afd6e317eb4aa408fb6a6ceb7d72a503eed))
+* **exitPropagation:** an award follows its seat, and a carry stands only beside its carrier ([#5444](https://github.com/CourtHive/competition-factory/issues/5444)) ([388355c](https://github.com/CourtHive/competition-factory/commit/388355c1316845d2444dcac9b0601a10cd9a8c3f))
+* **exitPropagation:** census S5, the run-18 held-BYE, reservation and removal-frame families ([#5450](https://github.com/CourtHive/competition-factory/issues/5450)) ([90a42c5](https://github.com/CourtHive/competition-factory/commit/90a42c5c333e58b3259fbc55af28889dab535a93))
+* **exitPropagation:** census S6, run-17 Class B order dependence and the older residuals ([#5455](https://github.com/CourtHive/competition-factory/issues/5455)) ([b188220](https://github.com/CourtHive/competition-factory/commit/b1882205c5d0dc3994d0e251adc43c9e04c3ecfb))
+* **forge:** dryRun previews with the queue's own dispatch and leaves the engine as it found it ([#5447](https://github.com/CourtHive/competition-factory/issues/5447)) ([5402f0a](https://github.com/CourtHive/competition-factory/commit/5402f0ace5b318122c50d35c7ea1d41d5361faae))
+* **notices:** announce what addEvent, deleteParticipants and scaledTeamAssignment change ([#5452](https://github.com/CourtHive/competition-factory/issues/5452)) ([b586cc6](https://github.com/CourtHive/competition-factory/commit/b586cc6082361c827f2ea36240a475e7ee528614))
+
+
+### Documentation
+
+* **engines:** correct the engine contract in docs and comments ([#5448](https://github.com/CourtHive/competition-factory/issues/5448)) ([b05311a](https://github.com/CourtHive/competition-factory/commit/b05311a6af2057adc5966b5c60454db9c082ca8b))
+
 ## [7.14.0](https://github.com/CourtHive/competition-factory/compare/v7.13.0...v7.14.0) (2026-10-14)
 
 
