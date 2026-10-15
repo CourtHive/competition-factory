@@ -2113,11 +2113,31 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
     // An exit already awarded to a seat nobody has reached yet delivers whoever reaches it. Read as finished, a held
     // exit opposite it was never sent on, and the matchUp they both feed read TO_BE_PLAYED only when the exit came last
     // (census run 17 Class A, COMPASS and OLYMPIC 32 policy off: 20630712 `Southeast|1|2` won by `South|1|4`'s loser).
-    const awaitedWinner = feeder.sides?.find((side) => side.sideNumber === feeder.winningSide);
-    if (isExit(feeder.matchUpStatus) && awaitedWinner && !awaitedWinner.participantId && !awaitedWinner.bye)
-      return true;
+    if (awardsASeatAwaitingArrival(feeder)) return true;
     return !isAnyExit(feeder.matchUpStatus);
   });
+}
+
+/** an exit already awarded to a seat nobody has reached yet: whoever reaches that seat is delivered onward */
+function awardsASeatAwaitingArrival(feeder: HydratedMatchUp): boolean {
+  const awaitedWinner = feeder.sides?.find((side) => side.sideNumber === feeder.winningSide);
+  return isExit(feeder.matchUpStatus) && !!awaitedWinner && !awaitedWinner.participantId && !awaitedWinner.bye;
+}
+
+/** the target's other feeder is an exit awarded to a seat nobody has reached: the held exit goes on to wait for them */
+function opponentFeederAwaitsArrival({
+  inContextDrawMatchUps,
+  holder,
+  target,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  holder: HydratedMatchUp;
+  target: HydratedMatchUp;
+}): boolean {
+  const feeders = inContextDrawMatchUps.filter(
+    (candidate) => candidate.winnerMatchUpId === target.matchUpId && candidate.matchUpId !== holder.matchUpId,
+  );
+  return feeders.length === 1 && awardsASeatAwaitingArrival(feeders[0]);
 }
 
 /**
@@ -3450,6 +3470,8 @@ function getHeldExit({
   if (arrivalEntry && !byeArrivalFromHolder) return undefined;
 
   const opponentSide = target.sides?.find((side) => side.sideNumber === 3 - arrivalSideNumber);
+  // an entry on a side that is itself a BYE is no exit waiting there: its carrier went home when the BYE took the seat
+  const exitSideIsBye = !!matchUp.sides?.find((side) => side.sideNumber === exitSideNumber)?.bye;
   // an exit standing on the other side is settled too: the held exit meets it, and they converge (RULE 4;
   // `convergesAtTarget` in the carrier). Declining here was the policy-off stall budget's whole population.
   // judged on the target as it stands once the holder's BYE arrival is taken back out (`releaseHoldersByeFromTarget`):
@@ -3466,7 +3488,8 @@ function getHeldExit({
       nextWinnerMatchUp: { ...target, sideExitProvenance: withoutArrival, matchUpStatus: derivedStatus },
       arrivalSideNumber,
     }) ||
-    opponentFeederHoldsAnExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, holder: matchUp, target });
+    opponentFeederHoldsAnExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, holder: matchUp, target }) ||
+    (!exitSideIsBye && opponentFeederAwaitsArrival({ inContextDrawMatchUps, holder: matchUp, target }));
   if (!settledNow) return undefined;
 
   return { holder: matchUp, origin };
