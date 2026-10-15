@@ -951,6 +951,13 @@ export const METHOD_NOT_FOUND = {
   code: 'ERR_NOT_FOUND_METHOD' as const,
 } satisfies ErrorType;
 
+// An operation asked for rollback and its snapshot of the state is not one it could restore. Refused
+// BEFORE anything runs: a rollback found impossible after the writes would leave them in place.
+export const ROLLBACK_UNAVAILABLE = {
+  message: 'Rollback unavailable: the state could not be snapshotted',
+  code: 'ERR_ROLLBACK_UNAVAILABLE' as const,
+} satisfies ErrorType;
+
 export const MUTATION_LOCKED = {
   message: 'Mutation blocked by active lock',
   code: 'ERR_MUTATION_LOCKED' as const,
@@ -1100,6 +1107,7 @@ export const errorConditionConstants = {
   MATCHUP_HAS_SCHEDULING,
   MATCHUP_NOT_FOUND,
   METHOD_NOT_FOUND,
+  ROLLBACK_UNAVAILABLE,
   MUTATION_LOCKED,
   MUTATION_LOCK_EXISTS,
   MUTATION_LOCK_NOT_FOUND,

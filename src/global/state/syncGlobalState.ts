@@ -41,6 +41,7 @@ export default {
   disableNotifications,
   enableNotifications,
   getMethods,
+  getNoticeBuffer,
   getNotices,
   getPayloads: getNotices, // canonical alias for the deprecated `getNotices`
   getTopics,
@@ -49,6 +50,7 @@ export default {
   getTournamentRecords,
   removeTournamentRecord,
   setMethods,
+  setNoticeBuffer,
   setSubscriptions,
   setTournamentId,
   setTournamentRecord,
@@ -209,6 +211,17 @@ export function getNotices({ topic }: GetNoticesArgs) {
 
 export function deleteNotices() {
   syncGlobalState.notices = [];
+}
+
+// The whole buffer, for an operation that must restore it on rollback: a refused write's notices
+// must not survive it, and an enclosing operation's earlier notices must. Notices are never edited
+// in place (a keyed add rebuilds the array), so a shallow copy is a faithful capture.
+export function getNoticeBuffer(): Notice[] {
+  return [...syncGlobalState.notices];
+}
+
+export function setNoticeBuffer(notices: Notice[]) {
+  syncGlobalState.notices = [...notices];
 }
 
 export function deleteNotice({ topic, key }: DeleteNoticeArgs) {

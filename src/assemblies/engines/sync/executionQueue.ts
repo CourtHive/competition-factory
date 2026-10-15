@@ -1,55 +1,53 @@
-import { deleteNotices, getInvokeObserver, getMethods, getTournamentRecords } from '@Global/state/globalState';
+import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
+import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
+import { deleteNotices, getInvokeObserver, getMethods } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
-import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
-import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
-import { setState } from '@Assemblies/engines/parts/stateMethods';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { withCapturedClock } from '@Tools/clock';
 
-// constants and types
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+// types
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
 export function executionQueue(engine: FactoryEngine, directives: Directives, rollbackOnError?: boolean) {
-  if (!Array.isArray(directives)) return { error: INVALID_VALUES, message: 'directives must be an array' };
-
   const methods = getMethods();
   const start = Date.now();
 
+  // every directive is checked before any runs: a refusal here has written nothing
+  const invalid = validateDirectives(directives, methods, start);
+  if (invalid) return invalid;
+
   // one instant for the whole queue, captured before any directive runs; see tools/clock.ts
   return withCapturedClock((timeStamp) => {
-    const snapshot = rollbackOnError && makeDeepCopy(getTournamentRecords(), false, true);
+    const capture = rollbackOnError ? captureOperation() : undefined;
+    if (capture?.error) return { error: capture.error, rolledBack: false };
+    const captured = capture?.captured;
 
     const results: any[] = [];
-    for (const directive of directives) {
-      if (typeof directive !== 'object') return { error: INVALID_VALUES, message: 'directive must be an object' };
-      if (directive.params && typeof directive.params !== 'object')
-        return { error: INVALID_VALUES, message: 'params must be an object' };
+    let refusal: ReturnType<typeof executeFunction> | undefined;
+    try {
+      for (const directive of directives) {
+        const methodName = directive.method;
+        const params = prepareDirective(directive, results);
 
-      const { method: methodName, pipe } = directive;
-      const params = directive.params ? { ...directive.params } : {};
-      if (!methods[methodName]) return logMethodNotFound({ methodName, start, params });
+        const result = executeFunction(engine, methods[methodName], params, methodName, 'sync');
+        getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'sync', params, result });
 
-      seedRandomParam(params); // nonRandom: <seed> middleware
-
-      if (pipe) {
-        const lastResult = results.at(-1);
-        const pipeKeys = Object.keys(pipe);
-        for (const pipeKey of pipeKeys) {
-          if (lastResult[pipeKey]) params[pipeKey] = lastResult[pipeKey];
+        if (result?.error) {
+          refusal = result;
+          break;
         }
+        results.push({ ...result, methodName });
       }
+    } catch (err) {
+      // thrown only under devContext (otherwise executeFunction catches): restore, then surface it
+      if (captured) restoreOperation(captured);
+      throw err;
+    }
 
-      const result = executeFunction(engine, methods[methodName], params, methodName, 'sync');
-      getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'sync', params, result });
-
-      if (result?.error) {
-        if (snapshot) setState(snapshot);
-        return { ...result, rolledBack: !!snapshot };
-      }
-      results.push({ ...result, methodName });
+    if (refusal) {
+      if (captured) restoreOperation(captured);
+      return { ...refusal, rolledBack: !!captured };
     }
 
     const mutationStatus = getMutationStatus({ timeStamp }); // timeStamp reaches the record via the factory extension

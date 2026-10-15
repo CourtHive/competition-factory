@@ -64,12 +64,13 @@ export async function notifySubscribersAsync(params?: NotifySubscribersArgs) {
     // only tested with packaged version of factory
     // won't show up in test coverage
     const payloads = getNotices({ topic });
-    if (payloads) await callListener({ topic, payloads, notices: payloads });
+    // `.length`, as the sync dispatch checks: an empty array is truthy and was delivered
+    if (payloads?.length) await callListener({ topic, payloads, notices: payloads });
   }
 
   if (mutationStatus && timeStamp && topics.includes(MUTATIONS)) {
     const mutationPayloads = [{ tournamentId, directives, timeStamp }];
-    callListener({
+    await callListener({
       payloads: mutationPayloads,
       notices: mutationPayloads,
       topic: MUTATIONS,

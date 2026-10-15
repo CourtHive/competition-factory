@@ -24,7 +24,7 @@ export function methodImporter(engine, engineInvoke, submittedMethods, traverse,
         try {
           return invoke();
         } catch (err) {
-          handleCaughtError({
+          return handleCaughtError({
             engineName: 'engine',
             methodName,
             params,
