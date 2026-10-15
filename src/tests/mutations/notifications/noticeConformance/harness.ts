@@ -41,6 +41,7 @@ import {
   MODIFY_POSITION_ASSIGNMENTS,
   MODIFY_SEED_ASSIGNMENTS,
   MODIFY_PARTICIPANTS,
+  MODIFY_SCHEDULING_PROFILE,
   MODIFY_TOURNAMENT_DETAIL,
   PUBLISH_EVENT,
   UNPUBLISH_EVENT,
@@ -89,7 +90,8 @@ const INCIDENTAL_KEYS = new Set(['updatedAt', 'createdAt', 'timeStamp', 'process
  * is uncoverable and surfaces as a violation.
  */
 export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, string[]>>> = {
-  tournament: { modified: [MODIFY_TOURNAMENT_DETAIL] },
+  // the scheduling profile is tournament data (an extension, or first-class) with a topic of its own
+  tournament: { modified: [MODIFY_TOURNAMENT_DETAIL, MODIFY_SCHEDULING_PROFILE] },
   // No topic list: an aggregate is not covered by naming ONE topic, because the mutations that move
   // it announce whichever event or venue changed. Coverage is decided in isEntityCovered instead.
   tournamentAggregate: {},
@@ -345,6 +347,7 @@ export function noticedEntityKeys(captured: CapturedNotice[]): Set<string> {
   for (const { topic, payload } of captured) {
     switch (topic) {
       case MODIFY_TOURNAMENT_DETAIL:
+      case MODIFY_SCHEDULING_PROFILE:
         add('tournament', payload?.tournamentId);
         break;
       case ADD_PARTICIPANTS:

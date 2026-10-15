@@ -112,6 +112,21 @@ function doublesContext(): Ctx {
   return extractContext();
 }
 
+/** Unscored seed with a venue, for scheduling-profile mutations. */
+function venueContext(): Ctx {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    tournamentAttributes: { tournamentId: 'conf-scn-venue' },
+    participantsProfile: { participantsCount: 16 },
+    drawProfiles: [{ drawSize: 8, eventName: 'Singles' }],
+    venueProfiles: [{ venueId: 'conf-venue', courtsCount: 2 }],
+    startDate: '2025-01-01',
+    endDate: '2025-01-14',
+    nonRandom: 1,
+  });
+  tournamentEngine.setState(tournamentRecord);
+  return extractContext();
+}
+
 /** TEAM event seed so tieFormat mutations have a team draw with collections. */
 function teamContext(): Ctx {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -982,6 +997,26 @@ const scenarios: Scenario[] = [
         scaleAttributes: { scaleName: 'WTN', scaleType: RANKING, eventType: 'SINGLES' },
         individualParticipantIds: participants.slice(0, 8).map(({ participantId }) => participantId),
         eventId: ctx.eventId,
+      });
+      expect(result.success).toEqual(true);
+    },
+  },
+  {
+    // the scheduling profile is announced with its own topic, MODIFY_SCHEDULING_PROFILE
+    name: 'setSchedulingProfile',
+    expectation: 'covered',
+    seed: venueContext,
+    run: (ctx) => {
+      const { tournamentId } = tournamentEngine.getTournament().tournamentRecord;
+      const round = {
+        tournamentId,
+        eventId: ctx.eventId,
+        drawId: ctx.drawId,
+        structureId: ctx.structureId,
+        roundNumber: 1,
+      };
+      const result = tournamentEngine.setSchedulingProfile({
+        schedulingProfile: [{ scheduleDate: '2025-01-05', venues: [{ venueId: 'conf-venue', rounds: [round] }] }],
       });
       expect(result.success).toEqual(true);
     },
