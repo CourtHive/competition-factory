@@ -589,6 +589,8 @@ function removeDrawPosition({
   return { ...SUCCESS };
 }
 
+const isPosition = (drawPosition: unknown): boolean => typeof drawPosition === 'number' && drawPosition > 0;
+
 function buildPairingDetails({ roundNumbers, roundProfile, positionAssignments, drawPosition }) {
   let targetDrawPosition: any = drawPosition;
   return roundNumbers
@@ -609,10 +611,16 @@ function buildPairingDetails({ roundNumbers, roundProfile, positionAssignments, 
       const nextRoundProfile = roundProfile?.[roundNumber + 1];
       // whether or not the pairedDrawPosition is a BYE
       const pairedDrawPositionIsBye = pairedDrawPositionAssignment?.bye;
-      // whether or not the pairedDrawPosition is present in the next round
-      const pairedDrawPositionInNextRound = nextRoundProfile?.pairedDrawPositions?.find((pairedPositions: any) =>
-        pairedPositions.includes(pairedDrawPosition),
-      );
+      // whether or not the pairedDrawPosition is present in the next round. A hole is not a drawPosition
+      // (`draw-positions.md` § 5): a lone position's partner is nobody, and `includes(undefined)` matched every
+      // next-round pair holding a hole, so the removal walked into a matchUp the position never reached and reset what
+      // stood there (census run 19, FIRST_MATCH_LOSER_CONSOLATION 16/15 policy-off 20806518: a withdrawn reservation at
+      // `Consolation` dp 4 reset `Consolation|3|1`'s produced walkover)
+      const pairedDrawPositionInNextRound =
+        isPosition(pairedDrawPosition) &&
+        nextRoundProfile?.pairedDrawPositions?.find((pairedPositions: any) =>
+          pairedPositions.includes(pairedDrawPosition),
+        );
       // pairedDrawPosition is a transitiveBye if it is a BYE and if it is present in next round
       const isTransitiveBye =
         pairedDrawPositionIsBye &&
