@@ -13,7 +13,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLES, SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING, SEEDING } from '@Constants/scaleConstants';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -686,7 +686,10 @@ describe('generateEventWithDraw additional options', () => {
     tournamentEngine.setState(result.tournamentRecord);
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     // Multiple rounds should have been generated and completed
-    expect(matchUps.length).toBeGreaterThan(0);
+    expect(new Set(matchUps.map((matchUp) => matchUp.roundNumber)).size).toEqual(3);
+    const paired = matchUps.filter((matchUp) => matchUp.sides.every((side) => side.participantId));
+    expect(paired.length).toBeGreaterThan(0);
+    expect(paired.every((matchUp) => matchUp.winningSide)).toEqual(true);
   });
 
   it('generates ROUND_ROBIN draw', () => {
@@ -774,8 +777,14 @@ describe('generateEventWithDraw additional options', () => {
         },
       ],
       matchUpStatusProfile: { [WALKOVER]: 50 },
+      setState: true,
     });
     expect(result.tournamentRecord).toBeDefined();
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    expect(matchUps.length).toEqual(3);
+    expect(matchUps.every((matchUp) => matchUp.winningSide)).toEqual(true);
+    const generated = new Set([COMPLETED, WALKOVER]);
+    expect(matchUps.every(({ matchUpStatus }) => generated.has(matchUpStatus))).toEqual(true);
   });
 
   it('generates draw with randomWinningSide', () => {
@@ -787,8 +796,12 @@ describe('generateEventWithDraw additional options', () => {
         },
       ],
       randomWinningSide: true,
+      setState: true,
     });
     expect(result.tournamentRecord).toBeDefined();
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    expect(matchUps.length).toEqual(3);
+    expect(matchUps.every((matchUp) => matchUp.winningSide)).toEqual(true);
   });
 });
 
@@ -982,7 +995,11 @@ describe('getParticipantIdFinishingPositions round robin', () => {
     expect(result.error).toBeUndefined();
     // Should have finishing positions for participants
     const keys = Object.keys(result);
-    expect(keys.length).toBeGreaterThan(0);
+    expect(keys.length).toBe(4);
+    for (const participantId of keys) {
+      expect(result[participantId].relevantMatchUps.length).toBe(3);
+      expect(result[participantId].finishingPositionRange).toBeDefined();
+    }
   });
 });
 
@@ -1068,6 +1085,9 @@ describe('generateAndPopulatePlayoffStructures paths', () => {
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
     const playoffStructure = drawDefinition.structures?.find((s) => s.stage === 'PLAY_OFF');
     expect(playoffStructure).toBeDefined();
+    // the completed groups populate the playoff, which is then completed too
+    expect(playoffStructure.positionAssignments.filter(({ participantId }) => participantId).length).toBe(2);
+    expect(playoffStructure.matchUps.every((matchUp) => matchUp.winningSide)).toBe(true);
   });
 });
 

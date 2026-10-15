@@ -11,6 +11,7 @@ import { expect, it } from 'vitest';
 import POLICY_POSITION_ACTIONS_UNRESTRICTED from '@Fixtures/policies/POLICY_POSITION_ACTIONS_UNRESTRICTED';
 import { DRAW, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DOUBLES } from '@Constants/matchUpTypes';
 import {
   QUALIFYING_PARTICIPANT,
   ASSIGN_BYE,
@@ -309,7 +310,7 @@ it('does what Jeff wants it to', () => {
       drawSize: 2,
       // both MAIN positions are filled by qualifiers, so no participant enters MAIN directly
       qualifiersCount: 2,
-      mathcUpType: 'DOUBLES',
+      matchUpType: DOUBLES,
       qualifyingProfiles: [
         {
           roundTarget: 1,
@@ -352,6 +353,9 @@ it('does what Jeff wants it to', () => {
   tournamentEngine.setState(tournamentRecord);
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const { matchUps } = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { drawIds: [drawId] } });
+  expect(matchUps.length).toBeGreaterThan(0);
+  expect(matchUps.every(({ matchUpType }) => matchUpType === DOUBLES)).toEqual(true);
 
   for (const structure of drawDefinition.structures) {
     if (structure.stage === QUALIFYING) {

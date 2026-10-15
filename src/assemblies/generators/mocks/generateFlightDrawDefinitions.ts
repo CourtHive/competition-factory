@@ -2,6 +2,7 @@ import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDraw
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
+import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
@@ -29,7 +30,7 @@ export function generateFlightDrawDefinitions({
 }: {
   random?: () => number;
   matchUpStatusProfile?: any;
-  completeAllMatchUps?: boolean;
+  completeAllMatchUps?: boolean | string;
   randomWinningSide?: boolean;
   tournamentRecord: Tournament;
   drawProfiles: any[];
@@ -92,14 +93,20 @@ export function generateFlightDrawDefinitions({
 
     const manual = drawProfiles[index]?.automated === false;
     const completionGoal = drawProfiles[index]?.completionGoal;
+    // a drawProfile's own completion options take precedence over the event/top-level ones for that draw
+    const completion = resolveCompletionOptions(drawProfile, {
+      matchUpStatusProfile,
+      completeAllMatchUps,
+      randomWinningSide,
+    });
 
-    if (!manual && (completeAllMatchUps || completionGoal)) {
+    if (!manual && (completion.completeAllMatchUps || completionGoal)) {
       const completeResult = completeFlightMatchUps({
         matchUpFormat: drawProfiles[index]?.matchUpFormat,
         drawType: drawProfiles[index]?.drawType,
-        matchUpStatusProfile,
-        completeAllMatchUps,
-        randomWinningSide,
+        matchUpStatusProfile: completion.matchUpStatusProfile,
+        completeAllMatchUps: completion.completeAllMatchUps,
+        randomWinningSide: completion.randomWinningSide,
         tournamentRecord,
         drawDefinition,
         completionGoal,

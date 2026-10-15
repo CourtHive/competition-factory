@@ -364,7 +364,9 @@ describe('getTournamentPoints with ranking policy', () => {
       },
     });
     expect(result.success).toBe(true);
-    expect(result.personPoints).toBeDefined();
+    // every finishing position of the completed draw is awarded: 1, 2, 2 x semifinal, 4 x quarterfinal
+    const awarded = Object.values(result.personPoints).flatMap((awards: any) => awards.map(({ points }) => points));
+    expect(awarded.toSorted((a, b) => b - a)).toEqual([100, 75, 50, 50, 25, 25, 25, 25]);
   });
 
   it('exercises perWinPoints profile', () => {
@@ -386,7 +388,9 @@ describe('getTournamentPoints with ranking policy', () => {
       },
     });
     expect(result.success).toBe(true);
-    expect(result.personPoints).toBeDefined();
+    // three matchUps won: the champion's two wins and the runner-up's semifinal win
+    const awarded = Object.values(result.personPoints).flatMap((awards: any) => awards.map(({ points }) => points));
+    expect(awarded.toSorted((a, b) => b - a)).toEqual([20, 10]);
   });
 });
 
@@ -501,9 +505,9 @@ describe('modifyTournamentRecord advanced paths', () => {
 
     // Add venue
     const modResult1 = tournamentEngine.modifyTournamentRecord({
-      venueProfiles: [{ venueCount: 1, courtsCount: 2 }],
+      venueProfiles: [{ courtsCount: 2 }],
     });
-    expect(modResult1.venueIds?.length).toBeGreaterThan(0);
+    expect(modResult1.venueIds?.length).toEqual(1);
 
     // Now add drawProfiles via modifyTournamentRecord
     const modResult2 = tournamentEngine.modifyTournamentRecord({
@@ -547,6 +551,12 @@ describe('modifyTournamentRecord advanced paths', () => {
 // ----------------------------------------------------------------
 // 8. generateStatCrew — exercise with TEAM tournament
 // ----------------------------------------------------------------
+function teamScoreTotals(json) {
+  return json.map((game) =>
+    game.childArray.filter((child) => child.team).reduce((total, { team }) => total + team.score, 0),
+  );
+}
+
 describe('generateStatCrew with TEAM tournament', () => {
   it('returns error without tournamentRecord', () => {
     const result: any = generateStatCrew({} as any);
@@ -562,6 +572,8 @@ describe('generateStatCrew with TEAM tournament', () => {
     expect(result.success).toBe(true);
     expect(result.json?.length).toBeGreaterThan(0);
     expect(result.xml?.length).toBeGreaterThan(0);
+    // the completed dual match reports all nine tieMatchUps (6 singles, 3 doubles) as won
+    expect(teamScoreTotals(result.json)).toEqual([9]);
   });
 
   it('exercises tournament path with multiple team matchUps', () => {
@@ -571,7 +583,8 @@ describe('generateStatCrew with TEAM tournament', () => {
 
     const result: any = generateStatCrew({ tournamentRecord });
     expect(result.success).toBe(true);
-    expect(result.json?.length).toBeGreaterThanOrEqual(1);
+    // both semifinals, and the final the completed semifinals populate
+    expect(result.json?.length).toEqual(3);
   });
 });
 
@@ -742,6 +755,11 @@ describe('generateAndPopulatePlayoffStructures via engine', () => {
     // Should have playoff structures
     const playoffStructures = drawDefinition.structures?.filter((s) => s.stage === 'PLAY_OFF');
     expect(playoffStructures?.length).toBeGreaterThan(0);
+    // completing the groups positions the group winners in the playoff, which is then completed too
+    const playoff = playoffStructures[0];
+    expect(playoff.positionAssignments.filter(({ participantId }) => participantId).length).toEqual(2);
+    expect(playoff.matchUps.length).toEqual(1);
+    expect(playoff.matchUps[0].winningSide).toBeDefined();
   });
 
   it('exercises playoff generation from completed SE structure', () => {
@@ -759,8 +777,10 @@ describe('generateAndPopulatePlayoffStructures via engine', () => {
       roundNumbers: [1],
       structureId,
     });
-    // Should succeed or fail gracefully
-    expect(result.error || result.success).toBeDefined();
+    // the first-round losers of the completed structure populate the new playoff
+    expect(result.success).toBe(true);
+    const playoff = result.structures.find((structure) => structure.structureId !== structureId);
+    expect(playoff.positionAssignments.filter(({ participantId }) => participantId).length).toEqual(4);
   });
 });
 
@@ -934,7 +954,8 @@ describe('getEventRankingPoints full path', () => {
       },
     });
     expect(result.success).toBe(true);
-    expect(result.eventAwards).toBeDefined();
+    const points = result.eventAwards.map((award) => award.points);
+    expect(points.toSorted((a, b) => b - a)).toEqual([200, 150, 100, 100, 50, 50, 50, 50]);
     expect(result.eventName).toBeDefined();
     expect(result.isDoubles).toBe(false);
   });
@@ -964,6 +985,8 @@ describe('getEventRankingPoints full path', () => {
     });
     expect(result.success).toBe(true);
     expect(result.isDoubles).toBe(true);
+    const points = result.eventAwards.map((award) => award.points);
+    expect(points.toSorted((a, b) => b - a)).toEqual([100, 50, 25, 25]);
   });
 });
 

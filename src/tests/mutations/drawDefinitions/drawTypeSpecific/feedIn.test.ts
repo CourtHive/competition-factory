@@ -17,7 +17,6 @@ it('can accurately generate sideNumbers', () => {
         drawType: FEED_IN,
         drawSize: 34,
         seedsCount: 4,
-        assignSeeds: 4,
       },
     ],
   });
@@ -152,7 +151,6 @@ it('can generate large feedIn with many BYEs', () => {
       {
         drawSize: 63,
         seedsCount: 33,
-        assignSeeds: 33,
         participantsCount: 50,
         enforcePolicyLimits: false,
         seedAssignmentProfile: { 5: 4 },

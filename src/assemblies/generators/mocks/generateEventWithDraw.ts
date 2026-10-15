@@ -9,6 +9,7 @@ import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
+import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
@@ -780,11 +781,8 @@ export function generateEventWithDraw(params) {
     allUniqueParticipantIds = [],
     useExistingParticipants,
     participantsProfile = {},
-    matchUpStatusProfile,
-    completeAllMatchUps,
     autoEntryPositions,
     hydrateCollections,
-    randomWinningSide,
     ratingsParameters,
     tournamentRecord,
     isMock = true,
@@ -794,6 +792,12 @@ export function generateEventWithDraw(params) {
     random,
     uuids,
   } = params;
+
+  // a drawProfile's own completion options take precedence over the top-level ones for that draw
+  const { matchUpStatusProfile, completeAllMatchUps, randomWinningSide } = resolveCompletionOptions(
+    drawProfile,
+    params,
+  );
 
   const drawProfileCopy = makeDeepCopy(drawProfile, false, true);
 

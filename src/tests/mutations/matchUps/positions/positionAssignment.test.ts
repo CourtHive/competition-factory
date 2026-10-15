@@ -255,7 +255,7 @@ it('can replace qualifier with participant', () => {
   const drawProfiles = [
     {
       drawSize: 16,
-      automate: false,
+      automated: false,
       qualifyingProfiles: [
         {
           roundTarget: 1,
@@ -285,6 +285,9 @@ it('can replace qualifier with participant', () => {
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
   const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN && s.stageSequence === 1);
+
+  // automated: false leaves every MAIN position unassigned
+  expect(mainStructure.positionAssignments.every(({ participantId }) => !participantId)).toBe(true);
 
   const structureId = mainStructure.structureId;
   const drawPosition = 1;
@@ -321,7 +324,8 @@ it('can replace qualifier with participant', () => {
   const assignment = assignedPositions?.find((p) => p.drawPosition === drawPosition);
 
   expect(assignment?.participantId).toBe(participantId);
-  expect(assignment?.qualifier).toBeDefined(); // Qualifier should be removed
+  // the seat keeps its qualifier marker: placing a participant does not clear it (positionClear does)
+  expect(assignment?.qualifier).toBeDefined();
   expect(assignment?.bye).toBeUndefined();
 });
 

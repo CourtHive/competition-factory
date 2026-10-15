@@ -49,7 +49,7 @@ const formatsScenarios = [
 it.each(formatsScenarios)('can regenerate participantNames', ({ formats, expectation }) => {
   tournamentEngine.devContext(true);
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    participantsProfile: { personData, shuffle: false },
+    participantsProfile: { personData },
     drawProfiles: [
       { drawSize: 8, eventType: DOUBLES_EVENT },
       { drawSize: 2, eventType: TEAM_EVENT },
