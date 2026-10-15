@@ -339,6 +339,24 @@ advanced (census run 18, FEED_IN_CHAMPIONSHIP, CURTIS_CONSOLATION, FIRST_MATCH_L
 DOUBLE_ELIMINATION: WINNER_NOT_ADVANCED, and a result refused after it had written when the
 reservation behind that seat was later withdrawn).
 
+The same holds for every fact written before the positions it describes. A carrier arriving past a
+BYE beside a lone position records its exit for the seat it takes, in the frame the matchUp is still
+in, so that the re-keying of the arrival carries it there; written in the new frame, it overwrote the
+lone position's own exit and was then moved onto that position's side, so the carrier won the matchUp
+on the walkover it had brought (census run 18, FEED_IN_CHAMPIONSHIP 8/5 under
+`doubleExitPropagateBye: false`: WINNING_SIDE_ADVANCEMENT_MISMATCH). And a removal clears the side the
+removed position held in the frame the record is in after the position has gone: read in the frame
+before, a produced exit leaving with its position was kept as the survivor's, the matchUp stayed a
+pending exit, and the seat the exit had awarded stayed in the next round (census run 18,
+FIRST_MATCH_LOSER_CONSOLATION 16/11: ADVANCED_FROM_UNDECIDED).
+
+The side a removed position held is read before the removal takes anything. A lone position's side
+is read through the feeder that delivered it, and the removal walks the rounds in order, releasing
+that feeder first; read afterwards, the side came back empty and the removal dropped the exit standing
+on the other side as well (census run 18, MODIFIED_FEED_IN_CHAMPIONSHIP 32/27 under
+`allowChangePropagation`: a produced walkover lost from a matchUp its arrival then passed undecided,
+ADVANCED_FROM_UNDECIDED).
+
 ### A pending exit's reservation goes with it
 
 Since 7.9.0. A pending produced exit can advance an empty seat ahead of it — a reservation for the
@@ -357,6 +375,12 @@ in FIRST_MATCH_LOSER_CONSOLATION the BYE placed for a round-2 loser who already 
 cannot be fed) is a decision about a decided matchUp, and is no longer withdrawn when that loser's
 opponent arrives afterwards and takes the walkover (census 9700053 and 9700084, the early-exit arm).
 
+A produced exit can also be replaced rather than withdrawn: when its double exit dissolves and a carrier passes a BYE
+into the matchUp, the carrier's own exit takes the produced exit's place there. That exit is awarded to the seat nobody
+has reached, and an award to an empty seat advances nobody, so the reservation the produced exit made is released just
+as a withdrawal releases it (census run 18, COMPASS 32/30, 20715025: `South|3|1` kept the reservation and the carrier,
+going on past a BYE later, met it there).
+
 ### An exit that meets a BYE leaves a BYE behind
 
 Since 7.5.0. An exit carried or produced into a matchUp whose other side is a BYE moves on with the
@@ -366,7 +390,11 @@ and nobody.
 Since 7.7.0 the reverse holds too. When that BYE is withdrawn — the double exit that placed it is
 re-scored, say — the exit comes to rest where the BYE was, pending, and the copy it carried further on
 is withdrawn. A relayed copy keeps its origin's id, so it stands only while every matchUp it passed
-still holds a BYE.
+still holds a BYE. That includes a `FIRST_MATCHUP` consolation reservation withdrawn when the mutation settles: the
+relays are asked again once it has gone, so the copy beyond its seat goes too (census run 18,
+FIRST_MATCH_LOSER_CONSOLATION 32/32 under `allowChangePropagation`: a first-round winner flipped by a walkover took
+the reservation in `Consolation|2|1` back, and the DEFAULTED relayed past it into `3|1` stood until the next arrival
+there cleared it).
 
 Since 7.9.0 two more cases hold. **A decided holder is still the BYE it holds**: an exit label standing
 beside a BYE with nobody present is settled to `BYE` when the mutation settles, whether or not a winner
@@ -375,6 +403,20 @@ BYE is never on the exit's side**: when a BYE is taken back from a matchUp holdi
 produced or carried exit, the position it held is read as the exit's opposite, because an exit owns no
 position — so the exit survives the removal even where the structure can no longer place the position
 and the BYE's own arrival record is gone (census 20209866, FIRST_MATCH_LOSER_CONSOLATION 8/7).
+
+**A BYE records no arrival by result.** A matchUp holding an exit may record where its other side will come from
+before anybody arrives. Once the matchUp becomes a BYE, whoever wins that feeder advances through it, so that origin
+goes; a BYE claim on the side stays (census run 18, COMPASS 16/16, 20672521: `South|2|1` kept `South|1|2`'s origin after
+both of `South|1|1`'s seats became BYEs, where entering either double exit first records nothing on that side).
+
+**A carrier a propagated BYE displaces takes their exit with them.** A double exit's loser target can be a seat a carrier
+already holds, sent there by an exit that has since converged into the double exit. The BYE takes the seat, and the
+exit the carrier recorded on that side of the matchUp leaves with them; only a BYE claim stays. Left behind, the BYE
+matchUp read as holding two carries, the carrier opposite was never carried past the BYE, and the matchUp they went on
+to read TO_BE_PLAYED over their exit (census run 18, OLYMPIC and COMPASS 32 under `doubleExitPropagateBye: false`,
+20711322 and seven more). The convergence the BYE matchUp held then settles to the carry that stays, and a carry the
+cascade has already taken past the BYE into a matchUp it decided is not replayed there: met a second time, it read as
+an exit already standing and the two converged (census run 17, OLYMPIC 16/16, 20738091).
 
 ### Two held exits meet past their own BYEs
 
@@ -394,6 +436,17 @@ that BYE from deciding anything:
 
 The two exits then converge into a double exit with an origin recorded on each side, and its produced exit waits in
 the next round with no position of its own, whichever of the two arrived first.
+
+The same holds one round on. A holder's BYE that already stands alone in the matchUp its produced exit is sent to is
+not an opponent there: the exit is not awarded to it and the BYE is not moved on again. It is taken back, and the exit
+waits there pending for whoever arrives on the other side (census run 18, DOUBLE_ELIMINATION 16/14: the BYE in
+`Backdraw|4|1` went on through `Backdraw|5|1` into the Backdraw final, and the Main final's loser across the link into
+the decider, while `Backdraw|3|2` had still to be played).
+
+The same holds when it is a participant, not an exit, that arrives opposite the holder's BYE. The holder's exit is gone
+(its double exit dissolved), the participant goes on past the BYE, and the BYE position standing one round on is taken
+back out first: a matchUp receives one position from each feeder (census run 18, COMPASS 32/30, 20715025: `South|3|1`
+held both of `South|2|2`'s positions, TWO_POSITIONS_FROM_ONE_FEEDER).
 
 ### A held exit goes on to a seat awaiting its arrival
 
@@ -538,6 +591,13 @@ on, and the BYE claimed for that matchUp's loser stands on the double exit's acc
 exit is re-derived to a single exit, the exit it produced is withdrawn and so is that BYE. Only the
 BYE at the re-derived matchUp's own loser seat stays, because its losing side is still the produced
 exit (census run-17 baseline, COMPASS 16/13 and 16/14 under `doubleExitPropagateBye: false`).
+
+A seat that becomes a BYE keeps nothing it was awarded. When a correction takes a fed loser back out and the seat they
+held becomes the BYE nobody can fill, an advancement a produced exit gave that seat is taken back first, and the BYE
+lands in the fed matchUp beside the exit it now holds; a BYE is never won. Before this the BYE was placed a round on,
+where the award had carried the seat, in front of the seat owed to the other feeder (census run 18,
+MODIFIED_FEED_IN_CHAMPIONSHIP 32/29 under `doubleExitPropagateBye: false`: `Main|2|1` re-scored as a double default
+left `Consolation|3|4` a BYE).
 
 ### A loser who is nobody holds no seat
 

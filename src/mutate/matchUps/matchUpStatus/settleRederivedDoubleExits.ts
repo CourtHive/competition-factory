@@ -1,16 +1,17 @@
 import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/removeDoubleExit';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { applyWithdrawnExits, withdrawByeSeats } from './applyWithdrawnExits';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { applyWithdrawnExits, withdrawByeSeats } from './applyWithdrawnExits';
 import {
   clearSideExitProvenance,
   getSideExitProvenance,
   withdrawProducedExits,
+  carriedExitStatus,
   setSideExitProvenance,
   blankSideExitCode,
   blankExitCodes,
@@ -255,7 +256,10 @@ export function settleRederivedDoubleExit({
     event,
   });
 
-  // 4. the kept origin's carry, replayed, and onward through every further loser link
+  // 4. the kept origin's carry, replayed, and onward through every further loser link — unless the carrier has already
+  //    carried it past this BYE into a matchUp it decided, where a replay would meet the carry as a second exit
+  if (stored.matchUpStatus === BYE && carriedOnAlready({ inContextMatchUps, inContext, carrierId, origin }))
+    return undefined;
   return carryExitOnward({
     context: {
       // the origin's reason is read from its own `sideStatusCodes` by `progressExitStatus`; the legacy
@@ -272,6 +276,34 @@ export function settleRederivedDoubleExit({
     tournamentRecord,
     drawDefinition,
     event,
+  });
+}
+
+/**
+ * Whether the carrier already stands a round on past this BYE matchUp, in a matchUp their carry decided: its side holding
+ * them records the exit carried from `origin`, and the matchUp is an exit. A carrier passing a BYE that arrives in the
+ * cascade itself is carried there at once (`stampCarriedExitOnArrival`); replaying the carry from the BYE matchUp then
+ * met it as an exit already standing and converged the two into a double exit (census run 17 F3, OLYMPIC 16/16 seed
+ * 20738091, `South|2|1`, reached once a displaced carrier's exit no longer stood on the BYE matchUp beside it).
+ */
+function carriedOnAlready({
+  inContextMatchUps,
+  inContext,
+  carrierId,
+  origin,
+}: {
+  inContextMatchUps?: HydratedMatchUp[];
+  inContext?: HydratedMatchUp;
+  carrierId?: string;
+  origin: MatchUp;
+}): boolean {
+  if (!carrierId || !inContext) return false;
+  return !!inContextMatchUps?.some((matchUp) => {
+    if (matchUp.structureId !== inContext.structureId) return false;
+    if ((matchUp.roundNumber ?? 0) <= (inContext.roundNumber ?? 0) || !isAnyExit(matchUp.matchUpStatus)) return false;
+    const side = matchUp.sides?.find((candidate) => candidate?.participantId === carrierId)?.sideNumber;
+    const entry = side ? getSideExitProvenance({ matchUp })?.[side as 1 | 2] : undefined;
+    return !!carriedExitStatus(entry) && entry?.sourceMatchUpId === origin.matchUpId;
   });
 }
 
