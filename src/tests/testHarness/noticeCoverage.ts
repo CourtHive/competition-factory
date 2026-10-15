@@ -16,6 +16,7 @@ if (enabled) {
   const outFile = process.env.NOTICE_COVERAGE_OUT ?? '.notice-coverage/tally.jsonl';
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   const collector = new NoticeCoverageCollector(outFile);
+  collector.install(); // also counts engine calls made before the first test (beforeAll, module level)
 
   beforeEach(() => {
     const { testPath, currentTestName } = expect.getState();
