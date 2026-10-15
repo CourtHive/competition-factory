@@ -576,6 +576,21 @@ export function conditionallyRemoveDrawPosition(params) {
   // one this call was given, which is the SOURCE's. They differ whenever the unwind has crossed a
   // link, and `getPairedPreviousMatchUp` below then looked up a Main roundPosition in the Backdraw.
   const { structure: targetStructure } = findStructure({ drawDefinition, structureId: targetMatchUp.structureId });
+  // read before the walk goes on: a matchUp holding only origins this unwind is not withdrawing keeps its own result
+  // (below), so nothing it sent on is this unwind's either
+  const keepsOwnResult =
+    !!getSideExitProvenance({ matchUp: noContextTargetMatchUp }) &&
+    !carriesWithdrawnOrigin(noContextTargetMatchUp, withdrawnSourceIds);
+  if (keepsOwnResult) {
+    pushGlobalLog({
+      method: stack,
+      color: 'brightyellow',
+      decision: 'RETAIN_untouched_origin',
+      matchUpId: targetMatchUp.matchUpId,
+      keyColors,
+    });
+    return { ...SUCCESS };
+  }
   let result = removeDoubleExit({
     structure: targetStructure ?? structure,
     targetData: nextTargetData,
