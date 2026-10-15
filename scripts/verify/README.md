@@ -1,8 +1,8 @@
 # Factory verification suite
 
-`pnpm verify` is the gate before every publish. It chains 11 checks that together cover compile, runtime, dist integrity, and security awareness. If any link in the chain fails, the suite exits non-zero and `prepublishOnly` blocks the release.
+`pnpm verify` is the gate before every publish. It chains 26 checks (the `verify` script in `package.json`) that together cover compile, runtime, dist integrity, and security awareness. If any link in the chain fails, the suite exits non-zero and `prepublishOnly` blocks the release.
 
-A 12th check, `verify:ecosystem`, runs downstream consumer tests against the in-tree factory but is **not** part of the chained `verify` script — it depends on sibling repos being checked out on disk, which isn't the case on CI runners. Run it explicitly (`pnpm verify:ecosystem`) when working locally, or use `pnpm verify:all` (= `pnpm verify && pnpm verify:ecosystem`) for the full sweep.
+A further check, `verify:ecosystem`, runs downstream consumer tests against the in-tree factory but is **not** part of the chained `verify` script — it depends on sibling repos being checked out on disk, which isn't the case on CI runners. Run it explicitly (`pnpm verify:ecosystem`) when working locally, or use `pnpm verify:all` (= `pnpm verify && pnpm verify:ecosystem`) for the full sweep.
 
 ## What each check catches
 
@@ -92,9 +92,9 @@ node scripts/verify/ecosystem.mjs --build-factory        # rebuild dist before s
 
 ## CI
 
-`.github/workflows/verify.yml` runs the 11-step chain on every PR + push to master, across the Node version matrix declared in `package.json#engines.node`. The job is skipped on release-please merge commits (CHANGELOG/version-only changes that don't need re-verification). The surface and bundle-size baselines participate in the same diff so updates are reviewable.
+`.github/workflows/verify.yml` runs the `verify` chain on every PR + push to master, across the Node version matrix declared in `package.json#engines.node`. The job is skipped on release-please merge commits (CHANGELOG/version-only changes that don't need re-verification). The surface and bundle-size baselines participate in the same diff so updates are reviewable.
 
-`.github/workflows/npm-publish.yml` runs `lint` + `check-types` + `build` at tag-time, then `npm publish` triggers `prepublishOnly` (= `pinst --disable && pnpm verify`) which re-runs the 11-step chain against the exact tagged commit before anything ships to npm.
+`.github/workflows/npm-publish.yml` runs `lint` + `check-types` + `build` at tag-time, then `npm publish` triggers `prepublishOnly` (= `pinst --disable && pnpm verify`) which re-runs the `verify` chain against the exact tagged commit before anything ships to npm.
 
 ## Adding a new check
 
