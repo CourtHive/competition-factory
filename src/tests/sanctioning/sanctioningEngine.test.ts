@@ -9,7 +9,7 @@ import {
 } from '@Assemblies/engines/sanctioning/sanctioningState';
 
 // constants
-import { DRAFT, SUBMITTED, WITHDRAWN } from '@Constants/sanctioningConstants';
+import { DRAFT, SUBMITTED, WITHDRAWN, APPROVED } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 // types
@@ -208,7 +208,7 @@ describe('Sanctioning Engine — updateProposal', () => {
     let result: any = createTestRecord();
     // Manually set status to SUBMITTED to test guard
     const record = result.sanctioningRecord;
-    record.status = 'SUBMITTED';
+    record.status = SUBMITTED;
     sanctioningEngine.setSanctioningRecord(record);
 
     result = sanctioningEngine.updateProposal({
@@ -287,7 +287,7 @@ describe('Sanctioning Engine — Event Proposal CRUD', () => {
   it('rejects event proposal mutations on non-editable record', () => {
     let result: any = createTestRecord();
     const record = result.sanctioningRecord;
-    record.status = 'APPROVED';
+    record.status = APPROVED;
     sanctioningEngine.setSanctioningRecord(record);
 
     result = sanctioningEngine.addEventProposal({

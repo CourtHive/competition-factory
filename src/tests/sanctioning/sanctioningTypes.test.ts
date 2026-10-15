@@ -37,18 +37,18 @@ import {
 
 describe('Sanctioning Types & Constants', () => {
   it('defines all sanctioning status values', () => {
-    expect(SanctioningStatusEnum.DRAFT).toEqual('DRAFT');
-    expect(SanctioningStatusEnum.SUBMITTED).toEqual('SUBMITTED');
-    expect(SanctioningStatusEnum.UNDER_REVIEW).toEqual('UNDER_REVIEW');
-    expect(SanctioningStatusEnum.APPROVED).toEqual('APPROVED');
-    expect(SanctioningStatusEnum.CONDITIONALLY_APPROVED).toEqual('CONDITIONALLY_APPROVED');
-    expect(SanctioningStatusEnum.REJECTED).toEqual('REJECTED');
-    expect(SanctioningStatusEnum.WITHDRAWN).toEqual('WITHDRAWN');
-    expect(SanctioningStatusEnum.MODIFICATION_REQUESTED).toEqual('MODIFICATION_REQUESTED');
-    expect(SanctioningStatusEnum.ACTIVE).toEqual('ACTIVE');
-    expect(SanctioningStatusEnum.POST_EVENT).toEqual('POST_EVENT');
-    expect(SanctioningStatusEnum.CLOSED).toEqual('CLOSED');
-    expect(SanctioningStatusEnum.ISSUES_FLAGGED).toEqual('ISSUES_FLAGGED');
+    expect(SanctioningStatusEnum.DRAFT).toEqual(DRAFT);
+    expect(SanctioningStatusEnum.SUBMITTED).toEqual(SUBMITTED);
+    expect(SanctioningStatusEnum.UNDER_REVIEW).toEqual(UNDER_REVIEW);
+    expect(SanctioningStatusEnum.APPROVED).toEqual(APPROVED);
+    expect(SanctioningStatusEnum.CONDITIONALLY_APPROVED).toEqual(CONDITIONALLY_APPROVED);
+    expect(SanctioningStatusEnum.REJECTED).toEqual(REJECTED);
+    expect(SanctioningStatusEnum.WITHDRAWN).toEqual(WITHDRAWN);
+    expect(SanctioningStatusEnum.MODIFICATION_REQUESTED).toEqual(MODIFICATION_REQUESTED);
+    expect(SanctioningStatusEnum.ACTIVE).toEqual(ACTIVE);
+    expect(SanctioningStatusEnum.POST_EVENT).toEqual(POST_EVENT);
+    expect(SanctioningStatusEnum.CLOSED).toEqual(CLOSED);
+    expect(SanctioningStatusEnum.ISSUES_FLAGGED).toEqual(ISSUES_FLAGGED);
     expect(Object.keys(SanctioningStatusEnum)).toHaveLength(12);
   });
 
@@ -61,9 +61,9 @@ describe('Sanctioning Types & Constants', () => {
 
   it('defines amendment status values', () => {
     expect(AmendmentStatusEnum.PROPOSED).toEqual('PROPOSED');
-    expect(AmendmentStatusEnum.UNDER_REVIEW).toEqual('UNDER_REVIEW');
-    expect(AmendmentStatusEnum.APPROVED).toEqual('APPROVED');
-    expect(AmendmentStatusEnum.REJECTED).toEqual('REJECTED');
+    expect(AmendmentStatusEnum.UNDER_REVIEW).toEqual(UNDER_REVIEW);
+    expect(AmendmentStatusEnum.APPROVED).toEqual(APPROVED);
+    expect(AmendmentStatusEnum.REJECTED).toEqual(REJECTED);
   });
 
   it('defines compliance status values', () => {
@@ -71,12 +71,12 @@ describe('Sanctioning Types & Constants', () => {
     expect(ComplianceStatusEnum.PENDING).toEqual('PENDING');
     expect(ComplianceStatusEnum.IN_PROGRESS).toEqual('IN_PROGRESS');
     expect(ComplianceStatusEnum.COMPLIANT).toEqual('COMPLIANT');
-    expect(ComplianceStatusEnum.ISSUES_FLAGGED).toEqual('ISSUES_FLAGGED');
+    expect(ComplianceStatusEnum.ISSUES_FLAGGED).toEqual(ISSUES_FLAGGED);
   });
 
   it('defines compliance item status values', () => {
     expect(ComplianceItemStatusEnum.PENDING).toEqual('PENDING');
-    expect(ComplianceItemStatusEnum.SUBMITTED).toEqual('SUBMITTED');
+    expect(ComplianceItemStatusEnum.SUBMITTED).toEqual(SUBMITTED);
     expect(ComplianceItemStatusEnum.VERIFIED).toEqual('VERIFIED');
     expect(ComplianceItemStatusEnum.OVERDUE).toEqual('OVERDUE');
     expect(ComplianceItemStatusEnum.WAIVED).toEqual('WAIVED');
@@ -112,18 +112,18 @@ describe('Sanctioning Types & Constants', () => {
 
 describe('Sanctioning Status Constants', () => {
   it('exports status string constants', () => {
-    expect(DRAFT).toEqual('DRAFT');
-    expect(SUBMITTED).toEqual('SUBMITTED');
-    expect(UNDER_REVIEW).toEqual('UNDER_REVIEW');
-    expect(APPROVED).toEqual('APPROVED');
-    expect(CONDITIONALLY_APPROVED).toEqual('CONDITIONALLY_APPROVED');
-    expect(REJECTED).toEqual('REJECTED');
-    expect(WITHDRAWN).toEqual('WITHDRAWN');
-    expect(MODIFICATION_REQUESTED).toEqual('MODIFICATION_REQUESTED');
-    expect(ACTIVE).toEqual('ACTIVE');
-    expect(POST_EVENT).toEqual('POST_EVENT');
-    expect(CLOSED).toEqual('CLOSED');
-    expect(ISSUES_FLAGGED).toEqual('ISSUES_FLAGGED');
+    expect(DRAFT).toEqual(DRAFT);
+    expect(SUBMITTED).toEqual(SUBMITTED);
+    expect(UNDER_REVIEW).toEqual(UNDER_REVIEW);
+    expect(APPROVED).toEqual(APPROVED);
+    expect(CONDITIONALLY_APPROVED).toEqual(CONDITIONALLY_APPROVED);
+    expect(REJECTED).toEqual(REJECTED);
+    expect(WITHDRAWN).toEqual(WITHDRAWN);
+    expect(MODIFICATION_REQUESTED).toEqual(MODIFICATION_REQUESTED);
+    expect(ACTIVE).toEqual(ACTIVE);
+    expect(POST_EVENT).toEqual(POST_EVENT);
+    expect(CLOSED).toEqual(CLOSED);
+    expect(ISSUES_FLAGGED).toEqual(ISSUES_FLAGGED);
   });
 
   it('defines terminal statuses', () => {

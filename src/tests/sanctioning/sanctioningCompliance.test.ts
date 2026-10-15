@@ -7,6 +7,9 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 // types
 import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
+// constants
+import { POST_EVENT, ISSUES_FLAGGED, UNDER_REVIEW } from '@Constants/sanctioningConstants';
+
 const testApplicant: Applicant = {
   organisationId: 'org-001',
   organisationName: 'Test Club',
@@ -57,7 +60,7 @@ describe('Post-Event Compliance — Lifecycle', () => {
 
     let recordResult: any = sanctioningEngine.getSanctioningRecord();
     let record = recordResult.sanctioningRecord;
-    expect(record.status).toEqual('POST_EVENT');
+    expect(record.status).toEqual(POST_EVENT);
   });
 
   it('submits a compliance item', () => {
@@ -179,7 +182,7 @@ describe('Post-Event Compliance — Lifecycle', () => {
 
     let recordResult: any = sanctioningEngine.getSanctioningRecord();
     let record = recordResult.sanctioningRecord;
-    expect(record.status).toEqual('ISSUES_FLAGGED');
+    expect(record.status).toEqual(ISSUES_FLAGGED);
 
     // Can still close from ISSUES_FLAGGED
     result = sanctioningEngine.closeApplication({ reason: 'Issues resolved' });
@@ -236,7 +239,7 @@ describe('Automatic OVERDUE Detection', () => {
     let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
     const overdueItems = record.compliance.items.filter((i: any) => i.status === 'OVERDUE');
     expect(overdueItems.length).toBeGreaterThan(0);
-    expect(record.compliance.status).toEqual('ISSUES_FLAGGED');
+    expect(record.compliance.status).toEqual(ISSUES_FLAGGED);
   });
 
   it('does not mark items as overdue when deadline has not passed', () => {
@@ -294,7 +297,7 @@ describe('Full Lifecycle — DRAFT to CLOSED', () => {
 
     let recordResult: any = sanctioningEngine.getSanctioningRecord();
     let record = recordResult.sanctioningRecord;
-    expect(record.status).toEqual('POST_EVENT');
+    expect(record.status).toEqual(POST_EVENT);
 
     // Submit and verify all compliance items
     const requiredItems = record.compliance.items.filter((i: any) => i.required);
@@ -312,10 +315,10 @@ describe('Full Lifecycle — DRAFT to CLOSED', () => {
     const statuses = history.statusHistory.map((h: any) => h.toStatus);
     expect(statuses).toContain('DRAFT');
     expect(statuses).toContain('SUBMITTED');
-    expect(statuses).toContain('UNDER_REVIEW');
+    expect(statuses).toContain(UNDER_REVIEW);
     expect(statuses).toContain('APPROVED');
     expect(statuses).toContain('ACTIVE');
-    expect(statuses).toContain('POST_EVENT');
+    expect(statuses).toContain(POST_EVENT);
     expect(statuses).toContain('CLOSED');
   });
 });

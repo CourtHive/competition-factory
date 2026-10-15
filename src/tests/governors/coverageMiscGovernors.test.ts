@@ -24,7 +24,7 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { INVALID_VALUES, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { COMPLETED, RETIRED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
-import { MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';
+import { MISSING_SANCTIONING_RECORD, DRAFT } from '@Constants/sanctioningConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { RATING, SCALE } from '@Constants/scaleConstants';
 
@@ -281,7 +281,7 @@ describe('querySanctioningRecord', () => {
   it('returns a deep copy of the sanctioning record', () => {
     const sanctioningRecord = {
       sanctioningBody: 'ITF',
-      status: 'DRAFT',
+      status: DRAFT,
       proposal: { tournamentName: 'Test Open' },
     };
 

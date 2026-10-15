@@ -1,5 +1,5 @@
 import { getCalendarConflicts } from '@Query/sanctioning/getCalendarConflicts';
-import { MISSING_SANCTIONING_RECORD } from '@Constants/sanctioningConstants';
+import { MISSING_SANCTIONING_RECORD, DRAFT } from '@Constants/sanctioningConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { describe, expect, it } from 'vitest';
 
@@ -19,7 +19,7 @@ function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentPro
 function minimalRecord(overrides?: Partial<SanctioningRecord>): SanctioningRecord {
   return {
     sanctioningId: 'sanc-001',
-    status: 'DRAFT',
+    status: DRAFT,
     version: 1,
     createdAt: '2027-01-01',
     updatedAt: '2027-01-01',
