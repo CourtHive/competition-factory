@@ -942,6 +942,11 @@ function awardStands({
   if (!winningSide) return true;
   const exitEntry = retained?.[3 - winningSide];
   if (!isDoubleExit(exitEntry?.previousMatchUpStatus)) return true;
+  // an exit that came straight down its source's LOSER link keeps its award to the seat that will receive the next
+  // arrival, as direct entry writes it (`exitStatusClearing` 2.3; `removeDoubleExit`'s `producedAwardStands`). Taken
+  // back here, a BYE withdrawn from that seat left the exit pending, and the held exit beside the next BYE read its
+  // target's other feeder as delivering nobody (census run 19, COMPASS 32/32 policy-off 20834212: `Southeast|1|2`)
+  if (cameDownLoserLink({ drawDefinition, targetMatchUp, sourceMatchUpId: exitEntry?.sourceMatchUpId })) return true;
   const drawPosition = getSideDrawPosition({
     matchUp: { ...targetMatchUp, sides: undefined },
     sideNumber: winningSide,
@@ -950,6 +955,22 @@ function awardStands({
   });
   const assignment = positionAssignments.find((candidate) => candidate.drawPosition === drawPosition);
   return !!(assignment?.participantId || assignment?.qualifier);
+}
+
+/** the target is the source's own loser target: the exit reached it over the link, not relayed past a BYE */
+function cameDownLoserLink({
+  drawDefinition,
+  targetMatchUp,
+  sourceMatchUpId,
+}: {
+  drawDefinition: DrawDefinition;
+  sourceMatchUpId?: string;
+  targetMatchUp: MatchUp;
+}): boolean {
+  if (!sourceMatchUpId) return false;
+  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition })?.matchUps ?? [];
+  const targets = positionTargets({ matchUpId: sourceMatchUpId, inContextDrawMatchUps, drawDefinition });
+  return targets.targetMatchUps?.loserMatchUp?.matchUpId === targetMatchUp.matchUpId;
 }
 
 /**
