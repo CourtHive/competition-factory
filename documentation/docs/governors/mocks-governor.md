@@ -262,6 +262,7 @@ const { tournamentRecord } = mocksGovernor.generateTournamentRecord({
 - Populates draws with participants
 - Assigns seeds and ratings
 - Can generate completed matchUps with outcomes
+- `completeAllMatchUps`, `randomWinningSide` and `matchUpStatusProfile` apply to every draw when passed at the top level, or to one draw when set on its `drawProfile` (the drawProfile value wins); see [Complete One Draw](../testing/mocks-engine-tournament-generation.md#complete-one-draw)
 - See full docs for extensive configuration options
 
 **Note:** This is the primary method for creating test tournaments. For comprehensive examples and all configuration options, see the [mocksEngine Getting Started](../testing/mocks-engine-getting-started.md) guide.
