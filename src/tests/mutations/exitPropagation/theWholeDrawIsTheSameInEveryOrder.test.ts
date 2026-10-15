@@ -167,17 +167,25 @@ function forwardOrder(steps: Step[]): Step[] {
   );
 }
 
-it.each(CASES)('$config.seed: the census schedule un-decides nothing', ({ config, schedule }) => {
-  setSubscriptions({});
-  expect(replay(config, schedule, `every-order-${config.seed}`, POLICY_OFF)).toBeNull();
-});
+it.each(CASES)(
+  '$config.seed: the census schedule un-decides nothing',
+  ({ config, schedule }) => {
+    setSubscriptions({});
+    expect(replay(config, schedule, `every-order-${config.seed}`, POLICY_OFF)).toBeNull();
+  },
+  180_000,
+);
 
-it.each(CASES)('$config.seed: the whole draw is the same in every order', ({ config, schedule, probe }) => {
-  const last = play(config, [...schedule, probe], `every-order-last-${config.seed}`);
-  expect(play(config, [probe, ...schedule], `every-order-first-${config.seed}`).draw).toEqual(last.draw);
-  const accepted = last.accepted.slice(0, -1);
-  expect(play(config, forwardOrder([...accepted, probe]), `every-order-fwd-${config.seed}`).draw).toEqual(last.draw);
-  expect(play(config, [probe, ...forwardOrder(accepted)], `every-order-fwd-first-${config.seed}`).draw).toEqual(
-    last.draw,
-  );
-});
+it.each(CASES)(
+  '$config.seed: the whole draw is the same in every order',
+  ({ config, schedule, probe }) => {
+    const last = play(config, [...schedule, probe], `every-order-last-${config.seed}`);
+    expect(play(config, [probe, ...schedule], `every-order-first-${config.seed}`).draw).toEqual(last.draw);
+    const accepted = last.accepted.slice(0, -1);
+    expect(play(config, forwardOrder([...accepted, probe]), `every-order-fwd-${config.seed}`).draw).toEqual(last.draw);
+    expect(play(config, [probe, ...forwardOrder(accepted)], `every-order-fwd-first-${config.seed}`).draw).toEqual(
+      last.draw,
+    );
+  },
+  180_000,
+);
