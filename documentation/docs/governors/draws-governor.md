@@ -1100,11 +1100,13 @@ const { drawDefinition } = engine.publicFindDrawDefinition({
 
 ## qualifierDrawPositionAssignment
 
-Replaces an existing drawPosition assignment with a qualifierParticipantId. This method is included in `validActions` for [positionActions](../policies/positionActions.md)
+Places a qualifier (`qualifyingParticipantId`) at a drawPosition. This method is included in `validActions` for [positionActions](../policies/positionActions.md).
+
+A seat reserved for a qualifier carries `qualifier: true`, and placing the qualifier there **keeps** the flag: it marks the participant as a qualifier, for example to show a 'Q' beside the name. See [the qualifier flag](../policies/positionActions.md#the-qualifier-flag).
 
 ```js
 engine.qualifierDrawPositionAssignment({
-  qualifierParticipantId,
+  qualifyingParticipantId,
   drawPosition,
   structureId,
   drawId,
@@ -1131,6 +1133,8 @@ engine.qualifierProgression({
 ## removeDrawPositionAssignment
 
 Clear draw position and optionally replace with a BYE, change entryStatus, or decompose a PAIR participant into UNGROUPED participants (DOUBLES only).
+
+Clearing a position removes its `qualifier` flag along with the participant or BYE.
 
 ```js
 engine.removeDrawPositionAssignment({
@@ -1386,7 +1390,7 @@ tournamentEngine.swapAdHocRounds({
 
 ## swapDrawPositionAssignments
 
-Swaps the `participantIds` of two `drawPositions`.
+Swaps the `participantIds` of two `drawPositions`. A placed qualifier's `qualifier` flag travels with it to its new position, including when it is swapped with a BYE; two unfilled qualifier seats are not swapped (there is nothing to move).
 
 ```js
 engine.swapDrawPositionAssignments({

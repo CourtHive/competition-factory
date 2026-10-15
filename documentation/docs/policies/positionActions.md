@@ -71,6 +71,14 @@ The following actions can be controlled by this policy:
 
 **ASSIGN_QUALIFIER** is offered on an empty position (no participant, BYE or placeholder) only while the round it enters is fed by qualifying that still owes more qualifiers than it has positions marked for them (`owedQualifiers` from [getAvailableQualifyingTargets](/docs/governors/draws-governor#getavailablequalifyingtargets)). Its payload carries `qualifier: true`; call `engine[action.method](action.payload)`.
 
+#### The qualifier flag
+
+`qualifier: true` on a position assignment marks a qualifier, both before and after one arrives (CA, 2026-10-15):
+
+- **Placing** a qualifier on a seat marked for one (**QUALIFIER**, `qualifierDrawPositionAssignment`) keeps the flag. A consumer reads it to show a 'Q' beside the participant.
+- **Clearing** the position (**REMOVE**, `removeDrawPositionAssignment`) removes the flag along with the participant.
+- **Swapping** positions (**SWAP**, `swapDrawPositionAssignments`) moves the flag with the qualifier it belongs to, including when the other position is a BYE. Two seats that are both still waiting for a qualifier are not swapped.
+
 ### Seeding Actions
 
 | Action          | Constant      | Method                    | Description                       |

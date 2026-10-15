@@ -189,6 +189,7 @@ export function drawPositionRemovals({
   const drawPositionCleared = positionAssignments.some((assignment) => {
     if (assignment.drawPosition === drawPosition) {
       delete assignment.participantId;
+      // a cleared position is no longer a qualifier's: the flag goes with the participant (see positionSwap)
       delete assignment.qualifier;
       delete assignment.bye;
       // A BYE removed by ANY route — cascade unwind, a position action, or a hand edit — takes

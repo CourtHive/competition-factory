@@ -1341,6 +1341,10 @@ export interface PositionAssignment {
   isMock?: boolean;
   notes?: string;
   participantId?: string;
+  /**
+   * Marks a qualifier: a seat reserved for one, and the qualifier once placed there (the flag stays, e.g. for a 'Q'
+   * beside the name). Cleared with the position; travels with the qualifier when positions are swapped.
+   */
   qualifier?: boolean;
   // CODES first-class: previously stored as `tally` extension
   tally?: TallyResult;
