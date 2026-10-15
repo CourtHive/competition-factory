@@ -20,11 +20,10 @@ it('the correct spellings exist beside the deprecated ones', () => {
   expect(penaltyConstants.FAILURE_TO_SIGN_IN).toEqual(penaltyConstants.FAILUIRE_TO_SIGN_IN);
 });
 
-it('normalises only the two misspelled values', () => {
+it('normalises the two misspelled codes, and leaves a correct code alone', () => {
   expect(normalizePenaltyType('EQUIMENT_VIOLATION')).toEqual('EQUIPMENT_VIOLATION');
   expect(normalizePenaltyType('FAILUIRE_TO_SIGN_IN')).toEqual('FAILURE_TO_SIGN_IN');
   expect(normalizePenaltyType('BALL_ABUSE')).toEqual('BALL_ABUSE');
-  expect(normalizePenaltyType('Ball Abuse')).toEqual('Ball Abuse');
   expect(normalizePenaltyType(undefined)).toBeUndefined();
 });
 
@@ -49,14 +48,13 @@ it('a penalty added or modified with a misspelled type is stored with the correc
 });
 
 /**
- * Two DISPLAY LABELS of `penaltyConstants` were misspelled too, and callers store a label as `penaltyType` (CA,
- * 2026-10-05: fix them as suggested, the old spellings accepted until 8.0.0).
+ * Two DISPLAY LABELS of `penaltyConstants` were misspelled too, and callers stored a label as `penaltyType` (CA,
+ * 2026-10-05: fix them as suggested, the old spellings accepted until 8.0.0). Since the constants became codes
+ * (CA, 2026-10-15) the old spellings are rewritten to the code.
  */
-it('the two misspelled penalty labels are corrected, and the old spellings are rewritten on write', () => {
-  expect(penaltyConstants.UNSPORTSMANLIKE_CONDUCT).toEqual('Unsportsmanlike Conduct');
-  expect(penaltyConstants.PUNCTUALITY).toEqual('Punctuality');
-  expect(normalizePenaltyType('Unsportmanlike Conduct')).toEqual('Unsportsmanlike Conduct');
-  expect(normalizePenaltyType('Puncuality')).toEqual('Punctuality');
+it('the two misspelled penalty labels are rewritten to their codes on write', () => {
+  expect(normalizePenaltyType('Unsportmanlike Conduct')).toEqual(PenaltyTypeEnum.UNSPORTSMANLIKE_CONDUCT);
+  expect(normalizePenaltyType('Puncuality')).toEqual(PenaltyTypeEnum.PUNCTUALITY);
 
   mocksEngine.generateTournamentRecord({ participantsProfile: { participantsCount: 2 }, setState: true });
   const participantIds = tournamentEngine.getParticipants().participants.map((p: any) => p.participantId);

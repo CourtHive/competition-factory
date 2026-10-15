@@ -639,7 +639,7 @@ const scenarios: Scenario[] = [
     run: (ctx) =>
       tournamentEngine.addPenalty({
         participantIds: [ctx.enteredIds[0]],
-        penaltyType: 'Ball Abuse',
+        penaltyType: 'BALL_ABUSE',
         penaltyCode: 'conf-penalty',
         matchUpId: ctx.matchUpId,
         drawId: ctx.drawId,

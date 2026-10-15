@@ -500,7 +500,7 @@ played. Since 7.7.0 the metadata is kept through every later rebuild of the scor
 
 ```js
 engine.decoratePoint(0, { courtPosition: 'deuce', shotType: 'forehand' });
-engine.decoratePoint(12, { penaltyType: 'Ball Abuse', annotation: 'racquet thrown' });
+engine.decoratePoint(12, { penaltyType: 'BALL_ABUSE', annotation: 'racquet thrown' });
 ```
 
 ---
@@ -524,7 +524,7 @@ next rebuild applies the edit.
 
 ```js
 // Record a penalty against a point after the match
-engine.editPoint(5, { penaltyType: 'Coaching' });
+engine.editPoint(5, { penaltyType: 'COACHING' });
 
 // Fix a wrong winner call
 engine.editPoint(5, { winner: 1 });

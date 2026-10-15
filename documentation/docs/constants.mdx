@@ -426,18 +426,21 @@ const { BALL_ABUSE, VERBAL_ABUSE, PHYSICAL_ABUSE, COACHING, TIME_VIOLATION, UNSP
   factoryConstants.penaltyConstants;
 ```
 
-The values are display labels (`'Ball Abuse'`, `'Time Violation'`), and a label is what gets stored as
-`penaltyType`. The codes of [`PenaltyTypeEnum`](./enums.mdx) are a separate vocabulary.
+Each value is its [`PenaltyTypeEnum`](./enums.mdx) code (`BALL_ABUSE = 'BALL_ABUSE'`), and the code is what gets
+stored as `penaltyType`: the same vocabulary as the `Penalty` type and the CODES schema. The factory keeps no display
+strings; render a code through `@courthive/i18n` with the `penalties.<CODE>` key (`penalties.BALL_ABUSE`).
+
+Before this 7.x release the values were display labels (`'Ball Abuse'`, `'Time Violation'`), and a label is what was
+stored. `addPenalty` and `modifyPenalty` accept every legacy label and rewrite it to its code on write, and
+[`migrateTournamentRecord`](./engines/migrate-tournament-record.md) rewrites the labels already stored in a record.
+8.0.0 stops accepting them.
 
 - `AUDIBLE_OBSCENITY`, `VISIBLE_OBSCENITY`, `TIME_VIOLATION`, `FAILURE_TO_SIGN_OUT` - added in 7.6.0.
 - `EQUIPMENT_VIOLATION`, `FAILURE_TO_SIGN_IN` - added in 7.5.0 as the correct spellings. The misspelled
   `EQUIMENT_VIOLATION` and `FAILUIRE_TO_SIGN_IN` remain as deprecated aliases of them, removed in 8.0.0.
-- `UNSPORTSMANLIKE_CONDUCT` and `PUNCTUALITY` carry corrected labels since 7.6.0 (`'Unsportsmanlike Conduct'`,
-  `'Punctuality'`; previously `'Unsportmanlike Conduct'` and `'Puncuality'`).
 
-`addPenalty` and `modifyPenalty` still accept the misspelled values (the codes `EQUIMENT_VIOLATION` and
-`FAILUIRE_TO_SIGN_IN`, and the labels `'Unsportmanlike Conduct'` and `'Puncuality'`) and rewrite them to the correct
-spelling on write. 8.0.0 stops accepting them.
+The misspelled values are accepted and rewritten the same way until 8.0.0: the codes `EQUIMENT_VIOLATION` and
+`FAILUIRE_TO_SIGN_IN`, and the labels `'Unsportmanlike Conduct'` and `'Puncuality'`.
 
 ### Data & Resource Constants
 

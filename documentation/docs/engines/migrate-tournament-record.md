@@ -52,6 +52,8 @@ The walker visits the tournament record, every event, every draw definition, eve
 
 A `flightProfile` extension on a **draw definition** is not promoted (since 7.10.0): a flight profile belongs to the event, nothing ever wrote one on a draw, and a stray draw-level extension is left as an extension.
 
+It also rewrites every legacy `participant.penalties[].penaltyType` to its `PenaltyTypeEnum` code, counted as `promoted.penaltyTypes`: a display label written by earlier releases (`'Ball Abuse'` becomes `BALL_ABUSE`) or a misspelled code (`EQUIMENT_VIOLATION`). It is the same rewrite `addPenalty` and `modifyPenalty` apply on write, and it does not depend on `clearLegacy`. A value it does not recognise is left as it is. See [penaltyConstants](../constants.mdx).
+
 For lifecycle timeItems (`START_TIME` / `STOP_TIME` / `RESUME_TIME` / `END_TIME`) — these are **not** promoted; they remain an ordered history that `matchUpDuration()` walks.
 
 ## `clearLegacy` flag
@@ -83,6 +85,10 @@ type MigrationResult = {
     positionAssignments: number;
     matchUps: number;
     matchUpScheduleTimeItems: number;
+    matchUpCheckIns: number;
+    drawPositions: number;
+    participantPresence: number;
+    penaltyTypes: number;
     venues: number;
     courts: number;
   };

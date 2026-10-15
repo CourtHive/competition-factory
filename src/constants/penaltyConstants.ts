@@ -1,40 +1,35 @@
 /**
- * DISPLAY LABELS, not codes: callers pass them straight through as `penaltyType`, so a label is what gets stored.
- * 8.0.0 stores the codes of `PenaltyTypeEnum` instead, and the factory (no runtime dependencies) keeps no display
- * strings: a consumer renders a code through `@courthive/i18n` (the `courthive-i18n` repo). Its existing
- * `penalties.*` keys are a different vocabulary and are reconciled with `PenaltyTypeEnum` then.
+ * Penalty CODES: each value is its `PenaltyTypeEnum` code, the vocabulary of the `Penalty.penaltyType` type, the
+ * CODES schema and the `@courthive/i18n` `penalties.<CODE>` keys (CA, 2026-10-15). The factory keeps no display
+ * strings; a consumer renders a code through `@courthive/i18n` (the `courthive-i18n` repo).
+ *
+ * They were display labels (`'Ball Abuse'`) until this 7.x release, and a label is what got stored. A legacy label
+ * is accepted and rewritten to its code on write (`normalizePenaltyType`) and by `migrateTournamentRecord`, until
+ * 8.0.0.
  */
-export const COACHING = 'Coaching';
-export const BALL_ABUSE = 'Ball Abuse';
-export const RACKET_ABUSE = 'Racket Abuse';
-export const VERBAL_ABUSE = 'Verbal Abuse';
+export const COACHING = 'COACHING';
+export const BALL_ABUSE = 'BALL_ABUSE';
+export const RACKET_ABUSE = 'RACKET_ABUSE';
+export const VERBAL_ABUSE = 'VERBAL_ABUSE';
 export const INELIGIBILITY = 'INELIGIBILITY';
-export const PHYSICAL_ABUSE = 'Physical Abuse';
-export const AUDIBLE_OBSCENITY = 'Audible Obscenity';
-export const VISIBLE_OBSCENITY = 'Visible Obscenity';
-export const TIME_VIOLATION = 'Time Violation';
-/**
- * Corrected 2026-10-05 (was `'Unsportmanlike Conduct'`). Stored records may hold the old spelling; it is accepted
- * and rewritten on write (`normalizePenaltyType`) until 8.0.0, when it stops being accepted.
- */
-export const UNSPORTSMANLIKE_CONDUCT = 'Unsportsmanlike Conduct';
-export const DRESS_CODE_VIOLATION = 'Dress Code Violation';
-export const EQUIPMENT_VIOLATION = 'Equipment Violation';
+export const PHYSICAL_ABUSE = 'PHYSICAL_ABUSE';
+export const AUDIBLE_OBSCENITY = 'AUDIBLE_OBSCENITY';
+export const VISIBLE_OBSCENITY = 'VISIBLE_OBSCENITY';
+export const TIME_VIOLATION = 'TIME_VIOLATION';
+export const UNSPORTSMANLIKE_CONDUCT = 'UNSPORTSMANLIKE_CONDUCT';
+export const DRESS_CODE_VIOLATION = 'DRESS_CODE_VIOLATION';
+export const EQUIPMENT_VIOLATION = 'EQUIPMENT_VIOLATION';
 /** @deprecated misspelled; use `EQUIPMENT_VIOLATION`. Removed in 8.0.0. */
 export const EQUIMENT_VIOLATION = EQUIPMENT_VIOLATION;
-export const LEAVING_THE_COURT = 'Leaving the court';
-export const FAILURE_TO_COMPLETE = 'Failure to complete';
-export const NO_SHOW = 'No Show';
-export const OTHER = 'Other';
+export const LEAVING_THE_COURT = 'LEAVING_THE_COURT';
+export const FAILURE_TO_COMPLETE = 'FAILURE_TO_COMPLETE';
+export const NO_SHOW = 'NO_SHOW';
+export const OTHER = 'OTHER';
 export const REFUSAL_TO_PLAY = 'REFUSAL_TO_PLAY';
 export const PROHIBITED_SUBSTANCE = 'PROHIBITED_SUBSTANCE';
-/**
- * Corrected 2026-10-05 (was `'Puncuality'`). Stored records may hold the old spelling; it is accepted and rewritten
- * on write (`normalizePenaltyType`) until 8.0.0, when it stops being accepted.
- */
-export const PUNCTUALITY = 'Punctuality';
-export const FAILURE_TO_SIGN_IN = 'Failure to sign in';
-export const FAILURE_TO_SIGN_OUT = 'Failure to sign out';
+export const PUNCTUALITY = 'PUNCTUALITY';
+export const FAILURE_TO_SIGN_IN = 'FAILURE_TO_SIGN_IN';
+export const FAILURE_TO_SIGN_OUT = 'FAILURE_TO_SIGN_OUT';
 /** @deprecated misspelled; use `FAILURE_TO_SIGN_IN`. Removed in 8.0.0. */
 export const FAILUIRE_TO_SIGN_IN = FAILURE_TO_SIGN_IN;
 

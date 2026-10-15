@@ -1,5 +1,6 @@
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { normalizePenaltyType } from '@Mutate/participants/penalties/normalizePenaltyType';
 import { getMatchUpPresence, getParticipantPresence } from '@Acquire/presenceAttestations';
 
 // constants and types
@@ -185,6 +186,7 @@ type MigrationCounts = {
   matchUpCheckIns: number;
   drawPositions: number;
   participantPresence: number;
+  penaltyTypes: number;
   venues: number;
   courts: number;
 };
@@ -233,6 +235,7 @@ function migrateTournamentLevel(record: Tournament, counts: MigrationCounts, cle
   counts.tournament += applyGroupPromotions(record, TOURNAMENT_GROUP_PROMOTIONS, clearLegacy);
   for (const participant of record.participants ?? []) {
     counts.participantPresence += promoteParticipantPresence(participant, clearLegacy);
+    counts.penaltyTypes += normalizePenaltyTypes(participant);
   }
 }
 
@@ -287,6 +290,7 @@ export function migrateTournamentRecord({
     matchUpCheckIns: 0,
     drawPositions: 0,
     participantPresence: 0,
+    penaltyTypes: 0,
     venues: 0,
     courts: 0,
   };
@@ -348,6 +352,25 @@ function promoteParticipantPresence(participant: Participant, clearLegacy: boole
     participant.timeItems = participant.timeItems.filter((timeItem) => timeItem?.itemType !== SIGN_IN_STATUS);
   }
   return promoted.length;
+}
+
+/**
+ * A stored legacy `penaltyType` is rewritten to its `PenaltyTypeEnum` code (CA, 2026-10-15: the factory stores codes).
+ *
+ * Records written before hold display labels (`'Ball Abuse'`) or a misspelled code, which `tournament.schema.json`
+ * rejects. `normalizePenaltyType` is the same map `addPenalty` and `modifyPenalty` apply on write. Unconditional,
+ * like `compactDrawPositions`: a label is never a legacy fact worth keeping. A value outside the map is left as it is.
+ */
+function normalizePenaltyTypes(participant: Participant): number {
+  let n = 0;
+  for (const penalty of participant?.penalties ?? []) {
+    const penaltyType = normalizePenaltyType(penalty?.penaltyType);
+    if (penalty && penaltyType !== penalty.penaltyType) {
+      penalty.penaltyType = penaltyType;
+      n += 1;
+    }
+  }
+  return n;
 }
 
 function migrateMatchUpSchedule(matchUp: MatchUp, counts: MigrationCounts, clearLegacy: boolean) {
