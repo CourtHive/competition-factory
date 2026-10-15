@@ -1,11 +1,12 @@
 import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
 import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
 // constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { COMPASS, DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * A BYE SENT ON FROM ITS HOLDER IS NO OPPONENT (census run 18 MONOTONIC_DECISION, DOUBLE_ELIMINATION 16/14, seed
@@ -112,4 +113,58 @@ it('scoring the other semi-final feeder reaches the draw the forward order reach
   const forward = play('bye-from-holder-first', [...SCHEDULE, PLAYED, CONVERGING]);
   expect(lateStates).toEqual(keys.map((key) => state(forward, key)));
   expect(lateStates[2].winningSide).toEqual(2);
+});
+
+/**
+ * The same read one structure on, under `doubleExitPropagateBye: false` (census s14 policy-off 20521366, COMPASS 32/27).
+ * `East|1|4`'s walkover carries its loser into `West|2|1`, decided for the empty seat, and on as that matchUp's loser
+ * past `Southwest|1|1`'s BYE into `Southwest|2|1`. `East|1|2`'s double walkover then converges `West|2|1`: a double exit
+ * has no loser, so the carrier comes home, and the produced exit sent over the loser link waits beside the BYE in
+ * `Southwest|1|1`, whose seat (dp 1) still stood alone in `Southwest|2|1`. Read as that matchUp's opponent, the seat was
+ * awarded the exit coming from it, and `Southwest|2|1` held a WALKOVER that entering the double walkover first never
+ * writes.
+ */
+const COMPASS_CONFIG = {
+  drawType: COMPASS,
+  propagateExitStatus: true,
+  participantsCount: 27,
+  drawSize: 32,
+  seed: 20521366,
+};
+const POLICY_OFF = { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: false } };
+const COMPASS_SCHEDULE = [
+  at('East|1|4', { matchUpStatus: WALKOVER, winningSide: 1 }),
+  at('East|1|8', { matchUpStatus: DOUBLE_DEFAULT }),
+  at('East|1|7', { matchUpStatus: WALKOVER, winningSide: 2 }),
+];
+const COMPASS_CONVERGING = at('East|1|2', { matchUpStatus: DOUBLE_WALKOVER });
+
+function playCompass(drawId: string, steps: any[]) {
+  setSubscriptions({});
+  prepareDraw(COMPASS_CONFIG, drawId, POLICY_OFF);
+  const find = (key: string) => getDrawMatchUps(drawId).find((matchUp: any) => coordinate(matchUp) === key);
+  for (const step of steps) {
+    const result: any = observeMutation({
+      propagateExitStatus: true,
+      matchUpId: find(coordinate(step)).matchUpId,
+      outcome: step.outcome,
+      drawId,
+    });
+    expect(result.error).toBeUndefined();
+  }
+  return find;
+}
+
+it('a convergence over the loser link leaves the seat beyond its BYE as entering it first does', () => {
+  const keys = ['Southwest|1|1', 'Southwest|1|2', 'Southwest|2|1', 'West|2|1'];
+  const late = playCompass('bye-from-holder-compass-last', [...COMPASS_SCHEDULE, COMPASS_CONVERGING]);
+  const lateStates = keys.map((key) => state(late, key));
+  expect(late('Southwest|2|1').matchUpStatus).toEqual('TO_BE_PLAYED');
+  const first = playCompass('bye-from-holder-compass-first', [
+    COMPASS_SCHEDULE[0],
+    COMPASS_SCHEDULE[1],
+    COMPASS_CONVERGING,
+    COMPASS_SCHEDULE[2],
+  ]);
+  expect(lateStates).toEqual(keys.map((key) => state(first, key)));
 });
