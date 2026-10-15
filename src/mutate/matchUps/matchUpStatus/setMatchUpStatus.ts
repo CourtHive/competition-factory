@@ -161,6 +161,12 @@ function settleDraw({
   // a FIRST_MATCHUP consolation seat holds the reservation the settled first round says it should
   const reserved = reconcileConsolationReservations({ tournamentRecord, drawDefinition, event });
   if (reserved?.error) return reserved;
+  // a reservation withdrawn here is a BYE taken back after the exits relayed past it were reconciled, so they are asked
+  // again: a copy beyond the seat it vacated stands no longer (`reconcileStaleExitOrigins`, `getStaleRelays`)
+  if (reserved?.withdrawn) {
+    const relays = reconcileStaleExitOrigins({ tournamentRecord, drawDefinition, event });
+    if (relays?.error) return relays;
+  }
   // and an exit a carrier holds past a BYE that arrived after them is written where they landed
   const carried = reconcileCarriesPastByes({ tournamentRecord, drawDefinition, event });
   if (carried?.error) return carried;

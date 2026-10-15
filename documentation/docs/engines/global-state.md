@@ -4,10 +4,14 @@ title: Global State
 
 ## devContext
 
-Setting devContext(true) bypasses **try {} catch (err) {}** code block and in some cases enables enhanced logging
+Setting a truthy devContext (`true` or an object) bypasses the **try {} catch (err) {}** block around method
+invocation, so an exception thrown inside a method propagates to the caller; an object value also configures logging.
+`setDevContext` sets the value; `getDevContext` only reads it.
 
 ```js
-getDevContext(true);
+setDevContext(true);
+getDevContext(); // true
+getDevContext({ errors: true }); // the devContext object if every given key matches, otherwise false
 ```
 
 ---
@@ -15,6 +19,8 @@ getDevContext(true);
 ## getState
 
 Returns a deep copy of `tournamentRecords` which have been loaded, along with currently selected `tournamentId`.
+With deep copy disabled (`setDeepCopy(false)`, or `setState(records, false)`), `tournamentRecords` holds the live loaded
+objects rather than copies.
 
 ```js
 const { tournamentId, tournamentRecords } = getState({
@@ -43,25 +49,77 @@ Loads tournament records into [Global State](/docs/engines/global-state); suppor
 const tournamentRecords = [tournamentRecord];
 // or const tournamentRecords = { [tournamentId]: tournamentRecord }
 
-setsState(tournamentRecords, deepCopy, deepCopyConfig);
+setState(tournamentRecords, deepCopy, deepCopyConfig);
 ```
 
 :::info
-By default a deep copy of the `tournamentRecords` is made so that mutations do not affect the source objects. An optional boolean parameter, _deepCopy_ can be set to false to override this default behavior.
+By default a deep copy of the `tournamentRecords` is made so that mutations do not affect the source objects. An optional
+boolean parameter, _deepCopy_, can be set to false to override this default behavior. The boolean is written to the
+process-wide setting (`setDeepCopy`), so it also governs later copies: with deep copy disabled the engine works on the
+caller's own objects, and `getState` / `getTournament` return those same objects rather than copies.
 :::
 
-:::note
-`deepCopyConfig` is an optional configuration for `makeDeepCopy`. In server configurations when `deepCopy` is FALSE and `tournamentRecords` are retrieved from Mongo, for instance, there are scenarios where nodes of the JSON structure contain prototypes which cannot be converted.
-:::
+`deepCopyConfig` is an optional configuration for `makeDeepCopy`, installed process-wide through `setDeepCopy`. These are
+the only attributes it accepts:
 
 ```js
 const deepCopyConfig = {
-  ignore, // optional - either an array of attributes to ignore or a function which processes attributes to determine whether to ignore them
-  toJSON, // optional - an array of attributes to convert to JSON if the attribute in question is an object with .toJSON property
-  stringify, // optional - an array of attributes to stringify
-  modulate, // optional - function to process every attribute and return custom values, or undefined, which continues normal processing
+  threshold, // optional - depth beyond which the original (uncopied) references are kept
+  ignore, // optional - an array of attribute names to leave out of the engine's internal copies
+  toJSON, // optional - an array of attribute names whose values are replaced by value.toJSON(), when present
+  stringify, // optional - an array of attribute names whose values are converted to strings
 };
 ```
+
+`ignore` applies to the engine's internal copies (copied query results), not to the copy `setState` makes, to the copies
+`getState` / `getTournament` return, or to rollback and preview snapshots (see below).
+
+### Why copying is configurable
+
+Records loaded from a document database can carry driver-internal objects — identifier and decimal classes, objects with
+prototypes — that cannot be walked as plain JSON. `ignore`, `toJSON`, `stringify` and `threshold` keep those values out of
+the walk. As an escape hatch, a state provider may supply its own `makeDeepCopy`, which the engine then uses for every
+copy in place of the built-in one.
+
+### Rollback and preview snapshots
+
+A `rollbackOnError` call, a rolled-back `executionQueue` and `dryRun` / `explain` take a **snapshot** of the loaded
+records, which is not an outward copy and does not use the configuration above:
+
+- plain objects and arrays are always copied, including those under `ignore`, `toJSON` or `stringify` keys: a plain
+  object is copyable, and the operation may change it;
+- every other value (a class instance, such as a database driver's identifier or decimal type) is kept **by reference**.
+  The factory never writes into a value whose shape it does not know; a `Date` is copied;
+- `null` stays `null`, and no `threshold` applies.
+
+With deep copy disabled the engine works on your own objects, so a snapshot is written back **into** them: after a
+rollback or a preview your objects, including nested objects the operation replaced or deleted, are the same objects with
+their original values, and the engine still holds them.
+
+The snapshot is checked **before** the first method runs. When it could not be restored, the call is refused with
+`ROLLBACK_UNAVAILABLE` and nothing is written: for example, a record whose root is a class instance (a mapping-library
+document) that the factory can neither copy nor restore.
+
+A state provider can take over both halves:
+
+```js
+const provider = {
+  ...stateProviderMethods,
+  // called with { purpose: 'snapshot' } for a snapshot; any other call is an outward copy
+  makeDeepCopy: (source, convertExtensions, internalUse, removeExtensions, options) => {
+    /* ... */
+  },
+  // writes a snapshot back into records the engine does not own (deep copy disabled)
+  restoreSnapshot: (liveRecords, snapshot) => {
+    /* ... */
+  },
+};
+```
+
+A snapshot must be a set of plain records keyed by `tournamentId`, distinct from the live records. With deep copy disabled,
+a provider snapshot also needs `restoreSnapshot`; without it the call is refused. Values alone may not be the whole of a
+restore: a mapping library that tracks changes needs its tracking put back as well, which only `restoreSnapshot` can do.
+A `makeDeepCopy` hook that ignores `purpose` keeps working, but whether its snapshot is faithful is then up to the hook.
 
 ---
 

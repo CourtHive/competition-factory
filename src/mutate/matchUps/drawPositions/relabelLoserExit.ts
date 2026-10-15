@@ -122,12 +122,14 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
 
   if (args.validExitToPropagate) {
     if (!carriedHere) {
-      // The loser arrived as a participant and WON a produced exit standing there (RULE 2), and now exits at the
-      // origin. That win is the cascade's own award, not a result a director recorded, so it is taken back and
-      // the carry proceeds: carried in, the exit converges with the produced one, as it does when the exit is
-      // entered first (census w2 9100377, MFIC 16/11 `Consolation|3|2`; the round trip F2 left open). A result the
-      // loser then EARNED onward stands, and the carry is refused as before.
-      if (wonProducedExit(standing, loserParticipantId)) {
+      // The loser arrived as a participant and WON an exit standing there (RULE 2), and now exits at the origin.
+      // That win is the cascade's own award, not a result a director recorded, so it is taken back and the carry
+      // proceeds: carried in, the exit converges with the one standing there, as it does when the exit is entered
+      // first (census w2 9100377, MFIC 16/11 `Consolation|3|2`, a produced exit; the round trip F2 left open). The
+      // same holds for an exit another loser CARRIED there (census s14 policy-off 20512801, COMPASS 16/13: `East|2|2`
+      // relabelled from RETIRED to WALKOVER left its loser holding `North|1|1`, awarded `East|2|1`'s carried walkover).
+      // A result the loser then EARNED onward stands, and the carry is refused as before.
+      if (wonExitOnArrival(standing, loserParticipantId)) {
         const onward = winnerPlayedOn(standing, inContextDrawMatchUps, drawDefinition);
         if (onward.error) return onward;
         if (onward.playedOn) return {};
@@ -155,20 +157,20 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
 }
 
 /**
- * The loser stands as the WINNER of a single exit whose other side holds an exit a double exit PRODUCED, with no
- * carried exit of their own and no score: the award a participant arriving at a pending produced exit is given.
+ * The loser stands as the WINNER of a single exit whose other side holds an exit carried or produced there, with no
+ * carried exit of their own and no score: the award a participant arriving at an exit standing for their seat is given.
  */
-function wonProducedExit(standing: HydratedMatchUp, loserParticipantId: string): boolean {
+function wonExitOnArrival(standing: HydratedMatchUp, loserParticipantId: string): boolean {
   if (!isExit(standing.matchUpStatus) || checkScoreHasValue({ score: standing.score })) return false;
   const loserSide = standing.sides?.find((side) => side?.participantId === loserParticipantId)?.sideNumber;
   if ((loserSide !== 1 && loserSide !== 2) || standing.winningSide !== loserSide) return false;
   const own = standing.sideExitProvenance?.[loserSide];
   const other = standing.sideExitProvenance?.[3 - loserSide];
-  return !carriedExitStatus(own) && !!carriedExitStatus(other) && isDoubleExit(other?.previousMatchUpStatus);
+  return !carriedExitStatus(own) && !!carriedExitStatus(other);
 }
 
 /**
- * Take back the award: the produced exit stands pending again, and the loser's advancement out of it is released,
+ * Take back the award: the exit stands pending again, and the loser's advancement out of it is released,
  * round by round and across any winner link, as `releaseAdvancedDrawPosition` releases a position that stopped
  * winning. The carry that follows converges with the pending exit.
  */
@@ -201,7 +203,11 @@ function unawardProducedExit(args: RelabelArgs, standing: HydratedMatchUp, loser
     event: args.event,
     drawPosition,
   });
-  delete stored.winningSide;
+  // an award over another participant's CARRIED exit sent that participant on as the matchUp's loser. The award stays
+  // recorded, so the carry that follows converges the matchUp as a decided one, as when the exit is entered directly:
+  // the double exit takes back what the award directed, its loser included (a double exit has no loser)
+  const overCarrier = standing.sides?.some((side) => side?.participantId && side.participantId !== loserParticipantId);
+  if (!overCarrier) delete stored.winningSide;
 }
 
 /** the loser's carried exit says WALKOVER where the source now says DEFAULTED, or the reverse */

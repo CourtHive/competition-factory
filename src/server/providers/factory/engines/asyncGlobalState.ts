@@ -121,6 +121,7 @@ export default {
   disableNotifications,
   enableNotifications,
   getMethods,
+  getNoticeBuffer,
   getNotices,
   getPayloads: getNotices, // canonical alias for the deprecated `getNotices`
   getTopics,
@@ -129,6 +130,7 @@ export default {
   getTournamentRecords,
   removeTournamentRecord,
   setMethods,
+  setNoticeBuffer,
   setSubscriptions,
   setTournamentId,
   setTournamentRecord,
@@ -304,6 +306,16 @@ function getNotices({ topic }: GetNoticesArgs) {
 function deleteNotices() {
   const instanceState = getInstanceState();
   instanceState.notices = [];
+}
+
+// Optional provider methods: a rollback restores the buffer it found instead of deleting every
+// notice. Without them the engine falls back to deleteNotices (see globalState.setNoticeBuffer).
+function getNoticeBuffer() {
+  return [...getInstanceState().notices];
+}
+
+function setNoticeBuffer(notices: Notice[]) {
+  getInstanceState().notices = [...notices];
 }
 
 function deleteNotice({ key, topic }) {

@@ -33,8 +33,8 @@ import {
 // constants and types
 import type { DrawDefinition, DrawLink, MatchUp, MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import type { HydratedMatchUp } from '@Types/hydrated';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
@@ -576,6 +576,21 @@ export function conditionallyRemoveDrawPosition(params) {
   // one this call was given, which is the SOURCE's. They differ whenever the unwind has crossed a
   // link, and `getPairedPreviousMatchUp` below then looked up a Main roundPosition in the Backdraw.
   const { structure: targetStructure } = findStructure({ drawDefinition, structureId: targetMatchUp.structureId });
+  // read before the walk goes on: a matchUp holding only origins this unwind is not withdrawing keeps its own result
+  // (below), so nothing it sent on is this unwind's either
+  const keepsOwnResult =
+    !!getSideExitProvenance({ matchUp: noContextTargetMatchUp }) &&
+    !carriesWithdrawnOrigin(noContextTargetMatchUp, withdrawnSourceIds);
+  if (keepsOwnResult) {
+    pushGlobalLog({
+      method: stack,
+      color: 'brightyellow',
+      decision: 'RETAIN_untouched_origin',
+      matchUpId: targetMatchUp.matchUpId,
+      keyColors,
+    });
+    return { ...SUCCESS };
+  }
   let result = removeDoubleExit({
     structure: targetStructure ?? structure,
     targetData: nextTargetData,
@@ -806,11 +821,15 @@ function getUnwoundState({
     // `matchUpStatusCodes: []` onto a matchUp that is still an exit is the residue CA ruled on
     // 2026-09-09: "RE-DERIVE the codes on unwind from the current upstream state instead of writing
     // []". See `knownFailures.ts`, DOUBLE_EXIT_STATUS_CODES_RESIDUE.
+    //
+    // The label is the KEPT exit's, read from what it retains: a mixed convergence is stored as a DOUBLE_WALKOVER
+    // (the weaker claim), so reading the stored status relabelled a DOUBLE_DEFAULT's produced DEFAULTED as a WALKOVER
+    // once the walkover side was withdrawn (census S6 Class B 20521366, COMPASS 32/27: `East|2|4`). The stored status
+    // decides only where nothing is retained.
     const status = noContextTargetMatchUp.matchUpStatus;
-    return {
-      matchUpStatus: status === DOUBLE_DEFAULT || status === DEFAULTED ? DEFAULTED : WALKOVER,
-      provenance: retained,
-    };
+    const kept = deriveExitStateFromProvenance(retained)?.matchUpStatus;
+    const fallback = status === DOUBLE_DEFAULT || status === DEFAULTED ? DEFAULTED : WALKOVER;
+    return { matchUpStatus: kept && isExit(kept) ? kept : fallback, provenance: retained };
   }
   if (targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp })) {
     return {
@@ -883,6 +902,7 @@ function producedAwardStands({
   const sourceMatchUpId = retained?.[3 - winningSide]?.sourceMatchUpId;
   if (!sourceMatchUpId) return true;
   if (
+    !relayedPastBye({ inContextDrawMatchUps, targetMatchUp, sourceMatchUpId }) &&
     arrivedOverLoserLink({
       targetMatchUpId: targetMatchUp.matchUpId,
       inContextDrawMatchUps,
@@ -901,6 +921,30 @@ function producedAwardStands({
   });
   const assignment = positionAssignmentsOf(structure)?.find((candidate) => candidate.drawPosition === drawPosition);
   return !!(assignment?.participantId || assignment?.qualifier);
+}
+
+/**
+ * A BYE feeding the target holds the exit's origin: it reached the target relayed past that BYE, not straight down its
+ * link. Relayed, it lands pending on the direct path (`carryExitOnward` writes no winningSide), so the unwind leaves it
+ * pending too unless somebody stands on the seat it would be awarded to (CA 2026-10-03, Q3; census S6 Class B 20641116,
+ * COMPASS 32/27 policy-off: `East|1|13` corrected from DOUBLE_WALKOVER to WALKOVER left `West|2|4` awarded to its
+ * empty side, and the loser arriving there took the award instead of converging with the exit).
+ */
+function relayedPastBye({
+  inContextDrawMatchUps,
+  sourceMatchUpId,
+  targetMatchUp,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  targetMatchUp: HydratedMatchUp;
+  sourceMatchUpId: string;
+}): boolean {
+  return inContextDrawMatchUps.some(
+    (feeder) =>
+      feeder.winnerMatchUpId === targetMatchUp.matchUpId &&
+      feeder.matchUpStatus === BYE &&
+      Object.values(feeder.sideExitProvenance ?? {}).some((entry) => entry?.sourceMatchUpId === sourceMatchUpId),
+  );
 }
 
 /**

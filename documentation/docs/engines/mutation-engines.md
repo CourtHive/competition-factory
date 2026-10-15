@@ -40,21 +40,28 @@ Use `asyncEngine` for multi-client server applications:
 
 **API Reference:** [addEvent](/docs/governors/event-governor#addevent)
 
-```js
-import { asyncEngine, globalState } from 'tods-competition-factory';
-import asyncGlobalState from './asyncGlobalState';
+`asyncEngine` is a factory **function**, not an engine: call it to get one. Install the async
+state provider first — without one, `asyncEngine()` returns `{ error }` instead of an engine.
 
-// Configure async state provider once at startup
+```js
+import { asyncEngine, globalState, governors } from 'tods-competition-factory';
+import asyncGlobalState from './asyncGlobalState'; // your copy of the reference implementation
+
+// Once, at startup: install the provider BEFORE any asyncEngine() call
 globalState.setStateProvider(asyncGlobalState);
 
 // Each client request gets isolated state
 app.post('/api/tournament/:id/event', async (req, res) => {
   const result = await asyncGlobalState.runWithInstanceState(async () => {
-    const tournamentRecord = await loadTournament(req.params.id);
-    await asyncEngine.setState(tournamentRecord);
+    const engine = asyncEngine(); // binds a fresh instance state to this request's context
+    if (engine.error) return { error: engine.error };
+    engine.importMethods(governors, true, 1);
 
-    const outcome = await asyncEngine.addEvent({ event: req.body.event });
-    await saveTournament(asyncEngine.getState());
+    const tournamentRecord = await loadTournament(req.params.id);
+    engine.setState(tournamentRecord);
+
+    const outcome = await engine.addEvent({ event: req.body.event }); // imported methods return promises
+    if (!outcome.error) await saveTournament(engine.getTournament().tournamentRecord);
     return outcome;
   });
 
@@ -168,46 +175,76 @@ Protect tournament integrity by automatically reverting changes when operations 
 
 ### Basic Rollback
 
-**API Reference:** [setMatchUpStatus](/docs/governors/matchup-governor#setmatchupstatus)
+**API Reference:** [automatedPositioning](/docs/governors/draws-governor#automatedpositioning)
+
+Engine methods do not throw on failure: an error is **returned** as `result.error`. (Only a
+truthy [devContext](/docs/engines/engine-methods#devcontext) lets an exception escape; with
+`rollbackOnError` the state is restored before it does.) Check the result rather than wrapping the call
+in `try`/`catch`.
+
+A rollback restores more than the records: the selected tournament, the buffered notices (a refused
+write's notices are never delivered; an enclosing operation's are kept) and the modification flag.
+When the state cannot be snapshotted faithfully, a call with `rollbackOnError` is refused **before it
+writes anything**, with `ROLLBACK_UNAVAILABLE`.
 
 ```js
 import { tournamentEngine } from 'tods-competition-factory';
 
 tournamentEngine.setState(tournamentRecord);
 
-try {
-  const result = await tournamentEngine.automatedPositioning({
-    drawId: 'draw-1',
-    rollbackOnError: true, // Enable automatic rollback
-  });
-} catch (error) {
-  // State automatically reverted to pre-operation state
-  console.error('Operation failed, state rolled back:', error);
+const result = tournamentEngine.automatedPositioning({
+  drawId: 'draw-1',
+  rollbackOnError: true, // on { error }, restore the records as they were before this call
+});
+
+if (result.error) {
+  // the tournament records are back to their pre-call state
+  console.error('Operation failed, state rolled back:', result.error);
 }
 ```
 
 ### Transaction Pattern
 
-**API Reference:** [automatedPositioning](/docs/governors/draws-governor#automatedpositioning)
+**API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
+
+`rollbackOnError` on separate calls is **not** one transaction: each call restores only its own
+changes, so a failure in the third call leaves the first two applied. To make several mutations
+succeed or fail together, submit them as one `executionQueue` with rollback enabled — the second
+argument — and check the result:
 
 ```js
-// Complex operation with multiple mutations
 tournamentEngine.setState(tournamentRecord);
-const originalState = tournamentEngine.getState();
 
-try {
-  // Multiple operations that must all succeed
-  await tournamentEngine.addEvent({ event, rollbackOnError: true });
-  await tournamentEngine.generateDrawDefinition({ drawSize: 32, rollbackOnError: true });
-  await tournamentEngine.attachPolicies({ policyDefinitions, rollbackOnError: true });
+const result = tournamentEngine.executionQueue(
+  [
+    { method: 'addEvent', params: { event } },
+    { method: 'generateDrawDefinition', params: { eventId: event.eventId, drawSize: 32 } },
+    // `pipe` copies drawDefinition from the previous directive's result into these params
+    { method: 'addDrawDefinition', params: { eventId: event.eventId }, pipe: { drawDefinition: true } },
+    { method: 'attachPolicies', params: { policyDefinitions } },
+  ],
+  true, // rollbackOnError: any { error } restores the records as they were before the queue
+);
 
-  // All succeeded, persist state
-  await saveToDatabase(tournamentEngine.getState());
-} catch (error) {
-  // Any failure rolls back entire transaction
-  console.error('Transaction failed:', error);
-  tournamentEngine.setState(originalState);
+if (result.error) {
+  // nothing in the queue was kept; result.rolledBack is true
+  console.error('Transaction failed:', result.error);
+} else {
+  // result is { success, results } — one entry per directive
+  const { tournamentRecord: updated } = tournamentEngine.getTournament();
+  await saveToDatabase(updated);
 }
+```
+
+To restore by hand from a saved state, keep in mind that `getState()` returns a wrapper,
+`{ tournamentId, tournamentRecords }`, not a record. Passing that wrapper back to `setState` loads it
+as one malformed record. Load the records and the active tournament separately:
+
+```js
+const state = tournamentEngine.getState();
+// ... later
+tournamentEngine.setState(state.tournamentRecords);
+tournamentEngine.setTournamentId(state.tournamentId);
 ```
 
 ### When to Use Rollback
@@ -278,8 +315,13 @@ request or bleed into a sibling:
 ```js
 app.post('/api/event', async (req, res) => {
   const result = await asyncGlobalState.runWithInstanceState(async () => {
-    await asyncEngine.setState(req.tournament);
-    return asyncEngine.addEvent({ event: req.body });
+    // Instantiate inside the scope: construction binds a fresh instance state to the context,
+    // so do it before setState or setSubscriptions, never after.
+    const engine = asyncEngine();
+    if (engine.error) return { error: engine.error };
+    engine.setState(req.tournament);
+    // methods registered globally above resolve by name in every request context
+    return engine.executionQueue([{ method: 'addEvent', params: { event: req.body } }], true);
   });
   res.json(result);
 });

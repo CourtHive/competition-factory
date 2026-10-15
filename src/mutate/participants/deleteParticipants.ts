@@ -3,6 +3,7 @@ import { removeParticipantIdsFromAllTeams } from './removeIndividualParticipantI
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { removeEventEntries } from '@Mutate/entries/removeEventEntries';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addNotice } from '@Global/state/globalState';
 import { intersection } from '@Tools/arrays';
@@ -13,7 +14,7 @@ import { GROUP, PAIR, TEAM as participantTeam } from '@Constants/participantCons
 import { DELETE_PARTICIPANTS } from '@Constants/topicConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
+import { Participant, Tournament } from '@Types/tournamentTypes';
 import { DOUBLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
 import {
@@ -86,6 +87,10 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
   }
 
   const eventParticipantIdsRemoved = {};
+  // what the notices announce: every participant removed (a PAIR goes with its deleted individual,
+  // though only the individual was requested) and every grouping whose ids were pruned
+  const removedParticipantIds: string[] = [];
+  const prunedGroupings: Participant[] = [];
   const mappedIndividualParticipantIdsToAdd = {};
 
   // If not active in draws, remove participantIds from all entries
@@ -119,16 +124,19 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
       participant.participantType &&
       [participantTeam, GROUP].includes(participant.participantType)
     ) {
-      if (participant.individualParticipantIds?.some((id) => participantIds.includes(id))) {
-        participant.individualParticipantIds = participant.individualParticipantIds.filter(
+      const prunesIndividuals = participant.individualParticipantIds?.some((id) => participantIds.includes(id));
+      const prunesContacts = participant.contactParticipantIds?.some((id) => participantIds.includes(id));
+      if (prunesIndividuals) {
+        participant.individualParticipantIds = participant.individualParticipantIds?.filter(
           (id) => !participantIds.includes(id),
         );
       }
-      if (participant.contactParticipantIds?.some((id) => participantIds.includes(id))) {
-        participant.contactParticipantIds = participant.contactParticipantIds.filter(
+      if (prunesContacts) {
+        participant.contactParticipantIds = participant.contactParticipantIds?.filter(
           (id) => !participantIds.includes(id),
         );
       }
+      if (prunesIndividuals || prunesContacts) prunedGroupings.push(participant);
     }
 
     if (
@@ -145,6 +153,7 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
         }
       }
     }
+    if (participantToRemove) removedParticipantIds.push(participant.participantId);
     return !participantToRemove;
   });
 
@@ -172,9 +181,10 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
 
   if (participantsRemovedCount) {
     addNotice({
-      payload: { participantIds, tournamentId: tournamentRecord.tournamentId },
+      payload: { participantIds: removedParticipantIds, tournamentId: tournamentRecord.tournamentId },
       topic: DELETE_PARTICIPANTS,
     });
+    modifyParticipantsNotice({ tournamentId: tournamentRecord.tournamentId, participants: prunedGroupings });
   }
 
   return participantsRemovedCount ? { ...SUCCESS, participantsRemovedCount } : { error: CANNOT_REMOVE_PARTICIPANTS };

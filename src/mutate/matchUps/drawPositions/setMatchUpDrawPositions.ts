@@ -59,6 +59,27 @@ export function rekeySideFacts({
   return { sideChanged };
 }
 
+/**
+ * Whether writing `drawPositions` will move the participant already here to the other side: a writer that records a
+ * side fact BEFORE the positions are written must key it in the frame the record is still in, so that the re-keying
+ * which follows carries it to the seat it names.
+ */
+export function arrivalMovesOccupant({
+  drawDefinition,
+  drawPositions,
+  structureId,
+  matchUp,
+}: SetMatchUpDrawPositionsArgs): boolean {
+  const before: (number | undefined)[] = matchUp.drawPositions ?? [];
+  return occupantChangesSide({
+    matchUp,
+    before,
+    after: normalizeDrawPositions(drawPositions),
+    drawDefinition,
+    structureId,
+  });
+}
+
 function occupantChangesSide({ matchUp, before, after, drawDefinition, structureId }): boolean {
   if (!drawDefinition || !structureId) return false;
   const held = (positions: (number | undefined)[]) => positions.filter((position): position is number => !!position);

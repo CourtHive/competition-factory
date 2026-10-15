@@ -1,13 +1,11 @@
-import { deleteNotices, getInvokeObserver, getTournamentRecords } from '@Global/state/globalState';
+import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
+import { deleteNotices, getInvokeObserver, getMethods } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
 import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
-import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { isFunction, isObject, isString } from '@Tools/objects';
-import { getMethods } from '@Global/state/syncGlobalState';
-import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { withCapturedClock } from '@Tools/clock';
 
 // constants
@@ -39,11 +37,26 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
 
   // one instant for the whole call, captured before anything is written; see tools/clock.ts
   return withCapturedClock((timeStamp) => {
-    const snapshot = params.rollbackOnError && makeDeepCopy(getTournamentRecords(), false, true);
+    const capture = params.rollbackOnError ? captureOperation() : undefined;
+    if (capture?.error) return { error: capture.error };
+    const captured = capture?.captured;
 
-    const result = executeFunction(engine, method, params, methodName, 'sync') ?? {};
+    let result: ReturnType<typeof executeFunction>;
+    try {
+      result = executeFunction(engine, method, params, methodName, 'sync') ?? {};
+    } catch (err) {
+      // thrown only under devContext (otherwise executeFunction catches): restore, then surface it
+      if (captured) restoreOperation(captured);
+      throw err;
+    }
 
-    if (result?.error && snapshot) setState(snapshot);
+    if (result?.error && captured) {
+      // records, selection, notices and the mutation flag all return to what they were: the
+      // record is not stamped, and nothing the refused write buffered is delivered
+      restoreOperation(captured);
+      getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'sync', params, result });
+      return result;
+    }
 
     const mutationStatus = getMutationStatus({ timeStamp }); // timeStamp reaches the record via the factory extension
 

@@ -120,24 +120,25 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   const newEvent = eventRecord as Event;
   tournamentRecord.events.push(newEvent);
 
+  // Every notice describes the event as STORED: its minted eventId, normalised gender and discipline,
+  // and minted tieFormat ids. Built from the caller's `event`, a notice without an eventId announced
+  // an event that subscribers could not identify.
   if (!suppressNotifications) {
+    const tournamentId = tournamentRecord?.tournamentId;
+    const eventId = newEvent.eventId;
     const { topics } = getTopics();
     if (topics.includes(ADD_MATCHUPS)) {
-      const matchUps = allEventMatchUps({ event }).matchUps ?? [];
-      addMatchUpsNotice({
-        tournamentId: tournamentRecord?.tournamentId,
-        eventId: event.eventId,
-        matchUps,
-      });
+      const matchUps = allEventMatchUps({ event: newEvent }).matchUps ?? [];
+      addMatchUpsNotice({ tournamentId, eventId, matchUps });
     }
 
-    const { drawDefinitions, ...rest } = event;
+    const { drawDefinitions, ...rest } = newEvent;
 
     for (const drawDefinition of drawDefinitions ?? []) {
-      addDrawNotice({ drawDefinition });
+      addDrawNotice({ drawDefinition, tournamentId, eventId });
     }
 
-    addEventNotice({ tournamentId: tournamentRecord?.tournamentId, event: rest });
+    addEventNotice({ tournamentId, event: rest });
   }
 
   return { ...SUCCESS, event: eventRecord };

@@ -41,6 +41,7 @@
   "SCHEDULED",
   "scheduledDate",
   "serve",
+  "setTime",
   "test",
   "time",
   "tournamentname",

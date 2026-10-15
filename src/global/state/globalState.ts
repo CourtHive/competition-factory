@@ -1,6 +1,5 @@
 import { isFunction, isObject } from '@Tools/objects';
 import syncGlobalState from './syncGlobalState';
-import { intersection } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
 
 // constants and types
@@ -119,10 +118,12 @@ const requiredStateProviderMethods = [
 ];
 
 export function setStateProvider(globalStateProvider?: { [key: string]: any }) {
-  if (typeof globalStateProvider !== 'object') {
+  // isObject, not `typeof === 'object'`: null passed that test and then threw an incidental TypeError
+  if (!globalStateProvider || !isObject(globalStateProvider)) {
     throw new Error(`Global state provider can not be undefined or null`);
   } else {
-    const providerMethods = intersection(Object.keys(globalStateProvider), requiredStateProviderMethods);
+    // presence, not callability: a provider that never calls a method it stubs has always installed
+    const providerMethods = requiredStateProviderMethods.filter((name) => name in globalStateProvider);
     if (providerMethods.length !== requiredStateProviderMethods.length) {
       throw new Error('Global state provider is missing required methods');
     } else {
@@ -424,6 +425,9 @@ export function setGlobalMethods(params?: { [key: string]: any }) {
 export function setMethods(params?: { [key: string]: any }) {
   if (!params) return { error: MISSING_VALUE, info: 'missing method declarations' };
   if (typeof params !== 'object') return { error: INVALID_VALUES };
+  // not in requiredStateProviderMethods, so a provider may lack it: refuse rather than throw
+  if (!isFunction(_globalStateProvider.setMethods))
+    return { error: INVALID_VALUES, info: 'provider has no setMethods' };
   return _globalStateProvider.setMethods(params);
 }
 
@@ -483,8 +487,35 @@ export function deleteNotices() {
   return _globalStateProvider.deleteNotices();
 }
 
-export function getTopics() {
-  return _globalStateProvider.getTopics();
+/**
+ * The notice buffer as it stands, for an operation that may need to restore it (rollback, dryRun).
+ * `undefined` when the provider cannot expose it; `setNoticeBuffer` then falls back to deleting.
+ */
+export function getNoticeBuffer(): Notice[] | undefined {
+  return isFunction(_globalStateProvider.getNoticeBuffer) ? _globalStateProvider.getNoticeBuffer() : undefined;
+}
+
+/**
+ * Restores a buffer captured by `getNoticeBuffer`. A provider without the optional pair cannot restore,
+ * so the buffer is emptied instead: losing an enclosing operation's notices is the lesser fault, beside
+ * delivering a notice for a write that was rolled back.
+ */
+export function setNoticeBuffer(notices?: Notice[]) {
+  if (notices && isFunction(_globalStateProvider.setNoticeBuffer)) return _globalStateProvider.setNoticeBuffer(notices);
+  return _globalStateProvider.deleteNotices();
+}
+
+/**
+ * Every topic a notice can be delivered on: the provider's subscriptions AND the global ones.
+ * `addNotice` buffers for a global-only subscription, so a topic list without them buffered
+ * notices that `notifySubscribers` then never delivered.
+ */
+export function getTopics(): { topics: string[] } {
+  const topics: string[] = _globalStateProvider.getTopics()?.topics ?? [];
+  const globalTopics = Object.keys(globalState.globalSubscriptions).filter(
+    (topic) => isFunction(globalState.globalSubscriptions[topic]) && !topics.includes(topic),
+  );
+  return { topics: [...topics, ...globalTopics] };
 }
 
 export function hasTopic(topic) {

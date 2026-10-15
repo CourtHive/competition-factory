@@ -62,6 +62,14 @@ it('the BYE two BYEs sent on stays where it went', () => {
     expect(observeMutation(params).error).toBeUndefined();
   }
   expect(find('West|1|2').matchUpStatus).toEqual(DOUBLE_WALKOVER);
-  for (const key of ['South|1|1', 'South|2|1', 'South|3|1']) expect(find(key).matchUpStatus, key).toEqual(BYE);
-  expect(find('South|3|1').drawPositions.filter(Boolean)).toEqual([2]);
+  // the BYEs behind the convergence stand, and the one `South|2|1` advanced keeps its seat there
+  for (const key of ['South|1|1', 'South|2|1']) expect(find(key).matchUpStatus, key).toEqual(BYE);
+  expect(find('South|2|1').drawPositions.filter(Boolean)).toEqual([2]);
+  // `South|1|2`'s produced walkover, held beside that BYE, goes on and waits in `South|3|1`, pending; the holder's BYE
+  // is no opponent there (census S6: a held exit is sent on while the other feeder can still deliver, CA 2026-09-24).
+  // Before, the exit stayed held and `South|3|1` read BYE in this order alone: 10 of the schedule's 120 orders
+  const final = find('South|3|1');
+  expect(final.matchUpStatus).toEqual(WALKOVER);
+  expect(final.winningSide).toBeUndefined();
+  expect((final.drawPositions ?? []).filter(Boolean)).toEqual([]);
 });
