@@ -16,6 +16,15 @@ import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_IT
 // types
 import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
+// constants
+import {
+  UNDER_REVIEW,
+  POST_EVENT,
+  MODIFICATION_REQUESTED,
+  ISSUES_FLAGGED,
+  CONDITIONALLY_APPROVED,
+} from '@Constants/sanctioningConstants';
+
 // ---------------------------------------------------------------------------
 // Shared fixtures
 // ---------------------------------------------------------------------------
@@ -167,10 +176,10 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     const statuses = history.statusHistory.map((h: any) => h.toStatus);
     expect(statuses).toContain('DRAFT');
     expect(statuses).toContain('SUBMITTED');
-    expect(statuses).toContain('UNDER_REVIEW');
+    expect(statuses).toContain(UNDER_REVIEW);
     expect(statuses).toContain('APPROVED');
     expect(statuses).toContain('ACTIVE');
-    expect(statuses).toContain('POST_EVENT');
+    expect(statuses).toContain(POST_EVENT);
     expect(statuses).toContain('CLOSED');
   });
 });
@@ -226,7 +235,7 @@ describe('Scenario: USTA Level 3 with Modification Request', () => {
     // Verify proposal is editable again
     let recordResult: any = sanctioningEngine.getSanctioningRecord();
     let record = recordResult.sanctioningRecord;
-    expect(record.status).toEqual('MODIFICATION_REQUESTED');
+    expect(record.status).toEqual(MODIFICATION_REQUESTED);
 
     // Applicant modifies draw size
     result = sanctioningEngine.updateEventProposal({
@@ -685,7 +694,7 @@ describe('Scenario: Post-Event Compliance Issues (USATF pattern)', () => {
 
     recordResult = sanctioningEngine.getSanctioningRecord();
     record = recordResult.sanctioningRecord;
-    expect(record.status).toEqual('ISSUES_FLAGGED');
+    expect(record.status).toEqual(ISSUES_FLAGGED);
 
     // Can still close from ISSUES_FLAGGED
     result = sanctioningEngine.closeApplication({ reason: 'Issues resolved after late submission' });
@@ -914,19 +923,19 @@ describe('Scenario: Policy Transition Guards', () => {
     requireEndorsement: false,
     transitionGuards: [
       {
-        from: 'UNDER_REVIEW',
+        from: UNDER_REVIEW,
         to: 'APPROVED',
         guard: 'PROPOSAL_VALID',
         message: 'Proposal must be complete before approval',
       },
       {
-        from: 'CONDITIONALLY_APPROVED',
+        from: CONDITIONALLY_APPROVED,
         to: 'APPROVED',
         guard: 'ALL_CONDITIONS_MET',
         message: 'All conditions must be met before full approval',
       },
       {
-        from: 'POST_EVENT',
+        from: POST_EVENT,
         to: 'CLOSED',
         guard: 'COMPLIANCE_COMPLETE',
         message: 'All required compliance items must be verified before closing',
@@ -949,7 +958,7 @@ describe('Scenario: Policy Transition Guards', () => {
     // Manually corrupt the proposal and set to UNDER_REVIEW for test
     let recordResult: any = sanctioningEngine.getSanctioningRecord();
     let record = recordResult.sanctioningRecord;
-    record.status = 'UNDER_REVIEW';
+    record.status = UNDER_REVIEW;
     record.proposal.tournamentName = '';
     record.policySnapshot = guardedPolicy;
     sanctioningEngine.setSanctioningRecord(record);

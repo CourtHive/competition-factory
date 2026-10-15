@@ -18,6 +18,9 @@ import type {
   Applicant,
 } from '@Types/sanctioningTypes';
 
+// constants
+import { POST_EVENT } from '@Constants/sanctioningConstants';
+
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
@@ -567,7 +570,7 @@ describe('Compliance edge cases', () => {
 
   it('checkComplianceDeadlines marks PENDING items as OVERDUE past deadline', () => {
     const record = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: {
         status: 'PENDING',
         items: [
@@ -632,7 +635,7 @@ describe('Compliance edge cases', () => {
 
   it('submitComplianceItem returns error for missing itemId', () => {
     const record = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: { status: 'PENDING', items: [] },
     });
     let result: any = submitComplianceItem({ sanctioningRecord: record, itemId: '' });
@@ -640,7 +643,7 @@ describe('Compliance edge cases', () => {
   });
 
   it('verifyComplianceItem returns error when compliance is absent', () => {
-    const record = makeRecord({ status: 'POST_EVENT' });
+    const record = makeRecord({ status: POST_EVENT });
     let result: any = verifyComplianceItem({ sanctioningRecord: record, itemId: 'x' });
     expect(result.error).toBeDefined();
     expect(result.error.code).toEqual('ERR_COMPLIANCE_NOT_APPLICABLE');
