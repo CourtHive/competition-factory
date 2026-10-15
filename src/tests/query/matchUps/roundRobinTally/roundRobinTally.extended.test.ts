@@ -212,6 +212,7 @@ describe('Round Robin Tally - Extended Coverage', () => {
 
       const result = tallyParticipantResults({ matchUps });
 
+      expect(Object.keys(result.participantResults).length).toBe(4);
       expect(result.readableReport).toBe('');
     });
 
@@ -241,6 +242,7 @@ describe('Round Robin Tally - Extended Coverage', () => {
         pressureRating: true,
       });
 
+      expect(Object.keys(result.participantResults).length).toBe(4);
       Object.values(result.participantResults).forEach((pr: any) => {
         expect(pr.pressureOrder).toBeDefined();
         expect(pr.pressureScores).toBeDefined();
@@ -269,6 +271,7 @@ describe('Round Robin Tally - Extended Coverage', () => {
 
       const result = tallyParticipantResults({ matchUps });
 
+      expect(Object.keys(result.participantResults).length).toBe(4);
       Object.values(result.participantResults).forEach((pr: any) => {
         expect(pr.pressureOrder).toBeUndefined();
       });
@@ -302,6 +305,9 @@ describe('Round Robin Tally - Extended Coverage', () => {
       });
 
       expect(result.participantResults).toBeDefined();
+      // every participant played its three group matchUps, all tallied
+      const tallied = Object.values(result.participantResults).map((pr: any) => pr.matchUpsWon + pr.matchUpsLost);
+      expect(tallied).toEqual([3, 3, 3, 3]);
     });
 
     // perPlayer tests
@@ -330,7 +336,8 @@ describe('Round Robin Tally - Extended Coverage', () => {
         perPlayer: 3,
       });
 
-      expect(result.participantResults).toBeDefined();
+      expect(result.bracketComplete).toBe(true);
+      expect(Object.keys(result.participantResults).length).toBe(4);
     });
 
     it('ignores perPlayer when bracket incomplete', () => {
@@ -505,6 +512,7 @@ describe('Round Robin Tally - Extended Coverage', () => {
       });
 
       const { order, report } = tallyParticipantResults({ matchUps });
+      expect(order?.length).toBe(4);
 
       const readable = getTallyReport({ matchUps, order, report });
 
@@ -570,6 +578,11 @@ describe('Round Robin Tally - Extended Coverage', () => {
 
       // Should contain participant information
       expect(readable.length).toBeGreaterThan(50);
+      const participantNames = new Set(
+        matchUps.flatMap((matchUp) => matchUp.sides.map((side) => side.participant?.participantName)),
+      );
+      expect(participantNames.size).toBe(4);
+      for (const participantName of participantNames) expect(readable).toContain(participantName);
     });
 
     it('handles undefined report', () => {

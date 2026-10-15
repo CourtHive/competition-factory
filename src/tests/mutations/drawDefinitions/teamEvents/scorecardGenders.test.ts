@@ -5,6 +5,7 @@ import { expect, it } from 'vitest';
 // constants
 import { DOMINANT_DUO, DOMINANT_DUO_MIXED } from '@Constants/tieFormatConstants';
 import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { MALE } from '@Constants/genderConstants';
 import { TEAM } from '@Constants/eventConstants';
 
@@ -13,7 +14,7 @@ it('will throw errors if gendered tieFormat not aligned with event gender', () =
     tournamentRecord,
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
-    participantsProfile: { gender: MALE },
+    participantsProfile: { sex: MALE },
     eventProfiles: [
       {
         drawProfiles: [{ drawSize: 16, generate: false }],
@@ -25,6 +26,10 @@ it('will throw errors if gendered tieFormat not aligned with event gender', () =
 
   const result = tournamentEngine.setState(tournamentRecord);
   expect(result.success).toEqual(true);
+
+  const { participants } = tournamentEngine.getParticipants({ participantFilters: { participantTypes: [INDIVIDUAL] } });
+  expect(participants.length).toBeGreaterThan(0);
+  expect(participants.every(({ person }) => person.sex === MALE)).toEqual(true);
 
   const event = tournamentEngine.getEvent({ eventId }).event;
   expect(event.gender).toEqual(MALE);

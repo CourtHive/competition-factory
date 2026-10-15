@@ -15,8 +15,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants and fixtures
-import { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import {
+  PLAY_OFF,
+  ROUND_ROBIN,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  SINGLE_ELIMINATION,
+} from '@Constants/drawDefinitionConstants';
 import {
   INVALID_MATCHUP,
   INVALID_VALUES,
@@ -28,6 +33,7 @@ import {
   INVALID_PARTICIPANT_IDS,
 } from '@Constants/errorConditionConstants';
 import {
+  BYE,
   COMPLETED,
   DEFAULTED,
   RETIRED,
@@ -768,9 +774,9 @@ describe('modifyTournamentRecord uncovered paths', () => {
     });
     tournamentEngine.setState(result.tournamentRecord);
     const modResult = tournamentEngine.modifyTournamentRecord({
-      venueProfiles: [{ venueCount: 1, courtsCount: 2 }],
+      venueProfiles: [{ courtsCount: 2 }],
     });
-    expect(modResult.venueIds).toBeDefined();
+    expect(modResult.venueIds.length).toEqual(1);
   });
 });
 
@@ -798,8 +804,14 @@ describe('generateEventWithDraw uncovered paths', () => {
   it('handles publish option in draw profile', () => {
     const result = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4, publish: true, completeAllMatchUps: true }],
+      setState: true,
     });
     expect(result.tournamentRecord).toBeDefined();
+    const { publishState } = tournamentEngine.getPublishState({ eventId: result.eventIds[0] });
+    expect(publishState.status.published).toEqual(true);
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    expect(matchUps.length).toEqual(3);
+    expect(matchUps.every((matchUp) => matchUp.winningSide)).toEqual(true);
   });
 
   it('handles outcomes array in drawProfile', () => {
@@ -877,9 +889,14 @@ describe('prepareStage uncovered paths', () => {
           completeAllMatchUps: true,
         },
       ],
+      setState: true,
     });
     expect(result.tournamentRecord).toBeDefined();
     expect(result.drawIds?.length).toBeGreaterThan(0);
+    // the playoff is positioned and completed after the groups
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    expect(matchUps.some((matchUp) => matchUp.stage === PLAY_OFF)).toEqual(true);
+    expect(matchUps.every((matchUp) => matchUp.winningSide)).toEqual(true);
   });
 
   it('handles qualifying profiles', () => {
@@ -918,6 +935,12 @@ describe('positionAssignment uncovered paths', () => {
     // Consolation structure should exist
     const consolation = drawDefinition?.structures?.find((s) => s.stage === 'CONSOLATION');
     expect(consolation).toBeDefined();
+    // completion feeds first-match losers into the consolation and completes it too
+    const consolationMatchUps = tournamentEngine
+      .allTournamentMatchUps()
+      .matchUps.filter((matchUp) => matchUp.structureId === consolation.structureId && matchUp.matchUpStatus !== BYE);
+    expect(consolationMatchUps.length).toBeGreaterThan(0);
+    expect(consolationMatchUps.every((matchUp) => matchUp.winningSide)).toEqual(true);
   });
 });
 

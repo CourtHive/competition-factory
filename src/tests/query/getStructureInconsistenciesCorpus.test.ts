@@ -37,13 +37,7 @@ const R1_EXIT_OUTCOMES = [
   { roundNumber: 1, roundPosition: 1, matchUpStatus: DOUBLE_WALKOVER },
   { roundNumber: 1, roundPosition: 2, matchUpStatus: WALKOVER, winningSide: 1 },
   { roundNumber: 1, roundPosition: 3, matchUpStatus: DEFAULTED, winningSide: 2 },
-  {
-    roundNumber: 1,
-    roundPosition: 4,
-    matchUpStatus: RETIRED,
-    winningSide: 1,
-    score: { sets: [{ side1Score: 6, side2Score: 3 }] },
-  },
+  { roundNumber: 1, roundPosition: 4, matchUpStatus: RETIRED, winningSide: 1, scoreString: '6-3' },
 ];
 
 const DRAW_TYPES = [

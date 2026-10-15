@@ -149,6 +149,8 @@ describe('CTS POLICY_RANKING_POINTS_CTS — Article 21 qualifying-stage points',
       .filter(
         (a: any) => a.eventType === SINGLES && a.rangeAccessor === 8, // rangeKey 8 = R1 loser in 8-draw (loser range [5,8])
       );
+    // the four first-round losers of the completed 8-draw
+    expect(mainR1LoserAwards.length).toEqual(4);
     // Tabulka IV row 12 col 3 = 67 pts.
     for (const award of mainR1LoserAwards) {
       expect((award as any).points).toEqual(67);
