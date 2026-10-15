@@ -25,7 +25,9 @@ import { COMPASS, CURTIS_CONSOLATION, OLYMPIC } from '@Constants/drawDefinitionC
  *   its exit only in part, leaving one on the winner's side.
  * - **The held exit travels** (20500008 COMPASS 16/16): River's carried default had taken the seat a BYE's held
  *   walkover was owed. Withdrawn, it left nothing there, and the BYE's exit never travelled: a single WALKOVER where
- *   direct entry converges to a DOUBLE_WALKOVER.
+ *   direct entry converges to a DOUBLE_WALKOVER. Since census S6 a loser seat already holding a BYE is settled and
+ *   nothing is produced onto it, in every order: both routes leave `South|2|1` a WALKOVER won by the participant who
+ *   reaches it (the DOUBLE_WALKOVER this pinned was reached by only part of the schedule's orders).
  *
  * Falsified: without `settleProducedExit` the pending and codes cases fail; without the relay to a passed occupant the
  * held-exit case does.
@@ -89,7 +91,7 @@ const CASES: {
     name: 'the held exit travels: COMPASS 16/16 (20500008)',
     config: { drawType: COMPASS, participantsCount: 16, drawSize: 16, seed: 20500008 },
     at: 'South|2|1',
-    expected: { matchUpStatus: DOUBLE_WALKOVER, winnerStands: false },
+    expected: { matchUpStatus: WALKOVER, winnerStands: true },
     steps: [
       ['East|1|8', { winningSide: 1 }],
       ['East|1|4', { matchUpStatus: DEFAULTED, winningSide: 1 }],
