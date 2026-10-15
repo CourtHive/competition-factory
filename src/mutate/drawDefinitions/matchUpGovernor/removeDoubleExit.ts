@@ -806,11 +806,15 @@ function getUnwoundState({
     // `matchUpStatusCodes: []` onto a matchUp that is still an exit is the residue CA ruled on
     // 2026-09-09: "RE-DERIVE the codes on unwind from the current upstream state instead of writing
     // []". See `knownFailures.ts`, DOUBLE_EXIT_STATUS_CODES_RESIDUE.
+    //
+    // The label is the KEPT exit's, read from what it retains: a mixed convergence is stored as a DOUBLE_WALKOVER
+    // (the weaker claim), so reading the stored status relabelled a DOUBLE_DEFAULT's produced DEFAULTED as a WALKOVER
+    // once the walkover side was withdrawn (census S6 Class B 20521366, COMPASS 32/27: `East|2|4`). The stored status
+    // decides only where nothing is retained.
     const status = noContextTargetMatchUp.matchUpStatus;
-    return {
-      matchUpStatus: status === DOUBLE_DEFAULT || status === DEFAULTED ? DEFAULTED : WALKOVER,
-      provenance: retained,
-    };
+    const kept = deriveExitStateFromProvenance(retained)?.matchUpStatus;
+    const fallback = status === DOUBLE_DEFAULT || status === DEFAULTED ? DEFAULTED : WALKOVER;
+    return { matchUpStatus: kept && isExit(kept) ? kept : fallback, provenance: retained };
   }
   if (targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp })) {
     return {
