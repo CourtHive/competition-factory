@@ -69,7 +69,11 @@ it('never persists a matchUpStatusCodes array containing a hole', () => {
   // sixty seeds of the window, the seeds that still persist one are 9000010, 9000013, 9000019,
   // 9000029, 9000036, 9000057 and 9000060. The originals are KEPT so the hole property stays asserted
   // over the scenarios it was found in.
-  const seeds = [9000003, 9000010, 9000019, 9000056, 9000060, 9000074];
+  //
+  // Widened again in census S6: once a withdrawn origin's kept exit is labelled from what it retains (20521366), the
+  // correction path stops writing codes direct entry never writes, and only 9000012 and 9000062 of the first 120 seeds
+  // still persist a non-empty array. They join the list so the control keeps seeing arrays.
+  const seeds = [9000003, 9000010, 9000012, 9000019, 9000056, 9000060, 9000062, 9000074];
   let arraysSeen = 0;
   const persisted: any[] = [];
 
