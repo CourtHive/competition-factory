@@ -1,0 +1,17 @@
+{
+  "*": {
+    "INVALID": "junk input: an unparseable matchUpFormat, rankBy or matchUpType, never the INVALID constant ('_invalid')"
+  },
+  "src/tests/constants/actionMethodConformance.test.ts": {
+    "ASSIGN_PARTICIPANT_METHOD": "the test scans source for emitted method IDENTIFIERS; the name is what it looks for"
+  },
+  "src/tests/mutations/participants/team/teamOnlyCompetition.test.ts": {
+    "TEAM_ONLY": "a tieFormatName, free text; unrelated to the doublesAttribution value teamOnly"
+  },
+  "src/tests/queries/matchUps/scheduleHydrationRegression.test.ts": {
+    "VENUE_ID": "asserts the hydrated schedule has NO upper-case constant-name keys",
+    "COURT_ID": "asserts the hydrated schedule has NO upper-case constant-name keys",
+    "SCHEDULED_DATE": "asserts the hydrated schedule has NO upper-case constant-name keys",
+    "SCHEDULED_TIME": "asserts the hydrated schedule has NO upper-case constant-name keys"
+  }
+}
