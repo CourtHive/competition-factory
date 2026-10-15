@@ -29,7 +29,7 @@
   "src/assemblies/generators/tournamentRecords": 14,
   "src/assemblies/governors/availabilityGovernor": 10,
   "src/errors": 1,
-  "src/forge": 65,
+  "src/forge": 63,
   "src/forge/builders": 11,
   "src/functions/declaration": 11,
   "src/functions/global": 8,

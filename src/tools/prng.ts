@@ -73,6 +73,30 @@ export function setRandomSource(source?: RandomFunction | number): {
   return { error: INVALID_VALUES, info: 'random source must be a seed (finite number) or a () => number' };
 }
 
+/**
+ * Runs `fn` against a FORK of the configured seeded source, then reinstates the original untouched.
+ *
+ * WHY a fork and not a rewind: a preview (dryRun) must leave the stream where it found it, so that
+ * the commit which follows draws exactly what the preview showed. Rewinding the ORIGINAL in place
+ * would re-mint the preview's ids from the same function, and `UUID` refuses an id that function
+ * has already minted (`refuseRepeatedId`, keyed by function). The fork records its ids under its
+ * own key; the original never sees them.
+ *
+ * Only a seeded source (`setRandomSource(seed)`) exposes its `state()`. A caller-supplied function
+ * and `Math.random` are opaque: they cannot be forked, and a preview advances them.
+ */
+export function withForkedRandomSource<T>(fn: () => T): T {
+  const original = configuredSource as SeededRandom | undefined;
+  if (typeof original?.state !== 'function') return fn();
+
+  configuredSource = createSeededRandom(original.state());
+  try {
+    return fn();
+  } finally {
+    configuredSource = original;
+  }
+}
+
 /** The function to draw randomness from right now. Read at the call, never captured at import. */
 export function randomSource(): RandomFunction {
   return configuredSource ?? Math.random;

@@ -2,17 +2,21 @@
  * `dryRun(engine, directives)` — preview an `executionQueue` without
  * committing.
  *
- * Same machinery as the real `executionQueue` (per-tournament snapshot via
- * `makeDeepCopy`, sequential method dispatch via `executeFunction`) but
- * with three contract differences:
+ * The same validation, directive preparation (the `nonRandom` seed, pipes)
+ * and dispatch as the real `executionQueue` — shared code, so a preview
+ * refuses what the commit would refuse and receives the inputs the commit
+ * would receive — with three contract differences:
  *
- *   1. **State is always restored** at the end — both on success and on
- *      error. Callers never see persisted side effects.
- *   2. **Subscribers are NOT notified.** The notices accumulated by the
- *      methods are captured into `willEmitNotices` and then drained from
- *      the buffer so the next real call starts clean. A consumer that
- *      wants to know "what would have fired" inspects the returned
- *      `willEmitNotices` array.
+ *   1. **The operation's state is restored** in a `finally`: records,
+ *      selected tournament, notice buffer and mutation flag, also when a
+ *      method throws under `devContext(true)`. A seeded random source is
+ *      run on a fork, so the commit that follows draws what the preview
+ *      showed (an opaque source cannot be forked, and is advanced). What a
+ *      method does OUTSIDE the engine state (I/O, a caller-held reference
+ *      it writes through) cannot be undone by any snapshot.
+ *   2. **Subscribers are NOT notified.** What would fire is returned in
+ *      `willEmitNotices`; the buffer is then restored to what it held
+ *      before the preview, so an enclosing operation keeps its notices.
  *   3. **Dev-log lines are tagged `dryRun: true`.** Dispatch goes through
  *      the same `executeFunction` as a real mutation, so without the tag a
  *      pre-flight and the commit that follows it print identical lines and
@@ -36,19 +40,20 @@
  *     showWarning(`Cannot delete: ${patch.length === 0 ? 'no changes' : '...'}`);
  *   }
  *
- * Perf: one `makeDeepCopy` of tournamentRecords up front (the same cost
- * `rollbackOnError` already pays), one diff walk over the post-state at
- * the end. For typical state sizes this is sub-10 ms; for very large
- * (50+ events, full draws) it's 50–200 ms. Safe for dev/preflight callers,
- * not for hot paths — for hot-path gating use `explain` instead.
+ * Cost: ONE copy of the records (the snapshot, the same copy rollbackOnError
+ * takes), one diff walk of the snapshot against the live post-state, and a
+ * copy of the patch's own values (proportional to the change, not the
+ * record). The snapshot is restored as it is. `explain` delegates here and
+ * pays the same cost.
  */
+import { captureOperation, OperationState, restoreOperation } from '@Assemblies/engines/parts/operationState';
+import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
-import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { generatePatch, JsonPatch } from './jsonPatch';
+import { withForkedRandomSource } from '@Tools/prng';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { withCapturedClock } from '@Tools/clock';
 import {
-  deleteNotices,
   getDevContext,
   getMethods,
   getNotices,
@@ -57,8 +62,7 @@ import {
   globalLog,
 } from '@Global/state/globalState';
 
-// constants and types
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+// types
 import { Directives, FactoryEngine } from '@Types/factoryTypes';
 
 export type EmittedNotice = {
@@ -74,7 +78,7 @@ export type DryRunResult = {
   patch: JsonPatch;
   /** Topics + payloads the real call would have emitted to subscribers. */
   willEmitNotices: EmittedNotice[];
-  /** Set when a directive's method dispatch returned `{ error }`. */
+  /** Set when the queue was refused, or a directive's method dispatch returned `{ error }`. */
   error?: any;
   /** True when state was restored — always true in dryRun. */
   rolledBack: true;
@@ -82,109 +86,46 @@ export type DryRunResult = {
 
 export function dryRun(engine: FactoryEngine, directives: Directives): DryRunResult {
   // one instant for the whole run, as the real executionQueue would capture; see tools/clock.ts
-  const run = withCapturedClock(() => dryRunAt(engine, directives));
+  const run = withCapturedClock(() => withForkedRandomSource(() => dryRunAt(engine, directives)));
   if ('wouldSucceed' in run) return run;
-  return {
-    wouldSucceed: false,
-    results: [],
-    patch: [],
-    willEmitNotices: [],
-    error: { ...run.error, message: run.message },
-    rolledBack: true,
-  };
+  return refused({ ...run.error, message: run.message }); // the clock itself refused
+}
+
+function refused(error: DryRunResult['error']): DryRunResult {
+  return { wouldSucceed: false, results: [], patch: [], willEmitNotices: [], error, rolledBack: true };
 }
 
 function dryRunAt(engine: FactoryEngine, directives: Directives): DryRunResult {
-  if (!Array.isArray(directives)) {
-    return {
-      wouldSucceed: false,
-      results: [],
-      patch: [],
-      willEmitNotices: [],
-      error: { ...INVALID_VALUES, message: 'directives must be an array' },
-      rolledBack: true,
-    };
-  }
-
   const methods = getMethods();
 
-  // Snapshot BEFORE any method runs. Independent deep copies so we can
-  // diff `snapshot` against the post-state without aliasing surprises.
+  // the queue's own validation: a preview refuses exactly what the commit would refuse
+  const invalid = validateDirectives(directives, methods);
+  if (invalid) {
+    const message = invalid.message ?? `method '${invalid.methodName}' not found`;
+    return refused({ ...invalid.error, message });
+  }
+
   const snapshotStart = Date.now();
-  const snapshot = makeDeepCopy(getTournamentRecords(), false, true);
+  const capture = captureOperation();
+  if (capture.error) return refused(capture.error);
+  const { captured } = capture;
   const snapshotElapsed = Date.now() - snapshotStart;
-  const executeStart = Date.now();
 
-  const results: any[] = [];
-  let error: any = undefined;
-
-  for (const directive of directives) {
-    if (typeof directive !== 'object') {
-      error = { ...INVALID_VALUES, message: 'directive must be an object' };
-      break;
-    }
-    if (directive.params && typeof directive.params !== 'object') {
-      error = { ...INVALID_VALUES, message: 'params must be an object' };
-      break;
-    }
-
-    const { method: methodName, pipe } = directive;
-    const params = directive.params ? { ...directive.params } : {};
-
-    if (!methods[methodName]) {
-      error = { ...INVALID_VALUES, message: `method '${methodName}' not found` };
-      break;
-    }
-
-    if (pipe) {
-      const lastResult = results.at(-1);
-      const pipeKeys = Object.keys(pipe);
-      for (const pipeKey of pipeKeys) {
-        if (lastResult?.[pipeKey]) params[pipeKey] = lastResult[pipeKey];
-      }
-    }
-
-    const result = executeFunction(engine, methods[methodName], params, methodName, 'sync', { dryRun: true });
-    results.push({ ...result, methodName });
-
-    if (result?.error) {
-      error = result.error;
-      break;
-    }
+  let run: PreviewRun;
+  const restoreTiming = { elapsed: 0 };
+  try {
+    run = previewAgainstLiveState(engine, directives, methods, captured);
+  } finally {
+    const restoreStart = Date.now();
+    restoreOperation(captured);
+    restoreTiming.elapsed = Date.now() - restoreStart;
   }
+  const restoreElapsed = restoreTiming.elapsed;
+  const { results, error, patch, willEmitNotices, executeElapsed, diffElapsed } = run;
 
-  const executeElapsed = Date.now() - executeStart;
-
-  // Capture the would-be post-state BEFORE restoring; diff snapshot vs. it.
-  // The post-snapshot must also be a deep copy so the cached `tournamentRecords`
-  // reference isn't shared with `snapshot` once we call `setState(snapshot)`.
-  const diffStart = Date.now();
-  const postState = makeDeepCopy(getTournamentRecords(), false, true);
-  const patch = generatePatch(snapshot, postState);
-  const diffElapsed = Date.now() - diffStart;
-
-  // Drain the notices buffer the methods accumulated. Capture per-topic
-  // payloads first, then `deleteNotices()` so the next real call starts
-  // clean. We do NOT call `notifySubscribers` — the whole point of dryRun
-  // is "what WOULD fire", not "fire it".
-  const willEmitNotices: EmittedNotice[] = [];
-  const { topics } = getTopics();
-  for (const topic of topics) {
-    const payloads = getNotices({ topic });
-    if (payloads?.length) willEmitNotices.push({ topic, payloads });
-  }
-  deleteNotices();
-
-  // Restore the snapshot. Always — dryRun's contract is "never persist".
-  const restoreStart = Date.now();
-  setState(snapshot);
-  const restoreElapsed = Date.now() - restoreStart;
-
-  // Cost summary. The per-method lines carry `dryRun: true` but only account
-  // for the method's own execution — the deep copies, the patch walk and the
-  // restore are dryRun's overhead and are invisible without this. Making the
-  // price legible is the point: a caller gating a UI action on `explain` pays
-  // it on every click, and 5ms on a small state is 200ms on a large one.
+  // Cost summary. The per-method lines carry `dryRun: true` but only account for the method's own
+  // execution; the snapshot, the patch walk and the restore are dryRun's overhead and are invisible
+  // without this. A caller gating a UI action on `explain` pays it on every click.
   if (typeof getDevContext() === 'object') {
     globalLog(
       {
@@ -207,4 +148,49 @@ function dryRunAt(engine: FactoryEngine, directives: Directives): DryRunResult {
     ...(error ? { error } : {}),
     rolledBack: true,
   };
+}
+
+type PreviewRun = Omit<DryRunResult, 'wouldSucceed' | 'rolledBack'> & { executeElapsed: number; diffElapsed: number };
+
+// Runs the directives on the live state. The caller restores it, in a `finally`.
+function previewAgainstLiveState(
+  engine: FactoryEngine,
+  directives: Directives,
+  methods: ReturnType<typeof getMethods>,
+  captured: OperationState,
+): PreviewRun {
+  const executeStart = Date.now();
+  const results: DryRunResult['results'] = [];
+  let error: DryRunResult['error'];
+  for (const directive of directives) {
+    const methodName = directive.method;
+    const params = prepareDirective(directive, results);
+
+    const result = executeFunction(engine, methods[methodName], params, methodName, 'sync', { dryRun: true });
+    results.push({ ...result, methodName });
+
+    if (result?.error) {
+      error = result.error;
+      break;
+    }
+  }
+  const executeElapsed = Date.now() - executeStart;
+
+  // The snapshot is the pre-state and the live records are the post-state, so no second copy is
+  // needed to diff. The patch's values are copied: they would otherwise be objects of the
+  // discarded post-state, or (when the engine works on a caller's objects) the caller's own.
+  const diffStart = Date.now();
+  const patch = generatePatch(captured.records, getTournamentRecords()).map((op) =>
+    'value' in op ? { ...op, value: makeDeepCopy(op.value, false, true) } : op,
+  );
+  const diffElapsed = Date.now() - diffStart;
+
+  // what WOULD fire; the buffer itself is restored by the caller, never drained
+  const willEmitNotices: EmittedNotice[] = [];
+  for (const topic of getTopics().topics) {
+    const payloads = getNotices({ topic });
+    if (payloads?.length) willEmitNotices.push({ topic, payloads });
+  }
+
+  return { results, error, patch, willEmitNotices, executeElapsed, diffElapsed };
 }
