@@ -1,7 +1,14 @@
 import { notifySubscribers, notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { setSubscriptions, addNotice, deleteNotices } from '@Global/state/syncGlobalState';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { MUTATIONS } from '@Constants/topicConstants';
+import {
+  ADD_DRAW_DEFINITION,
+  ADD_MATCHUPS,
+  MODIFY_DRAW_DEFINITION,
+  MODIFY_MATCHUP,
+  MUTATIONS,
+  UNPUBLISH_EVENT_SEEDING,
+} from '@Constants/topicConstants';
 
 describe('notifySubscribers', () => {
   beforeEach(() => {
@@ -73,20 +80,20 @@ describe('notifySubscribers', () => {
 
     setSubscriptions({
       subscriptions: {
-        MODIFY_MATCHUP: () => callOrder.push('MODIFY_MATCHUP'),
-        ADD_MATCHUPS: () => callOrder.push('ADD_MATCHUPS'),
-        MODIFY_DRAW_DEFINITION: () => callOrder.push('MODIFY_DRAW_DEFINITION'),
+        [MODIFY_MATCHUP]: () => callOrder.push(MODIFY_MATCHUP),
+        [ADD_MATCHUPS]: () => callOrder.push(ADD_MATCHUPS),
+        [MODIFY_DRAW_DEFINITION]: () => callOrder.push(MODIFY_DRAW_DEFINITION),
       },
     });
 
-    addNotice({ topic: 'MODIFY_MATCHUP', payload: { data: '1' } });
-    addNotice({ topic: 'ADD_MATCHUPS', payload: { data: '2' } });
-    addNotice({ topic: 'MODIFY_DRAW_DEFINITION', payload: { data: '3' } });
+    addNotice({ topic: MODIFY_MATCHUP, payload: { data: '1' } });
+    addNotice({ topic: ADD_MATCHUPS, payload: { data: '2' } });
+    addNotice({ topic: MODIFY_DRAW_DEFINITION, payload: { data: '3' } });
 
     notifySubscribers();
 
-    // Higher priority topics should be called first
-    expect(callOrder.length).toBeGreaterThan(0);
+    // Higher priority topics are called first, whatever order the notices arrived in
+    expect(callOrder).toEqual([MODIFY_DRAW_DEFINITION, ADD_MATCHUPS, MODIFY_MATCHUP]);
   });
 
   it('handles multiple notices for same topic', () => {
@@ -140,17 +147,17 @@ describe('notifySubscribers', () => {
 
       setSubscriptions({
         subscriptions: {
-          MODIFY_MATCHUP: async () => callOrder.push('MODIFY_MATCHUP'),
-          ADD_MATCHUPS: async () => callOrder.push('ADD_MATCHUPS'),
+          [MODIFY_MATCHUP]: async () => callOrder.push(MODIFY_MATCHUP),
+          [ADD_MATCHUPS]: async () => callOrder.push(ADD_MATCHUPS),
         },
       });
 
-      addNotice({ topic: 'MODIFY_MATCHUP', payload: { data: '1' } });
-      addNotice({ topic: 'ADD_MATCHUPS', payload: { data: '2' } });
+      addNotice({ topic: MODIFY_MATCHUP, payload: { data: '1' } });
+      addNotice({ topic: ADD_MATCHUPS, payload: { data: '2' } });
 
       await notifySubscribersAsync();
 
-      expect(callOrder.length).toBeGreaterThan(0);
+      expect(callOrder).toEqual([ADD_MATCHUPS, MODIFY_MATCHUP]);
     });
 
     it('handles topics with no notices asynchronously', async () => {
@@ -166,25 +173,26 @@ describe('notifySubscribers', () => {
 
       setSubscriptions({
         subscriptions: {
-          UNPUBLISH_EVENT_SEEDING: () => callOrder.push('UNPUBLISH_EVENT_SEEDING'),
-          MODIFY_MATCHUP: () => callOrder.push('MODIFY_MATCHUP'),
-          ADD_DRAW_DEFINITION: () => callOrder.push('ADD_DRAW_DEFINITION'),
+          [UNPUBLISH_EVENT_SEEDING]: () => callOrder.push(UNPUBLISH_EVENT_SEEDING),
+          [MODIFY_MATCHUP]: () => callOrder.push(MODIFY_MATCHUP),
+          [ADD_DRAW_DEFINITION]: () => callOrder.push(ADD_DRAW_DEFINITION),
         },
       });
 
-      addNotice({ topic: 'MODIFY_MATCHUP', payload: { data: '1' } });
-      addNotice({ topic: 'UNPUBLISH_EVENT_SEEDING', payload: { data: '2' } });
-      addNotice({ topic: 'ADD_DRAW_DEFINITION', payload: { data: '3' } });
+      addNotice({ topic: MODIFY_MATCHUP, payload: { data: '1' } });
+      addNotice({ topic: UNPUBLISH_EVENT_SEEDING, payload: { data: '2' } });
+      addNotice({ topic: ADD_DRAW_DEFINITION, payload: { data: '3' } });
 
       notifySubscribers();
 
       // UNPUBLISH_EVENT_SEEDING (value 5) should come before MODIFY_MATCHUP (value 1)
-      const unpublishIndex = callOrder.indexOf('UNPUBLISH_EVENT_SEEDING');
-      const modifyIndex = callOrder.indexOf('MODIFY_MATCHUP');
+      const unpublishIndex = callOrder.indexOf(UNPUBLISH_EVENT_SEEDING);
+      const modifyIndex = callOrder.indexOf(MODIFY_MATCHUP);
 
-      if (unpublishIndex >= 0 && modifyIndex >= 0) {
-        expect(unpublishIndex).toBeLessThan(modifyIndex);
-      }
+      expect(unpublishIndex).toBeGreaterThanOrEqual(0);
+      expect(modifyIndex).toBeGreaterThanOrEqual(0);
+      expect(unpublishIndex).toBeLessThan(modifyIndex);
+      expect(callOrder).toEqual([UNPUBLISH_EVENT_SEEDING, ADD_DRAW_DEFINITION, MODIFY_MATCHUP]);
     });
 
     it('handles topics without defined priority', () => {

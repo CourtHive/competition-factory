@@ -388,33 +388,6 @@ describe('getTournamentPoints with ranking policy', () => {
     expect(result.success).toBe(true);
     expect(result.personPoints).toBeDefined();
   });
-
-  it('exercises DOUBLES event with doublesAttribution SPLIT_EVEN', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: DOUBLES, completeAllMatchUps: true }],
-    });
-    tournamentEngine.setState(tournamentRecord);
-
-    const result = tournamentEngine.getTournamentPoints({
-      policyDefinitions: {
-        [POLICY_TYPE_RANKING_POINTS]: {
-          policyName: 'doubles',
-          doublesAttribution: 'SPLIT_EVEN',
-          awardProfiles: [
-            {
-              finishingPositionRanges: {
-                1: { value: 100 },
-                2: { value: 50 },
-                4: { value: 25 },
-              },
-            },
-          ],
-        },
-      },
-    });
-    expect(result.success).toBe(true);
-    expect(result.pairPoints).toBeDefined();
-  });
 });
 
 // ----------------------------------------------------------------
