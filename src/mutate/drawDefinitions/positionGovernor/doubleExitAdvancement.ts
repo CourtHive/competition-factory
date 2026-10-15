@@ -1664,13 +1664,28 @@ function sentOnFromTarget({
   targetMatchUp,
   matchUpsMap,
   EXIT,
+}: {
+  nextWinnerMatchUpHasDrawPosition?: boolean;
+  nextWinnerMatchUpDrawPositions: number[];
+  targetMatchUp: HydratedMatchUp;
+  matchUpsMap: MatchUpsMap;
+  EXIT?: MatchUpStatusUnion;
 }): boolean {
   if (!nextWinnerMatchUpHasDrawPosition || !isExit(EXIT)) return false;
   const storedTarget = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === targetMatchUp.matchUpId);
-  return !!storedTarget?.drawPositions?.includes(nextWinnerMatchUpDrawPositions.find(Boolean));
+  const heldPosition = nextWinnerMatchUpDrawPositions.find(Boolean);
+  return !!heldPosition && !!storedTarget?.drawPositions?.includes(heldPosition);
 }
 
-function exitTravelsToEmptyTarget({ nextWinnerMatchUpDrawPositions, nextWinnerMatchUp, EXIT }): boolean {
+function exitTravelsToEmptyTarget({
+  nextWinnerMatchUpDrawPositions,
+  nextWinnerMatchUp,
+  EXIT,
+}: {
+  nextWinnerMatchUpDrawPositions?: number[];
+  nextWinnerMatchUp: HydratedMatchUp;
+  EXIT?: MatchUpStatusUnion;
+}): boolean {
   return isExit(EXIT) && !nextWinnerMatchUpDrawPositions?.length && !isAnyExit(nextWinnerMatchUp.matchUpStatus);
 }
 
