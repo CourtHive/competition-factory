@@ -1022,8 +1022,32 @@ function conditionallyAdvanceDrawPosition(params) {
     isExit(noContextTargetMatchUp.matchUpStatus) &&
     !!walkoverWinningSide &&
     !!carriedExitStatus(getSideExitProvenance({ matchUp: noContextTargetMatchUp })?.[walkoverWinningSide]);
+  // a fed target round has no paired previous matchUp within this structure: its other
+  // side arrives over a feed link from another structure. sourceSideNumber is then
+  // derived by inferSourceSideNumber's feedRound branch, so undefined is expected here,
+  // not exceptional.
+  const inContextPairedPreviousMatchUp = pairedPreviousMatchUp
+    ? inContextDrawMatchUps.find((candidate) => candidate.matchUpId === pairedPreviousMatchUp.matchUpId)
+    : undefined;
+
+  const sourceSideNumber = inferSourceSideNumber({
+    inContextPairedPreviousMatchUp,
+    pairedPreviousMatchUp,
+    walkoverWinningSide,
+    sourceMatchUp,
+    targetMatchUp,
+    stack,
+  });
+
+  // ...and a target holding no position yet holds an exit on the OTHER side only if one is recorded there: an exit
+  // standing only on the side this one arrives at came the same way, relayed past a BYE that has since been replaced,
+  // and this one supersedes it rather than meeting it (census run 18, FEED_IN_CHAMPIONSHIP_TO_SF 16/13 seed 20733977:
+  // `Consolation|1|3`'s produced default, relayed past `2|3`'s BYE into `3|2`, was read as meeting the default `2|3`
+  // produced once a loser took that BYE's seat — a DOUBLE_DEFAULT that then produced onward into `4|2`)
+  const standsOnlyOnArrivalSide = exitStandsOnlyOnSide(noContextTargetMatchUp, sourceSideNumber);
   const existingExit =
-    (isExit(noContextTargetMatchUp.matchUpStatus) && (!drawPositions.length || recordedExitAwaitingThisSeat)) ||
+    (isExit(noContextTargetMatchUp.matchUpStatus) &&
+      ((!drawPositions.length && !standsOnlyOnArrivalSide) || recordedExitAwaitingThisSeat)) ||
     occupantCarriesExit;
 
   // Derived HERE, not at the top of the function, because this is where the other origin is known:
@@ -1086,23 +1110,6 @@ function conditionallyAdvanceDrawPosition(params) {
     targetDP: JSON.stringify(drawPositions),
     hasDrawPosition,
     walkoverWinningSide,
-  });
-
-  // a fed target round has no paired previous matchUp within this structure: its other
-  // side arrives over a feed link from another structure. sourceSideNumber is then
-  // derived by inferSourceSideNumber's feedRound branch, so undefined is expected here,
-  // not exceptional.
-  const inContextPairedPreviousMatchUp = pairedPreviousMatchUp
-    ? inContextDrawMatchUps.find((candidate) => candidate.matchUpId === pairedPreviousMatchUp.matchUpId)
-    : undefined;
-
-  const sourceSideNumber = inferSourceSideNumber({
-    inContextPairedPreviousMatchUp,
-    pairedPreviousMatchUp,
-    walkoverWinningSide,
-    sourceMatchUp,
-    targetMatchUp,
-    stack,
   });
 
   const sourceMatchUpStatus = params.matchUpStatus;
@@ -1294,6 +1301,13 @@ function conditionallyAdvanceDrawPosition(params) {
     stack,
     EXIT,
   });
+}
+
+// an exit recorded on `sideNumber` and none on the other side
+function exitStandsOnlyOnSide(matchUp, sideNumber?: number) {
+  if (!sideNumber) return false;
+  const provenance = getSideExitProvenance({ matchUp });
+  return !!carriedExitStatus(provenance?.[sideNumber]) && !carriedExitStatus(provenance?.[3 - sideNumber]);
 }
 
 function inferSourceSideNumber({

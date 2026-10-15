@@ -617,6 +617,14 @@ decided that matchUp for whoever arrived next (census run 18, FEED_IN_CHAMPIONSH
 MODIFIED_FEED_IN_CHAMPIONSHIP 16/14: a result refused after it had written, and two positions sent on
 by one matchUp).
 
+**A produced exit supersedes a stale relay on its own side.** A produced exit relayed past a BYE
+waits, on the side its path arrives at, in a matchUp no position has reached yet. When a loser takes
+that BYE's seat and the matchUp they meet there produces its own exit, it travels the same path onto
+the same side: it replaces the relay, which came the same way, rather than meeting it. Only an exit
+standing on the OTHER side converges with it. The draw then equals the one forward play leaves, with
+the loser's result entered first. Before this the two were read as a convergence, a double exit that
+produced onward over a matchUp nobody had played (census run 18, FEED_IN_CHAMPIONSHIP_TO_SF 16/13).
+
 ### An arrival carrying an exit converges with a pending exit
 
 Since 7.5.0. A loser carrying a `WALKOVER` or `DEFAULTED` can reach a matchUp that already holds a
