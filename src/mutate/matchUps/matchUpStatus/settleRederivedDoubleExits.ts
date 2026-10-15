@@ -167,6 +167,15 @@ export function settleRederivedDoubleExit({
     // carried over a loser link with nobody standing opposite: nothing to replay or advance, but the exit still reads
     // as the kept double exit alone produced it, pending
     if (!produced && isDoubleExit(origin.matchUpStatus) && overLoserLink && !winnerStands) {
+      // a double exit no longer, it claims no BYE further on; only its own loser target's is still owed (below)
+      withdrawByeSeats({
+        keepAt: ownLoserTarget({ matchUpId, inContextMatchUps, drawDefinition }),
+        claimantMatchUpId: matchUpId,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+        event,
+      });
       settleProducedExit({
         stored,
         keptSide,
@@ -194,8 +203,7 @@ export function settleRederivedDoubleExit({
     // loser of that goes with it (census run-17 baseline F3, COMPASS 16/14 20731395 and siblings, policy off:
     // `West|2|2`'s produced walkover went, and the BYE claimed in `Southwest|1|1` for its loser stood).
     const ownLoserTargetId = overLoserLink
-      ? positionTargets({ matchUpId, inContextDrawMatchUps: inContextMatchUps, drawDefinition }).targetMatchUps
-          ?.loserMatchUp?.matchUpId
+      ? ownLoserTarget({ matchUpId, inContextMatchUps, drawDefinition })
       : undefined;
     withdrawByeSeats({
       claimantMatchUpId: matchUpId,
@@ -348,6 +356,21 @@ function settleProducedExit({
     drawDefinition,
     event,
   });
+}
+
+/** the matchUp this one's loser link feeds, whose BYE a produced exit's empty losing side still owes */
+function ownLoserTarget({
+  inContextMatchUps,
+  drawDefinition,
+  matchUpId,
+}: {
+  inContextMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpId: string;
+}): string | undefined {
+  if (!inContextMatchUps) return undefined;
+  return positionTargets({ matchUpId, inContextDrawMatchUps: inContextMatchUps, drawDefinition }).targetMatchUps
+    ?.loserMatchUp?.matchUpId;
 }
 
 /** a BYE feeding this matchUp holds the kept exit's origin: the exit reached here relayed past it, not down its link */
