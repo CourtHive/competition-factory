@@ -883,6 +883,7 @@ function producedAwardStands({
   const sourceMatchUpId = retained?.[3 - winningSide]?.sourceMatchUpId;
   if (!sourceMatchUpId) return true;
   if (
+    !relayedPastBye({ inContextDrawMatchUps, targetMatchUp, sourceMatchUpId }) &&
     arrivedOverLoserLink({
       targetMatchUpId: targetMatchUp.matchUpId,
       inContextDrawMatchUps,
@@ -901,6 +902,30 @@ function producedAwardStands({
   });
   const assignment = positionAssignmentsOf(structure)?.find((candidate) => candidate.drawPosition === drawPosition);
   return !!(assignment?.participantId || assignment?.qualifier);
+}
+
+/**
+ * A BYE feeding the target holds the exit's origin: it reached the target relayed past that BYE, not straight down its
+ * link. Relayed, it lands pending on the direct path (`carryExitOnward` writes no winningSide), so the unwind leaves it
+ * pending too unless somebody stands on the seat it would be awarded to (CA 2026-10-03, Q3; census S6 Class B 20641116,
+ * COMPASS 32/27 policy-off: `East|1|13` corrected from DOUBLE_WALKOVER to WALKOVER left `West|2|4` awarded to its
+ * empty side, and the loser arriving there took the award instead of converging with the exit).
+ */
+function relayedPastBye({
+  inContextDrawMatchUps,
+  sourceMatchUpId,
+  targetMatchUp,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  targetMatchUp: HydratedMatchUp;
+  sourceMatchUpId: string;
+}): boolean {
+  return inContextDrawMatchUps.some(
+    (feeder) =>
+      feeder.winnerMatchUpId === targetMatchUp.matchUpId &&
+      feeder.matchUpStatus === BYE &&
+      Object.values(feeder.sideExitProvenance ?? {}).some((entry) => entry?.sourceMatchUpId === sourceMatchUpId),
+  );
 }
 
 /**
