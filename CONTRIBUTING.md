@@ -126,7 +126,10 @@ surprise people:
 
 - **`verify:generated`** — several enum, engine-method and request-shape files are generated from
   source. If you hand-edit one side, this fails with the `pnpm gen:…` command to run. Run it and
-  commit the result.
+  commit the result. It also runs `verify:constant-names`, which fails when a test uses a constant's
+  NAME where the code expects its value (`'REMOVE_ASSIGNMENT'` for `REMOVE_ASSIGNMENT`, which is
+  `'REMOVE'`): import the constant, or, if the name is deliberate, list the file and literal with
+  the reason in `scripts/verify/constantNames.allow.json`.
 - **`verify:format`** — Prettier is checked over `src/**` _and_ `documentation/docs/**`. Running
   `pnpm format` fixes it.
 - **`verify:migration-coverage`** — any commit carrying a breaking change must have its PR number
