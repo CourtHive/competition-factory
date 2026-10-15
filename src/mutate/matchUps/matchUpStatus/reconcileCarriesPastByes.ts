@@ -1,14 +1,15 @@
+import { carriedExitStatus, getExitSides, getSideExitProvenance } from './sideExitProvenance';
 import { carryExitOnward } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
-import { carriedExitStatus, getSideExitProvenance } from './sideExitProvenance';
+import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { isAnyExit } from '@Validators/isExit';
+import { isAnyExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
-import type { ResultType } from '@Types/factoryTypes';
 
 /**
  * AN EXIT CARRIED PAST A LATE BYE IS WRITTEN WHERE THE CARRIER LANDS — CA, 2026-10-02: *"a propagated exit encountering
@@ -51,7 +52,9 @@ export function reconcileCarriesPastByes({
     if (!candidates.length) return undefined;
 
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
-    const carry = candidates.map((byeMatchUp) => owedCarry({ byeMatchUp, inContextDrawMatchUps })).find(Boolean);
+    const carry = candidates
+      .map((byeMatchUp) => owedCarry({ byeMatchUp, inContextDrawMatchUps, drawDefinition, matchUpsMap }))
+      .find(Boolean);
     if (!carry) return undefined;
     carriedOn.add(carry.byeMatchUp.matchUpId);
 
@@ -85,9 +88,13 @@ function carriedSides(matchUp: MatchUp): number[] {
 /** the carry a BYE matchUp still owes: one carrier, standing a round on in a matchUp that has recorded nothing */
 function owedCarry({
   inContextDrawMatchUps,
+  drawDefinition,
+  matchUpsMap,
   byeMatchUp,
 }: {
   inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
   byeMatchUp: MatchUp;
 }) {
   const sides = carriedSides(byeMatchUp);
@@ -95,7 +102,8 @@ function owedCarry({
   const entry = getSideExitProvenance({ matchUp: byeMatchUp })?.[sides[0]];
   const inContextBye = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === byeMatchUp.matchUpId);
   const carrierId = inContextBye?.sides?.find((side) => side.sideNumber === sides[0])?.participantId;
-  if (!carrierId || !entry?.sourceMatchUpId) return undefined;
+  if (!carrierId || !entry?.sourceMatchUpId || !inContextBye) return undefined;
+  if (byeLeftByAHolder({ inContextBye, inContextDrawMatchUps, drawDefinition, matchUpsMap })) return undefined;
   // where the carrier now stands: the furthest round on in this structure. A BYE that lands beside them advances them
   // past every BYE waiting further on in the same cascade, so the matchUp a round on can itself be a BYE matchUp they
   // have already passed (census 20178071, FEED_IN_CHAMPIONSHIP 8/7: through `Consolation|1|2` and `2|2` into `3|1`)
@@ -118,4 +126,35 @@ function owedCarry({
   )
     return undefined;
   return { byeMatchUp, carrierId, matchUpStatus: carriedExitStatus(entry), sourceMatchUpId: entry.sourceMatchUpId };
+}
+
+/**
+ * THE BYE OPPOSITE IS A HOLDER'S, AND ITS EXIT IS STILL TO COME (P54, CA 2026-10-11: "the BYE stays; the exit
+ * travels"). A pending exit can advance its empty seat ahead of it as a reservation; when that seat then becomes a BYE
+ * nobody can fill, the matchUp a round on holds the holder's BYE beside the carrier. It is not a BYE the carrier passes:
+ * the held exit is sent on to that seat when the draw settles (`settleHeldExits`), and the two exits meet there (RULE
+ * 4). Carried past it first, the carrier decided the matchUp beyond as well, and the convergence that followed left both
+ * (census run 19, FEED_IN_CHAMPIONSHIP 16/14, 20833621: `Consolation|3|2`, and a later result refused after writing).
+ */
+function byeLeftByAHolder({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpsMap,
+  inContextBye,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  inContextBye: HydratedMatchUp;
+  matchUpsMap: MatchUpsMap;
+}): boolean {
+  const byePositions = new Set((inContextBye.sides ?? []).filter((side) => side?.bye).map((side) => side.drawPosition));
+  return inContextDrawMatchUps.some((feeder) => {
+    if (feeder.winnerMatchUpId !== inContextBye.matchUpId) return false;
+    if (!(feeder.drawPositions ?? []).some((drawPosition) => byePositions.has(drawPosition))) return false;
+    if (feeder.winningSide || feeder.sides?.some((side) => side?.participantId)) return false;
+    if (!matchUpHoldsBye({ drawDefinition, matchUp: feeder })) return false;
+    const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === feeder.matchUpId);
+    const [exitSideNumber] = getExitSides({ matchUp: stored });
+    return !!exitSideNumber && isExit(getSideExitProvenance({ matchUp: stored })?.[exitSideNumber]?.matchUpStatus);
+  });
 }
