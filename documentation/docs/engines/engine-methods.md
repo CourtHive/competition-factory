@@ -500,8 +500,6 @@ engine.addEvent({
 
 See [Global State](/docs/engines/global-state#setstate)
 
-**API Reference:** [addEvent](/docs/governors/event-governor#addevent)
-
 ```js
 engine.setState(tournamentRecords, deepCopyOption, deepCopyAttributes);
 ```

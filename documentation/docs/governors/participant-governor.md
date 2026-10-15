@@ -227,9 +227,12 @@ const { participant, participantId } = engine.createGroupParticipant({
 ```js
 engine.deleteParticipants({
   addIndividualParticipantsToEvents, // optional boolean
-  paricipantIds,
+  participantIds,
 });
 ```
+
+Notices: `DELETE_PARTICIPANTS` lists every participant actually removed (a PAIR removed along with its individual
+participant is included), and groupings that lost a member are announced with `MODIFY_PARTICIPANTS`.
 
 ---
 
