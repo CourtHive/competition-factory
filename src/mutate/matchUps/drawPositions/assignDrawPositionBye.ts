@@ -1,11 +1,6 @@
 import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { releaseHoldersByeFromTarget } from '@Mutate/drawDefinitions/positionGovernor/releaseHoldersByeFromTarget';
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
-import {
-  arrivalMovesOccupant,
-  rekeySideFacts,
-  setMatchUpDrawPositions,
-} from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
@@ -28,6 +23,11 @@ import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { findStructure } from '@Acquire/findStructure';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { numericSort } from '@Tools/sorting';
+import {
+  arrivalMovesOccupant,
+  rekeySideFacts,
+  setMatchUpDrawPositions,
+} from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import {
   deriveExitStateFromProvenance,
   buildCarriedExitProvenance,
