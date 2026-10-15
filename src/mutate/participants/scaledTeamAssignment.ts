@@ -1,3 +1,5 @@
+import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
@@ -7,7 +9,7 @@ import { generateRange } from '@Tools/arrays';
 
 // constants and types
 import { INDIVIDUAL, TEAM_PARTICIPANT } from '@Constants/participantConstants';
-import { Event, Participant, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { TEAM_EVENT } from '@Constants/eventConstants';
@@ -156,10 +158,21 @@ function distributeParticipantsToTeams({ scaledParticipants, relevantTeams }) {
   }
 }
 
-function removeAssignedFromEvents({ tournamentRecord, relevantTeams }) {
+function removeAssignedFromEvents({
+  tournamentRecord,
+  relevantTeams,
+}: {
+  tournamentRecord: Tournament;
+  relevantTeams: Participant[];
+}) {
+  const tournamentId = tournamentRecord.tournamentId;
   const relevantTeamParticipantIds = new Set(relevantTeams.map(getParticipantId));
   for (const event of tournamentRecord.events ?? []) {
     if (event.eventType !== TEAM_EVENT) continue;
+    const eventEntriesCount = (event.entries ?? []).length;
+    const drawEntriesCounts = new Map<DrawDefinition, number>(
+      (event.drawDefinitions ?? []).map((drawDefinition) => [drawDefinition, (drawDefinition.entries ?? []).length]),
+    );
     const relevantTeamEntries = (event.entries ?? []).filter((entry) =>
       relevantTeamParticipantIds.has(entry.participantId),
     );
@@ -167,7 +180,7 @@ function removeAssignedFromEvents({ tournamentRecord, relevantTeams }) {
       const relevantTeam = relevantTeams.find(
         (teamParticipant) => teamParticipant.participantId === relevantEntry.participantId,
       );
-      const individualParticipantIds = relevantTeam?.individualParticipantIds;
+      const individualParticipantIds = relevantTeam?.individualParticipantIds ?? [];
       event.entries = (event.entries ?? []).filter((entry) => !individualParticipantIds.includes(entry.participantId));
       (event.drawDefinitions ?? []).forEach((drawDefinition) => {
         drawDefinition.entries = (drawDefinition.entries ?? []).filter(
@@ -181,6 +194,11 @@ function removeAssignedFromEvents({ tournamentRecord, relevantTeams }) {
         );
       });
     }
+    for (const [drawDefinition, count] of drawEntriesCounts) {
+      if ((drawDefinition.entries ?? []).length !== count)
+        modifyDrawEntriesNotice({ drawDefinition, tournamentId, eventId: event.eventId });
+    }
+    if ((event.entries ?? []).length !== eventEntriesCount) modifyEventEntriesNotice({ event, tournamentId });
   }
 }
 
@@ -286,6 +304,8 @@ export function scaledTeamAssignment({
   distributeParticipantsToTeams({ scaledParticipants, relevantTeams });
 
   removeAssignedFromEvents({ tournamentRecord, relevantTeams });
+
+  modifyParticipantsNotice({ tournamentId: tournamentRecord.tournamentId, participants: relevantTeams });
 
   return { ...SUCCESS, scaledParticipants };
 }

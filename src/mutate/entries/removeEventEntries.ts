@@ -1,5 +1,6 @@
 import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { refreshEntryPositions } from './refreshEntryPositions';
@@ -110,11 +111,16 @@ export function removeEventEntries({
 
   // also remove entry from all flights and drawDefinitions
   const { flightProfile } = getFlightProfile({ event });
+  let flightsChanged = false;
   flightProfile?.flights?.forEach((flight) => {
+    const before = (flight.drawEntries ?? []).length;
     flight.drawEntries = (flight.drawEntries ?? []).filter((entry) => !participantIds.includes(entry.participantId));
+    if (flight.drawEntries.length !== before) flightsChanged = true;
   });
 
   const tournamentId = tournamentRecord?.tournamentId;
+  // the flight profile lives on the event (an extension), so its change is an event modification
+  if (!disableNotice && flightsChanged) modifyEventNotice({ tournamentId, event });
   event.drawDefinitions?.forEach((drawDefinition) => {
     const before = (drawDefinition.entries ?? []).length;
     drawDefinition.entries = (drawDefinition.entries ?? []).filter(
