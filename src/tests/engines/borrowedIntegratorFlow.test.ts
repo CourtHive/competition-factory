@@ -1,8 +1,8 @@
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import syncGlobalState from '@Global/state/syncGlobalState';
-import * as governors from '@Assemblies/governors';
 import asyncEngine from '@Assemblies/engines/async';
+import * as governors from '@Assemblies/governors';
 import mocksEngine from '@Assemblies/engines/mock';
 import { ObjectId } from 'bson';
 import {
