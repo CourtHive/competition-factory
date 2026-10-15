@@ -5,8 +5,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_ROUND_LOSER_CONSOLATION, DOUBLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * A WITHDRAWN EXIT TAKES ITS SIDE'S CODE WITH IT.
