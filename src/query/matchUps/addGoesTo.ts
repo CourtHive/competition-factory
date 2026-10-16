@@ -10,7 +10,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type AddGoesToArgs = {
@@ -220,4 +220,36 @@ export function needsFinishingRounds(drawDefinition: DrawDefinition): boolean {
       !!matchUp.finishingPositionRange ||
       !!matchUp.tieMatchUps?.some((tieMatchUp) => tieMatchUp.finishingPositionRange),
   );
+}
+
+/**
+ * The event as a READ should see it, without writing to it: a draw that does not store what `addGoesTo` derives is
+ * read from a copy that carries it (P54). `getParticipants({ withMatchUps | withRankingProfile })` used to repair the
+ * STORED draw for this (`getMatchUpDependencies`, result discarded), a query that wrote. Measured 2026-10-15 on
+ * Button's ingest corpus: it wrote on 40 of 414 records with draws (all converted outside the factory), never on a
+ * draw the factory made.
+ *
+ * What hydration reads is what the repair left behind: the edges, `finishingPositionRange.loser` widened over the loser
+ * target (it reaches the ranking profile and so points), and a lone foreign structure's finishing rounds. The draws the
+ * repair skipped are skipped here: one holding a matchUp without a roundPosition (tie matchUps carry none). A malformed
+ * round link stops the derivation where it is met, with what came before it derived, as it stopped the repair.
+ */
+export function eventWithDerivedGoesTo(event: Event): Event {
+  let derived = false;
+  const drawDefinitions = (event.drawDefinitions ?? []).map((drawDefinition) => {
+    const owed = !hasStoredGoesTo({ drawDefinition }) || needsFinishingRounds(drawDefinition);
+    if (!owed || hasMatchUpWithoutRoundPosition(drawDefinition)) return drawDefinition;
+    const copy = makeDeepCopy(drawDefinition, false, true);
+    addGoesTo({ drawDefinition: copy });
+    derived = true;
+    return copy;
+  });
+  return derived ? { ...event, drawDefinitions } : event;
+}
+
+function hasMatchUpWithoutRoundPosition(drawDefinition: DrawDefinition) {
+  return (drawDefinition.structures ?? [])
+    .flatMap((structure) => [structure, ...(structuresOf(structure) ?? [])])
+    .flatMap((structure) => matchUpsOf(structure) ?? [])
+    .some((matchUp) => !matchUp.roundPosition || matchUp.tieMatchUps?.some((tieMatchUp) => !tieMatchUp.roundPosition));
 }

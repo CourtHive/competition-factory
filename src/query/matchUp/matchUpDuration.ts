@@ -98,7 +98,15 @@ export function matchUpDuration({ matchUp }) {
   };
 }
 
-function msToTime(s) {
-  const pad = (n, z = 2) => ('00' + n).slice(-z);
-  return pad((s / 3.6e6) | 0) + ':' + pad(((s % 3.6e6) / 6e4) | 0) + ':' + pad(((s % 6e4) / 1000) | 0);
+/**
+ * `[-]HH:MM:SS`, with as many hour digits as the duration needs. A live interval read against the competition day can
+ * be negative (a bare start later in the day than now): the sign is printed once, ahead of the hours.
+ */
+function msToTime(milliseconds: number) {
+  const sign = milliseconds < 0 ? '-' : '';
+  const totalSeconds = Math.trunc(Math.abs(milliseconds) / 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const hours = Math.trunc(totalSeconds / 3600);
+  const minutes = Math.trunc((totalSeconds % 3600) / 60);
+  return `${sign}${pad(hours)}:${pad(minutes)}:${pad(totalSeconds % 60)}`;
 }
