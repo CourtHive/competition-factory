@@ -605,6 +605,19 @@ const {
 });
 ```
 
+Only scheduled matchUps that are not completed are considered. A matchUp is **not rescheduled**, and is
+reported in `notRescheduled` with its schedule untouched, when either change would take it out of bounds:
+
+- a `daysChange` that lands before the tournament `startDate` or after its `endDate`;
+- a `minutesChange` that takes its `scheduledTime` out of its own day: before `00:00`, or to `24:00` and
+  beyond (23:00 + 60 minutes is refused, as 23:00 + 61 is; the time never rolls over to another date).
+
+The two are judged separately and either one refuses the matchUp, so a `daysChange` past `endDate` is not
+rescued by a `minutesChange` given alongside it.
+
+A `daysChange` moves the matchUp off its old day's grid: its `courtOrder`, `courtId` and `venueId` are cleared,
+as for any [date change](#grid-position-is-cleared-on-a-date-change). A `minutesChange` alone keeps them.
+
 #### bulkRescheduleMatchUps Examples
 
 **Delay by One Day**:
@@ -1128,27 +1141,32 @@ engine.removeEventMatchUpFormatTiming({
 
 ### reorderUpcomingMatchUps
 
-Reorders upcoming matchUps on a court, affecting their order of play.
+Reorders a time-ordered list of upcoming matchUps by rotating their `scheduledTime`s: with `firstToLast` the
+first matchUp takes the last one's time and each other matchUp the time of the one before it; without it, the
+rotation runs the other way. Only `scheduledTime` moves; `courtOrder`, court and venue are left as they are.
 
 ```js
 engine.reorderUpcomingMatchUps({
-  matchUpContextIds, // required - array of matchUp context objects
+  matchUpsContextIds, // required - array of { tournamentId, drawId, matchUpId, schedule } in time order
   firstToLast, // optional boolean - direction of reorder
 });
 ```
 
+Every matchUp is resolved before any time is written: if one cannot be (unknown draw or matchUp, invalid time)
+the call returns `MODIFICATIONS_FAILED` and nothing is changed.
+
 **Example**:
 
 ```js
-const matchUpContextIds = [
-  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm1' },
-  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm2' },
-  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm3' },
+const matchUpsContextIds = [
+  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm1', schedule: { scheduledTime: '10:00' } },
+  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm2', schedule: { scheduledTime: '11:00' } },
+  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm3', schedule: { scheduledTime: '12:00' } },
 ];
 
 engine.reorderUpcomingMatchUps({
-  matchUpContextIds,
-  firstToLast: true, // Move first to last
+  matchUpsContextIds,
+  firstToLast: true, // m1 → 12:00, m2 → 10:00, m3 → 11:00
 });
 ```
 
@@ -1596,7 +1614,7 @@ the matchUp does not inherit the prior day's row on its new day.
   date is honored verbatim — a deliberate "move to a new day and row" is respected.
 
 This also governs `bulkScheduleMatchUps`, which delegates to
-`addMatchUpScheduleItems` per matchUp. The lower-level `addMatchUpScheduledDate`
+`addMatchUpScheduleItems` per matchUp, and the `daysChange` of `bulkRescheduleMatchUps`. The lower-level `addMatchUpScheduledDate`
 primitive does **not** clear grid position; use `addMatchUpScheduleItems` (the path
 TMX and integrations use) for date changes.
 
