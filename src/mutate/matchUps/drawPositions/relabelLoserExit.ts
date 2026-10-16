@@ -87,12 +87,12 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
     : false;
 
   // a withdrawal whose carry STOPPED at a BYE-held matchUp — nothing of it reached where the loser now stands — is
-  // withdrawn there (see `byeHeldCarry`); a carry relayed on past the BYE is the ordinary withdrawal's below, and the
-  // entry it left on the BYE-held matchUp goes with it
+  // withdrawn there (see `byeHeldCarries`); a carry relayed on past the BYE is the ordinary withdrawal's below, and
+  // the entry it left on each BYE-held matchUp goes with it
   const byeHeld = args.validExitToPropagate
-    ? undefined
-    : byeHeldCarry(inContextDrawMatchUps, args.targetStructureId, loserParticipantId, sourceMatchUpId);
-  if (byeHeld && !carriedHere) clearByeHeldCarry(args, byeHeld, loserParticipantId);
+    ? []
+    : byeHeldCarries(inContextDrawMatchUps, args.targetStructureId, loserParticipantId, sourceMatchUpId);
+  if (!carriedHere) clearByeHeldCarries(args, byeHeld, loserParticipantId);
   if (!standing) return {};
 
   // a walk that cannot read the draw's links refuses the relabel rather than reading as "not played on"
@@ -151,7 +151,7 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
     withdrawHere();
     // relayed past a BYE that arrived after the loser did (`carryPastTheBye`): the BYE-held matchUp still records the
     // entry the loser brought, and it names an exit that is no longer carried (census 20030075)
-    if (byeHeld) clearByeHeldCarry(args, byeHeld, loserParticipantId);
+    clearByeHeldCarries(args, byeHeld, loserParticipantId);
   }
   return refused ?? {};
 }
@@ -285,7 +285,7 @@ export function standingMatchUp(matchUps: HydratedMatchUp[] | undefined, structu
 }
 
 /**
- * A BYE-held matchUp of the target structure on whose loser side THIS source's carried exit is still recorded.
+ * Every BYE-held matchUp of the target structure on whose loser side THIS source's carried exit is still recorded.
  *
  * `standingMatchUp` passes over a BYE, because a loser fed opposite a BYE has already gone through it. But a matchUp
  * can read BYE because a double exit elsewhere CLAIMED its other seat, and the loser's carried exit stays recorded on
@@ -293,19 +293,30 @@ export function standingMatchUp(matchUps: HydratedMatchUp[] | undefined, structu
  * `Consolation|2|2`, which `Main|2|1`'s double default had made a BYE; relabelling `Main|1|3` as played looked past
  * it, found no carry one round on, and withdrew nothing. When the claim later went, the stale carry decided
  * `Consolation|2|2` as a WALKOVER whose winner never advanced, and `Consolation|3|1` stalled.
+ *
+ * EVERY one, not the first. A carry passing late BYEs is written on each matchUp it passes, so BYEs claiming two
+ * consecutive rounds leave it recorded on two BYE-held matchUps. Census S8 off arm, FEED_IN_CHAMPIONSHIP 8/6
+ * (20576342): `Main|1|3`'s walkover stood on `Consolation|2|2` and `Consolation|3|1`; relabelled as played, only
+ * `2|2` was cleared, and the entry left on `3|1` later converged with another loser's own carry and stalled
+ * `Consolation|4|1`. In 16/11 (20544709) the settle relayed the entry left on `Consolation|3|1` back onto
+ * `Consolation|4|1`, which the withdrawal had just cleared.
  */
-function byeHeldCarry(
+function byeHeldCarries(
   matchUps: HydratedMatchUp[] | undefined,
   structureId: string,
   participantId: string,
   sourceMatchUpId: string,
-): HydratedMatchUp | undefined {
-  return (matchUps ?? []).find((matchUp) => {
+): HydratedMatchUp[] {
+  return (matchUps ?? []).filter((matchUp) => {
     if (matchUp.structureId !== structureId || matchUp.matchUpStatus !== BYE) return false;
     const side = matchUp.sides?.find((candidate) => candidate?.participantId === participantId)?.sideNumber;
     const entry = side === 1 || side === 2 ? matchUp.sideExitProvenance?.[side] : undefined;
     return entry?.sourceMatchUpId === sourceMatchUpId && !!carriedExitStatus(entry);
   });
+}
+
+function clearByeHeldCarries(args: RelabelArgs, byeHeld: HydratedMatchUp[], loserParticipantId: string) {
+  for (const matchUp of byeHeld) clearByeHeldCarry(args, matchUp, loserParticipantId);
 }
 
 /**
