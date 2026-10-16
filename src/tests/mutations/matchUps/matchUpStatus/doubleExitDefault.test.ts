@@ -9,8 +9,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
+import { BYE, DEFAULTED, DOUBLE_DEFAULT, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { BYE, DEFAULTED, DOUBLE_DEFAULT } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
@@ -536,20 +536,20 @@ it('advanceds a DOUBLE_DEFAULT when encountering DOUBLE DOUBLE_DEFAULT', () => {
 
   const roundMatchUps: any = getRoundMatchUps({ matchUps })?.roundMatchUps;
   expect(roundMatchUps[1].map(({ matchUpStatus }) => matchUpStatus)).toEqual([
-    'COMPLETED',
-    'COMPLETED',
-    'DOUBLE_DEFAULT',
-    'DOUBLE_DEFAULT',
-    'TO_BE_PLAYED',
-    'TO_BE_PLAYED',
-    'TO_BE_PLAYED',
-    'TO_BE_PLAYED',
+    COMPLETED,
+    COMPLETED,
+    DOUBLE_DEFAULT,
+    DOUBLE_DEFAULT,
+    TO_BE_PLAYED,
+    TO_BE_PLAYED,
+    TO_BE_PLAYED,
+    TO_BE_PLAYED,
   ]);
   expect(roundMatchUps[2].map(({ matchUpStatus }) => matchUpStatus)).toEqual([
-    'TO_BE_PLAYED',
-    'DOUBLE_DEFAULT',
-    'TO_BE_PLAYED',
-    'TO_BE_PLAYED',
+    TO_BE_PLAYED,
+    DOUBLE_DEFAULT,
+    TO_BE_PLAYED,
+    TO_BE_PLAYED,
   ]);
 });
 

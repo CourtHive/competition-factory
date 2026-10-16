@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 // constants and fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * Rest is anchored on a caller-supplied `asOf`, which is the whole reason it
@@ -212,7 +213,7 @@ describe('getParticipantRest — a walkover is not load the director has spent',
     const final = matchUps.find((matchUp) => matchUp.roundNumber === 2);
     schedule(semis[0], '09:00');
     const status = tournamentEngine.setMatchUpStatus({
-      outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 },
+      outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
       matchUpId: semis[0].matchUpId,
       drawId: semis[0].drawId,
     });

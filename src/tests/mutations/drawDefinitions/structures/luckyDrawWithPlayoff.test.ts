@@ -4,6 +4,7 @@ import { expect, test, describe } from 'vitest';
 
 // constants
 import { LUCKY_DRAW, PLAY_OFF, MAIN, LOSER } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
  * End-to-end test: 10-participant lucky draw → complete round 1 → add playoff → select lucky participant
@@ -186,7 +187,7 @@ describe('lucky draw with playoff structure — end-to-end', () => {
 
     // Score the first playoff matchUp
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       scoreString: '6-3 6-4',
       winningSide: 1,
     });
@@ -228,7 +229,7 @@ describe('lucky draw with playoff structure — end-to-end', () => {
 
     for (const matchUp of round1MatchUps) {
       const { outcome } = mocksEngine.generateOutcomeFromScoreString({
-        matchUpStatus: 'COMPLETED',
+        matchUpStatus: COMPLETED,
         scoreString: '6-3 6-4',
         winningSide: 1,
       });

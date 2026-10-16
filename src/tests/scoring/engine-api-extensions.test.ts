@@ -1,6 +1,9 @@
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { describe, it, expect } from 'vitest';
 
+// constants
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+
 // Helper: play N points where side 0 wins all (quick game win in tennis)
 function winGame(engine: ScoringEngine, server: 0 | 1 = 0): void {
   for (let i = 0; i < 4; i++) {
@@ -841,7 +844,7 @@ describe('Event Handlers', () => {
 
       expect(calls).toHaveLength(1);
       // After reset, state should be clean
-      expect(calls[0].state.matchUpStatus).toBe('TO_BE_PLAYED');
+      expect(calls[0].state.matchUpStatus).toBe(TO_BE_PLAYED);
     });
   });
 

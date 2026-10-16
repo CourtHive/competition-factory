@@ -6,6 +6,7 @@ import { cast } from '@Query/readModel/cast';
 // constants
 import { ROUND_ROBIN, MAIN, CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 describe('cast — singles (STANDARD)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -52,7 +53,7 @@ describe('cast — singles (STANDARD)', () => {
 
   it('writes a winner-perspective score_string on completed matchUps', () => {
     const { rows } = cast({ tournamentRecord });
-    const completed = rows!.match_ups.filter((m) => m.winning_side && m.match_up_status === 'COMPLETED');
+    const completed = rows!.match_ups.filter((m) => m.winning_side && m.match_up_status === COMPLETED);
     expect(completed.length).toBeGreaterThan(0);
     expect(completed.every((m) => typeof m.score_string === 'string' && m.score_string.length > 0)).toBe(true);
   });

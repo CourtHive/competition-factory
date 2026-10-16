@@ -16,7 +16,7 @@ test('bye propagated double walkover hydration', () => {
           {
             roundNumber: 1,
             roundPosition: 3,
-            matchUpStatus: 'DOUBLE_WALKOVER',
+            matchUpStatus: DOUBLE_WALKOVER,
           },
         ],
       },

@@ -7,6 +7,9 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { describe, test, expect } from 'vitest';
 
+// constants
+import { TO_BE_PLAYED, IN_PROGRESS, COMPLETED } from '@Constants/matchUpStatusConstants';
+
 // ============================================================================
 // 1. addSet() — Set-Level Input
 // ============================================================================
@@ -56,10 +59,10 @@ describe('Phase 2 - addSet()', () => {
 
   test('transitions status to IN_PROGRESS', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine.getState().matchUpStatus).toBe('TO_BE_PLAYED');
+    expect(engine.getState().matchUpStatus).toBe(TO_BE_PLAYED);
 
     engine.addSet({ side1Score: 6, side2Score: 4 });
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
   });
 
   test('completes match when best-of-3 winner reached', () => {
@@ -67,7 +70,7 @@ describe('Phase 2 - addSet()', () => {
     engine.addSet({ side1Score: 6, side2Score: 4 });
     engine.addSet({ side1Score: 6, side2Score: 3 });
 
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1);
   });
 
@@ -77,10 +80,10 @@ describe('Phase 2 - addSet()', () => {
     engine.addSet({ side1Score: 3, side2Score: 6 });
 
     // 1-1 in sets, not complete
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
 
     engine.addSet({ side1Score: 6, side2Score: 2 });
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1);
   });
 
@@ -89,7 +92,7 @@ describe('Phase 2 - addSet()', () => {
     engine.addSet({ side1Score: 3, side2Score: 6 });
     engine.addSet({ side1Score: 4, side2Score: 6 });
 
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(2);
   });
 
@@ -133,14 +136,14 @@ describe('Phase 2 - addSet() aggregate + exactly formats', () => {
     engine.addSet({ side1Score: 5, side2Score: 2 });
     engine.addSet({ side1Score: 5, side2Score: 2 });
     engine.addSet({ side1Score: 5, side2Score: 2 });
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS'); // Not yet!
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS); // Not yet!
 
     engine.addSet({ side1Score: 2, side2Score: 5 });
     engine.addSet({ side1Score: 2, side2Score: 5 });
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS'); // Still need 7th
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS); // Still need 7th
 
     engine.addSet({ side1Score: 2, side2Score: 5 });
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1); // 26 vs 23
   });
 
@@ -152,7 +155,7 @@ describe('Phase 2 - addSet() aggregate + exactly formats', () => {
     }
 
     // Even though side 1 dominates, exactly 7 sets required
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
   });
 
   test('SET2XA-S:T10 — exactly 2 sets, aggregate winner', () => {
@@ -161,7 +164,7 @@ describe('Phase 2 - addSet() aggregate + exactly formats', () => {
     engine.addSet({ side1Score: 15, side2Score: 30 });
 
     // Aggregate: 40 vs 50 — side 2 wins
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(2);
   });
 
@@ -172,7 +175,7 @@ describe('Phase 2 - addSet() aggregate + exactly formats', () => {
     engine.addSet({ side1Score: 10, side2Score: 10 });
 
     // Aggregate: 30 vs 30 — tied, no winner
-    expect(engine.getState().matchUpStatus).not.toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).not.toBe(COMPLETED);
   });
 });
 
@@ -204,9 +207,9 @@ describe('Phase 2 - addGame()', () => {
 
   test('transitions to IN_PROGRESS', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine.getState().matchUpStatus).toBe('TO_BE_PLAYED');
+    expect(engine.getState().matchUpStatus).toBe(TO_BE_PLAYED);
     engine.addGame({ winner: 0 });
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
   });
 
   test('detects set completion at 6-0', () => {
@@ -276,7 +279,7 @@ describe('Phase 2 - addGame()', () => {
     // Win set 2: 6-0
     for (let i = 0; i < 6; i++) engine.addGame({ winner: 0 });
 
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1);
   });
 
@@ -357,13 +360,13 @@ describe('Phase 2 - Mixed-mode undo/redo', () => {
     engine.addSet({ side1Score: 6, side2Score: 3 });
 
     // Match complete
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
 
     engine.undo(); // Undo second set
 
     const state = engine.getState();
     expect(state.score.sets.length).toBe(1);
-    expect(state.matchUpStatus).toBe('IN_PROGRESS');
+    expect(state.matchUpStatus).toBe(IN_PROGRESS);
     expect(state.winningSide).toBeUndefined();
   });
 
@@ -376,7 +379,7 @@ describe('Phase 2 - Mixed-mode undo/redo', () => {
     engine.redo(); // Restore it
 
     expect(engine.getState().score.sets.length).toBe(2);
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
   });
 
   test('undo all sets returns to initial state', () => {
@@ -387,7 +390,7 @@ describe('Phase 2 - Mixed-mode undo/redo', () => {
     engine.undo(2); // Undo both sets
 
     expect(engine.getState().score.sets.length).toBe(0);
-    expect(engine.getState().matchUpStatus).toBe('TO_BE_PLAYED');
+    expect(engine.getState().matchUpStatus).toBe(TO_BE_PLAYED);
   });
 
   // 4.3 Game undo/redo
@@ -549,7 +552,7 @@ describe('Phase 2 - Mixed-mode undo/redo', () => {
 
     engine.redo(3); // Redo all
     expect(engine.getState().score.sets.length).toBe(3);
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1); // 2-1 in sets
   });
 });
@@ -697,16 +700,16 @@ describe('Phase 2 - Full match lifecycle with addSet', () => {
     engine.addSet({ side1Score: 3, side2Score: 6 }); // 1-1
     engine.addSet({ side1Score: 7, side2Score: 6, side1TiebreakScore: 7, side2TiebreakScore: 3 }); // 2-1
 
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1);
 
     engine.undo(); // Undo 3rd set
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
     expect(engine.getState().winningSide).toBeUndefined();
     expect(engine.getState().score.sets.length).toBe(2);
 
     engine.redo(); // Redo 3rd set
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1);
     expect(engine.getState().score.sets.length).toBe(3);
 

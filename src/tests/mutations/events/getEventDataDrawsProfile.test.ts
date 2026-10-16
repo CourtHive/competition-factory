@@ -4,7 +4,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants and types
 import { SINGLE_ELIMINATION, ROUND_ROBIN, COMPASS } from '@Constants/drawDefinitionConstants';
-import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
+import { completedMatchUpStatuses, BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { PayloadProfileEnum } from '@Types/tournamentTypes';
 
@@ -25,7 +25,7 @@ function loadDraw(drawProfile: any) {
 function completeAll() {
   const { outcome } = mocksEngine.generateOutcomeFromScoreString({
     scoreString: '6-4 6-2',
-    matchUpStatus: 'COMPLETED',
+    matchUpStatus: COMPLETED,
     winningSide: 1,
   });
   for (let pass = 0; pass < 12; pass++) {

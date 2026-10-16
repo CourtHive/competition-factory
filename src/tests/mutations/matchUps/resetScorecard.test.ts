@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   MATCHUP_NOT_FOUND,
@@ -300,7 +300,7 @@ describe('resetScorecard', () => {
       tournamentRecord,
       drawDefinition,
       matchUpId: teamMatchUp.matchUpId,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     });
 
     expect(result.success).toBe(true);

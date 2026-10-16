@@ -27,6 +27,9 @@ import type { MatchUp, FormatStructure, SetScore } from '@Types/scoring/types';
 import { inferServeSide } from '@Mutate/scoring/serveSideCalculator';
 import { describe, test, expect } from 'vitest';
 
+// constants
+import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+
 // ============================================================================
 // Helper to build minimal MatchUp objects
 // ============================================================================
@@ -35,7 +38,7 @@ function makeMatchUp(sets: SetScore[]): MatchUp {
   return {
     matchUpId: 'test-1',
     matchUpFormat: 'SET3-S:6/TB7',
-    matchUpStatus: 'IN_PROGRESS',
+    matchUpStatus: IN_PROGRESS,
     matchUpType: 'SINGLES',
     sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
     score: { sets },

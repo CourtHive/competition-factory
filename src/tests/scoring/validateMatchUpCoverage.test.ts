@@ -20,6 +20,9 @@ import { addPoint } from '@Mutate/scoring/addPoint';
 import type { MatchUp } from '@Types/scoring/types';
 import { describe, it, expect } from 'vitest';
 
+// constants
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+
 describe('validateMatchUp - Coverage Improvements', () => {
   // ==========================================================================
   // No matchUp provided
@@ -86,7 +89,7 @@ describe('validateMatchUp - Coverage Improvements', () => {
       const matchUp: MatchUp = {
         matchUpId: 'test',
         matchUpFormat: 'INVALID',
-        matchUpStatus: 'TO_BE_PLAYED',
+        matchUpStatus: TO_BE_PLAYED,
         matchUpType: 'SINGLES',
         sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
         score: { sets: [] },
@@ -108,7 +111,7 @@ describe('validateMatchUp - Coverage Improvements', () => {
       const matchUp: MatchUp = {
         matchUpId: 'test',
         matchUpFormat: 'INVALID',
-        matchUpStatus: 'TO_BE_PLAYED',
+        matchUpStatus: TO_BE_PLAYED,
         matchUpType: 'SINGLES',
         sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
         score: { sets: [] },

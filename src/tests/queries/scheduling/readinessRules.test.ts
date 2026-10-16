@@ -11,6 +11,9 @@ import {
 // types
 import { HydratedMatchUp } from '@Types/hydrated';
 
+// constants
+import { COMPLETED, WALKOVER, DOUBLE_WALKOVER, DEFAULTED, CANCELLED } from '@Constants/matchUpStatusConstants';
+
 /**
  * The readiness rules that a tournament fixture cannot provoke on demand: a
  * recovery window that has not elapsed, a neighbour with a recorded end time, a
@@ -193,7 +196,7 @@ describe('recovery — the window that has not elapsed', () => {
       'finished',
       [player('alice'), player('bob')],
       { scheduledTime: '10:30' },
-      { winningSide: 1, matchUpStatus: 'COMPLETED' },
+      { winningSide: 1, matchUpStatus: COMPLETED },
     );
     const target = matchUp('target', [player('alice'), player('chen')], { scheduledTime: '11:00' });
     const kinds = analyze([finished, target], 'target').map((finding) => finding.kind);
@@ -509,25 +512,25 @@ describe('a matchUp nobody played owes nothing', () => {
     matchUp('earlier', [player('alice'), player('bob')], { scheduledTime: '09:00' }, extra);
 
   it('charges no recovery for an earlier walkover', () => {
-    expect(analyze([at0900({ matchUpStatus: 'WALKOVER', winningSide: 1 }), target()], 'target')).toEqual([]);
+    expect(analyze([at0900({ matchUpStatus: WALKOVER, winningSide: 1 }), target()], 'target')).toEqual([]);
   });
 
   it('charges no recovery for an earlier double walkover', () => {
-    expect(analyze([at0900({ matchUpStatus: 'DOUBLE_WALKOVER' }), target()], 'target')).toEqual([]);
+    expect(analyze([at0900({ matchUpStatus: DOUBLE_WALKOVER }), target()], 'target')).toEqual([]);
   });
 
   it('charges recovery for the same matchUp when it was played — the control', () => {
-    const played = at0900({ matchUpStatus: 'COMPLETED', winningSide: 1 });
+    const played = at0900({ matchUpStatus: COMPLETED, winningSide: 1 });
     expect(analyze([played, target()], 'target')[0]).toMatchObject({ kind: 'recovery', notBefore: '11:30' });
   });
 
   it('charges recovery for a default with a score, which was played up to the default', () => {
-    const defaulted = at0900({ matchUpStatus: 'DEFAULTED', winningSide: 1, score: { sets: [{ side1Score: 3 }] } });
+    const defaulted = at0900({ matchUpStatus: DEFAULTED, winningSide: 1, score: { sets: [{ side1Score: 3 }] } });
     expect(analyze([defaulted, target()], 'target')[0]).toMatchObject({ kind: 'recovery', notBefore: '11:30' });
   });
 
   it('charges no recovery for a default with no score, which is a no-show', () => {
-    expect(analyze([at0900({ matchUpStatus: 'DEFAULTED', winningSide: 1 }), target()], 'target')).toEqual([]);
+    expect(analyze([at0900({ matchUpStatus: DEFAULTED, winningSide: 1 }), target()], 'target')).toEqual([]);
   });
 
   it('does not read a cancelled neighbour as an overlap', () => {
@@ -536,7 +539,7 @@ describe('a matchUp nobody played owes nothing', () => {
       [player('alice'), player('bob')],
       { scheduledTime: '10:30' },
       {
-        matchUpStatus: 'CANCELLED',
+        matchUpStatus: CANCELLED,
       },
     );
     expect(analyze([cancelled, target()], 'target')).toEqual([]);

@@ -18,8 +18,8 @@ import { wrapMatchResultsReport } from '@Query/reports/wrappers/wrapMatchResults
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { MATCH_RESULTS_REPORT } from '@Constants/reportConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
@@ -75,7 +75,7 @@ const sparseTournament: any = {
                 {
                   // not completed — must not appear in the report
                   matchUpId: 'in-progress',
-                  matchUpStatus: 'IN_PROGRESS',
+                  matchUpStatus: IN_PROGRESS,
                   roundNumber: 2,
                   roundPosition: 1,
                   sides: [{ sideNumber: 1 }, { sideNumber: 2 }],

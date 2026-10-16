@@ -1,4 +1,4 @@
-import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -221,7 +221,7 @@ test('DWO adjacent to a BYE-advanced position exercises bye advancement', () => 
 
   if (r2WithBye) {
     const pairedR1 = mainR1.find(
-      (m) => m.matchUpStatus !== 'BYE' && m.drawPositions?.some((dp) => r2WithBye.drawPositions?.includes(dp)),
+      (m) => m.matchUpStatus !== BYE && m.drawPositions?.some((dp) => r2WithBye.drawPositions?.includes(dp)),
     );
     if (pairedR1) {
       let result: any = tournamentEngine.setMatchUpStatus({

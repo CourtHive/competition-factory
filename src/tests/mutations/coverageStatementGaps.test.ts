@@ -27,6 +27,7 @@ import {
 } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 
 // constants
+import { DOUBLE_WALKOVER, TO_BE_PLAYED, DOUBLE_DEFAULT } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -705,7 +706,7 @@ describe('doubleExitAdvancement via engine', () => {
       // Set DOUBLE_WALKOVER on two adjacent first round matchUps
       const result1 = tournamentEngine.setMatchUpStatus({
         matchUpId: firstRoundMatchUps[0].matchUpId,
-        outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+        outcome: { matchUpStatus: DOUBLE_WALKOVER },
         drawId,
       });
       // This triggers doubleExitAdvancement for the winner matchUp
@@ -713,7 +714,7 @@ describe('doubleExitAdvancement via engine', () => {
 
       const result2 = tournamentEngine.setMatchUpStatus({
         matchUpId: firstRoundMatchUps[1].matchUpId,
-        outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+        outcome: { matchUpStatus: DOUBLE_WALKOVER },
         drawId,
       });
       expect(result2.success || result2.error).toBeDefined();
@@ -792,7 +793,7 @@ describe('removeDirectedParticipants via engine', () => {
       // Now remove the score — this triggers removeDirectedParticipants
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: firstRoundMatchUp.matchUpId,
-        outcome: { matchUpStatus: 'TO_BE_PLAYED' },
+        outcome: { matchUpStatus: TO_BE_PLAYED },
         drawId,
       });
       expect(result.success).toBe(true);
@@ -901,7 +902,7 @@ describe('FMLC draw consolation paths', () => {
       // Remove the outcome — exercises consolation cleanup paths
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: firstRoundMatchUp.matchUpId,
-        outcome: { matchUpStatus: 'TO_BE_PLAYED' },
+        outcome: { matchUpStatus: TO_BE_PLAYED },
         drawId,
       });
       expect(result.success).toBe(true);
@@ -927,7 +928,7 @@ describe('doubleExitAdvancement with DOUBLE_DEFAULT', () => {
     if (firstRoundMatchUps.length >= 1) {
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: firstRoundMatchUps[0].matchUpId,
-        outcome: { matchUpStatus: 'DOUBLE_DEFAULT' },
+        outcome: { matchUpStatus: DOUBLE_DEFAULT },
         drawId,
       });
       expect(result.success || result.error).toBeDefined();
@@ -954,7 +955,7 @@ describe('getParticipantIdFinishingPositions with completed draw', () => {
     );
 
     for (const matchUp of roundOrder) {
-      if (matchUp.matchUpStatus === 'TO_BE_PLAYED' && matchUp.drawPositions?.filter(Boolean).length === 2) {
+      if (matchUp.matchUpStatus === TO_BE_PLAYED && matchUp.drawPositions?.filter(Boolean).length === 2) {
         const { outcome } = mocksEngine.generateOutcomeFromScoreString({
           scoreString: '6-1 6-1',
           winningSide: 1,

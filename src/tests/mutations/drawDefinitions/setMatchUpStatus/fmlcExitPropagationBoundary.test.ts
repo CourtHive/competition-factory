@@ -14,7 +14,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { WALKOVER, DOUBLE_WALKOVER, DOUBLE_DEFAULT } from '@Constants/matchUpStatusConstants';
+import { WALKOVER, DOUBLE_WALKOVER, DOUBLE_DEFAULT, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 
 const DOUBLE_EXITS = [DOUBLE_WALKOVER, DOUBLE_DEFAULT];
@@ -73,7 +73,7 @@ describe('FMLC / exit-status propagation never advances a BYE side', () => {
     // walk over a couple of playable first-round matchUps so their losers feed consolation
     const r1 = tournamentEngine
       .allTournamentMatchUps()
-      .matchUps.filter((m) => m.stage === MAIN && m.roundNumber === 1 && m.matchUpStatus === 'TO_BE_PLAYED');
+      .matchUps.filter((m) => m.stage === MAIN && m.roundNumber === 1 && m.matchUpStatus === TO_BE_PLAYED);
     for (const m of r1.slice(0, 2)) {
       const result: any = tournamentEngine.setMatchUpStatus({
         outcome: { matchUpStatus: WALKOVER, winningSide: 1 },

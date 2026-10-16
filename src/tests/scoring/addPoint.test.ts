@@ -5,6 +5,9 @@
 import { createMatchUp, addPoint, getScore } from '@Assemblies/governors/scoreGovernor';
 import { describe, test, expect } from 'vitest';
 
+// constants
+import { IN_PROGRESS, COMPLETED } from '@Constants/matchUpStatusConstants';
+
 describe('addPoint', () => {
   test('should add a point to a new match', () => {
     let matchUp = createMatchUp({ matchUpFormat: 'SET3-S:6/TB7' });
@@ -14,7 +17,7 @@ describe('addPoint', () => {
     const score = getScore(matchUp);
     expect(score.points).toEqual([1, 0]);
     expect(score.games).toEqual([0, 0]);
-    expect(matchUp.matchUpStatus).toBe('IN_PROGRESS');
+    expect(matchUp.matchUpStatus).toBe(IN_PROGRESS);
   });
 
   test('should mutate matchUp in place (v3 adapter compatibility)', () => {
@@ -25,7 +28,7 @@ describe('addPoint', () => {
     // Original and updated are the SAME object
     expect(updated).toBe(original);
     expect(original.history?.points.length).toBe(1);
-    expect(original.matchUpStatus).toBe('IN_PROGRESS');
+    expect(original.matchUpStatus).toBe(IN_PROGRESS);
   });
 
   test('should track point history', () => {
@@ -109,7 +112,7 @@ describe('addPoint', () => {
     const parsed = JSON.parse(json);
 
     expect(parsed.history.points).toHaveLength(2);
-    expect(parsed.matchUpStatus).toBe('IN_PROGRESS');
+    expect(parsed.matchUpStatus).toBe(IN_PROGRESS);
   });
 
   test('should include timestamps', () => {
@@ -142,7 +145,7 @@ describe('a completed match takes no more points', () => {
   test('ignores a point after completion: no new set, no history entry, same state', () => {
     let matchUp = createMatchUp({ matchUpFormat: 'SET1-S:TB10' });
     for (let i = 0; i < 10; i++) matchUp = addPoint(matchUp, { winner: 0 });
-    expect(matchUp.matchUpStatus).toEqual('COMPLETED');
+    expect(matchUp.matchUpStatus).toEqual(COMPLETED);
     expect(matchUp.winningSide).toEqual(1);
     const before = JSON.stringify(matchUp);
     const pointsBefore = matchUp.history?.points.length;

@@ -3,6 +3,7 @@ import { expect, test, describe } from 'vitest';
 
 // constants
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import {
   LUCKY_DRAW,
   LOSER,
@@ -30,7 +31,7 @@ function buildCompletedRound1Draw(overrides: Record<string, any> = {}) {
   // Losers are side 1: pid-1, pid-3, pid-5, pid-7, pid-9
   const round1MatchUps = [1, 2, 3, 4, 5].map((rp) => ({
     drawPositions: [rp * 2 - 1, rp * 2],
-    matchUpStatus: 'COMPLETED',
+    matchUpStatus: COMPLETED,
     matchUpId: `r1-m${rp}`,
     roundPosition: rp,
     roundNumber: 1,
@@ -45,7 +46,7 @@ function buildCompletedRound1Draw(overrides: Record<string, any> = {}) {
     roundPosition: rp,
     roundNumber: 2,
     finishingRound: 3,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
   }));
 
   const round3MatchUps = [1, 2].map((rp) => ({
@@ -54,7 +55,7 @@ function buildCompletedRound1Draw(overrides: Record<string, any> = {}) {
     roundPosition: rp,
     roundNumber: 3,
     finishingRound: 2,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
   }));
 
   const finalMatchUp = {
@@ -63,7 +64,7 @@ function buildCompletedRound1Draw(overrides: Record<string, any> = {}) {
     roundPosition: 1,
     roundNumber: 4,
     finishingRound: 1,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
   };
 
   const pids = Array.from({ length: 10 }, (_, i) => `pid-${i + 1}`);
@@ -155,7 +156,7 @@ describe('luckyDrawAdvancement — guard branches', () => {
     const { drawDefinition } = buildCompletedRound1Draw();
     // Make round 1 matchUp 1 incomplete
     drawDefinition.structures[0].matchUps[0].winningSide = undefined;
-    drawDefinition.structures[0].matchUps[0].matchUpStatus = 'TO_BE_PLAYED';
+    drawDefinition.structures[0].matchUps[0].matchUpStatus = TO_BE_PLAYED;
 
     const result = luckyDrawAdvancement({
       drawDefinition,
@@ -315,7 +316,7 @@ describe('luckyDrawAdvancement — next round validation', () => {
             // Only round 1, only 1 matchUp (odd = pre-feed)
             {
               drawPositions: [1, 2],
-              matchUpStatus: 'COMPLETED',
+              matchUpStatus: COMPLETED,
               matchUpId: 'r1-m1',
               roundPosition: 1,
               roundNumber: 1,
@@ -356,7 +357,7 @@ describe('luckyDrawAdvancement — next round validation', () => {
       matchUpId: 'r2-m4',
       roundPosition: 4,
       roundNumber: 2,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     });
 
     const result = luckyDrawAdvancement({
@@ -519,7 +520,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
           matchUpId: `po-r1-m${rp}`,
           roundPosition: rp,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         })),
       ],
       positionAssignments: [],
@@ -629,14 +630,14 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
           matchUpId: 'po-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           drawPositions: [],
           matchUpId: 'po-m2',
           roundPosition: 2,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],
@@ -683,14 +684,14 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
           matchUpId: 'po-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           drawPositions: [203, 204],
           matchUpId: 'po-m2',
           roundPosition: 2,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],
@@ -737,14 +738,14 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
           matchUpId: 'po-td-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           drawPositions: [303, 304],
           matchUpId: 'po-td-m2',
           roundPosition: 2,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],
@@ -913,14 +914,14 @@ describe('luckyDrawAdvancement — implicit branch edge cases', () => {
           matchUpId: 'pp-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           drawPositions: [503, 504],
           matchUpId: 'pp-m2',
           roundPosition: 2,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [
@@ -1079,7 +1080,7 @@ describe('luckyDrawAdvancement — non-pre-feed round (even matchUp count)', () 
 
     const round1MatchUps = [1, 2, 3, 4].map((rp) => ({
       drawPositions: [rp * 2 - 1, rp * 2],
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       matchUpId: `r1-m${rp}`,
       roundPosition: rp,
       roundNumber: 1,
@@ -1092,7 +1093,7 @@ describe('luckyDrawAdvancement — non-pre-feed round (even matchUp count)', () 
       matchUpId: `r2-m${rp}`,
       roundPosition: rp,
       roundNumber: 2,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     }));
 
     const pids = Array.from({ length: 8 }, (_, i) => `pid-${i + 1}`);
@@ -1193,7 +1194,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers with already-filled posi
           matchUpId: 'pf-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [
@@ -1234,14 +1235,14 @@ describe('luckyDrawAdvancement — placeDiscardedLosers with already-filled posi
           matchUpId: 'pnd-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
           // drawPositions intentionally omitted
         },
         {
           matchUpId: 'pnd-m2',
           roundPosition: 2,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],

@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { ADAPTIVE, MAIN } from '@Constants/drawDefinitionConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, BYE } from '@Constants/matchUpStatusConstants';
 
 const DRAW_SIZE = 14;
 
@@ -141,7 +141,7 @@ describe('Adaptive draw completion and reset', () => {
         inContext: true,
       });
 
-      const readyMatchUps = matchUps.filter((m: any) => m.readyToScore && !m.winningSide && m.matchUpStatus !== 'BYE');
+      const readyMatchUps = matchUps.filter((m: any) => m.readyToScore && !m.winningSide && m.matchUpStatus !== BYE);
       if (!readyMatchUps.length) {
         if (!attemptLuckyAdvancement(drawId, structures)) break;
         continue;
@@ -154,11 +154,11 @@ describe('Adaptive draw completion and reset', () => {
 
     // Verify all structures have been played
     const { matchUps: allMatchUps } = tournamentEngine.allDrawMatchUps({ drawId, inContext: true });
-    const completedMatchUps = allMatchUps.filter((m: any) => m.winningSide || m.matchUpStatus === 'BYE');
-    const incompleteMatchUps = allMatchUps.filter((m: any) => !m.winningSide && m.matchUpStatus !== 'BYE');
+    const completedMatchUps = allMatchUps.filter((m: any) => m.winningSide || m.matchUpStatus === BYE);
+    const incompleteMatchUps = allMatchUps.filter((m: any) => !m.winningSide && m.matchUpStatus !== BYE);
 
     // every matchUp that is not a BYE was scored by this loop
-    expect(totalCompleted).toEqual(completedMatchUps.filter((m: any) => m.matchUpStatus !== 'BYE').length);
+    expect(totalCompleted).toEqual(completedMatchUps.filter((m: any) => m.matchUpStatus !== BYE).length);
 
     verifyStructureCompletion(allMatchUps, structures);
 

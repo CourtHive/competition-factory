@@ -12,6 +12,9 @@ import {
   MATRIX_CELLS,
 } from '@Tests/testHarness/exitPropagation/matrixCells';
 
+// constants
+import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+
 /**
  * `findDrawMatchUp` IN CONTEXT HYDRATES ONE MATCHUP, AND IT IS THE SAME MATCHUP THE STRUCTURE WOULD
  * HAVE RENDERED.
@@ -41,11 +44,11 @@ const canonical = (value: any): any => {
 
 const CELLS = [
   ...MATRIX_CELLS.filter(
-    (cell) => cell.drawSize === 16 && cell.participantsCount === 13 && cell.exitStatus === 'DOUBLE_WALKOVER',
+    (cell) => cell.drawSize === 16 && cell.participantsCount === 13 && cell.exitStatus === DOUBLE_WALKOVER,
   ),
-  ...MATRIX_EXTENSION_CELLS.filter((cell) => cell.drawSize === 16 && cell.exitStatus === 'DOUBLE_WALKOVER'),
+  ...MATRIX_EXTENSION_CELLS.filter((cell) => cell.drawSize === 16 && cell.exitStatus === DOUBLE_WALKOVER),
   ...TEAM_LINE_CELLS.filter(
-    (cell) => cell.drawSize === 8 && cell.participantsCount === 7 && cell.exitStatus === 'WALKOVER',
+    (cell) => cell.drawSize === 8 && cell.participantsCount === 7 && cell.exitStatus === WALKOVER,
   ),
 ].filter((cell) => cell.propagateExitStatus);
 

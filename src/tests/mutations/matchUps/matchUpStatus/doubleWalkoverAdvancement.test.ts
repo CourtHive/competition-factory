@@ -279,7 +279,7 @@ test('DOUBLE_WALKOVER in feedRound does not inappropriately advance drawPosition
           stage: CONSOLATION,
           roundNumber: 1,
           roundPosition: 1,
-          matchUpStatus: 'DOUBLE_WALKOVER',
+          matchUpStatus: DOUBLE_WALKOVER,
           matchUpStatusCodes: ['WOWO'],
         },
       ],

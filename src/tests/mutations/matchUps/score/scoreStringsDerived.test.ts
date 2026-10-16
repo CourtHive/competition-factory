@@ -3,7 +3,7 @@ import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, describe, test } from 'vitest';
 
 // constants
-import { RETIRED } from '@Constants/matchUpStatusConstants';
+import { RETIRED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 // Regression coverage for competition-factory#4564 — score strings are derived from score.sets and
 // are never accepted from the caller. Previously generation was skipped whenever the caller supplied
@@ -127,7 +127,7 @@ describe('score strings are derived from score.sets', () => {
       matchUpId: MATCHUP_ID,
       drawId: DRAW_ID,
       outcome: {
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
         score: {
           sets: [{ setNumber: 1, side1Score: 3, side2Score: 2 }],
           side1PointScore: '30',

@@ -25,6 +25,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import {
   INVALID_OBJECT,
   INVALID_VALUES,
@@ -268,7 +269,7 @@ describe('resetQualifyingStructure branch coverage', () => {
               {
                 matchUpId: 'm1',
                 score: { sets: [{ side1Score: 6, side2Score: 3 }] },
-                matchUpStatus: 'COMPLETED',
+                matchUpStatus: COMPLETED,
               },
             ],
           },

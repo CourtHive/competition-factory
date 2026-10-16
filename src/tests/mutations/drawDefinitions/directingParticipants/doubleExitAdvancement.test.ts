@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
@@ -203,10 +203,10 @@ test('doubleExitAdvancement of BYE encountering drawPosition', () => {
 
   let matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [1] } }).matchUps;
   expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus])).toEqual([
-    ['match-1-2', 'TO_BE_PLAYED'],
-    ['match-1-3', 'TO_BE_PLAYED'],
-    ['match-1-4', 'TO_BE_PLAYED'],
-    ['match-1-1', 'BYE'],
+    ['match-1-2', TO_BE_PLAYED],
+    ['match-1-3', TO_BE_PLAYED],
+    ['match-1-4', TO_BE_PLAYED],
+    ['match-1-1', BYE],
   ]);
 
   let setStatusResult = tournamentEngine.setMatchUpStatus({
@@ -265,7 +265,7 @@ test('doubleExitAdvancement of BYE encountering drawPosition', () => {
   ]);
 
   matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [3] } }).matchUps;
-  expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus])).toEqual([['match-3-1', 'WALKOVER']]);
+  expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus])).toEqual([['match-3-1', WALKOVER]]);
 });
 
 test('doubleExitAdvancement of BYE encountering WALKOVER', () => {
@@ -296,7 +296,7 @@ test('doubleExitAdvancement of BYE encountering WALKOVER', () => {
   expect(assignByeResult.success).toEqual(true);
 
   let matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [1] } }).matchUps;
-  expect(matchUps.find((m) => m.matchUpId === 'match-1-1').matchUpStatus).toEqual('BYE');
+  expect(matchUps.find((m) => m.matchUpId === 'match-1-1').matchUpStatus).toEqual(BYE);
 
   let setStatusResult = tournamentEngine.setMatchUpStatus({
     outcome: { winningSide: 1 },
@@ -365,6 +365,6 @@ test('doubleExitAdvancement of BYE encountering WALKOVER', () => {
 
   matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [4] } }).matchUps;
   expect(matchUps.map((m) => [m.matchUpId, m.matchUpStatus, m.winningSide])).toEqual([
-    ['match-4-1', 'WALKOVER', undefined],
+    ['match-4-1', WALKOVER, undefined],
   ]);
 });

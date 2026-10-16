@@ -5,6 +5,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS, MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import {
   COMPASS,
   ROUND_ROBIN,
@@ -54,7 +55,7 @@ describe('MODIFY_MATCHUP structureId', () => {
     const notices = capture([MODIFY_MATCHUP]);
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     const result: any = tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId, outcome });
@@ -104,7 +105,7 @@ describe('MODIFY_MATCHUP structureId', () => {
     const notices = capture([MODIFY_MATCHUP]);
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     let scored = 0;
@@ -146,7 +147,7 @@ describe('MODIFY_MATCHUP structureId', () => {
     const matchUps: any[] = tournamentEngine.allTournamentMatchUps().matchUps ?? [];
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     let scored = 0;
@@ -186,7 +187,7 @@ describe('MODIFY_MATCHUP structureId', () => {
     );
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId, outcome });
@@ -229,7 +230,7 @@ describe('MODIFY_MATCHUP structureId', () => {
     );
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId, outcome });

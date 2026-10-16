@@ -6,7 +6,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -45,7 +45,7 @@ function playToTheCrossing() {
   expect(prepareDraw(config as any, drawId)).toEqual(true);
   score('Main|1|2', { winningSide: 2 });
   score('Main|1|4', { matchUpStatus: DOUBLE_WALKOVER });
-  score('Main|1|4', { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: 'TO_BE_PLAYED' });
+  score('Main|1|4', { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: TO_BE_PLAYED });
   score('Main|1|3', { matchUpStatus: DEFAULTED, winningSide: 1 });
   score('Main|1|2', { matchUpStatus: WALKOVER, winningSide: 1 });
   score('Main|1|4', { matchUpStatus: DOUBLE_WALKOVER });

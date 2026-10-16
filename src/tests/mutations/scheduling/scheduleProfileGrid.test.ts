@@ -4,6 +4,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 const startDate = '2024-06-15';
 const endDate = '2024-06-20';
@@ -187,7 +188,7 @@ describe('scheduleProfileGrid', () => {
     const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
     const r1 = matchUps.filter((m) => m.roundNumber === 1);
     const r2 = matchUps.filter((m) => m.roundNumber === 2);
-    expect(r1.every((m) => m.matchUpStatus === 'COMPLETED')).toEqual(true);
+    expect(r1.every((m) => m.matchUpStatus === COMPLETED)).toEqual(true);
     expect(r2.length).toEqual(4);
     const { tournamentId, eventId, structureId } = matchUps[0];
 

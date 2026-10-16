@@ -5,6 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TEAM } from '@Constants/eventConstants';
 
 const tieKeys = [
@@ -121,7 +122,7 @@ test('timed sets can be COMPLETED with tied score', () => {
       ],
     },
     matchUpFormat: 'SET1-S:T20',
-    matchUpStatus: 'COMPLETED',
+    matchUpStatus: COMPLETED,
   };
 
   result = tournamentEngine.setMatchUpStatus({

@@ -8,7 +8,14 @@ import { expect, test } from 'vitest';
 import fs from 'fs';
 
 // constants
-import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER, RETIRED } from '@Constants/matchUpStatusConstants';
+import {
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+  DEFAULTED,
+  WALKOVER,
+  RETIRED,
+  TO_BE_PLAYED,
+} from '@Constants/matchUpStatusConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -143,7 +150,7 @@ test.skipIf(!enabled)(
       const playable = matchUps.filter(
         (m: any) =>
           !m.winningSide &&
-          (!m.matchUpStatus || m.matchUpStatus === 'TO_BE_PLAYED') &&
+          (!m.matchUpStatus || m.matchUpStatus === TO_BE_PLAYED) &&
           (m.sides ?? []).filter((s: any) => s?.participantId && !s?.bye).length === 2,
       );
       if (!playable.length) terminalCells += 1;

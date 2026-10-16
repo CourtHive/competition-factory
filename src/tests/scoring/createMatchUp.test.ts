@@ -6,6 +6,9 @@ import { createMatchUp } from '@Assemblies/governors/scoreGovernor';
 import type { MatchUp } from '@Types/scoring/types';
 import { describe, test, expect } from 'vitest';
 
+// constants
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+
 describe('createMatchUp', () => {
   test('should create a basic matchUp', () => {
     const matchUp = createMatchUp({
@@ -14,7 +17,7 @@ describe('createMatchUp', () => {
 
     expect(matchUp).toBeDefined();
     expect(matchUp.matchUpFormat).toBe('SET3-S:6/TB7');
-    expect(matchUp.matchUpStatus).toBe('TO_BE_PLAYED');
+    expect(matchUp.matchUpStatus).toBe(TO_BE_PLAYED);
     expect(matchUp.matchUpType).toBe('SINGLES');
     expect(matchUp.sides).toHaveLength(2);
     expect(matchUp.score.sets).toHaveLength(0);
@@ -76,7 +79,7 @@ describe('createMatchUp', () => {
     const parsed: MatchUp = JSON.parse(json);
 
     expect(parsed.matchUpFormat).toBe('SET3-S:6/TB7');
-    expect(parsed.matchUpStatus).toBe('TO_BE_PLAYED');
+    expect(parsed.matchUpStatus).toBe(TO_BE_PLAYED);
     expect(parsed.sides).toHaveLength(2);
   });
 

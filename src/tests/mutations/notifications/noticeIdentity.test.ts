@@ -6,6 +6,7 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { MODIFY_MATCHUP, PUBLISH_EVENT } from '@Constants/topicConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import * as topicConstants from '@Constants/topicConstants';
 
 /**
@@ -29,7 +30,7 @@ describe('notice identity envelope', () => {
 
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
