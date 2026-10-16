@@ -87,6 +87,7 @@ export function allEventMatchUps(params: GetMatchUpsArgs) {
       hydrationCache,
       scheduleVisibilityFilters,
       context: additionalContext,
+      hydrateParticipants: params.hydrateParticipants,
       participantsProfile,
       afterRecoveryTimes,
       policyDefinitions,
