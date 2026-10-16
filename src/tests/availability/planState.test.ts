@@ -16,6 +16,9 @@ import { AvailabilityEngine } from '@Assemblies/engines/availability/Availabilit
 import type { EngineEvent } from '@Assemblies/governors/availabilityGovernor/types';
 import { describe, it, expect, beforeEach } from 'vitest';
 
+// constants
+import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+
 // ============================================================================
 // Test Fixtures
 // ============================================================================
@@ -117,13 +120,13 @@ describe('addPlanItem', () => {
   });
 
   it('should replace item with same key', () => {
-    engine.addPlanItem(makePlanItemInput({ matchUpType: 'SINGLES' }));
-    const replaced = engine.addPlanItem(makePlanItemInput({ matchUpType: 'DOUBLES' }));
+    engine.addPlanItem(makePlanItemInput({ matchUpType: SINGLES_MATCHUP }));
+    const replaced = engine.addPlanItem(makePlanItemInput({ matchUpType: DOUBLES_MATCHUP }));
 
     const plan = engine.getDayPlan(DAY_1);
     expect(plan).not.toBeNull();
     expect(plan!.items).toHaveLength(1);
-    expect(plan!.items[0].matchUpType).toBe('DOUBLES');
+    expect(plan!.items[0].matchUpType).toBe(DOUBLES_MATCHUP);
     expect(plan!.items[0].planItemId).toBe(replaced.planItemId);
   });
 
@@ -217,14 +220,14 @@ describe('updatePlanItem', () => {
     const updated = engine.updatePlanItem(item.planItemId, {
       notBeforeTime: '10:00',
       estimatedDurationMinutes: 90,
-      matchUpType: 'DOUBLES',
+      matchUpType: DOUBLES_MATCHUP,
       roundSegment: { segmentNumber: 1, segmentsCount: 2 },
     });
 
     expect(updated).not.toBeNull();
     expect(updated!.notBeforeTime).toBe('10:00');
     expect(updated!.estimatedDurationMinutes).toBe(90);
-    expect(updated!.matchUpType).toBe('DOUBLES');
+    expect(updated!.matchUpType).toBe(DOUBLES_MATCHUP);
     expect(updated!.roundSegment).toEqual({ segmentNumber: 1, segmentsCount: 2 });
     // Key fields unchanged
     expect(updated!.planItemId).toBe(item.planItemId);
@@ -232,7 +235,7 @@ describe('updatePlanItem', () => {
   });
 
   it('should return null for non-existent ID', () => {
-    const result = engine.updatePlanItem('nonexistent-id', { matchUpType: 'SINGLES' });
+    const result = engine.updatePlanItem('nonexistent-id', { matchUpType: SINGLES_MATCHUP });
     expect(result).toBeNull();
   });
 
@@ -242,7 +245,7 @@ describe('updatePlanItem', () => {
     const events: EngineEvent[] = [];
     engine.subscribe((e) => events.push(e));
 
-    engine.updatePlanItem(item.planItemId, { matchUpType: 'DOUBLES' });
+    engine.updatePlanItem(item.planItemId, { matchUpType: DOUBLES_MATCHUP });
 
     const planEvents = events.filter((e) => e.type === 'PLAN_CHANGED');
     expect(planEvents).toHaveLength(1);

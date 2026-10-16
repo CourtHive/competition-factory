@@ -22,6 +22,7 @@ import { describe, it, expect } from 'vitest';
 
 // constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 
 describe('validateMatchUp - Coverage Improvements', () => {
   // ==========================================================================
@@ -90,7 +91,7 @@ describe('validateMatchUp - Coverage Improvements', () => {
         matchUpId: 'test',
         matchUpFormat: 'INVALID',
         matchUpStatus: TO_BE_PLAYED,
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
         score: { sets: [] },
         history: {
@@ -112,7 +113,7 @@ describe('validateMatchUp - Coverage Improvements', () => {
         matchUpId: 'test',
         matchUpFormat: 'INVALID',
         matchUpStatus: TO_BE_PLAYED,
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
         score: { sets: [] },
         history: {

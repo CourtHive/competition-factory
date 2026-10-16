@@ -6,11 +6,12 @@ import { expect, test } from 'vitest';
 import { INDIVIDUAL, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { TEAM_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 test('scaledTeamAssignment with no tournamentRecord returns error', () => {
   const result = tournamentEngine.scaledTeamAssignment({
     teamParticipantIds: [],
-    scaleAttributes: { scaleName: 'WTN', scaleType: RANKING, eventType: SINGLES_EVENT },
+    scaleAttributes: { scaleName: WTN, scaleType: RANKING, eventType: SINGLES_EVENT },
   });
   expect(result.error).toBeDefined();
 });
@@ -69,7 +70,7 @@ test('scaledTeamAssignment via eventId', () => {
   const individualParticipantIds = individuals.slice(0, 8).map((p) => p.participantId);
 
   const result = tournamentEngine.scaledTeamAssignment({
-    scaleAttributes: { scaleName: 'WTN', scaleType: RANKING, eventType: SINGLES_EVENT },
+    scaleAttributes: { scaleName: WTN, scaleType: RANKING, eventType: SINGLES_EVENT },
     individualParticipantIds,
     eventId,
   });
@@ -86,7 +87,7 @@ test('scaledTeamAssignment with eventId on non-TEAM event returns error', () => 
   });
 
   const result = tournamentEngine.scaledTeamAssignment({
-    scaleAttributes: { scaleName: 'WTN', scaleType: RANKING, eventType: SINGLES_EVENT },
+    scaleAttributes: { scaleName: WTN, scaleType: RANKING, eventType: SINGLES_EVENT },
     individualParticipantIds: ['test-id'],
     eventId,
   });
@@ -216,7 +217,7 @@ test('scaledTeamAssignment with scaleAttributes sortOrder', () => {
   const individualParticipantIds = individuals.slice(0, 8).map((p) => p.participantId);
 
   const result = tournamentEngine.scaledTeamAssignment({
-    scaleAttributes: { scaleName: 'WTN', scaleType: RANKING, eventType: SINGLES_EVENT, sortOrder: 1 },
+    scaleAttributes: { scaleName: WTN, scaleType: RANKING, eventType: SINGLES_EVENT, sortOrder: 1 },
     individualParticipantIds,
     teamsCount: 4,
   });

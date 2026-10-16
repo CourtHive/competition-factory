@@ -9,19 +9,20 @@ import { SINGLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants'
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
+import { WTN } from '@Constants/ratingConstants';
 
 it('can identify winningParticipants and map WTN and ranking', () => {
   const drawProfiles = [
     {
       eventName: `WTN 14-19 SINGLES`,
-      category: { ratingType: 'WTN', ratingMin: 14, ratingMax: 19.99 },
+      category: { ratingType: WTN, ratingMin: 14, ratingMax: 19.99 },
       generate: true,
       seedsCount: 2,
       drawSize: 4,
     },
     {
       eventName: `WTN 14-19 DOUBLES`,
-      category: { ratingType: 'WTN', ratingMin: 14, ratingMax: 19.99 },
+      category: { ratingType: WTN, ratingMin: 14, ratingMax: 19.99 },
       eventType: DOUBLES_EVENT,
       generate: true,
       seedsCount: 2,

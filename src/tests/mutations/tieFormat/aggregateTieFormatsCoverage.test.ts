@@ -5,10 +5,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { TEAM_MATCHUP, SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
@@ -51,7 +51,7 @@ describe('aggregateTieFormats additional branch coverage', () => {
       collectionDefinition: {
         collectionName: 'Extra Singles',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },
@@ -174,8 +174,20 @@ describe('calculateWinCriteria — branch coverage', () => {
   it('calculates valueGoal from collectionValue', () => {
     const result = calculateWinCriteria({
       collectionDefinitions: [
-        { collectionId: 'c1', collectionName: 'Singles', matchUpCount: 3, collectionValue: 3, matchUpType: 'SINGLES' },
-        { collectionId: 'c2', collectionName: 'Doubles', matchUpCount: 2, collectionValue: 2, matchUpType: 'DOUBLES' },
+        {
+          collectionId: 'c1',
+          collectionName: 'Singles',
+          matchUpCount: 3,
+          collectionValue: 3,
+          matchUpType: SINGLES_MATCHUP,
+        },
+        {
+          collectionId: 'c2',
+          collectionName: 'Doubles',
+          matchUpCount: 2,
+          collectionValue: 2,
+          matchUpType: DOUBLES_MATCHUP,
+        },
       ],
     });
     expect(result.success).toEqual(true);
@@ -187,7 +199,13 @@ describe('calculateWinCriteria — branch coverage', () => {
   it('calculates valueGoal from matchUpValue * matchUpCount', () => {
     const result = calculateWinCriteria({
       collectionDefinitions: [
-        { collectionId: 'c1', collectionName: 'Singles', matchUpCount: 5, matchUpValue: 1, matchUpType: 'SINGLES' },
+        {
+          collectionId: 'c1',
+          collectionName: 'Singles',
+          matchUpCount: 5,
+          matchUpValue: 1,
+          matchUpType: SINGLES_MATCHUP,
+        },
       ],
     });
     expect(result.success).toEqual(true);
@@ -202,7 +220,7 @@ describe('calculateWinCriteria — branch coverage', () => {
           collectionId: 'c1',
           collectionName: 'Singles',
           matchUpCount: 3,
-          matchUpType: 'SINGLES',
+          matchUpType: SINGLES_MATCHUP,
           collectionValueProfiles: [
             { matchUpValue: 2, collectionPosition: 1 },
             { matchUpValue: 1, collectionPosition: 2 },
@@ -225,7 +243,7 @@ describe('calculateWinCriteria — branch coverage', () => {
           matchUpCount: 3,
           collectionValue: 3,
           setValue: 1,
-          matchUpType: 'SINGLES',
+          matchUpType: SINGLES_MATCHUP,
         },
       ],
     });
@@ -242,7 +260,7 @@ describe('calculateWinCriteria — branch coverage', () => {
           matchUpCount: 3,
           collectionValue: 3,
           scoreValue: 1,
-          matchUpType: 'SINGLES',
+          matchUpType: SINGLES_MATCHUP,
         },
       ],
     });
@@ -259,14 +277,14 @@ describe('calculateWinCriteria — branch coverage', () => {
           matchUpCount: 3,
           collectionValue: 3,
           collectionGroupNumber: 1,
-          matchUpType: 'SINGLES',
+          matchUpType: SINGLES_MATCHUP,
         },
         {
           collectionId: 'c2',
           collectionName: 'Doubles',
           matchUpCount: 2,
           collectionValue: 2,
-          matchUpType: 'DOUBLES',
+          matchUpType: DOUBLES_MATCHUP,
         },
       ],
       collectionGroups: [{ groupNumber: 1, groupValue: 5 }],
@@ -280,7 +298,13 @@ describe('calculateWinCriteria — branch coverage', () => {
   it('adds groupValue from collectionGroups to valueTotal', () => {
     const result = calculateWinCriteria({
       collectionDefinitions: [
-        { collectionId: 'c1', collectionName: 'Singles', matchUpCount: 3, matchUpValue: 1, matchUpType: 'SINGLES' },
+        {
+          collectionId: 'c1',
+          collectionName: 'Singles',
+          matchUpCount: 3,
+          matchUpValue: 1,
+          matchUpType: SINGLES_MATCHUP,
+        },
       ],
       collectionGroups: [{ groupValue: 2, groupNumber: 1 }],
     });
@@ -292,8 +316,14 @@ describe('calculateWinCriteria — branch coverage', () => {
   it('handles matchUpCount of 0 with matchUpValue', () => {
     const result = calculateWinCriteria({
       collectionDefinitions: [
-        { collectionId: 'c1', collectionName: 'Empty', matchUpCount: 0, matchUpValue: 5, matchUpType: 'SINGLES' },
-        { collectionId: 'c2', collectionName: 'Singles', matchUpCount: 3, matchUpValue: 1, matchUpType: 'SINGLES' },
+        { collectionId: 'c1', collectionName: 'Empty', matchUpCount: 0, matchUpValue: 5, matchUpType: SINGLES_MATCHUP },
+        {
+          collectionId: 'c2',
+          collectionName: 'Singles',
+          matchUpCount: 3,
+          matchUpValue: 1,
+          matchUpType: SINGLES_MATCHUP,
+        },
       ],
     });
     expect(result.success).toEqual(true);
@@ -304,7 +334,7 @@ describe('calculateWinCriteria — branch coverage', () => {
   it('handles undefined matchUpCount gracefully (uses 0 fallback)', () => {
     const result = calculateWinCriteria({
       collectionDefinitions: [
-        { collectionId: 'c1', collectionName: 'NoCount', matchUpValue: 2, matchUpType: 'SINGLES' } as any,
+        { collectionId: 'c1', collectionName: 'NoCount', matchUpValue: 2, matchUpType: SINGLES_MATCHUP } as any,
       ],
     });
     expect(result.success).toEqual(true);

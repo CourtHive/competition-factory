@@ -15,7 +15,10 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { COMPLETED, DOUBLE_WALKOVER, WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLES, SINGLES, TEAM_EVENT, RATING } from '@Constants/eventConstants';
+import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { RANKING, SEEDING } from '@Constants/scaleConstants';
+import { CLAY } from '@Constants/surfaceConstants';
+import { UTR } from '@Constants/ratingConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
   AD_HOC,
@@ -284,7 +287,7 @@ describe('initializeDraft uncovered paths', () => {
     const result: any = initializeDraft({
       drawDefinition,
       tournamentRecord,
-      tierMethod: 'RANKING',
+      tierMethod: RANKING,
       force: true,
     });
     expect(result.success).toBe(true);
@@ -302,7 +305,7 @@ describe('initializeDraft uncovered paths', () => {
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });
 
     const result: any = initializeDraft({
-      event: { ...event, category: { ratingType: 'UTR' } },
+      event: { ...event, category: { ratingType: UTR } },
       tierMethod: RATING,
       tournamentRecord,
       drawDefinition,
@@ -341,7 +344,7 @@ describe('initializeDraft uncovered paths', () => {
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
     const result: any = initializeDraft({
-      tierMethod: 'RANKING',
+      tierMethod: RANKING,
       ascending: false,
       tournamentRecord,
       drawDefinition,
@@ -417,7 +420,7 @@ describe('addScaleItems uncovered paths', () => {
   it('setParticipantScaleItems returns INVALID_SCALE_ITEM for invalid scaleItem', () => {
     const result = setParticipantScaleItems({
       tournamentRecord: { tournamentId: 't1', participants: [{ participantId: 'p1' }] } as any,
-      scaleItemsWithParticipantIds: [{ participantId: 'p1', scaleItems: [{ scaleType: 'RANKING' } as any] }],
+      scaleItemsWithParticipantIds: [{ participantId: 'p1', scaleItems: [{ scaleType: RANKING } as any] }],
     });
     expect(result.error).toEqual(INVALID_SCALE_ITEM);
   });
@@ -477,7 +480,7 @@ describe('addScaleItems uncovered paths', () => {
       drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const teamParticipant = tournamentRecord.participants.find((p) => p.participantType === 'TEAM');
+    const teamParticipant = tournamentRecord.participants.find((p) => p.participantType === TEAM_PARTICIPANT);
 
     if (teamParticipant) {
       const result = setParticipantScaleItems({
@@ -764,7 +767,7 @@ describe('generateEventWithDraw additional options', () => {
       drawProfiles: [
         {
           drawSize: 4,
-          eventAttributes: { surfaceCategory: 'CLAY' },
+          eventAttributes: { surfaceCategory: CLAY },
         },
       ],
     });

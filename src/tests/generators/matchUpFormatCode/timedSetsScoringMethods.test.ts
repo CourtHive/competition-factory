@@ -3,6 +3,9 @@ import { expect, it } from 'vitest';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
+// constants
+import { TRADITIONAL } from '@Constants/matchUpFormatConstants';
+
 it('can parse and stringify timed sets with scoring methods', () => {
   // Test match-level aggregate scoring (XA modifier)
   let result: any = parse('SET3XA-S:T10');
@@ -121,7 +124,7 @@ it('supports traditional game format -G:TN', () => {
   expect(parsed.bestOf).toEqual(3);
   expect(parsed.setFormat.timed).toEqual(true);
   expect(parsed.setFormat.minutes).toEqual(10);
-  expect(parsed.gameFormat).toEqual({ type: 'TRADITIONAL' });
+  expect(parsed.gameFormat).toEqual({ type: TRADITIONAL });
   expect(stringify(parsed)).toEqual(format);
 });
 

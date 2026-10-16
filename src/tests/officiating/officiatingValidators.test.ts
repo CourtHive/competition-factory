@@ -7,6 +7,18 @@ import {
   CERTIFICATION_NOT_FOUND,
   MISSING_OFFICIAL_RECORD,
   CERTIFICATION_EXPIRED,
+  CERT_ACTIVE,
+  CERT_SUSPENDED,
+  CERT_EXPIRED,
+  EVAL_DRAFT,
+  EVAL_SUBMITTED,
+  ASSIGN_PROPOSED,
+  ASSIGN_CONFIRMED,
+  CERT_REVOKED,
+  EVAL_APPROVED,
+  ASSIGN_COMPLETED,
+  EVAL_REJECTED,
+  ASSIGN_DECLINED,
 } from '@Constants/officiatingConstants';
 
 // types
@@ -33,7 +45,7 @@ function makeCert(overrides: any = {}) {
     personId: 'person-001',
     organisationId: 'org-001',
     certificationFamily: 'UMPIRE',
-    status: 'ACTIVE',
+    status: CERT_ACTIVE,
     ...overrides,
   };
 }
@@ -79,7 +91,7 @@ describe('validateCertification', () => {
 
   it('returns invalid with reason when status is not ACTIVE', () => {
     let result: any = validateCertification({
-      officialRecord: makeRecord([makeCert({ status: 'SUSPENDED' })]),
+      officialRecord: makeRecord([makeCert({ status: CERT_SUSPENDED })]),
       certificationId: 'cert-001',
       asOfDate: '2026-06-15',
     });
@@ -112,7 +124,7 @@ describe('validateCertification', () => {
 
   it('collects multiple reasons when status is not ACTIVE and expired', () => {
     let result: any = validateCertification({
-      officialRecord: makeRecord([makeCert({ status: 'EXPIRED', validUntil: '2024-12-31' })]),
+      officialRecord: makeRecord([makeCert({ status: CERT_EXPIRED, validUntil: '2024-12-31' })]),
       certificationId: 'cert-001',
       asOfDate: '2025-06-01',
     });
@@ -150,8 +162,8 @@ describe('validateOfficiatingStatusTransition', () => {
   it('allows valid certification transition ACTIVE → SUSPENDED', () => {
     let result: any = validateOfficiatingStatusTransition({
       entityType: 'certification',
-      fromStatus: 'ACTIVE',
-      toStatus: 'SUSPENDED',
+      fromStatus: CERT_ACTIVE,
+      toStatus: CERT_SUSPENDED,
     });
     expect(result.success).toBe(true);
     expect(result.valid).toBe(true);
@@ -160,8 +172,8 @@ describe('validateOfficiatingStatusTransition', () => {
   it('allows valid evaluation transition DRAFT → SUBMITTED', () => {
     let result: any = validateOfficiatingStatusTransition({
       entityType: 'evaluation',
-      fromStatus: 'DRAFT',
-      toStatus: 'SUBMITTED',
+      fromStatus: EVAL_DRAFT,
+      toStatus: EVAL_SUBMITTED,
     });
     expect(result.success).toBe(true);
     expect(result.valid).toBe(true);
@@ -170,8 +182,8 @@ describe('validateOfficiatingStatusTransition', () => {
   it('allows valid assignment transition PROPOSED → CONFIRMED', () => {
     let result: any = validateOfficiatingStatusTransition({
       entityType: 'assignment',
-      fromStatus: 'PROPOSED',
-      toStatus: 'CONFIRMED',
+      fromStatus: ASSIGN_PROPOSED,
+      toStatus: ASSIGN_CONFIRMED,
     });
     expect(result.success).toBe(true);
     expect(result.valid).toBe(true);
@@ -180,8 +192,8 @@ describe('validateOfficiatingStatusTransition', () => {
   it('rejects unknown entityType', () => {
     let result: any = validateOfficiatingStatusTransition({
       entityType: 'unknown' as any,
-      fromStatus: 'ACTIVE',
-      toStatus: 'EXPIRED',
+      fromStatus: CERT_ACTIVE,
+      toStatus: CERT_EXPIRED,
     });
     expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.message).toContain('Unknown entityType');
@@ -191,7 +203,7 @@ describe('validateOfficiatingStatusTransition', () => {
     let result: any = validateOfficiatingStatusTransition({
       entityType: 'certification',
       fromStatus: 'BOGUS',
-      toStatus: 'ACTIVE',
+      toStatus: CERT_ACTIVE,
     });
     expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
     expect(result.context.fromStatus).toBe('BOGUS');
@@ -201,8 +213,8 @@ describe('validateOfficiatingStatusTransition', () => {
   it('rejects invalid certification transition REVOKED → ACTIVE', () => {
     let result: any = validateOfficiatingStatusTransition({
       entityType: 'certification',
-      fromStatus: 'REVOKED',
-      toStatus: 'ACTIVE',
+      fromStatus: CERT_REVOKED,
+      toStatus: CERT_ACTIVE,
     });
     expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
     expect(result.context.validTargets).toEqual([]);
@@ -211,19 +223,19 @@ describe('validateOfficiatingStatusTransition', () => {
   it('rejects invalid evaluation transition DRAFT → APPROVED', () => {
     let result: any = validateOfficiatingStatusTransition({
       entityType: 'evaluation',
-      fromStatus: 'DRAFT',
-      toStatus: 'APPROVED',
+      fromStatus: EVAL_DRAFT,
+      toStatus: EVAL_APPROVED,
     });
     expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
-    expect(result.context.fromStatus).toBe('DRAFT');
-    expect(result.context.toStatus).toBe('APPROVED');
+    expect(result.context.fromStatus).toBe(EVAL_DRAFT);
+    expect(result.context.toStatus).toBe(EVAL_APPROVED);
   });
 
   it('rejects invalid assignment transition COMPLETED → PROPOSED', () => {
     let result: any = validateOfficiatingStatusTransition({
       entityType: 'assignment',
-      fromStatus: 'COMPLETED',
-      toStatus: 'PROPOSED',
+      fromStatus: ASSIGN_COMPLETED,
+      toStatus: ASSIGN_PROPOSED,
     });
     expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
     expect(result.context.validTargets).toEqual([]);
@@ -232,8 +244,8 @@ describe('validateOfficiatingStatusTransition', () => {
   it('allows evaluation REJECTED → DRAFT', () => {
     let result: any = validateOfficiatingStatusTransition({
       entityType: 'evaluation',
-      fromStatus: 'REJECTED',
-      toStatus: 'DRAFT',
+      fromStatus: EVAL_REJECTED,
+      toStatus: EVAL_DRAFT,
     });
     expect(result.success).toBe(true);
     expect(result.valid).toBe(true);
@@ -242,8 +254,8 @@ describe('validateOfficiatingStatusTransition', () => {
   it('rejects transition from terminal assignment state DECLINED', () => {
     let result: any = validateOfficiatingStatusTransition({
       entityType: 'assignment',
-      fromStatus: 'DECLINED',
-      toStatus: 'CONFIRMED',
+      fromStatus: ASSIGN_DECLINED,
+      toStatus: ASSIGN_CONFIRMED,
     });
     expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
     expect(result.context.validTargets).toEqual([]);

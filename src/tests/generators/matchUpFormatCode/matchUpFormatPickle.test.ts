@@ -1,6 +1,9 @@
 import * as matchUpFormatCode from '@Assemblies/governors/matchUpFormatGovernor';
 import { expect, it } from 'vitest';
 
+// constants
+import { RALLY } from '@Constants/matchUpFormatConstants';
+
 it('supports annotations for PickleBall', () => {
   let format = 'SET3-S:TB15';
   let result = matchUpFormatCode.stringify(matchUpFormatCode.parse(format));
@@ -13,7 +16,7 @@ it('supports annotations for PickleBall', () => {
   format = 'SET3-S:TB21@RALLY';
   let parsed = matchUpFormatCode.parse(format);
   expect(parsed).toEqual({
-    setFormat: { tiebreakSet: { tiebreakTo: 21, modifier: 'RALLY' } },
+    setFormat: { tiebreakSet: { tiebreakTo: 21, modifier: RALLY } },
     bestOf: 3,
   });
 
@@ -24,7 +27,7 @@ it('supports annotations for PickleBall', () => {
   parsed = matchUpFormatCode.parse(format);
   expect(parsed).toEqual({
     setFormat: {
-      tiebreakSet: { tiebreakTo: 21, modifier: 'RALLY', NoAD: true },
+      tiebreakSet: { tiebreakTo: 21, modifier: RALLY, NoAD: true },
     },
     bestOf: 3,
   });
@@ -37,7 +40,7 @@ it('canary: SET3-S:TB21NOAD@RALLY round-trip unchanged after multi-root refactor
   const parsed = matchUpFormatCode.parse(format);
   expect(parsed).toEqual({
     setFormat: {
-      tiebreakSet: { tiebreakTo: 21, modifier: 'RALLY', NoAD: true },
+      tiebreakSet: { tiebreakTo: 21, modifier: RALLY, NoAD: true },
     },
     bestOf: 3,
   });

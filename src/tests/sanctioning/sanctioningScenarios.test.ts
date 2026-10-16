@@ -19,12 +19,21 @@ import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sa
 // constants
 import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT, DOUBLES_EVENT, AGE } from '@Constants/eventConstants';
+import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
+import { CLAY, HARD } from '@Constants/surfaceConstants';
+import { OUTDOOR } from '@Constants/venueConstants';
 import {
   UNDER_REVIEW,
   POST_EVENT,
   MODIFICATION_REQUESTED,
   ISSUES_FLAGGED,
   CONDITIONALLY_APPROVED,
+  DRAFT,
+  SUBMITTED,
+  APPROVED,
+  ACTIVE,
+  CLOSED,
+  REJECTED,
 } from '@Constants/sanctioningConstants';
 
 // ---------------------------------------------------------------------------
@@ -58,11 +67,11 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     proposedStartDate: '2028-03-11',
     proposedEndDate: '2028-03-17',
     hostCountryCode: 'BRA',
-    surfaceCategory: 'CLAY',
-    indoorOutdoor: 'OUTDOOR',
+    surfaceCategory: CLAY,
+    indoorOutdoor: OUTDOOR,
     localTimeZone: 'America/Sao_Paulo',
     totalPrizeMoney: [{ amount: 50000, currencyCode: 'USD', unit: 'MAJOR' }],
-    venues: [{ venueName: 'Jurerê Tennis Club', numberOfCourts: 8, surfaceCategory: 'CLAY' }],
+    venues: [{ venueName: 'Jurerê Tennis Club', numberOfCourts: 8, surfaceCategory: CLAY }],
     tournamentDirector: { personName: 'Carlos Mendes', role: 'Tournament Director' },
     referee: { personName: 'Ana Souza', role: 'Referee', certificationLevel: 'Bronze Badge' },
     officials: [
@@ -78,7 +87,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
       {
         eventName: "Women's Singles",
         eventType: SINGLES_EVENT,
-        gender: 'FEMALE',
+        gender: FEMALE,
         drawSize: 32,
         drawType: SINGLE_ELIMINATION,
         matchUpFormat: 'SET3-S:6/TB7',
@@ -87,7 +96,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
       {
         eventName: "Women's Doubles",
         eventType: DOUBLES_EVENT,
-        gender: 'FEMALE',
+        gender: FEMALE,
         drawSize: 32,
         drawType: SINGLE_ELIMINATION,
       },
@@ -151,7 +160,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     expect(result.success).toBe(true);
     expect(result.tournamentRecord.tournamentName).toEqual('W50 Florianopolis');
     expect(result.tournamentRecord.events).toHaveLength(2);
-    expect(result.tournamentRecord.surfaceCategory).toEqual('CLAY');
+    expect(result.tournamentRecord.surfaceCategory).toEqual(CLAY);
     expect(result.tournamentRecord.processCodes).toContain('SANCTIONED');
 
     // 11. Post-event
@@ -176,13 +185,13 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     // 14. Verify full status history
     let history: any = sanctioningEngine.getStatusHistory();
     const statuses = history.statusHistory.map((h: any) => h.toStatus);
-    expect(statuses).toContain('DRAFT');
-    expect(statuses).toContain('SUBMITTED');
+    expect(statuses).toContain(DRAFT);
+    expect(statuses).toContain(SUBMITTED);
     expect(statuses).toContain(UNDER_REVIEW);
-    expect(statuses).toContain('APPROVED');
-    expect(statuses).toContain('ACTIVE');
+    expect(statuses).toContain(APPROVED);
+    expect(statuses).toContain(ACTIVE);
     expect(statuses).toContain(POST_EVENT);
-    expect(statuses).toContain('CLOSED');
+    expect(statuses).toContain(CLOSED);
   });
 });
 
@@ -197,8 +206,8 @@ describe('Scenario: USTA Level 3 with Modification Request', () => {
     proposedStartDate: '2028-07-15',
     proposedEndDate: '2028-07-21',
     hostCountryCode: 'USA',
-    surfaceCategory: 'HARD',
-    indoorOutdoor: 'OUTDOOR',
+    surfaceCategory: HARD,
+    indoorOutdoor: OUTDOOR,
     venues: [{ venueName: 'Cary Tennis Park', numberOfCourts: 12 }],
     tournamentDirector: { personName: 'Bob Smith', role: 'Tournament Director' },
     referee: { personName: 'Carol Jones', role: 'Referee', certificationLevel: 'National' },
@@ -289,11 +298,11 @@ describe('Scenario: Conditional Approval — BWF Prize Money Confirmation', () =
         hostCountryCode: 'IDN',
         totalPrizeMoney: [{ amount: 25000, currencyCode: 'USD', unit: 'MAJOR' }],
         events: [
-          { eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: 'MALE', drawSize: 32 },
-          { eventName: "Women's Singles", eventType: SINGLES_EVENT, gender: 'FEMALE', drawSize: 32 },
-          { eventName: "Men's Doubles", eventType: DOUBLES_EVENT, gender: 'MALE', drawSize: 16 },
-          { eventName: "Women's Doubles", eventType: DOUBLES_EVENT, gender: 'FEMALE', drawSize: 16 },
-          { eventName: 'Mixed Doubles', eventType: DOUBLES_EVENT, gender: 'MIXED', drawSize: 16 },
+          { eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: MALE, drawSize: 32 },
+          { eventName: "Women's Singles", eventType: SINGLES_EVENT, gender: FEMALE, drawSize: 32 },
+          { eventName: "Men's Doubles", eventType: DOUBLES_EVENT, gender: MALE, drawSize: 16 },
+          { eventName: "Women's Doubles", eventType: DOUBLES_EVENT, gender: FEMALE, drawSize: 16 },
+          { eventName: 'Mixed Doubles', eventType: DOUBLES_EVENT, gender: MIXED, drawSize: 16 },
         ],
       },
     });
@@ -369,7 +378,7 @@ describe('Scenario: Application Rejection — Terminal State', () => {
 
     let recordResult: any = sanctioningEngine.getSanctioningRecord();
     let record = recordResult.sanctioningRecord;
-    expect(record.status).toEqual('REJECTED');
+    expect(record.status).toEqual(REJECTED);
 
     // All transitions should fail
     let result: any = sanctioningEngine.submitApplication({ sanctioningPolicy: POLICY_SANCTIONING_GENERIC });
@@ -419,7 +428,7 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
   it('blocks amendment to internal state fields (path traversal attack)', () => {
     let result: any = sanctioningEngine.proposeAmendment({
       changes: [
-        { field: 'statusHistory[0].fromStatus', previousValue: 'DRAFT', proposedValue: 'FAKE', changeType: 'MODIFIED' },
+        { field: 'statusHistory[0].fromStatus', previousValue: DRAFT, proposedValue: 'FAKE', changeType: 'MODIFIED' },
       ],
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
     });
@@ -430,7 +439,7 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
     let recordResult: any = sanctioningEngine.getSanctioningRecord();
     let record = recordResult.sanctioningRecord;
     // statusHistory should be untouched
-    expect(record.statusHistory[0].fromStatus).toEqual('DRAFT');
+    expect(record.statusHistory[0].fromStatus).toEqual(DRAFT);
   });
 
   it('blocks amendment to out-of-bounds array index', () => {
@@ -506,7 +515,7 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
     let record = result.sanctioningRecord;
     expect(record.amendments).toHaveLength(2);
     expect(record.amendments[0].severity).toEqual('MINOR');
-    expect(record.amendments[0].status).toEqual('APPROVED');
+    expect(record.amendments[0].status).toEqual(APPROVED);
     expect(record.amendments[1].severity).toEqual('SUBSTANTIAL');
     expect(record.amendments[1].status).toEqual('PROPOSED');
   });
@@ -759,28 +768,28 @@ describe('Scenario: Multi-Category Tournament Validation', () => {
           {
             eventName: 'Boys 18 Singles',
             eventType: SINGLES_EVENT,
-            gender: 'MALE',
+            gender: MALE,
             drawSize: 64,
             category: { categoryName: 'U18', type: AGE, ageMax: 18 },
           },
           {
             eventName: 'Girls 18 Singles',
             eventType: SINGLES_EVENT,
-            gender: 'FEMALE',
+            gender: FEMALE,
             drawSize: 64,
             category: { categoryName: 'U18', type: AGE, ageMax: 18 },
           },
           {
             eventName: 'Boys 16 Singles',
             eventType: SINGLES_EVENT,
-            gender: 'MALE',
+            gender: MALE,
             drawSize: 32,
             category: { categoryName: 'U16', type: AGE, ageMax: 16 },
           },
           {
             eventName: 'Boys 14 Singles',
             eventType: SINGLES_EVENT,
-            gender: 'MALE',
+            gender: MALE,
             drawSize: 32,
             category: { categoryName: 'U14', type: AGE, ageMax: 14 },
           },
@@ -824,7 +833,7 @@ describe('Scenario: Endorsement Declined and Re-requested', () => {
         proposedStartDate: '2028-05-01',
         proposedEndDate: '2028-05-07',
         venues: [{ venueName: 'Small Club', numberOfCourts: 2 }],
-        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, gender: 'FEMALE', drawSize: 32 }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, gender: FEMALE, drawSize: 32 }],
       },
     });
 
@@ -926,19 +935,19 @@ describe('Scenario: Policy Transition Guards', () => {
     transitionGuards: [
       {
         from: UNDER_REVIEW,
-        to: 'APPROVED',
+        to: APPROVED,
         guard: 'PROPOSAL_VALID',
         message: 'Proposal must be complete before approval',
       },
       {
         from: CONDITIONALLY_APPROVED,
-        to: 'APPROVED',
+        to: APPROVED,
         guard: 'ALL_CONDITIONS_MET',
         message: 'All conditions must be met before full approval',
       },
       {
         from: POST_EVENT,
-        to: 'CLOSED',
+        to: CLOSED,
         guard: 'COMPLIANCE_COMPLETE',
         message: 'All required compliance items must be verified before closing',
       },

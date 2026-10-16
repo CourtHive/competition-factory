@@ -5,6 +5,9 @@ import { expect, it } from 'vitest';
 // Fixtures
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 
+// constants
+import { CONSECUTIVE, TRADITIONAL } from '@Constants/matchUpFormatConstants';
+
 const standard = FORMAT_STANDARD;
 const validFormats = [
   {
@@ -433,7 +436,7 @@ it('supports -G:3C consecutive game format (TYPTI)', () => {
   expect(parsed).toEqual({
     bestOf: 5,
     setFormat: { setTo: 5, noTiebreak: true },
-    gameFormat: { type: 'CONSECUTIVE', count: 3 },
+    gameFormat: { type: CONSECUTIVE, count: 3 },
   });
   const stringified = matchUpFormatCode.stringify(parsed);
   expect(stringified).toEqual(format);
@@ -460,7 +463,7 @@ it('supports TYPTI win-by-1 variant (SET5-S:5WB1-G:3C)', () => {
   expect(parsed).toEqual({
     bestOf: 5,
     setFormat: { setTo: 5, noTiebreak: true, winBy: 1 },
-    gameFormat: { type: 'CONSECUTIVE', count: 3 },
+    gameFormat: { type: CONSECUTIVE, count: 3 },
   });
   const stringified = matchUpFormatCode.stringify(parsed);
   expect(stringified).toEqual(format);
@@ -521,7 +524,7 @@ it('supports -G:2C consecutive variant', () => {
   expect(parsed).toEqual({
     bestOf: 3,
     setFormat: { setTo: 4, noTiebreak: true },
-    gameFormat: { type: 'CONSECUTIVE', count: 2 },
+    gameFormat: { type: CONSECUTIVE, count: 2 },
   });
   const stringified = matchUpFormatCode.stringify(parsed);
   expect(stringified).toEqual(format);
@@ -567,7 +570,7 @@ it('dispatches sections by key, not position (order-independent)', () => {
   expect(parsed).toEqual({
     bestOf: 3,
     setFormat: { timed: true, minutes: 10 },
-    gameFormat: { type: 'TRADITIONAL', deuceAfter: 3 },
+    gameFormat: { type: TRADITIONAL, deuceAfter: 3 },
     finalSetFormat: { timed: true, minutes: 20 },
   });
 });
@@ -578,7 +581,7 @@ it('supports -G:TN3D Star Point format (Padel 2026)', () => {
   expect(parsed).toEqual({
     bestOf: 3,
     setFormat: { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } },
-    gameFormat: { type: 'TRADITIONAL', deuceAfter: 3 },
+    gameFormat: { type: TRADITIONAL, deuceAfter: 3 },
   });
   expect(matchUpFormatCode.stringify(parsed)).toEqual(format);
   expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);
@@ -590,7 +593,7 @@ it('supports -G:TN1D golden point format', () => {
   expect(parsed).toEqual({
     bestOf: 3,
     setFormat: { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } },
-    gameFormat: { type: 'TRADITIONAL', deuceAfter: 1 },
+    gameFormat: { type: TRADITIONAL, deuceAfter: 1 },
   });
   expect(matchUpFormatCode.stringify(parsed)).toEqual(format);
   expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);
@@ -602,7 +605,7 @@ it('supports -G:TN (explicit traditional, no deuce cap)', () => {
   expect(parsed).toEqual({
     bestOf: 3,
     setFormat: { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } },
-    gameFormat: { type: 'TRADITIONAL' },
+    gameFormat: { type: TRADITIONAL },
   });
   expect(matchUpFormatCode.stringify(parsed)).toEqual(format);
   expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);
@@ -614,7 +617,7 @@ it('supports -G:3C3D consecutive with Star Point deuce', () => {
   expect(parsed).toEqual({
     bestOf: 3,
     setFormat: { setTo: 4, noTiebreak: true },
-    gameFormat: { type: 'CONSECUTIVE', count: 3, deuceAfter: 3 },
+    gameFormat: { type: CONSECUTIVE, count: 3, deuceAfter: 3 },
   });
   expect(matchUpFormatCode.stringify(parsed)).toEqual(format);
   expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);

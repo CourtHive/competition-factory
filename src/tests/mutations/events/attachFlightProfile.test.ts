@@ -9,6 +9,8 @@ import { EXISTING_PROFILE, MISSING_EVENT, MISSING_VALUE } from '@Constants/error
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { SPLIT_WATERFALL } from '@Constants/flightConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { RATING } from '@Constants/scaleConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 describe('attachFlightProfile', () => {
   // Parameter validation
@@ -293,8 +295,8 @@ describe('attachFlightProfile', () => {
     const flightProfile = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
       splitMethod: 'CUSTOM',
-      scaleName: 'WTN',
-      scaleType: 'RATING',
+      scaleName: WTN,
+      scaleType: RATING,
       customMetadata: { key: 'value' },
     };
 
@@ -302,8 +304,8 @@ describe('attachFlightProfile', () => {
 
     expect(result.success).toBe(true);
     expect(result.flightProfile.splitMethod).toBe('CUSTOM');
-    expect(result.flightProfile.scaleName).toBe('WTN');
-    expect(result.flightProfile.scaleType).toBe('RATING');
+    expect(result.flightProfile.scaleName).toBe(WTN);
+    expect(result.flightProfile.scaleType).toBe(RATING);
   });
 
   // Edge cases

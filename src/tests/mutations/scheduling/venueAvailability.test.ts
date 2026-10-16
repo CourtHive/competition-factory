@@ -5,6 +5,7 @@ import { expect, test } from 'vitest';
 
 // constants and fixtures
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import { MAINTENANCE, PRACTICE } from '@Constants/bookingTypeConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 test('court with no dateAvailability inherits venue defaults', () => {
@@ -185,8 +186,8 @@ test('venue bookings merge with court bookings', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const venueBooking = { startTime: '12:00', endTime: '13:00', bookingType: 'MAINTENANCE' };
-  const courtBooking = { startTime: '15:00', endTime: '16:00', bookingType: 'PRACTICE' };
+  const venueBooking = { startTime: '12:00', endTime: '13:00', bookingType: MAINTENANCE };
+  const courtBooking = { startTime: '15:00', endTime: '16:00', bookingType: PRACTICE };
 
   const venue = {
     venueId: 'v1',
@@ -500,7 +501,7 @@ test('venue-level maintenance booking blocks court scheduling', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const maintenanceBooking = { startTime: '12:00', endTime: '14:00', bookingType: 'MAINTENANCE' };
+  const maintenanceBooking = { startTime: '12:00', endTime: '14:00', bookingType: MAINTENANCE };
 
   const venue = {
     venueId: 'v1',

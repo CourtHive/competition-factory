@@ -3,7 +3,7 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
+import { INDIVIDUAL, TEAM, PAIR } from '@Constants/participantConstants';
 
 const ORG = 'org-1';
 const OTHER_ORG = 'org-2';
@@ -40,7 +40,7 @@ describe('getParticipation', () => {
       tournamentRecord: record([issuedTeam('local-a', 'A'), issuedTeam('local-b', 'B')]),
     });
     expect(result.map((entry) => entry.subjectId).sort((a, b) => a.localeCompare(b, 'en'))).toEqual(['A', 'B']);
-    expect(result.every((entry) => entry.subjectType === 'TEAM')).toEqual(true);
+    expect(result.every((entry) => entry.subjectType === TEAM)).toEqual(true);
   });
 
   it('keys the subject on the ISSUED id and keeps the local id separately', () => {
@@ -60,7 +60,7 @@ describe('getParticipation', () => {
     const result: any = getParticipation({
       tournamentRecord: record([issuedTeam('local-a', 'A'), issuedPerson('local-p', 'P1')]),
     });
-    expect(result.filter((entry) => entry.subjectType === 'TEAM')).toHaveLength(1);
+    expect(result.filter((entry) => entry.subjectType === TEAM)).toHaveLength(1);
     expect(result.filter((entry) => entry.subjectType === 'PERSON')).toHaveLength(1);
   });
 
@@ -127,7 +127,7 @@ describe('getParticipation', () => {
 
   it('ignores participant types that carry no issued identity of their own', () => {
     const withPair: any = record([issuedTeam('local-a', 'A')]);
-    withPair.participants.push({ participantId: 'pair-1', participantType: 'PAIR' });
+    withPair.participants.push({ participantId: 'pair-1', participantType: PAIR });
     expect(getParticipation({ tournamentRecord: withPair })).toHaveLength(1);
   });
 

@@ -17,6 +17,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { WTN } from '@Constants/ratingConstants';
+
 describe('generateEventWithDraw coverage', () => {
   it('applies valid eventExtensions to the generated event', () => {
     // isValidExtension destructures { extension } from its argument;
@@ -111,7 +114,7 @@ describe('generateEventWithDraw coverage', () => {
           drawSize: 6,
           drawType: AD_HOC,
           roundsCount: 3,
-          scaleName: 'WTN',
+          scaleName: WTN,
         },
       ],
     });
@@ -133,7 +136,7 @@ describe('generateEventWithDraw coverage', () => {
           drawSize: 6,
           drawType: AD_HOC,
           roundsCount: 2,
-          category: { ratingType: 'WTN', ratingMin: 10, ratingMax: 14 },
+          category: { ratingType: WTN, ratingMin: 10, ratingMax: 14 },
         },
       ],
     });
@@ -154,7 +157,7 @@ describe('generateEventWithDraw coverage', () => {
           drawSize: 6,
           drawType: AD_HOC,
           roundsCount: 2,
-          drawMatic: { scaleName: 'WTN' },
+          drawMatic: { scaleName: WTN },
         },
       ],
     });

@@ -8,6 +8,7 @@ import { INVALID_MATCHUP, INVALID_VALUES, VALUE_UNCHANGED } from '@Constants/err
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
@@ -15,7 +16,7 @@ const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScori
 
 test('groupValue can be used in tieFormats and lineUps can be applied after scoring is completed', () => {
   const mockProfile = {
-    drawProfiles: [{ drawSize: 4, tieFormatName: 'USTA_BREWER_CUP', eventType: TEAM_EVENT }],
+    drawProfiles: [{ drawSize: 4, tieFormatName: USTA_BREWER_CUP, eventType: TEAM_EVENT }],
     tournamentName: 'Brewer',
     policyDefinitions,
   };

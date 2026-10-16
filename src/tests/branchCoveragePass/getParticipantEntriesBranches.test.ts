@@ -6,6 +6,7 @@ import { expect, test } from 'vitest';
 import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 
 // ─── Multi-bracket RR with playoff + rankingProfile (RR tally paths) ──────
 // Drives calculateRRRange multi-bracket + playoff branches, processRRBracket,
@@ -190,7 +191,7 @@ test('doubles event with unpaired entries', () => {
 
   // add some unpaired individual participants as entries to the doubles event
   const { participants } = tournamentEngine.getParticipants({
-    participantFilters: { participantTypes: ['INDIVIDUAL'] },
+    participantFilters: { participantTypes: [INDIVIDUAL] },
   });
   const unusedIndividualIds = participants.slice(0, 4).map((p: any) => p.participantId);
   if (eventId && unusedIndividualIds.length) {

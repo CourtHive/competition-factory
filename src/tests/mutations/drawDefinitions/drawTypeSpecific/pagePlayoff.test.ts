@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   PAGE_PLAYOFF,
@@ -19,7 +20,7 @@ describe('PAGE_PLAYOFF draw type', () => {
   it('generates structures and links directly via engine', () => {
     tournamentEngine.newTournamentRecord();
     tournamentEngine.addParticipants({
-      participantType: 'INDIVIDUAL',
+      participantType: INDIVIDUAL,
       participantsCount: 4,
     });
     const event = { eventName: 'PPS Test', eventType: SINGLES_EVENT };

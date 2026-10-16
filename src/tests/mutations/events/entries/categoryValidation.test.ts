@@ -6,7 +6,10 @@ import { expect, it, describe } from 'vitest';
 import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
+import { MALE, FEMALE } from '@Constants/genderConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
+import { RATING } from '@Constants/scaleConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 describe('Category Validation in addEventEntries', () => {
   describe('Age Validation', () => {
@@ -24,7 +27,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2008-06-15', // Will be 16 during event
           standardGivenName: 'John',
           standardFamilyName: 'Doe',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -68,7 +71,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2006-08-10',
           standardGivenName: 'Jane',
           standardFamilyName: 'Smith',
-          sex: 'FEMALE',
+          sex: FEMALE,
         },
       };
 
@@ -119,7 +122,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2015-01-01', // Age 9 during event
           standardGivenName: 'Kid',
           standardFamilyName: 'Young',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -162,7 +165,7 @@ describe('Category Validation in addEventEntries', () => {
         person: {
           standardGivenName: 'No',
           standardFamilyName: 'Birthday',
-          sex: 'MALE',
+          sex: MALE,
           // birthDate missing
         },
       };
@@ -206,7 +209,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2000-01-01',
           standardGivenName: 'Any',
           standardFamilyName: 'Age',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -248,7 +251,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2010-01-01', // Age 14
           standardGivenName: 'Valid',
           standardFamilyName: 'Player',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -259,7 +262,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2016-01-01', // Age 8
           standardGivenName: 'Too',
           standardFamilyName: 'Young',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -270,7 +273,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2005-01-01', // Age 19
           standardGivenName: 'Too',
           standardFamilyName: 'Old',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -319,7 +322,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '1990-01-01', // Age 34 - valid for 18O (18+)
           standardGivenName: 'Valid',
           standardFamilyName: 'Adult',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -330,7 +333,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2010-01-01', // Age 14 - invalid for 18O (18+)
           standardGivenName: 'Too',
           standardFamilyName: 'Young',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -379,7 +382,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2008-01-01', // Age 16 - valid for U18
           standardGivenName: 'Valid',
           standardFamilyName: 'Junior',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -390,7 +393,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2000-01-01', // Age 24 - invalid for U18
           standardGivenName: 'Too',
           standardFamilyName: 'Old',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -440,7 +443,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2015-01-01', // Age 9 - would fail normal age check
           standardGivenName: 'Young',
           standardFamilyName: 'Player',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -451,7 +454,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '1960-01-01', // Age 64 - valid for combined 50-70
           standardGivenName: 'Old',
           standardFamilyName: 'Player',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -499,7 +502,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2000-01-01',
           standardGivenName: 'Good',
           standardFamilyName: 'Player',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -510,8 +513,8 @@ describe('Category Validation in addEventEntries', () => {
       tournamentEngine.setParticipantScaleItem({
         participantId: participant.participantId,
         scaleItem: {
-          scaleType: 'RATING',
-          scaleName: 'WTN',
+          scaleType: RATING,
+          scaleName: WTN,
           scaleValue: 10.5,
           eventType: SINGLES,
           scaleDate: '2024-07-01',
@@ -523,7 +526,7 @@ describe('Category Validation in addEventEntries', () => {
         eventType: SINGLES,
         category: {
           categoryName: 'Intermediate',
-          ratingType: 'WTN',
+          ratingType: WTN,
           ratingMin: 9,
           ratingMax: 12,
         },
@@ -555,7 +558,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2000-01-01',
           standardGivenName: 'Low',
           standardFamilyName: 'Rated',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -565,8 +568,8 @@ describe('Category Validation in addEventEntries', () => {
       tournamentEngine.setParticipantScaleItem({
         participantId: participant.participantId,
         scaleItem: {
-          scaleType: 'RATING',
-          scaleName: 'WTN',
+          scaleType: RATING,
+          scaleName: WTN,
           scaleValue: 8,
           eventType: SINGLES,
           scaleDate: '2024-07-01',
@@ -578,7 +581,7 @@ describe('Category Validation in addEventEntries', () => {
         eventType: SINGLES,
         category: {
           categoryName: 'Advanced',
-          ratingType: 'WTN',
+          ratingType: WTN,
           ratingMin: 9,
         },
       };
@@ -613,7 +616,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2000-01-01',
           standardGivenName: 'High',
           standardFamilyName: 'Rated',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -623,8 +626,8 @@ describe('Category Validation in addEventEntries', () => {
       tournamentEngine.setParticipantScaleItem({
         participantId: participant.participantId,
         scaleItem: {
-          scaleType: 'RATING',
-          scaleName: 'WTN',
+          scaleType: RATING,
+          scaleName: WTN,
           scaleValue: 13,
           eventType: SINGLES,
           scaleDate: '2024-07-01',
@@ -636,7 +639,7 @@ describe('Category Validation in addEventEntries', () => {
         eventType: SINGLES,
         category: {
           categoryName: 'Beginner',
-          ratingType: 'WTN',
+          ratingType: WTN,
           ratingMax: 12,
         },
       };
@@ -669,7 +672,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2000-01-01',
           standardGivenName: 'No',
           standardFamilyName: 'Rating',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -683,7 +686,7 @@ describe('Category Validation in addEventEntries', () => {
         eventType: SINGLES,
         category: {
           categoryName: 'Rated',
-          ratingType: 'WTN',
+          ratingType: WTN,
           ratingMin: 9,
         },
       };
@@ -715,7 +718,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2000-01-01',
           standardGivenName: 'Any',
           standardFamilyName: 'Rating',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -759,7 +762,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2016-01-01', // Too young (age 8)
           standardGivenName: 'Double',
           standardFamilyName: 'Fail',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -769,8 +772,8 @@ describe('Category Validation in addEventEntries', () => {
       tournamentEngine.setParticipantScaleItem({
         participantId: participant.participantId,
         scaleItem: {
-          scaleType: 'RATING',
-          scaleName: 'WTN',
+          scaleType: RATING,
+          scaleName: WTN,
           scaleValue: 7, // Too low
           eventType: SINGLES,
           scaleDate: '2024-07-01',
@@ -784,7 +787,7 @@ describe('Category Validation in addEventEntries', () => {
           categoryName: 'Junior Advanced',
           ageMin: 12,
           ageMax: 18,
-          ratingType: 'WTN',
+          ratingType: WTN,
           ratingMin: 9,
           ratingMax: 12,
         },
@@ -824,7 +827,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2010-01-01', // Age 14
           standardGivenName: 'Valid',
           standardFamilyName: 'Player',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -835,7 +838,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2020-01-01', // Age 4 - too young
           standardGivenName: 'Invalid',
           standardFamilyName: 'Player',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -846,8 +849,8 @@ describe('Category Validation in addEventEntries', () => {
       tournamentEngine.setParticipantScaleItem({
         participantId: validParticipant.participantId,
         scaleItem: {
-          scaleType: 'RATING',
-          scaleName: 'WTN',
+          scaleType: RATING,
+          scaleName: WTN,
           scaleValue: 10,
           eventType: SINGLES,
           scaleDate: '2024-07-01',
@@ -857,8 +860,8 @@ describe('Category Validation in addEventEntries', () => {
       tournamentEngine.setParticipantScaleItem({
         participantId: invalidParticipant.participantId,
         scaleItem: {
-          scaleType: 'RATING',
-          scaleName: 'WTN',
+          scaleType: RATING,
+          scaleName: WTN,
           scaleValue: 10,
           eventType: SINGLES,
           scaleDate: '2024-07-01',
@@ -872,7 +875,7 @@ describe('Category Validation in addEventEntries', () => {
           categoryName: 'Juniors',
           ageMin: 12,
           ageMax: 18,
-          ratingType: 'WTN',
+          ratingType: WTN,
           ratingMin: 9,
           ratingMax: 12,
         },
@@ -907,7 +910,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '1999-03-15', // Age 25 during event
           standardGivenName: 'Adult',
           standardFamilyName: 'Player',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -953,7 +956,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2020-01-01', // Age 4 - too young
           standardGivenName: 'Invalid',
           standardFamilyName: 'Age',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -997,7 +1000,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2020-01-01', // Age 4 - too young
           standardGivenName: 'Invalid',
           standardFamilyName: 'Age',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1041,7 +1044,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2020-01-01',
           standardGivenName: 'Any',
           standardFamilyName: 'Age',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1083,7 +1086,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2020-01-01',
           standardGivenName: 'FirstName',
           standardFamilyName: 'LastName',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1125,7 +1128,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2020-06-15',
           standardGivenName: 'Test',
           standardFamilyName: 'Player',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1176,7 +1179,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2012-01-01', // Age 12 - valid for U14
           standardGivenName: 'Young',
           standardFamilyName: 'Player',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1187,7 +1190,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '1999-03-15', // Age 25 - invalid for U14
           standardGivenName: 'Old',
           standardFamilyName: 'Player',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1241,7 +1244,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2012-01-01', // Age 12
           standardGivenName: 'Valid',
           standardFamilyName: 'One',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1252,7 +1255,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2011-06-15', // Age 13
           standardGivenName: 'Valid',
           standardFamilyName: 'Two',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1299,7 +1302,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2000-01-01', // Age 24
           standardGivenName: 'Young',
           standardFamilyName: 'Partner',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1310,7 +1313,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '1960-01-01', // Age 64
           standardGivenName: 'Old',
           standardFamilyName: 'Partner',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1360,7 +1363,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2000-01-01',
           standardGivenName: 'Good',
           standardFamilyName: 'Rating',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1371,7 +1374,7 @@ describe('Category Validation in addEventEntries', () => {
           birthDate: '2000-01-01',
           standardGivenName: 'High',
           standardFamilyName: 'Rating',
-          sex: 'MALE',
+          sex: MALE,
         },
       };
 
@@ -1389,8 +1392,8 @@ describe('Category Validation in addEventEntries', () => {
       tournamentEngine.setParticipantScaleItem({
         participantId: 'p-good-rating',
         scaleItem: {
-          scaleType: 'RATING',
-          scaleName: 'WTN',
+          scaleType: RATING,
+          scaleName: WTN,
           scaleValue: 10,
           eventType: DOUBLES,
           scaleDate: '2024-07-01',
@@ -1400,8 +1403,8 @@ describe('Category Validation in addEventEntries', () => {
       tournamentEngine.setParticipantScaleItem({
         participantId: 'p-high-rating',
         scaleItem: {
-          scaleType: 'RATING',
-          scaleName: 'WTN',
+          scaleType: RATING,
+          scaleName: WTN,
           scaleValue: 15,
           eventType: DOUBLES,
           scaleDate: '2024-07-01',
@@ -1413,7 +1416,7 @@ describe('Category Validation in addEventEntries', () => {
         eventType: DOUBLES,
         category: {
           categoryName: 'Beginner',
-          ratingType: 'WTN',
+          ratingType: WTN,
           ratingMax: 12,
         },
       };
@@ -1457,7 +1460,7 @@ describe('Category Validation in addEventEntries', () => {
     it('accepts a person with only birthYear when calendar-year age is in range', () => {
       // 2024 − 2008 = 16, within U18 (ageMax 17)
       const result: any = setup(
-        { birthYear: 2008, standardGivenName: 'Year', standardFamilyName: 'Only', sex: 'MALE' },
+        { birthYear: 2008, standardGivenName: 'Year', standardFamilyName: 'Only', sex: MALE },
         { categoryName: 'U18', ageMax: 17 },
       );
       expect(result.success).toEqual(true);
@@ -1467,7 +1470,7 @@ describe('Category Validation in addEventEntries', () => {
     it('rejects a person with only birthYear who is too old, reporting birthYear in details', () => {
       // 2024 − 2000 = 24, outside U18
       const result: any = setup(
-        { birthYear: 2000, standardGivenName: 'Year', standardFamilyName: 'Old', sex: 'MALE' },
+        { birthYear: 2000, standardGivenName: 'Year', standardFamilyName: 'Old', sex: MALE },
         { categoryName: 'U18', ageMax: 17 },
       );
       expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
@@ -1481,7 +1484,7 @@ describe('Category Validation in addEventEntries', () => {
     it('birthDate is authoritative when both birthDate and birthYear are present', () => {
       // birthYear 2010 would pass, but birthDate 2000 (age 24) must win → rejected
       const result: any = setup(
-        { birthDate: '2000-01-01', birthYear: 2010, standardGivenName: 'Both', standardFamilyName: 'Set', sex: 'MALE' },
+        { birthDate: '2000-01-01', birthYear: 2010, standardGivenName: 'Both', standardFamilyName: 'Set', sex: MALE },
         { categoryName: 'U18', ageMax: 17 },
       );
       expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
@@ -1492,7 +1495,7 @@ describe('Category Validation in addEventEntries', () => {
 
     it('rejects when both birthDate and birthYear are missing', () => {
       const result: any = setup(
-        { standardGivenName: 'No', standardFamilyName: 'Dob', sex: 'MALE' },
+        { standardGivenName: 'No', standardFamilyName: 'Dob', sex: MALE },
         { categoryName: 'U18', ageMax: 17 },
       );
       expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);

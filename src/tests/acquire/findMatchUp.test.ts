@@ -5,6 +5,8 @@ import tournamentEngine from '@Engines/syncEngine';
 
 // constants
 import { MATCHUP_NOT_FOUND, MISSING_MATCHUP_ID, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { OUTDOOR, INDOOR } from '@Constants/venueConstants';
+import { CLAY, HARD } from '@Constants/surfaceConstants';
 
 describe('findMatchUp', () => {
   describe('error cases', () => {
@@ -326,8 +328,8 @@ describe('findMatchUp', () => {
       const drawDefinition = event.drawDefinitions[0];
 
       // Set event-level properties
-      event.surfaceCategory = 'CLAY';
-      event.indoorOutdoor = 'OUTDOOR';
+      event.surfaceCategory = CLAY;
+      event.indoorOutdoor = OUTDOOR;
       event.endDate = '2025-12-31';
 
       tournamentEngine.setState(tournamentRecord);
@@ -353,8 +355,8 @@ describe('findMatchUp', () => {
       const drawDefinition = event.drawDefinitions[0];
 
       // Set tournament-level properties (event has none)
-      tournamentRecord.surfaceCategory = 'HARD';
-      tournamentRecord.indoorOutdoor = 'INDOOR';
+      tournamentRecord.surfaceCategory = HARD;
+      tournamentRecord.indoorOutdoor = INDOOR;
 
       tournamentEngine.setState(tournamentRecord);
       const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;

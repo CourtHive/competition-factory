@@ -13,6 +13,9 @@ import { DRAFT, SUBMITTED, WITHDRAWN, APPROVED } from '@Constants/sanctioningCon
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { MALE, FEMALE } from '@Constants/genderConstants';
+import { HARD, CLAY } from '@Constants/surfaceConstants';
+import { OUTDOOR } from '@Constants/venueConstants';
 
 // types
 import type { EventProposal, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
@@ -27,7 +30,7 @@ const testApplicant: Applicant = {
 const testEventProposal: EventProposal = {
   eventName: "Men's Singles",
   eventType: SINGLES_EVENT,
-  gender: 'MALE',
+  gender: MALE,
   drawSize: 32,
   drawType: SINGLE_ELIMINATION,
 };
@@ -37,8 +40,8 @@ const testProposal: TournamentProposal = {
   proposedStartDate: '2026-06-01',
   proposedEndDate: '2026-06-07',
   hostCountryCode: 'USA',
-  surfaceCategory: 'HARD',
-  indoorOutdoor: 'OUTDOOR',
+  surfaceCategory: HARD,
+  indoorOutdoor: OUTDOOR,
   events: [testEventProposal],
 };
 
@@ -187,13 +190,13 @@ describe('Sanctioning Engine — updateProposal', () => {
   it('updates proposal fields on DRAFT record', () => {
     createTestRecord();
     let result: any = sanctioningEngine.updateProposal({
-      updates: { tournamentName: 'Updated Open 2026', surfaceCategory: 'CLAY' },
+      updates: { tournamentName: 'Updated Open 2026', surfaceCategory: CLAY },
     });
     expect(result.success).toBe(true);
 
     let getResult: any = sanctioningEngine.getSanctioningRecord();
     expect(getResult.sanctioningRecord.proposal.tournamentName).toEqual('Updated Open 2026');
-    expect(getResult.sanctioningRecord.proposal.surfaceCategory).toEqual('CLAY');
+    expect(getResult.sanctioningRecord.proposal.surfaceCategory).toEqual(CLAY);
     expect(getResult.sanctioningRecord.version).toEqual(2);
   });
 
@@ -238,7 +241,7 @@ describe('Sanctioning Engine — Event Proposal CRUD', () => {
       eventProposal: {
         eventName: "Women's Singles",
         eventType: SINGLES_EVENT,
-        gender: 'FEMALE',
+        gender: FEMALE,
         drawSize: 32,
       },
     });
@@ -362,7 +365,7 @@ describe('Sanctioning Engine — executionQueue', () => {
           eventProposal: {
             eventName: "Women's Doubles",
             eventType: DOUBLES_EVENT,
-            gender: 'FEMALE',
+            gender: FEMALE,
           },
         },
       },

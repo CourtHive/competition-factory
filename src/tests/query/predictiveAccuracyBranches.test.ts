@@ -4,10 +4,11 @@ import { expect, test } from 'vitest';
 
 // constants
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 test('getPredictiveAccuracy with no tournamentRecord and no matchUps returns error', () => {
   const result = tournamentEngine.getPredictiveAccuracy({
-    scaleName: 'WTN',
+    scaleName: WTN,
     matchUpType: SINGLES,
   });
   expect(result.error).toBeDefined();
@@ -20,7 +21,7 @@ test('getPredictiveAccuracy with invalid matchUpType returns error', () => {
   });
   const result = tournamentEngine.getPredictiveAccuracy({
     matchUpType: 'INVALID' as any,
-    scaleName: 'WTN',
+    scaleName: WTN,
   });
   expect(result.error).toBeDefined();
 });
@@ -32,7 +33,7 @@ test('getPredictiveAccuracy with invalid matchUps returns error', () => {
   });
   const result = tournamentEngine.getPredictiveAccuracy({
     matchUps: 'notAnArray' as any,
-    scaleName: 'WTN',
+    scaleName: WTN,
   });
   expect(result.error).toBeDefined();
 });
@@ -49,7 +50,7 @@ test('getPredictiveAccuracy with completed matchUps', () => {
 
   const result = tournamentEngine.getPredictiveAccuracy({
     matchUpType: SINGLES,
-    scaleName: 'WTN',
+    scaleName: WTN,
   });
   expect(result.success).toBe(true);
   expect(result.accuracy).toBeDefined();
@@ -69,7 +70,7 @@ test('getPredictiveAccuracy with drawId filter', () => {
   });
 
   const result = tournamentEngine.getPredictiveAccuracy({
-    scaleName: 'WTN',
+    scaleName: WTN,
     drawId,
   });
   expect(result.success).toBe(true);
@@ -88,7 +89,7 @@ test('getPredictiveAccuracy with eventId filter', () => {
   });
 
   const result = tournamentEngine.getPredictiveAccuracy({
-    scaleName: 'WTN',
+    scaleName: WTN,
     eventId,
   });
   expect(result.success).toBe(true);
@@ -106,7 +107,7 @@ test('getPredictiveAccuracy with zoneMargin', () => {
 
   const result = tournamentEngine.getPredictiveAccuracy({
     matchUpType: SINGLES,
-    scaleName: 'WTN',
+    scaleName: WTN,
     zoneMargin: 3,
   });
   expect(result.success).toBe(true);
@@ -126,7 +127,7 @@ test('getPredictiveAccuracy with excludeMargin', () => {
 
   const result = tournamentEngine.getPredictiveAccuracy({
     matchUpType: SINGLES,
-    scaleName: 'WTN',
+    scaleName: WTN,
     excludeMargin: 0.5,
   });
   expect(result.success).toBe(true);
@@ -146,7 +147,7 @@ test('getPredictiveAccuracy with ascending true', () => {
 
   const result = tournamentEngine.getPredictiveAccuracy({
     matchUpType: SINGLES,
-    scaleName: 'WTN',
+    scaleName: WTN,
     ascending: true,
   });
   expect(result.success).toBe(true);
@@ -164,7 +165,7 @@ test('getPredictiveAccuracy with zoneDoubling for DOUBLES', () => {
 
   const result = tournamentEngine.getPredictiveAccuracy({
     matchUpType: DOUBLES,
-    scaleName: 'WTN',
+    scaleName: WTN,
     zoneDoubling: true,
     zoneMargin: 3,
   });
@@ -189,7 +190,7 @@ test('getPredictiveAccuracy with hasContext matchUps and drawId filter', () => {
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
 
   const result = tournamentEngine.getPredictiveAccuracy({
-    scaleName: 'WTN',
+    scaleName: WTN,
     matchUps,
     drawId,
   });
@@ -211,7 +212,7 @@ test('getPredictiveAccuracy with hasContext matchUps and eventId filter', () => 
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
 
   const result = tournamentEngine.getPredictiveAccuracy({
-    scaleName: 'WTN',
+    scaleName: WTN,
     matchUps,
     eventId,
   });
@@ -234,7 +235,7 @@ test('getPredictiveAccuracy with zonePct', () => {
   // never looked at a value.
   const result = tournamentEngine.getPredictiveAccuracy({
     matchUpType: SINGLES,
-    scaleName: 'WTN',
+    scaleName: WTN,
     zonePct: 20,
   });
   expect(result.success).toBe(true);
@@ -242,7 +243,7 @@ test('getPredictiveAccuracy with zonePct', () => {
 
   const explicit = tournamentEngine.getPredictiveAccuracy({
     matchUpType: SINGLES,
-    scaleName: 'WTN',
+    scaleName: WTN,
     zoneMargin: 7.8,
   });
   expect(explicit.zoneMargin).toBeCloseTo(7.8, 6);
@@ -264,7 +265,7 @@ test('getPredictiveAccuracy with exclusionRule', () => {
   const result = tournamentEngine.getPredictiveAccuracy({
     exclusionRule: { valueAccessor: 'confidence', range: [0, 50] },
     matchUpType: SINGLES,
-    scaleName: 'WTN',
+    scaleName: WTN,
     ascending: true,
     valueAccessor: 'wtnRating',
     zoneMargin: 3,
@@ -285,7 +286,7 @@ test('getPredictiveAccuracy with bad exclusionRule logs error', () => {
   const result = tournamentEngine.getPredictiveAccuracy({
     exclusionRule: { valueAccessor: 'confidence' }, // missing range
     matchUpType: SINGLES,
-    scaleName: 'WTN',
+    scaleName: WTN,
   });
   expect(result.success).toBe(true);
   // Should have error in accuracy
@@ -300,7 +301,7 @@ test('getPredictiveAccuracy with empty matchUps array', () => {
 
   const result = tournamentEngine.getPredictiveAccuracy({
     matchUpType: SINGLES,
-    scaleName: 'WTN',
+    scaleName: WTN,
     matchUps: [],
   });
   expect(result.success).toBe(true);
@@ -315,7 +316,7 @@ test('getPredictiveAccuracy with drawId but no drawDefinition returns empty matc
 
   // Get matchUps without context
   const result = tournamentEngine.getPredictiveAccuracy({
-    scaleName: 'WTN',
+    scaleName: WTN,
     drawId: 'nonexistent-draw-id',
   });
   expect(result.success).toBe(true);

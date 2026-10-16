@@ -5,6 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
 
 const DAY1 = '2026-08-20';
@@ -167,7 +168,7 @@ describe('Participant Experience — singles/doubles type change', () => {
     const matchUps: any[] = tournamentEngine.allTournamentMatchUps({ inContext: true }).matchUps ?? [];
     const individualsOf = (matchUp: any): string[] =>
       (matchUp.sides ?? []).flatMap((side: any) =>
-        matchUp.matchUpType === 'DOUBLES'
+        matchUp.matchUpType === DOUBLES_MATCHUP
           ? (side.participant?.individualParticipantIds ?? [])
           : [side.participantId].filter(Boolean),
       );
@@ -176,9 +177,11 @@ describe('Participant Experience — singles/doubles type change', () => {
     // separate drawProfiles need not draw from overlapping pools, and a test
     // that silently found none would assert nothing.
     let pair: { doubles: any; singles: any } | undefined;
-    for (const doubles of matchUps.filter((m) => m.matchUpType === 'DOUBLES')) {
+    for (const doubles of matchUps.filter((m) => m.matchUpType === DOUBLES_MATCHUP)) {
       const ids = new Set(individualsOf(doubles));
-      const singles = matchUps.find((m) => m.matchUpType === 'SINGLES' && individualsOf(m).some((id) => ids.has(id)));
+      const singles = matchUps.find(
+        (m) => m.matchUpType === SINGLES_MATCHUP && individualsOf(m).some((id) => ids.has(id)),
+      );
       if (singles) {
         pair = { doubles, singles };
         break;

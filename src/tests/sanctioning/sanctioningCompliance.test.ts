@@ -8,8 +8,17 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 // constants
-import { POST_EVENT, ISSUES_FLAGGED, UNDER_REVIEW } from '@Constants/sanctioningConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import {
+  POST_EVENT,
+  ISSUES_FLAGGED,
+  UNDER_REVIEW,
+  SUBMITTED,
+  CLOSED,
+  ACTIVE,
+  DRAFT,
+  APPROVED,
+} from '@Constants/sanctioningConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -81,7 +90,7 @@ describe('Post-Event Compliance — Lifecycle', () => {
     recordResult = sanctioningEngine.getSanctioningRecord();
     record = recordResult.sanctioningRecord;
     const updated = record.compliance.items.find((i: any) => i.itemId === resultsItem.itemId);
-    expect(updated.status).toEqual('SUBMITTED');
+    expect(updated.status).toEqual(SUBMITTED);
     expect(updated.submittedAt).toBeDefined();
     expect(updated.value.fileUrl).toBeDefined();
     expect(record.compliance.status).toEqual('IN_PROGRESS');
@@ -164,7 +173,7 @@ describe('Post-Event Compliance — Lifecycle', () => {
 
     recordResult = sanctioningEngine.getSanctioningRecord();
     record = recordResult.sanctioningRecord;
-    expect(record.status).toEqual('CLOSED');
+    expect(record.status).toEqual(CLOSED);
     expect(record.compliance.completedAt).toBeDefined();
 
     // Terminal — no more transitions
@@ -189,7 +198,7 @@ describe('Post-Event Compliance — Lifecycle', () => {
     result = sanctioningEngine.closeApplication({ reason: 'Issues resolved' });
     expect(result.success).toBe(true);
     recordResult = sanctioningEngine.getSanctioningRecord();
-    expect(recordResult.sanctioningRecord.status).toEqual('CLOSED');
+    expect(recordResult.sanctioningRecord.status).toEqual(CLOSED);
   });
 
   it('returns error when submitting to non-existent item', () => {
@@ -214,7 +223,7 @@ describe('Post-Event Compliance — Lifecycle', () => {
     // Activate without policy — no compliance items
     const recordResult: any = sanctioningEngine.getSanctioningRecord();
     const record = recordResult.sanctioningRecord;
-    record.status = 'ACTIVE'; // manual for test
+    record.status = ACTIVE; // manual for test
     record.compliance = undefined;
     sanctioningEngine.setSanctioningRecord(record);
 
@@ -268,7 +277,7 @@ describe('Automatic OVERDUE Detection', () => {
 
     record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
     const item = record.compliance.items.find((i: any) => i.itemId === firstItem.itemId);
-    expect(item.status).toEqual('SUBMITTED');
+    expect(item.status).toEqual(SUBMITTED);
   });
 });
 
@@ -310,16 +319,16 @@ describe('Full Lifecycle — DRAFT to CLOSED', () => {
     sanctioningEngine.closeApplication({});
     recordResult = sanctioningEngine.getSanctioningRecord();
     record = recordResult.sanctioningRecord;
-    expect(record.status).toEqual('CLOSED');
+    expect(record.status).toEqual(CLOSED);
 
     let history: any = sanctioningEngine.getStatusHistory();
     const statuses = history.statusHistory.map((h: any) => h.toStatus);
-    expect(statuses).toContain('DRAFT');
-    expect(statuses).toContain('SUBMITTED');
+    expect(statuses).toContain(DRAFT);
+    expect(statuses).toContain(SUBMITTED);
     expect(statuses).toContain(UNDER_REVIEW);
-    expect(statuses).toContain('APPROVED');
-    expect(statuses).toContain('ACTIVE');
+    expect(statuses).toContain(APPROVED);
+    expect(statuses).toContain(ACTIVE);
     expect(statuses).toContain(POST_EVENT);
-    expect(statuses).toContain('CLOSED');
+    expect(statuses).toContain(CLOSED);
   });
 });

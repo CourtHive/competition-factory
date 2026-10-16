@@ -20,6 +20,7 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { NATIVE, BRIDGE, LEGACY, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { HARD } from '@Constants/surfaceConstants';
 
 function scheduleOneMatchUp(opts: { startDate: string }) {
   const venueProfiles = [
@@ -185,7 +186,7 @@ describe('competitionScheduleMatchUps — public API shape', () => {
 
     const ac: any = tournamentEngine.addCourt({
       venueId,
-      court: { courtName: 'Court 1', surfaceCategory: 'HARD', courtId },
+      court: { courtName: 'Court 1', surfaceCategory: HARD, courtId },
     });
     expect(ac.court?.courtId).toEqual(courtId);
     expect(ac.venueId).toEqual(venueId);

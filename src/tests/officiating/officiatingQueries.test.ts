@@ -1,6 +1,16 @@
-import { MISSING_EVALUATION_POLICY, MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { describe, expect, it } from 'vitest';
+import {
+  MISSING_EVALUATION_POLICY,
+  MISSING_OFFICIAL_RECORD,
+  EVAL_APPROVED,
+  EVAL_DRAFT,
+  CERT_ACTIVE,
+  CERT_EXPIRED,
+  ASSIGN_PROPOSED,
+  ASSIGN_COMPLETED,
+  EVAL_SUBMITTED,
+} from '@Constants/officiatingConstants';
 
 // Fixtures
 import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@Fixtures/policies/POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE';
@@ -50,7 +60,7 @@ describe('getEvaluations', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 4,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           scores: [],
         },
         {
@@ -59,7 +69,7 @@ describe('getEvaluations', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-07-01',
           overallRating: 3,
-          status: 'DRAFT',
+          status: EVAL_DRAFT,
           scores: [],
         },
       ],
@@ -78,7 +88,7 @@ describe('getEvaluations', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 4,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           scores: [],
         },
         {
@@ -87,7 +97,7 @@ describe('getEvaluations', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-07-01',
           overallRating: 3,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           scores: [],
         },
       ],
@@ -106,7 +116,7 @@ describe('getEvaluations', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 4,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           tournamentId: 't1',
           policyName: 'POL_A',
           scores: [],
@@ -117,7 +127,7 @@ describe('getEvaluations', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-07-01',
           overallRating: 3,
-          status: 'DRAFT',
+          status: EVAL_DRAFT,
           tournamentId: 't1',
           policyName: 'POL_A',
           scores: [],
@@ -128,7 +138,7 @@ describe('getEvaluations', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-08-01',
           overallRating: 5,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           tournamentId: 't2',
           policyName: 'POL_A',
           scores: [],
@@ -137,7 +147,7 @@ describe('getEvaluations', () => {
     });
     let result: any = getEvaluations({
       officialRecord: record,
-      status: 'APPROVED',
+      status: EVAL_APPROVED,
       tournamentId: 't1',
       policyName: 'POL_A',
     });
@@ -154,12 +164,12 @@ describe('getEvaluations', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 4,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           scores: [],
         },
       ],
     });
-    let result: any = getEvaluations({ officialRecord: record, status: 'DRAFT' });
+    let result: any = getEvaluations({ officialRecord: record, status: EVAL_DRAFT });
     expect(result.success).toBe(true);
     expect(result.evaluations).toHaveLength(0);
   });
@@ -182,14 +192,14 @@ describe('getOfficialCertifications', () => {
           personId: 'p1',
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
         },
         {
           certificationId: 'c2',
           personId: 'p1',
           organisationId: 'org2',
           certificationFamily: 'REFEREE',
-          status: 'EXPIRED',
+          status: CERT_EXPIRED,
         },
       ],
     });
@@ -207,7 +217,7 @@ describe('getOfficialCertifications', () => {
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
           certificationLevel: 'WHITE_BADGE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
         },
         {
           certificationId: 'c2',
@@ -215,7 +225,7 @@ describe('getOfficialCertifications', () => {
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
           certificationLevel: 'BRONZE_BADGE',
-          status: 'EXPIRED',
+          status: CERT_EXPIRED,
         },
         {
           certificationId: 'c3',
@@ -223,7 +233,7 @@ describe('getOfficialCertifications', () => {
           organisationId: 'org2',
           certificationFamily: 'UMPIRE',
           certificationLevel: 'WHITE_BADGE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
         },
       ],
     });
@@ -256,7 +266,7 @@ describe('getOfficialAssignments', () => {
           personId: 'p1',
           tournamentId: 't1',
           roleSubtype: 'CHAIR_UMPIRE',
-          status: 'PROPOSED',
+          status: ASSIGN_PROPOSED,
           assignedDate: '2025-01-01',
         },
         {
@@ -264,7 +274,7 @@ describe('getOfficialAssignments', () => {
           personId: 'p1',
           tournamentId: 't2',
           roleSubtype: 'REFEREE',
-          status: 'COMPLETED',
+          status: ASSIGN_COMPLETED,
           assignedDate: '2025-02-01',
         },
       ],
@@ -282,7 +292,7 @@ describe('getOfficialAssignments', () => {
           personId: 'p1',
           tournamentId: 't1',
           roleSubtype: 'CHAIR_UMPIRE',
-          status: 'COMPLETED',
+          status: ASSIGN_COMPLETED,
           assignedDate: '2025-01-01',
         },
         {
@@ -290,7 +300,7 @@ describe('getOfficialAssignments', () => {
           personId: 'p1',
           tournamentId: 't1',
           roleSubtype: 'REFEREE',
-          status: 'COMPLETED',
+          status: ASSIGN_COMPLETED,
           assignedDate: '2025-02-01',
         },
         {
@@ -298,7 +308,7 @@ describe('getOfficialAssignments', () => {
           personId: 'p1',
           tournamentId: 't2',
           roleSubtype: 'CHAIR_UMPIRE',
-          status: 'PROPOSED',
+          status: ASSIGN_PROPOSED,
           assignedDate: '2025-03-01',
         },
       ],
@@ -307,7 +317,7 @@ describe('getOfficialAssignments', () => {
       officialRecord: record,
       tournamentId: 't1',
       roleSubtype: 'CHAIR_UMPIRE',
-      status: 'COMPLETED',
+      status: ASSIGN_COMPLETED,
     });
     expect(result.assignments).toHaveLength(1);
     expect(result.assignments[0].assignmentId).toBe('a1');
@@ -340,7 +350,7 @@ describe('getEvaluationSummary', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 5,
-          status: 'DRAFT',
+          status: EVAL_DRAFT,
           scores: [],
         },
       ],
@@ -359,7 +369,7 @@ describe('getEvaluationSummary', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 4,
-          status: 'DRAFT',
+          status: EVAL_DRAFT,
           scores: [],
         },
         {
@@ -368,7 +378,7 @@ describe('getEvaluationSummary', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-07-01',
           overallRating: 2,
-          status: 'SUBMITTED',
+          status: EVAL_SUBMITTED,
           scores: [],
         },
       ],
@@ -389,7 +399,7 @@ describe('getEvaluationSummary', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-01-01',
           overallRating: 4,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           scores: [],
         },
         {
@@ -398,7 +408,7 @@ describe('getEvaluationSummary', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 3,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           scores: [],
         },
         {
@@ -407,7 +417,7 @@ describe('getEvaluationSummary', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-03-01',
           overallRating: 5,
-          status: 'DRAFT',
+          status: EVAL_DRAFT,
           scores: [],
         },
       ],
@@ -430,7 +440,7 @@ describe('getEvaluationSummary', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 4,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           policyName: policy.policyName,
           scores: [
             { criterionId: 'rules_knowledge', sectionId: 'pre_match', value: 5 },
@@ -470,7 +480,7 @@ describe('getEvaluationSummary', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 2,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           policyName: policy.policyName,
           scores: [{ criterionId: 'rules_knowledge', sectionId: 'pre_match', value: 2 }],
         },
@@ -490,7 +500,7 @@ describe('getEvaluationSummary', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 4,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           policyName: 'NONEXISTENT',
           scores: [],
         },
@@ -576,7 +586,7 @@ describe('getOfficialEligibility', () => {
           personId: 'p1',
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
           validFrom: '2025-01-01',
           validUntil: '2027-12-31',
         },
@@ -599,7 +609,7 @@ describe('getOfficialEligibility', () => {
           personId: 'p1',
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
         },
       ],
       suspensions: [{ suspensionId: 's1', personId: 'p1', suspendedFrom: '2026-01-01', suspendedUntil: '2026-12-31' }],
@@ -633,7 +643,7 @@ describe('getOfficialEligibility', () => {
           personId: 'p1',
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
           validUntil: '2020-12-31',
         },
       ],
@@ -655,7 +665,7 @@ describe('getOfficialEligibility', () => {
           personId: 'p1',
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
           validFrom: '2028-01-01',
         },
       ],
@@ -677,7 +687,7 @@ describe('getOfficialEligibility', () => {
           personId: 'p1',
           organisationId: 'org-other',
           certificationFamily: 'UMPIRE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
         },
       ],
     });
@@ -700,7 +710,7 @@ describe('getOfficialEligibility', () => {
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
           certificationLevel: 'BRONZE_BADGE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
         },
       ],
       certificationRequirements: [
@@ -719,7 +729,7 @@ describe('getOfficialEligibility', () => {
           personId: 'p1',
           tournamentId: 't1',
           roleSubtype: 'CHAIR_UMPIRE',
-          status: 'COMPLETED',
+          status: ASSIGN_COMPLETED,
           assignedDate: '2025-01-01',
         },
       ],
@@ -743,7 +753,7 @@ describe('getOfficialEligibility', () => {
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
           certificationLevel: 'SILVER_BADGE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
         },
       ],
       certificationRequirements: [
@@ -776,7 +786,7 @@ describe('getOfficialEligibility', () => {
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
           certificationLevel: 'SILVER_BADGE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
         },
       ],
       certificationRequirements: [
@@ -796,7 +806,7 @@ describe('getOfficialEligibility', () => {
           subjectPersonId: 'p1',
           evaluationDate: '2025-06-01',
           overallRating: 3,
-          status: 'APPROVED',
+          status: EVAL_APPROVED,
           scores: [],
         },
       ],
@@ -820,7 +830,7 @@ describe('getOfficialEligibility', () => {
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
           certificationLevel: 'GOLD_BADGE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
         },
       ],
       certificationRequirements: [
@@ -853,7 +863,7 @@ describe('getOfficialEligibility', () => {
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
           certificationLevel: 'GOLD_BADGE',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
         },
         {
           certificationId: 'c2',
@@ -861,7 +871,7 @@ describe('getOfficialEligibility', () => {
           organisationId: 'org1',
           certificationFamily: 'UMPIRE',
           certificationLevel: 'SILVER_BADGE',
-          status: 'EXPIRED',
+          status: CERT_EXPIRED,
         },
       ],
       certificationRequirements: [

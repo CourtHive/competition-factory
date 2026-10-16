@@ -4,7 +4,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
-import { CONFLICT_BYE_SCHEDULED, CONFLICT_COURT_DOUBLE_BOOKING } from '@Constants/scheduleConstants';
+import { CONFLICT_BYE_SCHEDULED, CONFLICT_COURT_DOUBLE_BOOKING, SCHEDULE_WARNING } from '@Constants/scheduleConstants';
 import { MATCHUP_HAS_SCHEDULING } from '@Constants/errorConditionConstants';
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
@@ -226,7 +226,7 @@ describe('a court-holding BYE is visible and flagged, not hidden', () => {
     const flagged = issuesOfType(CONFLICT_BYE_SCHEDULED);
     expect(flagged.length).toEqual(1);
     expect((flagged[0] as any).matchUpId).toEqual(target.matchUpId);
-    expect((flagged[0] as any).issue).toEqual('WARNING');
+    expect((flagged[0] as any).issue).toEqual(SCHEDULE_WARNING);
   });
 
   it('CONTROL: an unscheduled BYE is not flagged — the annotation tracks court occupancy', () => {

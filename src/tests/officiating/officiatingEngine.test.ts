@@ -6,6 +6,23 @@ import { beforeEach, describe, expect, it } from 'vitest';
 // Fixtures
 import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@Fixtures/policies/POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE';
 
+// constants
+import {
+  CERT_ACTIVE,
+  CERT_SUSPENDED,
+  CERT_REVOKED,
+  CERT_EXPIRED,
+  EVAL_DRAFT,
+  EVAL_SUBMITTED,
+  EVAL_REVIEWED,
+  EVAL_APPROVED,
+  EVAL_REJECTED,
+  ASSIGN_PROPOSED,
+  ASSIGN_CONFIRMED,
+  ASSIGN_COMPLETED,
+  CONFLICT_BLOCK,
+} from '@Constants/officiatingConstants';
+
 function createTestRecord(overrides?: any) {
   return officiatingEngine.createOfficialRecord({
     personId: 'person-001',
@@ -102,7 +119,7 @@ describe('Officiating Engine — Certifications', () => {
     });
     expect(result.success).toBe(true);
     expect(result.certification.certificationFamily).toBe('UMPIRE');
-    expect(result.certification.status).toBe('ACTIVE');
+    expect(result.certification.status).toBe(CERT_ACTIVE);
   });
 
   it('modifies a certification', () => {
@@ -144,11 +161,11 @@ describe('Officiating Engine — Certifications', () => {
 
     result = officiatingEngine.transitionCertificationStatus({
       certificationId,
-      toStatus: 'SUSPENDED',
+      toStatus: CERT_SUSPENDED,
       reason: 'Disciplinary review',
     });
     expect(result.success).toBe(true);
-    expect(result.certification.status).toBe('SUSPENDED');
+    expect(result.certification.status).toBe(CERT_SUSPENDED);
     expect(result.certification.statusHistory).toHaveLength(2);
   });
 
@@ -156,13 +173,13 @@ describe('Officiating Engine — Certifications', () => {
     let result: any = officiatingEngine.addCertification({
       organisationId: 'org-001',
       certificationFamily: 'UMPIRE',
-      status: 'REVOKED',
+      status: CERT_REVOKED,
     });
     const { certificationId } = result.certification;
 
     result = officiatingEngine.transitionCertificationStatus({
       certificationId,
-      toStatus: 'ACTIVE',
+      toStatus: CERT_ACTIVE,
     });
     expect(result.error).toBeDefined();
   });
@@ -207,7 +224,7 @@ describe('Officiating Engine — Certifications', () => {
     officiatingEngine.addCertification({
       organisationId: 'org-001',
       certificationFamily: 'UMPIRE',
-      status: 'EXPIRED',
+      status: CERT_EXPIRED,
     });
 
     let result: any = officiatingEngine.getOfficialCertifications({
@@ -230,7 +247,7 @@ describe('Officiating Engine — Evaluations', () => {
       overallRating: 4.2,
     });
     expect(result.success).toBe(true);
-    expect(result.evaluation.status).toBe('DRAFT');
+    expect(result.evaluation.status).toBe(EVAL_DRAFT);
     expect(result.evaluation.overallRating).toBe(4.2);
     expect(result.evaluation.subjectPersonId).toBe('person-001');
   });
@@ -259,7 +276,7 @@ describe('Officiating Engine — Evaluations', () => {
 
     officiatingEngine.transitionEvaluationStatus({
       evaluationId,
-      toStatus: 'SUBMITTED',
+      toStatus: EVAL_SUBMITTED,
     });
 
     result = officiatingEngine.modifyEvaluation({
@@ -276,13 +293,13 @@ describe('Officiating Engine — Evaluations', () => {
     });
     const { evaluationId } = result.evaluation;
 
-    result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: 'SUBMITTED' });
+    result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: EVAL_SUBMITTED });
     expect(result.success).toBe(true);
 
-    result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: 'REVIEWED' });
+    result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: EVAL_REVIEWED });
     expect(result.success).toBe(true);
 
-    result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: 'APPROVED' });
+    result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: EVAL_APPROVED });
     expect(result.success).toBe(true);
 
     expect(result.evaluation.statusHistory).toHaveLength(4);
@@ -295,7 +312,7 @@ describe('Officiating Engine — Evaluations', () => {
     });
     const { evaluationId } = result.evaluation;
 
-    result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: 'APPROVED' });
+    result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: EVAL_APPROVED });
     expect(result.error).toBeDefined();
   });
 
@@ -306,12 +323,12 @@ describe('Officiating Engine — Evaluations', () => {
     });
     const { evaluationId } = result.evaluation;
 
-    officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: 'SUBMITTED' });
-    officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: 'REJECTED' });
+    officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: EVAL_SUBMITTED });
+    officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: EVAL_REJECTED });
 
-    result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: 'DRAFT' });
+    result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: EVAL_DRAFT });
     expect(result.success).toBe(true);
-    expect(result.evaluation.status).toBe('DRAFT');
+    expect(result.evaluation.status).toBe(EVAL_DRAFT);
   });
 
   it('removes an evaluation', () => {
@@ -349,7 +366,7 @@ describe('Officiating Engine — Assignments', () => {
       roleSubtype: 'CHAIR_UMPIRE',
     });
     expect(result.success).toBe(true);
-    expect(result.assignment.status).toBe('PROPOSED');
+    expect(result.assignment.status).toBe(ASSIGN_PROPOSED);
     expect(result.assignment.tournamentId).toBe('tournament-001');
   });
 
@@ -360,10 +377,10 @@ describe('Officiating Engine — Assignments', () => {
     });
     const { assignmentId } = result.assignment;
 
-    result = officiatingEngine.transitionAssignmentStatus({ assignmentId, toStatus: 'CONFIRMED' });
+    result = officiatingEngine.transitionAssignmentStatus({ assignmentId, toStatus: ASSIGN_CONFIRMED });
     expect(result.success).toBe(true);
 
-    result = officiatingEngine.transitionAssignmentStatus({ assignmentId, toStatus: 'COMPLETED' });
+    result = officiatingEngine.transitionAssignmentStatus({ assignmentId, toStatus: ASSIGN_COMPLETED });
     expect(result.success).toBe(true);
     expect(result.assignment.statusHistory).toHaveLength(3);
   });
@@ -375,7 +392,7 @@ describe('Officiating Engine — Assignments', () => {
     });
     const { assignmentId } = result.assignment;
 
-    result = officiatingEngine.transitionAssignmentStatus({ assignmentId, toStatus: 'COMPLETED' });
+    result = officiatingEngine.transitionAssignmentStatus({ assignmentId, toStatus: ASSIGN_COMPLETED });
     expect(result.error).toBeDefined();
   });
 
@@ -511,14 +528,20 @@ describe('Officiating Engine — Evaluation Summary', () => {
   it('computes average rating from approved evaluations', () => {
     // Add and approve two evaluations
     let r1: any = officiatingEngine.addEvaluation({ evaluatorPersonId: 'e1', overallRating: 4.0 });
-    officiatingEngine.transitionEvaluationStatus({ evaluationId: r1.evaluation.evaluationId, toStatus: 'SUBMITTED' });
-    officiatingEngine.transitionEvaluationStatus({ evaluationId: r1.evaluation.evaluationId, toStatus: 'REVIEWED' });
-    officiatingEngine.transitionEvaluationStatus({ evaluationId: r1.evaluation.evaluationId, toStatus: 'APPROVED' });
+    officiatingEngine.transitionEvaluationStatus({
+      evaluationId: r1.evaluation.evaluationId,
+      toStatus: EVAL_SUBMITTED,
+    });
+    officiatingEngine.transitionEvaluationStatus({ evaluationId: r1.evaluation.evaluationId, toStatus: EVAL_REVIEWED });
+    officiatingEngine.transitionEvaluationStatus({ evaluationId: r1.evaluation.evaluationId, toStatus: EVAL_APPROVED });
 
     let r2: any = officiatingEngine.addEvaluation({ evaluatorPersonId: 'e2', overallRating: 3.0 });
-    officiatingEngine.transitionEvaluationStatus({ evaluationId: r2.evaluation.evaluationId, toStatus: 'SUBMITTED' });
-    officiatingEngine.transitionEvaluationStatus({ evaluationId: r2.evaluation.evaluationId, toStatus: 'REVIEWED' });
-    officiatingEngine.transitionEvaluationStatus({ evaluationId: r2.evaluation.evaluationId, toStatus: 'APPROVED' });
+    officiatingEngine.transitionEvaluationStatus({
+      evaluationId: r2.evaluation.evaluationId,
+      toStatus: EVAL_SUBMITTED,
+    });
+    officiatingEngine.transitionEvaluationStatus({ evaluationId: r2.evaluation.evaluationId, toStatus: EVAL_REVIEWED });
+    officiatingEngine.transitionEvaluationStatus({ evaluationId: r2.evaluation.evaluationId, toStatus: EVAL_APPROVED });
 
     // Add a draft evaluation (should be excluded)
     officiatingEngine.addEvaluation({ evaluatorPersonId: 'e3', overallRating: 1.0 });
@@ -574,7 +597,7 @@ describe('Officiating Engine — Evaluation Policy & Template', () => {
 
     result = officiatingEngine.transitionEvaluationStatus({
       evaluationId,
-      toStatus: 'SUBMITTED',
+      toStatus: EVAL_SUBMITTED,
     });
     expect(result.error).toBeDefined();
     expect(result.error.code).toBe('ERR_INVALID_EVALUATION_SCORES');
@@ -602,7 +625,7 @@ describe('Officiating Engine — Evaluation Policy & Template', () => {
 
     result = officiatingEngine.transitionEvaluationStatus({
       evaluationId,
-      toStatus: 'SUBMITTED',
+      toStatus: EVAL_SUBMITTED,
     });
     expect(result.success).toBe(true);
   });
@@ -651,7 +674,7 @@ describe('Officiating Engine — Execution Queue', () => {
         },
         {
           method: 'transitionCertificationStatus',
-          params: { certificationId: 'nonexistent', toStatus: 'EXPIRED' },
+          params: { certificationId: 'nonexistent', toStatus: CERT_EXPIRED },
         },
       ],
       true,
@@ -675,7 +698,7 @@ describe('Officiating Engine — Execution Queue', () => {
       },
       {
         method: 'transitionCertificationStatus',
-        params: { toStatus: 'SUSPENDED' },
+        params: { toStatus: CERT_SUSPENDED },
         pipe: { certificationId: true },
       },
     ]);
@@ -853,7 +876,7 @@ describe('Officiating Engine — Execution Queue Extended', () => {
         },
         {
           method: 'transitionCertificationStatus',
-          params: { certificationId: 'nonexistent', toStatus: 'EXPIRED' },
+          params: { certificationId: 'nonexistent', toStatus: CERT_EXPIRED },
         },
       ],
       false,
@@ -966,7 +989,7 @@ describe('Officiating Engine — Conflict of Interest', () => {
       participants: [{ participantId: 'par-1', person: { personId: 'person-042' } }],
       policyDefinitions: {
         officiatingConflict: {
-          conflictRules: { DECLARED_RELATIONSHIP: { enabled: true, severity: 'BLOCK' } },
+          conflictRules: { DECLARED_RELATIONSHIP: { enabled: true, severity: CONFLICT_BLOCK } },
         },
       },
     });

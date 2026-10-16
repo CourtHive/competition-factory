@@ -7,7 +7,7 @@ import { expect, it } from 'vitest';
 import { INVALID_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
-import { FEMALE, MALE } from '@Constants/genderConstants';
+import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
@@ -27,7 +27,7 @@ function setupMixedDoubles() {
   tournamentEngine.attachPolicies({ policyDefinitions: POLICY_MATCHUP_ACTIONS_DEFAULT });
   const mixedDoubles = tournamentEngine
     .allTournamentMatchUps()
-    .matchUps.find((m: any) => m.matchUpType === DOUBLES_MATCHUP && m.gender === 'MIXED');
+    .matchUps.find((m: any) => m.matchUpType === DOUBLES_MATCHUP && m.gender === MIXED);
   expect(mixedDoubles).toBeDefined();
   return mixedDoubles;
 }

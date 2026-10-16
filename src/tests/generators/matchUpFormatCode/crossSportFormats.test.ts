@@ -2,6 +2,9 @@ import * as matchUpFormatCode from '@Assemblies/governors/matchUpFormatGovernor'
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { RALLY, TRADITIONAL, CONSECUTIVE } from '@Constants/matchUpFormatConstants';
+
 // Helper: round-trip test (parse → stringify → compare) + validate
 function expectRoundTrip(format: string, expectedObj?: object) {
   const parsed = matchUpFormatCode.parse(format);
@@ -28,7 +31,7 @@ describe('Pickleball formats', () => {
   it('rally scoring to 11', () => {
     expectRoundTrip('SET3-S:TB11@RALLY', {
       bestOf: 3,
-      setFormat: { tiebreakSet: { tiebreakTo: 11, modifier: 'RALLY' } },
+      setFormat: { tiebreakSet: { tiebreakTo: 11, modifier: RALLY } },
     });
   });
 
@@ -56,22 +59,22 @@ describe('Pickleball formats', () => {
   it('rally scoring to 21', () => {
     expectRoundTrip('SET3-S:TB21@RALLY', {
       bestOf: 3,
-      setFormat: { tiebreakSet: { tiebreakTo: 21, modifier: 'RALLY' } },
+      setFormat: { tiebreakSet: { tiebreakTo: 21, modifier: RALLY } },
     });
   });
 
   it('no-deuce rally scoring to 21', () => {
     expectRoundTrip('SET3-S:TB21NOAD@RALLY', {
       bestOf: 3,
-      setFormat: { tiebreakSet: { tiebreakTo: 21, modifier: 'RALLY', NoAD: true } },
+      setFormat: { tiebreakSet: { tiebreakTo: 21, modifier: RALLY, NoAD: true } },
     });
   });
 
   it('MLP format: 4 games to 21, 5th to 15, rally scoring', () => {
     expectRoundTrip('SET5-S:TB21@RALLY-F:TB15@RALLY', {
       bestOf: 5,
-      setFormat: { tiebreakSet: { tiebreakTo: 21, modifier: 'RALLY' } },
-      finalSetFormat: { tiebreakSet: { tiebreakTo: 15, modifier: 'RALLY' } },
+      setFormat: { tiebreakSet: { tiebreakTo: 21, modifier: RALLY } },
+      finalSetFormat: { tiebreakSet: { tiebreakTo: 15, modifier: RALLY } },
     });
   });
 
@@ -85,15 +88,15 @@ describe('Pickleball formats', () => {
   it('single game rally scoring to 11', () => {
     expectRoundTrip('SET1-S:TB11@RALLY', {
       bestOf: 1,
-      setFormat: { tiebreakSet: { tiebreakTo: 11, modifier: 'RALLY' } },
+      setFormat: { tiebreakSet: { tiebreakTo: 11, modifier: RALLY } },
     });
   });
 
   it('no-deuce rally to 21 with tiebreaker to 15', () => {
     expectRoundTrip('SET3-S:TB21NOAD@RALLY-F:TB15NOAD@RALLY', {
       bestOf: 3,
-      setFormat: { tiebreakSet: { tiebreakTo: 21, modifier: 'RALLY', NoAD: true } },
-      finalSetFormat: { tiebreakSet: { tiebreakTo: 15, modifier: 'RALLY', NoAD: true } },
+      setFormat: { tiebreakSet: { tiebreakTo: 21, modifier: RALLY, NoAD: true } },
+      finalSetFormat: { tiebreakSet: { tiebreakTo: 15, modifier: RALLY, NoAD: true } },
     });
   });
 });
@@ -149,7 +152,7 @@ describe('Padel Star Point formats (2026)', () => {
     expectRoundTrip('SET3-S:6/TB7-G:TN3D', {
       bestOf: 3,
       setFormat: { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } },
-      gameFormat: { type: 'TRADITIONAL', deuceAfter: 3 },
+      gameFormat: { type: TRADITIONAL, deuceAfter: 3 },
     });
   });
 
@@ -157,7 +160,7 @@ describe('Padel Star Point formats (2026)', () => {
     expectRoundTrip('SET3-S:6/TB7-G:TN1D', {
       bestOf: 3,
       setFormat: { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } },
-      gameFormat: { type: 'TRADITIONAL', deuceAfter: 1 },
+      gameFormat: { type: TRADITIONAL, deuceAfter: 1 },
     });
   });
 
@@ -165,7 +168,7 @@ describe('Padel Star Point formats (2026)', () => {
     expectRoundTrip('SET3-S:T10-G:TN3D', {
       bestOf: 3,
       setFormat: { timed: true, minutes: 10 },
-      gameFormat: { type: 'TRADITIONAL', deuceAfter: 3 },
+      gameFormat: { type: TRADITIONAL, deuceAfter: 3 },
     });
   });
 
@@ -173,7 +176,7 @@ describe('Padel Star Point formats (2026)', () => {
     expectRoundTrip('SET3-S:6/TB7-G:TN3D-F:TB10', {
       bestOf: 3,
       setFormat: { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } },
-      gameFormat: { type: 'TRADITIONAL', deuceAfter: 3 },
+      gameFormat: { type: TRADITIONAL, deuceAfter: 3 },
       finalSetFormat: { tiebreakSet: { tiebreakTo: 10 } },
     });
   });
@@ -305,7 +308,7 @@ describe('TYPTI formats (Timed Yielding Points in Tennis Intervals)', () => {
     expectRoundTrip('SET5-S:5-G:3C', {
       bestOf: 5,
       setFormat: { setTo: 5, noTiebreak: true },
-      gameFormat: { type: 'CONSECUTIVE', count: 3 },
+      gameFormat: { type: CONSECUTIVE, count: 3 },
     });
   });
 
@@ -313,7 +316,7 @@ describe('TYPTI formats (Timed Yielding Points in Tennis Intervals)', () => {
     expectRoundTrip('SET3-S:4-G:2C', {
       bestOf: 3,
       setFormat: { setTo: 4, noTiebreak: true },
-      gameFormat: { type: 'CONSECUTIVE', count: 2 },
+      gameFormat: { type: CONSECUTIVE, count: 2 },
     });
   });
 
@@ -321,7 +324,7 @@ describe('TYPTI formats (Timed Yielding Points in Tennis Intervals)', () => {
     expectRoundTrip('SET5-S:5-G:4C', {
       bestOf: 5,
       setFormat: { setTo: 5, noTiebreak: true },
-      gameFormat: { type: 'CONSECUTIVE', count: 4 },
+      gameFormat: { type: CONSECUTIVE, count: 4 },
     });
   });
 
@@ -329,7 +332,7 @@ describe('TYPTI formats (Timed Yielding Points in Tennis Intervals)', () => {
     expectRoundTrip('SET3-S:4/TB5-G:3C', {
       bestOf: 3,
       setFormat: { setTo: 4, tiebreakAt: 4, tiebreakFormat: { tiebreakTo: 5 } },
-      gameFormat: { type: 'CONSECUTIVE', count: 3 },
+      gameFormat: { type: CONSECUTIVE, count: 3 },
     });
   });
 
@@ -337,7 +340,7 @@ describe('TYPTI formats (Timed Yielding Points in Tennis Intervals)', () => {
     expectRoundTrip('SET1-S:5-G:3C', {
       bestOf: 1,
       setFormat: { setTo: 5, noTiebreak: true },
-      gameFormat: { type: 'CONSECUTIVE', count: 3 },
+      gameFormat: { type: CONSECUTIVE, count: 3 },
     });
   });
 });
@@ -363,7 +366,7 @@ describe('INTENNSE format', () => {
     expectRoundTrip('SET3-S:T10-G:TN', {
       bestOf: 3,
       setFormat: { timed: true, minutes: 10 },
-      gameFormat: { type: 'TRADITIONAL' },
+      gameFormat: { type: TRADITIONAL },
     });
   });
 });

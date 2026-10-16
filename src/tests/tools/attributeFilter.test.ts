@@ -3,6 +3,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { INDIVIDUAL } from '@Constants/participantConstants';
+import { WTN, NTRP } from '@Constants/ratingConstants';
 import { MALE } from '@Constants/genderConstants';
 
 const timeStamp = '0001-01-01T00:00:00';
@@ -80,7 +81,7 @@ it('can filter attributes from arrays of object', () => {
   const expectedParticipant = {
     participantName: Ivan,
     participantId: '1234567',
-    participantType: 'INDIVIDUAL',
+    participantType: INDIVIDUAL,
     person: {
       addresses: [{ city: 'Cuernavaca', state: 'Morelos' }],
       nationalityCode: 'AUT',
@@ -141,7 +142,7 @@ it('supports templates which contain objects not present in source', () => {
   const expectedParticipant = {
     participantName: Ivan,
     participantId: '1234567',
-    participantType: 'INDIVIDUAL',
+    participantType: INDIVIDUAL,
     person: {
       nationalityCode: 'AUT',
       standardFamilyName: 'Illich',
@@ -203,7 +204,7 @@ it('supports sources which contain attributes not present in templates', () => {
   const expectedParticipant = {
     participantName: Ivan,
     participantId: '1234567',
-    participantType: 'INDIVIDUAL',
+    participantType: INDIVIDUAL,
     person: {
       nationalityCode: 'AUT',
       standardFamilyName: 'Illich',
@@ -225,7 +226,7 @@ it('can apply the same filter template to multiple attributes', () => {
             gameZoneLower: 31.14,
             gameZoneUpper: 27.57,
           },
-          scaleName: 'WTN',
+          scaleName: WTN,
         },
       ],
       SINGLES: [
@@ -238,11 +239,11 @@ it('can apply the same filter template to multiple attributes', () => {
             wtnRating: 24.52,
             wtnRatingDate: '2022-05-27T09:54:44.383Z',
           },
-          scaleName: 'WTN',
+          scaleName: WTN,
         },
         {
           scaleValue: {
-            ratingType: 'NTRP',
+            ratingType: NTRP,
             benchmarkType: '',
             dntrpRatingHundredths: 0,
             eventSubType: 'SINGLES',
@@ -255,7 +256,7 @@ it('can apply the same filter template to multiple attributes', () => {
             updatedAt: timeStamp,
             ustaRatingType: '',
           },
-          scaleName: 'NTRP',
+          scaleName: NTRP,
         },
       ],
     },
@@ -264,7 +265,7 @@ it('can apply the same filter template to multiple attributes', () => {
   let template: any = {
     ratings: {
       'SINGLES||DOUBLES': {
-        scaleName: ['WTN'],
+        scaleName: [WTN],
         scaleValue: { wtnRating: true },
       },
     },
@@ -282,7 +283,7 @@ it('can apply the same filter template to multiple attributes', () => {
   template = {
     ratings: {
       'SINGLES||DOUBLES': {
-        scaleName: ['WTN', 'NTRP'],
+        scaleName: [WTN, NTRP],
         scaleValue: { wtnRating: true, ntrpRating: true },
       },
     },
@@ -300,7 +301,7 @@ it('can apply the same filter template to multiple attributes', () => {
   template = {
     ratings: {
       'SINGLES||DOUBLES': {
-        scaleName: ['NTRP'],
+        scaleName: [NTRP],
         scaleValue: {
           '*': true,
           ntrpRatingHundredths: false,
@@ -318,7 +319,7 @@ it('can apply the same filter template to multiple attributes', () => {
   expect(filteredObject.ratings.SINGLES.length).toEqual(1);
 
   const rating = filteredObject.ratings.SINGLES[0];
-  expect(rating.scaleName).toEqual('NTRP');
+  expect(rating.scaleName).toEqual(NTRP);
   expect(rating.scaleValue.ntrpRatingHundredths).toBeUndefined();
   expect(rating.scaleValue.dntrpRatingHundredths).toBeUndefined();
   expect(rating.scaleValue.eventType).toEqual('ADULT');

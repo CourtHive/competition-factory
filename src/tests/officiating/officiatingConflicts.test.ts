@@ -11,6 +11,8 @@ import {
 // constants
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { GROUP } from '@Constants/participantConstants';
+import { COACH } from '@Constants/participantRoles';
 import {
   CONFLICT_DECLARATION_NOT_FOUND,
   OFFICIAL_CONFLICT_OF_INTEREST,
@@ -411,9 +413,9 @@ describe('assignOfficial conflict gate', () => {
       groupParticipants: [
         {
           participantId: 'grp-1',
-          participantType: 'GROUP',
+          participantType: GROUP,
           participantName: 'Team Alpha',
-          participantRole: 'COACH',
+          participantRole: COACH,
           individualParticipantIds: ['par-official', 'par-competitor'],
         } as any,
       ],
@@ -438,8 +440,8 @@ describe('assignOfficial conflict gate', () => {
       groupParticipants: [
         {
           participantId: 'grp-1',
-          participantType: 'GROUP',
-          participantRole: 'COACH',
+          participantType: GROUP,
+          participantRole: COACH,
           individualParticipantIds: ['someone-else', 'par-competitor'],
         } as any,
       ],

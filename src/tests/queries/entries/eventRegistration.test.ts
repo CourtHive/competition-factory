@@ -5,6 +5,7 @@ import type { Event, Tournament } from '@Types/tournamentTypes';
 
 // constants
 import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 /**
  * A2 and A3.
@@ -138,13 +139,13 @@ describe('EventEntryProfile round-trips', () => {
         entriesLimit: 64,
         targetDrawSize: 64,
         selectionProcess: 'TOP_DOWN_BY_RATING' as const,
-        selectionScaleName: 'WTN',
+        selectionScaleName: WTN,
         wildcardCount: 4,
         waitlistEnabled: true,
       },
     } as Event;
     expect(event.entryProfile?.selectionProcess).toBe('TOP_DOWN_BY_RATING');
-    expect(event.entryProfile?.selectionScaleName).toBe('WTN');
+    expect(event.entryProfile?.selectionScaleName).toBe(WTN);
     expect(event.entryProfile?.entriesLimit).toBe(64);
   });
 });

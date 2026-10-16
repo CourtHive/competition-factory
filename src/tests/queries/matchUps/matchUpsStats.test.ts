@@ -10,7 +10,10 @@ import { DEFAULTED, WALKOVER as WALKOVER_STATUS } from '@Constants/matchUpStatus
 import { COMPETITIVE, DECISIVE, ROUTINE, WALKOVER } from '@Constants/statsConstants';
 import { MISSING_EVENT } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { CLAY, HARD, GRASS } from '@Constants/surfaceConstants';
+import { OUTDOOR, INDOOR } from '@Constants/venueConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import { MALE } from '@Constants/genderConstants';
 
 it('can generate competitive statistics for matchUps and add competitiveness', () => {
   const mocksProfile = {
@@ -286,17 +289,17 @@ describe('allEventMatchUps branch coverage', () => {
     });
 
     const event = tournamentRecord.events.find((e) => e.eventId === eventId);
-    event.surfaceCategory = 'CLAY';
-    event.indoorOutdoor = 'OUTDOOR';
-    event.gender = 'MALE';
+    event.surfaceCategory = CLAY;
+    event.indoorOutdoor = OUTDOOR;
+    event.gender = MALE;
 
     const result = allEventMatchUps({ event, tournamentRecord, inContext: true });
     expect(result.matchUps).toBeDefined();
     const matchUp = result.matchUps?.[0];
     if (matchUp) {
-      expect(matchUp.surfaceCategory).toEqual('CLAY');
+      expect(matchUp.surfaceCategory).toEqual(CLAY);
       expect(matchUp.indoorOutDoor).toEqual('OUTDOOR');
-      expect(matchUp.gender).toEqual('MALE');
+      expect(matchUp.gender).toEqual(MALE);
     }
   });
 
@@ -311,14 +314,14 @@ describe('allEventMatchUps branch coverage', () => {
     const event = tournamentRecord.events.find((e) => e.eventId === eventId);
     delete event.surfaceCategory;
     delete event.indoorOutdoor;
-    tournamentRecord.surfaceCategory = 'HARD';
-    tournamentRecord.indoorOutdoor = 'INDOOR';
+    tournamentRecord.surfaceCategory = HARD;
+    tournamentRecord.indoorOutdoor = INDOOR;
 
     const result = allEventMatchUps({ event, tournamentRecord, inContext: true });
     expect(result.matchUps).toBeDefined();
     const matchUp = result.matchUps?.[0];
     if (matchUp) {
-      expect(matchUp.surfaceCategory).toEqual('HARD');
+      expect(matchUp.surfaceCategory).toEqual(HARD);
       expect(matchUp.indoorOutDoor).toEqual('INDOOR');
     }
   });
@@ -461,10 +464,10 @@ describe('eventMatchUps branch coverage', () => {
     });
 
     const event = tournamentRecord.events.find((e) => e.eventId === eventId);
-    event.surfaceCategory = 'GRASS';
-    event.indoorOutdoor = 'OUTDOOR';
-    tournamentRecord.surfaceCategory = 'HARD';
-    tournamentRecord.indoorOutdoor = 'INDOOR';
+    event.surfaceCategory = GRASS;
+    event.indoorOutdoor = OUTDOOR;
+    tournamentRecord.surfaceCategory = HARD;
+    tournamentRecord.indoorOutdoor = INDOOR;
 
     const result = eventMatchUps({ event, tournamentRecord, inContext: true });
     expect(result.success).toBeDefined();
@@ -481,8 +484,8 @@ describe('eventMatchUps branch coverage', () => {
     const event = tournamentRecord.events.find((e) => e.eventId === eventId);
     delete event.surfaceCategory;
     delete event.indoorOutdoor;
-    tournamentRecord.surfaceCategory = 'HARD';
-    tournamentRecord.indoorOutdoor = 'INDOOR';
+    tournamentRecord.surfaceCategory = HARD;
+    tournamentRecord.indoorOutdoor = INDOOR;
 
     const result = eventMatchUps({ event, tournamentRecord, inContext: true });
     expect(result.success).toBeDefined();

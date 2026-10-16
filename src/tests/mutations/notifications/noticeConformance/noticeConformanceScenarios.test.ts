@@ -9,7 +9,11 @@ import { DOUBLES_EVENT, TEAM_EVENT, SINGLES_EVENT } from '@Constants/eventConsta
 import { GROUP, INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { ALTERNATE, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { COMPETITOR, OTHER } from '@Constants/participantRoles';
-import { RANKING } from '@Constants/scaleConstants';
+import { RANKING, RATING } from '@Constants/scaleConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { BALL_ABUSE } from '@Constants/penaltyConstants';
+import { INDOOR } from '@Constants/venueConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 /**
  * Workstream D-scenarios (slice 2). A data-driven catalog that runs each mutation
@@ -436,7 +440,7 @@ const scenarios: Scenario[] = [
     run: (ctx) =>
       tournamentEngine.setParticipantScaleItem({
         participantId: ctx.enteredIds[0],
-        scaleItem: { scaleType: 'RATING', eventType: SINGLES_EVENT, scaleName: 'WTN', scaleValue: 15 },
+        scaleItem: { scaleType: RATING, eventType: SINGLES_EVENT, scaleName: WTN, scaleValue: 15 },
       }),
   },
 
@@ -578,7 +582,7 @@ const scenarios: Scenario[] = [
       tournamentEngine.addCollectionDefinition({
         drawId: ctx.drawId,
         collectionDefinition: {
-          matchUpType: 'DOUBLES',
+          matchUpType: DOUBLES_MATCHUP,
           matchUpFormat: 'SET1-S:T10P',
           collectionName: 'Overtime',
           matchUpCount: 1,
@@ -622,7 +626,7 @@ const scenarios: Scenario[] = [
           {
             participantId: 'conf-new-participant',
             participantType: INDIVIDUAL,
-            participantRole: 'COMPETITOR',
+            participantRole: COMPETITOR,
             person: { standardGivenName: 'New', standardFamilyName: 'Entrant' },
           },
         ],
@@ -641,7 +645,7 @@ const scenarios: Scenario[] = [
     run: (ctx) =>
       tournamentEngine.addPenalty({
         participantIds: [ctx.enteredIds[0]],
-        penaltyType: 'BALL_ABUSE',
+        penaltyType: BALL_ABUSE,
         penaltyCode: 'conf-penalty',
         matchUpId: ctx.matchUpId,
         drawId: ctx.drawId,
@@ -711,7 +715,7 @@ const scenarios: Scenario[] = [
     },
     run: () => {
       const venue = tournamentEngine.getTournament().tournamentRecord.venues[0];
-      tournamentEngine.modifyCourt({ courtId: venue.courts[0].courtId, modifications: { indoorOutdoor: 'INDOOR' } });
+      tournamentEngine.modifyCourt({ courtId: venue.courts[0].courtId, modifications: { indoorOutdoor: INDOOR } });
     },
   },
   {
@@ -811,11 +815,11 @@ const scenarios: Scenario[] = [
       const enteredPairIds = new Set(event.entries.map((e: any) => e.participantId));
       const pairedIndividuals = new Set(
         record.participants
-          .filter((p: any) => p.participantType === 'PAIR' && enteredPairIds.has(p.participantId))
+          .filter((p: any) => p.participantType === PAIR && enteredPairIds.has(p.participantId))
           .flatMap((p: any) => p.individualParticipantIds ?? []),
       );
       const spare = record.participants
-        .filter((p: any) => p.participantType === 'INDIVIDUAL' && !pairedIndividuals.has(p.participantId))
+        .filter((p: any) => p.participantType === INDIVIDUAL && !pairedIndividuals.has(p.participantId))
         .map((p: any) => p.participantId);
       tournamentEngine.modifyEventEntries({ eventId: ctx.eventId, unpairedParticipantIds: [spare[0], spare[1]] });
     },
@@ -996,7 +1000,7 @@ const scenarios: Scenario[] = [
         participantFilters: { participantTypes: [INDIVIDUAL] },
       });
       const result: any = tournamentEngine.scaledTeamAssignment({
-        scaleAttributes: { scaleName: 'WTN', scaleType: RANKING, eventType: SINGLES_EVENT },
+        scaleAttributes: { scaleName: WTN, scaleType: RANKING, eventType: SINGLES_EVENT },
         individualParticipantIds: participants.slice(0, 8).map(({ participantId }) => participantId),
         eventId: ctx.eventId,
       });

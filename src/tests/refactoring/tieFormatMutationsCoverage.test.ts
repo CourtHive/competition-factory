@@ -8,6 +8,7 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
+import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { TEAM } from '@Constants/eventConstants';
@@ -34,7 +35,7 @@ describe('checkTieFormat branch coverage', () => {
         collectionDefinitions: [
           {
             collectionName: 'Singles',
-            matchUpType: 'SINGLES',
+            matchUpType: SINGLES_MATCHUP,
             matchUpFormat: 'SET3-S:6/TB7',
             matchUpCount: 3,
             matchUpValue: 1,
@@ -183,7 +184,7 @@ describe('addCollectionDefinition additional coverage', () => {
       collectionDefinition: {
         collectionName: 'Massive Singles',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 10,
         matchUpValue: 5,
       },
@@ -207,7 +208,7 @@ describe('addCollectionDefinition additional coverage', () => {
       collectionDefinition: {
         collectionName: 'SetValue Collection',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 2,
         setValue: 1,
       },
@@ -283,7 +284,7 @@ describe('modifyTieFormat branch coverage', () => {
         {
           collectionId: 'brand-new-id-1',
           collectionName: 'New Singles',
-          matchUpType: 'SINGLES',
+          matchUpType: SINGLES_MATCHUP,
           matchUpFormat: 'SET3-S:6/TB7',
           matchUpCount: 3,
           matchUpValue: 1,
@@ -385,7 +386,7 @@ describe('resetTieFormat branch coverage', () => {
       collectionDefinition: {
         collectionName: 'Extra',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },
@@ -466,7 +467,7 @@ describe('writeTieFormat centralized path coverage', () => {
       collectionDefinition: {
         collectionName: 'Centralized Test',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },
@@ -553,7 +554,7 @@ describe('collectionGroupUpdate MISSING_DRAW_DEFINITION branch', () => {
       collectionDefinition: {
         collectionName: 'For Group',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'DOUBLES',
+        matchUpType: DOUBLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },
@@ -681,7 +682,7 @@ describe('addCollectionGroup with matchUp having existing tieFormat', () => {
       collectionDefinition: {
         collectionName: 'Group Target 1',
         matchUpFormat: 'SET1-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 2,
         matchUpValue: 1,
       },
@@ -694,7 +695,7 @@ describe('addCollectionGroup with matchUp having existing tieFormat', () => {
       collectionDefinition: {
         collectionName: 'Group Target 2',
         matchUpFormat: 'SET1-S:6/TB7',
-        matchUpType: 'DOUBLES',
+        matchUpType: DOUBLES_MATCHUP,
         matchUpCount: 2,
         matchUpValue: 1,
       },
@@ -800,7 +801,7 @@ describe('modifyCollectionDefinition with matchUpId scope', () => {
       collectionDefinition: {
         collectionName: 'MU Extra',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },

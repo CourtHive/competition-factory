@@ -5,6 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { COLLEGE_D3, COLLEGE_JUCO } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { DOUBLES } from '@Constants/matchUpTypes';
@@ -87,7 +88,7 @@ describe('COLLEGE_DEFAULT valueGoal', () => {
 
   // the nine-point formats keep valueGoal 5 — the fix must not sweep them up
   it('leaves the nine-point college formats at five', () => {
-    for (const name of ['COLLEGE_D3', 'COLLEGE_JUCO']) {
+    for (const name of [COLLEGE_D3, COLLEGE_JUCO]) {
       const tieFormat: any = (tieFormats as any)[name];
       const maxValue = tieFormat.collectionDefinitions.reduce(
         (total: number, c: any) => total + (c.collectionValue ?? (c.matchUpValue ?? 0) * (c.matchUpCount ?? 0)),

@@ -4,6 +4,7 @@ import { expect, test } from 'vitest';
 
 // constants
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import { DOMINANT_DUO_MIXED } from '@Constants/tieFormatConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
@@ -38,7 +39,7 @@ const tieFormats = {
         gender: FEMALE,
       },
     ],
-    tieFormatName: 'DOMINANT_DUO_MIXED',
+    tieFormatName: DOMINANT_DUO_MIXED,
     winCriteria: {
       valueGoal: 2,
     },

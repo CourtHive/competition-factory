@@ -7,6 +7,7 @@ import { expect, it } from 'vitest';
 // constants
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { MALE, FEMALE } from '@Constants/genderConstants';
 const { SINGLES, DOUBLES } = eventConstants;
 
 const avoidancePolicy = {
@@ -20,7 +21,7 @@ it('can generate SINGLE_ELIMINATION drawDefinition using country avoidance with 
     avoidance: avoidancePolicy,
     participantType: PAIR,
     eventType: DOUBLES,
-    sex: 'MALE',
+    sex: MALE,
   });
   if (error) console.log({ error });
   if (conflicts?.unseededConflicts) {
@@ -31,7 +32,7 @@ it('can generate SINGLE_ELIMINATION drawDefinition using country avoidance with 
     avoidance: avoidancePolicy,
     participantType: PAIR,
     eventType: DOUBLES,
-    sex: 'FEMALE',
+    sex: FEMALE,
   }));
   if (error) console.log({ error });
   if (conflicts?.unseededConflicts) {

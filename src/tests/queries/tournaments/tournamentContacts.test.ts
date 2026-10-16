@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { ADMINISTRATION, COMPETITOR, DIRECTOR, OFFICIAL } from '@Constants/participantRoles';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { FEMALE } from '@Constants/genderConstants';
 
 /**
  * `tournamentContacts` is the tournament's public "who to contact" list. It carried names and roles and
@@ -37,11 +39,11 @@ function seed({ role, contacts }: { role: string; contacts: any[] }) {
           nationalityCode: 'FRA',
           birthDate: '1970-05-05',
           personId: 'national-id-12345',
-          sex: 'FEMALE',
+          sex: FEMALE,
           contacts,
         },
         participantName: 'Dana Director',
-        participantType: 'INDIVIDUAL',
+        participantType: INDIVIDUAL,
         participantId: 'staff-1',
         participantRole: role,
       },

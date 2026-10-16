@@ -25,7 +25,7 @@ test('ratings values should be present on tournamentParticipants in getEventData
   const drawProfiles = [
     {
       eventName: `WTN 14-19 SINGLES`,
-      category: { ratingType: 'WTN', ratingMin: 14, ratingMax: 19.99 },
+      category: { ratingType: WTN, ratingMin: 14, ratingMax: 19.99 },
       generate: true,
       drawSize: 4,
       drawId,

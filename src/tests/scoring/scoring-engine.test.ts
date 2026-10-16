@@ -2,6 +2,11 @@ import type { competitionFormat, PointMultiplier } from '@Assemblies/governors/s
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { describe, it, expect } from 'vitest';
 
+// constants
+import { UNSPORTSMANLIKE_CONDUCT, BALL_ABUSE, RACKET_ABUSE } from '@Constants/penaltyConstants';
+import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { BETWEEN_POINTS } from '@Constants/competitionFormatConstants';
+
 const INTENNSE_STANDARD: competitionFormat = {
   competitionFormatName: 'INTENNSE_STANDARD',
   matchUpFormat: 'SET7XA-S:T10P',
@@ -15,19 +20,19 @@ const INTENNSE_STANDARD: competitionFormat = {
   timeoutRules: { count: 5, per: 'MATCHUP', durationSeconds: 60 },
   substitutionRules: {
     allowed: true,
-    allowedMatchUpTypes: ['SINGLES', 'DOUBLES'],
-    timing: 'BETWEEN_POINTS',
+    allowedMatchUpTypes: [SINGLES_MATCHUP, DOUBLES_MATCHUP],
+    timing: BETWEEN_POINTS,
   },
   playerRules: {
     maxMinutesPerSegment: 6,
-    matchUpTypes: ['SINGLES'],
+    matchUpTypes: [SINGLES_MATCHUP],
   },
   penaltyProfile: {
     sport: 'INTENNSE',
     penaltyTypes: [
-      { penaltyType: 'UNSPORTSMANLIKE_CONDUCT', label: 'Unsportsmanlike', category: 'conduct' },
-      { penaltyType: 'BALL_ABUSE', label: 'Ball Abuse', category: 'conduct' },
-      { penaltyType: 'RACKET_ABUSE', label: 'Racket Abuse', category: 'conduct' },
+      { penaltyType: UNSPORTSMANLIKE_CONDUCT, label: 'Unsportsmanlike', category: 'conduct' },
+      { penaltyType: BALL_ABUSE, label: 'Ball Abuse', category: 'conduct' },
+      { penaltyType: RACKET_ABUSE, label: 'Racket Abuse', category: 'conduct' },
     ],
     escalation: [
       { step: 1, consequence: 'warning' },
@@ -149,7 +154,7 @@ describe('ScoringEngine with competitionFormat', () => {
       expect(rules).toBeDefined();
       expect(rules!.allowed).toBe(true);
       expect(rules!.maxPerMatchUp).toBeUndefined(); // Omitted = unlimited
-      expect(rules!.timing).toBe('BETWEEN_POINTS');
+      expect(rules!.timing).toBe(BETWEEN_POINTS);
     });
 
     it('returns player rules', () => {

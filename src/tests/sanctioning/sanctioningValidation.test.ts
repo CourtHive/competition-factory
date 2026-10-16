@@ -11,6 +11,9 @@ import type { TierClassification } from '@Types/tournamentTypes';
 // constants
 import { SINGLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { OUTDOOR } from '@Constants/venueConstants';
+import { HARD } from '@Constants/surfaceConstants';
+import { MALE } from '@Constants/genderConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -24,13 +27,13 @@ const baseProposal: TournamentProposal = {
   proposedStartDate: '2027-06-01',
   proposedEndDate: '2027-06-07',
   hostCountryCode: 'USA',
-  surfaceCategory: 'HARD',
-  indoorOutdoor: 'OUTDOOR',
+  surfaceCategory: HARD,
+  indoorOutdoor: OUTDOOR,
   events: [
     {
       eventName: "Men's Singles",
       eventType: SINGLES_EVENT,
-      gender: 'MALE',
+      gender: MALE,
       drawSize: 32,
       drawType: SINGLE_ELIMINATION,
       matchUpFormat: 'SET3-S:6/TB7',
@@ -349,7 +352,7 @@ describe('Policy Validation — tier defaults from the sanctioning record', () =
       {
         eventName: "Men's Singles",
         eventType: SINGLES_EVENT,
-        gender: 'MALE',
+        gender: MALE,
         drawSize: 16,
         drawType: SINGLE_ELIMINATION,
         matchUpFormat: 'SET3-S:6/TB7',

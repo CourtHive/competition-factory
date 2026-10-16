@@ -25,6 +25,8 @@ import {
   ASSIGN_CONFIRMED,
   EVAL_SUBMITTED,
   EVAL_DRAFT,
+  CERT_ACTIVE,
+  ASSIGN_COMPLETED,
 } from '@Constants/officiatingConstants';
 
 // types
@@ -236,7 +238,7 @@ describe('modifyCertification — guards', () => {
           organisationId: 'org-1',
           certificationFamily: 'ITF',
           certificationLevel: 'Silver',
-          status: 'ACTIVE',
+          status: CERT_ACTIVE,
           statusHistory: [],
           extensions: [],
         } as any,
@@ -588,10 +590,10 @@ describe('transitionAssignmentStatus — guards and branches', () => {
     let result: any = transitionAssignmentStatus({
       officialRecord: record,
       assignmentId: 'a1',
-      toStatus: 'COMPLETED' as any,
+      toStatus: ASSIGN_COMPLETED as any,
     });
     expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
     expect(result.context.fromStatus).toBe(ASSIGN_PROPOSED);
-    expect(result.context.toStatus).toBe('COMPLETED');
+    expect(result.context.toStatus).toBe(ASSIGN_COMPLETED);
   });
 });

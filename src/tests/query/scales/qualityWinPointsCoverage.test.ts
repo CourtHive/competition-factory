@@ -19,7 +19,7 @@ function makeParticipant(id: string, rank?: number, scaleName = 'TEST', date?: s
   return { participantId: id, timeItems };
 }
 
-function makeMatchUp(matchUpId: string, winningSide: number, side1Id: string, side2Id: string, status = 'COMPLETED') {
+function makeMatchUp(matchUpId: string, winningSide: number, side1Id: string, side2Id: string, status = COMPLETED) {
   return {
     matchUpId,
     winningSide,

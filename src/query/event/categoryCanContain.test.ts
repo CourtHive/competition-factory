@@ -1,6 +1,9 @@
 import { categoryCanContain } from './categoryCanContain';
 import { expect, it } from 'vitest';
 
+// constants
+import { WTN } from '@Constants/ratingConstants';
+
 const scenarios = [
   {
     scenario: {
@@ -46,50 +49,50 @@ const scenarios = [
   },
   {
     scenario: {
-      childCategory: { ratingType: 'WTN' },
-      category: { ratingType: 'WTN' },
+      childCategory: { ratingType: WTN },
+      category: { ratingType: WTN },
     },
     expectation: { valid: true },
   },
   {
     scenario: {
-      childCategory: { ratingType: 'WTN', ratingMin: 10 },
-      category: { ratingType: 'WTN', ratingMin: 5 },
+      childCategory: { ratingType: WTN, ratingMin: 10 },
+      category: { ratingType: WTN, ratingMin: 5 },
     },
     expectation: { valid: true },
   },
   {
     scenario: {
-      childCategory: { ratingType: 'WTN', ratingMin: 5 },
-      category: { ratingType: 'WTN', ratingMin: 10 },
+      childCategory: { ratingType: WTN, ratingMin: 5 },
+      category: { ratingType: WTN, ratingMin: 10 },
     },
     expectation: { invalidRatingRange: true },
   },
   {
     scenario: {
-      childCategory: { ratingType: 'WTN', ratingMax: 15 },
-      category: { ratingType: 'WTN', ratingMax: 10 },
+      childCategory: { ratingType: WTN, ratingMax: 15 },
+      category: { ratingType: WTN, ratingMax: 10 },
     },
     expectation: { invalidRatingRange: true },
   },
   {
     scenario: {
-      childCategory: { ratingType: 'WTN', ratingMax: 15 },
-      category: { ratingType: 'WTN', ratingMin: 20 },
+      childCategory: { ratingType: WTN, ratingMax: 15 },
+      category: { ratingType: WTN, ratingMin: 20 },
     },
     expectation: { invalidRatingRange: true },
   },
   {
     scenario: {
-      childCategory: { ratingType: 'WTN', ratingMin: 15 },
-      category: { ratingType: 'WTN', ratingMax: 20 },
+      childCategory: { ratingType: WTN, ratingMin: 15 },
+      category: { ratingType: WTN, ratingMax: 20 },
     },
     expectation: { valid: true },
   },
   {
     scenario: {
-      childCategory: { ratingType: 'WTN', ratingMin: 15 },
-      category: { ratingType: 'WTN', ratingMax: 10 },
+      childCategory: { ratingType: WTN, ratingMin: 15 },
+      category: { ratingType: WTN, ratingMax: 10 },
     },
     expectation: { invalidRatingRange: true },
   },

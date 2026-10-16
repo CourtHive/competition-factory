@@ -19,6 +19,7 @@ import { expect, it, describe } from 'vitest';
 import { FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import {
   INCOMPATIBLE_MATCHUP_STATUS,
   INVALID_MATCHUP_STATUS,
@@ -138,7 +139,7 @@ describe('setMatchUpState TEAM matchUp branches', () => {
     });
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps.find((m) => m.matchUpType === 'TEAM' && m.readyToScore);
+    const teamMatchUp = matchUps.find((m) => m.matchUpType === TEAM_MATCHUP && m.readyToScore);
 
     if (teamMatchUp) {
       let result: any = tournamentEngine.setMatchUpStatus({

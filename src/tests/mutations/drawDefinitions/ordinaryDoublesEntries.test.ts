@@ -5,14 +5,16 @@ import { expect, it } from 'vitest';
 import { UNGROUPED, UNPAIRED, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { INVALID_ENTRIES } from '@Constants/errorConditionConstants';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 
 function setup() {
   const drawDefinition: DrawDefinition = {
     drawId: 'plain',
     drawType: AD_HOC,
-    matchUpType: 'DOUBLES',
+    matchUpType: DOUBLES_MATCHUP,
     entries: [],
     structures: [],
   };
@@ -30,9 +32,9 @@ function setup() {
     tournamentId: 't',
     events: [event],
     participants: [
-      { participantId: 'p1', participantType: 'INDIVIDUAL' },
-      { participantId: 'p2', participantType: 'INDIVIDUAL' },
-      { participantId: 'pair', participantType: 'PAIR', individualParticipantIds: ['p1', 'p2'] },
+      { participantId: 'p1', participantType: INDIVIDUAL },
+      { participantId: 'p2', participantType: INDIVIDUAL },
+      { participantId: 'pair', participantType: PAIR, individualParticipantIds: ['p1', 'p2'] },
     ],
   };
   tournamentEngine.setState(tournamentRecord);

@@ -10,6 +10,9 @@ import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sa
 // constants
 import { SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT, AGE, DOUBLES_EVENT } from '@Constants/eventConstants';
+import { MALE, FEMALE } from '@Constants/genderConstants';
+import { OUTDOOR } from '@Constants/venueConstants';
+import { HARD } from '@Constants/surfaceConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -24,15 +27,15 @@ const testProposal: TournamentProposal = {
   proposedStartDate: '2027-06-01',
   proposedEndDate: '2027-06-07',
   hostCountryCode: 'USA',
-  surfaceCategory: 'HARD',
-  indoorOutdoor: 'OUTDOOR',
+  surfaceCategory: HARD,
+  indoorOutdoor: OUTDOOR,
   localTimeZone: 'America/New_York',
   totalPrizeMoney: [{ amount: 25000, currencyCode: 'USD', unit: 'MAJOR' }],
   events: [
     {
       eventName: "Men's Singles",
       eventType: SINGLES_EVENT,
-      gender: 'MALE',
+      gender: MALE,
       drawSize: 32,
       drawType: SINGLE_ELIMINATION,
       matchUpFormat: 'SET3-S:6/TB7',
@@ -41,7 +44,7 @@ const testProposal: TournamentProposal = {
     {
       eventName: "Women's Singles",
       eventType: SINGLES_EVENT,
-      gender: 'FEMALE',
+      gender: FEMALE,
       drawSize: 32,
       drawType: SINGLE_ELIMINATION,
       allowedDrawTypes: [SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP],
@@ -91,8 +94,8 @@ describe('Activation — Tournament Generation', () => {
     expect(tr.startDate).toEqual('2027-06-01');
     expect(tr.endDate).toEqual('2027-06-07');
     expect(tr.hostCountryCode).toEqual('USA');
-    expect(tr.surfaceCategory).toEqual('HARD');
-    expect(tr.indoorOutdoor).toEqual('OUTDOOR');
+    expect(tr.surfaceCategory).toEqual(HARD);
+    expect(tr.indoorOutdoor).toEqual(OUTDOOR);
     expect(tr.localTimeZone).toEqual('America/New_York');
     expect(tr.tournamentStatus).toEqual('ACTIVE');
     expect(tr.processCodes).toContain('SANCTIONED');
@@ -109,7 +112,7 @@ describe('Activation — Tournament Generation', () => {
     const mensSingles = tr.events.find((e: any) => e.eventName === "Men's Singles");
     expect(mensSingles).toBeDefined();
     expect(mensSingles.eventType).toEqual(SINGLES_EVENT);
-    expect(mensSingles.gender).toEqual('MALE');
+    expect(mensSingles.gender).toEqual(MALE);
     expect(mensSingles.matchUpFormat).toEqual('SET3-S:6/TB7');
     expect(mensSingles.allowedDrawTypes).toEqual([SINGLE_ELIMINATION]);
     expect(mensSingles.category?.categoryName).toEqual('Open');

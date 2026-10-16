@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 
 /**
  * A structure report identifies its winner by `winningPersonId` — a PERSON id,
@@ -75,7 +76,7 @@ describe('Structure report — winningParticipantId', () => {
     for (const row of decided) {
       const participant = byId[row.winningParticipantId];
       expect(participant).toBeTruthy();
-      expect(participant.participantType).toEqual('INDIVIDUAL');
+      expect(participant.participantType).toEqual(INDIVIDUAL);
       // The id and the displayed name must agree — that agreement is the whole
       // contract, and it is what a PAIR id would break.
       expect(participant.participantName).toEqual(row.winner);

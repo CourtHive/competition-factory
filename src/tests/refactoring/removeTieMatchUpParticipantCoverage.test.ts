@@ -14,6 +14,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { REMOVE_PARTICIPANT } from '@Constants/matchUpActionConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { PAIR } from '@Constants/participantConstants';
@@ -523,7 +524,7 @@ describe('removeTieMatchUpParticipantId coverage', () => {
         drawId,
       });
 
-      const removeAction = result.validActions?.find(({ type }) => type === 'REMOVE_PARTICIPANT');
+      const removeAction = result.validActions?.find(({ type }) => type === REMOVE_PARTICIPANT);
       if (removeAction) {
         const { method: removeMethod, payload: removePayload } = removeAction;
         removePayload.participantId = substituteParticipantId;
@@ -999,7 +1000,7 @@ describe('removeTieMatchUpParticipantId coverage', () => {
         sideNumber,
         drawId,
       });
-      const removeAction = result.validActions?.find(({ type }) => type === 'REMOVE_PARTICIPANT');
+      const removeAction = result.validActions?.find(({ type }) => type === REMOVE_PARTICIPANT);
       if (removeAction) {
         removeAction.payload.participantId = availableParticipantIds[0];
         result = tournamentEngine[removeAction.method](removeAction.payload);
@@ -1178,7 +1179,7 @@ describe('removeTieMatchUpParticipantId coverage', () => {
     // remove substitute from side 1 — other side still has substitutions,
     // so removeSubstitutionProcessCodes condition is false (codes preserved)
     result = tournamentEngine.matchUpActions({ matchUpId: tieMatchUpId, sideNumber: 1, drawId });
-    const removeAction = result.validActions?.find(({ type }) => type === 'REMOVE_PARTICIPANT');
+    const removeAction = result.validActions?.find(({ type }) => type === REMOVE_PARTICIPANT);
     if (removeAction) {
       removeAction.payload.participantId = sub1Action.availableParticipantIds[0];
       result = tournamentEngine[removeAction.method](removeAction.payload);
@@ -1416,7 +1417,7 @@ describe('removeTieMatchUpParticipantId coverage', () => {
 
     for (const structure of drawDef.structures) {
       for (const matchUp of structure.matchUps ?? []) {
-        if (matchUp.matchUpType === 'TEAM' && matchUp.sides?.length) {
+        if (matchUp.matchUpType === TEAM && matchUp.sides?.length) {
           // check if any of its tieMatchUps includes our target
           const hasTieMatchUp = matchUp.tieMatchUps?.some((tm) => tm.matchUpId === singlesMatchUp.matchUpId);
           if (hasTieMatchUp) {

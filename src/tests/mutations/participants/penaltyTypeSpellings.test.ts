@@ -4,8 +4,17 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
-import { penaltyConstants } from '@Constants/penaltyConstants';
 import { PenaltyTypeEnum } from '@Types/tournamentTypes';
+import {
+  penaltyConstants,
+  EQUIPMENT_VIOLATION,
+  FAILURE_TO_SIGN_IN,
+  BALL_ABUSE,
+  TIME_VIOLATION,
+  AUDIBLE_OBSCENITY,
+  VISIBLE_OBSCENITY,
+  FAILURE_TO_SIGN_OUT,
+} from '@Constants/penaltyConstants';
 
 /**
  * Two penalty types were published misspelled, EQUIMENT_VIOLATION and FAILUIRE_TO_SIGN_IN (CA,
@@ -14,16 +23,16 @@ import { PenaltyTypeEnum } from '@Types/tournamentTypes';
  * callers keep working, and every write stores the correct spelling. They go at the next major.
  */
 it('the correct spellings exist beside the deprecated ones', () => {
-  expect(PenaltyTypeEnum.EQUIPMENT_VIOLATION).toEqual('EQUIPMENT_VIOLATION');
-  expect(PenaltyTypeEnum.FAILURE_TO_SIGN_IN).toEqual('FAILURE_TO_SIGN_IN');
+  expect(PenaltyTypeEnum.EQUIPMENT_VIOLATION).toEqual(EQUIPMENT_VIOLATION);
+  expect(PenaltyTypeEnum.FAILURE_TO_SIGN_IN).toEqual(FAILURE_TO_SIGN_IN);
   expect(penaltyConstants.EQUIPMENT_VIOLATION).toEqual(penaltyConstants.EQUIMENT_VIOLATION);
   expect(penaltyConstants.FAILURE_TO_SIGN_IN).toEqual(penaltyConstants.FAILUIRE_TO_SIGN_IN);
 });
 
 it('normalises the two misspelled codes, and leaves a correct code alone', () => {
-  expect(normalizePenaltyType('EQUIMENT_VIOLATION')).toEqual('EQUIPMENT_VIOLATION');
-  expect(normalizePenaltyType('FAILUIRE_TO_SIGN_IN')).toEqual('FAILURE_TO_SIGN_IN');
-  expect(normalizePenaltyType('BALL_ABUSE')).toEqual('BALL_ABUSE');
+  expect(normalizePenaltyType('EQUIMENT_VIOLATION')).toEqual(EQUIPMENT_VIOLATION);
+  expect(normalizePenaltyType('FAILUIRE_TO_SIGN_IN')).toEqual(FAILURE_TO_SIGN_IN);
+  expect(normalizePenaltyType(BALL_ABUSE)).toEqual(BALL_ABUSE);
   expect(normalizePenaltyType(undefined)).toBeUndefined();
 });
 
@@ -39,12 +48,12 @@ it('a penalty added or modified with a misspelled type is stored with the correc
   expect(result.success).toEqual(true);
   const { penaltyId } = result.penaltyId ? result : { penaltyId: result.penalty?.penaltyId };
   let stored = tournamentEngine.getTournamentPenalties().penalties.find((p: any) => p.penaltyId === penaltyId);
-  expect(stored.penaltyType).toEqual('EQUIPMENT_VIOLATION');
+  expect(stored.penaltyType).toEqual(EQUIPMENT_VIOLATION);
 
   result = tournamentEngine.modifyPenalty({ penaltyId, modifications: { penaltyType: 'FAILUIRE_TO_SIGN_IN' } });
   expect(result.success).toEqual(true);
   stored = tournamentEngine.getTournamentPenalties().penalties.find((p: any) => p.penaltyId === penaltyId);
-  expect(stored.penaltyType).toEqual('FAILURE_TO_SIGN_IN');
+  expect(stored.penaltyType).toEqual(FAILURE_TO_SIGN_IN);
 });
 
 /**
@@ -80,7 +89,7 @@ it('the two misspelled penalty labels are rewritten to their codes on write', ()
  * be keyed by an enum code.
  */
 it('the code-of-conduct offences of the legacy vocabulary are penalty types', () => {
-  for (const code of ['TIME_VIOLATION', 'AUDIBLE_OBSCENITY', 'VISIBLE_OBSCENITY', 'FAILURE_TO_SIGN_OUT']) {
+  for (const code of [TIME_VIOLATION, AUDIBLE_OBSCENITY, VISIBLE_OBSCENITY, FAILURE_TO_SIGN_OUT]) {
     expect(PenaltyTypeEnum[code]).toEqual(code);
     expect(penaltyConstants[code]).toBeDefined();
   }

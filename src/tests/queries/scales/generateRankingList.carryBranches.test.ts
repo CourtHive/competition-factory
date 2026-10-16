@@ -7,6 +7,8 @@ import type { CategoryAggregationRule } from '@Types/rankingTypes';
 // constants
 import { SINGLE_ELIMINATION, FEED_IN } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { FEMALE, MALE } from '@Constants/genderConstants';
+import { WTN, UTR } from '@Constants/ratingConstants';
 
 /**
  * The CARRY path of `generateRankingList` — how a category-aggregation rule selects source awards,
@@ -72,20 +74,20 @@ describe('generateRankingList — what a carry rule takes as its source', () => 
 
   it('scopes the source by gender, read from the category or the award', () => {
     const pointAwards = [
-      award({ personId: 'girl', category: { ageCategoryCode: '12U', gender: 'FEMALE' }, points: 100 }),
-      award({ personId: 'boy', gender: 'MALE', points: 100 }),
+      award({ personId: 'girl', category: { ageCategoryCode: '12U', gender: FEMALE }, points: 100 }),
+      award({ personId: 'boy', gender: MALE, points: 100 }),
       award({ personId: 'unknown', points: 100 }),
     ];
-    const entries = list14U(pointAwards, carryTo14U({ source: { ageCategoryCodes: ['12U'], genders: ['FEMALE'] } }));
+    const entries = list14U(pointAwards, carryTo14U({ source: { ageCategoryCodes: ['12U'], genders: [FEMALE] } }));
     expect(entries.map((entry: any) => entry.personId)).toEqual(['girl']);
   });
 
   it('scopes the source by category name and by rating type', () => {
     const pointAwards = [
-      award({ personId: 'named', category: { ageCategoryCode: '12U', categoryName: 'Open', ratingType: 'WTN' } }),
-      award({ personId: 'otherName', category: { ageCategoryCode: '12U', categoryName: 'Novice', ratingType: 'WTN' } }),
-      award({ personId: 'noName', category: { ageCategoryCode: '12U', ratingType: 'WTN' } }),
-      award({ personId: 'otherRating', category: { ageCategoryCode: '12U', categoryName: 'Open', ratingType: 'UTR' } }),
+      award({ personId: 'named', category: { ageCategoryCode: '12U', categoryName: 'Open', ratingType: WTN } }),
+      award({ personId: 'otherName', category: { ageCategoryCode: '12U', categoryName: 'Novice', ratingType: WTN } }),
+      award({ personId: 'noName', category: { ageCategoryCode: '12U', ratingType: WTN } }),
+      award({ personId: 'otherRating', category: { ageCategoryCode: '12U', categoryName: 'Open', ratingType: UTR } }),
       award({ personId: 'noRating', category: { ageCategoryCode: '12U', categoryName: 'Open' } }),
     ];
     const byName = list14U(pointAwards, carryTo14U({ source: { categoryNames: ['Open'] } }));
@@ -95,7 +97,7 @@ describe('generateRankingList — what a carry rule takes as its source', () => 
       'otherRating',
     ]);
 
-    const byRating = list14U(pointAwards, carryTo14U({ source: { ratingTypes: ['WTN'] } }));
+    const byRating = list14U(pointAwards, carryTo14U({ source: { ratingTypes: [WTN] } }));
     expect(byRating.map((entry: any) => entry.personId).sort((a, b) => a.localeCompare(b))).toEqual([
       'named',
       'noName',
@@ -125,18 +127,18 @@ describe('generateRankingList — what a carry rule takes as its source', () => 
 
 describe('generateRankingList — which target lists a carry rule feeds', () => {
   it('feeds a list whose gender filter overlaps the target, and no other', () => {
-    const rule = carryTo14U({ target: { ageCategoryCodes: ['14U'], genders: ['FEMALE'] } });
-    const pointAwards = [award({ category: { ageCategoryCode: '12U', gender: 'FEMALE' }, points: 100 })];
+    const rule = carryTo14U({ target: { ageCategoryCodes: ['14U'], genders: [FEMALE] } });
+    const pointAwards = [award({ category: { ageCategoryCode: '12U', gender: FEMALE }, points: 100 })];
 
     const female = generateRankingList({
-      categoryFilter: { ageCategoryCodes: ['14U'], genders: ['FEMALE'] },
+      categoryFilter: { ageCategoryCodes: ['14U'], genders: [FEMALE] },
       aggregationRules: { categoryAggregation: [rule] },
       pointAwards: pointAwards as any,
     });
     expect(pointsOf(female)).toEqual(100);
 
     const male = generateRankingList({
-      categoryFilter: { ageCategoryCodes: ['14U'], genders: ['MALE'] },
+      categoryFilter: { ageCategoryCodes: ['14U'], genders: [MALE] },
       aggregationRules: { categoryAggregation: [rule] },
       pointAwards: pointAwards as any,
     });

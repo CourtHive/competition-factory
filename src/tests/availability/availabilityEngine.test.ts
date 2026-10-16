@@ -24,6 +24,10 @@ import {
   type EngineEvent,
 } from '@Assemblies/governors/availabilityGovernor/types';
 
+// constants
+import { PRACTICE, MAINTENANCE, BLOCKED, DRYING, CLOSED } from '@Constants/bookingTypeConstants';
+import { OUTDOOR, INDOOR } from '@Constants/venueConstants';
+
 // ============================================================================
 // Test Fixtures
 // ============================================================================
@@ -50,14 +54,14 @@ function makeBasicRecord() {
             courtId: COURT_1,
             courtName: 'Court 1',
             surfaceCategory: 'clay',
-            indoorOutdoor: 'OUTDOOR',
+            indoorOutdoor: OUTDOOR,
             hasLights: true,
           },
           {
             courtId: COURT_2,
             courtName: 'Court 2',
             surfaceCategory: 'hard',
-            indoorOutdoor: 'INDOOR',
+            indoorOutdoor: INDOOR,
             hasLights: false,
           },
         ],
@@ -119,7 +123,7 @@ describe('Engine Lifecycle', () => {
     (record.venues[0].courts[0] as any).dateAvailability = [
       {
         date: '2026-06-15',
-        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'PRACTICE' }],
+        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: PRACTICE }],
       },
     ];
     engine.init(record, { tournamentId: TEST_TOURNAMENT });
@@ -691,8 +695,8 @@ describe('Tournament Record Loading', () => {
       {
         date: '2026-06-15',
         bookings: [
-          { startTime: '10:00', endTime: '11:00', bookingType: 'PRACTICE' },
-          { startTime: '14:00', endTime: '15:00', bookingType: 'MAINTENANCE' },
+          { startTime: '10:00', endTime: '11:00', bookingType: PRACTICE },
+          { startTime: '14:00', endTime: '15:00', bookingType: MAINTENANCE },
         ],
       },
     ];
@@ -714,7 +718,7 @@ describe('Tournament Record Loading', () => {
         date: '2026-06-15',
         startTime: '08:00',
         endTime: '20:00',
-        bookings: [{ startTime: '12:00', endTime: '13:00', bookingType: 'MAINTENANCE' }],
+        bookings: [{ startTime: '12:00', endTime: '13:00', bookingType: MAINTENANCE }],
       },
     ];
 
@@ -735,7 +739,7 @@ describe('Tournament Record Loading', () => {
     (record.venues[0].courts[0] as any).dateAvailability = [
       {
         date: '2026-06-15',
-        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'MAINTENANCE' }],
+        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: MAINTENANCE }],
       },
     ];
 
@@ -750,7 +754,7 @@ describe('Tournament Record Loading', () => {
     (record.venues[0].courts[0] as any).dateAvailability = [
       {
         date: '2026-06-15',
-        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'PRACTICE' }],
+        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: PRACTICE }],
       },
     ];
 
@@ -770,7 +774,7 @@ describe('Tournament Record Loading', () => {
     (record.venues[0].courts[0] as any).dateAvailability = [
       {
         date: '2026-06-15',
-        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'BLOCKED' }],
+        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: BLOCKED }],
       },
     ];
 
@@ -785,7 +789,7 @@ describe('Tournament Record Loading', () => {
     (record.venues[0].courts[0] as any).dateAvailability = [
       {
         date: '2026-06-15',
-        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'DRYING' }],
+        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: DRYING }],
       },
     ];
 
@@ -810,7 +814,7 @@ describe('Tournament Record Loading', () => {
     (record.venues[0].courts[0] as any).dateAvailability = [
       {
         date: '2026-06-15',
-        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: 'CLOSED' }],
+        bookings: [{ startTime: '10:00', endTime: '11:00', bookingType: CLOSED }],
       },
     ];
 
@@ -864,7 +868,7 @@ describe('Tournament Record Loading', () => {
     (record.venues[0].courts[0] as any).dateAvailability = [
       {
         date: '2026-06-15',
-        bookings: [{ startTime: '10:00', endTime: '11:30', bookingType: 'PRACTICE' }],
+        bookings: [{ startTime: '10:00', endTime: '11:30', bookingType: PRACTICE }],
       },
     ];
 
@@ -882,7 +886,7 @@ describe('Tournament Record Loading', () => {
     (record.venues[0].courts[0] as any).dateAvailability = [
       {
         date: '2026-06-15',
-        bookings: [{ startTime: '10:00:00', endTime: '11:30:00', bookingType: 'PRACTICE' }],
+        bookings: [{ startTime: '10:00:00', endTime: '11:30:00', bookingType: PRACTICE }],
       },
     ];
 

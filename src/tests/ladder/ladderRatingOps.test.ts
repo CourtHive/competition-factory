@@ -8,6 +8,7 @@ import { getLadderStanding } from '@Query/ladder/getLadderStanding';
 import { BY_RATING, RANK, RATING, SWAP } from '@Constants/ladderConstants';
 import { RATING as RATING_SCALE, SCALE } from '@Constants/scaleConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { UTR, WTN } from '@Constants/ratingConstants';
@@ -16,7 +17,7 @@ const AT = '2026-04-01T00:00:00.000Z';
 
 const withRating = (participantId: string, ratingType: string, scaleValue?: number) => ({
   participantId,
-  participantType: 'INDIVIDUAL',
+  participantType: INDIVIDUAL,
   timeItems:
     scaleValue === undefined
       ? []

@@ -9,6 +9,7 @@ import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sa
 
 // constants
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { MALE } from '@Constants/genderConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -21,7 +22,7 @@ const testProposal: TournamentProposal = {
   tournamentName: 'Test Open 2027',
   proposedStartDate: '2027-06-01',
   proposedEndDate: '2027-06-07',
-  events: [{ eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: 'MALE' }],
+  events: [{ eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: MALE }],
 };
 
 const testPolicy: SanctioningPolicy = { ...POLICY_SANCTIONING_GENERIC, requireEndorsement: false };

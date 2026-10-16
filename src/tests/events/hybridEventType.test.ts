@@ -8,8 +8,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, test, expect } from 'vitest';
 
 // constants
+import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { SINGLE_ELIMINATION, MAIN } from '@Constants/drawDefinitionConstants';
-import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { HYBRID } from '@Constants/eventConstants';
 
@@ -233,7 +233,7 @@ describe('HYBRID eventType', () => {
         {
           participantId: 'team-1',
           participantName: 'Team 1',
-          participantType: 'TEAM',
+          participantType: TEAM_PARTICIPANT,
           individualParticipantIds: [],
         },
       ],

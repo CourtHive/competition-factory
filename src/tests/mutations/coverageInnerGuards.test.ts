@@ -15,6 +15,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { BALL_ABUSE } from '@Constants/penaltyConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 import {
   INVALID_VALUES,
@@ -63,7 +64,7 @@ describe('addPenalty inner guards', () => {
     const result = addPenalty({
       tournamentRecords: { t1: undefined } as any,
       participantIds: ['p1'],
-      penaltyType: 'BALL_ABUSE' as any,
+      penaltyType: BALL_ABUSE as any,
       penaltyCode: 'TEST',
     });
     expect(result.error).toBeDefined();
@@ -73,7 +74,7 @@ describe('addPenalty inner guards', () => {
     const result = addPenalty({
       tournamentRecord: minimalTournament() as any,
       participantIds: ['nonexistent-id'],
-      penaltyType: 'BALL_ABUSE' as any,
+      penaltyType: BALL_ABUSE as any,
       penaltyCode: 'TEST',
     });
     expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);

@@ -7,6 +7,7 @@ import { expect, test } from 'vitest';
 
 // constants
 import { FEED_IN_CHAMPIONSHIP_TO_R16, MAIN } from '@Constants/drawDefinitionConstants';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 function getLoserMatchUpIdRounds(matchUps) {
@@ -162,7 +163,7 @@ test.each([tournamentEngineSync, tournamentEngineAsync])(
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 32, eventType: TEAM_EVENT, tieFormatName: 'DOMINANT_DUO' }],
+      drawProfiles: [{ drawSize: 32, eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO }],
     });
 
     expect(addMatchUpNotices.length).toEqual(124);

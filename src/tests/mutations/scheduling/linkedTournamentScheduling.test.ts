@@ -4,8 +4,10 @@ import { formatDate } from '@Tools/dateTime';
 import { expect, test } from 'vitest';
 
 // constants
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
+import { WTN } from '@Constants/ratingConstants';
 import {
   COMPASS,
   CURTIS_CONSOLATION,
@@ -52,7 +54,7 @@ const mockProfiles = [
       },
       {
         eventName: `WTN 5-8 SINGLES`,
-        category: { ratingType: 'WTN', ratingMin: 5, ratingMax: 8 },
+        category: { ratingType: WTN, ratingMin: 5, ratingMax: 8 },
         timeItems: [{ itemType: 'RETRIEVAL.RATING.SINGLES.WTN', itemValue: startDate }],
         generate: false,
         drawSize: 32,
@@ -93,7 +95,7 @@ const mockProfiles = [
     drawProfiles: [
       {
         eventName: 'Duo Draw',
-        tieFormatName: 'DOMINANT_DUO',
+        tieFormatName: DOMINANT_DUO,
         eventType: TEAM,
         drawSize: 8,
       },

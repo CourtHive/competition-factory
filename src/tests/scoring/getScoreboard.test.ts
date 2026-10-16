@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { IN_PROGRESS, COMPLETED } from '@Constants/matchUpStatusConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 
 function tennisScore(p1: number, p2: number): string {
   // Build enough game scores to place our target at the last index
@@ -32,7 +33,7 @@ function makeMatchUp(
     matchUpId: 'test-1',
     matchUpFormat: overrides.matchUpFormat ?? 'SET3-S:6/TB7',
     matchUpStatus: (overrides.matchUpStatus ?? IN_PROGRESS) as any,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     sides: [],
     score: { sets: overrides.sets ?? [] },
   } as MatchUp;

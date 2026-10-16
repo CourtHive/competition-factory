@@ -5,6 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
+import { PRACTICE, MAINTENANCE } from '@Constants/bookingTypeConstants';
 import {
   COURT_NOT_FOUND,
   INVALID_BOOKINGS,
@@ -141,9 +142,9 @@ it('can add events, venues, and modify court availbility', () => {
       endTime: '19:00',
       date: startDate,
       bookings: [
-        { startTime: '07:00', endTime: '08:30', bookingType: 'PRACTICE' },
-        { startTime: '08:30', endTime: '09:00', bookingType: 'MAINTENANCE' },
-        { startTime: '13:30', endTime: '14:00', bookingType: 'MAINTENANCE' },
+        { startTime: '07:00', endTime: '08:30', bookingType: PRACTICE },
+        { startTime: '08:30', endTime: '09:00', bookingType: MAINTENANCE },
+        { startTime: '13:30', endTime: '14:00', bookingType: MAINTENANCE },
       ],
     },
   ];
@@ -350,13 +351,13 @@ it('merges overlapping availability with bookings', () => {
         date: d210102,
         startTime: '08:00',
         endTime: '12:00',
-        bookings: [{ startTime: '08:00', endTime: '09:00', bookingType: 'PRACTICE' }],
+        bookings: [{ startTime: '08:00', endTime: '09:00', bookingType: PRACTICE }],
       },
       {
         date: d210102,
         startTime: '10:00',
         endTime: '17:00',
-        bookings: [{ startTime: '14:00', endTime: '15:00', bookingType: 'MAINTENANCE' }],
+        bookings: [{ startTime: '14:00', endTime: '15:00', bookingType: MAINTENANCE }],
       },
     ],
     courtId,
@@ -382,8 +383,8 @@ it('merging two overlapping windows that both hold bookings keeps one flat list 
   const { courts } = tournamentEngine.getCourts();
   const courtId = courts[0].courtId;
 
-  const practice = { startTime: '08:00', endTime: '09:00', bookingType: 'PRACTICE' };
-  const maintenance = { startTime: '14:00', endTime: '15:00', bookingType: 'MAINTENANCE' };
+  const practice = { startTime: '08:00', endTime: '09:00', bookingType: PRACTICE };
+  const maintenance = { startTime: '14:00', endTime: '15:00', bookingType: MAINTENANCE };
   const dateAvailability = [
     { date: d210102, startTime: '08:00', endTime: '12:00', bookings: [practice] },
     { date: d210102, startTime: '10:00', endTime: '17:00', bookings: [maintenance] },
@@ -420,7 +421,7 @@ it('merges overlapping availability where only the second entry has bookings', (
         date: d210102,
         startTime: '10:00',
         endTime: '17:00',
-        bookings: [{ startTime: '14:00', endTime: '15:00', bookingType: 'MAINTENANCE' }],
+        bookings: [{ startTime: '14:00', endTime: '15:00', bookingType: MAINTENANCE }],
       },
     ],
     courtId,
@@ -451,7 +452,7 @@ it('does not merge non-overlapping availability and preserves bookings on each',
         date: d210102,
         startTime: '08:00',
         endTime: '10:00',
-        bookings: [{ startTime: '08:00', endTime: '09:00', bookingType: 'PRACTICE' }],
+        bookings: [{ startTime: '08:00', endTime: '09:00', bookingType: PRACTICE }],
       },
       {
         date: d210102,

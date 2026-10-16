@@ -2,6 +2,9 @@ import { courtGridRows } from '@Assemblies/generators/scheduling/courtGridRows';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { BLOCKED, MAINTENANCE } from '@Constants/bookingTypeConstants';
+
 describe('courtGridRows with grid bookings', () => {
   it('marks cells as blocked when grid bookings exist', () => {
     tournamentEngine.devContext(true);
@@ -25,7 +28,7 @@ describe('courtGridRows with grid bookings', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 2,
       rowCount: 1,
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
     });
     expect(result.success).toEqual(true);
 
@@ -50,7 +53,7 @@ describe('courtGridRows with grid bookings', () => {
 
     expect(cell.isBlocked).toEqual(true);
     expect(cell.booking).toBeDefined();
-    expect(cell.booking.bookingType).toEqual('BLOCKED');
+    expect(cell.booking.bookingType).toEqual(BLOCKED);
     expect(cell.booking.courtOrder).toEqual(2);
 
     // Other rows should not be blocked
@@ -82,7 +85,7 @@ describe('courtGridRows with grid bookings', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 3,
       rowCount: 3,
-      bookingType: 'MAINTENANCE',
+      bookingType: MAINTENANCE,
     });
 
     const { venue: foundVenue } = tournamentEngine.findVenue({ venueId });
@@ -97,13 +100,13 @@ describe('courtGridRows with grid bookings', () => {
 
     // Rows 3, 4, 5 should be blocked
     expect(gridResult.rows?.[2]['C|0'].isBlocked).toEqual(true);
-    expect(gridResult.rows?.[2]['C|0'].booking.bookingType).toEqual('MAINTENANCE');
+    expect(gridResult.rows?.[2]['C|0'].booking.bookingType).toEqual(MAINTENANCE);
 
     expect(gridResult.rows?.[3]['C|0'].isBlocked).toEqual(true);
-    expect(gridResult.rows?.[3]['C|0'].booking.bookingType).toEqual('MAINTENANCE');
+    expect(gridResult.rows?.[3]['C|0'].booking.bookingType).toEqual(MAINTENANCE);
 
     expect(gridResult.rows?.[4]['C|0'].isBlocked).toEqual(true);
-    expect(gridResult.rows?.[4]['C|0'].booking.bookingType).toEqual('MAINTENANCE');
+    expect(gridResult.rows?.[4]['C|0'].booking.bookingType).toEqual(MAINTENANCE);
 
     // Rows 2 and 6 should NOT be blocked
     expect(gridResult.rows?.[1]['C|0'].isBlocked).toBeUndefined();
@@ -132,7 +135,7 @@ describe('courtGridRows with grid bookings', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 2,
       rowCount: 1,
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
     });
 
     const { venue: foundVenue } = tournamentEngine.findVenue({ venueId });
@@ -174,7 +177,7 @@ describe('courtGridRows with grid bookings', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 2,
       rowCount: 1,
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
     });
 
     const { venue: foundVenue } = tournamentEngine.findVenue({ venueId });
@@ -227,7 +230,7 @@ describe('courtGridRows with grid bookings', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 2,
       rowCount: 1,
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
     });
 
     const { venue: foundVenue } = tournamentEngine.findVenue({ venueId });
@@ -249,7 +252,7 @@ describe('courtGridRows with grid bookings', () => {
 
     // Court 1 (C|0) should be blocked
     expect(row2['C|0'].isBlocked).toEqual(true);
-    expect(row2['C|0'].booking.bookingType).toEqual('BLOCKED');
+    expect(row2['C|0'].booking.bookingType).toEqual(BLOCKED);
 
     // Court 2 (C|1) should NOT be blocked
     expect(row2['C|1'].isBlocked).toBeUndefined();
@@ -304,7 +307,7 @@ describe('courtGridRows with grid bookings', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 2,
       rowCount: 1,
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
     });
 
     const { venue: foundVenue } = tournamentEngine.findVenue({ venueId });

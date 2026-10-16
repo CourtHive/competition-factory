@@ -15,6 +15,8 @@ import { expect, it, describe } from 'vitest';
 import { COMPLETED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, BYE } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT, DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { RANKING } from '@Constants/scaleConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -693,7 +695,7 @@ describe('updateTieFormat advanced paths', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps?.find((m) => m.matchUpType === 'TEAM');
+    const teamMatchUp = matchUps?.find((m) => m.matchUpType === TEAM_MATCHUP);
 
     if (teamMatchUp?.tieFormat) {
       const { drawDefinition, event } = tournamentEngine.getEvent({ drawId: drawIds[0] });
@@ -880,7 +882,7 @@ describe('replaceTieMatchUpParticipant via engine', () => {
     if (singlesTieMatchUp) {
       const side = singlesTieMatchUp.sides?.find((s) => s.participant);
       const existingParticipantId = side?.participant?.participantId;
-      const teamMatchUp = matchUps?.find((m) => m.matchUpType === 'TEAM');
+      const teamMatchUp = matchUps?.find((m) => m.matchUpType === TEAM_MATCHUP);
       const teamSide = teamMatchUp?.sides?.find((s) => s.sideNumber === side?.sideNumber);
       const teamParticipant = teamSide?.participant;
 
@@ -910,7 +912,7 @@ describe('replaceTieMatchUpParticipant via engine', () => {
     if (singlesTieMatchUp) {
       const side = singlesTieMatchUp.sides?.find((s) => s.participant);
       const existingParticipantId = side?.participant?.participantId;
-      const teamMatchUp = matchUps?.find((m) => m.matchUpType === 'TEAM');
+      const teamMatchUp = matchUps?.find((m) => m.matchUpType === TEAM_MATCHUP);
       const teamSide = teamMatchUp?.sides?.find((s) => s.sideNumber === side?.sideNumber);
       const teamParticipant = teamSide?.participant;
 
@@ -1059,7 +1061,7 @@ describe('positionAssignment additional paths', () => {
     // Find a participant not in the draw
     const allParticipants = tournamentRecord.participants || [];
     const unassignedParticipant = allParticipants.find(
-      (p) => p.participantType === 'INDIVIDUAL' && !assignedIds.includes(p.participantId),
+      (p) => p.participantType === INDIVIDUAL && !assignedIds.includes(p.participantId),
     );
 
     if (byeAssignment && unassignedParticipant) {
@@ -1085,7 +1087,7 @@ describe('applyLineUps with valid TEAM data', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps?.find((m) => m.matchUpType === 'TEAM');
+    const teamMatchUp = matchUps?.find((m) => m.matchUpType === TEAM_MATCHUP);
 
     if (teamMatchUp) {
       const drawId = drawIds[0];
@@ -1260,13 +1262,13 @@ describe('directWinner lineUp propagation', () => {
     const drawId = drawIds[0];
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUps = matchUps.filter((m) => m.matchUpType === 'TEAM');
+    const teamMatchUps = matchUps.filter((m) => m.matchUpType === TEAM_MATCHUP);
     const firstRoundTeam = teamMatchUps.find((m) => m.roundNumber === 1);
 
     if (firstRoundTeam) {
       // Complete all tie matchUps for one side to win the team matchUp
       const tieMatchUps = matchUps.filter(
-        (m) => m.matchUpTieId === firstRoundTeam.matchUpId && m.matchUpType !== 'TEAM',
+        (m) => m.matchUpTieId === firstRoundTeam.matchUpId && m.matchUpType !== TEAM_MATCHUP,
       );
 
       for (const tieMatchUp of tieMatchUps) {

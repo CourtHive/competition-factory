@@ -1,6 +1,9 @@
 import { applyVenueConstraints } from '@Query/venues/applyVenueConstraints';
 import { expect, test } from 'vitest';
 
+// constants
+import { PRACTICE, MAINTENANCE } from '@Constants/bookingTypeConstants';
+
 test('no-op when venue has no scheduling attributes', () => {
   const inContextCourt: any = {
     venueId: 'v1',
@@ -136,8 +139,8 @@ test('venue dateless default takes precedence over defaultStartTime/defaultEndTi
 });
 
 test('bookings are merged from venue and court', () => {
-  const courtBooking = { startTime: '10:00', endTime: '11:00', bookingType: 'PRACTICE' };
-  const venueBooking = { startTime: '14:00', endTime: '15:00', bookingType: 'MAINTENANCE' };
+  const courtBooking = { startTime: '10:00', endTime: '11:00', bookingType: PRACTICE };
+  const venueBooking = { startTime: '14:00', endTime: '15:00', bookingType: MAINTENANCE };
 
   const inContextCourt: any = {
     venueId: 'v1',

@@ -4,6 +4,7 @@ import { expect, test } from 'vitest';
 
 // constants
 import { TEAM_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 
 test('TEAM tournament with completed tieMatchUps exercises evaluateCollectionResult', () => {
   mocksEngine.generateTournamentRecord({
@@ -11,7 +12,7 @@ test('TEAM tournament with completed tieMatchUps exercises evaluateCollectionRes
       {
         drawSize: 4,
         eventType: TEAM_EVENT,
-        tieFormatName: 'COLLEGE_DEFAULT',
+        tieFormatName: COLLEGE_DEFAULT,
       },
     ],
     completeAllMatchUps: true,
@@ -65,7 +66,7 @@ test('TEAM tournament with partial completion exercises tie format scoring', () 
       {
         drawSize: 4,
         eventType: TEAM_EVENT,
-        tieFormatName: 'COLLEGE_DEFAULT',
+        tieFormatName: COLLEGE_DEFAULT,
         completionGoal: 5,
       },
     ],

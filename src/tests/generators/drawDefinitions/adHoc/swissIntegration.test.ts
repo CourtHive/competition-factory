@@ -5,6 +5,7 @@ import { unique } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
 // constants
+import { BUCHHOLZ, SONNEBORN_BERGER, PROGRESSIVE_SCORE } from '@Constants/swissConstants';
 import { SWISS } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
@@ -242,7 +243,7 @@ test('getSwissStandings returns correct tiebreakers', () => {
 
   // request specific tiebreak methods
   const standings: any = tournamentEngine.getSwissStandings({
-    tiebreakMethods: ['BUCHHOLZ', 'SONNEBORN_BERGER', 'PROGRESSIVE_SCORE'],
+    tiebreakMethods: [BUCHHOLZ, SONNEBORN_BERGER, PROGRESSIVE_SCORE],
     drawId,
   });
   expect(standings.success).toEqual(true);

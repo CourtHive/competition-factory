@@ -5,8 +5,10 @@ import { cast } from '@Query/readModel/cast';
 
 // constants
 import { SINGLES_EVENT, DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
+import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { ROUND_ROBIN, MAIN, CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 describe('cast — singles (STANDARD)', () => {
@@ -48,7 +50,7 @@ describe('cast — singles (STANDARD)', () => {
     // singles competitors: index 0, INDIVIDUAL, side id === individual id
     expect(rows!.match_up_competitors.length).toBeGreaterThan(0);
     expect(rows!.match_up_competitors.every((c) => c.competitor_index === 0)).toBe(true);
-    expect(rows!.match_up_competitors.every((c) => c.participant_type === 'INDIVIDUAL')).toBe(true);
+    expect(rows!.match_up_competitors.every((c) => c.participant_type === INDIVIDUAL)).toBe(true);
     expect(rows!.match_up_competitors.every((c) => c.side_participant_id === c.individual_participant_id)).toBe(true);
   });
 
@@ -73,7 +75,7 @@ describe('cast — doubles (per-individual PAIR grain)', () => {
 
   it('emits two individual rows per assigned side with the pair as side_participant_id', () => {
     const { rows } = cast({ tournamentRecord });
-    const pairRows = rows!.match_up_competitors.filter((c) => c.participant_type === 'PAIR');
+    const pairRows = rows!.match_up_competitors.filter((c) => c.participant_type === PAIR);
     expect(pairRows.length).toBeGreaterThan(0);
 
     const indices = new Set(pairRows.map((c) => c.competitor_index));
@@ -91,7 +93,7 @@ describe('cast — doubles (per-individual PAIR grain)', () => {
 
 describe('cast — team (TIE container + RUBBER nesting)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: 'COLLEGE_DEFAULT', eventName: 'Teams' }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_DEFAULT, eventName: 'Teams' }],
     nonRandom: 1,
   });
 
@@ -105,7 +107,7 @@ describe('cast — team (TIE container + RUBBER nesting)', () => {
     expect(rubbers.length).toBeGreaterThan(0);
     expect(rubbers.every((r) => typeof r.parent_match_up_id === 'string')).toBe(true);
 
-    const teamRows = rows!.match_up_competitors.filter((c) => c.participant_type === 'TEAM');
+    const teamRows = rows!.match_up_competitors.filter((c) => c.participant_type === TEAM_PARTICIPANT);
     expect(teamRows.length).toBeGreaterThan(0);
     expect(teamRows.every((c) => typeof c.team_id === 'string')).toBe(true);
     // TEAM competitor rows are not resolved to a person

@@ -6,6 +6,7 @@ import { mocksEngine } from '../../..';
 // constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { RANKING_POINTS } from '@Constants/rankingConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
 
@@ -252,7 +253,7 @@ describe('applyTournamentRankingPoints', () => {
         participantId: withPerson.participantId,
         scaleAttributes: {
           scaleType: RANKING,
-          scaleName: 'RANKING_POINTS',
+          scaleName: RANKING_POINTS,
           eventType: SINGLES,
         },
       });

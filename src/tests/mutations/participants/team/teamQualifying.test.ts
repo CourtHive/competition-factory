@@ -149,7 +149,7 @@ it('Modifying tieFormats supported for TEAM QUALIFYING events', () => {
     collectionDefinition: {
       collectionName: 'Test',
       collectionOrder: 3,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       collectionId: thirdCollectionId,
       matchUpFormat: 'SET1-S:4/TB7',
       matchUpCount: 3,

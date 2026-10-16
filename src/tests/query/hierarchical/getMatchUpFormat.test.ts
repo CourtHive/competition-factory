@@ -4,6 +4,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+
 describe('getMatchUpFormat', () => {
   it('returns matchUpFormat from matchUp', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -13,7 +16,7 @@ describe('getMatchUpFormat', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0];
-    const matchUpFormat = { matchUpType: 'SINGLES', bestOf: 3 };
+    const matchUpFormat = { matchUpType: SINGLES_MATCHUP, bestOf: 3 };
     matchUp.matchUpFormat = matchUpFormat;
 
     const result = getMatchUpFormat({
@@ -30,7 +33,7 @@ describe('getMatchUpFormat', () => {
     });
 
     const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
-    const matchUpFormat = { matchUpType: 'SINGLES', bestOf: 5 };
+    const matchUpFormat = { matchUpType: SINGLES_MATCHUP, bestOf: 5 };
     structure.matchUpFormat = matchUpFormat;
 
     const result = getMatchUpFormat({
@@ -49,7 +52,7 @@ describe('getMatchUpFormat', () => {
 
     const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
     const structureId = drawDefinition.structures[0].structureId;
-    const matchUpFormat = { matchUpType: 'DOUBLES', bestOf: 3 };
+    const matchUpFormat = { matchUpType: DOUBLES_MATCHUP, bestOf: 3 };
     drawDefinition.matchUpFormat = matchUpFormat;
 
     const result = getMatchUpFormat({
@@ -67,7 +70,7 @@ describe('getMatchUpFormat', () => {
     });
 
     const event = tournamentRecord.events[0];
-    const matchUpFormat = { matchUpType: 'SINGLES', bestOf: 3 };
+    const matchUpFormat = { matchUpType: SINGLES_MATCHUP, bestOf: 3 };
     event.matchUpFormat = matchUpFormat;
 
     const result = getMatchUpFormat({

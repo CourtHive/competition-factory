@@ -14,6 +14,9 @@ import { AvailabilityEngine } from '@Assemblies/engines/availability/Availabilit
 import { BLOCK_TYPES } from '@Assemblies/governors/availabilityGovernor/types';
 import { describe, it, expect, beforeEach } from 'vitest';
 
+// constants
+import { MAINTENANCE } from '@Constants/bookingTypeConstants';
+
 // ============================================================================
 // Test Fixtures
 // ============================================================================
@@ -115,7 +118,7 @@ describe('Venue-level loading from tournament record', () => {
         startTime: '08:00',
         endTime: '20:00',
         venueId: VENUE_ID,
-        bookings: [{ startTime: '12:00', endTime: '13:00', bookingType: 'MAINTENANCE' }],
+        bookings: [{ startTime: '12:00', endTime: '13:00', bookingType: MAINTENANCE }],
       },
     ];
 

@@ -6,6 +6,7 @@ import { expect, it, describe } from 'vitest';
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
@@ -193,7 +194,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       collectionDefinition: {
         collectionName: 'Extra',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },

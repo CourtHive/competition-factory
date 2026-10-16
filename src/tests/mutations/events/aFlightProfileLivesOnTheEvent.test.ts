@@ -11,6 +11,7 @@ import type { DrawDefinition, Event } from '@Types/tournamentTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { RATING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import { NTRP } from '@Constants/ratingConstants';
 
 /**
  * A FLIGHT PROFILE LIVES ON THE EVENT, AND HAS A SHAPE.
@@ -38,7 +39,7 @@ function scaledEvent() {
     .slice(0, 12);
   expect(tournamentEngine.addEventEntries({ eventId: event.eventId, participantIds }).success).toEqual(true);
   participantIds.forEach((participantId, index) => {
-    const scaleItem = { scaleValue: index + 1, scaleName: 'NTRP', scaleType: RATING, eventType: SINGLES };
+    const scaleItem = { scaleValue: index + 1, scaleName: NTRP, scaleType: RATING, eventType: SINGLES };
     expect(tournamentEngine.setParticipantScaleItem({ participantId, scaleItem }).success).toEqual(true);
   });
   // an entry that already carries a scaleValue is the condition under which seedNumber used to be written
@@ -50,7 +51,7 @@ function scaledEvent() {
 
 it('a scaled flight split writes no seedNumber, and the record validates', () => {
   const { eventId } = scaledEvent();
-  const scaleAttributes = { scaleType: RATING, eventType: SINGLES, scaleName: 'NTRP', ascending: false };
+  const scaleAttributes = { scaleType: RATING, eventType: SINGLES, scaleName: NTRP, ascending: false };
   const result = tournamentEngine.generateFlightProfile({
     attachFlightProfile: true,
     scaleAttributes,

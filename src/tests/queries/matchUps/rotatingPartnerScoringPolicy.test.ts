@@ -10,6 +10,7 @@ import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tourna
 import type { RotatingPartnerScoringPolicy } from '@Types/rotatingPartnerScoring';
 import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 
 const locked: RotatingPartnerScoringPolicy = {
   defaultVariant: { tieResolution: 'DECIDING_POINT' },
@@ -19,13 +20,13 @@ const locked: RotatingPartnerScoringPolicy = {
 const draw = (): DrawDefinition => ({
   drawId: 'rotating-draw',
   drawType: AD_HOC,
-  matchUpType: 'DOUBLES',
+  matchUpType: DOUBLES_MATCHUP,
   structures: [],
   competitionProfile: {
     version: 1,
     format: 'AMERICANO',
     entrantScope: 'INDIVIDUAL',
-    matchUpType: 'DOUBLES',
+    matchUpType: DOUBLES_MATCHUP,
     scoring: { combinedPointTotal: 32 },
     standings: { metric: 'SIDE_POINTS', attribution: 'EACH_INDIVIDUAL' },
     pairing: { seed: 42, algorithmVersion: 1 },

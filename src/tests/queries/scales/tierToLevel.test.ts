@@ -4,6 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { ITF_JUNIOR, TENNIS_EUROPE } from '@Constants/pointsAuthorityConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
@@ -40,7 +41,7 @@ describe('tierToLevel — ranking points auto-resolution', () => {
 
     // Set tier on the tournament
     let result: any = tournamentEngine.setTournamentTier({
-      tournamentTier: { system: 'ITF_JUNIOR', value: 'J500', numericRank: 4 },
+      tournamentTier: { system: ITF_JUNIOR, value: 'J500', numericRank: 4 },
     });
     expect(result.success).toBe(true);
 
@@ -68,7 +69,7 @@ describe('tierToLevel — ranking points auto-resolution', () => {
     });
 
     tournamentEngine.setTournamentTier({
-      tournamentTier: { system: 'ITF_JUNIOR', value: 'J500', numericRank: 4 },
+      tournamentTier: { system: ITF_JUNIOR, value: 'J500', numericRank: 4 },
     });
 
     const { tournamentRecord } = tournamentEngine.getTournament();
@@ -192,7 +193,7 @@ describe('tierToLevel — numericRank fallback', () => {
       });
       // The TE policy carries no tierToLevel — the adapter-stamped numericRank is the level.
       tournamentEngine.setTournamentTier({
-        tournamentTier: { system: 'TENNIS_EUROPE', value: `cat-${numericRank}`, numericRank },
+        tournamentTier: { system: TENNIS_EUROPE, value: `cat-${numericRank}`, numericRank },
       });
       const { tournamentRecord } = tournamentEngine.getTournament();
       const eventId = tournamentRecord.events[0].eventId;
