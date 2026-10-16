@@ -316,6 +316,35 @@ function carriesDissolvedConvergence(
   });
 }
 
+type PositionedMatchUp = { drawPositions?: (number | undefined)[] } | undefined;
+
+/**
+ * Did the participant this unwind takes back out of `targetMatchUp` go on through it? A drawPosition that came from the
+ * source, sits in the target and has also reached the target's next winner matchUp was sent on by the target's result
+ * as its winner. The target's exit can stand while that advance cannot: the walk goes on to take it back.
+ *
+ * Census S8 policy-off, DOUBLE_ELIMINATION 8/6 (20590443): `Main|1|3`'s double walkover let the participant past
+ * `Main|1|4`'s BYE win `Main|2|2`, then `Main|3|1` on `Main|2|1`'s produced walkover, then the Main final, and so into
+ * the Decider. Re-scoring `Main|1|3` as a played win reached `Main|3|1`, whose walkover is `Main|2|1`'s and stands, and
+ * stopped: the participant stayed in the Decider, and the next Main final result was refused after a write.
+ */
+function sentOnThrough({
+  nextWinnerMatchUp,
+  sourceMatchUp,
+  targetMatchUp,
+}: {
+  nextWinnerMatchUp: PositionedMatchUp;
+  sourceMatchUp: PositionedMatchUp;
+  targetMatchUp: PositionedMatchUp;
+}): boolean {
+  const sourceDrawPositions = sourceMatchUp?.drawPositions?.filter(Boolean) ?? [];
+  const targetDrawPositions = targetMatchUp?.drawPositions?.filter(Boolean) ?? [];
+  return (nextWinnerMatchUp?.drawPositions ?? []).some(
+    (drawPosition) =>
+      !!drawPosition && sourceDrawPositions.includes(drawPosition) && targetDrawPositions.includes(drawPosition),
+  );
+}
+
 /**
  * Take back an exit that was carried through BYE-held matchUps, following the same chain out.
  *
@@ -614,7 +643,8 @@ export function conditionallyRemoveDrawPosition(params) {
   const keepsOwnResult =
     !!getSideExitProvenance({ matchUp: noContextTargetMatchUp }) &&
     !carriesWithdrawnOrigin(noContextTargetMatchUp, withdrawnSourceIds) &&
-    !carriesDissolvedConvergence(noContextTargetMatchUp, withdrawnSourceIds, matchUpsMap);
+    !carriesDissolvedConvergence(noContextTargetMatchUp, withdrawnSourceIds, matchUpsMap) &&
+    !sentOnThrough({ sourceMatchUp, targetMatchUp, nextWinnerMatchUp });
   if (keepsOwnResult) {
     pushGlobalLog({
       method: stack,
