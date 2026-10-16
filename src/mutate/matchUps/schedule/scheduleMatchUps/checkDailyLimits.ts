@@ -28,7 +28,7 @@ export function checkDailyLimits({
 
   const participantIdsAtLimit = relevantParticipantIds.filter((participantId) => {
     const loads = getParticipantDayLoads({
-      withMatchUp: { matchUpId, drawId, matchUpType, certain: certain.includes(participantId) },
+      addingMatchUp: { matchUpId, drawId, matchUpType, certain: certain.includes(participantId) },
       individualParticipantProfiles,
       reachability,
       participantId,

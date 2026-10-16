@@ -40,17 +40,17 @@ export function getParticipantDayLoads({
   individualParticipantProfiles,
   reachability,
   participantId,
-  withMatchUp,
+  addingMatchUp,
 }: {
   individualParticipantProfiles: IndividualParticipantProfiles;
   reachability: ParticipantReachability;
   participantId: string;
-  withMatchUp?: DayMatchUp;
+  addingMatchUp?: DayMatchUp;
 }) {
   checkParticipantProfileInitialization({ individualParticipantProfiles, participantId });
   const profile = individualParticipantProfiles[participantId];
-  const dayMatchUps: DayMatchUp[] = withMatchUp
-    ? [...profile.dayMatchUps.filter(({ matchUpId }) => matchUpId !== withMatchUp.matchUpId), withMatchUp]
+  const dayMatchUps: DayMatchUp[] = addingMatchUp
+    ? [...profile.dayMatchUps.filter(({ matchUpId }) => matchUpId !== addingMatchUp.matchUpId), addingMatchUp]
     : profile.dayMatchUps;
 
   const matchUpTypes = [...new Set(dayMatchUps.map(({ matchUpType }) => matchUpType).filter(Boolean))] as string[];
