@@ -22,6 +22,7 @@ import { getSide } from './getSide';
 
 // constants and types
 import type { RoundNamingProfile } from '@Query/matchUps/getRoundContextProfile';
+import type { HydrationCache } from '@Query/matchUps/hydrationCache';
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { isEmbargoed } from '@Query/publishing/isEmbargoed';
@@ -62,6 +63,7 @@ type AddMatchUpContextArgs = {
   contextContent?: ContextContent;
   sourceDrawPositionRanges?: any;
   contextProfile?: ContextProfile;
+  hydrationCache?: HydrationCache;
   hydrateParticipants?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
@@ -148,6 +150,7 @@ export function addMatchUpContext({
   isCollectionBye,
   seedAssignments,
   usePublishState,
+  hydrationCache,
   participantMap,
   contextContent,
   scheduleTiming,
@@ -196,6 +199,7 @@ export function addMatchUpContext({
     afterRecoveryTimes,
     tournamentRecord,
     usePublishState,
+    hydrationCache,
     scheduleTiming,
     drawDefinition,
     matchUpFormat,
@@ -402,6 +406,7 @@ export function addMatchUpContext({
       tournamentParticipants,
       positionAssignments,
       tournamentRecord,
+      hydrationCache,
       seedAssignments,
       participantMap,
       contextContent,
@@ -748,6 +753,7 @@ function processTieMatchUps(params) {
       tournamentParticipants: params.tournamentParticipants,
       positionAssignments: params.positionAssignments,
       tournamentRecord: params.tournamentRecord,
+      hydrationCache: params.hydrationCache,
       seedAssignments: params.seedAssignments,
       participantMap: params.participantMap,
       contextContent: params.contextContent,

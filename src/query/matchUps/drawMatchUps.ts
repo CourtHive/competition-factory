@@ -5,6 +5,7 @@ import { addUpcomingMatchUps } from '@Query/matchUp/addUpcomingMatchUps';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getDrawStructures } from '@Acquire/findStructure';
+import { createHydrationCache } from './hydrationCache';
 import { filterMatchUps } from '@Query/filterMatchUps';
 import { getMatchUpsMap } from './getMatchUpsMap';
 
@@ -104,6 +105,7 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
   }
 
   const exitProfiles = drawDefinition && getExitProfiles({ drawDefinition }).exitProfiles;
+  const hydrationCache = params.hydrationCache ?? createHydrationCache();
 
   structures.forEach((structure) => {
     const {
@@ -119,6 +121,7 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
       inContext: inContext || nextMatchUps || contextFilters,
       hydrateParticipants: params.hydrateParticipants,
       tournamentAppliedPolicies,
+      hydrationCache,
       scheduleVisibilityFilters,
       tournamentParticipants,
       requireParticipants,
