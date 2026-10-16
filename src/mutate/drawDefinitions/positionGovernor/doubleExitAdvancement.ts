@@ -1083,8 +1083,11 @@ function conditionallyAdvanceDrawPosition(params) {
   // winner target passes none, and the carrier there was awarded the exit (census F2, DOUBLE_ELIMINATION 8/7,
   // 20522496: Julian carried `Main|1|2`'s walkover into `Backdraw|3|1`, `Backdraw|2|1`'s double walkover then produced
   // onto the other side, and Julian went on; a later correction was refused placing the real winner after him).
+  // Whatever kind of exit the target holds: a double exit left standing from an earlier pass, whose produced side this
+  // exit now replaces, is an exit too, and its occupant still carries theirs (census S8 on arm, OLYMPIC 32/30,
+  // 20625776: `West|3|1` still read DOUBLE_WALKOVER when `West|2|2` converged again, and its carrier was awarded).
   const occupantCarriesExit =
-    isExit(noContextTargetMatchUp.matchUpStatus) &&
+    isAnyExit(noContextTargetMatchUp.matchUpStatus) &&
     !!walkoverWinningSide &&
     !!carriedExitStatus(getSideExitProvenance({ matchUp: noContextTargetMatchUp })?.[walkoverWinningSide]);
   // a fed target round has no paired previous matchUp within this structure: its other
