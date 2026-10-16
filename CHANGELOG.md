@@ -1,5 +1,49 @@
 # Changelog
 
+## [7.15.0](https://github.com/CourtHive/competition-factory/compare/v7.14.1...v7.15.0) (2026-10-16)
+
+
+### Features
+
+* **migrate:** migrateTournamentRecord gives a draw that stores no edges its edges ([#5487](https://github.com/CourtHive/competition-factory/issues/5487)) ([6637e9c](https://github.com/CourtHive/competition-factory/commit/6637e9cf747ae7d028b4794e38ea7bc3f4e69635))
+* **mocks:** honour completeAllMatchUps on a drawProfile ([#5466](https://github.com/CourtHive/competition-factory/issues/5466)) ([7944647](https://github.com/CourtHive/competition-factory/commit/7944647977e39bd461f464ed5efc9e856814458e))
+* **schedule:** bulk schedule mutations report what they skip and respect schedule locks ([#5490](https://github.com/CourtHive/competition-factory/issues/5490)) ([0738a5f](https://github.com/CourtHive/competition-factory/commit/0738a5f57cce080f4bdab381eba3f1435a38b6e9))
+* **scheduling:** deep dependencies, qualifier waits, participant daily limits and recovery fixes ([#5494](https://github.com/CourtHive/competition-factory/issues/5494)) ([51edfa7](https://github.com/CourtHive/competition-factory/commit/51edfa7673829f7040eaaa5680abb43828608032))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.14.1 ([#5463](https://github.com/CourtHive/competition-factory/issues/5463)) ([e95190e](https://github.com/CourtHive/competition-factory/commit/e95190e55244ab3a8617377f4f2fbec10fb919e4))
+* **duration:** schedule.time prints a negative or long duration well-formed ([#5484](https://github.com/CourtHive/competition-factory/issues/5484)) ([14bb64e](https://github.com/CourtHive/competition-factory/commit/14bb64e49e8a2826b2ca3374625da8b1dedbad18))
+* **exitPropagation:** an unwind walks through a dissolved convergence; a BYE claim survives ([#5480](https://github.com/CourtHive/competition-factory/issues/5480)) ([57e92a1](https://github.com/CourtHive/competition-factory/commit/57e92a1aa33b8c7443b86a2e0b1068cdf9595d80))
+* **mocks:** pair round 1 of an iterative AD_HOC draw when automated is unset ([#5474](https://github.com/CourtHive/competition-factory/issues/5474)) ([547524d](https://github.com/CourtHive/competition-factory/commit/547524db8b55afd3927e099ccf9cf46a75a06778))
+* **penalties:** store penalty codes, not display labels ([#5462](https://github.com/CourtHive/competition-factory/issues/5462)) ([7b04049](https://github.com/CourtHive/competition-factory/commit/7b040497959c1f2feee0bb42166812af5e0130f7))
+* **positionActions:** a placed qualifier keeps its flag and takes it when swapped ([#5468](https://github.com/CourtHive/competition-factory/issues/5468)) ([8a5698d](https://github.com/CourtHive/competition-factory/commit/8a5698dd92b1dd5569d80f2ff4de3f36c54293a5))
+* **query:** a draw that stores no edges keeps its loser potential participants ([#5483](https://github.com/CourtHive/competition-factory/issues/5483)) ([5252712](https://github.com/CourtHive/competition-factory/commit/52527125e1f2b1bd54e3973e5313e4f51f38ca42))
+* **query:** getMatchUpDependencies derives a draw's edges on a copy, never on the record ([#5485](https://github.com/CourtHive/competition-factory/issues/5485)) ([da7f94e](https://github.com/CourtHive/competition-factory/commit/da7f94ed00a23b0c2e3651aae5a211a61b365036))
+* **query:** getParticipants and findVenue no longer write to the record they read ([#5491](https://github.com/CourtHive/competition-factory/issues/5491)) ([bf55530](https://github.com/CourtHive/competition-factory/commit/bf5553012b5806e09b0c553691e98abf9e7a2dc6))
+* **query:** hydration no longer writes court names onto stored allocatedCourts ([#5479](https://github.com/CourtHive/competition-factory/issues/5479)) ([1c2c46c](https://github.com/CourtHive/competition-factory/commit/1c2c46c8447574cc960c8bed6138ed4ce92e978f))
+* **scheduling:** book a participant only into matchUps their sides already hold ([#5486](https://github.com/CourtHive/competition-factory/issues/5486)) ([e3b0b80](https://github.com/CourtHive/competition-factory/commit/e3b0b805e2be2ce351c0cfa7b7feeb569a18ece1))
+* **scheduling:** deprecate scheduleProfileRounds({ pro: true }); removal at the next major ([#5495](https://github.com/CourtHive/competition-factory/issues/5495)) ([e68afbd](https://github.com/CourtHive/competition-factory/commit/e68afbd21bb9d8c900715a9a15a091cb404882f5))
+* **scheduling:** one model of who can play each matchUp for recovery and daily limits ([#5489](https://github.com/CourtHive/competition-factory/issues/5489)) ([acae7f4](https://github.com/CourtHive/competition-factory/commit/acae7f4ee3fc2509be096b34680c5ec0ab54692f))
+* **scheduling:** profile scheduling mechanics in jinn and shared helpers ([#5492](https://github.com/CourtHive/competition-factory/issues/5492)) ([6b184c4](https://github.com/CourtHive/competition-factory/commit/6b184c42a974e6cc5e99596c54b5c0f07ee98b10))
+* **scheduling:** the pro grid treats a feeder's winner and loser paths as alternatives ([#5493](https://github.com/CourtHive/competition-factory/issues/5493)) ([738eaa8](https://github.com/CourtHive/competition-factory/commit/738eaa81780d0c75807a5c18b92702fabf3cf160))
+* **statCrew:** report each game from its own team matchUp ([#5472](https://github.com/CourtHive/competition-factory/issues/5472)) ([cbbe368](https://github.com/CourtHive/competition-factory/commit/cbbe368ec9afab5bff2e3382d610d21cabc297a6))
+
+
+### Performance
+
+* **acquire:** locate a bare matchUpId from stored structures, hydrate only the hit ([#5469](https://github.com/CourtHive/competition-factory/issues/5469)) ([4e13055](https://github.com/CourtHive/competition-factory/commit/4e13055801978084dc857e985a0eec2625803b4f))
+* **engines:** resolve the lock venue without findVenue, so a bare engine stops bundling fixtures ([#5471](https://github.com/CourtHive/competition-factory/issues/5471)) ([5cf6fc7](https://github.com/CourtHive/competition-factory/commit/5cf6fc724c60da27b85f9838f3792186881f1300))
+* **query:** operation-scoped target index for addGoesTo and positionTargets ([#5482](https://github.com/CourtHive/competition-factory/issues/5482)) ([809c89d](https://github.com/CourtHive/competition-factory/commit/809c89d21fb60ee15bae7f9db5e5a4ff808133ce))
+
+
+### Documentation
+
+* correct the notice, deep-copy and queue docs to what was measured ([#5467](https://github.com/CourtHive/competition-factory/issues/5467)) ([be87ac0](https://github.com/CourtHive/competition-factory/commit/be87ac098504cf6e84f9ba7e47dceff6243609b2))
+* **scheduling:** say what clearScheduleDates true clears ([#5488](https://github.com/CourtHive/competition-factory/issues/5488)) ([d9976e2](https://github.com/CourtHive/competition-factory/commit/d9976e27f5c70cfded84bea31127e2c81bcc5e96))
+* **setMatchUpStatus:** the nine pipeline settings in one place, and where 7.0.0 led ([#5470](https://github.com/CourtHive/competition-factory/issues/5470)) ([a67cbd5](https://github.com/CourtHive/competition-factory/commit/a67cbd58a7ea05417d6af1955090438fad8eb14b))
+
 ## [7.14.1](https://github.com/CourtHive/competition-factory/compare/v7.14.0...v7.14.1) (2026-10-15)
 
 
