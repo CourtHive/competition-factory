@@ -2181,6 +2181,7 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
     // exit opposite it was never sent on, and the matchUp they both feed read TO_BE_PLAYED only when the exit came last
     // (census run 17 Class A, COMPASS and OLYMPIC 32 policy off: 20630712 `Southeast|1|2` won by `South|1|4`'s loser).
     if (awardsASeatAwaitingArrival(feeder)) return true;
+    if (pendingExitAwaitsArrival(feeder)) return true;
     return !isAnyExit(feeder.matchUpStatus);
   });
 }
@@ -2189,6 +2190,19 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
 function awardsASeatAwaitingArrival(feeder: HydratedMatchUp): boolean {
   const awaitedWinner = feeder.sides?.find((side) => side.sideNumber === feeder.winningSide);
   return isExit(feeder.matchUpStatus) && !!awaitedWinner && !awaitedWinner.participantId && !awaitedWinner.bye;
+}
+
+/**
+ * A PENDING exit whose other seat nobody has reached yet: whoever reaches it wins the exit and goes on. Until then the
+ * exit has no winner (a produced exit awards no empty seat), but it delivers just as an awarded one does.
+ */
+function pendingExitAwaitsArrival(feeder: HydratedMatchUp): boolean {
+  if (!isExit(feeder.matchUpStatus) || feeder.winningSide) return false;
+  const exitSides = getExitSides({ matchUp: feeder });
+  if (!exitSides.length) return false;
+  return !!feeder.sides?.some(
+    (side) => !!side?.sideNumber && !exitSides.includes(side.sideNumber) && !side.participantId && !side.bye,
+  );
 }
 
 /** the target's other feeder is an exit awarded to a seat nobody has reached: the held exit goes on to wait for them */
