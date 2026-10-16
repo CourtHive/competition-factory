@@ -14,7 +14,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { COMPLETED, DOUBLE_WALKOVER, WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { DOUBLES, SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
+import { DOUBLES, SINGLES, TEAM_EVENT, RATING } from '@Constants/eventConstants';
 import { RANKING, SEEDING } from '@Constants/scaleConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
@@ -303,7 +303,7 @@ describe('initializeDraft uncovered paths', () => {
 
     const result: any = initializeDraft({
       event: { ...event, category: { ratingType: 'UTR' } },
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       tournamentRecord,
       drawDefinition,
       force: true,
@@ -324,7 +324,7 @@ describe('initializeDraft uncovered paths', () => {
     const result: any = initializeDraft({
       drawDefinition,
       tournamentRecord,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       force: true,
     });
     expect(result.success).toBe(true);

@@ -5,6 +5,7 @@ import { expect, it } from 'vitest';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { INVALID_ENTRIES } from '@Constants/errorConditionConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 
 function setup() {
   const drawDefinition: DrawDefinition = {
@@ -16,7 +17,7 @@ function setup() {
   };
   const event: Event = {
     eventId: 'doubles',
-    eventType: 'DOUBLES',
+    eventType: DOUBLES_EVENT,
     entries: [
       { participantId: 'p1', entryStatus: 'UNGROUPED' },
       { participantId: 'p2', entryStatus: 'UNPAIRED' },

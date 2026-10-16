@@ -3,6 +3,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { APPROVED } from '@Constants/sanctioningConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
  * Venue materialization at activation.
@@ -25,7 +26,7 @@ const baseRecord = (venues?: any) =>
       tournamentName: 'Peachtree Summer Open',
       proposedStartDate: '2026-09-01',
       proposedEndDate: '2026-09-05',
-      events: [{ eventName: 'Mens Singles', eventType: 'SINGLES' }],
+      events: [{ eventName: 'Mens Singles', eventType: SINGLES_EVENT }],
       ...(venues ? { venues } : {}),
     },
     statusHistory: [],

@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 // constants and types
 import { COMPLETED, CANCELLED } from '@Constants/matchUpStatusConstants';
 import { PracticeRegistrationStatusEnum } from '@Types/tournamentTypes';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import { PRACTICE } from '@Constants/scheduleConstants';
 import * as factoryEnums from '@Types/enumExports';
 import {
@@ -288,7 +289,7 @@ describe('detectParticipantConflicts — matchUp class', () => {
   });
 
   it('matches an individual playing a doubles matchUp via the side participant', () => {
-    setup({ drawProfiles: [{ drawSize: 4, eventType: 'DOUBLES', eventName: 'Doubles' }] });
+    setup({ drawProfiles: [{ drawSize: 4, eventType: DOUBLES_EVENT, eventName: 'Doubles' }] });
     const { matchUp, tournamentRecord } = scheduleFirstMatchUp({
       scheduledDate: TEST_DATE,
       scheduledTime: '14:30',

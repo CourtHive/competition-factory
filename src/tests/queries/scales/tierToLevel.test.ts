@@ -6,6 +6,7 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
  * Ranking policy with tierToLevel mapping.
@@ -139,7 +140,7 @@ describe('tierToLevel — numericRank fallback', () => {
       awardProfiles: [
         {
           profileName: 'leveled',
-          eventTypes: ['SINGLES'],
+          eventTypes: [SINGLES_EVENT],
           stages: [MAIN],
           category: { ageCategoryCodes: ['U18'] },
           finishingPositionRanges: { 1: { level: { 2: 500, 5: 60 } } },
@@ -152,7 +153,7 @@ describe('tierToLevel — numericRank fallback', () => {
     mocksEngine.generateTournamentRecord({
       eventProfiles: [
         {
-          eventType: 'SINGLES',
+          eventType: SINGLES_EVENT,
           category: { ageCategoryCode: 'U18' },
           drawProfiles: [{ drawSize: 8, completionGoal: 8 }],
         },
@@ -182,7 +183,7 @@ describe('tierToLevel — numericRank fallback', () => {
       mocksEngine.generateTournamentRecord({
         eventProfiles: [
           {
-            eventType: 'SINGLES',
+            eventType: SINGLES_EVENT,
             category: { ageCategoryCode: '16U' },
             drawProfiles: [{ drawSize: 16, completionGoal: 16 }],
           },

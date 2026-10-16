@@ -7,6 +7,7 @@ import { expect, it, describe } from 'vitest';
 import type { PrizeMoneyAward, Tournament, Event } from '@Types/tournamentTypes';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { APPROVED } from '@Constants/sanctioningConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 // Fixtures
 import { POLICY_RANKING_POINTS_ATP } from '@Fixtures/policies/POLICY_RANKING_POINTS_ATP';
@@ -74,7 +75,7 @@ describe('validateProposal prize money', () => {
     proposedStartDate: '2026-09-01',
     proposedEndDate: '2026-09-05',
     tournamentLevel: 'NATIONAL',
-    events: [{ eventName: 'MS', eventType: 'SINGLES' }],
+    events: [{ eventName: 'MS', eventType: SINGLES_EVENT }],
     totalPrizeMoney,
   });
 
@@ -123,7 +124,7 @@ describe('event prize money reaches the activated event', () => {
         tournamentName: 'T',
         proposedStartDate: '2026-09-01',
         proposedEndDate: '2026-09-05',
-        events: [{ eventName: 'MS', eventType: 'SINGLES', ...(prizeMoney ? { prizeMoney } : {}) }],
+        events: [{ eventName: 'MS', eventType: SINGLES_EVENT, ...(prizeMoney ? { prizeMoney } : {}) }],
       },
       statusHistory: [],
     }) as any;

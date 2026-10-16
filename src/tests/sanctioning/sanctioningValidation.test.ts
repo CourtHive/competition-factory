@@ -10,6 +10,7 @@ import type { TierClassification } from '@Types/tournamentTypes';
 
 // constants
 import { SINGLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -28,7 +29,7 @@ const baseProposal: TournamentProposal = {
   events: [
     {
       eventName: "Men's Singles",
-      eventType: 'SINGLES',
+      eventType: SINGLES_EVENT,
       gender: 'MALE',
       drawSize: 32,
       drawType: SINGLE_ELIMINATION,
@@ -93,7 +94,7 @@ describe('Policy Validation — validateProposal', () => {
 
   it('flags disallowed draw size', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 12, drawType: SINGLE_ELIMINATION }],
+      events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 12, drawType: SINGLE_ELIMINATION }],
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
@@ -106,7 +107,7 @@ describe('Policy Validation — validateProposal', () => {
 
   it('flags disallowed draw type', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: COMPASS }],
+      events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, drawType: COMPASS }],
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
@@ -122,7 +123,7 @@ describe('Policy Validation — validateProposal', () => {
       events: [
         {
           eventName: 'Singles',
-          eventType: 'SINGLES',
+          eventType: SINGLES_EVENT,
           drawSize: 32,
           matchUpFormat: 'SET1-S:4/TB7',
         },
@@ -138,7 +139,7 @@ describe('Policy Validation — validateProposal', () => {
 
   it('flags qualifying when not allowed', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, qualifyingDrawSize: 16 }],
+      events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, qualifyingDrawSize: 16 }],
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
@@ -262,7 +263,7 @@ describe('Eligible Tiers', () => {
 
   it('excludes tiers where draw size is not allowed', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 8 }],
+      events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 8 }],
       totalPrizeMoney: [{ amount: 100, currencyCode: 'USD', unit: 'MAJOR' }],
     });
     let result: any = sanctioningEngine.getEligibleTiers({
@@ -309,7 +310,7 @@ describe('Completeness Scoring', () => {
         tournamentName: 'Minimal',
         proposedStartDate: '2027-01-01',
         proposedEndDate: '2027-01-02',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
     });
     let result: any = sanctioningEngine.getCompleteness({});
@@ -347,7 +348,7 @@ describe('Policy Validation — tier defaults from the sanctioning record', () =
     events: [
       {
         eventName: "Men's Singles",
-        eventType: 'SINGLES',
+        eventType: SINGLES_EVENT,
         gender: 'MALE',
         drawSize: 16,
         drawType: SINGLE_ELIMINATION,

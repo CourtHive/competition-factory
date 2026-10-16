@@ -26,6 +26,7 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   INVALID_OBJECT,
   INVALID_VALUES,
@@ -553,7 +554,7 @@ describe('removeScaleValues branch coverage', () => {
   it('filters by stage when stage is provided', () => {
     const result = removeScaleValues({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: 'SINGLES' },
+      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: SINGLES_EVENT },
       event: {
         eventId: 'e1',
         entries: [{ participantId: 'p1', entryStage: MAIN, entryStatus: 'DIRECT_ACCEPTANCE' }],
@@ -567,7 +568,7 @@ describe('removeScaleValues branch coverage', () => {
   it('uses drawDefinition entries when drawId provided but no flight found', () => {
     const result = removeScaleValues({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: 'SINGLES' },
+      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: SINGLES_EVENT },
       event: { eventId: 'e1', entries: [] } as any,
       drawDefinition: {
         drawId: 'd1',
@@ -581,7 +582,7 @@ describe('removeScaleValues branch coverage', () => {
   it('uses flightProfile entries when drawId matches a flight', () => {
     const result = removeScaleValues({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: 'SINGLES' },
+      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: SINGLES_EVENT },
       event: {
         eventId: 'e1',
         entries: [{ participantId: 'p1' }],
@@ -607,7 +608,7 @@ describe('removeScaleValues branch coverage', () => {
   it('filters by entryStatuses when provided as array', () => {
     const result = removeScaleValues({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: 'SINGLES' },
+      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: SINGLES_EVENT },
       event: {
         eventId: 'e1',
         entries: [

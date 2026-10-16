@@ -7,6 +7,9 @@ import { describe, expect, it } from 'vitest';
 import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { SANCTIONING_CONSTRAINTS } from '@Constants/extensionConstants';
 
+// constants
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+
 const sanctioned = (events: any[]) =>
   ({
     extensions: [{ name: SANCTIONING_CONSTRAINTS, value: { events } }],
@@ -26,27 +29,27 @@ describe('getDrawCompositionConstraints', () => {
   });
 
   it('returns {} when no event is supplied (cannot match)', () => {
-    const tournamentRecord = sanctioned([{ eventType: 'SINGLES', drawSize: 32 }]);
+    const tournamentRecord = sanctioned([{ eventType: SINGLES_EVENT, drawSize: 32 }]);
     expect(getDrawCompositionConstraints({ tournamentRecord })).toEqual({});
   });
 
   it('returns {} when event does not match by eventType', () => {
-    const tournamentRecord = sanctioned([{ eventType: 'SINGLES', drawSize: 32 }]);
-    const event = { eventType: 'DOUBLES' } as any;
+    const tournamentRecord = sanctioned([{ eventType: SINGLES_EVENT, drawSize: 32 }]);
+    const event = { eventType: DOUBLES_EVENT } as any;
     expect(getDrawCompositionConstraints({ tournamentRecord, event })).toEqual({});
   });
 
   it('returns {} when matched eventConstraints exists but contains no constraint fields', () => {
-    const tournamentRecord = sanctioned([{ eventType: 'SINGLES' }]);
-    const event = { eventType: 'SINGLES' } as any;
+    const tournamentRecord = sanctioned([{ eventType: SINGLES_EVENT }]);
+    const event = { eventType: SINGLES_EVENT } as any;
     expect(getDrawCompositionConstraints({ tournamentRecord, event })).toEqual({});
   });
 
   it('returns all four constraint fields when set on the matched entry', () => {
     const tournamentRecord = sanctioned([
-      { eventType: 'SINGLES', drawSize: 32, maxWildcards: 4, maxAlternates: 2, maxQualifiers: 8 },
+      { eventType: SINGLES_EVENT, drawSize: 32, maxWildcards: 4, maxAlternates: 2, maxQualifiers: 8 },
     ]);
-    const event = { eventType: 'SINGLES' } as any;
+    const event = { eventType: SINGLES_EVENT } as any;
     expect(getDrawCompositionConstraints({ tournamentRecord, event })).toEqual({
       constraints: { drawSize: 32, maxWildcards: 4, maxAlternates: 2, maxQualifiers: 8 },
     });
@@ -54,30 +57,34 @@ describe('getDrawCompositionConstraints', () => {
 
   it('matches narrower entries by eventName when supplied on the constraint', () => {
     const tournamentRecord = sanctioned([
-      { eventType: 'SINGLES', eventName: 'Open', drawSize: 64 },
-      { eventType: 'SINGLES', drawSize: 32 },
+      { eventType: SINGLES_EVENT, eventName: 'Open', drawSize: 64 },
+      { eventType: SINGLES_EVENT, drawSize: 32 },
     ]);
-    const event = { eventType: 'SINGLES', eventName: 'Open' } as any;
+    const event = { eventType: SINGLES_EVENT, eventName: 'Open' } as any;
     expect(getDrawCompositionConstraints({ tournamentRecord, event })).toEqual({ constraints: { drawSize: 64 } });
   });
 
   it('rejects the entry when eventName is set on the constraint but the event has a different name', () => {
-    const tournamentRecord = sanctioned([{ eventType: 'SINGLES', eventName: 'Open', drawSize: 64 }]);
-    const event = { eventType: 'SINGLES', eventName: 'Masters' } as any;
+    const tournamentRecord = sanctioned([{ eventType: SINGLES_EVENT, eventName: 'Open', drawSize: 64 }]);
+    const event = { eventType: SINGLES_EVENT, eventName: 'Masters' } as any;
     expect(getDrawCompositionConstraints({ tournamentRecord, event })).toEqual({});
   });
 
   it('matches when constraint category.categoryName equals event.category.categoryName', () => {
-    const tournamentRecord = sanctioned([{ eventType: 'SINGLES', category: { categoryName: 'U18' }, maxWildcards: 6 }]);
-    const event = { eventType: 'SINGLES', category: { categoryName: 'U18' } } as any;
+    const tournamentRecord = sanctioned([
+      { eventType: SINGLES_EVENT, category: { categoryName: 'U18' }, maxWildcards: 6 },
+    ]);
+    const event = { eventType: SINGLES_EVENT, category: { categoryName: 'U18' } } as any;
     expect(getDrawCompositionConstraints({ tournamentRecord, event })).toEqual({
       constraints: { maxWildcards: 6 },
     });
   });
 
   it('rejects when constraint category.categoryName mismatches event.category.categoryName', () => {
-    const tournamentRecord = sanctioned([{ eventType: 'SINGLES', category: { categoryName: 'U18' }, maxWildcards: 6 }]);
-    const event = { eventType: 'SINGLES', category: { categoryName: 'U16' } } as any;
+    const tournamentRecord = sanctioned([
+      { eventType: SINGLES_EVENT, category: { categoryName: 'U18' }, maxWildcards: 6 },
+    ]);
+    const event = { eventType: SINGLES_EVENT, category: { categoryName: 'U16' } } as any;
     expect(getDrawCompositionConstraints({ tournamentRecord, event })).toEqual({});
   });
 });

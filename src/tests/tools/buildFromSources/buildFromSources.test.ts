@@ -20,6 +20,7 @@ import {
 
 // constants
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 
 // `classifySource`'s string union — extracted so the literal isn't repeated
 // across assertions (SonarJS S1192).
@@ -105,8 +106,8 @@ function generateRoundRobin(opts: AnyObj = {}) {
 function generateMultiEvent() {
   return mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawSize: 4, drawType: ROUND_ROBIN, eventName: 'Mens', eventType: 'SINGLES' },
-      { drawSize: 4, drawType: SINGLE_ELIMINATION, eventName: 'Womens', eventType: 'SINGLES' },
+      { drawSize: 4, drawType: ROUND_ROBIN, eventName: 'Mens', eventType: SINGLES_EVENT },
+      { drawSize: 4, drawType: SINGLE_ELIMINATION, eventName: 'Womens', eventType: SINGLES_EVENT },
     ],
     venueProfiles: [{ courtsCount: 2, venueName: 'Center' }],
     startDate: '2026-06-11',
@@ -116,7 +117,7 @@ function generateMultiEvent() {
 
 function generateDoubles(opts: AnyObj = {}) {
   return mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN, eventType: 'DOUBLES' }],
+    drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN, eventType: DOUBLES_EVENT }],
     venueProfiles: [{ courtsCount: 1 }],
     startDate: FIXTURE_DATE,
     endDate: '2026-06-13',
@@ -522,7 +523,7 @@ describe('round-trip from mocksEngine — doubles', () => {
       participantDocs: [extractParticipants(participantsResponse)],
     });
 
-    expect(rebuilt.events?.[0]?.eventType).toBe('DOUBLES');
+    expect(rebuilt.events?.[0]?.eventType).toBe(DOUBLES_EVENT);
     const matchUps = listRebuiltMatchUps(rebuilt);
     expect(matchUps.length).toBeGreaterThan(0);
     for (const m of matchUps) expect(m.matchUpType).toBe('DOUBLES');

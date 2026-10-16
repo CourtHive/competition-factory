@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 // constants and types
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 
 /**
  * `getEvent` RETURNS A ROTATING ROUND'S PAIRINGS EXACTLY AS STORED.
@@ -44,7 +45,7 @@ function rotatingDraw() {
     events: [
       {
         eventId: 'e',
-        eventType: 'DOUBLES',
+        eventType: DOUBLES_EVENT,
         entries: ids.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
         drawDefinitions: [draw],
       },

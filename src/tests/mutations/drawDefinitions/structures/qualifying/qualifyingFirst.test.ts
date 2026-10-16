@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { MAIN, QUALIFYING, SINGLE_ELIMINATION, WINNER } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 it('can generate qualifying-first draw via generateDrawDefinition with automated positioning', () => {
   // Create a tournament with participants
@@ -16,7 +17,7 @@ it('can generate qualifying-first draw via generateDrawDefinition with automated
   // Add an event with qualifying and main entries
   const { participants } = tournamentEngine.getParticipants();
   const eventId = 'test-event';
-  tournamentEngine.addEvent({ event: { eventId, eventName: 'Test Event', eventType: 'SINGLES' } });
+  tournamentEngine.addEvent({ event: { eventId, eventName: 'Test Event', eventType: SINGLES_EVENT } });
 
   // Add 16 qualifying entries and 24 main entries
   const qualifyingParticipantIds = participants.slice(0, 16).map((p) => p.participantId);

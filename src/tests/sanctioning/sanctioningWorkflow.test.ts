@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Applicant, EventProposal, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 // constants
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   UNDER_REVIEW,
   MODIFICATION_REQUESTED,
@@ -21,7 +22,7 @@ const testApplicant: Applicant = {
 
 const testEventProposal: EventProposal = {
   eventName: "Men's Singles",
-  eventType: 'SINGLES',
+  eventType: SINGLES_EVENT,
   gender: 'MALE',
   drawSize: 32,
 };

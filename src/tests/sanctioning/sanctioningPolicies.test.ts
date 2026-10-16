@@ -10,6 +10,7 @@ import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_IT
 import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
 
 // constants
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const testApplicant: Applicant = {
@@ -95,7 +96,7 @@ describe('Policy Fixtures — Engine Integration', () => {
       events: [
         {
           eventName: "Women's Singles",
-          eventType: 'SINGLES',
+          eventType: SINGLES_EVENT,
           gender: 'FEMALE',
           drawSize: 32,
           drawType: SINGLE_ELIMINATION,
@@ -104,7 +105,7 @@ describe('Policy Fixtures — Engine Integration', () => {
         },
         {
           eventName: "Women's Doubles",
-          eventType: 'DOUBLES',
+          eventType: DOUBLES_EVENT,
           gender: 'FEMALE',
           drawSize: 32,
         },
@@ -134,7 +135,7 @@ describe('Policy Fixtures — Engine Integration', () => {
         tournamentName: 'Bad W50',
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
-        events: [{ eventName: "Men's Singles", eventType: 'SINGLES', gender: 'MALE', drawSize: 32 }],
+        events: [{ eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: 'MALE', drawSize: 32 }],
       },
     });
 
@@ -155,7 +156,7 @@ describe('Policy Fixtures — Engine Integration', () => {
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
         venues: [{ venueName: 'Local Courts', numberOfCourts: 6 }],
-        events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32 }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32 }],
       },
     });
 
@@ -182,7 +183,7 @@ describe('Policy Fixtures — Engine Integration', () => {
         tournamentName: 'Snapshot Test',
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
     });
 

@@ -297,7 +297,7 @@ describe('doubleExitAdvancement with DOUBLE_DEFAULT propagation', () => {
 // ----------------------------------------------------------------
 describe('removeTieMatchUpParticipant with TEAM lineUps', () => {
   it('exercises participant assignment and removal in TEAM draw', () => {
-    const drawProfiles = [{ drawSize: 2, eventType: 'TEAM' }];
+    const drawProfiles = [{ drawSize: 2, eventType: TEAM_EVENT }];
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles });
     tournamentEngine.setState(tournamentRecord);
 
@@ -319,7 +319,7 @@ describe('removeTieMatchUpParticipant with TEAM lineUps', () => {
   });
 
   it('exercises DOUBLES tie matchUp participant removal', () => {
-    const drawProfiles = [{ drawSize: 2, eventType: 'TEAM' }];
+    const drawProfiles = [{ drawSize: 2, eventType: TEAM_EVENT }];
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles });
     tournamentEngine.setState(tournamentRecord);
 
@@ -569,7 +569,7 @@ describe('generateStatCrew with TEAM tournament', () => {
 
   it('exercises dual match (single team matchUp) path', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM', completeAllMatchUps: true }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, completeAllMatchUps: true }],
     });
 
     const result: any = generateStatCrew({ tournamentRecord });
@@ -582,7 +582,7 @@ describe('generateStatCrew with TEAM tournament', () => {
 
   it('exercises tournament path with multiple team matchUps', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM', completeAllMatchUps: true }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, completeAllMatchUps: true }],
     });
 
     const result: any = generateStatCrew({ tournamentRecord });
@@ -688,7 +688,7 @@ describe('updateTieFormat advanced paths', () => {
 
   it('exercises matchUp-level tieFormat update', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
 
@@ -718,7 +718,7 @@ describe('updateTieFormat advanced paths', () => {
 
   it('exercises structure-level tieFormat update', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
 
@@ -826,7 +826,7 @@ describe('generateLineUps paths', () => {
 
   it('exercises full lineUp generation for TEAM event', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId: drawIds[0] });
@@ -845,7 +845,7 @@ describe('generateLineUps paths', () => {
 
   it('exercises lineUp generation with attach option', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId: drawIds[0] });
@@ -870,7 +870,7 @@ describe('generateLineUps paths', () => {
 describe('replaceTieMatchUpParticipant via engine', () => {
   it('exercises replacement in TEAM draw', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
 
@@ -900,7 +900,7 @@ describe('replaceTieMatchUpParticipant via engine', () => {
 
   it('exercises substitution path', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
 
@@ -1080,7 +1080,7 @@ describe('positionAssignment additional paths', () => {
 describe('applyLineUps with valid TEAM data', () => {
   it('exercises lineUp application to TEAM matchUp', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
 
@@ -1254,7 +1254,7 @@ describe('FMLC bye propagation to consolation', () => {
 describe('directWinner lineUp propagation', () => {
   it('exercises lineUp propagation when completing TEAM matchUp', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
     const drawId = drawIds[0];

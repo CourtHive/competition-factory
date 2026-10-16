@@ -7,6 +7,7 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { UNLINKED_STRUCTURES } from '@Constants/errorConditionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
  * Two areas the ported suite did not reach, both real behaviour rather than coverage padding:
@@ -154,7 +155,7 @@ describe('buildFromSources — malformed and partial input', () => {
       {
         tournamentPublicEventData: {
           eventData: {
-            eventInfo: { eventId: 'e1', eventName: 'E', eventType: 'SINGLES' },
+            eventInfo: { eventId: 'e1', eventName: 'E', eventType: SINGLES_EVENT },
             drawsData: [{ drawName: 'no id here' }],
           },
         },
@@ -169,7 +170,7 @@ describe('buildFromSources — malformed and partial input', () => {
     const doc = (drawId: string) => ({
       tournamentPublicEventData: {
         eventData: {
-          eventInfo: { eventId: 'e1', eventName: 'E', eventType: 'SINGLES' },
+          eventInfo: { eventId: 'e1', eventName: 'E', eventType: SINGLES_EVENT },
           drawsData: [{ drawId, drawName: 'Main', structures: [] }],
         },
       },
@@ -192,7 +193,7 @@ describe('buildFromSources — malformed and partial input', () => {
       {
         tournamentPublicEventData: {
           eventData: {
-            eventInfo: { eventId: 'e1', eventName: 'E', eventType: 'SINGLES' },
+            eventInfo: { eventId: 'e1', eventName: 'E', eventType: SINGLES_EVENT },
             drawsData: [{ drawId: 'd1', drawName: 'Main', structures: [{ structureId: 's1', matchUps: [] }] }],
           },
         },
@@ -243,7 +244,7 @@ describe('buildFromSources — malformed and partial input', () => {
       {
         tournamentPublicEventData: {
           eventData: {
-            eventInfo: { eventId: 'e1', eventName: 'E', eventType: 'SINGLES' },
+            eventInfo: { eventId: 'e1', eventName: 'E', eventType: SINGLES_EVENT },
             drawsData: [{ drawId: 'd1', drawName: 'Main', structures: [{ structureId: 's1', matchUps: [] }] }],
           },
         },

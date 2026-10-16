@@ -10,6 +10,7 @@ import {
 
 // constants
 import { DRAFT, SUBMITTED, WITHDRAWN, APPROVED } from '@Constants/sanctioningConstants';
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
@@ -25,7 +26,7 @@ const testApplicant: Applicant = {
 
 const testEventProposal: EventProposal = {
   eventName: "Men's Singles",
-  eventType: 'SINGLES',
+  eventType: SINGLES_EVENT,
   gender: 'MALE',
   drawSize: 32,
   drawType: SINGLE_ELIMINATION,
@@ -236,7 +237,7 @@ describe('Sanctioning Engine — Event Proposal CRUD', () => {
     let result: any = sanctioningEngine.addEventProposal({
       eventProposal: {
         eventName: "Women's Singles",
-        eventType: 'SINGLES',
+        eventType: SINGLES_EVENT,
         gender: 'FEMALE',
         drawSize: 32,
       },
@@ -292,7 +293,7 @@ describe('Sanctioning Engine — Event Proposal CRUD', () => {
     sanctioningEngine.setSanctioningRecord(record);
 
     result = sanctioningEngine.addEventProposal({
-      eventProposal: { eventName: 'Fail', eventType: 'SINGLES' },
+      eventProposal: { eventName: 'Fail', eventType: SINGLES_EVENT },
     });
     expect(result.error?.code).toEqual('ERR_PROPOSAL_NOT_EDITABLE');
 
@@ -360,7 +361,7 @@ describe('Sanctioning Engine — executionQueue', () => {
         params: {
           eventProposal: {
             eventName: "Women's Doubles",
-            eventType: 'DOUBLES',
+            eventType: DOUBLES_EVENT,
             gender: 'FEMALE',
           },
         },

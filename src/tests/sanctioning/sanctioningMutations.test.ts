@@ -41,6 +41,7 @@ import type {
 // constants
 import { UNDER_REVIEW, POST_EVENT, ISSUES_FLAGGED } from '@Constants/sanctioningConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-mut',
@@ -54,7 +55,7 @@ function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentPro
     tournamentName: 'Mut Open',
     proposedStartDate: '2028-06-01',
     proposedEndDate: '2028-06-07',
-    events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: SINGLE_ELIMINATION }],
+    events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, drawType: SINGLE_ELIMINATION }],
     ...overrides,
   };
 }
@@ -791,7 +792,7 @@ describe('addEventProposal — missing-record and guard paths', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = addEventProposal({
       sanctioningRecord: undefined as any,
-      eventProposal: { eventName: 'S', eventType: 'SINGLES' },
+      eventProposal: { eventName: 'S', eventType: SINGLES_EVENT },
     });
     expect(result.error).toBeDefined();
   });
@@ -806,7 +807,7 @@ describe('addEventProposal — missing-record and guard paths', () => {
     const record = makeRecord();
     let result: any = addEventProposal({
       sanctioningRecord: record,
-      eventProposal: { eventName: '', eventType: 'SINGLES' },
+      eventProposal: { eventName: '', eventType: SINGLES_EVENT },
     });
     expect(result.error).toBeDefined();
   });

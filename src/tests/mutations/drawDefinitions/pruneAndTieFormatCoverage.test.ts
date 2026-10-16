@@ -3,6 +3,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
+import { TEAM_EVENT } from '@Constants/eventConstants';
+
 test('pruneDrawDefinition reliably triggers canBePruned on a standard draw', () => {
   // Create a standard 16-draw with all 16 participants placed (automated: true is default)
   const {
@@ -112,7 +115,7 @@ test('modifyCollectionDefinition on a TEAM draw modifies the tie format', () => 
     drawProfiles: [
       {
         drawSize: 4,
-        eventType: 'TEAM',
+        eventType: TEAM_EVENT,
         tieFormatName: 'COLLEGE_DEFAULT',
       },
     ],

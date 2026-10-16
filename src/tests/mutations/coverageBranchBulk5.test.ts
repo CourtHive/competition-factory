@@ -25,6 +25,7 @@ import { MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { MATCHUP, STRUCTURE } from '@Constants/attributeConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import { AGE, RATING } from '@Constants/eventConstants';
 import {
   INVALID_MATCHUP,
   INVALID_STAGE,
@@ -343,9 +344,9 @@ describe('tournamentDetails branch coverage', () => {
     const result: any = setTournamentCategories({
       tournamentRecord,
       categories: [
-        { categoryName: 'U18', type: 'AGE' },
+        { categoryName: 'U18', type: AGE },
         { categoryName: '', type: '' }, // invalid, no name/type
-        { categoryName: 'Open', type: 'RATING' },
+        { categoryName: 'Open', type: RATING },
       ],
     });
     expect(result.success).toBe(true);

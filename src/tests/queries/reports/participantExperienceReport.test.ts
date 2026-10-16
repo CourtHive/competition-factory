@@ -4,6 +4,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
+
 const DAY1 = '2026-08-20';
 const DAY2 = '2026-08-21';
 
@@ -151,7 +154,7 @@ describe('Participant Experience — singles/doubles type change', () => {
 
     mocksEngine.generateTournamentRecord({
       drawProfiles: [
-        { drawSize: 4, eventName: 'Doubles', eventType: 'DOUBLES' },
+        { drawSize: 4, eventName: 'Doubles', eventType: DOUBLES_EVENT },
         { drawSize: 8, eventName: 'Singles' },
       ],
       completeAllMatchUps: true,

@@ -25,6 +25,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+
 function makePersonData(count: number) {
   return Array.from({ length: count }, (_, i) => ({
     personId: `utr-${String(i + 1).padStart(3, '0')}`,
@@ -44,7 +47,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
         {
           drawSize: 32,
           drawType: SINGLE_ELIMINATION,
-          eventType: 'SINGLES',
+          eventType: SINGLES_EVENT,
           eventName: 'Open Singles',
           gender: ANY,
         },
@@ -87,7 +90,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
         {
           drawSize: 32,
           drawType: SINGLE_ELIMINATION,
-          eventType: 'SINGLES',
+          eventType: SINGLES_EVENT,
           eventName: 'Open Singles',
           gender: MIXED,
         },
@@ -119,7 +122,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
         {
           drawSize: 16,
           drawType: SINGLE_ELIMINATION,
-          eventType: 'DOUBLES',
+          eventType: DOUBLES_EVENT,
           eventName: 'Mixed Doubles',
           gender: MIXED,
         },
@@ -157,7 +160,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
       eventProfiles: [
         {
           eventName: 'Mixed Doubles',
-          eventType: 'DOUBLES',
+          eventType: DOUBLES_EVENT,
           gender: MIXED,
           drawProfiles: [{ drawSize: 16, drawType: SINGLE_ELIMINATION }],
         },
@@ -195,7 +198,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
         {
           drawSize: 32,
           drawType: SINGLE_ELIMINATION,
-          eventType: 'SINGLES',
+          eventType: SINGLES_EVENT,
           eventName: 'Men Singles',
           gender: 'MALE',
         },

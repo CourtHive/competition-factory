@@ -16,6 +16,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants and fixtures
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   PLAY_OFF,
   ROUND_ROBIN,
@@ -798,11 +799,11 @@ describe('generateEventWithDraw uncovered paths', () => {
 
   it('handles team event draw profile', () => {
     const result = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     expect(result.tournamentRecord).toBeDefined();
     const events = result.tournamentRecord.events;
-    expect(events?.[0]?.eventType).toBe('TEAM');
+    expect(events?.[0]?.eventType).toBe(TEAM_EVENT);
   });
 
   it('handles publish option in draw profile', () => {
@@ -862,11 +863,11 @@ describe('assignDrawPositionBye uncovered paths', () => {
 describe('updateTieFormat via engine', () => {
   it('updates tieFormat on a TEAM draw definition', () => {
     const result = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(result.tournamentRecord);
     const events = tournamentEngine.getEvents().events;
-    const teamEvent = events.find((e) => e.eventType === 'TEAM');
+    const teamEvent = events.find((e) => e.eventType === TEAM_EVENT);
     if (teamEvent?.drawDefinitions?.[0]?.tieFormat) {
       const tf = structuredClone(teamEvent.drawDefinitions[0].tieFormat);
       // Modify winCriteria slightly to trigger update path
@@ -954,7 +955,7 @@ describe('positionAssignment uncovered paths', () => {
 describe('removeTieMatchUpParticipant paths', () => {
   it('handles TEAM matchUp participant removal flows', () => {
     const result = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(result.tournamentRecord);
     // Getting matchUps for the TEAM draw

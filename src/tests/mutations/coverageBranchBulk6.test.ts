@@ -17,6 +17,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { MAIN } from '@Constants/drawDefinitionConstants';
+import { AGE } from '@Constants/eventConstants';
 import {
   COURT_NOT_FOUND,
   INVALID_VALUES,
@@ -166,7 +167,7 @@ describe('allowedTypes branch coverage', () => {
     const result = getAllowedDrawTypes({
       tournamentRecord,
       categoryName: undefined,
-      categoryType: 'AGE',
+      categoryType: AGE,
     });
     expect(Array.isArray(result)).toBe(true);
   });

@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 // types
 import type { Applicant, TournamentProposal, CalendarEvent } from '@Types/sanctioningTypes';
 
+// constants
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+
 const testApplicant: Applicant = {
   organisationId: 'org-001',
   organisationName: 'Test Club',
@@ -21,7 +24,7 @@ function createRecord(startDate: string, endDate: string, overrides?: Partial<To
       proposedStartDate: startDate,
       proposedEndDate: endDate,
       calendarSection: 'Southeast',
-      events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+      events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       ...overrides,
     },
   });
@@ -252,7 +255,7 @@ describe('Calendar Conflict Detection', () => {
         proposedStartDate: '2027-06-01',
         proposedEndDate: '2027-06-07',
         calendarSection: 'Southeast',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
     });
 

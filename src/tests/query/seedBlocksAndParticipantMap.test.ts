@@ -5,6 +5,7 @@ import { expect, test } from 'vitest';
 
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 
 // === getSeedBlocks tests ===
 
@@ -121,7 +122,7 @@ test('getParticipantMap with withGroupings', () => {
 
 test('getParticipantMap with withIndividualParticipants', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, eventType: 'DOUBLES' }],
+    drawProfiles: [{ drawSize: 8, eventType: DOUBLES_EVENT }],
   });
 
   const { participantMap } = getParticipantMap({

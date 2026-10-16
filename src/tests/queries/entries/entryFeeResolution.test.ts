@@ -5,6 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
+// constants
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+
 /**
  * Punch-list M1.
  *
@@ -115,7 +118,7 @@ describe('setRegistrationProfile — writes are strict', () => {
     const result: any = tournamentEngine.setRegistrationProfile({
       registrationProfile: {
         entriesClose: '2026-06-01',
-        entryFees: [{ amount: 6000, currencyCode: 'USD', unit: 'MINOR', eventType: 'SINGLES' }],
+        entryFees: [{ amount: 6000, currencyCode: 'USD', unit: 'MINOR', eventType: SINGLES_EVENT }],
       },
     });
     expect(result.success).toBe(true);

@@ -7,7 +7,7 @@ import { expect, test } from 'vitest';
 
 // constants
 import { MALE, FEMALE } from '@Constants/genderConstants';
-import { SINGLES } from '@Constants/eventConstants';
+import { SINGLES, AGE } from '@Constants/eventConstants';
 
 // stringify branches
 test('stringify with non-object returns undefined', () => {
@@ -170,13 +170,13 @@ test('validateCollectionDefinition with gender check failure', () => {
 test('validateCollectionDefinition with category check', () => {
   const result = validateCollectionDefinition({
     checkCategory: true,
-    referenceCategory: { categoryName: '14U', type: 'AGE' } as any,
+    referenceCategory: { categoryName: '14U', type: AGE } as any,
     collectionDefinition: {
       collectionId: 'test',
       matchUpCount: 3,
       matchUpType: SINGLES,
       matchUpValue: 1,
-      category: { categoryName: '18U', type: 'AGE' } as any,
+      category: { categoryName: '18U', type: AGE } as any,
     } as any,
   });
   // This might produce a category error depending on categoryCanContain logic

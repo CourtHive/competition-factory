@@ -15,6 +15,7 @@ import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED, DEFAULTED, RETIRED, WALKOVER } fr
 import type { RotatingPartnerScoringVariant } from '@Types/rotatingPartnerScoring';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 
 afterEach(() => setOutcomePipeline());
 
@@ -110,7 +111,7 @@ function setup(variant: RotatingPartnerScoringVariant = { tieResolution: 'ALLOW'
     events: [
       {
         eventId: 'e',
-        eventType: 'DOUBLES',
+        eventType: DOUBLES_EVENT,
         entries: ids.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
         drawDefinitions: [draw],
       },
