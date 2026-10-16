@@ -4,7 +4,7 @@ import { expect, test, describe } from 'vitest';
 
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION, MAIN, AD_HOC, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { DOUBLE_WALKOVER, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, COMPLETED, TO_BE_PLAYED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
 describe('removeDirectedParticipants - uncovered branches', () => {
@@ -138,7 +138,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
     const r1matchUp = matchUps.find((m) => m.matchUpId === firstRoundMatchUps[0].matchUpId);
     // After removing the outcome, the matchUp may be TO_BE_PLAYED or IN_PROGRESS
     // depending on whether there are still side effects from other completed matchUps
-    expect([TO_BE_PLAYED, 'IN_PROGRESS'].includes(r1matchUp.matchUpStatus)).toEqual(true);
+    expect([TO_BE_PLAYED, IN_PROGRESS].includes(r1matchUp.matchUpStatus)).toEqual(true);
   });
 
   test('removing result from team (DOUBLES) matchUp exercises collection/tieMatchUp path', () => {

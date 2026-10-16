@@ -7,6 +7,9 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { describe, test, expect, beforeEach } from 'vitest';
 
+// constants
+import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+
 describe('ScoringEngine - Basic Operations', () => {
   let engine: ScoringEngine;
 
@@ -234,7 +237,7 @@ describe('ScoringEngine - State Management', () => {
     const state = engine.getState();
     expect(state.matchUpFormat).toBe('SET3-S:6/TB7');
     expect(state.history?.points).toHaveLength(2);
-    expect(state.matchUpStatus).toBe('IN_PROGRESS');
+    expect(state.matchUpStatus).toBe(IN_PROGRESS);
   });
 
   test('should set state from JSON', () => {

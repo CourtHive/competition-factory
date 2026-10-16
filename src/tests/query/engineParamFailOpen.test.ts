@@ -7,8 +7,8 @@ import tournamentEngine from '@Engines/syncEngine';
 
 // constants
 import { INVALID_MATCHUP, MISSING_MATCHUPS, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
  * Both of these are on the engine, and both took an OBJECT param the engine does not resolve.
@@ -128,7 +128,7 @@ describe('engine methods refuse rather than answer when their object param is ab
     const noWinner: any = [
       {
         matchUpId: 'm1',
-        matchUpStatus: 'TO_BE_PLAYED',
+        matchUpStatus: TO_BE_PLAYED,
         sides: [
           { sideNumber: 1, drawPosition: 1 },
           { sideNumber: 2, drawPosition: 2 },

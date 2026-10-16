@@ -12,6 +12,9 @@
 import { createMatchUp, addPoint } from '@Assemblies/governors/scoreGovernor';
 import { describe, it, expect } from 'vitest';
 
+// constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -53,17 +56,17 @@ describe('checkAndFinalizeMatch — aggregate branch (lines 534-562)', () => {
 
     // Set 1: side 0 wins 11-0
     result = winTiebreakSet(result, 0, 11);
-    expect(result.matchUpStatus).not.toBe('COMPLETED');
+    expect(result.matchUpStatus).not.toBe(COMPLETED);
 
     // Set 2: side 0 wins 11-0 (side 0 has 2 sets, but aggregate needs all 3)
     result = winTiebreakSet(result, 0, 11);
-    expect(result.matchUpStatus).not.toBe('COMPLETED');
+    expect(result.matchUpStatus).not.toBe(COMPLETED);
 
     // Set 3: side 1 wins 11-0
     result = winTiebreakSet(result, 1, 11);
 
     // Aggregate totals: side0 tiebreak = 11+11+0 = 22, side1 tiebreak = 0+0+11 = 11
-    expect(result.matchUpStatus).toBe('COMPLETED');
+    expect(result.matchUpStatus).toBe(COMPLETED);
     expect(result.winningSide).toBe(1); // side 0 in 0-indexed = winningSide 1
   });
 
@@ -79,7 +82,7 @@ describe('checkAndFinalizeMatch — aggregate branch (lines 534-562)', () => {
     result = addPoint(result, { winner: 0 });
     result = addPoint(result, { winner: 0 }); // 11-9, side 0 wins set
     expect(result.score.sets[0].winningSide).toBe(1);
-    expect(result.matchUpStatus).not.toBe('COMPLETED');
+    expect(result.matchUpStatus).not.toBe(COMPLETED);
 
     // Set 2: side 1 wins 11-3
     for (let i = 0; i < 3; i++) result = addPoint(result, { winner: 0 });
@@ -89,7 +92,7 @@ describe('checkAndFinalizeMatch — aggregate branch (lines 534-562)', () => {
     // Then 11 points for side 1. At that point set 2 has side0=3, side1=11.
     // 11 >= 11 and 11-3=8 >= 2, so side 1 wins set 2.
     expect(result.score.sets[1].winningSide).toBe(2);
-    expect(result.matchUpStatus).not.toBe('COMPLETED');
+    expect(result.matchUpStatus).not.toBe(COMPLETED);
 
     // Set 3: side 1 wins 11-2
     for (let i = 0; i < 2; i++) result = addPoint(result, { winner: 0 });
@@ -97,7 +100,7 @@ describe('checkAndFinalizeMatch — aggregate branch (lines 534-562)', () => {
     expect(result.score.sets[2].winningSide).toBe(2);
 
     // Aggregate tiebreak totals: side0 = 11+3+2 = 16, side1 = 9+11+11 = 31
-    expect(result.matchUpStatus).toBe('COMPLETED');
+    expect(result.matchUpStatus).toBe(COMPLETED);
     expect(result.winningSide).toBe(2); // side 1 wins
   });
 
@@ -129,7 +132,7 @@ describe('checkAndFinalizeMatch — aggregate branch (lines 534-562)', () => {
     result = winTiebreakSet(result, 0, 11);
 
     // Aggregate: side0 = 11+0+11 = 22, side1 = 0+11+0 = 11
-    expect(result.matchUpStatus).toBe('COMPLETED');
+    expect(result.matchUpStatus).toBe(COMPLETED);
     expect(result.winningSide).toBe(1);
   });
 });
@@ -207,7 +210,7 @@ describe('checkAndFinalizeMatch — exactly non-aggregate branch (lines 570-572)
     // Side 0 has won 1 set >= setsToWin(1), so hasWinner=true
     // But exactly=2 and completedSets=1 < 2, so match should NOT be complete
     expect(result.score.sets[0].winningSide).toBe(1);
-    expect(result.matchUpStatus).not.toBe('COMPLETED');
+    expect(result.matchUpStatus).not.toBe(COMPLETED);
     expect(result.winningSide).toBeUndefined();
 
     // Set 2: side 1 wins 11-0
@@ -216,7 +219,7 @@ describe('checkAndFinalizeMatch — exactly non-aggregate branch (lines 570-572)
     // Now completedSets=2 >= exactly=2, and hasWinner is still true (setsWon[0]=1 >= 1)
     // Both sides have 1 set each, setsToWin=1, both qualify — matchWinner is side 0 (checked first)
     expect(result.score.sets[1].winningSide).toBe(2);
-    expect(result.matchUpStatus).toBe('COMPLETED');
+    expect(result.matchUpStatus).toBe(COMPLETED);
     // setsWon[0] >= setsToWin → matchWinner = 0, winningSide = 1
     expect(result.winningSide).toBe(1);
   });
@@ -227,15 +230,15 @@ describe('checkAndFinalizeMatch — exactly non-aggregate branch (lines 570-572)
 
     // Set 1: side 0 wins
     result = winTiebreakSet(result, 0, 11);
-    expect(result.matchUpStatus).not.toBe('COMPLETED');
+    expect(result.matchUpStatus).not.toBe(COMPLETED);
 
     // Set 2: side 0 wins (now has 2 sets, >= setsToWin, but exactly=3 needs 3 completed)
     result = winTiebreakSet(result, 0, 11);
-    expect(result.matchUpStatus).not.toBe('COMPLETED');
+    expect(result.matchUpStatus).not.toBe(COMPLETED);
 
     // Set 3: side 1 wins (all 3 sets played)
     result = winTiebreakSet(result, 1, 11);
-    expect(result.matchUpStatus).toBe('COMPLETED');
+    expect(result.matchUpStatus).toBe(COMPLETED);
     // setsWon: [2, 1], setsToWin=2, side 0 wins
     expect(result.winningSide).toBe(1);
   });
@@ -257,17 +260,17 @@ describe('checkAndFinalizeMatch — exactly non-aggregate branch (lines 570-572)
     // Set 1: side 0 wins 6-0
     result = winStandardSet(result, 0);
     expect(result.score.sets[0].winningSide).toBe(1);
-    expect(result.matchUpStatus).not.toBe('COMPLETED');
+    expect(result.matchUpStatus).not.toBe(COMPLETED);
 
     // Set 2: side 0 wins 6-0 (has 2 sets >= setsToWin=2, but exactly=3 needs 3 completed)
     result = winStandardSet(result, 0);
     expect(result.score.sets[1].winningSide).toBe(1);
-    expect(result.matchUpStatus).not.toBe('COMPLETED');
+    expect(result.matchUpStatus).not.toBe(COMPLETED);
 
     // Set 3: side 1 wins 6-0
     result = winStandardSet(result, 1);
     expect(result.score.sets[2].winningSide).toBe(2);
-    expect(result.matchUpStatus).toBe('COMPLETED');
+    expect(result.matchUpStatus).toBe(COMPLETED);
     // setsWon: [2, 1], side 0 wins
     expect(result.winningSide).toBe(1);
   });

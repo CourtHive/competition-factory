@@ -42,13 +42,15 @@ import {
   WALKOVER,
   DOUBLE_WALKOVER,
   DOUBLE_DEFAULT,
+  TO_BE_PLAYED,
+  IN_PROGRESS,
 } from '@Constants/matchUpStatusConstants';
 
 // ----------------------------------------------------------------
 // 1. addPoint.ts — timed set, aggregate format, rally scoring,
 //    consecutive game, match tiebreak, formatGameScore edge cases
 // ----------------------------------------------------------------
-function makeMatchUp(format: string, status = 'TO_BE_PLAYED') {
+function makeMatchUp(format: string, status = TO_BE_PLAYED) {
   return {
     matchUpId: 'mu1',
     matchUpFormat: format,
@@ -87,7 +89,7 @@ describe('addPoint uncovered paths', () => {
     }
     expect(m.score.sets.length).toBeGreaterThanOrEqual(1);
     // Timed sets don't auto-complete
-    expect(m.matchUpStatus).toBe('IN_PROGRESS');
+    expect(m.matchUpStatus).toBe(IN_PROGRESS);
   });
 
   it('handles tiebreak-only set (pickleball style)', () => {
@@ -110,7 +112,7 @@ describe('addPoint uncovered paths', () => {
       { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1, side1GameScores: [], side2GameScores: [] },
       { setNumber: 2, side1Score: 3, side2Score: 6, winningSide: 2, side1GameScores: [], side2GameScores: [] },
     ];
-    mu.matchUpStatus = 'IN_PROGRESS';
+    mu.matchUpStatus = IN_PROGRESS;
     let m = mu;
     // Play match tiebreak to 10-0
     for (let i = 0; i < 10; i++) {
@@ -264,7 +266,7 @@ describe('getParticipantResults uncovered paths', () => {
   it('handles team matchUps with tieMatchUps and no overall winningSide', () => {
     const matchUps = [
       {
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
         winningSide: undefined,
         sides: [
           { sideNumber: 1, participantId: 'teamA' },

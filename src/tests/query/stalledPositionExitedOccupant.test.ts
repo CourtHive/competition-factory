@@ -7,7 +7,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**
  * AN OCCUPANT WHO EXITED IS NOT WAITING FOR ANYBODY.
@@ -62,7 +62,7 @@ it('does not report the lone occupant of a converged double exit — COMPASS 16/
 
   // CONTROL: and the rule had its chance — nothing in the draw is playable, which is its first condition
   const playable = matchUps().filter((matchUp) => !matchUp.winningSide && occupantsOf(matchUp).length === 2);
-  expect(playable.filter((matchUp) => matchUp.matchUpStatus === 'TO_BE_PLAYED')).toEqual([]);
+  expect(playable.filter((matchUp) => matchUp.matchUpStatus === TO_BE_PLAYED)).toEqual([]);
 
   const drawDefinition: any = tournamentEngine.getEvent({ drawId: DRAW_ID }).drawDefinition;
   const result: any = getDrawInconsistencies({ drawDefinition, drawId: DRAW_ID });

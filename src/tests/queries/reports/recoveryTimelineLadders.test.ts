@@ -5,6 +5,18 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
+import {
+  WALKOVER,
+  DOUBLE_WALKOVER,
+  CANCELLED,
+  RETIRED,
+  ABANDONED,
+  COMPLETED,
+  DEAD_RUBBER,
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  IN_PROGRESS,
+} from '@Constants/matchUpStatusConstants';
 
 const DATE = '2026-08-20';
 
@@ -72,27 +84,27 @@ const allAppearances = (timeline: ReturnType<typeof timelineFor>) => [...timelin
 
 describe('wasPlayed', () => {
   it('excludes the statuses where nobody took the court', () => {
-    for (const matchUpStatus of ['WALKOVER', 'DOUBLE_WALKOVER', 'CANCELLED']) {
+    for (const matchUpStatus of [WALKOVER, DOUBLE_WALKOVER, CANCELLED]) {
       expect(wasPlayed({ matchUpStatus })).toBe(false);
     }
   });
 
   it('includes retirements and abandonments — time was spent on court', () => {
-    for (const matchUpStatus of ['RETIRED', 'ABANDONED', 'COMPLETED', 'DEAD_RUBBER']) {
+    for (const matchUpStatus of [RETIRED, ABANDONED, COMPLETED, DEAD_RUBBER]) {
       expect(wasPlayed({ matchUpStatus })).toBe(true);
     }
   });
 
   it('splits a default on score presence: mid-match disqualification vs no-show', () => {
     // Nothing else in the record distinguishes them.
-    expect(wasPlayed({ matchUpStatus: 'DEFAULTED', score: { sets: [{ side1Score: 6 }] } })).toBe(true);
-    expect(wasPlayed({ matchUpStatus: 'DEFAULTED' })).toBe(false);
-    expect(wasPlayed({ matchUpStatus: 'DOUBLE_DEFAULT', score: { sets: [] } })).toBe(false);
+    expect(wasPlayed({ matchUpStatus: DEFAULTED, score: { sets: [{ side1Score: 6 }] } })).toBe(true);
+    expect(wasPlayed({ matchUpStatus: DEFAULTED })).toBe(false);
+    expect(wasPlayed({ matchUpStatus: DOUBLE_DEFAULT, score: { sets: [] } })).toBe(false);
   });
 
   it('treats an unknown or absent status as played', () => {
     expect(wasPlayed({})).toBe(true);
-    expect(wasPlayed({ matchUpStatus: 'IN_PROGRESS' })).toBe(true);
+    expect(wasPlayed({ matchUpStatus: IN_PROGRESS })).toBe(true);
   });
 });
 
@@ -137,7 +149,7 @@ describe('finish and duration ladders', () => {
     });
     // Remove the auto-stamped scoredTime so the ladder falls all the way through.
     tournamentEngine.setMatchUpStatus({
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1, score: undefined },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1, score: undefined },
       matchUpId: target.matchUpId,
       drawId: target.drawId,
     });

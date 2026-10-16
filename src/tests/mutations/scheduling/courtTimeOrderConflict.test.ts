@@ -5,6 +5,20 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { CONFLICT_COURT_TIME_ORDER, CONFLICT_MATCHUP_ORDER, SCHEDULE_WARNING } from '@Constants/scheduleConstants';
+import {
+  WALKOVER,
+  DOUBLE_WALKOVER,
+  CANCELLED,
+  DEAD_RUBBER,
+  BYE,
+  COMPLETED,
+  TO_BE_PLAYED,
+  IN_PROGRESS,
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  ABANDONED,
+  RETIRED,
+} from '@Constants/matchUpStatusConstants';
 
 /**
  * CONFLICT_COURT_TIME_ORDER — a court's times out of step with its order of play.
@@ -69,7 +83,7 @@ describe('courtTimeOrderConflicts', () => {
     expect(pairs([slot('a', 1, `${DATE}T14:00`), slot('b', 2, `${DATE}T09:00`)])).toEqual([['a', 'b']]);
   });
 
-  it.each(['WALKOVER', 'DOUBLE_WALKOVER', 'CANCELLED', 'DEAD_RUBBER', 'BYE'])(
+  it.each([WALKOVER, DOUBLE_WALKOVER, CANCELLED, DEAD_RUBBER, BYE])(
     'a %s uses no court time, so the matchUp put on its court at the same time is not out of order',
     (matchUpStatus) => {
       expect(pairs([slot('a', 1, '08:00', { matchUpStatus }), slot('b', 2, '08:00')])).toEqual([]);
@@ -79,7 +93,7 @@ describe('courtTimeOrderConflicts', () => {
     },
   );
 
-  it.each(['COMPLETED', 'TO_BE_PLAYED', 'IN_PROGRESS', 'DEFAULTED', 'DOUBLE_DEFAULT', 'ABANDONED', 'RETIRED'])(
+  it.each([COMPLETED, TO_BE_PLAYED, IN_PROGRESS, DEFAULTED, DOUBLE_DEFAULT, ABANDONED, RETIRED])(
     'a %s still counts, since the court may have been used',
     (matchUpStatus) => {
       expect(pairs([slot('a', 1, '08:00', { matchUpStatus }), slot('b', 2, '08:00')])).toEqual([['a', 'b']]);
@@ -149,7 +163,7 @@ describe('proConflicts reports CONFLICT_COURT_TIME_ORDER', () => {
     place(drawId, walkover.matchUpId, court, 1, '08:00');
     place(drawId, next.matchUpId, court, 2, '08:00');
     const recorded = tournamentEngine.setMatchUpStatus({
-      outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 },
+      outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
       matchUpId: walkover.matchUpId,
       drawId,
     });

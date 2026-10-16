@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { SCORE } from '@Constants/matchUpActionConstants';
 
 const getTarget = ({ matchUps, roundNumber, roundPosition }) =>
@@ -49,12 +49,12 @@ it('can recognize when double WO/WO propagated WO/WO is NOT active downstream', 
       roundPosition,
     ]),
   ).toEqual([
-    ['DOUBLE_WALKOVER', 1, 1], // { roundNumber: 1, roundPosition: 1 }
-    ['DOUBLE_WALKOVER', 1, 2],
-    ['DOUBLE_WALKOVER', 1, 3],
-    ['DOUBLE_WALKOVER', 2, 1],
-    ['WALKOVER', 2, 2],
-    ['WALKOVER', 3, 1],
+    [DOUBLE_WALKOVER, 1, 1], // { roundNumber: 1, roundPosition: 1 }
+    [DOUBLE_WALKOVER, 1, 2],
+    [DOUBLE_WALKOVER, 1, 3],
+    [DOUBLE_WALKOVER, 2, 1],
+    [WALKOVER, 2, 2],
+    [WALKOVER, 3, 1],
   ]);
   expect(completedMatchUps.length).toEqual(6);
 

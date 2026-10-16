@@ -14,6 +14,7 @@ import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { ADD_PARTICIPANTS, ADD_MATCHUPS } from '@Constants/topicConstants';
 import type { CompetitionProfile } from '@Types/competitionProfile';
 import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import {
   EXISTING_MATCHUP_ID,
   EXISTING_MATCHUPS,
@@ -123,7 +124,7 @@ it('a late matchUp ID collision leaves no orphan PAIRs, matches, provenance or n
   context.event.drawDefinitions!.push({
     drawId: 'other',
     structures: [
-      { structureId: 'other-s', matchUps: [{ matchUpId: 'rotating-rp-round-1-1-m0', matchUpStatus: 'TO_BE_PLAYED' }] },
+      { structureId: 'other-s', matchUps: [{ matchUpId: 'rotating-rp-round-1-1-m0', matchUpStatus: TO_BE_PLAYED }] },
     ],
   });
   const args = request(context);
@@ -241,7 +242,7 @@ it('atomic staging and returned provenance stay isolated when query copying is d
   context.event.drawDefinitions!.push({
     drawId: 'other',
     structures: [
-      { structureId: 'other-s', matchUps: [{ matchUpId: 'rotating-rp-round-1-1-m0', matchUpStatus: 'TO_BE_PLAYED' }] },
+      { structureId: 'other-s', matchUps: [{ matchUpId: 'rotating-rp-round-1-1-m0', matchUpStatus: TO_BE_PLAYED }] },
     ],
   });
   setDeepCopy(false, {});

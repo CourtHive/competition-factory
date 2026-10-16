@@ -6,7 +6,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER, DEFAULTED } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, DEFAULTED, TO_BE_PLAYED, DOUBLE_DEFAULT, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -29,7 +29,7 @@ const playableCount = (drawId: string) =>
     .allDrawMatchUps({ inContext: true, drawId })
     .matchUps.filter(
       (m: any) =>
-        !m.winningSide && (!m.matchUpStatus || m.matchUpStatus === 'TO_BE_PLAYED') && occupantsOf(m).length === 2,
+        !m.winningSide && (!m.matchUpStatus || m.matchUpStatus === TO_BE_PLAYED) && occupantsOf(m).length === 2,
     ).length;
 
 const generate = (drawId: string, drawSize: number, participantsCount: number, nonRandom: number) => {
@@ -166,10 +166,10 @@ test.skipIf(!enabled)('probe 3 — census 9100555, a stall that a later correcti
 
   const submissions: [string, number, number, any][] = [
     ['Main', 1, 2, { winningSide: 2 }],
-    ['Main', 2, 2, { matchUpStatus: 'DOUBLE_DEFAULT' }],
+    ['Main', 2, 2, { matchUpStatus: DOUBLE_DEFAULT }],
     ['Main', 2, 1, { matchUpStatus: DEFAULTED, winningSide: 1 }],
     ['Backdraw', 3, 1, { matchUpStatus: DOUBLE_WALKOVER }],
-    ['Main', 1, 3, { matchUpStatus: 'WALKOVER', winningSide: 2 }],
+    ['Main', 1, 3, { matchUpStatus: WALKOVER, winningSide: 2 }],
     ['Backdraw', 3, 1, { winningSide: 1 }],
   ];
 

@@ -13,6 +13,9 @@ import {
 import { FORMAT_STANDARD, FORMAT_ATP_DOUBLES } from '@Fixtures/scoring/matchUpFormats';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
+// constants
+import { RETIRED, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
+
 // ----------------------------------------------------------------
 // addOutcome
 // ----------------------------------------------------------------
@@ -203,7 +206,7 @@ test('getMatchUpWinner respects WINNING_STATUSES with winningSide override', () 
   const sets = [{ winningSide: 1, side1Score: 6, side2Score: 3 }];
   const { matchUpWinningSide } = getMatchUpWinner({
     matchUpFormat: FORMAT_STANDARD,
-    matchUpStatus: 'RETIRED',
+    matchUpStatus: RETIRED,
     winningSide: 2,
     sets,
   });
@@ -224,7 +227,7 @@ test('getMatchUpWinner with DEFAULTED status', () => {
   const sets = [{ winningSide: 1, side1Score: 3, side2Score: 1 }];
   const { matchUpWinningSide } = getMatchUpWinner({
     matchUpFormat: FORMAT_STANDARD,
-    matchUpStatus: 'DEFAULTED',
+    matchUpStatus: DEFAULTED,
     winningSide: 1,
     sets,
   });
@@ -234,7 +237,7 @@ test('getMatchUpWinner with DEFAULTED status', () => {
 test('getMatchUpWinner with WALKOVER status', () => {
   const { matchUpWinningSide } = getMatchUpWinner({
     matchUpFormat: FORMAT_STANDARD,
-    matchUpStatus: 'WALKOVER',
+    matchUpStatus: WALKOVER,
     winningSide: 2,
     sets: [],
   });

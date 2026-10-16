@@ -37,6 +37,7 @@ import {
   DEFAULTED,
   WALKOVER,
   BYE,
+  CANCELLED,
 } from '@Constants/matchUpStatusConstants';
 
 // ─── setMatchUpState: validateMatchUpStateInputs ──────────────────────
@@ -100,7 +101,7 @@ describe('setMatchUpState validation branches', () => {
     });
 
     let result: any = tournamentEngine.setMatchUpStatus({
-      outcome: { matchUpStatus: 'CANCELLED', winningSide: 1 },
+      outcome: { matchUpStatus: CANCELLED, winningSide: 1 },
       matchUpId: 'm-1-1',
       drawId,
     });

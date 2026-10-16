@@ -15,6 +15,9 @@ import { formatGameScore } from '@Mutate/scoring/addPoint';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, test, expect, vi } from 'vitest';
 
+// constants
+import { TO_BE_PLAYED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+
 // ============================================================================
 // Helper: play N points for one side to win a game
 // ============================================================================
@@ -635,11 +638,11 @@ describe('ScoringEngine — setInitialScore', () => {
 
   test('transitions status to IN_PROGRESS', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine.getState().matchUpStatus).toBe('TO_BE_PLAYED');
+    expect(engine.getState().matchUpStatus).toBe(TO_BE_PLAYED);
     engine.setInitialScore({
       sets: [{ side1Score: 6, side2Score: 3, winningSide: 1 }],
     });
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
   });
 
   test('undo after setInitialScore + points restores initial state on rebuild', () => {

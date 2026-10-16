@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 // constants and fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
  * Readiness answers "can this placement happen at the time it is scheduled
@@ -94,7 +95,7 @@ describe('getMatchUpReadiness — what cannot be evaluated is never reported as 
       startDate,
     });
     const bye: any = (tournamentEngine.allTournamentMatchUps({ inContext: true }).matchUps as any[]).find(
-      (matchUp) => matchUp.matchUpStatus === 'BYE',
+      (matchUp) => matchUp.matchUpStatus === BYE,
     );
     expect(bye).toBeDefined();
     const result: any = getMatchUpReadiness({ tournamentRecord: tournamentRecord as any, matchUpId: bye.matchUpId });

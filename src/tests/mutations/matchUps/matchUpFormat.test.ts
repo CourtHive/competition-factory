@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 
 // constants and fixtures
 import { FORMAT_FAST4, FORMAT_SHORT_SETS, FORMAT_STANDARD, TIMED20 } from '@Fixtures/scoring/matchUpFormats';
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
@@ -358,7 +359,7 @@ it('setMatchUpFormat with scheduledDates applies format to specific dates', () =
 
   // Schedule a matchUp to a specific date
   const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
-  const tbpMatchUp = matchUps.find((m) => m.matchUpStatus === 'TO_BE_PLAYED');
+  const tbpMatchUp = matchUps.find((m) => m.matchUpStatus === TO_BE_PLAYED);
   if (tbpMatchUp) {
     tournamentEngine.addMatchUpScheduleItems({
       matchUpId: tbpMatchUp.matchUpId,

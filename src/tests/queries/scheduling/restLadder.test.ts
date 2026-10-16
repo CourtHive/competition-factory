@@ -9,6 +9,9 @@ import {
 // types
 import { HydratedMatchUp } from '@Types/hydrated';
 
+// constants
+import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
+
 /**
  * The ladder and the honesty rules, exercised directly against the pure
  * analysis rather than through the engine.
@@ -252,7 +255,7 @@ describe('rest declines to evaluate what it cannot', () => {
   });
 
   it('reports bye rather than measuring a matchUp nobody plays', () => {
-    const bye = singles('bye', ['alice'], { scheduledTime: '09:00' }, { matchUpStatus: 'BYE' });
+    const bye = singles('bye', ['alice'], { scheduledTime: '09:00' }, { matchUpStatus: BYE });
     const result = analyzeParticipantRest({
       timingFor: () => TIMING,
       matchUps: [bye],
@@ -320,7 +323,7 @@ describe('sides that have not been decided yet', () => {
   });
 
   it('adds no pending row when the feeder is already finished', () => {
-    const done = feeder({ endTime: '13:00' }, { winningSide: 1, matchUpStatus: 'COMPLETED' });
+    const done = feeder({ endTime: '13:00' }, { winningSide: 1, matchUpStatus: COMPLETED });
     const { rows } = analyze([halfKnown(), done], 'sf', '13:30');
     expect(rows.every((row) => !row.pendingUpstream)).toEqual(true);
   });

@@ -5,6 +5,7 @@ import { afterEach, expect, it } from 'vitest';
 
 // constants
 import { SINGLE_ELIMINATION, AD_HOC, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 afterEach(() => setOutcomePipeline());
 
@@ -76,7 +77,7 @@ it.each(['v1', 'v2', 'differential'] as const)(
         drawId: context.drawId,
         matchUpId: context.matchUpId,
         disableScoreValidation: true,
-        outcome: { matchUpStatus: 'COMPLETED', score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } },
+        outcome: { matchUpStatus: COMPLETED, score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } },
       }).error,
     ).toBeTruthy();
     expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
@@ -115,7 +116,7 @@ it('a social structure may have its own tied format without changing the elimina
 it('direct state writes cannot complete an elimination match without a winner', () => {
   const { drawId, matchUpId } = setup();
   expect(
-    tournamentEngine.setMatchUpState({ drawId, matchUpId, matchUpStatus: 'COMPLETED', disableScoreValidation: true })
+    tournamentEngine.setMatchUpState({ drawId, matchUpId, matchUpStatus: COMPLETED, disableScoreValidation: true })
       .error,
   ).toBeTruthy();
 });

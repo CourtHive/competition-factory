@@ -8,8 +8,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
+import { COMPLETED, CANCELLED } from '@Constants/matchUpStatusConstants';
 import { PracticeRegistrationStatusEnum } from '@Types/tournamentTypes';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { PRACTICE } from '@Constants/scheduleConstants';
 import * as factoryEnums from '@Types/enumExports';
 import {
@@ -827,7 +827,7 @@ describe('PracticeRegistrationStatusEnum — the single source for the status vo
     expect(cancelled.registration.status).toEqual(PracticeRegistrationStatusEnum.CANCELLED);
 
     expect(Object.values(PracticeRegistrationStatusEnum).toSorted((a, b) => a.localeCompare(b))).toEqual([
-      'CANCELLED',
+      CANCELLED,
       'CONFIRMED',
     ]);
   });

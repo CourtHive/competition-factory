@@ -3,6 +3,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { WALKOVER } from '@Constants/matchUpStatusConstants';
+
 const DATE = '2026-08-20';
 const NEXT_DATE = '2026-08-21';
 
@@ -144,7 +147,7 @@ describe('Participant Recovery Time report', () => {
     expect(before.rows.filter((r: any) => r.matchUpId === target.matchUpId).length).toBeGreaterThan(0);
 
     tournamentEngine.setMatchUpStatus({
-      outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 },
+      outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
       matchUpId: target.matchUpId,
       drawId: target.drawId,
     });

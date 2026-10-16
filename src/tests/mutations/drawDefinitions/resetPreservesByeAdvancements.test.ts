@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { FEED_IN_CHAMPIONSHIP, SINGLE_ELIMINATION, CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
  * `resetDrawDefinition` used to strand every BYE advancement in the draw.
@@ -74,7 +75,7 @@ it('preserves the drawPositions a BYE advanced when a draw is reset', () => {
 
   // and the round-1 BYEs the advancement came from are still there
   const byeMatchUps = getStructureMatchUps(DRAW_ID).matchUps.filter(
-    (m: any) => m.roundNumber === 1 && m.matchUpStatus === 'BYE',
+    (m: any) => m.roundNumber === 1 && m.matchUpStatus === BYE,
   );
   expect(byeMatchUps.length).toBe(3);
 

@@ -10,8 +10,8 @@ import { describe, test, expect } from 'vitest';
 
 // constants
 import { MISSING_DRAW_DEFINITION, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { LUCKY_PARTICIPANT } from '@Constants/positionActionConstants';
-import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   ADAPTIVE,
@@ -1031,7 +1031,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       roundPosition: rp,
       roundNumber: 2,
       finishingRound: 3,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     }));
 
     const round3MatchUps = [1, 2].map((rp) => ({
@@ -1040,7 +1040,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       roundPosition: rp,
       roundNumber: 3,
       finishingRound: 2,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     }));
 
     const finalMatchUp = {
@@ -1049,7 +1049,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       roundPosition: 1,
       roundNumber: 4,
       finishingRound: 1,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     };
 
     const pids = Array.from({ length: 10 }, (_, i) => `pid-${i + 1}`);
@@ -1141,14 +1141,14 @@ describe('luckyDrawAdvancement — additional coverage', () => {
           roundPosition: 1,
           drawPositions: [1, 2],
           matchUpId: 'po-m1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           roundNumber: 1,
           roundPosition: 2,
           drawPositions: [3, 4],
           matchUpId: 'po-m2',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],
@@ -1226,14 +1226,14 @@ describe('luckyDrawAdvancement — additional coverage', () => {
           roundPosition: 1,
           drawPositions: [1, 2],
           matchUpId: 'bu-m1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           roundNumber: 1,
           roundPosition: 2,
           drawPositions: [3, 4],
           matchUpId: 'bu-m2',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],

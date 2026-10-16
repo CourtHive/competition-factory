@@ -4,6 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import * as topicConstants from '@Constants/topicConstants';
 import {
   SINGLE_ELIMINATION,
@@ -92,7 +93,7 @@ function collectNotices(drawType: string) {
   // test passes straight through two of the three bugs this guard exists for.
   const { outcome } = mocksEngine.generateOutcomeFromScoreString({
     scoreString: '6-4 6-2',
-    matchUpStatus: 'COMPLETED',
+    matchUpStatus: COMPLETED,
     winningSide: 1,
   });
   let scored = 0;

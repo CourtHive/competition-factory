@@ -8,6 +8,9 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { describe, test, expect } from 'vitest';
 
+// constants
+import { IN_PROGRESS, COMPLETED } from '@Constants/matchUpStatusConstants';
+
 const BLW_FORMAT = 'INN4XA-S:O3-M:T50';
 
 describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
@@ -20,17 +23,17 @@ describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
     const engine = new ScoringEngine({ matchUpFormat: BLW_FORMAT });
 
     engine.addSet({ side1Score: 3, side2Score: 1 });
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
 
     engine.addSet({ side1Score: 0, side2Score: 2 });
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
 
     engine.addSet({ side1Score: 5, side2Score: 1 });
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
 
     engine.addSet({ side1Score: 2, side2Score: 0 });
     // Aggregate: 10 vs 4 → side 1 wins
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1);
   });
 
@@ -41,7 +44,7 @@ describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
     engine.addSet({ side1Score: 9, side2Score: 0 });
     engine.addSet({ side1Score: 9, side2Score: 0 });
 
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
   });
 
   test('aggregate scoring determines winner (not innings won)', () => {
@@ -54,7 +57,7 @@ describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
     engine.addSet({ side1Score: 0, side2Score: 1 }); // side 2 wins inning
 
     // Aggregate: 9 vs 4 → side 1 wins despite losing 3 innings
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1);
   });
 
@@ -67,7 +70,7 @@ describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
     engine.addSet({ side1Score: 1, side2Score: 0 });
 
     // Aggregate: 4 vs 9 → side 2 wins
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(2);
   });
 
@@ -80,7 +83,7 @@ describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
     engine.addSet({ side1Score: 1, side2Score: 1 });
 
     // Aggregate: 7 vs 7 — tied, not complete
-    expect(engine.getState().matchUpStatus).not.toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).not.toBe(COMPLETED);
   });
 
   test('tied innings have no winningSide', () => {
@@ -99,7 +102,7 @@ describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
     engine.addSet({ side1Score: 1, side2Score: 0 });
 
     // Aggregate: 15 vs 14 → side 1 wins
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1);
 
     for (const set of engine.getState().score.sets) {
@@ -119,7 +122,7 @@ describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
     engine.addSet({ side1Score: 1, side2Score: 0 });
 
     // Aggregate: 4 vs 3 → side 1 wins by 1
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
     expect(engine.getState().winningSide).toBe(1);
   });
 

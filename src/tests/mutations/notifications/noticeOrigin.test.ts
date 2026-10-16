@@ -5,6 +5,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 /**
@@ -29,7 +30,7 @@ describe('MODIFY_MATCHUP carries the sanctioning origin', () => {
   function scoreOne(drawId: string) {
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     const { matchUps } = tournamentEngine.allTournamentMatchUps();

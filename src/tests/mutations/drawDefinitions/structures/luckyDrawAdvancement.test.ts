@@ -8,6 +8,16 @@ import { expect, test, describe } from 'vitest';
 import { LUCKY_DRAW, MAIN, LOSER, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import { INVALID_DRAW_SIZE } from '@Constants/errorConditionConstants';
 import {
+  COMPLETED,
+  BYE,
+  TO_BE_PLAYED,
+  WALKOVER,
+  DEFAULTED,
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+  RETIRED,
+} from '@Constants/matchUpStatusConstants';
+import {
   ASSIGN_BYE,
   REMOVE_ASSIGNMENT,
   REMOVE_SEED,
@@ -502,7 +512,7 @@ describe('luckyDrawAdvancement', () => {
 
     // Score the first round 2 matchUp
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       scoreString: '6-3 6-4',
       winningSide: 1,
     });
@@ -539,11 +549,11 @@ describe('luckyDrawAdvancement', () => {
     const { matchUps: allMatchUps } = tournamentEngine.allTournamentMatchUps();
     const round1MatchUps = allMatchUps
       .filter((m: any) => m.roundNumber === 1 && m.drawId === drawId)
-      .filter((m: any) => !m.winningSide && m.matchUpStatus !== 'BYE');
+      .filter((m: any) => !m.winningSide && m.matchUpStatus !== BYE);
 
     for (const matchUp of round1MatchUps) {
       const { outcome } = mocksEngine.generateOutcomeFromScoreString({
-        matchUpStatus: 'COMPLETED',
+        matchUpStatus: COMPLETED,
         scoreString: '6-3 6-4',
         winningSide: 1,
       });
@@ -587,7 +597,7 @@ function buildStaleDrawDefinition() {
 
   const round1MatchUps = [1, 2, 3, 4, 5].map((rp) => ({
     drawPositions: [rp * 2 - 1, rp * 2],
-    matchUpStatus: 'COMPLETED',
+    matchUpStatus: COMPLETED,
     matchUpId: `r1-m${rp}`,
     roundPosition: rp,
     roundNumber: 1,
@@ -603,7 +613,7 @@ function buildStaleDrawDefinition() {
     roundPosition: rp,
     roundNumber: 2,
     finishingRound: 3,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
   }));
 
   const round3MatchUps = [1, 2].map((rp) => ({
@@ -612,7 +622,7 @@ function buildStaleDrawDefinition() {
     roundPosition: rp,
     roundNumber: 3,
     finishingRound: 2,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
   }));
 
   const finalMatchUp = {
@@ -621,7 +631,7 @@ function buildStaleDrawDefinition() {
     roundPosition: 1,
     roundNumber: 4,
     finishingRound: 1,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
   };
 
   // Round 1 positions (1-10) with real participants
@@ -1040,7 +1050,7 @@ describe('calculateMatchUpMargin — no-score outcomes', () => {
   test('returns NaN margin for WALKOVER', () => {
     const matchUp = {
       winningSide: 1,
-      matchUpStatus: 'WALKOVER',
+      matchUpStatus: WALKOVER,
       score: { sets: [] },
     };
 
@@ -1054,7 +1064,7 @@ describe('calculateMatchUpMargin — no-score outcomes', () => {
   test('returns NaN margin for DEFAULTED', () => {
     const matchUp = {
       winningSide: 1,
-      matchUpStatus: 'DEFAULTED',
+      matchUpStatus: DEFAULTED,
       score: { sets: [] },
     };
 
@@ -1066,7 +1076,7 @@ describe('calculateMatchUpMargin — no-score outcomes', () => {
   test('returns NaN margin for DOUBLE_WALKOVER', () => {
     const matchUp = {
       winningSide: 1,
-      matchUpStatus: 'DOUBLE_WALKOVER',
+      matchUpStatus: DOUBLE_WALKOVER,
       score: { sets: [] },
     };
 
@@ -1078,7 +1088,7 @@ describe('calculateMatchUpMargin — no-score outcomes', () => {
   test('returns NaN margin for DOUBLE_DEFAULT', () => {
     const matchUp = {
       winningSide: 1,
-      matchUpStatus: 'DOUBLE_DEFAULT',
+      matchUpStatus: DOUBLE_DEFAULT,
       score: { sets: [] },
     };
 
@@ -1090,7 +1100,7 @@ describe('calculateMatchUpMargin — no-score outcomes', () => {
   test('handles RETIRED with partial score (should calculate from played sets)', () => {
     const matchUp = {
       winningSide: 1,
-      matchUpStatus: 'RETIRED',
+      matchUpStatus: RETIRED,
       score: {
         sets: [
           { side1Score: 6, side2Score: 4, setNumber: 1, winningSide: 1 },
@@ -1675,7 +1685,7 @@ describe('lucky draw BYE handling — odd participant count', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const round1ByeMatchUps = matchUps.filter((m: any) => m.roundNumber === 1 && m.matchUpStatus === 'BYE');
+    const round1ByeMatchUps = matchUps.filter((m: any) => m.roundNumber === 1 && m.matchUpStatus === BYE);
     expect(round1ByeMatchUps.length).toBe(1);
   });
 
@@ -1882,7 +1892,7 @@ describe('lucky draw BYE handling — odd participant count', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const round1ByeMatchUps = matchUps.filter((m: any) => m.roundNumber === 1 && m.matchUpStatus === 'BYE');
+    const round1ByeMatchUps = matchUps.filter((m: any) => m.roundNumber === 1 && m.matchUpStatus === BYE);
     expect(round1ByeMatchUps.length).toBe(1);
 
     // Round status should show round 1 complete

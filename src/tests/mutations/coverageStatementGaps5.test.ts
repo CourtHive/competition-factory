@@ -13,7 +13,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { COMPLETED, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, DOUBLE_WALKOVER, WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLES, SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING, SEEDING } from '@Constants/scaleConstants';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -898,7 +898,7 @@ describe('FMLC deep consolation paths', () => {
     if (mainR1.length > 0) {
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: mainR1[0].matchUpId,
-        outcome: { matchUpStatus: 'TO_BE_PLAYED' },
+        outcome: { matchUpStatus: TO_BE_PLAYED },
         drawId,
       });
       expect(result.success).toBe(true);
@@ -935,7 +935,7 @@ describe('doubleExitAdvancement deeper paths', () => {
     const updated = tournamentEngine.allDrawMatchUps({ drawId }).matchUps;
     const r2 = updated.filter((m) => m.roundNumber === 2);
     // At least one second round matchUp should have a status other than TO_BE_PLAYED
-    const anyAdvanced = r2.some((m) => m.matchUpStatus !== 'TO_BE_PLAYED');
+    const anyAdvanced = r2.some((m) => m.matchUpStatus !== TO_BE_PLAYED);
     expect(anyAdvanced).toBe(true);
   });
 

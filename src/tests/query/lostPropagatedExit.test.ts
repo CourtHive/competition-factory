@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
+import { DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER, DOUBLE_DEFAULT } from '@Constants/matchUpStatusConstants';
 import { PROPAGATED_EXIT_LOST } from '@Query/drawDefinition/getStructureInconsistencies';
-import { DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -48,7 +48,7 @@ function brokenDraw(mutate: (matchUp: any) => void) {
 
   put(2, { matchUpStatus: DOUBLE_WALKOVER });
   put(4, { winningSide: 1 });
-  put(3, { matchUpStatus: 'DOUBLE_DEFAULT' });
+  put(3, { matchUpStatus: DOUBLE_DEFAULT });
 
   const target = locate();
   expect(target.matchUpStatus).toEqual(WALKOVER);

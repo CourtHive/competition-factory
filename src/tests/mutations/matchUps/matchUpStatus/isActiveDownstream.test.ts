@@ -58,9 +58,9 @@ it('will not allow winningSide change when active downstream', () => {
     matchUpId: m.matchUpId,
   }));
   expect(confirmation).toEqual([
-    { structureName: 'East', matchUpStatus: 'COMPLETED', roundPosition: 1, roundNumber: 1, matchUpId: 'm-East-RP-1-1' },
-    { structureName: 'East', matchUpStatus: 'COMPLETED', roundPosition: 2, roundNumber: 1, matchUpId: 'm-East-RP-1-2' },
-    { structureName: 'West', matchUpStatus: 'WALKOVER', roundPosition: 1, roundNumber: 1, matchUpId: 'm-West-RP-1-1' },
+    { structureName: 'East', matchUpStatus: COMPLETED, roundPosition: 1, roundNumber: 1, matchUpId: 'm-East-RP-1-1' },
+    { structureName: 'East', matchUpStatus: COMPLETED, roundPosition: 2, roundNumber: 1, matchUpId: 'm-East-RP-1-2' },
+    { structureName: 'West', matchUpStatus: WALKOVER, roundPosition: 1, roundNumber: 1, matchUpId: 'm-West-RP-1-1' },
   ]);
 
   let targetMatchUp = completedMatchUps.find((m) => m.matchUpId === 'm-East-RP-1-1');

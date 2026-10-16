@@ -6,7 +6,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
 // constants and types
-import { COMPLETED, IN_PROGRESS, CANCELLED, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, IN_PROGRESS, CANCELLED, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -280,12 +280,12 @@ it.each(['v1', 'v2', 'differential'] as const)(
         drawId,
         matchUpId,
         outcome: {
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
           score: { scoreStringSide1: '', scoreStringSide2: '' },
         },
       }).error,
     ).toBeUndefined();
-    expect(read()).toMatchObject({ matchUpStatus: 'TO_BE_PLAYED' });
+    expect(read()).toMatchObject({ matchUpStatus: TO_BE_PLAYED });
     expect(read().score?.sets?.length ?? 0).toBe(0);
   },
 );
@@ -342,7 +342,7 @@ it.each(['v1', 'v2', 'differential'] as const)('a score-only clear returns to TO
   let result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome: { score: { sets: [] } } });
   expect(result.error).toBeUndefined();
   const current = tournamentEngine.allTournamentMatchUps().matchUps.find((match) => match.matchUpId === matchUpId);
-  expect(current.matchUpStatus).toBe('TO_BE_PLAYED');
+  expect(current.matchUpStatus).toBe(TO_BE_PLAYED);
   expect(current.winningSide).toBeUndefined();
   expect(current.score?.sets?.length ?? 0).toBe(0);
   result = tournamentEngine.tallyParticipantResults({ matchUps: tournamentEngine.allTournamentMatchUps().matchUps });

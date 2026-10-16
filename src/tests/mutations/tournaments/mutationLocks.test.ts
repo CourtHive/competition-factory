@@ -3,6 +3,7 @@ import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import {
   INVALID_VALUES,
   MISSING_VALUE,
@@ -52,7 +53,7 @@ describe('Mutation Locks', () => {
     const scoreResult = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       drawId,
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1 },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1 },
     });
     expect(scoreResult.error).toEqual(MUTATION_LOCKED);
   });
@@ -350,7 +351,7 @@ describe('Mutation Locks', () => {
     const result = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       drawId,
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1 },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1 },
     });
     expect(result.error).toEqual(MUTATION_LOCKED);
 
@@ -358,7 +359,7 @@ describe('Mutation Locks', () => {
     const result2 = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       drawId,
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1 },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1 },
       lockToken: 'scorer-token',
     });
     expect(result2.error).not.toEqual(MUTATION_LOCKED);
@@ -387,7 +388,7 @@ describe('Mutation Locks', () => {
     const result = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       drawId,
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1 },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1 },
     });
     expect(result.error).toEqual(MUTATION_LOCKED);
   });
@@ -412,7 +413,7 @@ describe('Mutation Locks', () => {
     const result = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       drawId,
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1 },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1 },
     });
     expect(result.error).toEqual(MUTATION_LOCKED);
   });

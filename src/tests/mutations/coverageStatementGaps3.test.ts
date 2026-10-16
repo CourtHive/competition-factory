@@ -12,7 +12,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { COMPLETED, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, BYE } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT, DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { RANKING } from '@Constants/scaleConstants';
@@ -214,7 +214,7 @@ describe('removeDirectedParticipants via FMLC advanced scenarios', () => {
       // Now remove the second round outcome — exercises deep removal paths
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: mainR2[0].matchUpId,
-        outcome: { matchUpStatus: 'TO_BE_PLAYED' },
+        outcome: { matchUpStatus: TO_BE_PLAYED },
         drawId,
       });
       expect(result.success).toBe(true);
@@ -224,7 +224,7 @@ describe('removeDirectedParticipants via FMLC advanced scenarios', () => {
     // Note: R2 removal may have already affected R1 state, so accept either result
     const result = tournamentEngine.setMatchUpStatus({
       matchUpId: mainR1Ids[0],
-      outcome: { matchUpStatus: 'TO_BE_PLAYED' },
+      outcome: { matchUpStatus: TO_BE_PLAYED },
       drawId,
     });
     expect(result.success || result.error).toBeDefined();
@@ -1243,7 +1243,7 @@ describe('FMLC bye propagation to consolation', () => {
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId: drawIds[0] });
     const consolationMatchUps = matchUps.filter((m) => m.stage === CONSOLATION);
     // Some consolation matchUps may have BYE status
-    const byeMatchUps = consolationMatchUps.filter((m) => m.matchUpStatus === 'BYE');
+    const byeMatchUps = consolationMatchUps.filter((m) => m.matchUpStatus === BYE);
     expect(byeMatchUps.length).toBeGreaterThanOrEqual(0);
   });
 });

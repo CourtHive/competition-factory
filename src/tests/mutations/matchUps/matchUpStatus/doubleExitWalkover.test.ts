@@ -6,7 +6,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
-import { BYE, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, DOUBLE_WALKOVER, WALKOVER, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 const getTarget = ({ matchUps, roundNumber, roundPosition }) =>
@@ -421,20 +421,20 @@ it('advanceds a DOUBLE_WALKOVER when encountering DOUBLE DOUBLE_WALKOVER', () =>
 
   const roundMatchUps: any = getRoundMatchUps({ matchUps })?.roundMatchUps;
   expect(roundMatchUps[1].map(({ matchUpStatus }) => matchUpStatus)).toEqual([
-    'COMPLETED',
-    'COMPLETED',
-    'DOUBLE_WALKOVER',
-    'DOUBLE_WALKOVER',
-    'TO_BE_PLAYED',
-    'TO_BE_PLAYED',
-    'TO_BE_PLAYED',
-    'TO_BE_PLAYED',
+    COMPLETED,
+    COMPLETED,
+    DOUBLE_WALKOVER,
+    DOUBLE_WALKOVER,
+    TO_BE_PLAYED,
+    TO_BE_PLAYED,
+    TO_BE_PLAYED,
+    TO_BE_PLAYED,
   ]);
   expect(roundMatchUps[2].map(({ matchUpStatus }) => matchUpStatus)).toEqual([
-    'TO_BE_PLAYED',
-    'DOUBLE_WALKOVER',
-    'TO_BE_PLAYED',
-    'TO_BE_PLAYED',
+    TO_BE_PLAYED,
+    DOUBLE_WALKOVER,
+    TO_BE_PLAYED,
+    TO_BE_PLAYED,
   ]);
 });
 
