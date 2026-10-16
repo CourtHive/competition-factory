@@ -2,6 +2,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and types
+import { UNGROUPED, UNPAIRED, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { INVALID_ENTRIES } from '@Constants/errorConditionConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
@@ -19,9 +20,9 @@ function setup() {
     eventId: 'doubles',
     eventType: DOUBLES_EVENT,
     entries: [
-      { participantId: 'p1', entryStatus: 'UNGROUPED' },
-      { participantId: 'p2', entryStatus: 'UNPAIRED' },
-      { participantId: 'pair', entryStatus: 'DIRECT_ACCEPTANCE' },
+      { participantId: 'p1', entryStatus: UNGROUPED },
+      { participantId: 'p2', entryStatus: UNPAIRED },
+      { participantId: 'pair', entryStatus: DIRECT_ACCEPTANCE },
     ],
     drawDefinitions: [drawDefinition],
   };
@@ -51,11 +52,11 @@ it('ordinary doubles accepts a PAIR entrant', () => {
   const context = setup();
   expect(tournamentEngine.addDrawEntries({ drawId: context.drawId, participantIds: ['pair'] }).success).toBe(true);
   expect(tournamentEngine.getTournament().tournamentRecord.events?.[0].drawDefinitions?.[0].entries).toEqual([
-    expect.objectContaining({ participantId: 'pair', entryStatus: 'DIRECT_ACCEPTANCE' }),
+    expect.objectContaining({ participantId: 'pair', entryStatus: DIRECT_ACCEPTANCE }),
   ]);
 });
 
-it.each(['UNGROUPED', 'UNPAIRED'] as const)('ordinary doubles preserves %s individual placeholders', (entryStatus) => {
+it.each([UNGROUPED, UNPAIRED] as const)('ordinary doubles preserves %s individual placeholders', (entryStatus) => {
   const context = setup();
   expect(tournamentEngine.addDrawEntries({ drawId: context.drawId, entryStatus, participantIds: ['p1'] }).success).toBe(
     true,

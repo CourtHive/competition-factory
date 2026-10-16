@@ -12,6 +12,7 @@ import {
   LUCKY_LOSER,
   WITHDRAWN,
   ORGANISER_ACCEPTANCE,
+  UNGROUPED,
 } from '@Constants/entryStatusConstants';
 
 test('modifyEntriesStatus with invalid participantIds returns error', () => {
@@ -279,7 +280,7 @@ test('modifyEntriesStatus PAIR/TEAM participant with ungrouped status returns er
   // Try setting PAIR participant to UNGROUPED status (should fail)
   const result = tournamentEngine.modifyEntriesStatus({
     participantIds: [participants[0].participantId],
-    entryStatus: 'UNGROUPED' as any,
+    entryStatus: UNGROUPED as any,
     eventId,
   });
   expect(result.error).toBeDefined();

@@ -16,6 +16,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { WITHDRAWN } from '@Constants/entryStatusConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { AGE } from '@Constants/eventConstants';
 import {
@@ -679,7 +680,7 @@ describe('removeDrawPositionAssignment branch coverage', () => {
         drawId: drawIds[0],
         structureId: structure.structureId,
         drawPosition: assignment.drawPosition,
-        entryStatus: 'WITHDRAWN',
+        entryStatus: WITHDRAWN,
       });
       // Should succeed or error but exercise the code path
       expect(result).toBeDefined();

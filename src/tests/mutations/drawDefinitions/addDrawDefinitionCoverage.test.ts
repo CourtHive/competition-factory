@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants and types
 import { SINGLE_ELIMINATION, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
+import { DIRECT_ACCEPTANCE, WILDCARD, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
@@ -439,7 +439,7 @@ describe('addDrawDefinition coverage', () => {
   it('modifyEventEntries does not modify entries with non-selected statuses', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'non-selected-draw' });
     // WITHDRAWN is not in STRUCTURE_SELECTED_STATUSES
-    drawDefinition.entries = [{ participantId: 'p1', entryStatus: 'WITHDRAWN' }] as any;
+    drawDefinition.entries = [{ participantId: 'p1', entryStatus: WITHDRAWN }] as any;
     const event: any = {
       eventId: 'ev1',
       drawDefinitions: [],

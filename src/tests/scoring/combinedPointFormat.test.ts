@@ -13,6 +13,7 @@ import { afterEach, expect, it } from 'vitest';
 // constants and types
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { RotatingPartnerScoringVariant } from '@Types/rotatingPartnerScoring';
+import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
@@ -87,7 +88,7 @@ function setup(variant: RotatingPartnerScoringVariant = { tieResolution: 'ALLOW'
     drawId: 'd',
     drawType: AD_HOC,
     matchUpType: 'DOUBLES',
-    entries: ids.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' })),
+    entries: ids.map((participantId) => ({ participantId, entryStatus: DIRECT_ACCEPTANCE })),
     structures: [{ structureId: 's', matchUps: [] }],
     competitionProfile: {
       version: 1,
@@ -112,7 +113,7 @@ function setup(variant: RotatingPartnerScoringVariant = { tieResolution: 'ALLOW'
       {
         eventId: 'e',
         eventType: DOUBLES_EVENT,
-        entries: ids.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
+        entries: ids.map((participantId) => ({ participantId, entryStatus: UNGROUPED })),
         drawDefinitions: [draw],
       },
     ],

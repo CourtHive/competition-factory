@@ -11,6 +11,7 @@ import Ajv from 'ajv';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import { ADD_PARTICIPANTS, ADD_MATCHUPS } from '@Constants/topicConstants';
 import type { CompetitionProfile } from '@Types/competitionProfile';
 import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
@@ -40,14 +41,14 @@ function setup(count = 8) {
     drawType: AD_HOC,
     matchUpType: 'DOUBLES',
     competitionProfile: structuredClone(profile),
-    entries: participantIds.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' })),
+    entries: participantIds.map((participantId) => ({ participantId, entryStatus: DIRECT_ACCEPTANCE })),
     structures: [{ structureId: 's', matchUps: [] }],
   };
   const event: Event = {
     eventId: 'doubles',
     eventType: DOUBLES_EVENT,
     drawDefinitions: [drawDefinition],
-    entries: participantIds.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
+    entries: participantIds.map((participantId) => ({ participantId, entryStatus: UNGROUPED })),
   };
   const tournamentRecord: Tournament = {
     tournamentId: 't',
@@ -98,7 +99,7 @@ writeModeMatrix(() => {
     expect(new Set(pairs.map((pair) => pair.individualParticipantIds!.toSorted().join('|'))).size).toBe(28);
     context.roundNumber = 8;
     expect(getRotatingPartnerRoundPreview(context).error).toBe(INVALID_VALUES);
-    expect(context.event.entries!.every((entry) => entry.entryStatus === 'UNGROUPED')).toBe(true);
+    expect(context.event.entries!.every((entry) => entry.entryStatus === UNGROUPED)).toBe(true);
   });
 });
 

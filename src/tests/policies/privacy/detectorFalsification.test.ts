@@ -23,6 +23,7 @@ import {
 // constants and fixtures
 import POLICY_PRIVACY_DEFAULT from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
+import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 
 const fixture = generatePrivacyFixture();
 const template = participantTemplate(POLICY_PRIVACY_DEFAULT);
@@ -110,7 +111,7 @@ describe('collectUnpermittedAttributes', () => {
 
   it('honours declared context annotations, and reports which were seen', () => {
     const participants = clean();
-    const planted = [{ ...participants[0], entryStatus: 'DIRECT_ACCEPTANCE' }, ...participants.slice(1)];
+    const planted = [{ ...participants[0], entryStatus: DIRECT_ACCEPTANCE }, ...participants.slice(1)];
 
     const withAnnotation = collectUnpermittedAttributes({
       contextAnnotations: ['entryStatus'],
