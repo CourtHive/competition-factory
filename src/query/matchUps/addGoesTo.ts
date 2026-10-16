@@ -4,6 +4,7 @@ import { getMappedStructureMatchUps } from '@Query/matchUps/getMatchUpsMap';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -17,7 +18,7 @@ type AddGoesToArgs = {
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
 };
-type GoesToMap = {
+export type GoesToMap = {
   loserMatchUpIds: { [matchUpId: string]: string };
   winnerMatchUpIds: { [matchUpId: string]: string };
 };
@@ -168,16 +169,19 @@ export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMa
 }
 
 /**
- * `ensureGoesTo` for a caller that must still refuse a MALFORMED ROUND LINK (CA, 2026-10-06: it is an error):
- * `getMatchUpDependencies`. Deriving the edges is where `addGoesTo` met the link, so a draw that stores its edges, and
- * now derives nothing, has the link asked about on its own: once per round of each structure, which is the question
- * `positionTargets` asks of every matchUp in that round. The error is the same one; on a draw with several malformed
- * links it may name a different matchUp than the derivation would have reached first.
+ * The edges for a READ that must still refuse a MALFORMED ROUND LINK (CA, 2026-10-06: it is an error):
+ * `getMatchUpDependencies`. It never writes. A draw that does not store its edges has them derived on a copy and
+ * handed back as the `goesToMap`; the stored draw is left as it was. It used to be repaired here, the edges, a widened
+ * `finishingPositionRange.loser` and a lone foreign structure's finishing rounds all written by a query.
+ *
+ * A draw that stores its edges derives nothing, so the link is asked about on its own: once per round of each
+ * structure, which is the question `positionTargets` asks of every matchUp in that round. The error is the same one; on
+ * a draw with several malformed links it may name a different matchUp than the derivation would have reached first.
  */
-export function ensureGoesToOrLinkError({ drawDefinition }: { drawDefinition: DrawDefinition }) {
-  if (!hasStoredGoesTo({ drawDefinition }) || needsFinishingRounds(drawDefinition)) {
-    const result = addGoesTo({ drawDefinition });
-    return result.error ? result : undefined;
+export function derivedGoesToOrLinkError({ drawDefinition }: { drawDefinition: DrawDefinition }) {
+  if (!hasStoredGoesTo({ drawDefinition })) {
+    const result = addGoesTo({ drawDefinition: makeDeepCopy(drawDefinition, false, true) });
+    return result.error ? result : { goesToMap: result.goesToMap, error: undefined };
   }
 
   const structures = (drawDefinition.structures ?? []).flatMap((structure) => [
@@ -197,7 +201,7 @@ export function ensureGoesToOrLinkError({ drawDefinition }: { drawDefinition: Dr
         matchUpId: matchUp.matchUpId,
       });
       if (targetData.error)
-        return { ...decorateResult({ result: targetData, stack: 'ensureGoesTo' }), error: targetData.error };
+        return { ...decorateResult({ result: targetData, stack: 'derivedGoesTo' }), error: targetData.error };
     }
   }
   return undefined;

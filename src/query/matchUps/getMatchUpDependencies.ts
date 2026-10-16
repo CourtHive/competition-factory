@@ -5,10 +5,10 @@
 
 import { getIndividualParticipantIds } from '@Query/matchUp/getIndividualParticipantIds';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
+import { derivedGoesToOrLinkError, GoesToMap } from '@Query/matchUps/addGoesTo';
 import { allCompetitionMatchUps } from './getAllCompetitionMatchUps';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { allDrawMatchUps } from './getAllDrawMatchUps';
-import { ensureGoesToOrLinkError } from '@Query/matchUps/addGoesTo';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
@@ -112,11 +112,23 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
     }
   };
 
+  // the edges of a draw that does not store them, derived on a copy: a matchUp read from that draw carries none
+  const derivedGoesTo: GoesToMap = { winnerMatchUpIds: {}, loserMatchUpIds: {} };
+  const readGoesTo = (drawDefinition: DrawDefinition) => {
+    const result = derivedGoesToOrLinkError({ drawDefinition });
+    if (result?.error) return result;
+    Object.assign(derivedGoesTo.winnerMatchUpIds, result?.goesToMap?.winnerMatchUpIds);
+    Object.assign(derivedGoesTo.loserMatchUpIds, result?.goesToMap?.loserMatchUpIds);
+    return undefined;
+  };
+
   const processMatchUps = (matchUpsToProcess) => {
     const processSourceStructures = Object.keys(positionDependencies).length;
 
     for (const matchUp of matchUpsToProcess ?? []) {
-      const { matchUpId, winnerMatchUpId, loserMatchUpId } = matchUp;
+      const { matchUpId } = matchUp;
+      const winnerMatchUpId = matchUp.winnerMatchUpId ?? derivedGoesTo.winnerMatchUpIds[matchUpId];
+      const loserMatchUpId = matchUp.loserMatchUpId ?? derivedGoesTo.loserMatchUpIds[matchUpId];
 
       // only process specified matchUps
       if (!matchUpIds.length || matchUpIds.includes(matchUpId)) {
@@ -159,9 +171,9 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
   };
 
   if (drawDefinition) {
-    // the edges are read from the stored matchUps, derived only for a draw that does not store them; a malformed
-    // round link is refused either way
-    const goesTo = ensureGoesToOrLinkError({ drawDefinition });
+    // the edges are read from the stored matchUps, derived on a copy for a draw that does not store them; a
+    // malformed round link is refused either way
+    const goesTo = readGoesTo(drawDefinition);
     if (goesTo?.error) return goesTo;
     if (!matchUps?.length) {
       matchUps = allDrawMatchUps({ drawDefinition }).matchUps;
@@ -185,6 +197,7 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
         drawId,
         tournamentRecords,
         processMatchUps,
+        readGoesTo,
       });
       if (result?.error) return result;
     }
@@ -227,7 +240,7 @@ function gatherAllDrawIds(allTournamentRecords) {
     : [];
 }
 
-function processDrawMatchUps({ matchUps, drawId, tournamentRecords, processMatchUps }) {
+function processDrawMatchUps({ matchUps, drawId, tournamentRecords, processMatchUps, readGoesTo }) {
   const drawMatchUps = matchUps?.filter((matchUp) => matchUp.drawId === drawId).sort(matchUpSort);
 
   const isRoundRobin = drawMatchUps?.find(({ roundPosition }) => !roundPosition);
@@ -237,7 +250,7 @@ function processDrawMatchUps({ matchUps, drawId, tournamentRecords, processMatch
       tournamentRecord: tournamentRecords[hasTournamentId?.tournamentId],
       drawId,
     });
-    const goesTo = drawDefinition && ensureGoesToOrLinkError({ drawDefinition });
+    const goesTo = drawDefinition && readGoesTo(drawDefinition);
     if (goesTo?.error) return goesTo;
   }
 
