@@ -1218,6 +1218,22 @@ export function withdrawRelayedExit({
   return record ? [record] : [];
 }
 
+/** Split a matchUp's provenance into the entries a withdrawal keeps and whether it removed any, or any exit. */
+function splitWithdrawnEntries(provenance: SideExitProvenance, sources: Set<string>) {
+  const retained: SideExitProvenance = {};
+  let removedAny = false;
+  let removedAnExit = false;
+  for (const sideNumber of [1, 2] as const) {
+    const entry = provenance[sideNumber];
+    if (!entry) continue;
+    if (entry.sourceMatchUpId && sources.has(entry.sourceMatchUpId)) {
+      removedAny = true;
+      if (isAnyExit(entry.matchUpStatus)) removedAnExit = true;
+    } else retained[sideNumber] = entry;
+  }
+  return { retained, removedAny, removedAnExit };
+}
+
 /**
  * Withdraw one matchUp's entries, if any of them name a source in `sources`.
  *
@@ -1234,14 +1250,7 @@ function withdrawFromMatchUp(
   const provenance = getSideExitProvenance({ matchUp });
   if (!provenance) return undefined;
 
-  const retained: SideExitProvenance = {};
-  let removedAny = false;
-  for (const sideNumber of [1, 2] as const) {
-    const entry = provenance[sideNumber];
-    if (!entry) continue;
-    if (entry.sourceMatchUpId && sources.has(entry.sourceMatchUpId)) removedAny = true;
-    else retained[sideNumber] = entry;
-  }
+  const { retained, removedAny, removedAnExit } = splitWithdrawnEntries(provenance, sources);
   if (!removedAny) return undefined;
 
   /**
@@ -1306,7 +1315,14 @@ function withdrawFromMatchUp(
     const derived = deriveExitStateFromProvenance(exitsRetained);
     // Only an award that STOOD is re-read: a pending exit (no winningSide) is left pending, as forward play leaves it;
     // whether one waiting exit should have two representations is not this function's to settle (S4, CA 2026-10-12).
-    const winnerChanged = !!derived && !!matchUp.winningSide && derived.winningSide !== matchUp.winningSide;
+    //
+    // ...and only when an EXIT was withdrawn. Withdrawing an arrival record (the side a result now being taken back sent
+    // somebody to) changes no exit here: that result's own withdrawal releases the position it sent. Re-read anyway, the
+    // award moved onto a position that had arrived through the stale result and kept it as the winner (census S8
+    // policy-off, CURTIS_CONSOLATION 16/13, 20669990: `Consolation 1|4|1` kept the loser `Main|1|2`'s correction sent
+    // through `Consolation 1|3|1`, and the next result there was refused ERR_EXISTING_POSITION_ASSIGNMENT after a write).
+    const winnerChanged =
+      removedAnExit && !!derived && !!matchUp.winningSide && derived.winningSide !== matchUp.winningSide;
     if (derived && (derived.matchUpStatus !== matchUp.matchUpStatus || winnerChanged)) {
       // read structurally, as the undecided branch below does: a lone position sits at index 0 whatever its side
       const previousWinnerDrawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
