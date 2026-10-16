@@ -8,8 +8,8 @@ import { expect, it } from 'vitest';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import type { RotatingPartnerScoringPolicy } from '@Types/rotatingPartnerScoring';
-import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
+import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 
 const locked: RotatingPartnerScoringPolicy = {
   defaultVariant: { tieResolution: 'DECIDING_POINT' },

@@ -5,8 +5,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test, describe } from 'vitest';
 
 // constants
-import { INVALID_DRAW_SIZE } from '@Constants/errorConditionConstants';
 import { LUCKY_DRAW, MAIN, LOSER, TOP_DOWN } from '@Constants/drawDefinitionConstants';
+import { INVALID_DRAW_SIZE } from '@Constants/errorConditionConstants';
 import {
   ASSIGN_BYE,
   REMOVE_ASSIGNMENT,

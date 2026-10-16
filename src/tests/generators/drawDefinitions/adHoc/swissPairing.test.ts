@@ -7,8 +7,8 @@ import { unique } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
 // constants
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SWISS, DRAW } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 test('SWISS drawType generates an AD_HOC-style structure', () => {

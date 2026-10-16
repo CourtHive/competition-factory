@@ -26,8 +26,8 @@ import {
 } from '@Generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
 
 // constants
-import { ALTERNATE } from '@Constants/entryStatusConstants';
 import { MAIN, AD_HOC } from '@Constants/drawDefinitionConstants';
+import { ALTERNATE } from '@Constants/entryStatusConstants';
 import {
   MISSING_TOURNAMENT_RECORDS,
   MISSING_TOURNAMENT_RECORD,

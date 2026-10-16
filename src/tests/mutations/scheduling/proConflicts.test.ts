@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { SCHEDULE_CONFLICT_DOUBLE_BOOKING } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN_WITH_PLAYOFF, PLAY_OFF } from '@Constants/drawDefinitionConstants';
+import { SCHEDULE_CONFLICT_DOUBLE_BOOKING } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import {

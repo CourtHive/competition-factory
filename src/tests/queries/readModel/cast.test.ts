@@ -4,8 +4,8 @@ import { expect, it, describe } from 'vitest';
 import { cast } from '@Query/readModel/cast';
 
 // constants
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN, MAIN, CONTAINER } from '@Constants/drawDefinitionConstants';
+import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 
 describe('cast — singles (STANDARD)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({

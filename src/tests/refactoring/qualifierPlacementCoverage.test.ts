@@ -6,8 +6,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MAIN, QUALIFYING, LOSER, DRAW } from '@Constants/drawDefinitionConstants';
+import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 

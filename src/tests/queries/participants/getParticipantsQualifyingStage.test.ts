@@ -5,8 +5,8 @@ import { expect, it } from 'vitest';
 
 // constants
 import { QUALIFYING_PARTICIPANT } from '@Constants/positionActionConstants';
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 it('can generate and seed a qualifying structure', () => {
   const {

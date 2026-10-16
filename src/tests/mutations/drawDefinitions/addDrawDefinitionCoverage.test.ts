@@ -7,8 +7,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
-import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
 import { SINGLE_ELIMINATION, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
 import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
