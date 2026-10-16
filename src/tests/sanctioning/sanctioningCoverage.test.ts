@@ -19,9 +19,10 @@ import type {
 } from '@Types/sanctioningTypes';
 
 // constants
+import { POST_EVENT, DRAFT, APPROVED, SUBMITTED, CLOSED } from '@Constants/sanctioningConstants';
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { POST_EVENT } from '@Constants/sanctioningConstants';
+import { FEMALE, MALE } from '@Constants/genderConstants';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -58,7 +59,7 @@ function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentPro
 function makeRecord(overrides?: Partial<SanctioningRecord>): SanctioningRecord {
   return {
     sanctioningId: 'cov-001',
-    status: 'DRAFT',
+    status: DRAFT,
     version: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -180,17 +181,17 @@ describe('validateProposal — allowedEventTypes and allowedGenders', () => {
     });
     const issue = result.errors.find((i: any) => i.field.includes('eventType'));
     expect(issue).toBeDefined();
-    expect(issue.message).toContain('SINGLES');
+    expect(issue.message).toContain(SINGLES_EVENT);
   });
 
   it('flags disallowed gender for a tier', () => {
     const policy: SanctioningPolicy = {
       ...basePolicy,
       requireInsurance: false,
-      tiers: [{ tierName: 'GenderTier', tierLevel: 1, allowedGenders: ['FEMALE'] }],
+      tiers: [{ tierName: 'GenderTier', tierLevel: 1, allowedGenders: [FEMALE] }],
     };
     const proposal = minimalProposal({
-      events: [{ eventName: 'MS', eventType: SINGLES_EVENT, gender: 'MALE' }],
+      events: [{ eventName: 'MS', eventType: SINGLES_EVENT, gender: MALE }],
     });
     let result: any = validateProposal({
       proposal,
@@ -441,13 +442,13 @@ describe('Amendment edge cases', () => {
     createApprovedViaEngine();
 
     const changes: ProposalChange[] = [
-      { field: 'status', previousValue: 'APPROVED', proposedValue: 'DRAFT', changeType: 'MODIFIED' },
+      { field: 'status', previousValue: APPROVED, proposedValue: DRAFT, changeType: 'MODIFIED' },
     ];
     let result: any = sanctioningEngine.proposeAmendment({ changes, sanctioningPolicy: basePolicy });
     expect(result.success).toBe(true);
     // The status field is not in AMENDABLE_FIELD_PREFIXES, so it shouldn't be applied
     let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
-    expect(record.status).toEqual('APPROVED');
+    expect(record.status).toEqual(APPROVED);
   });
 
   it('blocks amendments inside noChangeWindowWeeks', () => {
@@ -490,7 +491,7 @@ describe('Amendment edge cases', () => {
   });
 
   it('reviewAmendment returns error for missing amendmentId', () => {
-    const record = makeRecord({ status: 'APPROVED', amendments: [] });
+    const record = makeRecord({ status: APPROVED, amendments: [] });
     let result: any = reviewAmendment({
       sanctioningRecord: record,
       amendmentId: '',
@@ -589,7 +590,7 @@ describe('Compliance edge cases', () => {
             itemType: 'FINANCIAL_RECONCILIATION',
             description: 'Finance',
             required: false,
-            status: 'SUBMITTED',
+            status: SUBMITTED,
             deadline: '2025-01-01',
           },
         ],
@@ -600,7 +601,7 @@ describe('Compliance edge cases', () => {
     expect(result.overdueCount).toEqual(1);
     expect(record.compliance!.items[0].status).toEqual('OVERDUE');
     // SUBMITTED items should not be overridden
-    expect(record.compliance!.items[1].status).toEqual('SUBMITTED');
+    expect(record.compliance!.items[1].status).toEqual(SUBMITTED);
   });
 
   it('closeApplication sets compliance status to COMPLIANT', () => {
@@ -630,7 +631,7 @@ describe('Compliance edge cases', () => {
 
     sanctioningEngine.closeApplication({ closedBy: 'Admin', reason: 'All done' });
     record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
-    expect(record.status).toEqual('CLOSED');
+    expect(record.status).toEqual(CLOSED);
     expect(record.compliance.status).toEqual('COMPLIANT');
     expect(record.compliance.completedAt).toBeDefined();
   });

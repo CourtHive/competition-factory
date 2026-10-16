@@ -15,7 +15,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants and fixtures
+import { SINGLES_MATCHUP, DOUBLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   PLAY_OFF,
@@ -277,7 +279,7 @@ describe('getParticipantResults uncovered paths', () => {
         tieMatchUps: [
           {
             winningSide: 1,
-            matchUpType: 'SINGLES',
+            matchUpType: SINGLES_MATCHUP,
             matchUpStatus: COMPLETED,
             score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1 }] },
             sides: [
@@ -287,7 +289,7 @@ describe('getParticipantResults uncovered paths', () => {
           },
           {
             winningSide: 2,
-            matchUpType: 'DOUBLES',
+            matchUpType: DOUBLES_MATCHUP,
             matchUpStatus: COMPLETED,
             score: { sets: [{ side1Score: 3, side2Score: 6, winningSide: 2 }] },
             sides: [
@@ -316,7 +318,7 @@ describe('getParticipantResults uncovered paths', () => {
         tieMatchUps: [
           {
             winningSide: 1,
-            matchUpType: 'DOUBLES',
+            matchUpType: DOUBLES_MATCHUP,
             matchUpStatus: COMPLETED,
             matchUpFormat: FORMAT_STANDARD,
             score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1 }] },
@@ -327,7 +329,7 @@ describe('getParticipantResults uncovered paths', () => {
           },
           {
             winningSide: 2,
-            matchUpType: 'SINGLES',
+            matchUpType: SINGLES_MATCHUP,
             matchUpStatus: COMPLETED,
             matchUpFormat: FORMAT_STANDARD,
             score: { sets: [{ side1Score: 4, side2Score: 6, winningSide: 2 }] },
@@ -726,13 +728,13 @@ describe('getParticipantStats uncovered paths', () => {
   it('returns INVALID_PARTICIPANT_IDS for non-team participants', () => {
     const tournamentRecord = {
       tournamentId: 't1',
-      participants: [{ participantId: 'p1', participantType: 'INDIVIDUAL' }],
+      participants: [{ participantId: 'p1', participantType: INDIVIDUAL }],
     } as any;
     // Provide matchUps so it doesn't hit MISSING_MATCHUPS first
     const matchUps = [
       {
         matchUpId: 'mu1',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpStatus: COMPLETED,
         winningSide: 1,
         score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1 }] },
@@ -960,7 +962,7 @@ describe('removeTieMatchUpParticipant paths', () => {
     tournamentEngine.setState(result.tournamentRecord);
     // Getting matchUps for the TEAM draw
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps?.find((m) => m.matchUpType === 'TEAM');
+    const teamMatchUp = matchUps?.find((m) => m.matchUpType === TEAM_MATCHUP);
     expect(teamMatchUp).toBeDefined();
     // The tieMatchUps should exist
     expect(teamMatchUp?.tieMatchUps?.length).toBeGreaterThan(0);

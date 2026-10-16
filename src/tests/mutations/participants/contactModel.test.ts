@@ -3,10 +3,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
+import { INDIVIDUAL, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { ContactRelationshipEnum } from '@Types/tournamentTypes';
 import { COMPETITOR, OTHER } from '@Constants/participantRoles';
-import { INDIVIDUAL } from '@Constants/participantConstants';
 
 /**
  * Two CODES additions and one cascade fix.
@@ -173,7 +173,7 @@ describe('delete cascade reaches GROUPs', () => {
           participantRole: COMPETITOR,
           participantId: 'team-1',
           participantName: 'Team One',
-          participantType: 'TEAM',
+          participantType: TEAM_PARTICIPANT,
         },
       ],
     });

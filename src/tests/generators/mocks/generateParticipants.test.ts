@@ -8,6 +8,7 @@ import { UUID } from '@Tools/UUID';
 // constants
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { PAIR } from '@Constants/participantConstants';
+import { UTR, WTN } from '@Constants/ratingConstants';
 
 it('can generate unique participants', () => {
   const defaultPersonData = generatePersonData().personData;
@@ -171,8 +172,8 @@ it('can generate participants with both UTR and WTN ratings', () => {
     scaleAllParticipants: true,
     participantsCount: 10,
     categories: [
-      { ratingType: 'UTR', ratingMin: 10, ratingMax: 12 },
-      { ratingType: 'WTN', ratingMin: 10, ratingMax: 14 },
+      { ratingType: UTR, ratingMin: 10, ratingMax: 12 },
+      { ratingType: WTN, ratingMin: 10, ratingMax: 14 },
     ],
   });
   expect(result.participants[0].timeItems.length).toEqual(2);

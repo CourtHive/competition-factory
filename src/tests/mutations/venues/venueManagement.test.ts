@@ -4,6 +4,7 @@ import { expect, test } from 'vitest';
 
 // constants
 import { INVALID_OBJECT, VENUE_EXISTS, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { PRACTICE, MAINTENANCE } from '@Constants/bookingTypeConstants';
 
 test('competitionEngine can modify venues', () => {
   const startDate = '2020-01-01';
@@ -32,9 +33,9 @@ test('competitionEngine can modify venues', () => {
       startTime: '07:00',
       endTime: '19:00',
       bookings: [
-        { startTime: '07:00', endTime: '08:30', bookingType: 'PRACTICE' },
-        { startTime: '08:30', endTime: '09:00', bookingType: 'MAINTENANCE' },
-        { startTime: '13:30', endTime: '14:00', bookingType: 'MAINTENANCE' },
+        { startTime: '07:00', endTime: '08:30', bookingType: PRACTICE },
+        { startTime: '08:30', endTime: '09:00', bookingType: MAINTENANCE },
+        { startTime: '13:30', endTime: '14:00', bookingType: MAINTENANCE },
       ],
     },
   ];

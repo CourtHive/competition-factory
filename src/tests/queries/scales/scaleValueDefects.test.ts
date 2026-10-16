@@ -6,7 +6,9 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { RATING, SEEDING } from '@Constants/scaleConstants';
+import { UTR, WTN, PSA } from '@Constants/ratingConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 
 /**
@@ -23,7 +25,7 @@ import { SINGLES } from '@Constants/matchUpTypes';
  * and the second is far more dangerous.
  */
 
-const utr = (utrRating: string | number) => ({ scaleValue: { utrRating }, scaleName: 'UTR' });
+const utr = (utrRating: string | number) => ({ scaleValue: { utrRating }, scaleName: UTR });
 
 function participantWithRating(participantId: string, utrRating: string | number) {
   return { participantId, ratings: { [SINGLES]: [utr(utrRating)] } };
@@ -45,7 +47,7 @@ describe('getMatchUpRatingDelta — string ratings are not "missing data"', () =
     const result: any = getMatchUpRatingDelta({
       matchUp: matchUpFor('12.48', '10.05'),
       scaleAccessor: 'utrRating',
-      scaleName: 'UTR',
+      scaleName: UTR,
     });
     // Sign is the module's own perspective convention; asserted here against
     // the value the NUMERIC path produces for identical inputs, so this test
@@ -57,12 +59,12 @@ describe('getMatchUpRatingDelta — string ratings are not "missing data"', () =
     const asStrings: any = getMatchUpRatingDelta({
       matchUp: matchUpFor('12.48', '10.05'),
       scaleAccessor: 'utrRating',
-      scaleName: 'UTR',
+      scaleName: UTR,
     });
     const asNumbers: any = getMatchUpRatingDelta({
       matchUp: matchUpFor(12.48, 10.05),
       scaleAccessor: 'utrRating',
-      scaleName: 'UTR',
+      scaleName: UTR,
     });
     expect(asStrings.signedDelta).toBeCloseTo(asNumbers.signedDelta, 10);
   });
@@ -71,7 +73,7 @@ describe('getMatchUpRatingDelta — string ratings are not "missing data"', () =
     const result: any = getMatchUpRatingDelta({
       matchUp: matchUpFor('12.48', ''),
       scaleAccessor: 'utrRating',
-      scaleName: 'UTR',
+      scaleName: UTR,
     });
     expect(result.signedDelta).toBeUndefined();
   });
@@ -81,7 +83,7 @@ describe('getConvertedRating — an empty rating must not become the worst ratin
   it('converts a STRING rating', () => {
     const result: any = getConvertedRating({
       ratings: { [SINGLES]: [utr('12.48')] },
-      targetRatingType: 'WTN',
+      targetRatingType: WTN,
       matchUpType: SINGLES,
     });
     expect(result.error).toBeUndefined();
@@ -94,7 +96,7 @@ describe('getConvertedRating — an empty rating must not become the worst ratin
     // reported as a successful conversion.
     const result: any = getConvertedRating({
       ratings: { [SINGLES]: [utr('')] },
-      targetRatingType: 'WTN',
+      targetRatingType: WTN,
       matchUpType: SINGLES,
     });
     expect(result.convertedRating).toBeUndefined();
@@ -104,12 +106,12 @@ describe('getConvertedRating — an empty rating must not become the worst ratin
   it('agrees between the string and number representations', () => {
     const asString: any = getConvertedRating({
       ratings: { [SINGLES]: [utr('12.48')] },
-      targetRatingType: 'WTN',
+      targetRatingType: WTN,
       matchUpType: SINGLES,
     });
     const asNumber: any = getConvertedRating({
       ratings: { [SINGLES]: [utr(12.48)] },
-      targetRatingType: 'WTN',
+      targetRatingType: WTN,
       matchUpType: SINGLES,
     });
     expect(asString.convertedRating).toBeCloseTo(asNumber.convertedRating, 10);
@@ -120,7 +122,7 @@ describe('getScaledEntries — zero is a rating, not an absence', () => {
   const buildRecord = (values: (number | string)[], scaleName: string) => {
     const participants = values.map((scaleValue, index) => ({
       participantId: `p${index}`,
-      participantType: 'INDIVIDUAL',
+      participantType: INDIVIDUAL,
       timeItems: [
         {
           itemType: `SCALE.${RATING}.${SINGLES}.${scaleName}`,
@@ -140,7 +142,7 @@ describe('getScaledEntries — zero is a rating, not an absence', () => {
     // autoSeeding runs through this they could never be seeded.
     const { tournamentRecord, entries } = buildRecord([0, 500, 900, 1200], 'PSA');
     const result: any = getScaledEntries({
-      scaleAttributes: { scaleType: RATING, scaleName: 'PSA', eventType: SINGLES },
+      scaleAttributes: { scaleType: RATING, scaleName: PSA, eventType: SINGLES },
       tournamentRecord: tournamentRecord as any,
       entries: entries as any,
     });
@@ -151,7 +153,7 @@ describe('getScaledEntries — zero is a rating, not an absence', () => {
   it('keeps STRING ratings and drops only the genuinely empty one', () => {
     const { tournamentRecord, entries } = buildRecord(['12.48', '11.20', '10.05', ''], 'UTR');
     const result: any = getScaledEntries({
-      scaleAttributes: { scaleType: RATING, scaleName: 'UTR', eventType: SINGLES },
+      scaleAttributes: { scaleType: RATING, scaleName: UTR, eventType: SINGLES },
       tournamentRecord: tournamentRecord as any,
       entries: entries as any,
     });
@@ -161,7 +163,7 @@ describe('getScaledEntries — zero is a rating, not an absence', () => {
   it('sorts a zero to the correct end rather than to the fallback', () => {
     const { tournamentRecord, entries } = buildRecord([0, 500, 1200], 'PSA');
     const result: any = getScaledEntries({
-      scaleAttributes: { scaleType: RATING, scaleName: 'PSA', eventType: SINGLES },
+      scaleAttributes: { scaleType: RATING, scaleName: PSA, eventType: SINGLES },
       tournamentRecord: tournamentRecord as any,
       entries: entries as any,
       sortDescending: true,
@@ -172,7 +174,7 @@ describe('getScaledEntries — zero is a rating, not an absence', () => {
   it('does not confuse a SEEDING scale with a RATING scale', () => {
     const { tournamentRecord, entries } = buildRecord([0, 500], 'PSA');
     const result: any = getScaledEntries({
-      scaleAttributes: { scaleType: SEEDING, scaleName: 'PSA', eventType: SINGLES },
+      scaleAttributes: { scaleType: SEEDING, scaleName: PSA, eventType: SINGLES },
       tournamentRecord: tournamentRecord as any,
       entries: entries as any,
     });
@@ -184,7 +186,7 @@ describe('getAvgWTN — string ratings must average, not concatenate', () => {
   const sideWith = (participantId: string, wtnRating: string | number) => ({
     participant: {
       participantId,
-      ratings: { [SINGLES]: [{ scaleName: 'WTN', scaleValue: { wtnRating, confidence: 90 } }] },
+      ratings: { [SINGLES]: [{ scaleName: WTN, scaleValue: { wtnRating, confidence: 90 } }] },
     },
   });
 

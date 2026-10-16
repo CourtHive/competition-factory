@@ -24,10 +24,14 @@ import { getAccessorValue } from '@Tools/getAccessorValue';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { INDIVIDUAL, GROUP, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { DIRECT_ACCEPTANCE, ALTERNATE } from '@Constants/entryStatusConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+import { RATING } from '@Constants/scaleConstants';
+import { UTR } from '@Constants/ratingConstants';
 import {
   INVALID_OBJECT,
   INVALID_VALUES,
@@ -66,7 +70,7 @@ describe('generateDoubleElimination branch coverage', () => {
   it('generates with explicit structureName and idPrefix', () => {
     const result = generateDoubleElimination({
       structureName: 'Custom Main',
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       idPrefix: 'test',
       drawSize: 4,
       isMock: true,
@@ -555,7 +559,7 @@ describe('removeScaleValues branch coverage', () => {
   it('filters by stage when stage is provided', () => {
     const result = removeScaleValues({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: SINGLES_EVENT },
+      scaleAttributes: { scaleType: RATING, scaleName: UTR, eventType: SINGLES_EVENT },
       event: {
         eventId: 'e1',
         entries: [{ participantId: 'p1', entryStage: MAIN, entryStatus: DIRECT_ACCEPTANCE }],
@@ -569,7 +573,7 @@ describe('removeScaleValues branch coverage', () => {
   it('uses drawDefinition entries when drawId provided but no flight found', () => {
     const result = removeScaleValues({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: SINGLES_EVENT },
+      scaleAttributes: { scaleType: RATING, scaleName: UTR, eventType: SINGLES_EVENT },
       event: { eventId: 'e1', entries: [] } as any,
       drawDefinition: {
         drawId: 'd1',
@@ -583,7 +587,7 @@ describe('removeScaleValues branch coverage', () => {
   it('uses flightProfile entries when drawId matches a flight', () => {
     const result = removeScaleValues({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: SINGLES_EVENT },
+      scaleAttributes: { scaleType: RATING, scaleName: UTR, eventType: SINGLES_EVENT },
       event: {
         eventId: 'e1',
         entries: [{ participantId: 'p1' }],
@@ -609,7 +613,7 @@ describe('removeScaleValues branch coverage', () => {
   it('filters by entryStatuses when provided as array', () => {
     const result = removeScaleValues({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: SINGLES_EVENT },
+      scaleAttributes: { scaleType: RATING, scaleName: UTR, eventType: SINGLES_EVENT },
       event: {
         eventId: 'e1',
         entries: [
@@ -854,7 +858,7 @@ describe('modifyIndividualParticipantIds branch coverage', () => {
     const result = modifyIndividualParticipantIds({
       tournamentRecord: {
         tournamentId: 't1',
-        participants: [{ participantId: 'g1', participantType: 'INDIVIDUAL' }],
+        participants: [{ participantId: 'g1', participantType: INDIVIDUAL }],
       } as any,
       groupingParticipantId: 'g1',
       individualParticipantIds: ['p1'],
@@ -867,8 +871,8 @@ describe('modifyIndividualParticipantIds branch coverage', () => {
       tournamentRecord: {
         tournamentId: 't1',
         participants: [
-          { participantId: 'g1', participantType: 'GROUP', individualParticipantIds: [] },
-          { participantId: 'p1', participantType: 'TEAM' },
+          { participantId: 'g1', participantType: GROUP, individualParticipantIds: [] },
+          { participantId: 'p1', participantType: TEAM_PARTICIPANT },
         ],
       } as any,
       groupingParticipantId: 'g1',

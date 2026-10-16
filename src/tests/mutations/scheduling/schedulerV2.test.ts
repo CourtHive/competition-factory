@@ -6,6 +6,7 @@ import { expect, test } from 'vitest';
 
 // constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { MALE } from '@Constants/genderConstants';
 
@@ -241,7 +242,7 @@ test('scheduling v2 respects DO_NOT_SCHEDULE requests', () => {
   const requests = [
     {
       date: availableDates[0],
-      requestType: 'DO_NOT_SCHEDULE',
+      requestType: DO_NOT_SCHEDULE,
       startTime: '07:00',
       endTime: '12:00',
     },

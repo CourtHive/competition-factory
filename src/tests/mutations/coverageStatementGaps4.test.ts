@@ -35,6 +35,7 @@ import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { GEM_SCORE } from '@Constants/tallyConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import { ELO } from '@Constants/ratingConstants';
 import {
   INVALID_BOOKINGS,
   INVALID_DATE,
@@ -413,7 +414,7 @@ describe('calculateNewRatings guard paths', () => {
       winnerCountables: 10,
       loserCountables: 10,
       maxCountables: 3,
-      ratingType: 'ELO',
+      ratingType: ELO,
     });
     expect(result.newWinnerRating).toBeDefined();
     expect(result.newLoserRating).toBeDefined();

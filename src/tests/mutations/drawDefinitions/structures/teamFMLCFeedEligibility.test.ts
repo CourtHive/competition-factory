@@ -6,6 +6,7 @@ import { expect, it } from 'vitest';
 // constants
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
@@ -20,7 +21,7 @@ function setup() {
     drawProfiles: [
       {
         drawType: FIRST_MATCH_LOSER_CONSOLATION,
-        tieFormatName: 'DOMINANT_DUO',
+        tieFormatName: DOMINANT_DUO,
         eventType: TEAM_EVENT,
         participantsCount: 7,
         drawSize: 8,

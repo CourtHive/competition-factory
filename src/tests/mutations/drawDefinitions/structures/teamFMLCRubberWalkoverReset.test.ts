@@ -6,6 +6,7 @@ import { expect, it } from 'vitest';
 // constants
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
@@ -24,7 +25,7 @@ function clearRoundTwo({ walkoverRubber }: { walkoverRubber: boolean }) {
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawType: FIRST_MATCH_LOSER_CONSOLATION, tieFormatName: 'DOMINANT_DUO', eventType: TEAM_EVENT, drawSize: 8 },
+      { drawType: FIRST_MATCH_LOSER_CONSOLATION, tieFormatName: DOMINANT_DUO, eventType: TEAM_EVENT, drawSize: 8 },
     ],
     setState: true,
   });

@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 // constants and types
 import { COMPLETED, CANCELLED } from '@Constants/matchUpStatusConstants';
 import { PracticeRegistrationStatusEnum } from '@Types/tournamentTypes';
+import { MAINTENANCE } from '@Constants/bookingTypeConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import { PRACTICE } from '@Constants/scheduleConstants';
 import * as factoryEnums from '@Types/enumExports';
@@ -774,7 +775,7 @@ describe('findPracticeBooking — lookup failures', () => {
   it('ignores a non-PRACTICE booking that happens to carry the requested id', () => {
     const { tournamentRecord, courtId } = setup();
     tournamentRecord.venues[0].courts[0].dateAvailability[0].bookings = [
-      { bookingId: 'booking-1', bookingType: 'MAINTENANCE', startTime: '14:00', endTime: '16:00' },
+      { bookingId: 'booking-1', bookingType: MAINTENANCE, startTime: '14:00', endTime: '16:00' },
     ];
     const result: any = findPracticeBooking({
       tournamentRecord,

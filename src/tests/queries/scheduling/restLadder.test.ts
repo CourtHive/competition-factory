@@ -10,6 +10,7 @@ import {
 import { HydratedMatchUp } from '@Types/hydrated';
 
 // constants
+import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -33,7 +34,7 @@ const at = (clock: string) => Date.parse(`${DAY}T${clock}:00.000Z`);
 function singles(id: string, participantIds: string[], schedule: any, extra: any = {}): HydratedMatchUp {
   return {
     matchUpId: id,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     sides: participantIds.map((participantId) => ({ participantId, participantName: participantId })),
     schedule: { scheduledDate: DAY, ...schedule },
     ...extra,
@@ -168,7 +169,7 @@ describe('recovery owed, and the day’s load', () => {
   it('charges the singles ↔ doubles figure when the participant changes type', () => {
     const priorDoubles = {
       ...singles('prior', ['alice', 'bob'], { scheduledTime: '09:00', endTime: '10:20' }, { winningSide: 1 }),
-      matchUpType: 'DOUBLES',
+      matchUpType: DOUBLES_MATCHUP,
     } as HydratedMatchUp;
     const target = singles('target', ['alice', 'chen'], { scheduledTime: '14:00' });
     const rows = analyze([priorDoubles, target], 'target', '10:40').rows;
@@ -278,7 +279,7 @@ describe('sides that have not been decided yet', () => {
   const halfKnown = (extra: any = {}) =>
     ({
       matchUpId: 'sf',
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       roundName: 'Semifinal',
       sides: [{}, { participantId: 'bob', participantName: 'Bob' }],
       schedule: { scheduledDate: DAY, scheduledTime: '14:30' },
@@ -363,7 +364,7 @@ describe("a doubles entrant's row carries the person's own name", () => {
     };
     const doubles = {
       matchUpId: 'd',
-      matchUpType: 'DOUBLES',
+      matchUpType: DOUBLES_MATCHUP,
       sides: [pair, { participantId: 'other', participantName: 'Other' }],
       schedule: { scheduledDate: DAY, scheduledTime: '14:00' },
     } as any;

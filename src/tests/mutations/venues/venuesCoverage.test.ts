@@ -9,6 +9,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { BLOCKED } from '@Constants/bookingTypeConstants';
 import {
   BOOKING_NOT_FOUND,
   COURT_NOT_FOUND,
@@ -267,7 +268,7 @@ describe('addCourtGridBooking direct guards', () => {
   it('returns error when tournamentRecord is missing', () => {
     let result: any = addCourtGridBooking({
       scheduledDate: '2024-01-15',
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
       courtOrder: 1,
       courtId: 'c1',
     } as any);
@@ -280,7 +281,7 @@ describe('addCourtGridBooking direct guards', () => {
     let result: any = addCourtGridBooking({
       tournamentRecord,
       scheduledDate: '2024-01-15',
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
       courtOrder: 1,
       courtId: '',
     } as any);
@@ -293,7 +294,7 @@ describe('addCourtGridBooking direct guards', () => {
     let result: any = addCourtGridBooking({
       tournamentRecord,
       scheduledDate: '',
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
       courtOrder: 1,
       courtId: 'c1',
     } as any);
@@ -319,7 +320,7 @@ describe('addCourtGridBooking direct guards', () => {
     let result: any = addCourtGridBooking({
       tournamentRecord,
       scheduledDate: '2024-01-15',
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
       courtOrder: undefined as any,
       courtId: 'c1',
     });
@@ -619,7 +620,7 @@ describe('removeCourtGridBooking with bookings at wrong courtOrder', () => {
     // Add a booking at courtOrder 5
     tournamentEngine.addCourtGridBooking({
       scheduledDate: '2024-01-15',
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
       courtOrder: 5,
       courtId: court.courtId,
     });

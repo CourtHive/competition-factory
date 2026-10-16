@@ -15,8 +15,11 @@ import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED, DEFAULTED, RETIRED, WALKOVER } fr
 import type { RotatingPartnerScoringVariant } from '@Types/rotatingPartnerScoring';
 import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 afterEach(() => setOutcomePipeline());
 
@@ -87,14 +90,14 @@ function setup(variant: RotatingPartnerScoringVariant = { tieResolution: 'ALLOW'
   const draw: DrawDefinition = {
     drawId: 'd',
     drawType: AD_HOC,
-    matchUpType: 'DOUBLES',
+    matchUpType: DOUBLES_MATCHUP,
     entries: ids.map((participantId) => ({ participantId, entryStatus: DIRECT_ACCEPTANCE })),
     structures: [{ structureId: 's', matchUps: [] }],
     competitionProfile: {
       version: 1,
       format: 'AMERICANO',
       entrantScope: 'INDIVIDUAL',
-      matchUpType: 'DOUBLES',
+      matchUpType: DOUBLES_MATCHUP,
       scoring: { combinedPointTotal: 32, selectedVariant: variant },
       standings: { metric: 'SIDE_POINTS', attribution: 'EACH_INDIVIDUAL' },
       pairing: { seed: 42, algorithmVersion: 1 },
@@ -105,8 +108,8 @@ function setup(variant: RotatingPartnerScoringVariant = { tieResolution: 'ALLOW'
     tournamentId: 't',
     participants: ids.map((participantId) => ({
       participantId,
-      participantType: 'INDIVIDUAL',
-      participantRole: 'COMPETITOR',
+      participantType: INDIVIDUAL,
+      participantRole: COMPETITOR,
       participantName: participantId,
     })),
     events: [

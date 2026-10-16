@@ -1,6 +1,9 @@
 import { expect, it, describe, beforeEach } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 
+// constants
+import { BLOCKED, MAINTENANCE } from '@Constants/bookingTypeConstants';
+
 describe('competitionScheduleMatchUps with blocked cells', () => {
   beforeEach(() => {
     tournamentEngine.devContext(true);
@@ -25,7 +28,7 @@ describe('competitionScheduleMatchUps with blocked cells', () => {
     // Add a grid booking at row 2
     const bookingResult = tournamentEngine.addCourtGridBooking({
       scheduledDate: '2024-01-15',
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
       courtOrder: 2,
       rowCount: 1,
       courtId,
@@ -49,7 +52,7 @@ describe('competitionScheduleMatchUps with blocked cells', () => {
 
     expect(court0Cell.isBlocked).toEqual(true);
     expect(court0Cell.booking).toBeDefined();
-    expect(court0Cell.booking.bookingType).toEqual('BLOCKED');
+    expect(court0Cell.booking.bookingType).toEqual(BLOCKED);
     expect(court0Cell.booking.courtOrder).toEqual(2);
     expect(court0Cell.booking.rowCount).toEqual(1);
 
@@ -79,7 +82,7 @@ describe('competitionScheduleMatchUps with blocked cells', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 2,
       rowCount: 1,
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
     });
 
     // Check Jan 15 - should be blocked
@@ -125,7 +128,7 @@ describe('competitionScheduleMatchUps with blocked cells', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 2,
       rowCount: 1,
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
     });
 
     const scheduleResult = tournamentEngine.competitionScheduleMatchUps({
@@ -171,7 +174,7 @@ describe('competitionScheduleMatchUps with blocked cells', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 2,
       rowCount: 1,
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
     });
 
     // Block rows 3-4 on Court 2
@@ -180,7 +183,7 @@ describe('competitionScheduleMatchUps with blocked cells', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 3,
       rowCount: 2,
-      bookingType: 'MAINTENANCE',
+      bookingType: MAINTENANCE,
     });
 
     const scheduleResult = tournamentEngine.competitionScheduleMatchUps({
@@ -191,18 +194,18 @@ describe('competitionScheduleMatchUps with blocked cells', () => {
 
     // Row 2: Court 1 blocked, Court 2 not blocked
     expect(scheduleResult.rows[1]['C|0'].isBlocked).toEqual(true);
-    expect(scheduleResult.rows[1]['C|0'].booking.bookingType).toEqual('BLOCKED');
+    expect(scheduleResult.rows[1]['C|0'].booking.bookingType).toEqual(BLOCKED);
     expect(scheduleResult.rows[1]['C|1'].isBlocked).toBeUndefined();
 
     // Row 3: Court 1 not blocked, Court 2 blocked
     expect(scheduleResult.rows[2]['C|0'].isBlocked).toBeUndefined();
     expect(scheduleResult.rows[2]['C|1'].isBlocked).toEqual(true);
-    expect(scheduleResult.rows[2]['C|1'].booking.bookingType).toEqual('MAINTENANCE');
+    expect(scheduleResult.rows[2]['C|1'].booking.bookingType).toEqual(MAINTENANCE);
 
     // Row 4: Court 1 not blocked, Court 2 blocked
     expect(scheduleResult.rows[3]['C|0'].isBlocked).toBeUndefined();
     expect(scheduleResult.rows[3]['C|1'].isBlocked).toEqual(true);
-    expect(scheduleResult.rows[3]['C|1'].booking.bookingType).toEqual('MAINTENANCE');
+    expect(scheduleResult.rows[3]['C|1'].booking.bookingType).toEqual(MAINTENANCE);
   });
 
   it('does not return blocked cells when withCourtGridRows is false', () => {
@@ -226,7 +229,7 @@ describe('competitionScheduleMatchUps with blocked cells', () => {
       scheduledDate: '2024-01-15',
       courtOrder: 2,
       rowCount: 1,
-      bookingType: 'BLOCKED',
+      bookingType: BLOCKED,
     });
 
     // Call WITHOUT withCourtGridRows

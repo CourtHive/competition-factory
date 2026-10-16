@@ -6,19 +6,20 @@ import { expect, it } from 'vitest';
 import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { REMOVE_SEED } from '@Constants/positionActionConstants';
 import { MALE } from '@Constants/genderConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 it('can re-position seeds when a seed is withdrawn', () => {
   const targetDrawId = 'someCompletedMatchUps';
   const drawProfiles = [
     {
-      category: { ratingType: 'WTN', ratingMin: 8, ratingMax: 12 },
+      category: { ratingType: WTN, ratingMin: 8, ratingMax: 12 },
       eventType: DOUBLES_EVENT,
       seedsCount: 8,
       drawSize: 32,
       gender: MALE,
     },
     {
-      category: { ratingType: 'WTN', ratingMin: 8, ratingMax: 12 },
+      category: { ratingType: WTN, ratingMin: 8, ratingMax: 12 },
       drawId: targetDrawId,
       eventType: SINGLES_EVENT,
       seedsCount: 9,

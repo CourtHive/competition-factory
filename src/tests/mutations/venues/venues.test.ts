@@ -3,6 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { PRACTICE, MAINTENANCE } from '@Constants/bookingTypeConstants';
 import { LINKED_TOURNAMENTS } from '@Constants/extensionConstants';
 import {
   MISSING_COURTS_INFO,
@@ -36,9 +37,9 @@ it('can define a new venue', () => {
       startTime: '07:00',
       endTime: '19:00',
       bookings: [
-        { startTime: '07:00', endTime: '08:30', bookingType: 'PRACTICE' },
-        { startTime: '08:30', endTime: '09:00', bookingType: 'MAINTENANCE' },
-        { startTime: '13:30', endTime: '14:00', bookingType: 'MAINTENANCE' },
+        { startTime: '07:00', endTime: '08:30', bookingType: PRACTICE },
+        { startTime: '08:30', endTime: '09:00', bookingType: MAINTENANCE },
+        { startTime: '13:30', endTime: '14:00', bookingType: MAINTENANCE },
       ],
     },
   ];

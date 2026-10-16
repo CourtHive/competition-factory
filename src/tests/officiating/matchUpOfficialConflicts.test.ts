@@ -219,7 +219,7 @@ describe('getMatchUpOfficialConflicts', () => {
     const drawDefinition = tournamentRecord.events[0].drawDefinitions.find((d: any) => d.drawId === drawId);
 
     const officialRecord = makeOfficialRecord({
-      conflictDeclarations: [{ declarationId: 'dec-1', participantId: sides[0].participantId, relationship: 'COACH' }],
+      conflictDeclarations: [{ declarationId: 'dec-1', participantId: sides[0].participantId, relationship: COACH }],
     });
 
     const result: any = getMatchUpOfficialConflicts({

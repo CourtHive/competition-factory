@@ -10,6 +10,7 @@ import { DOUBLES, TEAM, SINGLES_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
+import { MALE } from '@Constants/genderConstants';
 
 it('can delete participants', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();
@@ -124,7 +125,7 @@ it('will clean up pairParticipants when individual participants are deleted', ()
   const event = {
     eventName: 'Test Event',
     eventType: SINGLES_EVENT,
-    eventGender: 'MALE',
+    eventGender: MALE,
   };
 
   const {

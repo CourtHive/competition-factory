@@ -11,6 +11,7 @@ import { expect, it, describe } from 'vitest';
 import { DEFAULTED, RETIRED, WALKOVER, SUSPENDED, INCOMPLETE } from '@Constants/matchUpStatusConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import { WTN, UTR } from '@Constants/ratingConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -262,7 +263,7 @@ describe('calculatePressureRatings with actual ratings', () => {
         participantId: 'p1',
         participant: {
           ratings: {
-            [SINGLES]: [{ scaleName: 'WTN', scaleValue: { wtnRating: 20 } }],
+            [SINGLES]: [{ scaleName: WTN, scaleValue: { wtnRating: 20 } }],
           },
         },
       },
@@ -271,7 +272,7 @@ describe('calculatePressureRatings with actual ratings', () => {
         participantId: 'p2',
         participant: {
           ratings: {
-            [SINGLES]: [{ scaleName: 'WTN', scaleValue: { wtnRating: 30 } }],
+            [SINGLES]: [{ scaleName: WTN, scaleValue: { wtnRating: 30 } }],
           },
         },
       },
@@ -306,7 +307,7 @@ describe('calculatePressureRatings with actual ratings', () => {
         participantId: 'p1',
         participant: {
           ratings: {
-            [SINGLES]: [{ scaleName: 'UTR', scaleValue: { utrRating: 14 } }],
+            [SINGLES]: [{ scaleName: UTR, scaleValue: { utrRating: 14 } }],
           },
         },
       },
@@ -315,7 +316,7 @@ describe('calculatePressureRatings with actual ratings', () => {
         participantId: 'p2',
         participant: {
           ratings: {
-            [SINGLES]: [{ scaleName: 'UTR', scaleValue: { utrRating: 6 } }],
+            [SINGLES]: [{ scaleName: UTR, scaleValue: { utrRating: 6 } }],
           },
         },
       },

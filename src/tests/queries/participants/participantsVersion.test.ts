@@ -6,6 +6,7 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 
 /**
  * `participantsVersion` handshake — G2 / D2.
@@ -152,7 +153,7 @@ describe('participantsVersion', () => {
 
       const { participants: additions } = mocksEngine.generateParticipants({
         participantsCount: 1,
-        participantType: 'INDIVIDUAL',
+        participantType: INDIVIDUAL,
         nonRandom: 2,
       });
       const result: any = tournamentEngine.addParticipants({ participants: additions });

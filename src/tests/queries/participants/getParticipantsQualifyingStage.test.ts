@@ -7,6 +7,7 @@ import { expect, it } from 'vitest';
 import { QUALIFYING_PARTICIPANT } from '@Constants/positionActionConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 it('can generate and seed a qualifying structure', () => {
   const {
@@ -102,7 +103,7 @@ it('can generate and seed a qualifying structure', () => {
     withSeeding: true,
     withDraws: true,
     participantFilters: {
-      participantRoles: ['COMPETITOR'],
+      participantRoles: [COMPETITOR],
     },
   }).participants;
 

@@ -28,6 +28,7 @@ import {
 // constants
 import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { MAIN, AD_HOC } from '@Constants/drawDefinitionConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import {
   MISSING_TOURNAMENT_RECORDS,
   MISSING_TOURNAMENT_RECORD,
@@ -383,7 +384,7 @@ describe('collectionGroupUpdate branches', () => {
           {
             collectionId: 'c1',
             collectionName: 'Singles',
-            matchUpType: 'SINGLES',
+            matchUpType: SINGLES_MATCHUP,
             matchUpFormat: 'SET3-S:6/TB7',
             matchUpCount: 3,
             matchUpValue: 1,

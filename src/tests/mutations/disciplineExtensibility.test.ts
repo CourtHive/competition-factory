@@ -5,15 +5,27 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
 import tournamentSchema from '@Global/schema/tournament.schema.json';
-import { disciplines } from '@Constants/disciplineConstants';
+import {
+  disciplines,
+  TENNIS,
+  BEACH_VOLLEYBALL,
+  BEACH_TENNIS,
+  PADEL,
+  WHEELCHAIR_TENNIS,
+  PICKLEBALL,
+  VOLLEYBALL,
+} from '@Constants/disciplineConstants';
+
+// constants
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 
 // Phase 0 — normalization + curated known-set + drift guard.
 test('normalizeDiscipline canonicalizes casing and separators; open values pass through', () => {
-  expect(normalizeDiscipline('tennis')).toEqual('TENNIS');
-  expect(normalizeDiscipline('beach volleyball')).toEqual('BEACH_VOLLEYBALL');
-  expect(normalizeDiscipline('beach-tennis')).toEqual('BEACH_TENNIS');
-  expect(normalizeDiscipline('  Padel ')).toEqual('PADEL');
-  expect(normalizeDiscipline('BEACH_VOLLEYBALL')).toEqual('BEACH_VOLLEYBALL');
+  expect(normalizeDiscipline('tennis')).toEqual(TENNIS);
+  expect(normalizeDiscipline('beach volleyball')).toEqual(BEACH_VOLLEYBALL);
+  expect(normalizeDiscipline('beach-tennis')).toEqual(BEACH_TENNIS);
+  expect(normalizeDiscipline('  Padel ')).toEqual(PADEL);
+  expect(normalizeDiscipline(BEACH_VOLLEYBALL)).toEqual(BEACH_VOLLEYBALL);
   // open vocabulary: an unknown-but-well-formed value is normalized, never rejected
   expect(normalizeDiscipline('table tennis')).toEqual('TABLE_TENNIS');
   // non-strings + empty pass through unchanged
@@ -22,15 +34,7 @@ test('normalizeDiscipline canonicalizes casing and separators; open values pass 
 });
 
 test('isKnownDiscipline recognizes the curated set; rejects typos and unknowns', () => {
-  for (const d of [
-    'TENNIS',
-    'BEACH_TENNIS',
-    'WHEELCHAIR_TENNIS',
-    'PADEL',
-    'PICKLEBALL',
-    'VOLLEYBALL',
-    'BEACH_VOLLEYBALL',
-  ]) {
+  for (const d of [TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS, PADEL, PICKLEBALL, VOLLEYBALL, BEACH_VOLLEYBALL]) {
     expect(isKnownDiscipline(d)).toBe(true);
   }
   expect(isKnownDiscipline('beach volleyball')).toBe(true); // normalized, then matched
@@ -42,7 +46,7 @@ test('isKnownDiscipline recognizes the curated set; rejects typos and unknowns',
 // Guards the type↔schema drift that opened this workstream: the TS known set must include
 // every discipline the published schema historically enumerated.
 test('known set includes the schema-enumerated racquet disciplines (drift guard)', () => {
-  for (const d of ['TENNIS', 'BEACH_TENNIS', 'WHEELCHAIR_TENNIS', 'PADEL', 'PICKLEBALL']) {
+  for (const d of [TENNIS, BEACH_TENNIS, WHEELCHAIR_TENNIS, PADEL, PICKLEBALL]) {
     expect(disciplines).toContain(d);
   }
 });
@@ -59,10 +63,10 @@ test('schema DisciplineEnum examples stay in lockstep with disciplineConstants',
 
 // Phase 2 — policy gate + normalize-on-write.
 test('isDisciplineAllowed: empty/absent whitelist allows all; whitelist matches normalization-insensitively', () => {
-  expect(isDisciplineAllowed('VOLLEYBALL')).toBe(true); // no whitelist → unconstrained
-  expect(isDisciplineAllowed('VOLLEYBALL', [])).toBe(true); // empty whitelist → unconstrained
-  expect(isDisciplineAllowed('beach volleyball', ['BEACH_VOLLEYBALL', 'TENNIS'])).toBe(true); // normalized match
-  expect(isDisciplineAllowed('VOLLEYBALL', ['TENNIS', 'PADEL'])).toBe(false); // not in whitelist
+  expect(isDisciplineAllowed(VOLLEYBALL)).toBe(true); // no whitelist → unconstrained
+  expect(isDisciplineAllowed(VOLLEYBALL, [])).toBe(true); // empty whitelist → unconstrained
+  expect(isDisciplineAllowed('beach volleyball', [BEACH_VOLLEYBALL, TENNIS])).toBe(true); // normalized match
+  expect(isDisciplineAllowed(VOLLEYBALL, [TENNIS, PADEL])).toBe(false); // not in whitelist
 });
 
 test('addEvent normalizes an open discipline on write', () => {
@@ -72,10 +76,10 @@ test('addEvent normalizes an open discipline on write', () => {
   let result: any = tournamentEngine.addEvent({ event: { eventName: 'Beach VB', discipline: 'beach volleyball' } });
   expect(result.success).toEqual(true);
   // stored canonically despite the lower-case / space-separated input
-  expect(result.event.discipline).toEqual('BEACH_VOLLEYBALL');
+  expect(result.event.discipline).toEqual(BEACH_VOLLEYBALL);
 
   const { event }: any = tournamentEngine.getEvent({ eventId: result.event.eventId });
-  expect(event.discipline).toEqual('BEACH_VOLLEYBALL');
+  expect(event.discipline).toEqual(BEACH_VOLLEYBALL);
 });
 
 // Phase 3 — discipline -> sport-profile registry.
@@ -94,7 +98,7 @@ test('getDisciplineProfile resolves built-ins (normalization-insensitive); unkno
 test('registerDisciplineProfile adds/overrides a profile at runtime', () => {
   registerDisciplineProfile({
     discipline: 'test squash',
-    matchUpTypes: ['SINGLES'],
+    matchUpTypes: [SINGLES_MATCHUP],
     defaultMatchUpFormat: 'SET5-S:11NOAD',
   });
   const profile = getDisciplineProfile({ discipline: 'TEST_SQUASH' });

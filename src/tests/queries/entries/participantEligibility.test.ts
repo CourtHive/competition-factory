@@ -8,6 +8,9 @@ import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { ANY } from '@Constants/genderConstants';
 
+// constants
+import { NTRP } from '@Constants/ratingConstants';
+
 /**
  * Punch-list M3 and M4.
  *
@@ -178,7 +181,7 @@ describe('combined rating categories', () => {
 
   it('does not reject an individual against a combined-only bound', () => {
     const participant: any = { participantId: 'p', person: {} };
-    const category: any = { ratingType: 'NTRP', combinedRatingMax: 7.0 };
+    const category: any = { ratingType: NTRP, combinedRatingMax: 7.0 };
     expect(validateParticipantRating(participant, category, event).valid).toBe(true);
   });
 
@@ -190,7 +193,7 @@ describe('combined rating categories', () => {
     const participant = tournamentRecord.participants.find((p: any) => p.participantType === INDIVIDUAL);
     // No NTRP scale item exists for this participant, so an individual bound is INDETERMINATE
     // rather than satisfied — which is itself the point: the combined bound did not suppress it.
-    const category: any = { ratingType: 'NTRP', combinedRatingMax: 7.0, ratingMax: 5.0 };
+    const category: any = { ratingType: NTRP, combinedRatingMax: 7.0, ratingMax: 5.0 };
     const result: any = validateParticipantRating(participant, category, event as any, tournamentRecord);
     expect(result.valid).toBe(false);
     expect(result.indeterminate).toBe(true);

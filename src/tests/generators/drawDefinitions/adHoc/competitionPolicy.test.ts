@@ -17,7 +17,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';
 import { AD_HOC, SWISS } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
-import { RATING } from '@Constants/scaleConstants';
+import { RATING, SCALE } from '@Constants/scaleConstants';
+import { BUCHHOLZ } from '@Constants/swissConstants';
 import { ELO } from '@Constants/ratingConstants';
 
 // Testing
@@ -227,7 +228,7 @@ describe('competition policy attachment and state initialization', () => {
           ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION],
           ratingPolicy: {
             ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION].ratingPolicy,
-            baselineRating: { source: 'SCALE', scaleName: ELO, frozenDuringEvent: true as const },
+            baselineRating: { source: SCALE, scaleName: ELO, frozenDuringEvent: true as const },
           },
         },
       },
@@ -298,7 +299,7 @@ describe('pressure rating processing', () => {
           ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION],
           ratingPolicy: {
             ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION].ratingPolicy,
-            baselineRating: { source: 'SCALE', scaleName: ELO, frozenDuringEvent: true as const },
+            baselineRating: { source: SCALE, scaleName: ELO, frozenDuringEvent: true as const },
           },
         },
       },
@@ -355,7 +356,7 @@ describe('pressure rating processing', () => {
           ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION],
           ratingPolicy: {
             ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION].ratingPolicy,
-            baselineRating: { source: 'SCALE', scaleName: ELO, frozenDuringEvent: true as const },
+            baselineRating: { source: SCALE, scaleName: ELO, frozenDuringEvent: true as const },
           },
         },
       },
@@ -391,7 +392,7 @@ describe('pressure rating processing', () => {
           ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION],
           ratingPolicy: {
             ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION].ratingPolicy,
-            baselineRating: { source: 'SCALE', scaleName: ELO, frozenDuringEvent: true as const },
+            baselineRating: { source: SCALE, scaleName: ELO, frozenDuringEvent: true as const },
           },
         },
       },
@@ -436,7 +437,7 @@ describe('leaderboard', () => {
           ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION],
           ratingPolicy: {
             ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION].ratingPolicy,
-            baselineRating: { source: 'SCALE', scaleName: ELO, frozenDuringEvent: true as const },
+            baselineRating: { source: SCALE, scaleName: ELO, frozenDuringEvent: true as const },
           },
         },
       },
@@ -510,7 +511,7 @@ describe('per-round processing', () => {
         ...POLICY_COMPETITION_STANDARD[POLICY_TYPE_COMPETITION],
         ratingPolicy: {
           ...POLICY_COMPETITION_STANDARD[POLICY_TYPE_COMPETITION].ratingPolicy,
-          baselineRating: { source: 'SCALE', scaleName: ELO, frozenDuringEvent: true as const },
+          baselineRating: { source: SCALE, scaleName: ELO, frozenDuringEvent: true as const },
           pressureRating: {
             enabled: true,
             expectationSource: 'BASELINE_ONLY' as const,
@@ -560,7 +561,7 @@ describe('pairing integration', () => {
           ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION],
           ratingPolicy: {
             ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION].ratingPolicy,
-            baselineRating: { source: 'SCALE', scaleName: ELO, frozenDuringEvent: true as const },
+            baselineRating: { source: SCALE, scaleName: ELO, frozenDuringEvent: true as const },
           },
         },
       },
@@ -589,7 +590,7 @@ describe('Swiss with competition policy', () => {
           ...POLICY_COMPETITION_SWISS[POLICY_TYPE_COMPETITION],
           ratingPolicy: {
             ...POLICY_COMPETITION_SWISS[POLICY_TYPE_COMPETITION].ratingPolicy,
-            baselineRating: { source: 'SCALE', scaleName: ELO, frozenDuringEvent: true as const },
+            baselineRating: { source: SCALE, scaleName: ELO, frozenDuringEvent: true as const },
           },
         },
       },
@@ -617,7 +618,7 @@ describe('participant state query', () => {
           ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION],
           ratingPolicy: {
             ...POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION].ratingPolicy,
-            baselineRating: { source: 'SCALE', scaleName: ELO, frozenDuringEvent: true as const },
+            baselineRating: { source: SCALE, scaleName: ELO, frozenDuringEvent: true as const },
           },
         },
       },
@@ -659,7 +660,7 @@ describe('policy fixtures', () => {
     const policy = POLICY_COMPETITION_SWISS[POLICY_TYPE_COMPETITION];
     expect(policy.pairingPolicy.method).toBe(SWISS);
     expect(policy.victoryPolicy.primaryRanking).toBe('WINS');
-    expect(policy.victoryPolicy.tiebreakOrder).toContain('BUCHHOLZ');
+    expect(policy.victoryPolicy.tiebreakOrder).toContain(BUCHHOLZ);
   });
 });
 

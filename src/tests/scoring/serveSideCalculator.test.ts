@@ -29,6 +29,7 @@ import { describe, test, expect } from 'vitest';
 
 // constants
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 
 // ============================================================================
 // Helper to build minimal MatchUp objects
@@ -39,7 +40,7 @@ function makeMatchUp(sets: SetScore[]): MatchUp {
     matchUpId: 'test-1',
     matchUpFormat: 'SET3-S:6/TB7',
     matchUpStatus: IN_PROGRESS,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
     score: { sets },
   };

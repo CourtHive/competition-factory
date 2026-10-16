@@ -4,7 +4,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
-import { ACCEPTED, PENDING, RESULT } from '@Constants/ladderConstants';
+import { ACCEPTED, PENDING, RESULT, RANK } from '@Constants/ladderConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -186,7 +186,7 @@ describe('the ladder lifecycle is reachable through the engine', () => {
 
     const policy: any = tournamentEngine.getLadderPolicy({ drawId });
     expect(policy.challengeRange).toEqual(3);
-    expect(tournamentEngine.getLadderOrdering({ drawId })).toEqual('RANK');
+    expect(tournamentEngine.getLadderOrdering({ drawId })).toEqual(RANK);
 
     const lapses: any = tournamentEngine.getLapses({ participantId: participantIds[0], asOf: ISO(9), drawId });
     expect(lapses.count).toEqual(0);

@@ -12,7 +12,9 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { FIRST_ROUND_LOSER_CONSOLATION, AD_HOC, ROUND_OUTCOME } from '@Constants/drawDefinitionConstants';
+import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 // ----------------------------------------------------------------
@@ -351,7 +353,7 @@ describe('anonymizeTournamentRecord uncovered branches', () => {
 
   it('covers lineUp mapping in matchUp sides (L158) and birthDate (L283-285)', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: 'COLLEGE_DEFAULT' }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_DEFAULT }],
     });
 
     // Add lineUp to a matchUp side to trigger L158
@@ -414,7 +416,7 @@ describe('processPlayoffGroups uncovered branches', () => {
       groupCount: 2,
       groupSize: 4,
       stageSequence: 2,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       isMock: true,
     } as any);
     // Should produce structures and links
@@ -440,7 +442,7 @@ describe('processPlayoffGroups uncovered branches', () => {
       groupCount: 1,
       groupSize: 4,
       stageSequence: 2,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       isMock: true,
     } as any);
     expect(result.structures?.length).toBeGreaterThan(0);
@@ -464,7 +466,7 @@ describe('processPlayoffGroups uncovered branches', () => {
       groupCount: 1,
       groupSize: 4,
       stageSequence: 2,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       isMock: true,
     } as any);
     // bestOf 999 exceeds total participants, should trigger validation error

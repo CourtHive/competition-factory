@@ -5,8 +5,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
+import { COLLEGE_D3, USTA_BREWER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { NO_MODIFICATIONS_APPLIED } from '@Constants/errorConditionConstants';
-import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
@@ -461,7 +461,7 @@ test('removing collectionDefinition will not recalculate score or remove advance
   const params = {
     collectionId: '9798bdd1-acc9-4b27-8730-a0f2f7c9002e',
     updateInProgressMatchUps: true,
-    tieFormatName: 'USTA_COLLEGE',
+    tieFormatName: USTA_COLLEGE,
     matchUpId,
     drawId,
   };

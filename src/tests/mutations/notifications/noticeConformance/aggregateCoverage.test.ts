@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { DELETE_EVENT, MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { fidelityViolations } from './harness';
 
+// constants
+import { MALE } from '@Constants/genderConstants';
+
 /**
  * The `tournamentAggregate` coverage rule, falsified.
  *
@@ -23,7 +26,7 @@ const base = (overrides: any = {}) => ({
   tournamentName: 'Aggregate Coverage',
   startDate: '2026-07-01',
   endDate: '2026-07-07',
-  events: [{ eventId: 'e1', eventName: 'Singles', gender: 'MALE', category: { categoryType: 'ADULT' } }],
+  events: [{ eventId: 'e1', eventName: 'Singles', gender: MALE, category: { categoryType: 'ADULT' } }],
   venues: [],
   participants: [],
   ...overrides,

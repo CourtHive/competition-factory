@@ -11,6 +11,7 @@ import { MISSING_EVENT } from '@Constants/errorConditionConstants';
 import { ADD_SCALE_ITEMS } from '@Constants/topicConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { ScaleAttributes } from '@Types/factoryTypes';
+import { WTN } from '@Constants/ratingConstants';
 
 it('can autoSeed by Rankings', () => {
   const eventId = 'seededEventId';
@@ -33,7 +34,7 @@ it('can autoSeed by Rankings', () => {
         scaleValue: scaleValuesRating[index],
         eventType: SINGLES_EVENT,
         scaleType: RATING,
-        scaleName: 'WTN',
+        scaleName: WTN,
         scaleDate,
       },
       {
@@ -51,7 +52,7 @@ it('can autoSeed by Rankings', () => {
   let scaleAttributes = {
     eventType: SINGLES_EVENT,
     scaleType: RATING,
-    scaleName: 'WTN',
+    scaleName: WTN,
   };
   let result = tournamentEngine.setParticipantScaleItems({
     context: { scaleAttributes, eventId },

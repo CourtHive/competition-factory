@@ -9,6 +9,7 @@ import { MISSING_EVENT } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { RANKING, RATING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import { NTRP } from '@Constants/ratingConstants';
 
 // turn on devContext to enable checking splitEntries value
 tournamentEngine.devContext(true);
@@ -33,7 +34,7 @@ it('can sort entries by scaleAttributes when generatingflighProfiles', () => {
   scaleValues.forEach((scaleValue, index) => {
     const scaleItem = {
       scaleValue,
-      scaleName: 'NTRP',
+      scaleName: NTRP,
       scaleType: RATING,
       eventType: SINGLES,
       scaleDate: '2020-06-06',
@@ -49,7 +50,7 @@ it('can sort entries by scaleAttributes when generatingflighProfiles', () => {
   const scaleAttributes = {
     scaleType: RATING,
     eventType: SINGLES,
-    scaleName: 'NTRP',
+    scaleName: NTRP,
   };
   participantIds.forEach((participantId, index) => {
     const { scaleItem } = tournamentEngine.getParticipantScaleItem({

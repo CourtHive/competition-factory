@@ -5,7 +5,7 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { PICKLEBALL } from '@Constants/disciplineConstants';
+import { PICKLEBALL, TENNIS } from '@Constants/disciplineConstants';
 import { RALLY } from '@Constants/matchUpFormatConstants';
 
 const PICKLEBALL_FORMATS = Object.entries(matchUpFormats).filter(([name]) => name.startsWith('FORMAT_PICKLEBALL'));
@@ -72,7 +72,7 @@ describe('pickleball competitionFormat', () => {
 
   it('leaves the tennis profile untouched', () => {
     const tennis: any = competitionFormats.TENNIS_STANDARD;
-    expect(tennis.sport).toEqual('TENNIS');
+    expect(tennis.sport).toEqual(TENNIS);
     expect(tennis.matchUpFormat).toEqual('SET3-S:6/TB7');
   });
 });

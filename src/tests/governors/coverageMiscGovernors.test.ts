@@ -27,6 +27,7 @@ import { COMPLETED, RETIRED, WALKOVER, BYE } from '@Constants/matchUpStatusConst
 import { MISSING_SANCTIONING_RECORD, DRAFT } from '@Constants/sanctioningConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { RATING, SCALE } from '@Constants/scaleConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 // ----------------------------------------------------------------
 // Event Governor
@@ -265,7 +266,7 @@ describe('getScaleValues', () => {
     expect(result.ratings[SINGLES_EVENT]).toBeDefined();
     expect(result.ratings[SINGLES_EVENT].length).toBeGreaterThan(0);
     expect(result.ratings[SINGLES_EVENT][0].scaleValue).toBe(35.5);
-    expect(result.ratings[SINGLES_EVENT][0].scaleName).toBe('WTN');
+    expect(result.ratings[SINGLES_EVENT][0].scaleName).toBe(WTN);
   });
 });
 

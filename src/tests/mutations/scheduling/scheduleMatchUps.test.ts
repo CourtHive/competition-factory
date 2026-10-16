@@ -6,6 +6,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { ASSIGN_COURT, END_TIME, RESUME_TIME, START_TIME, STOP_TIME } from '@Constants/timeItemConstants';
+import { PRACTICE, MAINTENANCE } from '@Constants/bookingTypeConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
 import {
@@ -38,9 +39,9 @@ legacyMode('scheduleMatchUps — legacy timeItems', () => {
         startTime: '07:00',
         endTime: '19:00',
         bookings: [
-          { startTime: '07:00', endTime: '08:30', bookingType: 'PRACTICE' },
-          { startTime: '08:30', endTime: '09:00', bookingType: 'MAINTENANCE' },
-          { startTime: '13:30', endTime: '14:00', bookingType: 'MAINTENANCE' },
+          { startTime: '07:00', endTime: '08:30', bookingType: PRACTICE },
+          { startTime: '08:30', endTime: '09:00', bookingType: MAINTENANCE },
+          { startTime: '13:30', endTime: '14:00', bookingType: MAINTENANCE },
         ],
       },
     ];

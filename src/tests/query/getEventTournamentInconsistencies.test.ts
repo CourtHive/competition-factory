@@ -11,6 +11,7 @@ import {
 // constants
 import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { PAIR, INDIVIDUAL } from '@Constants/participantConstants';
 
 test('a completed multi-event tournament reports zero inconsistencies at every layer', () => {
   setSubscriptions({});
@@ -43,7 +44,7 @@ test('detects participants whose type is inconsistent with the eventType', () =>
   expect(result.valid).toEqual(false);
   const mismatch = result.inconsistencies.find((i) => i.issueType === EVENT_PARTICIPANT_TYPE_MISMATCH);
   expect(mismatch).toBeTruthy();
-  expect(mismatch.participantType).toEqual('PAIR');
+  expect(mismatch.participantType).toEqual(PAIR);
   expect(mismatch.severity).toEqual('error');
   expect(mismatch.scope).toEqual('EVENT');
   expect(mismatch.eventId).toEqual(event.eventId);
@@ -77,7 +78,7 @@ test('detects a person represented by two distinct INDIVIDUAL participants', () 
   expect(getTournamentInconsistencies({ tournamentRecord }).valid).toEqual(true);
 
   // corrupt: clone an existing INDIVIDUAL participant under a new participantId but the same personId
-  const original = tournamentRecord.participants.find((p) => p.participantType === 'INDIVIDUAL' && p.person?.personId);
+  const original = tournamentRecord.participants.find((p) => p.participantType === INDIVIDUAL && p.person?.personId);
   tournamentRecord.participants.push({
     ...original,
     participantId: `${original.participantId}-dup`,

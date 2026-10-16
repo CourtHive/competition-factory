@@ -5,7 +5,7 @@ import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { WATERFALL, SEPARATE, CLUSTER } from '@Constants/drawDefinitionConstants';
+import { WATERFALL, SEPARATE, CLUSTER, ADJACENT } from '@Constants/drawDefinitionConstants';
 
 /**
  * `SeedingPolicy` describes a shape the factory READS but never declared — `PolicyDefinitions`
@@ -42,7 +42,7 @@ describe('the shipped seeding policies carry the values their readers branch on'
   });
 
   it('every shipped positioning is a SeedingProfileEnum member', () => {
-    const members = ['ADJACENT', 'CLUSTER', 'SEPARATE', 'WATERFALL'];
+    const members = [ADJACENT, CLUSTER, SEPARATE, WATERFALL];
     const shipped = [
       POLICY_SEEDING_DEFAULT[POLICY_TYPE_SEEDING].seedingProfile.positioning,
       POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING].seedingProfile.positioning,

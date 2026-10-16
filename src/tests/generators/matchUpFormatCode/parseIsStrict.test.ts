@@ -3,6 +3,9 @@ import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { RALLY } from '@Constants/matchUpFormatConstants';
+
 /**
  * `parse` refuses what `isValidMatchUpFormat` refuses (CA, 2026-10-02).
  *
@@ -71,6 +74,6 @@ describe('stringify never writes a code parse refuses', () => {
 describe('the canonical rally format keeps both of its meanings', () => {
   it('TB11NOAD@RALLY is rally scoring, won by one', () => {
     const tiebreakSet: any = parse('SET3-S:TB11NOAD@RALLY')?.setFormat?.tiebreakSet;
-    expect(tiebreakSet).toEqual({ tiebreakTo: 11, NoAD: true, modifier: 'RALLY' });
+    expect(tiebreakSet).toEqual({ tiebreakTo: 11, NoAD: true, modifier: RALLY });
   });
 });

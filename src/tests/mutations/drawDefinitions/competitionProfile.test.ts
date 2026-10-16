@@ -15,6 +15,7 @@ import {
 } from '@Mutate/drawDefinitions/competitionProfile';
 
 // constants and types
+import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 
 import type { CompetitionProfile, MexicanoCompetitionProfile } from '@Types/competitionProfile';
@@ -35,7 +36,7 @@ const mexicano: MexicanoCompetitionProfile = {
   version: 1,
   format: 'MEXICANO',
   entrantScope: 'INDIVIDUAL',
-  matchUpType: 'DOUBLES',
+  matchUpType: DOUBLES_MATCHUP,
   scoring: { combinedPointTotal: 32 },
   standings: { metric: 'SIDE_POINTS', attribution: 'EACH_INDIVIDUAL' },
   pairing: { seed: 42, algorithmVersion: 1, groupBy: 'ADJACENT_STANDINGS', partners: 'FIRST_FOURTH_SECOND_THIRD' },
@@ -52,7 +53,7 @@ const copy = <T>(value: T): T => structuredClone(value);
 const draw = (): DrawDefinition => ({
   drawId: 'profile-draw',
   drawType: AD_HOC,
-  matchUpType: 'DOUBLES',
+  matchUpType: DOUBLES_MATCHUP,
   structures: [],
 });
 
@@ -78,7 +79,7 @@ describe('closed competition profile validation and CODES schema parity', () => 
     { ...mexicano, extra: true },
     { ...ladder, pairing: mexicano.pairing },
     { ...mexicano, entrantScope: 'PAIR' },
-    { ...mexicano, matchUpType: 'SINGLES' },
+    { ...mexicano, matchUpType: SINGLES_MATCHUP },
     { ...mexicano, scoring: { combinedPointTotal: 0 } },
     { ...mexicano, scoring: { combinedPointTotal: 1.5 } },
     { ...mexicano, scoring: { combinedPointTotal: Number.MAX_SAFE_INTEGER + 1 } },

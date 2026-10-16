@@ -8,6 +8,7 @@ import Ajv from 'ajv';
 // constants
 import { MATCHUP_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
@@ -89,7 +90,9 @@ describe('MatchUp.onlineResources', () => {
       nonRandom: 1,
       setState: true,
     });
-    const { matchUps } = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { matchUpTypes: ['SINGLES'] } });
+    const { matchUps } = tournamentEngine.allTournamentMatchUps({
+      matchUpFilters: { matchUpTypes: [SINGLES_MATCHUP] },
+    });
     const matchUpId = matchUps[0].matchUpId;
     expect(tournamentEngine.addOnlineResource({ drawId, matchUpId, onlineResource: matchVideo }).success).toEqual(true);
     expect(storedMatchUp(matchUpId).onlineResources).toEqual([matchVideo]);

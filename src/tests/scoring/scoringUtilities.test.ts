@@ -14,6 +14,9 @@ import {
   hasCountablePoints,
 } from '@Tools/scoring/scoringUtilities';
 
+// constants
+import { CONSECUTIVE } from '@Constants/matchUpFormatConstants';
+
 // ============================================================================
 // isValidFormat
 // ============================================================================
@@ -459,7 +462,7 @@ describe('getPointsToGame', () => {
     const format: FormatStructure = {
       bestOf: 5,
       setFormat: { setTo: 5 },
-      gameFormat: { type: 'CONSECUTIVE', count: 3 },
+      gameFormat: { type: CONSECUTIVE, count: 3 },
     };
     expect(getPointsToGame(format, standardCtx)).toBe(3);
   });
@@ -511,11 +514,11 @@ describe('getMinPointsToSetCompletion', () => {
   });
 
   it('uses CONSECUTIVE game format count', () => {
-    expect(getMinPointsToSetCompletion({ setTo: 5 }, { type: 'CONSECUTIVE', count: 3 })).toBe(15);
+    expect(getMinPointsToSetCompletion({ setTo: 5 }, { type: CONSECUTIVE, count: 3 })).toBe(15);
   });
 
   it('defaults CONSECUTIVE count to 3 when not specified', () => {
-    expect(getMinPointsToSetCompletion({ setTo: 5 }, { type: 'CONSECUTIVE' } as any)).toBe(15);
+    expect(getMinPointsToSetCompletion({ setTo: 5 }, { type: CONSECUTIVE } as any)).toBe(15);
   });
 });
 
@@ -570,7 +573,7 @@ describe('getMinPointsToMatchCompletion', () => {
     const format: FormatStructure = {
       bestOf: 5,
       setFormat: { setTo: 5 },
-      gameFormat: { type: 'CONSECUTIVE', count: 3 },
+      gameFormat: { type: CONSECUTIVE, count: 3 },
     };
     // 3 sets * (5 * 3) = 45
     expect(getMinPointsToMatchCompletion(format)).toBe(45);

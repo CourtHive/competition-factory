@@ -654,7 +654,7 @@ test('does not propagate matchUpStatusCodes from SINGLE/DOUBLES to TEAM matchUps
 
   expect(matchUpModifyNotices).toEqual([
     [
-      'SINGLES',
+      SINGLES,
       ['WOWO', 'WOWO'],
       {
         scoreStringSide1: '',
@@ -663,7 +663,7 @@ test('does not propagate matchUpStatusCodes from SINGLE/DOUBLES to TEAM matchUps
       },
     ],
     [
-      'TEAM',
+      TEAM,
       {
         scoreStringSide1: '0-0',
         scoreStringSide2: '0-0',

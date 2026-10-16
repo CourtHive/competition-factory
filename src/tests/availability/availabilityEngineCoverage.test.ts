@@ -2,6 +2,9 @@ import { BLOCK_TYPES, type CourtRef } from '@Assemblies/governors/availabilityGo
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// constants
+import { OUTDOOR, INDOOR } from '@Constants/venueConstants';
+
 const TEST_TOURNAMENT = 'test-tournament';
 const TEST_VENUE = 'venue-1';
 const COURT_1 = 'court-1';
@@ -24,14 +27,14 @@ function makeBasicRecord() {
             courtId: COURT_1,
             courtName: 'Court 1',
             surfaceCategory: 'clay',
-            indoorOutdoor: 'OUTDOOR',
+            indoorOutdoor: OUTDOOR,
             hasLights: true,
           },
           {
             courtId: COURT_2,
             courtName: 'Court 2',
             surfaceCategory: 'hard',
-            indoorOutdoor: 'INDOOR',
+            indoorOutdoor: INDOOR,
             hasLights: false,
           },
         ],

@@ -7,6 +7,7 @@ import type { MatchUp } from '@Types/scoring/types';
 import { describe, test, expect } from 'vitest';
 
 // constants
+import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 describe('createMatchUp', () => {
@@ -18,7 +19,7 @@ describe('createMatchUp', () => {
     expect(matchUp).toBeDefined();
     expect(matchUp.matchUpFormat).toBe('SET3-S:6/TB7');
     expect(matchUp.matchUpStatus).toBe(TO_BE_PLAYED);
-    expect(matchUp.matchUpType).toBe('SINGLES');
+    expect(matchUp.matchUpType).toBe(SINGLES_MATCHUP);
     expect(matchUp.sides).toHaveLength(2);
     expect(matchUp.score.sets).toHaveLength(0);
   });
@@ -29,7 +30,7 @@ describe('createMatchUp', () => {
       isDoubles: true,
     });
 
-    expect(matchUp.matchUpType).toBe('DOUBLES');
+    expect(matchUp.matchUpType).toBe(DOUBLES_MATCHUP);
   });
 
   test('should accept custom matchUpId', () => {

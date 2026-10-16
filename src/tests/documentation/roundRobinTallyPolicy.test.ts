@@ -8,6 +8,7 @@ import { DEFAULTED, RETIRED, WALKOVER, ABANDONED, INCOMPLETE } from '@Constants/
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 
 // Policy Fixtures
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
@@ -882,7 +883,7 @@ test('TEAM event type tracks tieMatchUpsWon, tieSinglesWon, and tieDoublesWon', 
         tieFormat: {
           collectionDefinitions: [
             { collectionName: 'Singles', matchUpType: SINGLES, matchUpCount: 2, matchUpFormat: 'SET3-S:6/TB7' },
-            { collectionName: 'Doubles', matchUpType: 'DOUBLES', matchUpCount: 1, matchUpFormat: 'SET3-S:6/TB7' },
+            { collectionName: 'Doubles', matchUpType: DOUBLES_MATCHUP, matchUpCount: 1, matchUpFormat: 'SET3-S:6/TB7' },
           ],
           winCriteria: { valueGoal: 2 },
         },

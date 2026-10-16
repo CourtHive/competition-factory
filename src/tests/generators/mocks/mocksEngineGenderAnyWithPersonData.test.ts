@@ -20,20 +20,21 @@
  * Storybook story showed no data per player (discovered 2026-06-03).
  */
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { ANY, MIXED } from '@Constants/genderConstants';
+import { ANY, MIXED, FEMALE, MALE } from '@Constants/genderConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 
 function makePersonData(count: number) {
   return Array.from({ length: count }, (_, i) => ({
     personId: `utr-${String(i + 1).padStart(3, '0')}`,
     firstName: `Given${i}`,
     lastName: `Family${i}`,
-    sex: i % 2 ? 'FEMALE' : 'MALE',
+    sex: i % 2 ? FEMALE : MALE,
   }));
 }
 
@@ -42,7 +43,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
     const personData = makePersonData(32);
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       tournamentAttributes: { tournamentName: 'Mixed cohort', endDate: '2026-01-15' },
-      participantsProfile: { participantsCount: 32, participantType: 'INDIVIDUAL', personData },
+      participantsProfile: { participantsCount: 32, participantType: INDIVIDUAL, personData },
       drawProfiles: [
         {
           drawSize: 32,
@@ -85,7 +86,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
     const personData = makePersonData(32);
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       tournamentAttributes: { tournamentName: 'Mixed singles', endDate: '2026-01-15' },
-      participantsProfile: { participantsCount: 32, participantType: 'INDIVIDUAL', personData },
+      participantsProfile: { participantsCount: 32, participantType: INDIVIDUAL, personData },
       drawProfiles: [
         {
           drawSize: 32,
@@ -117,7 +118,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
     const personData = makePersonData(32);
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       tournamentAttributes: { tournamentName: 'Mixed doubles', endDate: '2026-01-15' },
-      participantsProfile: { participantsCount: 32, participantType: 'INDIVIDUAL', personData },
+      participantsProfile: { participantsCount: 32, participantType: INDIVIDUAL, personData },
       drawProfiles: [
         {
           drawSize: 16,
@@ -133,7 +134,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
     });
 
     expect(tournamentRecord).toBeDefined();
-    const pairs = (tournamentRecord.participants ?? []).filter((p: any) => p.participantType === 'PAIR');
+    const pairs = (tournamentRecord.participants ?? []).filter((p: any) => p.participantType === PAIR);
     expect(pairs.length).toBe(16);
 
     const participantsById = new Map<string, any>(
@@ -144,7 +145,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
         .map((id: string) => participantsById.get(id)?.person?.sex)
         .filter(Boolean)
         .sort();
-      expect(memberSexes).toEqual(['FEMALE', 'MALE']);
+      expect(memberSexes).toEqual([FEMALE, MALE]);
     }
 
     tournamentEngine.setState(tournamentRecord);
@@ -171,7 +172,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
     });
 
     expect(tournamentRecord).toBeDefined();
-    const pairs = (tournamentRecord.participants ?? []).filter((p: any) => p.participantType === 'PAIR');
+    const pairs = (tournamentRecord.participants ?? []).filter((p: any) => p.participantType === PAIR);
     expect(pairs.length).toBe(16);
 
     const participantsById = new Map<string, any>(
@@ -182,7 +183,7 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
         .map((id: string) => participantsById.get(id)?.person?.sex)
         .filter(Boolean)
         .sort();
-      expect(memberSexes).toEqual(['FEMALE', 'MALE']);
+      expect(memberSexes).toEqual([FEMALE, MALE]);
     }
   });
 
@@ -193,14 +194,14 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
     const personData = makePersonData(32);
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       tournamentAttributes: { tournamentName: 'Male only', endDate: '2026-01-15' },
-      participantsProfile: { participantsCount: 32, participantType: 'INDIVIDUAL', personData },
+      participantsProfile: { participantsCount: 32, participantType: INDIVIDUAL, personData },
       drawProfiles: [
         {
           drawSize: 32,
           drawType: SINGLE_ELIMINATION,
           eventType: SINGLES_EVENT,
           eventName: 'Men Singles',
-          gender: 'MALE',
+          gender: MALE,
         },
       ],
       completeAllMatchUps: true,
@@ -214,6 +215,6 @@ describe('mocksEngine — gender:ANY + participantsProfile.personData', () => {
       (tournamentRecord.participants ?? []).map((p: any) => [p.participantId, p] as [string, any]),
     );
     const assignedSexes = assignedPids.map((pid: string) => participantsById.get(pid)?.person?.sex);
-    expect(assignedSexes.every((s: string | undefined) => s === 'MALE')).toBe(true);
+    expect(assignedSexes.every((s: string | undefined) => s === MALE)).toBe(true);
   });
 });

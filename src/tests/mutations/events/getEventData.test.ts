@@ -4,6 +4,7 @@ import { expect, it, test } from 'vitest';
 
 // constants
 import { COMPASS, CURTIS_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { INTENNSE_STANDARD } from '@Constants/competitionFormatConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TEAM } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
@@ -175,7 +176,7 @@ it('hydrates competitionFormat onto eventInfo and gates it on usePublishState', 
   // No public mutation exists for setting competitionFormat (planning doc
   // Phase 2 — TMX editor); the field is on the Event type already so we
   // splice it into the tournamentRecord before setState.
-  const competitionFormat = { competitionFormatCode: 'INTENNSE_STANDARD' } as any;
+  const competitionFormat = { competitionFormatCode: INTENNSE_STANDARD } as any;
   tournamentRecord.events!.find((e: any) => e.eventId === eventId)!.competitionFormat = competitionFormat;
   tournamentEngine.setState(tournamentRecord);
 

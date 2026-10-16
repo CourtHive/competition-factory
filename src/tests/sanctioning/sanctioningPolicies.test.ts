@@ -12,6 +12,9 @@ import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
 // constants
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { FEMALE, MALE } from '@Constants/genderConstants';
+import { OUTDOOR } from '@Constants/venueConstants';
+import { HARD } from '@Constants/surfaceConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -78,8 +81,8 @@ describe('Policy Fixtures — Engine Integration', () => {
       proposedStartDate: '2028-06-01',
       proposedEndDate: '2028-06-07',
       hostCountryCode: 'USA',
-      surfaceCategory: 'HARD',
-      indoorOutdoor: 'OUTDOOR',
+      surfaceCategory: HARD,
+      indoorOutdoor: OUTDOOR,
       totalPrizeMoney: [{ amount: 50000, currencyCode: 'USD', unit: 'MAJOR' }],
       venues: [{ venueName: 'Cary Tennis Park', numberOfCourts: 12 }],
       tournamentDirector: { personName: 'Alice', role: 'Tournament Director' },
@@ -97,7 +100,7 @@ describe('Policy Fixtures — Engine Integration', () => {
         {
           eventName: "Women's Singles",
           eventType: SINGLES_EVENT,
-          gender: 'FEMALE',
+          gender: FEMALE,
           drawSize: 32,
           drawType: SINGLE_ELIMINATION,
           matchUpFormat: 'SET3-S:6/TB7',
@@ -106,7 +109,7 @@ describe('Policy Fixtures — Engine Integration', () => {
         {
           eventName: "Women's Doubles",
           eventType: DOUBLES_EVENT,
-          gender: 'FEMALE',
+          gender: FEMALE,
           drawSize: 32,
         },
       ],
@@ -135,7 +138,7 @@ describe('Policy Fixtures — Engine Integration', () => {
         tournamentName: 'Bad W50',
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
-        events: [{ eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: 'MALE', drawSize: 32 }],
+        events: [{ eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: MALE, drawSize: 32 }],
       },
     });
 

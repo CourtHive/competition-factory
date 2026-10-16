@@ -10,6 +10,7 @@ import fs from 'fs';
 import { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
@@ -109,7 +110,7 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
   expect(result.events.length).toBe(3);
 
   const teamParticipants = tournamentEngine.getParticipants({
-    participantFilters: { participantTypes: ['TEAM'] },
+    participantFilters: { participantTypes: [TEAM_PARTICIPANT] },
     withIndividualParticipants: true,
   }).participants;
 

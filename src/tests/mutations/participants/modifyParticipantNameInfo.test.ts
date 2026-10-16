@@ -4,6 +4,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { PARTICIPANT_NAME_DERIVED_FROM_PERSON } from '@Constants/infoConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 
 /**
  * `modifyParticipant` derives `participantName` from `person` for an INDIVIDUAL when person names are
@@ -22,7 +23,7 @@ describe('modifyParticipant — participantName precedence is surfaced', () => {
       participantsProfile: { nonRandom: 1 },
       setState: true,
     });
-    const participant = (tournamentRecord.participants ?? []).find((p: any) => p.participantType === 'INDIVIDUAL');
+    const participant = (tournamentRecord.participants ?? []).find((p: any) => p.participantType === INDIVIDUAL);
     return { participant, tournamentRecord };
   }
 

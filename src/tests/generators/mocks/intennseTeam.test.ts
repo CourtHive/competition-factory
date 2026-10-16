@@ -8,6 +8,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { TEAM_PARTICIPANT, INDIVIDUAL } from '@Constants/participantConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
@@ -158,7 +159,7 @@ describe('INTENNSE Showdown tournament', () => {
     const tr = result.tournamentRecord;
 
     // Verify teams exist with correct names and useOtherName is false
-    const teams = tr.participants.filter((p: any) => p.participantType === 'TEAM');
+    const teams = tr.participants.filter((p: any) => p.participantType === TEAM_PARTICIPANT);
     expect(teams.length).toBe(2);
     const teamNames = teams.map((t: any) => t.participantName).sort();
     expect(teamNames).toEqual(['Cauldron', 'The Authentics']);
@@ -184,7 +185,7 @@ describe('INTENNSE Showdown tournament', () => {
     expect(collectionIds).toEqual(['intennse-md', 'intennse-ms', 'intennse-wd', 'intennse-ws', 'intennse-xd']);
 
     // Verify each team has 6 members: 3 MALE + 3 FEMALE
-    const individuals = tr.participants.filter((p: any) => p.participantType === 'INDIVIDUAL');
+    const individuals = tr.participants.filter((p: any) => p.participantType === INDIVIDUAL);
     for (const team of teams) {
       expect(team.individualParticipantIds.length).toBe(6);
       const members = team.individualParticipantIds.map((id: string) =>
@@ -223,8 +224,8 @@ describe('INTENNSE Showdown tournament', () => {
     });
 
     const trNoOverride = withoutOverride.tournamentRecord;
-    const teamsNoOverride = trNoOverride.participants.filter((p: any) => p.participantType === 'TEAM');
-    const individualsNoOverride = trNoOverride.participants.filter((p: any) => p.participantType === 'INDIVIDUAL');
+    const teamsNoOverride = trNoOverride.participants.filter((p: any) => p.participantType === TEAM_PARTICIPANT);
+    const individualsNoOverride = trNoOverride.participants.filter((p: any) => p.participantType === INDIVIDUAL);
 
     // Without override: teams only have 4 members (2M + 2F) — insufficient for INTENNSE
     for (const team of teamsNoOverride) {
@@ -257,8 +258,8 @@ describe('INTENNSE Showdown tournament', () => {
     });
 
     const trOverride = withOverride.tournamentRecord;
-    const teamsOverride = trOverride.participants.filter((p: any) => p.participantType === 'TEAM');
-    const individualsOverride = trOverride.participants.filter((p: any) => p.participantType === 'INDIVIDUAL');
+    const teamsOverride = trOverride.participants.filter((p: any) => p.participantType === TEAM_PARTICIPANT);
+    const individualsOverride = trOverride.participants.filter((p: any) => p.participantType === INDIVIDUAL);
 
     for (const team of teamsOverride) {
       expect(team.individualParticipantIds.length).toBe(6);
@@ -301,8 +302,8 @@ describe('INTENNSE Showdown tournament', () => {
     let result2: any = result;
     expect(result2.tournamentRecord).toBeDefined();
     const tr = result2.tournamentRecord;
-    const teams = tr.participants.filter((p: any) => p.participantType === 'TEAM');
-    const individuals = tr.participants.filter((p: any) => p.participantType === 'INDIVIDUAL');
+    const teams = tr.participants.filter((p: any) => p.participantType === TEAM_PARTICIPANT);
+    const individuals = tr.participants.filter((p: any) => p.participantType === INDIVIDUAL);
 
     for (const team of teams) {
       // Every member should have teamAttributes with jersey info
@@ -356,7 +357,7 @@ describe('INTENNSE Showdown tournament', () => {
 
     let result2: any = result;
     const tr = result2.tournamentRecord;
-    const teams = tr.participants.filter((p: any) => p.participantType === 'TEAM');
+    const teams = tr.participants.filter((p: any) => p.participantType === TEAM_PARTICIPANT);
 
     // TEAM participants should have useOtherName: false by default
     for (const team of teams) {

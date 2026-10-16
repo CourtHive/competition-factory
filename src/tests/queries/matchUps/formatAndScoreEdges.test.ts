@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
+import { RALLY } from '@Constants/matchUpFormatConstants';
 
 /**
  * EDGES OF THE FORMAT PARSER, THE SCORE PARSER AND THE BAND RESOLVERS that nothing exercised.
@@ -43,7 +44,7 @@ describe('parse — matchUpFormat codes at the edge of the grammar', () => {
   });
 
   it('reads a named modifier on a timed set', () => {
-    expect(parse('SET3-S:T20@RALLY')?.setFormat).toEqual({ timed: true, minutes: 20, modifier: 'RALLY' });
+    expect(parse('SET3-S:T20@RALLY')?.setFormat).toEqual({ timed: true, minutes: 20, modifier: RALLY });
   });
 });
 

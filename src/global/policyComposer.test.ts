@@ -97,7 +97,7 @@ describe('policyComposer.set', () => {
   it('sets a deep dot-path without losing siblings', () => {
     const result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
-      .set('seedingProfile.positioning', 'CLUSTER')
+      .set('seedingProfile.positioning', CLUSTER)
       .build();
     expect(result[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe(CLUSTER);
     expect(result[POLICY_TYPE_SEEDING].seedingProfile.drawTypes).toEqual(stockUstaSeeding.seedingProfile.drawTypes);
@@ -196,7 +196,7 @@ describe('policyComposer.get', () => {
   it('reads from the current accumulator', () => {
     const composer = policyComposer(POLICY_TYPE_SEEDING).extend(stockUstaSeeding);
     expect(composer.get('policyName')).toBe('USTA SEEDING');
-    expect(composer.get('seedingProfile.positioning')).toBe('SEPARATE');
+    expect(composer.get('seedingProfile.positioning')).toBe(SEPARATE);
     expect(composer.get('seedsCountThresholds.1.drawSize')).toBe(16);
   });
 
@@ -280,7 +280,7 @@ describe('policyComposer — federation override worked example', () => {
     const ctsSeeding: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
       .set('policyName', 'CTS SEEDING')
-      .set('seedingProfile.positioning', 'CLUSTER')
+      .set('seedingProfile.positioning', CLUSTER)
       .build();
 
     // What changed
@@ -313,7 +313,7 @@ describe('policyComposer — composing without a policyType wrapper', () => {
   });
 
   it('works with separate composers and feeds the unwrapped fragment into another composer', () => {
-    const fragment = policyComposer().set('drawTypes.ROUND_ROBIN.positioning', 'WATERFALL').build();
+    const fragment = policyComposer().set('drawTypes.ROUND_ROBIN.positioning', WATERFALL).build();
     const result: any = policyComposer(POLICY_TYPE_SCORING).merge('seedingProfile', fragment).build();
     expect(result[POLICY_TYPE_SCORING].seedingProfile.drawTypes.ROUND_ROBIN.positioning).toBe(WATERFALL);
   });

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { INVALID_SCALE_ITEM, PARTICIPANT_NOT_FOUND, VALUE_UNCHANGED } from '@Constants/errorConditionConstants';
+import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
 
@@ -16,7 +17,7 @@ describe('setParticipantScaleItem coverage', () => {
     const { participants } = tournamentEngine.getParticipants();
     const result = tournamentEngine.setParticipantScaleItem({
       participantId: participants[0].participantId,
-      scaleItem: { scaleType: 'RANKING' } as any, // missing required attributes
+      scaleItem: { scaleType: RANKING } as any, // missing required attributes
     });
     expect(result.error).toEqual(INVALID_SCALE_ITEM);
   });
@@ -74,7 +75,7 @@ describe('setParticipantScaleItem coverage', () => {
       setState: true,
     });
     const { participants } = tournamentEngine.getParticipants({
-      participantFilters: { participantTypes: ['TEAM'] },
+      participantFilters: { participantTypes: [TEAM_PARTICIPANT] },
     });
     const teamPid = participants[0].participantId;
     const result = tournamentEngine.setParticipantScaleItem({
@@ -159,7 +160,7 @@ describe('setParticipantScaleItems coverage', () => {
       scaleItemsWithParticipantIds: [
         {
           participantId: participants[0].participantId,
-          scaleItems: [{ scaleType: 'RANKING' } as any], // missing required
+          scaleItems: [{ scaleType: RANKING } as any], // missing required
         },
       ],
     });
@@ -212,7 +213,7 @@ describe('setParticipantScaleItems coverage', () => {
       setState: true,
     });
     const { participants } = tournamentEngine.getParticipants({
-      participantFilters: { participantTypes: ['TEAM'] },
+      participantFilters: { participantTypes: [TEAM_PARTICIPANT] },
     });
     const result = tournamentEngine.setParticipantScaleItems({
       scaleItemsWithParticipantIds: [

@@ -16,9 +16,12 @@ import { INVALID_SCORE, INVALID_VALUES } from '@Constants/errorConditionConstant
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import type { RotatingPartnerTallyPolicy } from '@Types/rotatingPartnerTally';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { COMPETITOR } from '@Constants/participantRoles';
 import {
   COMPLETED,
   TO_BE_PLAYED,
@@ -47,13 +50,13 @@ function setup(
   const drawDefinition: DrawDefinition = {
     drawId: 'd',
     drawType: AD_HOC,
-    matchUpType: 'DOUBLES',
+    matchUpType: DOUBLES_MATCHUP,
     entries: ids.map((participantId) => ({ participantId, entryStatus: DIRECT_ACCEPTANCE })),
     structures: [{ structureId: 's', matchUps: [] }],
     competitionProfile: {
       version: 1,
       entrantScope: 'INDIVIDUAL',
-      matchUpType: 'DOUBLES',
+      matchUpType: DOUBLES_MATCHUP,
       scoring: {
         combinedPointTotal: 32,
         selectedVariant: { tieResolution, ...(tieResolution === 'WIN_BY_MARGIN' ? { winningMargin: 2 } : {}) },
@@ -88,8 +91,8 @@ function setup(
     events: [event],
     participants: ids.map((participantId) => ({
       participantId,
-      participantType: 'INDIVIDUAL',
-      participantRole: 'COMPETITOR',
+      participantType: INDIVIDUAL,
+      participantRole: COMPETITOR,
     })),
   };
   return { tournamentRecord, drawDefinition, event, roundNumber: 1 };
@@ -253,7 +256,7 @@ it('refuses missing historical contracts, invalid scores and altered pair member
   expect(getRotatingPartnerStandings(context).error).toBe(INVALID_SCORE);
   settle(context);
   context.tournamentRecord.participants!.find(
-    (participant) => participant.participantType === 'PAIR',
+    (participant) => participant.participantType === PAIR,
   )!.individualParticipantIds = ['p0', 'p0'];
   expect(getRotatingPartnerStandings(context).error).toBe(INVALID_VALUES);
 });
@@ -605,7 +608,7 @@ it('a valid completed correction supersedes exit settlement and resumes the ordi
   expect(standings.staleSettlementIds).toEqual([request.requestId]);
   const contributions = standings.contributions!.filter((row) => row.matchUpId === match.matchUpId);
   expect(contributions.map((row) => row.pointsScored).toSorted((a, b) => a - b)).toEqual([12, 12, 20, 20]);
-  expect(contributions.every((row) => row.treatment === 'COMPLETED' && !row.settlementRequestId)).toBe(true);
+  expect(contributions.every((row) => row.treatment === COMPLETED && !row.settlementRequestId)).toBe(true);
   expect(getRotatingPartnerRoundPreview({ ...context, roundNumber: 2 }).success).toBe(true);
   expect(context.drawDefinition.competitionSettlements).toHaveLength(1);
 });

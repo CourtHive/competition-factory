@@ -20,6 +20,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
+import { PAIR } from '@Constants/participantConstants';
+import { WTN } from '@Constants/ratingConstants';
+
 test('missing drawProfile returns a checkRequiredParameters error (line 775)', () => {
   let result: any = generateEventWithDraw({});
   expect(result.error).toBeDefined();
@@ -62,7 +66,7 @@ test('HYBRID event synthesizes individuals and pairs (287, 295)', () => {
   expect(result.tournamentRecord).toBeDefined();
 
   let all: any = tournamentEngine.getParticipants({});
-  const pairs = all.participants.filter((p) => p.participantType === 'PAIR');
+  const pairs = all.participants.filter((p) => p.participantType === PAIR);
   expect(pairs.length).toBeGreaterThan(0);
 });
 
@@ -80,7 +84,7 @@ test('MIXED DOUBLES re-pairs generated individuals into mixed-sex pairs', () => 
   expect(result.tournamentRecord).toBeDefined();
 
   let all: any = tournamentEngine.getParticipants({ withIndividualParticipants: true });
-  const pairs = all.participants.filter((p) => p.participantType === 'PAIR');
+  const pairs = all.participants.filter((p) => p.participantType === PAIR);
   expect(pairs.length).toBeGreaterThan(0);
   // at least one pair should contain a MALE and a FEMALE member
   const mixedPair = pairs.find((p) => {
@@ -154,7 +158,7 @@ test('iterativeAdHoc AD_HOC roundsCount > 1 with completeAllMatchUps (954, 561-5
         drawSize: 6,
         drawType: AD_HOC,
         roundsCount: 3,
-        scaleName: 'WTN',
+        scaleName: WTN,
       },
     ],
   });

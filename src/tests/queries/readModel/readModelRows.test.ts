@@ -20,8 +20,13 @@ import {
 } from '@Query/readModel/readModelRows';
 
 // constants
+import { SINGLES_MATCHUP, TEAM_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { INDIVIDUAL, TEAM_PARTICIPANT, PAIR } from '@Constants/participantConstants';
 import { SINGLE_ELIMINATION, MAIN, ITEM } from '@Constants/drawDefinitionConstants';
-import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { SINGLES_EVENT, TEAM } from '@Constants/eventConstants';
+import { INDOOR } from '@Constants/venueConstants';
+import { HARD } from '@Constants/surfaceConstants';
+import { MALE } from '@Constants/genderConstants';
 
 const ctx: MatchUpRowContext = { tournamentId: 't1', providerId: 'PROV', published: false, embargo: null };
 
@@ -32,7 +37,7 @@ describe('eventRow', () => {
         eventId: 'e1',
         eventName: 'Singles',
         eventType: SINGLES_EVENT,
-        gender: 'MALE',
+        gender: MALE,
         category: { categoryName: 'U18' },
         matchUpFormat: 'SET3-S:6/TB7',
         startDate: '2025-01-02',
@@ -48,7 +53,7 @@ describe('eventRow', () => {
       provider_id: 'PROV',
       event_name: 'Singles',
       event_type: SINGLES_EVENT,
-      gender: 'MALE',
+      gender: MALE,
       category_name: 'U18',
       match_up_format: 'SET3-S:6/TB7',
       start_date: '2025-01-02',
@@ -315,8 +320,8 @@ describe('courtRow', () => {
         {
           courtId: 'c1',
           courtName: 'Court 1',
-          indoorOutdoor: 'INDOOR',
-          surfaceCategory: 'HARD',
+          indoorOutdoor: INDOOR,
+          surfaceCategory: HARD,
           surfaceType: 'Plexicushion',
         },
         ctx,
@@ -505,7 +510,7 @@ describe('matchUpRowSet', () => {
     const { matchUpRows, competitorRows } = matchUpRowSet(
       {
         matchUpId: 'm1',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         winningSide: 2,
         score: { scoreStringSide1: '6-1 6-2', scoreStringSide2: '1-6 2-6' },
         scheduledDate: '2025-02-02',
@@ -515,7 +520,7 @@ describe('matchUpRowSet', () => {
             sideNumber: 1,
             participant: {
               participantId: 'p1',
-              participantType: 'INDIVIDUAL',
+              participantType: INDIVIDUAL,
               participantName: 'A',
               person: { personId: 'UTR999' },
             },
@@ -547,21 +552,21 @@ describe('matchUpRowSet', () => {
     const { matchUpRows, competitorRows } = matchUpRowSet(
       {
         matchUpId: 'tie1',
-        matchUpType: 'TEAM',
+        matchUpType: TEAM_MATCHUP,
         tieFormat: { collectionDefinitions: [{ collectionId: 'COL1', matchUpValue: 3 }] },
         sides: [
           {
             sideNumber: 1,
             participant: {
               participantId: 'team1',
-              participantType: 'TEAM',
+              participantType: TEAM_PARTICIPANT,
               teamId: 'TEAM_A',
               participantName: 'Team A',
             },
           },
           {
             sideNumber: 2,
-            participant: { participantId: 'team2', participantType: 'TEAM', participantName: 'Team B' },
+            participant: { participantId: 'team2', participantType: TEAM_PARTICIPANT, participantName: 'Team B' },
           }, // no teamId → id fallback
         ],
         tieMatchUps: [
@@ -570,8 +575,8 @@ describe('matchUpRowSet', () => {
             collectionId: 'COL1',
             collectionPosition: 1,
             sides: [
-              { sideNumber: 1, participant: { participantId: 'p1', participantType: 'INDIVIDUAL' } },
-              { sideNumber: 2, participant: { participantId: 'p2', participantType: 'INDIVIDUAL' } },
+              { sideNumber: 1, participant: { participantId: 'p1', participantType: INDIVIDUAL } },
+              { sideNumber: 2, participant: { participantId: 'p2', participantType: INDIVIDUAL } },
             ],
           },
           { sides: [] }, // no matchUpId → skipped
@@ -585,7 +590,7 @@ describe('matchUpRowSet', () => {
     expect(matchUpRows[0].tie_value).toBeNull(); // the TIE container carries no weight
     expect(matchUpRows[1].tie_value).toEqual(3); // the RUBBER carries its collection matchUpValue
 
-    const teamRows = competitorRows.filter((c) => c.participant_type === 'TEAM');
+    const teamRows = competitorRows.filter((c) => c.participant_type === TEAM_PARTICIPANT);
     expect(teamRows.find((c) => c.side_participant_id === 'team1')!.team_id).toEqual('TEAM_A');
     expect(teamRows.find((c) => c.side_participant_id === 'team2')!.team_id).toEqual('team2'); // fallback
 
@@ -603,13 +608,13 @@ describe('matchUpRowSet', () => {
     const { competitorRows } = matchUpRowSet(
       {
         matchUpId: 'd1',
-        matchUpType: 'DOUBLES',
+        matchUpType: DOUBLES_MATCHUP,
         sides: [
           {
             sideNumber: 1,
             participant: {
               participantId: 'pair1',
-              participantType: 'PAIR',
+              participantType: PAIR,
               individualParticipants: [
                 { participantId: 'i1', participantName: 'One', person: { personId: 'i1' } },
                 { participantId: 'i2', participantName: 'Two' },
@@ -638,21 +643,24 @@ describe('matchUpRowSet', () => {
     const { competitorRows } = matchUpRowSet(
       {
         matchUpId: 'tie1',
-        matchUpType: 'TEAM',
+        matchUpType: TEAM_MATCHUP,
         sides: [
-          { sideNumber: 1, participant: { participantId: 'team1', participantType: 'TEAM', teamId: 'TEAM_A' } },
-          { sideNumber: 2, participant: { participantId: 'team2', participantType: 'TEAM' } },
+          {
+            sideNumber: 1,
+            participant: { participantId: 'team1', participantType: TEAM_PARTICIPANT, teamId: 'TEAM_A' },
+          },
+          { sideNumber: 2, participant: { participantId: 'team2', participantType: TEAM_PARTICIPANT } },
         ],
         tieMatchUps: [
           {
             matchUpId: 'r1',
             sides: [
-              { sideNumber: 1, participant: { participantId: 'p1', participantType: 'INDIVIDUAL' } },
+              { sideNumber: 1, participant: { participantId: 'p1', participantType: INDIVIDUAL } },
               {
                 sideNumber: 2,
                 participant: {
                   participantId: 'pair1',
-                  participantType: 'PAIR',
+                  participantType: PAIR,
                   individualParticipants: [{ participantId: 'i1' }, { participantId: 'i2' }],
                 },
               },
@@ -663,7 +671,7 @@ describe('matchUpRowSet', () => {
       ctx,
     );
     const grains = new Set(competitorRows.map((c) => c.participant_type));
-    expect(grains).toEqual(new Set(['TEAM', 'INDIVIDUAL', 'PAIR']));
+    expect(grains).toEqual(new Set([TEAM, 'INDIVIDUAL', 'PAIR']));
     expect(competitorRows.every((c) => c.tournament_id === 't1')).toBe(true);
   });
 });
@@ -709,7 +717,7 @@ describe('entryRows', () => {
       participants: [
         {
           participantId: 'local-a',
-          participantType: 'TEAM',
+          participantType: TEAM_PARTICIPANT,
           participantOtherIds: [{ organisationId: 'ITA', participantId: 'ITA-TEAM-1' }],
         },
       ],
@@ -725,7 +733,7 @@ describe('entryRows', () => {
   it('leaves team_id NULL for a TEAM stating no issued id — never the tournament-local id', () => {
     const rows = entryRows({
       tournamentId: 't1',
-      participants: [{ participantId: 'local-a', participantType: 'TEAM' }],
+      participants: [{ participantId: 'local-a', participantType: TEAM_PARTICIPANT }],
       events: [{ eventId: 'dual', entries: [{ participantId: 'local-a' }] }],
     });
     expect(rows[0].team_id).toBeNull();
@@ -738,7 +746,7 @@ describe('entryRows', () => {
       participants: [
         {
           participantId: 'p1',
-          participantType: 'INDIVIDUAL',
+          participantType: INDIVIDUAL,
           participantOtherIds: [{ organisationId: 'ITA', participantId: 'SHOULD-NOT-APPEAR' }],
         },
       ],
@@ -753,7 +761,7 @@ describe('entryRows', () => {
       participants: [
         {
           participantId: 'local-a',
-          participantType: 'TEAM',
+          participantType: TEAM_PARTICIPANT,
           participantOtherIds: [
             { organisationId: 'ITA', participantId: 'ITA-1' },
             { organisationId: 'NCAA', participantId: 'NCAA-9' },

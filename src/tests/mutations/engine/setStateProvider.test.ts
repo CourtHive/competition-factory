@@ -6,6 +6,8 @@ import { expect, it, test } from 'vitest';
 
 // constants
 import { DELETED_DRAW_IDS } from '@Constants/topicConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 it('can set state provider', () => {
   let result: any = setStateProvider(syncGlobalState);
@@ -39,8 +41,8 @@ it('can set state provider', () => {
 
   const { tournamentId } = tournamentEngine.newTournamentRecord();
   const participant = {
-    participantRole: 'COMPETITOR',
-    participantType: 'INDIVIDUAL',
+    participantRole: COMPETITOR,
+    participantType: INDIVIDUAL,
     person: {
       standardFamilyName: 'Family',
       standardGivenName: 'Given',

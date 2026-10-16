@@ -6,6 +6,9 @@ import { MAIN } from '@Constants/drawDefinitionConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
+// constants
+import { MALE } from '@Constants/genderConstants';
+
 function seed(participantsCount = 32) {
   return mocksEngine.generateTournamentRecord({
     setState: true,
@@ -141,7 +144,7 @@ describe('engine.build.event — fluent EventBuilder', () => {
     const result: any = tournamentEngine.build
       .event({ eventName: 'Mixed-pool sanity' })
       .singles()
-      .gender('MALE')
+      .gender(MALE)
       .draw(16, { seedsCount: 4 })
       .entries(participantIds, { enforceGender: false })
       .create();

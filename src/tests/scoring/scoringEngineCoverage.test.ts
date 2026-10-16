@@ -17,6 +17,7 @@ import { describe, test, expect, vi } from 'vitest';
 
 // constants
 import { TO_BE_PLAYED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 
 // ============================================================================
 // Helper: play N points for one side to win a game
@@ -46,14 +47,14 @@ describe('ScoringEngine — setState and format queries', () => {
     expect(engine.getFormat()).toBe('SET1-S:4/TB7');
     expect(engine.canRedo()).toBe(false);
     expect(engine.getPointCount()).toBe(0);
-    expect(engine.getState().matchUpType).toBe('SINGLES');
+    expect(engine.getState().matchUpType).toBe(SINGLES_MATCHUP);
   });
 
   test('setState with doubles matchUp sets isDoubles', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     const fresh = createMatchUp({ matchUpFormat: 'SET3-S:6/TB7', isDoubles: true });
     engine.setState(fresh);
-    expect(engine.getState().matchUpType).toBe('DOUBLES');
+    expect(engine.getState().matchUpType).toBe(DOUBLES_MATCHUP);
   });
 
   test('getSetsToWin returns correct value for various formats', () => {
@@ -1731,7 +1732,7 @@ describe('ScoringEngine — constructor defaults', () => {
 
   test('isDoubles creates DOUBLES matchUp', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7', isDoubles: true });
-    expect(engine.getState().matchUpType).toBe('DOUBLES');
+    expect(engine.getState().matchUpType).toBe(DOUBLES_MATCHUP);
   });
 });
 

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 // constants and types
 import { PAIR, TEAM, INDIVIDUAL } from '@Constants/participantConstants';
 import { UnifiedParticipantID } from '@Types/tournamentTypes';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 /**
  * `participantOtherIds` is the participant-grain member of the `Unified*ID` family. It
@@ -32,7 +33,7 @@ describe('participantOtherIds', () => {
         {
           participantId: 'individual-with-other-id',
           participantType: INDIVIDUAL,
-          participantRole: 'COMPETITOR',
+          participantRole: COMPETITOR,
           person: { standardFamilyName: 'Sampras', standardGivenName: 'Pete' },
           participantOtherIds: [itaId],
         },
@@ -59,7 +60,7 @@ describe('participantOtherIds', () => {
         {
           participantId: 'pair-with-other-id',
           participantType: PAIR,
-          participantRole: 'COMPETITOR',
+          participantRole: COMPETITOR,
           individualParticipantIds,
           participantOtherIds: [itaId],
         },
@@ -83,7 +84,7 @@ describe('participantOtherIds', () => {
         {
           participantId: 'team-with-other-id',
           participantType: TEAM,
-          participantRole: 'COMPETITOR',
+          participantRole: COMPETITOR,
           participantName: 'Georgia Bulldogs',
           individualParticipantIds,
           participantOtherIds: [itaId],
@@ -108,7 +109,7 @@ describe('participantOtherIds', () => {
         {
           participantId: 'multi-org-participant',
           participantType: INDIVIDUAL,
-          participantRole: 'COMPETITOR',
+          participantRole: COMPETITOR,
           person: { standardFamilyName: 'Agassi', standardGivenName: 'Andre' },
           participantOtherIds: [itaId, ustaId],
         },
@@ -138,7 +139,7 @@ describe('addParticipantOtherId', () => {
         {
           participantId: 'pair-1',
           participantType: PAIR,
-          participantRole: 'COMPETITOR',
+          participantRole: COMPETITOR,
           individualParticipantIds,
         },
       ],

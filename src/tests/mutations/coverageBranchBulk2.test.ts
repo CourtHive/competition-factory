@@ -33,6 +33,8 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { VOLUNTARY_CONSOLATION, MAIN, QUALIFYING, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE, UNGROUPED, ALTERNATE } from '@Constants/entryStatusConstants';
+import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import {
   INVALID_VALUES,
   MISSING_COURT_ID,
@@ -468,7 +470,7 @@ describe('getPersonRequests branch coverage', () => {
                 {
                   personId: 'person1',
                   requests: [
-                    { requestType: 'DO_NOT_SCHEDULE', date: '2024-01-01' },
+                    { requestType: DO_NOT_SCHEDULE, date: '2024-01-01' },
                     { requestType: 'OTHER', date: '2024-01-02' },
                   ],
                 },
@@ -477,7 +479,7 @@ describe('getPersonRequests branch coverage', () => {
           ],
         } as any,
       },
-      requestType: 'DO_NOT_SCHEDULE',
+      requestType: DO_NOT_SCHEDULE,
     });
     expect(result.personRequests?.['person1']?.length).toBe(1);
   });
@@ -648,7 +650,7 @@ describe('getParticipantEventDetails branch coverage', () => {
     const result = getParticipantEventDetails({
       tournamentRecord: {
         tournamentId: 't1',
-        participants: [{ participantId: 'team1', participantType: 'TEAM', individualParticipantIds: ['p1'] }],
+        participants: [{ participantId: 'team1', participantType: TEAM_PARTICIPANT, individualParticipantIds: ['p1'] }],
         events: [{ eventId: 'e1', eventName: 'E1', entries: [{ participantId: 'team1' }] }],
       } as any,
       participantId: 'p1',

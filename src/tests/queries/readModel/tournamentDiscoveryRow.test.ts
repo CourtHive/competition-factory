@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { tournamentDiscoveryRow } from '@Query/readModel/readModelRows';
 import { cast } from '@Query/readModel/cast';
 
+// constants
+import { MALE, FEMALE, MIXED } from '@Constants/genderConstants';
+import { NTRP } from '@Constants/ratingConstants';
+
 /**
  * A9, factory slice.
  *
@@ -43,12 +47,12 @@ const record: any = {
   events: [
     {
       eventId: 'e1',
-      gender: 'MALE',
-      category: { categoryType: 'ADULT', ageCategoryCode: 'O35', ratingType: 'NTRP' },
+      gender: MALE,
+      category: { categoryType: 'ADULT', ageCategoryCode: 'O35', ratingType: NTRP },
       registrationProfile: { entryFees: [{ amount: 9500, currencyCode: 'USD', unit: 'MINOR' }] },
     },
-    { eventId: 'e2', gender: 'FEMALE', category: { categoryType: 'ADULT', ageCategoryCode: 'O35' } },
-    { eventId: 'e3', gender: 'MIXED', category: { categoryType: 'JUNIOR', ageCategoryCode: 'U18' } },
+    { eventId: 'e2', gender: FEMALE, category: { categoryType: 'ADULT', ageCategoryCode: 'O35' } },
+    { eventId: 'e3', gender: MIXED, category: { categoryType: 'JUNIOR', ageCategoryCode: 'U18' } },
   ],
 };
 

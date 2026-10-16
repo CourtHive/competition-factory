@@ -1,6 +1,9 @@
 import { resolveScaleValueNumber, hasScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { UTR, WTN, DUPR } from '@Constants/ratingConstants';
+
 /**
  * Every case here is tied to a defect this helper exists to prevent. The string
  * and empty-string shapes are copied from production records (ITA regional
@@ -53,22 +56,22 @@ describe('resolveScaleValueNumber — object shapes', () => {
   });
 
   it("resolves via the scale's declared accessor when none is passed", () => {
-    expect(resolveScaleValueNumber({ utrRating: '12.48' }, { scaleName: 'UTR' })).toBe(12.48);
-    expect(resolveScaleValueNumber({ wtnRating: 4.13, confidence: 90 }, { scaleName: 'WTN' })).toBe(4.13);
+    expect(resolveScaleValueNumber({ utrRating: '12.48' }, { scaleName: UTR })).toBe(12.48);
+    expect(resolveScaleValueNumber({ wtnRating: 4.13, confidence: 90 }, { scaleName: WTN })).toBe(4.13);
   });
 
   it('takes the RATING, not a sibling attribute, for a multi-property scale', () => {
     // WTN carries both wtnRating and confidence. Resolving to confidence would
     // be catastrophic and silent, so scaleName must win over property order.
     const reordered = { confidence: 90, wtnRating: 4.13 };
-    expect(resolveScaleValueNumber(reordered, { scaleName: 'WTN' })).toBe(4.13);
-    expect(resolveScaleValueNumber({ reliabilityScore: 80, duprRating: 4.5 }, { scaleName: 'DUPR' })).toBe(4.5);
+    expect(resolveScaleValueNumber(reordered, { scaleName: WTN })).toBe(4.13);
+    expect(resolveScaleValueNumber({ reliabilityScore: 80, duprRating: 4.5 }, { scaleName: DUPR })).toBe(4.5);
   });
 
   it('rejects an object whose accessor holds an empty string', () => {
     // Real records use '' for a player with no rating on that scale.
-    expect(resolveScaleValueNumber({ utrRating: '' }, { scaleName: 'UTR' })).toBeUndefined();
-    expect(hasScaleValueNumber({ utrRating: '' }, { scaleName: 'UTR' })).toBe(false);
+    expect(resolveScaleValueNumber({ utrRating: '' }, { scaleName: UTR })).toBeUndefined();
+    expect(hasScaleValueNumber({ utrRating: '' }, { scaleName: UTR })).toBe(false);
   });
 
   it('falls back to the first resolvable property for an unknown scale', () => {
@@ -81,7 +84,7 @@ describe('resolveScaleValueNumber — object shapes', () => {
   });
 
   it('returns undefined for an object with nothing numeric in it', () => {
-    expect(resolveScaleValueNumber({ utrRating: '', confidence: '' }, { scaleName: 'UTR' })).toBeUndefined();
+    expect(resolveScaleValueNumber({ utrRating: '', confidence: '' }, { scaleName: UTR })).toBeUndefined();
     expect(resolveScaleValueNumber({ note: 'unrated' })).toBeUndefined();
   });
 });

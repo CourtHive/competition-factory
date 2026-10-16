@@ -21,6 +21,8 @@ import {
 // constants
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 
 // `classifySource`'s string union — extracted so the literal isn't repeated
 // across assertions (SonarJS S1192).
@@ -526,7 +528,7 @@ describe('round-trip from mocksEngine — doubles', () => {
     expect(rebuilt.events?.[0]?.eventType).toBe(DOUBLES_EVENT);
     const matchUps = listRebuiltMatchUps(rebuilt);
     expect(matchUps.length).toBeGreaterThan(0);
-    for (const m of matchUps) expect(m.matchUpType).toBe('DOUBLES');
+    for (const m of matchUps) expect(m.matchUpType).toBe(DOUBLES_MATCHUP);
   });
 
   it('positionAssignments and entries reference PAIR ids — never raw INDIVIDUAL ids', () => {
@@ -841,7 +843,7 @@ describe('cleanup invariants', () => {
     });
 
     for (const p of rebuilt.participants ?? []) {
-      if (p.participantType === 'INDIVIDUAL' && Array.isArray(p.individualParticipantIds)) {
+      if (p.participantType === INDIVIDUAL && Array.isArray(p.individualParticipantIds)) {
         expect(p.individualParticipantIds.length).toBeGreaterThan(0);
       }
     }

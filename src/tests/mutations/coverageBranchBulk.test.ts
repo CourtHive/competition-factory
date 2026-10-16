@@ -38,6 +38,9 @@ import { expect, it, describe } from 'vitest';
 import { DIRECT_ACCEPTANCE, ALTERNATE } from '@Constants/entryStatusConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { BALL_ABUSE } from '@Constants/penaltyConstants';
+import { RATING } from '@Constants/scaleConstants';
+import { WTN } from '@Constants/ratingConstants';
 import {
   INVALID_VALUES,
   MATCHUP_NOT_FOUND,
@@ -294,7 +297,7 @@ describe('removeRatings branch coverage', () => {
     const result = removeRatings({
       tournamentRecord: undefined as any,
       eventType: SINGLES_EVENT,
-      ratingType: 'WTN',
+      ratingType: WTN,
     });
     expect(result.error).toBeDefined();
   });
@@ -315,7 +318,7 @@ describe('removeRatings branch coverage', () => {
         participants: [{ participantId: 'p1' }],
       } as any,
       eventType: SINGLES_EVENT,
-      ratingType: 'WTN',
+      ratingType: WTN,
     });
     expect(result.error).toBeUndefined();
   });
@@ -398,7 +401,7 @@ describe('getMaxEntryPosition branch coverage', () => {
 describe('getParticipantScaleItem branch coverage', () => {
   it('returns error when participantId is missing', () => {
     const result = getParticipantScaleItem({
-      scaleAttributes: { scaleType: 'RATING', eventType: SINGLES_EVENT, scaleName: 'WTN' },
+      scaleAttributes: { scaleType: RATING, eventType: SINGLES_EVENT, scaleName: WTN },
       participantId: undefined as any,
     });
     expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
@@ -407,7 +410,7 @@ describe('getParticipantScaleItem branch coverage', () => {
   it('returns PARTICIPANT_NOT_FOUND when participant does not exist', () => {
     const result = getParticipantScaleItem({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      scaleAttributes: { scaleType: 'RATING', eventType: SINGLES_EVENT, scaleName: 'WTN' },
+      scaleAttributes: { scaleType: RATING, eventType: SINGLES_EVENT, scaleName: WTN },
       participantId: 'nonexistent',
     });
     expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
@@ -419,7 +422,7 @@ describe('getParticipantScaleItem branch coverage', () => {
         tournamentId: 't1',
         participants: [{ participantId: 'p1', timeItems: [] }],
       } as any,
-      scaleAttributes: { scaleType: 'RATING', eventType: SINGLES_EVENT, scaleName: 'WTN' },
+      scaleAttributes: { scaleType: RATING, eventType: SINGLES_EVENT, scaleName: WTN },
       participantId: 'p1',
     });
     expect(result.error).toBeUndefined();
@@ -641,7 +644,7 @@ describe('getTournamentPenalties branch coverage', () => {
         participants: [
           {
             participantId: 'p1',
-            penalties: [{ penaltyId: 'pen1', penaltyType: 'BALL_ABUSE' }],
+            penalties: [{ penaltyId: 'pen1', penaltyType: BALL_ABUSE }],
           },
         ],
       } as any,
@@ -978,7 +981,7 @@ describe('removeParticipantsScaleItems branch coverage', () => {
     };
     const result = removeParticipantsScaleItems({
       tournamentRecord,
-      scaleAttributes: { scaleType: 'RATING', eventType: SINGLES_EVENT, scaleName: 'WTN' },
+      scaleAttributes: { scaleType: RATING, eventType: SINGLES_EVENT, scaleName: WTN },
       participantIds: ['p1'],
     });
     expect(result.error).toBeUndefined();

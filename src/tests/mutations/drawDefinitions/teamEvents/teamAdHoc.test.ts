@@ -14,6 +14,7 @@ import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
+import { UTR } from '@Constants/ratingConstants';
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -57,7 +58,7 @@ it('can assign participants to SINGLES/DOUBLES matchUps in TEAM AdHoc events', (
           'TEAM-ptcpt-P-5',
         ],
         scaleAccessor: 'utrRating',
-        scaleName: 'UTR',
+        scaleName: UTR,
         idPrefix: 'ah',
         drawId,
       },

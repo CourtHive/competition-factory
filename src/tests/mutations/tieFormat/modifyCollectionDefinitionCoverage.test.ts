@@ -5,7 +5,8 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { INVALID_VALUES, MISSING_VALUE, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
-import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+import { SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
+import { FEMALE, MALE } from '@Constants/genderConstants';
 import { TEAM } from '@Constants/eventConstants';
 
 describe('modifyCollectionDefinition additional branch coverage', () => {
@@ -169,7 +170,7 @@ describe('modifyCollectionDefinition additional branch coverage', () => {
     // gender alone is not sufficient - need another modification param
     const result = tournamentEngine.modifyCollectionDefinition({
       collectionName: 'With Gender',
-      gender: 'FEMALE',
+      gender: FEMALE,
       collectionId,
       drawId,
     });
@@ -334,7 +335,7 @@ describe('modifyCollectionDefinition additional branch coverage', () => {
 
     // get a first-round TEAM matchUp
     let { matchUps: teamMatchUps } = tournamentEngine.allTournamentMatchUps({
-      matchUpFilters: { matchUpTypes: ['TEAM'], roundNumbers: [1] },
+      matchUpFilters: { matchUpTypes: [TEAM_MATCHUP], roundNumbers: [1] },
     });
     expect(teamMatchUps.length).toBeGreaterThan(0);
 
@@ -382,7 +383,7 @@ describe('modifyCollectionDefinition additional branch coverage', () => {
     // modify the collection to set gender to MALE
     let result: any = tournamentEngine.modifyCollectionDefinition({
       collectionName: 'Male Singles',
-      gender: 'MALE',
+      gender: MALE,
       collectionId,
       drawId,
     });
@@ -406,6 +407,6 @@ describe('modifyCollectionDefinition additional branch coverage', () => {
     const updatedCollection = updatedDraw.tieFormat.collectionDefinitions.find(
       (def) => def.collectionId === collectionId,
     );
-    expect(updatedCollection.gender).toEqual('MALE');
+    expect(updatedCollection.gender).toEqual(MALE);
   });
 });

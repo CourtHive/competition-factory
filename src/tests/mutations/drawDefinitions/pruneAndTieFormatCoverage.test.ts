@@ -4,6 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
+import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 test('pruneDrawDefinition reliably triggers canBePruned on a standard draw', () => {
@@ -116,7 +117,7 @@ test('modifyCollectionDefinition on a TEAM draw modifies the tie format', () => 
       {
         drawSize: 4,
         eventType: TEAM_EVENT,
-        tieFormatName: 'COLLEGE_DEFAULT',
+        tieFormatName: COLLEGE_DEFAULT,
       },
     ],
     setState: true,

@@ -4,6 +4,8 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { APPROVED } from '@Constants/sanctioningConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { OUTDOOR } from '@Constants/venueConstants';
+import { HARD } from '@Constants/surfaceConstants';
 
 /**
  * Venue materialization at activation.
@@ -38,8 +40,8 @@ const CANONICAL = {
   venueName: 'Life Time Peachtree Corners',
   addresses: [{ city: 'Norcross', countryCode: 'USA', latitude: '33.9695', longitude: '-84.2216' }],
   courts: [
-    { courtId: 'c1', courtName: 'Court 1', surfaceCategory: 'HARD', indoorOutdoor: 'OUTDOOR', courtOrder: 1 },
-    { courtId: 'c2', courtName: 'Court 2', surfaceCategory: 'HARD', indoorOutdoor: 'OUTDOOR', courtOrder: 2 },
+    { courtId: 'c1', courtName: 'Court 1', surfaceCategory: HARD, indoorOutdoor: OUTDOOR, courtOrder: 1 },
+    { courtId: 'c2', courtName: 'Court 2', surfaceCategory: HARD, indoorOutdoor: OUTDOOR, courtOrder: 2 },
   ],
 };
 
@@ -63,7 +65,7 @@ describe('activateFromSanctioning venue materialization', () => {
     expect(venue.facilityId).toEqual('fac-1');
     expect(venue.courts).toHaveLength(2);
     expect(venue.courts[0].courtOrder).toEqual(1);
-    expect(venue.courts[0].surfaceCategory).toEqual('HARD');
+    expect(venue.courts[0].surfaceCategory).toEqual(HARD);
   });
 
   it('falls back to the proposal venue when the caller resolved none', () => {

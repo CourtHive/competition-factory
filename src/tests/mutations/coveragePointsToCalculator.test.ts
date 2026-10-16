@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 
 // ============================================================================
 // Helpers
@@ -74,7 +75,7 @@ describe('NoAD game scoring — calcSidePointsToGame NoAD paths', () => {
       matchUpId: 'mu-noad-behind',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -129,7 +130,7 @@ describe('deuceAfter golden point territory — L210-213', () => {
       matchUpId: 'mu-deuce-after',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -167,7 +168,7 @@ describe('calcSidePointsToGame — already-won paths', () => {
       matchUpId: 'mu-deuce-won',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -198,7 +199,7 @@ describe('calcSidePointsToGame — already-won paths', () => {
       matchUpId: 'mu-won-preduce',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -254,7 +255,7 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
       matchUpId: 'mu-tb-noad',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -285,7 +286,7 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
       matchUpId: 'mu-tb-won',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -315,7 +316,7 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
       matchUpId: 'mu-tb-past',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -351,7 +352,7 @@ describe('calcSideGamesToSet — already-won and no-tiebreak paths', () => {
       matchUpId: 'mu-set-won',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -384,7 +385,7 @@ describe('calcSideGamesToSet — already-won and no-tiebreak paths', () => {
       matchUpId: 'mu-adv-set',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -420,7 +421,7 @@ describe('calcSideGamesToSet — already-won and no-tiebreak paths', () => {
       matchUpId: 'mu-adv-close',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -462,7 +463,7 @@ describe('calcSidePointsToSet and getMinPointsPerSet', () => {
       matchUpId: 'mu-pts-set-zero',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -493,7 +494,7 @@ describe('calcSidePointsToSet and getMinPointsPerSet', () => {
       matchUpId: 'mu-tb-set',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -546,7 +547,7 @@ describe('calcSidePointsToSet and getMinPointsPerSet', () => {
       matchUpId: 'mu-timed-pts',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -616,7 +617,7 @@ describe('Timed set — calculatePointsTo returns undefined', () => {
       matchUpId: 'mu-timed',
       matchUpFormat: format,
       matchUpStatus: IN_PROGRESS,
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: { sets: [] },
     };

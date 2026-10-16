@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   INVALID_PARTICIPANT_TYPE,
@@ -83,7 +84,7 @@ describe('applyLineUps — malformed lineUps are refused', () => {
 
   it('refuses two players on one singles position', () => {
     const { drawId, firstRound, side1 } = setup();
-    const singles = firstRound.tieMatchUps.find((tieMatchUp: any) => tieMatchUp.matchUpType === 'SINGLES');
+    const singles = firstRound.tieMatchUps.find((tieMatchUp: any) => tieMatchUp.matchUpType === SINGLES_MATCHUP);
     const assignment = { collectionId: singles.collectionId, collectionPosition: singles.collectionPosition };
     const [first, second] = side1.participant.individualParticipantIds;
     const result = apply(drawId, firstRound.matchUpId, [

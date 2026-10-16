@@ -6,8 +6,9 @@ import { nextPowerOf2 } from '@Tools/math';
 import { unique } from '@Tools/arrays';
 
 // constants
+import { DUPR, WTN, ELO } from '@Constants/ratingConstants';
+import { RATING, RANKING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
-import { RATING } from '@Constants/scaleConstants';
 import {
   EXISTING_DRAFT,
   INVALID_DRAW_POSITION,
@@ -738,7 +739,7 @@ describe('Draft Positioning - Tier Methods', () => {
     const draftParticipantIds = draftEntries.map((e: any) => e.participantId);
 
     // Assign DUPR ratings — descending order so first entry gets lowest rating
-    const scaleName = 'DUPR';
+    const scaleName = DUPR;
     draftParticipantIds.forEach((participantId: string, index: number) => {
       tournamentEngine.setParticipantScaleItem({
         participantId,
@@ -755,11 +756,11 @@ describe('Draft Positioning - Tier Methods', () => {
     const result = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 3,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
     });
     expect(result.success).toBe(true);
-    expect(result.draftState.tierMethod).toBe('RATING');
+    expect(result.draftState.tierMethod).toBe(RATING);
     expect(result.draftState.scaleAttributes).toEqual({ scaleType: RATING, scaleName, eventType: SINGLES });
 
     // Tier 1 should contain the highest-rated participants
@@ -806,7 +807,7 @@ describe('Draft Positioning - Tier Methods', () => {
     const draftParticipantIds = draftEntries.map((e: any) => e.participantId);
 
     // Only rate half the participants
-    const scaleName = 'DUPR';
+    const scaleName = DUPR;
     const ratedIds = draftParticipantIds.slice(0, Math.floor(draftParticipantIds.length / 2));
     const unratedIds = draftParticipantIds.slice(Math.floor(draftParticipantIds.length / 2));
 
@@ -820,7 +821,7 @@ describe('Draft Positioning - Tier Methods', () => {
     const result = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 2,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
     });
     expect(result.success).toBe(true);
@@ -860,13 +861,13 @@ describe('Draft Positioning - Tier Methods', () => {
     const reInit = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 2,
-      tierMethod: 'RATING',
-      scaleAttributes: { scaleType: RATING, scaleName: 'WTN' },
+      tierMethod: RATING,
+      scaleAttributes: { scaleType: RATING, scaleName: WTN },
       force: true,
     });
     expect(reInit.success).toBe(true);
-    expect(reInit.draftState.tierMethod).toBe('RATING');
-    expect(reInit.draftState.scaleAttributes).toEqual({ scaleType: RATING, scaleName: 'WTN' });
+    expect(reInit.draftState.tierMethod).toBe(RATING);
+    expect(reInit.draftState.scaleAttributes).toEqual({ scaleType: RATING, scaleName: WTN });
   });
 
   it('ascending=true puts lower values in tier 1', () => {
@@ -896,7 +897,7 @@ describe('Draft Positioning - Tier Methods', () => {
       ) ?? [];
     const draftParticipantIds = draftEntries.map((e: any) => e.participantId);
 
-    const scaleName = 'WTN';
+    const scaleName = WTN;
     draftParticipantIds.forEach((participantId: string, index: number) => {
       tournamentEngine.setParticipantScaleItem({
         participantId,
@@ -908,7 +909,7 @@ describe('Draft Positioning - Tier Methods', () => {
     const result = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 3,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       ascending: true,
       scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
     });
@@ -956,7 +957,7 @@ describe('Draft Positioning - Tier Methods', () => {
       ) ?? [];
     const draftParticipantIds = draftEntries.map((e: any) => e.participantId);
 
-    const scaleName = 'DUPR';
+    const scaleName = DUPR;
     draftParticipantIds.forEach((participantId: string, index: number) => {
       tournamentEngine.setParticipantScaleItem({
         participantId,
@@ -968,7 +969,7 @@ describe('Draft Positioning - Tier Methods', () => {
     const result = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 3,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       ascending: false,
       scaleAttributes: { scaleType: RATING, scaleName, eventType: SINGLES },
     });
@@ -989,14 +990,14 @@ describe('Draft Positioning - Tier Methods', () => {
     const ratingResult = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 3,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
     });
     expect(ratingResult.draftState.ascending).toBe(false);
 
     const rankingResult = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 3,
-      tierMethod: 'RANKING',
+      tierMethod: RANKING,
       force: true,
     });
     expect(rankingResult.draftState.ascending).toBe(true);
@@ -1025,14 +1026,14 @@ describe('Draft Sorting - diagnostic', () => {
     draftPids.forEach((pid: string, i: number) => {
       tournamentEngine.setParticipantScaleItem({
         participantId: pid,
-        scaleItem: { scaleType: RATING, scaleName: 'ELO', scaleValue: 2000 - i * 50, eventType: SINGLES },
+        scaleItem: { scaleType: RATING, scaleName: ELO, scaleValue: 2000 - i * 50, eventType: SINGLES },
       });
     });
 
     // Verify we can read them back
     const { scaleItem: checkItem } = tournamentEngine.getParticipantScaleItem({
       participantId: draftPids[0],
-      scaleAttributes: { scaleType: RATING, scaleName: 'ELO', eventType: SINGLES },
+      scaleAttributes: { scaleType: RATING, scaleName: ELO, eventType: SINGLES },
     });
     expect(checkItem?.scaleValue).toBe(2000);
 
@@ -1040,16 +1041,16 @@ describe('Draft Sorting - diagnostic', () => {
     const descResult = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 2,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       ascending: false,
-      scaleAttributes: { scaleType: RATING, scaleName: 'ELO', eventType: SINGLES },
+      scaleAttributes: { scaleType: RATING, scaleName: ELO, eventType: SINGLES },
     });
     expect(descResult.success).toBe(true);
 
     const getRating = (pid: string) => {
       const { scaleItem } = tournamentEngine.getParticipantScaleItem({
         participantId: pid,
-        scaleAttributes: { scaleType: RATING, scaleName: 'ELO', eventType: SINGLES },
+        scaleAttributes: { scaleType: RATING, scaleName: ELO, eventType: SINGLES },
       });
       return scaleItem?.scaleValue ?? 0;
     };
@@ -1063,9 +1064,9 @@ describe('Draft Sorting - diagnostic', () => {
     const ascResult = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 2,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       ascending: true,
-      scaleAttributes: { scaleType: RATING, scaleName: 'ELO', eventType: SINGLES },
+      scaleAttributes: { scaleType: RATING, scaleName: ELO, eventType: SINGLES },
       force: true,
     });
     expect(ascResult.success).toBe(true);
@@ -1098,7 +1099,7 @@ describe('Draft Sorting - diagnostic', () => {
         participantId: pid,
         scaleItem: {
           scaleType: RATING,
-          scaleName: 'DUPR',
+          scaleName: DUPR,
           scaleValue: { duprRating: 5 - i * 0.2, reliabilityScore: 80 },
           eventType: SINGLES,
         },
@@ -1108,7 +1109,7 @@ describe('Draft Sorting - diagnostic', () => {
     // Without accessor: scaleValue is the whole object
     const { scaleItem: rawItem } = tournamentEngine.getParticipantScaleItem({
       participantId: draftPids[0],
-      scaleAttributes: { scaleType: RATING, scaleName: 'DUPR', eventType: SINGLES },
+      scaleAttributes: { scaleType: RATING, scaleName: DUPR, eventType: SINGLES },
     });
     expect(typeof rawItem?.scaleValue).toBe('object');
     expect(rawItem?.scaleValue?.duprRating).toBe(5);
@@ -1116,7 +1117,7 @@ describe('Draft Sorting - diagnostic', () => {
     // With accessor: scaleValue should be resolved to the numeric value
     const { scaleItem: accessorItem } = tournamentEngine.getParticipantScaleItem({
       participantId: draftPids[0],
-      scaleAttributes: { scaleType: RATING, scaleName: 'DUPR', eventType: SINGLES, accessor: 'duprRating' },
+      scaleAttributes: { scaleType: RATING, scaleName: DUPR, eventType: SINGLES, accessor: 'duprRating' },
     });
     expect(accessorItem?.scaleValue).toBe(5);
 
@@ -1124,16 +1125,16 @@ describe('Draft Sorting - diagnostic', () => {
     const withAccessor = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 2,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       ascending: false,
-      scaleAttributes: { scaleType: RATING, scaleName: 'DUPR', eventType: SINGLES, accessor: 'duprRating' },
+      scaleAttributes: { scaleType: RATING, scaleName: DUPR, eventType: SINGLES, accessor: 'duprRating' },
     });
     expect(withAccessor.success).toBe(true);
 
     const getDupr = (pid: string) => {
       const { scaleItem } = tournamentEngine.getParticipantScaleItem({
         participantId: pid,
-        scaleAttributes: { scaleType: RATING, scaleName: 'DUPR', eventType: SINGLES, accessor: 'duprRating' },
+        scaleAttributes: { scaleType: RATING, scaleName: DUPR, eventType: SINGLES, accessor: 'duprRating' },
       });
       return (scaleItem?.scaleValue as number) ?? 0;
     };
@@ -1146,9 +1147,9 @@ describe('Draft Sorting - diagnostic', () => {
     const withoutAccessor = tournamentEngine.initializeDraft({
       drawId,
       tierCount: 2,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       ascending: false,
-      scaleAttributes: { scaleType: RATING, scaleName: 'DUPR', eventType: SINGLES },
+      scaleAttributes: { scaleType: RATING, scaleName: DUPR, eventType: SINGLES },
       force: true,
     });
     expect(withoutAccessor.success).toBe(true);
@@ -1178,20 +1179,20 @@ describe('Draft Sorting - diagnostic', () => {
     draftPids.forEach((pid: string, i: number) => {
       tournamentEngine.setParticipantScaleItem({
         participantId: pid,
-        scaleItem: { scaleType: RATING, scaleName: 'ELO', scaleValue: 2000 - i * 50, eventType: SINGLES },
+        scaleItem: { scaleType: RATING, scaleName: ELO, scaleValue: 2000 - i * 50, eventType: SINGLES },
       });
     });
 
     // Query WITHOUT eventType — should NOT find it because timeItem key includes eventType
     const { scaleItem: noEventType } = tournamentEngine.getParticipantScaleItem({
       participantId: draftPids[0],
-      scaleAttributes: { scaleType: RATING, scaleName: 'ELO' },
+      scaleAttributes: { scaleType: RATING, scaleName: ELO },
     });
 
     // Query WITH eventType — should find it
     const { scaleItem: withEventType } = tournamentEngine.getParticipantScaleItem({
       participantId: draftPids[0],
-      scaleAttributes: { scaleType: RATING, scaleName: 'ELO', eventType: SINGLES },
+      scaleAttributes: { scaleType: RATING, scaleName: ELO, eventType: SINGLES },
     });
 
     // The scale was stored under SINGLES, so only the lookup that names the eventType finds it

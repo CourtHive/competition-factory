@@ -5,6 +5,7 @@ import { getLadderStanding } from '@Query/ladder/getLadderStanding';
 // constants
 import { DYNAMIC, RATING as RATING_SCALE, SCALE } from '@Constants/scaleConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
 import { ELO, UTR, WTN } from '@Constants/ratingConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
@@ -19,13 +20,13 @@ const scaleTimeItem = (scaleName: string, itemValue: any) => ({
 
 const rated = (participantId: string, scaleName: string, scaleValue: any) => ({
   participantId,
-  participantType: 'INDIVIDUAL',
+  participantType: INDIVIDUAL,
   timeItems: [scaleTimeItem(scaleName, scaleValue)],
 });
 
 const ratedBoth = (participantId: string, published: number, dynamic: number) => ({
   participantId,
-  participantType: 'INDIVIDUAL',
+  participantType: INDIVIDUAL,
   timeItems: [scaleTimeItem(ELO, published), scaleTimeItem(`${ELO}.${DYNAMIC}`, dynamic)],
 });
 
