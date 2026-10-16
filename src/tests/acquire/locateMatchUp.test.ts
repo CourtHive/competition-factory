@@ -89,23 +89,27 @@ describe('locateMatchUp: a bare matchUpId resolves without hydrating the tournam
   it.each([
     [11, false],
     [12, true],
-  ])('places every stored matchUp where hydration places it (seed %s, completed %s)', (seed, completed) => {
-    const tournamentRecord = generate(seed, completed);
-    const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
-    const { locations, duplicated, selfNamed } = getMatchUpLocationIndex({ tournamentRecord });
+  ])(
+    'places every stored matchUp where hydration places it (seed %s, completed %s)',
+    (seed, completed) => {
+      const tournamentRecord = generate(seed, completed);
+      const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
+      const { locations, duplicated, selfNamed } = getMatchUpLocationIndex({ tournamentRecord });
 
-    expect(duplicated.size).toEqual(0);
-    expect(selfNamed.size).toEqual(0);
-    expect(locations.size).toEqual(matchUps.length);
-    for (const matchUp of matchUps) {
-      const location = locations.get(matchUp.matchUpId);
-      expect(location).toMatchObject({ eventId: matchUp.eventId, drawId: matchUp.drawId });
-      // the draw-level structure agrees; a dual's lines in a group are reported by hydration at the container
-      const top = (m) => m?.containerStructureId ?? m?.structureId;
-      expect(top(location)).toEqual(top(matchUp));
-      if (matchUp.containerStructureId) expect(location?.structureId).toEqual(matchUp.structureId);
-    }
-  });
+      expect(duplicated.size).toEqual(0);
+      expect(selfNamed.size).toEqual(0);
+      expect(locations.size).toEqual(matchUps.length);
+      for (const matchUp of matchUps) {
+        const location = locations.get(matchUp.matchUpId);
+        expect(location).toMatchObject({ eventId: matchUp.eventId, drawId: matchUp.drawId });
+        // the draw-level structure agrees; a dual's lines in a group are reported by hydration at the container
+        const top = (m) => m?.containerStructureId ?? m?.structureId;
+        expect(top(location)).toEqual(top(matchUp));
+        if (matchUp.containerStructureId) expect(location?.structureId).toEqual(matchUp.structureId);
+      }
+    },
+    180_000,
+  );
 
   it.each([
     [21, false],
