@@ -21,6 +21,7 @@ import {
 
 // constants
 import { SINGLE_ELIMINATION, MAIN, ITEM } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 const ctx: MatchUpRowContext = { tournamentId: 't1', providerId: 'PROV', published: false, embargo: null };
 
@@ -30,7 +31,7 @@ describe('eventRow', () => {
       {
         eventId: 'e1',
         eventName: 'Singles',
-        eventType: 'SINGLES',
+        eventType: SINGLES_EVENT,
         gender: 'MALE',
         category: { categoryName: 'U18' },
         matchUpFormat: 'SET3-S:6/TB7',
@@ -46,7 +47,7 @@ describe('eventRow', () => {
       tournament_id: 't1',
       provider_id: 'PROV',
       event_name: 'Singles',
-      event_type: 'SINGLES',
+      event_type: SINGLES_EVENT,
       gender: 'MALE',
       category_name: 'U18',
       match_up_format: 'SET3-S:6/TB7',

@@ -11,6 +11,7 @@ import { expect, it } from 'vitest';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { AD_HOC, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import type { CompetitionProfile } from '@Types/competitionProfile';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import {
   INVALID_ENTRIES,
   INVALID_PARTICIPANT_IDS,
@@ -37,7 +38,7 @@ function setup() {
     entries: [],
     structures: [],
   };
-  const event: Event = { eventId: 'doubles', eventType: 'DOUBLES', entries: [], drawDefinitions: [drawDefinition] };
+  const event: Event = { eventId: 'doubles', eventType: DOUBLES_EVENT, entries: [], drawDefinitions: [drawDefinition] };
   const tournamentRecord: Tournament = {
     tournamentId: 't',
     events: [event],

@@ -4,6 +4,7 @@ import { expect, it, describe } from 'vitest';
 import { cast } from '@Query/readModel/cast';
 
 // constants
+import { SINGLES_EVENT, DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { ROUND_ROBIN, MAIN, CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
@@ -31,7 +32,7 @@ describe('cast — singles (STANDARD)', () => {
     expect(rows!.events).toHaveLength(1);
     const event = rows!.events[0];
     expect(event.event_name).toEqual('Singles');
-    expect(event.event_type).toEqual('SINGLES');
+    expect(event.event_type).toEqual(SINGLES_EVENT);
     expect(event.tournament_id).toEqual('t1');
     expect(typeof event.published).toEqual('boolean');
     // event_id joins back to the match_ups' event_id
@@ -66,7 +67,7 @@ describe('cast — singles (STANDARD)', () => {
 
 describe('cast — doubles (per-individual PAIR grain)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, eventType: 'DOUBLES', eventName: 'Dubs' }],
+    drawProfiles: [{ drawSize: 8, eventType: DOUBLES_EVENT, eventName: 'Dubs' }],
     nonRandom: 1,
   });
 
@@ -84,13 +85,13 @@ describe('cast — doubles (per-individual PAIR grain)', () => {
     expect(second.side_participant_id).toBeTruthy();
     expect(second.individual_participant_id).toBeTruthy();
     expect(second.side_participant_id).not.toEqual(second.individual_participant_id);
-    expect(rows!.match_ups.every((m) => m.event_type === 'DOUBLES')).toBe(true);
+    expect(rows!.match_ups.every((m) => m.event_type === DOUBLES_EVENT)).toBe(true);
   });
 });
 
 describe('cast — team (TIE container + RUBBER nesting)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: 'TEAM', tieFormatName: 'COLLEGE_DEFAULT', eventName: 'Teams' }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: 'COLLEGE_DEFAULT', eventName: 'Teams' }],
     nonRandom: 1,
   });
 

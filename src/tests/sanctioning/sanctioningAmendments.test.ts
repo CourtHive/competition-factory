@@ -9,6 +9,7 @@ import type { Applicant, TournamentProposal, SanctioningPolicy, ProposalChange }
 
 // constants
 import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -21,7 +22,7 @@ const testProposal: TournamentProposal = {
   tournamentName: 'Test Open',
   proposedStartDate: '2028-06-01',
   proposedEndDate: '2028-06-07',
-  events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: SINGLE_ELIMINATION }],
+  events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, drawType: SINGLE_ELIMINATION }],
 };
 
 const testPolicy: SanctioningPolicy = {

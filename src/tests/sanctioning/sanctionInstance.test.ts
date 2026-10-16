@@ -5,6 +5,7 @@ import { expect, it, describe } from 'vitest';
 import { SanctionDecisionEnum, RecognitionEnum, CurrencyUnitEnum } from '@Types/tournamentTypes';
 import { APPROVED } from '@Constants/sanctioningConstants';
 import type { SanctionFee } from '@Types/tournamentTypes';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
  * `Tournament.sanction` — the sanction INSTANCE model.
@@ -38,7 +39,7 @@ const baseRecord = (overrides: any = {}) =>
       tournamentName: 'Peachtree Summer Open',
       proposedStartDate: '2026-09-01',
       proposedEndDate: '2026-09-05',
-      events: [{ eventName: 'Mens Singles', eventType: 'SINGLES' }],
+      events: [{ eventName: 'Mens Singles', eventType: SINGLES_EVENT }],
     },
     statusHistory: [],
     ...overrides,

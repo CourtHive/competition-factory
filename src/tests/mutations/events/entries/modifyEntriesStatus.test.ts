@@ -9,6 +9,7 @@ import { UUID } from '@Tools/UUID';
 // constants
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import {
   ALTERNATE,
@@ -201,7 +202,7 @@ it('can account for individuals appearing in multiple doubles pairs', () => {
   const eventProfiles = [
     {
       eventId: 'eId',
-      eventType: 'DOUBLES',
+      eventType: DOUBLES_EVENT,
       drawProfiles: [
         {
           drawSize: 4,

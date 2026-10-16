@@ -6,12 +6,15 @@ import { describe, expect, it } from 'vitest';
 // types
 import type { CalendarContext, CalendarEvent, SanctioningRecord, TournamentProposal } from '@Types/sanctioningTypes';
 
+// constants
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+
 function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentProposal {
   return {
     tournamentName: 'Proposed Open',
     proposedStartDate: '2027-06-15',
     proposedEndDate: '2027-06-21',
-    events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+    events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
     ...overrides,
   };
 }

@@ -1,8 +1,8 @@
 import { generateSeedingScaleItems } from '@Assemblies/generators/drawDefinitions/generateSeedingScaleItems';
 import POLICY_SEEDING_DEFAULT from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SEEDING, RATING } from '@Constants/scaleConstants';
-import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { ScaleAttributes } from '@Types/factoryTypes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -405,7 +405,7 @@ describe('generateSeedingScaleItems', () => {
 
   it('should preserve eventType from scaleAttributes', () => {
     const doublesScaleAttributes: ScaleAttributes = {
-      eventType: 'DOUBLES',
+      eventType: DOUBLES_EVENT,
       scaleType: RATING,
       scaleName: 'WTN',
     };
@@ -421,7 +421,7 @@ describe('generateSeedingScaleItems', () => {
       scaleName: 'U18',
     });
 
-    expect(result?.scaleItemsWithParticipantIds?.[0]?.scaleItems?.[0]?.eventType).toEqual('DOUBLES');
+    expect(result?.scaleItemsWithParticipantIds?.[0]?.scaleItems?.[0]?.eventType).toEqual(DOUBLES_EVENT);
   });
 });
 

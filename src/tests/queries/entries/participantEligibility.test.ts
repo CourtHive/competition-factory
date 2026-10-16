@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 import { getParticipantEligibility, getEligibleEvents } from '@Query/entries/getParticipantEligibility';
 import { validateParticipantRating } from '@Query/entries/categoryValidation';
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
-import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { ANY } from '@Constants/genderConstants';
 
 /**
@@ -174,7 +174,7 @@ describe('getEligibleEvents', () => {
  * Before this change a combined-7.0 category rejected the 4.0 half of a legal 3.0 + 4.0 pair.
  */
 describe('combined rating categories', () => {
-  const event: any = { eventId: 'e', eventType: 'DOUBLES' };
+  const event: any = { eventId: 'e', eventType: DOUBLES_EVENT };
 
   it('does not reject an individual against a combined-only bound', () => {
     const participant: any = { participantId: 'p', person: {} };

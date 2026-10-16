@@ -15,6 +15,7 @@ import { ADD_PARTICIPANTS, ADD_MATCHUPS } from '@Constants/topicConstants';
 import type { CompetitionProfile } from '@Types/competitionProfile';
 import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import {
   EXISTING_MATCHUP_ID,
   EXISTING_MATCHUPS,
@@ -44,7 +45,7 @@ function setup(count = 8) {
   };
   const event: Event = {
     eventId: 'doubles',
-    eventType: 'DOUBLES',
+    eventType: DOUBLES_EVENT,
     drawDefinitions: [drawDefinition],
     entries: participantIds.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
   };

@@ -19,6 +19,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { NATIVE, BRIDGE, LEGACY, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 function scheduleOneMatchUp(opts: { startDate: string }) {
   const venueProfiles = [
@@ -30,7 +31,7 @@ function scheduleOneMatchUp(opts: { startDate: string }) {
       endTime: '20:00',
     },
   ];
-  const drawProfiles = [{ drawSize: 8, eventType: 'SINGLES' }];
+  const drawProfiles = [{ drawSize: 8, eventType: SINGLES_EVENT }];
 
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     startDate: opts.startDate,
@@ -172,7 +173,7 @@ describe('competitionScheduleMatchUps — public API shape', () => {
     const startDate = '2026-05-05';
 
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'SINGLES' }],
+      drawProfiles: [{ drawSize: 4, eventType: SINGLES_EVENT }],
       startDate,
     });
     tournamentEngine.setState(tournamentRecord);

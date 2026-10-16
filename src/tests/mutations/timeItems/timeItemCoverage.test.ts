@@ -6,6 +6,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
+
 describe('addTimeItem edge cases', () => {
   it('returns error for missing timeItem', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord();
@@ -355,7 +358,7 @@ describe('matchUp timeItems: checkIn/checkOut', () => {
 
   it('refuses the PAIR and checks its members in and out individually', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'DOUBLES' }],
+      drawProfiles: [{ drawSize: 4, eventType: DOUBLES_EVENT }],
       participantsProfile: { participantsCount: 20 },
     });
     tournamentEngine.setState(tournamentRecord);

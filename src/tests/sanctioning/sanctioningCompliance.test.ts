@@ -9,6 +9,7 @@ import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sa
 
 // constants
 import { POST_EVENT, ISSUES_FLAGGED, UNDER_REVIEW } from '@Constants/sanctioningConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -21,7 +22,7 @@ const testProposal: TournamentProposal = {
   tournamentName: 'Compliance Test Open',
   proposedStartDate: '2027-06-01',
   proposedEndDate: '2027-06-07',
-  events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32 }],
+  events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32 }],
 };
 
 const testPolicy: SanctioningPolicy = {

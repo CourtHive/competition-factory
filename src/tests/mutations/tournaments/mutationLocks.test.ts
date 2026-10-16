@@ -4,6 +4,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   INVALID_VALUES,
   MISSING_VALUE,
@@ -298,7 +299,7 @@ describe('Mutation Locks', () => {
 
     // addEvent should NOT be blocked (not in methods list)
     const addResult = tournamentEngine.addEvent({
-      event: { eventName: 'Test', eventType: 'SINGLES' },
+      event: { eventName: 'Test', eventType: SINGLES_EVENT },
     });
     expect(addResult.error).not.toEqual(MUTATION_LOCKED);
 

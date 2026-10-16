@@ -6,10 +6,10 @@ import { expect, it } from 'vitest';
 
 // constants
 import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorConditionConstants';
+import { DOUBLES, TEAM, SINGLES_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
-import { DOUBLES, TEAM } from '@Constants/eventConstants';
 
 it('can delete participants', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();
@@ -123,7 +123,7 @@ it('will clean up pairParticipants when individual participants are deleted', ()
 
   const event = {
     eventName: 'Test Event',
-    eventType: 'SINGLES',
+    eventType: SINGLES_EVENT,
     eventGender: 'MALE',
   };
 

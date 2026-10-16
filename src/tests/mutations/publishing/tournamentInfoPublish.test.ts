@@ -8,6 +8,7 @@ import { globalState } from '../../..';
 // constants
 import { PUBLISH_TOURNAMENT_INFO, UNPUBLISH_TOURNAMENT, UNPUBLISH_TOURNAMENT_INFO } from '@Constants/topicConstants';
 import { EVENT_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 
 /**
  * Publishing a tournament's INFORMATION — punch list P23, option A.
@@ -22,7 +23,7 @@ function seedDrawless() {
     eventIds,
     tournamentRecord: { tournamentId },
   } = mocksEngine.generateTournamentRecord({
-    eventProfiles: [{ eventName: 'Open Singles' }, { eventName: 'Open Doubles', eventType: 'DOUBLES' }],
+    eventProfiles: [{ eventName: 'Open Singles' }, { eventName: 'Open Doubles', eventType: DOUBLES_EVENT }],
     setState: true,
   });
   return { eventIds, tournamentId };

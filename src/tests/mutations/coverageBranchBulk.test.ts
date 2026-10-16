@@ -36,6 +36,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   INVALID_VALUES,
   MATCHUP_NOT_FOUND,
@@ -291,7 +292,7 @@ describe('removeRatings branch coverage', () => {
   it('returns error when tournamentRecord is missing', () => {
     const result = removeRatings({
       tournamentRecord: undefined as any,
-      eventType: 'SINGLES',
+      eventType: SINGLES_EVENT,
       ratingType: 'WTN',
     });
     expect(result.error).toBeDefined();
@@ -300,7 +301,7 @@ describe('removeRatings branch coverage', () => {
   it('returns error for invalid ratingType', () => {
     const result = removeRatings({
       tournamentRecord: { tournamentId: 't1' } as any,
-      eventType: 'SINGLES',
+      eventType: SINGLES_EVENT,
       ratingType: 'INVALID_RATING',
     });
     expect(result.error).toBeDefined();
@@ -312,7 +313,7 @@ describe('removeRatings branch coverage', () => {
         tournamentId: 't1',
         participants: [{ participantId: 'p1' }],
       } as any,
-      eventType: 'SINGLES',
+      eventType: SINGLES_EVENT,
       ratingType: 'WTN',
     });
     expect(result.error).toBeUndefined();
@@ -396,7 +397,7 @@ describe('getMaxEntryPosition branch coverage', () => {
 describe('getParticipantScaleItem branch coverage', () => {
   it('returns error when participantId is missing', () => {
     const result = getParticipantScaleItem({
-      scaleAttributes: { scaleType: 'RATING', eventType: 'SINGLES', scaleName: 'WTN' },
+      scaleAttributes: { scaleType: 'RATING', eventType: SINGLES_EVENT, scaleName: 'WTN' },
       participantId: undefined as any,
     });
     expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
@@ -405,7 +406,7 @@ describe('getParticipantScaleItem branch coverage', () => {
   it('returns PARTICIPANT_NOT_FOUND when participant does not exist', () => {
     const result = getParticipantScaleItem({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      scaleAttributes: { scaleType: 'RATING', eventType: 'SINGLES', scaleName: 'WTN' },
+      scaleAttributes: { scaleType: 'RATING', eventType: SINGLES_EVENT, scaleName: 'WTN' },
       participantId: 'nonexistent',
     });
     expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
@@ -417,7 +418,7 @@ describe('getParticipantScaleItem branch coverage', () => {
         tournamentId: 't1',
         participants: [{ participantId: 'p1', timeItems: [] }],
       } as any,
-      scaleAttributes: { scaleType: 'RATING', eventType: 'SINGLES', scaleName: 'WTN' },
+      scaleAttributes: { scaleType: 'RATING', eventType: SINGLES_EVENT, scaleName: 'WTN' },
       participantId: 'p1',
     });
     expect(result.error).toBeUndefined();
@@ -459,7 +460,7 @@ describe('removeSeeding branch coverage', () => {
       tournamentRecord: { tournamentId: 't1', participants: [] },
       event: {
         eventId: 'e1',
-        eventType: 'SINGLES',
+        eventType: SINGLES_EVENT,
         category: { categoryName: 'U18' },
         entries: [],
       },
@@ -976,7 +977,7 @@ describe('removeParticipantsScaleItems branch coverage', () => {
     };
     const result = removeParticipantsScaleItems({
       tournamentRecord,
-      scaleAttributes: { scaleType: 'RATING', eventType: 'SINGLES', scaleName: 'WTN' },
+      scaleAttributes: { scaleType: 'RATING', eventType: SINGLES_EVENT, scaleName: 'WTN' },
       participantIds: ['p1'],
     });
     expect(result.error).toBeUndefined();

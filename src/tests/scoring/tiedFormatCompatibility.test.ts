@@ -6,6 +6,7 @@ import { afterEach, expect, it } from 'vitest';
 // constants
 import { SINGLE_ELIMINATION, AD_HOC, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 
 afterEach(() => setOutcomePipeline());
 
@@ -14,7 +15,7 @@ function setup() {
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, drawType: SINGLE_ELIMINATION, eventType: 'DOUBLES' }],
+    drawProfiles: [{ drawSize: 4, drawType: SINGLE_ELIMINATION, eventType: DOUBLES_EVENT }],
   });
   tournamentEngine.setState(tournamentRecord);
   const { event, drawDefinition } = tournamentEngine.getEvent({ drawId });

@@ -18,6 +18,7 @@ import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sa
 
 // constants
 import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT, DOUBLES_EVENT, AGE } from '@Constants/eventConstants';
 import {
   UNDER_REVIEW,
   POST_EVENT,
@@ -76,7 +77,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     events: [
       {
         eventName: "Women's Singles",
-        eventType: 'SINGLES',
+        eventType: SINGLES_EVENT,
         gender: 'FEMALE',
         drawSize: 32,
         drawType: SINGLE_ELIMINATION,
@@ -85,7 +86,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
       },
       {
         eventName: "Women's Doubles",
-        eventType: 'DOUBLES',
+        eventType: DOUBLES_EVENT,
         gender: 'FEMALE',
         drawSize: 32,
         drawType: SINGLE_ELIMINATION,
@@ -203,8 +204,8 @@ describe('Scenario: USTA Level 3 with Modification Request', () => {
     referee: { personName: 'Carol Jones', role: 'Referee', certificationLevel: 'National' },
     safeguardingCompliance: true,
     events: [
-      { eventName: 'Open Singles', eventType: 'SINGLES', drawSize: 64, drawType: SINGLE_ELIMINATION },
-      { eventName: 'Open Doubles', eventType: 'DOUBLES', drawSize: 32, drawType: SINGLE_ELIMINATION },
+      { eventName: 'Open Singles', eventType: SINGLES_EVENT, drawSize: 64, drawType: SINGLE_ELIMINATION },
+      { eventName: 'Open Doubles', eventType: DOUBLES_EVENT, drawSize: 32, drawType: SINGLE_ELIMINATION },
     ],
   };
 
@@ -288,11 +289,11 @@ describe('Scenario: Conditional Approval — BWF Prize Money Confirmation', () =
         hostCountryCode: 'IDN',
         totalPrizeMoney: [{ amount: 25000, currencyCode: 'USD', unit: 'MAJOR' }],
         events: [
-          { eventName: "Men's Singles", eventType: 'SINGLES', gender: 'MALE', drawSize: 32 },
-          { eventName: "Women's Singles", eventType: 'SINGLES', gender: 'FEMALE', drawSize: 32 },
-          { eventName: "Men's Doubles", eventType: 'DOUBLES', gender: 'MALE', drawSize: 16 },
-          { eventName: "Women's Doubles", eventType: 'DOUBLES', gender: 'FEMALE', drawSize: 16 },
-          { eventName: 'Mixed Doubles', eventType: 'DOUBLES', gender: 'MIXED', drawSize: 16 },
+          { eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: 'MALE', drawSize: 32 },
+          { eventName: "Women's Singles", eventType: SINGLES_EVENT, gender: 'FEMALE', drawSize: 32 },
+          { eventName: "Men's Doubles", eventType: DOUBLES_EVENT, gender: 'MALE', drawSize: 16 },
+          { eventName: "Women's Doubles", eventType: DOUBLES_EVENT, gender: 'FEMALE', drawSize: 16 },
+          { eventName: 'Mixed Doubles', eventType: DOUBLES_EVENT, gender: 'MIXED', drawSize: 16 },
         ],
       },
     });
@@ -358,7 +359,7 @@ describe('Scenario: Application Rejection — Terminal State', () => {
         tournamentName: 'Rejected Event',
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 8 }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 8 }],
       },
     });
 
@@ -404,7 +405,7 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
             tournamentName: 'Amendment Test',
             proposedStartDate: '2029-06-01',
             proposedEndDate: '2029-06-07',
-            events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: SINGLE_ELIMINATION }],
+            events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, drawType: SINGLE_ELIMINATION }],
           },
           sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
@@ -526,7 +527,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
         proposedStartDate: '2028-03-11',
         proposedEndDate: '2028-03-17',
         calendarSection: 'South America',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32 }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32 }],
       },
       sanctioningTier: { system: 'ITF', value: 'W25' },
     });
@@ -559,7 +560,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
         proposedStartDate: '2028-03-11',
         proposedEndDate: '2028-03-17',
         calendarSection: 'Asia',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
       sanctioningTier: { system: 'ITF', value: 'W25' },
     });
@@ -591,7 +592,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
         calendarSection: 'North America',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
       sanctioningTier: { system: 'ITF', value: 'W50' },
     });
@@ -624,7 +625,7 @@ describe('Scenario: Calendar Conflict Detection — Real-World Patterns', () => 
         proposedStartDate: '2028-03-11',
         proposedEndDate: '2028-03-17',
         calendarSection: 'North America',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
       sanctioningTier: { system: 'ITF', value: 'W15' },
     });
@@ -666,7 +667,7 @@ describe('Scenario: Post-Event Compliance Issues (USATF pattern)', () => {
             tournamentName: 'Compliance Test',
             proposedStartDate: '2027-01-01',
             proposedEndDate: '2027-01-07',
-            events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+            events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
           },
           sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
@@ -713,7 +714,7 @@ describe('Scenario: Post-Event Compliance Issues (USATF pattern)', () => {
             tournamentName: 'Resubmit Test',
             proposedStartDate: '2027-01-01',
             proposedEndDate: '2027-01-07',
-            events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+            events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
           },
           sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
@@ -757,31 +758,31 @@ describe('Scenario: Multi-Category Tournament Validation', () => {
         events: [
           {
             eventName: 'Boys 18 Singles',
-            eventType: 'SINGLES',
+            eventType: SINGLES_EVENT,
             gender: 'MALE',
             drawSize: 64,
-            category: { categoryName: 'U18', type: 'AGE', ageMax: 18 },
+            category: { categoryName: 'U18', type: AGE, ageMax: 18 },
           },
           {
             eventName: 'Girls 18 Singles',
-            eventType: 'SINGLES',
+            eventType: SINGLES_EVENT,
             gender: 'FEMALE',
             drawSize: 64,
-            category: { categoryName: 'U18', type: 'AGE', ageMax: 18 },
+            category: { categoryName: 'U18', type: AGE, ageMax: 18 },
           },
           {
             eventName: 'Boys 16 Singles',
-            eventType: 'SINGLES',
+            eventType: SINGLES_EVENT,
             gender: 'MALE',
             drawSize: 32,
-            category: { categoryName: 'U16', type: 'AGE', ageMax: 16 },
+            category: { categoryName: 'U16', type: AGE, ageMax: 16 },
           },
           {
             eventName: 'Boys 14 Singles',
-            eventType: 'SINGLES',
+            eventType: SINGLES_EVENT,
             gender: 'MALE',
             drawSize: 32,
-            category: { categoryName: 'U14', type: 'AGE', ageMax: 14 },
+            category: { categoryName: 'U14', type: AGE, ageMax: 14 },
           },
         ],
       },
@@ -823,7 +824,7 @@ describe('Scenario: Endorsement Declined and Re-requested', () => {
         proposedStartDate: '2028-05-01',
         proposedEndDate: '2028-05-07',
         venues: [{ venueName: 'Small Club', numberOfCourts: 2 }],
-        events: [{ eventName: 'Singles', eventType: 'SINGLES', gender: 'FEMALE', drawSize: 32 }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, gender: 'FEMALE', drawSize: 32 }],
       },
     });
 
@@ -884,7 +885,7 @@ describe('Scenario: Execution Queue Rollback Integrity', () => {
         tournamentName: 'Rollback Test',
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
     });
 
@@ -952,7 +953,7 @@ describe('Scenario: Policy Transition Guards', () => {
         tournamentName: 'Will Be Cleared',
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
     });
 
@@ -980,7 +981,7 @@ describe('Scenario: Policy Transition Guards', () => {
             tournamentName: 'Guard Test',
             proposedStartDate: '2027-01-01',
             proposedEndDate: '2027-01-07',
-            events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+            events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
           },
           sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
@@ -1018,7 +1019,7 @@ describe('Scenario: Policy Transition Guards', () => {
         tournamentName: 'Condition Guard Test',
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
     });
 

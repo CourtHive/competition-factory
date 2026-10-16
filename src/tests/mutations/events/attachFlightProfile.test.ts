@@ -231,7 +231,7 @@ describe('attachFlightProfile', () => {
         },
       ],
       splitMethod: SPLIT_WATERFALL,
-      eventType: 'SINGLES',
+      eventType: SINGLES_EVENT,
     };
 
     const result: any = attachFlightProfile({ event, flightProfile } as any);

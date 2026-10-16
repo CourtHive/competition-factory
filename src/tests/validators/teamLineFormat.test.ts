@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { INVALID_SCORE, MISSING_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
-import { TEAM } from '@Constants/eventConstants';
+import { TEAM, DOUBLES } from '@Constants/eventConstants';
 
 /**
  * A TEAM line is scored to its COLLECTION's format, and a score with no format is refused.
@@ -42,7 +42,7 @@ function collegeD3Line(matchUpType: string) {
 
 describe('a TEAM line is validated against its collection format', () => {
   it('COLLEGE_D3 doubles play one eight-game pro set: 8-3 is recorded, two sets 6-3 6-4 are refused', () => {
-    const { drawId, matchUp } = collegeD3Line('DOUBLES');
+    const { drawId, matchUp } = collegeD3Line(DOUBLES);
     expect(matchUp.matchUpFormat).toEqual('SET1-S:8/TB7@7');
 
     let result: any = tournamentEngine.setMatchUpStatus({

@@ -5,6 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
+import { DOUBLES_EVENT, TEAM_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { GROUP, INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { COMPETITOR, OTHER } from '@Constants/participantRoles';
 import { RANKING } from '@Constants/scaleConstants';
@@ -103,7 +104,7 @@ function doublesContext(): Ctx {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     tournamentAttributes: { tournamentId: 'conf-scn-doubles' },
     participantsProfile: { participantsCount: 24 },
-    drawProfiles: [{ drawSize: 4, eventType: 'DOUBLES', eventName: 'Doubles' }],
+    drawProfiles: [{ drawSize: 4, eventType: DOUBLES_EVENT, eventName: 'Doubles' }],
     startDate: '2025-01-01',
     endDate: '2025-01-14',
     nonRandom: 1,
@@ -131,7 +132,7 @@ function venueContext(): Ctx {
 function teamContext(): Ctx {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     tournamentAttributes: { tournamentId: 'conf-scn-team' },
-    drawProfiles: [{ eventType: 'TEAM', drawSize: 4, eventName: 'Team' }],
+    drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4, eventName: 'Team' }],
     startDate: '2025-01-01',
     endDate: '2025-01-14',
     nonRandom: 1,
@@ -434,7 +435,7 @@ const scenarios: Scenario[] = [
     run: (ctx) =>
       tournamentEngine.setParticipantScaleItem({
         participantId: ctx.enteredIds[0],
-        scaleItem: { scaleType: 'RATING', eventType: 'SINGLES', scaleName: 'WTN', scaleValue: 15 },
+        scaleItem: { scaleType: 'RATING', eventType: SINGLES_EVENT, scaleName: 'WTN', scaleValue: 15 },
       }),
   },
 
@@ -994,7 +995,7 @@ const scenarios: Scenario[] = [
         participantFilters: { participantTypes: [INDIVIDUAL] },
       });
       const result: any = tournamentEngine.scaledTeamAssignment({
-        scaleAttributes: { scaleName: 'WTN', scaleType: RANKING, eventType: 'SINGLES' },
+        scaleAttributes: { scaleName: 'WTN', scaleType: RANKING, eventType: SINGLES_EVENT },
         individualParticipantIds: participants.slice(0, 8).map(({ participantId }) => participantId),
         eventId: ctx.eventId,
       });

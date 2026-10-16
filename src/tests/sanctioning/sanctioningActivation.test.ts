@@ -9,6 +9,7 @@ import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sa
 
 // constants
 import { SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT, AGE, DOUBLES_EVENT } from '@Constants/eventConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-001',
@@ -30,16 +31,16 @@ const testProposal: TournamentProposal = {
   events: [
     {
       eventName: "Men's Singles",
-      eventType: 'SINGLES',
+      eventType: SINGLES_EVENT,
       gender: 'MALE',
       drawSize: 32,
       drawType: SINGLE_ELIMINATION,
       matchUpFormat: 'SET3-S:6/TB7',
-      category: { categoryName: 'Open', type: 'AGE' },
+      category: { categoryName: 'Open', type: AGE },
     },
     {
       eventName: "Women's Singles",
-      eventType: 'SINGLES',
+      eventType: SINGLES_EVENT,
       gender: 'FEMALE',
       drawSize: 32,
       drawType: SINGLE_ELIMINATION,
@@ -107,7 +108,7 @@ describe('Activation — Tournament Generation', () => {
 
     const mensSingles = tr.events.find((e: any) => e.eventName === "Men's Singles");
     expect(mensSingles).toBeDefined();
-    expect(mensSingles.eventType).toEqual('SINGLES');
+    expect(mensSingles.eventType).toEqual(SINGLES_EVENT);
     expect(mensSingles.gender).toEqual('MALE');
     expect(mensSingles.matchUpFormat).toEqual('SET3-S:6/TB7');
     expect(mensSingles.allowedDrawTypes).toEqual([SINGLE_ELIMINATION]);
@@ -223,13 +224,13 @@ describe('Activation — Tournament Generation', () => {
         events: [
           {
             eventName: 'U18 Singles',
-            eventType: 'SINGLES',
-            category: { categoryName: 'U18', type: 'AGE', ageMax: 18 },
+            eventType: SINGLES_EVENT,
+            category: { categoryName: 'U18', type: AGE, ageMax: 18 },
           },
           {
             eventName: 'U18 Doubles',
-            eventType: 'DOUBLES',
-            category: { categoryName: 'U18', type: 'AGE', ageMax: 18 },
+            eventType: DOUBLES_EVENT,
+            category: { categoryName: 'U18', type: AGE, ageMax: 18 },
           },
         ],
       },

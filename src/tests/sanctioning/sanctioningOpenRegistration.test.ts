@@ -7,6 +7,9 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 // types
 import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
+// constants
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+
 const testApplicant: Applicant = {
   organisationId: 'org-001',
   organisationName: 'Test Tennis Club',
@@ -18,7 +21,7 @@ const testProposal: TournamentProposal = {
   tournamentName: 'Test Open 2027',
   proposedStartDate: '2027-06-01',
   proposedEndDate: '2027-06-07',
-  events: [{ eventName: "Men's Singles", eventType: 'SINGLES', gender: 'MALE' }],
+  events: [{ eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: 'MALE' }],
 };
 
 const testPolicy: SanctioningPolicy = { ...POLICY_SANCTIONING_GENERIC, requireEndorsement: false };

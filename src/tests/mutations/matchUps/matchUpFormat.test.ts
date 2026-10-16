@@ -4,9 +4,9 @@ import { expect, it } from 'vitest';
 
 // constants and fixtures
 import { FORMAT_FAST4, FORMAT_SHORT_SETS, FORMAT_STANDARD, TIMED20 } from '@Fixtures/scoring/matchUpFormats';
+import { TEAM_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   INVALID_EVENT_TYPE,
   INVALID_VALUES,
@@ -337,7 +337,7 @@ it('setMatchUpFormat with SINGLES eventType filters events', () => {
 
   const result = tournamentEngine.setMatchUpFormat({
     matchUpFormat: FORMAT_SHORT_SETS,
-    eventType: 'SINGLES',
+    eventType: SINGLES_EVENT,
   });
   expect(result.success).toEqual(true);
 });

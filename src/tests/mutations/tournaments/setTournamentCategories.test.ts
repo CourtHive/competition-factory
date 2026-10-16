@@ -4,6 +4,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { TOURNAMENT_CATEGORY_IN_USE } from '@Constants/errorConditionConstants';
+import { AGE, RATING } from '@Constants/eventConstants';
 
 function seed(overrides?: any) {
   return mocksEngine.generateTournamentRecord({
@@ -17,8 +18,8 @@ describe('setTournamentCategories', () => {
     seed();
     let result: any = tournamentEngine.setTournamentCategories({
       categories: [
-        { categoryName: 'U18', type: 'AGE', ageCategoryCode: 'U18' },
-        { categoryName: 'Open', type: 'AGE' },
+        { categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' },
+        { categoryName: 'Open', type: AGE },
       ],
     });
     expect(result.success).toBe(true);
@@ -31,8 +32,8 @@ describe('setTournamentCategories', () => {
     seed();
     let result: any = tournamentEngine.setTournamentCategories({
       categories: [
-        { categoryName: 'U18', type: 'AGE' },
-        { type: 'AGE' }, // missing categoryName
+        { categoryName: 'U18', type: AGE },
+        { type: AGE }, // missing categoryName
         { categoryName: 'NoType' }, // missing type
       ],
     });
@@ -46,11 +47,11 @@ describe('setTournamentCategories', () => {
   it('rejects a removal that orphans an event.category by ageCategoryCode', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
     tournamentRecord.events[0].category = { ageCategoryCode: 'U18' };
-    tournamentRecord.tournamentCategories = [{ categoryName: 'U18', type: 'AGE', ageCategoryCode: 'U18' }];
+    tournamentRecord.tournamentCategories = [{ categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' }];
     tournamentEngine.setState(tournamentRecord);
 
     let result: any = tournamentEngine.setTournamentCategories({
-      categories: [{ categoryName: 'U16', type: 'AGE', ageCategoryCode: 'U16' }],
+      categories: [{ categoryName: 'U16', type: AGE, ageCategoryCode: 'U16' }],
     });
     expect(result.error).toEqual(TOURNAMENT_CATEGORY_IN_USE);
     expect(result.referenced).toContain('U18');
@@ -62,11 +63,11 @@ describe('setTournamentCategories', () => {
   it('rejects a removal that orphans by categoryName', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
     tournamentRecord.events[0].category = { categoryName: 'Foobar' };
-    tournamentRecord.tournamentCategories = [{ categoryName: 'Foobar', type: 'RATING' }];
+    tournamentRecord.tournamentCategories = [{ categoryName: 'Foobar', type: RATING }];
     tournamentEngine.setState(tournamentRecord);
 
     let result: any = tournamentEngine.setTournamentCategories({
-      categories: [{ categoryName: 'Other', type: 'AGE' }],
+      categories: [{ categoryName: 'Other', type: AGE }],
     });
     expect(result.error).toEqual(TOURNAMENT_CATEGORY_IN_USE);
     expect(result.referenced).toContain('Foobar');
@@ -76,13 +77,13 @@ describe('setTournamentCategories', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
     tournamentRecord.events[0].category = { ageCategoryCode: 'U18' };
     tournamentRecord.tournamentCategories = [
-      { categoryName: 'U18', type: 'AGE', ageCategoryCode: 'U18' },
-      { categoryName: 'U16', type: 'AGE', ageCategoryCode: 'U16' },
+      { categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' },
+      { categoryName: 'U16', type: AGE, ageCategoryCode: 'U16' },
     ];
     tournamentEngine.setState(tournamentRecord);
 
     let result: any = tournamentEngine.setTournamentCategories({
-      categories: [{ categoryName: 'U18', type: 'AGE', ageCategoryCode: 'U18' }],
+      categories: [{ categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' }],
     });
     expect(result.success).toBe(true);
 
@@ -102,7 +103,7 @@ describe('setTournamentCategories', () => {
   it('passes when no event has a category assigned', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
     delete tournamentRecord.events[0].category;
-    tournamentRecord.tournamentCategories = [{ categoryName: 'U18', type: 'AGE', ageCategoryCode: 'U18' }];
+    tournamentRecord.tournamentCategories = [{ categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' }];
     tournamentEngine.setState(tournamentRecord);
 
     let result: any = tournamentEngine.setTournamentCategories({ categories: [] });
@@ -118,8 +119,8 @@ describe('setTournamentCategories', () => {
     });
     tournamentRecord.events[0].category = { ageCategoryCode: 'U18' };
     tournamentRecord.tournamentCategories = [
-      { categoryName: 'U18', type: 'AGE', ageCategoryCode: 'U18' },
-      { categoryName: 'U16', type: 'AGE', ageCategoryCode: 'U16' },
+      { categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' },
+      { categoryName: 'U16', type: AGE, ageCategoryCode: 'U16' },
     ];
     tournamentEngine.setState(tournamentRecord);
 

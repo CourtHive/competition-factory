@@ -17,6 +17,7 @@ import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { RotatingPartnerTallyPolicy } from '@Types/rotatingPartnerTally';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import {
   COMPLETED,
   TO_BE_PLAYED,
@@ -77,7 +78,7 @@ function setup(
   };
   const event: Event = {
     eventId: 'e',
-    eventType: 'DOUBLES',
+    eventType: DOUBLES_EVENT,
     drawDefinitions: [drawDefinition],
     entries: ids.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
   };

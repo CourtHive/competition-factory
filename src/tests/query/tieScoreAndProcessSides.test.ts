@@ -2,12 +2,15 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
+import { TEAM_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+
 test('TEAM tournament with completed tieMatchUps exercises evaluateCollectionResult', () => {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
         drawSize: 4,
-        eventType: 'TEAM',
+        eventType: TEAM_EVENT,
         tieFormatName: 'COLLEGE_DEFAULT',
       },
     ],
@@ -32,7 +35,7 @@ test('DOUBLES tournament exercises processSides with individual participants', (
     drawProfiles: [
       {
         drawSize: 8,
-        eventType: 'DOUBLES',
+        eventType: DOUBLES_EVENT,
       },
     ],
     completeAllMatchUps: true,
@@ -61,7 +64,7 @@ test('TEAM tournament with partial completion exercises tie format scoring', () 
     drawProfiles: [
       {
         drawSize: 4,
-        eventType: 'TEAM',
+        eventType: TEAM_EVENT,
         tieFormatName: 'COLLEGE_DEFAULT',
         completionGoal: 5,
       },

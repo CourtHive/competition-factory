@@ -8,6 +8,7 @@ import Ajv from 'ajv';
 // constants
 import { MATCHUP_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 
 /**
  * A matchUp's recording, stream or stats page is a resource of the matchUp, and `onlineResources` is where CODES
@@ -84,7 +85,7 @@ describe('MatchUp.onlineResources', () => {
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
       nonRandom: 1,
       setState: true,
     });

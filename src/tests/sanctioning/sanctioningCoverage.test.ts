@@ -19,6 +19,7 @@ import type {
 } from '@Types/sanctioningTypes';
 
 // constants
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POST_EVENT } from '@Constants/sanctioningConstants';
 
@@ -49,7 +50,7 @@ function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentPro
     tournamentName: 'Coverage Open',
     proposedStartDate: futureDate(20),
     proposedEndDate: futureDate(21),
-    events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: SINGLE_ELIMINATION }],
+    events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, drawType: SINGLE_ELIMINATION }],
     ...overrides,
   };
 }
@@ -169,7 +170,7 @@ describe('validateProposal — allowedEventTypes and allowedGenders', () => {
     const policy: SanctioningPolicy = {
       ...basePolicy,
       requireInsurance: false,
-      tiers: [{ tierName: 'Restrict', tierLevel: 1, allowedEventTypes: ['DOUBLES'] }],
+      tiers: [{ tierName: 'Restrict', tierLevel: 1, allowedEventTypes: [DOUBLES_EVENT] }],
     };
     const proposal = minimalProposal();
     let result: any = validateProposal({
@@ -189,7 +190,7 @@ describe('validateProposal — allowedEventTypes and allowedGenders', () => {
       tiers: [{ tierName: 'GenderTier', tierLevel: 1, allowedGenders: ['FEMALE'] }],
     };
     const proposal = minimalProposal({
-      events: [{ eventName: 'MS', eventType: 'SINGLES', gender: 'MALE' }],
+      events: [{ eventName: 'MS', eventType: SINGLES_EVENT, gender: 'MALE' }],
     });
     let result: any = validateProposal({
       proposal,
@@ -239,7 +240,7 @@ describe('validateProposal — maxQualifyingDrawSize', () => {
       tiers: [{ tierName: 'Q', tierLevel: 1, qualifyingAllowed: true, maxQualifyingDrawSize: 16 }],
     };
     const proposal = minimalProposal({
-      events: [{ eventName: 'S', eventType: 'SINGLES', qualifyingDrawSize: 32 }],
+      events: [{ eventName: 'S', eventType: SINGLES_EVENT, qualifyingDrawSize: 32 }],
     });
     let result: any = validateProposal({
       proposal,
@@ -400,7 +401,7 @@ describe('Engine resolution — explicit sanctioningId and proposal in params', 
     });
     const overrideProposal = minimalProposal({
       totalPrizeMoney: [{ amount: 1, currencyCode: 'USD', unit: 'MAJOR' }],
-      events: [{ eventName: 'S', eventType: 'SINGLES', drawSize: 8 }],
+      events: [{ eventName: 'S', eventType: SINGLES_EVENT, drawSize: 8 }],
     });
     let result: any = sanctioningEngine.getEligibleTiers({
       sanctioningId: 'et-test',
