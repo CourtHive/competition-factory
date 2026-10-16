@@ -1,6 +1,7 @@
 import { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { getMatchUpLocationIndex } from '@Acquire/locateMatchUp';
 import { getMatchUpId } from '@Functions/global/extractors';
 
 // constants and types
@@ -52,9 +53,19 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
   if ((!matchUpDetails || matchUpContextIds) && !schedule)
     return { error: MISSING_VALUE, info: 'schedule is required' };
 
+  const notFoundMatchUpIds: string[] = [];
+  const skippedMatchUpIds: string[] = [];
   const lockedMatchUpIds: string[] = [];
   const warnings: any[] = [];
   let scheduled = 0;
+
+  // B4: the documented detail is { matchUpId, schedule }. A detail without a tournamentId was filtered out of
+  // every tournament and dropped in silence (success, scheduled: 0); its tournament is now found from its
+  // matchUpId, and a detail no tournament holds is reported in notFoundMatchUpIds.
+  const detailTournamentIds = resolveDetailTournamentIds({ tournamentRecords, matchUpDetails });
+  matchUpDetails?.forEach((detail, index) => {
+    if (detail?.matchUpId && !detailTournamentIds[index]) notFoundMatchUpIds.push(detail.matchUpId);
+  });
 
   const { matchUpDependencies } = getMatchUpDependencies({
     tournamentRecords,
@@ -66,7 +77,7 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
       ?.filter((contextIds) => contextIds.tournamentId === tournamentId)
       .map(getMatchUpId);
 
-    const tournamentMatchUpDetails = matchUpDetails?.filter((details) => details?.tournamentId === tournamentId);
+    const tournamentMatchUpDetails = matchUpDetails?.filter((_, index) => detailTournamentIds[index] === tournamentId);
 
     if (matchUpIds?.length || tournamentMatchUpDetails?.length) {
       const result = bulkScheduleTournamentMatchUps({
@@ -85,6 +96,8 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
       });
       if (result.warnings?.length) warnings.push(...result.warnings);
       if (result.lockedMatchUpIds?.length) lockedMatchUpIds.push(...result.lockedMatchUpIds);
+      if (result.skippedMatchUpIds?.length) skippedMatchUpIds.push(...result.skippedMatchUpIds);
+      if (result.notFoundMatchUpIds?.length) notFoundMatchUpIds.push(...result.notFoundMatchUpIds);
       if (result.scheduled) scheduled += result.scheduled;
       if (result.error) return result;
     }
@@ -94,6 +107,27 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
     ...SUCCESS,
     ...(warnings.length ? { warnings } : {}),
     ...(lockedMatchUpIds.length ? { lockedMatchUpIds } : {}),
+    ...(skippedMatchUpIds.length ? { skippedMatchUpIds } : {}),
+    ...(notFoundMatchUpIds.length ? { notFoundMatchUpIds } : {}),
     scheduled,
   };
+}
+
+// The tournament each detail belongs to: the one it names, else the one holding its matchUpId.
+function resolveDetailTournamentIds({ tournamentRecords, matchUpDetails }): (string | undefined)[] {
+  if (!Array.isArray(matchUpDetails)) return [];
+  const records: Tournament[] = Object.values(tournamentRecords);
+  let indexes: { tournamentId: string; locations: Map<string, unknown> }[] | undefined;
+  const holderOf = (matchUpId) => {
+    indexes ??= records.map((tournamentRecord) => ({
+      locations: getMatchUpLocationIndex({ tournamentRecord }).locations,
+      tournamentId: tournamentRecord.tournamentId,
+    }));
+    return indexes.find(({ locations }) => locations.has(matchUpId))?.tournamentId;
+  };
+
+  return matchUpDetails.map((detail) => {
+    if (detail?.tournamentId) return tournamentRecords[detail.tournamentId] ? detail.tournamentId : undefined;
+    return detail?.matchUpId ? holderOf(detail.matchUpId) : undefined;
+  });
 }

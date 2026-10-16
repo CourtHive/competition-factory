@@ -45,7 +45,9 @@ export function bulkScheduleTournamentMatchUps({
   matchUpIds,
   schedule,
 }: BulkScheduleMachUpsArgs): {
+  notFoundMatchUpIds?: string[];
   lockedMatchUpIds?: string[];
+  skippedMatchUpIds?: string[];
   error?: ErrorType;
   scheduled?: number;
   warnings?: any[];
@@ -80,6 +82,15 @@ export function bulkScheduleTournamentMatchUps({
       })?.matchUps ?? [];
   }
 
+  const detailMatchUpIds = matchUpDetails?.map((detail) => detail.matchUpId);
+  const requestedMatchUpIds = new Set<string>(matchUpIds ?? detailMatchUpIds ?? []);
+  const isRequested = (matchUpId: string) => requestedMatchUpIds.has(matchUpId);
+  const { tournamentId } = tournamentRecord;
+
+  // A requested matchUp that is a BYE or completed is deliberately not scheduled (unless the caller opts in), but
+  // it is REPORTED: a caller handed `scheduled: 0` and nothing else cannot tell a skip from a lost request.
+  const skippedMatchUpIds: string[] = [];
+
   // first organize matchUpIds by drawId
   const drawIdMap = inContextMatchUps.reduce((drawIdMap, matchUp) => {
     const { matchUpId, drawId, matchUpStatus } = matchUp;
@@ -92,11 +103,13 @@ export function bulkScheduleTournamentMatchUps({
       } else {
         drawIdMap[drawId] = [matchUpId];
       }
+    } else if ((!matchUp.tournamentId || matchUp.tournamentId === tournamentId) && isRequested(matchUpId)) {
+      skippedMatchUpIds.push(matchUpId);
     }
     return drawIdMap;
   }, {});
 
-  const detailMatchUpIds = matchUpDetails?.map((detail) => detail.matchUpId);
+  const attemptedMatchUpIds = new Set<string>(skippedMatchUpIds);
 
   for (const drawId of Object.keys(drawIdMap)) {
     const { drawDefinition } = findDrawDefinition({
@@ -105,9 +118,8 @@ export function bulkScheduleTournamentMatchUps({
     });
     if (!drawDefinition) continue;
 
-    const drawMatchUpIds = drawIdMap[drawId].filter(
-      (matchUpId) => matchUpIds?.includes(matchUpId) ?? detailMatchUpIds?.includes(matchUpId),
-    );
+    const drawMatchUpIds = drawIdMap[drawId].filter(isRequested);
+    drawMatchUpIds.forEach((matchUpId) => attemptedMatchUpIds.add(matchUpId));
 
     // optimize matchUp retrieval
     const drawMatchUps = allDrawMatchUps({
@@ -144,10 +156,15 @@ export function bulkScheduleTournamentMatchUps({
     }
   }
 
+  // a requested matchUpId this tournament does not hold is reported rather than dropped in silence
+  const notFoundMatchUpIds = [...requestedMatchUpIds].filter((matchUpId) => !attemptedMatchUpIds.has(matchUpId));
+
   return {
     ...SUCCESS,
     ...(warnings.length ? { warnings } : {}),
     ...(lockedMatchUpIds.length ? { lockedMatchUpIds } : {}),
+    ...(skippedMatchUpIds.length ? { skippedMatchUpIds } : {}),
+    ...(notFoundMatchUpIds.length ? { notFoundMatchUpIds } : {}),
     scheduled,
   };
 }

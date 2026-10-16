@@ -495,13 +495,32 @@ When `courtIds` is provided, only courts in the set are considered as placement 
 
 ### bulkScheduleMatchUps
 
-Schedules multiple matchUps at once with provided scheduling details.
+Schedules multiple matchUps at once with provided scheduling details, across every tournament in state.
 
 ```js
-engine.bulkScheduleMatchUps({
-  schedule, // required - array of schedule objects
+const {
+  scheduled, // number of matchUps scheduled
+  lockedMatchUpIds, // present when any - schedule-locked matchUps that were skipped
+  skippedMatchUpIds, // present when any - BYE or completed matchUps that were skipped
+  notFoundMatchUpIds, // present when any - requested matchUpIds no tournament in state holds
+  warnings, // present when any
+} = engine.bulkScheduleMatchUps({
+  matchUpDetails, // array of { matchUpId, schedule, tournamentId? } - each with its own schedule
+  // or
+  matchUpContextIds, // array of { tournamentId, matchUpId } - all given the same `schedule`
+  schedule, // required with matchUpContextIds
+
+  scheduleCompletedMatchUps, // optional boolean - default false: completed matchUps are skipped
+  scheduleByeMatchUps, // optional boolean - default false: BYE matchUps are skipped
+  overrideScheduleLock, // optional boolean
+  removePriorValues, // optional boolean
 });
 ```
+
+A detail's `tournamentId` is optional: when it is absent the tournament holding `matchUpId` is used. Nothing
+requested is dropped in silence: a skipped BYE or completed matchUp is named in `skippedMatchUpIds`, and a
+`matchUpId` that no tournament in state holds (or a detail naming a tournament that is not in state) in
+`notFoundMatchUpIds`.
 
 ---
 
@@ -524,6 +543,10 @@ engine.bulkScheduleTournamentMatchUps({
   removePriorValues, // optional boolean - clear existing scheduling timeItems
 });
 ```
+
+Returns `scheduled` and, when any, `lockedMatchUpIds`, `skippedMatchUpIds` (BYE or completed, unless
+`scheduleByeMatchUps` / `scheduleCompletedMatchUps`) and `notFoundMatchUpIds` (requested ids the tournament does
+not hold), as [`bulkScheduleMatchUps`](#bulkschedulematchups) does.
 
 #### bulkScheduleTournamentMatchUps Examples
 
