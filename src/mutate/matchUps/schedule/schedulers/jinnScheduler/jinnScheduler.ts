@@ -1,4 +1,5 @@
 import { checkDependenciesScheduled } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDependenciesScheduled';
+import { modifyParticipantDayMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantDayLoad';
 import { updateTimeAfterRecovery } from '@Mutate/matchUps/schedule/scheduleMatchUps/updateTimeAfterRecovery';
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { checkDependendantTiming } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDependentTiming';
@@ -29,6 +30,7 @@ export function jinnScheduler({
   dateSchedulingProfiles,
   containedStructureIds,
   matchUpDependencies,
+  participantReachability,
   matchUpDailyLimits,
   excludePriorDates,
   clearScheduleDates,
@@ -94,6 +96,7 @@ export function jinnScheduler({
         matchUpNotBeforeTimes,
         matchUpScheduleTimes,
         matchUpDependencies,
+        participantReachability,
         excludePriorDates,
         clearScheduleDates,
         tournamentRecords,
@@ -119,6 +122,7 @@ export function jinnScheduler({
       overLimitMatchUpIds,
       skippedScheduleTimes,
       matchUpDependencies,
+      participantReachability,
       matchUpDailyLimits,
       allDateMatchUpIds,
       requestConflicts,
@@ -210,16 +214,6 @@ function initializeDateTracking({
   requestConflicts[scheduleDate] = [];
 }
 
-function bumpLimits(relevantParticipantIds, matchUpType, individualParticipantProfiles) {
-  relevantParticipantIds.forEach((participantId) => {
-    const counters = individualParticipantProfiles[participantId].counters;
-    if (counters[matchUpType]) counters[matchUpType] += 1;
-    else counters[matchUpType] = 1;
-    if (counters[TOTAL]) counters[TOTAL] += 1;
-    else counters[TOTAL] = 1;
-  });
-}
-
 function tryScheduleMatchUp({
   checkPotentialRequestConflicts,
   recoveryTimeDeferredMatchUpIds,
@@ -232,6 +226,7 @@ function tryScheduleMatchUp({
   overLimitMatchUpDetails,
   overLimitMatchUpIds,
   matchUpDependencies,
+  participantReachability,
   matchUpDailyLimits,
   allDateMatchUpIds,
   requestConflicts,
@@ -243,8 +238,8 @@ function tryScheduleMatchUp({
 }) {
   const { matchUpId, matchUpType } = matchUp;
 
-  const { participantIdsAtLimit, relevantParticipantIds } = checkDailyLimits({
-    matchUpPotentialParticipantIds,
+  const { participantIdsAtLimit } = checkDailyLimits({
+    reachability: participantReachability,
     individualParticipantProfiles,
     matchUpDailyLimits,
     matchUp,
@@ -293,7 +288,7 @@ function tryScheduleMatchUp({
   const { enoughTime, blockingParticipantIds, notBeforeTime } = checkRecoveryTime({
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
-    matchUpDependencies,
+    reachability: participantReachability,
     scheduleTime,
     details,
     matchUp,
@@ -328,16 +323,23 @@ function tryScheduleMatchUp({
     return false;
   }
 
-  bumpLimits(relevantParticipantIds, matchUpType, individualParticipantProfiles);
+  modifyParticipantDayMatchUps({
+    individualParticipantProfiles,
+    reachability: participantReachability,
+    matchUp,
+    value: 1,
+  });
 
   const recoveryMinutes = details.minutesMap?.[matchUpId]?.recoveryMinutes;
+  const typeChangeRecoveryMinutes = details.minutesMap?.[matchUpId]?.typeChangeRecoveryMinutes;
 
   updateTimeAfterRecovery({
+    typeChangeRecoveryMinutes,
     matchUpPotentialParticipantIds,
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
     averageMatchUpMinutes,
-    matchUpDependencies,
+    reachability: participantReachability,
     recoveryMinutes,
     scheduleTime,
     matchUp,
@@ -362,6 +364,7 @@ function scheduleVenueRounds({
   overLimitMatchUpIds,
   skippedScheduleTimes,
   matchUpDependencies,
+  participantReachability,
   matchUpDailyLimits,
   allDateMatchUpIds,
   requestConflicts,
@@ -399,6 +402,7 @@ function scheduleVenueRounds({
             overLimitMatchUpDetails,
             overLimitMatchUpIds,
             matchUpDependencies,
+            participantReachability,
             matchUpDailyLimits,
             allDateMatchUpIds,
             requestConflicts,

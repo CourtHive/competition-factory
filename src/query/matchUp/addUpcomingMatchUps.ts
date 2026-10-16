@@ -12,8 +12,8 @@ import {
 } from '@Query/matchUp/positionTargets';
 
 // constants
+import { BYE, completedMatchUpStatuses, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';
-import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -172,6 +172,12 @@ function addPotentialParticipants({
 
   const participants = getMatchUpParticipants(inContextMatchUp);
   if (!participants.length) return;
+
+  // a decided matchUp has already placed whoever it sends on; one it has not placed (a loser an FMLC feed keeps out)
+  // is going nowhere, and a BYE has no loser at all: none of them is a potential participant of a target
+  const { matchUpStatus, winningSide } = inContextMatchUp;
+  const decided = !!winningSide || (!!matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus));
+  if (decided || matchUpStatus === BYE) return;
 
   const winnerParticipantIds = getParticipantIds(winnerMatchUp?.sides);
   const loserParticipantIds = getParticipantIds(loserMatchUp?.sides);
