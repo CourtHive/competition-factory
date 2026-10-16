@@ -98,9 +98,11 @@ function evaluateCourt({
     matchUp,
   });
 
+  // this court is refused; the best court found so far stands (returning false replaced the reduce's accumulator, and
+  // the next court threw writing to it: V2)
   if (conflicts?.length) {
     schedulingConflicts.push(...conflicts);
-    return false;
+    return courtTime;
   }
 
   bumpLimits(matchUp);
@@ -569,6 +571,11 @@ type V2Scheduler = {
   dryRun?: boolean;
 };
 
+/**
+ * @deprecated since 7.15.0, with `scheduleProfileRounds({ pro: true })`; removed at the next major. It keeps working
+ * until then, and its known defects are not being fixed (only the TypeError on a request conflict is). Its distinct
+ * behaviour, a court and a time for each matchUp in one pass, is a candidate for a later scheduling pipeline.
+ */
 export function v2Scheduler({
   schedulingProfileModifications,
   checkPotentialRequestConflicts,
