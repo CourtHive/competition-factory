@@ -1,3 +1,5 @@
+import { checkParticipantProfileInitialization } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkParticipantProfileInitialization';
+import { checkRecoveryTime } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRecoveryTime';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { timeStringMinutes } from '@Tools/dateTime';
 import competitionEngine from '@Engines/syncEngine';
@@ -103,4 +105,108 @@ it.each([
   expect(scheduled.schedule?.scheduledTime).toBeDefined();
   // a 90 minute matchUp starting at 10:00 would overlap the request window
   expect(scheduled.schedule?.scheduledTime?.slice(-5)).not.toEqual('10:00');
+});
+
+it('honours a DO_NOT_SCHEDULE request of a person in a DOUBLES pair that can only potentially reach the matchUp', () => {
+  // the potential participants of a DOUBLES matchUp are pairs, and a pair has no person: R4
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ startTime: '08:00', endTime: '20:00', courtsCount: 2 }],
+    drawProfiles: [{ drawSize: 4, eventType: DOUBLES }],
+    endDate: '2025-01-03',
+    startDate: scheduleDate,
+    setState: true,
+  });
+  const matchUps = competitionEngine.allCompetitionMatchUps({ inContext: true, nextMatchUps: true }).matchUps;
+  const final = matchUps.find(({ roundNumber }) => roundNumber === 2);
+  const pair = final.potentialParticipants.flat()[0];
+  const { personId } = pair.individualParticipants[0].person;
+
+  let result: any = competitionEngine.addPersonRequests({
+    requests: [{ date: scheduleDate, startTime: '08:00', endTime: '14:00', requestType: DO_NOT_SCHEDULE }],
+    personId,
+  });
+  expect(result.success).toEqual(true);
+
+  result = competitionEngine.scheduleMatchUps({
+    matchUpIds: [final.matchUpId],
+    averageMatchUpMinutes: 90,
+    scheduleDate,
+  });
+  expect(result.success).toEqual(true);
+
+  const scheduledTime = competitionEngine
+    .allCompetitionMatchUps({ inContext: true })
+    .matchUps.find(({ matchUpId }) => matchUpId === final.matchUpId).schedule?.scheduledTime;
+  expect(scheduledTime).toBeDefined();
+  // nothing may overlap 08:00–14:00 for that person
+  expect(timeStringMinutes(scheduledTime.slice(-5))).toBeGreaterThanOrEqual(timeStringMinutes('14:00'));
+});
+
+it.each([
+  [30, '23:00'],
+  [120, undefined],
+])('a recovery of %s minutes after a 22:00 matchUp leaves the next round at %s', (recoveryMinutes, expected) => {
+  // R5: a recovery ending past midnight wrapped to 00:30 and read as already over, so R2 was placed at 23:00
+  const venueId = 'lateVenue';
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    policyDefinitions: {
+      [POLICY_TYPE_SCHEDULING]: {
+        defaultTimes: {
+          recoveryTimes: [{ minutes: { default: recoveryMinutes } }],
+          averageTimes: [{ minutes: { default: 30 } }],
+        },
+      },
+    },
+    venueProfiles: [{ startTime: '22:00', endTime: '23:59', courtsCount: 2, venueId }],
+    drawProfiles: [{ drawSize: 4 }],
+    endDate: '2025-01-03',
+    startDate: scheduleDate,
+    setState: true,
+  });
+  const { tournamentId } = tournamentRecord;
+  const { eventId, drawDefinitions } = tournamentRecord.events[0];
+  const { drawId, structures } = drawDefinitions[0];
+  for (const roundNumber of [1, 2]) {
+    const result: any = competitionEngine.addSchedulingProfileRound({
+      round: { tournamentId, eventId, drawId, structureId: structures[0].structureId, roundNumber },
+      scheduleDate,
+      venueId,
+    });
+    expect(result.success).toEqual(true);
+  }
+
+  const result: any = competitionEngine.scheduleProfileRounds({ scheduleDates: [scheduleDate], periodLength: 30 });
+  expect(result.success).toEqual(true);
+
+  const timeOf = (roundNumber) =>
+    competitionEngine
+      .allCompetitionMatchUps({ inContext: true })
+      .matchUps.filter((matchUp) => matchUp.roundNumber === roundNumber)
+      .map(({ schedule }) => schedule?.scheduledTime);
+  expect(timeOf(1)).toEqual(['22:00', '22:00']);
+  expect(timeOf(2)).toEqual([expected]);
+});
+
+it('builds the window of a matchUp being placed from its new time, not from a stored endTime', () => {
+  // R6: a matchUp re-placed with a stored endTime got a window that ended before it started, so a 14:00 placement
+  // was not checked against a 14:30 booking of the same participant
+  const individualParticipantProfiles: any = {};
+  checkParticipantProfileInitialization({ individualParticipantProfiles, participantId: 'A' });
+  individualParticipantProfiles.A.timeAfterRecovery = '16:00';
+  individualParticipantProfiles.A.bookings.push({ scheduleTime: '14:30', timeAfterRecovery: '16:00' });
+
+  const result = checkRecoveryTime({
+    reachability: {
+      matchUps: { M: { certain: ['A'], potential: [], nearPotential: [] } },
+      upstream: {},
+      linkedTargets: {},
+    },
+    matchUp: { matchUpId: 'M', drawId: 'draw', matchUpType: SINGLES, schedule: { endTime: '09:00' } } as any,
+    details: { minutesMap: { M: { averageMinutes: 90, recoveryMinutes: 30 } } },
+    matchUpNotBeforeTimes: {},
+    individualParticipantProfiles,
+    scheduleTime: '14:00',
+  });
+  expect(result.enoughTime).toEqual(false);
+  expect(result.blockingParticipantIds).toEqual(['A']);
 });

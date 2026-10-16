@@ -1,7 +1,8 @@
-import { addMinutesToTimeString, extractTime, minutesDifference, timeToDate } from '@Tools/dateTime';
 import { getReachableParticipantIds, ParticipantReachability } from './getParticipantReachability';
 import { checkParticipantProfileInitialization } from './checkParticipantProfileInitialization';
 import { analyzeScheduleOverlap } from './analyzeScheduleOverlap';
+import { minutesDifference, timeToDate } from '@Tools/dateTime';
+import { addMinutesWithinDay } from './timeWithinDay';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { ensureInt } from '@Tools/ensureInt';
 
@@ -28,11 +29,10 @@ export function checkRecoveryTime({
   const recoveryMinutes = ensureInt(minutes?.recoveryMinutes || 0);
   const typeChangeRecoveryMinutes = ensureInt(minutes?.typeChangeRecoveryMinutes || 0) || recoveryMinutes;
 
-  const endTime = extractTime(matchUp?.schedule?.endTime);
+  // the window proposed starts at scheduleTime; a stored endTime records an earlier play of this matchUp and says
+  // nothing about this placement (R6: it made the window end before it started)
   const afterRecovery = (minutesOfRecovery: number) =>
-    endTime
-      ? addMinutesToTimeString(endTime, minutesOfRecovery)
-      : addMinutesToTimeString(scheduleTime, averageMatchUpMinutes + minutesOfRecovery);
+    addMinutesWithinDay(scheduleTime, averageMatchUpMinutes + minutesOfRecovery);
   const timeAfterRecovery = afterRecovery(recoveryMinutes);
   const typeChangeTimeAfterRecovery = afterRecovery(typeChangeRecoveryMinutes);
 

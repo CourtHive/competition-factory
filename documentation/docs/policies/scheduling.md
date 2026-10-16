@@ -425,16 +425,26 @@ const participantLimitsPolicy = {
 ### Retrieving Daily Limits
 
 ```js
-const { matchUpDailyLimits } = tournamentEngine.getMatchUpDailyLimits();
+const { matchUpDailyLimits, dailyLimitOverrides } = tournamentEngine.getMatchUpDailyLimits();
 
 console.log(matchUpDailyLimits);
 // { SINGLES: 2, DOUBLES: 2, total: 3 }   — when a scheduling policy is attached
 // undefined                              — when none is
+
+console.log(dailyLimitOverrides);
+// {
+//   tournaments: { [tournamentId]: { SINGLES: 2, DOUBLES: 2, total: 3 } }, — each tournament's own limits
+//   participants: { 'injured-player-id': { SINGLES: 1, total: 1 } },      — the policy's matchUpDailyLimits
+// }
 ```
 
-The method returns the **tournament-wide** limits and takes no `participantId`; per-participant
-overrides live in the policy's `matchUpDailyLimits` array and are applied by the scheduler, not
-returned here. In a multi-tournament context it accepts an optional `tournamentId`.
+`matchUpDailyLimits` is the **tournament-wide** limits (with several tournaments loaded, the last one's); the method
+takes no `participantId`. In a multi-tournament context it accepts an optional `tournamentId`.
+
+`scheduleProfileRounds` applies to each participant the limits of the matchUp's own tournament, with that
+participant's override from the policy's `matchUpDailyLimits` array on top: an override replaces only the keys it
+names, so `{ participantId, SINGLES: 1 }` keeps the tournament's `DOUBLES` and `total`. `scheduleMatchUps`,
+`proAutoSchedule` and `scheduleProfileGrid` apply only the `matchUpDailyLimits` they are given.
 
 :::caution `undefined` means "no limit configured" — do not substitute your own
 

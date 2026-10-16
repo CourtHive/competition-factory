@@ -125,6 +125,8 @@ The highest level auto-scheduling method is `engine.scheduleProfileRounds`.
       path cannot both be taken. Potential bookings are checked against `matchUps` in other draws
     - Each booking keeps both its recovery end and its type-change recovery end (`SINGLES_DOUBLES` /
       `DOUBLES_SINGLES`); a `matchUp` of the other `matchUpType` must clear the type-change end, in either order
+    - A recovery that would end after midnight ends the participant's day: nothing else is scheduled for them on
+      that date
 14. Filter out `matchUps` which are not appropriate for scheduling
 15. Filter out `matchUps` which include participants who have reached daily limits (see
     [Daily Limits](../policies/scheduling.md#daily-limits) for how potential matchUps are counted)
