@@ -1,7 +1,8 @@
 import { getReachableParticipantIds, ParticipantReachability } from './getParticipantReachability';
-import { addMinutesToTimeString, extractTime } from '@Tools/dateTime';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { processNextMatchUps } from './processNextMatchUps';
+import { addMinutesWithinDay } from './timeWithinDay';
+import { extractTime } from '@Tools/dateTime';
 import { ensureInt } from '@Tools/ensureInt';
 import {
   addParticipantPotentialRecovery,
@@ -35,14 +36,14 @@ export function updateTimeAfterRecovery({
 }: UpdateTimeAfterRecoveryArgs) {
   const endTime = extractTime(matchUp?.schedule?.endTime);
   const timeAfterRecovery = endTime
-    ? addMinutesToTimeString(endTime, ensureInt(recoveryMinutes))
-    : addMinutesToTimeString(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(recoveryMinutes));
+    ? addMinutesWithinDay(endTime, ensureInt(recoveryMinutes))
+    : addMinutesWithinDay(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(recoveryMinutes));
 
   const typeChangeTimeAfterRecovery =
     typeChangeRecoveryMinutes &&
     (endTime
-      ? addMinutesToTimeString(extractTime(endTime), ensureInt(typeChangeRecoveryMinutes))
-      : addMinutesToTimeString(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(typeChangeRecoveryMinutes)));
+      ? addMinutesWithinDay(extractTime(endTime), ensureInt(typeChangeRecoveryMinutes))
+      : addMinutesWithinDay(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(typeChangeRecoveryMinutes)));
   // only participants already placed in the matchUp's sides are certain to play it; a participant placed in a matchUp
   // that feeds it, whatever date that matchUp is on, is a potential booking, because a winner path and a loser path
   // cannot both be taken
@@ -78,6 +79,7 @@ export function updateTimeAfterRecovery({
   });
 
   processNextMatchUps({
+    linkedTargetIds: reachability.linkedTargets?.[matchUp.matchUpId],
     matchUpPotentialParticipantIds,
     matchUpNotBeforeTimes,
     timeAfterRecovery,

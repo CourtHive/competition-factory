@@ -1,4 +1,3 @@
-import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
 import { getParticipantClashes } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantClashes';
 import { matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
@@ -7,6 +6,10 @@ import { courtTimeOrderConflicts } from './courtTimeOrder';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { generateRange, unique } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
+import {
+  getParticipantReachability,
+  getReachableParticipantIds,
+} from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
 
 // constants and types
 import { ErrorType, MISSING_CONTEXT, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
@@ -347,61 +350,36 @@ export function proConflicts({
     }
 
     // Pass A: Potential Participant Recovery Conflicts
-    // Detects when deep-propagated participantIds overlap within a row or between adjacent rows
-    // Note: deps[matchUpId].participantIds can contain duplicates (e.g., RR players appear
-    // once per group match), so we use Sets to map each participant to unique matchUpIds.
-    const buildDeepParticipantMap = (row: Profile) => {
-      const directParticipantIds = new Set(row.participantIds);
-      const deepMap: { [key: string]: Set<string> } = {};
-      for (const matchUpId of row.matchUpIds) {
-        const depParticipantIds = deps[matchUpId]?.participantIds ?? [];
-        for (const id of depParticipantIds) {
-          if (!directParticipantIds.has(id)) {
-            if (!deepMap[id]) deepMap[id] = new Set();
-            deepMap[id].add(matchUpId);
-          }
-        }
+    // Participants who can reach two matchUps of a row (or of adjacent rows) however many rounds away, other than the
+    // row's own participants (reported above). A feeder's winner and loser paths are alternatives, and a participant
+    // eliminated by a completed matchUp reaches nothing (see getParticipantClashes and getParticipantReachability).
+    const rowParticipantIds = (row: Profile) =>
+      new Set(row.matchUpIds.flatMap((matchUpId) => getReachableParticipantIds(reachability, matchUpId).near));
+    const warnDeep = (matchUpIds: string[], otherMatchUpIds?: string[], excludeParticipantIds?: Set<string>) => {
+      const { clashingMatchUpIds } = getParticipantClashes({
+        excludeParticipantIds,
+        otherMatchUpIds,
+        depth: 'all',
+        reachability,
+        matchUpIds,
+        drawIdOf,
+      });
+      for (const matchUpId of clashingMatchUpIds) {
+        annotate(
+          matchUpId,
+          SCHEDULE_WARNING,
+          CONFLICT_POTENTIAL_PARTICIPANTS,
+          clashingMatchUpIds.filter((id) => id !== matchUpId),
+        );
       }
-      return deepMap;
     };
 
     rowProfiles.forEach((row, rowIndex) => {
-      const deepParticipantMap = buildDeepParticipantMap(row);
-
-      // Within-row: participants appearing in deep deps of multiple matchUps
-      for (const [, matchUpIdSet] of Object.entries(deepParticipantMap)) {
-        if (matchUpIdSet.size > 1) {
-          const matchUpIds = [...matchUpIdSet];
-          for (const matchUpId of matchUpIds) {
-            annotate(
-              matchUpId,
-              SCHEDULE_WARNING,
-              CONFLICT_POTENTIAL_PARTICIPANTS,
-              matchUpIds.filter((id) => id !== matchUpId),
-            );
-          }
-        }
-      }
-
-      // Adjacent row check: deep participantIds overlapping with previous row's deep participantIds
+      warnDeep(row.matchUpIds, undefined, rowParticipantIds(row));
       if (rowIndex > 0) {
         const previousRow = rowProfiles[rowIndex - 1];
-        const previousDeepMap = buildDeepParticipantMap(previousRow);
-
-        // Find overlapping deep participant IDs between rows
-        for (const [participantId, currentMatchUpIdSet] of Object.entries(deepParticipantMap)) {
-          if (previousDeepMap[participantId]) {
-            const involvedMatchUpIds = [...new Set([...currentMatchUpIdSet, ...previousDeepMap[participantId]])];
-            for (const matchUpId of involvedMatchUpIds) {
-              annotate(
-                matchUpId,
-                SCHEDULE_WARNING,
-                CONFLICT_POTENTIAL_PARTICIPANTS,
-                involvedMatchUpIds.filter((id) => id !== matchUpId),
-              );
-            }
-          }
-        }
+        const direct = new Set([...rowParticipantIds(row), ...rowParticipantIds(previousRow)]);
+        warnDeep(row.matchUpIds, previousRow.matchUpIds, direct);
       }
     });
 

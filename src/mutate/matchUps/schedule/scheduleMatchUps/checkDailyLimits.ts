@@ -5,11 +5,38 @@ import { getParticipantDayLoads } from './participantDayLoad';
 // constants
 import { TOTAL } from '@Constants/scheduleConstants';
 
+export type DailyLimits = { [counterName: string]: number };
+export type DailyLimitOverrides = {
+  participants?: { [participantId: string]: DailyLimits }; // a policy's per-participant matchUpDailyLimits
+  tournaments?: { [tournamentId: string]: DailyLimits }; // each tournament's own defaults
+};
+
+/**
+ * The limits that apply to one participant in one matchUp: the defaults of the matchUp's own tournament (or
+ * `matchUpDailyLimits` when the tournament has none listed), with the participant's override, key by key, on top.
+ */
+export function resolveDailyLimits({
+  dailyLimitOverrides,
+  matchUpDailyLimits,
+  participantId,
+  tournamentId,
+}: {
+  dailyLimitOverrides?: DailyLimitOverrides;
+  matchUpDailyLimits?: DailyLimits;
+  participantId: string;
+  tournamentId?: string;
+}): DailyLimits {
+  const tournamentLimits = tournamentId ? dailyLimitOverrides?.tournaments?.[tournamentId] : undefined;
+  const defaults = tournamentLimits ?? matchUpDailyLimits ?? {};
+  return { ...defaults, ...dailyLimitOverrides?.participants?.[participantId] };
+}
+
 type CheckDailyLimitsArgs = {
   matchUpDailyLimits?: { [key: string]: number };
+  dailyLimitOverrides?: DailyLimitOverrides;
   individualParticipantProfiles: IndividualParticipantProfiles;
   reachability: ParticipantReachability;
-  matchUp: { matchUpId: string; drawId: string; matchUpType?: string };
+  matchUp: { matchUpId: string; drawId: string; matchUpType?: string; tournamentId?: string };
 };
 
 /**
@@ -20,6 +47,7 @@ type CheckDailyLimitsArgs = {
 export function checkDailyLimits({
   individualParticipantProfiles,
   matchUpDailyLimits = {},
+  dailyLimitOverrides,
   reachability,
   matchUp,
 }: CheckDailyLimitsArgs) {
@@ -33,8 +61,14 @@ export function checkDailyLimits({
       reachability,
       participantId,
     });
+    const limits = resolveDailyLimits({
+      tournamentId: matchUp.tournamentId,
+      dailyLimitOverrides,
+      matchUpDailyLimits,
+      participantId,
+    });
     return [matchUpType, TOTAL].some((counterName) => {
-      const dailyLimit = counterName && matchUpDailyLimits[counterName];
+      const dailyLimit = counterName && limits[counterName];
       return !!dailyLimit && (loads[counterName as string] ?? 0) > dailyLimit;
     });
   });

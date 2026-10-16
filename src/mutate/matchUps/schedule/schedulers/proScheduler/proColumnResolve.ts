@@ -1,3 +1,5 @@
+import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
+import { getParticipantClashes } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantClashes';
 import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { validMatchUps } from '@Validators/validMatchUp';
@@ -36,7 +38,8 @@ import { HydratedMatchUp } from '@Types/hydrated';
  * reported in `unresolvable`, placed best-effort, and never forced.
  *
  * Folds both `CONFLICT_PARTICIPANTS` and `CONFLICT_POTENTIAL_PARTICIPANTS`
- * by using each matchUp's deep dependency participantIds as its conflict key.
+ * by keeping off a row any matchUp that shares a participant, at any depth, with a matchUp already on it, using the
+ * same rule as `proConflicts` (`getParticipantClashes`: a feeder's winner and loser paths are alternatives).
  * Every normally-placed row is therefore conflict-free by construction and a
  * force-placed (deadlock-broken) matchUp is alone on its row — so callers can
  * confirm the result by re-running `proConflicts`, which is the canonical
@@ -70,12 +73,14 @@ export function proColumnResolve({ tournamentRecords, matchUps, scheduledDate, c
   );
   if (!onGrid.length) return { success: true, resolved: [], unresolvable: [] };
 
-  const drawIds = unique(matchUps.map((m) => m.drawId));
   const deps = getMatchUpDependencies({
+    drawIds: unique(matchUps.map((m) => m.drawId)),
     includeParticipantDependencies: true,
     tournamentRecords,
-    drawIds,
   }).matchUpDependencies;
+  const reachability = getParticipantReachability({ matchUpDependencies: deps, matchUps });
+  const drawIds = new Map(matchUps.map(({ matchUpId, drawId }) => [matchUpId, drawId]));
+  const clashes = { reachability, drawIdOf: (matchUpId: string) => drawIds.get(matchUpId) };
 
   const byId: Record<string, HydratedMatchUp> = {};
   for (const m of onGrid) byId[m.matchUpId] = m;
@@ -91,7 +96,7 @@ export function proColumnResolve({ tournamentRecords, matchUps, scheduledDate, c
   for (const courtId of courtIdList) columns[courtId] = columns[courtId].toSorted(columnComparator);
 
   const unresolvable: { matchUpId: string; reason: string; sourceMatchUpIds: string[] }[] = [];
-  const rowOf = assignRows({ columns, courtIdList, deps, gridIds, unresolvable });
+  const rowOf = assignRows({ columns, courtIdList, deps, clashes, gridIds, unresolvable });
 
   addChronologyIssues({ onGrid, deps, gridIds, byId, unresolvable });
 
@@ -137,9 +142,15 @@ function sourcesSatisfied(
   return sources.every((id: string) => !gridIds.has(id) || (rowOf[id] !== undefined && rowOf[id] < row));
 }
 
-function participantsClash(matchUp: HydratedMatchUp, rowParticipants: Set<string>, deps): boolean {
-  const pids = deps[matchUp.matchUpId]?.participantIds ?? [];
-  return pids.some((id: string) => rowParticipants.has(id));
+function participantsClash(matchUp: HydratedMatchUp, rowMatchUpIds: string[], clashes): boolean {
+  if (!rowMatchUpIds.length) return false;
+  const { clashingMatchUpIds } = getParticipantClashes({
+    otherMatchUpIds: rowMatchUpIds,
+    matchUpIds: [matchUp.matchUpId],
+    depth: 'all',
+    ...clashes,
+  });
+  return clashingMatchUpIds.length > 0;
 }
 
 function blockingSources(
@@ -156,7 +167,7 @@ function blockingSources(
 // Greedy court-locked row sweep. Blank cells (gaps) are the "spacing". A row
 // that places nothing is a deadlock (a hand-made ordering cycle); break it by
 // force-placing the earliest stalled head and recording it as unresolvable.
-function assignRows({ columns, courtIdList, deps, gridIds, unresolvable }): Record<string, number> {
+function assignRows({ columns, courtIdList, deps, clashes, gridIds, unresolvable }): Record<string, number> {
   const ptr: Record<string, number> = Object.fromEntries(courtIdList.map((c: string) => [c, 0]));
   const rowOf: Record<string, number> = {};
   const remaining = () => courtIdList.some((c: string) => ptr[c] < columns[c].length);
@@ -164,17 +175,17 @@ function assignRows({ columns, courtIdList, deps, gridIds, unresolvable }): Reco
   let row = 0;
   while (remaining()) {
     row += 1;
-    const rowParticipants = new Set<string>();
+    const rowMatchUpIds: string[] = [];
     let placedThisRow = 0;
 
     for (const courtId of courtIdList) {
       const matchUp = columns[courtId][ptr[courtId]];
       if (!matchUp) continue;
       if (!sourcesSatisfied(matchUp, row, rowOf, deps, gridIds)) continue;
-      if (participantsClash(matchUp, rowParticipants, deps)) continue;
+      if (participantsClash(matchUp, rowMatchUpIds, clashes)) continue;
 
       rowOf[matchUp.matchUpId] = row;
-      for (const pid of deps[matchUp.matchUpId]?.participantIds ?? []) rowParticipants.add(pid);
+      rowMatchUpIds.push(matchUp.matchUpId);
       ptr[courtId] += 1;
       placedThisRow += 1;
     }

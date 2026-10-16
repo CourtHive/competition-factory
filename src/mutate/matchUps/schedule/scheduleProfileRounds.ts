@@ -138,7 +138,7 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
   // who can play each matchUp, across dates: the basis of recovery bookings and daily limits
   const participantReachability = getParticipantReachability({ matchUpDependencies, matchUps: matchUps ?? [] });
 
-  const { matchUpDailyLimits } = getMatchUpDailyLimits({ tournamentRecords });
+  const { matchUpDailyLimits, dailyLimitOverrides } = getMatchUpDailyLimits({ tournamentRecords });
 
   const { personRequests } = getPersonRequests({
     requestType: DO_NOT_SCHEDULE,
@@ -166,6 +166,7 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
     containedStructureIds,
     matchUpDependencies,
     matchUpDailyLimits,
+    dailyLimitOverrides,
     excludePriorDates,
     clearScheduleDates,
     tournamentRecords,

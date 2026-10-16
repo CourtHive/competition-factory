@@ -28,7 +28,14 @@ export function checkRequestConflicts({
 }) {
   const personIds = getIndividualParticipants(matchUp).map(({ person }) => person?.personId);
   if (potentials) {
-    const potentialPersonIds = (matchUp?.potentialParticipants ?? []).flat().map(({ person }) => person?.personId);
+    // a DOUBLES potential is a pair: its people are its individual participants (R4)
+    const potentialPersonIds = (matchUp?.potentialParticipants ?? [])
+      .flat()
+      .flatMap((participant) =>
+        participant?.individualParticipants?.length
+          ? participant.individualParticipants.map((individual) => individual?.person?.personId)
+          : [participant?.person?.personId],
+      );
     personIds.push(...potentialPersonIds);
   }
 
