@@ -7,6 +7,7 @@ import { processEventEntry } from '@Query/participant/processEventEntry';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { getPublishState } from '@Query/publishing/getPublishState';
+import { eventWithDerivedGoesTo } from '@Query/matchUps/addGoesTo';
 import { addScheduleItem } from '@Query/matchUps/addScheduleItem';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
@@ -193,7 +194,7 @@ function processEvent({
   matchUps,
 }) {
   const {
-    drawDefinitions = [],
+    drawDefinitions: storedDrawDefinitions = [],
     extensions = [],
     wheelchairClass,
     eventType,
@@ -268,7 +269,19 @@ function processEvent({
   }
   const eventPublishedSeeding = eventsPublishStatuses?.[eventId]?.publishedSeeding;
 
-  if (withDraws || withRankingProfile || withSeeding) {
+  // Draw entries are read with each draw's structures in `structureSort` order, and everything after them reads that
+  // order too. It was the STORED array, sorted in place: a query that reordered the record (P54). Sorted here on a
+  // view of the draw, so what follows reads the same order and the record keeps its own.
+  const readsDrawEntries = withDraws || withRankingProfile || withSeeding;
+  const drawDefinitions = readsDrawEntries
+    ? storedDrawDefinitions.map((drawDefinition) => ({
+        ...drawDefinition,
+        structures: [...(drawDefinition.structures ?? [])].sort((a, b) => structureSort(a, b)),
+      }))
+    : storedDrawDefinitions;
+  const readEvent = readsDrawEntries ? { ...event, drawDefinitions } : event;
+
+  if (readsDrawEntries) {
     const drawIds = unique([...drawDefinitions.map(getDrawId), ...flights.map(getDrawId)]);
 
     for (const drawId of drawIds) {
@@ -312,7 +325,8 @@ function processEvent({
         matchUpFilters,
         contextProfile,
         nextMatchUps,
-        event,
+        // a draw that does not store its edges is read from a copy carrying them; the record is never written
+        event: eventWithDerivedGoesTo(readEvent),
       })?.matchUps ?? [];
 
     for (const matchUp of eventMatchUps) {
@@ -427,8 +441,8 @@ function processDrawEntries({
   const entries = drawDefinition?.entries || flight?.drawEntries || [];
   const flightNumber = flight?.flightNumber;
 
+  // already in structureSort order: processEvent reads a sorted view of the draw
   const orderedStructureIds = (drawDefinition?.structures ?? [])
-    .sort((a, b) => structureSort(a, b))
     .map(({ structureId, structures }) => {
       return [structureId, ...(structures ?? []).map(({ structureId }) => structureId)];
     })
