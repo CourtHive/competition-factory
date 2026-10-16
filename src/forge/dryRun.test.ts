@@ -5,12 +5,15 @@ import tournamentEngine from '@Engines/syncEngine';
 import { explain } from './explain';
 import { dryRun } from './dryRun';
 
+// constants
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+
 describe('dryRun', () => {
   beforeEach(() => {
     // Generate a small tournament and load it into engine state. Each test
     // re-seeds so they're independent.
     mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'SINGLES' }],
+      drawProfiles: [{ drawSize: 4, eventType: SINGLES_EVENT }],
       setState: true,
     });
   });
@@ -135,7 +138,7 @@ describe('dryRun', () => {
 describe('explain', () => {
   beforeEach(() => {
     mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'SINGLES' }],
+      drawProfiles: [{ drawSize: 4, eventType: SINGLES_EVENT }],
       setState: true,
     });
   });

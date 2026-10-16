@@ -5,16 +5,16 @@
 
 import { getIndividualParticipantIds } from '@Query/matchUp/getIndividualParticipantIds';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
+import { derivedGoesToOrLinkError, GoesToMap } from '@Query/matchUps/addGoesTo';
 import { allCompetitionMatchUps } from './getAllCompetitionMatchUps';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { allDrawMatchUps } from './getAllDrawMatchUps';
-import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_ID, MISSING_MATCHUPS, MISSING_MATCHUP_IDS } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Tournament } from '@Types/tournamentTypes';
-import { POSITION } from '@Constants/drawDefinitionConstants';
+import { POSITION, WINNER } from '@Constants/drawDefinitionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -68,6 +68,11 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
   }, []);
 
   const positionLinks = allLinks.filter(({ linkType }) => linkType === POSITION);
+  // a WINNER link between two structures feeds the winners of a qualifying round into qualifier positions
+  const qualifyingLinks = allLinks.filter(
+    ({ linkType, source, target }) =>
+      linkType === WINNER && source?.structureId && target?.structureId && source.structureId !== target.structureId,
+  );
 
   let matchUps: HydratedMatchUp[] | undefined = targetMatchUps;
 
@@ -81,6 +86,20 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
       matchUps,
     });
   }
+
+  // the matchUps whose winners can fill a qualifier position of this matchUp
+  const getQualifyingSourceMatchUpIds = (matchUp: HydratedMatchUp): string[] => {
+    if (!qualifyingLinks.length || !matchUp.sides?.some((side) => side?.qualifier)) return [];
+    const { structureId, roundNumber } = matchUp;
+    return qualifyingLinks
+      .filter(({ target }) => target.structureId === structureId && (target.roundNumber ?? 1) === roundNumber)
+      .flatMap(({ source }) =>
+        (matchUps ?? [])
+          .filter((sourceMatchUp) => sourceMatchUp.structureId === source.structureId)
+          .filter((sourceMatchUp) => !source.roundNumber || sourceMatchUp.roundNumber === source.roundNumber)
+          .map(({ matchUpId }) => matchUpId),
+      );
+  };
 
   const initializeMatchUpId = (matchUpId) => {
     if (!matchUpDependencies[matchUpId]) {
@@ -112,19 +131,36 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
     }
   };
 
+  // the edges of a draw that does not store them, derived on a copy: a matchUp read from that draw carries none
+  const derivedGoesTo: GoesToMap = { winnerMatchUpIds: {}, loserMatchUpIds: {} };
+  const readGoesTo = (drawDefinition: DrawDefinition) => {
+    const result = derivedGoesToOrLinkError({ drawDefinition });
+    if (result?.error) return result;
+    Object.assign(derivedGoesTo.winnerMatchUpIds, result?.goesToMap?.winnerMatchUpIds);
+    Object.assign(derivedGoesTo.loserMatchUpIds, result?.goesToMap?.loserMatchUpIds);
+    return undefined;
+  };
+
   const processMatchUps = (matchUpsToProcess) => {
     const processSourceStructures = Object.keys(positionDependencies).length;
 
     for (const matchUp of matchUpsToProcess ?? []) {
-      const { matchUpId, winnerMatchUpId, loserMatchUpId } = matchUp;
+      const { matchUpId } = matchUp;
+      const winnerMatchUpId = matchUp.winnerMatchUpId ?? derivedGoesTo.winnerMatchUpIds[matchUpId];
+      const loserMatchUpId = matchUp.loserMatchUpId ?? derivedGoesTo.loserMatchUpIds[matchUpId];
 
       // only process specified matchUps
       if (!matchUpIds.length || matchUpIds.includes(matchUpId)) {
         initializeMatchUpId(matchUpId);
 
+        // a matchUp's own participants JOIN those its sources have already pushed onto it (G1: assigning them
+        // replaced the inherited ones, so participant dependencies never reached past one round)
         if (includeParticipantDependencies) {
           const { individualParticipantIds } = getIndividualParticipantIds(matchUp);
-          matchUpDependencies[matchUpId].participantIds = individualParticipantIds;
+          const participantIds = matchUpDependencies[matchUpId].participantIds;
+          individualParticipantIds.forEach((participantId) => {
+            if (!participantIds.includes(participantId)) participantIds.push(participantId);
+          });
         }
 
         if (winnerMatchUpId) {
@@ -143,6 +179,13 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
         const s2 = sourceMatchUpIds[matchUpId].map((id) => matchUpDependencies[id].sources[1]).flat();
         matchUpDependencies[matchUpId].sources.push(...[s1, s2]);
 
+        // G2: a qualifier position is filled by the winner of ANY matchUp in the linked qualifying round
+        for (const qualifyingMatchUpId of getQualifyingSourceMatchUpIds(matchUp)) {
+          initializeMatchUpId(qualifyingMatchUpId);
+          propagateDependencies(qualifyingMatchUpId, matchUpId);
+          sourceMatchUpIds[matchUpId].push(qualifyingMatchUpId);
+        }
+
         if (processSourceStructures) {
           const relevantStructureId = matchUp.containerStructureId || matchUp.structureId;
           const sourceStructureId = sourceStructureIdMap[relevantStructureId];
@@ -159,8 +202,10 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
   };
 
   if (drawDefinition) {
-    const goesTo = addGoesTo({ drawDefinition });
-    if (goesTo.error) return goesTo;
+    // the edges are read from the stored matchUps, derived on a copy for a draw that does not store them; a
+    // malformed round link is refused either way
+    const goesTo = readGoesTo(drawDefinition);
+    if (goesTo?.error) return goesTo;
     if (!matchUps?.length) {
       matchUps = allDrawMatchUps({ drawDefinition }).matchUps;
     }
@@ -183,6 +228,7 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
         drawId,
         tournamentRecords,
         processMatchUps,
+        readGoesTo,
       });
       if (result?.error) return result;
     }
@@ -225,7 +271,7 @@ function gatherAllDrawIds(allTournamentRecords) {
     : [];
 }
 
-function processDrawMatchUps({ matchUps, drawId, tournamentRecords, processMatchUps }) {
+function processDrawMatchUps({ matchUps, drawId, tournamentRecords, processMatchUps, readGoesTo }) {
   const drawMatchUps = matchUps?.filter((matchUp) => matchUp.drawId === drawId).sort(matchUpSort);
 
   const isRoundRobin = drawMatchUps?.find(({ roundPosition }) => !roundPosition);
@@ -235,7 +281,7 @@ function processDrawMatchUps({ matchUps, drawId, tournamentRecords, processMatch
       tournamentRecord: tournamentRecords[hasTournamentId?.tournamentId],
       drawId,
     });
-    const goesTo = drawDefinition && addGoesTo({ drawDefinition });
+    const goesTo = drawDefinition && readGoesTo(drawDefinition);
     if (goesTo?.error) return goesTo;
   }
 

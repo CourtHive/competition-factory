@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { ALTERNATE_PARTICIPANT } from '@Constants/positionActionConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   CONSOLATION,
@@ -315,8 +317,8 @@ describe('assignMatchUpSideParticipant', () => {
       // every participant of this drawSize-4 tournament plays in the round, so add one who does not
       const addResult: any = tournamentEngine.addParticipant({
         participant: {
-          participantType: 'INDIVIDUAL',
-          participantRole: 'COMPETITOR',
+          participantType: INDIVIDUAL,
+          participantRole: COMPETITOR,
           person: { standardFamilyName: 'Outside', standardGivenName: 'Round' },
         },
         returnParticipant: true,

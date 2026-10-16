@@ -5,7 +5,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { SIGNED_IN, SIGN_IN_STATUS } from '@Constants/participantConstants';
+import { SIGNED_IN, SIGN_IN_STATUS, PAID } from '@Constants/participantConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { RATING } from '@Constants/scaleConstants';
+import { UTR } from '@Constants/ratingConstants';
 
 /**
  * `occurredAt` — recording when something HAPPENED rather than when this
@@ -116,7 +119,7 @@ describe('modifyParticipantsPaymentStatus — occurredAt', () => {
 
     tournamentEngine.modifyParticipantsPaymentStatus({
       participantIds: [participantId],
-      paymentState: 'PAID',
+      paymentState: PAID,
       occurredAt: EARLY,
     });
     const supplied = timeItemsOf(participantId).at(-1).createdAt;
@@ -124,7 +127,7 @@ describe('modifyParticipantsPaymentStatus — occurredAt', () => {
 
     const other = seed();
     const before = Date.now();
-    tournamentEngine.modifyParticipantsPaymentStatus({ participantIds: [other], paymentState: 'PAID' });
+    tournamentEngine.modifyParticipantsPaymentStatus({ participantIds: [other], paymentState: PAID });
     const minted = timeItemsOf(other).at(-1).createdAt;
     expect(new Date(minted).getTime()).toBeGreaterThanOrEqual(before - 1000);
   });
@@ -137,9 +140,9 @@ describe('scale items — supplied createdAt (D2: event order is authoritative)'
     const result: any = tournamentEngine.setParticipantScaleItem({
       participantId,
       scaleItem: {
-        scaleType: 'RATING',
-        eventType: 'SINGLES',
-        scaleName: 'UTR',
+        scaleType: RATING,
+        eventType: SINGLES_EVENT,
+        scaleName: UTR,
         scaleValue: 9.5,
         createdAt: EARLY,
       },
@@ -155,7 +158,7 @@ describe('scale items — supplied createdAt (D2: event order is authoritative)'
     // SECOND (it synced later) but occurred FIRST, so the rating actually set
     // afterwards must remain current.
     const participantId = seed();
-    const scaleAttributes = { scaleType: 'RATING', eventType: 'SINGLES', scaleName: 'UTR' };
+    const scaleAttributes = { scaleType: RATING, eventType: SINGLES_EVENT, scaleName: UTR };
 
     // Arrives first, happened LATE.
     tournamentEngine.setParticipantScaleItem({

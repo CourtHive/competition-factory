@@ -7,6 +7,7 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { DUPLICATE_VALUE, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
+import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { TEAM } from '@Constants/eventConstants';
@@ -257,11 +258,11 @@ describe('modifyCollectionDefinition branch coverage', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { event } = tournamentEngine.getEvent({ drawId });
-    const singlesCollection = event.tieFormat.collectionDefinitions.find((cd) => cd.matchUpType === 'SINGLES');
+    const singlesCollection = event.tieFormat.collectionDefinitions.find((cd) => cd.matchUpType === SINGLES_MATCHUP);
 
     let result: any = tournamentEngine.modifyCollectionDefinition({
       collectionId: singlesCollection.collectionId,
-      matchUpType: 'DOUBLES',
+      matchUpType: DOUBLES_MATCHUP,
       matchUpValue: 2,
       drawId,
     });
@@ -310,7 +311,7 @@ describe('addCollectionDefinition branch coverage', () => {
         collectionId: existingCollectionId,
         collectionName: 'Duplicate',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },
@@ -335,7 +336,7 @@ describe('addCollectionDefinition branch coverage', () => {
       collectionDefinition: {
         collectionName: 'Extra Singles',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 2,
         matchUpValue: 1,
       },
@@ -361,7 +362,7 @@ describe('addCollectionDefinition branch coverage', () => {
       collectionDefinition: {
         collectionName: 'Extra Doubles',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'DOUBLES',
+        matchUpType: DOUBLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },
@@ -388,7 +389,7 @@ describe('addCollectionDefinition branch coverage', () => {
       collectionDefinition: {
         collectionName: 'Structure Singles',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },
@@ -418,7 +419,7 @@ describe('addCollectionDefinition branch coverage', () => {
       collectionDefinition: {
         collectionName: 'MatchUp Doubles',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'DOUBLES',
+        matchUpType: DOUBLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },
@@ -443,7 +444,7 @@ describe('addCollectionDefinition branch coverage', () => {
       collectionDefinition: {
         collectionName: 'No ID Collection',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },
@@ -470,7 +471,7 @@ describe('addCollectionDefinition branch coverage', () => {
       collectionDefinition: {
         collectionName: 'Value Change Collection',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 3,
         matchUpValue: 5,
       },

@@ -1,4 +1,8 @@
+import { getProfileRoundKey } from './schedulingUtils';
 import { extractDate } from '@Tools/dateTime';
+
+// types
+import type { DateSchedulingProfile } from './schedulingUtils';
 
 export function getUpdatedSchedulingProfile({ schedulingProfile, venueIds, eventIds, drawIds }) {
   const issues: string[] = [];
@@ -37,4 +41,28 @@ export function getUpdatedSchedulingProfile({ schedulingProfile, venueIds, event
 
   const modifications = issues.length;
   return { updatedSchedulingProfile, modifications, issues };
+}
+
+// a round (or round segment) profiled at more than one venue on the same date would be scheduled once per venue
+export function getMultipleVenueRoundIssues({
+  schedulingProfile,
+}: {
+  schedulingProfile?: DateSchedulingProfile[];
+}): string[] {
+  const issues: string[] = [];
+  for (const dateSchedulingProfile of schedulingProfile ?? []) {
+    const date = extractDate(dateSchedulingProfile?.scheduleDate);
+    const roundVenueIds: { [key: string]: string[] } = {};
+    for (const { venueId, rounds } of dateSchedulingProfile?.venues ?? []) {
+      for (const round of rounds ?? []) {
+        const key = getProfileRoundKey(round);
+        if (!roundVenueIds[key]) roundVenueIds[key] = [];
+        if (!roundVenueIds[key].includes(venueId)) roundVenueIds[key].push(venueId);
+      }
+    }
+    for (const [key, venueIds] of Object.entries(roundVenueIds)) {
+      if (venueIds.length > 1) issues.push(`Round at multiple venues on ${date}: ${key} (${venueIds.join(', ')})`);
+    }
+  }
+  return issues;
 }

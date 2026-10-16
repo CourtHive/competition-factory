@@ -17,22 +17,22 @@ test('Replacing a DOUBLE_WALKOVER which has produced WALKOVERs with a score will
         {
           roundNumber: 1,
           roundPosition: 1,
-          matchUpStatus: 'DOUBLE_WALKOVER',
+          matchUpStatus: DOUBLE_WALKOVER,
         },
         {
           roundNumber: 1,
           roundPosition: 2,
-          matchUpStatus: 'DOUBLE_WALKOVER',
+          matchUpStatus: DOUBLE_WALKOVER,
         },
         {
           roundNumber: 1,
           roundPosition: 3,
-          matchUpStatus: 'DOUBLE_WALKOVER',
+          matchUpStatus: DOUBLE_WALKOVER,
         },
         {
           roundNumber: 1,
           roundPosition: 4,
-          matchUpStatus: 'DOUBLE_WALKOVER',
+          matchUpStatus: DOUBLE_WALKOVER,
         },
       ],
     },

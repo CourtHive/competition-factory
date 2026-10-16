@@ -9,6 +9,10 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 // types
 import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
+// constants
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { MALE, FEMALE } from '@Constants/genderConstants';
+
 /**
  * Activation carries public registration across (P23 option A, D6).
  *
@@ -29,8 +33,8 @@ const proposal: TournamentProposal = {
   proposedStartDate: '2027-06-01',
   proposedEndDate: '2027-06-07',
   events: [
-    { eventName: "Men's Singles", eventType: 'SINGLES', gender: 'MALE' },
-    { eventName: "Women's Singles", eventType: 'SINGLES', gender: 'FEMALE' },
+    { eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: MALE },
+    { eventName: "Women's Singles", eventType: SINGLES_EVENT, gender: FEMALE },
   ],
 };
 

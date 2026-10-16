@@ -4,6 +4,7 @@ import { it, expect } from 'vitest';
 
 // constants
 import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
+import { CANCELLED, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 
 it('will reject WO/WO for an updated result on matchUp with downstream dependencies', () => {
   const {
@@ -28,7 +29,7 @@ it('will reject WO/WO for an updated result on matchUp with downstream dependenc
         scoreStringSide1: '',
         scoreStringSide2: '',
       },
-      matchUpStatus: 'CANCELLED',
+      matchUpStatus: CANCELLED,
     },
     drawId,
   };
@@ -43,7 +44,7 @@ it('will reject WO/WO for an updated result on matchUp with downstream dependenc
         scoreStringSide1: '',
         scoreStringSide2: '',
       },
-      matchUpStatus: 'DOUBLE_WALKOVER',
+      matchUpStatus: DOUBLE_WALKOVER,
       matchUpStatusCodes: ['WOWO', 'WOWO'],
     },
     drawId,

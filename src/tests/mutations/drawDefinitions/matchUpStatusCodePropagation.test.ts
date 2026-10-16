@@ -29,7 +29,7 @@ it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', (
       scoreStringSide1: '',
       scoreStringSide2: '',
     },
-    matchUpStatus: 'DOUBLE_WALKOVER',
+    matchUpStatus: DOUBLE_WALKOVER,
     matchUpStatusCodes: ['WD.WD', 'WD.WD'],
     matchUpFormat: 'SET1-S:8/TB7@7',
   };
@@ -66,7 +66,7 @@ it('will properly clean up matchUpStatusCodes when removing DOUBLE_WALKOVERs', (
       scoreStringSide1: '',
       scoreStringSide2: '',
     },
-    matchUpStatus: 'WALKOVER',
+    matchUpStatus: WALKOVER,
     matchUpStatusCodes: ['WD.ILL'],
     winningSide: 2,
     matchUpFormat: 'SET1-S:8/TB7@7',

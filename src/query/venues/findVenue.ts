@@ -1,6 +1,5 @@
 import { getLinkedTournamentIds } from '@Query/tournaments/getLinkedTournamentIds';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { addVenue } from '@Mutate/venues/addVenue';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -37,15 +36,13 @@ export function findVenue({ tournamentRecords, tournamentRecord, venueId }: Find
 
     const relevantIds = linkedTournamentIds[tournamentRecord!.tournamentId];
 
-    // if there are linked tournaments search for court in all linked tournaments
+    // if there are linked tournaments search for the venue in all linked tournaments. A QUERY: it used to add a
+    // copy of what it found to tournamentRecord (with an ADD_VENUE notice); the one caller that needs the copy,
+    // assignMatchUpVenue, now adds it itself (P54)
     for (const tournamentId of relevantIds) {
       const record = tournamentRecords[tournamentId];
       const result = findVenue({ tournamentRecord: record, venueId });
-      // if venue is found in linked tournamentRecords, add venue to original tournamentRecord
-      if (result.success && result.venue) {
-        addVenue({ tournamentRecord, venue: result.venue });
-        return { ...SUCCESS, venue };
-      }
+      if (result.success && result.venue) return { ...SUCCESS, venue: result.venue };
     }
   }
 

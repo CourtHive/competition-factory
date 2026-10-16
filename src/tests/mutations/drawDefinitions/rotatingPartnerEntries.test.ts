@@ -8,8 +8,15 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and types
+import { DIRECT_ACCEPTANCE, UNPAIRED, UNGROUPED } from '@Constants/entryStatusConstants';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { AD_HOC, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import type { CompetitionProfile } from '@Types/competitionProfile';
+import { PAIR, INDIVIDUAL } from '@Constants/participantConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { OFFICIAL } from '@Constants/participantRoles';
+import { FEMALE } from '@Constants/genderConstants';
 import {
   INVALID_ENTRIES,
   INVALID_PARTICIPANT_IDS,
@@ -21,7 +28,7 @@ const profile: CompetitionProfile = {
   version: 1,
   format: 'AMERICANO',
   entrantScope: 'INDIVIDUAL',
-  matchUpType: 'DOUBLES',
+  matchUpType: DOUBLES_MATCHUP,
   scoring: { combinedPointTotal: 32, selectedVariant: { tieResolution: 'ALLOW' } },
   standings: { metric: 'SIDE_POINTS', attribution: 'EACH_INDIVIDUAL' },
   pairing: { seed: 42, algorithmVersion: 1 },
@@ -30,13 +37,13 @@ const profile: CompetitionProfile = {
 function setup() {
   const drawDefinition: DrawDefinition = {
     drawId: 'rotating',
-    drawType: 'AD_HOC',
-    matchUpType: 'DOUBLES',
+    drawType: AD_HOC,
+    matchUpType: DOUBLES_MATCHUP,
     competitionProfile: structuredClone(profile),
     entries: [],
     structures: [],
   };
-  const event: Event = { eventId: 'doubles', eventType: 'DOUBLES', entries: [], drawDefinitions: [drawDefinition] };
+  const event: Event = { eventId: 'doubles', eventType: DOUBLES_EVENT, entries: [], drawDefinitions: [drawDefinition] };
   const tournamentRecord: Tournament = {
     tournamentId: 't',
     events: [event],
@@ -47,8 +54,8 @@ function setup() {
         participantRole: 'COMPETITOR' as const,
         person: { personId: `person${index}`, sex: 'MALE' as const },
       })),
-      { participantId: 'pair', participantType: 'PAIR', individualParticipantIds: ['p0', 'p1'] },
-      { participantId: 'official', participantType: 'INDIVIDUAL', participantRole: 'OFFICIAL' },
+      { participantId: 'pair', participantType: PAIR, individualParticipantIds: ['p0', 'p1'] },
+      { participantId: 'official', participantType: INDIVIDUAL, participantRole: OFFICIAL },
     ],
   };
   return { drawDefinition, event, tournamentRecord, drawId: drawDefinition.drawId };
@@ -75,7 +82,7 @@ it.each(['pair', 'official', 'missing'])('refuses %s before any event or draw wr
 
 it('preserves gender validation and permits an explicit existing gender-policy override', () => {
   const context = setup();
-  context.event.gender = 'FEMALE';
+  context.event.gender = FEMALE;
   const before = structuredClone(context.tournamentRecord);
   expect(addEventEntries({ ...context, participantIds: ['p0'] }).error).toBe(INVALID_PARTICIPANT_IDS);
   expect(context.tournamentRecord).toEqual(before);
@@ -96,7 +103,7 @@ it('leaves ordinary doubles admission unchanged and requires the drawId opt-in',
 
 it('refuses PAIR draw entries even if already entered in the event', () => {
   const context = setup();
-  context.event.entries = [{ participantId: 'pair', entryStatus: 'DIRECT_ACCEPTANCE' }];
+  context.event.entries = [{ participantId: 'pair', entryStatus: DIRECT_ACCEPTANCE }];
   const before = structuredClone(context.tournamentRecord);
   expect(
     addDrawEntries({
@@ -116,7 +123,7 @@ it('refuses PAIR draw entries even if already entered in the event', () => {
 it('refuses attaching a rotating profile to a PAIR roster', () => {
   const context = setup();
   delete context.drawDefinition.competitionProfile;
-  context.drawDefinition.entries = [{ participantId: 'pair', entryStatus: 'DIRECT_ACCEPTANCE' }];
+  context.drawDefinition.entries = [{ participantId: 'pair', entryStatus: DIRECT_ACCEPTANCE }];
   const before = structuredClone(context.drawDefinition);
   expect(setCompetitionProfile({ ...context, competitionProfile: profile }).error).toBe(INVALID_PARTICIPANT_IDS);
   expect(context.drawDefinition).toEqual(before);
@@ -125,8 +132,8 @@ it('refuses attaching a rotating profile to a PAIR roster', () => {
 it('detects missing and non-competitor entrants on a persisted rotating roster', () => {
   const context = setup();
   context.drawDefinition.entries = [
-    { participantId: 'missing', entryStatus: 'DIRECT_ACCEPTANCE' },
-    { participantId: 'official', entryStatus: 'DIRECT_ACCEPTANCE' },
+    { participantId: 'missing', entryStatus: DIRECT_ACCEPTANCE },
+    { participantId: 'official', entryStatus: DIRECT_ACCEPTANCE },
   ];
   expect(checkValidEntries(context).invalidParticipantIds).toEqual(['missing', 'official']);
 });
@@ -151,7 +158,7 @@ function sideContext() {
   addEventEntries({ ...context, participantIds: ['p0', 'p1', 'p2', 'p3'] });
   context.tournamentRecord.participants!.push({
     participantId: 'other-pair',
-    participantType: 'PAIR',
+    participantType: PAIR,
     individualParticipantIds: ['p2', 'p3'],
   });
   context.drawDefinition.structures = [{ structureId: 's', matchUps: [] }];
@@ -223,10 +230,10 @@ it('supports Mexicano individual admission under the same opt-in contract', () =
 it('keeps event entries ungrouped and acceptance exclusive to the rotating draw', () => {
   const context = setup();
   expect(addEventEntries({ ...context, participantIds: ['p0', 'p1'] }).success).toBe(true);
-  expect(context.event.entries?.map((entry) => entry.entryStatus)).toEqual(['UNGROUPED', 'UNGROUPED']);
+  expect(context.event.entries?.map((entry) => entry.entryStatus)).toEqual([UNGROUPED, UNGROUPED]);
   expect(context.drawDefinition.entries?.map((entry) => entry.entryStatus)).toEqual([
-    'DIRECT_ACCEPTANCE',
-    'DIRECT_ACCEPTANCE',
+    DIRECT_ACCEPTANCE,
+    DIRECT_ACCEPTANCE,
   ]);
   expect(checkValidEntries({ event: context.event, tournamentRecord: context.tournamentRecord })).toMatchObject({
     valid: true,
@@ -235,9 +242,9 @@ it('keeps event entries ungrouped and acceptance exclusive to the rotating draw'
 
 it('preserves explicit UNPAIRED event admission while accepting the rotating roster', () => {
   const context = setup();
-  expect(addEventEntries({ ...context, entryStatus: 'UNPAIRED', participantIds: ['p0'] }).success).toBe(true);
-  expect(context.event.entries?.[0].entryStatus).toBe('UNPAIRED');
-  expect(context.drawDefinition.entries?.[0].entryStatus).toBe('DIRECT_ACCEPTANCE');
+  expect(addEventEntries({ ...context, entryStatus: UNPAIRED, participantIds: ['p0'] }).success).toBe(true);
+  expect(context.event.entries?.[0].entryStatus).toBe(UNPAIRED);
+  expect(context.drawDefinition.entries?.[0].entryStatus).toBe(DIRECT_ACCEPTANCE);
 });
 
 it('refuses rotating individuals in an ordinary draw in the same doubles event', () => {
@@ -245,8 +252,8 @@ it('refuses rotating individuals in an ordinary draw in the same doubles event',
   addEventEntries({ ...context, participantIds: Array.from({ length: 8 }, (_, index) => `p${index}`) });
   const plain: DrawDefinition = {
     drawId: 'plain',
-    drawType: 'AD_HOC',
-    matchUpType: 'DOUBLES',
+    drawType: AD_HOC,
+    matchUpType: DOUBLES_MATCHUP,
     entries: [],
     structures: [],
   };
@@ -265,7 +272,7 @@ it('refuses rotating individuals in an ordinary draw in the same doubles event',
   ).toMatchObject({ valid: true });
   const generated = tournamentEngine.generateDrawDefinition({
     eventId: context.event.eventId,
-    drawType: 'SINGLE_ELIMINATION',
+    drawType: SINGLE_ELIMINATION,
     drawSize: 8,
   });
   // An ordinary generator may create an empty bracket, but cannot select ungrouped people.
@@ -282,7 +289,7 @@ it('keeps the doubles event valid after deleting its rotating draw', () => {
   const { event } = tournamentEngine.getEvent({ eventId: context.event.eventId });
   expect(event.drawDefinitions).toHaveLength(0);
   expect(event.entries).toHaveLength(4);
-  expect(event.entries.every((entry) => entry.entryStatus === 'UNGROUPED')).toBe(true);
+  expect(event.entries.every((entry) => entry.entryStatus === UNGROUPED)).toBe(true);
   expect(tournamentEngine.checkValidEntries({ eventId: event.eventId }).valid).toBe(true);
 });
 
@@ -307,16 +314,16 @@ it('keeps rotating ungrouped event entries when ordinary doubles PAIRs are admit
       .success,
   ).toBe(true);
   expect(context.event.entries?.map((entry) => [entry.participantId, entry.entryStatus])).toEqual([
-    ['p0', 'UNGROUPED'],
-    ['p1', 'UNGROUPED'],
-    ['pair', 'DIRECT_ACCEPTANCE'],
+    ['p0', UNGROUPED],
+    ['p1', UNGROUPED],
+    ['pair', DIRECT_ACCEPTANCE],
   ]);
 });
 
 it('does not grant event-level acceptance because an individual belongs to a rotating draw', () => {
   const context = setup();
   addEventEntries({ ...context, participantIds: ['p0'] });
-  context.event.entries![0].entryStatus = 'DIRECT_ACCEPTANCE';
+  context.event.entries![0].entryStatus = DIRECT_ACCEPTANCE;
   expect(checkValidEntries({ event: context.event, tournamentRecord: context.tournamentRecord }).error).toBe(
     INVALID_ENTRIES,
   );
@@ -328,8 +335,8 @@ it('keeps placement-oriented withDraws behavior consistent for unplaced AD_HOC e
   addEventEntries({ ...context, participantIds: ['p0', 'p1'] });
   const plain: DrawDefinition = {
     drawId: 'plain',
-    drawType: 'AD_HOC',
-    matchUpType: 'DOUBLES',
+    drawType: AD_HOC,
+    matchUpType: DOUBLES_MATCHUP,
     entries: [],
     structures: [],
   };
@@ -345,16 +352,16 @@ it('keeps placement-oriented withDraws behavior consistent for unplaced AD_HOC e
 
 it('public checkValidEntries selects event or draw entries and honours explicit overrides', () => {
   const context = setup();
-  context.event.entries = [{ participantId: 'p0', entryStatus: 'DIRECT_ACCEPTANCE' }];
+  context.event.entries = [{ participantId: 'p0', entryStatus: DIRECT_ACCEPTANCE }];
   const plain: DrawDefinition = {
     drawId: 'plain',
-    drawType: 'AD_HOC',
-    matchUpType: 'DOUBLES',
-    entries: [{ participantId: 'pair', entryStatus: 'DIRECT_ACCEPTANCE' }],
+    drawType: AD_HOC,
+    matchUpType: DOUBLES_MATCHUP,
+    entries: [{ participantId: 'pair', entryStatus: DIRECT_ACCEPTANCE }],
     structures: [],
   };
   context.event.drawDefinitions!.push(plain);
-  context.drawDefinition.entries = [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' }];
+  context.drawDefinition.entries = [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE }];
   tournamentEngine.setState(context.tournamentRecord);
 
   expect(tournamentEngine.checkValidEntries({ eventId: context.event.eventId })).toMatchObject({

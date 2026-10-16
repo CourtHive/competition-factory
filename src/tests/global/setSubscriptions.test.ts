@@ -34,8 +34,8 @@ it('can set subscriptions in global state outside of engines', () => {
 
   tournamentEngine.devContext(true).newTournamentRecord();
   const participant = {
-    participantRole: 'COMPETITOR',
-    participantType: 'INDIVIDUAL',
+    participantRole: COMPETITOR,
+    participantType: INDIVIDUAL,
     person: {
       standardFamilyName: 'Family',
       standardGivenName: 'Given',

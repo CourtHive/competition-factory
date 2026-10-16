@@ -650,11 +650,11 @@ test('does not propagate matchUpStatusCodes from SINGLE/DOUBLES to TEAM matchUps
   });
 
   expect(matchUps.map(({ matchUpStatusCodes }) => matchUpStatusCodes).filter(Boolean)).toEqual([]);
-  expect(matchUps.map(({ matchUpStatus }) => matchUpStatus)).toEqual(['TO_BE_PLAYED', 'TO_BE_PLAYED']);
+  expect(matchUps.map(({ matchUpStatus }) => matchUpStatus)).toEqual([TO_BE_PLAYED, TO_BE_PLAYED]);
 
   expect(matchUpModifyNotices).toEqual([
     [
-      'SINGLES',
+      SINGLES,
       ['WOWO', 'WOWO'],
       {
         scoreStringSide1: '',
@@ -663,7 +663,7 @@ test('does not propagate matchUpStatusCodes from SINGLE/DOUBLES to TEAM matchUps
       },
     ],
     [
-      'TEAM',
+      TEAM,
       {
         scoreStringSide1: '0-0',
         scoreStringSide2: '0-0',

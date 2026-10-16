@@ -45,7 +45,7 @@ describe('normalizeGender — gender vocabulary (MALE/FEMALE/MIXED/ANY, no OTHER
     expect(normalizeGender(ANY)).toEqual(ANY);
   });
   it('passes unrecognized values through unchanged (never coerces to OTHER)', () => {
-    expect(normalizeGender('OTHER')).toEqual('OTHER');
+    expect(normalizeGender(OTHER)).toEqual(OTHER);
     expect(normalizeGender('banana')).toEqual('banana');
     expect(normalizeGender(undefined)).toBeUndefined();
   });

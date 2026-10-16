@@ -6,9 +6,16 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants and fixtures
-import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
+import {
+  BYE,
+  COMPLETED,
+  DOUBLE_WALKOVER,
+  TO_BE_PLAYED,
+  WALKOVER,
+  IN_PROGRESS,
+} from '@Constants/matchUpStatusConstants';
 import {
   CONSOLATION,
   DOUBLE_ELIMINATION,
@@ -452,7 +459,7 @@ test.each([FEED_IN_CHAMPIONSHIP, DOUBLE_ELIMINATION])(
       allMatchUps().filter(
         (matchUp) =>
           !matchUp.winningSide &&
-          [TO_BE_PLAYED, 'IN_PROGRESS'].includes(matchUp.matchUpStatus) &&
+          [TO_BE_PLAYED, IN_PROGRESS].includes(matchUp.matchUpStatus) &&
           matchUp.sides?.filter((side) => side.participant).length === 2,
       );
 

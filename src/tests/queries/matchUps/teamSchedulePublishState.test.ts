@@ -5,6 +5,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { TEAM_EVENT } from '@Constants/eventConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
 it('competitionScheduleMatchUps with usePublishState includes tieMatchUps', () => {
   const scheduledDate = '2026-03-09';
@@ -22,7 +23,7 @@ it('competitionScheduleMatchUps with usePublishState includes tieMatchUps', () =
 
   // Get all matchUps
   const allMatchUps = queryEngine.allTournamentMatchUps().matchUps;
-  const teamMatchUps = allMatchUps.filter((m) => m.matchUpType === 'TEAM');
+  const teamMatchUps = allMatchUps.filter((m) => m.matchUpType === TEAM_MATCHUP);
   const tieMatchUps = allMatchUps.filter((m) => m.collectionId);
 
   expect(teamMatchUps.length).toBeGreaterThan(0);
@@ -84,7 +85,7 @@ it('competitionScheduleMatchUps with usePublishState includes tieMatchUps', () =
   });
   const dateMatchUpsWithPublish = result.dateMatchUps;
   const tieMatchUpsPublished = dateMatchUpsWithPublish.filter((m) => m.collectionId);
-  const teamMatchUpsPublished = dateMatchUpsWithPublish.filter((m) => m.matchUpType === 'TEAM');
+  const teamMatchUpsPublished = dateMatchUpsWithPublish.filter((m) => m.matchUpType === TEAM_MATCHUP);
 
   // This is the bug: tieMatchUps should be present
   expect(tieMatchUpsPublished.length).toBeGreaterThan(0);
@@ -106,7 +107,7 @@ it('tieMatchUps included when only tieMatchUps are scheduled (not parent TEAM)',
   tournamentEngine.setState(tournamentRecord);
 
   const allMatchUps = queryEngine.allTournamentMatchUps().matchUps;
-  const teamMatchUps = allMatchUps.filter((m) => m.matchUpType === 'TEAM');
+  const teamMatchUps = allMatchUps.filter((m) => m.matchUpType === TEAM_MATCHUP);
   const tieMatchUps = allMatchUps.filter((m) => m.collectionId);
   const teamMatchUp = teamMatchUps[0];
   const { drawId } = teamMatchUp;
@@ -171,7 +172,7 @@ it('tieMatchUps included with TEAM + SINGLES events (mixed)', () => {
   tournamentEngine.setState(tournamentRecord);
 
   const allMatchUps = queryEngine.allTournamentMatchUps().matchUps;
-  const teamMatchUps = allMatchUps.filter((m) => m.matchUpType === 'TEAM');
+  const teamMatchUps = allMatchUps.filter((m) => m.matchUpType === TEAM_MATCHUP);
   const tieMatchUps = allMatchUps.filter((m) => m.collectionId);
   const singlesMatchUps = allMatchUps.filter((m) => m.drawId === 'singlesDraw');
 
@@ -226,7 +227,7 @@ it('tieMatchUps included with TEAM + SINGLES events (mixed)', () => {
   });
 
   const publishTie = result.dateMatchUps.filter((m) => m.collectionId);
-  const publishTeam = result.dateMatchUps.filter((m) => m.matchUpType === 'TEAM');
+  const publishTeam = result.dateMatchUps.filter((m) => m.matchUpType === TEAM_MATCHUP);
   const publishSingles = result.dateMatchUps.filter((m) => m.drawId === 'singlesDraw');
 
   expect(publishTie.length).toBeGreaterThan(0);

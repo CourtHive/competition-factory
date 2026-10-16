@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test, describe } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, MAIN, AD_HOC, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_WALKOVER, COMPLETED, TO_BE_PLAYED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
 describe('removeDirectedParticipants - uncovered branches', () => {
@@ -138,7 +138,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
     const r1matchUp = matchUps.find((m) => m.matchUpId === firstRoundMatchUps[0].matchUpId);
     // After removing the outcome, the matchUp may be TO_BE_PLAYED or IN_PROGRESS
     // depending on whether there are still side effects from other completed matchUps
-    expect([TO_BE_PLAYED, 'IN_PROGRESS'].includes(r1matchUp.matchUpStatus)).toEqual(true);
+    expect([TO_BE_PLAYED, IN_PROGRESS].includes(r1matchUp.matchUpStatus)).toEqual(true);
   });
 
   test('removing result from team (DOUBLES) matchUp exercises collection/tieMatchUp path', () => {
@@ -185,7 +185,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
       drawProfiles: [
         {
           drawSize: 4,
-          drawType: 'AD_HOC',
+          drawType: AD_HOC,
         },
       ],
       setState: true,
@@ -235,7 +235,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
     });
 
     let { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const qualifyingMatchUps = matchUps.filter((m) => m.stage === 'QUALIFYING' && m.roundNumber === 1);
+    const qualifyingMatchUps = matchUps.filter((m) => m.stage === QUALIFYING && m.roundNumber === 1);
 
     // Complete qualifying matchUps
     for (const matchUp of qualifyingMatchUps) {
@@ -255,7 +255,7 @@ describe('removeDirectedParticipants - uncovered branches', () => {
 
     // Remove the qualifying result - exercises cross-structure winner removal
     ({ matchUps } = tournamentEngine.allTournamentMatchUps());
-    const completedQualifying = matchUps.find((m) => m.stage === 'QUALIFYING' && m.matchUpStatus === COMPLETED);
+    const completedQualifying = matchUps.find((m) => m.stage === QUALIFYING && m.matchUpStatus === COMPLETED);
     if (completedQualifying) {
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: completedQualifying.matchUpId,

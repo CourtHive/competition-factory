@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
+import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN, LOSER, DRAW } from '@Constants/drawDefinitionConstants';
 import { INVALID_STRUCTURE } from '@Constants/errorConditionConstants';
 
 it('rejects attachStructures when links reference non-existent structures', () => {
@@ -21,14 +21,14 @@ it('rejects attachStructures when links reference non-existent structures', () =
   // create a link with a bogus target structureId
   const links = [
     {
-      linkType: 'LOSER',
+      linkType: LOSER,
       source: {
         structureId: mainStructure.structureId,
         roundNumber: 1,
       },
       target: {
         structureId: 'non-existent-structure-id',
-        feedProfile: 'DRAW',
+        feedProfile: DRAW,
         roundNumber: 1,
       },
     },
@@ -57,14 +57,14 @@ it('rejects attachStructures when link source structureId is invalid', () => {
 
   const links = [
     {
-      linkType: 'LOSER',
+      linkType: LOSER,
       source: {
         structureId: 'bogus-source-id',
         roundNumber: 1,
       },
       target: {
         structureId: mainStructure.structureId,
-        feedProfile: 'DRAW',
+        feedProfile: DRAW,
         roundNumber: 1,
       },
     },

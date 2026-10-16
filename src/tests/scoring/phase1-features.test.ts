@@ -18,6 +18,9 @@ import { createMatchUp, addPoint, getScore } from '@Assemblies/governors/scoreGo
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { describe, test, expect } from 'vitest';
 
+// constants
+import { IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+
 // ============================================================================
 // 1. Tiebreak-Only Sets
 // ============================================================================
@@ -525,7 +528,7 @@ describe('Phase 1 - Late Arrival / setInitialScore', () => {
     });
 
     const state = engine.getState();
-    expect(state.matchUpStatus).toBe('IN_PROGRESS');
+    expect(state.matchUpStatus).toBe(IN_PROGRESS);
     expect(state.score.sets).toHaveLength(1);
     expect(state.score.sets[0].winningSide).toBe(1); // Side 1 won (6-4)
     expect(state.score.sets[0].side1Score).toBe(6);
@@ -613,7 +616,7 @@ describe('Phase 1 - Late Arrival / setInitialScore', () => {
 
     const state = engine.getState();
     expect(state.score.sets).toHaveLength(0);
-    expect(state.matchUpStatus).toBe('TO_BE_PLAYED');
+    expect(state.matchUpStatus).toBe(TO_BE_PLAYED);
   });
 });
 

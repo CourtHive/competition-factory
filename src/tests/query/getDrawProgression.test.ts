@@ -14,6 +14,7 @@ import {
   OLYMPIC,
   PLAY_OFF,
   WINNER,
+  DRAW,
 } from '@Constants/drawDefinitionConstants';
 
 // Corpus sweep — the primary false-positive guard for the eligibility-gated DROPPED_PROGRESSION.
@@ -68,7 +69,7 @@ test('detects a dropped progression when an eligible (round-1) loser is missing 
   expect(dropped).toBeTruthy();
   expect(dropped.matchUpId).toEqual(r1.matchUpId);
   expect(dropped.severity).toEqual('error');
-  expect(dropped.scope).toEqual('DRAW');
+  expect(dropped.scope).toEqual(DRAW);
 });
 
 test('an INELIGIBLE round-2 loser (won round 1) is not expected in consolation — no false positive', () => {

@@ -9,6 +9,9 @@
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { describe, test, expect } from 'vitest';
 
+// constants
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+
 describe('ScoringEngine.getState() deep copy', () => {
   test('returns a new object on each call (not the same reference)', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
@@ -85,6 +88,6 @@ describe('ScoringEngine.getState() deep copy', () => {
     let result: any = engine.getState();
 
     expect(result.score.sets).toEqual([]);
-    expect(result.matchUpStatus).toBe('TO_BE_PLAYED');
+    expect(result.matchUpStatus).toBe(TO_BE_PLAYED);
   });
 });

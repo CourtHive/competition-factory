@@ -1,4 +1,5 @@
-import { addMinutesToTimeString, timeStringMinutes } from '@Tools/dateTime';
+import { addMinutesWithinDay } from './timeWithinDay';
+import { timeStringMinutes } from '@Tools/dateTime';
 
 export function checkDependendantTiming({
   matchUpScheduleTimes,
@@ -12,7 +13,7 @@ export function checkDependendantTiming({
   const recoveryMinutes = details.minutesMap?.[matchUpId]?.recoveryMinutes;
   const averageMatchUpMinutes = details.minutesMap?.[matchUpId]?.averageMinutes;
   const totalMinutes = (averageMatchUpMinutes || 0) + (recoveryMinutes || 0);
-  const dependentNotBeforeTime = addMinutesToTimeString(scheduleTime, totalMinutes);
+  const dependentNotBeforeTime = addMinutesWithinDay(scheduleTime, totalMinutes);
 
   const matchUpIdDependents = matchUpDependencies?.[matchUpId]?.dependentMatchUpIds ?? [];
 

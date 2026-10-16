@@ -7,6 +7,7 @@ import { INVALID_DATE } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import { RATING } from '@Constants/scaleConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 describe('scaleDate validation', () => {
   it('rejects invalid scaleDate format', () => {
@@ -23,7 +24,7 @@ describe('scaleDate validation', () => {
       scaleItem: {
         eventType: SINGLES,
         scaleType: RATING,
-        scaleName: 'WTN',
+        scaleName: WTN,
         scaleValue: 8.3,
         scaleDate: 'not-a-date',
       },
@@ -45,7 +46,7 @@ describe('scaleDate validation', () => {
       scaleItem: {
         eventType: SINGLES,
         scaleType: RATING,
-        scaleName: 'WTN',
+        scaleName: WTN,
         scaleValue: 7.5,
         scaleDate: '2024-13-45',
       },
@@ -67,7 +68,7 @@ describe('scaleDate validation', () => {
       scaleItem: {
         eventType: SINGLES,
         scaleType: RATING,
-        scaleName: 'WTN',
+        scaleName: WTN,
         scaleValue: 8.3,
         scaleDate: '2024-06-15',
       },
@@ -89,7 +90,7 @@ describe('scaleDate validation', () => {
       scaleItem: {
         eventType: SINGLES,
         scaleType: RATING,
-        scaleName: 'WTN',
+        scaleName: WTN,
         scaleValue: 9.1,
       },
     });

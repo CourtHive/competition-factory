@@ -1,27 +1,28 @@
 # Factory verification suite
 
-`pnpm verify` is the gate before every publish. It chains 11 checks that together cover compile, runtime, dist integrity, and security awareness. If any link in the chain fails, the suite exits non-zero and `prepublishOnly` blocks the release.
+`pnpm verify` is the gate before every publish. It chains 26 checks (the `verify` script in `package.json`) that together cover compile, runtime, dist integrity, and security awareness. If any link in the chain fails, the suite exits non-zero and `prepublishOnly` blocks the release.
 
-A 12th check, `verify:ecosystem`, runs downstream consumer tests against the in-tree factory but is **not** part of the chained `verify` script — it depends on sibling repos being checked out on disk, which isn't the case on CI runners. Run it explicitly (`pnpm verify:ecosystem`) when working locally, or use `pnpm verify:all` (= `pnpm verify && pnpm verify:ecosystem`) for the full sweep.
+A further check, `verify:ecosystem`, runs downstream consumer tests against the in-tree factory but is **not** part of the chained `verify` script — it depends on sibling repos being checked out on disk, which isn't the case on CI runners. Run it explicitly (`pnpm verify:ecosystem`) when working locally, or use `pnpm verify:all` (= `pnpm verify && pnpm verify:ecosystem`) for the full sweep.
 
 ## What each check catches
 
-| Step                       | Catches                                                                                                                                                                                                                                                        | Cost   |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `verify:generated`         | a generated module (enum exports/constants, engine methods, method signatures) is stale; and `check:request-shapes` — a request shape reaching for bare `any` or bare `string` where a closed union exists; and `verify:any-count` — a directory gaining `any` | ~2 s   |
-| `verify:types`             | type errors anywhere in `src`; and `verify:test-types` — a test file gaining tsc errors (test files are excluded from `tsc --noEmit`); and `verify:implicit-any` — a directory gaining implicit `any`                                                          | ~25 s  |
-| `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                                                                                                    | ~5 s   |
-| `verify:exit-tenant`       | a NEW file in `src/` reaching for `matchUpStatusCodes` — the LEGACY array whose per-side exit tenant was evicted (P37); reads `sideExitProvenance` instead. Allowlisted by FILE, with a reason each, and a stale entry fails so the list ratchets down         | ~0 s   |
-| `verify:coverage`          | regressions below `95/97/87/97.5` statements/functions/branches/lines                                                                                                                                                                                          | ~100 s |
-| `verify:coverage-headroom` | a change spending more than 25 items of margin before the coverage floor; always prints headroom per metric                                                                                                                                                    | ~0 s   |
-| `verify:server`            | NestJS-style server specs (`pnpm test:server` — vitest, `vitest.server.config.mts`)                                                                                                                                                                            | ~7 s   |
-| `verify:audit`             | high or critical `pnpm audit` advisories in **every** lockfile (package + `documentation/`), minus entries in `audit-waivers.json`; a waiver matching no open advisory also fails                                                                              | ~10 s  |
-| `verify:build`             | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                                                                                                               | ~13 s  |
-| `verify:publint`           | `publint --strict --level warning` — package.json `exports` correctness, per-format type declarations, `sideEffects` / `type` hints, tarball contents match `files` field                                                                                      | ~6 s   |
-| `verify:runtime`           | "compiles but doesn't run" — CJS + ESM smoke against the built dist                                                                                                                                                                                            | ~3 s   |
-| `verify:bundle-size`       | a file in `dist/` grew beyond +10 % vs baseline                                                                                                                                                                                                                | ~1 s   |
-| `verify:surface`           | a public export was removed (breaking) or signature drifted                                                                                                                                                                                                    | ~1 s   |
-| `verify:pack`              | the published `.d.ts` references an internal path that didn't get packed; runtime `require()` smoke after `npm install` of the tarball                                                                                                                         | ~30 s  |
+| Step                       | Catches                                                                                                                                                                                                                                                                                                                                   | Cost   |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `verify:generated`         | a generated module (enum exports/constants, engine methods, method signatures) is stale; and `check:request-shapes` — a request shape reaching for bare `any` or bare `string` where a closed union exists; and `verify:any-count` — a directory gaining `any`; and `verify:constant-names` — a test using a constant's NAME as its value | ~2 s   |
+| `verify:types`             | type errors anywhere in `src`; and `verify:test-types` — a test file gaining tsc errors (test files are excluded from `tsc --noEmit`); and `verify:implicit-any` — a directory gaining implicit `any`                                                                                                                                     | ~25 s  |
+| `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                                                                                                                                                                               | ~5 s   |
+| `verify:exit-tenant`       | a NEW file in `src/` reaching for `matchUpStatusCodes` — the LEGACY array whose per-side exit tenant was evicted (P37); reads `sideExitProvenance` instead. Allowlisted by FILE, with a reason each, and a stale entry fails so the list ratchets down                                                                                    | ~0 s   |
+| `verify:coverage`          | regressions below `95/97/87/97.5` statements/functions/branches/lines                                                                                                                                                                                                                                                                     | ~100 s |
+| `verify:coverage-headroom` | a change spending more than 25 items of margin before the coverage floor; always prints headroom per metric                                                                                                                                                                                                                               | ~0 s   |
+| `verify:server`            | NestJS-style server specs (`pnpm test:server` — vitest, `vitest.server.config.mts`)                                                                                                                                                                                                                                                       | ~7 s   |
+| `verify:audit`             | high or critical `pnpm audit` advisories in **every** lockfile (package + `documentation/`), minus entries in `audit-waivers.json`; a waiver matching no open advisory also fails                                                                                                                                                         | ~10 s  |
+| `verify:build`             | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                                                                                                                                                                                          | ~13 s  |
+| `verify:publint`           | `publint --strict --level warning` — package.json `exports` correctness, per-format type declarations, `sideEffects` / `type` hints, tarball contents match `files` field                                                                                                                                                                 | ~6 s   |
+| `verify:runtime`           | "compiles but doesn't run" — CJS + ESM smoke against the built dist                                                                                                                                                                                                                                                                       | ~3 s   |
+| `verify:bundle-size`       | a file in `dist/` grew beyond +10 % vs baseline                                                                                                                                                                                                                                                                                           | ~1 s   |
+| `verify:consumer-bundle`   | what a CONSUMER bundles grew beyond +10 % vs baseline: bare `syncEngine` and `syncEngine` + named `queryGovernor`, built from `dist/esm` with esbuild (minify, ESM, gzip); a failure names the source areas that grew                                                                                                                     | ~1 s   |
+| `verify:surface`           | a public export was removed (breaking) or signature drifted                                                                                                                                                                                                                                                                               | ~1 s   |
+| `verify:pack`              | the published `.d.ts` references an internal path that didn't get packed; runtime `require()` smoke after `npm install` of the tarball                                                                                                                                                                                                    | ~30 s  |
 
 Total: ~3 minutes warm. The chain is ordered so cheap fail-fast checks run first.
 
@@ -43,6 +44,7 @@ Four artifacts live under `scripts/verify/baseline/`:
 
 - **`surface.txt`** — sorted list of every public export name. Surface drift is computed by set diff against this file. Regenerate after intentional surface changes with `pnpm verify:surface -- --update-baseline`.
 - **`bundle-size.json`** — `{ rawBytes, gzipBytes }` per published file. Growth-budget is +10 % per file by default; override with `--budget=N` (decimal).
+- **`consumer-bundle.json`** — per consumer fixture: raw + gzip of the bundled output, its module count, and its minified bytes per source area (from the esbuild metafile). +10 % by default (`--budget=N`); the areas let a failure say what was pulled in. `verify:bundle-size` cannot see this: when a governor starts importing a generator, the published files grow by one export line, because the generator was already in them. Re-seed with `pnpm verify:consumer-bundle -- --update-baseline`.
 - **`coverage-headroom.json`** — items of margin per metric before the coverage floor. A change may spend 25 by default (`--budget=N`); accept a new margin with `node scripts/verify/coverage-headroom.mjs --update-baseline`. Percentages hide how close the floor is — 95.09 % against a 95 floor was **39 statements** out of 43,284 — so this tracks the number in items.
 - **`any-count.json`** — `any` per directory in non-test `src`; it may only fall (`verify:any-count`, below).
 - **`tsc-test-types.json`** — tsc errors per test file; may only fall (`verify:test-types`, below).
@@ -90,9 +92,9 @@ node scripts/verify/ecosystem.mjs --build-factory        # rebuild dist before s
 
 ## CI
 
-`.github/workflows/verify.yml` runs the 11-step chain on every PR + push to master, across the Node version matrix declared in `package.json#engines.node`. The job is skipped on release-please merge commits (CHANGELOG/version-only changes that don't need re-verification). The surface and bundle-size baselines participate in the same diff so updates are reviewable.
+`.github/workflows/verify.yml` runs the `verify` chain on every PR + push to master, across the Node version matrix declared in `package.json#engines.node`. The job is skipped on release-please merge commits (CHANGELOG/version-only changes that don't need re-verification). The surface and bundle-size baselines participate in the same diff so updates are reviewable.
 
-`.github/workflows/npm-publish.yml` runs `lint` + `check-types` + `build` at tag-time, then `npm publish` triggers `prepublishOnly` (= `pinst --disable && pnpm verify`) which re-runs the 11-step chain against the exact tagged commit before anything ships to npm.
+`.github/workflows/npm-publish.yml` runs `lint` + `check-types` + `build` at tag-time, then `npm publish` triggers `prepublishOnly` (= `pinst --disable && pnpm verify`) which re-runs the `verify` chain against the exact tagged commit before anything ships to npm.
 
 ## Adding a new check
 
@@ -144,6 +146,20 @@ this ratchet is the only thing holding the count; the plan that lowers it is
 - It refuses to write a rise. `--accept-rise` records one deliberately, so it shows up as a reviewed line
   in the baseline diff, never silently.
 - `pnpm verify:any-count --self-test` proves it fires on a rise and stays quiet on a fall.
+
+## `verify:constant-names` — a test must use a constant's value, not its name
+
+`scripts/verify/constantNames.mjs` fails on a quoted string in a `*.test.ts` that is the NAME of an
+`export const NAME = '…'` in `src/constants/`, is not the value of any such constant, and is never written as a
+quoted string in non-test `src`. `REMOVE_ASSIGNMENT` is `'REMOVE'`: two lucky-loser tests matched
+`'REMOVE_ASSIGNMENT'`, found nothing, and passed for six months without calling the method (#5457), and the same
+sweep found three topic-priority tests and a ranking test with the same mistake.
+
+- A deliberate use (junk input, a spelling test, a scan for identifiers) goes in
+  `scripts/verify/constantNames.allow.json` under the test's path, with the reason; the `*` key allows a literal
+  in every test file.
+- `pnpm verify:constant-names` runs `--self-test` first, which proves it fires on a name and stays quiet on a
+  value, a code the source uses, a comment and an allowed entry.
 
 ## `verify:test-types` and `verify:implicit-any` — two tsc counts that may only go down
 

@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { SINGLES, DOUBLES_EVENT, HYBRID_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
-import { SINGLES } from '@Constants/eventConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+
+// constants
+import { MALE } from '@Constants/genderConstants';
 
 function seed(participantsCount = 32) {
   return mocksEngine.generateTournamentRecord({
@@ -141,7 +144,7 @@ describe('engine.build.event — fluent EventBuilder', () => {
     const result: any = tournamentEngine.build
       .event({ eventName: 'Mixed-pool sanity' })
       .singles()
-      .gender('MALE')
+      .gender(MALE)
       .draw(16, { seedsCount: 4 })
       .entries(participantIds, { enforceGender: false })
       .create();
@@ -153,13 +156,13 @@ describe('engine.build.event — fluent EventBuilder', () => {
 
   it('doubles() / hybrid() / team() with no tieFormat set eventType only', () => {
     const dd: any[] = tournamentEngine.build.event().doubles().toDirectives();
-    expect(dd[0].params.event.eventType).toEqual('DOUBLES');
+    expect(dd[0].params.event.eventType).toEqual(DOUBLES_EVENT);
 
     const hd: any[] = tournamentEngine.build.event().hybrid().toDirectives();
-    expect(hd[0].params.event.eventType).toEqual('HYBRID');
+    expect(hd[0].params.event.eventType).toEqual(HYBRID_EVENT);
 
     const td: any[] = tournamentEngine.build.event().team().toDirectives();
-    expect(td[0].params.event.eventType).toEqual('TEAM');
+    expect(td[0].params.event.eventType).toEqual(TEAM_EVENT);
     expect(td[0].params.event.tieFormat).toBeUndefined();
     expect(td[0].params.event.tieFormatName).toBeUndefined();
   });

@@ -17,6 +17,35 @@ self-reported results, `RANK` or `RATING` ordering, and eighteen new engine meth
 - **Upgrading?** Start at [what you must act on](#what-you-must-act-on) — it is a short list.
 - **Upgrade mechanics** in detail: the [6.x to 7.0.0 migration guide](./migration-7.0.0.md).
 - **Every commit**: [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
+- **Where it led**: [7.0.0 began a journey](#700-began-a-journey) that the 7.x releases continued.
+
+## 7.0.0 began a journey
+
+7.0.0 made two promises about the outcome pipeline. A record can say why it is in its state. A
+correction leaves the draw where the corrected entry would have left it. The release also shipped
+the means of testing those promises: probes, confluence sweeps and an exit-propagation harness. Once
+they were running, the harness kept finding cases the promises did not yet cover. The 7.x releases
+have been about closing them.
+
+| Release         | What it settled                                                                                                                                                                                                                                                                  |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.3.0           | **The legacy codes array stopped deciding exits.** Exit logic reads `sideExitProvenance`, and a gate keeps new logic off `matchUpStatusCodes`. A double exit now places a BYE in the linked structure by default (`doubleExitPropagateBye: true`).                               |
+| 7.5.0           | **[The outcome pipeline](./concepts/outcome-pipeline.md) is written down as a specification.** A golden corpus pins it. A scoring policy now governs the propagation flags in both directions. An exit can be recorded before the second opponent arrives.                       |
+| 7.7.0           | **The frozen census arms read zero**, and no writer leaves a hole in a draw.                                                                                                                                                                                                     |
+| 7.10.0          | **`STALLED_POSITION` became an error**, after an at-scale randomized census read zero stalls. The detector reports a position nobody can reach.                                                                                                                                  |
+| 7.11.0 – 7.14.1 | **The failure families found at scale were closed:**<ul><li>feed-in consolations under change propagation;</li><li>refused calls that still wrote;</li><li>BYE claims, reservations and carries;</li><li>results whose effect depended on the order they were entered.</li></ul> |
+
+**Where it stands, October 2026.** The randomized census plays each draw forward in a random order, in
+three configurations at 135,000 seeds each. Its most recent complete run, on 15 October 2026,
+reported 2, 4 and 8 failures per 135,000 seeds. The run of 10 October, at 40,000 seeds per
+configuration, reported 39, 302 and 110: a failure rate roughly a hundred times higher. Every
+failing schedule stored since 10 October now replays clean except one. That one concerns only
+`matchUpStatusCodes`, which 8.0 removes.
+
+The census continues, and the guarantees it confirms are recorded in
+[Exit Propagation](./concepts/exit-propagation.md#guarantees). The settings that shape the pipeline
+are listed together under
+[`setMatchUpStatus`](./governors/matchup-governor.md#what-one-call-sets-in-motion).
 
 ## Why provenance
 

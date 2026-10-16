@@ -104,7 +104,7 @@ minutes into a CI run.
 
 ## Tests
 
-The suite is large (15,800+ tests) and a PR that changes behaviour is expected to carry a test.
+The suite is large (16,800+ tests in the default run) and a PR that changes behaviour is expected to carry a test.
 
 - Unit tests live **beside the code** as `*.test.ts`.
 - Broader integration and scenario suites live under `src/tests/`, organized by area.
@@ -112,7 +112,8 @@ The suite is large (15,800+ tests) and a PR that changes behaviour is expected t
 - Where a test reassigns a result across successive engine calls, the house pattern is
   `let result: any = …` (`prefer-const` is off to permit it). Where a test calls once and never
   reassigns, `const` is correct — the pattern is not a blanket rule.
-- Coverage thresholds are enforced at **95% statements / 95% branches / 85% functions / 95% lines**.
+- Coverage thresholds are enforced at **95% statements / 97% functions / 87% branches / 97.5% lines**
+  (`vitest.config.mts`).
   Never lower a threshold to make a run pass; add the missing test instead.
 
 Run a single file with `pnpm test --run path/to/file.test.ts`.
@@ -125,7 +126,10 @@ surprise people:
 
 - **`verify:generated`** — several enum, engine-method and request-shape files are generated from
   source. If you hand-edit one side, this fails with the `pnpm gen:…` command to run. Run it and
-  commit the result.
+  commit the result. It also runs `verify:constant-names`, which fails when a test uses a constant's
+  NAME where the code expects its value (`'REMOVE_ASSIGNMENT'` for `REMOVE_ASSIGNMENT`, which is
+  `'REMOVE'`): import the constant, or, if the name is deliberate, list the file and literal with
+  the reason in `scripts/verify/constantNames.allow.json`.
 - **`verify:format`** — Prettier is checked over `src/**` _and_ `documentation/docs/**`. Running
   `pnpm format` fixes it.
 - **`verify:migration-coverage`** — any commit carrying a breaking change must have its PR number

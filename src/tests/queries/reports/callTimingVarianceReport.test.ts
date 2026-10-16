@@ -4,6 +4,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { CALL_TIMING_VARIANCE_REPORT } from '@Constants/reportConstants';
+import { BYE } from '@Constants/matchUpStatusConstants';
 
 const SCHEDULED_DATE = '2026-01-15';
 
@@ -16,7 +17,7 @@ function seedTwoScheduledMatchUps() {
     setState: true,
   });
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
-  const playable = (matchUps ?? []).filter((m: any) => m.matchUpStatus !== 'BYE');
+  const playable = (matchUps ?? []).filter((m: any) => m.matchUpStatus !== BYE);
   return playable;
 }
 

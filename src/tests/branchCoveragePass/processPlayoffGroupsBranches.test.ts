@@ -3,6 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
 // constants
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import {
   FIRST_ROUND_LOSER_CONSOLATION,
   FEED_IN_CHAMPIONSHIP,
@@ -11,6 +12,8 @@ import {
   COMPASS,
   OLYMPIC,
   AD_HOC,
+  ROUND_OUTCOME,
+  ITEM,
 } from '@Constants/drawDefinitionConstants';
 
 // minimal elimination-style source structure (no structureType, no nested structures)
@@ -20,7 +23,7 @@ function elimSource(positions = 8, matchUps: any[] = []) {
     structures: [
       {
         structureId: 'source-struct-id',
-        finishingPosition: 'ROUND_OUTCOME',
+        finishingPosition: ROUND_OUTCOME,
         positionAssignments: Array.from({ length: positions }, (_, i) => ({ drawPosition: i + 1 })),
         matchUps,
       },
@@ -45,7 +48,7 @@ test('returns validation error when bestOf exceeds available participants', () =
     drawDefinition: elimSource(4),
     groupCount: 1,
     groupSize: 4,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.error).toBeDefined();
@@ -80,7 +83,7 @@ test('AD_HOC group with undefined finishingPositions falls back to empty array',
     groupCount: 1,
     groupSize: 4,
     stageSequence: 2,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.structures?.length).toBeGreaterThan(0);
@@ -95,7 +98,7 @@ test('COMPASS playoff generates structures/links with idPrefix', () => {
     groupCount: 8,
     groupSize: 8,
     idPrefix: 'px',
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.structures?.length).toBeGreaterThan(0);
@@ -111,7 +114,7 @@ test('OLYMPIC playoff generates structures', () => {
     groupCount: 8,
     groupSize: 8,
     idPrefix: 'px',
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.structures?.length).toBeGreaterThan(0);
@@ -125,7 +128,7 @@ test('COMPASS playoff with drawSize < 2 produces no compass structures', () => {
     drawDefinition: elimSource(4),
     groupCount: 1,
     groupSize: 4,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   // no error, no early return; structures array still returned (possibly empty)
@@ -141,7 +144,7 @@ test('PAGE_PLAYOFF with participants !== 4 returns INVALID_CONFIGURATION', () =>
     drawDefinition: elimSource(4),
     groupCount: 1,
     groupSize: 4,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.error).toBeDefined();
@@ -164,7 +167,7 @@ test('PAGE_PLAYOFF from elimination source with idPrefix and structureName', () 
     groupCount: 1,
     groupSize: 4,
     idPrefix: 'px',
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.structures?.length).toBeGreaterThanOrEqual(3);
@@ -179,7 +182,7 @@ test('PAGE_PLAYOFF from elimination source without idPrefix or structureName', (
     drawDefinition: elimSource(4),
     groupCount: 1,
     groupSize: 4,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.structures?.length).toBeGreaterThanOrEqual(3);
@@ -194,7 +197,7 @@ test('FEED_IN_CHAMPIONSHIP playoff generates structures with idPrefix', () => {
     groupCount: 2,
     groupSize: 4,
     idPrefix: 'px',
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.structures?.length).toBeGreaterThan(0);
@@ -209,7 +212,7 @@ test('bestOf group followed by remainder group generates a remainder playoff', (
     groupCount: 2,
     groupSize: 4,
     idPrefix: 'px',
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.structures?.length).toBeGreaterThanOrEqual(2);
@@ -225,7 +228,7 @@ test('PAGE_PLAYOFF from non-elimination source with single finishing position', 
       structures: [
         {
           structureId: 'source-struct-id',
-          structureType: 'ITEM',
+          structureType: ITEM,
           matchUps: [],
           positionAssignments: [{ drawPosition: 1 }, { drawPosition: 2 }, { drawPosition: 3 }, { drawPosition: 4 }],
         },
@@ -233,7 +236,7 @@ test('PAGE_PLAYOFF from non-elimination source with single finishing position', 
     },
     groupCount: 4,
     groupSize: 4,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.structures?.length).toBeGreaterThanOrEqual(4);
@@ -248,7 +251,7 @@ test('FIRST_ROUND_LOSER_CONSOLATION playoff generates structures', () => {
     groupCount: 2,
     groupSize: 4,
     stageSequence: 2,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
   expect(result.structures?.length).toBeGreaterThan(0);

@@ -1,5 +1,8 @@
 import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
-import { getUpdatedSchedulingProfile } from '@Query/matchUps/scheduling/getUpdatedSchedulingProfile';
+import {
+  getMultipleVenueRoundIssues,
+  getUpdatedSchedulingProfile,
+} from '@Query/matchUps/scheduling/getUpdatedSchedulingProfile';
 import { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 import { getEventIdsAndDrawIds } from '@Query/tournaments/getEventIdsAndDrawIds';
 import { getCompetitionVenues } from '@Query/venues/venuesAndCourtsGetter';
@@ -69,7 +72,13 @@ export function getSchedulingProfile({ tournamentRecords, tournamentRecord }: Ge
       });
       if (result.error) return result;
 
+      issues.push(...getMultipleVenueRoundIssues({ schedulingProfile }));
       return { schedulingProfile, modifications, issues };
+    }
+
+    const multipleVenueRoundIssues = getMultipleVenueRoundIssues({ schedulingProfile });
+    if (multipleVenueRoundIssues.length) {
+      return { schedulingProfile, modifications: 0, issues: multipleVenueRoundIssues };
     }
   }
 

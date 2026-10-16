@@ -763,6 +763,20 @@ unless stated.
   through a real partner** (a hole is not a drawPosition, [drawPositions](./draw-positions.md) § 5). Census s13, s14,
   s16 and run 19 residuals; each pinned by a named test.
 
+### Rules settled by the census in S7 (2026-10-15)
+
+Read from census run 20, under `doubleExitPropagateBye: false`; each pinned by a named test.
+
+- **An unwind walks on through a result a dissolved convergence produced.** "A result it leaves standing" is one whose
+  exits all come from origins the unwind keeps. An exit produced by a convergence that holds one of the withdrawn
+  origins is not such a result, even before the walk has reached the convergence itself: re-scoring the origin dissolves
+  the convergence, and what it produced goes too (DOUBLE_ELIMINATION 8, 20994634 and 20932043:
+  `anUnwindWalksOnThroughADissolvedConvergence`).
+- **A BYE claim survives the exit withdrawn beside it.** One side of a matchUp can hold both an exit an origin sent there
+  and a claim on the BYE the seat now is (a matchUp whose loser is nobody). Withdrawing the exit leaves the claim, so the
+  BYE is taken back when the claimant later gains a real loser (COMPASS 16/13, 20964176:
+  `aByeClaimSurvivesTheExitWithdrawnBesideIt`).
+
 ### Nothing to do is success, not failure
 
 Several situations look like a failure to place a participant but are simply an absence of one. The

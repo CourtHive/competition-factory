@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { MISSING_TOURNAMENT_RECORD, INVALID_MATCHUP, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 
@@ -88,7 +89,7 @@ describe('getParticipantStats error conditions', () => {
     });
     // Get an individual participant
     const { participants } = tournamentEngine.getParticipants({
-      participantFilters: { participantTypes: ['INDIVIDUAL'] },
+      participantFilters: { participantTypes: [INDIVIDUAL] },
     });
     const individualId = participants[0].participantId;
     const result = tournamentEngine.getParticipantStats({ teamParticipantId: individualId });

@@ -15,6 +15,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { adHocMatchUpActions } from './adHocMatchUpActions';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { locateMatchUp } from '@Acquire/locateMatchUp';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isString } from '@Tools/objects';
 import {
@@ -213,8 +214,11 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
 }
 
 function resolveDrawDefinition({ tournamentRecord, matchUpId }) {
-  const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
-  const matchUp = matchUps.find((m) => m.matchUpId === matchUpId);
+  // where the matchUp lives is read from the stored structures; only an answer they cannot give hydrates them all
+  const { location, exact } = locateMatchUp({ tournamentRecord, matchUpId });
+  const matchUp = exact
+    ? location
+    : allTournamentMatchUps({ tournamentRecord }).matchUps?.find((m) => m.matchUpId === matchUpId);
   const event = (tournamentRecord?.events ?? []).find((e) => e.eventId === matchUp?.eventId);
   const drawDefinition = (event?.drawDefinitions ?? []).find((dd) => dd.drawId === matchUp?.drawId);
   return { drawDefinition, event };

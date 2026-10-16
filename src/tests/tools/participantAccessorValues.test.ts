@@ -7,18 +7,19 @@ import { expect, test } from 'vitest';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { MALE } from '@Constants/genderConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 test('accessorValues can target person.sex when participantType: PAIR', () => {
   const drawProfiles = [
     {
-      category: { ratingType: 'WTN', ratingMin: 8, ratingMax: 12 },
+      category: { ratingType: WTN, ratingMin: 8, ratingMax: 12 },
       eventName: `WTN 8-12 DOUBLES`,
       eventType: DOUBLES,
       drawSize: 32,
       gender: MALE,
     },
     {
-      category: { ratingType: 'WTN', ratingMin: 8, ratingMax: 12 },
+      category: { ratingType: WTN, ratingMin: 8, ratingMax: 12 },
       eventName: `WTN 8-12 SINGLES`,
       eventType: SINGLES,
       drawSize: 32,

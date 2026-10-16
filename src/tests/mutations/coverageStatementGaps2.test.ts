@@ -15,8 +15,18 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants and fixtures
-import { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLES_MATCHUP, DOUBLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { TEAM_EVENT } from '@Constants/eventConstants';
+import {
+  PLAY_OFF,
+  ROUND_ROBIN,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  SINGLE_ELIMINATION,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  CONSOLATION,
+} from '@Constants/drawDefinitionConstants';
 import {
   INVALID_MATCHUP,
   INVALID_VALUES,
@@ -28,19 +38,22 @@ import {
   INVALID_PARTICIPANT_IDS,
 } from '@Constants/errorConditionConstants';
 import {
+  BYE,
   COMPLETED,
   DEFAULTED,
   RETIRED,
   WALKOVER,
   DOUBLE_WALKOVER,
   DOUBLE_DEFAULT,
+  TO_BE_PLAYED,
+  IN_PROGRESS,
 } from '@Constants/matchUpStatusConstants';
 
 // ----------------------------------------------------------------
 // 1. addPoint.ts — timed set, aggregate format, rally scoring,
 //    consecutive game, match tiebreak, formatGameScore edge cases
 // ----------------------------------------------------------------
-function makeMatchUp(format: string, status = 'TO_BE_PLAYED') {
+function makeMatchUp(format: string, status = TO_BE_PLAYED) {
   return {
     matchUpId: 'mu1',
     matchUpFormat: format,
@@ -79,7 +92,7 @@ describe('addPoint uncovered paths', () => {
     }
     expect(m.score.sets.length).toBeGreaterThanOrEqual(1);
     // Timed sets don't auto-complete
-    expect(m.matchUpStatus).toBe('IN_PROGRESS');
+    expect(m.matchUpStatus).toBe(IN_PROGRESS);
   });
 
   it('handles tiebreak-only set (pickleball style)', () => {
@@ -102,7 +115,7 @@ describe('addPoint uncovered paths', () => {
       { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1, side1GameScores: [], side2GameScores: [] },
       { setNumber: 2, side1Score: 3, side2Score: 6, winningSide: 2, side1GameScores: [], side2GameScores: [] },
     ];
-    mu.matchUpStatus = 'IN_PROGRESS';
+    mu.matchUpStatus = IN_PROGRESS;
     let m = mu;
     // Play match tiebreak to 10-0
     for (let i = 0; i < 10; i++) {
@@ -256,7 +269,7 @@ describe('getParticipantResults uncovered paths', () => {
   it('handles team matchUps with tieMatchUps and no overall winningSide', () => {
     const matchUps = [
       {
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
         winningSide: undefined,
         sides: [
           { sideNumber: 1, participantId: 'teamA' },
@@ -266,7 +279,7 @@ describe('getParticipantResults uncovered paths', () => {
         tieMatchUps: [
           {
             winningSide: 1,
-            matchUpType: 'SINGLES',
+            matchUpType: SINGLES_MATCHUP,
             matchUpStatus: COMPLETED,
             score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1 }] },
             sides: [
@@ -276,7 +289,7 @@ describe('getParticipantResults uncovered paths', () => {
           },
           {
             winningSide: 2,
-            matchUpType: 'DOUBLES',
+            matchUpType: DOUBLES_MATCHUP,
             matchUpStatus: COMPLETED,
             score: { sets: [{ side1Score: 3, side2Score: 6, winningSide: 2 }] },
             sides: [
@@ -305,7 +318,7 @@ describe('getParticipantResults uncovered paths', () => {
         tieMatchUps: [
           {
             winningSide: 1,
-            matchUpType: 'DOUBLES',
+            matchUpType: DOUBLES_MATCHUP,
             matchUpStatus: COMPLETED,
             matchUpFormat: FORMAT_STANDARD,
             score: { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1 }] },
@@ -316,7 +329,7 @@ describe('getParticipantResults uncovered paths', () => {
           },
           {
             winningSide: 2,
-            matchUpType: 'SINGLES',
+            matchUpType: SINGLES_MATCHUP,
             matchUpStatus: COMPLETED,
             matchUpFormat: FORMAT_STANDARD,
             score: { sets: [{ side1Score: 4, side2Score: 6, winningSide: 2 }] },
@@ -715,13 +728,13 @@ describe('getParticipantStats uncovered paths', () => {
   it('returns INVALID_PARTICIPANT_IDS for non-team participants', () => {
     const tournamentRecord = {
       tournamentId: 't1',
-      participants: [{ participantId: 'p1', participantType: 'INDIVIDUAL' }],
+      participants: [{ participantId: 'p1', participantType: INDIVIDUAL }],
     } as any;
     // Provide matchUps so it doesn't hit MISSING_MATCHUPS first
     const matchUps = [
       {
         matchUpId: 'mu1',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpStatus: COMPLETED,
         winningSide: 1,
         score: { sets: [{ side1Score: 6, side2Score: 3, winningSide: 1 }] },
@@ -768,9 +781,9 @@ describe('modifyTournamentRecord uncovered paths', () => {
     });
     tournamentEngine.setState(result.tournamentRecord);
     const modResult = tournamentEngine.modifyTournamentRecord({
-      venueProfiles: [{ venueCount: 1, courtsCount: 2 }],
+      venueProfiles: [{ courtsCount: 2 }],
     });
-    expect(modResult.venueIds).toBeDefined();
+    expect(modResult.venueIds.length).toEqual(1);
   });
 });
 
@@ -788,18 +801,24 @@ describe('generateEventWithDraw uncovered paths', () => {
 
   it('handles team event draw profile', () => {
     const result = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     expect(result.tournamentRecord).toBeDefined();
     const events = result.tournamentRecord.events;
-    expect(events?.[0]?.eventType).toBe('TEAM');
+    expect(events?.[0]?.eventType).toBe(TEAM_EVENT);
   });
 
   it('handles publish option in draw profile', () => {
     const result = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4, publish: true, completeAllMatchUps: true }],
+      setState: true,
     });
     expect(result.tournamentRecord).toBeDefined();
+    const { publishState } = tournamentEngine.getPublishState({ eventId: result.eventIds[0] });
+    expect(publishState.status.published).toEqual(true);
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    expect(matchUps.length).toEqual(3);
+    expect(matchUps.every((matchUp) => matchUp.winningSide)).toEqual(true);
   });
 
   it('handles outcomes array in drawProfile', () => {
@@ -846,11 +865,11 @@ describe('assignDrawPositionBye uncovered paths', () => {
 describe('updateTieFormat via engine', () => {
   it('updates tieFormat on a TEAM draw definition', () => {
     const result = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(result.tournamentRecord);
     const events = tournamentEngine.getEvents().events;
-    const teamEvent = events.find((e) => e.eventType === 'TEAM');
+    const teamEvent = events.find((e) => e.eventType === TEAM_EVENT);
     if (teamEvent?.drawDefinitions?.[0]?.tieFormat) {
       const tf = structuredClone(teamEvent.drawDefinitions[0].tieFormat);
       // Modify winCriteria slightly to trigger update path
@@ -877,9 +896,14 @@ describe('prepareStage uncovered paths', () => {
           completeAllMatchUps: true,
         },
       ],
+      setState: true,
     });
     expect(result.tournamentRecord).toBeDefined();
     expect(result.drawIds?.length).toBeGreaterThan(0);
+    // the playoff is positioned and completed after the groups
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    expect(matchUps.some((matchUp) => matchUp.stage === PLAY_OFF)).toEqual(true);
+    expect(matchUps.every((matchUp) => matchUp.winningSide)).toEqual(true);
   });
 
   it('handles qualifying profiles', () => {
@@ -905,7 +929,7 @@ describe('positionAssignment uncovered paths', () => {
       drawProfiles: [
         {
           drawSize: 8,
-          drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+          drawType: FIRST_MATCH_LOSER_CONSOLATION,
           seedsCount: 2,
           completeAllMatchUps: true,
         },
@@ -916,8 +940,14 @@ describe('positionAssignment uncovered paths', () => {
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: result.drawIds[0] });
     // Consolation structure should exist
-    const consolation = drawDefinition?.structures?.find((s) => s.stage === 'CONSOLATION');
+    const consolation = drawDefinition?.structures?.find((s) => s.stage === CONSOLATION);
     expect(consolation).toBeDefined();
+    // completion feeds first-match losers into the consolation and completes it too
+    const consolationMatchUps = tournamentEngine
+      .allTournamentMatchUps()
+      .matchUps.filter((matchUp) => matchUp.structureId === consolation.structureId && matchUp.matchUpStatus !== BYE);
+    expect(consolationMatchUps.length).toBeGreaterThan(0);
+    expect(consolationMatchUps.every((matchUp) => matchUp.winningSide)).toEqual(true);
   });
 });
 
@@ -927,12 +957,12 @@ describe('positionAssignment uncovered paths', () => {
 describe('removeTieMatchUpParticipant paths', () => {
   it('handles TEAM matchUp participant removal flows', () => {
     const result = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(result.tournamentRecord);
     // Getting matchUps for the TEAM draw
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps?.find((m) => m.matchUpType === 'TEAM');
+    const teamMatchUp = matchUps?.find((m) => m.matchUpType === TEAM_MATCHUP);
     expect(teamMatchUp).toBeDefined();
     // The tieMatchUps should exist
     expect(teamMatchUp?.tieMatchUps?.length).toBeGreaterThan(0);

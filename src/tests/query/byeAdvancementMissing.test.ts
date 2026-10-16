@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLE_ELIMINATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -31,7 +31,7 @@ function generate(participantsCount: number) {
 }
 
 function mainStructure(tournamentRecord: any) {
-  return tournamentRecord.events[0].drawDefinitions[0].structures.find((s: any) => s.stage === 'MAIN');
+  return tournamentRecord.events[0].drawDefinitions[0].structures.find((s: any) => s.stage === MAIN);
 }
 
 /** The round-1 BYE matchUps that advance a real participant, plus the position each one advances. */

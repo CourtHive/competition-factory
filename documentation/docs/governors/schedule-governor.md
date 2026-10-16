@@ -342,14 +342,14 @@ engine.scheduleProfileRounds({
 
   // Date selection
   scheduleDates, // optional - specific dates to schedule
-  clearScheduleDates, // optional - boolean or array of dates to clear first
+  clearScheduleDates, // optional - true clears every scheduled matchUp in the tournament; an array clears those dates
 
   // Court selection
   courtIds, // optional array - restrict scheduling to only these courts
 
   // Execution control
   dryRun, // optional boolean - preview without changes
-  pro, // optional boolean - use grid scheduling instead of Garman
+  pro, // DEPRECATED - see below
   checkPotentialRequestConflicts, // optional boolean (default: true)
 
   // Daily-limit accounting (apply to already-scheduled matchUps that contribute
@@ -374,7 +374,7 @@ Set either flag to `false` to restore the pre-defaults legacy semantics where ev
 
 When `courtIds` is provided, the scheduler only considers those courts as available capacity. Useful when an operator wants auto-scheduling to operate against a subset of courts (e.g. when some courts are reserved for other purposes, or when scheduling is being applied per-court). Passing an empty array means "no courts are available" — the scheduler will run but place no matchUps. Omitting the parameter (the default) considers all enabled courts at the profile's venues.
 
-In `pro: true` mode, matchUps will receive `courtId` assignments only from the filtered set. In default (Garman) mode, the filter constrains capacity but final court assignment may still be deferred to play time.
+In the deprecated `pro: true` mode, matchUps will receive `courtId` assignments only from the filtered set. In default (Garman) mode, the filter constrains capacity but final court assignment may still be deferred to play time.
 
 **Returns**:
 
@@ -412,19 +412,27 @@ engine.scheduleProfileRounds({
 
 **Clear and Reschedule**:
 
+`clearScheduleDates: true` clears the schedule of **every** scheduled matchUp in the tournament records — on every
+date, in every event, whether or not the scheduling profile mentions it — before scheduling. To rebuild only some
+dates, pass those dates as an array: only matchUps scheduled on them are cleared. In both forms completed matchUps
+and [locked](../concepts/schedule-locks.mdx) matchUps keep their schedules.
+
 ```js
+// Clear everything, then schedule the whole profile
 engine.scheduleProfileRounds({
-  clearScheduleDates: true, // Clear all dates
+  clearScheduleDates: true,
   periodLength: 30,
 });
 
-// Or clear specific dates
+// Rebuild only 2024-06-16; every other date is left as it is
 engine.scheduleProfileRounds({
-  clearScheduleDates: ['2024-06-15', '2024-06-16'],
-  scheduleDates: ['2024-06-15', '2024-06-16'],
+  clearScheduleDates: ['2024-06-16'],
+  scheduleDates: ['2024-06-16'],
   periodLength: 30,
 });
 ```
+
+Clearing a date that is not also in `scheduleDates` leaves it cleared and unscheduled.
 
 **Dry Run Preview**:
 
@@ -437,14 +445,10 @@ console.log('Would schedule:', result.scheduledMatchUpIds.length, 'matchUps');
 console.log('Request conflicts:', result.requestConflicts);
 ```
 
-**Professional Grid Scheduling**:
-
-```js
-engine.scheduleProfileRounds({
-  pro: true, // Use grid scheduling
-  periodLength: 30,
-});
-```
+**`pro: true` is deprecated** (since 7.15.0; removed at the next major). It selects an older scheduler that gives each
+matchUp a court and a time in one pass, without Garman time slots. It is not grid scheduling: court grid positions
+(`courtOrder`) are placed by [`scheduleProfileGrid`](#scheduleprofilegrid), which can run after `scheduleProfileRounds`.
+Omit `pro` to use the default scheduler.
 
 :::note
 SINGLES and DOUBLES matchUps are scheduled automatically. TEAM matchUps require manual court allocation using `allocateTeamMatchUpCourts()`.
@@ -461,7 +465,7 @@ Profile-driven grid scheduling. Uses the scheduling profile to determine which r
 ```js
 engine.scheduleProfileGrid({
   scheduleDates, // optional - specific dates to schedule
-  clearScheduleDates, // optional - boolean or array of dates to clear first
+  clearScheduleDates, // optional - as for scheduleProfileRounds; clears dates and times too, not only grid positions
   scheduleCompletedMatchUps, // optional boolean (default: false) - include
   // already-COMPLETED matchUps in the placement pool
   matchUpDailyLimits, // optional - { SINGLES, DOUBLES, total } per-participant
@@ -495,13 +499,32 @@ When `courtIds` is provided, only courts in the set are considered as placement 
 
 ### bulkScheduleMatchUps
 
-Schedules multiple matchUps at once with provided scheduling details.
+Schedules multiple matchUps at once with provided scheduling details, across every tournament in state.
 
 ```js
-engine.bulkScheduleMatchUps({
-  schedule, // required - array of schedule objects
+const {
+  scheduled, // number of matchUps scheduled
+  lockedMatchUpIds, // present when any - schedule-locked matchUps that were skipped
+  skippedMatchUpIds, // present when any - BYE or completed matchUps that were skipped
+  notFoundMatchUpIds, // present when any - requested matchUpIds no tournament in state holds
+  warnings, // present when any
+} = engine.bulkScheduleMatchUps({
+  matchUpDetails, // array of { matchUpId, schedule, tournamentId? } - each with its own schedule
+  // or
+  matchUpContextIds, // array of { tournamentId, matchUpId } - all given the same `schedule`
+  schedule, // required with matchUpContextIds
+
+  scheduleCompletedMatchUps, // optional boolean - default false: completed matchUps are skipped
+  scheduleByeMatchUps, // optional boolean - default false: BYE matchUps are skipped
+  overrideScheduleLock, // optional boolean
+  removePriorValues, // optional boolean
 });
 ```
+
+A detail's `tournamentId` is optional: when it is absent the tournament holding `matchUpId` is used. Nothing
+requested is dropped in silence: a skipped BYE or completed matchUp is named in `skippedMatchUpIds`, and a
+`matchUpId` that no tournament in state holds (or a detail naming a tournament that is not in state) in
+`notFoundMatchUpIds`.
 
 ---
 
@@ -524,6 +547,10 @@ engine.bulkScheduleTournamentMatchUps({
   removePriorValues, // optional boolean - clear existing scheduling timeItems
 });
 ```
+
+Returns `scheduled` and, when any, `lockedMatchUpIds`, `skippedMatchUpIds` (BYE or completed, unless
+`scheduleByeMatchUps` / `scheduleCompletedMatchUps`) and `notFoundMatchUpIds` (requested ids the tournament does
+not hold), as [`bulkScheduleMatchUps`](#bulkschedulematchups) does.
 
 #### bulkScheduleTournamentMatchUps Examples
 
@@ -594,6 +621,7 @@ const {
   rescheduled, // array of inContext matchUps that were rescheduled
   notRescheduled, // array of inContext matchUps that were NOT rescheduled
   allRescheduled, // boolean - true if all matchUps rescheduled
+  lockedMatchUpIds, // matchUpIds skipped because a schedule lock pins them (present when any were)
   dryRun, // boolean - indicates if this was a dry run
 } = engine.bulkRescheduleMatchUps({
   matchUpIds, // required - array of matchUpIds to reschedule
@@ -601,9 +629,29 @@ const {
     daysChange: number, // number of days +/- to shift
     minutesChange: number, // number of minutes +/- to shift
   },
+  overrideScheduleLock, // optional boolean - move locked matchUps too (the locks stay)
   dryRun, // optional boolean - preview without changes
 });
 ```
+
+Only scheduled matchUps that are not completed are considered. A matchUp is **not rescheduled**, and is
+reported in `notRescheduled` with its schedule untouched, when either change would take it out of bounds:
+
+- a `daysChange` that lands before the tournament `startDate` or after its `endDate`;
+- a `minutesChange` that takes its `scheduledTime` out of its own day: before `00:00`, or to `24:00` and
+  beyond (23:00 + 60 minutes is refused, as 23:00 + 61 is; the time never rolls over to another date).
+
+The two are judged separately and either one refuses the matchUp, so a `daysChange` past `endDate` is not
+rescued by a `minutesChange` given alongside it.
+
+A `daysChange` moves the matchUp off its old day's grid: its `courtOrder`, `courtId` and `venueId` are cleared,
+as for any [date change](#grid-position-is-cleared-on-a-date-change). A `minutesChange` alone keeps them.
+
+A matchUp whose [schedule lock](../concepts/schedule-locks.mdx) pins what the shift would change is skipped, left
+as it is, and reported in both `notRescheduled` and `lockedMatchUpIds`; a dry run reports it the same way. A shift
+of a whole block therefore leaves a locked matchUp where it was, and a matchUp moved onto its court and time is a
+court double booking that `proConflicts` reports. Pass `overrideScheduleLock: true` once the operator has confirmed
+moving pinned matchUps as well.
 
 #### bulkRescheduleMatchUps Examples
 
@@ -1128,27 +1176,35 @@ engine.removeEventMatchUpFormatTiming({
 
 ### reorderUpcomingMatchUps
 
-Reorders upcoming matchUps on a court, affecting their order of play.
+Reorders a time-ordered list of upcoming matchUps by rotating their `scheduledTime`s: with `firstToLast` the
+first matchUp takes the last one's time and each other matchUp the time of the one before it; without it, the
+rotation runs the other way. Only `scheduledTime` moves; `courtOrder`, court and venue are left as they are.
 
 ```js
 engine.reorderUpcomingMatchUps({
-  matchUpContextIds, // required - array of matchUp context objects
+  matchUpsContextIds, // required - array of { tournamentId, drawId, matchUpId, schedule } in time order
   firstToLast, // optional boolean - direction of reorder
+  overrideScheduleLock, // optional boolean - rotate locked times too (the locks stay)
 });
 ```
+
+Every matchUp is resolved before any time is written: if one cannot be (unknown draw or matchUp, invalid time)
+the call returns `MODIFICATIONS_FAILED` and nothing is changed. If a [schedule lock](../concepts/schedule-locks.mdx)
+pins the time of any of them, the call returns `SCHEDULE_LOCKED` with `context.lockedMatchUpIds` and nothing is
+changed: the rotation moves every time in the list, so it is not applied in part.
 
 **Example**:
 
 ```js
-const matchUpContextIds = [
-  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm1' },
-  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm2' },
-  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm3' },
+const matchUpsContextIds = [
+  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm1', schedule: { scheduledTime: '10:00' } },
+  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm2', schedule: { scheduledTime: '11:00' } },
+  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm3', schedule: { scheduledTime: '12:00' } },
 ];
 
 engine.reorderUpcomingMatchUps({
-  matchUpContextIds,
-  firstToLast: true, // Move first to last
+  matchUpsContextIds,
+  firstToLast: true, // m1 → 12:00, m2 → 10:00, m3 → 11:00
 });
 ```
 
@@ -1596,7 +1652,7 @@ the matchUp does not inherit the prior day's row on its new day.
   date is honored verbatim — a deliberate "move to a new day and row" is respected.
 
 This also governs `bulkScheduleMatchUps`, which delegates to
-`addMatchUpScheduleItems` per matchUp. The lower-level `addMatchUpScheduledDate`
+`addMatchUpScheduleItems` per matchUp, and the `daysChange` of `bulkRescheduleMatchUps`. The lower-level `addMatchUpScheduledDate`
 primitive does **not** clear grid position; use `addMatchUpScheduleItems` (the path
 TMX and integrations use) for date changes.
 

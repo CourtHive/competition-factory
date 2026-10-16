@@ -2,13 +2,17 @@ import type { MatchUp, SetScore } from '@Types/scoring/types';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { IN_PROGRESS, COMPLETED } from '@Constants/matchUpStatusConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+
 function tennisScore(p1: number, p2: number): string {
   // Build enough game scores to place our target at the last index
   const p1Scores = [p1];
   const p2Scores = [p2];
   const m = makeMatchUp({
     sets: [inProgressSet(0, 0, { p1: p1Scores, p2: p2Scores })],
-    matchUpStatus: 'IN_PROGRESS',
+    matchUpStatus: IN_PROGRESS,
     matchUpFormat: 'SET3-S:6/TB7',
   });
   const result = getScoreboard(m);
@@ -28,8 +32,8 @@ function makeMatchUp(
   return {
     matchUpId: 'test-1',
     matchUpFormat: overrides.matchUpFormat ?? 'SET3-S:6/TB7',
-    matchUpStatus: (overrides.matchUpStatus ?? 'IN_PROGRESS') as any,
-    matchUpType: 'SINGLES',
+    matchUpStatus: (overrides.matchUpStatus ?? IN_PROGRESS) as any,
+    matchUpType: SINGLES_MATCHUP,
     sides: [],
     score: { sets: overrides.sets ?? [] },
   } as MatchUp;
@@ -72,7 +76,7 @@ describe('getScoreboard', () => {
   it('returns basic set score for a completed set', () => {
     const m = makeMatchUp({
       sets: [completedSet(6, 4)],
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
     });
     expect(getScoreboard(m)).toBe('6-4');
   });
@@ -80,7 +84,7 @@ describe('getScoreboard', () => {
   it('returns multiple set scores joined by comma', () => {
     const m = makeMatchUp({
       sets: [completedSet(6, 4), completedSet(3, 6), completedSet(7, 5)],
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
     });
     expect(getScoreboard(m)).toBe('6-4, 3-6, 7-5');
   });
@@ -92,7 +96,7 @@ describe('getScoreboard', () => {
     it('shows tiebreak score in parentheses for loser (side1 wins)', () => {
       const m = makeMatchUp({
         sets: [completedSet(7, 6, { tb1: 7, tb2: 5 })],
-        matchUpStatus: 'COMPLETED',
+        matchUpStatus: COMPLETED,
       });
       expect(getScoreboard(m)).toBe('7-6(5)');
     });
@@ -100,7 +104,7 @@ describe('getScoreboard', () => {
     it('shows tiebreak score in parentheses for loser (side2 wins)', () => {
       const m = makeMatchUp({
         sets: [completedSet(6, 7, { tb1: 3, tb2: 7 })],
-        matchUpStatus: 'COMPLETED',
+        matchUpStatus: COMPLETED,
       });
       expect(getScoreboard(m)).toBe('6(3)-7');
     });
@@ -113,7 +117,7 @@ describe('getScoreboard', () => {
         side1TiebreakScore: 7,
         winningSide: 1,
       };
-      const m = makeMatchUp({ sets: [set], matchUpStatus: 'COMPLETED' });
+      const m = makeMatchUp({ sets: [set], matchUpStatus: COMPLETED });
       // side2TiebreakScore defaults to 0
       expect(getScoreboard(m)).toBe('7-6(0)');
     });
@@ -126,7 +130,7 @@ describe('getScoreboard', () => {
         side2TiebreakScore: 7,
         winningSide: 2,
       };
-      const m = makeMatchUp({ sets: [set], matchUpStatus: 'COMPLETED' });
+      const m = makeMatchUp({ sets: [set], matchUpStatus: COMPLETED });
       expect(getScoreboard(m)).toBe('6(0)-7');
     });
   });
@@ -138,7 +142,7 @@ describe('getScoreboard', () => {
     it('swaps set scores when perspective is 1', () => {
       const m = makeMatchUp({
         sets: [completedSet(6, 4)],
-        matchUpStatus: 'COMPLETED',
+        matchUpStatus: COMPLETED,
       });
       expect(getScoreboard(m, { perspective: 1 })).toBe('4-6');
     });
@@ -146,7 +150,7 @@ describe('getScoreboard', () => {
     it('swaps tiebreak scores when perspective is 1', () => {
       const m = makeMatchUp({
         sets: [completedSet(7, 6, { tb1: 7, tb2: 5 })],
-        matchUpStatus: 'COMPLETED',
+        matchUpStatus: COMPLETED,
       });
       // Perspective 1: s1=6, s2=7; tb1=5, tb2=7; s2 > s1 → show tb1(loser) → '6(5)-7'
       expect(getScoreboard(m, { perspective: 1 })).toBe('6(5)-7');
@@ -155,7 +159,7 @@ describe('getScoreboard', () => {
     it('swaps game scores when perspective is 1', () => {
       const m = makeMatchUp({
         sets: [inProgressSet(3, 2, { p1: [0, 0, 0, 2], p2: [0, 0, 0, 1] })],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
       });
       // Without perspective: "3-2 (30-15)"
       const withoutPerspective = getScoreboard(m);
@@ -175,7 +179,7 @@ describe('getScoreboard', () => {
     it('shows tennis score during game', () => {
       const m = makeMatchUp({
         sets: [inProgressSet(2, 1, { p1: [0, 0, 2], p2: [0, 0, 1] })],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
       });
       expect(getScoreboard(m)).toBe('2-1 (30-15)');
     });
@@ -183,7 +187,7 @@ describe('getScoreboard', () => {
     it('returns just set string when game score is 0-0', () => {
       const m = makeMatchUp({
         sets: [inProgressSet(3, 2, { p1: [0, 0, 0, 0, 0, 0], p2: [0, 0, 0, 0, 0, 0] })],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
       });
       expect(getScoreboard(m)).toBe('3-2');
     });
@@ -191,7 +195,7 @@ describe('getScoreboard', () => {
     it('returns set string when no game scores at all', () => {
       const m = makeMatchUp({
         sets: [inProgressSet(3, 2)],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
       });
       // No gameScores → gameIndex = -1, condition fails
       expect(getScoreboard(m)).toBe('3-2');
@@ -200,7 +204,7 @@ describe('getScoreboard', () => {
     it('returns set string when gameScores is empty array', () => {
       const m = makeMatchUp({
         sets: [inProgressSet(3, 2, { p1: [], p2: [] })],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
       });
       // gameIndex = -1, condition fails
       expect(getScoreboard(m)).toBe('3-2');
@@ -215,7 +219,7 @@ describe('getScoreboard', () => {
         side1GameScores: [4, 4, 4, 4, 4, 4],
         side2GameScores: [2, 2, 4, 4, 2, 2],
       };
-      const m = makeMatchUp({ sets: [set], matchUpStatus: 'COMPLETED' });
+      const m = makeMatchUp({ sets: [set], matchUpStatus: COMPLETED });
       expect(getScoreboard(m)).toBe('6-4');
     });
 
@@ -223,7 +227,7 @@ describe('getScoreboard', () => {
       const set = completedSet(6, 4);
       set.side1GameScores = [4, 4, 4, 4, 4, 4];
       set.side2GameScores = [2, 2, 4, 4, 2, 2];
-      const m = makeMatchUp({ sets: [set], matchUpStatus: 'IN_PROGRESS' });
+      const m = makeMatchUp({ sets: [set], matchUpStatus: IN_PROGRESS });
       // winningSide is set, so condition fails
       expect(getScoreboard(m)).toBe('6-4');
     });
@@ -231,7 +235,7 @@ describe('getScoreboard', () => {
     it('shows with prefix from prior sets', () => {
       const m = makeMatchUp({
         sets: [completedSet(6, 4), inProgressSet(2, 3, { p1: [0, 0, 0, 0, 1], p2: [0, 0, 0, 0, 2] })],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
       });
       expect(getScoreboard(m)).toBe('6-4, 2-3 (15-30)');
     });
@@ -243,7 +247,7 @@ describe('getScoreboard', () => {
         side2Score: 1,
         side1GameScores: [0, 0, 3],
       };
-      const m = makeMatchUp({ sets: [set], matchUpStatus: 'IN_PROGRESS' });
+      const m = makeMatchUp({ sets: [set], matchUpStatus: IN_PROGRESS });
       // side2GameScores is undefined → defaults to [], p2 = 0
       expect(getScoreboard(m)).toContain('2-1');
       expect(getScoreboard(m)).toContain('40-0');
@@ -262,7 +266,7 @@ describe('getScoreboard', () => {
             p2: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
           }),
         ],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
         matchUpFormat: 'SET3-S:6/TB7',
       });
       // At 6-6 with tiebreakAt=6, isTiebreak=true → numeric
@@ -272,7 +276,7 @@ describe('getScoreboard', () => {
     it('shows numeric score for CONSECUTIVE game format', () => {
       const m = makeMatchUp({
         sets: [inProgressSet(2, 1, { p1: [0, 0, 2], p2: [0, 0, 1] })],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
         matchUpFormat: 'SET5-S:5-G:3C',
       });
       // isConsecutive=true → numeric
@@ -282,7 +286,7 @@ describe('getScoreboard', () => {
     it('shows tennis score for standard game (not tiebreak)', () => {
       const m = makeMatchUp({
         sets: [inProgressSet(3, 2, { p1: [0, 0, 0, 0, 2], p2: [0, 0, 0, 0, 1] })],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
         matchUpFormat: 'SET3-S:6/TB7',
       });
       // At 3-2, not tiebreak → tennis score
@@ -292,7 +296,7 @@ describe('getScoreboard', () => {
     it('handles missing matchUpFormat (defaults setTo=6)', () => {
       const m = makeMatchUp({
         sets: [inProgressSet(3, 2, { p1: [0, 0, 0, 0, 1], p2: [0, 0, 0, 0, 0] })],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
       });
       // Delete matchUpFormat to test the undefined path
       (m as any).matchUpFormat = undefined;
@@ -309,7 +313,7 @@ describe('getScoreboard', () => {
             p2: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3],
           }),
         ],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
         matchUpFormat: 'SET3-S:6/TB7',
       });
       // tiebreakAt is 6 (number) → isTiebreak when both at 6
@@ -327,7 +331,7 @@ describe('getScoreboard', () => {
       // 0-0 returns early without parentheses
       const m = makeMatchUp({
         sets: [inProgressSet(0, 0, { p1: [0], p2: [0] })],
-        matchUpStatus: 'IN_PROGRESS',
+        matchUpStatus: IN_PROGRESS,
       });
       expect(getScoreboard(m)).toBe('0-0');
     });

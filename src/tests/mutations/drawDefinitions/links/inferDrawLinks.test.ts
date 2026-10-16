@@ -5,7 +5,18 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { UNLINKED_STRUCTURES } from '@Constants/errorConditionConstants';
-import { LOSER, POSITION } from '@Constants/drawDefinitionConstants';
+import {
+  LOSER,
+  POSITION,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  SINGLE_ELIMINATION,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  COMPASS,
+  CURTIS_CONSOLATION,
+  MAIN,
+  QUALIFYING,
+  CONSOLATION,
+} from '@Constants/drawDefinitionConstants';
 
 /**
  * THE ORACLE IS THE FACTORY ITSELF.
@@ -28,21 +39,21 @@ const stripLinks = (drawDefinition: any) => ({ ...drawDefinition, links: [] });
 
 describe('inferDrawLinks', () => {
   it('leaves an already-linked draw alone', () => {
-    const { drawDefinition } = generatedDraw('FIRST_MATCH_LOSER_CONSOLATION');
+    const { drawDefinition } = generatedDraw(FIRST_MATCH_LOSER_CONSOLATION);
     let result: any = inferDrawLinks({ drawDefinition });
     expect(result.alreadyLinked).toBe(true);
     expect(result.links).toEqual([]);
   });
 
   it('leaves a single-structure draw alone — nothing to join', () => {
-    const { drawDefinition } = generatedDraw('SINGLE_ELIMINATION');
+    const { drawDefinition } = generatedDraw(SINGLE_ELIMINATION);
     expect(drawDefinition.structures.length).toBe(1);
     let result: any = inferDrawLinks({ drawDefinition });
     expect(result.alreadyLinked).toBe(true);
   });
 
   it('makes a stripped consolation draw READABLE again', () => {
-    const { tournamentRecord, event, drawDefinition } = generatedDraw('FIRST_MATCH_LOSER_CONSOLATION');
+    const { tournamentRecord, event, drawDefinition } = generatedDraw(FIRST_MATCH_LOSER_CONSOLATION);
     const stripped = stripLinks(drawDefinition);
 
     // The control: without links the factory refuses it outright.
@@ -59,7 +70,7 @@ describe('inferDrawLinks', () => {
   });
 
   it('agrees with the GENERATOR on link type and direction for a consolation draw', () => {
-    const { drawDefinition } = generatedDraw('FIRST_MATCH_LOSER_CONSOLATION');
+    const { drawDefinition } = generatedDraw(FIRST_MATCH_LOSER_CONSOLATION);
     const generated = drawDefinition.links[0];
     let result: any = inferDrawLinks({ drawDefinition: stripLinks(drawDefinition) });
 
@@ -71,7 +82,7 @@ describe('inferDrawLinks', () => {
   });
 
   it('agrees with the GENERATOR that a round-robin playoff feeds by POSITION, not LOSER', () => {
-    const { drawDefinition } = generatedDraw('ROUND_ROBIN_WITH_PLAYOFF', 8);
+    const { drawDefinition } = generatedDraw(ROUND_ROBIN_WITH_PLAYOFF, 8);
     const generated = drawDefinition.links[0];
     expect(generated.linkType).toBe(POSITION);
 
@@ -86,7 +97,7 @@ describe('inferDrawLinks', () => {
   it('reports SHAPE confidence, and says why, when the feed pattern cannot be recovered', () => {
     // COMPASS is 8 structures and 7 links whose pattern follows drawType. Readability is recoverable;
     // the pattern is not, and claiming otherwise would be the dangerous outcome.
-    const { tournamentRecord, event, drawDefinition } = generatedDraw('COMPASS');
+    const { tournamentRecord, event, drawDefinition } = generatedDraw(COMPASS);
     expect(drawDefinition.structures.length).toBeGreaterThan(2);
 
     let result: any = inferDrawLinks({ drawDefinition: stripLinks(drawDefinition) });
@@ -99,14 +110,14 @@ describe('inferDrawLinks', () => {
   });
 
   it('joins N groups with exactly N-1 links — no fan-out, no duplicates', () => {
-    const { drawDefinition } = generatedDraw('CURTIS_CONSOLATION');
+    const { drawDefinition } = generatedDraw(CURTIS_CONSOLATION);
     const groups = drawDefinition.structures.length;
     let result: any = inferDrawLinks({ drawDefinition: stripLinks(drawDefinition) });
     expect(result.links.length).toBe(groups - 1);
   });
 
   it('never modifies or removes links a draw already has', () => {
-    const { drawDefinition } = generatedDraw('CURTIS_CONSOLATION');
+    const { drawDefinition } = generatedDraw(CURTIS_CONSOLATION);
     // Keep only the first link: partly linked, so two groups remain rather than three.
     const partial = { ...drawDefinition, links: [drawDefinition.links[0]] };
     let result: any = inferDrawLinks({ drawDefinition: partial });
@@ -144,7 +155,7 @@ describe('inferDrawLinks — third-party shapes', () => {
   it('handles a stage vocabulary it does not know without throwing or dropping a structure', () => {
     let result: any = inferDrawLinks({
       drawDefinition: bare([
-        { structureId: 'main', stage: 'MAIN', matchUps: [] },
+        { structureId: 'main', stage: MAIN, matchUps: [] },
         { structureId: 'odd', stage: 'SOMETHING_ELSE', matchUps: [] },
       ]),
     });
@@ -156,9 +167,9 @@ describe('inferDrawLinks — third-party shapes', () => {
   it('joins three unlinked structures with two links, not three', () => {
     let result: any = inferDrawLinks({
       drawDefinition: bare([
-        { structureId: 'q', stage: 'QUALIFYING', matchUps: [] },
-        { structureId: 'm', stage: 'MAIN', matchUps: [] },
-        { structureId: 'c', stage: 'CONSOLATION', matchUps: [] },
+        { structureId: 'q', stage: QUALIFYING, matchUps: [] },
+        { structureId: 'm', stage: MAIN, matchUps: [] },
+        { structureId: 'c', stage: CONSOLATION, matchUps: [] },
       ]),
     });
     expect(result.links).toHaveLength(2);

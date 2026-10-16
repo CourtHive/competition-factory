@@ -5,6 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { DOUBLE_DEFAULT, WALKOVER, TO_BE_PLAYED, DOUBLE_WALKOVER, RETIRED } from '@Constants/matchUpStatusConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -59,21 +60,21 @@ it('census w1 9000016 stores no hole at any step, and its lone survivor reads on
   const config = { participantsCount: 30, propagateExitStatus: false, drawSize: 32, drawType: COMPASS, seed: 9000016 };
   expect(prepareDraw(config as any, drawId)).toEqual(true);
   const steps: [string, any][] = [
-    ['East|1|15', { matchUpStatus: 'DOUBLE_DEFAULT' }],
+    ['East|1|15', { matchUpStatus: DOUBLE_DEFAULT }],
     ['East|1|8', { winningSide: 2 }],
-    ['East|1|4', { matchUpStatus: 'WALKOVER', winningSide: 1 }],
-    ['East|1|12', { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: 'TO_BE_PLAYED' }],
+    ['East|1|4', { matchUpStatus: WALKOVER, winningSide: 1 }],
+    ['East|1|12', { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: TO_BE_PLAYED }],
     ['East|1|8', { winningSide: 1 }],
     ['East|1|10', { winningSide: 1 }],
-    ['East|1|7', { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: 'TO_BE_PLAYED' }],
+    ['East|1|7', { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: TO_BE_PLAYED }],
     ['East|1|6', { winningSide: 2 }],
     ['East|1|11', { winningSide: 2 }],
-    ['East|1|12', { matchUpStatus: 'DOUBLE_WALKOVER' }],
+    ['East|1|12', { matchUpStatus: DOUBLE_WALKOVER }],
     ['East|1|11', { winningSide: 2 }],
     [
       'East|1|12',
       {
-        matchUpStatus: 'RETIRED',
+        matchUpStatus: RETIRED,
         winningSide: 1,
         score: { sets: [{ side1Score: 6, side2Score: 3 }], scoreStringSide1: '6-3', scoreStringSide2: '3-6' },
       },

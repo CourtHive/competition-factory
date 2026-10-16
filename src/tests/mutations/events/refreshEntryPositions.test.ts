@@ -48,13 +48,13 @@ it('can separate bye stage, add, and update entryPositions', () => {
   ];
   const positionedEntries = refreshEntryPositions({ entries });
   expect(positionedEntries).toEqual([
-    { entryStage: 'MAIN', entryPosition: 1 },
-    { entryStage: 'MAIN', entryPosition: 2 },
-    { entryStage: 'MAIN', entryPosition: 3 },
-    { entryStage: 'CONSOLATION', entryPosition: 1 },
-    { entryStage: 'CONSOLATION', entryPosition: 2 },
-    { entryStage: 'QUALIFYING', entryPosition: 1 },
-    { entryStage: 'QUALIFYING', entryPosition: 2 },
+    { entryStage: MAIN, entryPosition: 1 },
+    { entryStage: MAIN, entryPosition: 2 },
+    { entryStage: MAIN, entryPosition: 3 },
+    { entryStage: CONSOLATION, entryPosition: 1 },
+    { entryStage: CONSOLATION, entryPosition: 2 },
+    { entryStage: QUALIFYING, entryPosition: 1 },
+    { entryStage: QUALIFYING, entryPosition: 2 },
   ]);
 });
 
@@ -70,12 +70,12 @@ it('can handle missing positions', () => {
   ];
   const positionedEntries = refreshEntryPositions({ entries });
   expect(positionedEntries).toEqual([
-    { entryStage: 'MAIN', entryPosition: 1 },
-    { entryStage: 'MAIN', entryPosition: 2 },
-    { entryStage: 'MAIN', entryPosition: 3 },
-    { entryStage: 'CONSOLATION', entryPosition: 1 },
-    { entryStage: 'CONSOLATION', entryPosition: 2 },
-    { entryStage: 'QUALIFYING', entryPosition: 1 },
-    { entryStage: 'QUALIFYING', entryPosition: 2 },
+    { entryStage: MAIN, entryPosition: 1 },
+    { entryStage: MAIN, entryPosition: 2 },
+    { entryStage: MAIN, entryPosition: 3 },
+    { entryStage: CONSOLATION, entryPosition: 1 },
+    { entryStage: CONSOLATION, entryPosition: 2 },
+    { entryStage: QUALIFYING, entryPosition: 1 },
+    { entryStage: QUALIFYING, entryPosition: 2 },
   ]);
 });

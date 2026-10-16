@@ -7,7 +7,6 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants and types
-import { SINGLE_ELIMINATION, DOUBLE_ELIMINATION, LADDER, AD_HOC } from '@Constants/drawDefinitionConstants';
 import { CHALLENGED, DEAD_RUBBER, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { MATCHUP_STATUS_OUT_OF_SCOPE } from '@Constants/errorConditionConstants';
 import { outcomePipelineModes } from '@Constants/outcomePipelineConstants';
@@ -16,6 +15,14 @@ import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES, TEAM } from '@Constants/matchUpTypes';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { SCORE } from '@Constants/matchUpActionConstants';
+import {
+  SINGLE_ELIMINATION,
+  DOUBLE_ELIMINATION,
+  LADDER,
+  AD_HOC,
+  WINNER,
+  LOSER,
+} from '@Constants/drawDefinitionConstants';
 
 type Kind = 'singles' | 'doubles' | 'dual' | 'rubber' | 'decider' | 'teamDecider' | 'ladder' | 'adHoc';
 const kinds: Kind[] = ['singles', 'doubles', 'dual', 'rubber', 'decider', 'teamDecider', 'ladder', 'adHoc'];
@@ -108,10 +115,10 @@ function createFixture(kind: Kind) {
   // The test identifies the Decider independently by its pair of WINNER/LOSER feeds.
   const winnerFeed = drawDefinition.links?.find(
     (winner) =>
-      winner.linkType === 'WINNER' &&
+      winner.linkType === WINNER &&
       drawDefinition.links.some(
         (loser) =>
-          loser.linkType === 'LOSER' &&
+          loser.linkType === LOSER &&
           loser.source.structureId === winner.source.structureId &&
           loser.source.roundNumber === winner.source.roundNumber &&
           loser.target.structureId === winner.target.structureId,

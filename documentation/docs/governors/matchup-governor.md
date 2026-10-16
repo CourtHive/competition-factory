@@ -1012,12 +1012,68 @@ engine.setMatchUpStatus({
 });
 ```
 
-**Propagation flags.** A scoring policy that sets `allowChangePropagation`, `propagateExitStatus` or
-`propagateRetirementAsExit` to `true` or `false` overrides the value passed on the call, in both
-directions; the call decides only where the policy is silent (since 7.5.0). The resolution is
-`policy ?? param ?? default`, where the default is `undefined` for the first two and `false` for
-`propagateRetirementAsExit`. `POLICY_SCORING_DEFAULT` is silent on all three. See
+### What one call sets in motion
+
+A result is rarely a write to one matchUp. `setMatchUpStatus` is the entry to the
+[outcome pipeline](../concepts/outcome-pipeline.md). In one call it can:
+
+- advance the winner;
+- direct the loser into a linked structure;
+- place a BYE where nobody will ever arrive;
+- carry an exit on to the loser's next matchUp.
+
+When a result is corrected, the same call takes back exactly what the earlier result placed. Each
+step can set off the next, several rounds or structures away.
+[Exit propagation](../concepts/exit-propagation.md) describes that cascade and what the engine
+guarantees while it runs.
+
+Providers settle these questions differently, so the pipeline has nine settings. Four can be passed
+on the call. The other five are read only from a policy attached to the tournament, event or draw.
+
+#### Settings passed on the call
+
+| Setting                     | What it decides                                                                                                                                                                                                           | Absent policy and call |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `propagateExitStatus`       | Whether a `WALKOVER` or `DEFAULTED` follows the loser into the matchUp they are fed to, as a [carried exit](../concepts/exit-propagation.md#the-pending-propagated-exit), rather than arriving as an ordinary loser       | off                    |
+| `propagateRetirementAsExit` | With `propagateExitStatus` on: whether a `RETIRED` loser arrives as an exit, a walkover to the opponent, or as an ordinary loser who may still play. [Details](../concepts/exit-propagation.md#propagateretirementasexit) | `false`                |
+| `allowChangePropagation`    | Whether a changed `winningSide` on a matchUp whose winner has already advanced swaps winner and loser downstream                                                                                                          | off                    |
+| `disableScoreValidation`    | Skips both score checks, bounds and completeness (see [below](#a-completed-score-must-be-complete)). Used for imports and corrections to history. Read from the call only                                                 | validated              |
+
+**The policy governs, both ways.** A scoring policy that sets one of the first three to `true` or
+`false` overrides the value passed on the call. The call decides only where the policy is silent
+(since 7.5.0). The resolution is `policy ?? param ?? default`. `POLICY_SCORING_DEFAULT` is silent on
+all three. `POLICY_SCORING_USTA` sets both exit flags to `true`. See
 [Scoring Policy](../policies/scoringPolicy.md).
+
+#### Settings read from an attached policy
+
+| Policy                                          | Setting                         | What it decides                                                                                                                                                                                                                                        | Absent the setting |
+| ----------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| [scoring](../policies/scoringPolicy.md)         | `requireParticipantsForScoring` | Whether both participants must be present before a matchUp is scored. Only `false` relaxes it. A single exit can be recorded against the one participant present either way ([below](#recording-an-exit-before-the-second-opponent-arrives))           | required           |
+| [progression](../policies/progressionPolicy.md) | `doubleExitPropagateBye`        | A double exit sends nobody on. This setting decides what fills the seat in a linked structure that its loser would have taken: a BYE (`true`) or a produced `WALKOVER` / `DEFAULTED` (`false`). The double exit's own structure is the same either way | `true`             |
+| [progression](../policies/progressionPolicy.md) | `autoPlaceQualifiers`           | Whether a qualifier is placed into an open qualifier position in the main structure when they win through                                                                                                                                              | `false`            |
+| [progression](../policies/progressionPolicy.md) | `autoReplaceQualifiers`         | Whether a placed qualifier is replaced when the qualifying result's `winningSide` changes                                                                                                                                                              | `false`            |
+| [progression](../policies/progressionPolicy.md) | `autoRemoveQualifiers`          | Whether a placed qualifier is removed when the qualifying result is removed                                                                                                                                                                            | `false`            |
+
+`POLICY_SCORING_DEFAULT` sets `requireParticipantsForScoring: false`, so a tournament with it
+attached can score a matchUp that is missing a participant. `POLICY_PROGRESSION_DEFAULT` sets the
+four progression values shown in the table.
+
+**How the exit settings are tested.** Since 7.0.0 an
+[exit-propagation harness](../testing/exit-propagation-harness.md) has driven the settings that
+shape the cascade.
+
+- A 600-cell matrix crosses ten draw types with draw sizes, exit statuses and `propagateExitStatus`.
+- Relational suites check undo, idempotence, monotonicity and order independence.
+- A route differential enters the same outcome with and without `allowChangePropagation` and
+  compares the draws.
+- A randomized census runs three arms: `allowChangePropagation` off, `allowChangePropagation` on,
+  and `doubleExitPropagateBye: false`. It plays each draw forward in a random order,
+  at 135,000 seeds per arm per run, and checks every resulting draw for
+  inconsistencies.
+
+The qualifier settings and `requireParticipantsForScoring` are covered by ordinary unit tests and
+not by the census.
 
 **Warnings.** A successful call can return `warnings`. When the recorded score holds a set decided by
 its tiebreak with no tiebreak points (`7-6`), the result carries

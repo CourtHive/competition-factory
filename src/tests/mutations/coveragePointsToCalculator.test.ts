@@ -16,6 +16,10 @@ import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -70,8 +74,8 @@ describe('NoAD game scoring — calcSidePointsToGame NoAD paths', () => {
     const mu: any = {
       matchUpId: 'mu-noad-behind',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -125,8 +129,8 @@ describe('deuceAfter golden point territory — L210-213', () => {
     const mu: any = {
       matchUpId: 'mu-deuce-after',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -163,8 +167,8 @@ describe('calcSidePointsToGame — already-won paths', () => {
     const mu: any = {
       matchUpId: 'mu-deuce-won',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -194,8 +198,8 @@ describe('calcSidePointsToGame — already-won paths', () => {
     const mu: any = {
       matchUpId: 'mu-won-preduce',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -250,8 +254,8 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
     const mu: any = {
       matchUpId: 'mu-tb-noad',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -281,8 +285,8 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
     const mu: any = {
       matchUpId: 'mu-tb-won',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -311,8 +315,8 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
     const mu: any = {
       matchUpId: 'mu-tb-past',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -347,8 +351,8 @@ describe('calcSideGamesToSet — already-won and no-tiebreak paths', () => {
     const mu: any = {
       matchUpId: 'mu-set-won',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -380,8 +384,8 @@ describe('calcSideGamesToSet — already-won and no-tiebreak paths', () => {
     const mu: any = {
       matchUpId: 'mu-adv-set',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -416,8 +420,8 @@ describe('calcSideGamesToSet — already-won and no-tiebreak paths', () => {
     const mu: any = {
       matchUpId: 'mu-adv-close',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -458,8 +462,8 @@ describe('calcSidePointsToSet and getMinPointsPerSet', () => {
     const mu: any = {
       matchUpId: 'mu-pts-set-zero',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -489,8 +493,8 @@ describe('calcSidePointsToSet and getMinPointsPerSet', () => {
     const mu: any = {
       matchUpId: 'mu-tb-set',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -542,8 +546,8 @@ describe('calcSidePointsToSet and getMinPointsPerSet', () => {
     const mu: any = {
       matchUpId: 'mu-timed-pts',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: {
         sets: [
@@ -612,8 +616,8 @@ describe('Timed set — calculatePointsTo returns undefined', () => {
     const mu: any = {
       matchUpId: 'mu-timed',
       matchUpFormat: format,
-      matchUpStatus: 'IN_PROGRESS',
-      matchUpType: 'SINGLES',
+      matchUpStatus: IN_PROGRESS,
+      matchUpType: SINGLES_MATCHUP,
       sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
       score: { sets: [] },
     };
@@ -630,6 +634,6 @@ describe('Timed set — calculatePointsTo returns undefined', () => {
 
     let result: any = engine.getState();
     expect(result.score.sets.length).toBeGreaterThanOrEqual(1);
-    expect(result.matchUpStatus).toBe('IN_PROGRESS');
+    expect(result.matchUpStatus).toBe(IN_PROGRESS);
   });
 });

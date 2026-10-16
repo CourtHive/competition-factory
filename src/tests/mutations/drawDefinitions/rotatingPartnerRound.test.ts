@@ -11,8 +11,15 @@ import Ajv from 'ajv';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import { ADD_PARTICIPANTS, ADD_MATCHUPS } from '@Constants/topicConstants';
 import type { CompetitionProfile } from '@Types/competitionProfile';
+import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { COMPETITOR } from '@Constants/participantRoles';
 import {
   EXISTING_MATCHUP_ID,
   EXISTING_MATCHUPS,
@@ -24,7 +31,7 @@ const profile: CompetitionProfile = {
   version: 1,
   format: 'AMERICANO',
   entrantScope: 'INDIVIDUAL',
-  matchUpType: 'DOUBLES',
+  matchUpType: DOUBLES_MATCHUP,
   scoring: { combinedPointTotal: 32, selectedVariant: { tieResolution: 'ALLOW' } },
   standings: { metric: 'SIDE_POINTS', attribution: 'EACH_INDIVIDUAL' },
   pairing: { seed: 42, algorithmVersion: 1 },
@@ -34,25 +41,25 @@ function setup(count = 8) {
   const participantIds = Array.from({ length: count }, (_, index) => `p${index}`);
   const drawDefinition: DrawDefinition = {
     drawId: 'rotating',
-    drawType: 'AD_HOC',
-    matchUpType: 'DOUBLES',
+    drawType: AD_HOC,
+    matchUpType: DOUBLES_MATCHUP,
     competitionProfile: structuredClone(profile),
-    entries: participantIds.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' })),
+    entries: participantIds.map((participantId) => ({ participantId, entryStatus: DIRECT_ACCEPTANCE })),
     structures: [{ structureId: 's', matchUps: [] }],
   };
   const event: Event = {
     eventId: 'doubles',
-    eventType: 'DOUBLES',
+    eventType: DOUBLES_EVENT,
     drawDefinitions: [drawDefinition],
-    entries: participantIds.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
+    entries: participantIds.map((participantId) => ({ participantId, entryStatus: UNGROUPED })),
   };
   const tournamentRecord: Tournament = {
     tournamentId: 't',
     events: [event],
     participants: participantIds.map((participantId) => ({
       participantId,
-      participantType: 'INDIVIDUAL',
-      participantRole: 'COMPETITOR',
+      participantType: INDIVIDUAL,
+      participantRole: COMPETITOR,
       participantName: participantId,
     })),
   };
@@ -88,14 +95,12 @@ writeModeMatrix(() => {
     }
     expect(context.drawDefinition.competitionRounds).toHaveLength(7);
     expect(matchUpsOf(context.drawDefinition.structures![0])).toHaveLength(14);
-    const pairs = context.tournamentRecord.participants!.filter(
-      (participant) => participant.participantType === 'PAIR',
-    );
+    const pairs = context.tournamentRecord.participants!.filter((participant) => participant.participantType === PAIR);
     expect(pairs).toHaveLength(28);
     expect(new Set(pairs.map((pair) => pair.individualParticipantIds!.toSorted().join('|'))).size).toBe(28);
     context.roundNumber = 8;
     expect(getRotatingPartnerRoundPreview(context).error).toBe(INVALID_VALUES);
-    expect(context.event.entries!.every((entry) => entry.entryStatus === 'UNGROUPED')).toBe(true);
+    expect(context.event.entries!.every((entry) => entry.entryStatus === UNGROUPED)).toBe(true);
   });
 });
 
@@ -104,8 +109,8 @@ it('reuses existing PAIR membership and publishes notices only after success', (
   const preview = getRotatingPartnerRoundPreview(context);
   context.tournamentRecord.participants!.push({
     participantId: 'existing-pair',
-    participantType: 'PAIR',
-    participantRole: 'COMPETITOR',
+    participantType: PAIR,
+    participantRole: COMPETITOR,
     individualParticipantIds: [...preview.round![0][0]].reverse(),
   });
   setSubscriptions({ subscriptions: { [ADD_PARTICIPANTS]: () => undefined, [ADD_MATCHUPS]: () => undefined } });
@@ -122,7 +127,7 @@ it('a late matchUp ID collision leaves no orphan PAIRs, matches, provenance or n
   context.event.drawDefinitions!.push({
     drawId: 'other',
     structures: [
-      { structureId: 'other-s', matchUps: [{ matchUpId: 'rotating-rp-round-1-1-m0', matchUpStatus: 'TO_BE_PLAYED' }] },
+      { structureId: 'other-s', matchUps: [{ matchUpId: 'rotating-rp-round-1-1-m0', matchUpStatus: TO_BE_PLAYED }] },
     ],
   });
   const args = request(context);
@@ -161,7 +166,7 @@ it('requires saved scoring configuration and refuses skipped rounds', () => {
   const context = setup();
   expect(getRotatingPartnerRoundPreview({ ...context, roundNumber: 2 }).error).toBe(INVALID_VALUES);
   const savedProfile = context.drawDefinition.competitionProfile!;
-  if (savedProfile.format !== 'LADDER') delete savedProfile.scoring.selectedVariant;
+  if (savedProfile.format !== LADDER) delete savedProfile.scoring.selectedVariant;
   expect(getRotatingPartnerRoundPreview(context).error).toBe(INVALID_VALUES);
 });
 
@@ -240,7 +245,7 @@ it('atomic staging and returned provenance stay isolated when query copying is d
   context.event.drawDefinitions!.push({
     drawId: 'other',
     structures: [
-      { structureId: 'other-s', matchUps: [{ matchUpId: 'rotating-rp-round-1-1-m0', matchUpStatus: 'TO_BE_PLAYED' }] },
+      { structureId: 'other-s', matchUps: [{ matchUpId: 'rotating-rp-round-1-1-m0', matchUpStatus: TO_BE_PLAYED }] },
     ],
   });
   setDeepCopy(false, {});
@@ -333,7 +338,7 @@ it('irrelevant scheduling and unrelated pairs do not invalidate approved pairing
   context.drawDefinition.structures![0].matchUps![0].timeItems = first.matchUps![0].timeItems;
   context.tournamentRecord.participants!.push({
     participantId: 'other-pair',
-    participantType: 'PAIR',
+    participantType: PAIR,
     individualParticipantIds: ['p0', 'p1'],
   });
   expect(generateRotatingPartnerRound(approved).error).toBeUndefined();
@@ -342,7 +347,7 @@ it('irrelevant scheduling and unrelated pairs do not invalidate approved pairing
 it('the scoring contract is part of approval even when pairings are unchanged', () => {
   const context = setup();
   const approved = request(context);
-  if (context.drawDefinition.competitionProfile!.format !== 'LADDER')
+  if (context.drawDefinition.competitionProfile!.format !== LADDER)
     context.drawDefinition.competitionProfile!.scoring.combinedPointTotal = 24;
   const before = structuredClone(context.tournamentRecord);
   expect(generateRotatingPartnerRound(approved).error).toBeTruthy();
@@ -387,7 +392,7 @@ it('300 unrelated partnerships have no effect on full-rotation round record size
         participantType: 'INDIVIDUAL' as const,
         participantRole: 'COMPETITOR' as const,
       })),
-      { participantId: `other-pair-${index}`, participantType: 'PAIR', individualParticipantIds: ids },
+      { participantId: `other-pair-${index}`, participantType: PAIR, individualParticipantIds: ids },
     );
   }
   for (let roundNumber = 1; roundNumber <= 15; roundNumber++) {

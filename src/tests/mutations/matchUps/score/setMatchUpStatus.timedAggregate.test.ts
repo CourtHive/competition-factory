@@ -2,11 +2,15 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
 it('can set score for timed aggregate format SET3XA-S:T10', () => {
   const drawProfiles = [
     {
       drawSize: 4,
-      drawType: 'SINGLE_ELIMINATION',
+      drawType: SINGLE_ELIMINATION,
     },
   ];
   const {
@@ -33,7 +37,7 @@ it('can set score for timed aggregate format SET3XA-S:T10', () => {
   // Aggregate: side1=22, side2=21, winner=side1
   const outcome = {
     matchUpFormat: 'SET3XA-S:T10',
-    matchUpStatus: 'COMPLETED',
+    matchUpStatus: COMPLETED,
     score: {
       sets: [
         {
@@ -78,7 +82,7 @@ it('can set score for timed aggregate format SET3XA-S:T10', () => {
   const updatedMatchUp = updatedMatchUps[0];
 
   expect(updatedMatchUp.winningSide).toBe(1);
-  expect(updatedMatchUp.matchUpStatus).toBe('COMPLETED');
+  expect(updatedMatchUp.matchUpStatus).toBe(COMPLETED);
   expect(updatedMatchUp.score?.sets?.length).toBe(3);
 
   // Verify set scores
@@ -99,7 +103,7 @@ it('can set score for timed non-aggregate format SET3X-S:T10', () => {
   const drawProfiles = [
     {
       drawSize: 4,
-      drawType: 'SINGLE_ELIMINATION',
+      drawType: SINGLE_ELIMINATION,
     },
   ];
   const {
@@ -126,7 +130,7 @@ it('can set score for timed non-aggregate format SET3X-S:T10', () => {
   // Winner determined by sets won: side1 wins 2/3 sets
   const outcome = {
     matchUpFormat: 'SET3X-S:T10',
-    matchUpStatus: 'COMPLETED',
+    matchUpStatus: COMPLETED,
     score: {
       sets: [
         {
@@ -168,7 +172,7 @@ it('can set score for timed non-aggregate format SET3X-S:T10', () => {
   const updatedMatchUp = updatedMatchUps[0];
 
   expect(updatedMatchUp.winningSide).toBe(1);
-  expect(updatedMatchUp.matchUpStatus).toBe('COMPLETED');
+  expect(updatedMatchUp.matchUpStatus).toBe(COMPLETED);
   expect(updatedMatchUp.score?.sets?.length).toBe(3);
 
   // Verify set scores

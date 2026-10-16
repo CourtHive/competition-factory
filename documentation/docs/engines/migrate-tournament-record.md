@@ -52,6 +52,16 @@ The walker visits the tournament record, every event, every draw definition, eve
 
 A `flightProfile` extension on a **draw definition** is not promoted (since 7.10.0): a flight profile belongs to the event, nothing ever wrote one on a draw, and a stray draw-level extension is left as an extension.
 
+It also rewrites every legacy `participant.penalties[].penaltyType` to its `PenaltyTypeEnum` code, counted as `promoted.penaltyLabels`: a display label written by earlier releases (`'Ball Abuse'` becomes `BALL_ABUSE`) or a misspelled code (`EQUIMENT_VIOLATION`). It is the same rewrite `addPenalty` and `modifyPenalty` apply on write, and it does not depend on `clearLegacy`. A value it does not recognise is left as it is. See [penaltyConstants](../constants.mdx).
+
+It also gives a draw that does not store its progression edges the ones the factory stores on every draw it generates, counted as `promoted.goesTo` (one per draw changed). A record converted from another system may hold no `winnerMatchUpId` / `loserMatchUpId` on its matchUps, and a lone structure from one may carry no `finishingPositionRange`. The migration writes what the draw's links and positions derive: the edges, the loser ranges widened over the loser target, and a lone foreign structure's finishing rounds. This does not depend on `clearLegacy`. Three kinds of draw are left as they are:
+
+- an AD_HOC draw, whose rounds are paired rather than linked;
+- a draw with a malformed round link, which is never half given its edges;
+- a draw whose edges cannot be derived, for example one structure with no links and nothing to follow.
+
+Readers never write these edges themselves: a query derives what it needs on a copy, so a record keeps whatever it was stored with until it is migrated.
+
 For lifecycle timeItems (`START_TIME` / `STOP_TIME` / `RESUME_TIME` / `END_TIME`) — these are **not** promoted; they remain an ordered history that `matchUpDuration()` walks.
 
 ## `clearLegacy` flag
@@ -83,6 +93,11 @@ type MigrationResult = {
     positionAssignments: number;
     matchUps: number;
     matchUpScheduleTimeItems: number;
+    matchUpCheckIns: number;
+    drawPositions: number;
+    goesTo: number; // draws given their progression edges or finishing rounds
+    participantPresence: number;
+    penaltyLabels: number;
     venues: number;
     courts: number;
   };

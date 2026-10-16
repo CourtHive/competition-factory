@@ -3,7 +3,16 @@ import { expect, test, describe } from 'vitest';
 
 // constants
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
-import { LUCKY_DRAW, LOSER } from '@Constants/drawDefinitionConstants';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import {
+  LUCKY_DRAW,
+  LOSER,
+  MAIN,
+  SINGLE_ELIMINATION,
+  PLAY_OFF,
+  BOTTOM_UP,
+  TOP_DOWN,
+} from '@Constants/drawDefinitionConstants';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helper: build a minimal lucky draw definition with completed round 1
@@ -22,7 +31,7 @@ function buildCompletedRound1Draw(overrides: Record<string, any> = {}) {
   // Losers are side 1: pid-1, pid-3, pid-5, pid-7, pid-9
   const round1MatchUps = [1, 2, 3, 4, 5].map((rp) => ({
     drawPositions: [rp * 2 - 1, rp * 2],
-    matchUpStatus: 'COMPLETED',
+    matchUpStatus: COMPLETED,
     matchUpId: `r1-m${rp}`,
     roundPosition: rp,
     roundNumber: 1,
@@ -37,7 +46,7 @@ function buildCompletedRound1Draw(overrides: Record<string, any> = {}) {
     roundPosition: rp,
     roundNumber: 2,
     finishingRound: 3,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
   }));
 
   const round3MatchUps = [1, 2].map((rp) => ({
@@ -46,7 +55,7 @@ function buildCompletedRound1Draw(overrides: Record<string, any> = {}) {
     roundPosition: rp,
     roundNumber: 3,
     finishingRound: 2,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
   }));
 
   const finalMatchUp = {
@@ -55,7 +64,7 @@ function buildCompletedRound1Draw(overrides: Record<string, any> = {}) {
     roundPosition: 1,
     roundNumber: 4,
     finishingRound: 1,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
   };
 
   const pids = Array.from({ length: 10 }, (_, i) => `pid-${i + 1}`);
@@ -70,7 +79,7 @@ function buildCompletedRound1Draw(overrides: Record<string, any> = {}) {
     structures: [
       {
         structureId: 'test-structure',
-        stage: 'MAIN',
+        stage: MAIN,
         stageSequence: 1,
         matchUps: [...round1MatchUps, ...round2MatchUps, ...round3MatchUps, finalMatchUp],
         positionAssignments: [...round1Assignments],
@@ -97,7 +106,7 @@ describe('luckyDrawAdvancement — guard branches', () => {
 
   test('returns INVALID_VALUES when drawType is not LUCKY_DRAW', () => {
     const result = luckyDrawAdvancement({
-      drawDefinition: { drawType: 'SINGLE_ELIMINATION', structures: [] } as any,
+      drawDefinition: { drawType: SINGLE_ELIMINATION, structures: [] } as any,
       roundNumber: 1,
     });
     expect(result.error).toBe(INVALID_VALUES);
@@ -147,7 +156,7 @@ describe('luckyDrawAdvancement — guard branches', () => {
     const { drawDefinition } = buildCompletedRound1Draw();
     // Make round 1 matchUp 1 incomplete
     drawDefinition.structures[0].matchUps[0].winningSide = undefined;
-    drawDefinition.structures[0].matchUps[0].matchUpStatus = 'TO_BE_PLAYED';
+    drawDefinition.structures[0].matchUps[0].matchUpStatus = TO_BE_PLAYED;
 
     const result = luckyDrawAdvancement({
       drawDefinition,
@@ -301,13 +310,13 @@ describe('luckyDrawAdvancement — next round validation', () => {
       structures: [
         {
           structureId: 'struct-1',
-          stage: 'MAIN',
+          stage: MAIN,
           stageSequence: 1,
           matchUps: [
             // Only round 1, only 1 matchUp (odd = pre-feed)
             {
               drawPositions: [1, 2],
-              matchUpStatus: 'COMPLETED',
+              matchUpStatus: COMPLETED,
               matchUpId: 'r1-m1',
               roundPosition: 1,
               roundNumber: 1,
@@ -348,7 +357,7 @@ describe('luckyDrawAdvancement — next round validation', () => {
       matchUpId: 'r2-m4',
       roundPosition: 4,
       roundNumber: 2,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     });
 
     const result = luckyDrawAdvancement({
@@ -502,7 +511,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
     // Add a LOSER link with BOTTOM_UP feedProfile
     const playoffStructure: any = {
       structureId: 'playoff-struct',
-      stage: 'PLAY_OFF',
+      stage: PLAY_OFF,
       stageSequence: 2,
       matchUps: [
         // 2 matchUps for round 1 of playoff (holds 4 discarded losers)
@@ -511,7 +520,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
           matchUpId: `po-r1-m${rp}`,
           roundPosition: rp,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         })),
       ],
       positionAssignments: [],
@@ -522,7 +531,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
       {
         linkType: LOSER,
         source: { structureId: 'test-structure', roundNumber: 1 },
-        target: { structureId: 'playoff-struct', roundNumber: 1, feedProfile: 'BOTTOM_UP' },
+        target: { structureId: 'playoff-struct', roundNumber: 1, feedProfile: BOTTOM_UP },
       },
     ];
 
@@ -551,7 +560,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
     // Add a playoff structure with NO matchUps (empty)
     const emptyPlayoff: any = {
       structureId: 'empty-playoff',
-      stage: 'PLAY_OFF',
+      stage: PLAY_OFF,
       stageSequence: 2,
       matchUps: [],
       positionAssignments: [],
@@ -562,7 +571,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
       {
         linkType: LOSER,
         source: { structureId: 'test-structure', roundNumber: 1 },
-        target: { structureId: 'empty-playoff', roundNumber: 1, feedProfile: 'TOP_DOWN' },
+        target: { structureId: 'empty-playoff', roundNumber: 1, feedProfile: TOP_DOWN },
       },
     ];
 
@@ -594,7 +603,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
       {
         linkType: LOSER,
         source: { structureId: 'test-structure', roundNumber: 1 },
-        target: { structureId: 'non-existent-struct', roundNumber: 1, feedProfile: 'TOP_DOWN' },
+        target: { structureId: 'non-existent-struct', roundNumber: 1, feedProfile: TOP_DOWN },
       },
     ];
 
@@ -613,7 +622,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
     // Add playoff structure with matchUps that have empty drawPositions arrays
     const playoffWithEmptyDPs: any = {
       structureId: 'playoff-empty-dp',
-      stage: 'PLAY_OFF',
+      stage: PLAY_OFF,
       stageSequence: 2,
       matchUps: [
         {
@@ -621,14 +630,14 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
           matchUpId: 'po-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           drawPositions: [],
           matchUpId: 'po-m2',
           roundPosition: 2,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],
@@ -639,7 +648,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
       {
         linkType: LOSER,
         source: { structureId: 'test-structure', roundNumber: 1 },
-        target: { structureId: 'playoff-empty-dp', roundNumber: 1, feedProfile: 'TOP_DOWN' },
+        target: { structureId: 'playoff-empty-dp', roundNumber: 1, feedProfile: TOP_DOWN },
       },
     ];
 
@@ -667,7 +676,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
     // Add playoff structure with matchUps that have drawPositions but NO assignments
     const playoffWithDPs: any = {
       structureId: 'playoff-with-dp',
-      stage: 'PLAY_OFF',
+      stage: PLAY_OFF,
       stageSequence: 2,
       matchUps: [
         {
@@ -675,14 +684,14 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
           matchUpId: 'po-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           drawPositions: [203, 204],
           matchUpId: 'po-m2',
           roundPosition: 2,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],
@@ -693,7 +702,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
       {
         linkType: LOSER,
         source: { structureId: 'test-structure', roundNumber: 1 },
-        target: { structureId: 'playoff-with-dp', roundNumber: 1, feedProfile: 'TOP_DOWN' },
+        target: { structureId: 'playoff-with-dp', roundNumber: 1, feedProfile: TOP_DOWN },
       },
     ];
 
@@ -721,7 +730,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
     // Add a playoff structure with matchUps having drawPositions
     const playoffTopDown: any = {
       structureId: 'playoff-topdown',
-      stage: 'PLAY_OFF',
+      stage: PLAY_OFF,
       stageSequence: 2,
       matchUps: [
         {
@@ -729,14 +738,14 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
           matchUpId: 'po-td-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           drawPositions: [303, 304],
           matchUpId: 'po-td-m2',
           roundPosition: 2,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],
@@ -747,7 +756,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
       {
         linkType: LOSER,
         source: { structureId: 'test-structure', roundNumber: 1 },
-        target: { structureId: 'playoff-topdown', roundNumber: 1, feedProfile: 'TOP_DOWN' },
+        target: { structureId: 'playoff-topdown', roundNumber: 1, feedProfile: TOP_DOWN },
       },
     ];
 
@@ -802,7 +811,7 @@ describe('luckyDrawAdvancement — implicit branch edge cases', () => {
       structures: [
         {
           structureId: 'no-mu-struct',
-          stage: 'MAIN',
+          stage: MAIN,
           stageSequence: 1,
           // matchUps intentionally omitted
           positionAssignments: [],
@@ -897,7 +906,7 @@ describe('luckyDrawAdvancement — implicit branch edge cases', () => {
     // Add playoff structure where some positions already have bye assignments
     const playoffPartial: any = {
       structureId: 'playoff-partial',
-      stage: 'PLAY_OFF',
+      stage: PLAY_OFF,
       stageSequence: 2,
       matchUps: [
         {
@@ -905,14 +914,14 @@ describe('luckyDrawAdvancement — implicit branch edge cases', () => {
           matchUpId: 'pp-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           drawPositions: [503, 504],
           matchUpId: 'pp-m2',
           roundPosition: 2,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [
@@ -925,7 +934,7 @@ describe('luckyDrawAdvancement — implicit branch edge cases', () => {
       {
         linkType: LOSER,
         source: { structureId: 'test-structure', roundNumber: 1 },
-        target: { structureId: 'playoff-partial', roundNumber: 1, feedProfile: 'TOP_DOWN' },
+        target: { structureId: 'playoff-partial', roundNumber: 1, feedProfile: TOP_DOWN },
       },
     ];
 
@@ -967,7 +976,7 @@ describe('luckyDrawAdvancement — implicit branch edge cases', () => {
 
     const playoffDefault: any = {
       structureId: 'playoff-default-rn',
-      stage: 'PLAY_OFF',
+      stage: PLAY_OFF,
       stageSequence: 2,
       matchUps: [],
       positionAssignments: [],
@@ -1071,7 +1080,7 @@ describe('luckyDrawAdvancement — non-pre-feed round (even matchUp count)', () 
 
     const round1MatchUps = [1, 2, 3, 4].map((rp) => ({
       drawPositions: [rp * 2 - 1, rp * 2],
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       matchUpId: `r1-m${rp}`,
       roundPosition: rp,
       roundNumber: 1,
@@ -1084,7 +1093,7 @@ describe('luckyDrawAdvancement — non-pre-feed round (even matchUp count)', () 
       matchUpId: `r2-m${rp}`,
       roundPosition: rp,
       roundNumber: 2,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     }));
 
     const pids = Array.from({ length: 8 }, (_, i) => `pid-${i + 1}`);
@@ -1099,7 +1108,7 @@ describe('luckyDrawAdvancement — non-pre-feed round (even matchUp count)', () 
       structures: [
         {
           structureId: 'even-struct',
-          stage: 'MAIN',
+          stage: MAIN,
           stageSequence: 1,
           matchUps: [...round1MatchUps, ...round2MatchUps],
           positionAssignments: [...assignments],
@@ -1177,7 +1186,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers with already-filled posi
     // Add a playoff structure where all existing positions are filled
     const playoffFilled: any = {
       structureId: 'playoff-filled',
-      stage: 'PLAY_OFF',
+      stage: PLAY_OFF,
       stageSequence: 2,
       matchUps: [
         {
@@ -1185,7 +1194,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers with already-filled posi
           matchUpId: 'pf-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [
@@ -1199,7 +1208,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers with already-filled posi
       {
         linkType: LOSER,
         source: { structureId: 'test-structure', roundNumber: 1 },
-        target: { structureId: 'playoff-filled', roundNumber: 1, feedProfile: 'TOP_DOWN' },
+        target: { structureId: 'playoff-filled', roundNumber: 1, feedProfile: TOP_DOWN },
       },
     ];
 
@@ -1219,21 +1228,21 @@ describe('luckyDrawAdvancement — placeDiscardedLosers with already-filled posi
     // Add a playoff structure where matchUps lack drawPositions entirely
     const playoffNoDps: any = {
       structureId: 'playoff-no-dps',
-      stage: 'PLAY_OFF',
+      stage: PLAY_OFF,
       stageSequence: 2,
       matchUps: [
         {
           matchUpId: 'pnd-m1',
           roundPosition: 1,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
           // drawPositions intentionally omitted
         },
         {
           matchUpId: 'pnd-m2',
           roundPosition: 2,
           roundNumber: 1,
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],
@@ -1244,7 +1253,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers with already-filled posi
       {
         linkType: LOSER,
         source: { structureId: 'test-structure', roundNumber: 1 },
-        target: { structureId: 'playoff-no-dps', roundNumber: 1, feedProfile: 'TOP_DOWN' },
+        target: { structureId: 'playoff-no-dps', roundNumber: 1, feedProfile: TOP_DOWN },
       },
     ];
 

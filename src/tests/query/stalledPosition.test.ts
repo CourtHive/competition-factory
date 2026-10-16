@@ -7,7 +7,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER, COMPLETED, WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, COMPLETED, WALKOVER, BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -58,7 +58,7 @@ function compass(participantsCount: number) {
     while (played) {
       played = 0;
       for (const matchUp of matchUps() as any[]) {
-        if (matchUp.winningSide || (matchUp.matchUpStatus && matchUp.matchUpStatus !== 'TO_BE_PLAYED')) continue;
+        if (matchUp.winningSide || (matchUp.matchUpStatus && matchUp.matchUpStatus !== TO_BE_PLAYED)) continue;
         if ((matchUp.sides ?? []).filter((side: any) => side?.participantId).length !== 2) continue;
         const outcome = { winningSide: 1 };
         const result: any = tournamentEngine.setMatchUpStatus({ matchUpId: matchUp.matchUpId, drawId: 'A', outcome });

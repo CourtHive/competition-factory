@@ -1,6 +1,6 @@
 import { matchUpFormatTimes } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
-import { addMinutesToTimeString, extractTime } from '@Tools/dateTime';
+import { addMinutesToTimeString, extractDate, extractTime } from '@Tools/dateTime';
 import { calculatePeriodLength } from './calculatePeriodLength';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { validMatchUps } from '@Validators/validMatchUp';
@@ -66,7 +66,10 @@ export function generateBookings({
 
   dateScheduledMatchUps ??= matchUps?.filter((matchUp) => {
     const schedule = matchUp.schedule;
-    return hasSchedule({ schedule }) && (!scheduleDate || schedule?.scheduledDate === scheduleDate);
+    // compare calendar dates: a stored scheduledDate may carry a time component
+    return (
+      hasSchedule({ schedule }) && (!scheduleDate || extractDate(schedule?.scheduledDate) === extractDate(scheduleDate))
+    );
   });
 
   const relevantMatchUps = dateScheduledMatchUps?.filter(

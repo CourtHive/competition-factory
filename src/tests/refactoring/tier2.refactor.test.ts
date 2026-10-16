@@ -18,6 +18,8 @@ import {
   LUCKY_DRAW,
   MAIN,
   ROUND_ROBIN_WITH_PLAYOFF,
+  QUALIFYING,
+  CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -104,7 +106,7 @@ it('generateEventWithDraw: qualifying profiles', () => {
   });
 
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
-  const qualifyingMatchUps = matchUps.filter((m) => m.stage === 'QUALIFYING');
+  const qualifyingMatchUps = matchUps.filter((m) => m.stage === QUALIFYING);
   expect(qualifyingMatchUps.length).toBeGreaterThan(0);
 });
 
@@ -154,7 +156,7 @@ it('doubleExitAdvancement: double walkover propagates to consolation', () => {
 
   // Verify the propagation happened
   ({ matchUps } = tournamentEngine.allTournamentMatchUps());
-  const consolation = matchUps.filter((m) => m.stage === 'CONSOLATION');
+  const consolation = matchUps.filter((m) => m.stage === CONSOLATION);
   // There should be consolation matchUps, some may have propagated statuses
   expect(consolation.length).toBeGreaterThan(0);
 });

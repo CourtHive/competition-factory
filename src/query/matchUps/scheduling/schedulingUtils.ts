@@ -30,6 +30,26 @@ export function getRoundId(obj) {
   });
 }
 
+export type ProfileRound = {
+  roundSegment?: { segmentNumber: number; segmentsCount: number };
+  containerStructureId?: string;
+  isRoundRobin?: boolean;
+  tournamentId?: string;
+  structureId?: string;
+  roundNumber?: number;
+  eventId?: string;
+  drawId?: string;
+};
+export type ProfileVenue = { venueId: string; rounds: ProfileRound[] };
+export type DateSchedulingProfile = { scheduleDate: string; venues: ProfileVenue[] };
+
+// identifies a profiled round, or one segment of it, independently of the venue it is profiled at
+export function getProfileRoundKey(round?: ProfileRound): string {
+  const { segmentNumber, segmentsCount } = round?.roundSegment ?? {};
+  const segment = segmentsCount ? `${segmentNumber}/${segmentsCount}` : '';
+  return [getRoundId(round ?? {}).id, segment].join('|');
+}
+
 export function getRoundTiming({ round, matchUps, events, tournamentRecords }) {
   const event = events.find((event) => event.eventId === round.eventId);
   const { eventType, category, categoryType } = event ?? {};

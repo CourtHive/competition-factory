@@ -7,6 +7,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { REMOVE_ASSIGNMENT } from '@Constants/positionActionConstants';
 import { QUALIFYING, MAIN } from '@Constants/drawDefinitionConstants';
 import {
   DRAW_POSITION_ACTIVE,
@@ -334,37 +335,35 @@ describe('luckyLoserDrawPositionAssignment full coverage', () => {
       drawPosition: filledAssignment.drawPosition,
       drawId,
     });
-    const removeAction = actionsResult.validActions?.find((a) => a.type === 'REMOVE_ASSIGNMENT');
+    const removeAction = actionsResult.validActions?.find((a) => a.type === REMOVE_ASSIGNMENT);
 
-    if (removeAction) {
-      let removeResult: any = tournamentEngine[removeAction.method](removeAction.payload);
-      expect(removeResult.success).toBe(true);
+    expect(removeAction).toBeDefined();
+    let removeResult: any = tournamentEngine[removeAction.method](removeAction.payload);
+    expect(removeResult.success).toBe(true);
 
-      // Get a participant not in the draw for lucky loser role
-      const { participants } = tournamentEngine.getParticipants();
-      const currentDraw = tournamentEngine.getEvent({ drawId }).drawDefinition;
-      const currentStructure = currentDraw.structures.find((s) => s.stage === MAIN);
-      const drawPids = currentStructure.positionAssignments.filter((a) => a.participantId).map((a) => a.participantId);
-      const luckyLoserPid = participants.find((p) => !drawPids.includes(p.participantId))?.participantId;
+    // Get a participant not in the draw for lucky loser role
+    const { participants } = tournamentEngine.getParticipants();
+    const currentDraw = tournamentEngine.getEvent({ drawId }).drawDefinition;
+    const currentStructure = currentDraw.structures.find((s) => s.stage === MAIN);
+    const drawPids = currentStructure.positionAssignments.filter((a) => a.participantId).map((a) => a.participantId);
+    const luckyLoserPid = participants.find((p) => !drawPids.includes(p.participantId))?.participantId;
 
-      if (luckyLoserPid) {
-        let result: any = tournamentEngine.luckyLoserDrawPositionAssignment({
-          drawPosition: filledAssignment.drawPosition,
-          structureId: structure.structureId,
-          luckyLoserParticipantId: luckyLoserPid,
-          drawId,
-        });
-        expect(result.success).toBe(true);
+    expect(luckyLoserPid).toBeDefined();
+    let result: any = tournamentEngine.luckyLoserDrawPositionAssignment({
+      drawPosition: filledAssignment.drawPosition,
+      structureId: structure.structureId,
+      luckyLoserParticipantId: luckyLoserPid,
+      drawId,
+    });
+    expect(result.success).toBe(true);
 
-        // Verify the lucky loser is now at that draw position
-        const updatedDraw = tournamentEngine.getEvent({ drawId }).drawDefinition;
-        const updatedStructure = updatedDraw.structures.find((s) => s.stage === MAIN);
-        const assignment = updatedStructure.positionAssignments.find(
-          (a) => a.drawPosition === filledAssignment.drawPosition,
-        );
-        expect(assignment?.participantId).toBe(luckyLoserPid);
-      }
-    }
+    // Verify the lucky loser is now at that draw position
+    const updatedDraw = tournamentEngine.getEvent({ drawId }).drawDefinition;
+    const updatedStructure = updatedDraw.structures.find((s) => s.stage === MAIN);
+    const assignment = updatedStructure.positionAssignments.find(
+      (a) => a.drawPosition === filledAssignment.drawPosition,
+    );
+    expect(assignment?.participantId).toBe(luckyLoserPid);
   });
 
   it('exercises lucky loser via positionParticipantAction with qualifier position replacement', () => {
@@ -804,29 +803,27 @@ describe('lucky loser integration flow', () => {
       drawPosition: filledAssignment.drawPosition,
       drawId,
     });
-    const removeAction = actionsResult.validActions?.find((a) => a.type === 'REMOVE_ASSIGNMENT');
+    const removeAction = actionsResult.validActions?.find((a) => a.type === REMOVE_ASSIGNMENT);
 
-    if (removeAction) {
-      let removeResult: any = tournamentEngine[removeAction.method](removeAction.payload);
-      expect(removeResult.success).toBe(true);
+    expect(removeAction).toBeDefined();
+    let removeResult: any = tournamentEngine[removeAction.method](removeAction.payload);
+    expect(removeResult.success).toBe(true);
 
-      // Get participants not in the draw
-      const { participants } = tournamentEngine.getParticipants();
-      const currentDraw = tournamentEngine.getEvent({ drawId }).drawDefinition;
-      const currentStructure = currentDraw.structures.find((s) => s.stage === MAIN);
-      const drawPids = currentStructure.positionAssignments.filter((a) => a.participantId).map((a) => a.participantId);
-      const luckyLoserPid = participants.find((p) => !drawPids.includes(p.participantId))?.participantId;
+    // Get participants not in the draw
+    const { participants } = tournamentEngine.getParticipants();
+    const currentDraw = tournamentEngine.getEvent({ drawId }).drawDefinition;
+    const currentStructure = currentDraw.structures.find((s) => s.stage === MAIN);
+    const drawPids = currentStructure.positionAssignments.filter((a) => a.participantId).map((a) => a.participantId);
+    const luckyLoserPid = participants.find((p) => !drawPids.includes(p.participantId))?.participantId;
 
-      if (luckyLoserPid) {
-        let result: any = tournamentEngine.luckyLoserDrawPositionAssignment({
-          drawPosition: filledAssignment.drawPosition,
-          structureId: structure.structureId,
-          luckyLoserParticipantId: luckyLoserPid,
-          drawId,
-        });
-        expect(result.success).toBe(true);
-      }
-    }
+    expect(luckyLoserPid).toBeDefined();
+    let result: any = tournamentEngine.luckyLoserDrawPositionAssignment({
+      drawPosition: filledAssignment.drawPosition,
+      structureId: structure.structureId,
+      luckyLoserParticipantId: luckyLoserPid,
+      drawId,
+    });
+    expect(result.success).toBe(true);
   });
 
   it('positions lucky loser via direct function call with tournamentRecord', () => {

@@ -7,6 +7,7 @@ import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 import { RESULT_NOT_VALIDATED } from '@Constants/errorConditionConstants';
 import { CHALLENGED, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
 import {
   FORFEIT,
@@ -283,7 +284,7 @@ describe('history mirroring actually writes — the silent failure guard', () =>
       tournamentId: 't1',
       participants: [1, 2, 3, 4, 5].map((n) => ({
         participantId: `p${n}`,
-        participantType: 'INDIVIDUAL',
+        participantType: INDIVIDUAL,
         timeItems: [],
       })),
     };

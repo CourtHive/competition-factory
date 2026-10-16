@@ -1,5 +1,7 @@
 import { addMinutesToTimeString, extractDate, sameDay, timeStringMinutes, timeToDate, zeroPad } from '@Tools/dateTime';
+import type { ParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
 import { checkDependenciesScheduled } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDependenciesScheduled';
+import { modifyParticipantDayMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantDayLoad';
 import { updateTimeAfterRecovery } from '@Mutate/matchUps/schedule/scheduleMatchUps/updateTimeAfterRecovery';
 import { checkDependendantTiming } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDependentTiming';
 import { checkRequestConflicts } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRequestConflicts';
@@ -22,7 +24,6 @@ import { nowMs } from '@Tools/clock';
 import { PersonRequests, TournamentRecords } from '@Types/factoryTypes';
 import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
-import { TOTAL } from '@Constants/scheduleConstants';
 
 // NOTE: non-Garman scheduling
 
@@ -36,12 +37,11 @@ function evaluateCourt({
   schedulingConflicts,
   matchUpScheduleTimes,
   matchUpDependencies,
-  relevantParticipantIds,
+  participantReachability,
   requestConflicts,
   personRequests,
   scheduleDate,
   bumpLimits,
-  matchUpType,
   matchUpId,
   courtTime,
   matchUp,
@@ -71,7 +71,7 @@ function evaluateCourt({
   const { enoughTime } = checkRecoveryTime({
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
-    matchUpDependencies,
+    reachability: participantReachability,
     scheduleTime,
     details,
     matchUp,
@@ -98,12 +98,14 @@ function evaluateCourt({
     matchUp,
   });
 
+  // this court is refused; the best court found so far stands (returning false replaced the reduce's accumulator, and
+  // the next court threw writing to it: V2)
   if (conflicts?.length) {
     schedulingConflicts.push(...conflicts);
-    return false;
+    return courtTime;
   }
 
-  bumpLimits(relevantParticipantIds, matchUpType);
+  bumpLimits(matchUp);
 
   const recoveryMinutes = details.minutesMap?.[matchUpId]?.recoveryMinutes;
 
@@ -112,7 +114,7 @@ function evaluateCourt({
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
     averageMatchUpMinutes,
-    matchUpDependencies,
+    reachability: participantReachability,
     recoveryMinutes,
     scheduleTime,
     matchUp,
@@ -139,13 +141,12 @@ function findBestCourtTime({
   schedulingConflicts,
   matchUpScheduleTimes,
   matchUpDependencies,
-  relevantParticipantIds,
+  participantReachability,
   courtIdsScheduled,
   requestConflicts,
   personRequests,
   scheduleDate,
   bumpLimits,
-  matchUpType,
   dateCourts,
   matchUpId,
   matchUp,
@@ -164,12 +165,11 @@ function findBestCourtTime({
       schedulingConflicts,
       matchUpScheduleTimes,
       matchUpDependencies,
-      relevantParticipantIds,
+      participantReachability,
       requestConflicts,
       personRequests,
       scheduleDate,
       bumpLimits,
-      matchUpType,
       matchUpId,
       courtTime,
       matchUp,
@@ -192,6 +192,7 @@ function tryScheduleMatchUp({
   overLimitMatchUpIds,
   matchUpScheduleTimes,
   matchUpDependencies,
+  participantReachability,
   matchUpDailyLimits,
   courtIdsScheduled,
   requestConflicts,
@@ -205,10 +206,10 @@ function tryScheduleMatchUp({
   details,
   venueId,
 }) {
-  const { matchUpId, matchUpType } = matchUp;
+  const { matchUpId } = matchUp;
 
-  const { participantIdsAtLimit, relevantParticipantIds } = checkDailyLimits({
-    matchUpPotentialParticipantIds,
+  const { participantIdsAtLimit } = checkDailyLimits({
+    reachability: participantReachability,
     individualParticipantProfiles,
     matchUpDailyLimits,
     matchUp,
@@ -246,13 +247,12 @@ function tryScheduleMatchUp({
     schedulingConflicts,
     matchUpScheduleTimes,
     matchUpDependencies,
-    relevantParticipantIds,
+    participantReachability,
     courtIdsScheduled,
     requestConflicts,
     personRequests,
     scheduleDate,
     bumpLimits,
-    matchUpType,
     dateCourts,
     matchUpId,
     matchUp,
@@ -365,6 +365,7 @@ function scheduleVenuePass({
   overLimitMatchUpIds,
   matchUpScheduleTimes,
   matchUpDependencies,
+  participantReachability,
   matchUpDailyLimits,
   requestConflicts,
   allDateMatchUpIds,
@@ -402,6 +403,7 @@ function scheduleVenuePass({
         overLimitMatchUpIds,
         matchUpScheduleTimes,
         matchUpDependencies,
+        participantReachability,
         matchUpDailyLimits,
         courtIdsScheduled,
         requestConflicts,
@@ -462,6 +464,7 @@ function scheduleVenueRounds({
   overLimitMatchUpIds,
   matchUpScheduleTimes,
   matchUpDependencies,
+  participantReachability,
   matchUpDailyLimits,
   venueTimeBoundaries,
   requestConflicts,
@@ -495,6 +498,7 @@ function scheduleVenueRounds({
         overLimitMatchUpIds,
         matchUpScheduleTimes,
         matchUpDependencies,
+        participantReachability,
         matchUpDailyLimits,
         requestConflicts,
         allDateMatchUpIds,
@@ -547,6 +551,7 @@ function computeRoundSchedulingStats({ dateSchedulingProfile, scheduledMatchUpId
 
 type V2Scheduler = {
   matchUpDependencies: { [key: string]: any };
+  participantReachability: ParticipantReachability;
   checkPotentialRequestConflicts?: boolean;
   tournamentRecords: TournamentRecords;
   scheduleCompletedMatchUps?: boolean;
@@ -566,6 +571,11 @@ type V2Scheduler = {
   dryRun?: boolean;
 };
 
+/**
+ * @deprecated since 7.15.0, with `scheduleProfileRounds({ pro: true })`; removed at the next major. It keeps working
+ * until then, and its known defects are not being fixed (only the TypeError on a request conflict is). Its distinct
+ * behaviour, a court and a time for each matchUp in one pass, is a candidate for a later scheduling pipeline.
+ */
 export function v2Scheduler({
   schedulingProfileModifications,
   checkPotentialRequestConflicts,
@@ -575,6 +585,7 @@ export function v2Scheduler({
   dateSchedulingProfiles,
   containedStructureIds,
   matchUpDependencies,
+  participantReachability,
   matchUpDailyLimits,
   excludePriorDates,
   clearScheduleDates,
@@ -603,15 +614,14 @@ export function v2Scheduler({
     const matchUpPotentialParticipantIds = {};
     const individualParticipantProfiles = {};
 
-    const bumpLimits = (relevantParticipantIds, matchUpType) => {
-      relevantParticipantIds.forEach((participantId) => {
-        const counters = individualParticipantProfiles[participantId].counters;
-        if (counters[matchUpType]) counters[matchUpType] += 1;
-        else counters[matchUpType] = 1;
-        if (counters[TOTAL]) counters[TOTAL] += 1;
-        else counters[TOTAL] = 1;
+    // recording a matchUp into a participant's day is idempotent: re-evaluating a court does not count it twice
+    const bumpLimits = (matchUp) =>
+      modifyParticipantDayMatchUps({
+        individualParticipantProfiles,
+        reachability: participantReachability,
+        matchUp,
+        value: 1,
       });
-    };
 
     recoveryTimeDeferredMatchUpIds[scheduleDate] = {};
     dependencyDeferredMatchUpIds[scheduleDate] = {};
@@ -646,6 +656,7 @@ export function v2Scheduler({
       matchUpNotBeforeTimes,
       matchUpScheduleTimes,
       matchUpDependencies,
+      participantReachability,
       excludePriorDates,
       clearScheduleDates,
       tournamentRecords,
@@ -709,6 +720,7 @@ export function v2Scheduler({
       overLimitMatchUpIds,
       matchUpScheduleTimes,
       matchUpDependencies,
+      participantReachability,
       matchUpDailyLimits,
       venueTimeBoundaries,
       requestConflicts,

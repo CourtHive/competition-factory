@@ -3,6 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
 
 /**
@@ -23,7 +24,7 @@ function seedStaff(contacts?: any[]) {
       {
         person: { standardGivenName: 'Rae', standardFamilyName: 'Stringer', nationalityCode: 'USA', contacts },
         participantName: 'Rae Stringer',
-        participantType: 'INDIVIDUAL',
+        participantType: INDIVIDUAL,
         participantRole: OFFICIAL,
         participantId: STAFF_ID,
       },

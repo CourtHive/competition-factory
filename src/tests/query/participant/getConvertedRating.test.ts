@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { ELO, WTN, NTRP, UTR } from '@Constants/ratingConstants';
 import { SINGLES, DOUBLES } from '@Constants/matchUpTypes';
-import { ELO } from '@Constants/ratingConstants';
 
 describe('getConvertedRating', () => {
   // Unit tests for error handling
@@ -85,12 +85,12 @@ describe('getConvertedRating', () => {
     const ratings = {
       [SINGLES]: [
         { scaleName: ELO, scaleValue: 1500 },
-        { scaleName: 'WTN', scaleValue: 30 },
+        { scaleName: WTN, scaleValue: 30 },
       ],
     };
 
     const result = getConvertedRating({
-      targetRatingType: 'WTN',
+      targetRatingType: WTN,
       ratings,
     });
 
@@ -143,7 +143,7 @@ describe('getConvertedRating', () => {
       [SINGLES]: [
         {
           scaleValue: { wtnRating: 35, confidence: 0.9 },
-          scaleName: 'WTN',
+          scaleName: WTN,
         },
       ],
     };
@@ -205,7 +205,7 @@ describe('getConvertedRating', () => {
     const ratings = {
       [SINGLES]: [
         {
-          scaleName: 'NTRP',
+          scaleName: NTRP,
           scaleValue: 4,
         },
       ],
@@ -225,7 +225,7 @@ describe('getConvertedRating', () => {
     const ratings = {
       [SINGLES]: [
         {
-          scaleName: 'UTR',
+          scaleName: UTR,
           scaleValue: {
             reliability: 'High',
             utrRating: 10.5,
@@ -244,7 +244,7 @@ describe('getConvertedRating', () => {
 
   it('preserves all rating metadata in result', () => {
     const ratingObject = {
-      scaleName: 'WTN',
+      scaleName: WTN,
       scaleValue: { rating: 30, confidence: 0.8 },
       scaleDate: '2024-01-01',
       eventType: SINGLES,
@@ -256,10 +256,10 @@ describe('getConvertedRating', () => {
 
     const result = getConvertedRating({
       ratings,
-      targetRatingType: 'WTN',
+      targetRatingType: WTN,
     });
 
-    expect(result.scaleName).toBe('WTN');
+    expect(result.scaleName).toBe(WTN);
     expect(result.scaleDate).toBe('2024-01-01');
     expect(result.eventType).toBe(SINGLES);
   });

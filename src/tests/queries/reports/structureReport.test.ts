@@ -5,22 +5,24 @@ import * as tools from '@Assemblies/tools';
 import { expect, it } from 'vitest';
 
 // constants
+import { SINGLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
+import { WTN } from '@Constants/ratingConstants';
 
 it('can identify winningParticipants and map WTN and ranking', () => {
   const drawProfiles = [
     {
       eventName: `WTN 14-19 SINGLES`,
-      category: { ratingType: 'WTN', ratingMin: 14, ratingMax: 19.99 },
+      category: { ratingType: WTN, ratingMin: 14, ratingMax: 19.99 },
       generate: true,
       seedsCount: 2,
       drawSize: 4,
     },
     {
       eventName: `WTN 14-19 DOUBLES`,
-      category: { ratingType: 'WTN', ratingMin: 14, ratingMax: 19.99 },
+      category: { ratingType: WTN, ratingMin: 14, ratingMax: 19.99 },
       eventType: DOUBLES_EVENT,
       generate: true,
       seedsCount: 2,
@@ -203,7 +205,7 @@ it('can generate structureReports for a COMPASS draw', () => {
     {
       eventName: `COMPASS DRAW SINGLES`,
       category: { categoryName: '18U' },
-      drawType: 'COMPASS',
+      drawType: COMPASS,
       generate: true,
       seedsCount: 4,
       drawSize: 16,
@@ -267,7 +269,7 @@ it('can generate structureReports for a COMPASS draw', () => {
 
   expect(participantEntryReports.length).toEqual(individualParticipantsWithEvents.length);
 
-  expect(structureReports.map((r) => r.drawType)).toEqual(['COMPASS']);
+  expect(structureReports.map((r) => r.drawType)).toEqual([COMPASS]);
 });
 
 it('getStructureReports for a draw with PLAY_OFF returns 2 structures when firstStageSequenceOnly: false', () => {
@@ -275,7 +277,7 @@ it('getStructureReports for a draw with PLAY_OFF returns 2 structures when first
   const drawProfiles = [
     {
       eventName: `SINGLES MAIN DRAW`,
-      drawType: 'SINGLE_ELIMINATION',
+      drawType: SINGLE_ELIMINATION,
       category: { categoryName: '18U' },
       generate: true,
       seedsCount: 4,

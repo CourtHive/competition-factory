@@ -3,7 +3,7 @@ import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { QUALIFYING, SINGLE_ELIMINATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 
@@ -62,7 +62,7 @@ describe('ITF WTT 2020 Profile Selection', () => {
       awardProfiles: policy.awardProfiles,
       drawType: SINGLE_ELIMINATION,
       eventType: SINGLES,
-      participation: { participationOrder: 1, rankingStage: 'MAIN' },
+      participation: { participationOrder: 1, rankingStage: MAIN },
       level: 1,
     });
     expect(awardProfile).toBeUndefined();

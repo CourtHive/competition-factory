@@ -26,6 +26,15 @@ import {
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
+/**
+ * A seat reserved for a qualifier that no qualifier has filled yet. `qualifier: true` stays on a seat when a
+ * qualifier is placed there (it marks the participant as a qualifier, e.g. for a 'Q' beside the name); it is
+ * removed when the position is cleared, and it travels with the qualifier when positions are swapped.
+ */
+function isQualifierPlaceholder({ qualifier, participantId }: { qualifier?: boolean; participantId?: string }) {
+  return !!qualifier && !participantId;
+}
+
 export function swapDrawPositionAssignments({ tournamentRecord, drawDefinition, drawPositions, structureId, event }) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!structureId) return { error: MISSING_STRUCTURE_ID };
@@ -159,10 +168,11 @@ function eliminationSwap({
   // if both positions are BYE no need to do anything
   if (assignments.filter(({ bye }) => bye).length === 2) return { ...SUCCESS };
 
-  // if both positions are qualifier no need to do anything
-  if (assignments.filter(({ qualifier }) => qualifier).length === 2) return { ...SUCCESS };
+  // if both positions are unfilled qualifier seats no need to do anything
+  if (assignments.filter(isQualifierPlaceholder).length === 2) return { ...SUCCESS };
 
-  const isQualifierSwap = assignments.some(({ qualifier }) => qualifier);
+  // a PLACED qualifier is a participant and swaps as one, keeping its `qualifier` flag (see isQualifierPlaceholder)
+  const isQualifierSwap = assignments.some(isQualifierPlaceholder);
   const isByeSwap = assignments.some(({ bye }) => bye);
 
   if (isByeSwap && !isQualifierSwap) {
@@ -202,6 +212,8 @@ function swapParticipantIdWithBYE({
   const originalParticipantIdAssignment = assignments.find(({ participantId }) => participantId);
   const originalByeDrawPosition = originalByeAssignment.drawPosition;
   const { participantId, drawPosition: originalParticipantIdDrawPosition } = originalParticipantIdAssignment;
+  // clearing a position removes its `qualifier` flag; a placed qualifier takes it to the seat it moves to
+  const { qualifier } = originalParticipantIdAssignment;
   const { structureId } = structure;
 
   // remove both drawPosition assignments
@@ -246,6 +258,7 @@ function swapParticipantIdWithBYE({
     event,
   });
   if (result.error) return result;
+  if (qualifier) originalByeAssignment.qualifier = true;
 
   return { ...SUCCESS };
 }
@@ -307,8 +320,8 @@ function roundRobinSwap({
   // if both positions are BYE no need to do anything
   if (assignments.filter(({ bye }) => bye).length === 2) return { ...SUCCESS };
 
-  // if both positions are QUALIFIER no need to do anything
-  if (assignments.filter(({ qualifier }) => qualifier).length === 2) return { ...SUCCESS };
+  // if both positions are unfilled qualifier seats no need to do anything
+  if (assignments.filter(isQualifierPlaceholder).length === 2) return { ...SUCCESS };
 
   resetLineUps({
     inContextDrawMatchUps,
@@ -320,7 +333,7 @@ function roundRobinSwap({
     event,
   });
 
-  const isQualifierSwap = assignments.some(({ qualifier }) => qualifier);
+  const isQualifierSwap = assignments.some(isQualifierPlaceholder);
   const isByeSwap = assignments.some(({ bye }) => bye);
 
   if (isByeSwap && !isQualifierSwap) {

@@ -29,6 +29,9 @@ import tournamentEngine from '@Engines/syncEngine';
 
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 
+// constants
+import { GROUP } from '@Constants/participantConstants';
+
 /** Every conflict input, each set to a value distinguishable from `undefined`. */
 function fullInputs() {
   return {
@@ -46,7 +49,7 @@ function fullInputs() {
       updatedAt: '2025-01-01',
     } as any,
     officialParticipantId: 'par-official',
-    groupParticipants: [{ participantId: 'grp-1', participantType: 'GROUP', individualParticipantIds: [] }] as any,
+    groupParticipants: [{ participantId: 'grp-1', participantType: GROUP, individualParticipantIds: [] }] as any,
     nationalityCode: 'FRA',
     organisationIds: ['org-1'],
   };

@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { getEffectiveRegistrationProfile, getEventEntryFees } from '@Query/entries/getEffectiveRegistrationProfile';
 import type { Event, Tournament } from '@Types/tournamentTypes';
 
+// constants
+import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
+import { WTN } from '@Constants/ratingConstants';
+
 /**
  * A2 and A3.
  *
@@ -75,28 +79,28 @@ describe('getEventEntryFees — selectors, most specific first', () => {
     registrationProfile: {
       entryFees: [
         { amount: 30, currencyCode: 'USD', unit: 'MAJOR' as const },
-        { amount: 75, currencyCode: 'USD', unit: 'MAJOR' as const, eventType: 'DOUBLES' },
+        { amount: 75, currencyCode: 'USD', unit: 'MAJOR' as const, eventType: DOUBLES_EVENT },
         { amount: 95, currencyCode: 'USD', unit: 'MAJOR' as const, eventId: 'open-doubles' },
       ],
     },
   } as unknown as Tournament;
 
   it('eventId beats eventType', () => {
-    const event = { eventId: 'open-doubles', eventType: 'DOUBLES' } as Event;
+    const event = { eventId: 'open-doubles', eventType: DOUBLES_EVENT } as Event;
     const fees: any = getEventEntryFees({ event, tournamentRecord: record });
     expect(fees).toHaveLength(1);
     expect(fees[0].amount).toBe(95);
   });
 
   it('eventType applies when no eventId-keyed fee exists', () => {
-    const event = { eventId: 'over35-doubles', eventType: 'DOUBLES' } as Event;
+    const event = { eventId: 'over35-doubles', eventType: DOUBLES_EVENT } as Event;
     const fees: any = getEventEntryFees({ event, tournamentRecord: record });
     expect(fees).toHaveLength(1);
     expect(fees[0].amount).toBe(75);
   });
 
   it('an unselected fee is tournament-wide', () => {
-    const event = { eventId: 'singles', eventType: 'SINGLES' } as Event;
+    const event = { eventId: 'singles', eventType: SINGLES_EVENT } as Event;
     const fees: any = getEventEntryFees({ event, tournamentRecord: record });
     expect(fees).toHaveLength(1);
     expect(fees[0].amount).toBe(30);
@@ -109,14 +113,14 @@ describe('getEventEntryFees — selectors, most specific first', () => {
         entryFees: [{ amount: 95, currencyCode: 'USD', unit: 'MAJOR' as const, eventId: 'other' }],
       },
     } as unknown as Tournament;
-    const event = { eventId: 'mine', eventType: 'SINGLES' } as Event;
+    const event = { eventId: 'mine', eventType: SINGLES_EVENT } as Event;
     expect(getEventEntryFees({ event, tournamentRecord: onlyOther })).toEqual([]);
   });
 
   it('reads a fee stated on the event itself', () => {
     const event = {
       eventId: 'e',
-      eventType: 'SINGLES',
+      eventType: SINGLES_EVENT,
       registrationProfile: { entryFees: [{ amount: 60, currencyCode: 'USD', unit: 'MAJOR' as const }] },
     } as Event;
     const fees: any = getEventEntryFees({ event, tournamentRecord: record });
@@ -135,13 +139,13 @@ describe('EventEntryProfile round-trips', () => {
         entriesLimit: 64,
         targetDrawSize: 64,
         selectionProcess: 'TOP_DOWN_BY_RATING' as const,
-        selectionScaleName: 'WTN',
+        selectionScaleName: WTN,
         wildcardCount: 4,
         waitlistEnabled: true,
       },
     } as Event;
     expect(event.entryProfile?.selectionProcess).toBe('TOP_DOWN_BY_RATING');
-    expect(event.entryProfile?.selectionScaleName).toBe('WTN');
+    expect(event.entryProfile?.selectionScaleName).toBe(WTN);
     expect(event.entryProfile?.entriesLimit).toBe(64);
   });
 });

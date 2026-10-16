@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
+import { MALE, FEMALE } from '@Constants/genderConstants';
 
 function makeAward(overrides: Record<string, any> = {}) {
   return {
@@ -46,13 +47,13 @@ describe('generateRankingList — branch coverage', () => {
 
     it('filters by genders using category.gender', () => {
       const awards = [
-        makeAward({ personId: 'p1', points: 100, category: { gender: 'MALE' } }),
-        makeAward({ personId: 'p2', points: 200, category: { gender: 'FEMALE' } }),
+        makeAward({ personId: 'p1', points: 100, category: { gender: MALE } }),
+        makeAward({ personId: 'p2', points: 200, category: { gender: FEMALE } }),
       ];
 
       const result = generateRankingList({
         pointAwards: awards,
-        categoryFilter: { genders: ['FEMALE'] },
+        categoryFilter: { genders: [FEMALE] },
       });
 
       expect(result.length).toEqual(1);
@@ -61,14 +62,14 @@ describe('generateRankingList — branch coverage', () => {
 
     it('filters by genders using award.gender fallback when category.gender is absent', () => {
       const awards = [
-        makeAward({ personId: 'p1', points: 100, gender: 'MALE' }),
-        makeAward({ personId: 'p2', points: 200, gender: 'FEMALE' }),
+        makeAward({ personId: 'p1', points: 100, gender: MALE }),
+        makeAward({ personId: 'p2', points: 200, gender: FEMALE }),
         makeAward({ personId: 'p3', points: 300 }), // no gender at all — excluded
       ];
 
       const result = generateRankingList({
         pointAwards: awards,
-        categoryFilter: { genders: ['MALE'] },
+        categoryFilter: { genders: [MALE] },
       });
 
       expect(result.length).toEqual(1);
@@ -107,26 +108,26 @@ describe('generateRankingList — branch coverage', () => {
         makeAward({
           personId: 'p1',
           points: 100,
-          category: { ageCategoryCode: 'U18', gender: 'MALE' },
+          category: { ageCategoryCode: 'U18', gender: MALE },
           eventType: SINGLES,
         }),
         makeAward({
           personId: 'p2',
           points: 200,
-          category: { ageCategoryCode: 'U18', gender: 'FEMALE' },
+          category: { ageCategoryCode: 'U18', gender: FEMALE },
           eventType: SINGLES,
         }),
         makeAward({
           personId: 'p3',
           points: 300,
-          category: { ageCategoryCode: 'U14', gender: 'MALE' },
+          category: { ageCategoryCode: 'U14', gender: MALE },
           eventType: SINGLES,
         }),
       ];
 
       const result = generateRankingList({
         pointAwards: awards,
-        categoryFilter: { ageCategoryCodes: ['U18'], genders: ['MALE'], eventTypes: [SINGLES] },
+        categoryFilter: { ageCategoryCodes: ['U18'], genders: [MALE], eventTypes: [SINGLES] },
       });
 
       expect(result.length).toEqual(1);

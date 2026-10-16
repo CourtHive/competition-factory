@@ -1,15 +1,16 @@
 import { addFinishingRounds } from '@Assemblies/generators/drawDefinitions/addFinishingRounds';
+import { buildTargetIndex, positionTargets } from '@Query/matchUp/positionTargets';
 import { getMappedStructureMatchUps } from '@Query/matchUps/getMatchUpsMap';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { positionTargets } from '@Query/matchUp/positionTargets';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { DrawDefinition } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type AddGoesToArgs = {
@@ -17,7 +18,7 @@ type AddGoesToArgs = {
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
 };
-type GoesToMap = {
+export type GoesToMap = {
   loserMatchUpIds: { [matchUpId: string]: string };
   winnerMatchUpIds: { [matchUpId: string]: string };
 };
@@ -58,11 +59,27 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
     addFinishingRounds({ matchUps });
   }
 
+  // built once for this call: every matchUp's targets are read from the same draw
+  const targetIndex = buildTargetIndex(inContextDrawMatchUps);
+  const storedById = new Map<string, Map<string, MatchUp>>();
+  const storedMatchUp = (structureId: string, matchUpId: string) => {
+    if (!storedById.has(structureId)) {
+      const byId = new Map<string, MatchUp>();
+      for (const matchUp of getMappedStructureMatchUps({ matchUpsMap, structureId })) {
+        if (!byId.has(matchUp.matchUpId)) byId.set(matchUp.matchUpId, matchUp);
+      }
+      storedById.set(structureId, byId);
+    }
+    return storedById.get(structureId)?.get(matchUpId);
+  };
+
   for (const inContextMatchUp of (inContextDrawMatchUps ?? []).filter(({ collectionId }) => !collectionId)) {
     const { matchUpId, structureId } = inContextMatchUp;
     const targetData = positionTargets({
+      asReferences: true, // read here, never changed
       inContextDrawMatchUps,
       drawDefinition,
+      targetIndex,
       matchUpId,
     });
     // a malformed round link is an error, never an edge that is quietly not written
@@ -72,11 +89,7 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
     const winnerMatchUpId = winnerMatchUp?.matchUpId;
     const loserMatchUpId = loserMatchUp?.matchUpId;
 
-    const matchUps = getMappedStructureMatchUps({
-      matchUpsMap,
-      structureId,
-    });
-    const matchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
+    const matchUp = storedMatchUp(structureId, matchUpId);
 
     if (matchUp) {
       if (winnerMatchUpId) {
@@ -97,7 +110,7 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
           // undefined where the loser target carries no range: written as it always was
           const loser = loserRange && [Math.min(...loserRange), Math.max(...loserRange)];
           Object.assign(inContextMatchUp.finishingPositionRange, { loser });
-          matchUp.finishingPositionRange.loser = loser;
+          (matchUp.finishingPositionRange as { loser?: number[] }).loser = loser;
         }
       }
     }
@@ -153,4 +166,90 @@ export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMa
   if (hasStoredGoesTo({ drawDefinition })) return undefined;
   const result = addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
   return result.error ? result : undefined;
+}
+
+/**
+ * The edges for a READ that must still refuse a MALFORMED ROUND LINK (CA, 2026-10-06: it is an error):
+ * `getMatchUpDependencies`. It never writes. A draw that does not store its edges has them derived on a copy and
+ * handed back as the `goesToMap`; the stored draw is left as it was. It used to be repaired here, the edges, a widened
+ * `finishingPositionRange.loser` and a lone foreign structure's finishing rounds all written by a query.
+ *
+ * A draw that stores its edges derives nothing, so the link is asked about on its own: once per round of each
+ * structure, which is the question `positionTargets` asks of every matchUp in that round. The error is the same one; on
+ * a draw with several malformed links it may name a different matchUp than the derivation would have reached first.
+ */
+export function derivedGoesToOrLinkError({ drawDefinition }: { drawDefinition: DrawDefinition }) {
+  if (!hasStoredGoesTo({ drawDefinition })) {
+    const result = addGoesTo({ drawDefinition: makeDeepCopy(drawDefinition, false, true) });
+    return result.error ? result : { goesToMap: result.goesToMap, error: undefined };
+  }
+
+  const structures = (drawDefinition.structures ?? []).flatMap((structure) => [
+    structure,
+    ...(structuresOf(structure) ?? []),
+  ]);
+  for (const structure of structures) {
+    const askedRounds = new Set<number | undefined>();
+    for (const matchUp of matchUpsOf(structure) ?? []) {
+      if (matchUp.collectionId || askedRounds.has(matchUp.roundNumber)) continue;
+      askedRounds.add(matchUp.roundNumber);
+      const inContextMatchUp = { ...matchUp, structureId: structure.structureId } as HydratedMatchUp;
+      const targetData = positionTargets({
+        asReferences: true,
+        inContextMatchUp,
+        drawDefinition,
+        matchUpId: matchUp.matchUpId,
+      });
+      if (targetData.error)
+        return { ...decorateResult({ result: targetData, stack: 'derivedGoesTo' }), error: targetData.error };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * What `addGoesTo` does besides the edges: a lone structure the factory did not generate, none of whose matchUps
+ * carries a `finishingPositionRange`, is given its finishing rounds. A one-round draw stores no edges and needs none
+ * (`hasStoredGoesTo` is true), so the edges alone do not say whether this is still owed. Asked as `addGoesTo` asks it.
+ */
+export function needsFinishingRounds(drawDefinition: DrawDefinition): boolean {
+  const structures = drawDefinition.structures ?? [];
+  if (structures.length !== 1 || structuresOf(structures[0])) return false;
+  return !(matchUpsOf(structures[0]) ?? []).some(
+    (matchUp) =>
+      !!matchUp.finishingPositionRange ||
+      !!matchUp.tieMatchUps?.some((tieMatchUp) => tieMatchUp.finishingPositionRange),
+  );
+}
+
+/**
+ * The event as a READ should see it, without writing to it: a draw that does not store what `addGoesTo` derives is
+ * read from a copy that carries it (P54). `getParticipants({ withMatchUps | withRankingProfile })` used to repair the
+ * STORED draw for this (`getMatchUpDependencies`, result discarded), a query that wrote. Measured 2026-10-15 on
+ * Button's ingest corpus: it wrote on 40 of 414 records with draws (all converted outside the factory), never on a
+ * draw the factory made.
+ *
+ * What hydration reads is what the repair left behind: the edges, `finishingPositionRange.loser` widened over the loser
+ * target (it reaches the ranking profile and so points), and a lone foreign structure's finishing rounds. The draws the
+ * repair skipped are skipped here: one holding a matchUp without a roundPosition (tie matchUps carry none). A malformed
+ * round link stops the derivation where it is met, with what came before it derived, as it stopped the repair.
+ */
+export function eventWithDerivedGoesTo(event: Event): Event {
+  let derived = false;
+  const drawDefinitions = (event.drawDefinitions ?? []).map((drawDefinition) => {
+    const owed = !hasStoredGoesTo({ drawDefinition }) || needsFinishingRounds(drawDefinition);
+    if (!owed || hasMatchUpWithoutRoundPosition(drawDefinition)) return drawDefinition;
+    const copy = makeDeepCopy(drawDefinition, false, true);
+    addGoesTo({ drawDefinition: copy });
+    derived = true;
+    return copy;
+  });
+  return derived ? { ...event, drawDefinitions } : event;
+}
+
+function hasMatchUpWithoutRoundPosition(drawDefinition: DrawDefinition) {
+  return (drawDefinition.structures ?? [])
+    .flatMap((structure) => [structure, ...(structuresOf(structure) ?? [])])
+    .flatMap((structure) => matchUpsOf(structure) ?? [])
+    .some((matchUp) => !matchUp.roundPosition || matchUp.tieMatchUps?.some((tieMatchUp) => !tieMatchUp.roundPosition));
 }

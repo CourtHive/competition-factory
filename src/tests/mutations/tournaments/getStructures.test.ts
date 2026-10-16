@@ -71,5 +71,5 @@ it('can extract and collate event and tournament structures', () => {
   const { structures, stageStructures } = tournamentEngine.getTournamentStructures({ withStageGrouping: true });
 
   expect(structures.length).toEqual(totalStructuresCount);
-  expect(Object.keys(stageStructures)).toEqual(['MAIN', 'PLAY_OFF', 'CONSOLATION']);
+  expect(Object.keys(stageStructures)).toEqual([MAIN, PLAY_OFF, CONSOLATION]);
 });

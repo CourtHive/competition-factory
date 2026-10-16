@@ -4,7 +4,9 @@ import { expect, it } from 'vitest';
 
 // constants and fixtures
 import { FORMAT_FAST4, FORMAT_SHORT_SETS, FORMAT_STANDARD, TIMED20 } from '@Fixtures/scoring/matchUpFormats';
-import { TEAM_EVENT } from '@Constants/eventConstants';
+import { TEAM_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { MAIN } from '@Constants/drawDefinitionConstants';
 import {
   INVALID_EVENT_TYPE,
   INVALID_VALUES,
@@ -281,7 +283,7 @@ it('setMatchUpFormat applies format to specific drawIds', () => {
   const result = tournamentEngine.setMatchUpFormat({
     matchUpFormat: FORMAT_SHORT_SETS,
     drawIds: [drawId],
-    stages: ['MAIN'],
+    stages: [MAIN],
     eventId,
   });
   expect(result.success).toEqual(true);
@@ -335,7 +337,7 @@ it('setMatchUpFormat with SINGLES eventType filters events', () => {
 
   const result = tournamentEngine.setMatchUpFormat({
     matchUpFormat: FORMAT_SHORT_SETS,
-    eventType: 'SINGLES',
+    eventType: SINGLES_EVENT,
   });
   expect(result.success).toEqual(true);
 });
@@ -357,7 +359,7 @@ it('setMatchUpFormat with scheduledDates applies format to specific dates', () =
 
   // Schedule a matchUp to a specific date
   const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
-  const tbpMatchUp = matchUps.find((m) => m.matchUpStatus === 'TO_BE_PLAYED');
+  const tbpMatchUp = matchUps.find((m) => m.matchUpStatus === TO_BE_PLAYED);
   if (tbpMatchUp) {
     tournamentEngine.addMatchUpScheduleItems({
       matchUpId: tbpMatchUp.matchUpId,

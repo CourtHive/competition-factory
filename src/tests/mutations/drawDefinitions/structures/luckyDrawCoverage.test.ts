@@ -10,8 +10,8 @@ import { describe, test, expect } from 'vitest';
 
 // constants
 import { MISSING_DRAW_DEFINITION, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { LUCKY_PARTICIPANT } from '@Constants/positionActionConstants';
-import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   ADAPTIVE,
@@ -21,6 +21,9 @@ import {
   PLAY_OFF,
   TOP_DOWN,
   CONSOLATION,
+  SINGLE_ELIMINATION,
+  BOTTOM_UP,
+  WIN_RATIO,
 } from '@Constants/drawDefinitionConstants';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -483,7 +486,7 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
 
   test('returns empty rounds for non-lucky draw type', () => {
     let result: any = getLuckyDrawRoundStatus({
-      drawDefinition: { drawType: 'SINGLE_ELIMINATION' } as any,
+      drawDefinition: { drawType: SINGLE_ELIMINATION } as any,
     });
     expect(result.success).toBe(true);
     expect(result.isLuckyDraw).toBe(false);
@@ -1028,7 +1031,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       roundPosition: rp,
       roundNumber: 2,
       finishingRound: 3,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     }));
 
     const round3MatchUps = [1, 2].map((rp) => ({
@@ -1037,7 +1040,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       roundPosition: rp,
       roundNumber: 3,
       finishingRound: 2,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     }));
 
     const finalMatchUp = {
@@ -1046,7 +1049,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       roundPosition: 1,
       roundNumber: 4,
       finishingRound: 1,
-      matchUpStatus: 'TO_BE_PLAYED',
+      matchUpStatus: TO_BE_PLAYED,
     };
 
     const pids = Array.from({ length: 10 }, (_, i) => `pid-${i + 1}`);
@@ -1061,7 +1064,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       structures: [
         {
           structureId: 'test-structure',
-          stage: 'MAIN',
+          stage: MAIN,
           stageSequence: 1,
           matchUps: [...round1MatchUps, ...round2MatchUps, ...round3MatchUps, finalMatchUp],
           positionAssignments: [...round1Assignments],
@@ -1138,14 +1141,14 @@ describe('luckyDrawAdvancement — additional coverage', () => {
           roundPosition: 1,
           drawPositions: [1, 2],
           matchUpId: 'po-m1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           roundNumber: 1,
           roundPosition: 2,
           drawPositions: [3, 4],
           matchUpId: 'po-m2',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],
@@ -1208,7 +1211,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
         {
           linkType: LOSER,
           source: { structureId: 'test-structure', roundNumber: 1 },
-          target: { structureId: 'bottom-up-playoff', roundNumber: 1, feedProfile: 'BOTTOM_UP' },
+          target: { structureId: 'bottom-up-playoff', roundNumber: 1, feedProfile: BOTTOM_UP },
         },
       ],
     });
@@ -1223,14 +1226,14 @@ describe('luckyDrawAdvancement — additional coverage', () => {
           roundPosition: 1,
           drawPositions: [1, 2],
           matchUpId: 'bu-m1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
         {
           roundNumber: 1,
           roundPosition: 2,
           drawPositions: [3, 4],
           matchUpId: 'bu-m2',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
         },
       ],
       positionAssignments: [],
@@ -1329,7 +1332,7 @@ describe('Lucky Draw integration tests', () => {
   });
 
   test('getLuckyDrawRoundStatus with non-lucky draw returns isLuckyDraw false', () => {
-    const drawProfiles = [{ drawSize: 8, drawType: 'SINGLE_ELIMINATION' }];
+    const drawProfiles = [{ drawSize: 8, drawType: SINGLE_ELIMINATION }];
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
@@ -2087,7 +2090,7 @@ describe('getLuckyDrawRoundStatus — BYE-advanced and additional branches', () 
 describe('luckyDrawAdvancement — deeper branch coverage', () => {
   test('advancement with non-lucky draw type returns error', () => {
     let result: any = luckyDrawAdvancement({
-      drawDefinition: { drawType: 'SINGLE_ELIMINATION', structures: [] } as any,
+      drawDefinition: { drawType: SINGLE_ELIMINATION, structures: [] } as any,
       roundNumber: 1,
     });
     expect(result.error).toBeDefined();
@@ -2453,7 +2456,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
           structureId: 'adhoc-struct',
           stage: PLAY_OFF,
           stageSequence: 2,
-          finishingPosition: 'WIN_RATIO',
+          finishingPosition: WIN_RATIO,
           matchUps: [],
           positionAssignments: [],
         },

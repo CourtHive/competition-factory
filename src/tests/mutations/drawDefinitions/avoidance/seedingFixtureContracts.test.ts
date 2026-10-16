@@ -9,6 +9,7 @@ import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
  * Three fixture behaviours that each produced a confident FALSE NEGATIVE while diagnosing seeded
@@ -138,7 +139,7 @@ describe('trap 3 — seedsCount alone creates seed SLOTS and seeds nobody', () =
       participantsProfile: { participantsCount: DRAW_SIZE },
       setState: true,
     });
-    const { event } = tournamentEngine.addEvent({ event: { eventName: 'unseeded', eventType: 'SINGLES' } });
+    const { event } = tournamentEngine.addEvent({ event: { eventName: 'unseeded', eventType: SINGLES_EVENT } });
     const participantIds = tournamentRecord.participants
       .slice(0, DRAW_SIZE)
       .map(({ participantId }: any) => participantId);

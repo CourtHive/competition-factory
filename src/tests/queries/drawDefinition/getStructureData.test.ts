@@ -4,7 +4,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { MISSING_STRUCTURE_ID, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { SINGLE_ELIMINATION, ROUND_ROBIN, MAIN } from '@Constants/drawDefinitionConstants';
 
 function seedWithQualifying() {
   const {
@@ -32,7 +32,7 @@ describe('getStructureData', () => {
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
     const full: any = tournamentEngine.getDrawData({ drawDefinition });
-    const target = full.structures.find((s: any) => s.stage === 'MAIN');
+    const target = full.structures.find((s: any) => s.stage === MAIN);
 
     const result: any = tournamentEngine.getStructureData({ drawDefinition, structureId: target.structureId });
     expect(result.success).toEqual(true);
@@ -51,7 +51,7 @@ describe('getStructureData', () => {
 
     const full: any = tournamentEngine.getDrawData({ drawDefinition });
     expect(full.structures.length).toBeGreaterThan(1);
-    const mainId = full.structures.find((s: any) => s.stage === 'MAIN').structureId;
+    const mainId = full.structures.find((s: any) => s.stage === MAIN).structureId;
 
     const one: any = tournamentEngine.getStructureData({ drawDefinition, structureId: mainId });
     expect(one.structure.structureId).toEqual(mainId);

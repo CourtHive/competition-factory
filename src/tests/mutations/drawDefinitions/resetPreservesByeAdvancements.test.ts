@@ -3,7 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { FEED_IN_CHAMPIONSHIP, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { FEED_IN_CHAMPIONSHIP, SINGLE_ELIMINATION, CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
  * `resetDrawDefinition` used to strand every BYE advancement in the draw.
@@ -74,7 +75,7 @@ it('preserves the drawPositions a BYE advanced when a draw is reset', () => {
 
   // and the round-1 BYEs the advancement came from are still there
   const byeMatchUps = getStructureMatchUps(DRAW_ID).matchUps.filter(
-    (m: any) => m.roundNumber === 1 && m.matchUpStatus === 'BYE',
+    (m: any) => m.roundNumber === 1 && m.matchUpStatus === BYE,
   );
   expect(byeMatchUps.length).toBe(3);
 
@@ -169,7 +170,7 @@ it('preserves the reserved FED slot as well as the BYE advancement beside it', (
   });
   tournamentEngine.setState(tournamentRecord);
 
-  const before = getStructureMatchUps(DRAW_ID, 'CONSOLATION').matchUps.map((m: any) => ({
+  const before = getStructureMatchUps(DRAW_ID, CONSOLATION).matchUps.map((m: any) => ({
     roundNumber: m.roundNumber,
     roundPosition: m.roundPosition,
     drawPositions: [...(m.drawPositions ?? [])],
@@ -181,7 +182,7 @@ it('preserves the reserved FED slot as well as the BYE advancement beside it', (
   const result: any = tournamentEngine.resetDrawDefinition({ drawId: DRAW_ID });
   expect(result.success).toBe(true);
 
-  const after = getStructureMatchUps(DRAW_ID, 'CONSOLATION').matchUps.map((m: any) => ({
+  const after = getStructureMatchUps(DRAW_ID, CONSOLATION).matchUps.map((m: any) => ({
     roundNumber: m.roundNumber,
     roundPosition: m.roundPosition,
     drawPositions: [...(m.drawPositions ?? [])],

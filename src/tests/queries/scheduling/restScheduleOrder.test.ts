@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest';
 // types
 import { HydratedMatchUp } from '@Types/hydrated';
 
+// constants
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+
 /**
  * An unfinished matchUp nobody has called or started is placed in time by its schedule alone. It is under way
  * only if it holds a court (CA: a player on no grid cell is not on court), and it counts as load before the
@@ -25,7 +28,7 @@ const iso = (clock: string) => `${DAY}T${clock}:00.000Z`;
 function singles(id: string, participantIds: string[], schedule: any, extra: any = {}): HydratedMatchUp {
   return {
     matchUpId: id,
-    matchUpType: 'SINGLES',
+    matchUpType: SINGLES_MATCHUP,
     sides: participantIds.map((participantId) => ({ participantId, participantName: participantId })),
     schedule: { scheduledDate: DAY, ...schedule },
     ...extra,

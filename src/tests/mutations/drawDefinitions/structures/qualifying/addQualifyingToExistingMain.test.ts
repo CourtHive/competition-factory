@@ -18,7 +18,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 describe('Generate Qualifying when main exists without a placeholder', () => {
   it('routes through processExistingDrawDefinition and adds a real qualifying structure', () => {
@@ -86,7 +86,7 @@ describe('Generate Qualifying when main exists without a placeholder', () => {
             {
               qualifyingPositions: qualifiersCount,
               drawSize: 48,
-              drawType: 'SINGLE_ELIMINATION',
+              drawType: SINGLE_ELIMINATION,
               seedsCount: 16,
               structureName: 'Qualifying',
               matchUpFormat: 'SET3-S:6/TB7',

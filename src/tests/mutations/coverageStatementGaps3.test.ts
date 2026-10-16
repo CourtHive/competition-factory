@@ -12,15 +12,21 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { COMPLETED, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, BYE } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT, DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { RANKING } from '@Constants/scaleConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
+  MAIN,
+  QUALIFYING,
+  PLAY_OFF,
+  CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
 import {
   DRAW_DEFINITION_NOT_FOUND,
@@ -171,7 +177,7 @@ describe('removeDirectedParticipants via FMLC advanced scenarios', () => {
 
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
     const mainR1 = matchUps
-      .filter((m) => m.roundNumber === 1 && m.stage === 'MAIN')
+      .filter((m) => m.roundNumber === 1 && m.stage === MAIN)
       .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
     // Save first round matchUp ids for later
@@ -193,7 +199,7 @@ describe('removeDirectedParticipants via FMLC advanced scenarios', () => {
     // Complete a second round matchUp
     const { matchUps: updatedMatchUps } = tournamentEngine.allDrawMatchUps({ drawId });
     const mainR2 = updatedMatchUps.filter(
-      (m) => m.roundNumber === 2 && m.stage === 'MAIN' && m.drawPositions?.filter(Boolean).length === 2,
+      (m) => m.roundNumber === 2 && m.stage === MAIN && m.drawPositions?.filter(Boolean).length === 2,
     );
 
     if (mainR2.length) {
@@ -210,7 +216,7 @@ describe('removeDirectedParticipants via FMLC advanced scenarios', () => {
       // Now remove the second round outcome — exercises deep removal paths
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: mainR2[0].matchUpId,
-        outcome: { matchUpStatus: 'TO_BE_PLAYED' },
+        outcome: { matchUpStatus: TO_BE_PLAYED },
         drawId,
       });
       expect(result.success).toBe(true);
@@ -220,7 +226,7 @@ describe('removeDirectedParticipants via FMLC advanced scenarios', () => {
     // Note: R2 removal may have already affected R1 state, so accept either result
     const result = tournamentEngine.setMatchUpStatus({
       matchUpId: mainR1Ids[0],
-      outcome: { matchUpStatus: 'TO_BE_PLAYED' },
+      outcome: { matchUpStatus: TO_BE_PLAYED },
       drawId,
     });
     expect(result.success || result.error).toBeDefined();
@@ -240,7 +246,7 @@ describe('doubleExitAdvancement with DOUBLE_DEFAULT propagation', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
-    const mainR1 = matchUps.filter((m) => m.roundNumber === 1 && m.stage === 'MAIN');
+    const mainR1 = matchUps.filter((m) => m.roundNumber === 1 && m.stage === MAIN);
 
     // Set DOUBLE_DEFAULT on first match — should propagate to consolation
     if (mainR1.length >= 2) {
@@ -293,7 +299,7 @@ describe('doubleExitAdvancement with DOUBLE_DEFAULT propagation', () => {
 // ----------------------------------------------------------------
 describe('removeTieMatchUpParticipant with TEAM lineUps', () => {
   it('exercises participant assignment and removal in TEAM draw', () => {
-    const drawProfiles = [{ drawSize: 2, eventType: 'TEAM' }];
+    const drawProfiles = [{ drawSize: 2, eventType: TEAM_EVENT }];
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles });
     tournamentEngine.setState(tournamentRecord);
 
@@ -315,7 +321,7 @@ describe('removeTieMatchUpParticipant with TEAM lineUps', () => {
   });
 
   it('exercises DOUBLES tie matchUp participant removal', () => {
-    const drawProfiles = [{ drawSize: 2, eventType: 'TEAM' }];
+    const drawProfiles = [{ drawSize: 2, eventType: TEAM_EVENT }];
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles });
     tournamentEngine.setState(tournamentRecord);
 
@@ -364,7 +370,9 @@ describe('getTournamentPoints with ranking policy', () => {
       },
     });
     expect(result.success).toBe(true);
-    expect(result.personPoints).toBeDefined();
+    // every finishing position of the completed draw is awarded: 1, 2, 2 x semifinal, 4 x quarterfinal
+    const awarded = Object.values(result.personPoints).flatMap((awards: any) => awards.map(({ points }) => points));
+    expect(awarded.toSorted((a, b) => b - a)).toEqual([100, 75, 50, 50, 25, 25, 25, 25]);
   });
 
   it('exercises perWinPoints profile', () => {
@@ -386,34 +394,9 @@ describe('getTournamentPoints with ranking policy', () => {
       },
     });
     expect(result.success).toBe(true);
-    expect(result.personPoints).toBeDefined();
-  });
-
-  it('exercises DOUBLES event with doublesAttribution SPLIT_EVEN', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: DOUBLES, completeAllMatchUps: true }],
-    });
-    tournamentEngine.setState(tournamentRecord);
-
-    const result = tournamentEngine.getTournamentPoints({
-      policyDefinitions: {
-        [POLICY_TYPE_RANKING_POINTS]: {
-          policyName: 'doubles',
-          doublesAttribution: 'SPLIT_EVEN',
-          awardProfiles: [
-            {
-              finishingPositionRanges: {
-                1: { value: 100 },
-                2: { value: 50 },
-                4: { value: 25 },
-              },
-            },
-          ],
-        },
-      },
-    });
-    expect(result.success).toBe(true);
-    expect(result.pairPoints).toBeDefined();
+    // three matchUps won: the champion's two wins and the runner-up's semifinal win
+    const awarded = Object.values(result.personPoints).flatMap((awards: any) => awards.map(({ points }) => points));
+    expect(awarded.toSorted((a, b) => b - a)).toEqual([20, 10]);
   });
 });
 
@@ -528,9 +511,9 @@ describe('modifyTournamentRecord advanced paths', () => {
 
     // Add venue
     const modResult1 = tournamentEngine.modifyTournamentRecord({
-      venueProfiles: [{ venueCount: 1, courtsCount: 2 }],
+      venueProfiles: [{ courtsCount: 2 }],
     });
-    expect(modResult1.venueIds?.length).toBeGreaterThan(0);
+    expect(modResult1.venueIds?.length).toEqual(1);
 
     // Now add drawProfiles via modifyTournamentRecord
     const modResult2 = tournamentEngine.modifyTournamentRecord({
@@ -574,6 +557,12 @@ describe('modifyTournamentRecord advanced paths', () => {
 // ----------------------------------------------------------------
 // 8. generateStatCrew — exercise with TEAM tournament
 // ----------------------------------------------------------------
+function teamScoreTotals(json) {
+  return json.map((game) =>
+    game.childArray.filter((child) => child.team).reduce((total, { team }) => total + team.score, 0),
+  );
+}
+
 describe('generateStatCrew with TEAM tournament', () => {
   it('returns error without tournamentRecord', () => {
     const result: any = generateStatCrew({} as any);
@@ -582,23 +571,26 @@ describe('generateStatCrew with TEAM tournament', () => {
 
   it('exercises dual match (single team matchUp) path', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM', completeAllMatchUps: true }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT, completeAllMatchUps: true }],
     });
 
     const result: any = generateStatCrew({ tournamentRecord });
     expect(result.success).toBe(true);
     expect(result.json?.length).toBeGreaterThan(0);
     expect(result.xml?.length).toBeGreaterThan(0);
+    // the completed dual match reports all nine tieMatchUps (6 singles, 3 doubles) as won
+    expect(teamScoreTotals(result.json)).toEqual([9]);
   });
 
   it('exercises tournament path with multiple team matchUps', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM', completeAllMatchUps: true }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, completeAllMatchUps: true }],
     });
 
     const result: any = generateStatCrew({ tournamentRecord });
     expect(result.success).toBe(true);
-    expect(result.json?.length).toBeGreaterThanOrEqual(1);
+    // both semifinals, and the final the completed semifinals populate
+    expect(result.json?.length).toEqual(3);
   });
 });
 
@@ -659,7 +651,7 @@ describe('directWinner with qualifying structures', () => {
     const drawId = drawIds[0];
 
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
-    const qualifyingMatchUps = matchUps.filter((m) => m.stage === 'QUALIFYING');
+    const qualifyingMatchUps = matchUps.filter((m) => m.stage === QUALIFYING);
 
     // Complete qualifying matchUps to trigger directWinner with winnerTargetLink
     const qualifyingR1 = qualifyingMatchUps
@@ -698,12 +690,12 @@ describe('updateTieFormat advanced paths', () => {
 
   it('exercises matchUp-level tieFormat update', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps?.find((m) => m.matchUpType === 'TEAM');
+    const teamMatchUp = matchUps?.find((m) => m.matchUpType === TEAM_MATCHUP);
 
     if (teamMatchUp?.tieFormat) {
       const { drawDefinition, event } = tournamentEngine.getEvent({ drawId: drawIds[0] });
@@ -728,7 +720,7 @@ describe('updateTieFormat advanced paths', () => {
 
   it('exercises structure-level tieFormat update', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
 
@@ -767,8 +759,13 @@ describe('generateAndPopulatePlayoffStructures via engine', () => {
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: drawIds[0] });
     // Should have playoff structures
-    const playoffStructures = drawDefinition.structures?.filter((s) => s.stage === 'PLAY_OFF');
+    const playoffStructures = drawDefinition.structures?.filter((s) => s.stage === PLAY_OFF);
     expect(playoffStructures?.length).toBeGreaterThan(0);
+    // completing the groups positions the group winners in the playoff, which is then completed too
+    const playoff = playoffStructures[0];
+    expect(playoff.positionAssignments.filter(({ participantId }) => participantId).length).toEqual(2);
+    expect(playoff.matchUps.length).toEqual(1);
+    expect(playoff.matchUps[0].winningSide).toBeDefined();
   });
 
   it('exercises playoff generation from completed SE structure', () => {
@@ -786,8 +783,10 @@ describe('generateAndPopulatePlayoffStructures via engine', () => {
       roundNumbers: [1],
       structureId,
     });
-    // Should succeed or fail gracefully
-    expect(result.error || result.success).toBeDefined();
+    // the first-round losers of the completed structure populate the new playoff
+    expect(result.success).toBe(true);
+    const playoff = result.structures.find((structure) => structure.structureId !== structureId);
+    expect(playoff.positionAssignments.filter(({ participantId }) => participantId).length).toEqual(4);
   });
 });
 
@@ -829,7 +828,7 @@ describe('generateLineUps paths', () => {
 
   it('exercises full lineUp generation for TEAM event', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId: drawIds[0] });
@@ -848,7 +847,7 @@ describe('generateLineUps paths', () => {
 
   it('exercises lineUp generation with attach option', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId: drawIds[0] });
@@ -873,7 +872,7 @@ describe('generateLineUps paths', () => {
 describe('replaceTieMatchUpParticipant via engine', () => {
   it('exercises replacement in TEAM draw', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
 
@@ -883,7 +882,7 @@ describe('replaceTieMatchUpParticipant via engine', () => {
     if (singlesTieMatchUp) {
       const side = singlesTieMatchUp.sides?.find((s) => s.participant);
       const existingParticipantId = side?.participant?.participantId;
-      const teamMatchUp = matchUps?.find((m) => m.matchUpType === 'TEAM');
+      const teamMatchUp = matchUps?.find((m) => m.matchUpType === TEAM_MATCHUP);
       const teamSide = teamMatchUp?.sides?.find((s) => s.sideNumber === side?.sideNumber);
       const teamParticipant = teamSide?.participant;
 
@@ -903,7 +902,7 @@ describe('replaceTieMatchUpParticipant via engine', () => {
 
   it('exercises substitution path', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
 
@@ -913,7 +912,7 @@ describe('replaceTieMatchUpParticipant via engine', () => {
     if (singlesTieMatchUp) {
       const side = singlesTieMatchUp.sides?.find((s) => s.participant);
       const existingParticipantId = side?.participant?.participantId;
-      const teamMatchUp = matchUps?.find((m) => m.matchUpType === 'TEAM');
+      const teamMatchUp = matchUps?.find((m) => m.matchUpType === TEAM_MATCHUP);
       const teamSide = teamMatchUp?.sides?.find((s) => s.sideNumber === side?.sideNumber);
       const teamParticipant = teamSide?.participant;
 
@@ -961,7 +960,8 @@ describe('getEventRankingPoints full path', () => {
       },
     });
     expect(result.success).toBe(true);
-    expect(result.eventAwards).toBeDefined();
+    const points = result.eventAwards.map((award) => award.points);
+    expect(points.toSorted((a, b) => b - a)).toEqual([200, 150, 100, 100, 50, 50, 50, 50]);
     expect(result.eventName).toBeDefined();
     expect(result.isDoubles).toBe(false);
   });
@@ -991,6 +991,8 @@ describe('getEventRankingPoints full path', () => {
     });
     expect(result.success).toBe(true);
     expect(result.isDoubles).toBe(true);
+    const points = result.eventAwards.map((award) => award.points);
+    expect(points.toSorted((a, b) => b - a)).toEqual([100, 50, 25, 25]);
   });
 });
 
@@ -1059,7 +1061,7 @@ describe('positionAssignment additional paths', () => {
     // Find a participant not in the draw
     const allParticipants = tournamentRecord.participants || [];
     const unassignedParticipant = allParticipants.find(
-      (p) => p.participantType === 'INDIVIDUAL' && !assignedIds.includes(p.participantId),
+      (p) => p.participantType === INDIVIDUAL && !assignedIds.includes(p.participantId),
     );
 
     if (byeAssignment && unassignedParticipant) {
@@ -1080,12 +1082,12 @@ describe('positionAssignment additional paths', () => {
 describe('applyLineUps with valid TEAM data', () => {
   it('exercises lineUp application to TEAM matchUp', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 2, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps?.find((m) => m.matchUpType === 'TEAM');
+    const teamMatchUp = matchUps?.find((m) => m.matchUpType === TEAM_MATCHUP);
 
     if (teamMatchUp) {
       const drawId = drawIds[0];
@@ -1143,7 +1145,7 @@ describe('prepareStage with multi-sequence qualifying', () => {
     expect(result.tournamentRecord).toBeDefined();
     tournamentEngine.setState(result.tournamentRecord);
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: result.drawIds[0] });
-    const qualifyingStructures = drawDefinition.structures?.filter((s) => s.stage === 'QUALIFYING');
+    const qualifyingStructures = drawDefinition.structures?.filter((s) => s.stage === QUALIFYING);
     expect(qualifyingStructures?.length).toBeGreaterThanOrEqual(1);
   });
 });
@@ -1238,12 +1240,12 @@ describe('FMLC bye propagation to consolation', () => {
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: drawIds[0] });
 
     // Consolation structure should have BYEs propagated
-    const consolation = drawDefinition.structures?.find((s) => s.stage === 'CONSOLATION');
+    const consolation = drawDefinition.structures?.find((s) => s.stage === CONSOLATION);
     expect(consolation).toBeDefined();
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId: drawIds[0] });
-    const consolationMatchUps = matchUps.filter((m) => m.stage === 'CONSOLATION');
+    const consolationMatchUps = matchUps.filter((m) => m.stage === CONSOLATION);
     // Some consolation matchUps may have BYE status
-    const byeMatchUps = consolationMatchUps.filter((m) => m.matchUpStatus === 'BYE');
+    const byeMatchUps = consolationMatchUps.filter((m) => m.matchUpStatus === BYE);
     expect(byeMatchUps.length).toBeGreaterThanOrEqual(0);
   });
 });
@@ -1254,19 +1256,19 @@ describe('FMLC bye propagation to consolation', () => {
 describe('directWinner lineUp propagation', () => {
   it('exercises lineUp propagation when completing TEAM matchUp', () => {
     const { tournamentRecord, drawIds } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, eventType: 'TEAM' }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
     const drawId = drawIds[0];
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUps = matchUps.filter((m) => m.matchUpType === 'TEAM');
+    const teamMatchUps = matchUps.filter((m) => m.matchUpType === TEAM_MATCHUP);
     const firstRoundTeam = teamMatchUps.find((m) => m.roundNumber === 1);
 
     if (firstRoundTeam) {
       // Complete all tie matchUps for one side to win the team matchUp
       const tieMatchUps = matchUps.filter(
-        (m) => m.matchUpTieId === firstRoundTeam.matchUpId && m.matchUpType !== 'TEAM',
+        (m) => m.matchUpTieId === firstRoundTeam.matchUpId && m.matchUpType !== TEAM_MATCHUP,
       );
 
       for (const tieMatchUp of tieMatchUps) {

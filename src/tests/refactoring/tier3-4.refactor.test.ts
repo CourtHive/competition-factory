@@ -14,8 +14,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { INDIVIDUAL } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -225,6 +225,6 @@ it('addEventEntries: doubles event accepts pair participants', () => {
   const { participants } = tournamentEngine.getParticipants();
   for (const entry of event.entries) {
     const p = participants.find((p) => p.participantId === entry.participantId);
-    if (p) expect(p.participantType).toEqual('PAIR');
+    if (p) expect(p.participantType).toEqual(PAIR);
   }
 });

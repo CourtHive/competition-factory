@@ -12,7 +12,7 @@ import { getChallengeState } from '@Query/ladder/getChallengeState';
 import { issueChallenge } from '@Mutate/ladder/issueChallenge';
 
 // constants
-import { FORFEIT, FORFEIT_POSITION, RANK, RATING, RESULT, SWAP } from '@Constants/ladderConstants';
+import { FORFEIT, FORFEIT_POSITION, RANK, RATING, RESULT, SWAP, PENDING } from '@Constants/ladderConstants';
 import { LADDER, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CHALLENGED, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
@@ -276,7 +276,7 @@ describe('degenerate but legal inputs', () => {
   test('getChallengeState with no issue record is PENDING, not EXPIRED', () => {
     // Something that never started cannot have run out.
     expect(getChallengeState({ matchUp: { timeItems: [] }, policy: { acceptanceDays: 5 }, asOf: AT }).state).toEqual(
-      'PENDING',
+      PENDING,
     );
   });
 
@@ -284,7 +284,7 @@ describe('degenerate but legal inputs', () => {
     const matchUp = {
       timeItems: [{ itemType: 'ladder.challenge.issued', itemValue: 'x', itemDate: '2020-01-01T00:00:00.000Z' }],
     };
-    expect(getChallengeState({ matchUp, policy: {}, asOf: AT }).state).toEqual('PENDING');
+    expect(getChallengeState({ matchUp, policy: {}, asOf: AT }).state).toEqual(PENDING);
   });
 
   test('a completed matchUp cannot be accepted or declined again', () => {

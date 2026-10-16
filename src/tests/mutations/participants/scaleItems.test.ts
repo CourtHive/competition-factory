@@ -8,6 +8,7 @@ import { RANKING } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import { RATING } from '@Constants/scaleConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 const scaleDate = '2020-06-06';
 
@@ -27,7 +28,7 @@ it('can set participant scaleItems', () => {
   let scaleItem: any = {
     eventType: SINGLES,
     scaleType: RATING,
-    scaleName: 'WTN',
+    scaleName: WTN,
     scaleValue: 8.3,
     scaleDate,
   };
@@ -41,7 +42,7 @@ it('can set participant scaleItems', () => {
   let scaleAttributes: any = {
     eventType: SINGLES,
     scaleType: RATING,
-    scaleName: 'WTN',
+    scaleName: WTN,
   };
   ({ scaleItem: result } = tournamentEngine.getParticipantScaleItem({
     scaleAttributes,
@@ -78,7 +79,7 @@ it('can set participant scaleItems', () => {
 
   scaleItem = {
     scaleValue: 8.4,
-    scaleName: 'WTN',
+    scaleName: WTN,
     scaleType: RATING,
     eventType: SINGLES,
     scaleDate,
@@ -92,7 +93,7 @@ it('can set participant scaleItems', () => {
 
   scaleItem = {
     scaleValue: 8.4,
-    scaleName: 'WTN',
+    scaleName: WTN,
     scaleType: RATING,
     eventType: SINGLES,
     scaleDate,
@@ -107,7 +108,7 @@ it('can set participant scaleItems', () => {
 
   scaleItem = {
     scaleValue: undefined,
-    scaleName: 'WTN',
+    scaleName: WTN,
     scaleType: RATING,
     eventType: SINGLES,
     scaleDate,
@@ -147,7 +148,7 @@ it('can set participant scaleItems in bulk', () => {
     const scaleItems = [
       {
         scaleValue: 8.3,
-        scaleName: 'WTN',
+        scaleName: WTN,
         scaleType: RATING,
         eventType: SINGLES,
         scaleDate: '2021-01-01',
@@ -219,7 +220,7 @@ it('addDynamicRatings returns error when participantId is not found', () => {
 
   const scaleItem = {
     scaleValue: 8.3,
-    scaleName: 'WTN',
+    scaleName: WTN,
     scaleType: RATING,
     eventType: SINGLES,
     scaleDate: '2021-01-01',
@@ -245,7 +246,7 @@ it('addDynamicRatings succeeds with valid scale values', () => {
 
   const scaleItem = {
     scaleValue: 8.3,
-    scaleName: 'WTN',
+    scaleName: WTN,
     scaleType: RATING,
     eventType: SINGLES,
     scaleDate: '2021-01-01',

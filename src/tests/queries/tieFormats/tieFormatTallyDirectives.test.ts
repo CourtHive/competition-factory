@@ -2,6 +2,9 @@ import tournamentRecord from './tieFormatTallyDirectives.codes.json';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
+
 it('can can determine scorecard winner using tallyDirectives', () => {
   let result = tournamentEngine.setState(tournamentRecord);
   expect(result.success).toEqual(true);
@@ -9,7 +12,7 @@ it('can can determine scorecard winner using tallyDirectives', () => {
   const {
     matchUps: [matchUp],
   } = tournamentEngine.allTournamentMatchUps({
-    matchUpFilters: { matchUpTypes: ['TEAM'] },
+    matchUpFilters: { matchUpTypes: [TEAM_MATCHUP] },
   });
 
   const { matchUpId, drawId, tieFormat, winningSide } = matchUp;

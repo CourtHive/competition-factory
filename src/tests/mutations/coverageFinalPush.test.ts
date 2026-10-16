@@ -14,14 +14,16 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { TEAM_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   MAIN,
   VOLUNTARY_CONSOLATION,
   SINGLE_ELIMINATION,
+  ROUND_ROBIN_WITH_PLAYOFF,
 } from '@Constants/drawDefinitionConstants';
 
 // ----------------------------------------------------------------
@@ -160,7 +162,7 @@ describe('getParticipantStats: withIndividualStats non-team path', () => {
 
     const { matchUps: allMatchUps } = tournamentEngine.allTournamentMatchUps();
     const singlesMatchUps = allMatchUps.filter(
-      (m) => m.matchUpType === 'SINGLES' && m.sides?.every((s) => s.participant),
+      (m) => m.matchUpType === SINGLES_MATCHUP && m.sides?.every((s) => s.participant),
     );
 
     if (singlesMatchUps.length) {
@@ -320,7 +322,7 @@ describe('generateAndPopulatePlayoffStructures guard branches', () => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 8, drawType: 'ROUND_ROBIN_WITH_PLAYOFF' }],
+      drawProfiles: [{ drawSize: 8, drawType: ROUND_ROBIN_WITH_PLAYOFF }],
     });
 
     tournamentEngine.setState(tournamentRecord);
@@ -396,7 +398,7 @@ describe('generateVoluntaryConsolation coverage gaps', () => {
 
     // Add 4 participants as voluntary consolation entries
     const pids = tournamentRecord.participants
-      .filter((p) => p.participantType === 'TEAM')
+      .filter((p) => p.participantType === TEAM_PARTICIPANT)
       .slice(0, 4)
       .map((p) => p.participantId);
 

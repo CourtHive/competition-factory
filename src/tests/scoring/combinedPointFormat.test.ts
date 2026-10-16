@@ -11,8 +11,15 @@ import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
 // constants and types
+import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { RotatingPartnerScoringVariant } from '@Types/rotatingPartnerScoring';
+import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 afterEach(() => setOutcomePipeline());
 
@@ -53,13 +60,13 @@ it.each([
 ])('completion/analysis/validator agree on $code $a–$b', ({ code, a, b, complete, winner }) => {
   const set = { setNumber: 1, side1Score: a, side2Score: b, winningSide: winner };
   expect(checkSetIsComplete({ set, matchUpFormat: code })).toBe(complete);
-  expect(validateMatchUpScore([set], code, complete ? 'COMPLETED' : 'IN_PROGRESS').isValid).toBe(true);
+  expect(validateMatchUpScore([set], code, complete ? COMPLETED : IN_PROGRESS).isValid).toBe(true);
   expect(
     analyzeScore({
       score: { sets: [set] },
       matchUpFormat: code,
       winningSide: winner,
-      matchUpStatus: complete ? 'COMPLETED' : 'IN_PROGRESS',
+      matchUpStatus: complete ? COMPLETED : IN_PROGRESS,
     }).valid,
   ).toBe(true);
   expect(
@@ -82,15 +89,15 @@ function setup(variant: RotatingPartnerScoringVariant = { tieResolution: 'ALLOW'
   const ids = ['a', 'b', 'c', 'd'];
   const draw: DrawDefinition = {
     drawId: 'd',
-    drawType: 'AD_HOC',
-    matchUpType: 'DOUBLES',
-    entries: ids.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' })),
+    drawType: AD_HOC,
+    matchUpType: DOUBLES_MATCHUP,
+    entries: ids.map((participantId) => ({ participantId, entryStatus: DIRECT_ACCEPTANCE })),
     structures: [{ structureId: 's', matchUps: [] }],
     competitionProfile: {
       version: 1,
       format: 'AMERICANO',
       entrantScope: 'INDIVIDUAL',
-      matchUpType: 'DOUBLES',
+      matchUpType: DOUBLES_MATCHUP,
       scoring: { combinedPointTotal: 32, selectedVariant: variant },
       standings: { metric: 'SIDE_POINTS', attribution: 'EACH_INDIVIDUAL' },
       pairing: { seed: 42, algorithmVersion: 1 },
@@ -101,15 +108,15 @@ function setup(variant: RotatingPartnerScoringVariant = { tieResolution: 'ALLOW'
     tournamentId: 't',
     participants: ids.map((participantId) => ({
       participantId,
-      participantType: 'INDIVIDUAL',
-      participantRole: 'COMPETITOR',
+      participantType: INDIVIDUAL,
+      participantRole: COMPETITOR,
       participantName: participantId,
     })),
     events: [
       {
         eventId: 'e',
-        eventType: 'DOUBLES',
-        entries: ids.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
+        eventType: DOUBLES_EVENT,
+        entries: ids.map((participantId) => ({ participantId, entryStatus: UNGROUPED })),
         drawDefinitions: [draw],
       },
     ],
@@ -132,11 +139,11 @@ it.each(['v1', 'v2', 'differential'] as const)(
   (pipeline) => {
     setOutcomePipeline(pipeline);
     const context = setup();
-    const outcome = { matchUpStatus: 'COMPLETED', score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } };
+    const outcome = { matchUpStatus: COMPLETED, score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } };
     expect(tournamentEngine.setMatchUpStatus({ ...context, outcome }).error).toBeUndefined();
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     expect(matchUps.find((matchUp) => matchUp.matchUpId === context.matchUpId)).toMatchObject({
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       matchUpFormat: 'SET1-S:P32',
       score: { sets: [{ side1Score: 16, side2Score: 16 }] },
     });
@@ -150,7 +157,7 @@ it('winner-to-tie correction removes the former winner', () => {
     tournamentEngine.setMatchUpStatus({
       ...context,
       outcome: {
-        matchUpStatus: 'COMPLETED',
+        matchUpStatus: COMPLETED,
         winningSide: 1,
         score: { sets: [{ setNumber: 1, side1Score: 17, side2Score: 15, winningSide: 1 }] },
       },
@@ -159,7 +166,7 @@ it('winner-to-tie correction removes the former winner', () => {
   expect(
     tournamentEngine.setMatchUpStatus({
       ...context,
-      outcome: { matchUpStatus: 'COMPLETED', score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } },
+      outcome: { matchUpStatus: COMPLETED, score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } },
     }).error,
   ).toBeUndefined();
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
@@ -171,7 +178,7 @@ it('winner-to-tie correction removes the former winner', () => {
 it('saved rules refuse tied completion and format overrides even with validation disabled', () => {
   const context = setup({ tieResolution: 'DECIDING_POINT' });
   const before = structuredClone(tournamentEngine.getTournament().tournamentRecord.events);
-  const outcome = { matchUpStatus: 'COMPLETED', score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } };
+  const outcome = { matchUpStatus: COMPLETED, score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } };
   expect(tournamentEngine.setMatchUpStatus({ ...context, outcome, disableScoreValidation: true }).error).toBeTruthy();
   expect(tournamentEngine.setMatchUpState({ ...context, ...outcome, disableScoreValidation: true }).error).toBeTruthy();
   expect(tournamentEngine.setMatchUpStatus({ ...context, outcome, matchUpFormat: 'SET1-S:P32' }).error).toBeTruthy();
@@ -180,7 +187,7 @@ it('saved rules refuse tied completion and format overrides even with validation
     tournamentEngine.setMatchUpStatus({
       ...context,
       outcome: {
-        matchUpStatus: 'COMPLETED',
+        matchUpStatus: COMPLETED,
         winningSide: 2,
         score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 17, winningSide: 2 }] },
       },
@@ -200,7 +207,7 @@ it.each([
   }
   for (const side of extra) engine.addPoint({ winner: side as 0 | 1 });
   expect(engine.getState()).toMatchObject({
-    matchUpStatus: 'COMPLETED',
+    matchUpStatus: COMPLETED,
     score: { sets: [{ side1Score: a, side2Score: b }] },
   });
   expect(engine.getState().winningSide).toBe(winner);
@@ -210,7 +217,7 @@ it.each([
   engine.addPoint({ winner: 0 });
   expect(engine.getState()).toEqual(completed);
   engine.undo();
-  expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+  expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
   engine.redo();
   expect(engine.getState().score).toEqual(completed.score);
   expect(engine.getState().winningSide).toBe(winner);
@@ -241,7 +248,7 @@ it('live deciding point is displayed numerically, with policy-aware match-point 
     situation: { isGoldenPoint: true, isMatchPoint: true, isGamePoint: false },
   });
   engine.addPoint({ winningSide: 2, serverSideNumber: 1, timestamp: '2026-10-10T12:00:00Z' });
-  expect(engine.getState()).toMatchObject({ matchUpStatus: 'COMPLETED', winningSide: 2 });
+  expect(engine.getState()).toMatchObject({ matchUpStatus: COMPLETED, winningSide: 2 });
   expect(engine.getState().history?.points.at(-1)).toMatchObject({
     winner: 1,
     server: 0,
@@ -252,12 +259,12 @@ it('live deciding point is displayed numerically, with policy-aware match-point 
 it('initial rally totals resume live scoring and invalid replacements leave state unchanged', () => {
   const engine = new ScoringEngine({ matchUpFormat: 'SET1-S:P32DP' });
   engine.setInitialScore({ sets: [{ side1Score: 16, side2Score: 16 }] });
-  expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+  expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
   engine.addPoint({ winner: 0 });
-  expect(engine.getState()).toMatchObject({ matchUpStatus: 'COMPLETED', winningSide: 1 });
+  expect(engine.getState()).toMatchObject({ matchUpStatus: COMPLETED, winningSide: 1 });
   engine.undo();
   expect(engine.getState()).toMatchObject({
-    matchUpStatus: 'IN_PROGRESS',
+    matchUpStatus: IN_PROGRESS,
     score: { sets: [{ side1Score: 16, side2Score: 16 }] },
   });
   const before = engine.getState();
@@ -271,14 +278,14 @@ it('initial rally totals resume live scoring and invalid replacements leave stat
 it('whole-segment entry infers a winner or a completed tie and refuses a second segment', () => {
   const engine = new ScoringEngine({ matchUpFormat: 'SET1-S:P32' });
   engine.addSet({ side1Score: 16, side2Score: 16 });
-  expect(engine.getState()).toMatchObject({ matchUpStatus: 'COMPLETED' });
+  expect(engine.getState()).toMatchObject({ matchUpStatus: COMPLETED });
   expect(engine.getState().winningSide).toBeUndefined();
   const before = engine.getState();
   expect(() => engine.addSet({ side1Score: 17, side2Score: 15 })).toThrow();
   expect(engine.getState()).toEqual(before);
   engine.undo();
   engine.addSet({ side1Score: 17, side2Score: 15 });
-  expect(engine.getState()).toMatchObject({ matchUpStatus: 'COMPLETED', winningSide: 1 });
+  expect(engine.getState()).toMatchObject({ matchUpStatus: COMPLETED, winningSide: 1 });
 });
 
 it.each(['v1', 'v2', 'differential'] as const)(
@@ -294,7 +301,7 @@ it.each(['v1', 'v2', 'differential'] as const)(
     ).toBeUndefined();
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     expect(matchUps.find((matchUp) => matchUp.matchUpId === context.matchUpId)).toMatchObject({
-      matchUpStatus: 'IN_PROGRESS',
+      matchUpStatus: IN_PROGRESS,
       score: { sets: [{ side1Score: 10, side2Score: 12 }] },
     });
   },
@@ -315,20 +322,20 @@ it.each(['v1', 'v2', 'differential'] as const)(
     const current = tournamentEngine
       .allTournamentMatchUps()
       .matchUps.find((matchUp) => matchUp.matchUpId === context.matchUpId);
-    expect(current.matchUpStatus).toBe('TO_BE_PLAYED');
+    expect(current.matchUpStatus).toBe(TO_BE_PLAYED);
     expect(current.winningSide).toBeUndefined();
     expect(current.score?.sets?.length ?? 0).toBe(0);
   },
 );
 
-it.each(['DEFAULTED', 'RETIRED', 'WALKOVER'] as const)(
+it.each([DEFAULTED, RETIRED, WALKOVER] as const)(
   'combined-point readers honor the awarded winner for %s rather than the point leader',
   (matchUpStatus) => {
     const score = { sets: [{ setNumber: 1, side1Score: 20, side2Score: 12, winningSide: 1 }] };
     const matchUp = { matchUpFormat: 'SET1-S:P32', matchUpStatus, score, winningSide: 2 };
     expect(analyzeScore(matchUp).valid).toBe(true);
     expect(analyzeMatchUp({ matchUp }).validMatchUpWinningSide).toBe(true);
-    expect(analyzeScore({ ...matchUp, matchUpStatus: 'COMPLETED' }).valid).toBe(false);
-    expect(analyzeMatchUp({ matchUp: { ...matchUp, matchUpStatus: 'COMPLETED' } }).validMatchUpWinningSide).toBe(false);
+    expect(analyzeScore({ ...matchUp, matchUpStatus: COMPLETED }).valid).toBe(false);
+    expect(analyzeMatchUp({ matchUp: { ...matchUp, matchUpStatus: COMPLETED } }).validMatchUpWinningSide).toBe(false);
   },
 );

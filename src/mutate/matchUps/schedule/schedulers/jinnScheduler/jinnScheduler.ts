@@ -1,14 +1,16 @@
+import type { IndividualParticipantProfiles } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkParticipantProfileInitialization';
 import { checkDependenciesScheduled } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDependenciesScheduled';
+import { checkDailyLimits, resolveDailyLimits } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits';
+import { modifyParticipantDayMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantDayLoad';
 import { updateTimeAfterRecovery } from '@Mutate/matchUps/schedule/scheduleMatchUps/updateTimeAfterRecovery';
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { checkDependendantTiming } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDependentTiming';
 import { checkRequestConflicts } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRequestConflicts';
+import type { DailyLimitOverrides } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits';
 import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/processNextMatchUps';
 import { checkRecoveryTime } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRecoveryTime';
 import { getVenueSchedulingDetails } from '@Query/matchUps/scheduling/getVenueSchedulingDetails';
-import { checkDailyLimits } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits';
 import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
-import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
 import { extractDate, sameDay, timeStringMinutes, zeroPad } from '@Tools/dateTime';
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
@@ -29,7 +31,9 @@ export function jinnScheduler({
   dateSchedulingProfiles,
   containedStructureIds,
   matchUpDependencies,
+  participantReachability,
   matchUpDailyLimits,
+  dailyLimitOverrides,
   excludePriorDates,
   clearScheduleDates,
   tournamentRecords,
@@ -84,26 +88,27 @@ export function jinnScheduler({
       }
     });
 
-    const { allDateScheduledByeMatchUpDetails, venueScheduledRoundDetails, allDateMatchUpIds } =
-      getVenueSchedulingDetails({
-        matchUpPotentialParticipantIds,
-        individualParticipantProfiles,
-        scheduleCompletedMatchUps,
-        excludeNoDateCompleted,
-        containedStructureIds,
-        matchUpNotBeforeTimes,
-        matchUpScheduleTimes,
-        matchUpDependencies,
-        excludePriorDates,
-        clearScheduleDates,
-        tournamentRecords,
-        useGarman: true,
-        periodLength,
-        scheduleDate,
-        matchUps,
-        courts,
-        venues,
-      });
+    // BYE schedules are never cleared here: byeSchedulingPreservation keeps every placement
+    const { venueScheduledRoundDetails, allDateMatchUpIds } = getVenueSchedulingDetails({
+      matchUpPotentialParticipantIds,
+      individualParticipantProfiles,
+      scheduleCompletedMatchUps,
+      excludeNoDateCompleted,
+      containedStructureIds,
+      matchUpNotBeforeTimes,
+      matchUpScheduleTimes,
+      matchUpDependencies,
+      participantReachability,
+      excludePriorDates,
+      clearScheduleDates,
+      tournamentRecords,
+      useGarman: true,
+      periodLength,
+      scheduleDate,
+      matchUps,
+      courts,
+      venues,
+    });
 
     scheduleVenueRounds({
       checkPotentialRequestConflicts,
@@ -119,7 +124,9 @@ export function jinnScheduler({
       overLimitMatchUpIds,
       skippedScheduleTimes,
       matchUpDependencies,
+      participantReachability,
       matchUpDailyLimits,
+      dailyLimitOverrides,
       allDateMatchUpIds,
       requestConflicts,
       personRequests,
@@ -136,12 +143,6 @@ export function jinnScheduler({
       noTimeMatchUpIds,
       scheduleDate,
       venues,
-      dryRun,
-    });
-
-    clearByeMatchUpScheduling({
-      allDateScheduledByeMatchUpDetails,
-      tournamentRecords,
       dryRun,
     });
 
@@ -210,16 +211,6 @@ function initializeDateTracking({
   requestConflicts[scheduleDate] = [];
 }
 
-function bumpLimits(relevantParticipantIds, matchUpType, individualParticipantProfiles) {
-  relevantParticipantIds.forEach((participantId) => {
-    const counters = individualParticipantProfiles[participantId].counters;
-    if (counters[matchUpType]) counters[matchUpType] += 1;
-    else counters[matchUpType] = 1;
-    if (counters[TOTAL]) counters[TOTAL] += 1;
-    else counters[TOTAL] = 1;
-  });
-}
-
 function tryScheduleMatchUp({
   checkPotentialRequestConflicts,
   recoveryTimeDeferredMatchUpIds,
@@ -232,7 +223,9 @@ function tryScheduleMatchUp({
   overLimitMatchUpDetails,
   overLimitMatchUpIds,
   matchUpDependencies,
+  participantReachability,
   matchUpDailyLimits,
+  dailyLimitOverrides,
   allDateMatchUpIds,
   requestConflicts,
   personRequests,
@@ -243,20 +236,23 @@ function tryScheduleMatchUp({
 }) {
   const { matchUpId, matchUpType } = matchUp;
 
-  const { participantIdsAtLimit, relevantParticipantIds } = checkDailyLimits({
-    matchUpPotentialParticipantIds,
+  const { participantIdsAtLimit } = checkDailyLimits({
+    reachability: participantReachability,
     individualParticipantProfiles,
     matchUpDailyLimits,
+    dailyLimitOverrides,
     matchUp,
   });
 
   if (participantIdsAtLimit.length) {
     if (!overLimitMatchUpIds[scheduleDate].includes(matchUpId)) overLimitMatchUpIds[scheduleDate].push(matchUpId);
     recordOverLimitDetail({
+      tournamentId: matchUp.tournamentId,
       overLimitMatchUpDetails,
       individualParticipantProfiles,
       participantIdsAtLimit,
       matchUpDailyLimits,
+      dailyLimitOverrides,
       matchUpType,
       scheduleDate,
       scheduleTime,
@@ -293,7 +289,7 @@ function tryScheduleMatchUp({
   const { enoughTime, blockingParticipantIds, notBeforeTime } = checkRecoveryTime({
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
-    matchUpDependencies,
+    reachability: participantReachability,
     scheduleTime,
     details,
     matchUp,
@@ -328,16 +324,23 @@ function tryScheduleMatchUp({
     return false;
   }
 
-  bumpLimits(relevantParticipantIds, matchUpType, individualParticipantProfiles);
+  modifyParticipantDayMatchUps({
+    individualParticipantProfiles,
+    reachability: participantReachability,
+    matchUp,
+    value: 1,
+  });
 
   const recoveryMinutes = details.minutesMap?.[matchUpId]?.recoveryMinutes;
+  const typeChangeRecoveryMinutes = details.minutesMap?.[matchUpId]?.typeChangeRecoveryMinutes;
 
   updateTimeAfterRecovery({
+    typeChangeRecoveryMinutes,
     matchUpPotentialParticipantIds,
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
     averageMatchUpMinutes,
-    matchUpDependencies,
+    reachability: participantReachability,
     recoveryMinutes,
     scheduleTime,
     matchUp,
@@ -362,7 +365,9 @@ function scheduleVenueRounds({
   overLimitMatchUpIds,
   skippedScheduleTimes,
   matchUpDependencies,
+  participantReachability,
   matchUpDailyLimits,
+  dailyLimitOverrides,
   allDateMatchUpIds,
   requestConflicts,
   personRequests,
@@ -372,7 +377,10 @@ function scheduleVenueRounds({
   const maxScheduleTimeAttempts = 10;
   let schedulingIterations = 0;
   let schedulingComplete;
-  const failSafe = 10;
+  // every pass that leaves a venue incomplete consumes at least one scheduleTime attempt,
+  // and no scheduleTime is attempted more than maxScheduleTimeAttempts times, so the day's
+  // slots bound the passes; a constant cap stopped a long day after a fixed number of passes
+  const failSafe = getPassesBound({ venueScheduledRoundDetails, maxScheduleTimeAttempts, venues });
 
   while (!schedulingComplete) {
     for (const { venueId } of venues) {
@@ -399,7 +407,9 @@ function scheduleVenueRounds({
             overLimitMatchUpDetails,
             overLimitMatchUpIds,
             matchUpDependencies,
+            participantReachability,
             matchUpDailyLimits,
+            dailyLimitOverrides,
             allDateMatchUpIds,
             requestConflicts,
             personRequests,
@@ -433,13 +443,28 @@ function scheduleVenueRounds({
         });
       }
 
-      if (!details.scheduleTimes?.length || !details.matchUpsToSchedule?.length) details.complete = true;
+      if (!details.courtsCount || !details.scheduleTimes?.length || !details.matchUpsToSchedule?.length)
+        details.complete = true;
     }
 
     schedulingIterations += 1;
     schedulingComplete =
-      venues.every(({ venueId }) => venueScheduledRoundDetails[venueId].complete) || schedulingIterations === failSafe;
+      venues.every(({ venueId }) => venueScheduledRoundDetails[venueId].complete) || schedulingIterations >= failSafe;
   }
+}
+
+type PassesBoundArgs = {
+  venueScheduledRoundDetails: { [venueId: string]: { scheduleTimes?: unknown[] } };
+  maxScheduleTimeAttempts: number;
+  venues: { venueId: string }[];
+};
+
+function getPassesBound({ venueScheduledRoundDetails, maxScheduleTimeAttempts, venues }: PassesBoundArgs): number {
+  const slotsCount = venues.reduce(
+    (count: number, { venueId }) => count + (venueScheduledRoundDetails[venueId]?.scheduleTimes?.length ?? 0),
+    0,
+  );
+  return slotsCount * maxScheduleTimeAttempts + 1;
 }
 
 function assignScheduledTimes({
@@ -483,7 +508,8 @@ function assignScheduledTimes({
       });
     });
 
-    noTimeMatchUpIds[scheduleDate] = venueScheduledRoundDetails[venueId].matchUpsToSchedule.map(getMatchUpId);
+    // accumulate across venues: every venue on the date reports the matchUps it could not place
+    noTimeMatchUpIds[scheduleDate].push(...venueScheduledRoundDetails[venueId].matchUpsToSchedule.map(getMatchUpId));
 
     scheduleTimesRemaining[scheduleDate][venueId] = venueScheduledRoundDetails[venueId].scheduleTimes.sort(
       (a, b) => timeStringMinutes(a.scheduleTime) - timeStringMinutes(b.scheduleTime),
@@ -539,52 +565,56 @@ function scheduleMatchUpTime({
   }
 }
 
-function clearByeMatchUpScheduling({ allDateScheduledByeMatchUpDetails, tournamentRecords, dryRun }) {
-  if (dryRun || !allDateScheduledByeMatchUpDetails?.length) return;
-
-  bulkScheduleMatchUps({
-    matchUpDetails: allDateScheduledByeMatchUpDetails,
-    scheduleByeMatchUps: true,
-    removePriorValues: true,
-    tournamentRecords,
-    schedule: {
-      scheduledDate: '',
-      scheduledTime: '',
-      courtOrder: '',
-      courtId: '',
-      venueId: '',
-    },
-  });
-}
-
 // Capture per-attempt explanation for an over-limit refusal: which
 // participants on the matchUp are at the cap, and which counters
 // (matchUpType / TOTAL) they have hit and at what value. Pushed in
 // addition to the existing flat overLimitMatchUpIds array so existing
 // consumers continue to work; the drawer reads this when present.
+type OverLimitMatchUpDetail = {
+  participants: { participantId: string; atLimitCounters: { counter: string; count: number; limit: number }[] }[];
+  attemptedTime: string;
+  matchUpId: string;
+};
+
+type RecordOverLimitDetailArgs = {
+  overLimitMatchUpDetails: { [scheduleDate: string]: OverLimitMatchUpDetail[] };
+  individualParticipantProfiles: IndividualParticipantProfiles;
+  matchUpDailyLimits?: { [counterName: string]: number };
+  dailyLimitOverrides?: DailyLimitOverrides;
+  participantIdsAtLimit: string[];
+  tournamentId?: string;
+  matchUpType?: string;
+  scheduleDate: string;
+  scheduleTime: string;
+  matchUpId: string;
+};
+
 function recordOverLimitDetail({
   overLimitMatchUpDetails,
   individualParticipantProfiles,
   participantIdsAtLimit,
   matchUpDailyLimits,
+  dailyLimitOverrides,
+  tournamentId,
   matchUpType,
   scheduleDate,
   scheduleTime,
   matchUpId,
-}) {
-  const counterNames = [matchUpType, TOTAL];
+}: RecordOverLimitDetailArgs) {
+  const counterNames = [matchUpType, TOTAL].filter((counterName): counterName is string => !!counterName);
   const participants = participantIdsAtLimit.map((participantId) => {
     const counters = individualParticipantProfiles[participantId]?.counters || {};
+    const limits = resolveDailyLimits({ dailyLimitOverrides, matchUpDailyLimits, participantId, tournamentId });
     const atLimitCounters = counterNames
       .filter((counterName) => {
         const count = counters[counterName] || 0;
-        const limit = matchUpDailyLimits[counterName] || 0;
+        const limit = limits[counterName] || 0;
         return count && limit && count >= limit;
       })
       .map((counterName) => ({
         counter: counterName,
         count: counters[counterName],
-        limit: matchUpDailyLimits[counterName],
+        limit: limits[counterName],
       }));
     return { participantId, atLimitCounters };
   });

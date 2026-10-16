@@ -8,6 +8,13 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
 import type { TierClassification } from '@Types/tournamentTypes';
 
+// constants
+import { SINGLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { OUTDOOR } from '@Constants/venueConstants';
+import { HARD } from '@Constants/surfaceConstants';
+import { MALE } from '@Constants/genderConstants';
+
 const testApplicant: Applicant = {
   organisationId: 'org-001',
   organisationName: 'Test Tennis Club',
@@ -20,15 +27,15 @@ const baseProposal: TournamentProposal = {
   proposedStartDate: '2027-06-01',
   proposedEndDate: '2027-06-07',
   hostCountryCode: 'USA',
-  surfaceCategory: 'HARD',
-  indoorOutdoor: 'OUTDOOR',
+  surfaceCategory: HARD,
+  indoorOutdoor: OUTDOOR,
   events: [
     {
       eventName: "Men's Singles",
-      eventType: 'SINGLES',
-      gender: 'MALE',
+      eventType: SINGLES_EVENT,
+      gender: MALE,
       drawSize: 32,
-      drawType: 'SINGLE_ELIMINATION',
+      drawType: SINGLE_ELIMINATION,
       matchUpFormat: 'SET3-S:6/TB7',
     },
   ],
@@ -90,7 +97,7 @@ describe('Policy Validation — validateProposal', () => {
 
   it('flags disallowed draw size', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 12, drawType: 'SINGLE_ELIMINATION' }],
+      events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 12, drawType: SINGLE_ELIMINATION }],
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
@@ -103,7 +110,7 @@ describe('Policy Validation — validateProposal', () => {
 
   it('flags disallowed draw type', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: 'COMPASS' }],
+      events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, drawType: COMPASS }],
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
@@ -119,7 +126,7 @@ describe('Policy Validation — validateProposal', () => {
       events: [
         {
           eventName: 'Singles',
-          eventType: 'SINGLES',
+          eventType: SINGLES_EVENT,
           drawSize: 32,
           matchUpFormat: 'SET1-S:4/TB7',
         },
@@ -135,7 +142,7 @@ describe('Policy Validation — validateProposal', () => {
 
   it('flags qualifying when not allowed', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, qualifyingDrawSize: 16 }],
+      events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, qualifyingDrawSize: 16 }],
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
@@ -259,7 +266,7 @@ describe('Eligible Tiers', () => {
 
   it('excludes tiers where draw size is not allowed', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 8 }],
+      events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 8 }],
       totalPrizeMoney: [{ amount: 100, currencyCode: 'USD', unit: 'MAJOR' }],
     });
     let result: any = sanctioningEngine.getEligibleTiers({
@@ -306,7 +313,7 @@ describe('Completeness Scoring', () => {
         tournamentName: 'Minimal',
         proposedStartDate: '2027-01-01',
         proposedEndDate: '2027-01-02',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
     });
     let result: any = sanctioningEngine.getCompleteness({});
@@ -344,10 +351,10 @@ describe('Policy Validation — tier defaults from the sanctioning record', () =
     events: [
       {
         eventName: "Men's Singles",
-        eventType: 'SINGLES',
-        gender: 'MALE',
+        eventType: SINGLES_EVENT,
+        gender: MALE,
         drawSize: 16,
-        drawType: 'SINGLE_ELIMINATION',
+        drawType: SINGLE_ELIMINATION,
         matchUpFormat: 'SET3-S:6/TB7',
       },
     ],

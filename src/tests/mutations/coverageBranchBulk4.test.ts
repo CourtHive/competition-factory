@@ -26,8 +26,9 @@ import {
 } from '@Generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
 
 // constants
-import { ALTERNATE } from '@Constants/entryStatusConstants';
-import { MAIN } from '@Constants/drawDefinitionConstants';
+import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { MAIN, AD_HOC } from '@Constants/drawDefinitionConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import {
   MISSING_TOURNAMENT_RECORDS,
   MISSING_TOURNAMENT_RECORD,
@@ -62,7 +63,7 @@ describe('getEventAlternateParticipantIds branches', () => {
     const eventEntries = [
       { entryStatus: ALTERNATE, participantId: 'p1', entryPosition: undefined },
       { entryStatus: ALTERNATE, participantId: 'p2', entryPosition: 1 },
-      { entryStatus: 'DIRECT_ACCEPTANCE', participantId: 'p3', entryPosition: 2 },
+      { entryStatus: DIRECT_ACCEPTANCE, participantId: 'p3', entryPosition: 2 },
     ];
     const result = getEventAlternateParticipantIds({ eventEntries, structure });
     expect(Array.isArray(result)).toBe(true);
@@ -72,7 +73,7 @@ describe('getEventAlternateParticipantIds branches', () => {
 
   it('returns empty when no alternates', () => {
     const structure = { stage: MAIN };
-    const eventEntries = [{ entryStatus: 'DIRECT_ACCEPTANCE', participantId: 'p1' }];
+    const eventEntries = [{ entryStatus: DIRECT_ACCEPTANCE, participantId: 'p1' }];
     const result = getEventAlternateParticipantIds({ eventEntries, structure });
     expect(result).toEqual([]);
   });
@@ -83,7 +84,7 @@ describe('generateAdHocRounds branches', () => {
   it('returns error when getParticipantIds fails (invalid participantIds)', () => {
     const drawDefinition = {
       drawId: 'd1',
-      entries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' }],
+      entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE }],
       structures: [{ structureId: 's1', matchUps: [] }],
     };
     const event = { eventId: 'e1' } as any;
@@ -99,7 +100,7 @@ describe('generateAdHocRounds branches', () => {
 
   it('handles multiple rounds count', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, drawType: 'AD_HOC' }],
+      drawProfiles: [{ drawSize: 4, drawType: AD_HOC }],
     });
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition } = tournamentEngine.getEvent({
@@ -383,7 +384,7 @@ describe('collectionGroupUpdate branches', () => {
           {
             collectionId: 'c1',
             collectionName: 'Singles',
-            matchUpType: 'SINGLES',
+            matchUpType: SINGLES_MATCHUP,
             matchUpFormat: 'SET3-S:6/TB7',
             matchUpCount: 3,
             matchUpValue: 1,

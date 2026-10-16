@@ -6,9 +6,9 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { NO_MODIFICATIONS_APPLIED } from '@Constants/errorConditionConstants';
 import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
+import { DOUBLES, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
-import { DOUBLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/eventConstants';
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
@@ -84,7 +84,7 @@ describe('removeCollectionDefinition additional branch coverage', () => {
       collectionDefinition: {
         collectionName: 'Extra Singles',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },
@@ -202,7 +202,7 @@ describe('removeCollectionDefinition additional branch coverage', () => {
       collectionDefinition: {
         collectionName: 'Extra',
         matchUpFormat: 'SET3-S:6/TB7',
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES_MATCHUP,
         matchUpCount: 1,
         matchUpValue: 1,
       },

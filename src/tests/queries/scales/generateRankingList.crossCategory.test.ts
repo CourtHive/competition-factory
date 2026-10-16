@@ -4,13 +4,16 @@ import { describe, expect, it } from 'vitest';
 // types
 import type { CategoryAggregationRule, PointPoolModel } from '@Types/rankingTypes';
 
+// constants
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+
 type Award = Record<string, any>;
 
 const mkAward = (overrides: Partial<Award>): Award => ({
   personId: 'p1',
   participantId: 'pi1',
   drawId: 'd1',
-  eventType: 'SINGLES',
+  eventType: SINGLES_EVENT,
   category: { ageCategoryCode: '12U' },
   points: 100,
   positionPoints: 100,

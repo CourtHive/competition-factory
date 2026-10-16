@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 
 // constants
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { MALE, FEMALE } from '@Constants/genderConstants';
@@ -145,7 +146,7 @@ describe('mocksEngine.generateTournamentRecord — preset participants', () => {
       const r = tournamentEngine.setMatchUpStatus({
         drawId,
         matchUpId: mu.matchUpId,
-        matchUpStatus: 'COMPLETED',
+        matchUpStatus: COMPLETED,
         outcome: { winningSide: 1, scoreString: '6-3 6-2' },
       });
       expect(r.success).toEqual(true);

@@ -4,7 +4,9 @@ import { expect, test } from 'vitest';
 
 // constants
 import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 
 // ─── Multi-bracket RR with playoff + rankingProfile (RR tally paths) ──────
 // Drives calculateRRRange multi-bracket + playoff branches, processRRBracket,
@@ -158,11 +160,11 @@ test('event and draw entries referencing unknown participantId are skipped', () 
   });
 
   for (const event of tournamentRecord.events ?? []) {
-    (event.entries ??= []).push({ participantId: 'ghost-participant', entryStatus: 'DIRECT_ACCEPTANCE' } as any);
+    (event.entries ??= []).push({ participantId: 'ghost-participant', entryStatus: DIRECT_ACCEPTANCE } as any);
     for (const drawDefinition of event.drawDefinitions ?? []) {
       (drawDefinition.entries ??= []).push({
         participantId: 'ghost-participant',
-        entryStatus: 'DIRECT_ACCEPTANCE',
+        entryStatus: DIRECT_ACCEPTANCE,
       } as any);
     }
   }
@@ -189,13 +191,13 @@ test('doubles event with unpaired entries', () => {
 
   // add some unpaired individual participants as entries to the doubles event
   const { participants } = tournamentEngine.getParticipants({
-    participantFilters: { participantTypes: ['INDIVIDUAL'] },
+    participantFilters: { participantTypes: [INDIVIDUAL] },
   });
   const unusedIndividualIds = participants.slice(0, 4).map((p: any) => p.participantId);
   if (eventId && unusedIndividualIds.length) {
     tournamentEngine.addEventEntries({
       participantIds: unusedIndividualIds,
-      entryStatus: 'UNGROUPED',
+      entryStatus: UNGROUPED,
       eventId,
     });
   }

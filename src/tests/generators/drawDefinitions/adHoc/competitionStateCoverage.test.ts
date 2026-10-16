@@ -18,7 +18,10 @@ import { resetCompetitionState } from '@Mutate/drawDefinitions/competition/reset
 import { MISSING_DRAW_DEFINITION, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { APPLIED_POLICIES, COMPETITION_STATE } from '@Constants/extensionConstants';
 import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';
+import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import { PAIR } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
+import { ELO } from '@Constants/ratingConstants';
 
 // Testing
 import { expect, describe, test } from 'vitest';
@@ -28,7 +31,7 @@ import { expect, describe, test } from 'vitest';
 function makeDrawDefinition(extensions: any[] = []): any {
   return {
     drawId: 'd-coverage',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     structures: [],
     extensions,
   };
@@ -126,7 +129,7 @@ describe('initializeCompetitionState coverage', () => {
     test(`DOUBLES + ratingAggregation=${aggregation} runs aggregation branch`, () => {
       const policy = {
         ratingPolicy: {
-          baselineRating: { source: 'SCALE', scaleName: 'ELO' },
+          baselineRating: { source: 'SCALE', scaleName: ELO },
           ratingAggregation: aggregation,
         },
         victoryPolicy: { primaryRanking: 'WINS' },
@@ -136,7 +139,7 @@ describe('initializeCompetitionState coverage', () => {
       const tournamentRecord: any = {
         tournamentId: 't',
         participants: [
-          { participantId: 'pair1', participantType: 'PAIR', individualParticipantIds: ['i1', 'i2'] },
+          { participantId: 'pair1', participantType: PAIR, individualParticipantIds: ['i1', 'i2'] },
           { participantId: 'i1' },
           { participantId: 'i2' },
         ],

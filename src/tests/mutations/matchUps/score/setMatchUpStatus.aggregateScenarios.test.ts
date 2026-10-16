@@ -3,13 +3,16 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
+// constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+
 const exactly3aggregateTimedSets = 'SET3XA-S:T10';
 
 function generateMatchUpOutcome(params: { matchUpFormat: string }) {
   const drawProfiles = [
     {
       matchUpFormat: params.matchUpFormat,
-      drawType: 'SINGLE_ELIMINATION',
+      drawType: SINGLE_ELIMINATION,
       drawSize: 4,
     },
   ];

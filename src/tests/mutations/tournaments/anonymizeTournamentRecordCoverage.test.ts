@@ -3,7 +3,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { DOUBLES } from '@Constants/eventConstants';
+import { PAIR, TEAM_PARTICIPANT, INDIVIDUAL, GROUP } from '@Constants/participantConstants';
+import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
+import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
+import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 
 test('anonymize DOUBLES tournament covers PAIR participant handling', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -11,14 +14,14 @@ test('anonymize DOUBLES tournament covers PAIR participant handling', () => {
   });
 
   // Verify PAIR participants exist
-  const pairParticipants = tournamentRecord.participants.filter((p) => p.participantType === 'PAIR');
+  const pairParticipants = tournamentRecord.participants.filter((p) => p.participantType === PAIR);
   expect(pairParticipants.length).toBeGreaterThan(0);
 
   const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord });
   expect(result.success).toEqual(true);
 
   // Verify pair participants have new names with '/' separator
-  const anonPairParticipants = tournamentRecord.participants.filter((p) => p.participantType === 'PAIR');
+  const anonPairParticipants = tournamentRecord.participants.filter((p) => p.participantType === PAIR);
   anonPairParticipants.forEach((pair) => {
     expect(pair.participantName).toBeDefined();
     expect(pair.participantName.includes('/')).toEqual(true);
@@ -27,18 +30,18 @@ test('anonymize DOUBLES tournament covers PAIR participant handling', () => {
 
 test('anonymize TEAM tournament covers TEAM participant handling', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: 'TEAM', tieFormatName: 'COLLEGE_DEFAULT' }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_DEFAULT }],
   });
 
   // Verify TEAM participants exist
-  const teamParticipants = tournamentRecord.participants.filter((p) => p.participantType === 'TEAM');
+  const teamParticipants = tournamentRecord.participants.filter((p) => p.participantType === TEAM_PARTICIPANT);
   expect(teamParticipants.length).toBeGreaterThan(0);
 
   const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord });
   expect(result.success).toEqual(true);
 
   // Team participants should have new names
-  const anonTeamParticipants = tournamentRecord.participants.filter((p) => p.participantType === 'TEAM');
+  const anonTeamParticipants = tournamentRecord.participants.filter((p) => p.participantType === TEAM_PARTICIPANT);
   anonTeamParticipants.forEach((team) => {
     expect(team.participantName).toBeDefined();
   });
@@ -51,7 +54,7 @@ test('anonymize tournament with GROUP participants covers GROUP handling', () =>
 
   tournamentEngine.setState(tournamentRecord);
 
-  const individualParticipants = tournamentRecord.participants.filter((p) => p.participantType === 'INDIVIDUAL');
+  const individualParticipants = tournamentRecord.participants.filter((p) => p.participantType === INDIVIDUAL);
   const individualParticipantIds = individualParticipants.slice(0, 3).map((p) => p.participantId);
 
   const groupResult = tournamentEngine.createGroupParticipant({
@@ -61,14 +64,14 @@ test('anonymize tournament with GROUP participants covers GROUP handling', () =>
   expect(groupResult.success).toEqual(true);
 
   const { tournamentRecord: updatedRecord } = tournamentEngine.getTournament();
-  const groupParticipants = updatedRecord.participants.filter((p) => p.participantType === 'GROUP');
+  const groupParticipants = updatedRecord.participants.filter((p) => p.participantType === GROUP);
   expect(groupParticipants.length).toBeGreaterThan(0);
 
   const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord: updatedRecord });
   expect(result.success).toEqual(true);
 
   // Group participants should have new names
-  const anonGroupParticipants = updatedRecord.participants.filter((p) => p.participantType === 'GROUP');
+  const anonGroupParticipants = updatedRecord.participants.filter((p) => p.participantType === GROUP);
   anonGroupParticipants.forEach((group) => {
     expect(group.participantName).toBeDefined();
   });
@@ -99,7 +102,7 @@ test('anonymize with anonymizeParticipantNames: false preserves original names',
   });
 
   const originalNames = tournamentRecord.participants
-    .filter((p) => p.participantType === 'INDIVIDUAL')
+    .filter((p) => p.participantType === INDIVIDUAL)
     .map((p) => p.person?.standardFamilyName);
 
   const result = mocksEngine.anonymizeTournamentRecord({
@@ -109,7 +112,7 @@ test('anonymize with anonymizeParticipantNames: false preserves original names',
   expect(result.success).toEqual(true);
 
   // standardFamilyName should be preserved
-  const anonParticipants = tournamentRecord.participants.filter((p) => p.participantType === 'INDIVIDUAL');
+  const anonParticipants = tournamentRecord.participants.filter((p) => p.participantType === INDIVIDUAL);
   anonParticipants.forEach((p, i) => {
     expect(p.person.standardFamilyName).toEqual(originalNames[i]);
   });
@@ -169,7 +172,7 @@ test('anonymize tournament with person requests extension', () => {
     drawProfiles: [{ drawSize: 4 }],
   });
 
-  const individualParticipant = tournamentRecord.participants.find((p) => p.participantType === 'INDIVIDUAL');
+  const individualParticipant = tournamentRecord.participants.find((p) => p.participantType === INDIVIDUAL);
   const personId = individualParticipant.person.personId;
 
   // Add a person requests extension to the tournament record
@@ -179,7 +182,7 @@ test('anonymize tournament with person requests extension', () => {
     value: [
       {
         personId,
-        requestType: 'DO_NOT_SCHEDULE',
+        requestType: DO_NOT_SCHEDULE,
       },
     ],
   });
@@ -233,7 +236,7 @@ test('anonymize covers v5 NATIVE-mode + birthDate + non-gendered paths', () => {
   participant.person.birthDate = '1990-04-15';
 
   // Knock another participant's sex out so the non-gendered counter branch hits.
-  const anotherParticipant = tournamentRecord.participants.find((p, i) => i > 0 && p.participantType === 'INDIVIDUAL');
+  const anotherParticipant = tournamentRecord.participants.find((p, i) => i > 0 && p.participantType === INDIVIDUAL);
   if (anotherParticipant?.person) anotherParticipant.person.sex = undefined;
 
   const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord });

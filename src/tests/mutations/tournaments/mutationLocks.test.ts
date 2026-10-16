@@ -3,6 +3,8 @@ import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   INVALID_VALUES,
   MISSING_VALUE,
@@ -52,7 +54,7 @@ describe('Mutation Locks', () => {
     const scoreResult = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       drawId,
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1 },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1 },
     });
     expect(scoreResult.error).toEqual(MUTATION_LOCKED);
   });
@@ -297,7 +299,7 @@ describe('Mutation Locks', () => {
 
     // addEvent should NOT be blocked (not in methods list)
     const addResult = tournamentEngine.addEvent({
-      event: { eventName: 'Test', eventType: 'SINGLES' },
+      event: { eventName: 'Test', eventType: SINGLES_EVENT },
     });
     expect(addResult.error).not.toEqual(MUTATION_LOCKED);
 
@@ -350,7 +352,7 @@ describe('Mutation Locks', () => {
     const result = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       drawId,
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1 },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1 },
     });
     expect(result.error).toEqual(MUTATION_LOCKED);
 
@@ -358,7 +360,7 @@ describe('Mutation Locks', () => {
     const result2 = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       drawId,
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1 },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1 },
       lockToken: 'scorer-token',
     });
     expect(result2.error).not.toEqual(MUTATION_LOCKED);
@@ -387,7 +389,7 @@ describe('Mutation Locks', () => {
     const result = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       drawId,
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1 },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1 },
     });
     expect(result.error).toEqual(MUTATION_LOCKED);
   });
@@ -412,7 +414,7 @@ describe('Mutation Locks', () => {
     const result = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
       drawId,
-      outcome: { matchUpStatus: 'COMPLETED', winningSide: 1 },
+      outcome: { matchUpStatus: COMPLETED, winningSide: 1 },
     });
     expect(result.error).toEqual(MUTATION_LOCKED);
   });
@@ -443,6 +445,29 @@ describe('Mutation Locks', () => {
 
     const drawLock = mutationLocks.find((l) => l.scope === 'DRAWS');
     expect(drawLock.drawId).toEqual(drawId);
+  });
+
+  it('venue-level lock blocks venue-scoped mutations on that venue only', () => {
+    mocksEngine.generateTournamentRecord({ setState: true });
+    const venueId = tournamentEngine.addVenue({ venue: { venueName: 'Locked Venue' } }).venue.venueId;
+    const otherVenueId = tournamentEngine.addVenue({ venue: { venueName: 'Open Venue' } }).venue.venueId;
+
+    tournamentEngine.addMutationLock({ scope: 'VENUES', lockToken: 'venue-token', venueId });
+
+    let result: any = tournamentEngine.addCourts({ venueId, courtsCount: 1 });
+    expect(result.error).toEqual(MUTATION_LOCKED);
+
+    // lockToken is read by the engine's lock check, not declared on addCourts' own params
+    const withToken = { venueId, courtsCount: 1, lockToken: 'venue-token' };
+    result = tournamentEngine.addCourts(withToken);
+    expect(result.success).toEqual(true);
+
+    result = tournamentEngine.addCourts({ venueId: otherVenueId, courtsCount: 1 });
+    expect(result.success).toEqual(true);
+
+    // an unknown venueId resolves no venue, so no venue lock applies
+    result = tournamentEngine.addCourts({ venueId: 'unknown-venue', courtsCount: 1 });
+    expect(result.error).not.toEqual(MUTATION_LOCKED);
   });
 
   it('getMutationLocks filters by scope', () => {

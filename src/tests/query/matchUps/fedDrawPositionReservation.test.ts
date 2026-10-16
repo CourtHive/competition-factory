@@ -4,7 +4,24 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_ELIMINATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
+import {
+  DOUBLE_ELIMINATION,
+  FEED_IN_CHAMPIONSHIP,
+  SINGLE_ELIMINATION,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FIRST_ROUND_LOSER_CONSOLATION,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
+  FEED_IN_CHAMPIONSHIP_TO_QF,
+  FEED_IN_CHAMPIONSHIP_TO_R16,
+  CURTIS_CONSOLATION,
+  FEED_IN,
+  COMPASS,
+  OLYMPIC,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  PAGE_PLAYOFF,
+  PLAYOFF,
+} from '@Constants/drawDefinitionConstants';
 
 /**
  * A FEED ROUND and a round that RESERVES a fed drawPosition are two different facts, and the engine
@@ -29,22 +46,22 @@ import { DOUBLE_ELIMINATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinit
 const isPosition = (drawPosition: any) => drawPosition !== undefined && drawPosition !== null;
 
 const DRAW_TYPES = [
-  'SINGLE_ELIMINATION',
-  'DOUBLE_ELIMINATION',
-  'FIRST_MATCH_LOSER_CONSOLATION',
-  'FIRST_ROUND_LOSER_CONSOLATION',
-  'MODIFIED_FEED_IN_CHAMPIONSHIP',
-  'FEED_IN_CHAMPIONSHIP_TO_SF',
-  'FEED_IN_CHAMPIONSHIP_TO_QF',
-  'FEED_IN_CHAMPIONSHIP_TO_R16',
-  'FEED_IN_CHAMPIONSHIP',
-  'CURTIS_CONSOLATION',
-  'FEED_IN',
-  'COMPASS',
-  'OLYMPIC',
-  'ROUND_ROBIN_WITH_PLAYOFF',
-  'PAGE_PLAYOFF',
-  'PLAYOFF',
+  SINGLE_ELIMINATION,
+  DOUBLE_ELIMINATION,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FIRST_ROUND_LOSER_CONSOLATION,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
+  FEED_IN_CHAMPIONSHIP_TO_QF,
+  FEED_IN_CHAMPIONSHIP_TO_R16,
+  FEED_IN_CHAMPIONSHIP,
+  CURTIS_CONSOLATION,
+  FEED_IN,
+  COMPASS,
+  OLYMPIC,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  PAGE_PLAYOFF,
+  PLAYOFF,
 ];
 
 // 6, 12, 24 and 48 matter: they are where FEED_IN reserves feed slots fed from the draw's own
@@ -124,7 +141,7 @@ it('hasFedDrawPosition names every round that reserves a fed drawPosition, and n
   expect(feedRoundWrong.length).toBeGreaterThan(0);
   expect(
     feedRoundWrong.filter(
-      (round) => !(round.label.startsWith('DOUBLE_ELIMINATION') && round.label.includes('Main|r') && round.feedRound),
+      (round) => !(round.label.startsWith(DOUBLE_ELIMINATION) && round.label.includes('Main|r') && round.feedRound),
     ),
   ).toEqual([]);
 

@@ -53,8 +53,8 @@ interface GenerateTournamentRecordOptions {
   autoSchedule?: boolean; // Auto-schedule using profile
   scenarioProfile?: object; // Anchor the schedule to a moment (see below)
 
-  // Match Completion
-  completeAllMatchUps?: boolean; // Complete all generated matchUps
+  // Match Completion (each may also be set on a single drawProfile, which takes precedence)
+  completeAllMatchUps?: boolean | string; // Complete all generated matchUps (or a score string)
   randomWinningSide?: boolean; // Random winners (default: false = side 1 wins)
   matchUpStatusProfile?: object; // Control matchUp status distribution
 
@@ -634,6 +634,30 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   drawProfiles: [{ drawSize: 16 }],
   completeAllMatchUps: true,
   randomWinningSide: true, // Random winners, otherwise side 1 always wins
+});
+```
+
+### Complete One Draw
+
+`completeAllMatchUps`, `randomWinningSide` and `matchUpStatusProfile` can also be set on an individual
+draw profile — in `drawProfiles`, in an `eventProfile`'s `drawProfiles`, and in both for
+`modifyTournamentRecord`. The value applies to that draw only and **takes precedence** over the
+generation-wide value; a draw profile that leaves an option undefined inherits the generation-wide
+value (for an existing event in `modifyTournamentRecord`, the `eventProfile` value).
+
+```js
+const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  drawProfiles: [
+    { drawSize: 16, completeAllMatchUps: true, randomWinningSide: true }, // completed
+    { drawSize: 16 }, // inherits: not completed
+    { drawSize: 8, drawType: 'ROUND_ROBIN', completeAllMatchUps: true }, // completed
+  ],
+});
+
+// generation-wide completion with one draw opting out
+mocksEngine.generateTournamentRecord({
+  drawProfiles: [{ drawSize: 16 }, { drawSize: 16, completeAllMatchUps: false }],
+  completeAllMatchUps: true,
 });
 ```
 

@@ -4,7 +4,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { ITF_JUNIOR, TENNIS_EUROPE } from '@Constants/pointsAuthorityConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
+import { MAIN } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
  * Ranking policy with tierToLevel mapping.
@@ -38,7 +41,7 @@ describe('tierToLevel — ranking points auto-resolution', () => {
 
     // Set tier on the tournament
     let result: any = tournamentEngine.setTournamentTier({
-      tournamentTier: { system: 'ITF_JUNIOR', value: 'J500', numericRank: 4 },
+      tournamentTier: { system: ITF_JUNIOR, value: 'J500', numericRank: 4 },
     });
     expect(result.success).toBe(true);
 
@@ -66,7 +69,7 @@ describe('tierToLevel — ranking points auto-resolution', () => {
     });
 
     tournamentEngine.setTournamentTier({
-      tournamentTier: { system: 'ITF_JUNIOR', value: 'J500', numericRank: 4 },
+      tournamentTier: { system: ITF_JUNIOR, value: 'J500', numericRank: 4 },
     });
 
     const { tournamentRecord } = tournamentEngine.getTournament();
@@ -138,8 +141,8 @@ describe('tierToLevel — numericRank fallback', () => {
       awardProfiles: [
         {
           profileName: 'leveled',
-          eventTypes: ['SINGLES'],
-          stages: ['MAIN'],
+          eventTypes: [SINGLES_EVENT],
+          stages: [MAIN],
           category: { ageCategoryCodes: ['U18'] },
           finishingPositionRanges: { 1: { level: { 2: 500, 5: 60 } } },
         },
@@ -151,7 +154,7 @@ describe('tierToLevel — numericRank fallback', () => {
     mocksEngine.generateTournamentRecord({
       eventProfiles: [
         {
-          eventType: 'SINGLES',
+          eventType: SINGLES_EVENT,
           category: { ageCategoryCode: 'U18' },
           drawProfiles: [{ drawSize: 8, completionGoal: 8 }],
         },
@@ -181,7 +184,7 @@ describe('tierToLevel — numericRank fallback', () => {
       mocksEngine.generateTournamentRecord({
         eventProfiles: [
           {
-            eventType: 'SINGLES',
+            eventType: SINGLES_EVENT,
             category: { ageCategoryCode: '16U' },
             drawProfiles: [{ drawSize: 16, completionGoal: 16 }],
           },
@@ -190,7 +193,7 @@ describe('tierToLevel — numericRank fallback', () => {
       });
       // The TE policy carries no tierToLevel — the adapter-stamped numericRank is the level.
       tournamentEngine.setTournamentTier({
-        tournamentTier: { system: 'TENNIS_EUROPE', value: `cat-${numericRank}`, numericRank },
+        tournamentTier: { system: TENNIS_EUROPE, value: `cat-${numericRank}`, numericRank },
       });
       const { tournamentRecord } = tournamentEngine.getTournament();
       const eventId = tournamentRecord.events[0].eventId;

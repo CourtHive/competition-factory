@@ -6,6 +6,9 @@ import Ajv from 'ajv';
 import { getParticipantEligibility } from '@Query/entries/getParticipantEligibility';
 import type { Event, Participant, Tournament } from '@Types/tournamentTypes';
 
+// constants
+import { INDIVIDUAL } from '@Constants/participantConstants';
+
 /**
  * A6 and A8.
  *
@@ -22,7 +25,7 @@ const tournamentRecord = {
 
 const participant = {
   participantId: 'p',
-  participantType: 'INDIVIDUAL',
+  participantType: INDIVIDUAL,
   person: { birthDate: '2010-03-04' },
 } as unknown as Participant;
 

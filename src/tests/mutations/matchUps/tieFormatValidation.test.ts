@@ -5,7 +5,6 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants and fixtures
-import { COLLEGE_D3, DOMINANT_DUO, TEAM_DOUBLES_3_AGGREGATION } from '@Constants/tieFormatConstants';
 import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
@@ -13,6 +12,13 @@ import { FEMALE, MALE } from '@Constants/genderConstants';
 import { tieFormats } from '@Fixtures/scoring/tieFormats';
 import { TEAM } from '@Constants/eventConstants';
 import { fixtures } from '@Fixtures/index';
+import {
+  COLLEGE_D3,
+  DOMINANT_DUO,
+  TEAM_DOUBLES_3_AGGREGATION,
+  COLLEGE_DEFAULT,
+  COLLEGE_JUCO,
+} from '@Constants/tieFormatConstants';
 
 const matchUpFormat = FORMAT_STANDARD;
 
@@ -79,7 +85,7 @@ it.each(successConditions)('can validate tieFormats', (errorCondition: any) => {
 });
 
 test('various tieFormat defaults', () => {
-  let format = tieFormatDefaults({ namedFormat: 'COLLEGE_DEFAULT' });
+  let format = tieFormatDefaults({ namedFormat: COLLEGE_DEFAULT });
   expect(format.winCriteria.valueGoal).toEqual(4);
   let result = validateTieFormat({ tieFormat: format });
   expect(result.valid).toEqual(true);
@@ -99,7 +105,7 @@ test('various tieFormat defaults', () => {
     }),
   ).toEqual(true);
 
-  format = tieFormatDefaults({ namedFormat: 'COLLEGE_JUCO' });
+  format = tieFormatDefaults({ namedFormat: COLLEGE_JUCO });
   expect(format.winCriteria.valueGoal).toEqual(5);
   result = validateTieFormat({ tieFormat: format });
   expect(result.valid).toEqual(true);

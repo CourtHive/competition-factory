@@ -4,7 +4,12 @@ import { expect, it, describe } from 'vitest';
 import { cast } from '@Query/readModel/cast';
 
 // constants
+import { SINGLES_EVENT, DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
+import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { ROUND_ROBIN, MAIN, CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 describe('cast — singles (STANDARD)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -29,7 +34,7 @@ describe('cast — singles (STANDARD)', () => {
     expect(rows!.events).toHaveLength(1);
     const event = rows!.events[0];
     expect(event.event_name).toEqual('Singles');
-    expect(event.event_type).toEqual('SINGLES');
+    expect(event.event_type).toEqual(SINGLES_EVENT);
     expect(event.tournament_id).toEqual('t1');
     expect(typeof event.published).toEqual('boolean');
     // event_id joins back to the match_ups' event_id
@@ -45,13 +50,13 @@ describe('cast — singles (STANDARD)', () => {
     // singles competitors: index 0, INDIVIDUAL, side id === individual id
     expect(rows!.match_up_competitors.length).toBeGreaterThan(0);
     expect(rows!.match_up_competitors.every((c) => c.competitor_index === 0)).toBe(true);
-    expect(rows!.match_up_competitors.every((c) => c.participant_type === 'INDIVIDUAL')).toBe(true);
+    expect(rows!.match_up_competitors.every((c) => c.participant_type === INDIVIDUAL)).toBe(true);
     expect(rows!.match_up_competitors.every((c) => c.side_participant_id === c.individual_participant_id)).toBe(true);
   });
 
   it('writes a winner-perspective score_string on completed matchUps', () => {
     const { rows } = cast({ tournamentRecord });
-    const completed = rows!.match_ups.filter((m) => m.winning_side && m.match_up_status === 'COMPLETED');
+    const completed = rows!.match_ups.filter((m) => m.winning_side && m.match_up_status === COMPLETED);
     expect(completed.length).toBeGreaterThan(0);
     expect(completed.every((m) => typeof m.score_string === 'string' && m.score_string.length > 0)).toBe(true);
   });
@@ -64,13 +69,13 @@ describe('cast — singles (STANDARD)', () => {
 
 describe('cast — doubles (per-individual PAIR grain)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, eventType: 'DOUBLES', eventName: 'Dubs' }],
+    drawProfiles: [{ drawSize: 8, eventType: DOUBLES_EVENT, eventName: 'Dubs' }],
     nonRandom: 1,
   });
 
   it('emits two individual rows per assigned side with the pair as side_participant_id', () => {
     const { rows } = cast({ tournamentRecord });
-    const pairRows = rows!.match_up_competitors.filter((c) => c.participant_type === 'PAIR');
+    const pairRows = rows!.match_up_competitors.filter((c) => c.participant_type === PAIR);
     expect(pairRows.length).toBeGreaterThan(0);
 
     const indices = new Set(pairRows.map((c) => c.competitor_index));
@@ -82,13 +87,13 @@ describe('cast — doubles (per-individual PAIR grain)', () => {
     expect(second.side_participant_id).toBeTruthy();
     expect(second.individual_participant_id).toBeTruthy();
     expect(second.side_participant_id).not.toEqual(second.individual_participant_id);
-    expect(rows!.match_ups.every((m) => m.event_type === 'DOUBLES')).toBe(true);
+    expect(rows!.match_ups.every((m) => m.event_type === DOUBLES_EVENT)).toBe(true);
   });
 });
 
 describe('cast — team (TIE container + RUBBER nesting)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, eventType: 'TEAM', tieFormatName: 'COLLEGE_DEFAULT', eventName: 'Teams' }],
+    drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT, tieFormatName: COLLEGE_DEFAULT, eventName: 'Teams' }],
     nonRandom: 1,
   });
 
@@ -102,7 +107,7 @@ describe('cast — team (TIE container + RUBBER nesting)', () => {
     expect(rubbers.length).toBeGreaterThan(0);
     expect(rubbers.every((r) => typeof r.parent_match_up_id === 'string')).toBe(true);
 
-    const teamRows = rows!.match_up_competitors.filter((c) => c.participant_type === 'TEAM');
+    const teamRows = rows!.match_up_competitors.filter((c) => c.participant_type === TEAM_PARTICIPANT);
     expect(teamRows.length).toBeGreaterThan(0);
     expect(teamRows.every((c) => typeof c.team_id === 'string')).toBe(true);
     // TEAM competitor rows are not resolved to a person
@@ -320,7 +325,7 @@ describe('cast — draws + structures', () => {
     const drawId = rows!.draws[0].draw_id;
     expect(rows!.structures.every((s) => s.draw_id === drawId)).toBe(true);
     // a MAIN structure exists and its structure_id joins back to the match_ups
-    const main = rows!.structures.find((s) => s.stage === 'MAIN');
+    const main = rows!.structures.find((s) => s.stage === MAIN);
     expect(main).toBeTruthy();
     expect(rows!.match_ups.some((m) => m.structure_id === main!.structure_id)).toBe(true);
   });
@@ -360,7 +365,7 @@ describe('cast — guard', () => {
 describe('cast — round-robin nested group structures', () => {
   it('projects each group sub-structure so every matchUp structure_id resolves (no orphans)', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 8, drawType: 'ROUND_ROBIN', eventName: 'RR' }],
+      drawProfiles: [{ drawSize: 8, drawType: ROUND_ROBIN, eventName: 'RR' }],
       nonRandom: 1,
     });
     const { rows } = cast({ tournamentRecord });
@@ -372,7 +377,7 @@ describe('cast — round-robin nested group structures', () => {
     expect(matchUpStructureIds.every((id) => structureIds.has(id))).toBe(true);
 
     // the container is projected AND at least two group ITEM rows point at it.
-    const container = rows!.structures.find((s: any) => s.structure_type === 'CONTAINER');
+    const container = rows!.structures.find((s: any) => s.structure_type === CONTAINER);
     const groups = rows!.structures.filter((s: any) => s.parent_structure_id === container?.structure_id);
     expect(container).toBeDefined();
     expect(groups.length).toBeGreaterThanOrEqual(2);

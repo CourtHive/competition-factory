@@ -5,6 +5,7 @@ import { expect, it } from 'vitest';
 // constants
 import { SINGLES } from '@Constants/eventConstants';
 import { RATING } from '@Constants/scaleConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 it('can get event properties to determine if there are seeded, ranked, or rated participants', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -36,7 +37,7 @@ it('can get event properties to determine if there are seeded, ranked, or rated 
     const scaleItems = [
       {
         scaleValue: 8.3,
-        scaleName: 'WTN',
+        scaleName: WTN,
         scaleType: RATING,
         eventType: SINGLES,
         scaleDate: '2021-01-01',

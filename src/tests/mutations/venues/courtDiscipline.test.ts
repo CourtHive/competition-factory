@@ -2,8 +2,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { PICKLEBALL, TENNIS, SQUASH } from '@Constants/disciplineConstants';
 import { NO_VALID_ATTRIBUTES } from '@Constants/errorConditionConstants';
-import { PICKLEBALL, TENNIS } from '@Constants/disciplineConstants';
 
 /**
  * `Court.discipline` — which sport a court IS.
@@ -67,9 +67,9 @@ it('modifyCourt persists discipline', () => {
 it('accepts a discipline outside the known vocabulary', () => {
   // The vocabulary is deliberately OPEN (DISCIPLINE_EXTENSIBILITY.md) — a new sport must not need
   // a factory release. This guards the openness, which an enum-shaped schema change would break.
-  const { venueId, courtId } = setupVenueWithCourt({ courtName: 'Court 1', discipline: 'SQUASH' });
+  const { venueId, courtId } = setupVenueWithCourt({ courtName: 'Court 1', discipline: SQUASH });
 
-  expect(findCourt(venueId, courtId).discipline).toEqual('SQUASH');
+  expect(findCourt(venueId, courtId).discipline).toEqual(SQUASH);
 });
 
 it('does not treat discipline as the only modifiable attribute', () => {

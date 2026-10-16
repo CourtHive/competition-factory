@@ -1,3 +1,4 @@
+import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
 import { jinnScheduler } from '@Mutate/matchUps/schedule/schedulers/jinnScheduler/jinnScheduler';
 import { v2Scheduler } from '@Mutate/matchUps/schedule/schedulers/v2Scheduler/v2Scheduler';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
@@ -24,13 +25,17 @@ type ScheduleProfileRoundsArgs = {
   tournamentRecords: TournamentRecords;
   scheduleCompletedMatchUps?: boolean;
   excludeNoDateCompleted?: boolean;
-  clearScheduleDates?: boolean;
+  clearScheduleDates?: boolean | string[];
   excludePriorDates?: boolean;
   scheduleDates?: string[];
   periodLength?: number;
   useGarman?: boolean;
   courtIds?: string[];
   dryRun?: boolean;
+  /**
+   * @deprecated since 7.15.0; removed at the next major. Selects `v2Scheduler`, a court-and-time scheduler that is not
+   * Garman scheduling and not grid scheduling (that is `scheduleProfileGrid`). Omit it to use the default scheduler.
+   */
   pro?: boolean;
 };
 // abstraction layer to allow other schedulers to be defined at a later time
@@ -130,7 +135,10 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
     matchUps,
   });
 
-  const { matchUpDailyLimits } = getMatchUpDailyLimits({ tournamentRecords });
+  // who can play each matchUp, across dates: the basis of recovery bookings and daily limits
+  const participantReachability = getParticipantReachability({ matchUpDependencies, matchUps: matchUps ?? [] });
+
+  const { matchUpDailyLimits, dailyLimitOverrides } = getMatchUpDailyLimits({ tournamentRecords });
 
   const { personRequests } = getPersonRequests({
     requestType: DO_NOT_SCHEDULE,
@@ -154,9 +162,11 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
     excludeNoDateCompleted,
     schedulingProfileIssues,
     dateSchedulingProfiles,
+    participantReachability,
     containedStructureIds,
     matchUpDependencies,
     matchUpDailyLimits,
+    dailyLimitOverrides,
     excludePriorDates,
     clearScheduleDates,
     tournamentRecords,
@@ -170,7 +180,9 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
   };
 
   if (pro) {
-    return v2Scheduler(schedulingParams);
+    // v2Scheduler (held pending its assessment) still types clearScheduleDates as boolean;
+    // the shared helpers it passes the value to accept the documented string[] form
+    return v2Scheduler(schedulingParams as Parameters<typeof v2Scheduler>[0]);
   } else {
     return jinnScheduler(schedulingParams);
   }

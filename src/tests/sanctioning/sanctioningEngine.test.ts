@@ -9,8 +9,13 @@ import {
 } from '@Assemblies/engines/sanctioning/sanctioningState';
 
 // constants
-import { DRAFT, SUBMITTED, WITHDRAWN } from '@Constants/sanctioningConstants';
+import { DRAFT, SUBMITTED, WITHDRAWN, APPROVED } from '@Constants/sanctioningConstants';
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { MALE, FEMALE } from '@Constants/genderConstants';
+import { HARD, CLAY } from '@Constants/surfaceConstants';
+import { OUTDOOR } from '@Constants/venueConstants';
 
 // types
 import type { EventProposal, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
@@ -24,10 +29,10 @@ const testApplicant: Applicant = {
 
 const testEventProposal: EventProposal = {
   eventName: "Men's Singles",
-  eventType: 'SINGLES',
-  gender: 'MALE',
+  eventType: SINGLES_EVENT,
+  gender: MALE,
   drawSize: 32,
-  drawType: 'SINGLE_ELIMINATION',
+  drawType: SINGLE_ELIMINATION,
 };
 
 const testProposal: TournamentProposal = {
@@ -35,8 +40,8 @@ const testProposal: TournamentProposal = {
   proposedStartDate: '2026-06-01',
   proposedEndDate: '2026-06-07',
   hostCountryCode: 'USA',
-  surfaceCategory: 'HARD',
-  indoorOutdoor: 'OUTDOOR',
+  surfaceCategory: HARD,
+  indoorOutdoor: OUTDOOR,
   events: [testEventProposal],
 };
 
@@ -185,13 +190,13 @@ describe('Sanctioning Engine — updateProposal', () => {
   it('updates proposal fields on DRAFT record', () => {
     createTestRecord();
     let result: any = sanctioningEngine.updateProposal({
-      updates: { tournamentName: 'Updated Open 2026', surfaceCategory: 'CLAY' },
+      updates: { tournamentName: 'Updated Open 2026', surfaceCategory: CLAY },
     });
     expect(result.success).toBe(true);
 
     let getResult: any = sanctioningEngine.getSanctioningRecord();
     expect(getResult.sanctioningRecord.proposal.tournamentName).toEqual('Updated Open 2026');
-    expect(getResult.sanctioningRecord.proposal.surfaceCategory).toEqual('CLAY');
+    expect(getResult.sanctioningRecord.proposal.surfaceCategory).toEqual(CLAY);
     expect(getResult.sanctioningRecord.version).toEqual(2);
   });
 
@@ -208,7 +213,7 @@ describe('Sanctioning Engine — updateProposal', () => {
     let result: any = createTestRecord();
     // Manually set status to SUBMITTED to test guard
     const record = result.sanctioningRecord;
-    record.status = 'SUBMITTED';
+    record.status = SUBMITTED;
     sanctioningEngine.setSanctioningRecord(record);
 
     result = sanctioningEngine.updateProposal({
@@ -235,8 +240,8 @@ describe('Sanctioning Engine — Event Proposal CRUD', () => {
     let result: any = sanctioningEngine.addEventProposal({
       eventProposal: {
         eventName: "Women's Singles",
-        eventType: 'SINGLES',
-        gender: 'FEMALE',
+        eventType: SINGLES_EVENT,
+        gender: FEMALE,
         drawSize: 32,
       },
     });
@@ -287,11 +292,11 @@ describe('Sanctioning Engine — Event Proposal CRUD', () => {
   it('rejects event proposal mutations on non-editable record', () => {
     let result: any = createTestRecord();
     const record = result.sanctioningRecord;
-    record.status = 'APPROVED';
+    record.status = APPROVED;
     sanctioningEngine.setSanctioningRecord(record);
 
     result = sanctioningEngine.addEventProposal({
-      eventProposal: { eventName: 'Fail', eventType: 'SINGLES' },
+      eventProposal: { eventName: 'Fail', eventType: SINGLES_EVENT },
     });
     expect(result.error?.code).toEqual('ERR_PROPOSAL_NOT_EDITABLE');
 
@@ -359,8 +364,8 @@ describe('Sanctioning Engine — executionQueue', () => {
         params: {
           eventProposal: {
             eventName: "Women's Doubles",
-            eventType: 'DOUBLES',
-            gender: 'FEMALE',
+            eventType: DOUBLES_EVENT,
+            gender: FEMALE,
           },
         },
       },

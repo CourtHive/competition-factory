@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 // constants
 import { INSUFFICIENT_UUIDS } from '@Constants/errorConditionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { MALE } from '@Constants/genderConstants';
 
 // types
 import type { Applicant, EventProposal, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
@@ -32,8 +34,8 @@ const testApplicant: Applicant = {
 
 const testEventProposal: EventProposal = {
   eventName: "Men's Singles",
-  eventType: 'SINGLES',
-  gender: 'MALE',
+  eventType: SINGLES_EVENT,
+  gender: MALE,
   drawSize: 32,
 };
 

@@ -1,5 +1,8 @@
-import { addMinutesToTimeString, extractTime } from '@Tools/dateTime';
+import { getReachableParticipantIds, ParticipantReachability } from './getParticipantReachability';
+import { definedAttributes } from '@Tools/definedAttributes';
 import { processNextMatchUps } from './processNextMatchUps';
+import { addMinutesWithinDay } from './timeWithinDay';
+import { extractTime } from '@Tools/dateTime';
 import { ensureInt } from '@Tools/ensureInt';
 import {
   addParticipantPotentialRecovery,
@@ -12,8 +15,8 @@ import { HydratedMatchUp } from '@Types/hydrated';
 type UpdateTimeAfterRecoveryArgs = {
   matchUpPotentialParticipantIds: { [key: string]: string[] };
   matchUpNotBeforeTimes: { [key: string]: any };
-  matchUpDependencies: { [key: string]: any };
-  typeChangeRecoveryMinutes?: string;
+  reachability: ParticipantReachability;
+  typeChangeRecoveryMinutes?: number;
   individualParticipantProfiles: any;
   averageMatchUpMinutes?: number;
   recoveryMinutes?: number;
@@ -26,27 +29,25 @@ export function updateTimeAfterRecovery({
   typeChangeRecoveryMinutes,
   averageMatchUpMinutes = 0,
   matchUpNotBeforeTimes,
-  matchUpDependencies,
   recoveryMinutes = 0,
+  reachability,
   scheduleTime,
   matchUp,
 }: UpdateTimeAfterRecoveryArgs) {
   const endTime = extractTime(matchUp?.schedule?.endTime);
   const timeAfterRecovery = endTime
-    ? addMinutesToTimeString(endTime, ensureInt(recoveryMinutes))
-    : addMinutesToTimeString(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(recoveryMinutes));
+    ? addMinutesWithinDay(endTime, ensureInt(recoveryMinutes))
+    : addMinutesWithinDay(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(recoveryMinutes));
 
   const typeChangeTimeAfterRecovery =
     typeChangeRecoveryMinutes &&
     (endTime
-      ? addMinutesToTimeString(extractTime(endTime), typeChangeRecoveryMinutes)
-      : addMinutesToTimeString(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(typeChangeRecoveryMinutes)));
-  const participantIdDependencies = matchUpDependencies?.[matchUp.matchUpId]?.participantIds ?? [];
-
-  const potentialIndividualParticipantIds = (
-    (matchUp.roundPosition && matchUpPotentialParticipantIds[matchUp.matchUpId]) ||
-    []
-  ).flat();
+      ? addMinutesWithinDay(extractTime(endTime), ensureInt(typeChangeRecoveryMinutes))
+      : addMinutesWithinDay(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(typeChangeRecoveryMinutes)));
+  // only participants already placed in the matchUp's sides are certain to play it; a participant placed in a matchUp
+  // that feeds it, whatever date that matchUp is on, is a potential booking, because a winner path and a loser path
+  // cannot both be taken
+  const { certain, near: participantIdDependencies } = getReachableParticipantIds(reachability, matchUp.matchUpId);
 
   participantIdDependencies.forEach((participantId) => {
     checkParticipantProfileInitialization({
@@ -54,33 +55,31 @@ export function updateTimeAfterRecovery({
       participantId,
     });
 
-    const matchUpTypeChange = individualParticipantProfiles[participantId].priorMatchUpType !== matchUp.matchUpType;
-
-    // if matchUpType of previous matchUp is different, use typeChangeTimeAfterRecovery (if available)
-    const recoveryValue: string = matchUpTypeChange
-      ? typeChangeTimeAfterRecovery || timeAfterRecovery
-      : timeAfterRecovery;
+    // a booking keeps both ends: which recovery applies depends on the type of the participant's OTHER matchUp, which
+    // checkRecoveryTime knows and this booking does not
+    const booking = definedAttributes({
+      typeChangeTimeAfterRecovery: typeChangeTimeAfterRecovery || undefined,
+      matchUpType: matchUp.matchUpType,
+      timeAfterRecovery,
+      scheduleTime,
+    });
 
     // check whether this participantId is potential or actual for this matchUp
-    if (potentialIndividualParticipantIds.includes(participantId)) {
+    if (!certain.includes(participantId)) {
       addParticipantPotentialRecovery({
         individualParticipantProfiles,
         drawId: matchUp.drawId,
-        recoveryValue,
         participantId,
-        scheduleTime,
+        booking,
       });
     } else {
-      individualParticipantProfiles[participantId].timeAfterRecovery = recoveryValue;
-
-      individualParticipantProfiles[participantId].bookings.push({
-        scheduleTime,
-        timeAfterRecovery: recoveryValue,
-      });
+      individualParticipantProfiles[participantId].timeAfterRecovery = timeAfterRecovery;
+      individualParticipantProfiles[participantId].bookings.push(booking);
     }
   });
 
   processNextMatchUps({
+    linkedTargetIds: reachability.linkedTargets?.[matchUp.matchUpId],
     matchUpPotentialParticipantIds,
     matchUpNotBeforeTimes,
     timeAfterRecovery,

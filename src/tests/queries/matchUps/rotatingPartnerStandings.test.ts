@@ -14,8 +14,27 @@ import Ajv from 'ajv';
 // constants and types
 import { INVALID_SCORE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import type { RotatingPartnerTallyPolicy } from '@Types/rotatingPartnerTally';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
+import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { COMPETITOR } from '@Constants/participantRoles';
+import {
+  COMPLETED,
+  TO_BE_PLAYED,
+  RETIRED,
+  WALKOVER,
+  DEFAULTED,
+  ABANDONED,
+  CANCELLED,
+  DOUBLE_WALKOVER,
+  DOUBLE_DEFAULT,
+  DEAD_RUBBER,
+  IN_PROGRESS,
+} from '@Constants/matchUpStatusConstants';
 
 const policy: RotatingPartnerTallyPolicy = {
   version: 1,
@@ -30,14 +49,14 @@ function setup(
   const ids = Array.from({ length: 8 }, (_, index) => `p${index}`);
   const drawDefinition: DrawDefinition = {
     drawId: 'd',
-    drawType: 'AD_HOC',
-    matchUpType: 'DOUBLES',
-    entries: ids.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' })),
+    drawType: AD_HOC,
+    matchUpType: DOUBLES_MATCHUP,
+    entries: ids.map((participantId) => ({ participantId, entryStatus: DIRECT_ACCEPTANCE })),
     structures: [{ structureId: 's', matchUps: [] }],
     competitionProfile: {
       version: 1,
       entrantScope: 'INDIVIDUAL',
-      matchUpType: 'DOUBLES',
+      matchUpType: DOUBLES_MATCHUP,
       scoring: {
         combinedPointTotal: 32,
         selectedVariant: { tieResolution, ...(tieResolution === 'WIN_BY_MARGIN' ? { winningMargin: 2 } : {}) },
@@ -63,17 +82,17 @@ function setup(
   };
   const event: Event = {
     eventId: 'e',
-    eventType: 'DOUBLES',
+    eventType: DOUBLES_EVENT,
     drawDefinitions: [drawDefinition],
-    entries: ids.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
+    entries: ids.map((participantId) => ({ participantId, entryStatus: UNGROUPED })),
   };
   const tournamentRecord: Tournament = {
     tournamentId: 't',
     events: [event],
     participants: ids.map((participantId) => ({
       participantId,
-      participantType: 'INDIVIDUAL',
-      participantRole: 'COMPETITOR',
+      participantType: INDIVIDUAL,
+      participantRole: COMPETITOR,
     })),
   };
   return { tournamentRecord, drawDefinition, event, roundNumber: 1 };
@@ -93,7 +112,7 @@ function apply(context: ReturnType<typeof setup>) {
 }
 function settle(context: ReturnType<typeof setup>, a = 17, b = 15) {
   for (const match of context.drawDefinition.structures![0].matchUps!) {
-    match.matchUpStatus = 'COMPLETED';
+    match.matchUpStatus = COMPLETED;
     match.score = {
       sets: [{ setNumber: 1, side1Score: a, side2Score: b, ...(a === b ? {} : { winningSide: a > b ? 1 : 2 }) }],
     };
@@ -135,7 +154,7 @@ it('counts completed shared ties and recomputes score corrections and clears imm
   settle(context, 20, 12);
   expect(getRotatingPartnerStandings(context).standings?.[0].pointsScored).toBe(20);
   const match = context.drawDefinition.structures![0].matchUps![0];
-  match.matchUpStatus = 'TO_BE_PLAYED';
+  match.matchUpStatus = TO_BE_PLAYED;
   delete match.score;
   delete match.winningSide;
   const result = getRotatingPartnerStandings(context);
@@ -172,14 +191,14 @@ it('preserves historical policy while applying a replacement only to the next ro
 
 it('keeps terminal nonstandard statuses unresolved by default and only settles explicit treatments', () => {
   for (const status of [
-    'RETIRED',
-    'WALKOVER',
-    'DEFAULTED',
-    'ABANDONED',
-    'CANCELLED',
-    'DOUBLE_WALKOVER',
-    'DOUBLE_DEFAULT',
-    'DEAD_RUBBER',
+    RETIRED,
+    WALKOVER,
+    DEFAULTED,
+    ABANDONED,
+    CANCELLED,
+    DOUBLE_WALKOVER,
+    DOUBLE_DEFAULT,
+    DEAD_RUBBER,
   ] as const) {
     const context = setup();
     apply(context);
@@ -189,7 +208,7 @@ it('keeps terminal nonstandard statuses unresolved by default and only settles e
   const excluded = setup();
   attach(excluded, { ...policy, statusTreatments: { CANCELLED: { kind: 'EXCLUDE' } } });
   apply(excluded);
-  for (const match of excluded.drawDefinition.structures![0].matchUps!) match.matchUpStatus = 'CANCELLED';
+  for (const match of excluded.drawDefinition.structures![0].matchUps!) match.matchUpStatus = CANCELLED;
   expect(getRotatingPartnerStandings(excluded).unresolved).toHaveLength(0);
   expect(getRotatingPartnerStandings(excluded).contributions).toHaveLength(0);
   const credited = setup();
@@ -199,7 +218,7 @@ it('keeps terminal nonstandard statuses unresolved by default and only settles e
   });
   apply(credited);
   for (const match of credited.drawDefinition.structures![0].matchUps!) {
-    match.matchUpStatus = 'WALKOVER';
+    match.matchUpStatus = WALKOVER;
     match.winningSide = 1;
   }
   const result = getRotatingPartnerStandings(credited);
@@ -214,7 +233,7 @@ it('attributes partial retirement scores only under an explicit played-points ru
   attach(context, { ...policy, statusTreatments: { RETIRED: { kind: 'PLAYED_POINTS' } } });
   apply(context);
   for (const match of context.drawDefinition.structures![0].matchUps!) {
-    match.matchUpStatus = 'RETIRED';
+    match.matchUpStatus = RETIRED;
     match.winningSide = 2;
     match.score = { sets: [{ side1Score: 8, side2Score: 6 }] };
   }
@@ -237,7 +256,7 @@ it('refuses missing historical contracts, invalid scores and altered pair member
   expect(getRotatingPartnerStandings(context).error).toBe(INVALID_SCORE);
   settle(context);
   context.tournamentRecord.participants!.find(
-    (participant) => participant.participantType === 'PAIR',
+    (participant) => participant.participantType === PAIR,
   )!.individualParticipantIds = ['p0', 'p0'];
   expect(getRotatingPartnerStandings(context).error).toBe(INVALID_VALUES);
 });
@@ -394,7 +413,7 @@ it('separates awarded credits from an actual partial score kept on a retirement'
   attach(context, { ...policy, statusTreatments: { RETIRED: { kind: 'CREDIT', winningPoints: 20, losingPoints: 0 } } });
   apply(context);
   for (const match of context.drawDefinition.structures![0].matchUps!) {
-    match.matchUpStatus = 'RETIRED';
+    match.matchUpStatus = RETIRED;
     match.winningSide = 1;
     match.score = { sets: [{ side1Score: 8, side2Score: 6 }] };
   }
@@ -428,7 +447,7 @@ it('audited settlement unlocks Mexicano without rewriting round contracts or lat
   apply(context);
   settle(context);
   const match = context.drawDefinition.structures![0].matchUps![0];
-  match.matchUpStatus = 'WALKOVER';
+  match.matchUpStatus = WALKOVER;
   delete match.score;
   const contract = structuredClone(context.drawDefinition.competitionRounds![0].tallyContract);
   expect(getRotatingPartnerRoundPreview({ ...context, roundNumber: 2 }).error).toBeDefined();
@@ -461,7 +480,7 @@ it('settlement corrections become stale and require explicit supersession or aud
   apply(context);
   settle(context);
   const match = context.drawDefinition.structures![0].matchUps![0];
-  match.matchUpStatus = 'RETIRED';
+  match.matchUpStatus = RETIRED;
   match.score = { sets: [{ setNumber: 1, side1Score: 8, side2Score: 6 }] };
   const request = { ...settlementRequest(context), treatment: { kind: 'PLAYED_POINTS' as const } };
   expect(settleRotatingPartnerResult(request).success).toBe(true);
@@ -499,7 +518,7 @@ it('invalid settlements and corrupt audit history refuse without a write', () =>
   settle(context);
   const match = context.drawDefinition.structures![0].matchUps![0];
   expect(settleRotatingPartnerResult(settlementRequest(context)).error).toBeDefined();
-  match.matchUpStatus = 'DEFAULTED';
+  match.matchUpStatus = DEFAULTED;
   delete match.winningSide;
   const request = settlementRequest(context);
   const before = structuredClone(context.tournamentRecord);
@@ -521,7 +540,7 @@ it.each(['draw', 'event', 'tournament'])('settlement engine API respects a DRAWS
   const context = setup();
   apply(context);
   settle(context);
-  context.drawDefinition.structures![0].matchUps![0].matchUpStatus = 'WALKOVER';
+  context.drawDefinition.structures![0].matchUps![0].matchUpStatus = WALKOVER;
   const { tournamentRecord, drawDefinition, event, roundNumber, ...request } = settlementRequest(context);
   tournamentEngine.setState(tournamentRecord);
   const scopeParams: { drawId?: string; eventId?: string } = {};
@@ -541,7 +560,7 @@ it.each(['draw', 'event', 'tournament'])('settlement engine API respects a DRAWS
 it('settlement runtime and closed schema validators agree', () => {
   const context = setup();
   apply(context);
-  context.drawDefinition.structures![0].matchUps![0].matchUpStatus = 'WALKOVER';
+  context.drawDefinition.structures![0].matchUps![0].matchUpStatus = WALKOVER;
   const result = settleRotatingPartnerResult(settlementRequest(context));
   expect(result.success).toBe(true);
   const ajv = new Ajv({ strict: false });
@@ -554,8 +573,8 @@ it('settlement runtime and closed schema validators agree', () => {
     { ...valid, reason: ' ' },
     { ...valid, extra: 1 },
     { ...valid, recordedAt: 'bad' },
-    { ...valid, expectedOutcome: { matchUpStatus: 'RETIRED', score: { sets: 'bad' } } },
-    { ...valid, expectedOutcome: { matchUpStatus: 'RETIRED', score: { sets: [null] } } },
+    { ...valid, expectedOutcome: { matchUpStatus: RETIRED, score: { sets: 'bad' } } },
+    { ...valid, expectedOutcome: { matchUpStatus: RETIRED, score: { sets: [null] } } },
     ...[
       '2026-10-10T12:00:00Z',
       '2026-10-10T12:00:00.123456789Z',
@@ -565,7 +584,7 @@ it('settlement runtime and closed schema validators agree', () => {
       '2026-10-10T12:00:00',
     ].map((recordedAt) => ({ ...valid, recordedAt })),
     { ...valid, treatment: { kind: 'CREDIT', winningPoints: -1, losingPoints: 0 } },
-    { ...valid, expectedOutcome: { matchUpStatus: 'IN_PROGRESS' } },
+    { ...valid, expectedOutcome: { matchUpStatus: IN_PROGRESS } },
   ]) {
     expect(isRotatingPartnerSettlement(record)).toBe(!!validate(record));
   }
@@ -576,11 +595,11 @@ it('a valid completed correction supersedes exit settlement and resumes the ordi
   apply(context);
   settle(context);
   const match = context.drawDefinition.structures![0].matchUps![0];
-  match.matchUpStatus = 'RETIRED';
+  match.matchUpStatus = RETIRED;
   match.score = { sets: [{ setNumber: 1, side1Score: 8, side2Score: 6 }] };
   const request = { ...settlementRequest(context), treatment: { kind: 'PLAYED_POINTS' as const } };
   expect(settleRotatingPartnerResult(request).success).toBe(true);
-  match.matchUpStatus = 'COMPLETED';
+  match.matchUpStatus = COMPLETED;
   match.score = { sets: [{ setNumber: 1, side1Score: 20, side2Score: 12, winningSide: 1 }] };
   match.winningSide = 1;
   const standings = getRotatingPartnerStandings(context);
@@ -589,7 +608,7 @@ it('a valid completed correction supersedes exit settlement and resumes the ordi
   expect(standings.staleSettlementIds).toEqual([request.requestId]);
   const contributions = standings.contributions!.filter((row) => row.matchUpId === match.matchUpId);
   expect(contributions.map((row) => row.pointsScored).toSorted((a, b) => a - b)).toEqual([12, 12, 20, 20]);
-  expect(contributions.every((row) => row.treatment === 'COMPLETED' && !row.settlementRequestId)).toBe(true);
+  expect(contributions.every((row) => row.treatment === COMPLETED && !row.settlementRequestId)).toBe(true);
   expect(getRotatingPartnerRoundPreview({ ...context, roundNumber: 2 }).success).toBe(true);
   expect(context.drawDefinition.competitionSettlements).toHaveLength(1);
 });
@@ -599,7 +618,7 @@ it('settlement freshness and retries ignore score display strings but retain spo
   apply(context);
   settle(context);
   const match = context.drawDefinition.structures![0].matchUps![0];
-  match.matchUpStatus = 'RETIRED';
+  match.matchUpStatus = RETIRED;
   match.score = { sets: [{ setNumber: 1, side1Score: 8, side2Score: 6 }], scoreStringSide1: '8-6' };
   const request = { ...settlementRequest(context), treatment: { kind: 'PLAYED_POINTS' as const } };
   expect(settleRotatingPartnerResult(request).success).toBe(true);
@@ -619,7 +638,7 @@ it.each(['2026-10-10T12:00:00Z', '2026-10-10T12:00:00.123456789Z', '2026-10-10T1
   (recordedAt) => {
     const context = setup();
     apply(context);
-    context.drawDefinition.structures![0].matchUps![0].matchUpStatus = 'WALKOVER';
+    context.drawDefinition.structures![0].matchUps![0].matchUpStatus = WALKOVER;
     expect(settleRotatingPartnerResult({ ...settlementRequest(context), recordedAt }).settlement?.recordedAt).toBe(
       recordedAt,
     );
@@ -633,7 +652,7 @@ it.each([
   const context = setup();
   apply(context);
   const match = context.drawDefinition.structures![0].matchUps![0];
-  match.matchUpStatus = 'WALKOVER';
+  match.matchUpStatus = WALKOVER;
   const request = settlementRequest(context);
   const initial = settleRotatingPartnerResult(request);
   expect(initial.success).toBe(true);
@@ -648,7 +667,7 @@ it('a settlement retry with different sporting intent is refused without a write
   const context = setup();
   apply(context);
   const match = context.drawDefinition.structures![0].matchUps![0];
-  match.matchUpStatus = 'WALKOVER';
+  match.matchUpStatus = WALKOVER;
   const request = settlementRequest(context);
   expect(settleRotatingPartnerResult(request).success).toBe(true);
   const before = structuredClone(context.tournamentRecord);

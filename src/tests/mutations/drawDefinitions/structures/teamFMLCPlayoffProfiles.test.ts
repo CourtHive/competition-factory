@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 const expectedRanges = [
@@ -17,7 +18,7 @@ function generate({ completeAllMatchUps }) {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawType: FIRST_MATCH_LOSER_CONSOLATION, eventType: TEAM_EVENT, tieFormatName: 'DOMINANT_DUO', drawSize: 16 },
+      { drawType: FIRST_MATCH_LOSER_CONSOLATION, eventType: TEAM_EVENT, tieFormatName: DOMINANT_DUO, drawSize: 16 },
     ],
     completeAllMatchUps,
   });

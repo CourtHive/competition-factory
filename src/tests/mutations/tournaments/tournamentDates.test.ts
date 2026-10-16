@@ -6,6 +6,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP } from '@Constants/topicConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { MON } from '@Constants/weekdayConstants';
 import {
   INVALID_DATE,
@@ -295,7 +296,7 @@ it('hard-blocks a date change when a COMPLETED matchUp was played outside the ne
   const completed = tournamentEngine.setMatchUpStatus({
     drawId,
     matchUpId: target.matchUpId,
-    matchUpStatus: 'COMPLETED',
+    matchUpStatus: COMPLETED,
     outcome: { winningSide: 1, scoreString: '6-3 6-2' },
   });
   expect(completed.success).toEqual(true);

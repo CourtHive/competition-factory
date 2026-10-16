@@ -3,8 +3,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
+import { DIRECT_ACCEPTANCE, ALTERNATE } from '@Constants/entryStatusConstants';
+import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POSITION_ACTIONS } from '@Constants/extensionConstants';
-import { BYE } from '@Constants/matchUpStatusConstants';
 import {
   AD_HOC,
   COMPASS,
@@ -459,8 +460,8 @@ it('resets AD_HOC voluntary consolation by clearing all matchUps', () => {
 
   // AD_HOC VC structures have finishingPosition: WIN_RATIO and no roundPosition on matchUps
   vcStructure.matchUps = [
-    { matchUpId: 'vc-m1', roundNumber: 1, matchUpStatus: 'COMPLETED', winningSide: 1 },
-    { matchUpId: 'vc-m2', roundNumber: 1, matchUpStatus: 'COMPLETED', winningSide: 2 },
+    { matchUpId: 'vc-m1', roundNumber: 1, matchUpStatus: COMPLETED, winningSide: 1 },
+    { matchUpId: 'vc-m2', roundNumber: 1, matchUpStatus: COMPLETED, winningSide: 2 },
   ];
 
   tournamentEngine.setState(tournamentRecord);
@@ -505,7 +506,7 @@ it('removes VOLUNTARY_CONSOLATION entries on reset', () => {
 
   result = tournamentEngine.addDrawEntries({
     entryStage: VOLUNTARY_CONSOLATION,
-    entryStatus: 'DIRECT_ACCEPTANCE',
+    entryStatus: DIRECT_ACCEPTANCE,
     participantIds: acceptedIds,
     ignoreStageSpace: true,
     drawId,
@@ -515,7 +516,7 @@ it('removes VOLUNTARY_CONSOLATION entries on reset', () => {
   if (alternateIds.length) {
     result = tournamentEngine.addDrawEntries({
       entryStage: VOLUNTARY_CONSOLATION,
-      entryStatus: 'ALTERNATE',
+      entryStatus: ALTERNATE,
       participantIds: alternateIds,
       ignoreStageSpace: true,
       drawId,

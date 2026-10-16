@@ -15,10 +15,12 @@ import {
 } from '@Mutate/drawDefinitions/competitionProfile';
 
 // constants and types
+import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 
 import type { CompetitionProfile, MexicanoCompetitionProfile } from '@Types/competitionProfile';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
-import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
+import { AD_HOC, LADDER, CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import {
@@ -34,7 +36,7 @@ const mexicano: MexicanoCompetitionProfile = {
   version: 1,
   format: 'MEXICANO',
   entrantScope: 'INDIVIDUAL',
-  matchUpType: 'DOUBLES',
+  matchUpType: DOUBLES_MATCHUP,
   scoring: { combinedPointTotal: 32 },
   standings: { metric: 'SIDE_POINTS', attribution: 'EACH_INDIVIDUAL' },
   pairing: { seed: 42, algorithmVersion: 1, groupBy: 'ADJACENT_STANDINGS', partners: 'FIRST_FOURTH_SECOND_THIRD' },
@@ -46,12 +48,12 @@ const americano: CompetitionProfile = {
   pairing: { seed: 42, algorithmVersion: 1 },
   completion: { kind: 'PARTNERSHIP_COVERAGE' },
 };
-const ladder: CompetitionProfile = { version: 1, format: 'LADDER' };
+const ladder: CompetitionProfile = { version: 1, format: LADDER };
 const copy = <T>(value: T): T => structuredClone(value);
 const draw = (): DrawDefinition => ({
   drawId: 'profile-draw',
   drawType: AD_HOC,
-  matchUpType: 'DOUBLES',
+  matchUpType: DOUBLES_MATCHUP,
   structures: [],
 });
 
@@ -77,7 +79,7 @@ describe('closed competition profile validation and CODES schema parity', () => 
     { ...mexicano, extra: true },
     { ...ladder, pairing: mexicano.pairing },
     { ...mexicano, entrantScope: 'PAIR' },
-    { ...mexicano, matchUpType: 'SINGLES' },
+    { ...mexicano, matchUpType: SINGLES_MATCHUP },
     { ...mexicano, scoring: { combinedPointTotal: 0 } },
     { ...mexicano, scoring: { combinedPointTotal: 1.5 } },
     { ...mexicano, scoring: { combinedPointTotal: Number.MAX_SAFE_INTEGER + 1 } },
@@ -141,14 +143,14 @@ describe('competition profile context and lifecycle guards', () => {
       setCompetitionProfile({
         drawDefinition,
         competitionProfile: americano,
-        event: { eventId: 'e', eventType: 'SINGLES' },
+        event: { eventId: 'e', eventType: SINGLES_EVENT },
       }).error,
     ).toBe(INVALID_VALUES);
     expect(
       setCompetitionProfile({
         drawDefinition,
         competitionProfile: americano,
-        event: { eventId: 'e', eventType: 'DOUBLES' },
+        event: { eventId: 'e', eventType: DOUBLES_EVENT },
       }).success,
     ).toBe(true);
   });
@@ -168,7 +170,7 @@ describe('competition profile context and lifecycle guards', () => {
     else if (location === 'structure') drawDefinition.structures = [{ structureId: 's', matchUps }];
     else
       drawDefinition.structures = [
-        { structureId: 's', structureType: 'CONTAINER', structures: [{ structureId: 'child', matchUps }] },
+        { structureId: 's', structureType: CONTAINER, structures: [{ structureId: 'child', matchUps }] },
       ];
     const before = copy(drawDefinition);
     const changed = copy(mexicano);
@@ -189,7 +191,7 @@ describe('competition profile context and lifecycle guards', () => {
   it('resolves drawId through the engine and survives JSON save/reload', () => {
     const tournamentRecord: Tournament = {
       tournamentId: 'profile-tournament',
-      events: [{ eventId: 'profile-event', eventType: 'DOUBLES', drawDefinitions: [draw()] }],
+      events: [{ eventId: 'profile-event', eventType: DOUBLES_EVENT, drawDefinitions: [draw()] }],
     };
     tournamentEngine.setState(tournamentRecord);
     expect(
@@ -207,7 +209,7 @@ describe('competition profile mutation locks', () => {
   it.each(['draw', 'event', 'tournament'])('enforces a DRAWS lock at %s scope for set and remove', (level) => {
     tournamentEngine.setState({
       tournamentId: 'profile-tournament',
-      events: [{ eventId: 'profile-event', eventType: 'DOUBLES', drawDefinitions: [draw()] }],
+      events: [{ eventId: 'profile-event', eventType: DOUBLES_EVENT, drawDefinitions: [draw()] }],
     });
     const drawId = 'profile-draw';
     expect(tournamentEngine.setCompetitionProfile({ drawId, competitionProfile: mexicano }).success).toBe(true);

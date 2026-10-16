@@ -79,7 +79,7 @@ const penaltyData = {
 let result = engine.addPenalty(penaltyData);
 ```
 
-A misspelled `penaltyType` from earlier releases (`EQUIMENT_VIOLATION`, `FAILUIRE_TO_SIGN_IN`, `'Unsportmanlike Conduct'`, `'Puncuality'`) is still accepted and stored with the correct spelling; 8.0.0 stops accepting them. See [penaltyConstants](../constants.mdx).
+`penaltyType` is a `PenaltyTypeEnum` code (`BALL_ABUSE` is `'BALL_ABUSE'`), and the code is what is stored; render it through `@courthive/i18n` (`penalties.<CODE>`). A legacy value from earlier releases, a display label (`'Ball Abuse'`) or a misspelling (`EQUIMENT_VIOLATION`, `FAILUIRE_TO_SIGN_IN`, `'Unsportmanlike Conduct'`, `'Puncuality'`), is still accepted and stored as its code; 8.0.0 stops accepting them. See [penaltyConstants](../constants.mdx).
 
 ---
 
@@ -227,9 +227,12 @@ const { participant, participantId } = engine.createGroupParticipant({
 ```js
 engine.deleteParticipants({
   addIndividualParticipantsToEvents, // optional boolean
-  paricipantIds,
+  participantIds,
 });
 ```
+
+Notices: `DELETE_PARTICIPANTS` lists every participant actually removed (a PAIR removed along with its individual
+participant is included), and groupings that lost a member are announced with `MODIFY_PARTICIPANTS`.
 
 ---
 
@@ -643,7 +646,7 @@ const modifications = { notes };
 engine.modifyPenalty({ penaltyId, modifications });
 ```
 
-A `penaltyType` modification with one of the old misspellings (see [addPenalty](#addpenalty)) is rewritten to the correct spelling before it is stored, until 8.0.0.
+A `penaltyType` modification with a legacy label or misspelling (see [addPenalty](#addpenalty)) is rewritten to its code before it is stored, until 8.0.0.
 
 ---
 

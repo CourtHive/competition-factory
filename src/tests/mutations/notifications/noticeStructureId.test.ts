@@ -5,11 +5,15 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS, MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import {
   COMPASS,
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
   FIRST_MATCH_LOSER_CONSOLATION,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  FEED_IN_CHAMPIONSHIP,
+  CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -51,7 +55,7 @@ describe('MODIFY_MATCHUP structureId', () => {
     const notices = capture([MODIFY_MATCHUP]);
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     const result: any = tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId, outcome });
@@ -78,12 +82,12 @@ describe('MODIFY_MATCHUP structureId', () => {
   });
 
   it.each([
-    ['single elimination', 'SINGLE_ELIMINATION'],
-    ['compass', 'COMPASS'],
-    ['round robin', 'ROUND_ROBIN'],
-    ['first match loser consolation', 'FIRST_MATCH_LOSER_CONSOLATION'],
-    ['round robin with playoff', 'ROUND_ROBIN_WITH_PLAYOFF'],
-    ['feed in championship', 'FEED_IN_CHAMPIONSHIP'],
+    ['single elimination', SINGLE_ELIMINATION],
+    ['compass', COMPASS],
+    ['round robin', ROUND_ROBIN],
+    ['first match loser consolation', FIRST_MATCH_LOSER_CONSOLATION],
+    ['round robin with playoff', ROUND_ROBIN_WITH_PLAYOFF],
+    ['feed in championship', FEED_IN_CHAMPIONSHIP],
   ])('%s — EVERY notice from a fully played draw carries an eventId', (_label, drawType) => {
     // Advancement paths used to drop `event` on the way down (directWinner -> assignMatchUpDrawPosition,
     // handleContainerAssignment -> modifyRoundRobinMatchUpsStatus, advanceDrawPosition), so notices for
@@ -101,7 +105,7 @@ describe('MODIFY_MATCHUP structureId', () => {
     const notices = capture([MODIFY_MATCHUP]);
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     let scored = 0;
@@ -143,7 +147,7 @@ describe('MODIFY_MATCHUP structureId', () => {
     const matchUps: any[] = tournamentEngine.allTournamentMatchUps().matchUps ?? [];
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     let scored = 0;
@@ -183,7 +187,7 @@ describe('MODIFY_MATCHUP structureId', () => {
     );
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId, outcome });
@@ -226,13 +230,13 @@ describe('MODIFY_MATCHUP structureId', () => {
     );
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId, outcome });
 
     const { drawDefinition }: any = tournamentEngine.getEvent({ drawId });
-    const consolation = drawDefinition?.structures?.find((structure: any) => structure.stage === 'CONSOLATION');
+    const consolation = drawDefinition?.structures?.find((structure: any) => structure.stage === CONSOLATION);
     tournamentEngine.removeStructure({ structureId: consolation.structureId, drawId });
 
     // The control: without notices to inspect, "none unnamed" is vacuously true.

@@ -12,11 +12,14 @@ import { expect, it } from 'vitest';
 // types
 import type { MatchUp } from '@Types/scoring/types';
 
+// constants
+import { TO_BE_PLAYED, COMPLETED } from '@Constants/matchUpStatusConstants';
+
 function createMatchUp(format: string): MatchUp {
   return {
     matchUpId: 'test-match',
     matchUpFormat: format,
-    matchUpStatus: 'TO_BE_PLAYED',
+    matchUpStatus: TO_BE_PLAYED,
     score: { sets: [] },
     sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
   } as MatchUp;
@@ -121,7 +124,7 @@ it('addPoint: match completes when setsToWin reached', () => {
     }
   }
 
-  expect(matchUp.matchUpStatus).toEqual('COMPLETED');
+  expect(matchUp.matchUpStatus).toEqual(COMPLETED);
   expect(matchUp.winningSide).toEqual(1);
 });
 
@@ -164,7 +167,7 @@ it('addPoint: match tiebreak as final set', () => {
     matchUp = addPoint(matchUp, { winner: 0 as 0 | 1 });
   }
 
-  expect(matchUp.matchUpStatus).toEqual('COMPLETED');
+  expect(matchUp.matchUpStatus).toEqual(COMPLETED);
   expect(matchUp.winningSide).toEqual(1);
 });
 
@@ -221,7 +224,7 @@ it('ScoringEngine: set/match completion matches addPoint behavior', () => {
   }
 
   const state = engine.getState();
-  expect(state.matchUpStatus).toEqual('COMPLETED');
+  expect(state.matchUpStatus).toEqual(COMPLETED);
   expect(state.winningSide).toEqual(1);
   expect(state.score.sets.length).toEqual(2);
   expect(state.score.sets[0].winningSide).toEqual(1);
@@ -244,6 +247,6 @@ it('ScoringEngine: addSet + checkSetCompletion consistency', () => {
   // Add second set via addSet
   engine.addSet({ side1Score: 6, side2Score: 3 });
   state = engine.getState();
-  expect(state.matchUpStatus).toEqual('COMPLETED');
+  expect(state.matchUpStatus).toEqual(COMPLETED);
   expect(state.winningSide).toEqual(1);
 });

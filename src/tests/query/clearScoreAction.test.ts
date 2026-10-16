@@ -17,9 +17,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CLEAR_SCORE, SCORE } from '@Constants/matchUpActionConstants';
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 const clearOutcome = {
   score: { scoreStringSide1: '', scoreStringSide2: '' },
@@ -124,7 +124,7 @@ describe('CLEAR_SCORE', () => {
         .find((m: any) => (m.sides ?? []).filter((s: any) => s?.participantId).length === 2);
       if (!next) break;
       tournamentEngine.setMatchUpStatus({
-        outcome: i % 3 === 2 ? { matchUpStatus: 'WALKOVER', winningSide: 1 } : { winningSide: 1 },
+        outcome: i % 3 === 2 ? { matchUpStatus: WALKOVER, winningSide: 1 } : { winningSide: 1 },
         matchUpId: next.matchUpId,
         propagateExitStatus: true,
         drawId,

@@ -84,9 +84,13 @@ setSubscriptions(subscriptions);
 
 ## Completeness guarantee
 
-The notice stream is a **complete, faithful change-log of the tournament record**: every mutation that changes the record dispatches at least one notice whose topic covers the changed entity. This makes it safe to keep an external cache, read-model, or reactive UI in sync from notices alone — a table driven by the notice deltas equals a direct re-query of the record.
+The **goal** is a complete, faithful change-log of the tournament record: every mutation that changes the record dispatches at least one notice whose topic covers the changed entity, so an external cache, read-model or reactive UI can be kept in sync from notices alone.
 
-This is a tested property. A conformance harness (`src/tests/mutations/notifications/noticeConformance`) runs each mutation, structurally diffs the record before/after, and asserts every changed entity is covered by an emitted notice — failing CI if a mutation ever goes silent. Recent topic additions extend that coverage to events and entries:
+**It is not yet complete.** A conformance harness (`src/tests/mutations/notifications/noticeConformance`) runs a catalog of mutation scenarios, structurally diffs the record before and after, and fails CI when a changed entity is not covered by an emitted notice. That guarantee holds for the scenarios in the catalog. Measured over **every** engine call in the whole test suite (2026-10-15), some methods still change the record without a covering notice in some calls — among them parts of exit propagation in `setMatchUpStatus`, `generateLineUps`, `setDrawPositionPreferences`, and court and venue changes. Fixes are landing method by method. Until they are complete, a consumer that must not miss a change should re-read what it caches after a mutation that may not announce itself, or persist the whole record.
+
+To measure it yourself, see [Measuring notice coverage](/docs/testing/testing-overview#measuring-notice-coverage).
+
+Topics that extend the coverage to events and entries:
 
 | Topic                                         | Fires when                                                                                                                               |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -96,6 +100,11 @@ This is a tested property. A conformance harness (`src/tests/mutations/notificat
 | `MODIFY_SCHEDULING_PROFILE`                   | the scheduling plan (`scheduling.profile`) changes — previously a silent extension mutation                                              |
 
 These topics are additive; existing subscribers are unaffected.
+
+Notices describe the record **as stored**: `addEvent`'s `ADD_EVENT` carries the event with its generated `eventId` and
+normalised values, and the draw notices it sends carry `tournamentId` and `eventId`. Grouping changes are announced
+too: `scaledTeamAssignment` sends `MODIFY_PARTICIPANTS` for the teams it fills and `MODIFY_EVENT_ENTRIES` /
+`MODIFY_DRAW_ENTRIES` for the entries it moves, and `removeEventEntries` sends `MODIFY_EVENT` when it changes a flight.
 
 ## The MODIFY_MATCHUP envelope
 

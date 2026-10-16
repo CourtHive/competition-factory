@@ -528,7 +528,7 @@ it('properly calculates valueGoal when adding collectionDefinition with tiebreak
       {
         collectionName: 'G14 Doubles',
         collectionOrder: 1,
-        matchUpType: 'DOUBLES',
+        matchUpType: DOUBLES,
         collectionId: 'c738fa5f-93a6-45c1-8bff-f17dbe1c1976',
         matchUpFormat: 'SET1-S:4/TB7',
         matchUpCount: 1,
@@ -538,7 +538,7 @@ it('properly calculates valueGoal when adding collectionDefinition with tiebreak
       {
         collectionName: 'G14 Singles',
         collectionOrder: 2,
-        matchUpType: 'SINGLES',
+        matchUpType: SINGLES,
         collectionId: '631742d0-ff2e-46a2-af84-25952cbfcc71',
         matchUpFormat: 'SET1-S:4/TB7',
         matchUpCount: 3,
@@ -575,7 +575,7 @@ it('properly calculates valueGoal when adding collectionDefinition with tiebreak
       collectionName: 'Tiebreak Match',
       processCodes: ['RANKING.IGNORE'],
       matchUpFormat: 'SET1-S:TB10',
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES,
       collectionOrder: 3,
       matchUpValue: 1,
       matchUpCount: 1,
@@ -626,7 +626,7 @@ it('can validate collectionDefinition.category when adding collectionDefinitions
     collectionDefinition: {
       category: { ageCategoryCode: 'U20' },
       matchUpFormat: 'SET1-S:TB10',
-      matchUpType: 'SINGLES',
+      matchUpType: SINGLES,
       matchUpValue: 1,
       matchUpCount: 1,
     },

@@ -1,4 +1,5 @@
 import { processAlreadyScheduledMatchUps } from '@Mutate/matchUps/schedule/schedulers/processAlreadyScheduledMatchUps';
+import type { ParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
 import { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUps/getMatchUpsToSchedule';
 import { generateScheduleTimes } from '@Generators/scheduling/utils/generateScheduleTimes';
 import { getScheduledRoundsDetails } from './getScheduledRoundsDetails';
@@ -17,10 +18,11 @@ type GetVenueSchedulingDetailsArgs = {
   matchUpScheduleTimes: { [key: string]: string };
   matchUpNotBeforeTimes: { [key: string]: any };
   matchUpDependencies: { [key: string]: any };
+  participantReachability: ParticipantReachability;
   scheduleCompletedMatchUps?: boolean;
   excludeNoDateCompleted?: boolean;
   containedStructureIds: string[];
-  clearScheduleDates?: boolean;
+  clearScheduleDates?: boolean | string[];
   excludePriorDates?: boolean;
   matchUps: HydratedMatchUp[];
   periodLength?: number;
@@ -39,6 +41,7 @@ export function getVenueSchedulingDetails({
   matchUpNotBeforeTimes,
   matchUpScheduleTimes,
   matchUpDependencies,
+  participantReachability,
   excludePriorDates,
   clearScheduleDates,
   tournamentRecords,
@@ -81,7 +84,11 @@ export function getVenueSchedulingDetails({
       },
     );
 
-    allDateMatchUpIds.push(...(orderedMatchUpIds ?? []));
+    // a matchUp belongs to the first venue that profiles it on the date: a round profiled at two
+    // venues must not be scheduled once per venue
+    const claimedMatchUpIds = new Set(allDateMatchUpIds);
+    const venueMatchUpIds = (orderedMatchUpIds ?? []).filter((matchUpId) => !claimedMatchUpIds.has(matchUpId));
+    allDateMatchUpIds.push(...venueMatchUpIds);
 
     const { groupedRounds } = getGroupedRounds({
       scheduledRoundsDetails,
@@ -92,6 +99,9 @@ export function getVenueSchedulingDetails({
     let dateScheduledMatchUpIds;
     let scheduleTimes: ScheduleTimesResult[] | undefined = [];
 
+    // courts arrive already narrowed by any courtIds the caller selected
+    const venueCourts = courts.filter((court) => court.venueId === venueId);
+
     if (useGarman) {
       // determines court availability taking into account already scheduled matchUps on the scheduleDate
       // optimization to pass already retrieved competitionMatchUps to avoid refetch (requires refactor)
@@ -99,6 +109,7 @@ export function getVenueSchedulingDetails({
       ({ scheduleTimes, dateScheduledMatchUpIds } = generateScheduleTimes({
         averageMatchUpMinutes: groupedRounds[0]?.averageMinutes,
         scheduleDate: extractDate(scheduleDate),
+        courtIds: venueCourts.map((court) => court.courtId),
         venueIds: [venue.venueId],
         clearScheduleDates,
         tournamentRecords,
@@ -117,6 +128,7 @@ export function getVenueSchedulingDetails({
       matchUpScheduleTimes,
       excludePriorDates,
       matchUpDependencies,
+      participantReachability,
       clearScheduleDates,
       scheduleDate,
       minutesMap,
@@ -131,15 +143,14 @@ export function getVenueSchedulingDetails({
     const { matchUpsToSchedule, matchUpMap } = getMatchUpsToSchedule({
       matchUpPotentialParticipantIds,
       scheduleCompletedMatchUps,
+      orderedMatchUpIds: venueMatchUpIds,
       dateScheduledMatchUpIds,
       matchUpNotBeforeTimes,
       matchUpScheduleTimes,
-      orderedMatchUpIds,
       clearDate,
       matchUps,
     });
 
-    const venueCourts = courts.filter((court) => court.venueId === venueId);
     venueScheduledRoundDetails[venueId] = {
       previousRemainingScheduleTimes: [], // keep track of sheduleTimes not used on previous iteration
       courtsCount: venueCourts.length,

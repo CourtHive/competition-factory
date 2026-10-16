@@ -5,6 +5,7 @@ import { expect, describe, it } from 'vitest';
 
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 /**
@@ -38,9 +39,9 @@ describe('MODIFY_MATCHUP drawPositionSides', () => {
           drawSize: 8,
           drawType,
           outcomes: [
-            { roundNumber: 1, roundPosition: 1, matchUpStatus: 'DOUBLE_WALKOVER' },
+            { roundNumber: 1, roundPosition: 1, matchUpStatus: DOUBLE_WALKOVER },
             { roundNumber: 1, roundPosition: 2, winningSide: 2, scoreString: '6-1 6-2' },
-            { roundNumber: 1, roundPosition: 3, matchUpStatus: 'DOUBLE_DEFAULT' },
+            { roundNumber: 1, roundPosition: 3, matchUpStatus: DOUBLE_DEFAULT },
             { roundNumber: 1, roundPosition: 4, winningSide: 1, scoreString: '6-1 6-2' },
           ],
         },
@@ -58,7 +59,7 @@ describe('MODIFY_MATCHUP drawPositionSides', () => {
     );
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId: drawIds[0], outcome });
@@ -92,7 +93,7 @@ describe('MODIFY_MATCHUP drawPositionSides', () => {
     );
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({
       scoreString: '6-4 6-2',
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       winningSide: 1,
     });
     tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId: target.drawId, outcome });

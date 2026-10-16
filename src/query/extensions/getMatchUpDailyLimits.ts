@@ -2,6 +2,7 @@ import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafO
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 
 // constants and types
+import type { DailyLimitOverrides, DailyLimits } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits';
 import { MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
@@ -15,6 +16,7 @@ type GetMatchUpDailyLimitsArgs = {
   tournamentId?: string;
 };
 export function getMatchUpDailyLimits({ tournamentRecords, tournamentId }: GetMatchUpDailyLimitsArgs): ResultType & {
+  dailyLimitOverrides?: DailyLimitOverrides;
   matchUpDailyLimits?: any;
 } {
   if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length)
@@ -24,21 +26,28 @@ export function getMatchUpDailyLimits({ tournamentRecords, tournamentId }: GetMa
     (currentTournamentId) => !tournamentId || currentTournamentId === tournamentId,
   );
 
+  // `matchUpDailyLimits` is the last tournament's, as it always was; each tournament's own defaults and every
+  // participant override (the policy's `matchUpDailyLimits` array) are returned beside it
   let dailyLimits;
+  const tournaments: NonNullable<DailyLimitOverrides['tournaments']> = {};
+  const participants: NonNullable<DailyLimitOverrides['participants']> = {};
   tournamentIds.forEach((tournamentId) => {
     const tournamentRecord = tournamentRecords[tournamentId];
 
-    const { matchUpDailyLimits } = getDailyLimit({
+    const { matchUpDailyLimits, participantDailyLimits } = getDailyLimit({
       tournamentRecord,
     });
     dailyLimits = matchUpDailyLimits;
+    if (matchUpDailyLimits) tournaments[tournamentId] = matchUpDailyLimits;
+    Object.assign(participants, participantDailyLimits ?? {});
   });
 
-  return { matchUpDailyLimits: dailyLimits };
+  return { matchUpDailyLimits: dailyLimits, dailyLimitOverrides: { tournaments, participants } };
 }
 
 export function getDailyLimit(params): ResultType & {
-  matchUpDailyLimits?: number;
+  participantDailyLimits?: { [participantId: string]: DailyLimits };
+  matchUpDailyLimits?: DailyLimits;
 } {
   const paramCheck = checkRequiredParameters(params, [{ [TOURNAMENT_RECORD]: true }]);
   if (paramCheck.error) return paramCheck;
@@ -59,5 +68,12 @@ export function getDailyLimit(params): ResultType & {
   const tournamentDailyLimits = limitsValue?.dailyLimits;
   const policyDailyLimits = policy?.defaultDailyLimits;
 
-  return { matchUpDailyLimits: tournamentDailyLimits || policyDailyLimits };
+  // the policy's per-participant overrides: [{ participantId, SINGLES?, DOUBLES?, total? }]
+  const participantDailyLimits: { [participantId: string]: DailyLimits } = {};
+  for (const entry of Array.isArray(policy?.matchUpDailyLimits) ? policy.matchUpDailyLimits : []) {
+    const { participantId, ...limits } = entry ?? {};
+    if (participantId) participantDailyLimits[participantId] = limits;
+  }
+
+  return { matchUpDailyLimits: tournamentDailyLimits || policyDailyLimits, participantDailyLimits };
 }

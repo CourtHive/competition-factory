@@ -58,7 +58,7 @@ it('can complete FIC consolation with WOWO before main', () => {
   const consolation2ndRoundStatuses = tournamentEngine
     .allTournamentMatchUps({
       matchUpFilters: { roundNumbers: [2] },
-      contextFilters: { stages: ['CONSOLATION'] },
+      contextFilters: { stages: [CONSOLATION] },
     })
     .matchUps.map(({ matchUpStatus }) => matchUpStatus);
 

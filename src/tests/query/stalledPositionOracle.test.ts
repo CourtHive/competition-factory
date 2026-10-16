@@ -13,7 +13,7 @@ import { expect, test } from 'vitest';
 import fs from 'fs';
 
 // constants
-import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, TO_BE_PLAYED, DOUBLE_DEFAULT, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -62,7 +62,7 @@ const enabled = process.env.STALLED_ORACLE === '1';
 const arm = process.env.ARM ?? 'control';
 const outPath = process.env.OUT ?? '/tmp/stalledPositionOracle.jsonl';
 const STALLED_POSITION = 'STALLED_POSITION';
-const TO_BE_PLAYED_STATUS = 'TO_BE_PLAYED';
+const TO_BE_PLAYED_STATUS = TO_BE_PLAYED;
 
 /**
  * The 600 cells now come from `@Tests/testHarness/exitPropagation/matrixCells`, which this file used
@@ -348,7 +348,7 @@ test.skipIf(!enabled)('oracle over the named COMPASS reproductions', () => {
         !(m.sides ?? []).some((side: any) => side?.bye),
     );
     const describe = (m: any) =>
-      `${m.structureName}|${m.roundNumber}|${m.roundPosition} ${m.matchUpStatus ?? 'TO_BE_PLAYED'}` +
+      `${m.structureName}|${m.roundNumber}|${m.roundPosition} ${m.matchUpStatus ?? TO_BE_PLAYED}` +
       `${detectorWouldSee(m) ? '' : ' (HIDDEN)'}`;
 
     /**
@@ -362,7 +362,7 @@ test.skipIf(!enabled)('oracle over the named COMPASS reproductions', () => {
       .filter((m) => named.includes(`${m.structureName}|${m.roundNumber}|${m.roundPosition}`))
       .map(
         (m) =>
-          `  ${m.structureName}|${m.roundNumber}|${m.roundPosition} ${m.matchUpStatus ?? 'TO_BE_PLAYED'} ` +
+          `  ${m.structureName}|${m.roundNumber}|${m.roundPosition} ${m.matchUpStatus ?? TO_BE_PLAYED} ` +
           `ws=${m.winningSide ?? 'undefined'} occupants=${occupantsOf(m).length} ` +
           `byes=${(m.sides ?? []).filter((s: any) => s?.bye).length}`,
       );
@@ -396,10 +396,10 @@ test.skipIf(!enabled)('the correction-sequence stalls, per step', () => {
       nonRandom: 9100555,
       submissions: [
         ['Main', 1, 2, { winningSide: 2 }],
-        ['Main', 2, 2, { matchUpStatus: 'DOUBLE_DEFAULT' }],
-        ['Main', 2, 1, { matchUpStatus: 'DEFAULTED', winningSide: 1 }],
+        ['Main', 2, 2, { matchUpStatus: DOUBLE_DEFAULT }],
+        ['Main', 2, 1, { matchUpStatus: DEFAULTED, winningSide: 1 }],
         ['Backdraw', 3, 1, { matchUpStatus: DOUBLE_WALKOVER }],
-        ['Main', 1, 3, { matchUpStatus: 'WALKOVER', winningSide: 2 }],
+        ['Main', 1, 3, { matchUpStatus: WALKOVER, winningSide: 2 }],
         ['Backdraw', 3, 1, { winningSide: 1 }],
       ],
     },
@@ -409,9 +409,9 @@ test.skipIf(!enabled)('the correction-sequence stalls, per step', () => {
       nonRandom: 9301605,
       submissions: [
         ['Main', 2, 1, { winningSide: 1 }],
-        ['Backdraw', 3, 1, { matchUpStatus: 'DOUBLE_DEFAULT' }],
+        ['Backdraw', 3, 1, { matchUpStatus: DOUBLE_DEFAULT }],
         ['Main', 2, 2, { winningSide: 2 }],
-        ['Main', 3, 1, { matchUpStatus: 'WALKOVER', winningSide: 1 }],
+        ['Main', 3, 1, { matchUpStatus: WALKOVER, winningSide: 1 }],
         ['Main', 3, 1, { winningSide: 2 }],
       ],
     },

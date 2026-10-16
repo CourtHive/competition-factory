@@ -6,7 +6,7 @@ import { expect, test } from 'vitest';
 
 // constants
 import { COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { CONSOLATION, FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 const getTarget = (params) => {
@@ -272,14 +272,14 @@ test('DOUBLE_WALKOVER in feedRound does not inappropriately advance drawPosition
   const drawProfiles = [
     {
       drawSize: 8,
-      drawType: 'FEED_IN_CHAMPIONSHIP_TO_SF',
+      drawType: FEED_IN_CHAMPIONSHIP_TO_SF,
       completionGoal,
       outcomes: [
         {
-          stage: 'CONSOLATION',
+          stage: CONSOLATION,
           roundNumber: 1,
           roundPosition: 1,
-          matchUpStatus: 'DOUBLE_WALKOVER',
+          matchUpStatus: DOUBLE_WALKOVER,
           matchUpStatusCodes: ['WOWO'],
         },
       ],

@@ -8,8 +8,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
+import { COMPLETED, CANCELLED } from '@Constants/matchUpStatusConstants';
 import { PracticeRegistrationStatusEnum } from '@Types/tournamentTypes';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import { MAINTENANCE } from '@Constants/bookingTypeConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import { PRACTICE } from '@Constants/scheduleConstants';
 import * as factoryEnums from '@Types/enumExports';
 import {
@@ -288,7 +290,7 @@ describe('detectParticipantConflicts — matchUp class', () => {
   });
 
   it('matches an individual playing a doubles matchUp via the side participant', () => {
-    setup({ drawProfiles: [{ drawSize: 4, eventType: 'DOUBLES', eventName: 'Doubles' }] });
+    setup({ drawProfiles: [{ drawSize: 4, eventType: DOUBLES_EVENT, eventName: 'Doubles' }] });
     const { matchUp, tournamentRecord } = scheduleFirstMatchUp({
       scheduledDate: TEST_DATE,
       scheduledTime: '14:30',
@@ -773,7 +775,7 @@ describe('findPracticeBooking — lookup failures', () => {
   it('ignores a non-PRACTICE booking that happens to carry the requested id', () => {
     const { tournamentRecord, courtId } = setup();
     tournamentRecord.venues[0].courts[0].dateAvailability[0].bookings = [
-      { bookingId: 'booking-1', bookingType: 'MAINTENANCE', startTime: '14:00', endTime: '16:00' },
+      { bookingId: 'booking-1', bookingType: MAINTENANCE, startTime: '14:00', endTime: '16:00' },
     ];
     const result: any = findPracticeBooking({
       tournamentRecord,
@@ -827,7 +829,7 @@ describe('PracticeRegistrationStatusEnum — the single source for the status vo
     expect(cancelled.registration.status).toEqual(PracticeRegistrationStatusEnum.CANCELLED);
 
     expect(Object.values(PracticeRegistrationStatusEnum).toSorted((a, b) => a.localeCompare(b))).toEqual([
-      'CANCELLED',
+      CANCELLED,
       'CONFIRMED',
     ]);
   });

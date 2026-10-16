@@ -3,6 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { PRACTICE, MAINTENANCE } from '@Constants/bookingTypeConstants';
 import { LINKED_TOURNAMENTS } from '@Constants/extensionConstants';
 import {
   MISSING_COURTS_INFO,
@@ -36,9 +37,9 @@ it('can define a new venue', () => {
       startTime: '07:00',
       endTime: '19:00',
       bookings: [
-        { startTime: '07:00', endTime: '08:30', bookingType: 'PRACTICE' },
-        { startTime: '08:30', endTime: '09:00', bookingType: 'MAINTENANCE' },
-        { startTime: '13:30', endTime: '14:00', bookingType: 'MAINTENANCE' },
+        { startTime: '07:00', endTime: '08:30', bookingType: PRACTICE },
+        { startTime: '08:30', endTime: '09:00', bookingType: MAINTENANCE },
+        { startTime: '13:30', endTime: '14:00', bookingType: MAINTENANCE },
       ],
     },
   ];
@@ -111,7 +112,7 @@ it('findVenue handles tournamentRecord with no venues array', () => {
   expect(result.error).toEqual(VENUE_NOT_FOUND);
 });
 
-it('findVenue finds venue in linked tournament records and adds it to the original record', () => {
+it('findVenue finds venue in linked tournament records and leaves the original record unchanged', () => {
   const venueId = 'shared-venue-id';
   const venue = { venueId, venueName: 'Linked Venue', courts: [] };
 
@@ -141,8 +142,9 @@ it('findVenue finds venue in linked tournament records and adds it to the origin
   const result = findVenue({ tournamentRecords, tournamentRecord: record1, venueId });
   // The linked tournament path returns success when venue is found in a linked record
   expect(result.success).toEqual(true);
-  // The venue is added to the original tournament record as a side effect
-  expect(record1.venues.length).toEqual(1);
+  expect(result.venue?.venueId).toEqual(venueId);
+  // a query: assignMatchUpVenue copies a linked venue in, findVenue does not
+  expect(record1.venues.length).toEqual(0);
 });
 
 it('findVenue returns VENUE_NOT_FOUND when venue not in any linked tournament', () => {

@@ -13,9 +13,12 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { DOUBLES, SINGLES, TEAM_EVENT } from '@Constants/eventConstants';
+import { COMPLETED, DOUBLE_WALKOVER, WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DOUBLES, SINGLES, TEAM_EVENT, RATING } from '@Constants/eventConstants';
+import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { RANKING, SEEDING } from '@Constants/scaleConstants';
+import { CLAY } from '@Constants/surfaceConstants';
+import { UTR } from '@Constants/ratingConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
   AD_HOC,
@@ -24,6 +27,9 @@ import {
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
   VOLUNTARY_CONSOLATION,
+  MAIN,
+  PLAY_OFF,
+  QUALIFYING,
 } from '@Constants/drawDefinitionConstants';
 import {
   EXISTING_DRAFT,
@@ -281,7 +287,7 @@ describe('initializeDraft uncovered paths', () => {
     const result: any = initializeDraft({
       drawDefinition,
       tournamentRecord,
-      tierMethod: 'RANKING',
+      tierMethod: RANKING,
       force: true,
     });
     expect(result.success).toBe(true);
@@ -299,8 +305,8 @@ describe('initializeDraft uncovered paths', () => {
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });
 
     const result: any = initializeDraft({
-      event: { ...event, category: { ratingType: 'UTR' } },
-      tierMethod: 'RATING',
+      event: { ...event, category: { ratingType: UTR } },
+      tierMethod: RATING,
       tournamentRecord,
       drawDefinition,
       force: true,
@@ -321,7 +327,7 @@ describe('initializeDraft uncovered paths', () => {
     const result: any = initializeDraft({
       drawDefinition,
       tournamentRecord,
-      tierMethod: 'RATING',
+      tierMethod: RATING,
       force: true,
     });
     expect(result.success).toBe(true);
@@ -338,7 +344,7 @@ describe('initializeDraft uncovered paths', () => {
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
     const result: any = initializeDraft({
-      tierMethod: 'RANKING',
+      tierMethod: RANKING,
       ascending: false,
       tournamentRecord,
       drawDefinition,
@@ -414,7 +420,7 @@ describe('addScaleItems uncovered paths', () => {
   it('setParticipantScaleItems returns INVALID_SCALE_ITEM for invalid scaleItem', () => {
     const result = setParticipantScaleItems({
       tournamentRecord: { tournamentId: 't1', participants: [{ participantId: 'p1' }] } as any,
-      scaleItemsWithParticipantIds: [{ participantId: 'p1', scaleItems: [{ scaleType: 'RANKING' } as any] }],
+      scaleItemsWithParticipantIds: [{ participantId: 'p1', scaleItems: [{ scaleType: RANKING } as any] }],
     });
     expect(result.error).toEqual(INVALID_SCALE_ITEM);
   });
@@ -474,7 +480,7 @@ describe('addScaleItems uncovered paths', () => {
       drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const teamParticipant = tournamentRecord.participants.find((p) => p.participantType === 'TEAM');
+    const teamParticipant = tournamentRecord.participants.find((p) => p.participantType === TEAM_PARTICIPANT);
 
     if (teamParticipant) {
       const result = setParticipantScaleItems({
@@ -686,7 +692,10 @@ describe('generateEventWithDraw additional options', () => {
     tournamentEngine.setState(result.tournamentRecord);
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     // Multiple rounds should have been generated and completed
-    expect(matchUps.length).toBeGreaterThan(0);
+    expect(new Set(matchUps.map((matchUp) => matchUp.roundNumber)).size).toEqual(3);
+    const paired = matchUps.filter((matchUp) => matchUp.sides.every((side) => side.participantId));
+    expect(paired.length).toBeGreaterThan(0);
+    expect(paired.every((matchUp) => matchUp.winningSide)).toEqual(true);
   });
 
   it('generates ROUND_ROBIN draw', () => {
@@ -758,7 +767,7 @@ describe('generateEventWithDraw additional options', () => {
       drawProfiles: [
         {
           drawSize: 4,
-          eventAttributes: { surfaceCategory: 'CLAY' },
+          eventAttributes: { surfaceCategory: CLAY },
         },
       ],
     });
@@ -774,8 +783,14 @@ describe('generateEventWithDraw additional options', () => {
         },
       ],
       matchUpStatusProfile: { [WALKOVER]: 50 },
+      setState: true,
     });
     expect(result.tournamentRecord).toBeDefined();
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    expect(matchUps.length).toEqual(3);
+    expect(matchUps.every((matchUp) => matchUp.winningSide)).toEqual(true);
+    const generated = new Set([COMPLETED, WALKOVER]);
+    expect(matchUps.every(({ matchUpStatus }) => generated.has(matchUpStatus))).toEqual(true);
   });
 
   it('generates draw with randomWinningSide', () => {
@@ -787,8 +802,12 @@ describe('generateEventWithDraw additional options', () => {
         },
       ],
       randomWinningSide: true,
+      setState: true,
     });
     expect(result.tournamentRecord).toBeDefined();
+    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    expect(matchUps.length).toEqual(3);
+    expect(matchUps.every((matchUp) => matchUp.winningSide)).toEqual(true);
   });
 });
 
@@ -859,7 +878,7 @@ describe('FMLC deep consolation paths', () => {
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     // allTournamentMatchUps returns matchUps with inContext which includes stage
     const mainR1 = matchUps
-      .filter((m) => m.roundNumber === 1 && m.stage === 'MAIN')
+      .filter((m) => m.roundNumber === 1 && m.stage === MAIN)
       .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
     // Complete first two R1 matchUps
@@ -882,7 +901,7 @@ describe('FMLC deep consolation paths', () => {
     if (mainR1.length > 0) {
       const result = tournamentEngine.setMatchUpStatus({
         matchUpId: mainR1[0].matchUpId,
-        outcome: { matchUpStatus: 'TO_BE_PLAYED' },
+        outcome: { matchUpStatus: TO_BE_PLAYED },
         drawId,
       });
       expect(result.success).toBe(true);
@@ -919,7 +938,7 @@ describe('doubleExitAdvancement deeper paths', () => {
     const updated = tournamentEngine.allDrawMatchUps({ drawId }).matchUps;
     const r2 = updated.filter((m) => m.roundNumber === 2);
     // At least one second round matchUp should have a status other than TO_BE_PLAYED
-    const anyAdvanced = r2.some((m) => m.matchUpStatus !== 'TO_BE_PLAYED');
+    const anyAdvanced = r2.some((m) => m.matchUpStatus !== TO_BE_PLAYED);
     expect(anyAdvanced).toBe(true);
   });
 
@@ -933,7 +952,7 @@ describe('doubleExitAdvancement deeper paths', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
-    const mainR1 = matchUps.filter((m) => m.roundNumber === 1 && m.stage === 'MAIN');
+    const mainR1 = matchUps.filter((m) => m.roundNumber === 1 && m.stage === MAIN);
 
     if (mainR1.length >= 2) {
       const r1 = tournamentEngine.setMatchUpStatus({
@@ -982,7 +1001,11 @@ describe('getParticipantIdFinishingPositions round robin', () => {
     expect(result.error).toBeUndefined();
     // Should have finishing positions for participants
     const keys = Object.keys(result);
-    expect(keys.length).toBeGreaterThan(0);
+    expect(keys.length).toBe(4);
+    for (const participantId of keys) {
+      expect(result[participantId].relevantMatchUps.length).toBe(3);
+      expect(result[participantId].finishingPositionRange).toBeDefined();
+    }
   });
 });
 
@@ -1066,8 +1089,11 @@ describe('generateAndPopulatePlayoffStructures paths', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const playoffStructure = drawDefinition.structures?.find((s) => s.stage === 'PLAY_OFF');
+    const playoffStructure = drawDefinition.structures?.find((s) => s.stage === PLAY_OFF);
     expect(playoffStructure).toBeDefined();
+    // the completed groups populate the playoff, which is then completed too
+    expect(playoffStructure.positionAssignments.filter(({ participantId }) => participantId).length).toBe(2);
+    expect(playoffStructure.matchUps.every((matchUp) => matchUp.winningSide)).toBe(true);
   });
 });
 
@@ -1097,7 +1123,7 @@ describe('prepareStage additional paths', () => {
     const { drawDefinition } = tournamentEngine
       .setState(result.tournamentRecord)
       .getEvent({ drawId: result.drawIds[0] });
-    const qualifyingStructures = drawDefinition?.structures?.filter((s) => s.stage === 'QUALIFYING');
+    const qualifyingStructures = drawDefinition?.structures?.filter((s) => s.stage === QUALIFYING);
     expect(qualifyingStructures?.length).toBeGreaterThan(0);
   });
 

@@ -17,6 +17,9 @@
 import { validateSetScore, validateMatchUpScore } from '@Validators/validateMatchUpScore';
 import { describe, it, expect } from 'vitest';
 
+// constants
+import { RETIRED, WALKOVER, DEFAULTED } from '@Constants/matchUpStatusConstants';
+
 describe('validateSetScore', () => {
   const standardFormat = 'SET3-S:6/TB7';
 
@@ -307,19 +310,19 @@ describe('validateMatchUpScore', () => {
         { side1Score: 6, side2Score: 4, winningSide: 1 },
         { side1Score: 3, side2Score: 2 }, // Partial set, no winningSide
       ];
-      const result = validateMatchUpScore(sets, bestOf3Format, 'RETIRED');
+      const result = validateMatchUpScore(sets, bestOf3Format, RETIRED);
       expect(result.isValid).toBe(true);
     });
 
     it('should accept walkover with no sets', () => {
       const sets: any[] = [];
-      const result = validateMatchUpScore(sets, bestOf3Format, 'WALKOVER');
+      const result = validateMatchUpScore(sets, bestOf3Format, WALKOVER);
       expect(result.isValid).toBe(true);
     });
 
     it('should accept default with partial score', () => {
       const sets = [{ side1Score: 6, side2Score: 0, winningSide: 1 }];
-      const result = validateMatchUpScore(sets, bestOf3Format, 'DEFAULTED');
+      const result = validateMatchUpScore(sets, bestOf3Format, DEFAULTED);
       expect(result.isValid).toBe(true);
     });
   });
@@ -336,7 +339,7 @@ describe('validateMatchUpScore', () => {
 
     it('should handle empty sets array for irregular ending', () => {
       const sets: any[] = [];
-      const result = validateMatchUpScore(sets, bestOf3Format, 'RETIRED');
+      const result = validateMatchUpScore(sets, bestOf3Format, RETIRED);
       expect(result.isValid).toBe(true);
     });
 
@@ -351,7 +354,7 @@ describe('validateMatchUpScore', () => {
       const sets = [
         { side1Score: 6, side2Score: 4 }, // No winningSide
       ];
-      const result = validateMatchUpScore(sets, bestOf3Format, 'RETIRED');
+      const result = validateMatchUpScore(sets, bestOf3Format, RETIRED);
       expect(result.isValid).toBe(true);
     });
   });

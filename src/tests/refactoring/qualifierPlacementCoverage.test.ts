@@ -6,10 +6,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { COMPLETED, TO_BE_PLAYED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import { MAIN, QUALIFYING, LOSER, DRAW } from '@Constants/drawDefinitionConstants';
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 // ---------------------------------------------------------------------------
 // Helper: create a tournament with qualifying → main draw, complete qualifying
@@ -87,7 +87,7 @@ describe('placeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'LOSER', structureId: 'x', roundNumber: 1 },
+            target: { feedProfile: LOSER, structureId: 'x', roundNumber: 1 },
           },
         },
       },
@@ -108,7 +108,7 @@ describe('placeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: 'x', roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: 'x', roundNumber: 1 },
           },
         },
       },
@@ -127,7 +127,7 @@ describe('placeQualifier direct guard branches', () => {
           structureId: targetStructureId,
           roundNumber: 1,
           matchUpId: 'mu1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
           sides: [
             { sideNumber: 1, qualifier: true, participantId: undefined, drawPosition: 1 },
             { sideNumber: 2, participantId: 'other', drawPosition: 2 },
@@ -141,7 +141,7 @@ describe('placeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -164,7 +164,7 @@ describe('removeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'LOSER', structureId: 'x', roundNumber: 1 },
+            target: { feedProfile: LOSER, structureId: 'x', roundNumber: 1 },
           },
         },
       },
@@ -185,7 +185,7 @@ describe('removeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: 'x', roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: 'x', roundNumber: 1 },
           },
         },
       },
@@ -214,7 +214,7 @@ describe('removeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -494,7 +494,7 @@ describe('placeQualifier skips placement when main matchUp not TO_BE_PLAYED', ()
           structureId: targetStructureId,
           roundNumber: 1,
           matchUpId: 'mu1',
-          matchUpStatus: 'IN_PROGRESS',
+          matchUpStatus: IN_PROGRESS,
           sides: [
             { sideNumber: 1, qualifier: true, participantId: undefined },
             { sideNumber: 2, participantId: 'other' },
@@ -508,7 +508,7 @@ describe('placeQualifier skips placement when main matchUp not TO_BE_PLAYED', ()
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -534,7 +534,7 @@ describe('placeQualifier assigns participant to drawPosition', () => {
           structureId: targetStructureId,
           roundNumber: 1,
           matchUpId: 'mu1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
           sides: [
             { sideNumber: 1, qualifier: true, participantId: undefined, drawPosition: 1 },
             { sideNumber: 2, participantId: 'seeded1', drawPosition: 2 },
@@ -563,7 +563,7 @@ describe('placeQualifier assigns participant to drawPosition', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -587,7 +587,7 @@ describe('placeQualifier assigns participant to drawPosition', () => {
           structureId: targetStructureId,
           roundNumber: 1,
           matchUpId: 'mu1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
           sides: [
             { sideNumber: 1, qualifier: true, participantId: undefined, drawPosition: 1 },
             { sideNumber: 2, participantId: 'seeded1', drawPosition: 2 },
@@ -626,7 +626,7 @@ describe('placeQualifier assigns participant to drawPosition', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -657,7 +657,7 @@ describe('removeQualifier with subStructures', () => {
           structureId: targetStructureId,
           roundNumber: 1,
           matchUpId: 'mu1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
           sides: [
             { sideNumber: 1, participantId: 'qualWinner', drawPosition: 1 },
             { sideNumber: 2, participantId: 'seeded1', drawPosition: 2 },
@@ -692,7 +692,7 @@ describe('removeQualifier with subStructures', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -717,7 +717,7 @@ describe('removeQualifier with subStructures', () => {
           structureId: targetStructureId,
           roundNumber: 1,
           matchUpId: 'mu1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
           sides: [{ participantId: 'qualWinner' }],
         },
       ],
@@ -739,7 +739,7 @@ describe('removeQualifier with subStructures', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -766,7 +766,7 @@ describe('placeQualifier when no positionAssignment matches targetDrawPosition',
           structureId: targetStructureId,
           roundNumber: 1,
           matchUpId: 'mu1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
           sides: [
             { sideNumber: 1, qualifier: true, participantId: undefined, drawPosition: 99 },
             { sideNumber: 2, participantId: 'seeded1', drawPosition: 2 },
@@ -792,7 +792,7 @@ describe('placeQualifier when no positionAssignment matches targetDrawPosition',
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -817,7 +817,7 @@ describe('placeQualifier when drawPosition already has participantId', () => {
           structureId: targetStructureId,
           roundNumber: 1,
           matchUpId: 'mu1',
-          matchUpStatus: 'TO_BE_PLAYED',
+          matchUpStatus: TO_BE_PLAYED,
           sides: [
             { sideNumber: 1, qualifier: true, participantId: undefined, drawPosition: 1 },
             { sideNumber: 2, participantId: 'seeded1', drawPosition: 2 },
@@ -843,7 +843,7 @@ describe('placeQualifier when drawPosition already has participantId', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },

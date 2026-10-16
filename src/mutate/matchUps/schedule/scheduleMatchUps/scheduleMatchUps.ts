@@ -1,13 +1,13 @@
-import { checkParticipantProfileInitialization } from './checkParticipantProfileInitialization';
 import { extractDate, extractTime, isValidDateString, sameDay, zeroPad } from '@Tools/dateTime';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
-import { modifyParticipantMatchUpsCount } from './modifyParticipantMatchUpsCount';
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { getParticipantReachability } from './getParticipantReachability';
 import { checkDependenciesScheduled } from './checkDependenciesScheduled';
+import { modifyParticipantDayMatchUps } from './participantDayLoad';
 import { updateTimeAfterRecovery } from './updateTimeAfterRecovery';
 import { calculateScheduleTimes } from './calculateScheduleTimes';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
@@ -22,7 +22,6 @@ import { BYE, ABANDONED, DEFAULTED, RETIRED, WALKOVER, COMPLETED } from '@Consta
 import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { TOTAL } from '@Constants/scheduleConstants';
 import {
   AVERAGE_MATCHUP_MINUTES,
   INVALID,
@@ -113,6 +112,9 @@ export function scheduleMatchUps(params) {
       tournamentRecords,
     }).matchUpDependencies;
 
+  // who can play each matchUp, across dates: the basis of recovery bookings and daily limits
+  const participantReachability = getParticipantReachability({ matchUpDependencies, matchUps: competitionMatchUps });
+
   competitionMatchUps.forEach((matchUp) => {
     if (matchUp.schedule?.scheduledDate && sameDay(scheduleDate, extractDate(matchUp.schedule.scheduledDate))) {
       processNextMatchUps({
@@ -153,8 +155,8 @@ export function scheduleMatchUps(params) {
     dateScheduledMatchUpIds?.includes(matchUpId),
   );
   dateScheduledMatchUps.forEach((matchUp) => {
-    modifyParticipantMatchUpsCount({
-      matchUpPotentialParticipantIds,
+    modifyParticipantDayMatchUps({
+      reachability: participantReachability,
       individualParticipantProfiles,
       matchUp,
       value: 1,
@@ -169,7 +171,7 @@ export function scheduleMatchUps(params) {
         individualParticipantProfiles,
         matchUpNotBeforeTimes,
         averageMatchUpMinutes,
-        matchUpDependencies,
+        reachability: participantReachability,
         scheduleTime,
         matchUp,
       });
@@ -188,11 +190,11 @@ export function scheduleMatchUps(params) {
   // keep track of matchUps counts per participant and don't add matchUps for participants beyond those limits
   const { matchUpMap, overLimitMatchUpIds, participantIdsAtLimit } = matchUpsToSchedule.reduce(
     (aggregator, matchUp) => {
-      const { drawId, tournamentId, matchUpType } = matchUp;
+      const { drawId, tournamentId } = matchUp;
 
-      const { participantIdsAtLimit, relevantParticipantIds } = checkDailyLimits({
+      const { participantIdsAtLimit } = checkDailyLimits({
+        reachability: participantReachability,
         individualParticipantProfiles,
-        matchUpPotentialParticipantIds,
         matchUpDailyLimits,
         matchUp,
       });
@@ -203,16 +205,11 @@ export function scheduleMatchUps(params) {
         return aggregator;
       }
 
-      relevantParticipantIds.forEach((participantId) => {
-        checkParticipantProfileInitialization({
-          individualParticipantProfiles,
-          participantId,
-        });
-        const counters = individualParticipantProfiles[participantId].counters;
-        if (counters[matchUpType]) counters[matchUpType] += 1;
-        else counters[matchUpType] = 1;
-        if (counters[TOTAL]) counters[TOTAL] += 1;
-        else counters[TOTAL] = 1;
+      modifyParticipantDayMatchUps({
+        reachability: participantReachability,
+        individualParticipantProfiles,
+        value: 1,
+        matchUp,
       });
 
       if (!aggregator.matchUpMap[tournamentId]) aggregator.matchUpMap[tournamentId] = {};
@@ -270,7 +267,7 @@ export function scheduleMatchUps(params) {
       const { enoughTime } = checkRecoveryTime({
         individualParticipantProfiles,
         matchUpNotBeforeTimes,
-        matchUpDependencies,
+        reachability: participantReachability,
         scheduleTime,
         matchUp,
       });
@@ -302,7 +299,7 @@ export function scheduleMatchUps(params) {
         individualParticipantProfiles,
         matchUpNotBeforeTimes,
         averageMatchUpMinutes,
-        matchUpDependencies,
+        reachability: participantReachability,
         scheduleTime,
         matchUp,
       });
@@ -320,9 +317,9 @@ export function scheduleMatchUps(params) {
 
   // cleanup limits counters for matchUps which could not be scheduled due to recovery times
   matchUpsToSchedule.forEach((matchUp) => {
-    modifyParticipantMatchUpsCount({
+    modifyParticipantDayMatchUps({
       individualParticipantProfiles,
-      matchUpPotentialParticipantIds,
+      reachability: participantReachability,
       value: -1,
       matchUp,
     });

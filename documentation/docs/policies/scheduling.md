@@ -361,6 +361,20 @@ const ageGroupSchedulingPolicy = {
 
 ## Daily Limits
 
+### How a participant's matchUps are counted
+
+A participant's count for a day is the most matchUps they can actually play that day:
+
+- every matchUp they are already placed in counts;
+- of the matchUps they could only reach by winning or losing earlier matchUps, they can play one **chain** (a run of
+  matchUps each of which can feed the next), so the longest such chain counts. A matchUp's winner path and loser path
+  are alternatives, not a sum: a first-round player in a feed-in draw plays the second round **or** the consolation;
+- chains reach across dates: a player whose first round was yesterday still counts toward today's later rounds;
+- separate draws add together.
+
+A matchUp is not scheduled when adding it would take any participant who can play it over the limit for its
+`matchUpType` or over `total`.
+
 ### Tournament-Wide Daily Limits
 
 ```js
@@ -411,16 +425,26 @@ const participantLimitsPolicy = {
 ### Retrieving Daily Limits
 
 ```js
-const { matchUpDailyLimits } = tournamentEngine.getMatchUpDailyLimits();
+const { matchUpDailyLimits, dailyLimitOverrides } = tournamentEngine.getMatchUpDailyLimits();
 
 console.log(matchUpDailyLimits);
 // { SINGLES: 2, DOUBLES: 2, total: 3 }   — when a scheduling policy is attached
 // undefined                              — when none is
+
+console.log(dailyLimitOverrides);
+// {
+//   tournaments: { [tournamentId]: { SINGLES: 2, DOUBLES: 2, total: 3 } }, — each tournament's own limits
+//   participants: { 'injured-player-id': { SINGLES: 1, total: 1 } },      — the policy's matchUpDailyLimits
+// }
 ```
 
-The method returns the **tournament-wide** limits and takes no `participantId`; per-participant
-overrides live in the policy's `matchUpDailyLimits` array and are applied by the scheduler, not
-returned here. In a multi-tournament context it accepts an optional `tournamentId`.
+`matchUpDailyLimits` is the **tournament-wide** limits (with several tournaments loaded, the last one's); the method
+takes no `participantId`. In a multi-tournament context it accepts an optional `tournamentId`.
+
+`scheduleProfileRounds` applies to each participant the limits of the matchUp's own tournament, with that
+participant's override from the policy's `matchUpDailyLimits` array on top: an override replaces only the keys it
+names, so `{ participantId, SINGLES: 1 }` keeps the tournament's `DOUBLES` and `total`. `scheduleMatchUps`,
+`proAutoSchedule` and `scheduleProfileGrid` apply only the `matchUpDailyLimits` they are given.
 
 :::caution `undefined` means "no limit configured" — do not substitute your own
 

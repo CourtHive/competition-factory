@@ -15,6 +15,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
+
 const scoringPolicy = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
 // ----------------------------------------------------------------
@@ -170,7 +173,7 @@ describe('updateTieFormat: uncovered branches', () => {
 
     // Get the actual team matchUp with tieMatchUps
     const { matchUps } = tournamentEngine.allTournamentMatchUps({
-      matchUpFilters: { matchUpTypes: ['TEAM'] },
+      matchUpFilters: { matchUpTypes: [TEAM_MATCHUP] },
     });
     const teamMatchUp = matchUps[0];
     expect(teamMatchUp.tieMatchUps).toBeDefined();
@@ -436,7 +439,7 @@ describe('applyLineUps guard clauses via team event', () => {
 
     // Get team matchUps
     const { matchUps } = tournamentEngine.allTournamentMatchUps({
-      matchUpFilters: { matchUpTypes: ['TEAM'] },
+      matchUpFilters: { matchUpTypes: [TEAM_MATCHUP] },
     });
     expect(matchUps.length).toBeGreaterThan(0);
 

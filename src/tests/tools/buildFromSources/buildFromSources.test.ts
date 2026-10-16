@@ -18,6 +18,12 @@ import {
   buildFromSources,
 } from '@Tools/buildFromSources/buildFromSources';
 
+// constants
+import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+
 // `classifySource`'s string union — extracted so the literal isn't repeated
 // across assertions (SonarJS S1192).
 const EVENT_DATA = 'event-data';
@@ -91,7 +97,7 @@ function cfsShapes(record: AnyObj): CfsShapes {
 
 function generateRoundRobin(opts: AnyObj = {}) {
   return mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, drawType: 'ROUND_ROBIN' }],
+    drawProfiles: [{ drawSize: 8, drawType: ROUND_ROBIN }],
     venueProfiles: [{ courtsCount: 2 }],
     startDate: '2026-06-11',
     endDate: FIXTURE_DATE,
@@ -102,8 +108,8 @@ function generateRoundRobin(opts: AnyObj = {}) {
 function generateMultiEvent() {
   return mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawSize: 4, drawType: 'ROUND_ROBIN', eventName: 'Mens', eventType: 'SINGLES' },
-      { drawSize: 4, drawType: 'SINGLE_ELIMINATION', eventName: 'Womens', eventType: 'SINGLES' },
+      { drawSize: 4, drawType: ROUND_ROBIN, eventName: 'Mens', eventType: SINGLES_EVENT },
+      { drawSize: 4, drawType: SINGLE_ELIMINATION, eventName: 'Womens', eventType: SINGLES_EVENT },
     ],
     venueProfiles: [{ courtsCount: 2, venueName: 'Center' }],
     startDate: '2026-06-11',
@@ -113,7 +119,7 @@ function generateMultiEvent() {
 
 function generateDoubles(opts: AnyObj = {}) {
   return mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, drawType: 'ROUND_ROBIN', eventType: 'DOUBLES' }],
+    drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN, eventType: DOUBLES_EVENT }],
     venueProfiles: [{ courtsCount: 1 }],
     startDate: FIXTURE_DATE,
     endDate: '2026-06-13',
@@ -519,10 +525,10 @@ describe('round-trip from mocksEngine — doubles', () => {
       participantDocs: [extractParticipants(participantsResponse)],
     });
 
-    expect(rebuilt.events?.[0]?.eventType).toBe('DOUBLES');
+    expect(rebuilt.events?.[0]?.eventType).toBe(DOUBLES_EVENT);
     const matchUps = listRebuiltMatchUps(rebuilt);
     expect(matchUps.length).toBeGreaterThan(0);
-    for (const m of matchUps) expect(m.matchUpType).toBe('DOUBLES');
+    for (const m of matchUps) expect(m.matchUpType).toBe(DOUBLES_MATCHUP);
   });
 
   it('positionAssignments and entries reference PAIR ids — never raw INDIVIDUAL ids', () => {
@@ -837,7 +843,7 @@ describe('cleanup invariants', () => {
     });
 
     for (const p of rebuilt.participants ?? []) {
-      if (p.participantType === 'INDIVIDUAL' && Array.isArray(p.individualParticipantIds)) {
+      if (p.participantType === INDIVIDUAL && Array.isArray(p.individualParticipantIds)) {
         expect(p.individualParticipantIds.length).toBeGreaterThan(0);
       }
     }

@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { MATCHUP_NOT_FOUND, MISSING_MATCHUP, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { PAIR, INDIVIDUAL } from '@Constants/participantConstants';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
 
 /**
@@ -63,7 +65,7 @@ describe('getMatchUpCheckInState', () => {
   });
 
   it('team: every member of each team, listed once', () => {
-    const { firstRound } = setup({ drawSize: 4, eventType: TEAM, tieFormatName: 'DOMINANT_DUO' });
+    const { firstRound } = setup({ drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO });
     const result: any = state(firstRound);
     const members = firstRound.sides.flatMap((side: any) => side.participant.individualParticipants);
     expect(result.total).toEqual(members.length);
@@ -102,11 +104,11 @@ describe('getMatchUpCheckInState', () => {
       matchUpId: 'm1',
       hasContext: true,
       sides: [
-        { sideNumber: 1, participantId: 'pair', participant: { participantId: 'pair', participantType: 'PAIR' } },
+        { sideNumber: 1, participantId: 'pair', participant: { participantId: 'pair', participantType: PAIR } },
         {
           sideNumber: 2,
           participantId: 'p2',
-          participant: { participantId: 'p2', participantType: 'INDIVIDUAL', participantName: 'Two' },
+          participant: { participantId: 'p2', participantType: INDIVIDUAL, participantName: 'Two' },
         },
       ],
     };

@@ -7,8 +7,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
-import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLE_ELIMINATION, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { DIRECT_ACCEPTANCE, WILDCARD, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
@@ -439,7 +439,7 @@ describe('addDrawDefinition coverage', () => {
   it('modifyEventEntries does not modify entries with non-selected statuses', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'non-selected-draw' });
     // WITHDRAWN is not in STRUCTURE_SELECTED_STATUSES
-    drawDefinition.entries = [{ participantId: 'p1', entryStatus: 'WITHDRAWN' }] as any;
+    drawDefinition.entries = [{ participantId: 'p1', entryStatus: WITHDRAWN }] as any;
     const event: any = {
       eventId: 'ev1',
       drawDefinitions: [],
@@ -633,11 +633,11 @@ describe('addDrawDefinition coverage', () => {
 
   it('checkEntryStatus with entryStage matching', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'stage-check-draw' });
-    drawDefinition.entries = [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE, entryStage: 'MAIN' }] as any;
+    drawDefinition.entries = [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE, entryStage: MAIN }] as any;
     const event: any = {
       eventId: 'ev1',
       drawDefinitions: [],
-      entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE, entryStage: 'MAIN' }],
+      entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE, entryStage: MAIN }],
     };
 
     const result = addDrawDefinition({
@@ -650,11 +650,11 @@ describe('addDrawDefinition coverage', () => {
 
   it('checkEntryStatus returns error when entryStage does not match', () => {
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId: 'stage-mismatch-draw' });
-    drawDefinition.entries = [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE, entryStage: 'QUALIFYING' }] as any;
+    drawDefinition.entries = [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE, entryStage: QUALIFYING }] as any;
     const event: any = {
       eventId: 'ev1',
       drawDefinitions: [],
-      entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE, entryStage: 'MAIN' }],
+      entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE, entryStage: MAIN }],
     };
 
     const result = addDrawDefinition({

@@ -16,7 +16,7 @@ import { expect, it } from 'vitest';
 import { AD_HOC, MAIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { SHARED_INDIVIDUAL_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
-import { PAIR } from '@Constants/participantConstants';
+import { PAIR, INDIVIDUAL } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
 /** 10 pairs, 8 of them in the draw — so two pairs' worth of individuals stay unentered. */
@@ -51,7 +51,7 @@ function freeIndividualIds(eventId: string, drawId: string): string[] {
     }),
   );
   return tournamentRecord.participants
-    .filter((p: any) => p.participantType === 'INDIVIDUAL' && !taken.has(p.participantId))
+    .filter((p: any) => p.participantType === INDIVIDUAL && !taken.has(p.participantId))
     .map((p: any) => p.participantId);
 }
 

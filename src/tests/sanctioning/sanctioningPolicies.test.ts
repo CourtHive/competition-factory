@@ -9,6 +9,13 @@ import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_IT
 // types
 import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
 
+// constants
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { FEMALE, MALE } from '@Constants/genderConstants';
+import { OUTDOOR } from '@Constants/venueConstants';
+import { HARD } from '@Constants/surfaceConstants';
+
 const testApplicant: Applicant = {
   organisationId: 'org-001',
   organisationName: 'Test Club',
@@ -74,8 +81,8 @@ describe('Policy Fixtures — Engine Integration', () => {
       proposedStartDate: '2028-06-01',
       proposedEndDate: '2028-06-07',
       hostCountryCode: 'USA',
-      surfaceCategory: 'HARD',
-      indoorOutdoor: 'OUTDOOR',
+      surfaceCategory: HARD,
+      indoorOutdoor: OUTDOOR,
       totalPrizeMoney: [{ amount: 50000, currencyCode: 'USD', unit: 'MAJOR' }],
       venues: [{ venueName: 'Cary Tennis Park', numberOfCourts: 12 }],
       tournamentDirector: { personName: 'Alice', role: 'Tournament Director' },
@@ -92,17 +99,17 @@ describe('Policy Fixtures — Engine Integration', () => {
       events: [
         {
           eventName: "Women's Singles",
-          eventType: 'SINGLES',
-          gender: 'FEMALE',
+          eventType: SINGLES_EVENT,
+          gender: FEMALE,
           drawSize: 32,
-          drawType: 'SINGLE_ELIMINATION',
+          drawType: SINGLE_ELIMINATION,
           matchUpFormat: 'SET3-S:6/TB7',
           qualifyingDrawSize: 16,
         },
         {
           eventName: "Women's Doubles",
-          eventType: 'DOUBLES',
-          gender: 'FEMALE',
+          eventType: DOUBLES_EVENT,
+          gender: FEMALE,
           drawSize: 32,
         },
       ],
@@ -131,7 +138,7 @@ describe('Policy Fixtures — Engine Integration', () => {
         tournamentName: 'Bad W50',
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
-        events: [{ eventName: "Men's Singles", eventType: 'SINGLES', gender: 'MALE', drawSize: 32 }],
+        events: [{ eventName: "Men's Singles", eventType: SINGLES_EVENT, gender: MALE, drawSize: 32 }],
       },
     });
 
@@ -152,7 +159,7 @@ describe('Policy Fixtures — Engine Integration', () => {
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
         venues: [{ venueName: 'Local Courts', numberOfCourts: 6 }],
-        events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32 }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32 }],
       },
     });
 
@@ -179,7 +186,7 @@ describe('Policy Fixtures — Engine Integration', () => {
         tournamentName: 'Snapshot Test',
         proposedStartDate: '2028-06-01',
         proposedEndDate: '2028-06-07',
-        events: [{ eventName: 'Singles', eventType: 'SINGLES' }],
+        events: [{ eventName: 'Singles', eventType: SINGLES_EVENT }],
       },
     });
 

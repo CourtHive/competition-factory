@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { policyComposer } from './policyComposer';
 import { policyRegistry } from './policyRegistry';
 
+// constants
+import { WATERFALL, SEPARATE, CLUSTER } from '@Constants/drawDefinitionConstants';
+
 const POLICY_TYPE_SEEDING = 'seeding';
 const POLICY_TYPE_SCORING = 'scoring';
 
@@ -15,10 +18,10 @@ const stockUstaSeeding = {
   drawSizeProgression: true,
   seedingProfile: {
     drawTypes: {
-      ROUND_ROBIN_WITH_PLAYOFF: { positioning: 'WATERFALL' },
-      ROUND_ROBIN: { positioning: 'WATERFALL' },
+      ROUND_ROBIN_WITH_PLAYOFF: { positioning: WATERFALL },
+      ROUND_ROBIN: { positioning: WATERFALL },
     },
-    positioning: 'SEPARATE',
+    positioning: SEPARATE,
   },
   policyName: 'USTA SEEDING',
   seedsCountThresholds: [
@@ -63,14 +66,14 @@ describe('policyComposer.extend', () => {
     const result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend({
         policyName: 'A',
-        seedingProfile: { positioning: 'SEPARATE', drawTypes: { RR: { positioning: 'WATERFALL' } } },
+        seedingProfile: { positioning: SEPARATE, drawTypes: { RR: { positioning: WATERFALL } } },
       })
-      .extend({ policyName: 'B', seedingProfile: { drawTypes: { SE: { positioning: 'CLUSTER' } } } })
+      .extend({ policyName: 'B', seedingProfile: { drawTypes: { SE: { positioning: CLUSTER } } } })
       .build();
     expect(result[POLICY_TYPE_SEEDING].policyName).toBe('B');
-    expect(result[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe('SEPARATE'); // unchanged from first
-    expect(result[POLICY_TYPE_SEEDING].seedingProfile.drawTypes.RR).toEqual({ positioning: 'WATERFALL' });
-    expect(result[POLICY_TYPE_SEEDING].seedingProfile.drawTypes.SE).toEqual({ positioning: 'CLUSTER' });
+    expect(result[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe(SEPARATE); // unchanged from first
+    expect(result[POLICY_TYPE_SEEDING].seedingProfile.drawTypes.RR).toEqual({ positioning: WATERFALL });
+    expect(result[POLICY_TYPE_SEEDING].seedingProfile.drawTypes.SE).toEqual({ positioning: CLUSTER });
   });
 
   it('replaces arrays (does not concat)', () => {
@@ -94,9 +97,9 @@ describe('policyComposer.set', () => {
   it('sets a deep dot-path without losing siblings', () => {
     const result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
-      .set('seedingProfile.positioning', 'CLUSTER')
+      .set('seedingProfile.positioning', CLUSTER)
       .build();
-    expect(result[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe('CLUSTER');
+    expect(result[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe(CLUSTER);
     expect(result[POLICY_TYPE_SEEDING].seedingProfile.drawTypes).toEqual(stockUstaSeeding.seedingProfile.drawTypes);
   });
 
@@ -124,11 +127,11 @@ describe('policyComposer.merge', () => {
   it('deep-merges a fragment at a path', () => {
     const result: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
-      .merge('seedingProfile.drawTypes', { SINGLE_ELIMINATION: { positioning: 'CLUSTER' } })
+      .merge('seedingProfile.drawTypes', { SINGLE_ELIMINATION: { positioning: CLUSTER } })
       .build();
     const drawTypes = result[POLICY_TYPE_SEEDING].seedingProfile.drawTypes;
-    expect(drawTypes.ROUND_ROBIN).toEqual({ positioning: 'WATERFALL' });
-    expect(drawTypes.SINGLE_ELIMINATION).toEqual({ positioning: 'CLUSTER' });
+    expect(drawTypes.ROUND_ROBIN).toEqual({ positioning: WATERFALL });
+    expect(drawTypes.SINGLE_ELIMINATION).toEqual({ positioning: CLUSTER });
   });
 
   it('treats missing target as a plain set', () => {
@@ -169,7 +172,7 @@ describe('policyComposer.unset', () => {
       .extend(stockUstaSeeding)
       .unset('seedingProfile.nonexistent.deep')
       .build();
-    expect(result[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe('SEPARATE');
+    expect(result[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe(SEPARATE);
   });
 
   // Walks through an array index to reach a sub-key, exercises the array
@@ -193,7 +196,7 @@ describe('policyComposer.get', () => {
   it('reads from the current accumulator', () => {
     const composer = policyComposer(POLICY_TYPE_SEEDING).extend(stockUstaSeeding);
     expect(composer.get('policyName')).toBe('USTA SEEDING');
-    expect(composer.get('seedingProfile.positioning')).toBe('SEPARATE');
+    expect(composer.get('seedingProfile.positioning')).toBe(SEPARATE);
     expect(composer.get('seedsCountThresholds.1.drawSize')).toBe(16);
   });
 
@@ -261,7 +264,7 @@ describe('policyComposer.register (registry integration)', () => {
 
     const looked: any = policyRegistry.lookup({ policyType: POLICY_TYPE_SEEDING, name: 'CTS_DEFAULT' });
     expect(looked.policyName).toBe('CTS SEEDING');
-    expect(looked.seedingProfile.positioning).toBe('SEPARATE');
+    expect(looked.seedingProfile.positioning).toBe(SEPARATE);
   });
 
   it('throws when called on an untyped composer', () => {
@@ -277,17 +280,17 @@ describe('policyComposer — federation override worked example', () => {
     const ctsSeeding: any = policyComposer(POLICY_TYPE_SEEDING)
       .extend(stockUstaSeeding)
       .set('policyName', 'CTS SEEDING')
-      .set('seedingProfile.positioning', 'CLUSTER')
+      .set('seedingProfile.positioning', CLUSTER)
       .build();
 
     // What changed
     expect(ctsSeeding[POLICY_TYPE_SEEDING].policyName).toBe('CTS SEEDING');
-    expect(ctsSeeding[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe('CLUSTER');
+    expect(ctsSeeding[POLICY_TYPE_SEEDING].seedingProfile.positioning).toBe(CLUSTER);
 
     // What did NOT change — drawTypes overrides are preserved
-    expect(ctsSeeding[POLICY_TYPE_SEEDING].seedingProfile.drawTypes.ROUND_ROBIN).toEqual({ positioning: 'WATERFALL' });
+    expect(ctsSeeding[POLICY_TYPE_SEEDING].seedingProfile.drawTypes.ROUND_ROBIN).toEqual({ positioning: WATERFALL });
     expect(ctsSeeding[POLICY_TYPE_SEEDING].seedingProfile.drawTypes.ROUND_ROBIN_WITH_PLAYOFF).toEqual({
-      positioning: 'WATERFALL',
+      positioning: WATERFALL,
     });
     expect(ctsSeeding[POLICY_TYPE_SEEDING].seedsCountThresholds).toEqual(stockUstaSeeding.seedsCountThresholds);
     expect(ctsSeeding[POLICY_TYPE_SEEDING].validSeedPositions).toEqual({ ignore: true });
@@ -296,7 +299,7 @@ describe('policyComposer — federation override worked example', () => {
 
     // The base USTA policy did NOT mutate
     expect(stockUstaSeeding.policyName).toBe('USTA SEEDING');
-    expect(stockUstaSeeding.seedingProfile.positioning).toBe('SEPARATE');
+    expect(stockUstaSeeding.seedingProfile.positioning).toBe(SEPARATE);
   });
 });
 
@@ -310,9 +313,9 @@ describe('policyComposer — composing without a policyType wrapper', () => {
   });
 
   it('works with separate composers and feeds the unwrapped fragment into another composer', () => {
-    const fragment = policyComposer().set('drawTypes.ROUND_ROBIN.positioning', 'WATERFALL').build();
+    const fragment = policyComposer().set('drawTypes.ROUND_ROBIN.positioning', WATERFALL).build();
     const result: any = policyComposer(POLICY_TYPE_SCORING).merge('seedingProfile', fragment).build();
-    expect(result[POLICY_TYPE_SCORING].seedingProfile.drawTypes.ROUND_ROBIN.positioning).toBe('WATERFALL');
+    expect(result[POLICY_TYPE_SCORING].seedingProfile.drawTypes.ROUND_ROBIN.positioning).toBe(WATERFALL);
   });
 
   // An untyped composer treats every extend() input as raw — even objects

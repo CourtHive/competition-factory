@@ -2,6 +2,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
+import { WTN } from '@Constants/ratingConstants';
+
 test('mocksEngine can autoschedule', () => {
   const startDate = '2022-02-02';
   const drawId = 'mockDrawId';
@@ -18,7 +21,7 @@ test('mocksEngine can autoschedule', () => {
   const drawProfiles = [
     {
       eventName: `WTN 14-19 SINGLES`,
-      category: { ratingType: 'WTN', ratingMin: 14, ratingMax: 19.99 },
+      category: { ratingType: WTN, ratingMin: 14, ratingMax: 19.99 },
       generate: true,
       drawSize: 4,
       drawId,
@@ -77,7 +80,7 @@ test('competitionScheduelMatchUps supports hydrateParticipants: false', () => {
   const drawProfiles = [
     {
       eventName: `WTN 14-19 SINGLES`,
-      category: { ratingType: 'WTN', ratingMin: 14, ratingMax: 19.99 },
+      category: { ratingType: WTN, ratingMin: 14, ratingMax: 19.99 },
       generate: true,
       drawSize,
       drawId,

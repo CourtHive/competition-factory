@@ -2,6 +2,7 @@ import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/ma
 import { expect, it } from 'vitest';
 
 // constants
+import { TO_BE_PLAYED, COMPLETED } from '@Constants/matchUpStatusConstants';
 import * as matchUpStatusModule from '@Constants/matchUpStatusConstants';
 
 /**
@@ -42,6 +43,6 @@ it('a missing matchUpStatus is neither directing nor non-directing', () => {
   expect(isNonDirectingMatchUpStatus({ matchUpStatus: undefined as any })).toBe(false);
   expect(isDirectingMatchUpStatus({ matchUpStatus: undefined })).toBe(false);
   // CONTROL: the same calls answer for a real status
-  expect(isNonDirectingMatchUpStatus({ matchUpStatus: 'TO_BE_PLAYED' })).toBe(true);
-  expect(isDirectingMatchUpStatus({ matchUpStatus: 'COMPLETED' })).toBe(true);
+  expect(isNonDirectingMatchUpStatus({ matchUpStatus: TO_BE_PLAYED })).toBe(true);
+  expect(isDirectingMatchUpStatus({ matchUpStatus: COMPLETED })).toBe(true);
 });

@@ -7,6 +7,10 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 // types
 import type { Applicant, TournamentProposal, SanctioningPolicy, ProposalChange } from '@Types/sanctioningTypes';
 
+// constants
+import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+
 const testApplicant: Applicant = {
   organisationId: 'org-001',
   organisationName: 'Test Club',
@@ -18,7 +22,7 @@ const testProposal: TournamentProposal = {
   tournamentName: 'Test Open',
   proposedStartDate: '2028-06-01',
   proposedEndDate: '2028-06-07',
-  events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: 'SINGLE_ELIMINATION' }],
+  events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, drawType: SINGLE_ELIMINATION }],
 };
 
 const testPolicy: SanctioningPolicy = {
@@ -269,8 +273,8 @@ describe('Amendment Workflow — Multiple Amendments', () => {
       changes: [
         {
           field: 'events[0].drawType',
-          previousValue: 'SINGLE_ELIMINATION',
-          proposedValue: 'ROUND_ROBIN',
+          previousValue: SINGLE_ELIMINATION,
+          proposedValue: ROUND_ROBIN,
           changeType: 'MODIFIED',
         },
       ],

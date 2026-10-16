@@ -18,6 +18,12 @@ import type {
   Applicant,
 } from '@Types/sanctioningTypes';
 
+// constants
+import { POST_EVENT, DRAFT, APPROVED, SUBMITTED, CLOSED } from '@Constants/sanctioningConstants';
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { FEMALE, MALE } from '@Constants/genderConstants';
+
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
@@ -45,7 +51,7 @@ function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentPro
     tournamentName: 'Coverage Open',
     proposedStartDate: futureDate(20),
     proposedEndDate: futureDate(21),
-    events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: 'SINGLE_ELIMINATION' }],
+    events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, drawType: SINGLE_ELIMINATION }],
     ...overrides,
   };
 }
@@ -53,7 +59,7 @@ function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentPro
 function makeRecord(overrides?: Partial<SanctioningRecord>): SanctioningRecord {
   return {
     sanctioningId: 'cov-001',
-    status: 'DRAFT',
+    status: DRAFT,
     version: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -165,7 +171,7 @@ describe('validateProposal — allowedEventTypes and allowedGenders', () => {
     const policy: SanctioningPolicy = {
       ...basePolicy,
       requireInsurance: false,
-      tiers: [{ tierName: 'Restrict', tierLevel: 1, allowedEventTypes: ['DOUBLES'] }],
+      tiers: [{ tierName: 'Restrict', tierLevel: 1, allowedEventTypes: [DOUBLES_EVENT] }],
     };
     const proposal = minimalProposal();
     let result: any = validateProposal({
@@ -175,17 +181,17 @@ describe('validateProposal — allowedEventTypes and allowedGenders', () => {
     });
     const issue = result.errors.find((i: any) => i.field.includes('eventType'));
     expect(issue).toBeDefined();
-    expect(issue.message).toContain('SINGLES');
+    expect(issue.message).toContain(SINGLES_EVENT);
   });
 
   it('flags disallowed gender for a tier', () => {
     const policy: SanctioningPolicy = {
       ...basePolicy,
       requireInsurance: false,
-      tiers: [{ tierName: 'GenderTier', tierLevel: 1, allowedGenders: ['FEMALE'] }],
+      tiers: [{ tierName: 'GenderTier', tierLevel: 1, allowedGenders: [FEMALE] }],
     };
     const proposal = minimalProposal({
-      events: [{ eventName: 'MS', eventType: 'SINGLES', gender: 'MALE' }],
+      events: [{ eventName: 'MS', eventType: SINGLES_EVENT, gender: MALE }],
     });
     let result: any = validateProposal({
       proposal,
@@ -235,7 +241,7 @@ describe('validateProposal — maxQualifyingDrawSize', () => {
       tiers: [{ tierName: 'Q', tierLevel: 1, qualifyingAllowed: true, maxQualifyingDrawSize: 16 }],
     };
     const proposal = minimalProposal({
-      events: [{ eventName: 'S', eventType: 'SINGLES', qualifyingDrawSize: 32 }],
+      events: [{ eventName: 'S', eventType: SINGLES_EVENT, qualifyingDrawSize: 32 }],
     });
     let result: any = validateProposal({
       proposal,
@@ -396,7 +402,7 @@ describe('Engine resolution — explicit sanctioningId and proposal in params', 
     });
     const overrideProposal = minimalProposal({
       totalPrizeMoney: [{ amount: 1, currencyCode: 'USD', unit: 'MAJOR' }],
-      events: [{ eventName: 'S', eventType: 'SINGLES', drawSize: 8 }],
+      events: [{ eventName: 'S', eventType: SINGLES_EVENT, drawSize: 8 }],
     });
     let result: any = sanctioningEngine.getEligibleTiers({
       sanctioningId: 'et-test',
@@ -436,13 +442,13 @@ describe('Amendment edge cases', () => {
     createApprovedViaEngine();
 
     const changes: ProposalChange[] = [
-      { field: 'status', previousValue: 'APPROVED', proposedValue: 'DRAFT', changeType: 'MODIFIED' },
+      { field: 'status', previousValue: APPROVED, proposedValue: DRAFT, changeType: 'MODIFIED' },
     ];
     let result: any = sanctioningEngine.proposeAmendment({ changes, sanctioningPolicy: basePolicy });
     expect(result.success).toBe(true);
     // The status field is not in AMENDABLE_FIELD_PREFIXES, so it shouldn't be applied
     let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
-    expect(record.status).toEqual('APPROVED');
+    expect(record.status).toEqual(APPROVED);
   });
 
   it('blocks amendments inside noChangeWindowWeeks', () => {
@@ -485,7 +491,7 @@ describe('Amendment edge cases', () => {
   });
 
   it('reviewAmendment returns error for missing amendmentId', () => {
-    const record = makeRecord({ status: 'APPROVED', amendments: [] });
+    const record = makeRecord({ status: APPROVED, amendments: [] });
     let result: any = reviewAmendment({
       sanctioningRecord: record,
       amendmentId: '',
@@ -567,7 +573,7 @@ describe('Compliance edge cases', () => {
 
   it('checkComplianceDeadlines marks PENDING items as OVERDUE past deadline', () => {
     const record = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: {
         status: 'PENDING',
         items: [
@@ -584,7 +590,7 @@ describe('Compliance edge cases', () => {
             itemType: 'FINANCIAL_RECONCILIATION',
             description: 'Finance',
             required: false,
-            status: 'SUBMITTED',
+            status: SUBMITTED,
             deadline: '2025-01-01',
           },
         ],
@@ -595,7 +601,7 @@ describe('Compliance edge cases', () => {
     expect(result.overdueCount).toEqual(1);
     expect(record.compliance!.items[0].status).toEqual('OVERDUE');
     // SUBMITTED items should not be overridden
-    expect(record.compliance!.items[1].status).toEqual('SUBMITTED');
+    expect(record.compliance!.items[1].status).toEqual(SUBMITTED);
   });
 
   it('closeApplication sets compliance status to COMPLIANT', () => {
@@ -625,14 +631,14 @@ describe('Compliance edge cases', () => {
 
     sanctioningEngine.closeApplication({ closedBy: 'Admin', reason: 'All done' });
     record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
-    expect(record.status).toEqual('CLOSED');
+    expect(record.status).toEqual(CLOSED);
     expect(record.compliance.status).toEqual('COMPLIANT');
     expect(record.compliance.completedAt).toBeDefined();
   });
 
   it('submitComplianceItem returns error for missing itemId', () => {
     const record = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: { status: 'PENDING', items: [] },
     });
     let result: any = submitComplianceItem({ sanctioningRecord: record, itemId: '' });
@@ -640,7 +646,7 @@ describe('Compliance edge cases', () => {
   });
 
   it('verifyComplianceItem returns error when compliance is absent', () => {
-    const record = makeRecord({ status: 'POST_EVENT' });
+    const record = makeRecord({ status: POST_EVENT });
     let result: any = verifyComplianceItem({ sanctioningRecord: record, itemId: 'x' });
     expect(result.error).toBeDefined();
     expect(result.error.code).toEqual('ERR_COMPLIANCE_NOT_APPLICABLE');

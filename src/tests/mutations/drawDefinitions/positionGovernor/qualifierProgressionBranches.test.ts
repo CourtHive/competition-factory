@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { MAIN, QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { MAIN, QUALIFYING, ROUND_ROBIN, POSITION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
@@ -621,7 +621,7 @@ test('qualifierProgression with completed RR qualifying structure and POSITION l
   });
 
   // Verify POSITION link exists
-  const positionLink = drawDefinition.links?.find((link) => link.linkType === 'POSITION');
+  const positionLink = drawDefinition.links?.find((link) => link.linkType === POSITION);
   expect(positionLink).toBeDefined();
 
   // Use stages filter instead of structureIds for RR container structures

@@ -208,7 +208,12 @@ if (result.error) {
 **API Reference:** [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)
 
 `rollbackOnError` on separate calls is **not** one transaction: each call restores only its own
-changes, so a failure in the third call leaves the first two applied. To make several mutations
+changes, so a failure in the third call leaves the first two applied.
+
+The same holds **inside** an `executionQueue` submitted without rollback: when a directive fails, the writes of the
+directives before it stay in the records, and **no notices are delivered** for any of them. A caller that persists
+from notices, or that lent the engine its own objects (`setDeepCopy(false)`), must then discard the in-memory records
+— for example by aborting its database transaction — because they no longer match what was announced. To make several mutations
 succeed or fail together, submit them as one `executionQueue` with rollback enabled — the second
 argument — and check the result:
 

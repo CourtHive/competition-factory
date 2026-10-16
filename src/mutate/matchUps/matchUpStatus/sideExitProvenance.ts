@@ -325,6 +325,27 @@ export function refreshArrivalsFrom({
 }
 
 /**
+ * Remove a BYE-held matchUp's exits, and keep the BYE CLAIMS recorded beside them.
+ *
+ * A side's entry can hold both: the exit an origin sent there, and the claim a matchUp whose loser is nobody holds on
+ * the BYE that seat now is (`recordByeClaim`). They are separate relations. Withdrawing the exit cleared the whole
+ * entry, and the claim went with it: census run 20 policy-off, COMPASS 16/13 (20964176): `West|2|2`'s convergence
+ * dissolved to a single exit and claimed the BYE in `Southwest|1|1` for its loser, and withdrawing the produced exit
+ * the double exit had sent there erased that claim in the same settle. When a relabel later brought `West|2|2` an
+ * opponent, nothing recorded the BYE as `West|2|2`'s, so it stood, and its real loser replaced it a result later.
+ */
+function clearExitsKeepingByeClaims(matchUp: MatchUp): void {
+  const claims = ([1, 2] as const)
+    .map((sideNumber) => [sideNumber, matchUp.sideExitProvenance?.[sideNumber]?.byeClaims] as const)
+    .filter(([, byeClaims]) => byeClaims?.length);
+  clearSideExitProvenance(matchUp);
+  if (!claims.length) return;
+  matchUp.sideExitProvenance = Object.fromEntries(
+    claims.map(([sideNumber, byeClaims]) => [sideNumber, { byeClaims: [...(byeClaims ?? [])] }]),
+  );
+}
+
+/**
  * Remove provenance from a matchUp.
  *
  * NOT gated on the write mode. Every site that blanks `matchUpStatusCodes` must also clear this, or
@@ -1308,7 +1329,7 @@ function withdrawFromMatchUp(
   // BYE carrying one exit through it, and when that exit's origin became a double exit the withdrawal
   // reverted the BYE to TO_BE_PLAYED, with BYEs on both sides once the double exit's BYE arrived.
   if (holdsBye({ matchUp, structureId, drawDefinition })) {
-    clearSideExitProvenance(matchUp);
+    clearExitsKeepingByeClaims(matchUp);
     matchUp.matchUpStatusCodes = [];
     // and an exit LABEL beside the BYE goes with the exit it described: a BYE is never won. Census w2 9100211
     // (FIRST_MATCH_LOSER_CONSOLATION 32/32, `doubleExitPropagateBye: false`): `Consolation|1|4`'s convergence produced

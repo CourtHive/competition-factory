@@ -120,10 +120,19 @@ The highest level auto-scheduling method is `engine.scheduleProfileRounds`.
 11. Loop through groups of `matchUpIds` ...
 12. Calculate available scheduleTimes, considering court availability, already scheduled matchUps, and `remainingScheduleTimes` from previous iteration
 13. Construct per-participant hash tables of `matchUps` played and `timeAfterRecovery`
+    - A participant already placed in a `matchUp`'s sides is booked into it; a participant placed in a `matchUp` that
+      feeds it directly (on this date or an earlier one) is only a potential booking, because a winner path and a loser
+      path cannot both be taken. Potential bookings are checked against `matchUps` in other draws
+    - Each booking keeps both its recovery end and its type-change recovery end (`SINGLES_DOUBLES` /
+      `DOUBLES_SINGLES`); a `matchUp` of the other `matchUpType` must clear the type-change end, in either order
+    - A recovery that would end after midnight ends the participant's day: nothing else is scheduled for them on
+      that date
 14. Filter out `matchUps` which are not appropriate for scheduling
-15. Filter out `matchUps` which include participants who have reached daily limits
+15. Filter out `matchUps` which include participants who have reached daily limits (see
+    [Daily Limits](../policies/scheduling.md#daily-limits) for how potential matchUps are counted)
 16. Loop through available `scheduleTimes` and build up mapping of `matchUpIds` to `scheduleTimes`
     - Defer scheduling of matchUps where `timeAfterRecovery` has not been reached
-    - Defer scheduling of matchUps where `personRequests` include `{ requestType: DO_NOT_SCHEDULE }` conflicts
+    - Defer scheduling of matchUps where `personRequests` include `{ requestType: DO_NOT_SCHEDULE }` conflicts: a
+      request conflicts when its window overlaps the `matchUp`'s projected window at all
 17. Group `matchUpIds` by **eventId|drawId|structureId** and assign `scheduleTimes` to `matchUps`
 18. Return array of `remainingScheduleTimes` from current iteration to seed next iteration of virtualCourtBookings

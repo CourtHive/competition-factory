@@ -2,6 +2,9 @@ import { expect, it, describe, beforeEach } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
+// constants
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
+
 describe('registrationProfile', () => {
   beforeEach(() => {
     mocksEngine.generateTournamentRecord({
@@ -96,8 +99,8 @@ describe('registrationProfile', () => {
     let result: any = tournamentEngine.setRegistrationProfile({
       registrationProfile: {
         entryFees: [
-          { amount: 50, currencyCode: 'USD', unit: 'MAJOR', eventType: 'SINGLES' },
-          { amount: 75, currencyCode: 'USD', unit: 'MAJOR', eventType: 'DOUBLES' },
+          { amount: 50, currencyCode: 'USD', unit: 'MAJOR', eventType: SINGLES_EVENT },
+          { amount: 75, currencyCode: 'USD', unit: 'MAJOR', eventType: DOUBLES_EVENT },
         ],
       },
     });
@@ -107,7 +110,7 @@ describe('registrationProfile', () => {
     expect(registrationProfile?.entryFees).toHaveLength(2);
     expect(registrationProfile?.entryFees?.[0].amount).toBe(50);
     expect(registrationProfile?.entryFees?.[0].unit).toBe('MAJOR');
-    expect(registrationProfile?.entryFees?.[1].eventType).toBe('DOUBLES');
+    expect(registrationProfile?.entryFees?.[1].eventType).toBe(DOUBLES_EVENT);
   });
 
   it('refuses an entry fee whose scale is unstated', () => {

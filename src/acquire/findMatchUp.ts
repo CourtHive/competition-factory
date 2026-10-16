@@ -4,6 +4,7 @@ import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { findDrawMatchUp } from './findDrawMatchUp';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { locateMatchUp } from './locateMatchUp';
 import { findEvent } from './findEvent';
 
 // constants and types
@@ -63,15 +64,15 @@ export function findMatchUp({
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (typeof matchUpId !== 'string') return { error: MISSING_MATCHUP_ID };
 
-  // brute force
   if (!drawDefinition || !event) {
-    const matchUps = allTournamentMatchUps({ tournamentRecord, nextMatchUps }).matchUps ?? [];
-
-    const inContextMatchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
-    if (!inContextMatchUp) return { error: MATCHUP_NOT_FOUND };
+    // The stored structures say which event and draw hold the matchUp, so nothing is hydrated to find out;
+    // only the hit is hydrated below. Where the hydrated walk might disagree, the walk itself answers.
+    const { location, exact } = locateMatchUp({ tournamentRecord, matchUpId });
+    const located = exact ? location : bruteForceLocation({ tournamentRecord, nextMatchUps, matchUpId });
+    if (!located) return { error: MATCHUP_NOT_FOUND };
 
     // since drawEngineFindMatchUp is being used, additional context needs to be provided
-    ({ eventId, drawId } = inContextMatchUp);
+    ({ eventId, drawId } = located);
     ({ event, drawDefinition } = findEvent({
       tournamentRecord,
       eventId,
@@ -105,6 +106,7 @@ export function findMatchUp({
         context: inContext ? additionalContext : undefined,
         participants: tournamentParticipants,
         afterRecoveryTimes,
+        tournamentRecord,
         contextContent,
         contextProfile,
         drawDefinition,
@@ -122,6 +124,7 @@ export function findMatchUp({
     const { matchUp, structure } = findDrawMatchUp({
       context: inContext ? additionalContext : undefined,
       tournamentParticipants,
+      tournamentRecord,
       participantsProfile,
       afterRecoveryTimes,
       contextContent,
@@ -134,4 +137,18 @@ export function findMatchUp({
 
     return { matchUp, structure, drawDefinition };
   }
+}
+
+/** Every matchUp in the tournament hydrated, to read where one of them lives: only for what `locateMatchUp` cannot answer. */
+function bruteForceLocation({
+  tournamentRecord,
+  nextMatchUps,
+  matchUpId,
+}: {
+  tournamentRecord: Tournament;
+  nextMatchUps?: boolean;
+  matchUpId: string;
+}): HydratedMatchUp | undefined {
+  const matchUps = allTournamentMatchUps({ tournamentRecord, nextMatchUps }).matchUps ?? [];
+  return matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
 }

@@ -24,7 +24,9 @@ import { matchUpCourtOrder } from '@Query/matchUp/courtOrder';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { HOME_PARTICIPANT_ID } from '@Constants/timeItemConstants';
+import { SINGLES_MATCHUP, TEAM } from '@Constants/matchUpTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import {
   INVALID_MATCHUP,
@@ -265,7 +267,7 @@ describe('getHomeParticipantId branch coverage', () => {
       matchUp: {
         timeItems: [
           {
-            itemType: 'HOME_PARTICIPANT_ID',
+            itemType: HOME_PARTICIPANT_ID,
             itemValue: 'hp-from-timeItem',
             timeStamp: '2025-06-01T00:00:00Z',
           },
@@ -418,7 +420,7 @@ describe('checkTieFormat branch coverage', () => {
       collectionDefinitions: [
         {
           matchUpCount: 3,
-          matchUpType: 'SINGLES',
+          matchUpType: SINGLES_MATCHUP,
           matchUpFormat: 'SET3-S:6/TB7',
           matchUpValue: 1,
           collectionName: 'Singles',
@@ -590,6 +592,7 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
 
     const result = processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds,
+      participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles,
       dateScheduledMatchUpIds: undefined as any,
       matchUpNotBeforeTimes,
@@ -619,6 +622,7 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
   it('returns empty alreadyScheduled when clearDate is true', () => {
     const result = processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds: {},
+      participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
       matchUpNotBeforeTimes: {},
@@ -635,6 +639,7 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
   it('handles clearScheduleDates as an array', () => {
     const result = processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds: {},
+      participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
       matchUpNotBeforeTimes: {},
@@ -652,6 +657,7 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
     const matchUpScheduleTimes: Record<string, any> = {};
     const result = processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds: {},
+      participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
       matchUpNotBeforeTimes: {},
@@ -671,6 +677,7 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
     const matchUpScheduleTimes: Record<string, any> = {};
     processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds: {},
+      participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
       matchUpNotBeforeTimes: {},
@@ -736,7 +743,7 @@ describe('getParticipantMembership branch coverage', () => {
     const result = getParticipantMembership({
       tournamentRecord: {
         tournamentId: 't1',
-        participants: [{ participantId: 'p1', participantType: 'INDIVIDUAL' }],
+        participants: [{ participantId: 'p1', participantType: INDIVIDUAL }],
       } as any,
       participantId: 'p1',
     });
@@ -748,11 +755,11 @@ describe('getParticipantMembership branch coverage', () => {
       tournamentRecord: {
         tournamentId: 't1',
         participants: [
-          { participantId: 'p1', participantType: 'INDIVIDUAL' },
-          { participantId: 'p2', participantType: 'INDIVIDUAL' },
+          { participantId: 'p1', participantType: INDIVIDUAL },
+          { participantId: 'p2', participantType: INDIVIDUAL },
           {
             participantId: 'pair1',
-            participantType: 'PAIR',
+            participantType: PAIR,
             individualParticipantIds: ['p1', 'p2'],
           },
         ],
@@ -768,15 +775,15 @@ describe('getParticipantMembership branch coverage', () => {
       tournamentRecord: {
         tournamentId: 't1',
         participants: [
-          { participantId: 'p1', participantType: 'INDIVIDUAL' },
+          { participantId: 'p1', participantType: INDIVIDUAL },
           {
             participantId: 'pair1',
-            participantType: 'PAIR',
+            participantType: PAIR,
             individualParticipantIds: ['p1', 'p2'],
           },
           {
             participantId: 'team1',
-            participantType: 'TEAM',
+            participantType: TEAM_PARTICIPANT,
             individualParticipantIds: ['p1', 'p3'],
           },
         ],
@@ -784,6 +791,6 @@ describe('getParticipantMembership branch coverage', () => {
       participantId: 'p1',
     });
     expect(result).toHaveProperty('PAIR');
-    expect(result).toHaveProperty('TEAM');
+    expect(result).toHaveProperty(TEAM);
   });
 });

@@ -9,7 +9,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import {
   DEFAULTED,
   DOUBLE_WALKOVER,
@@ -181,7 +183,7 @@ describe('modifyMatchUpScore coverage', () => {
   });
 
   it('handles TEAM matchUp score modification', () => {
-    const drawProfiles = [{ drawSize: 4, drawType: 'ROUND_ROBIN' }];
+    const drawProfiles = [{ drawSize: 4, drawType: ROUND_ROBIN }];
     const eventProfiles = [{ eventType: TEAM_EVENT, drawProfiles }];
 
     mocksEngine.generateTournamentRecord({
@@ -190,7 +192,7 @@ describe('modifyMatchUpScore coverage', () => {
     });
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps.find((m) => m.matchUpType === 'TEAM');
+    const teamMatchUp = matchUps.find((m) => m.matchUpType === TEAM_MATCHUP);
     expect(teamMatchUp).toBeDefined();
   });
 });

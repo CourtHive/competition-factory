@@ -226,6 +226,9 @@ jobs:
       - name: verify:bundle-size
         run: pnpm verify:bundle-size
 
+      - name: verify:consumer-bundle
+        run: pnpm verify:consumer-bundle
+
       - name: verify:surface
         run: pnpm verify:surface
 

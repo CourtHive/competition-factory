@@ -331,7 +331,7 @@ test('can propagate an exit status and progress the already existing opponent in
           },
         ],
       },
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       status: {
         side1: {
           categoryName: 'Winner',

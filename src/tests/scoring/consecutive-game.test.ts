@@ -8,6 +8,9 @@
 import { createMatchUp, addPoint, getScore, getScoreboard } from '@Assemblies/governors/scoreGovernor';
 import { describe, test, expect } from 'vitest';
 
+// constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
 // Helper: add N points for a side
 function addPoints(matchUp: ReturnType<typeof createMatchUp>, winner: 0 | 1, count: number) {
   for (let i = 0; i < count; i++) {
@@ -98,7 +101,7 @@ describe('Consecutive game format (-G:3C)', () => {
         }
       }
 
-      expect(matchUp.matchUpStatus).toBe('COMPLETED');
+      expect(matchUp.matchUpStatus).toBe(COMPLETED);
       expect(matchUp.winningSide).toBe(1); // 1-indexed
     });
 

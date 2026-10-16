@@ -7,8 +7,9 @@ import { unique } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
 // constants
+import { BUCHHOLZ, SONNEBORN_BERGER, PROGRESSIVE_SCORE, MEDIAN_BUCHHOLZ } from '@Constants/swissConstants';
+import { SWISS, DRAW } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { SWISS } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 test('SWISS drawType generates an AD_HOC-style structure', () => {
@@ -395,7 +396,7 @@ test('Buchholz tiebreaker computed correctly', () => {
   ];
 
   const { records } = computeScoreGroups({ participantIds, matchUps });
-  const standings = computeTiebreakers({ records, tiebreakMethods: ['BUCHHOLZ', 'SONNEBORN_BERGER'] });
+  const standings = computeTiebreakers({ records, tiebreakMethods: [BUCHHOLZ, SONNEBORN_BERGER] });
 
   // P1: 3-0, opponents P5(1pt), P2(2pts), P3(2pts) → Buchholz = 5
   const p1 = standings.find((s) => s.participantId === 'P1');
@@ -432,7 +433,7 @@ test('progressive score tiebreaker computed correctly', () => {
   ];
 
   const { records } = computeScoreGroups({ participantIds, matchUps });
-  const standings = computeTiebreakers({ records, tiebreakMethods: ['PROGRESSIVE_SCORE'] });
+  const standings = computeTiebreakers({ records, tiebreakMethods: [PROGRESSIVE_SCORE] });
 
   // P1: round 1 = 1pt. Progressive = 1
   const p1 = standings.find((s) => s.participantId === 'P1');
@@ -572,7 +573,7 @@ test('median Buchholz drops highest and lowest opponent scores', () => {
 
   // After 3 rounds: P1=3-0, P2=2-1, P3=2-1, P4=1-2, P5=1-2, P6=0-3
   const { records } = computeScoreGroups({ participantIds, matchUps });
-  const standings = computeTiebreakers({ records, tiebreakMethods: ['BUCHHOLZ', 'MEDIAN_BUCHHOLZ'] });
+  const standings = computeTiebreakers({ records, tiebreakMethods: [BUCHHOLZ, MEDIAN_BUCHHOLZ] });
 
   // P1: opponents P4(1pt), P2(2pts), P3(2pts) → Buchholz = 5, Median = 2 (drop 1 and 2)
   const p1 = standings.find((s) => s.participantId === 'P1');
@@ -651,7 +652,7 @@ test('tiebreaker cascade: Buchholz tie broken by Sonneborn-Berger', () => {
   ];
 
   const { records } = computeScoreGroups({ participantIds, matchUps });
-  const standings = computeTiebreakers({ records, tiebreakMethods: ['BUCHHOLZ', 'SONNEBORN_BERGER'] });
+  const standings = computeTiebreakers({ records, tiebreakMethods: [BUCHHOLZ, SONNEBORN_BERGER] });
 
   const p1 = standings.find((s) => s.participantId === 'P1');
   const p3 = standings.find((s) => s.participantId === 'P3');
@@ -701,7 +702,7 @@ test('draws tracked correctly when allowDraws is true', () => {
 
   // 3 score groups: 1-0-0, 0-0-1, 0-1-0
   expect(scoreGroups.length).toEqual(3);
-  expect(records.get('P1')?.opponentOutcomes.get('P2')).toEqual('DRAW');
+  expect(records.get('P1')?.opponentOutcomes.get('P2')).toEqual(DRAW);
 });
 
 test('full Swiss tournament via engine API', () => {

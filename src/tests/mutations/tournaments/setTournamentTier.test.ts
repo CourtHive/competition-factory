@@ -2,6 +2,9 @@ import { expect, it, describe, beforeEach } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
+// constants
+import { ITF_JUNIOR } from '@Constants/pointsAuthorityConstants';
+
 describe('setTournamentTier', () => {
   beforeEach(() => {
     mocksEngine.generateTournamentRecord({
@@ -12,13 +15,13 @@ describe('setTournamentTier', () => {
 
   it('sets a tier on the tournament record', () => {
     let result: any = tournamentEngine.setTournamentTier({
-      tournamentTier: { system: 'ITF_JUNIOR', value: '3', numericRank: 3 },
+      tournamentTier: { system: ITF_JUNIOR, value: '3', numericRank: 3 },
     });
     expect(result.success).toBe(true);
 
     const { tournamentRecord } = tournamentEngine.getTournament();
     expect(tournamentRecord.tournamentTier).toEqual({
-      system: 'ITF_JUNIOR',
+      system: ITF_JUNIOR,
       value: '3',
       numericRank: 3,
     });
@@ -66,7 +69,7 @@ describe('setTournamentTier', () => {
 
   it('rejects tier without value', () => {
     let result: any = tournamentEngine.setTournamentTier({
-      tournamentTier: { system: 'ITF_JUNIOR' },
+      tournamentTier: { system: ITF_JUNIOR },
     });
     expect(result.error).toBeDefined();
   });
@@ -110,12 +113,12 @@ describe('setTournamentTier', () => {
   // without it the chip never reaches the client.
   it('propagates tournamentTier through getTournamentInfo for list / card display', () => {
     tournamentEngine.setTournamentTier({
-      tournamentTier: { system: 'ITF_JUNIOR', value: 'J500', numericRank: 4 },
+      tournamentTier: { system: ITF_JUNIOR, value: 'J500', numericRank: 4 },
     });
 
     const { tournamentInfo } = tournamentEngine.getTournamentInfo();
     expect(tournamentInfo.tournamentTier).toEqual({
-      system: 'ITF_JUNIOR',
+      system: ITF_JUNIOR,
       value: 'J500',
       numericRank: 4,
     });

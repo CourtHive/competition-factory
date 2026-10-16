@@ -2,7 +2,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and types
+import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { INDIVIDUAL } from '@Constants/participantConstants';
+import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import { DOUBLES_EVENT } from '@Constants/eventConstants';
+import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 /**
  * `getEvent` RETURNS A ROTATING ROUND'S PAIRINGS EXACTLY AS STORED.
@@ -17,15 +23,15 @@ function rotatingDraw() {
   const ids = ['a', 'b', 'c', 'd'];
   const draw: DrawDefinition = {
     drawId: 'd',
-    drawType: 'AD_HOC',
-    matchUpType: 'DOUBLES',
-    entries: ids.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' })),
+    drawType: AD_HOC,
+    matchUpType: DOUBLES_MATCHUP,
+    entries: ids.map((participantId) => ({ participantId, entryStatus: DIRECT_ACCEPTANCE })),
     structures: [{ structureId: 's', matchUps: [] }],
     competitionProfile: {
       version: 1,
       format: 'AMERICANO',
       entrantScope: 'INDIVIDUAL',
-      matchUpType: 'DOUBLES',
+      matchUpType: DOUBLES_MATCHUP,
       scoring: { combinedPointTotal: 32, selectedVariant: { tieResolution: 'ALLOW' } },
       standings: { metric: 'SIDE_POINTS', attribution: 'EACH_INDIVIDUAL' },
       pairing: { seed: 42, algorithmVersion: 1 },
@@ -36,15 +42,15 @@ function rotatingDraw() {
     tournamentId: 't',
     participants: ids.map((participantId) => ({
       participantId,
-      participantType: 'INDIVIDUAL',
-      participantRole: 'COMPETITOR',
+      participantType: INDIVIDUAL,
+      participantRole: COMPETITOR,
       participantName: participantId,
     })),
     events: [
       {
         eventId: 'e',
-        eventType: 'DOUBLES',
-        entries: ids.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
+        eventType: DOUBLES_EVENT,
+        entries: ids.map((participantId) => ({ participantId, entryStatus: UNGROUPED })),
         drawDefinitions: [draw],
       },
     ],

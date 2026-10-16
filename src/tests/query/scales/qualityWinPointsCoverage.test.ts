@@ -2,6 +2,7 @@ import { getQualityWinPoints } from '@Query/scales/getQualityWinPoints';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { WALKOVER, COMPLETED, DEFAULTED } from '@Constants/matchUpStatusConstants';
 import { RANKING, SCALE } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
@@ -18,7 +19,7 @@ function makeParticipant(id: string, rank?: number, scaleName = 'TEST', date?: s
   return { participantId: id, timeItems };
 }
 
-function makeMatchUp(matchUpId: string, winningSide: number, side1Id: string, side2Id: string, status = 'COMPLETED') {
+function makeMatchUp(matchUpId: string, winningSide: number, side1Id: string, side2Id: string, status = COMPLETED) {
   return {
     matchUpId,
     winningSide,
@@ -58,7 +59,7 @@ describe('getQualityWinPoints', () => {
 
   it('skips walkovers and defaults by default', () => {
     const participants = [makeParticipant('p1'), makeParticipant('p2', 1)];
-    const matchUp = makeMatchUp('m1', 1, 'p1', 'p2', 'WALKOVER');
+    const matchUp = makeMatchUp('m1', 1, 'p1', 'p2', WALKOVER);
     const result = getQualityWinPoints({
       qualityWinProfiles: [{ rankingScaleName: 'TEST', rankingRanges: [{ rankRange: [1, 10], value: 100 }] }],
       wonMatchUpIds: ['m1'],
@@ -72,7 +73,7 @@ describe('getQualityWinPoints', () => {
 
   it('includes walkovers when includeWalkovers is true', () => {
     const participants = [makeParticipant('p1'), makeParticipant('p2', 3)];
-    const matchUp = makeMatchUp('m1', 1, 'p1', 'p2', 'WALKOVER');
+    const matchUp = makeMatchUp('m1', 1, 'p1', 'p2', WALKOVER);
     const result = getQualityWinPoints({
       qualityWinProfiles: [
         {
@@ -242,7 +243,7 @@ describe('getQualityWinPoints', () => {
     const matchUp = {
       matchUpId: 'm1',
       winningSide: 1,
-      matchUpStatus: 'COMPLETED',
+      matchUpStatus: COMPLETED,
       sides: [{ sideNumber: 1, participantId: 'p1' }],
     };
     const result = getQualityWinPoints({
@@ -272,7 +273,7 @@ describe('getQualityWinPoints', () => {
 
   it('skips DEFAULTED matchUps by default', () => {
     const participants = [makeParticipant('p1'), makeParticipant('p2', 1)];
-    const matchUp = makeMatchUp('m1', 1, 'p1', 'p2', 'DEFAULTED');
+    const matchUp = makeMatchUp('m1', 1, 'p1', 'p2', DEFAULTED);
     const result = getQualityWinPoints({
       qualityWinProfiles: [{ rankingScaleName: 'TEST', rankingRanges: [{ rankRange: [1, 10], value: 100 }] }],
       wonMatchUpIds: ['m1'],

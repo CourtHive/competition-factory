@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_ELIMINATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { DOUBLE_ELIMINATION, SINGLE_ELIMINATION, WINNER, LOSER } from '@Constants/drawDefinitionConstants';
 import { MATCHUP_STATUS_OUT_OF_SCOPE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DEAD_RUBBER } from '@Constants/matchUpStatusConstants';
@@ -96,10 +96,10 @@ describe('DEAD_RUBBER scope', () => {
     const links = drawDefinition.links;
     const deciderStructureId = links.find(
       (winner) =>
-        winner.linkType === 'WINNER' &&
+        winner.linkType === WINNER &&
         links.some(
           (loser) =>
-            loser.linkType === 'LOSER' &&
+            loser.linkType === LOSER &&
             loser.source.structureId === winner.source.structureId &&
             loser.source.roundNumber === winner.source.roundNumber &&
             loser.target.structureId === winner.target.structureId,

@@ -1,5 +1,6 @@
-import { modifyParticipantMatchUpsCount } from '@Mutate/matchUps/schedule/scheduleMatchUps/modifyParticipantMatchUpsCount';
-import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/processNextMatchUps';
+import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
+import { modifyParticipantDayMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantDayLoad';
+import { getParticipantClashes } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantClashes';
 import { checkDailyLimits } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits';
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 import { matchUpChronologicalSort } from '@Functions/sorters/matchUpChronologicalSort';
@@ -125,27 +126,12 @@ export function proAutoSchedule({
 
   const gridMatchUps: HydratedMatchUp[] = [];
 
-  const getMatchUpParticipantIds = (matchUp) =>
-    [
-      (matchUp.sides ?? []).map((side) => [side.participantId, side.participant?.individualParticipantIds]),
-      (matchUp.potentialParticipants ?? []).flat().map((p) => [p.participantId, p.individualParticipantIds]),
-    ]
-      .flat(Infinity)
-      .filter(Boolean);
-
   const gridRows = rows?.reduce((gridRows, row) => {
-    const matchUpIds: string[] = [],
-      participantIds: string[] = [];
+    const matchUpIds: string[] = [];
     Object.values(row).forEach((c: any) => {
-      if (isObject(c)) {
-        if (c.matchUpId) {
-          matchUpIds.push(c.matchUpId);
-          gridMatchUps.push(c);
-        }
-        if (c.sides) {
-          const matchUpParticipantIds = getMatchUpParticipantIds(c);
-          participantIds.push(...matchUpParticipantIds);
-        }
+      if (isObject(c) && c.matchUpId) {
+        matchUpIds.push(c.matchUpId);
+        gridMatchUps.push(c);
       }
     });
     const availableCourts = Object.values(row).filter(
@@ -156,7 +142,6 @@ export function proAutoSchedule({
       matchUpIds,
       availableCourts,
       rowId: row.rowId,
-      participantIds,
     });
   }, []);
 
@@ -175,23 +160,22 @@ export function proAutoSchedule({
     tournamentRecords,
   }).matchUpDependencies;
 
-  // Per-participant per-day counters. Only used when matchUpDailyLimits is
-  // provided. Pre-populated from gridMatchUps (matchUps already on the grid
-  // for this date) so the limit reflects total daily load, not just what
-  // this run is placing. modifyParticipantMatchUpsCount handles both entered
-  // and potential (winner-advancing) participants.
+  // Per-participant day loads. Only used when matchUpDailyLimits is provided. Pre-populated from gridMatchUps
+  // (matchUps already on the grid for this date) so the limit reflects the whole day, not just what this run places.
+  // Participants certain and potential for each matchUp come from the reachability model (see participantDayLoad).
   const enforceLimits = !!matchUpDailyLimits && Object.keys(matchUpDailyLimits).length > 0;
+  const reachability = getParticipantReachability({
+    matchUpDependencies: deps,
+    matchUps: matchUps.concat(gridMatchUps),
+  });
+  const drawIds = new Map(matchUps.concat(gridMatchUps).map(({ matchUpId, drawId }) => [matchUpId, drawId]));
+  const drawIdOf = (matchUpId: string) => drawIds.get(matchUpId);
   const individualParticipantProfiles: any = {};
-  const matchUpPotentialParticipantIds: { [key: string]: string[] } = {};
   const overLimitMatchUpIds: string[] = [];
 
   if (enforceLimits) {
-    bumpCountersForMatchUps(gridMatchUps, individualParticipantProfiles, matchUpPotentialParticipantIds);
-    // Seed downstream matchUps with the winner-advancement potentials from
-    // matchUps already on the grid, so daily limits on R2+ recognize the
-    // R1 winners (and their losers via loserMatchUpId) before placement.
-    for (const m of gridMatchUps) {
-      processNextMatchUps({ matchUpPotentialParticipantIds, matchUpNotBeforeTimes: {}, matchUp: m });
+    for (const matchUp of gridMatchUps) {
+      modifyParticipantDayMatchUps({ individualParticipantProfiles, reachability, matchUp, value: 1 });
     }
   }
 
@@ -216,11 +200,11 @@ export function proAutoSchedule({
         deps,
         previousRowMatchUpIds,
         unscheduledMatchUpIds,
-        getMatchUpParticipantIds,
         enforceLimits,
+        drawIdOf,
         matchUpDailyLimits,
         individualParticipantProfiles,
-        matchUpPotentialParticipantIds,
+        reachability,
       });
 
       if (verdict.canPlace && matchUp && openCourtIndex !== -1) {
@@ -230,25 +214,11 @@ export function proAutoSchedule({
         Object.assign(court, matchUp);
         scheduled.push(matchUp);
         if (enforceLimits) {
-          modifyParticipantMatchUpsCount({
-            matchUpPotentialParticipantIds,
-            individualParticipantProfiles,
-            value: 1,
-            matchUp,
-          });
-          // Propagate winner/loser advancement so downstream matchUps in the
-          // same run see this matchUp's participants in their potentials map.
-          processNextMatchUps({ matchUpPotentialParticipantIds, matchUpNotBeforeTimes: {}, matchUp });
+          modifyParticipantDayMatchUps({ individualParticipantProfiles, reachability, matchUp, value: 1 });
         }
-        row.participantIds.push(...verdict.participantIds);
         row.matchUpIds.push(matchUp.matchUpId);
       } else if (matchUp && verdict.atLimit) {
         if (!overLimitMatchUpIds.includes(matchUp.matchUpId)) overLimitMatchUpIds.push(matchUp.matchUpId);
-        // Even though this matchUp can't be placed, propagate its potential
-        // participants forward so downstream matchUps' daily-limit checks see
-        // the right pool. Otherwise a final-round matchUp ends up with an
-        // empty potentials map and slips through unchecked.
-        processNextMatchUps({ matchUpPotentialParticipantIds, matchUpNotBeforeTimes: {}, matchUp });
       } else if (matchUp) {
         unscheduledMatchUps.push(matchUp);
       }
@@ -274,21 +244,6 @@ export function proAutoSchedule({
   return { ...result, scheduled, notScheduled, overLimitMatchUpIds };
 }
 
-function bumpCountersForMatchUps(
-  matchUps: HydratedMatchUp[],
-  individualParticipantProfiles: any,
-  matchUpPotentialParticipantIds: { [key: string]: string[] },
-): void {
-  for (const m of matchUps) {
-    modifyParticipantMatchUpsCount({
-      matchUpPotentialParticipantIds,
-      individualParticipantProfiles,
-      value: 1,
-      matchUp: m,
-    });
-  }
-}
-
 // Evaluate whether `matchUp` can be placed on `row` given dependency,
 // participant-conflict, and (optional) daily-limit constraints. Returns a
 // discriminated verdict: `canPlace` (with side-effect inputs prepared),
@@ -300,13 +255,13 @@ function evaluatePlacement({
   deps,
   previousRowMatchUpIds,
   unscheduledMatchUpIds,
-  getMatchUpParticipantIds,
   enforceLimits,
+  drawIdOf,
   matchUpDailyLimits,
   individualParticipantProfiles,
-  matchUpPotentialParticipantIds,
-}: any): { canPlace: boolean; atLimit: boolean; participantIds: string[] } {
-  if (!matchUp) return { canPlace: false, atLimit: false, participantIds: [] };
+  reachability,
+}: any): { canPlace: boolean; atLimit: boolean } {
+  if (!matchUp) return { canPlace: false, atLimit: false };
 
   const matchUpId = matchUp.matchUpId;
   const linkedMatchUpIds = deps[matchUpId].matchUpIds.concat(deps[matchUpId].dependentMatchUpIds);
@@ -317,13 +272,16 @@ function evaluatePlacement({
   );
   const rowIncludesLinked = row.matchUpIds.some((id: string) => linkedMatchUpIds.includes(id));
 
-  const participantIds: string[] = getMatchUpParticipantIds(matchUp);
-  const rowContainsParticipants = row.participantIds.some((id: string) => participantIds.includes(id));
+  // a participant who can play this matchUp and one already on the row clashes, unless the two are alternatives for
+  // them (a feeder's winner path and loser path; see getParticipantClashes)
+  const rowContainsParticipants =
+    getParticipantClashes({ matchUpIds: [matchUpId], otherMatchUpIds: row.matchUpIds, reachability, drawIdOf })
+      .clashingMatchUpIds.length > 0;
 
   let atLimitParticipantIds: string[] = [];
   if (enforceLimits) {
     const dlResult = checkDailyLimits({
-      matchUpPotentialParticipantIds,
+      reachability,
       individualParticipantProfiles,
       matchUpDailyLimits,
       matchUp,
@@ -339,5 +297,5 @@ function evaluatePlacement({
     !previousIncludesDependent &&
     !atLimit;
 
-  return { canPlace, atLimit, participantIds };
+  return { canPlace, atLimit };
 }

@@ -4,9 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 import { getParticipantEligibility, getEligibleEvents } from '@Query/entries/getParticipantEligibility';
 import { validateParticipantRating } from '@Query/entries/categoryValidation';
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
-import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { ANY } from '@Constants/genderConstants';
+
+// constants
+import { NTRP } from '@Constants/ratingConstants';
 
 /**
  * Punch-list M3 and M4.
@@ -174,11 +177,11 @@ describe('getEligibleEvents', () => {
  * Before this change a combined-7.0 category rejected the 4.0 half of a legal 3.0 + 4.0 pair.
  */
 describe('combined rating categories', () => {
-  const event: any = { eventId: 'e', eventType: 'DOUBLES' };
+  const event: any = { eventId: 'e', eventType: DOUBLES_EVENT };
 
   it('does not reject an individual against a combined-only bound', () => {
     const participant: any = { participantId: 'p', person: {} };
-    const category: any = { ratingType: 'NTRP', combinedRatingMax: 7.0 };
+    const category: any = { ratingType: NTRP, combinedRatingMax: 7.0 };
     expect(validateParticipantRating(participant, category, event).valid).toBe(true);
   });
 
@@ -190,7 +193,7 @@ describe('combined rating categories', () => {
     const participant = tournamentRecord.participants.find((p: any) => p.participantType === INDIVIDUAL);
     // No NTRP scale item exists for this participant, so an individual bound is INDETERMINATE
     // rather than satisfied — which is itself the point: the combined bound did not suppress it.
-    const category: any = { ratingType: 'NTRP', combinedRatingMax: 7.0, ratingMax: 5.0 };
+    const category: any = { ratingType: NTRP, combinedRatingMax: 7.0, ratingMax: 5.0 };
     const result: any = validateParticipantRating(participant, category, event as any, tournamentRecord);
     expect(result.valid).toBe(false);
     expect(result.indeterminate).toBe(true);

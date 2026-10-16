@@ -8,6 +8,7 @@ import { expect, test } from 'vitest';
 
 // constants and types
 import { SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
+import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 
@@ -15,7 +16,7 @@ test('in context, a TEAM draw reads as its TEAM matchUps: the rubbers sharing th
   const {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ tieFormatName: 'DOMINANT_DUO', eventType: TEAM_EVENT, drawSize: 4 }],
+    drawProfiles: [{ tieFormatName: DOMINANT_DUO, eventType: TEAM_EVENT, drawSize: 4 }],
     setState: true,
   });
   const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId, inContext: true });
@@ -35,7 +36,7 @@ test('a raw list holds no rubbers, and reads unchanged', () => {
   const {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ tieFormatName: 'DOMINANT_DUO', eventType: TEAM_EVENT, drawSize: 4 }],
+    drawProfiles: [{ tieFormatName: DOMINANT_DUO, eventType: TEAM_EVENT, drawSize: 4 }],
     setState: true,
   });
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
@@ -58,7 +59,7 @@ test('a counting predicate takes only a TEAM-level list: a list straight from a 
   const {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ tieFormatName: 'DOMINANT_DUO', eventType: TEAM_EVENT, drawSize: 4 }],
+    drawProfiles: [{ tieFormatName: DOMINANT_DUO, eventType: TEAM_EVENT, drawSize: 4 }],
     setState: true,
   });
   const matchUps: HydratedMatchUp[] = tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps;
@@ -75,7 +76,7 @@ test('the structure getter stays tie-inclusive in raw and contextual modes', () 
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     nonRandom: 1,
-    drawProfiles: [{ tieFormatName: 'DOMINANT_DUO', eventType: TEAM_EVENT, drawSize: 4 }],
+    drawProfiles: [{ tieFormatName: DOMINANT_DUO, eventType: TEAM_EVENT, drawSize: 4 }],
     setState: true,
   });
   const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });

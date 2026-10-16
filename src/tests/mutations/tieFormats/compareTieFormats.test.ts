@@ -3,7 +3,7 @@ import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefault
 import { it, expect, test } from 'vitest';
 
 // constants and types
-import { COLLEGE_D3, COLLEGE_DEFAULT, COLLEGE_JUCO } from '@Constants/tieFormatConstants';
+import { COLLEGE_D3, COLLEGE_DEFAULT, COLLEGE_JUCO, DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import collegeDefault from '@Fixtures/scoring/tieFormats/COLLEGE_DEFAULT.json';
 import collegeJuco from '@Fixtures/scoring/tieFormats/COLLEGE_JUCO.json';
 import collegeD3 from '@Fixtures/scoring/tieFormats/COLLEGE_D3.json';
@@ -60,7 +60,7 @@ it('can differentiate matchUpValue', () => {
           matchUpValue: 0,
         },
       ],
-      tieFormatName: 'DOMINANT_DUO',
+      tieFormatName: DOMINANT_DUO,
       winCriteria: {
         aggregateValue: true,
       },
@@ -86,7 +86,7 @@ it('can differentiate matchUpValue', () => {
           matchUpValue: 1,
         },
       ],
-      tieFormatName: 'DOMINANT_DUO',
+      tieFormatName: DOMINANT_DUO,
       winCriteria: {
         valueGoal: 2,
       },

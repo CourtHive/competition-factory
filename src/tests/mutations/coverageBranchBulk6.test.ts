@@ -16,6 +16,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { WITHDRAWN } from '@Constants/entryStatusConstants';
+import { MAIN } from '@Constants/drawDefinitionConstants';
+import { AGE } from '@Constants/eventConstants';
 import {
   COURT_NOT_FOUND,
   INVALID_VALUES,
@@ -165,7 +168,7 @@ describe('allowedTypes branch coverage', () => {
     const result = getAllowedDrawTypes({
       tournamentRecord,
       categoryName: undefined,
-      categoryType: 'AGE',
+      categoryType: AGE,
     });
     expect(Array.isArray(result)).toBe(true);
   });
@@ -647,7 +650,7 @@ describe('assignDrawPositionQualifier branch coverage', () => {
     });
     const result = tournamentEngine.setState(tournamentRecord);
     const { drawDefinition } = result.getEvent({ drawId: drawIds[0] });
-    const structure = drawDefinition.structures.find((s) => s.stage === 'MAIN');
+    const structure = drawDefinition.structures.find((s) => s.stage === MAIN);
     const qualifierAssignment = structure?.positionAssignments?.find((a) => a.qualifier);
     if (qualifierAssignment) {
       const assignResult: any = assignDrawPositionQualifier({
@@ -677,7 +680,7 @@ describe('removeDrawPositionAssignment branch coverage', () => {
         drawId: drawIds[0],
         structureId: structure.structureId,
         drawPosition: assignment.drawPosition,
-        entryStatus: 'WITHDRAWN',
+        entryStatus: WITHDRAWN,
       });
       // Should succeed or error but exercise the code path
       expect(result).toBeDefined();

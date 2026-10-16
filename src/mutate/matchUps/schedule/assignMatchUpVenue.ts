@@ -1,5 +1,7 @@
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { findVenue } from '@Query/venues/findVenue';
+import { addVenue } from '@Mutate/venues/addVenue';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORD, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
@@ -34,6 +36,11 @@ export function assignMatchUpVenue({
       venueId,
     });
     if (result.error) return result;
+    // a venue only a linked tournament holds is copied onto this record, which later hydration reads it from (the
+    // linked record's own object is never shared between two records). findVenue did this itself until P54, a query
+    // that wrote; as there, a copy refused (an invalid dateAvailability) leaves the assignment to go ahead
+    const onRecord = tournamentRecord.venues?.some((venue) => venue.venueId === venueId);
+    if (!onRecord && result.venue) addVenue({ tournamentRecord, venue: makeDeepCopy(result.venue, false, true) });
   }
 
   return setMatchUpFirstClassOrTimeItem({

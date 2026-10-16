@@ -1,11 +1,13 @@
 import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
+import { getProfileRoundKey } from '@Query/matchUps/scheduling/schedulingUtils';
 import { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isValidDateString, sameDay } from '@Tools/dateTime';
 import { isObject } from '@Tools/objects';
 
-// constants
+// constants and types
+import type { ProfileRound, ProfileVenue } from '@Query/matchUps/scheduling/schedulingUtils';
 import { EXISTING_ROUND, INVALID_DATE } from '@Constants/errorConditionConstants';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -42,6 +44,16 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
     dateProfile = { scheduleDate, venues: [] };
     schedulingProfile.push(dateProfile);
   }
+
+  // a round profiled at a second venue on the same date would be scheduled once per venue
+  const roundKey = getProfileRoundKey(round);
+  const atOtherVenue = dateProfile.venues.some(
+    (venue: ProfileVenue) =>
+      venue.venueId !== venueId &&
+      venue.rounds.some((existingRound: ProfileRound) => getProfileRoundKey(existingRound) === roundKey),
+  );
+  if (atOtherVenue)
+    return decorateResult({ result: { error: EXISTING_ROUND }, info: 'round is profiled at another venue', stack });
 
   let venueOnDate = dateProfile.venues.find((venue) => venue.venueId === venueId);
 

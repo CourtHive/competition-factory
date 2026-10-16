@@ -17,6 +17,7 @@ import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { COMPETITOR, COACH } from '@Constants/participantRoles';
+import { FEMALE } from '@Constants/genderConstants';
 
 describe('EventBuilder', () => {
   beforeEach(() => {
@@ -47,14 +48,14 @@ describe('EventBuilder', () => {
       .event()
       .singles()
       .named('Senior Open')
-      .gender('FEMALE')
+      .gender(FEMALE)
       .category({ categoryName: 'U18', ageCategoryCode: 'U18' })
       .dates('2026-06-01', '2026-06-07')
       .toDirectives();
 
     const event = directives[0].params.event;
     expect(event.eventName).toBe('Senior Open');
-    expect(event.gender).toBe('FEMALE');
+    expect(event.gender).toBe(FEMALE);
     expect(event.category).toEqual({ categoryName: 'U18', ageCategoryCode: 'U18' });
     expect(event.startDate).toBe('2026-06-01');
     expect(event.endDate).toBe('2026-06-07');

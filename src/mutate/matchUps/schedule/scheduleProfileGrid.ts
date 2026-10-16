@@ -20,7 +20,7 @@ type ScheduleProfileGridArgs = {
   tournamentRecords: TournamentRecords;
   matchUpDailyLimits?: { [key: string]: number };
   scheduleCompletedMatchUps?: boolean;
-  clearScheduleDates?: boolean;
+  clearScheduleDates?: boolean | string[];
   minCourtGridRows?: number;
   scheduleDates?: string[];
   courtIds?: string[];

@@ -9,6 +9,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { ASSIGN_COURT, SCHEDULED_DATE, SCHEDULED_TIME, ASSIGN_VENUE, START_TIME } from '@Constants/timeItemConstants';
+import { PRACTICE, MAINTENANCE } from '@Constants/bookingTypeConstants';
 import { DELETE_VENUE, MODIFY_VENUE } from '@Constants/topicConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import {
@@ -107,9 +108,9 @@ legacyMode('can add events, venues, and schedule matchUps and modify drawDefinit
         endTime: '19:00',
         date: d200101,
         bookings: [
-          { startTime: '07:00', endTime: '08:30', bookingType: 'PRACTICE' },
-          { startTime: '08:30', endTime: '09:00', bookingType: 'MAINTENANCE' },
-          { startTime: '13:30', endTime: '14:00', bookingType: 'MAINTENANCE' },
+          { startTime: '07:00', endTime: '08:30', bookingType: PRACTICE },
+          { startTime: '08:30', endTime: '09:00', bookingType: MAINTENANCE },
+          { startTime: '13:30', endTime: '14:00', bookingType: MAINTENANCE },
         ],
       },
     ];
@@ -493,9 +494,9 @@ it('adds venueId to matchUp.schedule when court is assigned', () => {
       endTime: '19:00',
       date,
       bookings: [
-        { startTime: '07:00', endTime: '08:30', bookingType: 'PRACTICE' },
-        { startTime: '08:30', endTime: '09:00', bookingType: 'MAINTENANCE' },
-        { startTime: '13:30', endTime: '14:00', bookingType: 'MAINTENANCE' },
+        { startTime: '07:00', endTime: '08:30', bookingType: PRACTICE },
+        { startTime: '08:30', endTime: '09:00', bookingType: MAINTENANCE },
+        { startTime: '13:30', endTime: '14:00', bookingType: MAINTENANCE },
       ],
     },
   ];

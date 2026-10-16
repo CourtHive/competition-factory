@@ -1,21 +1,30 @@
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getParticipantIds } from '@Functions/global/extractors';
-import { positionTargets } from '@Query/matchUp/positionTargets';
-import { findStructure } from '@Acquire/findStructure';
 import { timeStringMinutes } from '@Tools/dateTime';
 import { ensureInt } from '@Tools/ensureInt';
 import { numericSort } from '@Tools/sorting';
+import {
+  buildTargetIndex,
+  indexedStructure,
+  PositionTargetLinks,
+  positionTargets,
+  TargetIndex,
+} from '@Query/matchUp/positionTargets';
 
 // constants
+import { BYE, completedMatchUpStatuses, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';
-import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DrawDefinition } from '@Types/tournamentTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 export function addUpcomingMatchUps({ drawDefinition, inContextDrawMatchUps }) {
   const scheduleConflictMatchUpIds = {};
+  // built once for this call: every matchUp's targets are read from the same draw
+  const targetIndex = buildTargetIndex(inContextDrawMatchUps);
 
   inContextDrawMatchUps.forEach((inContextMatchUp) => {
     const { matchUpId, structureId, drawPositions = [] } = inContextMatchUp;
-    const { structure } = findStructure({ drawDefinition, structureId });
+    const { structure } = indexedStructure({ drawDefinition, targetIndex, structureId });
     if (structure?.finishingPosition === WIN_RATIO) {
       addRoundRobinSidesTo({ inContextMatchUp, structure, drawPositions });
     } else {
@@ -24,6 +33,7 @@ export function addUpcomingMatchUps({ drawDefinition, inContextDrawMatchUps }) {
         inContextDrawMatchUps,
         inContextMatchUp,
         drawDefinition,
+        targetIndex,
         matchUpId,
       });
     }
@@ -67,13 +77,22 @@ function addEliminationUpcomingInfo({
   inContextDrawMatchUps,
   inContextMatchUp,
   drawDefinition,
+  targetIndex,
   matchUpId,
+}: {
+  scheduleConflictMatchUpIds: Record<string, string>;
+  inContextDrawMatchUps: HydratedMatchUp[];
+  inContextMatchUp: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  targetIndex: TargetIndex;
+  matchUpId: string;
 }) {
   const targetData = positionTargets({
     useTargetMatchUpIds: true,
     inContextDrawMatchUps,
     inContextMatchUp,
     drawDefinition,
+    targetIndex,
     matchUpId,
   });
   /**
@@ -115,11 +134,11 @@ function addEliminationUpcomingInfo({
 
   if (inContextMatchUp.drawPositions?.filter(Boolean).length) {
     addPotentialParticipants({
-      inContextDrawMatchUps,
+      targetLinks: targetData.targetLinks,
       inContextMatchUp,
       winnerMatchUp,
       loserMatchUp,
-      targetData,
+      targetIndex,
     });
   }
 }
@@ -136,17 +155,29 @@ function checkScheduleConflict({ scheduleConflictMatchUpIds, inContextMatchUp, t
 }
 
 function addPotentialParticipants({
-  inContextDrawMatchUps,
   inContextMatchUp,
   winnerMatchUp,
   loserMatchUp,
-  targetData,
+  targetLinks,
+  targetIndex,
+}: {
+  inContextMatchUp: HydratedMatchUp;
+  winnerMatchUp?: HydratedMatchUp;
+  loserMatchUp?: HydratedMatchUp;
+  targetLinks: PositionTargetLinks;
+  targetIndex: TargetIndex;
 }) {
-  const loserTargetLink = targetData.targetLinks?.loserTargetLink;
+  const loserTargetLink = targetLinks.loserTargetLink;
   const firstMatchUp = loserTargetLink?.linkCondition === FIRST_MATCHUP;
 
   const participants = getMatchUpParticipants(inContextMatchUp);
   if (!participants.length) return;
+
+  // a decided matchUp has already placed whoever it sends on; one it has not placed (a loser an FMLC feed keeps out)
+  // is going nowhere, and a BYE has no loser at all: none of them is a potential participant of a target
+  const { matchUpStatus, winningSide } = inContextMatchUp;
+  const decided = !!winningSide || (!!matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus));
+  if (decided || matchUpStatus === BYE) return;
 
   const winnerParticipantIds = getParticipantIds(winnerMatchUp?.sides);
   const loserParticipantIds = getParticipantIds(loserMatchUp?.sides);
@@ -158,24 +189,20 @@ function addPotentialParticipants({
     loserPotentials.push({ bye: true, tbd: true }); // tbd: true indiciates that for FMLC, WO/DEF could propagate a player
   }
 
-  if (winnerPotentials?.length && winnerMatchUp) {
-    if (!targetData.targetMatchUpIds && winnerMatchUp) {
-      winnerMatchUp = inContextDrawMatchUps.find(({ matchUpId }) => matchUpId === winnerMatchUp.matchUpId);
-    }
+  // a target resolved from the draw's links is a COPY (`positionTargets` returns copies unless asked for references),
+  // so the potentials are written onto the in-context matchUp the caller is handed. `targetMatchUpIds` does not say
+  // which a target is: the stored-id shortcut returns references without setting it, the full path copies with it set
+  const inContextTarget = (target) => targetIndex.byMatchUpId.get(target.matchUpId) ?? target;
 
-    winnerMatchUp.potentialParticipants ??= [];
-    winnerMatchUp.potentialParticipants.push(winnerPotentials);
+  if (winnerPotentials.length && winnerMatchUp) {
+    const target = inContextTarget(winnerMatchUp);
+    target.potentialParticipants ??= [];
+    target.potentialParticipants.push(winnerPotentials);
   }
-  if (loserPotentials?.length && loserMatchUp) {
-    if (!targetData.targetMatchUpIds) {
-      winnerMatchUp = inContextDrawMatchUps.find(({ matchUpId }) => matchUpId === loserMatchUp.matchUpId);
-    }
-
-    if (!loserMatchUp.potentialParticipants) {
-      loserMatchUp.potentialParticipants = [];
-    }
-
-    loserMatchUp.potentialParticipants.push(loserPotentials);
+  if (loserPotentials.length && loserMatchUp) {
+    const target = inContextTarget(loserMatchUp);
+    target.potentialParticipants ??= [];
+    target.potentialParticipants.push(loserPotentials);
   }
 }
 

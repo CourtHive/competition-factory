@@ -5,7 +5,7 @@ import { expect, it, test } from 'vitest';
 
 // constants
 import { PENALTY, REFEREE, SCHEDULE, SCORE, STATUS } from '@Constants/matchUpActionConstants';
-import { DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, TO_BE_PLAYED, BYE } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import {
@@ -319,7 +319,7 @@ it('matchUpActions returns empty validActions when isByeMatchUp', () => {
   tournamentEngine.setState(tournamentRecord);
   const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
 
-  const byeMatchUp = matchUps.find((m) => m.matchUpStatus === 'BYE');
+  const byeMatchUp = matchUps.find((m) => m.matchUpStatus === BYE);
   if (byeMatchUp) {
     const result = tournamentEngine.matchUpActions({
       matchUpId: byeMatchUp.matchUpId,

@@ -275,19 +275,26 @@ const result = tournamentEngine.scheduleProfileRounds({
 Clear existing schedules before applying profile:
 
 ```js
-// Clear specific dates
+// Clear specific dates: only matchUps scheduled on these dates are cleared
 const result = tournamentEngine.scheduleProfileRounds({
   clearScheduleDates: ['2024-06-15'], // Clear these dates first
   scheduleDates: ['2024-06-15'], // Then reschedule
   periodLength: 30,
 });
 
-// Clear ALL dates in profile
+// Clear EVERYTHING: every scheduled matchUp in the tournament records
 const result = tournamentEngine.scheduleProfileRounds({
-  clearScheduleDates: true, // Clear all dates in profile
+  clearScheduleDates: true,
   periodLength: 30,
 });
 ```
+
+`clearScheduleDates: true` is not limited to the profile: it clears matchUps on every date and in every event,
+including ones the profile never mentions and ones scheduled by hand. Completed and locked matchUps keep their
+schedules either way. A date cleared but not included in `scheduleDates` is left unscheduled.
+
+`scheduleProfileGrid` accepts the same option. Because the grid usually runs after `scheduleProfileRounds` has set
+dates and times, note that clearing there removes those dates and times as well as grid positions.
 
 ### Dry Run
 
@@ -666,19 +673,12 @@ tournamentEngine.scheduleProfileRounds({ periodLength: 30 });
 // Garman scheduling will respect policy limits
 ```
 
-### Pro Scheduling Mode
+### `pro: true` (deprecated)
 
-For professional tournaments with grid scheduling:
-
-**API Reference:** [attachPolicies](/docs/governors/policy-governor#attachpolicies)
-
-```js
-const result = tournamentEngine.scheduleProfileRounds({
-  pro: true, // Use grid scheduling instead of Garman
-  periodLength: 30,
-});
-// Uses court-specific grid placement
-```
+**Deprecated since 7.15.0; removed at the next major.** `pro: true` selects an older court-and-time scheduler that
+gives each matchUp a court and a time in one pass, without Garman time slots. It is **not** grid scheduling: to place
+matchUps on court grid positions (`courtOrder`), use [`scheduleProfileGrid`](/docs/governors/schedule-governor#scheduleprofilegrid),
+which can run after `scheduleProfileRounds` has set dates and times. Omit `pro` to use the default scheduler.
 
 ## Related Documentation
 

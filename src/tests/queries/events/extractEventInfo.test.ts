@@ -3,6 +3,11 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { HARD } from '@Constants/surfaceConstants';
+import { MALE } from '@Constants/genderConstants';
+
 // A live tournament surveyed while this was written declared no format on the
 // event and this code on its drawDefinition — the shape the survey exists for.
 const DRAW_FORMAT = 'SET3-S:6/TB7';
@@ -90,20 +95,20 @@ describe('extractEventInfo', () => {
     const event: any = {
       eventId: 'e1',
       eventName: 'Mens Open Singles',
-      eventType: 'SINGLES',
-      gender: 'MALE',
+      eventType: SINGLES_EVENT,
+      gender: MALE,
       matchUpFormat: EVENT_FORMAT,
-      surfaceCategory: 'HARD',
+      surfaceCategory: HARD,
       discipline: 'TENNIS',
       entries: [{}, {}, {}],
     };
     const { eventInfo }: any = extractEventInfo({ event });
     expect(eventInfo.eventId).toEqual('e1');
     expect(eventInfo.eventName).toEqual('Mens Open Singles');
-    expect(eventInfo.eventType).toEqual('SINGLES');
-    expect(eventInfo.gender).toEqual('MALE');
+    expect(eventInfo.eventType).toEqual(SINGLES_EVENT);
+    expect(eventInfo.gender).toEqual(MALE);
     expect(eventInfo.matchUpFormat).toEqual(EVENT_FORMAT);
-    expect(eventInfo.surfaceCategory).toEqual('HARD');
+    expect(eventInfo.surfaceCategory).toEqual(HARD);
     expect(eventInfo.discipline).toEqual('TENNIS');
     expect(eventInfo.entriesCount).toEqual(3);
   });

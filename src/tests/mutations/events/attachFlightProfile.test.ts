@@ -6,7 +6,11 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { EXISTING_PROFILE, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { SPLIT_WATERFALL } from '@Constants/flightConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import { RATING } from '@Constants/scaleConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 describe('attachFlightProfile', () => {
   // Parameter validation
@@ -216,27 +220,27 @@ describe('attachFlightProfile', () => {
           drawId: 'd1',
           drawName: 'Flight 1',
           drawEntries: [
-            { participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' },
-            { participantId: 'p2', entryStatus: 'DIRECT_ACCEPTANCE' },
+            { participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE },
+            { participantId: 'p2', entryStatus: DIRECT_ACCEPTANCE },
           ],
         },
         {
           drawId: 'd2',
           drawName: 'Flight 2',
           drawEntries: [
-            { participantId: 'p3', entryStatus: 'DIRECT_ACCEPTANCE' },
-            { participantId: 'p4', entryStatus: 'DIRECT_ACCEPTANCE' },
+            { participantId: 'p3', entryStatus: DIRECT_ACCEPTANCE },
+            { participantId: 'p4', entryStatus: DIRECT_ACCEPTANCE },
           ],
         },
       ],
-      splitMethod: 'WATERFALL',
-      eventType: 'SINGLES',
+      splitMethod: SPLIT_WATERFALL,
+      eventType: SINGLES_EVENT,
     };
 
     const result: any = attachFlightProfile({ event, flightProfile } as any);
 
     expect(result.success).toBe(true);
-    expect(result.flightProfile.splitMethod).toBe('WATERFALL');
+    expect(result.flightProfile.splitMethod).toBe(SPLIT_WATERFALL);
     expect(result.flightProfile.flights[0].drawEntries).toHaveLength(2);
   });
 
@@ -291,8 +295,8 @@ describe('attachFlightProfile', () => {
     const flightProfile = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
       splitMethod: 'CUSTOM',
-      scaleName: 'WTN',
-      scaleType: 'RATING',
+      scaleName: WTN,
+      scaleType: RATING,
       customMetadata: { key: 'value' },
     };
 
@@ -300,8 +304,8 @@ describe('attachFlightProfile', () => {
 
     expect(result.success).toBe(true);
     expect(result.flightProfile.splitMethod).toBe('CUSTOM');
-    expect(result.flightProfile.scaleName).toBe('WTN');
-    expect(result.flightProfile.scaleType).toBe('RATING');
+    expect(result.flightProfile.scaleName).toBe(WTN);
+    expect(result.flightProfile.scaleType).toBe(RATING);
   });
 
   // Edge cases

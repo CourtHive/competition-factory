@@ -180,7 +180,7 @@ it('can generate payload for publishing a Round Robin with Playoffs', () => {
   expect(eventData.drawsData[0].drawId).toEqual(drawDefinition.drawId);
   expect(eventData.drawsData[0].structures.length).toEqual(5);
 
-  const main = eventData.drawsData[0].structures.find((structure) => structure.stage === 'MAIN');
+  const main = eventData.drawsData[0].structures.find((structure) => structure.stage === MAIN);
   expect(main.structureType).toEqual(CONTAINER);
 
   expect(eventData.drawsData[0].structures[0].roundMatchUps[1][0].drawId).toEqual(drawDefinition.drawId);

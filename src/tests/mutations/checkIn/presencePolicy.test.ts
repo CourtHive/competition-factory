@@ -11,6 +11,7 @@ import { POLICY_TYPE_SANCTIONING } from '@Constants/policyConstants';
 import { ContactRelationshipEnum } from '@Types/tournamentTypes';
 import type { PresenceRules } from '@Types/presencePolicyTypes';
 import { SIGNED_IN } from '@Constants/participantConstants';
+import { OFFICIAL } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
 import { DOUBLES } from '@Constants/matchUpTypes';
 
@@ -89,7 +90,7 @@ it('reports the expectation without enforcing it', () => {
 it('distinguishes "notUsed" from "nobody said" — the ambiguity D4h exists to remove', () => {
   const declared = seeded({ presence: U10_RULES });
   const official = declared.tournamentRecord.participants[0];
-  official.participantRole = 'OFFICIAL';
+  official.participantRole = OFFICIAL;
 
   const notUsed: any = getPresenceExpectation({
     tournamentRecord: declared.tournamentRecord,

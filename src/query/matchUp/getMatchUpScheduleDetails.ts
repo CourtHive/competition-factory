@@ -249,7 +249,7 @@ function buildFullSchedule({
 
   const isoDateString = getIsoDateString({ scheduledDate, scheduledTime });
 
-  const { venueName, venueAbbreviation, courtName } = resolveVenueAndCourt({
+  const { venueName, venueAbbreviation, courtName, hydratedAllocatedCourts } = resolveVenueAndCourt({
     tournamentRecord,
     allocatedCourts,
     venueId,
@@ -266,7 +266,7 @@ function buildFullSchedule({
     courtAnnotation,
     venueAbbreviation,
     lock,
-    allocatedCourts,
+    allocatedCourts: hydratedAllocatedCourts,
     scheduledDate,
     scheduledTime,
     isoDateString,
@@ -328,6 +328,8 @@ function computeRecoveryTimes({
   return { timeAfterRecovery, averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, typeChangeTimeAfterRecovery };
 }
 
+type AllocatedCourt = { venueId?: string; courtId?: string; [key: string]: unknown };
+
 function resolveVenueAndCourt({ tournamentRecord, allocatedCourts, venueId, courtId }) {
   const venueDataMap = {};
   const venueData = (tournamentRecord && venueId && getVenueData({ tournamentRecord, venueId }))?.venueData ?? {};
@@ -338,19 +340,19 @@ function resolveVenueAndCourt({ tournamentRecord, allocatedCourts, venueId, cour
   const courtInfo = courtId && courtsInfo?.find((courtInfo) => courtInfo.courtId === courtId);
   const courtName = courtInfo?.courtName;
 
-  for (const allocatedCourt of allocatedCourts ?? []) {
-    if (!tournamentRecord) break;
+  // The allocatedCourts handed in are the STORED ones: the names go on new objects, never onto those.
+  const hydratedAllocatedCourts = allocatedCourts?.map((allocatedCourt: AllocatedCourt) => {
+    if (!tournamentRecord) return { ...allocatedCourt };
     if (allocatedCourt.venueId && !venueDataMap[allocatedCourt.venueId]) {
       venueDataMap[allocatedCourt.venueId] = getVenueData({
         venueId: allocatedCourt.venueId,
         tournamentRecord,
       })?.venueData;
     }
-    const vData = venueDataMap[allocatedCourt.venueId];
-    allocatedCourt.venueName = vData?.venueName;
+    const vData = allocatedCourt.venueId ? venueDataMap[allocatedCourt.venueId] : undefined;
     const cInfo = vData?.courtsInfo?.find((ci) => ci.courtId === allocatedCourt.courtId);
-    allocatedCourt.courtName = cInfo?.courtName;
-  }
+    return { ...allocatedCourt, venueName: vData?.venueName, courtName: cInfo?.courtName };
+  });
 
-  return { venueName, venueAbbreviation, courtName };
+  return { venueName, venueAbbreviation, courtName, hydratedAllocatedCourts };
 }

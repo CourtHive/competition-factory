@@ -7,8 +7,9 @@ import { expect, it } from 'vitest';
 import { modifyTieFormat as modifyTieFormatFn } from '@Mutate/tieFormat/modifyTieFormat';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
+import { TEAM_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
+import { FEMALE } from '@Constants/genderConstants';
 import { TEAM } from '@Constants/eventConstants';
 
 it('can add collectionDefinitions to tieFormat in a structure', () => {
@@ -82,9 +83,9 @@ it('can add collectionDefinitions to tieFormat in a structure', () => {
   modifiedTieFormat.collectionDefinitions.push({
     matchUpFormat: 'SET3-S:6/TB7',
     collectionName: 'New Name',
-    matchUpType: 'DOUBLES',
+    matchUpType: DOUBLES_MATCHUP,
     collectionValue: 2,
-    gender: 'FEMALE',
+    gender: FEMALE,
     collectionId,
     matchUpCount,
   });
@@ -547,7 +548,7 @@ it('simultaneously adds and removes collections', () => {
     matchUpFormat: 'SET3-S:6/TB7',
     collectionName: 'Mixed Doubles',
     collectionId: 'addedMixed',
-    matchUpType: 'DOUBLES',
+    matchUpType: DOUBLES_MATCHUP,
     matchUpValue: 1,
     matchUpCount: 1,
   });

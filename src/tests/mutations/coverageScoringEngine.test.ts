@@ -18,6 +18,9 @@ import type { CompetitionFormat } from '@Assemblies/engines/scoring/ScoringEngin
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -141,7 +144,7 @@ describe('ScoringEngine — addGame and checkSetCompletion', () => {
     expect(result.winningSide).toBe(2);
 
     // Match should be complete
-    expect(engine.getState().matchUpStatus).toBe('COMPLETED');
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
   });
 
   it('covers addGame with tiebreakScore', () => {
@@ -197,7 +200,7 @@ describe('ScoringEngine — rebuildFromEntries with initialScore', () => {
     result = engine.getState().score.sets;
     expect(result.length).toBeGreaterThanOrEqual(2);
     expect(result[0].winningSide).toBe(1);
-    expect(engine.getState().matchUpStatus).toBe('IN_PROGRESS');
+    expect(engine.getState().matchUpStatus).toBe(IN_PROGRESS);
   });
 });
 
@@ -233,7 +236,7 @@ describe('ScoringEngine — addSet with match completion', () => {
     engine.addSet({ side1Score: 7, side2Score: 5 });
 
     let result: any = engine.getState();
-    expect(result.matchUpStatus).toBe('COMPLETED');
+    expect(result.matchUpStatus).toBe(COMPLETED);
     expect(result.winningSide).toBe(1);
   });
 
@@ -244,7 +247,7 @@ describe('ScoringEngine — addSet with match completion', () => {
     engine.addSet({ side1Score: 5, side2Score: 7 });
 
     let result: any = engine.getState();
-    expect(result.matchUpStatus).toBe('COMPLETED');
+    expect(result.matchUpStatus).toBe(COMPLETED);
     expect(result.winningSide).toBe(2);
   });
 });

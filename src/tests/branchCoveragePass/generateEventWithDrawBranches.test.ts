@@ -11,7 +11,7 @@
  * - iterativeAdHoc AD_HOC roundsCount > 1 (954, 561..576 happy sides)
  * - ROUND_ROBIN_WITH_PLAYOFF with completionGoal (441)
  */
-import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION, AD_HOC } from '@Constants/drawDefinitionConstants';
+import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION, AD_HOC, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { generateEventWithDraw } from '@Assemblies/generators/mocks/generateEventWithDraw';
 import { DOUBLES, HYBRID, TEAM } from '@Constants/eventConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
@@ -19,6 +19,10 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
+
+// constants
+import { PAIR } from '@Constants/participantConstants';
+import { WTN } from '@Constants/ratingConstants';
 
 test('missing drawProfile returns a checkRequiredParameters error (line 775)', () => {
   let result: any = generateEventWithDraw({});
@@ -62,7 +66,7 @@ test('HYBRID event synthesizes individuals and pairs (287, 295)', () => {
   expect(result.tournamentRecord).toBeDefined();
 
   let all: any = tournamentEngine.getParticipants({});
-  const pairs = all.participants.filter((p) => p.participantType === 'PAIR');
+  const pairs = all.participants.filter((p) => p.participantType === PAIR);
   expect(pairs.length).toBeGreaterThan(0);
 });
 
@@ -80,7 +84,7 @@ test('MIXED DOUBLES re-pairs generated individuals into mixed-sex pairs', () => 
   expect(result.tournamentRecord).toBeDefined();
 
   let all: any = tournamentEngine.getParticipants({ withIndividualParticipants: true });
-  const pairs = all.participants.filter((p) => p.participantType === 'PAIR');
+  const pairs = all.participants.filter((p) => p.participantType === PAIR);
   expect(pairs.length).toBeGreaterThan(0);
   // at least one pair should contain a MALE and a FEMALE member
   const mixedPair = pairs.find((p) => {
@@ -109,7 +113,7 @@ test('qualifyingProfiles with participantsCount and drawSize (1001, qualifying e
 
   tournamentEngine.setState(result.tournamentRecord);
   const { event } = tournamentEngine.getEvent({ eventId: result.eventIds[0] });
-  const qualifyingEntries = (event.entries ?? []).filter((e) => e.entryStage === 'QUALIFYING');
+  const qualifyingEntries = (event.entries ?? []).filter((e) => e.entryStage === QUALIFYING);
   expect(qualifyingEntries.length).toBeGreaterThan(0);
 });
 
@@ -154,7 +158,7 @@ test('iterativeAdHoc AD_HOC roundsCount > 1 with completeAllMatchUps (954, 561-5
         drawSize: 6,
         drawType: AD_HOC,
         roundsCount: 3,
-        scaleName: 'WTN',
+        scaleName: WTN,
       },
     ],
   });

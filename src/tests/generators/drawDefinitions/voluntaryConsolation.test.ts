@@ -15,6 +15,7 @@ import {
   LUCKY_DRAW,
   AD_HOC,
   VOLUNTARY_CONSOLATION,
+  MAIN,
 } from '@Constants/drawDefinitionConstants';
 
 const DRAW_SIZE = 32;
@@ -215,7 +216,7 @@ describe('Voluntary Consolation Generation', () => {
 
       const { drawDefinition: before } = tournamentEngine.getEvent({ drawId: DRAW_ID });
       const vcEntriesBefore = before.entries.filter((e) => e.entryStage === VOLUNTARY_CONSOLATION);
-      const mainEntriesBefore = before.entries.filter((e) => !e.entryStage || e.entryStage === 'MAIN');
+      const mainEntriesBefore = before.entries.filter((e) => !e.entryStage || e.entryStage === MAIN);
       expect(vcEntriesBefore.length).toBe(5);
       expect(mainEntriesBefore.length).toBe(DRAW_SIZE);
 
@@ -227,7 +228,7 @@ describe('Voluntary Consolation Generation', () => {
 
       const { drawDefinition: after } = tournamentEngine.getEvent({ drawId: DRAW_ID });
       const vcEntriesAfter = after.entries.filter((e) => e.entryStage === VOLUNTARY_CONSOLATION);
-      const mainEntriesAfter = after.entries.filter((e) => !e.entryStage || e.entryStage === 'MAIN');
+      const mainEntriesAfter = after.entries.filter((e) => !e.entryStage || e.entryStage === MAIN);
       expect(vcEntriesAfter.length).toBe(0);
       expect(mainEntriesAfter.length).toBe(DRAW_SIZE);
     });

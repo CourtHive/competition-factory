@@ -38,6 +38,11 @@ import type {
   ProposalChange,
 } from '@Types/sanctioningTypes';
 
+// constants
+import { UNDER_REVIEW, POST_EVENT, ISSUES_FLAGGED, APPROVED, SUBMITTED, DRAFT } from '@Constants/sanctioningConstants';
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { SINGLES_EVENT } from '@Constants/eventConstants';
+
 const testApplicant: Applicant = {
   organisationId: 'org-mut',
   organisationName: 'Mutation Test Club',
@@ -50,7 +55,7 @@ function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentPro
     tournamentName: 'Mut Open',
     proposedStartDate: '2028-06-01',
     proposedEndDate: '2028-06-07',
-    events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: 'SINGLE_ELIMINATION' }],
+    events: [{ eventName: 'Singles', eventType: SINGLES_EVENT, drawSize: 32, drawType: SINGLE_ELIMINATION }],
     ...overrides,
   };
 }
@@ -71,7 +76,7 @@ function makeRecord(overrides?: Partial<SanctioningRecord>): SanctioningRecord {
 describe('transitionStatus — transition guard branches', () => {
   it('evaluates ENDORSEMENT_REQUIRED guard with legacy endorsement field', () => {
     const record = makeRecord({
-      status: 'UNDER_REVIEW',
+      status: UNDER_REVIEW,
       endorsement: { status: 'ENDORSED', endorserId: 'e1' },
     });
     record.policySnapshot = {
@@ -81,30 +86,30 @@ describe('transitionStatus — transition guard branches', () => {
       governingBodyId: 'gov-001',
       tiers: [],
       transitionGuards: [
-        { guard: 'ENDORSEMENT_REQUIRED', from: 'UNDER_REVIEW', to: 'APPROVED', message: 'Need endorsement' },
+        { guard: 'ENDORSEMENT_REQUIRED', from: UNDER_REVIEW, to: APPROVED, message: 'Need endorsement' },
       ],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.success).toBe(true);
   });
 
   it('fails ENDORSEMENT_REQUIRED guard when no endorsement exists', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     record.policySnapshot = {
       policyName: 'Test',
       policyVersion: '1',
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: UNDER_REVIEW, to: APPROVED }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.error).toBeDefined();
     expect(result.context.guard).toEqual('ENDORSEMENT_REQUIRED');
   });
 
   it('evaluates PROPOSAL_VALID guard — fails when proposal incomplete', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     record.proposal.events = [];
     record.policySnapshot = {
       policyName: 'Test',
@@ -112,44 +117,44 @@ describe('transitionStatus — transition guard branches', () => {
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'PROPOSAL_VALID', from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'PROPOSAL_VALID', from: UNDER_REVIEW, to: APPROVED }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.error).toBeDefined();
     expect(result.context.guard).toEqual('PROPOSAL_VALID');
   });
 
   it('evaluates PROPOSAL_VALID guard — succeeds when complete', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     record.policySnapshot = {
       policyName: 'Test',
       policyVersion: '1',
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'PROPOSAL_VALID', from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'PROPOSAL_VALID', from: UNDER_REVIEW, to: APPROVED }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.success).toBe(true);
   });
 
   it('evaluates ALL_CONDITIONS_MET guard — succeeds when no conditions', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     record.policySnapshot = {
       policyName: 'Test',
       policyVersion: '1',
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'ALL_CONDITIONS_MET', from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'ALL_CONDITIONS_MET', from: UNDER_REVIEW, to: APPROVED }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.success).toBe(true);
   });
 
   it('evaluates ALL_CONDITIONS_MET guard — fails when unmet conditions', () => {
     const record = makeRecord({
-      status: 'UNDER_REVIEW',
+      status: UNDER_REVIEW,
       conditions: [{ conditionId: 'c1', description: 'Insurance', met: false, createdAt: '' }],
     });
     record.policySnapshot = {
@@ -158,15 +163,15 @@ describe('transitionStatus — transition guard branches', () => {
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'ALL_CONDITIONS_MET', from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'ALL_CONDITIONS_MET', from: UNDER_REVIEW, to: APPROVED }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.error).toBeDefined();
   });
 
   it('evaluates COMPLIANCE_COMPLETE guard — fails when required items not verified', () => {
     const record = makeRecord({
-      status: 'UNDER_REVIEW',
+      status: UNDER_REVIEW,
       compliance: {
         status: 'PENDING',
         items: [{ itemId: 'i1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: true, status: 'PENDING' }],
@@ -178,16 +183,16 @@ describe('transitionStatus — transition guard branches', () => {
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'COMPLIANCE_COMPLETE', from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'COMPLIANCE_COMPLETE', from: UNDER_REVIEW, to: APPROVED }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.error).toBeDefined();
     expect(result.context.guard).toEqual('COMPLIANCE_COMPLETE');
   });
 
   it('evaluates COMPLIANCE_COMPLETE guard — succeeds when all required items VERIFIED or WAIVED', () => {
     const record = makeRecord({
-      status: 'UNDER_REVIEW',
+      status: UNDER_REVIEW,
       compliance: {
         status: 'COMPLIANT',
         items: [
@@ -203,14 +208,14 @@ describe('transitionStatus — transition guard branches', () => {
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'COMPLIANCE_COMPLETE', from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'COMPLIANCE_COMPLETE', from: UNDER_REVIEW, to: APPROVED }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.success).toBe(true);
   });
 
   it('evaluates CUSTOM guard — succeeds when field is truthy', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     (record as any).customField = { nested: { value: true } };
     record.policySnapshot = {
       policyName: 'Test',
@@ -219,122 +224,118 @@ describe('transitionStatus — transition guard branches', () => {
       governingBodyId: 'gov-001',
       tiers: [],
       transitionGuards: [
-        { guard: 'CUSTOM', from: 'UNDER_REVIEW', to: 'APPROVED', customGuardField: 'customField.nested.value' },
+        { guard: 'CUSTOM', from: UNDER_REVIEW, to: APPROVED, customGuardField: 'customField.nested.value' },
       ],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.success).toBe(true);
   });
 
   it('evaluates CUSTOM guard — fails when field is falsy', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     record.policySnapshot = {
       policyName: 'Test',
       policyVersion: '1',
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [
-        { guard: 'CUSTOM', from: 'UNDER_REVIEW', to: 'APPROVED', customGuardField: 'nonExistent.path' },
-      ],
+      transitionGuards: [{ guard: 'CUSTOM', from: UNDER_REVIEW, to: APPROVED, customGuardField: 'nonExistent.path' }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.error).toBeDefined();
   });
 
   it('CUSTOM guard without customGuardField returns true', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     record.policySnapshot = {
       policyName: 'Test',
       policyVersion: '1',
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'CUSTOM', from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'CUSTOM', from: UNDER_REVIEW, to: APPROVED }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.success).toBe(true);
   });
 
   it('unknown guard type passes by default', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     record.policySnapshot = {
       policyName: 'Test',
       policyVersion: '1',
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'FUTURE_GUARD_TYPE' as any, from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'FUTURE_GUARD_TYPE' as any, from: UNDER_REVIEW, to: APPROVED }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.success).toBe(true);
   });
 
   it('tier-filtered guards skip guards for non-matching tiers', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW', sanctioningTier: { system: 'ITF', value: 'W50' } });
+    const record = makeRecord({ status: UNDER_REVIEW, sanctioningTier: { system: 'ITF', value: 'W50' } });
     record.policySnapshot = {
       policyName: 'Test',
       policyVersion: '1',
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: 'UNDER_REVIEW', to: 'APPROVED', tiers: ['W100'] }],
+      transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: UNDER_REVIEW, to: APPROVED, tiers: ['W100'] }],
     };
     // Guard for W100 should be skipped since record is W50
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.success).toBe(true);
   });
 
   it('guard message uses custom message when provided', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     record.policySnapshot = {
       policyName: 'Test',
       policyVersion: '1',
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [
-        { guard: 'ENDORSEMENT_REQUIRED', from: 'UNDER_REVIEW', to: 'APPROVED', message: 'Custom msg' },
-      ],
+      transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: UNDER_REVIEW, to: APPROVED, message: 'Custom msg' }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.context.message).toEqual('Custom msg');
   });
 
   it('guard message uses default when no custom message', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     record.policySnapshot = {
       policyName: 'Test',
       policyVersion: '1',
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: UNDER_REVIEW, to: APPROVED }],
     };
-    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: 'APPROVED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
     expect(result.context.message).toContain('Transition guard failed');
   });
 
   it('returns MISSING_SANCTIONING_RECORD when record is undefined', () => {
-    let result: any = transitionStatus({ sanctioningRecord: undefined as any, toStatus: 'SUBMITTED' as any });
+    let result: any = transitionStatus({ sanctioningRecord: undefined as any, toStatus: SUBMITTED as any });
     expect(result.error).toBeDefined();
     expect(result.error.code).toContain('MISSING');
   });
 
   it('uses sanctioningPolicy param over policySnapshot', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     const policy: SanctioningPolicy = {
       policyName: 'Param',
       policyVersion: '1',
       effectiveDate: '2026-01-01',
       governingBodyId: 'gov-001',
       tiers: [],
-      transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: 'UNDER_REVIEW', to: 'APPROVED' }],
+      transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: UNDER_REVIEW, to: APPROVED }],
     };
     // No endorsement, so guard should fail
     let result: any = transitionStatus({
       sanctioningRecord: record,
-      toStatus: 'APPROVED' as any,
+      toStatus: APPROVED as any,
       sanctioningPolicy: policy,
     });
     expect(result.error).toBeDefined();
@@ -347,7 +348,7 @@ describe('transitionStatus — transition guard branches', () => {
 
 describe('amendments — applyChanges with array bracket notation', () => {
   it('applies changes to array-indexed paths like events[0].drawSize', () => {
-    const record = makeRecord({ status: 'APPROVED' });
+    const record = makeRecord({ status: APPROVED });
     const changes: ProposalChange[] = [
       { field: 'events[0].drawSize', previousValue: 32, proposedValue: 64, changeType: 'MODIFIED' },
     ];
@@ -362,7 +363,7 @@ describe('amendments — applyChanges with array bracket notation', () => {
   });
 
   it('skips changes for out-of-bounds array index in intermediate path', () => {
-    const record = makeRecord({ status: 'APPROVED' });
+    const record = makeRecord({ status: APPROVED });
     const changes: ProposalChange[] = [
       { field: 'events[99].drawSize', previousValue: 32, proposedValue: 64, changeType: 'MODIFIED' },
     ];
@@ -377,7 +378,7 @@ describe('amendments — applyChanges with array bracket notation', () => {
   });
 
   it('handles last-key array bracket notation like venues[0]', () => {
-    const record = makeRecord({ status: 'APPROVED' });
+    const record = makeRecord({ status: APPROVED });
     record.proposal.venues = [{ venueName: 'Old' }];
     const changes: ProposalChange[] = [
       {
@@ -397,7 +398,7 @@ describe('amendments — applyChanges with array bracket notation', () => {
   });
 
   it('skips last-key array bracket when index is out of bounds', () => {
-    const record = makeRecord({ status: 'APPROVED' });
+    const record = makeRecord({ status: APPROVED });
     record.proposal.venues = [{ venueName: 'Only' }];
     const changes: ProposalChange[] = [
       { field: 'venues[5]', previousValue: undefined, proposedValue: { venueName: 'Extra' }, changeType: 'ADDED' },
@@ -421,7 +422,7 @@ describe('amendments — applyChanges with array bracket notation', () => {
   });
 
   it('reviewAmendment returns error when amendment not found', () => {
-    const record = makeRecord({ status: 'APPROVED', amendments: [] });
+    const record = makeRecord({ status: APPROVED, amendments: [] });
     let result: any = reviewAmendment({
       sanctioningRecord: record,
       amendmentId: 'nonexistent',
@@ -431,7 +432,7 @@ describe('amendments — applyChanges with array bracket notation', () => {
   });
 
   it('proposeAmendment rejects non-array changes', () => {
-    const record = makeRecord({ status: 'APPROVED' });
+    const record = makeRecord({ status: APPROVED });
     let result: any = proposeAmendment({
       sanctioningRecord: record,
       changes: 'bad' as any,
@@ -446,7 +447,7 @@ describe('amendments — applyChanges with array bracket notation', () => {
     const startDate = nextWeek.toISOString().slice(0, 10);
     const endDate = new Date(nextWeek.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const record = makeRecord({
-      status: 'APPROVED',
+      status: APPROVED,
       proposal: minimalProposal({ proposedStartDate: startDate, proposedEndDate: endDate }),
     });
     const policy: SanctioningPolicy = {
@@ -567,7 +568,7 @@ describe('endorsement — edge cases', () => {
 describe('compliance — PENDING status branch and guards', () => {
   it('updateComplianceStatus sets PENDING when no items submitted/verified/waived/overdue', () => {
     const record = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: {
         status: 'IN_PROGRESS',
         items: [
@@ -598,7 +599,7 @@ describe('compliance — PENDING status branch and guards', () => {
     // Let's construct a scenario where we force updateComplianceStatus through overdue detection
     // and remaining items are PENDING
     const record2 = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: {
         status: 'IN_PROGRESS',
         items: [
@@ -617,7 +618,7 @@ describe('compliance — PENDING status branch and guards', () => {
     result = checkComplianceDeadlines({ sanctioningRecord: record2, asOfDate: '2025-06-01' });
     expect(result.overdueCount).toEqual(1);
     // dl1 is now OVERDUE, dl2 is PENDING — so anyOverdue=true → ISSUES_FLAGGED
-    expect(record2.compliance!.status).toEqual('ISSUES_FLAGGED');
+    expect(record2.compliance!.status).toEqual(ISSUES_FLAGGED);
   });
 
   it('transitionToPostEvent returns error for missing record', () => {
@@ -636,9 +637,9 @@ describe('compliance — PENDING status branch and guards', () => {
   });
 
   it('closeApplication without compliance skips compliance update', () => {
-    const record = makeRecord({ status: 'POST_EVENT' });
+    const record = makeRecord({ status: POST_EVENT });
     // Transition POST_EVENT → ISSUES_FLAGGED → CLOSED
-    transitionStatus({ sanctioningRecord: record, toStatus: 'ISSUES_FLAGGED' as any });
+    transitionStatus({ sanctioningRecord: record, toStatus: ISSUES_FLAGGED as any });
     let result: any = closeApplication({ sanctioningRecord: record });
     expect(result.success).toBe(true);
     expect(record.compliance).toBeUndefined();
@@ -646,7 +647,7 @@ describe('compliance — PENDING status branch and guards', () => {
 
   it('submitComplianceItem returns error for non-existent itemId', () => {
     const record = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: {
         status: 'PENDING',
         items: [{ itemId: 'x1', itemType: 'R', description: 'R', required: true, status: 'PENDING' }],
@@ -658,7 +659,7 @@ describe('compliance — PENDING status branch and guards', () => {
 
   it('submitComplianceItem stores value when provided', () => {
     const record = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: {
         status: 'PENDING',
         items: [{ itemId: 'x1', itemType: 'R', description: 'R', required: true, status: 'PENDING' }],
@@ -675,7 +676,7 @@ describe('compliance — PENDING status branch and guards', () => {
 
   it('verifyComplianceItem returns error for missing itemId param', () => {
     const record = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: { status: 'PENDING', items: [] },
     });
     let result: any = verifyComplianceItem({ sanctioningRecord: record, itemId: '' });
@@ -684,10 +685,10 @@ describe('compliance — PENDING status branch and guards', () => {
 
   it('verifyComplianceItem returns error for non-existent item', () => {
     const record = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: {
         status: 'PENDING',
-        items: [{ itemId: 'x1', itemType: 'R', description: 'R', required: true, status: 'SUBMITTED' }],
+        items: [{ itemId: 'x1', itemType: 'R', description: 'R', required: true, status: SUBMITTED }],
       },
     });
     let result: any = verifyComplianceItem({ sanctioningRecord: record, itemId: 'bogus' });
@@ -696,11 +697,11 @@ describe('compliance — PENDING status branch and guards', () => {
 
   it('verifyComplianceItem returns allCompliant true when all required verified', () => {
     const record = makeRecord({
-      status: 'POST_EVENT',
+      status: POST_EVENT,
       compliance: {
         status: 'PENDING',
         items: [
-          { itemId: 'x1', itemType: 'R', description: 'R', required: true, status: 'SUBMITTED' },
+          { itemId: 'x1', itemType: 'R', description: 'R', required: true, status: SUBMITTED },
           { itemId: 'x2', itemType: 'O', description: 'O', required: false, status: 'PENDING' },
         ],
       },
@@ -791,7 +792,7 @@ describe('addEventProposal — missing-record and guard paths', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = addEventProposal({
       sanctioningRecord: undefined as any,
-      eventProposal: { eventName: 'S', eventType: 'SINGLES' },
+      eventProposal: { eventName: 'S', eventType: SINGLES_EVENT },
     });
     expect(result.error).toBeDefined();
   });
@@ -806,7 +807,7 @@ describe('addEventProposal — missing-record and guard paths', () => {
     const record = makeRecord();
     let result: any = addEventProposal({
       sanctioningRecord: record,
-      eventProposal: { eventName: '', eventType: 'SINGLES' },
+      eventProposal: { eventName: '', eventType: SINGLES_EVENT },
     });
     expect(result.error).toBeDefined();
   });
@@ -910,19 +911,19 @@ describe('conditionallyApprove — guard paths', () => {
   });
 
   it('returns error for empty conditions array', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     let result: any = conditionallyApprove({ sanctioningRecord: record, conditions: [] });
     expect(result.error).toBeDefined();
   });
 
   it('returns error for non-array conditions', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     let result: any = conditionallyApprove({ sanctioningRecord: record, conditions: 'bad' as any });
     expect(result.error).toBeDefined();
   });
 
   it('returns error when transition is invalid from current status', () => {
-    const record = makeRecord({ status: 'DRAFT' });
+    const record = makeRecord({ status: DRAFT });
     let result: any = conditionallyApprove({ sanctioningRecord: record, conditions: [{ description: 'x' }] });
     expect(result.error).toBeDefined();
   });
@@ -935,13 +936,13 @@ describe('requestModification — guard paths', () => {
   });
 
   it('returns error for invalid transition', () => {
-    const record = makeRecord({ status: 'DRAFT' });
+    const record = makeRecord({ status: DRAFT });
     let result: any = requestModification({ sanctioningRecord: record, note: 'Fix it' });
     expect(result.error).toBeDefined();
   });
 
   it('adds review note when note provided', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     let result: any = requestModification({ sanctioningRecord: record, requestedBy: 'Rev1', note: 'Please fix dates' });
     expect(result.success).toBe(true);
     expect(record.reviewNotes).toHaveLength(1);
@@ -949,7 +950,7 @@ describe('requestModification — guard paths', () => {
   });
 
   it('skips review note when no note provided', () => {
-    const record = makeRecord({ status: 'UNDER_REVIEW' });
+    const record = makeRecord({ status: UNDER_REVIEW });
     let result: any = requestModification({ sanctioningRecord: record });
     expect(result.success).toBe(true);
     expect(record.reviewNotes).toBeUndefined();
@@ -984,14 +985,14 @@ describe('activateFromSanctioning — guard paths', () => {
   });
 
   it('returns error when status is not APPROVED', () => {
-    const record = makeRecord({ status: 'DRAFT' });
+    const record = makeRecord({ status: DRAFT });
     let result: any = activateFromSanctioning({ sanctioningRecord: record });
     expect(result.error).toBeDefined();
-    expect(result.context.message).toContain('DRAFT');
+    expect(result.context.message).toContain(DRAFT);
   });
 
   it('filters compliance items by tier', () => {
-    const record = makeRecord({ status: 'APPROVED', sanctioningTier: { system: 'ITF', value: 'W50' } });
+    const record = makeRecord({ status: APPROVED, sanctioningTier: { system: 'ITF', value: 'W50' } });
     const policy: SanctioningPolicy = {
       policyName: 'T',
       policyVersion: '1',
@@ -1011,7 +1012,7 @@ describe('activateFromSanctioning — guard paths', () => {
   });
 
   it('skips compliance generation when no postEventRequirements in policy', () => {
-    const record = makeRecord({ status: 'APPROVED' });
+    const record = makeRecord({ status: APPROVED });
     const policy: SanctioningPolicy = {
       policyName: 'T',
       policyVersion: '1',
@@ -1025,7 +1026,7 @@ describe('activateFromSanctioning — guard paths', () => {
   });
 
   it('generates tournament without a tier extension or tournamentTier when tier not set', () => {
-    const record = makeRecord({ status: 'APPROVED' });
+    const record = makeRecord({ status: APPROVED });
     delete (record as any).sanctioningTier;
     let result: any = activateFromSanctioning({ sanctioningRecord: record });
     expect(result.success).toBe(true);
@@ -1037,10 +1038,10 @@ describe('activateFromSanctioning — guard paths', () => {
 
 describe('submitApplication — prior compliance gate and guards', () => {
   it('blocks submission when prior record has outstanding compliance', () => {
-    const record = makeRecord({ status: 'DRAFT' });
+    const record = makeRecord({ status: DRAFT });
     const priorRecord = makeRecord({
       compliance: {
-        status: 'ISSUES_FLAGGED',
+        status: ISSUES_FLAGGED,
         items: [{ itemId: 'p1', itemType: 'R', description: 'R', required: true, status: 'OVERDUE' }],
       },
     });
@@ -1057,7 +1058,7 @@ describe('submitApplication — prior compliance gate and guards', () => {
   });
 
   it('blocks submission when endorsement required but not met', () => {
-    const record = makeRecord({ status: 'DRAFT' });
+    const record = makeRecord({ status: DRAFT });
     const policy: SanctioningPolicy = {
       policyName: 'T',
       policyVersion: '1',
@@ -1072,7 +1073,7 @@ describe('submitApplication — prior compliance gate and guards', () => {
   });
 
   it('allows submission when endorsement count met via legacy endorsement field', () => {
-    const record = makeRecord({ status: 'DRAFT', endorsement: { status: 'ENDORSED', endorserId: 'e1' } });
+    const record = makeRecord({ status: DRAFT, endorsement: { status: 'ENDORSED', endorserId: 'e1' } });
     const policy: SanctioningPolicy = {
       policyName: 'T',
       policyVersion: '1',
@@ -1087,7 +1088,7 @@ describe('submitApplication — prior compliance gate and guards', () => {
   });
 
   it('snapshots policy on successful submission', () => {
-    const record = makeRecord({ status: 'DRAFT' });
+    const record = makeRecord({ status: DRAFT });
     const policy: SanctioningPolicy = {
       policyName: 'Snapshot Test',
       policyVersion: '2.0',

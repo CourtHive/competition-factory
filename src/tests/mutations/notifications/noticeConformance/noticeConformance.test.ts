@@ -21,6 +21,9 @@ import {
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
 
+// constants
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+
 // Workstream D-core scaffold. Demonstrates the notice-completeness invariant on
 // two representative mutations, both COVERED (setEventDates was the known gap until
 // C2 added MODIFY_EVENT). The catalog sweep is noticeConformanceScenarios.test.ts.
@@ -126,7 +129,7 @@ describe('notice conformance harness (D-core scaffold)', () => {
             ],
           },
           winningSide: 1,
-          matchUpStatus: 'COMPLETED',
+          matchUpStatus: COMPLETED,
         },
       });
     });

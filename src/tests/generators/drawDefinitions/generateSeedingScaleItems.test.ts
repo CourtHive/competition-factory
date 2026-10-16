@@ -1,18 +1,21 @@
 import { generateSeedingScaleItems } from '@Assemblies/generators/drawDefinitions/generateSeedingScaleItems';
 import POLICY_SEEDING_DEFAULT from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
+import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SEEDING, RATING } from '@Constants/scaleConstants';
-import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { ScaleAttributes } from '@Types/factoryTypes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { WTN } from '@Constants/ratingConstants';
+
 describe('generateSeedingScaleItems', () => {
   const baseScaleAttributes: ScaleAttributes = {
     eventType: SINGLES_EVENT,
     scaleType: RATING,
-    scaleName: 'WTN',
+    scaleName: WTN,
   };
 
   it('should return error when scaleAttributes is missing', () => {
@@ -79,7 +82,7 @@ describe('generateSeedingScaleItems', () => {
     const scaleAttributes: ScaleAttributes = {
       eventType: SINGLES_EVENT,
       scaleType: RATING,
-      scaleName: 'WTN',
+      scaleName: WTN,
     };
 
     const scaledEntries = [{ participantId: 'p1', scaledValue: 10 }];
@@ -93,14 +96,14 @@ describe('generateSeedingScaleItems', () => {
       scaleName: undefined,
     });
 
-    expect(result?.scaleItemsWithParticipantIds?.[0].scaleItems[0].scaleName).toEqual('WTN');
+    expect(result?.scaleItemsWithParticipantIds?.[0].scaleItems[0].scaleName).toEqual(WTN);
   });
 
   it('should prefer provided scaleName over scaleAttributes.scaleName', () => {
     const scaleAttributes: ScaleAttributes = {
       eventType: SINGLES_EVENT,
       scaleType: RATING,
-      scaleName: 'WTN',
+      scaleName: WTN,
     };
 
     const scaledEntries = [{ participantId: 'p1', scaledValue: 10 }];
@@ -213,7 +216,7 @@ describe('generateSeedingScaleItems', () => {
     const scaleAttributes: ScaleAttributes = {
       eventType: SINGLES_EVENT,
       scaleType: RATING,
-      scaleName: 'WTN',
+      scaleName: WTN,
     };
 
     const scaledEntries = [{ participantId: 'p1', scaledValue: 10 }];
@@ -405,9 +408,9 @@ describe('generateSeedingScaleItems', () => {
 
   it('should preserve eventType from scaleAttributes', () => {
     const doublesScaleAttributes: ScaleAttributes = {
-      eventType: 'DOUBLES',
+      eventType: DOUBLES_EVENT,
       scaleType: RATING,
-      scaleName: 'WTN',
+      scaleName: WTN,
     };
 
     const scaledEntries = [{ participantId: 'p1', scaledValue: 10 }];
@@ -421,7 +424,7 @@ describe('generateSeedingScaleItems', () => {
       scaleName: 'U18',
     });
 
-    expect(result?.scaleItemsWithParticipantIds?.[0]?.scaleItems?.[0]?.eventType).toEqual('DOUBLES');
+    expect(result?.scaleItemsWithParticipantIds?.[0]?.scaleItems?.[0]?.eventType).toEqual(DOUBLES_EVENT);
   });
 });
 

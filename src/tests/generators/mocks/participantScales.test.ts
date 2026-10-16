@@ -268,7 +268,7 @@ it('can assess predictive accuracy of scaleValues', () => {
 it('can get predictiveAccuracy for DOUBLES events', () => {
   const drawProfiles = [
     {
-      category: { ratingType: 'WTN', ratingMin: 8, ratingMax: 12 },
+      category: { ratingType: WTN, ratingMin: 8, ratingMax: 12 },
       eventName: `WTN 8-12 DOUBLES`,
       eventType: DOUBLES,
       drawSize: 32,
@@ -312,7 +312,7 @@ it('can get predictiveAccuracy for DOUBLES events', () => {
 it('can pass matchUps array into predictiveAccuracy', () => {
   const drawProfiles = [
     {
-      category: { ratingType: 'WTN', ratingMin: 8, ratingMax: 12 },
+      category: { ratingType: WTN, ratingMin: 8, ratingMax: 12 },
       eventName: `WTN 8-12 DOUBLES`,
       eventType: DOUBLES,
       drawSize: 32,

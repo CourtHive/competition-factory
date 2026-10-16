@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
+import { INDIVIDUAL, SIGNED_IN } from '@Constants/participantConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
-import { INDIVIDUAL } from '@Constants/participantConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { DOUBLES } from '@Constants/eventConstants';
@@ -36,7 +36,7 @@ test('filterParticipants enableOrFiltering with multiple criteria', () => {
   const { participants: signInFiltered } = tournamentEngine.getParticipants({
     participantFilters: {
       enableOrFiltering: true,
-      signInStatus: 'SIGNED_IN',
+      signInStatus: SIGNED_IN,
     },
   });
   // No one is signed in, so this should return empty (unless other OR criteria match)
@@ -96,7 +96,7 @@ test('filterParticipants AND filtering with signInStatus and drawEntryStatuses',
   // Test signInStatus in AND mode
   const { participants: noSignIn } = tournamentEngine.getParticipants({
     participantFilters: {
-      signInStatus: 'SIGNED_IN',
+      signInStatus: SIGNED_IN,
     },
   });
   expect(noSignIn.length).toBe(0);

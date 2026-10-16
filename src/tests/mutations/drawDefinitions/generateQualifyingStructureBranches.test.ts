@@ -5,6 +5,8 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { MAIN, QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   INVALID_VALUES,
   MISSING_DRAW_DEFINITION,
@@ -282,8 +284,8 @@ describe('generateQualifyingStructure - uncovered branches', () => {
       drawProfiles: [
         {
           drawSize: 8,
-          eventType: 'TEAM',
-          tieFormatName: 'COLLEGE_DEFAULT',
+          eventType: TEAM_EVENT,
+          tieFormatName: COLLEGE_DEFAULT,
         },
       ],
       setState: true,

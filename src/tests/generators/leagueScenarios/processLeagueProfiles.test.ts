@@ -7,6 +7,7 @@ import { expect, it, describe } from 'vitest';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { AD_HOC, MAIN } from '@Constants/drawDefinitionConstants';
 import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
+import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/participantConstants';
 import { MALE } from '@Constants/genderConstants';
 
@@ -390,7 +391,7 @@ describe('processLeagueProfiles tieFormat resolution', () => {
         {
           collectionId: 'c1',
           collectionName: 'Singles',
-          matchUpType: 'SINGLES',
+          matchUpType: SINGLES_MATCHUP,
           matchUpCount: 3,
           matchUpValue: 1,
           matchUpFormat: 'SET3-S:6/TB7',

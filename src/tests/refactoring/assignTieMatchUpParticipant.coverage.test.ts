@@ -9,12 +9,13 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { INVALID_SIDE_NUMBER, MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { DOUBLES, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+import { DOUBLES, SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
+import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 describe('assignTieMatchUpParticipant coverage', () => {
   function generateTeamTournament() {
-    const drawProfiles = [{ drawSize: 4, tieFormatName: 'COLLEGE_DEFAULT' }];
+    const drawProfiles = [{ drawSize: 4, tieFormatName: COLLEGE_DEFAULT }];
     const eventProfiles = [{ eventType: TEAM_EVENT, drawProfiles }];
 
     return mocksEngine.generateTournamentRecord({
@@ -47,7 +48,7 @@ describe('assignTieMatchUpParticipant coverage', () => {
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const tieMatchUp = matchUps.find((m) => m.matchUpType === SINGLES_MATCHUP && m.matchUpTieId);
 
-    const teamMatchUp = matchUps.find((m) => m.matchUpType === 'TEAM' && m.matchUpId === tieMatchUp.matchUpTieId);
+    const teamMatchUp = matchUps.find((m) => m.matchUpType === TEAM_MATCHUP && m.matchUpId === tieMatchUp.matchUpTieId);
     const participantId = teamMatchUp?.sides?.[0]?.participant?.individualParticipantIds?.[0];
     if (!participantId) return;
 
@@ -82,7 +83,7 @@ describe('assignTieMatchUpParticipant coverage', () => {
     } = generateTeamTournament();
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps.find((m) => m.matchUpType === 'TEAM' && m.sides?.every((s) => s.participantId));
+    const teamMatchUp = matchUps.find((m) => m.matchUpType === TEAM_MATCHUP && m.sides?.every((s) => s.participantId));
     if (!teamMatchUp) return;
 
     const singlesTieMatchUp = matchUps.find(
@@ -108,7 +109,7 @@ describe('assignTieMatchUpParticipant coverage', () => {
     } = generateTeamTournament();
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps.find((m) => m.matchUpType === 'TEAM' && m.sides?.every((s) => s.participantId));
+    const teamMatchUp = matchUps.find((m) => m.matchUpType === TEAM_MATCHUP && m.sides?.every((s) => s.participantId));
     if (!teamMatchUp) return;
 
     const singlesTieMatchUp = matchUps.find(
@@ -140,7 +141,7 @@ describe('assignTieMatchUpParticipant coverage', () => {
     } = generateTeamTournament();
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const teamMatchUp = matchUps.find((m) => m.matchUpType === 'TEAM' && m.sides?.every((s) => s.participantId));
+    const teamMatchUp = matchUps.find((m) => m.matchUpType === TEAM_MATCHUP && m.sides?.every((s) => s.participantId));
     if (!teamMatchUp) return;
 
     const doublesTieMatchUp = matchUps.find(

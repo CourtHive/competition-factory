@@ -4,19 +4,23 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { INDIVIDUAL } from '@Constants/participantConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   PAGE_PLAYOFF,
   PLAY_OFF,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
+  WINNER,
+  LOSER,
+  POSITION,
 } from '@Constants/drawDefinitionConstants';
 
 describe('PAGE_PLAYOFF draw type', () => {
   it('generates structures and links directly via engine', () => {
     tournamentEngine.newTournamentRecord();
     tournamentEngine.addParticipants({
-      participantType: 'INDIVIDUAL',
+      participantType: INDIVIDUAL,
       participantsCount: 4,
     });
     const event = { eventName: 'PPS Test', eventType: SINGLES_EVENT };
@@ -116,16 +120,16 @@ describe('PAGE_PLAYOFF draw type', () => {
     const q2Id = structures.find((s) => s.structureName === 'Qualifier 2')?.structureId;
     const finalId = structures.find((s) => s.structureName === 'Final')?.structureId;
 
-    const q1WinnerLink = links.find((l) => l.source.structureId === q1Id && l.linkType === 'WINNER');
+    const q1WinnerLink = links.find((l) => l.source.structureId === q1Id && l.linkType === WINNER);
     expect(q1WinnerLink?.target.structureId).toEqual(finalId);
 
-    const q1LoserLink = links.find((l) => l.source.structureId === q1Id && l.linkType === 'LOSER');
+    const q1LoserLink = links.find((l) => l.source.structureId === q1Id && l.linkType === LOSER);
     expect(q1LoserLink?.target.structureId).toEqual(q2Id);
 
-    const elimWinnerLink = links.find((l) => l.source.structureId === elimId && l.linkType === 'WINNER');
+    const elimWinnerLink = links.find((l) => l.source.structureId === elimId && l.linkType === WINNER);
     expect(elimWinnerLink?.target.structureId).toEqual(q2Id);
 
-    const q2WinnerLink = links.find((l) => l.source.structureId === q2Id && l.linkType === 'WINNER');
+    const q2WinnerLink = links.find((l) => l.source.structureId === q2Id && l.linkType === WINNER);
     expect(q2WinnerLink?.target.structureId).toEqual(finalId);
   });
 
@@ -181,7 +185,7 @@ describe('PAGE_PLAYOFF draw type', () => {
     expect(structures.length).toEqual(5);
 
     // Two POSITION links: [1]→Q1, [2]→Eliminator
-    const positionLinks = links.filter((l) => l.linkType === 'POSITION');
+    const positionLinks = links.filter((l) => l.linkType === POSITION);
     expect(positionLinks.length).toEqual(2);
 
     const ppsStructures = structures.filter((s) => s.stage === PLAY_OFF);
@@ -247,7 +251,7 @@ describe('PAGE_PLAYOFF draw type', () => {
     // LOSER link: SE semifinal → Eliminator (semifinal losers are positions 3-4)
     const semifinalRound = mainFinalRound - 1;
     const loserToElim = result.links?.find(
-      (l: any) => l.linkType === 'LOSER' && l.target.structureId === eliminator.structureId,
+      (l: any) => l.linkType === LOSER && l.target.structureId === eliminator.structureId,
     );
     expect(loserToElim).toBeDefined();
     expect(loserToElim?.source.structureId).toEqual(mainStructureId);
@@ -255,7 +259,7 @@ describe('PAGE_PLAYOFF draw type', () => {
 
     // WINNER link: SE final → PPS Final
     const winnerFromSE = result.links?.find(
-      (l: any) => l.linkType === 'WINNER' && l.source.structureId === mainStructureId,
+      (l: any) => l.linkType === WINNER && l.source.structureId === mainStructureId,
     );
     expect(winnerFromSE?.source.roundNumber).toEqual(mainFinalRound);
     expect(winnerFromSE?.target.structureId).toEqual(ppsFinal.structureId);
@@ -263,20 +267,18 @@ describe('PAGE_PLAYOFF draw type', () => {
     // LOSER link: SE final → Q2
     const loserFromSE = result.links?.find(
       (l: any) =>
-        l.linkType === 'LOSER' && l.source.structureId === mainStructureId && l.source.roundNumber === mainFinalRound,
+        l.linkType === LOSER && l.source.structureId === mainStructureId && l.source.roundNumber === mainFinalRound,
     );
     expect(loserFromSE?.target.structureId).toEqual(q2.structureId);
 
     // Internal: Eliminator WINNER → Q2
     const elimToQ2 = result.links?.find(
-      (l: any) => l.linkType === 'WINNER' && l.source.structureId === eliminator.structureId,
+      (l: any) => l.linkType === WINNER && l.source.structureId === eliminator.structureId,
     );
     expect(elimToQ2?.target.structureId).toEqual(q2.structureId);
 
     // Internal: Q2 WINNER → PPS Final
-    const q2ToFinal = result.links?.find(
-      (l: any) => l.linkType === 'WINNER' && l.source.structureId === q2.structureId,
-    );
+    const q2ToFinal = result.links?.find((l: any) => l.linkType === WINNER && l.source.structureId === q2.structureId);
     expect(q2ToFinal?.target.structureId).toEqual(ppsFinal.structureId);
   });
 
@@ -409,11 +411,11 @@ describe('PAGE_PLAYOFF draw type', () => {
     expect(ppsStructures.length).toEqual(4);
 
     // Two POSITION links: [1]→Q1, [2]→Eliminator
-    const positionLinks = drawDefinition.links.filter((l) => l.linkType === 'POSITION');
+    const positionLinks = drawDefinition.links.filter((l) => l.linkType === POSITION);
     expect(positionLinks.length).toEqual(2);
 
     // 4 internal PPS links (WINNER/LOSER)
-    const internalLinks = drawDefinition.links.filter((l) => l.linkType === 'WINNER' || l.linkType === 'LOSER');
+    const internalLinks = drawDefinition.links.filter((l) => l.linkType === WINNER || l.linkType === LOSER);
     expect(internalLinks.length).toEqual(4);
   });
 });

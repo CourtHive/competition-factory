@@ -4,6 +4,9 @@ import { POLICY_SEEDING_ITF } from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import { describe, expect, it } from 'vitest';
 
+// constants
+import { WATERFALL, SEPARATE, CLUSTER, ADJACENT } from '@Constants/drawDefinitionConstants';
+
 /**
  * `SeedingPolicy` describes a shape the factory READS but never declared — `PolicyDefinitions`
  * types every policy as `{ [key: string]: any }`, so `seedingProfile.drawTypes` was consumed by
@@ -24,14 +27,14 @@ describe('the shipped seeding policies carry the values their readers branch on'
   it('POLICY_SEEDING_DEFAULT resolves round robins to WATERFALL via a per-drawType override', () => {
     const profile = POLICY_SEEDING_DEFAULT[POLICY_TYPE_SEEDING].seedingProfile;
     // validateAndDeriveDrawValues consults drawTypes[drawType] BEFORE the outer profile.
-    expect(profile.drawTypes.ROUND_ROBIN).toEqual({ positioning: 'WATERFALL' });
-    expect(profile.drawTypes.ROUND_ROBIN_WITH_PLAYOFF).toEqual({ positioning: 'WATERFALL' });
-    expect(profile.positioning).toBe('SEPARATE');
+    expect(profile.drawTypes.ROUND_ROBIN).toEqual({ positioning: WATERFALL });
+    expect(profile.drawTypes.ROUND_ROBIN_WITH_PLAYOFF).toEqual({ positioning: WATERFALL });
+    expect(profile.positioning).toBe(SEPARATE);
   });
 
   it('POLICY_SEEDING_ITF is CLUSTER with no overrides', () => {
     const policy = POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING];
-    expect(policy.seedingProfile).toEqual({ positioning: 'CLUSTER' });
+    expect(policy.seedingProfile).toEqual({ positioning: CLUSTER });
   });
 
   it('POLICY_SEEDING_BYES sets the flag getSeedOrderedByePositions reads', () => {
@@ -39,7 +42,7 @@ describe('the shipped seeding policies carry the values their readers branch on'
   });
 
   it('every shipped positioning is a SeedingProfileEnum member', () => {
-    const members = ['ADJACENT', 'CLUSTER', 'SEPARATE', 'WATERFALL'];
+    const members = [ADJACENT, CLUSTER, SEPARATE, WATERFALL];
     const shipped = [
       POLICY_SEEDING_DEFAULT[POLICY_TYPE_SEEDING].seedingProfile.positioning,
       POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING].seedingProfile.positioning,
