@@ -284,6 +284,39 @@ function carriesWithdrawnOrigin(matchUp, withdrawnSourceIds: Set<string>): boole
 }
 
 /**
+ * Does this matchUp carry an exit PRODUCED by a convergence this unwind dissolves? Such a convergence is a double exit
+ * one of whose own origins is being taken back. The walk has not reached it yet (a matchUp's loser target is visited
+ * after its winner target), so its id is not among the withdrawn ones, but the exit it produced goes with its origin.
+ *
+ * Census run 20 policy-off, DOUBLE_ELIMINATION 8/4 (20994634) and 8/5 (20932043): `Main|2|1`'s DOUBLE_DEFAULT
+ * converged in `Backdraw|3|1` with a loser's carry and produced a DEFAULTED onward, past the Backdraw final's BYE into
+ * the Main final. Re-scoring `Main|2|1` as a played win dissolves that convergence. The walk reached the Main final
+ * from `Main|3|1`, read its origin as `Backdraw|3|1`, untouched, and stopped, keeping a result whose exit was gone: the
+ * participant who then came through the Backdraw passed on into the Decider, and the next result was refused after
+ * a write (ERR_OCCUPIED_DRAW_POSITION).
+ */
+function carriesDissolvedConvergence(
+  matchUp: MatchUp | undefined,
+  withdrawnSourceIds: Set<string>,
+  matchUpsMap?: MatchUpsMap,
+  visited = new Set<string>(),
+): boolean {
+  const provenance = getSideExitProvenance({ matchUp });
+  if (!provenance) return false;
+  return [1, 2].some((sideNumber) => {
+    const sourceMatchUpId = provenance[sideNumber]?.sourceMatchUpId;
+    if (!sourceMatchUpId || visited.has(sourceMatchUpId)) return false;
+    visited.add(sourceMatchUpId);
+    const source = matchUpsMap?.drawMatchUps.find((candidate) => candidate.matchUpId === sourceMatchUpId);
+    if (!source || !isDoubleExit(source.matchUpStatus)) return false;
+    return (
+      carriesWithdrawnOrigin(source, withdrawnSourceIds) ||
+      carriesDissolvedConvergence(source, withdrawnSourceIds, matchUpsMap, visited)
+    );
+  });
+}
+
+/**
  * Take back an exit that was carried through BYE-held matchUps, following the same chain out.
  *
  * The mirror of `doubleExitAdvancement`'s `carryExitOnward`, and it exists for the reason that file
@@ -580,7 +613,8 @@ export function conditionallyRemoveDrawPosition(params) {
   // (below), so nothing it sent on is this unwind's either
   const keepsOwnResult =
     !!getSideExitProvenance({ matchUp: noContextTargetMatchUp }) &&
-    !carriesWithdrawnOrigin(noContextTargetMatchUp, withdrawnSourceIds);
+    !carriesWithdrawnOrigin(noContextTargetMatchUp, withdrawnSourceIds) &&
+    !carriesDissolvedConvergence(noContextTargetMatchUp, withdrawnSourceIds, matchUpsMap);
   if (keepsOwnResult) {
     pushGlobalLog({
       method: stack,
