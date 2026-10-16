@@ -697,6 +697,16 @@ decided that matchUp for whoever arrived next (census run 18, FEED_IN_CHAMPIONSH
 MODIFIED_FEED_IN_CHAMPIONSHIP 16/14: a result refused after it had written, and two positions sent on
 by one matchUp).
 
+**A seat emptied for the winner holds no carry.** When a played win is re-entered as a walkover or
+default the other way, the old winner is taken out of the rounds they reached, and the seat each removal
+empties is the one the new winner takes next. A single exit decides nothing there: the exit is the new
+loser's, and it goes with them. Only a double exit, which sends nobody, records a produced exit on that
+seat. Before this, the empty seat was stamped with the new loser's exit as though they had been carried
+into it. On a BYE the stamp stood beside the new winner and went past the BYE with them. It then either
+converged with the exit waiting there into a double exit nobody had entered, or, once the copy was
+withdrawn as stranded, took the new winner's advancement back with it (census S8, FEED_IN_CHAMPIONSHIP
+16/11 and COMPASS 32/27: `aSeatEmptiedForTheWinnerHoldsNoCarry`).
+
 **A produced exit supersedes a stale relay on its own side.** A produced exit relayed past a BYE
 waits, on the side its path arrives at, in a matchUp no position has reached yet. When a loser takes
 that BYE's seat and the matchUp they meet there produces its own exit, it travels the same path onto
