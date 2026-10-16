@@ -84,6 +84,7 @@ export function allEventMatchUps(params: GetMatchUpsArgs) {
       tournamentAppliedPolicies,
       scheduleVisibilityFilters,
       context: additionalContext,
+      hydrateParticipants: params.hydrateParticipants,
       participantsProfile,
       afterRecoveryTimes,
       policyDefinitions,
