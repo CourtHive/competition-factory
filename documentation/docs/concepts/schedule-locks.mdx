@@ -71,10 +71,15 @@ The predicate is enforced at every mutation that writes or wipes placement, so t
 | Mutation                                                  | Behaviour on a locked matchUp                                              |
 | --------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `addMatchUpScheduleItems`                                 | Returns `SCHEDULE_LOCKED`; `info` names the locked attributes              |
+| `bulkRescheduleMatchUps`                                  | Skips the matchUp, continues with the rest, returns `lockedMatchUpIds`     |
+| `reorderUpcomingMatchUps`                                 | Returns `SCHEDULE_LOCKED`, `context.lockedMatchUpIds`; nothing is rotated  |
 | `bulkScheduleMatchUps` / `bulkScheduleTournamentMatchUps` | **Skips** the matchUp, continues with the rest, returns `lockedMatchUpIds` |
 | `clearScheduledMatchUps`                                  | Skips the matchUp, returns `lockedMatchUpIds`                              |
 | `clearMatchUpSchedule`                                    | Returns `SCHEDULE_LOCKED`                                                  |
 | `applyScheduleScenario`                                   | Skips (hand-off to `bulkScheduleMatchUps`), returns `lockedMatchUpIds`     |
+
+A date change that would clear a pinned court, venue or `courtOrder` (a matchUp leaves its old day's grid when only
+its date is given) counts as a change to those attributes, so a lock on the court alone refuses it.
 
 Every one of them accepts **`overrideScheduleLock: true`** for callers that have confirmed the intent with the operator — the TMX grid, for example, confirms a drag of a pinned matchUp and then passes the override. **An override moves the placement but does not remove the lock**: only `setMatchUpScheduleLock` does that.
 

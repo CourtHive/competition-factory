@@ -503,13 +503,32 @@ When `courtIds` is provided, only courts in the set are considered as placement 
 
 ### bulkScheduleMatchUps
 
-Schedules multiple matchUps at once with provided scheduling details.
+Schedules multiple matchUps at once with provided scheduling details, across every tournament in state.
 
 ```js
-engine.bulkScheduleMatchUps({
-  schedule, // required - array of schedule objects
+const {
+  scheduled, // number of matchUps scheduled
+  lockedMatchUpIds, // present when any - schedule-locked matchUps that were skipped
+  skippedMatchUpIds, // present when any - BYE or completed matchUps that were skipped
+  notFoundMatchUpIds, // present when any - requested matchUpIds no tournament in state holds
+  warnings, // present when any
+} = engine.bulkScheduleMatchUps({
+  matchUpDetails, // array of { matchUpId, schedule, tournamentId? } - each with its own schedule
+  // or
+  matchUpContextIds, // array of { tournamentId, matchUpId } - all given the same `schedule`
+  schedule, // required with matchUpContextIds
+
+  scheduleCompletedMatchUps, // optional boolean - default false: completed matchUps are skipped
+  scheduleByeMatchUps, // optional boolean - default false: BYE matchUps are skipped
+  overrideScheduleLock, // optional boolean
+  removePriorValues, // optional boolean
 });
 ```
+
+A detail's `tournamentId` is optional: when it is absent the tournament holding `matchUpId` is used. Nothing
+requested is dropped in silence: a skipped BYE or completed matchUp is named in `skippedMatchUpIds`, and a
+`matchUpId` that no tournament in state holds (or a detail naming a tournament that is not in state) in
+`notFoundMatchUpIds`.
 
 ---
 
@@ -532,6 +551,10 @@ engine.bulkScheduleTournamentMatchUps({
   removePriorValues, // optional boolean - clear existing scheduling timeItems
 });
 ```
+
+Returns `scheduled` and, when any, `lockedMatchUpIds`, `skippedMatchUpIds` (BYE or completed, unless
+`scheduleByeMatchUps` / `scheduleCompletedMatchUps`) and `notFoundMatchUpIds` (requested ids the tournament does
+not hold), as [`bulkScheduleMatchUps`](#bulkschedulematchups) does.
 
 #### bulkScheduleTournamentMatchUps Examples
 
@@ -602,6 +625,7 @@ const {
   rescheduled, // array of inContext matchUps that were rescheduled
   notRescheduled, // array of inContext matchUps that were NOT rescheduled
   allRescheduled, // boolean - true if all matchUps rescheduled
+  lockedMatchUpIds, // matchUpIds skipped because a schedule lock pins them (present when any were)
   dryRun, // boolean - indicates if this was a dry run
 } = engine.bulkRescheduleMatchUps({
   matchUpIds, // required - array of matchUpIds to reschedule
@@ -609,9 +633,29 @@ const {
     daysChange: number, // number of days +/- to shift
     minutesChange: number, // number of minutes +/- to shift
   },
+  overrideScheduleLock, // optional boolean - move locked matchUps too (the locks stay)
   dryRun, // optional boolean - preview without changes
 });
 ```
+
+Only scheduled matchUps that are not completed are considered. A matchUp is **not rescheduled**, and is
+reported in `notRescheduled` with its schedule untouched, when either change would take it out of bounds:
+
+- a `daysChange` that lands before the tournament `startDate` or after its `endDate`;
+- a `minutesChange` that takes its `scheduledTime` out of its own day: before `00:00`, or to `24:00` and
+  beyond (23:00 + 60 minutes is refused, as 23:00 + 61 is; the time never rolls over to another date).
+
+The two are judged separately and either one refuses the matchUp, so a `daysChange` past `endDate` is not
+rescued by a `minutesChange` given alongside it.
+
+A `daysChange` moves the matchUp off its old day's grid: its `courtOrder`, `courtId` and `venueId` are cleared,
+as for any [date change](#grid-position-is-cleared-on-a-date-change). A `minutesChange` alone keeps them.
+
+A matchUp whose [schedule lock](../concepts/schedule-locks.mdx) pins what the shift would change is skipped, left
+as it is, and reported in both `notRescheduled` and `lockedMatchUpIds`; a dry run reports it the same way. A shift
+of a whole block therefore leaves a locked matchUp where it was, and a matchUp moved onto its court and time is a
+court double booking that `proConflicts` reports. Pass `overrideScheduleLock: true` once the operator has confirmed
+moving pinned matchUps as well.
 
 #### bulkRescheduleMatchUps Examples
 
@@ -1136,27 +1180,35 @@ engine.removeEventMatchUpFormatTiming({
 
 ### reorderUpcomingMatchUps
 
-Reorders upcoming matchUps on a court, affecting their order of play.
+Reorders a time-ordered list of upcoming matchUps by rotating their `scheduledTime`s: with `firstToLast` the
+first matchUp takes the last one's time and each other matchUp the time of the one before it; without it, the
+rotation runs the other way. Only `scheduledTime` moves; `courtOrder`, court and venue are left as they are.
 
 ```js
 engine.reorderUpcomingMatchUps({
-  matchUpContextIds, // required - array of matchUp context objects
+  matchUpsContextIds, // required - array of { tournamentId, drawId, matchUpId, schedule } in time order
   firstToLast, // optional boolean - direction of reorder
+  overrideScheduleLock, // optional boolean - rotate locked times too (the locks stay)
 });
 ```
+
+Every matchUp is resolved before any time is written: if one cannot be (unknown draw or matchUp, invalid time)
+the call returns `MODIFICATIONS_FAILED` and nothing is changed. If a [schedule lock](../concepts/schedule-locks.mdx)
+pins the time of any of them, the call returns `SCHEDULE_LOCKED` with `context.lockedMatchUpIds` and nothing is
+changed: the rotation moves every time in the list, so it is not applied in part.
 
 **Example**:
 
 ```js
-const matchUpContextIds = [
-  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm1' },
-  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm2' },
-  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm3' },
+const matchUpsContextIds = [
+  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm1', schedule: { scheduledTime: '10:00' } },
+  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm2', schedule: { scheduledTime: '11:00' } },
+  { tournamentId: 't1', drawId: 'd1', matchUpId: 'm3', schedule: { scheduledTime: '12:00' } },
 ];
 
 engine.reorderUpcomingMatchUps({
-  matchUpContextIds,
-  firstToLast: true, // Move first to last
+  matchUpsContextIds,
+  firstToLast: true, // m1 → 12:00, m2 → 10:00, m3 → 11:00
 });
 ```
 
@@ -1604,7 +1656,7 @@ the matchUp does not inherit the prior day's row on its new day.
   date is honored verbatim — a deliberate "move to a new day and row" is respected.
 
 This also governs `bulkScheduleMatchUps`, which delegates to
-`addMatchUpScheduleItems` per matchUp. The lower-level `addMatchUpScheduledDate`
+`addMatchUpScheduleItems` per matchUp, and the `daysChange` of `bulkRescheduleMatchUps`. The lower-level `addMatchUpScheduledDate`
 primitive does **not** clear grid position; use `addMatchUpScheduleItems` (the path
 TMX and integrations use) for date changes.
 
