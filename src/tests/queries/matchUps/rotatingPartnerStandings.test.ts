@@ -14,6 +14,7 @@ import Ajv from 'ajv';
 // constants and types
 import { INVALID_SCORE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import type { RotatingPartnerTallyPolicy } from '@Types/rotatingPartnerTally';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
@@ -47,7 +48,7 @@ function setup(
     drawId: 'd',
     drawType: AD_HOC,
     matchUpType: 'DOUBLES',
-    entries: ids.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' })),
+    entries: ids.map((participantId) => ({ participantId, entryStatus: DIRECT_ACCEPTANCE })),
     structures: [{ structureId: 's', matchUps: [] }],
     competitionProfile: {
       version: 1,
@@ -80,7 +81,7 @@ function setup(
     eventId: 'e',
     eventType: DOUBLES_EVENT,
     drawDefinitions: [drawDefinition],
-    entries: ids.map((participantId) => ({ participantId, entryStatus: 'UNGROUPED' })),
+    entries: ids.map((participantId) => ({ participantId, entryStatus: UNGROUPED })),
   };
   const tournamentRecord: Tournament = {
     tournamentId: 't',

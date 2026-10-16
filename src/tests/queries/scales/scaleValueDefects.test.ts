@@ -5,6 +5,7 @@ import { getAvgWTN } from '@Query/scales/getAvgWTN';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { RATING, SEEDING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 
@@ -129,7 +130,7 @@ describe('getScaledEntries — zero is a rating, not an absence', () => {
     }));
     return {
       tournamentRecord: { participants },
-      entries: values.map((_, index) => ({ participantId: `p${index}`, entryStatus: 'DIRECT_ACCEPTANCE' })),
+      entries: values.map((_, index) => ({ participantId: `p${index}`, entryStatus: DIRECT_ACCEPTANCE })),
     };
   };
 

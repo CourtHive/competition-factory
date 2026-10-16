@@ -6,6 +6,7 @@ import { expect, it, describe } from 'vitest';
 import { MISSING_EVENT, MISSING_POLICY_DEFINITION } from '@Constants/errorConditionConstants';
 import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
 import { SINGLE_ELIMINATION, MAIN } from '@Constants/drawDefinitionConstants';
+import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 
 const policyDefinitions = POLICY_RANKING_POINTS_BASIC;
@@ -230,7 +231,7 @@ describe('getEventRankingPoints', () => {
       drawName: 'Flight 2',
       drawEntries: someParticipantIds.map((participantId: string) => ({
         participantId,
-        entryStatus: 'DIRECT_ACCEPTANCE',
+        entryStatus: DIRECT_ACCEPTANCE,
         entryStage: MAIN,
       })),
     });

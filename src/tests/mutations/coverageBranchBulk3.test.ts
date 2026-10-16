@@ -24,6 +24,7 @@ import { getAccessorValue } from '@Tools/getAccessorValue';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { DIRECT_ACCEPTANCE, ALTERNATE } from '@Constants/entryStatusConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
@@ -557,7 +558,7 @@ describe('removeScaleValues branch coverage', () => {
       scaleAttributes: { scaleType: 'RATING', scaleName: 'UTR', eventType: SINGLES_EVENT },
       event: {
         eventId: 'e1',
-        entries: [{ participantId: 'p1', entryStage: MAIN, entryStatus: 'DIRECT_ACCEPTANCE' }],
+        entries: [{ participantId: 'p1', entryStage: MAIN, entryStatus: DIRECT_ACCEPTANCE }],
       } as any,
       stage: MAIN,
     } as any);
@@ -572,7 +573,7 @@ describe('removeScaleValues branch coverage', () => {
       event: { eventId: 'e1', entries: [] } as any,
       drawDefinition: {
         drawId: 'd1',
-        entries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' }],
+        entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE }],
       } as any,
       drawId: 'd1',
     } as any);
@@ -593,7 +594,7 @@ describe('removeScaleValues branch coverage', () => {
               flights: [
                 {
                   drawId: 'd1',
-                  drawEntries: [{ participantId: 'p2', entryStatus: 'DIRECT_ACCEPTANCE' }],
+                  drawEntries: [{ participantId: 'p2', entryStatus: DIRECT_ACCEPTANCE }],
                 },
               ],
             },
@@ -612,11 +613,11 @@ describe('removeScaleValues branch coverage', () => {
       event: {
         eventId: 'e1',
         entries: [
-          { participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' },
-          { participantId: 'p2', entryStatus: 'ALTERNATE' },
+          { participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE },
+          { participantId: 'p2', entryStatus: ALTERNATE },
         ],
       } as any,
-      entryStatuses: ['DIRECT_ACCEPTANCE'],
+      entryStatuses: [DIRECT_ACCEPTANCE],
     } as any);
     expect(result.error).toBeUndefined();
   });

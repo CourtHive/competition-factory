@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { EXISTING_PROFILE, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { SPLIT_WATERFALL } from '@Constants/flightConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
@@ -217,16 +218,16 @@ describe('attachFlightProfile', () => {
           drawId: 'd1',
           drawName: 'Flight 1',
           drawEntries: [
-            { participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' },
-            { participantId: 'p2', entryStatus: 'DIRECT_ACCEPTANCE' },
+            { participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE },
+            { participantId: 'p2', entryStatus: DIRECT_ACCEPTANCE },
           ],
         },
         {
           drawId: 'd2',
           drawName: 'Flight 2',
           drawEntries: [
-            { participantId: 'p3', entryStatus: 'DIRECT_ACCEPTANCE' },
-            { participantId: 'p4', entryStatus: 'DIRECT_ACCEPTANCE' },
+            { participantId: 'p3', entryStatus: DIRECT_ACCEPTANCE },
+            { participantId: 'p4', entryStatus: DIRECT_ACCEPTANCE },
           ],
         },
       ],

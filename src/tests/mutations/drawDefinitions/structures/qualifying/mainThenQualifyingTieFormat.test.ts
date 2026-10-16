@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 import { ANY, MALE } from '@Constants/genderConstants';
 import { SINGLES } from '@Constants/eventConstants';
@@ -85,13 +86,13 @@ it('can generateDrawDefinition a main structure, then generate a qualifying stru
 
   const drawEntries = [
     ...mainParticipantIds.map((p, i) => ({
-      entryStatus: 'DIRECT_ACCEPTANCE',
+      entryStatus: DIRECT_ACCEPTANCE,
       entryPosition: i + 1,
       entryStage: MAIN,
       participantId: p,
     })),
     ...qualifyingParticipantIds.slice(0, 2).map((p, i) => ({
-      entryStatus: 'DIRECT_ACCEPTANCE',
+      entryStatus: DIRECT_ACCEPTANCE,
       entryStage: QUALIFYING,
       entryPosition: i + 1,
       participantId: p,

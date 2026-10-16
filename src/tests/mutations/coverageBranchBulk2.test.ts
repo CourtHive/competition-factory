@@ -32,6 +32,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { VOLUNTARY_CONSOLATION, MAIN, QUALIFYING, CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { DIRECT_ACCEPTANCE, UNGROUPED, ALTERNATE } from '@Constants/entryStatusConstants';
 import {
   INVALID_VALUES,
   MISSING_COURT_ID,
@@ -102,7 +103,7 @@ describe('getSwapOptions branch coverage', () => {
 describe('getEventAlternateParticipantIds branch coverage', () => {
   it('returns empty array when no entries match ALTERNATE status', () => {
     const result = getEventAlternateParticipantIds({
-      eventEntries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' }],
+      eventEntries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE }],
       structure: { stage: MAIN, stageSequence: 1 },
     });
     expect(result).toEqual([]);
@@ -298,7 +299,7 @@ describe('getValidModifyAssignedPairAction branch coverage', () => {
       drawPosition: 1,
       participant: { participantId: 'pair1', individualParticipantIds: ['ip2'] },
       drawId: 'd1',
-      event: { entries: [{ participantId: 'ip1', entryStatus: 'UNGROUPED' }] },
+      event: { entries: [{ participantId: 'ip1', entryStatus: UNGROUPED }] },
     });
     expect(result.validModifyAssignedPairAction).toBeDefined();
   });
@@ -313,7 +314,7 @@ describe('getValidModifyAssignedPairAction branch coverage', () => {
       drawPosition: 1,
       participant: { participantId: 'pair1', individualParticipantIds: ['ip2'] },
       drawId: 'd1',
-      event: { entries: [{ participantId: 'ip1', entryStatus: 'UNGROUPED' }] },
+      event: { entries: [{ participantId: 'ip1', entryStatus: UNGROUPED }] },
     });
     expect(result.validModifyAssignedPairAction).toBeDefined();
     expect(result.validModifyAssignedPairAction.availableIndividualParticipants).toBeDefined();
@@ -375,8 +376,8 @@ describe('generateAdHocRounds branch coverage', () => {
       drawDefinition: {
         drawId: 'd1',
         entries: [
-          { participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' },
-          { participantId: 'p2', entryStatus: 'DIRECT_ACCEPTANCE' },
+          { participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE },
+          { participantId: 'p2', entryStatus: DIRECT_ACCEPTANCE },
         ],
         structures: [{ structureId: 's1', matchUps: [] }],
       } as any,
@@ -818,7 +819,7 @@ describe('getStageEntries branch coverage', () => {
   it('returns entries from event when no drawId', () => {
     const result = getStageEntries({
       drawDefinition: { drawId: 'd1' } as any,
-      event: { entries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE', entryStage: MAIN }] } as any,
+      event: { entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE, entryStage: MAIN }] } as any,
     });
     expect(result.entries.length).toBe(1);
   });
@@ -828,43 +829,43 @@ describe('getStageEntries branch coverage', () => {
       drawDefinition: { drawId: 'd1' } as any,
       drawId: 'd1',
       event: {
-        entries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' }],
+        entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE }],
         extensions: [
           {
             name: 'flightProfile',
             value: {
-              flights: [{ drawId: 'd1', drawEntries: [{ participantId: 'p2', entryStatus: 'DIRECT_ACCEPTANCE' }] }],
+              flights: [{ drawId: 'd1', drawEntries: [{ participantId: 'p2', entryStatus: DIRECT_ACCEPTANCE }] }],
             },
           },
         ],
       } as any,
     });
-    expect(result.entries).toEqual([{ participantId: 'p2', entryStatus: 'DIRECT_ACCEPTANCE' }]);
+    expect(result.entries).toEqual([{ participantId: 'p2', entryStatus: DIRECT_ACCEPTANCE }]);
   });
 
   it('uses drawDefinition.entries when drawId does not match a flight', () => {
     const result = getStageEntries({
       drawDefinition: {
         drawId: 'd1',
-        entries: [{ participantId: 'p3', entryStatus: 'DIRECT_ACCEPTANCE' }],
+        entries: [{ participantId: 'p3', entryStatus: DIRECT_ACCEPTANCE }],
       } as any,
       drawId: 'd2',
       event: {
-        entries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' }],
+        entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE }],
       } as any,
     });
-    expect(result.entries).toEqual([{ participantId: 'p3', entryStatus: 'DIRECT_ACCEPTANCE' }]);
+    expect(result.entries).toEqual([{ participantId: 'p3', entryStatus: DIRECT_ACCEPTANCE }]);
   });
 
   it('filters by entryStatuses', () => {
     const result = getStageEntries({
       drawDefinition: { drawId: 'd1' } as any,
-      entryStatuses: ['ALTERNATE'] as any,
+      entryStatuses: [ALTERNATE] as any,
       selected: false,
       event: {
         entries: [
-          { participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' },
-          { participantId: 'p2', entryStatus: 'ALTERNATE' },
+          { participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE },
+          { participantId: 'p2', entryStatus: ALTERNATE },
         ],
       } as any,
     });
@@ -1017,8 +1018,8 @@ describe('removeEntry branch coverage', () => {
       drawId: 'd1',
       structures: [],
       entries: [
-        { participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' },
-        { participantId: 'p2', entryStatus: 'DIRECT_ACCEPTANCE' },
+        { participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE },
+        { participantId: 'p2', entryStatus: DIRECT_ACCEPTANCE },
       ],
     } as any;
     const result: any = removeEntry({ drawDefinition, participantId: 'p1' });
@@ -1030,7 +1031,7 @@ describe('removeEntry branch coverage', () => {
     const drawDefinition = {
       drawId: 'd1',
       structures: [],
-      entries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' }],
+      entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE }],
     } as any;
     const result: any = removeEntry({ drawDefinition, participantId: 'p1', autoEntryPositions: false });
     expect(result.success).toBe(true);

@@ -26,8 +26,8 @@ import {
 } from '@Generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
 
 // constants
+import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { MAIN, AD_HOC } from '@Constants/drawDefinitionConstants';
-import { ALTERNATE } from '@Constants/entryStatusConstants';
 import {
   MISSING_TOURNAMENT_RECORDS,
   MISSING_TOURNAMENT_RECORD,
@@ -62,7 +62,7 @@ describe('getEventAlternateParticipantIds branches', () => {
     const eventEntries = [
       { entryStatus: ALTERNATE, participantId: 'p1', entryPosition: undefined },
       { entryStatus: ALTERNATE, participantId: 'p2', entryPosition: 1 },
-      { entryStatus: 'DIRECT_ACCEPTANCE', participantId: 'p3', entryPosition: 2 },
+      { entryStatus: DIRECT_ACCEPTANCE, participantId: 'p3', entryPosition: 2 },
     ];
     const result = getEventAlternateParticipantIds({ eventEntries, structure });
     expect(Array.isArray(result)).toBe(true);
@@ -72,7 +72,7 @@ describe('getEventAlternateParticipantIds branches', () => {
 
   it('returns empty when no alternates', () => {
     const structure = { stage: MAIN };
-    const eventEntries = [{ entryStatus: 'DIRECT_ACCEPTANCE', participantId: 'p1' }];
+    const eventEntries = [{ entryStatus: DIRECT_ACCEPTANCE, participantId: 'p1' }];
     const result = getEventAlternateParticipantIds({ eventEntries, structure });
     expect(result).toEqual([]);
   });
@@ -83,7 +83,7 @@ describe('generateAdHocRounds branches', () => {
   it('returns error when getParticipantIds fails (invalid participantIds)', () => {
     const drawDefinition = {
       drawId: 'd1',
-      entries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' }],
+      entries: [{ participantId: 'p1', entryStatus: DIRECT_ACCEPTANCE }],
       structures: [{ structureId: 's1', matchUps: [] }],
     };
     const event = { eventId: 'e1' } as any;

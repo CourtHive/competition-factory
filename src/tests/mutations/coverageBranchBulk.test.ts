@@ -35,6 +35,7 @@ import { disableVenues } from '@Mutate/venues/disableVenues';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { DIRECT_ACCEPTANCE, ALTERNATE } from '@Constants/entryStatusConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
@@ -199,7 +200,7 @@ describe('getEventAlternateParticipantIds branch coverage', () => {
 
   it('filters out non-ALTERNATE entries', () => {
     const result = getEventAlternateParticipantIds({
-      eventEntries: [{ entryStatus: 'DIRECT_ACCEPTANCE', participantId: 'p1' }],
+      eventEntries: [{ entryStatus: DIRECT_ACCEPTANCE, participantId: 'p1' }],
       structure: {},
     });
     expect(result).toEqual([]);
@@ -382,10 +383,10 @@ describe('getMaxEntryPosition branch coverage', () => {
   it('filters by entryStatus when provided', () => {
     const result = getMaxEntryPosition({
       entries: [
-        { entryPosition: 2, entryStatus: 'DIRECT_ACCEPTANCE' },
-        { entryPosition: 7, entryStatus: 'ALTERNATE' },
+        { entryPosition: 2, entryStatus: DIRECT_ACCEPTANCE },
+        { entryPosition: 7, entryStatus: ALTERNATE },
       ],
-      entryStatus: 'ALTERNATE',
+      entryStatus: ALTERNATE,
     });
     expect(result).toBe(7);
   });

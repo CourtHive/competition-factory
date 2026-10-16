@@ -7,6 +7,7 @@ import tournamentEngine from '@Engines/syncEngine';
 // constants
 import { DOUBLES_EVENT, TEAM_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { GROUP, INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { ALTERNATE, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { COMPETITOR, OTHER } from '@Constants/participantRoles';
 import { RANKING } from '@Constants/scaleConstants';
 
@@ -789,13 +790,13 @@ const scenarios: Scenario[] = [
       tournamentEngine.addEventEntries({
         eventId: ctx.eventId,
         participantIds: [ctx.alternateIds[0]],
-        entryStatus: 'ALTERNATE',
+        entryStatus: ALTERNATE,
       }),
     run: (ctx) =>
       tournamentEngine.modifyEntriesStatus({
         eventId: ctx.eventId,
         participantIds: [ctx.alternateIds[0]],
-        entryStatus: 'WITHDRAWN',
+        entryStatus: WITHDRAWN,
       }),
   },
   {
@@ -831,7 +832,7 @@ const scenarios: Scenario[] = [
       tournamentEngine.modifyEntriesStatus({
         drawId: ctx.drawId,
         participantIds: [ctx.enteredIds[0]],
-        entryStatus: 'ALTERNATE',
+        entryStatus: ALTERNATE,
       }),
   },
   {
