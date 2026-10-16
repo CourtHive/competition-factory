@@ -8,7 +8,7 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import { allCompetitionMatchUps } from './getAllCompetitionMatchUps';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { allDrawMatchUps } from './getAllDrawMatchUps';
-import { addGoesTo } from '@Query/matchUps/addGoesTo';
+import { ensureGoesToOrLinkError } from '@Query/matchUps/addGoesTo';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
@@ -159,8 +159,10 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
   };
 
   if (drawDefinition) {
-    const goesTo = addGoesTo({ drawDefinition });
-    if (goesTo.error) return goesTo;
+    // the edges are read from the stored matchUps, derived only for a draw that does not store them; a malformed
+    // round link is refused either way
+    const goesTo = ensureGoesToOrLinkError({ drawDefinition });
+    if (goesTo?.error) return goesTo;
     if (!matchUps?.length) {
       matchUps = allDrawMatchUps({ drawDefinition }).matchUps;
     }
@@ -235,7 +237,7 @@ function processDrawMatchUps({ matchUps, drawId, tournamentRecords, processMatch
       tournamentRecord: tournamentRecords[hasTournamentId?.tournamentId],
       drawId,
     });
-    const goesTo = drawDefinition && addGoesTo({ drawDefinition });
+    const goesTo = drawDefinition && ensureGoesToOrLinkError({ drawDefinition });
     if (goesTo?.error) return goesTo;
   }
 

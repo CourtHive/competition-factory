@@ -1,7 +1,6 @@
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getParticipantIds } from '@Functions/global/extractors';
-import { positionTargets } from '@Query/matchUp/positionTargets';
-import { findStructure } from '@Acquire/findStructure';
+import { buildTargetIndex, indexedStructure, positionTargets, TargetIndex } from '@Query/matchUp/positionTargets';
 import { timeStringMinutes } from '@Tools/dateTime';
 import { ensureInt } from '@Tools/ensureInt';
 import { numericSort } from '@Tools/sorting';
@@ -9,13 +8,17 @@ import { numericSort } from '@Tools/sorting';
 // constants
 import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DrawDefinition } from '@Types/tournamentTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 export function addUpcomingMatchUps({ drawDefinition, inContextDrawMatchUps }) {
   const scheduleConflictMatchUpIds = {};
+  // built once for this call: every matchUp's targets are read from the same draw
+  const targetIndex = buildTargetIndex(inContextDrawMatchUps);
 
   inContextDrawMatchUps.forEach((inContextMatchUp) => {
     const { matchUpId, structureId, drawPositions = [] } = inContextMatchUp;
-    const { structure } = findStructure({ drawDefinition, structureId });
+    const { structure } = indexedStructure({ drawDefinition, targetIndex, structureId });
     if (structure?.finishingPosition === WIN_RATIO) {
       addRoundRobinSidesTo({ inContextMatchUp, structure, drawPositions });
     } else {
@@ -24,6 +27,7 @@ export function addUpcomingMatchUps({ drawDefinition, inContextDrawMatchUps }) {
         inContextDrawMatchUps,
         inContextMatchUp,
         drawDefinition,
+        targetIndex,
         matchUpId,
       });
     }
@@ -67,13 +71,22 @@ function addEliminationUpcomingInfo({
   inContextDrawMatchUps,
   inContextMatchUp,
   drawDefinition,
+  targetIndex,
   matchUpId,
+}: {
+  scheduleConflictMatchUpIds: Record<string, string>;
+  inContextDrawMatchUps: HydratedMatchUp[];
+  inContextMatchUp: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  targetIndex: TargetIndex;
+  matchUpId: string;
 }) {
   const targetData = positionTargets({
     useTargetMatchUpIds: true,
     inContextDrawMatchUps,
     inContextMatchUp,
     drawDefinition,
+    targetIndex,
     matchUpId,
   });
   /**
