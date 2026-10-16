@@ -3,8 +3,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // Constants
-import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { PAIR } from '@Constants/participantConstants';
+import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
 // Fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
