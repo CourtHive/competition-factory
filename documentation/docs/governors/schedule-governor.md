@@ -349,7 +349,7 @@ engine.scheduleProfileRounds({
 
   // Execution control
   dryRun, // optional boolean - preview without changes
-  pro, // optional boolean - use grid scheduling instead of Garman
+  pro, // DEPRECATED - see below
   checkPotentialRequestConflicts, // optional boolean (default: true)
 
   // Daily-limit accounting (apply to already-scheduled matchUps that contribute
@@ -374,7 +374,7 @@ Set either flag to `false` to restore the pre-defaults legacy semantics where ev
 
 When `courtIds` is provided, the scheduler only considers those courts as available capacity. Useful when an operator wants auto-scheduling to operate against a subset of courts (e.g. when some courts are reserved for other purposes, or when scheduling is being applied per-court). Passing an empty array means "no courts are available" — the scheduler will run but place no matchUps. Omitting the parameter (the default) considers all enabled courts at the profile's venues.
 
-In `pro: true` mode, matchUps will receive `courtId` assignments only from the filtered set. In default (Garman) mode, the filter constrains capacity but final court assignment may still be deferred to play time.
+In the deprecated `pro: true` mode, matchUps will receive `courtId` assignments only from the filtered set. In default (Garman) mode, the filter constrains capacity but final court assignment may still be deferred to play time.
 
 **Returns**:
 
@@ -445,14 +445,10 @@ console.log('Would schedule:', result.scheduledMatchUpIds.length, 'matchUps');
 console.log('Request conflicts:', result.requestConflicts);
 ```
 
-**Professional Grid Scheduling**:
-
-```js
-engine.scheduleProfileRounds({
-  pro: true, // Use grid scheduling
-  periodLength: 30,
-});
-```
+**`pro: true` is deprecated** (since 7.15.0; removed at the next major). It selects an older scheduler that gives each
+matchUp a court and a time in one pass, without Garman time slots. It is not grid scheduling: court grid positions
+(`courtOrder`) are placed by [`scheduleProfileGrid`](#scheduleprofilegrid), which can run after `scheduleProfileRounds`.
+Omit `pro` to use the default scheduler.
 
 :::note
 SINGLES and DOUBLES matchUps are scheduled automatically. TEAM matchUps require manual court allocation using `allocateTeamMatchUpCourts()`.

@@ -32,6 +32,10 @@ type ScheduleProfileRoundsArgs = {
   useGarman?: boolean;
   courtIds?: string[];
   dryRun?: boolean;
+  /**
+   * @deprecated since 7.15.0; removed at the next major. Selects `v2Scheduler`, a court-and-time scheduler that is not
+   * Garman scheduling and not grid scheduling (that is `scheduleProfileGrid`). Omit it to use the default scheduler.
+   */
   pro?: boolean;
 };
 // abstraction layer to allow other schedulers to be defined at a later time
