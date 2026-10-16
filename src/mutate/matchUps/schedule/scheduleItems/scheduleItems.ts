@@ -35,7 +35,7 @@ import {
 
 // constants and types
 import { AddScheduleAttributeArgs, PolicyDefinitions, ResultType, TournamentRecords } from '@Types/factoryTypes';
-import { DrawDefinition, Event, MatchUpSchedule, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, MatchUpSchedule, Tournament } from '@Types/tournamentTypes';
 import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
@@ -697,6 +697,22 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
  * which is what makes the hoist possible at all.
  */
 /**
+ * A date change with no grid position of its own clears the matchUp's court, venue and courtOrder (see
+ * `clearGridPositionOnDateChange`). The lock check sees those clears as the writes they are, so a lock that pins only
+ * the court refuses a date change that would remove it.
+ */
+function withGridPositionCleared({ matchUp, schedule }: { matchUp?: MatchUp; schedule?: MatchUpSchedule }) {
+  const { scheduledDate, courtOrder, courtId, venueId } = schedule ?? {};
+  const priorScheduledDate = matchUp && scheduledMatchUpDate({ matchUp })?.scheduledDate;
+  const dateChange =
+    scheduledDate !== undefined &&
+    !!priorScheduledDate &&
+    extractDate(priorScheduledDate) !== extractDate(scheduledDate);
+  if (!dateChange || courtOrder !== undefined || courtId !== undefined || venueId !== undefined) return schedule;
+  return { ...schedule, courtOrder: undefined, courtId: undefined, venueId: undefined };
+}
+
+/**
  * The refusals that are decided BEFORE anything is written, in one place.
  *
  * Extracted from `addMatchUpScheduleItems` when adding `validateOnly` took that function's
@@ -716,7 +732,10 @@ function checkScheduleRefusals({
   // locked matchUp can still be started, suspended and completed. Callers that
   // have confirmed the move with the operator pass `overrideScheduleLock`.
   if (!overrideScheduleLock) {
-    const lockedAttributes = scheduleLockConflicts({ matchUp, schedule });
+    const lockedAttributes = scheduleLockConflicts({
+      matchUp,
+      schedule: withGridPositionCleared({ matchUp, schedule }),
+    });
     if (lockedAttributes.length) {
       return {
         error: decorateResult({

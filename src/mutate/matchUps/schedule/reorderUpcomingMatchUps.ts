@@ -1,4 +1,5 @@
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
+import { scheduleLockConflicts } from '@Query/matchUp/isScheduleLocked';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -13,6 +14,7 @@ import {
   MISSING_TOURNAMENT_RECORDS,
   MISSING_VALUE,
   MODIFICATIONS_FAILED,
+  SCHEDULE_LOCKED,
   ErrorType,
 } from '@Constants/errorConditionConstants';
 
@@ -37,7 +39,7 @@ export function reorderUpcomingMatchUps(params) {
       stack,
     });
 
-  const { matchUpsContextIds, firstToLast } = params;
+  const { matchUpsContextIds, firstToLast, overrideScheduleLock } = params;
   if (!matchUpsContextIds) return decorateResult({ result: { error: MISSING_VALUE }, stack });
 
   const matchUpsCount = matchUpsContextIds?.length;
@@ -47,6 +49,7 @@ export function reorderUpcomingMatchUps(params) {
   // `return` did not stop it, so one unresolvable matchUp left the others rotated (two matchUps sharing one
   // time) and then reported MODIFICATIONS_FAILED. A refused reorder now changes nothing.
   const assignments: Assignment[] = [];
+  const lockedMatchUpIds: string[] = [];
   for (const [index, context] of matchUpsContextIds.entries()) {
     let calculatedIndex = index + (firstToLast ? -1 : 1);
     if (calculatedIndex < 0) calculatedIndex = matchUpsCount - 1;
@@ -62,7 +65,20 @@ export function reorderUpcomingMatchUps(params) {
       });
     }
     const { drawDefinition, matchUp } = resolved;
+    if (!overrideScheduleLock && scheduleLockConflicts({ matchUp, schedule: { scheduledTime } }).length) {
+      lockedMatchUpIds.push(context.matchUpId);
+    }
     assignments.push({ drawDefinition, matchUp, matchUpId: context.matchUpId, scheduledTime });
+  }
+
+  // a reorder rotates times through the whole list, so one pinned time stops all of it rather than part of it
+  if (lockedMatchUpIds.length) {
+    return decorateResult({
+      info: 'schedule locked: scheduledTime',
+      result: { error: SCHEDULE_LOCKED },
+      context: { lockedMatchUpIds },
+      stack,
+    });
   }
 
   for (const { drawDefinition, matchUp, matchUpId, scheduledTime } of assignments) {

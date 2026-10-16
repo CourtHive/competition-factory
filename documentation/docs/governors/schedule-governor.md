@@ -617,6 +617,7 @@ const {
   rescheduled, // array of inContext matchUps that were rescheduled
   notRescheduled, // array of inContext matchUps that were NOT rescheduled
   allRescheduled, // boolean - true if all matchUps rescheduled
+  lockedMatchUpIds, // matchUpIds skipped because a schedule lock pins them (present when any were)
   dryRun, // boolean - indicates if this was a dry run
 } = engine.bulkRescheduleMatchUps({
   matchUpIds, // required - array of matchUpIds to reschedule
@@ -624,6 +625,7 @@ const {
     daysChange: number, // number of days +/- to shift
     minutesChange: number, // number of minutes +/- to shift
   },
+  overrideScheduleLock, // optional boolean - move locked matchUps too (the locks stay)
   dryRun, // optional boolean - preview without changes
 });
 ```
@@ -640,6 +642,12 @@ rescued by a `minutesChange` given alongside it.
 
 A `daysChange` moves the matchUp off its old day's grid: its `courtOrder`, `courtId` and `venueId` are cleared,
 as for any [date change](#grid-position-is-cleared-on-a-date-change). A `minutesChange` alone keeps them.
+
+A matchUp whose [schedule lock](../concepts/schedule-locks.mdx) pins what the shift would change is skipped, left
+as it is, and reported in both `notRescheduled` and `lockedMatchUpIds`; a dry run reports it the same way. A shift
+of a whole block therefore leaves a locked matchUp where it was, and a matchUp moved onto its court and time is a
+court double booking that `proConflicts` reports. Pass `overrideScheduleLock: true` once the operator has confirmed
+moving pinned matchUps as well.
 
 #### bulkRescheduleMatchUps Examples
 
@@ -1172,11 +1180,14 @@ rotation runs the other way. Only `scheduledTime` moves; `courtOrder`, court and
 engine.reorderUpcomingMatchUps({
   matchUpsContextIds, // required - array of { tournamentId, drawId, matchUpId, schedule } in time order
   firstToLast, // optional boolean - direction of reorder
+  overrideScheduleLock, // optional boolean - rotate locked times too (the locks stay)
 });
 ```
 
 Every matchUp is resolved before any time is written: if one cannot be (unknown draw or matchUp, invalid time)
-the call returns `MODIFICATIONS_FAILED` and nothing is changed.
+the call returns `MODIFICATIONS_FAILED` and nothing is changed. If a [schedule lock](../concepts/schedule-locks.mdx)
+pins the time of any of them, the call returns `SCHEDULE_LOCKED` with `context.lockedMatchUpIds` and nothing is
+changed: the rotation moves every time in the list, so it is not applied in part.
 
 **Example**:
 
