@@ -11,6 +11,9 @@ import { TEAM } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { unique } from '@Tools/arrays';
 
+// types
+import type { HydratedMatchUp } from '@Types/hydrated';
+
 export function generateStatCrew(params) {
   const paramsCheck = checkRequiredParameters(params, [{ [TOURNAMENT_RECORD]: true }]);
   if (paramsCheck.error) return paramsCheck;
@@ -172,26 +175,43 @@ function getScoreAttributes({ sets, sideNumber }) {
   );
 }
 
+type PlayerRecord = { SINGLES: { w: number; l: number }; DOUBLES: { w: number; l: number } };
+
+type RecordPlayersArgs = {
+  playerRecords: Record<string, PlayerRecord>;
+  tieMatchUp: HydratedMatchUp;
+  sideNumber?: number;
+  wl: 'w' | 'l';
+};
+
+function recordPlayers({ playerRecords, tieMatchUp, sideNumber, wl }: RecordPlayersArgs) {
+  const side = tieMatchUp.sides?.find((tieSide) => tieSide.sideNumber === sideNumber);
+  const individualIds = side?.participant?.individualParticipantIds ?? [side?.participant?.participantId];
+  for (const individualId of individualIds.filter((id): id is string => !!id)) {
+    playerRecords[individualId] ??= { SINGLES: { w: 0, l: 0 }, DOUBLES: { w: 0, l: 0 } };
+    playerRecords[individualId][tieMatchUp.matchUpType as keyof PlayerRecord][wl] += 1;
+  }
+}
+
+// A StatCrew <tngame> reports ONE team matchUp: the team's score, totals and player records all come from that
+// matchUp's tieMatchUps, never from the team's other matchUps in the tournament.
 function getTeam({ teamParticipant, teamMatchUp, participantMap, mappedMatchUps, homeid, uniValues }) {
   const { participantId: id, participantName: name } = teamParticipant;
   const vh = (homeid && (id === homeid ? 'H' : 'V')) || '';
   const teamMatchUps = participantMap?.[id]?.matchUps;
-  const matchUpIds = teamMatchUps && Object.keys(teamMatchUps);
-
-  // if there is a teamMatchUp, get the team side number and set score
-  const teamSideNumber = teamMatchUp?.sides?.find(({ participant }) => participant.participantId === id)?.sideNumber;
-  const setScore = teamMatchUp?.score?.sets?.[0]?.[`side${teamSideNumber}Score`] ?? 0;
+  const matchUpIds = teamMatchUp ? [teamMatchUp.matchUpId] : teamMatchUps && Object.keys(teamMatchUps);
 
   uniValues[id] = {};
 
   const winLoss = { SINGLES: { w: 0, l: 0 }, DOUBLES: { w: 0, l: 0 } };
+  const playerRecords: Record<string, PlayerRecord> = {};
   const doubles: any = [];
   const singles: any = [];
   let calcScore = 0;
 
   for (const matchUpId of matchUpIds ?? []) {
-    const matchUp = mappedMatchUps?.[matchUpId];
-    const sideNumber = matchUp.sides.find(({ participant }) => participant.participantId === id)?.sideNumber;
+    const matchUp = mappedMatchUps?.[matchUpId] ?? teamMatchUp;
+    const sideNumber = matchUp.sides.find(({ participant }) => participant?.participantId === id)?.sideNumber;
     const matchScore = matchUp.score?.sets?.[0]?.[`side${sideNumber}Score`] ?? 0;
     calcScore += matchScore;
 
@@ -201,6 +221,8 @@ function getTeam({ teamParticipant, teamMatchUp, participantMap, mappedMatchUps,
       if (wl) winLoss[matchUpType][wl] += 1;
       const won = wl === 'w' ? '1' : '0';
       const lost = wl === 'l' ? '1' : '0';
+
+      if (wl) recordPlayers({ playerRecords, tieMatchUp, sideNumber, wl });
 
       if (matchUpType === SINGLES) {
         const pair = singles.length + 1;
@@ -222,9 +244,10 @@ function getTeam({ teamParticipant, teamMatchUp, participantMap, mappedMatchUps,
   for (const individualParticipantId of teamParticipant.individualParticipantIds) {
     const mappedParticipant = participantMap?.[individualParticipantId];
     if (mappedParticipant) {
-      const { participant, counters } = mappedParticipant;
-      const doublesStats = { won: counters?.DOUBLES?.wins || 0, lost: counters?.DOUBLES?.losses || 0 };
-      const singlesStats = { won: counters?.SINGLES?.wins || 0, lost: counters?.SINGLES?.losses || 0 };
+      const { participant } = mappedParticipant;
+      const record = playerRecords[individualParticipantId];
+      const doublesStats = { won: record?.DOUBLES.w ?? 0, lost: record?.DOUBLES.l ?? 0 };
+      const singlesStats = { won: record?.SINGLES.w ?? 0, lost: record?.SINGLES.l ?? 0 };
       const { participantName: name, participantId } = participant;
       uniValues[id][participantId] = playerIndex;
       players.push({ player: { name, uni: playerIndex, singles: singlesStats, doubles: doublesStats } });
@@ -232,7 +255,8 @@ function getTeam({ teamParticipant, teamMatchUp, participantMap, mappedMatchUps,
     playerIndex += 1;
   }
 
-  const score = setScore || calcScore;
+  // the team score is the team matchUp's tally, which is 0 for a team that won no tieMatchUps
+  const score = calcScore;
 
   return { vh, id, name, score, totals, childArray: players };
 }
