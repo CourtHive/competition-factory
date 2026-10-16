@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 test('generate qualifying structure with round robin format', () => {
   const {
@@ -19,7 +19,7 @@ test('generate qualifying structure with round robin format', () => {
               {
                 drawSize: 8,
                 qualifyingPositions: 4,
-                drawType: 'ROUND_ROBIN',
+                drawType: ROUND_ROBIN,
                 structureOptions: { groupSize: 4 },
               },
             ],

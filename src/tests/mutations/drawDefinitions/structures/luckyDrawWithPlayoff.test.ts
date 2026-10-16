@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test, describe } from 'vitest';
 
 // constants
-import { LUCKY_DRAW, PLAY_OFF } from '@Constants/drawDefinitionConstants';
+import { LUCKY_DRAW, PLAY_OFF, MAIN, LOSER } from '@Constants/drawDefinitionConstants';
 
 /**
  * End-to-end test: 10-participant lucky draw → complete round 1 → add playoff → select lucky participant
@@ -25,7 +25,7 @@ describe('lucky draw with playoff structure — end-to-end', () => {
 
     // Get draw info
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const mainStructure = drawDefinition.structures.find((s: any) => s.stage === 'MAIN');
+    const mainStructure = drawDefinition.structures.find((s: any) => s.stage === MAIN);
     const mainStructureId = mainStructure.structureId;
 
     // Verify round 1 status: pre-feed round, needs lucky selection
@@ -69,7 +69,7 @@ describe('lucky draw with playoff structure — end-to-end', () => {
     // Verify a LOSER link was created from main round 1 to the playoff
     const loserLink = updatedDraw.links.find(
       (link: any) =>
-        link.linkType === 'LOSER' &&
+        link.linkType === LOSER &&
         link.source.structureId === mainStructureId &&
         link.source.roundNumber === 1 &&
         link.target.structureId === playoffStructure.structureId,
@@ -287,7 +287,7 @@ describe('lucky draw with playoff structure — end-to-end', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const mainStructure = drawDefinition.structures.find((s: any) => s.stage === 'MAIN');
+    const mainStructure = drawDefinition.structures.find((s: any) => s.stage === MAIN);
     const mainStructureId = mainStructure.structureId;
 
     // Verify available playoff profiles include round 1
@@ -321,7 +321,7 @@ describe('lucky draw with playoff structure — end-to-end', () => {
     // Verify a LOSER link was created
     const loserLink = updatedDraw.links.find(
       (link: any) =>
-        link.linkType === 'LOSER' &&
+        link.linkType === LOSER &&
         link.source.structureId === mainStructureId &&
         link.source.roundNumber === 1 &&
         link.target.structureId === playoffStructure.structureId,

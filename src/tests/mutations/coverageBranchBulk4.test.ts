@@ -26,8 +26,8 @@ import {
 } from '@Generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
 
 // constants
+import { MAIN, AD_HOC } from '@Constants/drawDefinitionConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
-import { MAIN } from '@Constants/drawDefinitionConstants';
 import {
   MISSING_TOURNAMENT_RECORDS,
   MISSING_TOURNAMENT_RECORD,
@@ -99,7 +99,7 @@ describe('generateAdHocRounds branches', () => {
 
   it('handles multiple rounds count', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, drawType: 'AD_HOC' }],
+      drawProfiles: [{ drawSize: 4, drawType: AD_HOC }],
     });
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition } = tournamentEngine.getEvent({

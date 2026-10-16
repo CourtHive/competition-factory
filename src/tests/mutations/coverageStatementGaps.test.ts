@@ -28,9 +28,15 @@ import {
 
 // constants
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
-import { CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { TEAM } from '@Constants/matchUpTypes';
+import {
+  CONSOLATION,
+  MAIN,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FEED_IN,
+  ROUND_ROBIN,
+} from '@Constants/drawDefinitionConstants';
 import {
   DRAW_POSITION_ACTIVE,
   EXISTING_END_TIME,
@@ -296,8 +302,8 @@ describe('getDrawData guard paths', () => {
       drawDefinition: {
         drawId: 'd1',
         structures: [
-          { structureId: 's1', stage: 'MAIN', stageSequence: 1 },
-          { structureId: 's2', stage: 'CONSOLATION', stageSequence: 1 },
+          { structureId: 's1', stage: MAIN, stageSequence: 1 },
+          { structureId: 's2', stage: CONSOLATION, stageSequence: 1 },
         ],
         links: [],
       },
@@ -432,7 +438,7 @@ describe('getSourceDrawPositionRanges guard paths', () => {
   });
 
   it('exercises the full path with a consolation draw', () => {
-    const drawProfiles = [{ drawSize: 8, drawType: 'FIRST_MATCH_LOSER_CONSOLATION' }];
+    const drawProfiles = [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }];
     const {
       tournamentRecord,
       drawIds: [drawId],
@@ -608,7 +614,7 @@ describe('generateVoluntaryConsolation guard paths', () => {
     // Try to generate voluntary consolation with no entries — should get error
     const result = tournamentEngine.generateVoluntaryConsolation({
       drawId,
-      drawType: 'FEED_IN',
+      drawType: FEED_IN,
     });
     // No VOLUNTARY_CONSOLATION entries exist so drawSize would be 0
     expect(result.error).toBeDefined();
@@ -840,7 +846,7 @@ describe('getDrawData noDeepCopy and publish paths', () => {
 // ----------------------------------------------------------------
 describe('swapDrawPositionAssignments round robin', () => {
   it('exercises round robin swap', () => {
-    const drawProfiles = [{ drawSize: 4, drawType: 'ROUND_ROBIN' }];
+    const drawProfiles = [{ drawSize: 4, drawType: ROUND_ROBIN }];
     const {
       tournamentRecord,
       drawIds: [drawId],
@@ -848,7 +854,7 @@ describe('swapDrawPositionAssignments round robin', () => {
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });
 
-    const mainStructure = drawDefinition.structures.find((s) => s.stage === 'MAIN');
+    const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
     if (mainStructure) {
       const positionAssignments = mainStructure.structures?.[0]?.positionAssignments || [];
       if (positionAssignments.length >= 2) {
@@ -870,7 +876,7 @@ describe('swapDrawPositionAssignments round robin', () => {
 // ----------------------------------------------------------------
 describe('FMLC draw consolation paths', () => {
   it('exercises drawPositionRemovals consolation cleanup', () => {
-    const drawProfiles = [{ drawSize: 8, drawType: 'FIRST_MATCH_LOSER_CONSOLATION', automated: true }];
+    const drawProfiles = [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, automated: true }];
     const {
       tournamentRecord,
       drawIds: [drawId],
@@ -878,7 +884,7 @@ describe('FMLC draw consolation paths', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
-    const firstRoundMatchUp = matchUps.find((m) => m.roundNumber === 1 && m.stage === 'MAIN');
+    const firstRoundMatchUp = matchUps.find((m) => m.roundNumber === 1 && m.stage === MAIN);
 
     if (firstRoundMatchUp) {
       // Complete the matchUp

@@ -12,6 +12,7 @@ import {
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
+  DRAW,
 } from '@Constants/drawDefinitionConstants';
 
 // Corpus sweep — the primary defence against false positives. No legitimately-generated,
@@ -78,7 +79,7 @@ test('detects a dangling link pointing at a structure not in the draw (without c
   const dangling = result.inconsistencies.find((i) => i.issueType === DANGLING_LINK);
   expect(dangling).toBeTruthy();
   expect(dangling.severity).toEqual('error');
-  expect(dangling.scope).toEqual('DRAW');
+  expect(dangling.scope).toEqual(DRAW);
   expect(dangling.targetStructureId).toEqual('no-such-structure');
 });
 

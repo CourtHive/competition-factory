@@ -17,6 +17,7 @@ import { POLICY_SANCTIONING_ITF } from '@Fixtures/policies/POLICY_SANCTIONING_IT
 import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 // constants
+import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import {
   UNDER_REVIEW,
   POST_EVENT,
@@ -78,7 +79,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
         eventType: 'SINGLES',
         gender: 'FEMALE',
         drawSize: 32,
-        drawType: 'SINGLE_ELIMINATION',
+        drawType: SINGLE_ELIMINATION,
         matchUpFormat: 'SET3-S:6/TB7',
         qualifyingDrawSize: 16,
       },
@@ -87,7 +88,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
         eventType: 'DOUBLES',
         gender: 'FEMALE',
         drawSize: 32,
-        drawType: 'SINGLE_ELIMINATION',
+        drawType: SINGLE_ELIMINATION,
       },
     ],
   };
@@ -202,8 +203,8 @@ describe('Scenario: USTA Level 3 with Modification Request', () => {
     referee: { personName: 'Carol Jones', role: 'Referee', certificationLevel: 'National' },
     safeguardingCompliance: true,
     events: [
-      { eventName: 'Open Singles', eventType: 'SINGLES', drawSize: 64, drawType: 'SINGLE_ELIMINATION' },
-      { eventName: 'Open Doubles', eventType: 'DOUBLES', drawSize: 32, drawType: 'SINGLE_ELIMINATION' },
+      { eventName: 'Open Singles', eventType: 'SINGLES', drawSize: 64, drawType: SINGLE_ELIMINATION },
+      { eventName: 'Open Doubles', eventType: 'DOUBLES', drawSize: 32, drawType: SINGLE_ELIMINATION },
     ],
   };
 
@@ -403,7 +404,7 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
             tournamentName: 'Amendment Test',
             proposedStartDate: '2029-06-01',
             proposedEndDate: '2029-06-07',
-            events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: 'SINGLE_ELIMINATION' }],
+            events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: SINGLE_ELIMINATION }],
           },
           sanctioningTier: { system: 'GENERIC', value: 'Level 2' },
         },
@@ -449,8 +450,8 @@ describe('Scenario: Amendment Security & Edge Cases', () => {
       changes: [
         {
           field: 'events[0].drawType',
-          previousValue: 'SINGLE_ELIMINATION',
-          proposedValue: 'ROUND_ROBIN',
+          previousValue: SINGLE_ELIMINATION,
+          proposedValue: ROUND_ROBIN,
           changeType: 'MODIFIED',
         },
       ],

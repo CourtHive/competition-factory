@@ -6,7 +6,7 @@ import { expect, it, test } from 'vitest';
 import fs from 'fs-extra';
 
 // constants
-import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
+import { FEED_IN_CHAMPIONSHIP, MAIN } from '@Constants/drawDefinitionConstants';
 import { POSITION_ACTIONS } from '@Constants/extensionConstants';
 
 it('can run stress tests when JEST_STRESS=true', () => {
@@ -18,7 +18,7 @@ it('can run stress tests when JEST_STRESS=true', () => {
           keyColors: {
             stage: 'brightcyan',
           },
-          stage: 'MAIN',
+          stage: MAIN,
           method: 'Global Log Tests',
         },
         true,

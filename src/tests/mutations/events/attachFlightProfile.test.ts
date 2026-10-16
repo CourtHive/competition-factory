@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { EXISTING_PROFILE, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { SPLIT_WATERFALL } from '@Constants/flightConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 describe('attachFlightProfile', () => {
@@ -229,14 +230,14 @@ describe('attachFlightProfile', () => {
           ],
         },
       ],
-      splitMethod: 'WATERFALL',
+      splitMethod: SPLIT_WATERFALL,
       eventType: 'SINGLES',
     };
 
     const result: any = attachFlightProfile({ event, flightProfile } as any);
 
     expect(result.success).toBe(true);
-    expect(result.flightProfile.splitMethod).toBe('WATERFALL');
+    expect(result.flightProfile.splitMethod).toBe(SPLIT_WATERFALL);
     expect(result.flightProfile.flights[0].drawEntries).toHaveLength(2);
   });
 

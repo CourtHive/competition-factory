@@ -1,4 +1,4 @@
-import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { BRIDGE, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { setSchemaWriteMode } from '@Global/state/globalState';
 import { DISABLE_LINKS } from '@Constants/extensionConstants';
@@ -52,7 +52,7 @@ function drawWithAClearedConsolationPosition(drawId: string) {
   }
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  const consolation = (drawDefinition.structures ?? []).find((s: any) => s.stage === 'CONSOLATION');
+  const consolation = (drawDefinition.structures ?? []).find((s: any) => s.stage === CONSOLATION);
   const occupied = (consolation?.positionAssignments ?? []).filter((a: any) => a.participantId);
   // the feed must actually have happened, or the rest of the test proves nothing
   expect(occupied.length).toBeGreaterThan(0);
@@ -110,7 +110,7 @@ it('a reset draw can be re-fed through the position that had been disabled', () 
   }
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  const consolation = (drawDefinition.structures ?? []).find((s: any) => s.stage === 'CONSOLATION');
+  const consolation = (drawDefinition.structures ?? []).find((s: any) => s.stage === CONSOLATION);
   const occupied = (consolation?.positionAssignments ?? []).filter((a: any) => a.participantId);
   // all eight first-match losers land again, including the position that had been disabled
   expect(occupied.length).toEqual(8);

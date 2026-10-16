@@ -10,6 +10,9 @@ import {
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
   FIRST_MATCH_LOSER_CONSOLATION,
+  ROUND_ROBIN_WITH_PLAYOFF,
+  FEED_IN_CHAMPIONSHIP,
+  CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -78,12 +81,12 @@ describe('MODIFY_MATCHUP structureId', () => {
   });
 
   it.each([
-    ['single elimination', 'SINGLE_ELIMINATION'],
-    ['compass', 'COMPASS'],
-    ['round robin', 'ROUND_ROBIN'],
-    ['first match loser consolation', 'FIRST_MATCH_LOSER_CONSOLATION'],
-    ['round robin with playoff', 'ROUND_ROBIN_WITH_PLAYOFF'],
-    ['feed in championship', 'FEED_IN_CHAMPIONSHIP'],
+    ['single elimination', SINGLE_ELIMINATION],
+    ['compass', COMPASS],
+    ['round robin', ROUND_ROBIN],
+    ['first match loser consolation', FIRST_MATCH_LOSER_CONSOLATION],
+    ['round robin with playoff', ROUND_ROBIN_WITH_PLAYOFF],
+    ['feed in championship', FEED_IN_CHAMPIONSHIP],
   ])('%s — EVERY notice from a fully played draw carries an eventId', (_label, drawType) => {
     // Advancement paths used to drop `event` on the way down (directWinner -> assignMatchUpDrawPosition,
     // handleContainerAssignment -> modifyRoundRobinMatchUpsStatus, advanceDrawPosition), so notices for
@@ -232,7 +235,7 @@ describe('MODIFY_MATCHUP structureId', () => {
     tournamentEngine.setMatchUpStatus({ matchUpId: target.matchUpId, drawId, outcome });
 
     const { drawDefinition }: any = tournamentEngine.getEvent({ drawId });
-    const consolation = drawDefinition?.structures?.find((structure: any) => structure.stage === 'CONSOLATION');
+    const consolation = drawDefinition?.structures?.find((structure: any) => structure.stage === CONSOLATION);
     tournamentEngine.removeStructure({ structureId: consolation.structureId, drawId });
 
     // The control: without notices to inspect, "none unnamed" is vacuously true.

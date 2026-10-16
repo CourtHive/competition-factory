@@ -4,11 +4,12 @@ import { expect, it } from 'vitest';
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { INVALID_ENTRIES } from '@Constants/errorConditionConstants';
+import { AD_HOC } from '@Constants/drawDefinitionConstants';
 
 function setup() {
   const drawDefinition: DrawDefinition = {
     drawId: 'plain',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     matchUpType: 'DOUBLES',
     entries: [],
     structures: [],

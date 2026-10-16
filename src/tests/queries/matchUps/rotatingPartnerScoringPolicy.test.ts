@@ -8,6 +8,7 @@ import { expect, it } from 'vitest';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import type { RotatingPartnerScoringPolicy } from '@Types/rotatingPartnerScoring';
+import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 
 const locked: RotatingPartnerScoringPolicy = {
@@ -17,7 +18,7 @@ const locked: RotatingPartnerScoringPolicy = {
 };
 const draw = (): DrawDefinition => ({
   drawId: 'rotating-draw',
-  drawType: 'AD_HOC',
+  drawType: AD_HOC,
   matchUpType: 'DOUBLES',
   structures: [],
   competitionProfile: {
@@ -108,7 +109,7 @@ it('resolves by drawId through the public engine query', () => {
 it('refuses missing or unsupported profiles', () => {
   expect(getRotatingPartnerScoringPolicy({}).error).toBe(MISSING_DRAW_DEFINITION);
   const drawDefinition = draw();
-  drawDefinition.competitionProfile = { version: 1, format: 'LADDER' };
+  drawDefinition.competitionProfile = { version: 1, format: LADDER };
   expect(getRotatingPartnerScoringPolicy({ drawDefinition }).error).toBe(INVALID_VALUES);
 });
 

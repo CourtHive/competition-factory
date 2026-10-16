@@ -21,6 +21,9 @@ import {
   PLAY_OFF,
   TOP_DOWN,
   CONSOLATION,
+  SINGLE_ELIMINATION,
+  BOTTOM_UP,
+  WIN_RATIO,
 } from '@Constants/drawDefinitionConstants';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -483,7 +486,7 @@ describe('getLuckyDrawRoundStatus edge cases', () => {
 
   test('returns empty rounds for non-lucky draw type', () => {
     let result: any = getLuckyDrawRoundStatus({
-      drawDefinition: { drawType: 'SINGLE_ELIMINATION' } as any,
+      drawDefinition: { drawType: SINGLE_ELIMINATION } as any,
     });
     expect(result.success).toBe(true);
     expect(result.isLuckyDraw).toBe(false);
@@ -1061,7 +1064,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       structures: [
         {
           structureId: 'test-structure',
-          stage: 'MAIN',
+          stage: MAIN,
           stageSequence: 1,
           matchUps: [...round1MatchUps, ...round2MatchUps, ...round3MatchUps, finalMatchUp],
           positionAssignments: [...round1Assignments],
@@ -1208,7 +1211,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
         {
           linkType: LOSER,
           source: { structureId: 'test-structure', roundNumber: 1 },
-          target: { structureId: 'bottom-up-playoff', roundNumber: 1, feedProfile: 'BOTTOM_UP' },
+          target: { structureId: 'bottom-up-playoff', roundNumber: 1, feedProfile: BOTTOM_UP },
         },
       ],
     });
@@ -1329,7 +1332,7 @@ describe('Lucky Draw integration tests', () => {
   });
 
   test('getLuckyDrawRoundStatus with non-lucky draw returns isLuckyDraw false', () => {
-    const drawProfiles = [{ drawSize: 8, drawType: 'SINGLE_ELIMINATION' }];
+    const drawProfiles = [{ drawSize: 8, drawType: SINGLE_ELIMINATION }];
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
@@ -2087,7 +2090,7 @@ describe('getLuckyDrawRoundStatus — BYE-advanced and additional branches', () 
 describe('luckyDrawAdvancement — deeper branch coverage', () => {
   test('advancement with non-lucky draw type returns error', () => {
     let result: any = luckyDrawAdvancement({
-      drawDefinition: { drawType: 'SINGLE_ELIMINATION', structures: [] } as any,
+      drawDefinition: { drawType: SINGLE_ELIMINATION, structures: [] } as any,
       roundNumber: 1,
     });
     expect(result.error).toBeDefined();
@@ -2453,7 +2456,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
           structureId: 'adhoc-struct',
           stage: PLAY_OFF,
           stageSequence: 2,
-          finishingPosition: 'WIN_RATIO',
+          finishingPosition: WIN_RATIO,
           matchUps: [],
           positionAssignments: [],
         },

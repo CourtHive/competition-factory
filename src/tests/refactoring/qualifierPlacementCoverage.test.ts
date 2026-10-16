@@ -6,8 +6,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { MAIN, QUALIFYING, LOSER, DRAW } from '@Constants/drawDefinitionConstants';
 import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
@@ -87,7 +87,7 @@ describe('placeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'LOSER', structureId: 'x', roundNumber: 1 },
+            target: { feedProfile: LOSER, structureId: 'x', roundNumber: 1 },
           },
         },
       },
@@ -108,7 +108,7 @@ describe('placeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: 'x', roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: 'x', roundNumber: 1 },
           },
         },
       },
@@ -141,7 +141,7 @@ describe('placeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -164,7 +164,7 @@ describe('removeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'LOSER', structureId: 'x', roundNumber: 1 },
+            target: { feedProfile: LOSER, structureId: 'x', roundNumber: 1 },
           },
         },
       },
@@ -185,7 +185,7 @@ describe('removeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: 'x', roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: 'x', roundNumber: 1 },
           },
         },
       },
@@ -214,7 +214,7 @@ describe('removeQualifier direct guard branches', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -508,7 +508,7 @@ describe('placeQualifier skips placement when main matchUp not TO_BE_PLAYED', ()
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -563,7 +563,7 @@ describe('placeQualifier assigns participant to drawPosition', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -626,7 +626,7 @@ describe('placeQualifier assigns participant to drawPosition', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -692,7 +692,7 @@ describe('removeQualifier with subStructures', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -739,7 +739,7 @@ describe('removeQualifier with subStructures', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -792,7 +792,7 @@ describe('placeQualifier when no positionAssignment matches targetDrawPosition',
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },
@@ -843,7 +843,7 @@ describe('placeQualifier when drawPosition already has participantId', () => {
       targetData: {
         targetLinks: {
           winnerTargetLink: {
-            target: { feedProfile: 'DRAW', structureId: targetStructureId, roundNumber: 1 },
+            target: { feedProfile: DRAW, structureId: targetStructureId, roundNumber: 1 },
           },
         },
       },

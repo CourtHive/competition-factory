@@ -18,7 +18,7 @@ import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { MAIN } from '@Constants/drawDefinitionConstants';
+import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { TEAM } from '@Constants/eventConstants';
 
 describe('getDrawFormat — TEAM tieFormat resolution', () => {
@@ -26,7 +26,7 @@ describe('getDrawFormat — TEAM tieFormat resolution', () => {
     const tieFormat = tieFormatDefaults({});
     const existingDrawDefinition: any = {
       structures: [
-        { stage: 'QUALIFYING', structureId: 'q' },
+        { stage: QUALIFYING, structureId: 'q' },
         { stage: MAIN, structureId: 'm', tieFormat },
       ],
     };

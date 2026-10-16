@@ -16,6 +16,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { MAIN } from '@Constants/drawDefinitionConstants';
 import {
   COURT_NOT_FOUND,
   INVALID_VALUES,
@@ -647,7 +648,7 @@ describe('assignDrawPositionQualifier branch coverage', () => {
     });
     const result = tournamentEngine.setState(tournamentRecord);
     const { drawDefinition } = result.getEvent({ drawId: drawIds[0] });
-    const structure = drawDefinition.structures.find((s) => s.stage === 'MAIN');
+    const structure = drawDefinition.structures.find((s) => s.stage === MAIN);
     const qualifierAssignment = structure?.positionAssignments?.find((a) => a.qualifier);
     if (qualifierAssignment) {
       const assignResult: any = assignDrawPositionQualifier({

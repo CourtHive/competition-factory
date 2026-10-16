@@ -9,8 +9,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 // ─── Scenario 1: Basic score setting with winningSide ─────────────────────
 it('setMatchUpState: basic score and winningSide', () => {
@@ -100,7 +100,7 @@ it('setMatchUpState: FMLC consolation structure receives losers', () => {
   });
 
   let { matchUps } = tournamentEngine.allTournamentMatchUps();
-  const mainMatchUps = matchUps.filter((m) => m.stage === 'MAIN' && m.roundNumber === 1 && m.readyToScore);
+  const mainMatchUps = matchUps.filter((m) => m.stage === MAIN && m.roundNumber === 1 && m.readyToScore);
   expect(mainMatchUps.length).toEqual(4);
 
   // Complete all first round matches
@@ -125,7 +125,7 @@ it('setMatchUpState: FMLC consolation structure receives losers', () => {
 
   // Consolation matchUps should now have participants
   ({ matchUps } = tournamentEngine.allTournamentMatchUps());
-  const consolationMatchUps = matchUps.filter((m) => m.stage === 'CONSOLATION');
+  const consolationMatchUps = matchUps.filter((m) => m.stage === CONSOLATION);
   const readyConsolation = consolationMatchUps.filter((m) => m.readyToScore);
   expect(readyConsolation.length).toBeGreaterThan(0);
 });

@@ -5,6 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { FIRST_ROUND_LOSER_CONSOLATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 
 /**
@@ -14,7 +15,7 @@ import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
  * them", the most natural integrator call — threw a bare
  * `Cannot read properties of undefined` from getMappedStructureMatchUps.
  */
-function seed(drawType = 'FIRST_ROUND_LOSER_CONSOLATION') {
+function seed(drawType = FIRST_ROUND_LOSER_CONSOLATION) {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     tournamentAttributes: { tournamentId: `goesto-${drawType}` },
     drawProfiles: [{ drawSize: 16, drawType, eventName: 'Singles' }],
@@ -79,7 +80,7 @@ describe('addGoesTo argument robustness', () => {
   });
 
   it('handles a draw type with no loser feed without inventing edges', () => {
-    const { drawDefinition } = seed('SINGLE_ELIMINATION');
+    const { drawDefinition } = seed(SINGLE_ELIMINATION);
     const { matchUps } = getAllDrawMatchUps({ inContext: true, drawDefinition });
     const result: any = addGoesTo({ drawDefinition, inContextDrawMatchUps: matchUps });
     expect(result.error).toBeUndefined();

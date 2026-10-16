@@ -11,7 +11,7 @@
  * - iterativeAdHoc AD_HOC roundsCount > 1 (954, 561..576 happy sides)
  * - ROUND_ROBIN_WITH_PLAYOFF with completionGoal (441)
  */
-import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION, AD_HOC } from '@Constants/drawDefinitionConstants';
+import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION, AD_HOC, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { generateEventWithDraw } from '@Assemblies/generators/mocks/generateEventWithDraw';
 import { DOUBLES, HYBRID, TEAM } from '@Constants/eventConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
@@ -109,7 +109,7 @@ test('qualifyingProfiles with participantsCount and drawSize (1001, qualifying e
 
   tournamentEngine.setState(result.tournamentRecord);
   const { event } = tournamentEngine.getEvent({ eventId: result.eventIds[0] });
-  const qualifyingEntries = (event.entries ?? []).filter((e) => e.entryStage === 'QUALIFYING');
+  const qualifyingEntries = (event.entries ?? []).filter((e) => e.entryStage === QUALIFYING);
   expect(qualifyingEntries.length).toBeGreaterThan(0);
 });
 

@@ -7,8 +7,8 @@ import { unique } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 
 // constants
+import { SWISS, DRAW } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import { SWISS } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 test('SWISS drawType generates an AD_HOC-style structure', () => {
@@ -701,7 +701,7 @@ test('draws tracked correctly when allowDraws is true', () => {
 
   // 3 score groups: 1-0-0, 0-0-1, 0-1-0
   expect(scoreGroups.length).toEqual(3);
-  expect(records.get('P1')?.opponentOutcomes.get('P2')).toEqual('DRAW');
+  expect(records.get('P1')?.opponentOutcomes.get('P2')).toEqual(DRAW);
 });
 
 test('full Swiss tournament via engine API', () => {

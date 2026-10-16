@@ -18,6 +18,7 @@ import {
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
   TOP_DOWN,
+  CLUSTER,
 } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -487,7 +488,7 @@ it('feed-in policy does NOT apply to ROUND_ROBIN', () => {
 it('can combine feed-in policy with seeding policy', () => {
   const combinedPolicy = {
     [POLICY_TYPE_SEEDING]: {
-      seedingProfile: { positioning: 'CLUSTER' },
+      seedingProfile: { positioning: CLUSTER },
       validSeedPositions: { ignore: true },
       duplicateSeedNumbers: true,
       drawSizeProgression: true,

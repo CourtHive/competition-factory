@@ -11,6 +11,8 @@ import {
   COMPASS,
   OLYMPIC,
   AD_HOC,
+  ROUND_OUTCOME,
+  ITEM,
 } from '@Constants/drawDefinitionConstants';
 
 // minimal elimination-style source structure (no structureType, no nested structures)
@@ -20,7 +22,7 @@ function elimSource(positions = 8, matchUps: any[] = []) {
     structures: [
       {
         structureId: 'source-struct-id',
-        finishingPosition: 'ROUND_OUTCOME',
+        finishingPosition: ROUND_OUTCOME,
         positionAssignments: Array.from({ length: positions }, (_, i) => ({ drawPosition: i + 1 })),
         matchUps,
       },
@@ -225,7 +227,7 @@ test('PAGE_PLAYOFF from non-elimination source with single finishing position', 
       structures: [
         {
           structureId: 'source-struct-id',
-          structureType: 'ITEM',
+          structureType: ITEM,
           matchUps: [],
           positionAssignments: [{ drawPosition: 1 }, { drawPosition: 2 }, { drawPosition: 3 }, { drawPosition: 4 }],
         },

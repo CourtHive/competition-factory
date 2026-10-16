@@ -8,6 +8,9 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 import type { Applicant, TournamentProposal } from '@Types/sanctioningTypes';
 import type { TierClassification } from '@Types/tournamentTypes';
 
+// constants
+import { SINGLE_ELIMINATION, COMPASS } from '@Constants/drawDefinitionConstants';
+
 const testApplicant: Applicant = {
   organisationId: 'org-001',
   organisationName: 'Test Tennis Club',
@@ -28,7 +31,7 @@ const baseProposal: TournamentProposal = {
       eventType: 'SINGLES',
       gender: 'MALE',
       drawSize: 32,
-      drawType: 'SINGLE_ELIMINATION',
+      drawType: SINGLE_ELIMINATION,
       matchUpFormat: 'SET3-S:6/TB7',
     },
   ],
@@ -90,7 +93,7 @@ describe('Policy Validation — validateProposal', () => {
 
   it('flags disallowed draw size', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 12, drawType: 'SINGLE_ELIMINATION' }],
+      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 12, drawType: SINGLE_ELIMINATION }],
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
@@ -103,7 +106,7 @@ describe('Policy Validation — validateProposal', () => {
 
   it('flags disallowed draw type', () => {
     createTestRecord({
-      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: 'COMPASS' }],
+      events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: COMPASS }],
     });
     let result: any = sanctioningEngine.validateProposal({
       sanctioningPolicy: POLICY_SANCTIONING_GENERIC,
@@ -347,7 +350,7 @@ describe('Policy Validation — tier defaults from the sanctioning record', () =
         eventType: 'SINGLES',
         gender: 'MALE',
         drawSize: 16,
-        drawType: 'SINGLE_ELIMINATION',
+        drawType: SINGLE_ELIMINATION,
         matchUpFormat: 'SET3-S:6/TB7',
       },
     ],

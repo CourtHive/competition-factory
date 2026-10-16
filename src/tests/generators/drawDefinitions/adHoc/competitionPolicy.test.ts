@@ -657,7 +657,7 @@ describe('policy fixtures', () => {
 
   test('POLICY_COMPETITION_SWISS has Swiss pairing', () => {
     const policy = POLICY_COMPETITION_SWISS[POLICY_TYPE_COMPETITION];
-    expect(policy.pairingPolicy.method).toBe('SWISS');
+    expect(policy.pairingPolicy.method).toBe(SWISS);
     expect(policy.victoryPolicy.primaryRanking).toBe('WINS');
     expect(policy.victoryPolicy.tiebreakOrder).toContain('BUCHHOLZ');
   });

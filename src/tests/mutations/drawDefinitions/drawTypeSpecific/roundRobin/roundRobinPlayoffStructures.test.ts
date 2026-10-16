@@ -9,7 +9,7 @@ import { mocksEngine } from '../../../../..';
 import { expect, it } from 'vitest';
 
 // constants
-import { COMPASS, MAIN, PLAYOFF, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { COMPASS, MAIN, PLAYOFF, ROUND_ROBIN_WITH_PLAYOFF, LOSER } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 it('is possible to have COMPASS playoff for Round Robin with playoffs', () => {
@@ -55,7 +55,7 @@ it('is possible to have COMPASS playoff for Round Robin with playoffs', () => {
     .sort(
       (a, b) => sortedStrucctureIds.indexOf(a.source.structureId) - sortedStrucctureIds.indexOf(b.source.structureId),
     )
-    .filter(({ linkType }) => linkType === 'LOSER')
+    .filter(({ linkType }) => linkType === LOSER)
     .map(({ source, target }) => [source.structureId, target.structureId]);
 
   const linkGroups = linkRelationships.reduce((groups, relationship) => {

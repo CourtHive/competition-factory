@@ -3,6 +3,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
+// constants
+import { SINGLE_ELIMINATION, AD_HOC, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+
 afterEach(() => setOutcomePipeline());
 
 function setup() {
@@ -10,7 +13,7 @@ function setup() {
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, drawType: 'SINGLE_ELIMINATION', eventType: 'DOUBLES' }],
+    drawProfiles: [{ drawSize: 4, drawType: SINGLE_ELIMINATION, eventType: 'DOUBLES' }],
   });
   tournamentEngine.setState(tournamentRecord);
   const { event, drawDefinition } = tournamentEngine.getEvent({ drawId });
@@ -25,7 +28,7 @@ it('refuses generation of an elimination draw with a tie-capable format', () => 
   expect(
     tournamentEngine.generateDrawDefinition({
       eventId,
-      drawType: 'SINGLE_ELIMINATION',
+      drawType: SINGLE_ELIMINATION,
       drawSize: 4,
       matchUpFormat: 'SET1-S:P32',
     }).error,
@@ -85,7 +88,7 @@ it('bulk event format validation refuses before changing an earlier social draw'
   const record = tournamentEngine.getTournament().tournamentRecord;
   record.events[0].drawDefinitions.unshift({
     drawId: 'social',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     structures: [{ structureId: 'social-s', matchUps: [] }],
   });
   tournamentEngine.setState(record);
@@ -99,7 +102,7 @@ it('a social structure may have its own tied format without changing the elimina
   const record = tournamentEngine.getTournament().tournamentRecord;
   const draw = record.events[0].drawDefinitions[0];
   const original = draw.matchUpFormat;
-  draw.structures.push({ structureId: 'social-s', finishingPosition: 'WIN_RATIO', matchUps: [] });
+  draw.structures.push({ structureId: 'social-s', finishingPosition: WIN_RATIO, matchUps: [] });
   tournamentEngine.setState(record);
   expect(
     tournamentEngine.setMatchUpFormat({ drawId, structureId: 'social-s', matchUpFormat: 'SET1-S:P32' }).error,

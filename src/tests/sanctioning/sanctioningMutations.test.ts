@@ -40,6 +40,7 @@ import type {
 
 // constants
 import { UNDER_REVIEW, POST_EVENT, ISSUES_FLAGGED } from '@Constants/sanctioningConstants';
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-mut',
@@ -53,7 +54,7 @@ function minimalProposal(overrides?: Partial<TournamentProposal>): TournamentPro
     tournamentName: 'Mut Open',
     proposedStartDate: '2028-06-01',
     proposedEndDate: '2028-06-07',
-    events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: 'SINGLE_ELIMINATION' }],
+    events: [{ eventName: 'Singles', eventType: 'SINGLES', drawSize: 32, drawType: SINGLE_ELIMINATION }],
     ...overrides,
   };
 }

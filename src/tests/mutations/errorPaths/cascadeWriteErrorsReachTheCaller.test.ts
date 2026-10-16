@@ -9,10 +9,14 @@ import { afterEach, expect, it, vi } from 'vitest';
 
 // constants
 import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { FIRST_MATCH_LOSER_CONSOLATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
+import {
+  FIRST_MATCH_LOSER_CONSOLATION,
+  SINGLE_ELIMINATION,
+  DOUBLE_ELIMINATION,
+} from '@Constants/drawDefinitionConstants';
 
 /**
  * EVERY WRITE THE CASCADE MAKES, IF IT FAILS, FAILS THE CALL — assessment gap G9.
@@ -181,7 +185,7 @@ const CORRECTION_SITES = [
   {
     context: 'withdrawExitFromByeChain',
     config: {
-      drawType: 'DOUBLE_ELIMINATION',
+      drawType: DOUBLE_ELIMINATION,
       drawSize: 8,
       participantsCount: 5,
       seed: 7000545,

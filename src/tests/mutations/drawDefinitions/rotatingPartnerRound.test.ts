@@ -13,6 +13,7 @@ import Ajv from 'ajv';
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { ADD_PARTICIPANTS, ADD_MATCHUPS } from '@Constants/topicConstants';
 import type { CompetitionProfile } from '@Types/competitionProfile';
+import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
 import {
   EXISTING_MATCHUP_ID,
   EXISTING_MATCHUPS,
@@ -34,7 +35,7 @@ function setup(count = 8) {
   const participantIds = Array.from({ length: count }, (_, index) => `p${index}`);
   const drawDefinition: DrawDefinition = {
     drawId: 'rotating',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     matchUpType: 'DOUBLES',
     competitionProfile: structuredClone(profile),
     entries: participantIds.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' })),
@@ -161,7 +162,7 @@ it('requires saved scoring configuration and refuses skipped rounds', () => {
   const context = setup();
   expect(getRotatingPartnerRoundPreview({ ...context, roundNumber: 2 }).error).toBe(INVALID_VALUES);
   const savedProfile = context.drawDefinition.competitionProfile!;
-  if (savedProfile.format !== 'LADDER') delete savedProfile.scoring.selectedVariant;
+  if (savedProfile.format !== LADDER) delete savedProfile.scoring.selectedVariant;
   expect(getRotatingPartnerRoundPreview(context).error).toBe(INVALID_VALUES);
 });
 
@@ -342,7 +343,7 @@ it('irrelevant scheduling and unrelated pairs do not invalidate approved pairing
 it('the scoring contract is part of approval even when pairings are unchanged', () => {
   const context = setup();
   const approved = request(context);
-  if (context.drawDefinition.competitionProfile!.format !== 'LADDER')
+  if (context.drawDefinition.competitionProfile!.format !== LADDER)
     context.drawDefinition.competitionProfile!.scoring.combinedPointTotal = 24;
   const before = structuredClone(context.tournamentRecord);
   expect(generateRotatingPartnerRound(approved).error).toBeTruthy();

@@ -19,6 +19,9 @@ import {
   StructureRowContext,
 } from '@Query/readModel/readModelRows';
 
+// constants
+import { SINGLE_ELIMINATION, MAIN, ITEM } from '@Constants/drawDefinitionConstants';
+
 const ctx: MatchUpRowContext = { tournamentId: 't1', providerId: 'PROV', published: false, embargo: null };
 
 describe('eventRow', () => {
@@ -190,7 +193,7 @@ describe('drawRow', () => {
   it('maps draw attributes, nulling optional ones on a bare draw', () => {
     expect(
       drawRow(
-        { drawId: 'd1', drawName: 'Main', drawType: 'SINGLE_ELIMINATION', matchUpFormat: 'SET3-S:6/TB7' },
+        { drawId: 'd1', drawName: 'Main', drawType: SINGLE_ELIMINATION, matchUpFormat: 'SET3-S:6/TB7' },
         't1',
         'e1',
         'PROV',
@@ -201,7 +204,7 @@ describe('drawRow', () => {
       event_id: 'e1',
       provider_id: 'PROV',
       draw_name: 'Main',
-      draw_type: 'SINGLE_ELIMINATION',
+      draw_type: SINGLE_ELIMINATION,
       match_up_format: 'SET3-S:6/TB7',
       origin_organisation_id: null,
       origin_tournament_id: null,
@@ -228,9 +231,9 @@ describe('structureRow', () => {
         {
           structureId: 's1',
           structureName: 'Main',
-          stage: 'MAIN',
+          stage: MAIN,
           stageSequence: 1,
-          structureType: 'ITEM',
+          structureType: ITEM,
           structureOrder: 1,
           matchUpFormat: 'SET3-S:6/TB7',
         },
@@ -243,9 +246,9 @@ describe('structureRow', () => {
       event_id: 'e1',
       provider_id: 'PROV',
       structure_name: 'Main',
-      stage: 'MAIN',
+      stage: MAIN,
       stage_sequence: 1,
-      structure_type: 'ITEM',
+      structure_type: ITEM,
       structure_order: 1,
       match_up_format: 'SET3-S:6/TB7',
       parent_structure_id: null,
@@ -254,7 +257,7 @@ describe('structureRow', () => {
 
   it('carries parent_structure_id for a nested round-robin group', () => {
     const row = structureRow(
-      { structureId: 'g1', structureName: 'Group 1', structureType: 'ITEM' },
+      { structureId: 'g1', structureName: 'Group 1', structureType: ITEM },
       { ...sctx, parentStructureId: 'container-1' },
     );
     expect(row.structure_id).toBe('g1');

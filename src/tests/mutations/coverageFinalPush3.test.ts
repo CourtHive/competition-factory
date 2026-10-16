@@ -11,7 +11,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { FIRST_ROUND_LOSER_CONSOLATION, AD_HOC } from '@Constants/drawDefinitionConstants';
+import { FIRST_ROUND_LOSER_CONSOLATION, AD_HOC, ROUND_OUTCOME } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
@@ -396,7 +396,7 @@ describe('processPlayoffGroups uncovered branches', () => {
         structures: [
           {
             structureId: 'source-struct-id',
-            finishingPosition: 'ROUND_OUTCOME',
+            finishingPosition: ROUND_OUTCOME,
             matchUps: [],
             positionAssignments: [
               { drawPosition: 1 },
@@ -431,7 +431,7 @@ describe('processPlayoffGroups uncovered branches', () => {
         structures: [
           {
             structureId: 'source-struct-id',
-            finishingPosition: 'ROUND_OUTCOME',
+            finishingPosition: ROUND_OUTCOME,
             matchUps: [],
             positionAssignments: [{ drawPosition: 1 }, { drawPosition: 2 }, { drawPosition: 3 }, { drawPosition: 4 }],
           },
@@ -455,7 +455,7 @@ describe('processPlayoffGroups uncovered branches', () => {
         structures: [
           {
             structureId: 'source-struct-id',
-            finishingPosition: 'ROUND_OUTCOME',
+            finishingPosition: ROUND_OUTCOME,
             matchUps: [],
             positionAssignments: [{ drawPosition: 1 }, { drawPosition: 2 }, { drawPosition: 3 }, { drawPosition: 4 }],
           },

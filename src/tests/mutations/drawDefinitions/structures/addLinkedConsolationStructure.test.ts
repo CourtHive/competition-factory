@@ -11,6 +11,7 @@ import {
   LUCKY_DRAW,
   SINGLE_ELIMINATION,
   ROUND_ROBIN,
+  LOSER,
 } from '@Constants/drawDefinitionConstants';
 
 describe('generateConsolationStructure', () => {
@@ -149,7 +150,7 @@ describe('addLinkedConsolationStructure', () => {
     expect(consolation.matchUps).toEqual([]);
 
     // Verify LOSER links were created
-    const loserLinks = drawDefinition.links.filter((l) => l.linkType === 'LOSER');
+    const loserLinks = drawDefinition.links.filter((l) => l.linkType === LOSER);
     expect(loserLinks.length).toEqual(2);
 
     const link1 = loserLinks.find((l) => l.source.roundNumber === 1);
@@ -224,7 +225,7 @@ describe('addLinkedConsolationStructure', () => {
     const consolation = updated.structures.find((s) => s.stage === CONSOLATION);
     expect(consolation).toBeDefined();
 
-    const loserLinks = updated.links.filter((l) => l.linkType === 'LOSER');
+    const loserLinks = updated.links.filter((l) => l.linkType === LOSER);
     expect(loserLinks.length).toEqual(3);
   });
 

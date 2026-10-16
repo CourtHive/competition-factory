@@ -3,6 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and fixtures
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
@@ -44,7 +45,7 @@ it.each([1, 2, 3, 4, 5])('Swap Options in candiate generation works as expected'
     matchUpFormat: FORMAT_STANDARD,
     tieFormatName: '',
     drawName: 'Draw',
-    drawType: 'SINGLE_ELIMINATION',
+    drawType: SINGLE_ELIMINATION,
     voluntaryConsolation: false,
     drawSize: 32,
     eventId: 'F83DA131-055A-463D-96DD-48D0F0EB23D4',

@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 
 // constants and fixtures
 import { FORMAT_FAST4, FORMAT_SHORT_SETS, FORMAT_STANDARD, TIMED20 } from '@Fixtures/scoring/matchUpFormats';
+import { MAIN } from '@Constants/drawDefinitionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   INVALID_EVENT_TYPE,
@@ -281,7 +282,7 @@ it('setMatchUpFormat applies format to specific drawIds', () => {
   const result = tournamentEngine.setMatchUpFormat({
     matchUpFormat: FORMAT_SHORT_SETS,
     drawIds: [drawId],
-    stages: ['MAIN'],
+    stages: [MAIN],
     eventId,
   });
   expect(result.success).toEqual(true);

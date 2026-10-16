@@ -4,6 +4,7 @@ import { expect, it, describe } from 'vitest';
 import { cast } from '@Query/readModel/cast';
 
 // constants
+import { ROUND_ROBIN, MAIN, CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 
 describe('cast — singles (STANDARD)', () => {
@@ -320,7 +321,7 @@ describe('cast — draws + structures', () => {
     const drawId = rows!.draws[0].draw_id;
     expect(rows!.structures.every((s) => s.draw_id === drawId)).toBe(true);
     // a MAIN structure exists and its structure_id joins back to the match_ups
-    const main = rows!.structures.find((s) => s.stage === 'MAIN');
+    const main = rows!.structures.find((s) => s.stage === MAIN);
     expect(main).toBeTruthy();
     expect(rows!.match_ups.some((m) => m.structure_id === main!.structure_id)).toBe(true);
   });
@@ -360,7 +361,7 @@ describe('cast — guard', () => {
 describe('cast — round-robin nested group structures', () => {
   it('projects each group sub-structure so every matchUp structure_id resolves (no orphans)', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 8, drawType: 'ROUND_ROBIN', eventName: 'RR' }],
+      drawProfiles: [{ drawSize: 8, drawType: ROUND_ROBIN, eventName: 'RR' }],
       nonRandom: 1,
     });
     const { rows } = cast({ tournamentRecord });
@@ -372,7 +373,7 @@ describe('cast — round-robin nested group structures', () => {
     expect(matchUpStructureIds.every((id) => structureIds.has(id))).toBe(true);
 
     // the container is projected AND at least two group ITEM rows point at it.
-    const container = rows!.structures.find((s: any) => s.structure_type === 'CONTAINER');
+    const container = rows!.structures.find((s: any) => s.structure_type === CONTAINER);
     const groups = rows!.structures.filter((s: any) => s.parent_structure_id === container?.structure_id);
     expect(container).toBeDefined();
     expect(groups.length).toBeGreaterThanOrEqual(2);

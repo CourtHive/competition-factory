@@ -2,16 +2,19 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
+// constants
+import { ROUND_ROBIN, AD_HOC, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
+
 test('drawMatic works for AD_HOC voluntary consolation in a ROUND_ROBIN draw', () => {
   const drawId = 'drawId';
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawSize: 8, drawType: 'ROUND_ROBIN', completionGoal: 100 }],
+    drawProfiles: [{ drawId, drawSize: 8, drawType: ROUND_ROBIN, completionGoal: 100 }],
     completeAllMatchUps: true,
     setState: true,
   });
 
   const vcResult = tournamentEngine.generateVoluntaryConsolation({
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     drawId,
   });
   expect(vcResult.success).toBe(true);
@@ -19,7 +22,7 @@ test('drawMatic works for AD_HOC voluntary consolation in a ROUND_ROBIN draw', (
   tournamentEngine.attachConsolationStructures({ structures: vcResult.structures, links: vcResult.links, drawId });
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  const vcStructure = drawDefinition.structures.find((s: any) => s.stage === 'VOLUNTARY_CONSOLATION');
+  const vcStructure = drawDefinition.structures.find((s: any) => s.stage === VOLUNTARY_CONSOLATION);
   expect(vcStructure).toBeDefined();
 
   const eligible = tournamentEngine.getEligibleVoluntaryConsolationParticipants({ drawId });

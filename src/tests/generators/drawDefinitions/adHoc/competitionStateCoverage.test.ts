@@ -18,6 +18,7 @@ import { resetCompetitionState } from '@Mutate/drawDefinitions/competition/reset
 import { MISSING_DRAW_DEFINITION, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { APPLIED_POLICIES, COMPETITION_STATE } from '@Constants/extensionConstants';
 import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';
+import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 
 // Testing
@@ -28,7 +29,7 @@ import { expect, describe, test } from 'vitest';
 function makeDrawDefinition(extensions: any[] = []): any {
   return {
     drawId: 'd-coverage',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     structures: [],
     extensions,
   };

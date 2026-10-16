@@ -24,6 +24,9 @@ import {
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
   VOLUNTARY_CONSOLATION,
+  MAIN,
+  PLAY_OFF,
+  QUALIFYING,
 } from '@Constants/drawDefinitionConstants';
 import {
   EXISTING_DRAFT,
@@ -872,7 +875,7 @@ describe('FMLC deep consolation paths', () => {
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     // allTournamentMatchUps returns matchUps with inContext which includes stage
     const mainR1 = matchUps
-      .filter((m) => m.roundNumber === 1 && m.stage === 'MAIN')
+      .filter((m) => m.roundNumber === 1 && m.stage === MAIN)
       .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
     // Complete first two R1 matchUps
@@ -946,7 +949,7 @@ describe('doubleExitAdvancement deeper paths', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
-    const mainR1 = matchUps.filter((m) => m.roundNumber === 1 && m.stage === 'MAIN');
+    const mainR1 = matchUps.filter((m) => m.roundNumber === 1 && m.stage === MAIN);
 
     if (mainR1.length >= 2) {
       const r1 = tournamentEngine.setMatchUpStatus({
@@ -1083,7 +1086,7 @@ describe('generateAndPopulatePlayoffStructures paths', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-    const playoffStructure = drawDefinition.structures?.find((s) => s.stage === 'PLAY_OFF');
+    const playoffStructure = drawDefinition.structures?.find((s) => s.stage === PLAY_OFF);
     expect(playoffStructure).toBeDefined();
     // the completed groups populate the playoff, which is then completed too
     expect(playoffStructure.positionAssignments.filter(({ participantId }) => participantId).length).toBe(2);
@@ -1117,7 +1120,7 @@ describe('prepareStage additional paths', () => {
     const { drawDefinition } = tournamentEngine
       .setState(result.tournamentRecord)
       .getEvent({ drawId: result.drawIds[0] });
-    const qualifyingStructures = drawDefinition?.structures?.filter((s) => s.stage === 'QUALIFYING');
+    const qualifyingStructures = drawDefinition?.structures?.filter((s) => s.stage === QUALIFYING);
     expect(qualifyingStructures?.length).toBeGreaterThan(0);
   });
 

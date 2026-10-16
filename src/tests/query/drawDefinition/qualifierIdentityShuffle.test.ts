@@ -4,6 +4,7 @@ import { setRandomSource } from '@Tools/prng';
 
 // constants and types
 import type { DrawDefinition } from '@Types/tournamentTypes';
+import { MAIN } from '@Constants/drawDefinitionConstants';
 
 function drawDefinition(count = 4): DrawDefinition {
   return {
@@ -11,7 +12,7 @@ function drawDefinition(count = 4): DrawDefinition {
     structures: [
       {
         structureId: 'main',
-        stage: 'MAIN',
+        stage: MAIN,
         stageSequence: 1,
         positionAssignments: Array.from({ length: count }, (_, index) => ({
           drawPosition: index + 1,

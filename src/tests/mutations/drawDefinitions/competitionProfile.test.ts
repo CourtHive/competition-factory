@@ -18,7 +18,7 @@ import {
 
 import type { CompetitionProfile, MexicanoCompetitionProfile } from '@Types/competitionProfile';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
-import { AD_HOC, LADDER } from '@Constants/drawDefinitionConstants';
+import { AD_HOC, LADDER, CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import {
@@ -46,7 +46,7 @@ const americano: CompetitionProfile = {
   pairing: { seed: 42, algorithmVersion: 1 },
   completion: { kind: 'PARTNERSHIP_COVERAGE' },
 };
-const ladder: CompetitionProfile = { version: 1, format: 'LADDER' };
+const ladder: CompetitionProfile = { version: 1, format: LADDER };
 const copy = <T>(value: T): T => structuredClone(value);
 const draw = (): DrawDefinition => ({
   drawId: 'profile-draw',
@@ -168,7 +168,7 @@ describe('competition profile context and lifecycle guards', () => {
     else if (location === 'structure') drawDefinition.structures = [{ structureId: 's', matchUps }];
     else
       drawDefinition.structures = [
-        { structureId: 's', structureType: 'CONTAINER', structures: [{ structureId: 'child', matchUps }] },
+        { structureId: 's', structureType: CONTAINER, structures: [{ structureId: 'child', matchUps }] },
       ];
     const before = copy(drawDefinition);
     const changed = copy(mexicano);

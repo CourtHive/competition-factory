@@ -18,6 +18,9 @@ import {
   buildFromSources,
 } from '@Tools/buildFromSources/buildFromSources';
 
+// constants
+import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+
 // `classifySource`'s string union — extracted so the literal isn't repeated
 // across assertions (SonarJS S1192).
 const EVENT_DATA = 'event-data';
@@ -91,7 +94,7 @@ function cfsShapes(record: AnyObj): CfsShapes {
 
 function generateRoundRobin(opts: AnyObj = {}) {
   return mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, drawType: 'ROUND_ROBIN' }],
+    drawProfiles: [{ drawSize: 8, drawType: ROUND_ROBIN }],
     venueProfiles: [{ courtsCount: 2 }],
     startDate: '2026-06-11',
     endDate: FIXTURE_DATE,
@@ -102,8 +105,8 @@ function generateRoundRobin(opts: AnyObj = {}) {
 function generateMultiEvent() {
   return mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawSize: 4, drawType: 'ROUND_ROBIN', eventName: 'Mens', eventType: 'SINGLES' },
-      { drawSize: 4, drawType: 'SINGLE_ELIMINATION', eventName: 'Womens', eventType: 'SINGLES' },
+      { drawSize: 4, drawType: ROUND_ROBIN, eventName: 'Mens', eventType: 'SINGLES' },
+      { drawSize: 4, drawType: SINGLE_ELIMINATION, eventName: 'Womens', eventType: 'SINGLES' },
     ],
     venueProfiles: [{ courtsCount: 2, venueName: 'Center' }],
     startDate: '2026-06-11',
@@ -113,7 +116,7 @@ function generateMultiEvent() {
 
 function generateDoubles(opts: AnyObj = {}) {
   return mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, drawType: 'ROUND_ROBIN', eventType: 'DOUBLES' }],
+    drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN, eventType: 'DOUBLES' }],
     venueProfiles: [{ courtsCount: 1 }],
     startDate: FIXTURE_DATE,
     endDate: '2026-06-13',

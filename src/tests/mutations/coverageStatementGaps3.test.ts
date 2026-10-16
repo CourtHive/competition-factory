@@ -21,6 +21,10 @@ import {
   ROUND_ROBIN,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
+  MAIN,
+  QUALIFYING,
+  PLAY_OFF,
+  CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
 import {
   DRAW_DEFINITION_NOT_FOUND,
@@ -171,7 +175,7 @@ describe('removeDirectedParticipants via FMLC advanced scenarios', () => {
 
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
     const mainR1 = matchUps
-      .filter((m) => m.roundNumber === 1 && m.stage === 'MAIN')
+      .filter((m) => m.roundNumber === 1 && m.stage === MAIN)
       .sort((a, b) => (a.roundPosition || 0) - (b.roundPosition || 0));
 
     // Save first round matchUp ids for later
@@ -193,7 +197,7 @@ describe('removeDirectedParticipants via FMLC advanced scenarios', () => {
     // Complete a second round matchUp
     const { matchUps: updatedMatchUps } = tournamentEngine.allDrawMatchUps({ drawId });
     const mainR2 = updatedMatchUps.filter(
-      (m) => m.roundNumber === 2 && m.stage === 'MAIN' && m.drawPositions?.filter(Boolean).length === 2,
+      (m) => m.roundNumber === 2 && m.stage === MAIN && m.drawPositions?.filter(Boolean).length === 2,
     );
 
     if (mainR2.length) {
@@ -240,7 +244,7 @@ describe('doubleExitAdvancement with DOUBLE_DEFAULT propagation', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
-    const mainR1 = matchUps.filter((m) => m.roundNumber === 1 && m.stage === 'MAIN');
+    const mainR1 = matchUps.filter((m) => m.roundNumber === 1 && m.stage === MAIN);
 
     // Set DOUBLE_DEFAULT on first match — should propagate to consolation
     if (mainR1.length >= 2) {
@@ -645,7 +649,7 @@ describe('directWinner with qualifying structures', () => {
     const drawId = drawIds[0];
 
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
-    const qualifyingMatchUps = matchUps.filter((m) => m.stage === 'QUALIFYING');
+    const qualifyingMatchUps = matchUps.filter((m) => m.stage === QUALIFYING);
 
     // Complete qualifying matchUps to trigger directWinner with winnerTargetLink
     const qualifyingR1 = qualifyingMatchUps
@@ -753,7 +757,7 @@ describe('generateAndPopulatePlayoffStructures via engine', () => {
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: drawIds[0] });
     // Should have playoff structures
-    const playoffStructures = drawDefinition.structures?.filter((s) => s.stage === 'PLAY_OFF');
+    const playoffStructures = drawDefinition.structures?.filter((s) => s.stage === PLAY_OFF);
     expect(playoffStructures?.length).toBeGreaterThan(0);
     // completing the groups positions the group winners in the playoff, which is then completed too
     const playoff = playoffStructures[0];
@@ -1139,7 +1143,7 @@ describe('prepareStage with multi-sequence qualifying', () => {
     expect(result.tournamentRecord).toBeDefined();
     tournamentEngine.setState(result.tournamentRecord);
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: result.drawIds[0] });
-    const qualifyingStructures = drawDefinition.structures?.filter((s) => s.stage === 'QUALIFYING');
+    const qualifyingStructures = drawDefinition.structures?.filter((s) => s.stage === QUALIFYING);
     expect(qualifyingStructures?.length).toBeGreaterThanOrEqual(1);
   });
 });
@@ -1234,10 +1238,10 @@ describe('FMLC bye propagation to consolation', () => {
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: drawIds[0] });
 
     // Consolation structure should have BYEs propagated
-    const consolation = drawDefinition.structures?.find((s) => s.stage === 'CONSOLATION');
+    const consolation = drawDefinition.structures?.find((s) => s.stage === CONSOLATION);
     expect(consolation).toBeDefined();
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId: drawIds[0] });
-    const consolationMatchUps = matchUps.filter((m) => m.stage === 'CONSOLATION');
+    const consolationMatchUps = matchUps.filter((m) => m.stage === CONSOLATION);
     // Some consolation matchUps may have BYE status
     const byeMatchUps = consolationMatchUps.filter((m) => m.matchUpStatus === 'BYE');
     expect(byeMatchUps.length).toBeGreaterThanOrEqual(0);

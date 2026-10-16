@@ -31,6 +31,7 @@ import { getCourts } from '@Query/venues/getCourts';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { VOLUNTARY_CONSOLATION, MAIN, QUALIFYING, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import {
   INVALID_VALUES,
   MISSING_COURT_ID,
@@ -102,7 +103,7 @@ describe('getEventAlternateParticipantIds branch coverage', () => {
   it('returns empty array when no entries match ALTERNATE status', () => {
     const result = getEventAlternateParticipantIds({
       eventEntries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE' }],
-      structure: { stage: 'MAIN', stageSequence: 1 },
+      structure: { stage: MAIN, stageSequence: 1 },
     });
     expect(result).toEqual([]);
   });
@@ -110,7 +111,7 @@ describe('getEventAlternateParticipantIds branch coverage', () => {
   it('returns empty array when eventEntries is empty', () => {
     const result = getEventAlternateParticipantIds({
       eventEntries: [],
-      structure: { stage: 'MAIN', stageSequence: 1 },
+      structure: { stage: MAIN, stageSequence: 1 },
     });
     expect(result).toEqual([]);
   });
@@ -155,7 +156,7 @@ describe('autoSeeding branch coverage', () => {
       drawSize: 8,
       drawId: 'd1',
       event: undefined as any,
-      stage: 'MAIN' as any,
+      stage: MAIN as any,
       sortDescending: false,
       scaleSortMethod: undefined,
     });
@@ -178,7 +179,7 @@ describe('autoSeeding branch coverage', () => {
       drawSize: 8,
       drawId: 'd1',
       event: { eventId: 'e1', entries: [] } as any,
-      stage: 'MAIN' as any,
+      stage: MAIN as any,
       sortDescending: false,
       scaleSortMethod: undefined,
     });
@@ -214,13 +215,13 @@ describe('resetVoluntaryConsolationStructure branch coverage', () => {
     const drawDefinition = {
       drawId: 'd1',
       entries: [
-        { participantId: 'p1', entryStage: 'VOLUNTARY_CONSOLATION' },
-        { participantId: 'p2', entryStage: 'MAIN' },
+        { participantId: 'p1', entryStage: VOLUNTARY_CONSOLATION },
+        { participantId: 'p2', entryStage: MAIN },
       ],
       structures: [
         {
           structureId: 's1',
-          stage: 'VOLUNTARY_CONSOLATION',
+          stage: VOLUNTARY_CONSOLATION,
           positionAssignments: [{ drawPosition: 1, participantId: 'p1' }],
           seedAssignments: [],
           matchUps: [{ matchUpId: 'm1' }],
@@ -817,7 +818,7 @@ describe('getStageEntries branch coverage', () => {
   it('returns entries from event when no drawId', () => {
     const result = getStageEntries({
       drawDefinition: { drawId: 'd1' } as any,
-      event: { entries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE', entryStage: 'MAIN' }] } as any,
+      event: { entries: [{ participantId: 'p1', entryStatus: 'DIRECT_ACCEPTANCE', entryStage: MAIN }] } as any,
     });
     expect(result.entries.length).toBe(1);
   });
@@ -874,12 +875,12 @@ describe('getStageEntries branch coverage', () => {
   it('filters by stage', () => {
     const result = getStageEntries({
       drawDefinition: { drawId: 'd1' } as any,
-      stage: 'QUALIFYING',
+      stage: QUALIFYING,
       selected: false,
       event: {
         entries: [
-          { participantId: 'p1', entryStage: 'MAIN' },
-          { participantId: 'p2', entryStage: 'QUALIFYING' },
+          { participantId: 'p1', entryStage: MAIN },
+          { participantId: 'p2', entryStage: QUALIFYING },
         ],
       } as any,
     });
@@ -962,7 +963,7 @@ describe('removeSeededParticipant branch coverage', () => {
       tournamentRecord: {} as any,
       drawDefinition: {
         drawId: 'd1',
-        structures: [{ structureId: 's1', stage: 'CONSOLATION', stageSequence: 1 }],
+        structures: [{ structureId: 's1', stage: CONSOLATION, stageSequence: 1 }],
       } as any,
       participantId: 'p1',
       structureId: 's1',
@@ -978,7 +979,7 @@ describe('removeSeededParticipant branch coverage', () => {
         structures: [
           {
             structureId: 's1',
-            stage: 'MAIN',
+            stage: MAIN,
             stageSequence: 1,
             seedAssignments: [{ seedNumber: 1, participantId: 'other' }],
           },

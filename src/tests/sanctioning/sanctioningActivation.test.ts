@@ -7,6 +7,9 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 // types
 import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
+// constants
+import { SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
+
 const testApplicant: Applicant = {
   organisationId: 'org-001',
   organisationName: 'Test Tennis Club',
@@ -30,7 +33,7 @@ const testProposal: TournamentProposal = {
       eventType: 'SINGLES',
       gender: 'MALE',
       drawSize: 32,
-      drawType: 'SINGLE_ELIMINATION',
+      drawType: SINGLE_ELIMINATION,
       matchUpFormat: 'SET3-S:6/TB7',
       category: { categoryName: 'Open', type: 'AGE' },
     },
@@ -39,8 +42,8 @@ const testProposal: TournamentProposal = {
       eventType: 'SINGLES',
       gender: 'FEMALE',
       drawSize: 32,
-      drawType: 'SINGLE_ELIMINATION',
-      allowedDrawTypes: ['SINGLE_ELIMINATION', 'FEED_IN_CHAMPIONSHIP'],
+      drawType: SINGLE_ELIMINATION,
+      allowedDrawTypes: [SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP],
       matchUpFormat: 'SET3-S:6/TB7',
     },
   ],
@@ -107,11 +110,11 @@ describe('Activation — Tournament Generation', () => {
     expect(mensSingles.eventType).toEqual('SINGLES');
     expect(mensSingles.gender).toEqual('MALE');
     expect(mensSingles.matchUpFormat).toEqual('SET3-S:6/TB7');
-    expect(mensSingles.allowedDrawTypes).toEqual(['SINGLE_ELIMINATION']);
+    expect(mensSingles.allowedDrawTypes).toEqual([SINGLE_ELIMINATION]);
     expect(mensSingles.category?.categoryName).toEqual('Open');
 
     const womensSingles = tr.events.find((e: any) => e.eventName === "Women's Singles");
-    expect(womensSingles.allowedDrawTypes).toEqual(['SINGLE_ELIMINATION', 'FEED_IN_CHAMPIONSHIP']);
+    expect(womensSingles.allowedDrawTypes).toEqual([SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP]);
   });
 
   it('stores sanctioning reference as extension', () => {

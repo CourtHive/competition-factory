@@ -5,8 +5,8 @@ import { expect, it } from 'vitest';
 
 // constants
 import { QUALIFYING_PARTICIPANT } from '@Constants/positionActionConstants';
+import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { MAIN } from '@Constants/drawDefinitionConstants';
 
 it('can generate and seed a qualifying structure', () => {
   const {
@@ -108,7 +108,7 @@ it('can generate and seed a qualifying structure', () => {
 
   const mmw = participants.find((p) => {
     const stages = p.matchUps.map((m) => m.stage);
-    return stages.includes('MAIN') && stages.includes('QUALIFYING');
+    return stages.includes(MAIN) && stages.includes(QUALIFYING);
   });
   expect(mmw.matchUps.length >= 2).toEqual(true);
 

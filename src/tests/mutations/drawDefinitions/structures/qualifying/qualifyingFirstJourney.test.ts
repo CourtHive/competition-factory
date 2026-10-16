@@ -29,6 +29,7 @@ import {
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
   SWISS,
+  WINNER,
 } from '@Constants/drawDefinitionConstants';
 
 type Setup = {
@@ -119,7 +120,7 @@ describe('qualifying-first user journey', () => {
       // Exactly one WINNER link from qualifying final round to MAIN round 1
       expect(drawDefinition.links.length).toEqual(1);
       const link = drawDefinition.links[0];
-      expect(link.linkType).toEqual('WINNER');
+      expect(link.linkType).toEqual(WINNER);
       expect(link.source.structureId).toEqual(qualStructure.structureId);
       expect(link.target.structureId).toEqual(mainStructure.structureId);
       expect(link.source.roundNumber).toEqual(qualStructure.qualifyingRoundNumber);

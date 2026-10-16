@@ -1,6 +1,9 @@
 import { resolveMatchUpPublishState } from '@Query/readModel/readModelPublish';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
+
 const FUTURE = '2999-01-01T00:00:00.000Z';
 const EARLY = '2020-01-01T00:00:00.000Z';
 const MID = '2050-01-01T00:00:00.000Z';
@@ -63,7 +66,7 @@ describe('resolveMatchUpPublishState', () => {
 
   it('publishes a listed draw and carries a draw-level embargo (intent stays true under embargo)', () => {
     const status = { drawDetails: { d1: { publishingDetail: { published: true, embargo: FUTURE } } } };
-    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN')).toEqual({
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', MAIN)).toEqual({
       published: true,
       embargo: FUTURE,
       scheduleEmbargo: null,
@@ -79,8 +82,8 @@ describe('resolveMatchUpPublishState', () => {
         },
       },
     };
-    expect(resolveMatchUpPublishState(status, 'd1', 'sMain', 'MAIN').published).toBe(true);
-    expect(resolveMatchUpPublishState(status, 'd1', 'sQual', 'QUALIFYING').published).toBe(false);
+    expect(resolveMatchUpPublishState(status, 'd1', 'sMain', MAIN).published).toBe(true);
+    expect(resolveMatchUpPublishState(status, 'd1', 'sQual', QUALIFYING).published).toBe(false);
   });
 
   it('applies the stage gate and explicit published:false', () => {
@@ -92,15 +95,15 @@ describe('resolveMatchUpPublishState', () => {
         },
       },
     };
-    expect(resolveMatchUpPublishState(status, 'd1', 's', 'MAIN').published).toBe(true);
-    expect(resolveMatchUpPublishState(status, 'd1', 's', 'QUALIFYING').published).toBe(false);
+    expect(resolveMatchUpPublishState(status, 'd1', 's', MAIN).published).toBe(true);
+    expect(resolveMatchUpPublishState(status, 'd1', 's', QUALIFYING).published).toBe(false);
   });
 
   it('resolves the effective embargo as the LATEST (max) of applicable levels', () => {
     const structureOnly = {
       drawDetails: { d1: { publishingDetail: { published: true }, structureDetails: { s1: { embargo: LATE } } } },
     };
-    expect(resolveMatchUpPublishState(structureOnly, 'd1', 's1', 'MAIN').embargo).toEqual(LATE);
+    expect(resolveMatchUpPublishState(structureOnly, 'd1', 's1', MAIN).embargo).toEqual(LATE);
 
     // a lifted/earlier DRAW embargo must NOT mask a later STRUCTURE embargo (the #3 fix):
     // getEventData still hides while the structure embargo is active, so the read model
@@ -113,7 +116,7 @@ describe('resolveMatchUpPublishState', () => {
         },
       },
     };
-    expect(resolveMatchUpPublishState(earlyDrawLateStructure, 'd1', 's1', 'MAIN').embargo).toEqual(LATE);
+    expect(resolveMatchUpPublishState(earlyDrawLateStructure, 'd1', 's1', MAIN).embargo).toEqual(LATE);
 
     // symmetric: a later DRAW embargo wins over an earlier structure embargo.
     const lateDrawEarlyStructure = {
@@ -125,7 +128,7 @@ describe('resolveMatchUpPublishState', () => {
         },
       },
     };
-    expect(resolveMatchUpPublishState(lateDrawEarlyStructure, 'd1', 's1', 'MAIN').embargo).toEqual(LATE);
+    expect(resolveMatchUpPublishState(lateDrawEarlyStructure, 'd1', 's1', MAIN).embargo).toEqual(LATE);
 
     // the stage level participates in the max too.
     const stageIsLatest = {
@@ -137,13 +140,13 @@ describe('resolveMatchUpPublishState', () => {
         },
       },
     };
-    expect(resolveMatchUpPublishState(stageIsLatest, 'd1', 's1', 'MAIN').embargo).toEqual(LATE);
+    expect(resolveMatchUpPublishState(stageIsLatest, 'd1', 's1', MAIN).embargo).toEqual(LATE);
 
     // non-ISO embargo values do not constrain (matches isEmbargoed) → null when none valid.
     const nonIso = {
       drawDetails: { d1: { publishingDetail: { published: true, embargo: 'not-a-date' } } },
     };
-    expect(resolveMatchUpPublishState(nonIso, 'd1', 's1', 'MAIN').embargo).toEqual(null);
+    expect(resolveMatchUpPublishState(nonIso, 'd1', 's1', MAIN).embargo).toEqual(null);
   });
 
   it('resolves the round-level scheduledRounds embargo into scheduleEmbargo (#9)', () => {
@@ -156,10 +159,10 @@ describe('resolveMatchUpPublishState', () => {
       },
     };
     // the embargoed round carries scheduleEmbargo; other rounds do not.
-    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 2).scheduleEmbargo).toBe(LATE);
-    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 1).scheduleEmbargo).toBeNull();
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', MAIN, 2).scheduleEmbargo).toBe(LATE);
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', MAIN, 1).scheduleEmbargo).toBeNull();
     // the matchUp itself stays published (whole-matchUp visibility is unaffected).
-    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 2).published).toBe(true);
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', MAIN, 2).published).toBe(true);
   });
 
   it('hides rounds beyond a per-structure roundLimit (published:false; the #4 fix)', () => {
@@ -169,15 +172,15 @@ describe('resolveMatchUpPublishState', () => {
       },
     };
     // round 1 is within the limit → published; rounds beyond it are hidden.
-    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 1).published).toBe(true);
-    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 2).published).toBe(false);
-    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN', 3).published).toBe(false);
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', MAIN, 1).published).toBe(true);
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', MAIN, 2).published).toBe(false);
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', MAIN, 3).published).toBe(false);
     // no roundNumber supplied → the roundLimit gate does not apply (back-compat).
-    expect(resolveMatchUpPublishState(status, 'd1', 's1', 'MAIN').published).toBe(true);
+    expect(resolveMatchUpPublishState(status, 'd1', 's1', MAIN).published).toBe(true);
     // no roundLimit set → all rounds published.
     const noLimit = {
       drawDetails: { d1: { publishingDetail: { published: true }, structureDetails: { s1: { published: true } } } },
     };
-    expect(resolveMatchUpPublishState(noLimit, 'd1', 's1', 'MAIN', 9).published).toBe(true);
+    expect(resolveMatchUpPublishState(noLimit, 'd1', 's1', MAIN, 9).published).toBe(true);
   });
 });

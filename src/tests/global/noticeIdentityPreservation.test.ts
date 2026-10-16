@@ -3,6 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 
 /**
@@ -82,7 +83,7 @@ describe('keyed notice de-dup preserves identity', () => {
     const {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 8, drawType: 'SINGLE_ELIMINATION' }],
+      drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
       participantsProfile: { nonRandom: 1 },
       setState: true,
     });

@@ -16,6 +16,7 @@ import { INVALID_SCORE, INVALID_VALUES } from '@Constants/errorConditionConstant
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { RotatingPartnerTallyPolicy } from '@Types/rotatingPartnerTally';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
+import { AD_HOC } from '@Constants/drawDefinitionConstants';
 
 const policy: RotatingPartnerTallyPolicy = {
   version: 1,
@@ -30,7 +31,7 @@ function setup(
   const ids = Array.from({ length: 8 }, (_, index) => `p${index}`);
   const drawDefinition: DrawDefinition = {
     drawId: 'd',
-    drawType: 'AD_HOC',
+    drawType: AD_HOC,
     matchUpType: 'DOUBLES',
     entries: ids.map((participantId) => ({ participantId, entryStatus: 'DIRECT_ACCEPTANCE' })),
     structures: [{ structureId: 's', matchUps: [] }],

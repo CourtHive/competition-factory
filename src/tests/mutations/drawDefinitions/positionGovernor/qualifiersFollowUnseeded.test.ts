@@ -8,11 +8,12 @@ import { setRandomSource } from '@Tools/prng';
 
 // constants and types
 import { NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS } from '@Constants/errorConditionConstants';
+import { LUCKY_DRAW, SINGLE_ELIMINATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import type { PositionAssignment } from '@Types/tournamentTypes';
 
-const drawTypes = ['LUCKY_DRAW', 'SINGLE_ELIMINATION'];
+const drawTypes = [LUCKY_DRAW, SINGLE_ELIMINATION];
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -48,7 +49,7 @@ describe('anonymous qualifier placeholders follow unseeded entrants', () => {
         assignments.every((assignment) => !assignment.qualifier && !assignment.participantId && !assignment.bye),
       ).toBe(true);
     }
-    const main = result.tournamentRecord.events[0].drawDefinitions[0].structures.find((s) => s.stage === 'MAIN');
+    const main = result.tournamentRecord.events[0].drawDefinitions[0].structures.find((s) => s.stage === MAIN);
     expect(main.positionAssignments.filter((a) => a.qualifier)).toHaveLength(4);
     expect(main.positionAssignments.filter((a) => a.participantId)).toHaveLength(12);
     expect(main.positionAssignments.every((a) => !(a.participantId && a.qualifier))).toBe(true);
@@ -58,7 +59,7 @@ describe('anonymous qualifier placeholders follow unseeded entrants', () => {
     const placeQualifiers = qualifiers.positionQualifiers;
     const entrantCounts: number[] = [];
     vi.spyOn(qualifiers, 'positionQualifiers').mockImplementation((params) => {
-      if (params.structure.stage === 'MAIN') {
+      if (params.structure.stage === MAIN) {
         entrantCounts.push(params.structure.positionAssignments.filter((a) => a.participantId).length);
       }
       return placeQualifiers(params);
@@ -90,7 +91,7 @@ describe('anonymous qualifier placeholders follow unseeded entrants', () => {
       ],
     });
     const structureId = tournamentRecord.events[0].drawDefinitions[0].structures.find(
-      (s) => s.stage === 'MAIN',
+      (s) => s.stage === MAIN,
     ).structureId;
     const position = (drawSize?: number) => {
       tournamentEngine.setState(structuredClone(tournamentRecord));
@@ -119,7 +120,7 @@ describe('anonymous qualifier placeholders follow unseeded entrants', () => {
       nonRandom: 1,
       drawProfiles: [
         {
-          drawType: 'SINGLE_ELIMINATION',
+          drawType: SINGLE_ELIMINATION,
           drawSize: 2,
           participantsCount: 1,
           seedsCount: 0,
@@ -129,7 +130,7 @@ describe('anonymous qualifier placeholders follow unseeded entrants', () => {
       ],
     });
     const structureId = tournamentRecord.events[0].drawDefinitions[0].structures.find(
-      (s) => s.stage === 'MAIN',
+      (s) => s.stage === MAIN,
     ).structureId;
     const positions = [
       [0.9, 0.1, 0.2],
@@ -159,7 +160,7 @@ describe('anonymous qualifier placeholders follow unseeded entrants', () => {
         },
       ],
     });
-    const main = tournamentEngine.getEvent({ drawId }).drawDefinition.structures.find((s) => s.stage === 'MAIN');
+    const main = tournamentEngine.getEvent({ drawId }).drawDefinition.structures.find((s) => s.stage === MAIN);
     for (const drawPosition of [1, 2, 3, 4, 5, 6]) {
       expect(
         tournamentEngine.assignDrawPositionBye({ drawId, structureId: main.structureId, drawPosition }).success,
