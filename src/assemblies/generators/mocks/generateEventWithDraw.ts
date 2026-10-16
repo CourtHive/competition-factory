@@ -693,8 +693,10 @@ function generateAndAttachDraw({
   qualifyingPositions,
   stage,
 }) {
+  // the iterative AD_HOC path runs unless `automated` is false, so round 1 is paired the same way the later rounds
+  // are: generateDrawDefinition pairs an AD_HOC round only when `automated` is set
   const drawProfileForGeneration = iterativeAdHoc
-    ? { ...makeDeepCopy(drawProfile, false, true), roundsCount: 1 }
+    ? { ...makeDeepCopy(drawProfile, false, true), roundsCount: 1, automated: drawProfile.automated ?? true }
     : makeDeepCopy(drawProfile, false, true);
 
   const result = generateDrawDefinition({

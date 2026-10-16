@@ -71,18 +71,47 @@ describe('completeAllMatchUps on a drawProfile (drawProfiles)', () => {
 
   it('completes every round of an iterative AD_HOC draw', () => {
     mocksEngine.generateTournamentRecord({
-      // `automated: true`: an AD_HOC profile without it generates an unpaired first round, with the
-      // generation-wide option exactly as here
-      drawProfiles: [
-        { drawId: 'adhoc', drawType: AD_HOC, drawSize: 8, roundsCount: 3, automated: true, completeAllMatchUps: true },
-      ],
+      drawProfiles: [{ drawId: 'adhoc', drawType: AD_HOC, drawSize: 8, roundsCount: 3, completeAllMatchUps: true }],
       setState: true,
     });
 
     const matchUps = drawMatchUps('adhoc');
     expect(new Set(matchUps.map((matchUp) => matchUp.roundNumber)).size).toEqual(3);
     expect(matchUps.length).toEqual(12);
+    // round 1 is paired too: without `automated` it used to be generated empty and left unscored
+    expect(
+      matchUps.filter((matchUp) => matchUp.roundNumber === 1 && matchUp.sides?.every((side) => side.participantId)),
+    ).toHaveLength(4);
     expect(unscored('adhoc')).toEqual([]);
+  });
+
+  it('completes every round of an iterative AD_HOC draw with the generation-wide option', () => {
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawId: 'adhocTop', drawType: AD_HOC, drawSize: 8, roundsCount: 3 }],
+      completeAllMatchUps: true,
+      setState: true,
+    });
+
+    expect(drawMatchUps('adhocTop').length).toEqual(12);
+    expect(unscored('adhocTop')).toEqual([]);
+  });
+
+  it('leaves an iterative AD_HOC draw with `automated: false` unpaired', () => {
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          drawId: 'manual',
+          drawType: AD_HOC,
+          drawSize: 8,
+          roundsCount: 3,
+          automated: false,
+          completeAllMatchUps: true,
+        },
+      ],
+      setState: true,
+    });
+
+    expect(drawMatchUps('manual').every((matchUp) => !matchUp.sides?.some((side) => side.participantId))).toEqual(true);
   });
 
   it('completes the TEAM matchUps of a TEAM draw', () => {
