@@ -76,7 +76,7 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  * answer at the connected structure the loser would have travelled to — which is also why this function
  * tests `loserMatchUp.structureId !== inContextMatchUp.structureId` rather than testing a round.
  *
- * ## THERE IS NO WITHDRAWAL, and that is measured rather than assumed
+ * ## THIS FUNCTION WITHDRAWS NOTHING, and that is measured rather than assumed
  *
  * `propagateConsolationBye`'s docblock records the defect that follows a reservation nobody revisits —
  * *"Correct when placed — and never revisited."* So a withdrawal was written, and then found to be
@@ -98,8 +98,10 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  * and tells the next reader that a withdrawal has become necessary.
  *
  * The claim IS still recorded: `removeDoubleExit`'s `byeClaimSurvives` consults the ledger whenever it
- * visits a loser target, so the record makes this cascade's work visible to machinery that already
- * exists, whether or not anything withdraws it today.
+ * visits a loser target, and `withdrawByeSeats` (`applyWithdrawnExits.ts`) reads the same claims when a
+ * claimant later gains an opponent. The measurement above holds for correcting the ORIGINATING exit; a
+ * BYE claimed by a dissolved convergence is withdrawn there, not here, and only while the claim survives
+ * the exits withdrawn beside it (census S7, 20964176: `aByeClaimSurvivesTheExitWithdrawnBesideIt.test.ts`).
  */
 export function propagateUnfillableLoserBye({
   tournamentRecord,
