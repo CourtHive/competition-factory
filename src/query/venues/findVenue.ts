@@ -41,10 +41,11 @@ export function findVenue({ tournamentRecords, tournamentRecord, venueId }: Find
     for (const tournamentId of relevantIds) {
       const record = tournamentRecords[tournamentId];
       const result = findVenue({ tournamentRecord: record, venueId });
-      // if venue is found in linked tournamentRecords, add venue to original tournamentRecord
+      // if venue is found in linked tournamentRecords, add a copy of it to the original tournamentRecord: the
+      // linked record's own object must not be shared between two records
       if (result.success && result.venue) {
-        addVenue({ tournamentRecord, venue: result.venue });
-        return { ...SUCCESS, venue };
+        addVenue({ tournamentRecord, venue: makeDeepCopy(result.venue, false, true) });
+        return { ...SUCCESS, venue: result.venue };
       }
     }
   }
