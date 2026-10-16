@@ -316,17 +316,27 @@ function carriesDissolvedConvergence(
   });
 }
 
-type PositionedMatchUp = { drawPositions?: (number | undefined)[] } | undefined;
+type PositionedMatchUp =
+  | {
+      drawPositions?: (number | undefined)[];
+      sides?: { drawPosition?: number; participantId?: string }[];
+      structureId?: string;
+    }
+  | undefined;
 
 /**
  * Did the participant this unwind takes back out of `targetMatchUp` go on through it? A drawPosition that came from the
- * source, sits in the target and has also reached the target's next winner matchUp was sent on by the target's result
- * as its winner. The target's exit can stand while that advance cannot: the walk goes on to take it back.
+ * source and sits in the target was sent on by the target's result as its winner if it has also reached the target's
+ * next winner matchUp. The target's exit can stand while that advance cannot: the walk goes on to take it back.
  *
  * Census S8 policy-off, DOUBLE_ELIMINATION 8/6 (20590443): `Main|1|3`'s double walkover let the participant past
  * `Main|1|4`'s BYE win `Main|2|2`, then `Main|3|1` on `Main|2|1`'s produced walkover, then the Main final, and so into
  * the Decider. Re-scoring `Main|1|3` as a played win reached `Main|3|1`, whose walkover is `Main|2|1`'s and stands, and
  * stopped: the participant stayed in the Decider, and the next Main final result was refused after a write.
+ *
+ * Across a link the next winner matchUp numbers its positions in its own structure, so there the participant is
+ * followed instead (census S8 `allowChangePropagation`, DOUBLE_ELIMINATION 8/6, 20701264: the walk stopped at the Main
+ * final, whose walkover had sent the participant the unwind takes back on into the Decider).
  */
 function sentOnThrough({
   nextWinnerMatchUp,
@@ -338,10 +348,20 @@ function sentOnThrough({
   targetMatchUp: PositionedMatchUp;
 }): boolean {
   const sourceDrawPositions = sourceMatchUp?.drawPositions?.filter(Boolean) ?? [];
-  const targetDrawPositions = targetMatchUp?.drawPositions?.filter(Boolean) ?? [];
-  return (nextWinnerMatchUp?.drawPositions ?? []).some(
-    (drawPosition) =>
-      !!drawPosition && sourceDrawPositions.includes(drawPosition) && targetDrawPositions.includes(drawPosition),
+  const passing = (targetMatchUp?.drawPositions?.filter(Boolean) ?? []).filter((drawPosition) =>
+    sourceDrawPositions.includes(drawPosition),
+  );
+  if (!passing.length || !nextWinnerMatchUp) return false;
+  if (!nextWinnerMatchUp.structureId || nextWinnerMatchUp.structureId === targetMatchUp?.structureId) {
+    return (nextWinnerMatchUp.drawPositions ?? []).some(
+      (drawPosition) => !!drawPosition && passing.includes(drawPosition),
+    );
+  }
+  const passingParticipantIds = (targetMatchUp?.sides ?? [])
+    .filter((side) => side?.drawPosition && passing.includes(side.drawPosition) && side.participantId)
+    .map((side) => side.participantId);
+  return (nextWinnerMatchUp.sides ?? []).some(
+    (side) => !!side?.participantId && passingParticipantIds.includes(side.participantId),
   );
 }
 
