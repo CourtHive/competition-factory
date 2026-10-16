@@ -25,7 +25,7 @@ type ScheduleProfileRoundsArgs = {
   tournamentRecords: TournamentRecords;
   scheduleCompletedMatchUps?: boolean;
   excludeNoDateCompleted?: boolean;
-  clearScheduleDates?: boolean;
+  clearScheduleDates?: boolean | string[];
   excludePriorDates?: boolean;
   scheduleDates?: string[];
   periodLength?: number;
@@ -175,7 +175,9 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
   };
 
   if (pro) {
-    return v2Scheduler(schedulingParams);
+    // v2Scheduler (held pending its assessment) still types clearScheduleDates as boolean;
+    // the shared helpers it passes the value to accept the documented string[] form
+    return v2Scheduler(schedulingParams as Parameters<typeof v2Scheduler>[0]);
   } else {
     return jinnScheduler(schedulingParams);
   }

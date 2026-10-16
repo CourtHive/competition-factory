@@ -18,7 +18,7 @@ type ProcessAlreadyScheduledMatchUpsArgs = {
   dateScheduledMatchUpIds: string[];
   greatestAverageMinutes?: number;
   excludeNoDateCompleted?: boolean;
-  clearScheduleDates?: boolean;
+  clearScheduleDates?: boolean | string[];
   excludePriorDates?: boolean;
   matchUps: HydratedMatchUp[];
   matchUpDependencies: any;
@@ -59,7 +59,8 @@ export function processAlreadyScheduledMatchUps({
       return (
         !isByeMatchUp &&
         hasSchedule({ schedule }) &&
-        (!scheduleDate || matchUp.schedule?.scheduledDate === scheduleDate)
+        // compare calendar dates: a stored scheduledDate may carry a time component
+        (!scheduleDate || extractDate(matchUp.schedule?.scheduledDate) === extractDate(scheduleDate))
       );
     });
 

@@ -18,8 +18,9 @@ type GenerateScheduleTimesArgs = {
   defaultRecoveryMinutes?: number;
   averageMatchUpMinutes?: number;
   tournamentRecord?: Tournament;
-  clearScheduleDates?: boolean;
+  clearScheduleDates?: boolean | string[];
   matchUps?: HydratedMatchUp[];
+  courtIds?: string[];
   periodLength?: number;
   scheduleDate: string;
   venueIds: string[];
@@ -39,6 +40,7 @@ export function generateScheduleTimes({
   scheduleDate,
   startTime,
   venueIds,
+  courtIds,
   matchUps,
   endTime,
 }: GenerateScheduleTimesArgs): {
@@ -67,7 +69,11 @@ export function generateScheduleTimes({
     tournamentRecords,
   });
 
-  const courts = allCourts?.filter((court) => !venueIds || venueIds.includes(court.venueId)) ?? [];
+  // courtIds, when provided, narrows capacity to the selected courts of the venues
+  const courts =
+    allCourts?.filter(
+      (court) => (!venueIds || venueIds.includes(court.venueId)) && (!courtIds || courtIds.includes(court.courtId)),
+    ) ?? [];
 
   startTime = startTime ?? getDateTimeBoundary({ courts, scheduleDate, startTime: true });
   endTime = endTime ?? getDateTimeBoundary({ courts, scheduleDate, endTime: true });
