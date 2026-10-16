@@ -342,7 +342,7 @@ engine.scheduleProfileRounds({
 
   // Date selection
   scheduleDates, // optional - specific dates to schedule
-  clearScheduleDates, // optional - boolean or array of dates to clear first
+  clearScheduleDates, // optional - true clears every scheduled matchUp in the tournament; an array clears those dates
 
   // Court selection
   courtIds, // optional array - restrict scheduling to only these courts
@@ -412,19 +412,27 @@ engine.scheduleProfileRounds({
 
 **Clear and Reschedule**:
 
+`clearScheduleDates: true` clears the schedule of **every** scheduled matchUp in the tournament records — on every
+date, in every event, whether or not the scheduling profile mentions it — before scheduling. To rebuild only some
+dates, pass those dates as an array: only matchUps scheduled on them are cleared. In both forms completed matchUps
+and [locked](../concepts/schedule-locks.mdx) matchUps keep their schedules.
+
 ```js
+// Clear everything, then schedule the whole profile
 engine.scheduleProfileRounds({
-  clearScheduleDates: true, // Clear all dates
+  clearScheduleDates: true,
   periodLength: 30,
 });
 
-// Or clear specific dates
+// Rebuild only 2024-06-16; every other date is left as it is
 engine.scheduleProfileRounds({
-  clearScheduleDates: ['2024-06-15', '2024-06-16'],
-  scheduleDates: ['2024-06-15', '2024-06-16'],
+  clearScheduleDates: ['2024-06-16'],
+  scheduleDates: ['2024-06-16'],
   periodLength: 30,
 });
 ```
+
+Clearing a date that is not also in `scheduleDates` leaves it cleared and unscheduled.
 
 **Dry Run Preview**:
 
@@ -461,7 +469,7 @@ Profile-driven grid scheduling. Uses the scheduling profile to determine which r
 ```js
 engine.scheduleProfileGrid({
   scheduleDates, // optional - specific dates to schedule
-  clearScheduleDates, // optional - boolean or array of dates to clear first
+  clearScheduleDates, // optional - as for scheduleProfileRounds; clears dates and times too, not only grid positions
   scheduleCompletedMatchUps, // optional boolean (default: false) - include
   // already-COMPLETED matchUps in the placement pool
   matchUpDailyLimits, // optional - { SINGLES, DOUBLES, total } per-participant
