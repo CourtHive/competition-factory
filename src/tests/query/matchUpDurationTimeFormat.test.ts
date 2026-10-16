@@ -29,14 +29,14 @@ it.each([
   ['10:00', '-00:06:26'],
   ['09:00', '00:53:34'],
 ])('a live bare start of %s reads as %s', (itemValue, time) => {
-  let result: any = matchUpDuration({ matchUp: { timeItems: [{ itemType: START_TIME, itemValue }] } });
+  const result: any = matchUpDuration({ matchUp: { timeItems: [{ itemType: START_TIME, itemValue }] } });
   expect(result.time).toEqual(time);
   expect(Math.sign(result.milliseconds)).toEqual(time.startsWith('-') ? -1 : 1);
 });
 
 // the hours were cut to two digits as well: 125 hours printed as `25:00:00`
 it('prints every hour of a duration past 99 hours', () => {
-  let result: any = matchUpDuration({
+  const result: any = matchUpDuration({
     matchUp: { timeItems: [{ itemType: START_TIME, itemValue: '2026-05-12T04:53:34Z' }] },
   });
   expect(result.milliseconds).toEqual(125 * 60 * 60 * 1000);
