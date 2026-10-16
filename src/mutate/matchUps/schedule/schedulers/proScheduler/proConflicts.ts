@@ -1,9 +1,11 @@
+import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
+import { getParticipantClashes } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantClashes';
 import { matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
-import { generateRange, instanceCount, unique } from '@Tools/arrays';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { courtTimeOrderConflicts } from './courtTimeOrder';
 import { validMatchUps } from '@Validators/validMatchUp';
+import { generateRange, unique } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
@@ -73,6 +75,8 @@ export function proConflicts({
   });
   const deps = depsResult.matchUpDependencies;
   const positionDeps = useDeepDependencies ? (depsResult.positionDependencies ?? {}) : {};
+  const reachability = getParticipantReachability({ matchUpDependencies: deps, matchUps });
+  const drawIdOf = (matchUpId: string) => mappedMatchUps[matchUpId]?.drawId;
 
   type Profile = {
     sourceMatchUpIds: string[];
@@ -141,19 +145,21 @@ export function proConflicts({
     }
   };
 
+  // a participant who can play a matchUp on each of two adjacent rows has them back to back; winner and loser paths of
+  // one feeder are alternatives, not back to back (see getParticipantClashes)
   const processParticipantWarnings = (
     previousRow: Profile,
     row: Profile,
     participantConflicts: { [key: string]: any },
   ) => {
-    const previousRowWarnings = row.participantIds.filter((id) => previousRow.participantIds.includes(id));
-    previousRowWarnings.forEach((participantId) => {
-      const warnedMatchUpIds = row.matchUpIds
-        .concat(previousRow.matchUpIds)
-        .filter((matchUpId) => deps[matchUpId].participantIds.includes(participantId));
-      warnedMatchUpIds.forEach((matchUpId) => {
-        addWarningToMatchUp(matchUpId, warnedMatchUpIds, participantConflicts);
-      });
+    const { clashingMatchUpIds: warnedMatchUpIds } = getParticipantClashes({
+      otherMatchUpIds: previousRow.matchUpIds,
+      matchUpIds: row.matchUpIds,
+      reachability,
+      drawIdOf,
+    });
+    warnedMatchUpIds.forEach((matchUpId) => {
+      addWarningToMatchUp(matchUpId, warnedMatchUpIds, participantConflicts);
     });
   };
 
@@ -168,15 +174,13 @@ export function proConflicts({
     }
   };
 
+  // a participant who can play two matchUps on one row is asked to be in two places at once, unless the two are
+  // alternatives for them (a feeder's winner path and loser path)
   const processParticipantConflicts = (row: Profile): { [key: string]: any } => {
     const participantConflicts: { [key: string]: any } = {};
-    const instances = instanceCount(row.participantIds);
-    const conflictedParticipantIds = new Set(Object.keys(instances).filter((key) => instances[key] > 1));
-    const conflictedMatchUpIds = row.matchUpIds.filter((matchUpId) =>
-      deps[matchUpId].participantIds.some((id) => conflictedParticipantIds.has(id)),
-    );
-    conflictedMatchUpIds.forEach((matchUpId) => {
-      addConflictToMatchUp(matchUpId, conflictedMatchUpIds, participantConflicts);
+    const { clashingMatchUpIds } = getParticipantClashes({ matchUpIds: row.matchUpIds, reachability, drawIdOf });
+    clashingMatchUpIds.forEach((matchUpId) => {
+      addConflictToMatchUp(matchUpId, clashingMatchUpIds, participantConflicts);
     });
     return participantConflicts;
   };
