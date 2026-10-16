@@ -1,4 +1,5 @@
 import { processAlreadyScheduledMatchUps } from '@Mutate/matchUps/schedule/schedulers/processAlreadyScheduledMatchUps';
+import type { ParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
 import { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUps/getMatchUpsToSchedule';
 import { generateScheduleTimes } from '@Generators/scheduling/utils/generateScheduleTimes';
 import { getScheduledRoundsDetails } from './getScheduledRoundsDetails';
@@ -17,6 +18,7 @@ type GetVenueSchedulingDetailsArgs = {
   matchUpScheduleTimes: { [key: string]: string };
   matchUpNotBeforeTimes: { [key: string]: any };
   matchUpDependencies: { [key: string]: any };
+  participantReachability: ParticipantReachability;
   scheduleCompletedMatchUps?: boolean;
   excludeNoDateCompleted?: boolean;
   containedStructureIds: string[];
@@ -39,6 +41,7 @@ export function getVenueSchedulingDetails({
   matchUpNotBeforeTimes,
   matchUpScheduleTimes,
   matchUpDependencies,
+  participantReachability,
   excludePriorDates,
   clearScheduleDates,
   tournamentRecords,
@@ -117,6 +120,7 @@ export function getVenueSchedulingDetails({
       matchUpScheduleTimes,
       excludePriorDates,
       matchUpDependencies,
+      participantReachability,
       clearScheduleDates,
       scheduleDate,
       minutesMap,

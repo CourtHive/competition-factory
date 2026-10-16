@@ -1,4 +1,5 @@
 import { addMinutesToTimeString, extractTime, minutesDifference, timeToDate } from '@Tools/dateTime';
+import { getReachableParticipantIds, ParticipantReachability } from './getParticipantReachability';
 import { checkParticipantProfileInitialization } from './checkParticipantProfileInitialization';
 import { analyzeScheduleOverlap } from './analyzeScheduleOverlap';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -7,7 +8,7 @@ import { ensureInt } from '@Tools/ensureInt';
 type CheckRecoveryTimeArgs = {
   individualParticipantProfiles: { [key: string]: any };
   matchUpNotBeforeTimes: { [key: string]: any };
-  matchUpDependencies: { [key: string]: any };
+  reachability: ParticipantReachability;
   matchUp: HydratedMatchUp;
   scheduleTime: string;
   details?: any;
@@ -15,15 +16,25 @@ type CheckRecoveryTimeArgs = {
 export function checkRecoveryTime({
   individualParticipantProfiles,
   matchUpNotBeforeTimes,
-  matchUpDependencies,
+  reachability,
   scheduleTime,
   matchUp,
   details,
 }: CheckRecoveryTimeArgs) {
-  const participantIdDependencies = (matchUpDependencies?.[matchUp.matchUpId]?.participantIds ?? []).flat();
+  const participantIdDependencies = getReachableParticipantIds(reachability, matchUp.matchUpId).near;
 
-  const averageMatchUpMinutes = details?.minutesMap?.[matchUp.matchUpId]?.averageMinutes || 0;
-  const recoveryMinutes = details?.minutesMap?.[matchUp.matchUpId]?.recoveryMinutes || 0;
+  const minutes = details?.minutesMap?.[matchUp.matchUpId];
+  const averageMatchUpMinutes = ensureInt(minutes?.averageMinutes || 0);
+  const recoveryMinutes = ensureInt(minutes?.recoveryMinutes || 0);
+  const typeChangeRecoveryMinutes = ensureInt(minutes?.typeChangeRecoveryMinutes || 0) || recoveryMinutes;
+
+  const endTime = extractTime(matchUp?.schedule?.endTime);
+  const afterRecovery = (minutesOfRecovery: number) =>
+    endTime
+      ? addMinutesToTimeString(endTime, minutesOfRecovery)
+      : addMinutesToTimeString(scheduleTime, averageMatchUpMinutes + minutesOfRecovery);
+  const timeAfterRecovery = afterRecovery(recoveryMinutes);
+  const typeChangeTimeAfterRecovery = afterRecovery(typeChangeRecoveryMinutes);
 
   // Collect the participantIds whose existing bookings overlap the proposed
   // schedule window (matchUp duration + recovery). Used for explanation in
@@ -43,16 +54,20 @@ export function checkRecoveryTime({
     // a participant with only potential bookings (in other draws) must still be checked against them
     if (!profile.timeAfterRecovery && !potentialParticipantBookings.length) continue;
 
-    const endTime = extractTime(matchUp?.schedule?.endTime);
-    const timeAfterRecovery = endTime
-      ? addMinutesToTimeString(endTime, ensureInt(recoveryMinutes))
-      : addMinutesToTimeString(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(recoveryMinutes));
-
     const participantBookings = [...potentialParticipantBookings, ...profile.bookings];
 
-    const timeOverlap = participantBookings.some(
-      (booking) => analyzeScheduleOverlap({ scheduleTime, timeAfterRecovery }, booking).hasOverlap,
-    );
+    // a booking of another matchUpType is separated from this matchUp by the type-change recovery, in either order
+    const timeOverlap = participantBookings.some((booking) => {
+      const typeChange = !!booking.matchUpType && booking.matchUpType !== matchUp.matchUpType;
+      const proposed = {
+        scheduleTime,
+        timeAfterRecovery: typeChange ? typeChangeTimeAfterRecovery : timeAfterRecovery,
+      };
+      const existing = typeChange
+        ? { ...booking, timeAfterRecovery: booking.typeChangeTimeAfterRecovery ?? booking.timeAfterRecovery }
+        : booking;
+      return analyzeScheduleOverlap(proposed, existing).hasOverlap;
+    });
 
     if (timeOverlap) blockingParticipantIds.push(participantId);
   }

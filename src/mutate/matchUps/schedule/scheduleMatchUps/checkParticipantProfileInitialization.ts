@@ -1,35 +1,48 @@
+// a time window a participant is booked for: from scheduleTime until they have recovered
+export type ParticipantBooking = {
+  typeChangeTimeAfterRecovery?: string; // the end when their other matchUp is of another matchUpType
+  timeAfterRecovery: string;
+  matchUpType?: string;
+  scheduleTime: string;
+};
+
+// a matchUp on the day being scheduled that a participant can play (see participantDayLoad)
+export type DayMatchUp = {
+  matchUpType?: string;
+  matchUpId: string;
+  certain: boolean;
+  drawId: string;
+};
+
+export type ParticipantProfile = {
+  potentialBookings: { [drawId: string]: ParticipantBooking[] };
+  potentialRecovery: { [drawId: string]: string[] };
+  counters: { [counterName: string]: number }; // the participant's day load by matchUpType and TOTAL
+  bookings: ParticipantBooking[];
+  timeAfterRecovery?: string;
+  dayMatchUps: DayMatchUp[];
+};
+
+export type IndividualParticipantProfiles = { [participantId: string]: ParticipantProfile };
+
 export function checkParticipantProfileInitialization({ individualParticipantProfiles, participantId }) {
   if (!individualParticipantProfiles[participantId]) {
     individualParticipantProfiles[participantId] = {
-      typeChangeTimeAfterRecovery: undefined,
       timeAfterRecovery: undefined,
-      priorMatchUpType: undefined,
       potentialRecovery: {}, // { [drawId]: [timeString] } - timeAfterRecovery for potential matchUps by drawId
-      potentialCounted: {}, // whether a potential matchUp has been counted for daily limits for a specific drawId
       potentialBookings: {},
+      dayMatchUps: [], // the matchUps on the day being scheduled that the participant can play (see participantDayLoad)
       bookings: [],
-      counters: {},
+      counters: {}, // the participant's day load by matchUpType and TOTAL
     };
   }
 }
 
-export function addParticipantPotentialRecovery({
-  individualParticipantProfiles,
-  recoveryValue,
-  participantId,
-  scheduleTime,
-  drawId,
-}) {
-  if (!individualParticipantProfiles[participantId].potentialRecovery[drawId]) {
-    individualParticipantProfiles[participantId].potentialRecovery[drawId] = [];
-  }
-  individualParticipantProfiles[participantId].potentialRecovery[drawId].push(recoveryValue);
+export function addParticipantPotentialRecovery({ individualParticipantProfiles, participantId, booking, drawId }) {
+  const profile = individualParticipantProfiles[participantId];
+  if (!profile.potentialRecovery[drawId]) profile.potentialRecovery[drawId] = [];
+  profile.potentialRecovery[drawId].push(booking.timeAfterRecovery);
 
-  if (!individualParticipantProfiles[participantId].potentialBookings[drawId]) {
-    individualParticipantProfiles[participantId].potentialBookings[drawId] = [];
-  }
-  individualParticipantProfiles[participantId].potentialBookings[drawId].push({
-    timeAfterRecovery: recoveryValue,
-    scheduleTime,
-  });
+  if (!profile.potentialBookings[drawId]) profile.potentialBookings[drawId] = [];
+  profile.potentialBookings[drawId].push(booking);
 }

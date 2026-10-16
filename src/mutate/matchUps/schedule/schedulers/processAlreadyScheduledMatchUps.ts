@@ -1,4 +1,5 @@
-import { modifyParticipantMatchUpsCount } from '@Mutate/matchUps/schedule/scheduleMatchUps/modifyParticipantMatchUpsCount';
+import type { ParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
+import { modifyParticipantDayMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantDayLoad';
 import { updateTimeAfterRecovery } from '@Mutate/matchUps/schedule/scheduleMatchUps/updateTimeAfterRecovery';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
@@ -21,6 +22,7 @@ type ProcessAlreadyScheduledMatchUpsArgs = {
   excludePriorDates?: boolean;
   matchUps: HydratedMatchUp[];
   matchUpDependencies: any;
+  participantReachability: ParticipantReachability;
   scheduleDate: string;
   minutesMap: any;
 };
@@ -34,7 +36,7 @@ export function processAlreadyScheduledMatchUps({
   matchUpNotBeforeTimes,
   matchUpScheduleTimes,
   excludePriorDates = true,
-  matchUpDependencies,
+  participantReachability,
   clearScheduleDates,
   scheduleDate,
   minutesMap,
@@ -94,8 +96,8 @@ export function processAlreadyScheduledMatchUps({
   for (const matchUp of alreadyScheduled) {
     if (shouldExclude(matchUp)) continue;
 
-    modifyParticipantMatchUpsCount({
-      matchUpPotentialParticipantIds,
+    modifyParticipantDayMatchUps({
+      reachability: participantReachability,
       individualParticipantProfiles,
       value: 1,
       matchUp,
@@ -106,14 +108,16 @@ export function processAlreadyScheduledMatchUps({
     if (scheduleTime) {
       matchUpScheduleTimes[matchUp.matchUpId] = scheduleTime;
       const recoveryMinutes = minutesMap?.[matchUp.matchUpId]?.recoveryMinutes;
+      const typeChangeRecoveryMinutes = minutesMap?.[matchUp.matchUpId]?.typeChangeRecoveryMinutes;
       const averageMatchUpMinutes = greatestAverageMinutes;
       // minutesMap?.[matchUp.matchUpId]?.averageMinutes; // for the future when variable averageMinutes supported
 
       updateTimeAfterRecovery({
+        typeChangeRecoveryMinutes,
         individualParticipantProfiles,
         matchUpPotentialParticipantIds,
         matchUpNotBeforeTimes,
-        matchUpDependencies,
+        reachability: participantReachability,
         averageMatchUpMinutes,
         recoveryMinutes,
         scheduleTime,

@@ -361,6 +361,20 @@ const ageGroupSchedulingPolicy = {
 
 ## Daily Limits
 
+### How a participant's matchUps are counted
+
+A participant's count for a day is the most matchUps they can actually play that day:
+
+- every matchUp they are already placed in counts;
+- of the matchUps they could only reach by winning or losing earlier matchUps, they can play one **chain** (a run of
+  matchUps each of which can feed the next), so the longest such chain counts. A matchUp's winner path and loser path
+  are alternatives, not a sum: a first-round player in a feed-in draw plays the second round **or** the consolation;
+- chains reach across dates: a player whose first round was yesterday still counts toward today's later rounds;
+- separate draws add together.
+
+A matchUp is not scheduled when adding it would take any participant who can play it over the limit for its
+`matchUpType` or over `total`.
+
 ### Tournament-Wide Daily Limits
 
 ```js

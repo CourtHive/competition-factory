@@ -1,5 +1,5 @@
-import { addMinutes, extractDate, extractTime, sameDay, timeToDate } from '@Tools/dateTime';
 import { getIndividualParticipants } from '@Query/matchUp/getIndividualParticipants';
+import { extractTime, sameDay, timeStringMinutes } from '@Tools/dateTime';
 
 // constants
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
@@ -40,17 +40,15 @@ export function checkRequestConflicts({
 
   const conflicts: any[] = [];
   const matchUpId = matchUp?.matchUpId;
-  const scheduleStart = timeToDate(extractTime(scheduleTime), extractDate(scheduleDate));
-  const averageEnd = extractTime(addMinutes(scheduleStart, averageMatchUpMinutes).toISOString());
+  // minutes from midnight, so a matchUp running past midnight is not wrapped back to the start of the day
+  const matchUpStart = timeStringMinutes(extractTime(scheduleTime));
+  const matchUpEnd = matchUpStart + averageMatchUpMinutes;
 
-  // scheduleTime, averageEnd, startTime and endTime are all string format '00:00'
-  // string comparison < > is used to determine...
-  // ...if either schedultTime or averageEnd falls between request startTime and endTime
+  // a request conflicts when its window and the matchUp's projected window overlap at all: the request may hold the
+  // matchUp's start or end, or lie wholly inside it
   for (const request of relevantPersonRequests) {
     const { requestId, startTime, endTime } = request;
-    const conflict =
-      (scheduleTime > startTime && scheduleTime < endTime) ||
-      (averageEnd && averageEnd > startTime && averageEnd < endTime);
+    const conflict = matchUpStart < timeStringMinutes(endTime) && matchUpEnd > timeStringMinutes(startTime);
     if (conflict) {
       conflicts.push({ matchUpId, request, scheduleTime });
       if (requestConflicts[requestId]) {

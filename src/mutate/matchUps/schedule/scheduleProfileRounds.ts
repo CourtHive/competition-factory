@@ -1,3 +1,4 @@
+import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
 import { jinnScheduler } from '@Mutate/matchUps/schedule/schedulers/jinnScheduler/jinnScheduler';
 import { v2Scheduler } from '@Mutate/matchUps/schedule/schedulers/v2Scheduler/v2Scheduler';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
@@ -130,6 +131,9 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
     matchUps,
   });
 
+  // who can play each matchUp, across dates: the basis of recovery bookings and daily limits
+  const participantReachability = getParticipantReachability({ matchUpDependencies, matchUps: matchUps ?? [] });
+
   const { matchUpDailyLimits } = getMatchUpDailyLimits({ tournamentRecords });
 
   const { personRequests } = getPersonRequests({
@@ -154,6 +158,7 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
     excludeNoDateCompleted,
     schedulingProfileIssues,
     dateSchedulingProfiles,
+    participantReachability,
     containedStructureIds,
     matchUpDependencies,
     matchUpDailyLimits,
