@@ -1,6 +1,7 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
+import type { HydrationCache } from '@Query/matchUps/hydrationCache';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -55,6 +56,7 @@ type GetStructureMatchUpsArgs = {
   tournamentRecord?: Tournament;
   contextProfile?: ContextProfile;
   drawDefinition?: DrawDefinition;
+  hydrationCache?: HydrationCache;
   afterRecoveryTimes?: boolean;
   usePublishState?: boolean;
   exitProfiles?: ExitProfiles;
@@ -82,6 +84,7 @@ export function getStructureMatchUps({
   policyDefinitions,
   tournamentRecord,
   usePublishState,
+  hydrationCache,
   matchUpFilters,
   contextFilters,
   contextContent,
@@ -111,6 +114,7 @@ export function getStructureMatchUps({
     policyDefinitions,
     tournamentRecord,
     usePublishState,
+    hydrationCache,
     matchUpFilters,
     contextFilters,
     contextContent,

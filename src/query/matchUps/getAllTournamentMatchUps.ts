@@ -3,6 +3,7 @@ import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { allEventMatchUps } from './getAllEventMatchUps';
+import { createHydrationCache } from './hydrationCache';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
@@ -34,6 +35,7 @@ export function allTournamentMatchUps(params?: GetMatchUpsArgs): ResultType & {
   } = params;
 
   const tournamentId = params.tournamentId ?? tournamentRecord.tournamentId;
+  const hydrationCache = params.hydrationCache ?? createHydrationCache();
   const events = tournamentRecord?.events ?? [];
 
   if (!participants) {
@@ -73,6 +75,7 @@ export function allTournamentMatchUps(params?: GetMatchUpsArgs): ResultType & {
         allEventMatchUps({
           context: additionalContext,
           scheduleVisibilityFilters,
+          hydrationCache,
           tournamentAppliedPolicies,
           participantsProfile,
           afterRecoveryTimes,

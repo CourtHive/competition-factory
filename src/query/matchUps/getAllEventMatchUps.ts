@@ -2,6 +2,7 @@ import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getSche
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { createHydrationCache } from './hydrationCache';
 import { getAllDrawMatchUps } from './drawMatchUps';
 
 // constants and types
@@ -73,6 +74,7 @@ export function allEventMatchUps(params: GetMatchUpsArgs) {
   }
 
   const drawDefinitions = event.drawDefinitions ?? [];
+  const hydrationCache = params.hydrationCache ?? createHydrationCache();
   const scheduleTiming = getScheduleTiming({
     tournamentRecord,
     event,
@@ -82,6 +84,7 @@ export function allEventMatchUps(params: GetMatchUpsArgs) {
     const { matchUps } = getAllDrawMatchUps({
       tournamentParticipants: participants,
       tournamentAppliedPolicies,
+      hydrationCache,
       scheduleVisibilityFilters,
       context: additionalContext,
       participantsProfile,

@@ -67,6 +67,7 @@ export function allDrawMatchUps(params: GetMatchUpsArgs) {
   }
 
   const allDrawMatchUpsResult = getAllDrawMatchUps({
+    hydrationCache: params.hydrationCache,
     context: additionalContext,
     tournamentAppliedPolicies,
     scheduleVisibilityFilters,

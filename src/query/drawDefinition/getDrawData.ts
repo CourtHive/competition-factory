@@ -10,6 +10,7 @@ import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
+import { createHydrationCache } from '@Query/matchUps/hydrationCache';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { applyRoundLimit } from '@Query/publishing/applyRoundLimit';
@@ -130,6 +131,7 @@ export function getDrawData(params: GetDrawDataArgs): {
   }
 
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  const hydrationCache = createHydrationCache();
 
   const { matchUpFormat, updatedAt, drawType, drawName, drawId } = drawDefinition;
   const drawInfo: DrawInfo = {
@@ -244,6 +246,7 @@ export function getDrawData(params: GetDrawDataArgs): {
           policyDefinitions,
           tournamentRecord,
           usePublishState,
+          hydrationCache,
           publishStatus,
           contextProfile,
           drawDefinition,
