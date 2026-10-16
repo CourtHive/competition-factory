@@ -394,6 +394,7 @@ export function addMatchUpContext({
       drawPositions,
       scheduleVisibilityFilters,
       sourceDrawPositionRanges,
+      hydrateParticipants,
       drawPositionsRanges,
       initialRoundOfPlay,
       roundNamingProfile,
@@ -735,6 +736,8 @@ function processTieMatchUps(params) {
       tieDrawPositions: params.drawPositions,
       scheduleVisibilityFilters: params.scheduleVisibilityFilters,
       sourceDrawPositionRanges: params.sourceDrawPositionRanges,
+      // a line's sides are participants of the same draw: emitted thin when the dual's are
+      hydrateParticipants: params.hydrateParticipants,
       sideLineUps: lineUps,
       drawPositionsRanges: params.drawPositionsRanges,
       initialRoundOfPlay: params.initialRoundOfPlay,
