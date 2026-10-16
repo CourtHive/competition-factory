@@ -78,6 +78,7 @@ export function updateTimeAfterRecovery({
   });
 
   processNextMatchUps({
+    linkedTargetIds: reachability.linkedTargets?.[matchUp.matchUpId],
     matchUpPotentialParticipantIds,
     matchUpNotBeforeTimes,
     timeAfterRecovery,

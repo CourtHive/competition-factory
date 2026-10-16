@@ -1285,7 +1285,8 @@ Each entry in `matchUpDependencies` has the following shape:
 matchUpDependencies[matchUpId] = {
   matchUpIds: string[],           // transitive closure of ALL upstream matchUpIds
   dependentMatchUpIds: string[],  // direct downstream matchUpIds (matchUps that depend on this one)
-  participantIds: string[],       // all potential participantIds (when includeParticipantDependencies is true)
+  participantIds: string[],       // the participantIds of this matchUp and of every upstream matchUp
+                                  //   (when includeParticipantDependencies is true)
   sources: string[][],            // upstream matchUpIds grouped by round distance:
                                   //   sources[0] = direct feeders (1 round back)
                                   //   sources[1] = 2 rounds back
@@ -1312,13 +1313,19 @@ positionDependencies = {
 
 `getMatchUpDependencies` follows **all** draw link types:
 
-| Link Type                                             | How It's Captured                                                                                                          |
-| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Winner progression** (elimination draws)            | `winnerMatchUpId` on each matchUp                                                                                          |
-| **Loser progression** (consolation, compass, feed-in) | `loserMatchUpId` on each matchUp                                                                                           |
-| **POSITION links** (RR → Playoff, Swiss → Playoff)    | `positionDependencies` — all matchUps in the source structure become dependencies of every matchUp in the target structure |
+| Link Type                                               | How It's Captured                                                                                                                                                                           |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Winner progression** (elimination draws)              | `winnerMatchUpId` on each matchUp                                                                                                                                                           |
+| **Loser progression** (consolation, compass, feed-in)   | `loserMatchUpId` on each matchUp                                                                                                                                                            |
+| **POSITION links** (RR → Playoff, Swiss → Playoff)      | `positionDependencies` — all matchUps in the source structure become dependencies of every matchUp in the target structure                                                                  |
+| **WINNER links between structures** (Qualifying → Main) | every matchUp of the linked qualifying round becomes a dependency of every target-round matchUp holding a qualifier position: any qualifying winner can be placed in any qualifier position |
 
 This means a consolation Round 1 matchUp will correctly list the main draw Round 1 matchUp it depends on (via `loserMatchUpId`), and a playoff matchUp after a Round Robin will list every RR group matchUp as a dependency.
+
+`participantIds` is the plain union over the upstream chain: it does not remove a participant who has already lost a
+completed upstream matchUp. Automated scheduling works out who can still reach each matchUp from the draw itself (a
+completed matchUp sends only its winner on, and only its loser to a consolation), so a participant eliminated earlier
+in the draw is never booked or counted against a later round.
 
 ### Usage Example
 

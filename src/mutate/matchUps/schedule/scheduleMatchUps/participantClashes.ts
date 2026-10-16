@@ -2,8 +2,10 @@ import { getReachableParticipantIds, ParticipantReachability } from './getPartic
 
 type GetParticipantClashesArgs = {
   drawIdOf: (matchUpId: string) => string | undefined;
+  excludeParticipantIds?: Set<string>;
   reachability: ParticipantReachability;
   otherMatchUpIds?: string[];
+  depth?: 'near' | 'all';
   matchUpIds: string[];
 };
 
@@ -16,9 +18,12 @@ type GetParticipantClashesArgs = {
  * placed in are not, and nor are a matchUp and one it feeds. Participants are those certain to play a matchUp or one
  * matchUp away from it (the near potentials).
  *
- * Pairs are taken within `matchUpIds`, or between `matchUpIds` and `otherMatchUpIds` when given.
+ * Pairs are taken within `matchUpIds`, or between `matchUpIds` and `otherMatchUpIds` when given. `depth: 'all'` reads
+ * every potential however far away (the deep checks), less any `excludeParticipantIds`.
  */
 export function getParticipantClashes({
+  excludeParticipantIds,
+  depth = 'near',
   otherMatchUpIds,
   reachability,
   matchUpIds,
@@ -34,7 +39,9 @@ export function getParticipantClashes({
   for (const [a, b] of pairs) {
     const reachA = getReachableParticipantIds(reachability, a);
     const reachB = getReachableParticipantIds(reachability, b);
-    const shared = reachA.near.filter((participantId) => reachB.near.includes(participantId));
+    const shared = reachA[depth].filter(
+      (participantId) => reachB[depth].includes(participantId) && !excludeParticipantIds?.has(participantId),
+    );
     const alternatives =
       drawIdOf(a) === drawIdOf(b) && !reachability.upstream[a]?.has(b) && !reachability.upstream[b]?.has(a);
 

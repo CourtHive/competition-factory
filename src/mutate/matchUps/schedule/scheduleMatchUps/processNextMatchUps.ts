@@ -6,12 +6,14 @@ type ProcessNextMatchUpsArgs = {
   matchUpPotentialParticipantIds: { [key: string]: string[] };
   matchUpNotBeforeTimes: { [key: string]: any };
   timeAfterRecovery?: string;
+  linkedTargetIds?: string[];
   matchUp: HydratedMatchUp;
 };
 export function processNextMatchUps({
   matchUpPotentialParticipantIds,
   matchUpNotBeforeTimes,
   timeAfterRecovery,
+  linkedTargetIds,
   matchUp,
 }: ProcessNextMatchUpsArgs) {
   const { individualParticipantIds } = getIndividualParticipantIds(matchUp);
@@ -51,6 +53,9 @@ export function processNextMatchUps({
     timeAfterRecovery && updateNotBeforeTime(loserMatchUpId);
     addPotentialParticipantIds(loserMatchUpId);
   }
+  // a linked target (a qualifier position, a playoff fed by a round robin group) waits for this matchUp to end, but its
+  // potential participants come from the reachability model, not from this map
+  linkedTargetIds?.forEach((matchUpId) => timeAfterRecovery && updateNotBeforeTime(matchUpId));
   if (matchUp.sidesTo?.length) {
     matchUp.sidesTo.forEach(({ matchUpId }) => {
       if (matchUpId) {

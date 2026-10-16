@@ -592,7 +592,7 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
 
     const result = processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds,
-      participantReachability: { matchUps: {}, upstream: {} },
+      participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles,
       dateScheduledMatchUpIds: undefined as any,
       matchUpNotBeforeTimes,
@@ -622,7 +622,7 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
   it('returns empty alreadyScheduled when clearDate is true', () => {
     const result = processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds: {},
-      participantReachability: { matchUps: {}, upstream: {} },
+      participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
       matchUpNotBeforeTimes: {},
@@ -639,7 +639,7 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
   it('handles clearScheduleDates as an array', () => {
     const result = processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds: {},
-      participantReachability: { matchUps: {}, upstream: {} },
+      participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
       matchUpNotBeforeTimes: {},
@@ -657,7 +657,7 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
     const matchUpScheduleTimes: Record<string, any> = {};
     const result = processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds: {},
-      participantReachability: { matchUps: {}, upstream: {} },
+      participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
       matchUpNotBeforeTimes: {},
@@ -677,7 +677,7 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
     const matchUpScheduleTimes: Record<string, any> = {};
     processAlreadyScheduledMatchUps({
       matchUpPotentialParticipantIds: {},
-      participantReachability: { matchUps: {}, upstream: {} },
+      participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
       matchUpNotBeforeTimes: {},

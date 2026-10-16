@@ -14,7 +14,7 @@ import { findEvent } from '@Acquire/findEvent';
 // constants and types
 import { ErrorType, MISSING_DRAW_ID, MISSING_MATCHUPS, MISSING_MATCHUP_IDS } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Tournament } from '@Types/tournamentTypes';
-import { POSITION } from '@Constants/drawDefinitionConstants';
+import { POSITION, WINNER } from '@Constants/drawDefinitionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -68,6 +68,11 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
   }, []);
 
   const positionLinks = allLinks.filter(({ linkType }) => linkType === POSITION);
+  // a WINNER link between two structures feeds the winners of a qualifying round into qualifier positions
+  const qualifyingLinks = allLinks.filter(
+    ({ linkType, source, target }) =>
+      linkType === WINNER && source?.structureId && target?.structureId && source.structureId !== target.structureId,
+  );
 
   let matchUps: HydratedMatchUp[] | undefined = targetMatchUps;
 
@@ -81,6 +86,20 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
       matchUps,
     });
   }
+
+  // the matchUps whose winners can fill a qualifier position of this matchUp
+  const getQualifyingSourceMatchUpIds = (matchUp: HydratedMatchUp): string[] => {
+    if (!qualifyingLinks.length || !matchUp.sides?.some((side) => side?.qualifier)) return [];
+    const { structureId, roundNumber } = matchUp;
+    return qualifyingLinks
+      .filter(({ target }) => target.structureId === structureId && (target.roundNumber ?? 1) === roundNumber)
+      .flatMap(({ source }) =>
+        (matchUps ?? [])
+          .filter((sourceMatchUp) => sourceMatchUp.structureId === source.structureId)
+          .filter((sourceMatchUp) => !source.roundNumber || sourceMatchUp.roundNumber === source.roundNumber)
+          .map(({ matchUpId }) => matchUpId),
+      );
+  };
 
   const initializeMatchUpId = (matchUpId) => {
     if (!matchUpDependencies[matchUpId]) {
@@ -134,9 +153,14 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
       if (!matchUpIds.length || matchUpIds.includes(matchUpId)) {
         initializeMatchUpId(matchUpId);
 
+        // a matchUp's own participants JOIN those its sources have already pushed onto it (G1: assigning them
+        // replaced the inherited ones, so participant dependencies never reached past one round)
         if (includeParticipantDependencies) {
           const { individualParticipantIds } = getIndividualParticipantIds(matchUp);
-          matchUpDependencies[matchUpId].participantIds = individualParticipantIds;
+          const participantIds = matchUpDependencies[matchUpId].participantIds;
+          individualParticipantIds.forEach((participantId) => {
+            if (!participantIds.includes(participantId)) participantIds.push(participantId);
+          });
         }
 
         if (winnerMatchUpId) {
@@ -154,6 +178,13 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
         const s1 = sourceMatchUpIds[matchUpId].map((id) => matchUpDependencies[id].sources[0]).flat();
         const s2 = sourceMatchUpIds[matchUpId].map((id) => matchUpDependencies[id].sources[1]).flat();
         matchUpDependencies[matchUpId].sources.push(...[s1, s2]);
+
+        // G2: a qualifier position is filled by the winner of ANY matchUp in the linked qualifying round
+        for (const qualifyingMatchUpId of getQualifyingSourceMatchUpIds(matchUp)) {
+          initializeMatchUpId(qualifyingMatchUpId);
+          propagateDependencies(qualifyingMatchUpId, matchUpId);
+          sourceMatchUpIds[matchUpId].push(qualifyingMatchUpId);
+        }
 
         if (processSourceStructures) {
           const relevantStructureId = matchUp.containerStructureId || matchUp.structureId;
