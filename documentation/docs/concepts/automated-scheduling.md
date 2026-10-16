@@ -120,6 +120,9 @@ The highest level auto-scheduling method is `engine.scheduleProfileRounds`.
 11. Loop through groups of `matchUpIds` ...
 12. Calculate available scheduleTimes, considering court availability, already scheduled matchUps, and `remainingScheduleTimes` from previous iteration
 13. Construct per-participant hash tables of `matchUps` played and `timeAfterRecovery`
+    - A participant already placed in a `matchUp`'s sides is booked into it; any other participant who could reach it
+      (from a `matchUp` that feeds it, on this date or an earlier one) is only a potential booking, because a winner
+      path and a loser path cannot both be taken
 14. Filter out `matchUps` which are not appropriate for scheduling
 15. Filter out `matchUps` which include participants who have reached daily limits
 16. Loop through available `scheduleTimes` and build up mapping of `matchUpIds` to `scheduleTimes`
