@@ -1,15 +1,15 @@
 import { addFinishingRounds } from '@Assemblies/generators/drawDefinitions/addFinishingRounds';
+import { buildTargetIndex, positionTargets } from '@Query/matchUp/positionTargets';
 import { getMappedStructureMatchUps } from '@Query/matchUps/getMatchUpsMap';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { positionTargets } from '@Query/matchUp/positionTargets';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { DrawDefinition } from '@Types/tournamentTypes';
+import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type AddGoesToArgs = {
@@ -58,11 +58,27 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
     addFinishingRounds({ matchUps });
   }
 
+  // built once for this call: every matchUp's targets are read from the same draw
+  const targetIndex = buildTargetIndex(inContextDrawMatchUps);
+  const storedById = new Map<string, Map<string, MatchUp>>();
+  const storedMatchUp = (structureId: string, matchUpId: string) => {
+    if (!storedById.has(structureId)) {
+      const byId = new Map<string, MatchUp>();
+      for (const matchUp of getMappedStructureMatchUps({ matchUpsMap, structureId })) {
+        if (!byId.has(matchUp.matchUpId)) byId.set(matchUp.matchUpId, matchUp);
+      }
+      storedById.set(structureId, byId);
+    }
+    return storedById.get(structureId)?.get(matchUpId);
+  };
+
   for (const inContextMatchUp of (inContextDrawMatchUps ?? []).filter(({ collectionId }) => !collectionId)) {
     const { matchUpId, structureId } = inContextMatchUp;
     const targetData = positionTargets({
+      asReferences: true, // read here, never changed
       inContextDrawMatchUps,
       drawDefinition,
+      targetIndex,
       matchUpId,
     });
     // a malformed round link is an error, never an edge that is quietly not written
@@ -72,11 +88,7 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
     const winnerMatchUpId = winnerMatchUp?.matchUpId;
     const loserMatchUpId = loserMatchUp?.matchUpId;
 
-    const matchUps = getMappedStructureMatchUps({
-      matchUpsMap,
-      structureId,
-    });
-    const matchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
+    const matchUp = storedMatchUp(structureId, matchUpId);
 
     if (matchUp) {
       if (winnerMatchUpId) {
@@ -97,7 +109,7 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
           // undefined where the loser target carries no range: written as it always was
           const loser = loserRange && [Math.min(...loserRange), Math.max(...loserRange)];
           Object.assign(inContextMatchUp.finishingPositionRange, { loser });
-          matchUp.finishingPositionRange.loser = loser;
+          (matchUp.finishingPositionRange as { loser?: number[] }).loser = loser;
         }
       }
     }
@@ -153,4 +165,55 @@ export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMa
   if (hasStoredGoesTo({ drawDefinition })) return undefined;
   const result = addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
   return result.error ? result : undefined;
+}
+
+/**
+ * `ensureGoesTo` for a caller that must still refuse a MALFORMED ROUND LINK (CA, 2026-10-06: it is an error):
+ * `getMatchUpDependencies`. Deriving the edges is where `addGoesTo` met the link, so a draw that stores its edges, and
+ * now derives nothing, has the link asked about on its own: once per round of each structure, which is the question
+ * `positionTargets` asks of every matchUp in that round. The error is the same one; on a draw with several malformed
+ * links it may name a different matchUp than the derivation would have reached first.
+ */
+export function ensureGoesToOrLinkError({ drawDefinition }: { drawDefinition: DrawDefinition }) {
+  if (!hasStoredGoesTo({ drawDefinition }) || needsFinishingRounds(drawDefinition)) {
+    const result = addGoesTo({ drawDefinition });
+    return result.error ? result : undefined;
+  }
+
+  const structures = (drawDefinition.structures ?? []).flatMap((structure) => [
+    structure,
+    ...(structuresOf(structure) ?? []),
+  ]);
+  for (const structure of structures) {
+    const askedRounds = new Set<number | undefined>();
+    for (const matchUp of matchUpsOf(structure) ?? []) {
+      if (matchUp.collectionId || askedRounds.has(matchUp.roundNumber)) continue;
+      askedRounds.add(matchUp.roundNumber);
+      const inContextMatchUp = { ...matchUp, structureId: structure.structureId } as HydratedMatchUp;
+      const targetData = positionTargets({
+        asReferences: true,
+        inContextMatchUp,
+        drawDefinition,
+        matchUpId: matchUp.matchUpId,
+      });
+      if (targetData.error)
+        return { ...decorateResult({ result: targetData, stack: 'ensureGoesTo' }), error: targetData.error };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * What `addGoesTo` does besides the edges: a lone structure the factory did not generate, none of whose matchUps
+ * carries a `finishingPositionRange`, is given its finishing rounds. A one-round draw stores no edges and needs none
+ * (`hasStoredGoesTo` is true), so the edges alone do not say whether this is still owed. Asked as `addGoesTo` asks it.
+ */
+export function needsFinishingRounds(drawDefinition: DrawDefinition): boolean {
+  const structures = drawDefinition.structures ?? [];
+  if (structures.length !== 1 || structuresOf(structures[0])) return false;
+  return !(matchUpsOf(structures[0]) ?? []).some(
+    (matchUp) =>
+      !!matchUp.finishingPositionRange ||
+      !!matchUp.tieMatchUps?.some((tieMatchUp) => tieMatchUp.finishingPositionRange),
+  );
 }

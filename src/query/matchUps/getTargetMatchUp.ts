@@ -4,28 +4,41 @@ import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { reduceGroupedOrder } from './reduceGroupedOrder';
 import { chunkArray, generateRange } from '@Tools/arrays';
-import { findStructure } from '@Acquire/findStructure';
+import { indexedRound, indexedStructure, TargetIndex } from '@Query/matchUp/positionTargets';
 
 // constants
 import { MISSING_TARGET_LINK, NOT_IMPLEMENTED } from '@Constants/errorConditionConstants';
 import { DRAW, BOTTOM_UP, RANDOM, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import { DISABLE_LINKS } from '@Constants/extensionConstants';
+import { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 export function getTargetMatchUp({
   sourceRoundMatchUpCount,
   inContextDrawMatchUps,
   sourceRoundPosition,
   drawDefinition,
+  targetIndex,
   targetLink,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  sourceRoundMatchUpCount: number;
+  sourceRoundPosition?: number;
+  drawDefinition: DrawDefinition;
+  targetIndex?: TargetIndex;
+  targetLink?: DrawLink;
 }) {
   if (!targetLink) return { error: MISSING_TARGET_LINK };
 
   const {
     target: { structureId, feedProfile, groupedOrder, roundNumber, positionInterleave },
   } = targetLink;
+  // read as given: a source with no roundPosition directs nowhere (the arithmetic reads NaN), as it always has
+  const sourcePosition = sourceRoundPosition as number;
 
-  const { structure: targetStructure } = findStructure({
+  const { structure: targetStructure } = indexedStructure({
     drawDefinition,
+    targetIndex,
     structureId,
   });
 
@@ -33,12 +46,13 @@ export function getTargetMatchUp({
     structure: targetStructure,
   });
 
-  const structureMatchUps = inContextDrawMatchUps?.filter(
-    (matchUp) => matchUp.structureId === targetStructure?.structureId,
-  );
-  const targetRoundMatchUps = structureMatchUps.filter(
-    (matchUp) => matchUp.roundNumber === roundNumber && !matchUp.matchUpTieId, // exclude tieMatchUps
-  );
+  const targetRoundMatchUps = targetIndex
+    ? indexedRound(targetIndex, targetStructure?.structureId, roundNumber)
+    : inContextDrawMatchUps
+        ?.filter((matchUp) => matchUp.structureId === targetStructure?.structureId)
+        .filter(
+          (matchUp) => matchUp.roundNumber === roundNumber && !matchUp.matchUpTieId, // exclude tieMatchUps
+        );
   const targetRoundMatchUpCount = targetRoundMatchUps.length;
   const roundPositions = generateRange(1, targetRoundMatchUpCount + 1);
 
@@ -46,8 +60,8 @@ export function getTargetMatchUp({
 
   // usually target structures are half the size of source structures
   // which means the calculatedRoundPosition for target matchUps is sourceRoundPosition * 0.5
-  let calculatedRoundPosition = Math.ceil(matchUpCountFactor * sourceRoundPosition);
-  let matchUpDrawPositionIndex = 1 - (sourceRoundPosition % 2);
+  let calculatedRoundPosition = Math.ceil(matchUpCountFactor * sourcePosition);
+  let matchUpDrawPositionIndex = 1 - (sourcePosition % 2);
 
   // when more than one source structure or more than one source structure round feed the same round in the target structure
   // then there is a positionInterleave attribute which specifies both an offset and an interleave
@@ -55,9 +69,9 @@ export function getTargetMatchUp({
   // the interleave indicates how many positions are fed in between each position fed by current source structure round
   if (positionInterleave?.interleave && matchUpCountFactor !== 0.5) {
     // the oofset here is a combination of the specified offset and the number of previous positions interleaved
-    const offset = positionInterleave.offset + (sourceRoundPosition - 1) * positionInterleave.interleave;
+    const offset = positionInterleave.offset + (sourcePosition - 1) * positionInterleave.interleave;
     // the target drawPosition is relative because the actual drawPosition value is based on the number of subseqent round feed-in matchUps
-    const relativeRoundPosition = sourceRoundPosition + offset;
+    const relativeRoundPosition = sourcePosition + offset;
     calculatedRoundPosition = Math.ceil(relativeRoundPosition / 2);
     // the index in the target matchUp.drawPositions[] is recalculated based on calculated relative drawPosition
     matchUpDrawPositionIndex = 1 - (relativeRoundPosition % 2);
@@ -107,7 +121,7 @@ export function getTargetMatchUp({
 
   const matchUp =
     targetedRoundPosition &&
-    targetRoundMatchUps.reduce((matchUp, current) => {
+    targetRoundMatchUps.reduce<HydratedMatchUp | undefined>((matchUp, current) => {
       return current.roundPosition === targetedRoundPosition ? current : matchUp;
     }, undefined);
 
