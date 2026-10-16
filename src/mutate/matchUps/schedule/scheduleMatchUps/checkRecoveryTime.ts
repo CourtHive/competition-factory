@@ -36,16 +36,17 @@ export function checkRecoveryTime({
     });
 
     const profile = individualParticipantProfiles[participantId];
-    if (!profile.timeAfterRecovery) continue;
+    const potentialParticipantBookings = Object.keys(profile.potentialBookings)
+      .filter((drawId) => drawId !== matchUp.drawId)
+      .flatMap((drawId) => profile.potentialBookings[drawId]);
+
+    // a participant with only potential bookings (in other draws) must still be checked against them
+    if (!profile.timeAfterRecovery && !potentialParticipantBookings.length) continue;
 
     const endTime = extractTime(matchUp?.schedule?.endTime);
     const timeAfterRecovery = endTime
       ? addMinutesToTimeString(endTime, ensureInt(recoveryMinutes))
       : addMinutesToTimeString(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(recoveryMinutes));
-
-    const potentialParticipantBookings = Object.keys(profile.potentialBookings)
-      .filter((drawId) => drawId !== matchUp.drawId)
-      .flatMap((drawId) => profile.potentialBookings[drawId]);
 
     const participantBookings = [...potentialParticipantBookings, ...profile.bookings];
 

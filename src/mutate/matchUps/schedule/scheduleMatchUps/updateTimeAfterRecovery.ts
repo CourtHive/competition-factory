@@ -1,3 +1,4 @@
+import { getIndividualParticipantIds } from '@Query/matchUp/getIndividualParticipantIds';
 import { addMinutesToTimeString, extractTime } from '@Tools/dateTime';
 import { processNextMatchUps } from './processNextMatchUps';
 import { ensureInt } from '@Tools/ensureInt';
@@ -43,10 +44,10 @@ export function updateTimeAfterRecovery({
       : addMinutesToTimeString(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(typeChangeRecoveryMinutes)));
   const participantIdDependencies = matchUpDependencies?.[matchUp.matchUpId]?.participantIds ?? [];
 
-  const potentialIndividualParticipantIds = (
-    (matchUp.roundPosition && matchUpPotentialParticipantIds[matchUp.matchUpId]) ||
-    []
-  ).flat();
+  // only participants already placed in the matchUp's sides are certain to play it; every other dependency
+  // participant may instead be routed elsewhere (e.g. a winner path and a loser path), whether or not the
+  // matchUp that feeds them is scheduled on the date being scheduled
+  const { enteredIndividualParticipantIds } = getIndividualParticipantIds(matchUp);
 
   participantIdDependencies.forEach((participantId) => {
     checkParticipantProfileInitialization({
@@ -62,7 +63,7 @@ export function updateTimeAfterRecovery({
       : timeAfterRecovery;
 
     // check whether this participantId is potential or actual for this matchUp
-    if (potentialIndividualParticipantIds.includes(participantId)) {
+    if (!enteredIndividualParticipantIds.includes(participantId)) {
       addParticipantPotentialRecovery({
         individualParticipantProfiles,
         drawId: matchUp.drawId,
