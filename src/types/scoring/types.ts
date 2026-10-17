@@ -109,6 +109,8 @@ export interface SubstitutionEvent {
   outParticipantId: string;
   inParticipantId: string;
   beforePointIndex: number;
+  /** The set in play when it was recorded (1-based); absent on events recorded before 2026-10-17 */
+  setNumber?: number;
   timestamp?: string;
 }
 
@@ -261,8 +263,11 @@ export interface Point {
   /** Games each side needs to win current set: [side1, side2] */
   gamesToSet?: [number, number];
 
-  /** Which court side the serve is from */
+  /** Which court side the serve is expected from, inferred from the score */
   serveSide?: 'deuce' | 'ad';
+
+  /** The court half recorded as observed by the caller, when it supplied one */
+  observedServeSide?: 'deuce' | 'ad';
 
   /** Whether the receiver is one point from winning the game */
   isBreakpoint?: boolean;
@@ -467,6 +472,9 @@ export interface AddPointOptions {
 
   /** Point was awarded as a penalty */
   penaltyPoint?: boolean;
+
+  /** The court half the server was observed serving from; `serveSide` stays the expected half */
+  observedServeSide?: 'deuce' | 'ad';
 }
 
 /**

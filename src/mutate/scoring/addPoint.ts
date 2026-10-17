@@ -736,6 +736,9 @@ export function validatePointInput(options: Partial<AddPointOptions>): void {
     throw new Error(`Invalid serverSideNumber: ${serverSideNumber}`);
   if (server != null && serverSideNumber != null && server + 1 !== serverSideNumber)
     throw new Error(`server ${server} and serverSideNumber ${serverSideNumber} disagree`);
+  const { observedServeSide } = options;
+  if (observedServeSide !== undefined && observedServeSide !== 'deuce' && observedServeSide !== 'ad')
+    throw new Error(`Invalid observedServeSide: ${observedServeSide}`);
   if (scoreValue !== undefined && !(Number.isFinite(scoreValue) && scoreValue >= 0))
     throw new Error(`Invalid scoreValue: ${scoreValue}`);
 }

@@ -46,10 +46,11 @@ ignored, as before.
 **What the engine records about service.** The server is side-level. `serverParticipantId` is host
 metadata, recorded as given and never validated or derived. `serveSide` is the _expected_ court half,
 inferred from the score (a No-Ad deciding point, where the receiver chooses, is still reported as
-`deuce`). `wrongSide` and `wrongServer` are host decorations that do not affect scoring. A server
+`deuce`). A caller that saw the court half supplies it as `observedServeSide` (`'deuce'` or `'ad'`),
+recorded beside the expected `serveSide`. `wrongSide` and `wrongServer` are host decorations that do
+not affect scoring. A server
 correction (`setServer`) flips the side due to serve from that point on. An individual doubles
-rotation, receiver identity, an observed court half and rule-based corrections (ITF Rule 27) are not
-modelled.
+rotation, receiver identity and rule-based corrections (ITF Rule 27) are not modelled.
 
 ```js
 // 0-based convention
