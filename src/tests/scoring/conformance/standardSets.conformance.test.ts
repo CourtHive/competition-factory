@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
  * Every expected outcome below is written from the rule it cites, not recorded from the engine.
  *
  * Sources: ITF Rules of Tennis 2026 — Rule 5 (score in a game), Rule 5(b) (tie-break game),
- * Rule 6 (score in a set: advantage set, tie-break set), Rule 7 (score in a match), and Appendix V
+ * Rule 6 (score in a set: advantage set, tie-break set), Rule 7 (score in a match), and Appendix VI
  * (alternative procedures: short sets, match tie-break in lieu of the final set).
  */
 
@@ -105,7 +105,7 @@ describe('SET5-S:6/TB7 — best of five (Rule 7)', () => {
   });
 });
 
-describe('SET3-S:4/TB7 — short sets (Appendix V: first to four games, tie-break at four all)', () => {
+describe('SET3-S:4/TB7 — short sets (Appendix VI: first to four games, tie-break at four all)', () => {
   it('the tie-break comes at four games all', () => {
     conforms('SET3-S:4/TB7', `${games('12121212')} 1111111`, { sets: [[5, 4, [7, 0]]], complete: false });
   });
@@ -126,7 +126,7 @@ describe('final sets that differ from the ordinary set', () => {
     });
   });
 
-  it('-F:6/TB10 — the final set tie-break is first to ten (Appendix V)', () => {
+  it('-F:6/TB10 — the final set tie-break is first to ten (Appendix VI)', () => {
     conforms('SET3-S:6/TB7-F:6/TB10', `${ONE_SET_ALL} ${SIX_ALL} 1111111111`, {
       sets: [
         [6, 0],
@@ -138,7 +138,7 @@ describe('final sets that differ from the ordinary set', () => {
     });
   });
 
-  it('-F:TB10 — a match tie-break in lieu of the final set, first to ten by two (Appendix V)', () => {
+  it('-F:TB10 — a match tie-break in lieu of the final set, first to ten by two (Appendix VI)', () => {
     conforms('SET3-S:6/TB7-F:TB10', `${ONE_SET_ALL} ${'12'.repeat(9)} 11`, {
       sets: [
         [6, 0],

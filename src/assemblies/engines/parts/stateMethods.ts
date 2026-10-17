@@ -70,9 +70,9 @@ export function setTournamentRecord(record, deepCopyOption = true): ResultType {
 }
 
 export function setState(records, deepCopyOption = true) {
-  if (typeof records !== 'object') return { error: INVALID_OBJECT };
+  if (!records || typeof records !== 'object') return { error: INVALID_OBJECT };
 
-  setTournamentId();
+  // validate BEFORE touching the selection: a refused install must leave the active tournament as it was
   if (Array.isArray(records)) {
     const validRecordsArray = records.filter((record) => record?.tournamentId).length === records.length;
 
@@ -81,13 +81,13 @@ export function setState(records, deepCopyOption = true) {
     records = Object.assign({}, ...records.map((record) => ({ [record.tournamentId]: record })));
   } else if (records?.tournamentId) {
     records = { [records.tournamentId]: records };
-    setTournamentId(records.tournamentId);
   } else {
     const validRecordsObject = Object.keys(records).every(
-      (tournamentId) => records[tournamentId].tournamentId === tournamentId,
+      (tournamentId) => records[tournamentId]?.tournamentId === tournamentId,
     );
     if (!validRecordsObject) return { error: INVALID_RECORDS };
   }
 
+  setTournamentId();
   return setTournamentRecords(deepCopyOption ? makeDeepCopy(records) : records);
 }
