@@ -11,8 +11,7 @@
  */
 
 import type { MatchUp, Episode, EpisodeNeeded, FormatStructure, Point, ScoreEntry } from '@Types/scoring/types';
-import { isLiveDecidingSet, resolveSetType } from '@Tools/scoring/scoringUtilities';
-import { setHasTiebreak } from '@Mutate/scoring/addPoint';
+import { isLiveDecidingSet, resolveSetType, setHasTiebreak } from '@Tools/scoring/scoringUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
