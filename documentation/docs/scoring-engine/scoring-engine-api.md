@@ -33,7 +33,23 @@ The timeline records every input the call supplied, including fields beyond `Add
 host passes as decorations, so a rebuild (`undo`, `redo`, `editPoint`, `removePoint`) replays the
 point exactly as recorded: its `scoreValue`, its `wrongSide`/`wrongServer`/`penaltyPoint` flags and
 its decorations survive. A server the engine calculated is not an input and is not recorded; a
-rebuild derives it again.
+rebuild derives it again. Nor is any other field the scorer calculates (`serveSide`, `score`,
+`pointNumber`, the points-to fields): passed in, it is overwritten on the point and left out of the
+timeline.
+
+An input the scorer cannot take is refused with an error before anything is written (no point, no
+timeline entry, no event): a `winner` other than 0 or 1, a `winningSide` other than 1 or 2, the two
+spellings of a side naming different sides (likewise `server`/`serverSideNumber`), or a `scoreValue`
+that is negative or not finite. A zero `scoreValue` is allowed. A point that names no winner is
+ignored, as before.
+
+**What the engine records about service.** The server is side-level. `serverParticipantId` is host
+metadata, recorded as given and never validated or derived. `serveSide` is the _expected_ court half,
+inferred from the score (a No-Ad deciding point, where the receiver chooses, is still reported as
+`deuce`). `wrongSide` and `wrongServer` are host decorations that do not affect scoring. A server
+correction (`setServer`) flips the side due to serve from that point on. An individual doubles
+rotation, receiver identity, an observed court half and rule-based corrections (ITF Rule 27) are not
+modelled.
 
 ```js
 // 0-based convention
@@ -189,6 +205,9 @@ setState(matchUp: MatchUp): void
 ```
 
 Load matchUp state from a CODES MatchUp JSON object. Replaces all internal state, clears redo stack.
+The engine keeps a copy, so changing the object afterwards does not change the engine; `setLineUp`
+and `setPointMultipliers` copy their arguments the same way, and `getPointMultipliers` and
+`getSupplementaryState` return copies.
 The initial lineups a rebuild starts from are the matchUp's lineups with its substitutions undone
 (since 7.7.0); `loadSupplementaryState` replaces them with the saved snapshot.
 
@@ -311,7 +330,8 @@ Get the number of actions that can be redone.
 getScore(): ScoreResult
 ```
 
-Get the current score as a structured object with sets, current game score, and set scores.
+Get the current score as a structured object with sets, current game score, and set scores. Returns a
+copy: changing it does not change the engine.
 
 ```js
 const score = engine.getScore();
