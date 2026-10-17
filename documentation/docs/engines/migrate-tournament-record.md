@@ -75,7 +75,7 @@ type MigrateTournamentRecordArgs = {
 
 | Value            | Behavior                                                                                                                                                                                                                                     |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `true` (default) | After promoting an entry, the legacy extension / timeItem is **removed**. Output is purely native-shaped.                                                                                                                                    |
+| `true` (default) | After promoting an entry, the legacy extension / timeItem is **removed**, so the promoted entries no longer have a legacy copy.                                                                                                              |
 | `false`          | Promoted values are copied to their new home; legacy entries are kept. Useful when you want to migrate readers but defer dropping the legacy envelope (e.g., to keep an in-flight `schemaWriteMode: 'bridge'` deployment safe to roll back). |
 
 Existing first-class values are never overwritten — the helper only fills `element[attribute] === undefined`. Running migration twice is a no-op on the second pass.

@@ -158,15 +158,6 @@ A typical live scoring app architecture:
 
 The engine's persistence methods (`getState`, `setState`, `getSupplementaryState`, `loadSupplementaryState`) enable saving and restoring match state across app restarts, making it suitable for mobile applications where the app may be backgrounded.
 
-## Related Documentation
-
-- **[Overview](./scoring-engine-overview.md)** — Introduction and architecture
-- **[Core API Reference](./scoring-engine-api.md)** — Complete method reference with `getEpisodes()` and `getStatistics()`
-- **[Event Handlers & Integration](./event-handlers.md)** — Real-time event callbacks
-- **[Multi-Sport Format Support](./format-support.md)** — Format strings for different sports
-
-`StatisticsOptions.setFilter`, episode point/game/set indices and stored point indices are zero-based. The first set is `setFilter: 0`; CODES `winningSide` remains one-based.
-
 ## Mixed input timelines
 
 Episodes project recorded points; `addGame` and `addSet` do not invent point records. They still affect
@@ -188,3 +179,12 @@ const timeline = mixed.getEpisodes();
 Metadata such as `rallyLength` is absent from the episode point projection. Join the stored history by
 `episode.point.index`, as the grid example does. `needed` describes opportunities before that point;
 `game.complete` and `set.complete` describe completions on it. See the [core API](./scoring-engine-api.md#getepisodes).
+
+`StatisticsOptions.setFilter`, episode point/game/set indices and stored point indices are zero-based. The first set is `setFilter: 0`; CODES `winningSide` remains one-based.
+
+## Related Documentation
+
+- **[Overview](./scoring-engine-overview.md)** — Introduction and architecture
+- **[Core API Reference](./scoring-engine-api.md)** — Complete method reference with `getEpisodes()` and `getStatistics()`
+- **[Event Handlers & Integration](./event-handlers.md)** — Real-time event callbacks
+- **[Multi-Sport Format Support](./format-support.md)** — Format strings for different sports

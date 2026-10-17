@@ -135,7 +135,7 @@ That is what a before/after measurement needs. "Sixteen closed, one new" is a st
 and a deduplicated file cannot support it. Every census figure quoted in this area's history is this
 measurement rather than the sweep's.
 
-### Frozen schedules, for an honest A/B
+### Frozen schedules, for a fair A/B
 
 `generateSchedule` walks the **live** draw and picks among matchUps that currently hold two
 participants — so it calls the engine under test. A fix therefore changes the schedules themselves,

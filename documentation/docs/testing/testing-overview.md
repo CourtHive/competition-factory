@@ -322,7 +322,7 @@ Scoring conformance does not prove tournament exit propagation. See
 ## Checking documentation contracts
 
 After building the package, run `pnpm verify:docs-model`, `pnpm verify:docs-examples`,
-`pnpm verify:docs-imports --ci` and `pnpm verify:docs-methods --ci`. The example check extracts selected
+`pnpm verify:docs-imports` and `pnpm verify:docs-methods`. The example check extracts selected
 fences from these pages, compiles them strictly against the built declarations and executes their
 output checks; it also checks that every public ScoringEngine method has an API heading. It is a
 focused gate, not an assertion that every narrative fence is standalone. Model reference regeneration

@@ -678,15 +678,6 @@ engine.canRedo(); // true (if there were undone actions)
 
 ---
 
-## Related Documentation
-
-- **[Overview](./scoring-engine-overview.md)** — Introduction and architecture
-- **[Event Handlers & Integration](./event-handlers.md)** — Event system and competitionFormat profiles
-- **[Multi-Sport Format Support](./format-support.md)** — Format strings for different sports
-- **[Visualization Applications](./visualization-applications.md)** — Building visualizations with ScoringEngine data
-
-`StatisticsOptions.setFilter`, episode point/game/set indices and stored point indices are zero-based. The first set is `setFilter: 0`; CODES `winningSide` remains one-based.
-
 ## Service correction
 
 ### setServer
@@ -848,3 +839,12 @@ getEventHandlers(): ScoringEventHandlers | undefined
 
 Returns the currently installed handler object (a reference). Neither method emits a scoring event.
 See the [dispatch matrix](./event-handlers.md#handler-descriptions) for when callbacks run.
+
+`StatisticsOptions.setFilter`, episode point/game/set indices and stored point indices are zero-based. The first set is `setFilter: 0`; CODES `winningSide` remains one-based.
+
+## Related Documentation
+
+- **[Overview](./scoring-engine-overview.md)** — Introduction and architecture
+- **[Event Handlers & Integration](./event-handlers.md)** — Event system and competitionFormat profiles
+- **[Multi-Sport Format Support](./format-support.md)** — Format strings for different sports
+- **[Visualization Applications](./visualization-applications.md)** — Building visualizations with ScoringEngine data

@@ -96,11 +96,11 @@ request of a server and the server needs to prepare context by loading a tournam
 Queue notifications are deferred until successful completion. The rollback option controls whether
 an error also restores earlier writes:
 
-| Result                     | Record state                        | Queued notices                                   |
-| -------------------------- | ----------------------------------- | ------------------------------------------------ |
-| All directives succeed     | Writes retained                     | Delivered after the queue                        |
-| Refusal, rollback disabled | Earlier writes may remain           | Failed queue does not deliver its queued notices |
-| Refusal, rollback enabled  | Restored from the rollback snapshot | Queued notices discarded                         |
+| Result                     | Record state                        | Queued notices                                                                            |
+| -------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| All directives succeed     | Writes retained                     | Delivered after the queue                                                                 |
+| Refusal, rollback disabled | Earlier writes may remain           | Not delivered by this call; they stay buffered and the next successful call delivers them |
+| Refusal, rollback enabled  | Restored from the rollback snapshot | Queued notices discarded                                                                  |
 
 Subscribers run synchronously when dispatched; batching does not make slow callbacks nonblocking.
 Restoring records cannot undo external work already performed by subscribers or other host code.

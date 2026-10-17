@@ -12,7 +12,7 @@ Publishing methods prepare optimized data payloads for public display.
 const { eventData } = engine.publishEvent({
   eventId,
   eventDataParams: {
-    allParticipantResults: true, // Permit missing results for tally-bearing structures
+    allParticipantResults: true, // Calculate results for tallied structures that store none
     refreshResults: true, // Recalculate those results for this projection
     participantsProfile: {
       withISO2: true, // Include country codes

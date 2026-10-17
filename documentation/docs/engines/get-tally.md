@@ -52,4 +52,5 @@ Errors come back as the legacy `{ error: { code } }` envelope; wrap with [`unwra
 Current write modes are `native`, `bridge` and `legacy`. The old name `dual` is rejected with
 `ERR_INVALID_VALUES`. Use this table as the shared mode reference for
 [migration](./migrate-tournament-record.md) and the [5.0 migration guide](../migration-5.0.0.md).
-The read fallback depends on the record's fields, not the current write setting.
+The read fallback depends on the record's fields, not the current write setting: the first-class
+attribute wins when present, otherwise the legacy extension is read.

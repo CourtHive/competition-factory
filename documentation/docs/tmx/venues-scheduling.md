@@ -91,7 +91,6 @@ uses that profile; event IDs and start/end times alone do not define one.
 tournamentEngine.setSchedulingProfile({ schedulingProfile });
 const result = tournamentEngine.scheduleProfileRounds({
   scheduleDates: ['2024-06-15', '2024-06-16'],
-  periodLength: 90,
 });
 if (result.error) throw new Error(result.error.message);
 ```

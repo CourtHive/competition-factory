@@ -19,7 +19,7 @@ The **ScoringEngine** is a stateful mutation engine for point-by-point match sco
 
 - **Multi-level scoring** — Points, games, sets, and segments can all be added through a unified timeline
 - **Undo/redo** — Full undo/redo stack across all input modes (points, games, sets, segments)
-- **Event handlers** — Callbacks for point, game completion, set completion, match completion, undo, redo, and reset
+- **Event handlers** — Callbacks for point, game completion, set completion, match completion, match tie, undo, redo, and reset
 - **Multi-sport format support** — [matchUpFormat codes](/docs/codes/matchup-format) covering many sports
 - **[CODES](/docs/data-standards#codes)-compliant state** — Internal state is a standard CODES `MatchUp` object
 - **Mixed-mode input** — Combine point-level, game-level, and set-level input in the same match

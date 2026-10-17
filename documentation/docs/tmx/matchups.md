@@ -474,7 +474,7 @@ const { matchUps } = tournamentEngine.allEventMatchUps({
 const { matchUps } = tournamentEngine.allEventMatchUps({
   eventId,
   inContext: true,
-  matchUpFilters: { participantIds: [participantId] },
+  contextFilters: { participantIds: [participantId] }, // participantIds is a context filter
 });
 ```
 

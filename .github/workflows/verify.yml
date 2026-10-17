@@ -254,10 +254,7 @@ jobs:
       - name: verify:docs-methods
         run: pnpm verify:docs-methods
 
-      # Source-derived model reference and strict, executed examples from the actual doc fences.
-      - name: verify:docs-model
-        run: pnpm verify:docs-model
-
+      # Strict, executed examples from the actual doc fences (verify:docs-model runs in verify:generated).
       - name: verify:docs-examples
         run: pnpm verify:docs-examples
 

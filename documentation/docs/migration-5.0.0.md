@@ -261,6 +261,6 @@ The same migration was performed on TMX and courthive-components alongside the 5
 
 ## Upgrading a v4 record
 
-Use the `engine.migrateTournamentRecord({ tournamentRecord })` one-shot utility. It walks the record and promotes all 17 canonical legacy extensions / schedule timeItems to first-class. Idempotent — safe to call multiple times. Pass `clearLegacy: true` to also remove the legacy `extensions[]` / `timeItems[]` entries after promotion (destructive); default is to leave both surfaces populated (shadow mode).
+Use the `engine.migrateTournamentRecord({ tournamentRecord })` one-shot utility. It walks the record and promotes all 17 canonical legacy extensions / schedule timeItems to first-class. Idempotent — safe to call multiple times. By default (`clearLegacy: true`) it also removes the legacy `extensions[]` / `timeItems[]` entries after promotion (destructive); pass `clearLegacy: false` to leave both surfaces populated (shadow mode).
 
 Current accepted mode names and read precedence are listed in the [shared write-mode reference](./engines/get-tally.md#supported-write-mode-names).
