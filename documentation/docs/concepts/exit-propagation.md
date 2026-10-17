@@ -826,6 +826,10 @@ by a named test that fails without it.
   placed again, because the losing side is still the produced exit and can never send a loser. A walkover corrected
   to a played result leaves the draw that the played result alone leaves (COMPASS 8/8 20853116:
   `aDissolvedConvergenceOwesItsLoserSeatTheByeAgain`).
+- **A produced convergence crosses the link it reaches.** A convergence the settle produces onward can advance a
+  participant through BYEs to the source round of a WINNER link, opposite a BYE; they cross the link as one advanced
+  there by any other route does, because the crossing is asked again after the production and not only before it
+  (DOUBLE_ELIMINATION 16/11 21138954: `aProducedConvergenceCrossesTheLinkItReaches`).
 - **A double exit's own position leaves every round it reached.** A participant arriving opposite a double exit's
   produced exit is advanced at once, past any BYE beyond; when their own exit then converges the matchUp, the
   position is taken back from every round it went on to, a double exit there included, since a double exit
