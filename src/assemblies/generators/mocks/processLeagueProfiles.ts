@@ -4,6 +4,7 @@ import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { generateParticipants } from './generateParticipants';
+import { isGendered } from '@Validators/isGendered';
 import { genParticipantId } from './genParticipantId';
 import { processTieFormat } from './processTieFormat';
 import { generateRange } from '@Tools/arrays';
@@ -88,7 +89,9 @@ export function processLeagueProfiles(params) {
               consideredDate,
               gendersCount,
               category,
-              gender,
+              // persons have a sex, and only a MALE or FEMALE league names one: `gender` was passed under its
+              // own name, which generateParticipants never reads (M14, 2026-10-17)
+              sex: isGendered(gender) ? gender : undefined,
               random,
               uuids,
             }).participants as Participant[]);

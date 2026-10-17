@@ -26,16 +26,14 @@ describe('generateOutcome - uncovered branches', () => {
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
-  it('handles matchUpStatusProfile with high totals (code uses Object.keys on array)', () => {
-    // Note: the code uses Object.keys(matchUpStatuses) which returns indices not status names
-    // so matchUpStatusTotals computation may not behave as expected for > 100 check
-    // We just verify the function runs and produces an outcome
+  // This test documented the defect it tolerated: the >100 guard summed Object.keys of the status ARRAY
+  // (its indices), so it never fired. The weights are summed now, and 110% is refused (M8, 2026-10-17).
+  it('refuses a matchUpStatusProfile whose weights exceed 100', () => {
     const result = mocksEngine.generateOutcome({
       matchUpStatusProfile: { [WALKOVER]: 60, [RETIRED]: 50 },
     });
-    // The bug in the code means this doesn't return INVALID_VALUES
-    // It will produce an outcome (either WALKOVER or RETIRED)
-    expect(result.outcome || result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result.outcome).toBeUndefined();
   });
 
   it('returns error for NaN defaultWithScorePercent', () => {

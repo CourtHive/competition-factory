@@ -35,7 +35,7 @@ function processExistingEvent({ event, eventProfile, tournamentRecord, allUnique
       gender,
     });
 
-    const { uniqueDrawParticipants = [], uniqueParticipantIds = [] } = uniqueParticipantStages
+    const eventParticipants = uniqueParticipantStages
       ? generateEventParticipants({
           event: { eventType, category, gender },
           uniqueParticipantsCount,
@@ -46,6 +46,8 @@ function processExistingEvent({ event, eventProfile, tournamentRecord, allUnique
           uuids: eventProfile.uuids,
         })
       : {};
+    if (eventParticipants?.error) return eventParticipants;
+    const { uniqueDrawParticipants = [], uniqueParticipantIds = [] } = eventParticipants ?? {};
 
     allUniqueParticipantIds.push(...uniqueParticipantIds);
 

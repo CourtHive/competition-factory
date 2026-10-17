@@ -102,12 +102,25 @@ describe('setState installs only what was generated', () => {
   });
 });
 
+// a generator that throws, whatever the generators do with malformed profiles: the first read of these
+// attributes throws (only the first: the error handler serializes the params it logs)
+const throwingAttributes = (): any => {
+  let thrown = false;
+  return {
+    get tournamentName() {
+      if (thrown) return 'thrown once';
+      thrown = true;
+      throw new Error('thrown by the test');
+    },
+  };
+};
+
 describe('a thrown generator', () => {
   describe('outside devContext', () => {
     useEngineCatch();
 
     it('returns a structured error, not undefined', () => {
-      const result: any = mocksEngine.generateTournamentRecord({ drawProfiles: [null] as any });
+      const result: any = mocksEngine.generateTournamentRecord({ tournamentAttributes: throwingAttributes() });
       expect(result).toBeDefined();
       expect(result.error).toBeDefined();
       expect(result.success).toBeUndefined();
@@ -115,14 +128,19 @@ describe('a thrown generator', () => {
 
     it('does not install anything when setState is requested', () => {
       installKnownTournament();
-      const result: any = mocksEngine.generateTournamentRecord({ drawProfiles: [null] as any, setState: true });
+      const result: any = mocksEngine.generateTournamentRecord({
+        tournamentAttributes: throwingAttributes(),
+        setState: true,
+      });
       expect(result.error).toBeDefined();
       expect(tournamentEngine.getTournament().tournamentRecord?.tournamentId).toEqual(KEEP_ID);
     });
   });
 
   it('under an invocation-scoped devContext rethrows, then leaves devContext off', () => {
-    expect(() => mocksEngine.devContext(true).generateTournamentRecord({ drawProfiles: [null] as any })).toThrow();
+    expect(() =>
+      mocksEngine.devContext(true).generateTournamentRecord({ tournamentAttributes: throwingAttributes() }),
+    ).toThrow();
     expect(getDevContext()).toBeFalsy();
 
     const result: any = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
@@ -132,7 +150,7 @@ describe('a thrown generator', () => {
   it('under a devContext the caller set, rethrows and leaves the caller its devContext', () => {
     setDevContext(true);
     try {
-      expect(() => mocksEngine.generateTournamentRecord({ drawProfiles: [null] as any })).toThrow();
+      expect(() => mocksEngine.generateTournamentRecord({ tournamentAttributes: throwingAttributes() })).toThrow();
       expect(getDevContext()).toEqual(true);
     } finally {
       setDevContext(false);

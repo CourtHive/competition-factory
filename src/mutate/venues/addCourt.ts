@@ -159,9 +159,11 @@ export function courtsAdd({
 
   const { venue } = result;
 
-  if (!isNumeric(courtsCount) || !courtNames) return { error: MISSING_COURTS_INFO };
+  // names alone say how many courts there are: the `courtNames.length` fallback was unreachable behind
+  // a guard that demanded a numeric courtsCount whatever names were given (M13, 2026-10-17)
+  if (!isNumeric(courtsCount) && !courtNames?.length) return { error: MISSING_COURTS_INFO };
 
-  courtsCount = courtsCount ?? courtNames.length;
+  courtsCount = isNumeric(courtsCount) ? courtsCount : courtNames.length;
   const courts = generateRange(0, courtsCount).map((i) => {
     const courtTiming = courtTimings?.[i];
     const courtAvailability = courtTiming

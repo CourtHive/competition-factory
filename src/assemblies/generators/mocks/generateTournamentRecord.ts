@@ -9,6 +9,7 @@ import { generateEventWithDraw } from './generateEventWithDraw';
 import { processLeagueProfiles } from './processLeagueProfiles';
 import { cycleMutationStatus } from '@Global/state/globalState';
 import { formatDate, isValidDateString } from '@Tools/dateTime';
+import { addDays, extractDate } from '@Tools/plainDate';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { applyScenarioProfile } from './applyScenarioProfile';
@@ -37,6 +38,8 @@ import { SUCCESS } from '@Constants/resultConstants';
 // drawPosition 23 to 10. In the exit-propagation sweep this made three of thirty-one failing seeds
 // unreproducible in isolation, which is why per-seed attribution in that census could not be
 // trusted. See `mockTournamentNameReuse.test.ts`.
+const DEFAULT_SPAN_DAYS = 7;
+
 const mockTournamentNames = [
   'Generated Tournament',
   'CourtHive Challenge',
@@ -50,7 +53,6 @@ const mockTournamentNames = [
 ];
 
 export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
-  let { startDate, endDate } = params ?? {};
   const {
     tournamentName = randomMember(mockTournamentNames, params?.random),
     ratingsParameters = defaultRatingsParameters,
@@ -63,12 +65,11 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
 
   const isMock = params?.isMock === false ? undefined : true;
 
-  if ((startDate && !isValidDateString(startDate)) || (endDate && !isValidDateString(endDate)))
-    return { error: INVALID_DATE };
+  const dates = resolveDates(params?.startDate, params?.endDate);
+  if (dates.error) return dates;
+  const { startDate, endDate } = dates;
 
   if (!areValidProfiles(params)) return { error: INVALID_VALUES };
-
-  ({ startDate, endDate } = resolveDates(startDate, endDate));
 
   const tournamentRecord = createTournamentRecord({
     ...params.tournamentAttributes,
@@ -254,21 +255,32 @@ function areValidProfiles(params) {
   );
 }
 
-function resolveDates(startDate, endDate) {
-  let resolvedStart = startDate;
-  let resolvedEnd = endDate;
+/**
+ * A bound the caller gives is kept; a missing one is derived from it by the default span of a week.
+ *
+ * Before (M7, 2026-10-17): an `endDate` alone became the START, and the end was overwritten with
+ * today + 7, so `endDate: 2027-02-01` produced 2027-02-01 to 2026-10-24. And a `startDate` alone was
+ * parsed as UTC then advanced in local time, which is start + 6 west of UTC. Calendar dates only.
+ */
+function resolveDates(
+  startDate?: string,
+  endDate?: string,
+): { startDate: string; endDate: string; error?: undefined } | { error: ErrorType; info?: string } {
+  if ((startDate && !isValidDateString(startDate)) || (endDate && !isValidDateString(endDate)))
+    return { error: INVALID_DATE };
+  const resolved = deriveMissingDate(startDate, endDate);
+  // an inverted range is refused before any participant or schedule is generated for it
+  if (extractDate(resolved.endDate) < extractDate(resolved.startDate))
+    return { error: INVALID_DATE, info: 'endDate precedes startDate' };
+  return resolved;
+}
 
-  if (!resolvedStart) {
-    const tournamentDate = now();
-    resolvedStart = formatDate(resolvedEnd ?? tournamentDate);
-    resolvedEnd = formatDate(tournamentDate.setDate(tournamentDate.getDate() + 7));
-  }
-  if (!resolvedEnd) {
-    const tournamentDate = new Date(resolvedStart);
-    resolvedEnd = formatDate(tournamentDate.setDate(tournamentDate.getDate() + 7));
-  }
-
-  return { startDate: resolvedStart, endDate: resolvedEnd };
+function deriveMissingDate(startDate?: string, endDate?: string) {
+  if (startDate && endDate) return { startDate, endDate };
+  if (startDate) return { startDate, endDate: addDays(startDate, DEFAULT_SPAN_DAYS) };
+  if (endDate) return { startDate: addDays(endDate, -DEFAULT_SPAN_DAYS), endDate };
+  const today = formatDate(now());
+  return { startDate: today, endDate: addDays(today, DEFAULT_SPAN_DAYS) };
 }
 
 function processAllProfiles({
