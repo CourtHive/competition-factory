@@ -18,9 +18,14 @@ const { matchUps } = engine.allDrawMatchUps({
   nextMatchUps, // optioanl - boolean - to include winnerTo and loserTo
   inContext, // boolean - add context { drawId, structureId, participant, individualParticipants ... }
   context, // optional context to be added into matchUps
+  usePublishState, // optional - boolean - the published view: embargoed rounds withhold their schedule details
+  publishStatus, // optional - overrides the event's own publish status when usePublishState is set
+  afterRecoveryTimes, // optional - boolean - add recovery times from the scheduling policy to each schedule
   drawId,
 });
 ```
+
+`usePublishState`, `publishStatus` and `afterRecoveryTimes` act on hydrated matchUps, so they need `inContext: true`.
 
 ---
 
@@ -36,6 +41,8 @@ const { matchUps } = allEventMatchUps({
   contextFilters, // filters based on context attributes
   nextMatchUps: true, // include winner/loser target matchUp details
   inContext: true, // include contextual details
+  usePublishState, // optional - boolean - the published view: embargoed rounds withhold their schedule details
+  afterRecoveryTimes, // optional - boolean - add recovery times from the scheduling policy to each schedule
   eventId,
 });
 ```
