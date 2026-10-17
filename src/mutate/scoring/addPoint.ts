@@ -61,6 +61,7 @@ export interface AddPointConfig {
 export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: AddPointConfig): MatchUp {
   // IMPORTANT: Do NOT clone matchUp! The v3 adapter needs mutation to work.
   if (!isObject(options)) return matchUp;
+  validatePointInput(options);
 
   // Normalize between 0-indexed (winner/server) and 1-indexed (winningSide/serverSideNumber)
   let winner = options.winner;
@@ -711,6 +712,29 @@ export function checkStandardSetWon(
   }
 
   return undefined;
+}
+
+const SIDE_INDEX = new Set([0, 1]);
+const SIDE_NUMBER = new Set([1, 2]);
+
+/**
+ * Refuse a point input the scorer cannot take, before anything is written: a side outside 0/1 (or 1/2),
+ * the two spellings of a side naming different sides, or a scoreValue that is negative or not finite.
+ * A zero scoreValue is allowed. A missing winner is not an error here: such a point is ignored.
+ */
+export function validatePointInput(options: Partial<AddPointOptions>): void {
+  const { winner, winningSide, server, serverSideNumber, scoreValue } = options;
+  if (winner != null && !SIDE_INDEX.has(winner)) throw new Error(`Invalid winner: ${winner}`);
+  if (winningSide != null && !SIDE_NUMBER.has(winningSide)) throw new Error(`Invalid winningSide: ${winningSide}`);
+  if (winner != null && winningSide != null && winner + 1 !== winningSide)
+    throw new Error(`winner ${winner} and winningSide ${winningSide} disagree`);
+  if (server != null && !SIDE_INDEX.has(server)) throw new Error(`Invalid server: ${server}`);
+  if (serverSideNumber != null && !SIDE_NUMBER.has(serverSideNumber))
+    throw new Error(`Invalid serverSideNumber: ${serverSideNumber}`);
+  if (server != null && serverSideNumber != null && server + 1 !== serverSideNumber)
+    throw new Error(`server ${server} and serverSideNumber ${serverSideNumber} disagree`);
+  if (scoreValue !== undefined && !(Number.isFinite(scoreValue) && scoreValue >= 0))
+    throw new Error(`Invalid scoreValue: ${scoreValue}`);
 }
 
 /**

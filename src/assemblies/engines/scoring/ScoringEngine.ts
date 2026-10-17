@@ -30,6 +30,7 @@ import { getScore } from '@Query/scoring/getScore';
 import { nowIso } from '@Tools/clock';
 import {
   addPoint,
+  validatePointInput,
   deriveServer,
   deriveServerBase,
   checkStandardSetWon,
@@ -194,9 +195,20 @@ const CALCULATED_POINT_FIELDS = new Set([
   'serveSide',
 ]);
 
-/** A caller's point input as the timeline records it: every field it supplied, and nothing calculated. */
+/** The 1-indexed spellings of winner and server: calculated on every point, and a caller's input when supplied. */
+const INPUT_SPELLINGS = new Set(['winningSide', 'serverSideNumber']);
+
+/**
+ * A caller's point input as the timeline records it: every field it supplied, and nothing calculated. A
+ * calculated field passed in (an untyped `serveSide`, say) is overwritten by the scorer, so recording it
+ * would leave the entry and the point disagreeing.
+ */
 function recordedPointInput(options: AddPointOptions): AddPointOptions {
-  return Object.fromEntries(Object.entries(options).filter(([, value]) => value !== undefined)) as AddPointOptions;
+  return Object.fromEntries(
+    Object.entries(options).filter(
+      ([key, value]) => value !== undefined && (INPUT_SPELLINGS.has(key) || !CALCULATED_POINT_FIELDS.has(key)),
+    ),
+  ) as AddPointOptions;
 }
 
 /**
@@ -290,7 +302,9 @@ export class ScoringEngine {
    * @param matchUp - TODS matchUp object
    */
   setState(matchUp: MatchUp): void {
-    this.state = matchUp;
+    // a copy: the caller's object stays the caller's (S9); a JSON round trip, as in getState
+    // eslint-disable-next-line no-restricted-syntax
+    this.state = JSON.parse(JSON.stringify(matchUp));
     this.matchUpFormat = matchUp.matchUpFormat;
     this.matchUpId = matchUp.matchUpId;
     this.isDoubles = matchUp.matchUpType === 'DOUBLES';
@@ -328,6 +342,9 @@ export class ScoringEngine {
    * @param options - Point options (winner, server, etc.)
    */
   addPoint(options: AddPointOptions): void {
+    // refused before anything is written (S9): an unscorable format or an invalid input
+    if (!this.cachedFormatStructure) throw new Error(`Invalid matchUpFormat: ${this.matchUpFormat}`);
+    validatePointInput(options);
     // before the point is scored: a record without a timeline starts one from the points it already has
     this.ensureHistory();
     const pointIndex = this.state.history?.points.length || 0;
@@ -643,7 +660,9 @@ export class ScoringEngine {
    * Get current score
    */
   getScore(): ReturnType<typeof getScore> {
-    return getScore(this.state);
+    // a copy: the score's sets are the engine's own (S9)
+    // eslint-disable-next-line no-restricted-syntax
+    return JSON.parse(JSON.stringify(getScore(this.state)));
   }
 
   /**
@@ -902,7 +921,7 @@ export class ScoringEngine {
   setLineUp(sideNumber: 1 | 2, lineUp: TeamCompetitor[]): void {
     const side = this.state.sides.find((s) => s.sideNumber === sideNumber);
     if (side) {
-      side.lineUp = lineUp;
+      side.lineUp = lineUp.map((tc) => ({ ...tc }));
     }
     // Save initial lineUp snapshot for rebuild
     this.initialLineUps ??= {};
@@ -995,14 +1014,14 @@ export class ScoringEngine {
    * Set or update point multipliers
    */
   setPointMultipliers(multipliers: PointMultiplier[]): void {
-    this.pointMultipliers = multipliers;
+    this.pointMultipliers = structuredClone(multipliers);
   }
 
   /**
    * Get current point multipliers
    */
   getPointMultipliers(): PointMultiplier[] {
-    return this.pointMultipliers;
+    return structuredClone(this.pointMultipliers);
   }
 
   /**
@@ -1017,7 +1036,7 @@ export class ScoringEngine {
       version: SUPPLEMENTARY_STATE_VERSION,
       competitionFormat: this.competitionFormat && { ...this.competitionFormat },
       pointMultipliers: this.pointMultipliers.map((multiplier) => ({ ...multiplier })),
-      redoStack: [...this.redoStack],
+      redoStack: structuredClone(this.redoStack),
       initialLineUps: this.initialLineUps
         ? Object.fromEntries(Object.entries(this.initialLineUps).map(([k, v]) => [k, v.map((tc) => ({ ...tc }))]))
         : undefined,
@@ -1167,6 +1186,8 @@ export class ScoringEngine {
    *     false only updates point data
    */
   editPoint(pointIndex: number, newData: Partial<AddPointOptions>, options?: { recalculate?: boolean }): void {
+    // refused before the point or its entry changes: a rebuild could not replay it
+    validatePointInput(newData);
     const points = this.state.history?.points;
     if (!points || pointIndex < 0 || pointIndex >= points.length) return;
 
