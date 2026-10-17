@@ -606,20 +606,23 @@ function handleTimedTiebreakPoint(
   formatStructure: FormatStructure | undefined,
   setsToWin: number,
 ): void {
-  (point as PlacedPoint).game = (currentSet.side1Score || 0) + (currentSet.side2Score || 0);
-  (point as PlacedPoint).number = (currentSet.side1TiebreakScore || 0) + (currentSet.side2TiebreakScore || 0);
-  if (winner === 0) currentSet.side1TiebreakScore = (currentSet.side1TiebreakScore || 0) + 1;
-  else currentSet.side2TiebreakScore = (currentSet.side2TiebreakScore || 0) + 1;
+  // endSegment opened the tiebreak with the games and the tiebreak points all set
+  const games = [currentSet.side1Score!, currentSet.side2Score!];
+  (point as PlacedPoint).game = games[0] + games[1];
+  (point as PlacedPoint).number = currentSet.side1TiebreakScore! + currentSet.side2TiebreakScore!;
+  if (winner === 0) currentSet.side1TiebreakScore! += 1;
+  else currentSet.side2TiebreakScore! += 1;
 
-  const tb1 = currentSet.side1TiebreakScore || 0;
-  const tb2 = currentSet.side2TiebreakScore || 0;
-  const tiebreak = setFormat.tiebreakFormat;
-  const won = checkTiebreakWon(tb1, tb2, tiebreak?.tiebreakTo ?? 7, tiebreak?.NoAD);
+  const tb1 = currentSet.side1TiebreakScore!;
+  const tb2 = currentSet.side2TiebreakScore!;
+  // only a set that declares `/TB{n}` opens one, so its tiebreak format is there
+  const tiebreak = setFormat.tiebreakFormat!;
+  const won = checkTiebreakWon(tb1, tb2, tiebreak.tiebreakTo!, tiebreak.NoAD);
   point.score = `${tb1}-${tb2}`;
   if (won === undefined) return;
 
-  if (won === 0) currentSet.side1Score = (currentSet.side1Score || 0) + 1;
-  else currentSet.side2Score = (currentSet.side2Score || 0) + 1;
+  if (won === 0) currentSet.side1Score = games[0] + 1;
+  else currentSet.side2Score = games[1] + 1;
   currentSet.winningSide = won + 1;
   (currentSet as ClosableSet).segmentComplete = true;
   if (formatStructure) checkAndFinalizeMatch(matchUp, formatStructure, setsToWin);

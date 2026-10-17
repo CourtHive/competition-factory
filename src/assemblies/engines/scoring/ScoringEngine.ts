@@ -1571,6 +1571,8 @@ export class ScoringEngine {
     // stays open; its points go to the tiebreak, and the tiebreak's winner closes it.
     const activeFormat = this.activeSetFormat();
     if (s1 === s2 && activeFormat?.timed && activeFormat.tiebreakFormat) {
+      targetSet.side1Score = s1;
+      targetSet.side2Score = s2;
       targetSet.side1TiebreakScore = 0;
       targetSet.side2TiebreakScore = 0;
       return;
