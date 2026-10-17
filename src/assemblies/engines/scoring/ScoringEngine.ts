@@ -162,8 +162,51 @@ export interface ScoringEngineOptions {
 }
 
 export interface ScoringEngineSupplementaryState {
+  /** Envelope version: 1 adds the scoring configuration. An envelope without it predates the field. */
+  version?: number;
   initialLineUps?: Record<string, TeamCompetitor[]>;
   redoStack?: ScoreEntry[];
+  /** The configuration the history was scored under; a load restores it, over the constructor's. */
+  competitionFormat?: CompetitionFormat;
+  pointMultipliers?: PointMultiplier[];
+}
+
+const SUPPLEMENTARY_STATE_VERSION = 1;
+
+/**
+ * Point fields the scorer calculates. A replay recomputes them, so they are never replay input; every
+ * other field on a point is something a caller recorded.
+ */
+const CALCULATED_POINT_FIELDS = new Set([
+  'pointNumber',
+  'winningSide',
+  'serverSideNumber',
+  'index',
+  'set',
+  'game',
+  'number',
+  'score',
+  'pointsToGame',
+  'pointsToSet',
+  'pointsToMatch',
+  'gamesToSet',
+  'isBreakpoint',
+  'serveSide',
+]);
+
+/** A caller's point input as the timeline records it: every field it supplied, and nothing calculated. */
+function recordedPointInput(options: AddPointOptions): AddPointOptions {
+  return Object.fromEntries(Object.entries(options).filter(([, value]) => value !== undefined)) as AddPointOptions;
+}
+
+/**
+ * Replay input for a point with no timeline entry (a record saved without one): every field but the
+ * calculated ones. Its scoreValue is the effective value it was scored with, so the old result stands.
+ */
+function pointReplayInput(point: Point): AddPointOptions {
+  return Object.fromEntries(
+    Object.entries(point).filter(([key, value]) => value !== undefined && !CALCULATED_POINT_FIELDS.has(key)),
+  ) as AddPointOptions;
 }
 
 /**
@@ -199,7 +242,7 @@ function deriveInitialLineUps(matchUp: MatchUp): Record<number, TeamCompetitor[]
  * Supports competitionFormat consumption for gameplay rules.
  */
 export class ScoringEngine {
-  private readonly competitionFormat?: CompetitionFormat;
+  private competitionFormat?: CompetitionFormat;
   private initialLineUps?: Record<number, TeamCompetitor[]>;
   private pointMultipliers: PointMultiplier[] = [];
   private cachedFormatStructure?: FormatStructure;
@@ -285,6 +328,8 @@ export class ScoringEngine {
    * @param options - Point options (winner, server, etc.)
    */
   addPoint(options: AddPointOptions): void {
+    // before the point is scored: a record without a timeline starts one from the points it already has
+    this.ensureHistory();
     const pointIndex = this.state.history?.points.length || 0;
 
     // Snapshot game/set/match state before point for event detection
@@ -319,21 +364,12 @@ export class ScoringEngine {
       (lastPoint as any).penaltyType = options.penaltyType;
     }
 
-    // Record entry in unified timeline
-    this.ensureHistory();
-    this.state.history!.entries!.push({
+    // Record entry in unified timeline: every input the caller supplied (S1). A calculated server is
+    // not one, so a rebuild re-derives it.
+    this.state.history!.entries ??= [];
+    this.state.history!.entries.push({
       type: 'point',
-      data: {
-        winner: options.winner,
-        winningSide: options.winningSide,
-        server: options.server,
-        serverSideNumber: options.serverSideNumber,
-        serverParticipantId: options.serverParticipantId,
-        timestamp: options.timestamp,
-        rallyLength: options.rallyLength,
-        result: options.result,
-        penaltyType: options.penaltyType,
-      },
+      data: recordedPointInput(options),
       timestamp: options.timestamp || nowIso(),
       pointIndex,
     });
@@ -522,16 +558,7 @@ export class ScoringEngine {
     const pointsToUndo = Math.min(count, points.length);
     for (let i = 0; i < pointsToUndo; i++) {
       const point = points.pop()!;
-      this.redoStack.push({
-        type: 'point',
-        data: {
-          winner: point.winner,
-          server: point.server,
-          timestamp: point.timestamp,
-          rallyLength: point.rallyLength,
-        },
-        timestamp: point.timestamp || '',
-      });
+      this.redoStack.push({ type: 'point', data: pointReplayInput(point), timestamp: point.timestamp || '' });
     }
     this.rebuildState();
 
@@ -550,17 +577,22 @@ export class ScoringEngine {
   redo(count: number = 1): boolean {
     if (this.redoStack.length === 0) return false;
 
+    // A record with no timeline was undone point by point: put the points back the same way. Starting
+    // a timeline here would hold only the redone points, and a rebuild from it would drop the rest.
+    if (!this.state.history?.entries) {
+      const toRedo = Math.min(count, this.redoStack.length);
+      for (let i = 0; i < toRedo; i++) {
+        const entry = this.redoStack.pop()!;
+        this.state = addPoint(this.state, entry.data, { pointMultipliers: this.pointMultipliers });
+      }
+      this.eventHandlers?.onRedo?.(this.buildEventContext());
+      return true;
+    }
+
     const toRedo = Math.min(count, this.redoStack.length);
     for (let i = 0; i < toRedo; i++) {
-      const entry = this.redoStack.pop()!;
-
-      this.ensureHistory();
-      this.state.history!.entries!.push(entry);
-
-      // Also restore point data for point entries
-      if (entry.type === 'point') {
-        // Point will be re-added during rebuild
-      }
+      // a redone point is re-added during the rebuild
+      this.state.history!.entries!.push(this.redoStack.pop()!);
     }
 
     this.rebuildFromEntries();
@@ -980,6 +1012,9 @@ export class ScoringEngine {
    */
   getSupplementaryState(): ScoringEngineSupplementaryState {
     return {
+      version: SUPPLEMENTARY_STATE_VERSION,
+      competitionFormat: this.competitionFormat && { ...this.competitionFormat },
+      pointMultipliers: this.pointMultipliers.map((multiplier) => ({ ...multiplier })),
       redoStack: [...this.redoStack],
       initialLineUps: this.initialLineUps
         ? Object.fromEntries(Object.entries(this.initialLineUps).map(([k, v]) => [k, v.map((tc) => ({ ...tc }))]))
@@ -994,6 +1029,9 @@ export class ScoringEngine {
    * Call after setState() to fully restore engine state.
    */
   loadSupplementaryState(state: ScoringEngineSupplementaryState): void {
+    // the configuration the history was scored under, so a rebuild scores it the same way (S10)
+    if (state.competitionFormat) this.competitionFormat = { ...state.competitionFormat };
+    if (state.pointMultipliers) this.pointMultipliers = state.pointMultipliers.map((multiplier) => ({ ...multiplier }));
     if (state.redoStack) this.redoStack = [...state.redoStack];
     if (state.initialLineUps) {
       this.initialLineUps = Object.fromEntries(
@@ -1242,7 +1280,13 @@ export class ScoringEngine {
 
   private ensureHistory(): void {
     this.state.history ??= { points: [] };
-    this.state.history.entries ??= [];
+    // A record saved without a timeline starts one from its points, so a later rebuild keeps them.
+    this.state.history.entries ??= this.state.history.points.map((point, pointIndex) => ({
+      type: 'point',
+      data: pointReplayInput(point),
+      timestamp: point.timestamp || '',
+      pointIndex,
+    }));
   }
 
   /**
@@ -1540,6 +1584,9 @@ export class ScoringEngine {
           this.applySubstitution(entry.data);
           break;
         case 'setInitialScore':
+          // the late-start baseline is part of the timeline (S2): replayed where it was set, gone once undone
+          this.applyInitialScore(this.state, entry.data);
+          if (this.state.matchUpStatus === TO_BE_PLAYED) this.state.matchUpStatus = IN_PROGRESS;
           break;
         case 'setServer':
           this.replaySetServerEntry(entry.data);
@@ -1551,25 +1598,25 @@ export class ScoringEngine {
   private prepareRebuildState(entries: any[]): MatchUp {
     const savedLineUps = this.getInitialLineUps();
 
-    const newState = createMatchUp({
+    // Only what scoring produces starts over. The matchUp's identity, participants and any other
+    // metadata a host attached are kept as they are: a rebuild is not a new matchUp.
+    const { score: _score, history: _history, winningSide: _winningSide, ...identity } = this.state;
+    const { serverFlip: _serverFlip, endTime: _endTime, matchUpStatus: _matchUpStatus, ...kept } = identity;
+    // a JSON round trip, as in getState: the state may hold framework proxies structuredClone rejects
+    // eslint-disable-next-line no-restricted-syntax
+    const copy = JSON.parse(JSON.stringify(kept));
+    const fresh = createMatchUp({
       matchUpFormat: this.matchUpFormat,
       matchUpId: this.matchUpId,
       isDoubles: this.isDoubles,
     });
+    const newState: MatchUp = { ...copy, score: fresh.score, matchUpStatus: fresh.matchUpStatus };
+    newState.matchUpFormat = this.matchUpFormat;
 
-    if (savedLineUps) {
-      for (const side of newState.sides) {
-        if (savedLineUps[side.sideNumber]) {
-          side.lineUp = savedLineUps[side.sideNumber].map((tc) => ({ ...tc }));
-        }
-      }
-    }
-
-    if (this.initialScore) {
-      this.applyInitialScore(newState, this.initialScore);
-      if (newState.matchUpStatus === TO_BE_PLAYED) {
-        newState.matchUpStatus = IN_PROGRESS;
-      }
+    for (const side of newState.sides) {
+      const lineUp = savedLineUps?.[side.sideNumber];
+      if (lineUp) side.lineUp = lineUp.map((tc) => ({ ...tc }));
+      else delete side.lineUp;
     }
 
     newState.history = { points: [], entries: [...entries] };
@@ -1625,24 +1672,7 @@ export class ScoringEngine {
     // Replay all tracked points with multipliers
     for (const point of currentPoints) {
       const pointCount = newState.history?.points.length || 0;
-      newState = addPoint(
-        newState,
-        {
-          winner: point.winner,
-          server: point.server,
-          timestamp: point.timestamp,
-          rallyLength: point.rallyLength,
-          result: point.result,
-          // corrections recorded on the point (none of them moves the score)
-          penaltyType: (point as any).penaltyType,
-          penaltyPoint: (point as any).penaltyPoint,
-          wrongSide: (point as any).wrongSide,
-          wrongServer: (point as any).wrongServer,
-        },
-        {
-          pointMultipliers: this.pointMultipliers,
-        },
-      );
+      newState = addPoint(newState, pointReplayInput(point), { pointMultipliers: this.pointMultipliers });
       // the players recorded on court for the point; with no timeline there is nothing to recompute from
       const replayed = newState.history?.points ?? [];
       const played = replayed.length > pointCount ? replayed.at(-1) : undefined;
