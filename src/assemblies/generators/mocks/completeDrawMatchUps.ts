@@ -144,6 +144,7 @@ function completeStructureMatchUps({
   completionGoal,
   completedCount,
   roundNumber: roundNumberFilter,
+  leafStructureIds,
   random,
 }) {
   const matchUps = getAllStructureMatchUps({
@@ -158,7 +159,12 @@ function completeStructureMatchUps({
   }).matchUps;
 
   const sortedMatchUpIds = matchUps
-    .filter(({ winningSide, roundNumber }) => !winningSide && (!roundNumberFilter || roundNumber === roundNumberFilter))
+    .filter(
+      ({ winningSide, roundNumber, structureId }) =>
+        !winningSide &&
+        (!roundNumberFilter || roundNumber === roundNumberFilter) &&
+        (!leafStructureIds || leafStructureIds.includes(structureId)),
+    )
     .sort(matchUpSort)
     .map(getMatchUpId);
 
@@ -294,6 +300,23 @@ export function completeDrawMatchUps(params): {
     )
     .map(({ structureId }) => structureId);
 
+  /**
+   * ...but matching a container BY a child id must not widen the request to the whole container.
+   * Completion reads every matchUp of the container, so without a leaf scope one round-robin group
+   * completed all of them — measured: ROUND_ROBIN 16, one child id -> 24 completed across four
+   * groups. Named by its own id, a container still completes every group; named by child ids, only
+   * those children's matchUps (inContext they carry the CHILD's structureId) are completed.
+   */
+  const getLeafStructureIds = (structure: {
+    structureId: string;
+    structures?: { structureId: string }[];
+  }): string[] | undefined => {
+    if (!requestedStructureIds?.length || requestedStructureIds.includes(structure.structureId)) return undefined;
+    return (structure.structures ?? [])
+      .map((child) => child.structureId)
+      .filter((childId) => requestedStructureIds.includes(childId));
+  };
+
   // Multi-pass loop: after each pass, cross-structure advancement (via directParticipants)
   // may populate positions in downstream structures, making new matchUps ready to complete.
   // This is necessary for DOUBLE_ELIMINATION where the main final and decider depend on
@@ -339,6 +362,7 @@ export function completeDrawMatchUps(params): {
         completionGoal,
         completedCount,
         roundNumber,
+        leafStructureIds: getLeafStructureIds(structure),
         random,
       });
       if (result?.error) return result;

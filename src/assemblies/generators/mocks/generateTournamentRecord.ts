@@ -19,7 +19,7 @@ import { randomMember } from '@Tools/arrays';
 import { now } from '@Tools/clock';
 
 // constants and fixtures
-import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { ParticipantsProfile, PolicyDefinitions } from '@Types/factoryTypes';
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -107,8 +107,12 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
     endDate,
     isMock,
   });
+  // an invalid header (a bad localTimeZone, say) comes back as an error envelope; carrying on would
+  // decorate that envelope with participants and events and report it as a generated tournament
+  if (tournamentRecord.error) return tournamentRecord;
 
   const venueIds = venueProfiles?.length ? generateVenues({ tournamentRecord, venueProfiles, uuids }) : [];
+  if (!Array.isArray(venueIds)) return venueIds;
 
   // attach any valid tournamentExtensions
   if (tournamentExtensions?.length && Array.isArray(tournamentExtensions)) {
@@ -166,9 +170,11 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   });
   if (profilesResult?.error) return profilesResult;
 
-  const { scheduledRounds = undefined, schedulerResult = {} } = schedulingProfile
-    ? scheduleRounds({ ...params, tournamentRecord })
-    : {};
+  const scheduled = schedulingProfile ? scheduleRounds({ ...params, tournamentRecord }) : {};
+  // a refused schedule is a refusal, not an empty schedule
+  if (scheduled.error) return scheduled;
+  if (scheduled.schedulerResult?.error) return scheduled.schedulerResult;
+  const { scheduledRounds = undefined, schedulerResult = {} } = scheduled;
 
   // Anchoring runs AFTER scheduling: it shifts the times the scheduler produced rather than
   // replacing them, so matchUp average and recovery spacing survive intact.
@@ -245,7 +251,7 @@ function processEventProfiles(params) {
   }
 }
 
-function scheduleRounds(params): { scheduledRounds?: any; schedulerResult?: any } {
+function scheduleRounds(params): { scheduledRounds?: any; schedulerResult?: any; error?: ErrorType } {
   const { schedulingProfile, tournamentRecord, autoSchedule, periodLength, scheduleCompletedMatchUps } = params;
   const result = generateScheduledRounds({
     schedulingProfile,
