@@ -697,6 +697,16 @@ decided that matchUp for whoever arrived next (census run 18, FEED_IN_CHAMPIONSH
 MODIFIED_FEED_IN_CHAMPIONSHIP 16/14: a result refused after it had written, and two positions sent on
 by one matchUp).
 
+**A seat emptied for the winner holds no carry.** When a played win is re-entered as a walkover or
+default the other way, the old winner is taken out of the rounds they reached, and the seat each removal
+empties is the one the new winner takes next. A single exit decides nothing there: the exit is the new
+loser's, and it goes with them. Only a double exit, which sends nobody, records a produced exit on that
+seat. Before this, the empty seat was stamped with the new loser's exit as though they had been carried
+into it. On a BYE the stamp stood beside the new winner and went past the BYE with them. It then either
+converged with the exit waiting there into a double exit nobody had entered, or, once the copy was
+withdrawn as stranded, took the new winner's advancement back with it (census S8, FEED_IN_CHAMPIONSHIP
+16/11 and COMPASS 32/27: `aSeatEmptiedForTheWinnerHoldsNoCarry`).
+
 **A produced exit supersedes a stale relay on its own side.** A produced exit relayed past a BYE
 waits, on the side its path arrives at, in a matchUp no position has reached yet. When a loser takes
 that BYE's seat and the matchUp they meet there produces its own exit, it travels the same path onto
@@ -776,6 +786,40 @@ Read from census run 20, under `doubleExitPropagateBye: false`; each pinned by a
   and a claim on the BYE the seat now is (a matchUp whose loser is nobody). Withdrawing the exit leaves the claim, so the
   BYE is taken back when the claimant later gains a real loser (COMPASS 16/13, 20964176:
   `aByeClaimSurvivesTheExitWithdrawnBesideIt`).
+
+### Rules settled by the census in S8 (2026-10-16)
+
+Read from the S8 closing re-sweep, which replayed the stored schedules of runs 13–20 at one ref. Each seed had passed in
+its own run and failed at that ref; each was bisected by replay to the commit that exposed it, and each rule is pinned
+by a named test that fails without it.
+
+- **A removal walks through a hole into the matchUp it feeds.** A lone position's partner is a hole. The removal walks
+  on only into the next-round matchUp its own matchUp feeds, so a carry that passed a lone BYE comes back with the BYE;
+  it does not walk into any other matchUp holding a hole (COMPASS 32/27 20611808, FEED_IN_CHAMPIONSHIP_TO_SF 8/7
+  20650915: `aRemovalWalksThroughAHoleIntoTheMatchUpItFeeds`).
+- **A relabel withdraws its carry from every BYE-held matchUp it reached.** A carry passing BYEs in consecutive rounds
+  is recorded on each of them; a relabel to a played result takes it back from all of them, not the first (two
+  FEED_IN_CHAMPIONSHIP consolation stalls, 20544709 and 20576342:
+  `aRelabelWithdrawsTheCarryFromEveryByeHeldMatchUp`).
+- **A seat emptied for the winner holds no carry** (above; FEED_IN_CHAMPIONSHIP 16/11 20532286, COMPASS 32/27
+  20585407: `aSeatEmptiedForTheWinnerHoldsNoCarry`).
+- **An unwind takes back what it sent on through a result it leaves standing.** S7's stop at a result whose exits come
+  only from kept origins still holds, but a participant the unwind is taking back who was sent on through that result
+  is taken back too. Across a link the participant is followed, not the drawPosition (DOUBLE_ELIMINATION 8/6 20590443,
+  and 20701264 into the Decider: `anUnwindTakesBackWhatItSentOnThroughAStandingResult`).
+- **A withdrawn arrival leaves the award its exit made.** A settle re-reads a matchUp's winner only when it withdraws
+  an exit entry; withdrawing an arrival record alone leaves the award (CURTIS_CONSOLATION 16/13 20669990:
+  `aWithdrawnArrivalLeavesTheAwardItsExitMade`).
+- **A pending exit awaiting an arrival can still deliver.** A held exit sent on as a pending walkover, whose other seat
+  holds neither a participant nor a BYE, is a feeder that can still deliver someone, not a dead end; the result no
+  longer depends on whether a later walkover is entered first or last (OLYMPIC 32/30 20609643:
+  `aPendingExitAwaitingAnArrivalCanDeliver`).
+- **A Decider holds nobody until its final is decided.** When the Main final is left with no winner, both Decider seats
+  are cleared; a final decided for a seat its winner has not reached keeps the seats its links made
+  (DOUBLE_ELIMINATION 8/5 20722665: `aDeciderHoldsNobodyUntilItsFinalIsDecided`).
+- **A carrier under a stale double exit is not awarded.** An occupant carrying an exit is not awarded a produced exit
+  on a matchUp that still reads a double exit from an earlier pass of the same mutation (OLYMPIC 32/30 20625776:
+  `aCarrierUnderAStaleDoubleExitIsNotAwarded`).
 
 ### Nothing to do is success, not failure
 

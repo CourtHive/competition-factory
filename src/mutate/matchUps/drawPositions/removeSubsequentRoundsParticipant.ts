@@ -220,6 +220,7 @@ function removeDrawPosition({
   if (matchUp.roundNumber === roundNumber && participatesInExitCascade({ matchUp })) {
     recordSourceSideProvenance({
       inContextDrawMatchUps: inContextDrawMatchUps ?? [],
+      seatAwaitsSourceWinner: true,
       drawPositions: matchUp.drawPositions,
       sourceMatchUpStatus,
       sourceMatchUpId,

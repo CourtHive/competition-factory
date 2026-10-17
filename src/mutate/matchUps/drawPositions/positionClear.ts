@@ -592,6 +592,40 @@ function removeDrawPosition({
 
 const isPosition = (drawPosition: unknown): boolean => typeof drawPosition === 'number' && drawPosition > 0;
 
+/**
+ * A HOLE'S CARRY GOES ON ONLY INTO THE MATCHUP ITS OWN MATCHUP FEEDS.
+ *
+ * A lone position's partner is nobody, but its matchUp can still have sent something on through that hole: a carried
+ * exit that met the position's BYE passed it (RULE 1) into the next round with no drawPosition of its own. Clearing
+ * the BYE takes that carry back ("a carry past a BYE a holder takes back comes back with it"), so the removal walks
+ * on, into the matchUp the lone matchUp feeds and nowhere else. That matchUp is read structurally, the way
+ * `getRoundMatchUps` chunks a round: a round that does not halve (a feed round) is fed one to one, any other by its
+ * chunk. It is walked into only while it holds a hole too, for a seat a carry can stand on; one holding two positions
+ * holds nothing that came through the hole. Census S8 FEED_IN_CHAMPIONSHIP_TO_SF 8/7 20650915 and COMPASS 32/27
+ * 20611808: with no walk at all the carry stayed one round on beside the position that replaced it, the convergence
+ * re-derived from it, and the matchUp's exit code sat on its winner. Asking the next round for ANY pair holding a hole
+ * is what reset an unrelated matchUp (20806518, `aRemovalWalksOnlyThroughARealPartner`).
+ */
+type RoundPairs = { pairedDrawPositions?: (number | undefined)[][]; matchUpsCount?: number };
+function holeCarriedOnto({
+  nextRoundProfile,
+  relevantPair,
+  profile,
+}: {
+  relevantPair?: (number | undefined)[];
+  nextRoundProfile?: RoundPairs;
+  profile?: RoundPairs;
+}): (number | undefined)[] | undefined {
+  const pairs = profile?.pairedDrawPositions;
+  const nextPairs = nextRoundProfile?.pairedDrawPositions;
+  const index = relevantPair ? (pairs?.indexOf(relevantPair) ?? -1) : -1;
+  if (index < 0 || !nextPairs?.length) return undefined;
+  const chunkFactor = (profile?.matchUpsCount ?? 0) / (nextRoundProfile?.matchUpsCount ?? 0);
+  if (!Number.isInteger(chunkFactor) || chunkFactor < 1) return undefined;
+  const fedPair = nextPairs[Math.floor(index / chunkFactor)];
+  return fedPair?.some((drawPosition: unknown) => !isPosition(drawPosition)) ? fedPair : undefined;
+}
+
 function buildPairingDetails({ roundNumbers, roundProfile, positionAssignments, drawPosition }) {
   let targetDrawPosition: any = drawPosition;
   return roundNumbers
@@ -616,12 +650,13 @@ function buildPairingDetails({ roundNumbers, roundProfile, positionAssignments, 
       // (`draw-positions.md` § 5): a lone position's partner is nobody, and `includes(undefined)` matched every
       // next-round pair holding a hole, so the removal walked into a matchUp the position never reached and reset what
       // stood there (census run 19, FIRST_MATCH_LOSER_CONSOLATION 16/15 policy-off 20806518: a withdrawn reservation at
-      // `Consolation` dp 4 reset `Consolation|3|1`'s produced walkover)
-      const pairedDrawPositionInNextRound =
-        isPosition(pairedDrawPosition) &&
-        nextRoundProfile?.pairedDrawPositions?.find((pairedPositions: any) =>
-          pairedPositions.includes(pairedDrawPosition),
-        );
+      // `Consolation` dp 4 reset `Consolation|3|1`'s produced walkover). What a hole carried on is looked for only in the
+      // matchUp the lone matchUp feeds (`holeCarriedOnto`)
+      const pairedDrawPositionInNextRound = isPosition(pairedDrawPosition)
+        ? nextRoundProfile?.pairedDrawPositions?.find((pairedPositions: any) =>
+            pairedPositions.includes(pairedDrawPosition),
+          )
+        : holeCarriedOnto({ profile, nextRoundProfile, relevantPair });
       // pairedDrawPosition is a transitiveBye if it is a BYE and if it is present in next round
       const isTransitiveBye =
         pairedDrawPositionIsBye &&

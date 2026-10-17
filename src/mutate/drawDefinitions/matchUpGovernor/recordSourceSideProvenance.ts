@@ -23,12 +23,15 @@ type RecordSourceSideProvenanceArgs = {
   drawDefinition?: DrawDefinition;
   inContextDrawMatchUps: any[];
   sourceMatchUpStatus?: MatchUpStatusUnion;
+  /** the seat was just emptied of the source's previous winner, and is the one its re-derived winner takes */
+  seatAwaitsSourceWinner?: boolean;
   matchUpsMap: MatchUpsMap;
   sourceMatchUpId?: string;
   matchUp: MatchUp;
 };
 
 export function recordSourceSideProvenance({
+  seatAwaitsSourceWinner,
   inContextDrawMatchUps,
   sourceMatchUpStatus,
   sourceMatchUpId,
@@ -90,10 +93,22 @@ export function recordSourceSideProvenance({
     // feeds (FRLC w2 9100283: the Main|1|12 walkover's loser passes a consolation BYE into Consolation|2|3). That
     // side IS exiting, so its status stays. Which one arrived is read off the seat: the source's winner is an
     // arrival; anyone else carried the exit in.
+    //
+    // A SEAT EMPTIED FOR THE SOURCE'S WINNER IS NOT A LOSER'S SEAT. A re-score that changes the winner first takes the
+    // old winner out of the rounds they reached, and the removal stamps the seat it empties in the source's own
+    // structure, which holds nobody at that moment. Read off the seat, nobody is the source's winner, so a single
+    // exit was recorded as decided: the new loser's own walkover or default, on the side the new winner is about to
+    // take. Where that matchUp is a BYE the winner's arrival entry is not admitted (`admissibleOn`), so the stale
+    // record stood beside them and was carried past the BYE with them. Before #5444 it then converged with the exit
+    // waiting there into a double exit nobody entered; since #5444 it is withdrawn as a carry stranded from its
+    // carrier, and the withdrawal took back the winner's advancement with it (census S8, FEED_IN_CHAMPIONSHIP 16/11
+    // 20532286 `Consolation|2|3` and COMPASS 32/27 20585407 `West|1|4`, each relabelled from a played win to a
+    // walkover or default the other way: WINNER_NOT_ADVANCED). Only a double exit decides anything for that seat.
     if (sourceMatchUpStatus && sourceMatchUpStatus !== TO_BE_PLAYED) {
       const decided =
         decidesForTheSide(sourceMatchUpStatus) ||
-        !seatHoldsSourceWinner({ inContextDrawMatchUps, drawDefinition, drawPositions, sourceMatchUp, matchUp });
+        (!seatAwaitsSourceWinner &&
+          !seatHoldsSourceWinner({ inContextDrawMatchUps, drawDefinition, drawPositions, sourceMatchUp, matchUp }));
       mergeSideExitProvenance({
         matchUp,
         provenance: {
