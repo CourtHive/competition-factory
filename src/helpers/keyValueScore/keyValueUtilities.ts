@@ -1,3 +1,4 @@
+import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { arrayIndices } from '@Tools/arrays';
 
@@ -76,7 +77,7 @@ function processMatchTiebreakRemoval({
   if (side2TiebreakScore) {
     const highIndex = lowSide === 1 ? 1 : 0;
 
-    matchTiebreakScores[highIndex] = (matchTiebreakScores?.[1 - highIndex] || 0) + (NoAD ? 1 : 2);
+    matchTiebreakScores[highIndex] = (matchTiebreakScores?.[1 - highIndex] || 0) + tiebreakMargin(tiebreakTo, NoAD);
     if ((matchTiebreakScores[highIndex] || 0) < tiebreakTo) matchTiebreakScores[highIndex] = tiebreakTo;
 
     newScore = scoreString.slice(0, lastMatchTiebreakOpenBracketIndex + 1);
@@ -266,7 +267,7 @@ export function lastNumericIndex(str) {
 
 export function getHighTiebreakValue(params?) {
   const { lowValue = 0, NoAD = false, tiebreakTo } = params ?? {};
-  const winBy = NoAD ? 1 : 2;
+  const winBy = tiebreakMargin(parseInt(tiebreakTo), NoAD);
   if (lowValue + 1 >= tiebreakTo) {
     return lowValue + winBy;
   }

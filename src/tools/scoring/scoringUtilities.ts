@@ -197,6 +197,16 @@ export function isStandardSetTiebreak(
   return side1Games === tiebreakAt && side2Games === tiebreakAt;
 }
 
+/**
+ * The margin a tiebreak is won by: one when it is no-ad, or when its target is one (an `F:TB1` decider is
+ * a single sudden-death point, CA 2026-10-17); otherwise two. Scoring, points-to, score entry, the
+ * complement and the validators all read this one rule.
+ */
+export function tiebreakMargin(tiebreakTo: number | undefined, NoAD?: boolean): number {
+  if (NoAD) return 1;
+  return typeof tiebreakTo === 'number' ? Math.min(2, tiebreakTo) : 2;
+}
+
 /** Which inputs a segment can be scored with: points, games, or set totals (addSet). */
 export type InputLevels = { point: boolean; game: boolean; set: boolean };
 
