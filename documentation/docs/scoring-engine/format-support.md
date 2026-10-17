@@ -110,6 +110,32 @@ engine.endSegment();
 // Segment score is finalized, next segment begins
 ```
 
+### Points-based and games-based segments
+
+A points-based segment (`T{minutes}P`) counts points: each point adds one (or its `scoreValue`) to the
+segment score. What a point does in a games-based segment (`T{minutes}`, `T{minutes}G`) depends on the
+format:
+
+- **Under the SET root, not aggregate** (`SET3-S:T10`, `SET3-S:T10-G:TN3D`): a tennis-family timed set.
+  Points build traditional games, with deuce, No-Ad (`NOAD`) and deuce caps (`-G:TN{n}D`), and the
+  segment score counts games. Service alternates game by game.
+- **Under another root** (`HAL2A-S:T45`, `QTR4A-S:T12`, `RND12A-S:T3`), **standalone** (`T90`), or in an
+  **aggregate** format (`SET2XA-S:T10`): a point is one of the sport's own scoring units (a goal, a
+  basket, an INTENNSE bolt's point), so each point adds one (or its `scoreValue`).
+
+### A tiebreak at time
+
+A timed segment that declares a tiebreak (`T20/TB7`, `T10P/TB1`) plays it when the segment is level at
+time. `endSegment` on a level segment opens the tiebreak instead of closing the segment; points then go
+to the tiebreak, and its winner takes the segment by one game (or point), recorded like a tennis
+tiebreak: `SET3-S:T20/TB7` level 1-1 and won 7-0 in the tiebreak is `2-1 (7-0)`. A tiebreak to one
+(`TB1`) is sudden death.
+
+### The final segment of an exactly format
+
+In a non-aggregate exactly format, `-F:` governs set N: `SET4X-S:T20P-F:T20` plays its fourth segment
+in games, whatever the count before it.
+
 ## Consecutive Game Formats
 
 The `-G:NC` game modifier makes a game a run of N consecutive points: the first side to win N points
