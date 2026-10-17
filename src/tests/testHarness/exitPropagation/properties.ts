@@ -1,6 +1,6 @@
 import { clearOutcome, getDrawDefinition, getDrawMatchUps, hash, observeMutation, stableHash } from './transitions';
-import { decidedMatchUpIds, projectDraw } from './transitions';
-import type { PropertyFailure } from './transitions';
+import { checkErrorAtomicity, decidedMatchUpIds, projectDraw } from './transitions';
+import type { Observation, PropertyFailure } from './transitions';
 import { isDoubleExit } from '@Validators/isExit';
 
 /**
@@ -11,7 +11,57 @@ import { isDoubleExit } from '@Validators/isExit';
  * decline a clear (PROPAGATED_EXITS_DOWNSTREAM, CANNOT_CHANGE_WINNING_SIDE); what it is not
  * entitled to do is accept one and leave residue behind. Conflating those two would make the
  * properties fire on correct behaviour, and a harness that cries wolf gets muted.
+ *
+ * A refusal excuses the requested TRANSITION, never a write. Every call a property makes (the forward apply, the
+ * second apply, the clear) runs `checkErrorAtomicity`, so a refusal or a throw that wrote is reported from here.
+ * Census replay only ran that check on the schedule's own steps, and these returned `[]` on any error: an
+ * observation `{ error, mutated: true }` passed all three (assessment 2026-10-17, finding 2).
  */
+
+/**
+ * What a property actually EXECUTED, as opposed to what it was asked to check.
+ *
+ * A property that returns `[]` may have checked its claim, or may have stopped at a refused or no-op forward call
+ * and checked nothing. Census replay ran the three on one shared draw, so monotonicity's apply left idempotence and
+ * do/undo seeing `mutated: false` and returning: there were no clear operations in census replay at all (assessment
+ * 2026-10-17, finding 1). A caller passes an accumulator to tell the two apart.
+ */
+export type RelationalCoverage = {
+  /** forward applies attempted, and those that wrote */
+  forward: number;
+  forwardMutated: number;
+  /** forward applies refused or thrown */
+  forwardRefused: number;
+  /** second applies (idempotence) and clears (do/undo) that ran */
+  secondApply: number;
+  clear: number;
+  /** clears refused: a legitimate refusal, but the round trip did not complete */
+  clearRefused: number;
+};
+
+export const emptyCoverage = (): RelationalCoverage => ({
+  forward: 0,
+  forwardMutated: 0,
+  forwardRefused: 0,
+  secondApply: 0,
+  clear: 0,
+  clearRefused: 0,
+});
+
+type RelationalParams = {
+  coverage?: RelationalCoverage;
+  propagateExitStatus?: boolean;
+  matchUpId: string;
+  drawId: string;
+  outcome: any;
+};
+
+function countForward(coverage: RelationalCoverage | undefined, applied: Observation) {
+  if (!coverage) return;
+  coverage.forward += 1;
+  if (applied.mutated) coverage.forwardMutated += 1;
+  if (applied.error || applied.thrown) coverage.forwardRefused += 1;
+}
 
 /**
  * DO_UNDO_IDENTITY — applying an outcome and then clearing it must restore the prior draw.
@@ -21,20 +71,27 @@ import { isDoubleExit } from '@Validators/isExit';
  * later in a real tournament. It is also the general form of the partial-mutation class: a write
  * that errors halfway cannot be undone, so the round trip diverges.
  */
-export function checkDoUndoIdentity({ propagateExitStatus, matchUpId, drawId, outcome }): PropertyFailure[] {
+export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[] {
+  const { propagateExitStatus, matchUpId, drawId, outcome, coverage } = params;
   const before = stableHash(projectDraw(getDrawDefinition(drawId)));
 
   const applied = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome });
-  // the forward mutation being refused is not this property's business — checkErrorAtomicity
-  // already covers refusals, and there is nothing to undo.
-  if (applied.error || applied.thrown || !applied.mutated) return [];
+  countForward(coverage, applied);
+  // a refused forward call leaves nothing to undo, but it must not have written
+  if (applied.error || applied.thrown) return checkErrorAtomicity(applied, matchUpId);
+  if (!applied.mutated) return [];
 
   const cleared = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome: clearOutcome });
+  if (coverage) coverage.clear += 1;
   if (cleared.thrown) {
     return [{ property: 'DO_UNDO_IDENTITY', matchUpId, detail: `clear threw: ${cleared.thrown}` }];
   }
-  // a refused clear is legitimate: the engine may decline to unwind a propagated exit.
-  if (cleared.error) return [];
+  // a refused clear is legitimate: the engine may decline to unwind a propagated exit. A refused clear that WROTE
+  // is not.
+  if (cleared.error) {
+    if (coverage) coverage.clearRefused += 1;
+    return checkErrorAtomicity(cleared, matchUpId);
+  }
 
   const after = stableHash(projectDraw(getDrawDefinition(drawId)));
   if (after === before) return [];
@@ -54,11 +111,17 @@ export function checkDoUndoIdentity({ propagateExitStatus, matchUpId, drawId, ou
  * A non-idempotent mutation means a client that retries on failure corrupts progressively, which
  * is exactly what the DOUBLE_ELIMINATION defect does today.
  */
-export function checkIdempotence({ propagateExitStatus, matchUpId, drawId, outcome }): PropertyFailure[] {
+export function checkIdempotence(params: RelationalParams): PropertyFailure[] {
+  const { propagateExitStatus, matchUpId, drawId, outcome, coverage } = params;
   const first = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome });
-  if (first.error || first.thrown || !first.mutated) return [];
+  countForward(coverage, first);
+  if (first.error || first.thrown) return checkErrorAtomicity(first, matchUpId);
+  if (!first.mutated) return [];
 
   const second = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome, priorHash: first.after });
+  if (coverage) coverage.secondApply += 1;
+  // a second apply may be refused (nothing to do), but it must not throw
+  if (second.thrown) return checkErrorAtomicity(second, matchUpId);
   if (!second.mutated) return [];
 
   return [
@@ -136,11 +199,13 @@ export function isProvisionalDecision(matchUp: any): boolean {
  * A census run from before that fix will still show the class. Counts taken across it are not
  * comparable with counts taken after, which is the same caveat the 6.38.0 baseline carries.
  */
-export function checkMonotonicity({ propagateExitStatus, matchUpId, drawId, outcome }): PropertyFailure[] {
+export function checkMonotonicity(params: RelationalParams): PropertyFailure[] {
+  const { propagateExitStatus, matchUpId, drawId, outcome, coverage } = params;
   const beforeMatchUps = getDrawMatchUps(drawId);
   const before = decidedMatchUpIds(beforeMatchUps);
   const applied = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome });
-  if (applied.error || applied.thrown) return [];
+  countForward(coverage, applied);
+  if (applied.error || applied.thrown) return checkErrorAtomicity(applied, matchUpId);
 
   const after = decidedMatchUpIds(applied.matchUps);
   const undecided = [...before].filter((id) => !after.has(id));

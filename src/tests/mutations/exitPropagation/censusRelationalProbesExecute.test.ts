@@ -1,0 +1,86 @@
+import { emptyCoverage } from '@Tests/testHarness/exitPropagation/properties';
+import { clearOutcome } from '@Tests/testHarness/exitPropagation/transitions';
+import { replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { setSubscriptions } from '@Global/state/globalState';
+import { afterEach, expect, it, vi } from 'vitest';
+import tournamentEngine from '@Engines/syncEngine';
+
+// constants
+import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+
+/**
+ * CENSUS REPLAY EXECUTES THE ROUND TRIPS IT CLAIMS, AND POLICES EVERY WRITE THEY MAKE (assessment 2026-10-17,
+ * findings 1 and 2).
+ *
+ * `replay` ran monotonicity, idempotence and do/undo back to back on one draw. Monotonicity applied the probe's
+ * outcome and kept it, so idempotence and do/undo saw `mutated: false` on their first call and returned: no second
+ * apply and no clear ran anywhere in census replay. And every relational property returned `[]` on a refused forward
+ * call or a refused clear, without asking whether the refusal wrote.
+ *
+ * Each case below plants a fault the census must catch, and drives it through `replay` itself, not through a direct
+ * property call (which always ran the round trip from a fresh draw). Both faults pass undetected through the shared
+ * draw and the early returns.
+ */
+
+const config = {
+  drawType: SINGLE_ELIMINATION,
+  propagateExitStatus: true,
+  participantsCount: 8,
+  drawSize: 8,
+  seed: 42,
+};
+
+const isClear = (params: any) => params?.outcome === clearOutcome;
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+it('every probe runs its second apply and its clear', () => {
+  setSubscriptions({});
+  const coverage = emptyCoverage();
+  expect(replay(config, [], 'relational-coverage', undefined, coverage)).toBeNull();
+
+  // three probes, three properties each, each forward call starting from the setup state
+  expect(coverage.forward).toEqual(9);
+  expect(coverage.forwardMutated).toEqual(9);
+  expect(coverage.secondApply).toEqual(3);
+  expect(coverage.clear).toEqual(3);
+  expect(coverage.clearRefused).toEqual(0);
+});
+
+it('a clear that silently does nothing is caught through replay', () => {
+  setSubscriptions({});
+  const setMatchUpStatus = tournamentEngine.setMatchUpStatus;
+  vi.spyOn(tournamentEngine, 'setMatchUpStatus').mockImplementation((params: any) =>
+    isClear(params) ? { success: true } : setMatchUpStatus(params),
+  );
+
+  const failure = replay(config, [], 'relational-planted-undo');
+  expect(failure?.property).toEqual('DO_UNDO_IDENTITY');
+});
+
+it('a forward call that writes and then refuses is caught through replay', () => {
+  setSubscriptions({});
+  const setMatchUpStatus = tournamentEngine.setMatchUpStatus;
+  vi.spyOn(tournamentEngine, 'setMatchUpStatus').mockImplementation((params: any) => {
+    const result = setMatchUpStatus(params);
+    return isClear(params) ? result : { error: INVALID_VALUES };
+  });
+
+  const failure = replay(config, [], 'relational-planted-write');
+  expect(failure?.property).toEqual('ERROR_IMPLIES_NO_MUTATION');
+});
+
+it('a clear that writes and then refuses is caught through replay', () => {
+  setSubscriptions({});
+  const setMatchUpStatus = tournamentEngine.setMatchUpStatus;
+  vi.spyOn(tournamentEngine, 'setMatchUpStatus').mockImplementation((params: any) => {
+    const result = setMatchUpStatus(params);
+    return isClear(params) ? { error: INVALID_VALUES } : result;
+  });
+
+  const failure = replay(config, [], 'relational-planted-clear');
+  expect(failure?.property).toEqual('ERROR_IMPLIES_NO_MUTATION');
+});
