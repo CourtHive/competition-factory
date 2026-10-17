@@ -312,6 +312,7 @@ export function modifyTournamentRecord(params) {
   }
 
   const venueIds = venueProfiles?.length ? generateVenues({ tournamentRecord, venueProfiles }) : [];
+  if (!Array.isArray(venueIds)) return venueIds;
 
   const schedulingResult = applySchedulingProfile({
     tournamentRecord,
