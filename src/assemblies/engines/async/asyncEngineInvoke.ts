@@ -1,9 +1,9 @@
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
-import { deleteNotices, getInvokeObserver, getMethods } from '@Global/state/globalState';
+import { deleteNotices, getDevContext, getInvokeObserver, getMethods } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
 import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
-import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
+import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { isFunction, isObject, isString } from '@Tools/objects';
 import { withCapturedClockAsync } from '@Tools/clock';
@@ -44,9 +44,12 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
     try {
       result = (await executeFunction(engine, method, params, methodName, 'async')) ?? {};
     } catch (err) {
-      // thrown only under devContext (otherwise executeFunction catches): restore, then surface it
+      // executeFunction catches a SYNC throw outside devContext, but an async method's rejection arrives after it has
+      // returned. Restore, then answer as the sync engine does: rethrow under devContext, otherwise the
+      // caught-error envelope
       if (captured) restoreOperation(captured);
-      throw err;
+      if (getDevContext()) throw err;
+      return caughtErrorResult({ methodName, params, err });
     }
 
     if (result?.error && captured) {
