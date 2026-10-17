@@ -835,6 +835,12 @@ by a named test that fails without it.
   first pass left pending with that same exit on the arrival side, nothing new has arrived: the pending exit stays
   pending and is not advanced from as though decided. A double walkover corrected to a default leaves the draw that
   the default alone leaves (DOUBLE_ELIMINATION 16/11 21030358: `anExitReDeliveredIntoItsOwnSeatIsNotSentOn`).
+- **A double exit's own position leaves every round it reached.** A participant arriving opposite a double exit's
+  produced exit is advanced at once, past any BYE beyond; when their own exit then converges the matchUp, the
+  position is taken back from every round it went on to, a double exit there included, since a double exit
+  advances nobody. When that leaves a single produced exit, it awards no empty seat and stands pending, as forward
+  play lands it. A double default corrected to a walkover leaves the draw that the walkover alone leaves
+  (FEED_IN_CHAMPIONSHIP 16/11 21123326: `aDoubleExitsOwnPositionLeavesEveryRoundItReached`).
 
 ### Nothing to do is success, not failure
 

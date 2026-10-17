@@ -1142,6 +1142,27 @@ export type WithdrawnExit = {
   matchUpId: string;
 };
 
+/** The single exit a re-derivation leaves was PRODUCED by a double exit, and the seat it would award holds nobody. */
+function awardsEmptySeat({
+  drawDefinition,
+  exitsRetained,
+  structureId,
+  derived,
+  matchUp,
+}: {
+  derived: { winningSide?: number };
+  exitsRetained: SideExitProvenance;
+  drawDefinition?: DrawDefinition;
+  structureId: string;
+  matchUp: MatchUp;
+}): boolean {
+  const winningSide = derived.winningSide as 1 | 2;
+  if (!isDoubleExit(exitsRetained[(3 - winningSide) as 1 | 2]?.previousMatchUpStatus)) return false;
+  const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
+  const seat = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber: winningSide });
+  return !positionAssignmentsOf(structure)?.find((assignment) => assignment.drawPosition === seat)?.participantId;
+}
+
 /** Does a BYE hold one of this matchUp's drawPositions? Read from the structure's assignments. */
 function holdsBye({
   drawDefinition,
@@ -1327,7 +1348,11 @@ function withdrawFromMatchUp(
       // read structurally, as the undecided branch below does: a lone position sits at index 0 whatever its side
       const previousWinnerDrawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
       matchUp.matchUpStatus = derived.matchUpStatus as any;
-      if (derived.winningSide) matchUp.winningSide = derived.winningSide;
+      // ...and a PRODUCED exit left alone awards no empty seat: it stands pending, as forward play lands it (census S8
+      // policy-off, FEED_IN_CHAMPIONSHIP 16/11 21123326: `Consolation|5|1`, a double walkover dissolved to the walkover
+      // `Consolation|3|1` produced, was awarded to the side nobody had reached)
+      if (derived.winningSide && !awardsEmptySeat({ derived, exitsRetained, drawDefinition, structureId, matchUp }))
+        matchUp.winningSide = derived.winningSide;
       else delete matchUp.winningSide;
       return {
         winnerDrawPosition: previousWinnerDrawPosition,
