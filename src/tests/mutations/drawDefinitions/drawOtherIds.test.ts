@@ -25,7 +25,6 @@ describe('addDrawOtherId', () => {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     return { drawId, eventId };
@@ -132,7 +131,6 @@ describe('setDrawOtherIds', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     return drawId;
@@ -200,7 +198,6 @@ describe('drawOrigin + the draws read-model row', () => {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     tournamentEngine.addDrawOtherId({

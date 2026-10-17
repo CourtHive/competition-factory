@@ -91,7 +91,7 @@ function getEventDataUnredacted(params: GetEventDataArgs): {
   const { tournamentId, endDate } = tournamentRecord;
 
   const publishStatus = getEventPublishStatus({ event, status });
-  const eventPublishState = getPublishState({ event }).publishState ?? {};
+  const eventPublishState = getPublishState({ event, status }).publishState ?? {};
   const eventPublished = !!eventPublishState?.status?.published;
 
   const { participants: tournamentParticipants } = getParticipants({

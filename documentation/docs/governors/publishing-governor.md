@@ -34,6 +34,15 @@ const {
 } = eventState;
 ```
 
+### Query Another Status Key
+
+Every read is taken from one publish status key, `PUBLIC` unless `status` names another. See
+[Status Keys](../concepts/publishing/publishing-status-keys.md).
+
+```js
+const { publishState } = engine.getPublishState({ status: 'INTERNAL' });
+```
+
 ### Query Specific Event
 
 ```js

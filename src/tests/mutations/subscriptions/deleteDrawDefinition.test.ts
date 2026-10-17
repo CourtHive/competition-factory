@@ -23,7 +23,6 @@ it('can notify subscriber when drawDefinitions are deleted', () => {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   const auditTrail: any[] = [];

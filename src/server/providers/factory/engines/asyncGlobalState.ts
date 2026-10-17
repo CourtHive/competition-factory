@@ -360,4 +360,7 @@ export function handleCaughtError({ engineName, methodName, params, err }: Handl
     methodName,
     error,
   });
+
+  // the envelope, as the sync provider returns it: a handler that returns nothing turns a throw into `{}`
+  return { error };
 }

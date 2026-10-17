@@ -18,7 +18,6 @@ it('can set entryPositions', () => {
     eventIds: [eventId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 

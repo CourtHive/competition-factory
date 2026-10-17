@@ -20,7 +20,6 @@ it('when no audit topic is found will add draw deletions extension', () => {
     drawIds: [drawId],
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     setState: true,
     drawProfiles,
   });
@@ -58,7 +57,6 @@ it('can notify subscriber when audit information is added', () => {
     eventIds: [eventId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -101,7 +99,6 @@ it('subscriptions can be removed by providing a non-function value', () => {
     drawIds: [drawId],
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     setState: true,
     drawProfiles,
   });

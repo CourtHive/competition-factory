@@ -311,16 +311,14 @@ describe('modifyEvent - Extended Coverage', () => {
   });
 
   it('checks participant ages against category', () => {
-    const youngBirthDate = '2010-01-01';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [
         {
           eventId,
           eventName: 'Test Event',
-          participantsProfile: {
-            participantsCount: 2,
-            personExtensions: [{ birthDate: youngBirthDate }],
-          },
+          // an eventProfile's participantsProfile is read only for its count on this path (a
+          // personExtensions entry here was never read, and was not an extension)
+          participantsProfile: { participantsCount: 2 },
         },
       ],
     });

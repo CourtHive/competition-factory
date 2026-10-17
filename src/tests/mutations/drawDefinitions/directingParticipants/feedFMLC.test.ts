@@ -18,7 +18,6 @@ it('Feeds both consolation rounds TOP_DOWN', () => {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

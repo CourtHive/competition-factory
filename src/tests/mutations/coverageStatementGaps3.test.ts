@@ -1006,10 +1006,13 @@ describe('randomUnseededSeparation via avoidance', () => {
         {
           drawSize: 16,
           seedsCount: 4,
-          avoidance: {
-            policyAttributes: [{ key: 'person.nationalityCode' }],
-            roundsToSeparate: 2,
-            candidatesCount: 2,
+          // in policyDefinitions: a drawProfile `avoidance` key was never read, so no avoidance ran
+          policyDefinitions: {
+            avoidance: {
+              policyAttributes: [{ key: 'person.nationalityCode' }],
+              roundsToSeparate: 2,
+              candidatesCount: 2,
+            },
           },
         },
       ],
@@ -1026,9 +1029,11 @@ describe('randomUnseededSeparation via avoidance', () => {
         {
           drawSize: 8,
           drawType: ROUND_ROBIN,
-          avoidance: {
-            policyAttributes: [{ key: 'person.nationalityCode' }],
-            roundsToSeparate: 1,
+          policyDefinitions: {
+            avoidance: {
+              policyAttributes: [{ key: 'person.nationalityCode' }],
+              roundsToSeparate: 1,
+            },
           },
         },
       ],

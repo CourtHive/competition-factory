@@ -1,7 +1,6 @@
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
-import { Extension, Participant, Tournament } from '@Types/tournamentTypes';
 import { addTournamentParticipants } from './addTournamentParticipants';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
@@ -20,7 +19,7 @@ import { now } from '@Tools/clock';
 
 // constants and fixtures
 import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { ParticipantsProfile, PolicyDefinitions } from '@Types/factoryTypes';
+import type { GenerateTournamentRecordArgs } from '@Types/mocksTypes';
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -49,35 +48,6 @@ const mockTournamentNames = [
   'Racket Rally',
   'Stats Fail',
 ];
-
-type GenerateTournamentRecordArgs = {
-  // Pre-built participants supplied by the caller. When non-empty, factory
-  // adds them directly to the tournament instead of synthesizing mocks via
-  // `addTournamentParticipants` / `generateEventParticipants`. Used by
-  // ingest pipelines (courthive-ingest's federation adapters) where stable
-  // provider-issued IDs need to be preserved through the generated shape.
-  participants?: Participant[];
-  participantsProfile?: ParticipantsProfile;
-  scheduleCompletedMatchUps?: boolean;
-  tournamentExtensions?: Extension[];
-  policyDefinitions?: PolicyDefinitions;
-  completeAllMatchUps?: boolean;
-  tournamentAttributes?: Partial<Tournament>;
-  ratingsParameters?: any;
-  tournamentName?: string;
-  schedulingProfile?: any;
-  scenarioProfile?: any;
-  random?: () => number;
-  autoSchedule?: boolean;
-  leagueProfiles?: any[];
-  eventProfiles?: any[];
-  venueProfiles?: any[];
-  drawProfiles?: any[];
-  startDate?: string;
-  endDate?: string;
-  isMock?: boolean;
-  uuids?: string[];
-};
 
 export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   let { startDate, endDate } = params ?? {};
