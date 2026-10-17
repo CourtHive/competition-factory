@@ -1564,6 +1564,18 @@ export class ScoringEngine {
     const s1 = targetSet.side1Score || 0;
     const s2 = targetSet.side2Score || 0;
 
+    // A tiebreak already under way is decided by its points, not by the clock
+    if (targetSet.side1TiebreakScore !== undefined) return;
+
+    // Level at time, and the set declares `/TB{n}`: the tiebreak decides it (CA 2026-10-17). The set
+    // stays open; its points go to the tiebreak, and the tiebreak's winner closes it.
+    const activeFormat = this.activeSetFormat();
+    if (s1 === s2 && activeFormat?.timed && activeFormat.tiebreakFormat) {
+      targetSet.side1TiebreakScore = 0;
+      targetSet.side2TiebreakScore = 0;
+      return;
+    }
+
     if (s1 > s2) targetSet.winningSide = 1;
     else if (s2 > s1) targetSet.winningSide = 2;
 
