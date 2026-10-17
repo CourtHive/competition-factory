@@ -40,7 +40,6 @@ it('can set and return matchUpFormat codes', () => {
     eventIds: [eventId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
     startDate,
   });

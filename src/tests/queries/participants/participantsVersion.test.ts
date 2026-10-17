@@ -23,7 +23,6 @@ describe('participantsVersion', () => {
   function loadTournament() {
     return mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 16, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
   }

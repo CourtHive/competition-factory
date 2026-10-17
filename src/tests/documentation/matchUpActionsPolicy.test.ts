@@ -31,7 +31,6 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
     it('verifies all 7 core action types are available', () => {
       const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 16, participantsCount: 16 }],
-        inContext: true,
       });
 
       tournamentEngine.setState(tournamentRecord);
@@ -105,7 +104,6 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
     it('enables all actions by default', () => {
       const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 16, participantsCount: 16 }],
-        inContext: true,
       });
 
       tournamentEngine.setState(tournamentRecord);
@@ -190,7 +188,6 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
     it('enables SCORE action for ready-to-score matchUps', () => {
       const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 16, participantsCount: 16 }],
-        inContext: true,
       });
 
       tournamentEngine.setState(tournamentRecord);
@@ -318,7 +315,6 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
     it('supports stage-specific action control', () => {
       const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 16, participantsCount: 16 }],
-        inContext: true,
       });
 
       tournamentEngine.setState(tournamentRecord);
@@ -529,7 +525,6 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
     it('provides executable method and payload for SCORE action', () => {
       const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 16, participantsCount: 16 }],
-        inContext: true,
       });
 
       tournamentEngine.setState(tournamentRecord);
@@ -570,7 +565,6 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
     it('can execute SCORE action using provided structure', () => {
       const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 16, participantsCount: 16 }],
-        inContext: true,
       });
 
       tournamentEngine.setState(tournamentRecord);
@@ -650,7 +644,6 @@ describe('MatchUp Actions Policy Documentation Tests', () => {
     it('reports structure completion status', () => {
       const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 4, participantsCount: 4 }],
-        inContext: true,
       });
 
       tournamentEngine.setState(tournamentRecord);

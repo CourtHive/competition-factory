@@ -71,6 +71,7 @@ import type { toggleParticipantCheckInState } from '@Mutate/timeItems/matchUps/t
 import type { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import type { getScenarioScheduleProjection } from '@Query/matchUps/scheduling/getScenarioScheduleProjection';
 import type { swapAdHocRounds } from '@Mutate/drawDefinitions/structureGovernor/adHocRounds/swapAdHocRounds';
+import type { cleanExpiredMutationLocks } from '@Mutate/tournaments/mutationLocks/cleanExpiredMutationLocks';
 import type { getCompetitionLeaderboard } from '@Query/drawDefinition/competition/getCompetitionLeaderboard';
 import type { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 import type { getEligibleEvents, getParticipantEligibility } from '@Query/entries/getParticipantEligibility';
@@ -203,7 +204,6 @@ import type { removePracticeRegistration } from '@Mutate/practice/removePractice
 import type { setPracticeDefaultCapacity } from '@Mutate/practice/setPracticeDefaultCapacity';
 import type { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
 import type { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
-import type { cleanExpiredMutationLocks } from '@Query/tournaments/cleanExpiredMutationLocks';
 import type { getTournamentCompleteness } from '@Query/tournaments/getTournamentCompleteness';
 import type { addQualifyingStructure } from '@Mutate/drawDefinitions/addQualifyingStructure';
 import type { destroyPairEntries, destroyPairEntry } from '@Mutate/entries/destroyPairEntry';

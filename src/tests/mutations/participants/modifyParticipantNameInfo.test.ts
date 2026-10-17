@@ -20,7 +20,6 @@ describe('modifyParticipant — participantName precedence is surfaced', () => {
   function loadParticipant() {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8 }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     const participant = (tournamentRecord.participants ?? []).find((p: any) => p.participantType === INDIVIDUAL);

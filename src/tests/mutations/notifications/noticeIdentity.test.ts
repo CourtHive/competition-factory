@@ -24,7 +24,6 @@ describe('notice identity envelope', () => {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
 
@@ -61,7 +60,6 @@ describe('notice identity envelope', () => {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
 

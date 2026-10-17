@@ -15,7 +15,6 @@ const DRAW_PROFILES = [{ participantsCount: 30, drawSize: 32 }];
 
 function seedTournament() {
   const result = mocksEngine.generateTournamentRecord({
-    inContext: true,
     setState: true,
     drawProfiles: DRAW_PROFILES,
   });

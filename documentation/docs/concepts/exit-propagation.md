@@ -830,6 +830,11 @@ by a named test that fails without it.
   participant through BYEs to the source round of a WINNER link, opposite a BYE; they cross the link as one advanced
   there by any other route does, because the crossing is asked again after the production and not only before it
   (DOUBLE_ELIMINATION 16/11 21138954: `aProducedConvergenceCrossesTheLinkItReaches`).
+- **An exit re-delivered into its own seat is not sent on.** A double exit that re-settles (one side's carried exit
+  becoming a produced one) propagates again. Where its produced exit, passed on through a BYE, reaches the matchUp its
+  first pass left pending with that same exit on the arrival side, nothing new has arrived: the pending exit stays
+  pending and is not advanced from as though decided. A double walkover corrected to a default leaves the draw that
+  the default alone leaves (DOUBLE_ELIMINATION 16/11 21030358: `anExitReDeliveredIntoItsOwnSeatIsNotSentOn`).
 - **A loser seat holding a BYE is not converged.** A convergence whose loser seat already holds a BYE leaves that
   matchUp a BYE, even when the matchUp also holds a pending exit and nobody else: the BYE is the record of the loser
   who will never arrive, and the pending exit passes through it. A BYE placed in a seat a convergence had produced into

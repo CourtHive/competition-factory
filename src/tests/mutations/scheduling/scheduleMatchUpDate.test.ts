@@ -16,7 +16,6 @@ it('can re-schedule matchUp date backwards and forwards in time', () => {
     },
   ];
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
     startDate,
     endDate,

@@ -175,7 +175,7 @@ function generateAndAddDraw({
   const drawExtensions = drawProfile?.drawExtensions;
   if (Array.isArray(drawExtensions)) {
     drawExtensions
-      .filter(isValidExtension)
+      .filter((extension) => isValidExtension({ extension }))
       .forEach((extension) => addExtension({ element: drawDefinition, extension }));
   }
 

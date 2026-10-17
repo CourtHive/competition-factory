@@ -1,3 +1,4 @@
+export { cleanExpiredMutationLocks } from '@Mutate/tournaments/mutationLocks/cleanExpiredMutationLocks';
 export { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 export { removeMutationLock } from '@Mutate/tournaments/mutationLocks/removeMutationLock';
 export { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
