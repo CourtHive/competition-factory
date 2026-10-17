@@ -453,6 +453,26 @@ function handleLoserMatchUp({
     });
   }
 
+  /**
+   * A LOSER SEAT THAT ALREADY HOLDS A BYE IS SETTLED, and the BYE is its record: nothing is produced onto it. A produced
+   * walkover awarded to an empty seat claims the BYE its loser would have taken (P39); when a carrier later converges
+   * that matchUp, the double exit's own loser seat is that BYE. Forward entry leaves it so in every order; the
+   * correction route recorded the produced exit on the BYE's own seat and sent it on, and the matchUp beyond read a
+   * pending walkover in that order alone (census S6 Class B 20694910, COMPASS 32/30 policy-off: `South|1|2` dp 3,
+   * `South|2|1`). Two opposed debate agents measured keeping the BYE against owing the seat the produced exit; both
+   * concluded the BYE stays.
+   *
+   * It is asked BEFORE the empty-exit branch. A seat can become a BYE while its matchUp holds only a pending exit from
+   * the other side: a convergence of two carriers loses one to a double exit upstream, is re-derived and withdrawn from
+   * the seat, and is owed a BYE there instead. Re-converging, it found a pending walkover with nobody in it and made it
+   * a double walkover over the BYE; entered with the BYE first, the matchUp is a BYE relaying the other exit (census
+   * policy-off 20551581, COMPASS 32/31: `South|1|4`'s loser seat in `Southeast|1|2`).
+   */
+  const { positionAssignments } = getPositionAssignments({ structureId: loserMatchUp.structureId, drawDefinition });
+  if (positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition)?.bye) {
+    return { ...SUCCESS };
+  }
+
   if (loserMatchUpIsEmptyExit) {
     return handleEmptyExitLoser({
       loserTargetDrawPosition,
@@ -474,19 +494,6 @@ function handleLoserMatchUp({
     return { ...SUCCESS };
   }
 
-  /**
-   * A LOSER SEAT THAT ALREADY HOLDS A BYE IS SETTLED, and the BYE is its record: nothing is produced onto it. A produced
-   * walkover awarded to an empty seat claims the BYE its loser would have taken (P39); when a carrier later converges
-   * that matchUp, the double exit's own loser seat is that BYE. Forward entry leaves it so in every order; the
-   * correction route recorded the produced exit on the BYE's own seat and sent it on, and the matchUp beyond read a
-   * pending walkover in that order alone (census S6 Class B 20694910, COMPASS 32/30 policy-off: `South|1|2` dp 3,
-   * `South|2|1`). Two opposed debate agents measured keeping the BYE against owing the seat the produced exit; both
-   * concluded the BYE stays.
-   */
-  const { positionAssignments } = getPositionAssignments({ structureId: loserMatchUp.structureId, drawDefinition });
-  if (positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition)?.bye) {
-    return { ...SUCCESS };
-  }
   const { feedRound, matchUpId } = loserMatchUp;
   // the side opposite the loser's target position, read structurally: a lone position's side is not its index
   const loserTargetSide = getDrawPositionSideNumber({

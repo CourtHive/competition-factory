@@ -826,6 +826,11 @@ by a named test that fails without it.
   placed again, because the losing side is still the produced exit and can never send a loser. A walkover corrected
   to a played result leaves the draw that the played result alone leaves (COMPASS 8/8 20853116:
   `aDissolvedConvergenceOwesItsLoserSeatTheByeAgain`).
+- **A loser seat holding a BYE is not converged.** A convergence whose loser seat already holds a BYE leaves that
+  matchUp a BYE, even when the matchUp also holds a pending exit and nobody else: the BYE is the record of the loser
+  who will never arrive, and the pending exit passes through it. A BYE placed in a seat a convergence had produced into
+  therefore reaches the draw the same results reach with the BYE placed first (COMPASS 32/31 20551581:
+  `aLoserSeatHoldingAByeIsNotConverged`).
 
 ### Nothing to do is success, not failure
 
