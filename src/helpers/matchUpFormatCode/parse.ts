@@ -488,7 +488,7 @@ function parseTimedSet(formatstring: string): SetFormat | undefined {
   // If no suffix, leave 'based' undefined (games is default)
 
   // Parse set-level tiebreak (if present)
-  // Note: This is notation only for tournament directors
+  // A timed set level at time plays this tiebreak (CA 2026-10-17)
   const setTiebreakTo = parts?.[3];
   if (setTiebreakTo) {
     const tiebreakToNumber = getNumber(setTiebreakTo);
