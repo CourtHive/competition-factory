@@ -45,7 +45,7 @@ import { COMPETITOR } from '@Constants/participantRoles';
 import { OBJECT } from '@Constants/attributeConstants';
 import { SEEDING } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Participant } from '@Types/tournamentTypes';
+import { Category, GenderUnion, Participant, TieFormat, Tournament } from '@Types/tournamentTypes';
 import { nameMocks } from './nameMocks';
 
 function generateEventParticipants({
@@ -842,6 +842,7 @@ export function generateEventWithDraw(params) {
     gender,
     tieFormatName,
     hydrateCollections,
+    random,
     isMock,
   });
 
@@ -1043,6 +1044,19 @@ function buildMockEvent({
   return event;
 }
 
+type ResolveTieFormatArgs = {
+  drawProfile: { tieFormat?: TieFormat; tieFormatId?: string };
+  tournamentRecord?: Tournament;
+  hydrateCollections?: boolean;
+  random?: () => number;
+  tieFormatName?: string;
+  category?: Category;
+  eventType?: string;
+  gender?: GenderUnion;
+  isMock?: boolean;
+  eventId: string;
+};
+
 function resolveTieFormat({
   drawProfile,
   tournamentRecord,
@@ -1052,8 +1066,9 @@ function resolveTieFormat({
   gender,
   tieFormatName,
   hydrateCollections,
+  random,
   isMock,
-}) {
+}: ResolveTieFormatArgs) {
   if (isObject(drawProfile.tieFormat)) return drawProfile.tieFormat;
 
   if (drawProfile.tieFormatId) {
@@ -1068,6 +1083,7 @@ function resolveTieFormat({
       event: { eventId, category, gender },
       namedFormat: tieFormatName,
       hydrateCollections,
+      random,
       isMock,
     });
   }

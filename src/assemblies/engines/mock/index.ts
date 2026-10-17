@@ -3,6 +3,7 @@ import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { factoryVersion } from '@Functions/global/factoryVersion';
+import { withRandomSource } from '@Tools/prng';
 import { withCapturedClock } from '@Tools/clock';
 
 import { setState } from '@Assemblies/engines/parts/stateMethods';
@@ -31,12 +32,15 @@ export const mocksEngine = (() => {
   // enable Middleware
   function engineInvoke(method, params) {
     try {
-      // one instant per generation, captured before anything is written; see tools/clock.ts
-      return withCapturedClock(() => {
-        const generated = method({ ...params });
-        if (!generated?.error) notifySubscribers();
-        return generated;
-      });
+      // one instant per generation, captured before anything is written; see tools/clock.ts. And one
+      // random stream: a seeded call draws ONLY from its seed, threaded or not; see tools/prng.ts
+      return withRandomSource(params?.random, () =>
+        withCapturedClock(() => {
+          const generated = method({ ...params });
+          if (!generated?.error) notifySubscribers();
+          return generated;
+        }),
+      );
     } finally {
       // in finally so that a throw (rethrown under devContext) cannot leave notices or an
       // invocation-scoped devContext behind for the next, unrelated call

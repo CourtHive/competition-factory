@@ -60,6 +60,7 @@ export function processLeagueProfiles(params) {
         event: { eventId, category, gender },
         namedFormat: tieFormatName,
         isMock: params.isMock,
+        random,
       }) ||
       undefined;
 

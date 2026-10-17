@@ -64,6 +64,7 @@ export function generateEventWithFlights(params) {
           namedFormat: tieFormatName,
           event: { eventId, category, gender },
           hydrateCollections,
+          random,
           isMock,
         })
       : undefined);
@@ -95,6 +96,7 @@ export function generateEventWithFlights(params) {
         tournamentRecord,
         eventProfile,
         eventIndex,
+        random,
         uuids,
       })
     : {};

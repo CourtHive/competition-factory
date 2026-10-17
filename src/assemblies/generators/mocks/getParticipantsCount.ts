@@ -7,7 +7,7 @@ import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
 
-export function getParticipantsCount({ participantsProfile, eventProfiles, drawProfiles }) {
+export function getParticipantsCount({ participantsProfile, eventProfiles, drawProfiles, random }) {
   let { participantsCount, participantType = INDIVIDUAL } = participantsProfile ?? {};
   const specifiedParicipantsCount = participantsCount || 0; // capture this to ensure calculated participantsCount is not below
 
@@ -47,7 +47,7 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
     if (isTeam) {
       largestTeamDraw = Math.max(largestTeamDraw, drawSize + alternatesCount);
 
-      tieFormat = typeof tieFormat === 'object' ? tieFormat : tieFormatDefaults({ namedFormat: tieFormatName });
+      tieFormat = typeof tieFormat === 'object' ? tieFormat : tieFormatDefaults({ namedFormat: tieFormatName, random });
 
       const { teamSize, maxDoublesDraw, maxSinglesDraw, genders } = processTieFormat({
         alternatesCount,

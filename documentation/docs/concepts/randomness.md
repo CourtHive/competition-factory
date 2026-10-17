@@ -71,6 +71,12 @@ become `random`, so a nested dispatch does not start a second stream.
 A method's own `random` function can also be passed directly: to a named engine method, through `execute`, or in a
 directive.
 
+For a `mocksEngine` call the seed covers **every** draw the call makes, not only those of generators that take a
+`random` parameter: for the duration of the call its stream is also the source that unthreaded code reads (ids minted
+by draw, venue and tieFormat generation among them), and the previous source is reinstated afterwards. So the same
+`nonRandom`, profile, clock and factory version give a byte-identical record whatever the process's configured source
+is and whatever was generated before it, and a seeded call draws nothing from the configured source.
+
 ## Process-wide, not per request
 
 The configured source is a run configuration, like `schemaWriteMode`: one setting covers every tournament and request

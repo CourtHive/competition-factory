@@ -102,6 +102,7 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
 
   const tournamentRecord = createTournamentRecord({
     ...params.tournamentAttributes,
+    random: params.random,
     tournamentName,
     startDate,
     endDate,

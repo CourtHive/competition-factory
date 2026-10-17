@@ -22,7 +22,9 @@ export function processTieFormat(params) {
   const categories = {};
   const genders = { [MALE]: 0, [FEMALE]: 0, [MIXED]: 0, [OTHER]: 0, [ANY]: 0 };
 
-  const tieFormat = isObject(params.tieFormat) ? params.tieFormat : tieFormatDefaults({ namedFormat: tieFormatName });
+  const tieFormat = isObject(params.tieFormat)
+    ? params.tieFormat
+    : tieFormatDefaults({ namedFormat: tieFormatName, random: params.random });
 
   tieFormat?.collectionDefinitions?.filter(Boolean).forEach((collectionDefinition) => {
     const { category, collectionId, matchUpType, matchUpCount, gender } = collectionDefinition;

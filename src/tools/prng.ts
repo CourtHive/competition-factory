@@ -97,6 +97,27 @@ export function withForkedRandomSource<T>(fn: () => T): T {
   }
 }
 
+/**
+ * Runs `fn` with `source` as the source every unthreaded draw reads, then reinstates the previous one.
+ *
+ * WHY: a mocksEngine call's `nonRandom` seed names its record only if EVERY draw comes from that
+ * seed. Threading `random` by hand reaches the mocks' own generators, but generation also calls draw,
+ * venue, tieFormat and id code that mints from the configured source (68 bare `UUID()` sites,
+ * 2026-10-17). Scoped here, an unthreaded draw takes the call's own stream instead of the process's,
+ * so the same seed gives the same record whatever ran before it and whatever the ambient source is.
+ * Without a function (no seed) `fn` runs against the configured source unchanged.
+ */
+export function withRandomSource<T>(source: RandomFunction | undefined, fn: () => T): T {
+  if (typeof source !== 'function') return fn();
+  const previous = configuredSource;
+  configuredSource = source;
+  try {
+    return fn();
+  } finally {
+    configuredSource = previous;
+  }
+}
+
 /** The function to draw randomness from right now. Read at the call, never captured at import. */
 export function randomSource(): RandomFunction {
   return configuredSource ?? Math.random;
