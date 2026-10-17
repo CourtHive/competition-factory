@@ -1,5 +1,7 @@
 import { addParticipantGroupings } from '@Query/drawDefinition/avoidance/addParticipantGroupings';
+import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
+import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { addUpcomingMatchUps } from '@Query/matchUp/addUpcomingMatchUps';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
@@ -48,7 +50,7 @@ function getAllDrawMatchUpsUnredacted(params): ResultType & {
 
 export function getDrawMatchUps(params): GroupsMatchUpsResult {
   if (!params?.drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  let { tournamentParticipants, contextContent, matchUpsMap } = params;
+  let { tournamentParticipants, contextContent, matchUpsMap, scheduleTiming, publishStatus } = params;
   const {
     scheduleVisibilityFilters,
     tournamentAppliedPolicies,
@@ -60,9 +62,7 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
     usePublishState,
     contextFilters,
     matchUpFilters,
-    scheduleTiming,
     participantMap,
-    publishStatus,
     contextProfile,
     drawDefinition,
     nextMatchUps,
@@ -76,6 +76,15 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
   let allUpcomingMatchUps: HydratedMatchUp[] = [];
   let allPendingMatchUps: HydratedMatchUp[] = [];
   let allByeMatchUps: HydratedMatchUp[] = [];
+
+  // Every draw, event, tournament and competition query reaches here, and not all of them derive these first:
+  // a recovery time needs the scheduling policy's timing, and the published view needs the event's publish status.
+  if (afterRecoveryTimes && !scheduleTiming) {
+    scheduleTiming = getScheduleTiming({ policyDefinitions, tournamentRecord, event }).scheduleTiming;
+  }
+  if (usePublishState && !publishStatus && event) {
+    publishStatus = getEventPublishStatus({ event });
+  }
 
   if (contextProfile && !contextContent) {
     contextContent = getContextContent({
