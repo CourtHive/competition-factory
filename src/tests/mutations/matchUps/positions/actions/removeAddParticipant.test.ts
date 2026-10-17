@@ -14,7 +14,6 @@ it('can remove drawPosition assignment and add it back', () => {
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

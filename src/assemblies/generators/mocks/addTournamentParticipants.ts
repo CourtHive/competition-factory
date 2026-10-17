@@ -8,17 +8,17 @@ import { generateRange } from '@Tools/arrays';
 // constants and types
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 import { Participant, Tournament } from '@Types/tournamentTypes';
-import { ParticipantsProfile } from '@Types/factoryTypes';
+import type { MockDrawProfile, MockEventProfile, MockParticipantsProfile } from '@Types/mocksTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { genParticipantId } from './genParticipantId';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AddTournamentParticipantsArgs = {
-  participantsProfile?: ParticipantsProfile;
+  participantsProfile?: MockParticipantsProfile;
   tournamentRecord: Tournament;
   random?: () => number;
-  eventProfiles?: any[];
-  drawProfiles?: any[];
+  eventProfiles?: MockEventProfile[];
+  drawProfiles?: MockDrawProfile[];
   startDate?: string;
   uuids?: string[];
 };

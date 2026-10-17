@@ -26,7 +26,7 @@ describe('addTournamentOtherId', () => {
   };
 
   function seed() {
-    mocksEngine.generateTournamentRecord({ participantsProfile: { nonRandom: 1 }, setState: true });
+    mocksEngine.generateTournamentRecord({ setState: true });
     return tournamentEngine.getTournament().tournamentRecord;
   }
 
@@ -162,9 +162,7 @@ describe('addTournamentOtherId', () => {
   });
 
   it('round-trips a fully-formed entry supplied at record creation', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      participantsProfile: { nonRandom: 1 },
-    });
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({});
     tournamentRecord.tournamentOtherIds = [{ ...utrId, isOrigin: true }];
     tournamentEngine.setState(tournamentRecord);
 
@@ -175,7 +173,7 @@ describe('addTournamentOtherId', () => {
 
 describe('setTournamentOtherIds', () => {
   function seed() {
-    mocksEngine.generateTournamentRecord({ participantsProfile: { nonRandom: 1 }, setState: true });
+    mocksEngine.generateTournamentRecord({ setState: true });
   }
 
   it('replaces the array wholesale, which is how the origin is re-pointed', () => {
@@ -241,7 +239,7 @@ describe('setTournamentOtherIds', () => {
 
 describe('tournamentOrigin + the tournaments read-model row', () => {
   it('projects the flagged entry, independently of the record’s own tournamentId', () => {
-    mocksEngine.generateTournamentRecord({ participantsProfile: { nonRandom: 1 }, setState: true });
+    mocksEngine.generateTournamentRecord({ setState: true });
     tournamentEngine.addTournamentOtherId({ organisationId: 'UTR', otherTournamentId: '306618', isOrigin: true });
 
     const { tournamentRecord } = tournamentEngine.getTournament();
@@ -261,7 +259,6 @@ describe('tournamentOrigin + the tournaments read-model row', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     tournamentEngine.addTournamentOtherId({ organisationId: 'UTR', otherTournamentId: '306618', isOrigin: true });

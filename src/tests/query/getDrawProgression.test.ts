@@ -33,7 +33,14 @@ test.for([
   setSubscriptions({});
   const drawId = `prog-${drawType}-${drawSize}-${count ?? 'full'}`;
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawSize, drawType, participantsCount: count }],
+    drawProfiles: [
+      {
+        drawId,
+        drawSize: drawSize as number,
+        drawType: drawType as string,
+        participantsCount: count as number | undefined,
+      },
+    ],
     completeAllMatchUps: true,
     setState: true,
   });

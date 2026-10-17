@@ -20,7 +20,7 @@ const iterations = 1;
 it.each(generateRange(0, iterations))('can generate score strings for matchUpFormats', () => {
   let result = mocksEngine.generateOutcome({ matchUpFormat: '' });
   expect(result.error).toEqual(INVALID_MATCHUP_FORMAT);
-  result = mocksEngine.generateOutcome({ matchUpStatusProfile: '' });
+  result = mocksEngine.generateOutcome({ matchUpStatusProfile: '' as any });
   expect(result.error).toEqual(INVALID_VALUES);
   result = mocksEngine.generateOutcome({ matchUpStatusProfile: {} });
   expect([1, 2].includes(result.outcome.winningSide)).toBeTruthy();

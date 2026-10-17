@@ -115,7 +115,7 @@ it('an ungendered collection takes members in order, as before', () => {
 it('a completion the engine refuses is the generation error, not a success with nothing played', () => {
   const result: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [
-      { drawSize: 4, drawType: ROUND_ROBIN, matchUpStatusProfile: 'not a profile', completeAllMatchUps: true },
+      { drawSize: 4, drawType: ROUND_ROBIN, matchUpStatusProfile: 'not a profile' as any, completeAllMatchUps: true },
     ],
   });
   expect(result.error).toEqual(INVALID_VALUES);

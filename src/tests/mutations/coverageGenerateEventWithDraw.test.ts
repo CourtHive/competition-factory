@@ -21,47 +21,55 @@ import { expect, it, describe } from 'vitest';
 import { WTN } from '@Constants/ratingConstants';
 
 describe('generateEventWithDraw coverage', () => {
+  // These two used the `{ extension }` wrapper, the only shape the generator's extension filter let
+  // through; it then stored the wrapper. Extensions are `{ name, value }` (M18, 2026-10-17): a
+  // well-formed one is attached, and a wrapper is not an extension.
   it('applies valid eventExtensions to the generated event', () => {
-    // isValidExtension destructures { extension } from its argument;
-    // when used as filter callback, each array element IS the argument,
-    // so the element must have an `extension` key to pass validation
     let result: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [
         {
           drawSize: 4,
-          eventExtensions: [{ extension: { name: 'testEventExt', value: 'data' } }],
+          eventExtensions: [{ name: 'testEventExt', value: 'data' }],
         },
       ],
     });
     expect(result.tournamentRecord).toBeDefined();
 
-    // The eventExtensions path (Object.assign(event, { extensions })) is exercised;
-    // the resulting extensions array contains the wrapper objects
     tournamentEngine.setState(result.tournamentRecord);
     const { event } = tournamentEngine.getEvent({ eventId: result.eventIds[0] });
-    // Extensions are assigned as-is from the filter result
-    expect(event.extensions).toBeDefined();
-    expect(event.extensions.length).toBeGreaterThan(0);
+    expect(event.extensions).toEqual([{ name: 'testEventExt', value: 'data' }]);
   });
 
   it('applies valid drawExtensions via forEach callback', () => {
-    // Targets the fstat-no on the forEach callback (drawExtensions line ~432)
-    // isValidExtension as filter callback needs { extension: { name, value } }
     let result: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [
         {
           drawSize: 4,
-          drawExtensions: [{ extension: { name: 'drawMeta', value: 'someValue' } }],
+          drawExtensions: [{ name: 'drawMeta', value: 'someValue' }],
         },
       ],
     });
     expect(result.tournamentRecord).toBeDefined();
 
-    // The forEach callback is exercised even though addExtension may reject the nested wrapper;
-    // the important thing is the forEach function body is executed
     tournamentEngine.setState(result.tournamentRecord);
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: result.drawIds[0] });
-    expect(drawDefinition).toBeDefined();
+    expect(drawDefinition.extensions?.find((extension: any) => extension.name === 'drawMeta')?.value).toEqual(
+      'someValue',
+    );
+  });
+
+  it('a wrapped extension is not an extension, and is not attached', () => {
+    let result: any = mocksEngine.generateTournamentRecord({
+      drawProfiles: [
+        {
+          drawSize: 4,
+          eventExtensions: [{ extension: { name: 'wrapped', value: 'data' } }] as any,
+        },
+      ],
+    });
+    tournamentEngine.setState(result.tournamentRecord);
+    const { event } = tournamentEngine.getEvent({ eventId: result.eventIds[0] });
+    expect(event.extensions ?? []).toEqual([]);
   });
 
   it('handles ROUND_ROBIN_WITH_PLAYOFF with completeAllMatchUps at top level', () => {
@@ -312,8 +320,8 @@ describe('generateEventWithDraw coverage', () => {
         {
           drawSize: 4,
           eventType: DOUBLES,
-          drawExtensions: [{ extension: { name: 'doublesExt', value: 42 } }],
-          eventExtensions: [{ extension: { name: 'doublesEventExt', value: 'data' } }],
+          drawExtensions: [{ name: 'doublesExt', value: 42 }],
+          eventExtensions: [{ name: 'doublesEventExt', value: 'data' }],
         },
       ],
     });
@@ -366,9 +374,9 @@ describe('generateEventWithDraw coverage', () => {
         {
           drawSize: 4,
           drawExtensions: [
-            { extension: { name: 'validExt', value: 'good' } },
-            { invalid: true },
-            { extension: { name: 'anotherValid', value: { nested: true } } },
+            { name: 'validExt', value: 'good' },
+            { invalid: true } as any,
+            { name: 'anotherValid', value: { nested: true } },
           ],
         },
       ],
@@ -377,7 +385,10 @@ describe('generateEventWithDraw coverage', () => {
 
     tournamentEngine.setState(result.tournamentRecord);
     const { drawDefinition } = tournamentEngine.getEvent({ drawId: result.drawIds[0] });
-    expect(drawDefinition).toBeDefined();
+    const names = (drawDefinition.extensions ?? []).map((extension: any) => extension.name);
+    expect(names).toContain('validExt');
+    expect(names).toContain('anotherValid');
+    expect(names.filter((name: string) => !name)).toEqual([]);
   });
 
   it('handles AD_HOC with automated: false skipping iterative path', () => {

@@ -22,7 +22,7 @@ describe('generateOutcome - uncovered branches', () => {
   });
 
   it('returns error when matchUpStatusProfile is not an object', () => {
-    const result = mocksEngine.generateOutcome({ matchUpStatusProfile: 42 });
+    const result = mocksEngine.generateOutcome({ matchUpStatusProfile: 42 as any });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
@@ -40,21 +40,21 @@ describe('generateOutcome - uncovered branches', () => {
 
   it('returns error for NaN defaultWithScorePercent', () => {
     const result = mocksEngine.generateOutcome({
-      defaultWithScorePercent: 'notANumber',
+      defaultWithScorePercent: 'notANumber' as any,
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for NaN pointsPerMinute', () => {
     const result = mocksEngine.generateOutcome({
-      pointsPerMinute: 'bad',
+      pointsPerMinute: 'bad' as any,
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for NaN sideWeight', () => {
     const result = mocksEngine.generateOutcome({
-      sideWeight: 'bad',
+      sideWeight: 'bad' as any,
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });

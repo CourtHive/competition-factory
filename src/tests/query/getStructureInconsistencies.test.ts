@@ -310,7 +310,7 @@ test.for([
   setSubscriptions({});
   const drawId = `sweep-${drawType}-${drawSize}`;
   mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId, drawSize, drawType }],
+    drawProfiles: [{ drawId, drawSize: drawSize as number, drawType: drawType as string }],
     completeAllMatchUps: true,
     setState: true,
   });

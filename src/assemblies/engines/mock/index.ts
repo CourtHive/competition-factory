@@ -7,11 +7,31 @@ import { createDerivedRandom, withRandomSource } from '@Tools/prng';
 import { withCapturedClock } from '@Tools/clock';
 
 import { setState } from '@Assemblies/engines/parts/stateMethods';
+import type {
+  GenerateTournamentRecordArgs,
+  ModifyTournamentRecordArgs,
+  CompleteDrawMatchUpsArgs,
+  GenerateParticipantsArgs,
+  GenerateOutcomeArgs,
+} from '@Types/mocksTypes';
 import { FactoryEngine } from '@Types/factoryTypes';
 
 let devContextSet = false;
 
-export const mocksEngine = (() => {
+/**
+ * The typed surface: each generation method's params are a closed type, so a misplaced or misspelled
+ * option is a compile error at the call site. Results stay untyped for now (a result is a success or an
+ * error envelope, and every existing caller destructures it directly).
+ */
+export type MocksEngine = FactoryEngine & {
+  generateTournamentRecord: (params?: GenerateTournamentRecordArgs) => any;
+  modifyTournamentRecord: (params?: ModifyTournamentRecordArgs) => any;
+  completeDrawMatchUps: (params: CompleteDrawMatchUpsArgs) => any;
+  generateParticipants: (params?: GenerateParticipantsArgs) => any;
+  generateOutcome: (params?: GenerateOutcomeArgs) => any;
+};
+
+export const mocksEngine: MocksEngine = (() => {
   const engine: FactoryEngine = {
     version: () => factoryVersion(),
     setDeepCopy: (deepCopyOption, deepCopyAttributes) => {
@@ -27,7 +47,7 @@ export const mocksEngine = (() => {
 
   importGovernors([mocksGovernor]);
 
-  return engine;
+  return engine as MocksEngine;
 
   // enable Middleware
   function engineInvoke(method, params, unthreadedSource?: () => number) {

@@ -12,7 +12,6 @@ it('can advance participants when double BYEs are created', () => {
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
     participantsProfile: { participantsCount: 32 },
-    inContext: true,
     drawProfiles,
   });
 

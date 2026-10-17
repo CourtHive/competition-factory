@@ -15,7 +15,6 @@ it('can replace positioned participant with a bye and move to ALTERNATEs', () =>
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -105,7 +104,6 @@ it('can withdraw and replace positioned participant with a bye', () => {
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);
