@@ -180,8 +180,11 @@ export function analyzeMatchUp(params?): ResultType & {
     ? aggregateWinningSide(aggregateScores)
     : (reachedSetsToWin && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) || undefined;
 
+  // the aggregate branch above does not consult set counts, and neither may this check: an aggregate
+  // is routinely won on fewer segments (2026-10-17: a 25-24 INN4XA win on one inning of three, and
+  // INTENNSE's 132-78 on fewer bolts), which made every such result "not a validated winning score"
   const validMatchUpWinningSide =
-    winningSideSetsCount > losingSideSetsCount && matchUpWinningSide === calculatedWinningSide;
+    (!!aggregate || winningSideSetsCount > losingSideSetsCount) && matchUpWinningSide === calculatedWinningSide;
 
   const validMatchUpOutcome = calculatedWinningSide && completedSetsHaveValidOutcomes && validMatchUpWinningSide;
 
