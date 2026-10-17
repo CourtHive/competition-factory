@@ -1,3 +1,4 @@
+import { tournamentGovernor } from '@Assemblies/governors';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -512,6 +513,15 @@ describe('Mutation Locks', () => {
     const { mutationLocks } = tournamentEngine.getMutationLocks();
     expect(mutationLocks.length).toEqual(1);
     expect(mutationLocks[0].scope).toEqual('SCORING');
+  });
+
+  // it removes locks, so it is a mutation and lives in `mutate`; the `query` export is a deprecated alias of the same
+  // function, kept so existing imports resolve until 8.0.0
+  it('cleanExpiredMutationLocks is a tournamentGovernor mutation; the query export is the same function', () => {
+    const { mutate, query } = tournamentGovernor as any;
+    expect(typeof mutate.cleanExpiredMutationLocks).toEqual('function');
+    expect(query.cleanExpiredMutationLocks).toBe(mutate.cleanExpiredMutationLocks);
+    expect((tournamentGovernor as any).cleanExpiredMutationLocks).toBe(mutate.cleanExpiredMutationLocks);
   });
 
   // ─── Lock management methods are never blocked ────────
