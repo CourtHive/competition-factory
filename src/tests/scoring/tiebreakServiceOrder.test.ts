@@ -1,4 +1,5 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
 import { describe, expect, it } from 'vitest';
 
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -189,5 +190,20 @@ describe('tiebreak servers on records saved under the old rotation', () => {
     expect(entries.map((entry) => entry.data.server ?? null)).toEqual([null, 0, null, null]);
     // point 2 keeps its observed server; the calculated ones follow Rule 5(b): 0, [0], 1, 0
     expect(engine.getState().history!.points.map((point) => point.server)).toEqual([0, 0, 1, 0]);
+  });
+});
+
+describe('isStandardSetTiebreak', () => {
+  it('reads the format it is given, with the defaults of a hand-built one', () => {
+    // parsed: tiebreak at games-all of setTo, or at an explicit tiebreakAt
+    expect(isStandardSetTiebreak({ setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } }, 6, 6)).toBe(true);
+    expect(isStandardSetTiebreak({ setTo: 4, tiebreakAt: 3, tiebreakFormat: { tiebreakTo: 5 } }, 3, 3)).toBe(true);
+    // hand-built with only a tiebreak format: games-all of setTo, and setTo defaults to 6
+    expect(isStandardSetTiebreak({ setTo: 8, tiebreakFormat: { tiebreakTo: 7 } }, 8, 8)).toBe(true);
+    expect(isStandardSetTiebreak({ tiebreakFormat: { tiebreakTo: 7 } }, 6, 6)).toBe(true);
+    expect(isStandardSetTiebreak({ tiebreakFormat: { tiebreakTo: 7 } }, 5, 5)).toBe(false);
+    // an advantage set, or no format at all, has no tiebreak
+    expect(isStandardSetTiebreak({ setTo: 6, noTiebreak: true }, 6, 6)).toBe(false);
+    expect(isStandardSetTiebreak(undefined, 6, 6)).toBe(false);
   });
 });
