@@ -173,7 +173,7 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
 
   if (!allStructuresLinked) return { error: UNLINKED_STRUCTURES };
 
-  const eventPublishState = params?.eventPublishState ?? getPublishState({ event }).publishState;
+  const eventPublishState = params?.eventPublishState ?? getPublishState({ event, status }).publishState;
   const publishStatus = params?.publishStatus ?? getEventPublishStatus({ event, status });
   const drawDetails = eventPublishState?.status?.drawDetails?.[drawDefinition.drawId];
   const eventPublished = !!eventPublishState?.status?.published;

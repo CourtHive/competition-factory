@@ -142,6 +142,7 @@ module.exports = {
           label: 'Publishing',
           items: [
             'concepts/publishing/publishing-overview',
+            'concepts/publishing/publishing-status-keys',
             'concepts/publishing/publishing-events',
             'concepts/publishing/publishing-seeding',
             'concepts/publishing/publishing-order-of-play',
