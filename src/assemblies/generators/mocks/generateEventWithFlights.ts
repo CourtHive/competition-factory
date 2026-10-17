@@ -236,7 +236,7 @@ function buildEventObject({
   };
 
   if (eventExtensions?.length && Array.isArray(eventExtensions)) {
-    const extensions = eventExtensions.filter(isValidExtension);
+    const extensions = eventExtensions.filter((extension) => isValidExtension({ extension }));
     if (extensions?.length) Object.assign(newEvent, { extensions });
   }
 

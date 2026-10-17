@@ -30,12 +30,15 @@ describe('generateAndPopulatePlayoffStructures branch coverage', () => {
       drawProfiles: [
         {
           drawType: ROUND_ROBIN_WITH_PLAYOFF,
-          playoffGroups: [
-            { finishingPositions: [1], structureName: 'Gold' },
-            { finishingPositions: [2], structureName: 'Silver' },
-          ],
+          // under structureOptions: drawProfile `playoffGroups` and `groupSize` keys were never read
+          structureOptions: {
+            playoffGroups: [
+              { finishingPositions: [1], structureName: 'Gold' },
+              { finishingPositions: [2], structureName: 'Silver' },
+            ],
+            groupSize: 4,
+          },
           drawSize: 16,
-          groupSize: 4,
         },
       ],
       setState: true,

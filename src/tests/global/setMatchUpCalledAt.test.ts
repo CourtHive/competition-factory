@@ -22,7 +22,6 @@ function seedTournament() {
     drawProfiles: [{ participantsCount: 8, drawSize: 8 }],
     startDate: START_DATE,
     endDate: END_DATE,
-    inContext: true,
     setState: true,
   });
   const drawId = result.drawIds[0];

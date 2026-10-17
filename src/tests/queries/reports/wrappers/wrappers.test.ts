@@ -30,7 +30,6 @@ const empty: any = { tournamentId: 'empty-1' };
 
 beforeAll(() => {
   const result = mocksEngine.generateTournamentRecord({
-    inContext: true,
     completeAllMatchUps: true,
     drawProfiles: [{ drawSize: 8, seedsCount: 2, eventName: 'Singles A' }],
     venueProfiles: [{ courtsCount: 4 }],

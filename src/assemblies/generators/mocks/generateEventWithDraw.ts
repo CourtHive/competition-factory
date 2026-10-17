@@ -400,7 +400,12 @@ function processOutcomes({
 
   // NOTE: completionGoal implies something less than "all matchUps"
   // ==> do this first with the assumption that any outcomes must come after
-  if (completionGoal) goComplete({ completionGoal });
+  // a completion error is the generation's error: discarded, a fixture reported success with its
+  // matchUps unplayed (2026-10-17: gendered TEAM lineups refused, nothing completed, success: true)
+  if (completionGoal) {
+    const goalResult = goComplete({ completionGoal });
+    if (goalResult?.error) return goalResult;
+  }
 
   if (drawProfile.outcomes) {
     const outcomesResult = applyDefinedOutcomes({
@@ -413,7 +418,10 @@ function processOutcomes({
   }
 
   // NOTE: do this last => complete any matchUps which have not already been completed
-  if (completeAllMatchUps) goComplete({ completeAllMatchUps });
+  if (completeAllMatchUps) {
+    const completeResult = goComplete({ completeAllMatchUps });
+    if (completeResult?.error) return completeResult;
+  }
 
   return { goComplete };
 }
@@ -718,7 +726,7 @@ function generateAndAttachDraw({
 
   if (Array.isArray(drawExtensions)) {
     drawExtensions
-      .filter(isValidExtension)
+      .filter((extension) => isValidExtension({ extension }))
       .forEach((extension) => addExtension({ element: drawDefinition, extension }));
   }
 
@@ -1036,7 +1044,7 @@ function buildMockEvent({
   Object.assign(event, eventAttributes);
 
   if (eventExtensions?.length && Array.isArray(eventExtensions)) {
-    const extensions = eventExtensions.filter(isValidExtension);
+    const extensions = eventExtensions.filter((extension) => isValidExtension({ extension }));
     if (extensions?.length) Object.assign(event, { extensions });
   }
 

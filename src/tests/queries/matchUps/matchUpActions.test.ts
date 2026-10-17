@@ -100,7 +100,6 @@ test('matchUpActions finds drawDefinition via brute force when not provided', ()
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 4, participantsCount: 4 }],
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -137,7 +136,6 @@ it('matchUpActions respects requireAllPositionsAssigned scoring policy', () => {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8, participantsCount: 8 }],
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -203,7 +201,6 @@ it('matchUpActions includes ADD_PENALTY when sideNumber is provided and side has
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 4, participantsCount: 4 }],
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -238,7 +235,6 @@ it('matchUpActions excludes ADD_PENALTY when sideNumber is provided but side has
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8, participantsCount: 4 }],
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

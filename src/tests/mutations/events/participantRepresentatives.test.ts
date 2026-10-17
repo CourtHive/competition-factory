@@ -18,7 +18,6 @@ it('can set and get drawRepresentatitveIds', () => {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   const { participants } = tournamentEngine.setState(tournamentRecord).getParticipants();

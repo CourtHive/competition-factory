@@ -49,7 +49,7 @@ describe('stage errors are the call error', () => {
   });
 
   it('a refused schedulingProfile is refused, not an empty schedule', () => {
-    const result: any = mocksEngine.generateTournamentRecord({ schedulingProfile: 'invalid' });
+    const result: any = mocksEngine.generateTournamentRecord({ schedulingProfile: 'invalid' as any });
     expect(result.error).toEqual(INVALID_VALUES);
     expect(result.success).toBeUndefined();
     expect(result.schedulerResult).toBeUndefined();
@@ -107,7 +107,7 @@ describe('a thrown generator', () => {
     useEngineCatch();
 
     it('returns a structured error, not undefined', () => {
-      const result: any = mocksEngine.generateTournamentRecord({ drawProfiles: [null] });
+      const result: any = mocksEngine.generateTournamentRecord({ drawProfiles: [null] as any });
       expect(result).toBeDefined();
       expect(result.error).toBeDefined();
       expect(result.success).toBeUndefined();
@@ -115,14 +115,14 @@ describe('a thrown generator', () => {
 
     it('does not install anything when setState is requested', () => {
       installKnownTournament();
-      const result: any = mocksEngine.generateTournamentRecord({ drawProfiles: [null], setState: true });
+      const result: any = mocksEngine.generateTournamentRecord({ drawProfiles: [null] as any, setState: true });
       expect(result.error).toBeDefined();
       expect(tournamentEngine.getTournament().tournamentRecord?.tournamentId).toEqual(KEEP_ID);
     });
   });
 
   it('under an invocation-scoped devContext rethrows, then leaves devContext off', () => {
-    expect(() => mocksEngine.devContext(true).generateTournamentRecord({ drawProfiles: [null] })).toThrow();
+    expect(() => mocksEngine.devContext(true).generateTournamentRecord({ drawProfiles: [null] as any })).toThrow();
     expect(getDevContext()).toBeFalsy();
 
     const result: any = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
@@ -132,7 +132,7 @@ describe('a thrown generator', () => {
   it('under a devContext the caller set, rethrows and leaves the caller its devContext', () => {
     setDevContext(true);
     try {
-      expect(() => mocksEngine.generateTournamentRecord({ drawProfiles: [null] })).toThrow();
+      expect(() => mocksEngine.generateTournamentRecord({ drawProfiles: [null] as any })).toThrow();
       expect(getDevContext()).toEqual(true);
     } finally {
       setDevContext(false);
