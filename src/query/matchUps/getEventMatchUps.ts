@@ -3,13 +3,18 @@ import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { getDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { withContextExclusion } from './contextExclusion';
 
 // constants and types
 import { GetMatchUpsArgs, GroupInfo, GroupsMatchUpsResult } from '@Types/factoryTypes';
 import { MISSING_EVENT } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
-export function eventMatchUps(params: GetMatchUpsArgs): GroupsMatchUpsResult {
+export function eventMatchUps(params: GetMatchUpsArgs) {
+  return withContextExclusion(params, eventMatchUpsUnredacted);
+}
+
+function eventMatchUpsUnredacted(params: GetMatchUpsArgs): GroupsMatchUpsResult {
   let { participants: tournamentParticipants, contextContent, participantMap } = params;
 
   const {

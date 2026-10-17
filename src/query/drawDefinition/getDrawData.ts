@@ -9,6 +9,7 @@ import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
+import { withContextExclusion } from '@Query/matchUps/contextExclusion';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
@@ -102,7 +103,11 @@ type DrawInfo = Pick<DrawDefinition, 'matchUpFormat' | 'updatedAt' | 'drawName' 
 };
 
 // NOTE: if { usePublishState: true } then { eventPublishState } or { event } must be provided
-export function getDrawData(params: GetDrawDataArgs): {
+export function getDrawData(params: GetDrawDataArgs) {
+  return withContextExclusion(params, getDrawDataUnredacted);
+}
+
+function getDrawDataUnredacted(params: GetDrawDataArgs): {
   structures?: any[];
   success?: boolean;
   error?: ErrorType;

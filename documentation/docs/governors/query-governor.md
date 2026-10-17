@@ -70,6 +70,8 @@ const { matchUps, groupInfo } = engine.allTournamentMatchUps({
 });
 ```
 
+`contextProfile.exclude` removes the named attributes from the hydrated matchUps the caller receives, nested `tieMatchUps` included. It changes the payload, not the result: filters, completion (`drawCompleted`, `structureCompleted`), grouping and schedule order are all computed before the attributes are removed. It applies to hydrated (**inContext**) matchUps only; `inContext: false` returns stored matchUps as they are.
+
 ---
 
 ## cast

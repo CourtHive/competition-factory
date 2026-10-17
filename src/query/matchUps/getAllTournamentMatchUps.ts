@@ -3,6 +3,7 @@ import { stripCheckInAttribution } from '@Query/participants/participantPrivacy'
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
+import { withContextExclusion } from './contextExclusion';
 import { allEventMatchUps } from './getAllEventMatchUps';
 import { createHydrationCache } from './hydrationCache';
 import { filterMatchUps } from '@Query/filterMatchUps';
@@ -14,7 +15,11 @@ import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
-export function allTournamentMatchUps(params?: GetMatchUpsArgs): ResultType & {
+export function allTournamentMatchUps(params?: GetMatchUpsArgs) {
+  return withContextExclusion(params, allTournamentMatchUpsUnredacted);
+}
+
+function allTournamentMatchUpsUnredacted(params?: GetMatchUpsArgs): ResultType & {
   matchUps?: HydratedMatchUp[];
 } {
   const paramsCheck = checkRequiredParameters(params, [{ tournamentRecord: true }]);

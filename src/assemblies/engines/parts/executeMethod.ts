@@ -1,4 +1,5 @@
 import { engineLogging, paramsMayBeLogged } from '@Global/state/engineLogging';
+import { withContextExclusion } from '@Query/matchUps/contextExclusion';
 import { checkMutationLock } from './checkMutationLock';
 import { paramsMiddleware } from './paramsMiddleware';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -70,11 +71,13 @@ function resolve({ method, params, methodName, tournamentRecords, tournamentReco
 }
 
 function invoke({ tournamentRecords, tournamentRecord, params, methodName, method }) {
+  // every method is entered here, so this is the one boundary at which an engine caller's exclusion is applied
+  const run = () => withContextExclusion({ tournamentRecords, tournamentRecord, ...params }, method);
   if (getDevContext()) {
-    return method({ tournamentRecords, tournamentRecord, ...params });
+    return run();
   } else {
     try {
-      return method({ tournamentRecords, tournamentRecord, ...params });
+      return run();
     } catch (err) {
       return handleCaughtError({
         engineName: 'engine',
