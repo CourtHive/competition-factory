@@ -197,6 +197,26 @@ export function isStandardSetTiebreak(
   return side1Games === tiebreakAt && side2Games === tiebreakAt;
 }
 
+/** Which inputs a segment can be scored with: points, games, or set totals (addSet). */
+export type InputLevels = { point: boolean; game: boolean; set: boolean };
+
+/**
+ * The inputs a set format can be scored with. A parser-valid format is not a promise of a point model:
+ * a segment of outs (innings, halves) has no point or game model here, so it takes set totals only
+ * rather than having its points scored as tennis; a combined-point total has no games. The engine's
+ * refusals read this, so what it reports and what it accepts cannot disagree.
+ */
+export function inputLevels(setFormat?: SetFormatStructure): InputLevels {
+  if (setFormat?.outs) return { point: false, game: false, set: true };
+  if (setFormat?.combinedPointTotal) return { point: true, game: false, set: true };
+  return { point: true, game: true, set: true };
+}
+
+/** The refusal for an input a segment cannot take. */
+export function inputLevelError(level: 'point' | 'game'): Error {
+  return new Error(`This segment takes set totals (addSet), not ${level} input`);
+}
+
 /**
  * Whether the set in play is the one the final-set format governs. Mid-match that is the set played with
  * both sides one set from winning, except an aggregate format's sudden-death decider, which is set N + 1
