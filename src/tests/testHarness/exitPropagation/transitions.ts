@@ -275,7 +275,62 @@ export type PropertyFailure = {
    * phase for the measurement that cost a signal write-up. Absent on every other property.
    */
   probe?: { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
+  /** for DO_UNDO_IDENTITY: every projected field the round trip left changed, by coordinate */
+  changes?: ProjectionChange[];
 };
+
+export type ProjectionChange = { at: string; field: string; before: any; after: any };
+
+const MATCHUP_FIELDS = [
+  'matchUpStatus',
+  'winningSide',
+  'drawPositions',
+  'matchUpStatusCodes',
+  'sideExitProvenance',
+  'score',
+];
+
+/**
+ * The projected fields two `projectDraw` results disagree on, named by structural coordinate rather than by offset into a
+ * serialization: an offset says where two strings part, not which matchUp kept what. `coordinates` maps matchUpId to
+ * `structureName|roundNumber|roundPosition`; a positionAssignment is named by structure and drawPosition.
+ */
+export function projectionChanges(before: any[], after: any[], coordinates: Map<string, string>): ProjectionChange[] {
+  const changes: ProjectionChange[] = [];
+  const afterById = new Map(after.map((structure: any) => [structure.structureId, structure]));
+  for (const structure of before) {
+    const later = afterById.get(structure.structureId);
+    const laterMatchUps = new Map((later?.matchUps ?? []).map((row: any[]) => [row[0], row]));
+    for (const row of structure.matchUps) {
+      const laterRow: any = laterMatchUps.get(row[0]);
+      MATCHUP_FIELDS.forEach((field, index) => {
+        const [prior, next] = [row[index + 1], laterRow?.[index + 1]];
+        if (JSON.stringify(normalize(prior)) !== JSON.stringify(normalize(next)))
+          changes.push({ at: coordinates.get(row[0]) ?? row[0], field, before: prior, after: next ?? null });
+      });
+    }
+    const laterAssignments = new Map(
+      (later?.positionAssignments ?? []).map((assignment: any) => [assignment.drawPosition, assignment]),
+    );
+    const structureName = structureNameOf(structure, coordinates);
+    for (const assignment of structure.positionAssignments) {
+      const next = laterAssignments.get(assignment.drawPosition);
+      if (JSON.stringify(assignment) !== JSON.stringify(next ?? null))
+        changes.push({
+          at: `${structureName}|dp${assignment.drawPosition}`,
+          field: 'positionAssignment',
+          before: assignment,
+          after: next ?? null,
+        });
+    }
+  }
+  return changes;
+}
+
+function structureNameOf(structure: any, coordinates: Map<string, string>): string {
+  const coordinate = structure.matchUps.map((row: any[]) => coordinates.get(row[0])).find(Boolean);
+  return coordinate?.split('|')[0] ?? structure.structureId;
+}
 
 /**
  * ERROR_IMPLIES_NO_MUTATION — the general form of the partial-mutation class.

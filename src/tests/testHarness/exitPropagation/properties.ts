@@ -1,5 +1,5 @@
 import { clearOutcome, getDrawDefinition, getDrawMatchUps, hash, observeMutation, stableHash } from './transitions';
-import { checkErrorAtomicity, decidedMatchUpIds, projectDraw } from './transitions';
+import { checkErrorAtomicity, decidedMatchUpIds, projectDraw, projectionChanges } from './transitions';
 import type { Observation, PropertyFailure } from './transitions';
 import { isDoubleExit } from '@Validators/isExit';
 
@@ -73,7 +73,8 @@ function countForward(coverage: RelationalCoverage | undefined, applied: Observa
  */
 export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[] {
   const { propagateExitStatus, matchUpId, drawId, outcome, coverage } = params;
-  const before = stableHash(projectDraw(getDrawDefinition(drawId)));
+  const beforeProjection = projectDraw(getDrawDefinition(drawId));
+  const before = stableHash(beforeProjection);
 
   const applied = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome });
   countForward(coverage, applied);
@@ -93,14 +94,22 @@ export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[]
     return checkErrorAtomicity(cleared, matchUpId);
   }
 
-  const after = stableHash(projectDraw(getDrawDefinition(drawId)));
+  const afterProjection = projectDraw(getDrawDefinition(drawId));
+  const after = stableHash(afterProjection);
   if (after === before) return [];
 
+  const coordinates = new Map(
+    getDrawMatchUps(drawId).map((matchUp: any) => [
+      matchUp.matchUpId,
+      `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`,
+    ]),
+  );
   return [
     {
       property: 'DO_UNDO_IDENTITY',
       matchUpId,
       detail: `clear succeeded but the draw did not return to its prior state\n  ${firstDifference(before, after)}`,
+      changes: projectionChanges(beforeProjection, afterProjection, coordinates),
     },
   ];
 }
