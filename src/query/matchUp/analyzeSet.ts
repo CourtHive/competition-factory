@@ -44,7 +44,11 @@ export function analyzeSet(params) {
   }
   const expectTiebreakSet = !!setFormat?.tiebreakSet;
   const expectTimedSet = !!setFormat?.timed;
-  const expectStandardSet = !expectTiebreakSet && !expectTimedSet;
+  // an outs segment (an inning) has no games and no `setTo`: it is recorded as two totals, and the
+  // standard-set check — which requires `setTo` — refused every completed one, so a BLW result was
+  // never a validated score and `setMatchUpState`'s revert guard failed open on it (2026-10-17)
+  const expectOutsSet = !!setFormat?.outs;
+  const expectStandardSet = !expectTiebreakSet && !expectTimedSet && !expectOutsSet;
 
   const isValidSetNumber = !!(setNumber && maxSetNumber && setNumber <= maxSetNumber);
 
@@ -77,6 +81,7 @@ export function analyzeSet(params) {
   });
 
   const isValidSetOutcome = deriveValidSetOutcome({
+    isValidOutsSetOutcome: expectOutsSet && isValidOutsSetOutcome(setObject, sideGameScores),
     isValidStandardSetOutcome,
     isValidTiebreakSetOutcome,
     expectStandardSet,
@@ -155,7 +160,21 @@ function determineLeadingSide(hasTiebreakCondition, sideGameScores) {
   return undefined;
 }
 
+/**
+ * An outs segment is complete when both totals are recorded; the higher total wins it, and a level one
+ * has no winner (the match is decided on the aggregate, never on segments won). No other rule applies:
+ * the grammar bounds neither total.
+ */
+function isValidOutsSetOutcome(setObject, sideGameScores): boolean {
+  const [side1, side2] = sideGameScores ?? [];
+  const isTotal = (value) => Number.isInteger(value) && value >= 0;
+  if (!isTotal(side1) || !isTotal(side2)) return false;
+  const higherSide = (side1 > side2 && 1) || (side2 > side1 && 2) || undefined;
+  return setObject?.winningSide === higherSide;
+}
+
 function deriveValidSetOutcome({
+  isValidOutsSetOutcome,
   isValidStandardSetOutcome,
   isValidTiebreakSetOutcome,
   expectStandardSet,
@@ -166,7 +185,8 @@ function deriveValidSetOutcome({
   return (
     (expectStandardSet && !isTiebreakSet && isValidStandardSetOutcome) ||
     (expectTiebreakSet && isTiebreakSet && isValidTiebreakSetOutcome) ||
-    expectTimedSet
+    expectTimedSet ||
+    isValidOutsSetOutcome
   );
 }
 
