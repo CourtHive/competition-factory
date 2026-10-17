@@ -332,17 +332,17 @@ queryEngine.addEvent({}); // also typed — the type does not know what was impo
 
 ## Bundle Size
 
-Measured together from the build at `97ad4dbe` (2026-10-17, post-7.15 dev), on Node 26.11.1, using
+Measured together from the build at `133cbb00` (2026-10-17, post-7.15 dev), on Node 26.8.1, using
 `pnpm verify:consumer-bundle`: esbuild bundle/minify/tree shaking, ESM output and gzip level 9.
 KB below means 1,024 bytes. Exact fixture bodies and growth budgets are in
 `scripts/verify/consumerBundle.mjs` and `scripts/verify/baseline/consumer-bundle.json`.
 
 | What the application imports             | Bundle (gzip)            |
 | ---------------------------------------- | ------------------------ |
-| `syncEngine` alone                       | 15.9 KB (16,231 bytes)   |
-| `syncEngine` + named `queryGovernor`     | 197.8 KB (202,587 bytes) |
-| `syncEngine` + `governors.queryGovernor` | 521.1 KB (533,633 bytes) |
-| `tournamentEngine`                       | 521.1 KB (533,642 bytes) |
+| `syncEngine` alone                       | 16.1 KB (16,486 bytes)   |
+| `syncEngine` + named `queryGovernor`     | 198.7 KB (203,466 bytes) |
+| `syncEngine` + `governors.queryGovernor` | 523.0 KB (535,550 bytes) |
+| `tournamentEngine`                       | 523.0 KB (535,528 bytes) |
 
 The older 7.14 table's bare-engine figure was about 27 KB. In 7.15, #5471 recorded
 27.1 → 15.7 KB; the current measurement above includes subsequent changes. It is an import-scenario
