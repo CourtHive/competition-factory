@@ -166,5 +166,6 @@ export function processLeagueProfiles(params) {
 
   // add venues - can get more sophisticated with this and generate number of courts
   const venueProfiles = venueIds.map((venueId) => ({ venueId }));
-  generateVenues({ tournamentRecord, ignoreExistingVenues: true, venueProfiles, uuids });
+  const venuesResult = generateVenues({ tournamentRecord, ignoreExistingVenues: true, venueProfiles, uuids });
+  if (!Array.isArray(venuesResult)) return venuesResult;
 }
