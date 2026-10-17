@@ -443,7 +443,7 @@ describe('SET3-S:1/TB7 — the one-game set', () => {
 });
 
 /*
- * ENGINE DISAGREES — needs review.
+ * Fixed 2026-10-17 (CA: "Rule 6: margin of two"); found by these cases.
  *
  * `S:1/TB7` read by Rule 6 (and Appendix VI short sets) at `setTo` 1: the first side to one game wins
  * the set PROVIDED there is a margin of two games, and at one game all a tie-break is played. The
@@ -456,27 +456,27 @@ describe('SET3-S:1/TB7 — the one-game set', () => {
  * `[[2, 0]]`. The factory's own `checkSetIsComplete` (two-game margin, no tie-break reached) would call
  * that 1-0 incomplete, so the engine and the set analysis disagree with each other as well.
  */
-describe('ENGINE DISAGREES — needs review', () => {
+describe('SET3-S:1/TB7 — the one-game set by Rule 6', () => {
   const format = 'SET3-S:1/TB7';
 
   // expected [[1, 1]] (1-0 has no margin of two); observed [[1, 0], [0, 1]], complete false
-  it.skip('SET3-S:1/TB7 — engine-defined: one game with no margin of two is not a set', () => {
+  it('SET3-S:1/TB7 — engine-defined: one game with no margin of two is not a set', () => {
     conforms(format, games('12'), { sets: [[1, 1]], complete: false });
   });
 
   // expected [[2, 0]], complete false; observed [[1, 0], [1, 0]], winningSide 1, complete true
-  it.skip('SET3-S:1/TB7 — engine-defined: two games to love win the set', () => {
+  it('SET3-S:1/TB7 — engine-defined: two games to love win the set', () => {
     conforms(format, games('11'), { sets: [[2, 0]], complete: false });
   });
 
   // expected [[2, 1, [7, 0]]]; observed [[1, 0], [0, 1], [1, 0]], winningSide 1:
   // the tie-break points are played as a third set
-  it.skip('SET3-S:1/TB7 — engine-defined: at one game all a seven-point tie-break decides the set', () => {
+  it('SET3-S:1/TB7 — engine-defined: at one game all a seven-point tie-break decides the set', () => {
     conforms(format, `${games('12')} 1111111`, { sets: [[2, 1, [7, 0]]], complete: false });
   });
 
   // expected [[2, 0], [2, 0]], winningSide 1; observed [[1, 0], [1, 0]] — the match was already over after two games
-  it.skip('SET3-S:1/TB7 — engine-defined: two sets win the match', () => {
+  it('SET3-S:1/TB7 — engine-defined: two sets win the match', () => {
     conforms(format, games('1111'), {
       sets: [
         [2, 0],
