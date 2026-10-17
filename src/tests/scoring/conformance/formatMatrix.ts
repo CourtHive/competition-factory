@@ -12,6 +12,10 @@ import type { MatrixEntry } from '../../testHarness/scoringConformance/formatMat
  */
 
 const MISSING: MatrixEntry = { status: 'missing' };
+const STANDARD_SETS: MatrixEntry = {
+  status: 'conformance',
+  cases: ['src/tests/scoring/conformance/standardSets.conformance.test.ts'],
+};
 const OUTS = 'a segment of outs takes set totals (addSet); point and game input are refused (S4, #5518)';
 
 export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
@@ -59,21 +63,22 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
     MISSING,
   'bestOf | SET | set:standard(tiebreak) | final:outs | game:traditional | noClock | knownModifiers': MISSING,
   'bestOf | SET | set:standard(tiebreak) | final:same | game:consecutive | noClock | knownModifiers': MISSING,
-  'bestOf | SET | set:standard(tiebreak) | final:same | game:traditional | clock | knownModifiers': MISSING,
-  'bestOf | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers': MISSING,
+  'bestOf | SET | set:standard(tiebreak) | final:same | game:traditional | clock | knownModifiers': STANDARD_SETS,
+  'bestOf | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers': STANDARD_SETS,
   'bestOf | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | unknownModifiers': MISSING,
   'bestOf | SET | set:standard(tiebreak) | final:same | game:traditional(deuceCap) | noClock | knownModifiers': MISSING,
   'bestOf | SET | set:standard(tiebreak) | final:standard(advantage) | game:traditional | noClock | knownModifiers':
-    MISSING,
+    STANDARD_SETS,
   'bestOf | SET | set:standard(tiebreak) | final:standard(tiebreak,earlyTiebreak) | game:traditional | noClock | knownModifiers':
-    MISSING,
+    STANDARD_SETS,
   'bestOf | SET | set:standard(tiebreak) | final:standard(tiebreak) | game:traditional | noClock | knownModifiers':
-    MISSING,
-  'bestOf | SET | set:standard(tiebreak) | final:tiebreakSet | game:traditional | noClock | knownModifiers': MISSING,
+    STANDARD_SETS,
+  'bestOf | SET | set:standard(tiebreak) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
+    STANDARD_SETS,
   'bestOf | SET | set:standard(tiebreak) | final:tiebreakSet | game:traditional(deuceCap) | noClock | knownModifiers':
     MISSING,
   'bestOf | SET | set:standard(tiebreak) | final:tiebreakSet(noAD) | game:traditional | noClock | knownModifiers':
-    MISSING,
+    STANDARD_SETS,
   'bestOf | SET | set:standard(tiebreak) | final:timed(G) | game:traditional | noClock | knownModifiers': MISSING,
   'bestOf | SET | set:standard(tiebreak) | final:timed(P) | game:traditional | noClock | knownModifiers': MISSING,
   'bestOf | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': MISSING,
