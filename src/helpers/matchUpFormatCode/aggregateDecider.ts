@@ -19,7 +19,11 @@ export function aggregateDeciderSetNumber(parsed: any): number | undefined {
  */
 export function finalSetGoverns(parsed: any, setNumber: number | undefined, otherwise: boolean): boolean {
   const deciderSetNumber = aggregateDeciderSetNumber(parsed);
-  return deciderSetNumber ? setNumber === deciderSetNumber : otherwise;
+  if (deciderSetNumber) return setNumber === deciderSetNumber;
+  // A non-aggregate exactly format plays every one of its N sets, so its final set is set N, whatever
+  // the count: in SET4X-S:T20P-F:T20 the fourth set is games-based even after a 3-0 lead.
+  if (parsed?.exactly && setNumber !== undefined) return setNumber === parsed.exactly;
+  return otherwise;
 }
 
 /** The set a live point lands in: the last set while it is open, otherwise the next one. */
