@@ -22,7 +22,7 @@ describe('generateOutcome - uncovered branches', () => {
   });
 
   it('returns error when matchUpStatusProfile is not an object', () => {
-    const result = mocksEngine.generateOutcome({ matchUpStatusProfile: 42 });
+    const result = mocksEngine.generateOutcome({ matchUpStatusProfile: 42 as any });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
@@ -40,21 +40,21 @@ describe('generateOutcome - uncovered branches', () => {
 
   it('returns error for NaN defaultWithScorePercent', () => {
     const result = mocksEngine.generateOutcome({
-      defaultWithScorePercent: 'notANumber',
+      defaultWithScorePercent: 'notANumber' as any,
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for NaN pointsPerMinute', () => {
     const result = mocksEngine.generateOutcome({
-      pointsPerMinute: 'bad',
+      pointsPerMinute: 'bad' as any,
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for NaN sideWeight', () => {
     const result = mocksEngine.generateOutcome({
-      sideWeight: 'bad',
+      sideWeight: 'bad' as any,
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });
@@ -264,7 +264,7 @@ describe('generateOutcome - uncovered branches', () => {
   it('matchUpStatusProfile with only unknown statuses produces COMPLETED', () => {
     generateRange(0, 5).forEach(() => {
       const { outcome } = mocksEngine.generateOutcome({
-        matchUpStatusProfile: { UNKNOWN_STATUS: 50 },
+        matchUpStatusProfile: { UNKNOWN_STATUS: 50 } as any,
       });
       // Unknown statuses are filtered out, so always COMPLETED
       expect(outcome.matchUpStatus).toEqual(COMPLETED);

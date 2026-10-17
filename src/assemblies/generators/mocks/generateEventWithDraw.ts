@@ -726,7 +726,7 @@ function generateAndAttachDraw({
 
   if (Array.isArray(drawExtensions)) {
     drawExtensions
-      .filter(isValidExtension)
+      .filter((extension) => isValidExtension({ extension }))
       .forEach((extension) => addExtension({ element: drawDefinition, extension }));
   }
 
@@ -1044,7 +1044,7 @@ function buildMockEvent({
   Object.assign(event, eventAttributes);
 
   if (eventExtensions?.length && Array.isArray(eventExtensions)) {
-    const extensions = eventExtensions.filter(isValidExtension);
+    const extensions = eventExtensions.filter((extension) => isValidExtension({ extension }));
     if (extensions?.length) Object.assign(event, { extensions });
   }
 

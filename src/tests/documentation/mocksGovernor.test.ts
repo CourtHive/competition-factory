@@ -322,7 +322,7 @@ test('modifyTournamentRecord - randomWinningSide parameter', () => {
 
 test('modifyTournamentRecord - error handling', () => {
   const result = mocksEngine.modifyTournamentRecord({
-    tournamentRecord: undefined,
+    tournamentRecord: undefined as any,
   });
 
   expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);

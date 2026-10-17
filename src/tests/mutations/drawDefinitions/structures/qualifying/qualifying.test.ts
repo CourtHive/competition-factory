@@ -32,7 +32,7 @@ it('will throw an error for incorrect qualifyingStructures', () => {
   const result = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        qualifyingProfiles: [{ drawSize: 16, qualifyingPositions: 4 }],
+        qualifyingProfiles: [{ drawSize: 16, qualifyingPositions: 4 }] as any,
         drawSize: 16,
       },
     ],

@@ -21,7 +21,6 @@ it('can recognize valid ALTERNATES', () => {
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
   // end mock tournament generation
