@@ -3097,6 +3097,12 @@ export function settleHeldExits({
     event,
   });
   if (produced?.error) return decorateResult({ result: produced, stack });
+  // a production advances whoever stood in its winner target, through BYEs, possibly to a link's source round: the
+  // crossing asked above was asked of the draw before it (census DOUBLE_ELIMINATION 16/11, 21138954)
+  if (produced?.produced) {
+    const crossed = crossLinksThroughByes({ tournamentRecord, drawDefinition, matchUpsMap, event, stack });
+    if (crossed.error) return decorateResult({ result: crossed, stack });
+  }
 
   // under either policy, an exit label left beside a BYE with nobody in it is the BYE it holds
   const relabelled = settleHoldersToBye({ drawDefinition, matchUpsMap, params: { appliedPolicies } });
@@ -3130,14 +3136,14 @@ function produceStrandedConvergences({
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
   event?: Event;
-}): ResultType | undefined {
+}): (ResultType & { produced?: boolean }) | undefined {
   const produced = new Set<string>();
   for (let pass = 0; pass < 16; pass++) {
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
     const stranded = inContextDrawMatchUps.find(
       (matchUp) => !produced.has(matchUp.matchUpId) && strandsItsExit({ inContextDrawMatchUps, matchUpsMap, matchUp }),
     );
-    if (!stranded) return undefined;
+    if (!stranded) return produced.size ? { ...SUCCESS, produced: true } : undefined;
     produced.add(stranded.matchUpId);
     const { structure } = findStructure({ drawDefinition, structureId: stranded.structureId });
     const result = advanceConvergedWinner({
@@ -3158,7 +3164,7 @@ function produceStrandedConvergences({
     });
     if (result?.error) return result;
   }
-  return undefined;
+  return produced.size ? { ...SUCCESS, produced: true } : undefined;
 }
 
 function strandsItsExit({

@@ -107,7 +107,7 @@ describe('bestOf | timed(G) — SET3-S:T10 and its kin: timed sets scored in gam
 
 describe('bestOf | timed(G) | game:traditional(deuceCap) — SET3-S:T10-G:TN3D', () => {
   const format = 'SET3-S:T10-G:TN3D';
-  // the cap itself is a point-level rule: see ENGINE DISAGREES below, where points do not build games
+  // the cap itself is a point-level rule, held by the point-input cases at the end of this file
 
   it('engine-defined: a game-capped timed set still has no game target; time closes it', () => {
     segmentConforms(format, 'g1111111', { sets: [[7, 0]], complete: false });
@@ -450,35 +450,37 @@ describe('exactly | INN | standard(tiebreak) — INN3X-S:6/TB7: exactly three in
  * Each case below is derived from the definition and FAILS against the engine. The expectation is the
  * definition's, kept unchanged and skipped for review; the comment records what the engine did.
  */
-describe('ENGINE DISAGREES — needs review', () => {
+// Found by these cases on 2026-10-17 and fixed (CA: points build games in a SET-root timed set; a
+// level timed set plays its declared tiebreak; an exactly format's final set is set N).
+describe('timed sets: games from points, the tiebreak at time, the final set of an exactly format', () => {
   // Definition: `T{minutes}` is a "Timed set (games-based)" (matchup-format.mdx), and a game is
   // traditional (`-G:TN`, 0-15-30-40). Four points to love are one game, so 28 points are 7-0 in games.
   // Observed: point input in a games-based timed segment adds one to the set score per POINT
   // ([28, 0]); no game structure is built. Game-level input (addGame) scores games correctly.
-  it.skip('SET3-S:T10 — 28 points to love are seven games, not 28', () => {
+  it('SET3-S:T10 — 28 points to love are seven games, not 28', () => {
     segmentConforms('SET3-S:T10', games('1111111'), { sets: [[7, 0]], complete: false });
   });
 
   // Definition: as above, a traditional game from deuce needs two clear points.
   // Expected [1, 0] after deuce-adv-deuce-adv-game; observed [6, 4] (one unit per point).
-  it.skip('SET3-S:T10 — a game inside a timed set is traditional: from deuce two clear points', () => {
+  it('SET3-S:T10 — a game inside a timed set is traditional: from deuce two clear points', () => {
     segmentConforms('SET3-S:T10', '111222 12 11', { sets: [[1, 0]], complete: false });
   });
 
   // Definition: -G:TN3D "Traditional with deuce cap (Star Point: decisive at 3rd deuce)".
   // Expected: at the third deuce the next point wins the game, [1, 0]; observed [6, 5].
-  it.skip('SET3-S:T10-G:TN3D — at the third deuce the next point wins the game', () => {
+  it('SET3-S:T10-G:TN3D — at the third deuce the next point wins the game', () => {
     segmentConforms('SET3-S:T10-G:TN3D', '111222 1221 1', { sets: [[1, 0]], complete: false });
   });
 
   // Expected: advantage after the first deuce is no game, [0, 0]; observed [4, 3].
-  it.skip('SET3-S:T10-G:TN3D — before the third deuce advantage still applies', () => {
+  it('SET3-S:T10-G:TN3D — before the third deuce advantage still applies', () => {
     segmentConforms('SET3-S:T10-G:TN3D', '111222 1', { sets: [[0, 0]], complete: false });
   });
 
   // Expected: the match-level -G: cap governs the timed final; the capped game is 1-0 in games.
   // Observed: the final set reads [6, 5] in points and the match is not decided as expected.
-  it.skip('SET3-S:T10-G:TN3D-F:T20 — the deuce cap governs the final timed segment as well', () => {
+  it('SET3-S:T10-G:TN3D-F:T20 — the deuce cap governs the final timed segment as well', () => {
     segmentConforms('SET3-S:T10-G:TN3D-F:T20', seq(segment('1'), segment('2'), '111222 1221 1', END), {
       sets: [
         [1, 0],
@@ -492,7 +494,7 @@ describe('ENGINE DISAGREES — needs review', () => {
 
   // Definition: `-F:T20` makes the fourth segment games-based; one love game is [0, 1].
   // Observed: four points read [0, 4].
-  it.skip('SET4X-S:T20P-F:T20 — four points to love in the games-based fourth segment are one game', () => {
+  it('SET4X-S:T20P-F:T20 — four points to love in the games-based fourth segment are one game', () => {
     segmentConforms('SET4X-S:T20P-F:T20', seq(pointSegment('1'), pointSegment('1'), pointSegment('1'), '2222'), {
       sets: [
         [1, 0],
@@ -509,7 +511,7 @@ describe('ENGINE DISAGREES — needs review', () => {
   // Observed: endSegment closes the level set [1, 1] with no tiebreak; the seven points open set 2
   // ([7, 0]). parse.ts calls the timed `/TB` "notation only for tournament directors" — the docs and
   // the code comment disagree, and the engine follows the comment.
-  it.skip('SET3-S:T20/TB7 — level at time, a tiebreak to seven decides the segment', () => {
+  it('SET3-S:T20/TB7 — level at time, a tiebreak to seven decides the segment', () => {
     segmentConforms('SET3-S:T20/TB7', seq(segment('12'), '1111111', segment('1')), {
       sets: [
         [2, 1, [7, 0]],
@@ -521,7 +523,7 @@ describe('ENGINE DISAGREES — needs review', () => {
   });
 
   // Expected [2, 1, [8, 6]]; observed [1, 1] then the points scored in set 2.
-  it.skip('SET3-S:T20/TB7 — the timed-set tiebreak runs on to a two-point margin', () => {
+  it('SET3-S:T20/TB7 — the timed-set tiebreak runs on to a two-point margin', () => {
     segmentConforms('SET3-S:T20/TB7', seq(segment('12'), '121212121212 11'), {
       sets: [[2, 1, [8, 6]]],
       complete: false,
@@ -529,12 +531,12 @@ describe('ENGINE DISAGREES — needs review', () => {
   });
 
   // Expected [1, 2, [0, 1]]; observed [[1, 1], [0, 1]] — the point opens set 2.
-  it.skip.each(['SET3-S:T10/TB1', 'SET3-S:T10G/TB1'])('%s — level at time, one point decides', (format) => {
+  it.each(['SET3-S:T10/TB1', 'SET3-S:T10G/TB1'])('%s — level at time, one point decides', (format) => {
     segmentConforms(format, seq(segment('12'), '2'), { sets: [[1, 2, [0, 1]]], complete: false });
   });
 
   // Expected [3, 2, [1, 0]]; observed [[2, 2], [1, 0]].
-  it.skip.each(['SET3-S:T10P/TB1', 'SET5-S:T10P/TB1'])(
+  it.each(['SET3-S:T10P/TB1', 'SET5-S:T10P/TB1'])(
     '%s — level on points at time, one tiebreak point decides the segment',
     (format) => {
       segmentConforms(format, seq(pointSegment('1212'), '1'), { sets: [[3, 2, [1, 0]]], complete: false });
@@ -542,13 +544,13 @@ describe('ENGINE DISAGREES — needs review', () => {
   );
 
   // Expected [2, 1, [7, 0]]; observed [[1, 1], [7, 0]].
-  it.skip('SET3-S:T10P/TB7 — level at time, a tiebreak to seven decides', () => {
+  it('SET3-S:T10P/TB7 — level at time, a tiebreak to seven decides', () => {
     segmentConforms('SET3-S:T10P/TB7', seq(pointSegment('12'), '1111111'), { sets: [[2, 1, [7, 0]]], complete: false });
   });
 
   // Expected: set 1 [2, 1, [1, 0]], then 1-0, 0-1: side 1 wins 2-1. Observed: set 1 closes [1, 1]
   // with no winner, so after three segments sets are [1, 1], [2, 0], [0, 1] and the match is open.
-  it.skip('SET3X-S:T10P/TB1 — a segment level on points at time goes to a one-point tiebreak', () => {
+  it('SET3X-S:T10P/TB1 — a segment level on points at time goes to a one-point tiebreak', () => {
     segmentConforms('SET3X-S:T10P/TB1', seq(pointSegment('12'), '1', pointSegment('1'), pointSegment('2')), {
       sets: [
         [2, 1, [1, 0]],
