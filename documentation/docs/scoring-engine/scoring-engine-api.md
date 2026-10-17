@@ -455,6 +455,24 @@ Get the parsed format structure for advanced consumers. Returns `undefined` if t
 
 ---
 
+### getInputLevels
+
+```ts
+getInputLevels(): { point: boolean; game: boolean; set: boolean }
+```
+
+The inputs the set in play can be scored with: points, games, or set totals (`addSet`). `addPoint` and
+`addGame` refuse an input this reports as unavailable, and throw before recording anything. A segment
+of outs takes set totals only (see [Input Levels](./format-support#input-levels)).
+
+```js
+const engine = new ScoringEngine({ matchUpFormat: 'INN4XA-S:O3' });
+engine.getInputLevels(); // { point: false, game: false, set: true }
+engine.addSet({ side1Score: 2, side2Score: 1 }); // an inning's runs
+```
+
+---
+
 ### getInputMode
 
 ```ts
@@ -575,7 +593,9 @@ engine.editPoint(5, { result: 'Ace' }, { recalculate: false });
 markHardBoundary(options: { setIndex: number; gameIndex: number }): void
 ```
 
-Mark a game boundary as "hard". Edits before this boundary won't cascade past it during recalculation.
+**Deprecated, removed in the next major.** Records the game index on its set's `hardBoundaries` as an
+annotation only. Recalculation does not respect it: an edit before it still changes what follows, and a
+rebuild (`undo`, `redo`, `editPoint`, `removePoint`) discards it.
 
 ```js
 engine.markHardBoundary({ setIndex: 0, gameIndex: 4 });

@@ -167,7 +167,7 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
   drawInfo.display = findExtension({ element: drawDefinition, name: DISPLAY }).extension?.value;
 
   const qualificationStageSeedAssignments = {};
-  let mainStageSeedAssignments, report;
+  let mainStageSeedAssignments;
 
   const { allStructuresLinked, sourceStructureIds, hasDrawFeedProfile, structureGroups } = getStructureGroups({
     drawDefinition,
@@ -248,6 +248,9 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
         if (!structure) return undefined;
         const structureId = structure?.structureId;
         let seedAssignments = [];
+        // per structure: one that is not tallied here (a round robin under refreshResults) reports nothing,
+        // rather than the report of the structure tallied before it
+        let report;
 
         // pass seedAssignments from { stageSequence: 1 } to other stages
         if (structure.stage && [MAIN, CONSOLATION, PLAY_OFF].includes(structure.stage)) {

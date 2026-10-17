@@ -24,8 +24,10 @@ import { addCombinedPoint } from './addCombinedPoint';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 import {
+  inputLevels,
   resolveSetType,
   setHasTiebreak,
+  inputLevelError,
   isLiveDecidingSet,
   isAggregateFormat,
   isStandardSetTiebreak,
@@ -120,6 +122,7 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, setNumber);
   const activeSetFormat: SetFormatStructure | undefined =
     isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
+  if (!inputLevels(activeSetFormat).point) throw inputLevelError('point');
 
   // Detect rally scoring (skip auto server derivation)
   const isRallyScoring = !!(activeSetFormat?.tiebreakSet?.modifier === RALLY || activeSetFormat?.modifier === RALLY);
