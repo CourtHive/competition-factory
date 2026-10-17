@@ -13,6 +13,7 @@ import { createHydrationCache, HydrationCache } from './hydrationCache';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
 import { getDrawPositionsRanges } from './getDrawPositionsRanges';
 import { getRoundContextProfile } from './getRoundContextProfile';
+import { withContextExclusion } from './contextExclusion';
 import { structuresOf } from '@Acquire/structureMembers';
 import { addMatchUpContext } from './addMatchUpContext';
 import { filterMatchUps } from '@Query/filterMatchUps';
@@ -106,6 +107,10 @@ export function getAllStructureMatchUps(
 export function getAllStructureMatchUps(params: GetAllStructureMatchUps): AllStructureMatchUpsResult;
 // eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
 export function getAllStructureMatchUps(params: GetAllStructureMatchUps): AllStructureMatchUpsResult {
+  return withContextExclusion(params, getAllStructureMatchUpsUnredacted);
+}
+
+function getAllStructureMatchUpsUnredacted(params: GetAllStructureMatchUps): AllStructureMatchUpsResult {
   const {
     provisionalPositioning,
     tournamentRecord,

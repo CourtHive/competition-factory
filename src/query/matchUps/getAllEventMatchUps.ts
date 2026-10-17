@@ -2,6 +2,7 @@ import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getSche
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { withContextExclusion } from './contextExclusion';
 import { createHydrationCache } from './hydrationCache';
 import { getAllDrawMatchUps } from './drawMatchUps';
 
@@ -11,6 +12,10 @@ import { GetMatchUpsArgs } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 export function allEventMatchUps(params: GetMatchUpsArgs) {
+  return withContextExclusion(params, allEventMatchUpsUnredacted);
+}
+
+function allEventMatchUpsUnredacted(params: GetMatchUpsArgs) {
   let { participants = [], contextContent, participantMap } = params;
   const {
     scheduleVisibilityFilters,

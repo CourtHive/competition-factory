@@ -5,6 +5,7 @@ import { addUpcomingMatchUps } from '@Query/matchUp/addUpcomingMatchUps';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getDrawStructures } from '@Acquire/findStructure';
+import { withContextExclusion } from './contextExclusion';
 import { createHydrationCache } from './hydrationCache';
 import { filterMatchUps } from '@Query/filterMatchUps';
 import { getMatchUpsMap } from './getMatchUpsMap';
@@ -18,7 +19,11 @@ import { HydratedMatchUp } from '@Types/hydrated';
 /*
   return ALL matchUps within a drawDefinition, regardless of state
 */
-export function getAllDrawMatchUps(params): ResultType & {
+export function getAllDrawMatchUps(params) {
+  return withContextExclusion(params, getAllDrawMatchUpsUnredacted);
+}
+
+function getAllDrawMatchUpsUnredacted(params): ResultType & {
   matchUps?: HydratedMatchUp[];
   matchUpsMap?: MatchUpsMap;
 } {

@@ -450,10 +450,8 @@ export function addMatchUpContext({
     matchUpWithContext.checkIns = stripCheckInAttribution([matchUpWithContext])?.[0]?.checkIns;
   }
 
-  if (Array.isArray(contextProfile?.exclude)) {
-    // loop through all attributes and delete them from matchUpWithContext
-    contextProfile?.exclude.forEach((attribute) => delete matchUpWithContext[attribute]);
-  }
+  // `contextProfile.exclude` is not applied here: what this returns is still read (completion, filters, schedule
+  // order), so the exclusion is a redaction of the final result. See contextExclusion.ts.
 
   return matchUpWithContext;
 }
