@@ -90,8 +90,9 @@ export function generateParticipants(params): {
     scaledParticipantsCount && scaledParticipantsCount > defaultRankingRange
       ? scaledParticipantsCount
       : defaultRankingRange;
-  rankingRange = rankingRange || [1, rankingUpperBound];
-  rankingRange[1] += 1; // so that behavior is as expected
+  // a new array: the caller's rankingRange is read, never incremented in place (it grew by one on
+  // every reuse of the same profile: [1,2] -> [1,3] -> [1,4])
+  rankingRange = rankingRange ? [rankingRange[0], rankingRange[1] + 1] : [1, rankingUpperBound + 1]; // upper bound exclusive below
 
   // a team-only competition enumerates no individuals at all, so no persons are generated for them
   const teamsOnly = !!team && enumerateIndividuals === false;

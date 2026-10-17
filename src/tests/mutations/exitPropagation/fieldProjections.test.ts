@@ -3,6 +3,7 @@ import { compareCorrection } from '@Tests/testHarness/exitPropagation/correction
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { createSeededRandom } from '@Tools/prng';
 import { describe, expect, it } from 'vitest';
 import {
   projectFields,
@@ -32,11 +33,14 @@ import { TEAM } from '@Constants/eventConstants';
 
 const drawId = 'g14';
 
-const generateTeam = () => {
+// `seedAsFunction`: the same seeded stream passed as `random` rather than `nonRandom`. Its seeded
+// draws are identical, but ids the seed does not reach are minted from the process source, so they
+// differ; `nonRandom` determines those too, and two such generations share every id
+const generateTeam = (seedAsFunction?: boolean) => {
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawId, drawType: SINGLE_ELIMINATION, drawSize: 4, eventType: TEAM, tieFormatName: DOMINANT_DUO }],
-    nonRandom: 1405,
+    ...(seedAsFunction ? { random: createSeededRandom(1405) } : { nonRandom: 1405 }),
     setState: true,
   });
 };
@@ -119,7 +123,7 @@ describe('the projection is stable where it must be', () => {
     generateTeam();
     const first = projectFields(drawId);
     const firstIds = new Set(matchUpIds());
-    generateTeam();
+    generateTeam(true);
     // the control: the ids really are regenerated (measured: eventId and structureId are not)
     expect(matchUpIds().some((matchUpId: string) => firstIds.has(matchUpId))).toEqual(false);
     expect(diffFields(first, projectFields(drawId))).toEqual([]);

@@ -25,6 +25,7 @@ import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 import {
   inputLevels,
+  tiebreakMargin,
   resolveSetType,
   setHasTiebreak,
   inputLevelError,
@@ -94,6 +95,14 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   if (!formatStructure) {
     throw new Error(`Invalid matchUpFormat: ${matchUp.matchUpFormat}`);
   }
+  // An exactly format plays N sets and no more ("Exactly N Sets"): once all N are closed a level count
+  // names no winner, and a point after it starts nothing. Ignored, as a point after the match is.
+  if (
+    formatStructure.exactly &&
+    !isAggregateFormat(formatStructure) &&
+    openSetNumber(matchUp.score.sets) > formatStructure.exactly
+  )
+    return matchUp;
   if (formatStructure.setFormat?.combinedPointTotal)
     return addCombinedPoint(matchUp, options, winner, server, {
       combinedPointTotal: formatStructure.setFormat.combinedPointTotal,
@@ -198,7 +207,7 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
       handleMatchTiebreak(newMatchUp, point, winner, formatStructure, setsToWin, scoreIncrement);
       break;
     case 'timed':
-      handleTimedSet(newMatchUp, point, winner, activeSetFormat!, scoreIncrement);
+      handleTimedSet(newMatchUp, point, winner, activeSetFormat!, scoreIncrement, formatStructure, setsToWin);
       break;
     case 'standard':
     default:
@@ -493,20 +502,37 @@ function handleMatchTiebreak(
  * Points are recorded but the set does NOT auto-complete.
  * The set completes via endSegment() on the engine.
  */
+/** A point with the set, game and point-in-game coordinates the scorer writes onto it. */
+type PlacedPoint = Point & { set?: number; game?: number; number?: number };
+/** A set a timed segment or tiebreak closes. */
+type ClosableSet = SetScore & { segmentComplete?: boolean };
+
 function handleTimedSet(
   matchUp: MatchUp,
   point: Point,
   winner: 0 | 1,
-  _activeSetFormat: SetFormatStructure,
+  activeSetFormat: SetFormatStructure,
   scoreIncrement: number = 1,
+  formatStructure?: FormatStructure,
+  setsToWin: number = 2,
 ): void {
   const currentSet = getOrCreateSet(matchUp, false, true);
   const currentSetIndex = matchUp.score.sets.indexOf(currentSet);
+  (point as PlacedPoint).set = currentSetIndex;
 
-  // V3-compatible point metadata
-  (point as any).set = currentSetIndex;
-  (point as any).game = 0;
-  (point as any).number = (currentSet.side1Score || 0) + (currentSet.side2Score || 0);
+  // Level at time with a declared `/TB{n}`: endSegment opened a tiebreak, and the set waits on it
+  if (currentSet.side1TiebreakScore !== undefined && currentSet.side2TiebreakScore !== undefined) {
+    handleTimedTiebreakPoint(matchUp, currentSet, point, winner, activeSetFormat, formatStructure, setsToWin);
+    return;
+  }
+
+  if (timedSetBuildsGames(formatStructure, activeSetFormat)) {
+    handleTimedGamePoint(currentSet, point, winner, activeSetFormat, formatStructure);
+    return;
+  }
+
+  (point as PlacedPoint).game = 0;
+  (point as PlacedPoint).number = (currentSet.side1Score || 0) + (currentSet.side2Score || 0);
 
   // Just increment the score — set doesn't auto-complete (with multiplier support)
   if (winner === 0) {
@@ -518,6 +544,88 @@ function handleTimedSet(
   const s1 = currentSet.side1Score || 0;
   const s2 = currentSet.side2Score || 0;
   point.score = `${s1}-${s2}`;
+}
+
+/**
+ * Whether points in this timed set build games. A games-based timed set (`T{minutes}`, `T{minutes}G`)
+ * under the SET root is a tennis-family set: its points make traditional games, with deuce, No-Ad and
+ * deuce caps, and the set counts games (CA 2026-10-17). Elsewhere a point stays one scoring unit:
+ * - under another root (HAL, QTR, PER, RND, INN) and in the standalone form, a game is the sport's own
+ *   unit (a goal, a basket);
+ * - in an aggregate format the segment's total is its units: INTENNSE bolts (`SET2XA-S:T10`) score
+ *   point by point, with point multipliers.
+ */
+function timedSetBuildsGames(formatStructure: FormatStructure | undefined, setFormat: SetFormatStructure): boolean {
+  if (!formatStructure || formatStructure.matchRoot || formatStructure.simplified) return false;
+  return !formatStructure.aggregate && setFormat.based !== 'P';
+}
+
+function handleTimedGamePoint(
+  currentSet: SetScore,
+  point: Point,
+  winner: 0 | 1,
+  setFormat: SetFormatStructure,
+  formatStructure?: FormatStructure,
+): void {
+  const side1GameScores = (currentSet.side1GameScores ??= []);
+  const side2GameScores = (currentSet.side2GameScores ??= []);
+  if (!side1GameScores.length) {
+    side1GameScores.push(0);
+    side2GameScores.push(0);
+  }
+  const last = side1GameScores.length - 1;
+  (point as PlacedPoint).game = (currentSet.side1Score || 0) + (currentSet.side2Score || 0);
+  (point as PlacedPoint).number = side1GameScores[last] + side2GameScores[last];
+
+  if (winner === 0) side1GameScores[last] += 1;
+  else side2GameScores[last] += 1;
+
+  const gameWon = checkStandardGameWon(side1GameScores[last], side2GameScores[last], setFormat, false, formatStructure);
+  if (gameWon === undefined) {
+    point.score = formatGameScore(side1GameScores[last], side2GameScores[last], false);
+    return;
+  }
+  if (gameWon === 0) currentSet.side1Score = (currentSet.side1Score || 0) + 1;
+  else currentSet.side2Score = (currentSet.side2Score || 0) + 1;
+  side1GameScores.push(0);
+  side2GameScores.push(0);
+  point.score = '0-0';
+}
+
+/**
+ * A point of the tiebreak a level timed set plays at time (`T{minutes}/TB{n}`, CA 2026-10-17). The
+ * tiebreak's winner takes the set by one more game (or point, in a points-based set), as a tennis
+ * tiebreak wins 7-6, and the set is closed.
+ */
+function handleTimedTiebreakPoint(
+  matchUp: MatchUp,
+  currentSet: SetScore,
+  point: Point,
+  winner: 0 | 1,
+  setFormat: SetFormatStructure,
+  formatStructure: FormatStructure | undefined,
+  setsToWin: number,
+): void {
+  // endSegment opened the tiebreak with the games and the tiebreak points all set
+  const games = [currentSet.side1Score!, currentSet.side2Score!];
+  (point as PlacedPoint).game = games[0] + games[1];
+  (point as PlacedPoint).number = currentSet.side1TiebreakScore! + currentSet.side2TiebreakScore!;
+  if (winner === 0) currentSet.side1TiebreakScore! += 1;
+  else currentSet.side2TiebreakScore! += 1;
+
+  const tb1 = currentSet.side1TiebreakScore!;
+  const tb2 = currentSet.side2TiebreakScore!;
+  // only a set that declares `/TB{n}` opens one, so its tiebreak format is there
+  const tiebreak = setFormat.tiebreakFormat!;
+  const won = checkTiebreakWon(tb1, tb2, tiebreak.tiebreakTo!, tiebreak.NoAD);
+  point.score = `${tb1}-${tb2}`;
+  if (won === undefined) return;
+
+  if (won === 0) currentSet.side1Score = games[0] + 1;
+  else currentSet.side2Score = games[1] + 1;
+  currentSet.winningSide = won + 1;
+  (currentSet as ClosableSet).segmentComplete = true;
+  if (formatStructure) checkAndFinalizeMatch(matchUp, formatStructure, setsToWin);
 }
 
 // ============================================================================
@@ -572,8 +680,9 @@ export function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatS
     // Sum scores
     const totals = matchUp.score.sets.reduce(
       (acc, set) => {
-        // For tiebreak-only sets, use tiebreak scores
-        if (set.side1TiebreakScore !== undefined && set.side2TiebreakScore !== undefined) {
+        // For tiebreak-only sets, use tiebreak scores. A timed set's own score is its total, even when a
+        // tiebreak at time decided it.
+        if (!set.isTimed && set.side1TiebreakScore !== undefined && set.side2TiebreakScore !== undefined) {
           acc[0] += set.side1TiebreakScore;
           acc[1] += set.side2TiebreakScore;
         } else {
@@ -598,13 +707,16 @@ export function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatS
   const hasWinner = setsWon[0] >= setsToWin || setsWon[1] >= setsToWin;
   if (!hasWinner) return;
 
-  // For exactly formats, all sets must be completed
+  // For exactly formats, all sets must be completed, and the side with more sets wins: a level count
+  // names no winner (format-support "Exactly N Sets"). Both sides can reach setsToWin (2-2 in SET4X),
+  // and reading the first side's count alone named side 1 the winner of a level match.
   if (exactly) {
     const completedSets = matchUp.score.sets.filter((s) => s.winningSide !== undefined).length;
     if (completedSets < exactly) return;
+    if (setsWon[0] === setsWon[1]) return;
   }
 
-  const matchWinner = setsWon[0] >= setsToWin ? 0 : 1;
+  const matchWinner = setsWon[0] > setsWon[1] ? 0 : 1;
   matchUp.matchUpStatus = COMPLETED;
   matchUp.winningSide = matchWinner + 1;
   matchUp.endTime = nowIso();
@@ -620,7 +732,7 @@ function checkTiebreakWon(
   isNoAD: boolean = false,
 ): number | undefined {
   const diff = Math.abs(side1Points - side2Points);
-  const minWin = isNoAD ? 1 : 2;
+  const minWin = tiebreakMargin(tiebreakTo, isNoAD);
 
   if ((side1Points >= tiebreakTo || side2Points >= tiebreakTo) && diff >= minWin) {
     return side1Points > side2Points ? 0 : 1;
@@ -690,14 +802,6 @@ export function checkStandardSetWon(
   const tiebreakAt = (typeof setFormat.tiebreakAt === 'number' ? setFormat.tiebreakAt : undefined) ?? setTo;
   const activeFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
   const noTiebreak = !setHasTiebreak(activeFormat);
-
-  // For setTo === 1, first to 1 game wins
-  if (setTo === 1) {
-    if (side1Games >= 1 || side2Games >= 1) {
-      return side1Games > side2Games ? 0 : 1;
-    }
-    return undefined;
-  }
 
   const winBy = activeFormat.winBy || 2;
 

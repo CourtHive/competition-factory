@@ -8,6 +8,7 @@ import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPoin
 import { tiebreakSetGames, isTiebreakGamesScore, tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { isTiebreakMarker } from '@Query/matchUp/tiebreakSetShape';
+import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
 import { getMaxSetScore } from '@Query/matchUp/getComplement';
 import { timedSetWinnerContradicts } from './timedSetWinner';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
@@ -51,7 +52,7 @@ function validateTiebreakOnlySet(
   // the only score it can have; measured 2026-09-30, this refused it with "must be won by at least 2
   // points" while `checkSetIsComplete` (since #5049) accepted it. The cap below is the same one it uses,
   // so the validator and the analysis agree about the one set that can only ever be won by one.
-  const requiredWinBy = NoAD ? 1 : Math.min(2, tiebreakSetTo);
+  const requiredWinBy = tiebreakMargin(tiebreakSetTo, NoAD);
 
   if (scoreDiff < requiredWinBy) {
     return {
@@ -130,7 +131,7 @@ function validateExplicitTiebreakScore(
   // A no-ad tiebreak is won by one at the target — the ITF's short-set tiebreak (first to five, deciding
   // point at four-all), Fast4's, World TeamTennis's nine-pointer. This demanded two from every tiebreak
   // and refused all of them, including the mocks' own 5-4 under `TB5NOAD@5` (measured 2026-10-01).
-  const requiredWinBy = tiebreakFormat.NoAD ? 1 : 2;
+  const requiredWinBy = tiebreakMargin(tiebreakFormat.tiebreakTo, tiebreakFormat.NoAD);
   if (tbDiff < requiredWinBy) {
     return {
       isValid: false,

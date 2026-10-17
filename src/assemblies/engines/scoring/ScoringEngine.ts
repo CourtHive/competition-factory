@@ -15,7 +15,13 @@
  *   const matchUp = engine.getState();
  */
 
-import { inputLevels, resolveSetType, inputLevelError, isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
+import {
+  inputLevels,
+  resolveSetType,
+  tiebreakMargin,
+  inputLevelError,
+  isLiveDecidingSet,
+} from '@Tools/scoring/scoringUtilities';
 import { finalSetGoverns, openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
@@ -1558,6 +1564,20 @@ export class ScoringEngine {
     const s1 = targetSet.side1Score || 0;
     const s2 = targetSet.side2Score || 0;
 
+    // A tiebreak already under way is decided by its points, not by the clock
+    if (targetSet.side1TiebreakScore !== undefined) return;
+
+    // Level at time, and the set declares `/TB{n}`: the tiebreak decides it (CA 2026-10-17). The set
+    // stays open; its points go to the tiebreak, and the tiebreak's winner closes it.
+    const activeFormat = this.activeSetFormat();
+    if (s1 === s2 && activeFormat?.timed && activeFormat.tiebreakFormat) {
+      targetSet.side1Score = s1;
+      targetSet.side2Score = s2;
+      targetSet.side1TiebreakScore = 0;
+      targetSet.side2TiebreakScore = 0;
+      return;
+    }
+
     if (s1 > s2) targetSet.winningSide = 1;
     else if (s2 > s1) targetSet.winningSide = 2;
 
@@ -1626,8 +1646,7 @@ export class ScoringEngine {
 
     if (activeSetFormat.tiebreakSet) {
       const tbTo = activeSetFormat.tiebreakSet.tiebreakTo || 11;
-      const isNoAD = activeSetFormat.tiebreakSet.NoAD || false;
-      const minWin = isNoAD ? 1 : 2;
+      const minWin = tiebreakMargin(tbTo, activeSetFormat.tiebreakSet.NoAD);
       if ((s1 >= tbTo || s2 >= tbTo) && Math.abs(s1 - s2) >= minWin) {
         currentSet.winningSide = s1 > s2 ? 1 : 2;
       }

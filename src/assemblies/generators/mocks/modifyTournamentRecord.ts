@@ -247,18 +247,14 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
 }
 
 export function modifyTournamentRecord(params) {
-  const {
-    participantsProfile = {},
-    schedulingProfile,
-    tournamentRecord,
-    autoSchedule,
-    eventProfiles,
-    periodLength,
-    venueProfiles,
-    drawProfiles,
-    uuids,
-  } = params;
+  const { schedulingProfile, tournamentRecord, autoSchedule, periodLength, venueProfiles, drawProfiles, uuids } =
+    params;
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+
+  // the caller's profiles are configuration, not scratch space: the gender and idPrefix adjustments
+  // below are made on copies, so passing the same profile twice asks for the same thing twice
+  const participantsProfile = { ...params.participantsProfile };
+  const eventProfiles = params.eventProfiles?.map((eventProfile) => ({ ...eventProfile }));
 
   const allUniqueParticipantIds: string[] = [];
   const eventIds: string[] = [];
@@ -287,6 +283,13 @@ export function modifyTournamentRecord(params) {
   });
   if (!result.success) return result;
 
+  // what the nested generators read as `params`: the adjusted copies, never the caller's objects
+  const generationParams = {
+    ...params,
+    participantsProfile: params.participantsProfile ? participantsProfile : undefined,
+    eventProfiles,
+  };
+
   if (eventProfiles) {
     const eventResult = processEventProfiles({
       eventProfiles,
@@ -294,7 +297,7 @@ export function modifyTournamentRecord(params) {
       allUniqueParticipantIds,
       eventIds,
       drawIds,
-      params,
+      params: generationParams,
     });
     if (eventResult.error) return eventResult;
   }
@@ -306,12 +309,13 @@ export function modifyTournamentRecord(params) {
       allUniqueParticipantIds,
       eventIds,
       drawIds,
-      params,
+      params: generationParams,
     });
     if (drawResult.error) return drawResult;
   }
 
   const venueIds = venueProfiles?.length ? generateVenues({ tournamentRecord, venueProfiles }) : [];
+  if (!Array.isArray(venueIds)) return venueIds;
 
   const schedulingResult = applySchedulingProfile({
     tournamentRecord,

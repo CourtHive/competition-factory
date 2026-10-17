@@ -1032,7 +1032,9 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 
 ## Deterministic Generation
 
-The `nonRandom` parameter seeds a deterministic PRNG that replaces `Math.random` throughout the entire generation chain. This makes every random decision — participant names, IDs, nationalities, ratings, draw position assignments, and match outcomes — fully reproducible.
+The `nonRandom` parameter seeds a deterministic PRNG that replaces `Math.random` throughout the entire generation chain. This makes every random decision — participant names, IDs, nationalities, addresses, ratings, draw position assignments, and match outcomes — fully reproducible.
+
+What a seed promises: given the same `nonRandom`, the same profile, the same clock and the same factory version, the record is identical byte for byte. It does not depend on the process's random source (`setRandomSource`) or on anything generated earlier in the process, and the call draws nothing from that source. `modifyTournamentRecord` gives the same promise for what it adds. To pin the clock as well, use `setClock`. See [Randomness](../concepts/randomness.md).
 
 ### Same Seed = Same Results
 

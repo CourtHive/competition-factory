@@ -1,4 +1,5 @@
 import { getHighTiebreakValue, testTiebreakEntry } from './keyValueUtilities';
+import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
 import { ensureInt } from '@Tools/ensureInt';
 
 import { MATCH_TIEBREAK_BRACKETS, MATCH_TIEBREAK_JOINER } from './constants';
@@ -49,7 +50,7 @@ export function processTiebreakSet({ analysis, auto, lowSide, scoreString = '', 
       if (lowSide === 2) matchTiebreakScores[1] = (matchTiebreakScores[1] || '') + value;
       const setScores = [matchTiebreakScores[0] || 0, matchTiebreakScores[1] || 0].map((s) => ensureInt(s));
       const highIndex = lowSide === 1 ? 1 : 0;
-      setScores[highIndex] = setScores[1 - highIndex] + (NoAD ? 1 : 2);
+      setScores[highIndex] = setScores[1 - highIndex] + tiebreakMargin(tiebreakTo, NoAD);
       if (setScores[highIndex] < tiebreakTo) setScores[highIndex] = tiebreakTo;
 
       const lastSet = sets[sets.length - 1];
