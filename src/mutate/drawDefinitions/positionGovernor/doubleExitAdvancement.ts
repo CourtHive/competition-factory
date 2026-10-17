@@ -1759,6 +1759,55 @@ function exitTravelsToEmptyTarget({
   return isExit(EXIT) && !nextWinnerMatchUpDrawPositions?.length && !isAnyExit(nextWinnerMatchUp.matchUpStatus);
 }
 
+/**
+ * AN EXIT RE-DELIVERED INTO THE SEAT IT ALREADY STANDS ON IS NOT A SECOND EXIT.
+ *
+ * A double exit re-settled with a different origin on one side (a carried exit becoming a produced one) propagates
+ * again, past the same BYE, into the matchUp its first pass already left pending with this exit on the arrival
+ * side. Read as an exit meeting a standing one, the matchUp was advanced FROM as though decided: a WALKOVER nobody
+ * won was sent on into the next round, which became an exit stamped with an arrival from a matchUp nobody had won,
+ * and the participant who later did win it arrived into a TO_BE_PLAYED matchUp still carrying that origin.
+ * Census S8 21030358 (DOUBLE_ELIMINATION 16/11): `Backdraw|3|1` re-settled when `Main|2|2`'s double walkover was
+ * corrected to a default, and `Backdraw|5|1`'s pending walkover was sent on into the backdraw final.
+ */
+function advanceFromStandingExit({
+  noContextNextWinnerMatchUp,
+  inContextDrawMatchUps,
+  nextWinnerMatchUp,
+  nextTargetData,
+  targetMatchUp,
+  matchUpStatus,
+  params,
+  stack,
+}: {
+  nextTargetData: ReturnType<typeof positionTargets>;
+  params: Parameters<typeof doubleExitAdvancement>[0];
+  inContextDrawMatchUps: HydratedMatchUp[];
+  matchUpStatus?: MatchUpStatusUnion;
+  nextWinnerMatchUp: HydratedMatchUp;
+  noContextNextWinnerMatchUp: MatchUp;
+  targetMatchUp: HydratedMatchUp;
+  stack: string;
+}): ResultType {
+  const arrivalSideNumber = getExitArrivalSideNumber({
+    inContextDrawMatchUps,
+    nextWinnerMatchUp,
+    sourceMatchUp: targetMatchUp,
+  });
+  if (exitStandsOnlyOnSide(noContextNextWinnerMatchUp, arrivalSideNumber))
+    return decorateResult({ result: { ...SUCCESS }, stack });
+
+  // the exit standing on the next targetMatchUp is on the OTHER side: the arriving exit meets it
+  const result = doubleExitAdvancement({
+    ...params,
+    matchUpId: noContextNextWinnerMatchUp.matchUpId,
+    matchUpStatus,
+    targetData: nextTargetData,
+  });
+  if (result.error) return decorateResult({ result, stack });
+  return decorateResult({ result: { ...SUCCESS }, stack });
+}
+
 function advanceByeAdvancedDrawPosition({
   nextWinnerMatchUpDrawPositions,
   nextWinnerMatchUpHasDrawPosition,
@@ -2028,14 +2077,16 @@ function advanceByeAdvancedDrawPosition({
 
     return advanceResult;
   } else if (isExit(nextWinnerMatchUp.matchUpStatus)) {
-    // if the next targetMatchUp is a double walkover or double default
-    const result = doubleExitAdvancement({
-      ...params,
-      matchUpId: noContextNextWinnerMatchUp.matchUpId,
+    return advanceFromStandingExit({
+      noContextNextWinnerMatchUp,
+      inContextDrawMatchUps,
+      nextWinnerMatchUp,
+      nextTargetData,
+      targetMatchUp,
       matchUpStatus,
-      targetData: nextTargetData,
+      params,
+      stack,
     });
-    if (result.error) return decorateResult({ result, stack });
   } else if (
     ownPositionOnward ||
     exitTravelsToEmptyTarget({ nextWinnerMatchUpDrawPositions, nextWinnerMatchUp, EXIT })
