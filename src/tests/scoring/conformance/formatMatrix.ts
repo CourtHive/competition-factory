@@ -16,11 +16,15 @@ const STANDARD_SETS: MatrixEntry = {
   status: 'conformance',
   cases: ['src/tests/scoring/conformance/standardSets.conformance.test.ts'],
 };
+const TIEBREAK_SETS: MatrixEntry = {
+  status: 'conformance',
+  cases: ['src/tests/scoring/conformance/tiebreakSets.conformance.test.ts'],
+};
 const OUTS = 'a segment of outs takes set totals (addSet); point and game input are refused (S4, #5518)';
 
 export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
-  'bestOf | FRM | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': MISSING,
-  'bestOf | MAP | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': MISSING,
+  'bestOf | FRM | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
+  'bestOf | MAP | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
   'bestOf | SET | set:combined(ALLOW) | final:same | game:traditional | noClock | knownModifiers': MISSING,
   'bestOf | SET | set:combined(DECIDING_POINT) | final:same | game:traditional | noClock | knownModifiers': MISSING,
   'bestOf | SET | set:combined(WIN_BY_MARGIN) | final:same | game:traditional | noClock | knownModifiers': MISSING,
@@ -81,15 +85,16 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
     STANDARD_SETS,
   'bestOf | SET | set:standard(tiebreak) | final:timed(G) | game:traditional | noClock | knownModifiers': MISSING,
   'bestOf | SET | set:standard(tiebreak) | final:timed(P) | game:traditional | noClock | knownModifiers': MISSING,
-  'bestOf | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': MISSING,
-  'bestOf | SET | set:tiebreakSet | final:tiebreakSet | game:traditional | noClock | knownModifiers': MISSING,
-  'bestOf | SET | set:tiebreakSet(@RALLY,noAD) | final:same | game:traditional | noClock | knownModifiers': MISSING,
+  'bestOf | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
+  'bestOf | SET | set:tiebreakSet | final:tiebreakSet | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
+  'bestOf | SET | set:tiebreakSet(@RALLY,noAD) | final:same | game:traditional | noClock | knownModifiers':
+    TIEBREAK_SETS,
   'bestOf | SET | set:tiebreakSet(@RALLY,noAD) | final:tiebreakSet(@RALLY,noAD) | game:traditional | noClock | knownModifiers':
-    MISSING,
-  'bestOf | SET | set:tiebreakSet(@RALLY) | final:same | game:traditional | noClock | knownModifiers': MISSING,
+    TIEBREAK_SETS,
+  'bestOf | SET | set:tiebreakSet(@RALLY) | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
   'bestOf | SET | set:tiebreakSet(@RALLY) | final:tiebreakSet(@RALLY) | game:traditional | noClock | knownModifiers':
-    MISSING,
-  'bestOf | SET | set:tiebreakSet(noAD) | final:same | game:traditional | noClock | knownModifiers': MISSING,
+    TIEBREAK_SETS,
+  'bestOf | SET | set:tiebreakSet(noAD) | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
   'bestOf | SET | set:timed(G,@RALLY) | final:same | game:traditional | noClock | knownModifiers': MISSING,
   'bestOf | SET | set:timed(G,tiebreak) | final:same | game:traditional | noClock | knownModifiers': MISSING,
   'bestOf | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers': MISSING,
@@ -106,9 +111,9 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
   'bestOf+aggregate | PER | set:timed(G) | final:same | game:traditional | noClock | knownModifiers': MISSING,
   'bestOf+aggregate | QTR | set:timed(G) | final:same | game:traditional | noClock | knownModifiers': MISSING,
   'bestOf+aggregate | RND | set:timed(G) | final:same | game:traditional | noClock | knownModifiers': MISSING,
-  'bestOf+aggregate | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': MISSING,
+  'bestOf+aggregate | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
   'bestOf+aggregate | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers': MISSING,
-  'exactly | HAL | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': MISSING,
+  'exactly | HAL | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
   'exactly | INN | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers': MISSING,
   'exactly | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers': MISSING,
   'exactly | SET | set:timed(P,tiebreak) | final:same | game:traditional | noClock | knownModifiers': MISSING,
