@@ -506,6 +506,9 @@ function smartComplete(params) {
     winningSide,
     random,
   });
+  // a refused outcome is the completion's error: passed on, `setMatchUpStatus` received `outcome:
+  // undefined` and refused with an error that named the status rather than the format
+  if (generatedResult.error) return generatedResult;
   const { outcome } = generatedResult;
 
   return setMatchUpStatus({
