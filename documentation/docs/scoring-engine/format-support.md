@@ -262,3 +262,7 @@ Manual `setMatchUpStatus` refuses a conflicting format or illegal score even whe
 score validation is disabled. A tied result uses `COMPLETED` without `winningSide`.
 Live completion fires `onMatchTie` for a tie and `onMatchComplete` for a winner.
 Individual standings and separate deciding-phase records are subsequent work.
+
+## Later 7.x adoption
+
+See the [dated post-7.15 adoption notes](../whats-new-7.0.0.md#after-715-unreleased-adoption-notes) for input levels, validation errors, replay/configuration, service metadata, substitution results and refreshed tallies. These dev changes remain labeled unreleased until a tag contains them.

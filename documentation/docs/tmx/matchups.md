@@ -471,9 +471,10 @@ const { matchUps } = tournamentEngine.allEventMatchUps({
 });
 
 // Get matches for specific participant
-const { matchUps } = tournamentEngine.getParticipantMatchUps({
-  participantId,
+const { matchUps } = tournamentEngine.allEventMatchUps({
   eventId,
+  inContext: true,
+  matchUpFilters: { participantIds: [participantId] },
 });
 ```
 
