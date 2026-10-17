@@ -6,7 +6,7 @@
  */
 
 import type { MatchUp, ScoreResult, PointSituation, FormatStructure, SetFormatStructure } from '@Types/scoring/types';
-import { resolveSetType, isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
+import { resolveSetType, isLiveDecidingSet, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { deriveServer, formatGameScore } from '@Mutate/scoring/addPoint';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
@@ -100,16 +100,7 @@ function computePointDisplay(matchUp: MatchUp, points: number[]): [string, strin
     const activeSetFormat: SetFormatStructure | undefined =
       isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 
-    if (activeSetFormat) {
-      const s1Games = currentSet.side1Score || 0;
-      const s2Games = currentSet.side2Score || 0;
-      const setTo = activeSetFormat.setTo || 6;
-      const tiebreakAt =
-        (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-      const noTiebreak = activeSetFormat.noTiebreak || false;
-      const finalSetNoTiebreak = isDecidingSet && formatStructure.finalSetFormat?.noTiebreak;
-      isTiebreak = !noTiebreak && !finalSetNoTiebreak && s1Games === tiebreakAt && s2Games === tiebreakAt;
-    }
+    isTiebreak = isStandardSetTiebreak(activeSetFormat, currentSet.side1Score || 0, currentSet.side2Score || 0);
   }
 
   const scoreStr = formatGameScore(points[0], points[1], isTiebreak, isConsecutive && !isTiebreak);
@@ -176,14 +167,7 @@ function computeSituation(matchUp: MatchUp): PointSituation | undefined {
   if (!isTiebreak && setType === 'standard' && activeSetFormat) {
     const currentSet = matchUp.score.sets.at(-1);
     if (currentSet) {
-      const s1Games = currentSet.side1Score || 0;
-      const s2Games = currentSet.side2Score || 0;
-      const setTo = activeSetFormat.setTo || 6;
-      const tiebreakAt =
-        (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-      const noTiebreak = activeSetFormat.noTiebreak || false;
-      const finalSetNoTiebreak = isDecidingSet && formatStructure.finalSetFormat?.noTiebreak;
-      isTiebreak = !noTiebreak && !finalSetNoTiebreak && s1Games === tiebreakAt && s2Games === tiebreakAt;
+      isTiebreak = isStandardSetTiebreak(activeSetFormat, currentSet.side1Score || 0, currentSet.side2Score || 0);
     }
   }
 
