@@ -15,11 +15,11 @@
  *   const matchUp = engine.getState();
  */
 
+import { inputLevels, resolveSetType, inputLevelError, isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
 import { finalSetGoverns, openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
-import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
@@ -41,6 +41,7 @@ import {
 import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
+import type { InputLevels } from '@Tools/scoring/scoringUtilities';
 import type {
   MatchUp,
   AddPointOptions,
@@ -354,9 +355,11 @@ export class ScoringEngine {
    * @param options - Point options (winner, server, etc.)
    */
   addPoint(options: AddPointOptions): void {
-    // refused before anything is written (S9): an unscorable format or an invalid input
+    // refused before anything is written: an unscorable format or an invalid input (S9), or a segment
+    // of outs, which takes set totals (S4)
     if (!this.cachedFormatStructure) throw new Error(`Invalid matchUpFormat: ${this.matchUpFormat}`);
     validatePointInput(options);
+    if (!this.getInputLevels().point) throw inputLevelError('point');
     // before the point is scored: a record without a timeline starts one from the points it already has
     this.ensureHistory();
     const pointIndex = this.state.history?.points.length || 0;
@@ -478,6 +481,7 @@ export class ScoringEngine {
    */
   addGame(options: AddGameOptions): void {
     this.requireGameOrTimedSegment();
+    if (!this.getInputLevels().game) throw inputLevelError('game');
     this.applyAddGame(options);
 
     // Record entry in unified timeline
@@ -896,6 +900,27 @@ export class ScoringEngine {
   }
 
   /**
+   * The inputs the set in play can be scored with: points, games, or set totals (addSet). A segment of
+   * outs takes set totals only; addPoint and addGame refuse what this reports as unavailable.
+   */
+  getInputLevels(): InputLevels {
+    return inputLevels(this.activeSetFormat());
+  }
+
+  /** The format governing the set in play: the final-set format in the live deciding set. */
+  private activeSetFormat() {
+    const formatStructure = this.cachedFormatStructure;
+    if (!formatStructure) return undefined;
+    const setsWon: [number, number] = [0, 0];
+    this.state.score.sets.forEach((set) => {
+      if (set.winningSide === 1) setsWon[0]++;
+      if (set.winningSide === 2) setsWon[1]++;
+    });
+    const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, openSetNumber(this.state.score.sets));
+    return isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
+  }
+
+  /**
    * Get the input mode based on what types of entries have been recorded
    *
    * @returns 'points' if only point entries, 'games' if only game entries,
@@ -1207,9 +1232,11 @@ export class ScoringEngine {
   }
 
   /**
-   * Mark a game boundary as "hard"
+   * Record a game index on its set's `hardBoundaries`.
    *
-   * Edits before this boundary won't cascade past it during recalculation.
+   * @deprecated An annotation only, removed in the next major. Recalculation does not respect it (an
+   * edit before it still changes what follows) and a rebuild (undo, redo, editPoint, removePoint)
+   * discards it. Nothing in the ecosystem reads it.
    *
    * @param options - Set and game indices to mark
    */

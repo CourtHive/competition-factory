@@ -136,7 +136,11 @@ export interface SetScore {
   side2GameScores?: number[];
   winningSide?: number;
   setFormat?: string;
-  /** Game indices that are hard boundaries (not recalculated past) */
+  /**
+   * Game indices recorded by markHardBoundary.
+   * @deprecated An annotation only, removed in the next major: recalculation does not respect it and a
+   * rebuild discards it.
+   */
   hardBoundaries?: number[];
   /** Current consecutive point streak for TYPTI format */
   currentStreak?: { side: 0 | 1; count: number };
@@ -288,7 +292,7 @@ export interface Point {
   /** Specific penalty type from competition format profile */
   penaltyType?: string;
 
-  /** Game boundary after this point should not be recalculated past */
+  /** @deprecated Never written or read by the engine; removed in the next major. */
   hardBoundary?: boolean;
 }
 

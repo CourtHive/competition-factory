@@ -112,11 +112,12 @@ engine.endSegment();
 
 ## Consecutive Game Formats
 
-The `-G:NC` modifier indicates N consecutive games within a set, used by formats like TYPTI.
+The `-G:NC` game modifier makes a game a run of N consecutive points: the first side to win N points
+in a row wins the game. It is used by formats like TYPTI.
 
 ```js
-const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7-G:3C' });
-// Standard tennis with 3 consecutive games per rotation
+const engine = new ScoringEngine({ matchUpFormat: 'SET5-S:5-G:3C' });
+// A game goes to the first side to win 3 points in a row; first to 5 games wins the set
 ```
 
 ## Aggregate Scoring
@@ -151,6 +152,28 @@ A non-aggregate exactly format is decided on sets won, but only once all N sets 
 
 An aggregate exactly format (`XA`) may record one set more than N: a level total goes to a
 sudden-death decider (`-F:`), which is set N + 1 and not one of the N sets (since 7.5.0).
+
+## Input Levels
+
+A parser-valid format is not a promise of a point model. `getInputLevels()` reports what the set in
+play can be scored with, and `addPoint` and `addGame` refuse what it reports as unavailable:
+
+| Segment                           | `point` | `game` | `set` |
+| --------------------------------- | ------- | ------ | ----- |
+| Standard, tiebreak-only, timed    | yes     | yes    | yes   |
+| Combined point total (`S:P32`)    | yes     | no     | yes   |
+| Outs (`S:O3`, e.g. `INN4XA-S:O3`) | no      | no     | yes   |
+
+A segment of outs has no point or game model here, so it is scored with set totals (`addSet`): its
+points are refused rather than scored as tennis sets. A final set of outs (`-F:O3`) refuses points
+only once it is the set in play.
+
+A tiebreak-only set to 11 (`SET3-S:TB11`) is how pickleball, squash and table tennis all write a
+game, so the code cannot say whether only the serving side scores. The engine scores every point it
+is given; a host recording side-out pickleball adds only the points the serving side won.
+
+A match constraint such as `-M:T50` (a 50-minute match) is parsed and kept, and the clock is the
+host's to enforce, as it is for timed segments.
 
 ## Format Introspection
 
