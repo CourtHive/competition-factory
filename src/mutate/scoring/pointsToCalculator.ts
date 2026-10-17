@@ -13,7 +13,7 @@
  */
 
 import type { MatchUp, FormatStructure, SetFormatStructure, SetScore } from '@Types/scoring/types';
-import { isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
+import { isStandardSetTiebreak, tiebreakMargin } from '@Tools/scoring/scoringUtilities';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 
 export interface PointsToDecoration {
@@ -220,7 +220,12 @@ function calcSidePointsToGame(
  * Tiebreak: play to tiebreakTo, win by 2 (or NoAD: win by 1)
  */
 function calcTiebreakPointsTo(p1: number, p2: number, tiebreakTo: number, isNoAD: boolean): [number, number] {
-  return [calcSideTiebreakPointsTo(p1, p2, tiebreakTo, isNoAD), calcSideTiebreakPointsTo(p2, p1, tiebreakTo, isNoAD)];
+  // a tiebreak won by one point's margin plays as no-ad (see tiebreakMargin)
+  const suddenDeath = tiebreakMargin(tiebreakTo, isNoAD) === 1;
+  return [
+    calcSideTiebreakPointsTo(p1, p2, tiebreakTo, suddenDeath),
+    calcSideTiebreakPointsTo(p2, p1, tiebreakTo, suddenDeath),
+  ];
 }
 
 function calcSideTiebreakPointsTo(myPoints: number, oppPoints: number, tiebreakTo: number, isNoAD: boolean): number {
