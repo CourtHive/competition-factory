@@ -167,6 +167,37 @@ export function resolveSetType(
 }
 
 /**
+ * Whether the set this format describes is decided by a tiebreak at games-all.
+ *
+ * `parse` writes `noTiebreak: true` and no `tiebreakAt` for an advantage set (`S:6`, `F:6`, `S:5WB1`);
+ * a hand-built format carrying neither tiebreak field is read the same way. Every site below used to
+ * derive `tiebreakAt ?? setTo` and treat games-all as a tiebreak whatever the format said — measured
+ * 2026-10-02, the engine played a full TB7 at six-all in `SET1-S:6` and ended it 7-6(7-0) COMPLETED,
+ * a set `checkSetIsComplete` then called unfinished. Only the deciding set's `noTiebreak` was read.
+ */
+export function setHasTiebreak(setFormat?: SetFormatStructure): boolean {
+  if (!setFormat || setFormat.noTiebreak) return false;
+  return !!setFormat.tiebreakFormat || typeof setFormat.tiebreakAt === 'number';
+}
+
+/**
+ * Whether a standard set at these games is playing its tiebreak. `activeSetFormat` must be the format
+ * governing the set in play (the final-set format in the live deciding set): scoring, the score
+ * situation, points-to and server derivation all read this one predicate, so they cannot disagree
+ * about whether a tiebreak is under way.
+ */
+export function isStandardSetTiebreak(
+  activeSetFormat: SetFormatStructure | undefined,
+  side1Games: number,
+  side2Games: number,
+): boolean {
+  if (!activeSetFormat || !setHasTiebreak(activeSetFormat)) return false;
+  const setTo = activeSetFormat.setTo || 6;
+  const tiebreakAt = (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
+  return side1Games === tiebreakAt && side2Games === tiebreakAt;
+}
+
+/**
  * Whether the set in play is the one the final-set format governs. Mid-match that is the set played with
  * both sides one set from winning, except an aggregate format's sudden-death decider, which is set N + 1
  * by number and never one of the N (`aggregateDeciderSetNumber`).

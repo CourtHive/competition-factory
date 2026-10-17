@@ -13,7 +13,6 @@
  * - NoAD games and tiebreaks
  */
 
-import { resolveSetType, isAggregateFormat, isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 import type { PointMultiplier } from './resolvePointValue';
@@ -24,6 +23,13 @@ import { inferServeSide } from './serveSideCalculator';
 import { addCombinedPoint } from './addCombinedPoint';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
+import {
+  resolveSetType,
+  setHasTiebreak,
+  isLiveDecidingSet,
+  isAggregateFormat,
+  isStandardSetTiebreak,
+} from '@Tools/scoring/scoringUtilities';
 import type {
   MatchUp,
   AddPointOptions,
@@ -242,12 +248,6 @@ function handleStandardSet(
   (point as any).game = gameOffset + currentGameIndex;
   (point as any).number = side1Points + side2Points;
 
-  // Get format details
-  const setTo = activeSetFormat.setTo || 6;
-  const tiebreakAt = (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-  // the ACTIVE format's say, deciding set or not — see `setHasTiebreak`
-  const noTiebreak = !setHasTiebreak(activeSetFormat);
-
   // Add point to winner
   if (winner === 0) {
     side1Points++;
@@ -274,8 +274,8 @@ function handleStandardSet(
     }
   }
 
-  // Check if in tiebreak
-  const isTiebreak = !noTiebreak && side1Games === tiebreakAt && side2Games === tiebreakAt;
+  // Check if in tiebreak: the ACTIVE format's say, deciding set or not — see `setHasTiebreak`
+  const isTiebreak = isStandardSetTiebreak(activeSetFormat, side1Games, side2Games);
 
   // Check if game is won
   let gameWon: number | undefined;
@@ -673,20 +673,6 @@ function checkStandardGameWon(
 }
 
 /**
- * Whether the set this format describes is decided by a tiebreak at games-all.
- *
- * `parse` writes `noTiebreak: true` and no `tiebreakAt` for an advantage set (`S:6`, `F:6`, `S:5WB1`);
- * a hand-built format carrying neither tiebreak field is read the same way. Every site below used to
- * derive `tiebreakAt ?? setTo` and treat games-all as a tiebreak whatever the format said — measured
- * 2026-10-02, the engine played a full TB7 at six-all in `SET1-S:6` and ended it 7-6(7-0) COMPLETED,
- * a set `checkSetIsComplete` then called unfinished. Only the deciding set's `noTiebreak` was read.
- */
-export function setHasTiebreak(setFormat?: SetFormatStructure): boolean {
-  if (!setFormat || setFormat.noTiebreak) return false;
-  return !!setFormat.tiebreakFormat || typeof setFormat.tiebreakAt === 'number';
-}
-
-/**
  * Check if a standard set is won
  */
 export function checkStandardSetWon(
@@ -789,28 +775,35 @@ export function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStruct
     const s = matchUp.score.sets[i];
     totalPreviousGames += (s.side1Score || 0) + (s.side2Score || 0);
   }
+  const totalGames = totalPreviousGames + side1Games + side2Games;
 
-  const setTo = formatStructure.setFormat?.setTo || 6;
-  const tiebreakAt =
-    (typeof formatStructure.setFormat?.tiebreakAt === 'number' ? formatStructure.setFormat.tiebreakAt : undefined) ??
-    setTo;
-  const noTiebreak = formatStructure.finalSetFormat?.noTiebreak || !setHasTiebreak(formatStructure.setFormat);
+  // the format governing the set in play — the scorer's own choice, so both agree on a tiebreak
+  const setsWon: [number, number] = [0, 0];
+  matchUp.score.sets.forEach((set) => {
+    if (set.winningSide === 1) setsWon[0]++;
+    if (set.winningSide === 2) setsWon[1]++;
+  });
+  const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, openSetNumber(matchUp.score.sets));
+  const activeSetFormat =
+    isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 
-  const inTiebreak = !noTiebreak && side1Games === tiebreakAt && side2Games === tiebreakAt;
-
-  if (inTiebreak) {
+  if (isStandardSetTiebreak(activeSetFormat, side1Games, side2Games)) {
     const side1GameScores = currentSet?.side1GameScores ?? [];
     const side2GameScores = currentSet?.side2GameScores ?? [];
     const tiebreakPoints = (side1GameScores.at(-1) || 0) + (side2GameScores.at(-1) || 0);
-
-    const totalGames = totalPreviousGames + side1Games + side2Games;
-    const tiebreakInitialServer = totalGames % 2;
-    const serverOffset = Math.floor(tiebreakPoints / 2) % 2;
-    return ((tiebreakInitialServer + serverOffset) % 2) as 0 | 1;
+    // the side due to serve the next game opens the tiebreak
+    return tiebreakServer((totalGames % 2) as 0 | 1, tiebreakPoints);
   }
 
-  const totalGames = totalPreviousGames + side1Games + side2Games;
   return (totalGames % 2) as 0 | 1;
+}
+
+/**
+ * The server of the next point of a tiebreak: the opening server serves one point, then each side
+ * serves two in turn (ITF Rules of Tennis, Rule 5(b)) — servers 0, 1, 1, 0, 0, 1, 1, … for opener 0.
+ */
+export function tiebreakServer(openingServer: 0 | 1, pointsPlayed: number): 0 | 1 {
+  return ((openingServer + Math.floor((pointsPlayed + 1) / 2)) % 2) as 0 | 1;
 }
 
 function deriveTiebreakServer(matchUp: MatchUp, currentSet: SetScore | undefined): 0 | 1 {
@@ -824,9 +817,7 @@ function deriveTiebreakServer(matchUp: MatchUp, currentSet: SetScore | undefined
     totalPreviousGames += (s.side1Score || 0) + (s.side2Score || 0);
   }
 
-  const tiebreakInitialServer = totalPreviousGames % 2;
-  const serverOffset = Math.floor(pointsPlayed / 2) % 2;
-  return ((tiebreakInitialServer + serverOffset) % 2) as 0 | 1;
+  return tiebreakServer((totalPreviousGames % 2) as 0 | 1, pointsPlayed);
 }
 
 function deriveTimedServer(currentSet: SetScore | undefined): 0 | 1 {

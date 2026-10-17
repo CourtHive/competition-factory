@@ -3,7 +3,7 @@ import { enterValues, scoreMatchUp } from '../helpers/keyValueScore/primitives';
 import { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
-import { setHasTiebreak } from '@Mutate/scoring/addPoint';
+import { setHasTiebreak } from '@Tools/scoring/scoringUtilities';
 import { validateScore } from '@Validators/validateScore';
 import { describe, expect, it } from 'vitest';
 

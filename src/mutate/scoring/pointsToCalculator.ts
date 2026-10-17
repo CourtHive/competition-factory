@@ -13,6 +13,7 @@
  */
 
 import type { MatchUp, FormatStructure, SetFormatStructure, SetScore } from '@Types/scoring/types';
+import { isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 
 export interface PointsToDecoration {
@@ -145,20 +146,10 @@ function calcPointsToGame(
   }
 
   // Standard set: detect if currently in tiebreak
-  if (currentSet) {
-    const s1Games = currentSet.side1Score || 0;
-    const s2Games = currentSet.side2Score || 0;
-    const setTo = activeSetFormat.setTo || 6;
-    const tiebreakAt =
-      (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-    const noTiebreak = activeSetFormat.noTiebreak || false;
-
-    if (!noTiebreak && s1Games === tiebreakAt && s2Games === tiebreakAt) {
-      // We're in a tiebreak within a standard set
-      const tbTo = activeSetFormat.tiebreakFormat?.tiebreakTo || 7;
-      const isNoAD = activeSetFormat.tiebreakFormat?.NoAD || false;
-      return calcTiebreakPointsTo(side1Points, side2Points, tbTo, isNoAD);
-    }
+  if (currentSet && isStandardSetTiebreak(activeSetFormat, currentSet.side1Score || 0, currentSet.side2Score || 0)) {
+    const tbTo = activeSetFormat.tiebreakFormat?.tiebreakTo || 7;
+    const isNoAD = activeSetFormat.tiebreakFormat?.NoAD || false;
+    return calcTiebreakPointsTo(side1Points, side2Points, tbTo, isNoAD);
   }
 
   // Consecutive game format: return count as minimum-to-win
