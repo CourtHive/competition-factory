@@ -1,3 +1,5 @@
+import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
+
 /**
  * Where a tiebreak set ENDS, for any `tiebreakAt`.
  *
@@ -79,7 +81,7 @@ export function isTiebreakWon(
 ): boolean {
   const { tiebreakTo, NoAD } = tiebreak ?? {};
   if (typeof tiebreakTo !== 'number') return winnerPoints > loserPoints;
-  const margin = NoAD ? 1 : Math.min(2, tiebreakTo);
+  const margin = tiebreakMargin(tiebreakTo, NoAD);
   if (winnerPoints < tiebreakTo || winnerPoints - loserPoints < margin) return false;
   if (winnerPoints === tiebreakTo) return true;
   return !NoAD && winnerPoints - loserPoints === margin;

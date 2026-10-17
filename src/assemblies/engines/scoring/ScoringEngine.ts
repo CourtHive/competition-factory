@@ -15,7 +15,13 @@
  *   const matchUp = engine.getState();
  */
 
-import { inputLevels, resolveSetType, inputLevelError, isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
+import {
+  inputLevels,
+  resolveSetType,
+  tiebreakMargin,
+  inputLevelError,
+  isLiveDecidingSet,
+} from '@Tools/scoring/scoringUtilities';
 import { finalSetGoverns, openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
@@ -1626,8 +1632,7 @@ export class ScoringEngine {
 
     if (activeSetFormat.tiebreakSet) {
       const tbTo = activeSetFormat.tiebreakSet.tiebreakTo || 11;
-      const isNoAD = activeSetFormat.tiebreakSet.NoAD || false;
-      const minWin = isNoAD ? 1 : 2;
+      const minWin = tiebreakMargin(tbTo, activeSetFormat.tiebreakSet.NoAD);
       if ((s1 >= tbTo || s2 >= tbTo) && Math.abs(s1 - s2) >= minWin) {
         currentSet.winningSide = s1 > s2 ? 1 : 2;
       }

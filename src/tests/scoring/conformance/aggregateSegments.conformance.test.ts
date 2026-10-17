@@ -189,18 +189,13 @@ describe('exactly+aggregate | SET | timed(G) | final:timed(P) — SET3XA-S:T10-F
   });
 });
 
-/*
- * Each case below is derived from the definition and FAILS against the engine. The expectation is the
- * definition's, kept unchanged and skipped for review; the comment records what the engine did.
- */
-describe('ENGINE DISAGREES — needs review', () => {
+describe('-F:TB1 — the sudden-death decider of a level aggregate', () => {
   // Definition: "In an XA format, -F: describes the sudden-death decider that settles level aggregate
   // totals (SET3XA-S:T10-F:TB1)" (matchup-format.mdx), and "a tied total names no winner until a
   // deciding point breaks it" (format-support.md). So one point after a level total decides the match.
-  // Expected: set N + 1 [0, 1, [0, 1]], side 2 wins. Observed: after one point set N + 1 reads [0, 0]
-  // and the match is open; a second point completes it [0, 1, [0, 2]] — the engine reads `TB1` by the
-  // generic tiebreak-set rule (first to 1, win by two), and only `TB1NOAD` is sudden death.
-  it.skip.each([
+  // Found by these cases on 2026-10-17: the engine read `TB1` by the generic rule (first to 1, win by
+  // two), so a single point did not decide. A one-point target is sudden death (CA 2026-10-17); fixed.
+  it.each([
     ['SET3XA-S:T10-F:TB1', 3],
     ['SET2XA-S:T20-F:TB1', 2],
     ['SET2XA-S:T10-F:TB1', 2],

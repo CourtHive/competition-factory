@@ -558,15 +558,13 @@ describe('MAP3-S:TB13, MAP5-S:TB13 — esports maps first to 13 rounds (VALORANT
   });
 });
 
-describe('ENGINE DISAGREES — needs review', () => {
+describe('HAL2X-S:TB11 — a level count of halves (format-support "Exactly N Sets")', () => {
   /*
-   * HAL2X-S:TB11, halves won 11-0 by side 1 and 0-11 by side 2.
-   * Rule (format-support.md, "Exactly N Sets"): a non-aggregate exactly format is decided on sets
-   * won once all N are recorded; a level count names no winner, and no set beyond N is recorded.
-   * Expected: one half all, no winningSide, not complete (with or without a further point).
-   * Observed (2026-10-17, as played): winningSide 1, complete true, in both cases.
+   * A non-aggregate exactly format is decided on sets won once all N are recorded; a level count names
+   * no winner, and no set beyond N is recorded. Found by these cases on 2026-10-17: the engine named
+   * side 1 the winner of a level match (both sides had reached setsToWin); fixed.
    */
-  it.skip('X: a level count of halves names no winner', () => {
+  it('X: a level count of halves names no winner', () => {
     conforms('HAL2X-S:TB11', `${run('1', 11)} ${run('2', 11)}`, {
       sets: [
         [1, 0, [11, 0]],
@@ -576,7 +574,7 @@ describe('ENGINE DISAGREES — needs review', () => {
     });
   });
 
-  it.skip('X: no half beyond N is recorded', () => {
+  it('X: no half beyond N is recorded', () => {
     conforms('HAL2X-S:TB11', `${run('1', 11)} ${run('2', 11)} 1`, {
       sets: [
         [1, 0, [11, 0]],

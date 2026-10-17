@@ -25,6 +25,7 @@ import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 import {
   inputLevels,
+  tiebreakMargin,
   resolveSetType,
   setHasTiebreak,
   inputLevelError,
@@ -94,6 +95,14 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   if (!formatStructure) {
     throw new Error(`Invalid matchUpFormat: ${matchUp.matchUpFormat}`);
   }
+  // An exactly format plays N sets and no more ("Exactly N Sets"): once all N are closed a level count
+  // names no winner, and a point after it starts nothing. Ignored, as a point after the match is.
+  if (
+    formatStructure.exactly &&
+    !isAggregateFormat(formatStructure) &&
+    openSetNumber(matchUp.score.sets) > formatStructure.exactly
+  )
+    return matchUp;
   if (formatStructure.setFormat?.combinedPointTotal)
     return addCombinedPoint(matchUp, options, winner, server, {
       combinedPointTotal: formatStructure.setFormat.combinedPointTotal,
@@ -598,13 +607,16 @@ export function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatS
   const hasWinner = setsWon[0] >= setsToWin || setsWon[1] >= setsToWin;
   if (!hasWinner) return;
 
-  // For exactly formats, all sets must be completed
+  // For exactly formats, all sets must be completed, and the side with more sets wins: a level count
+  // names no winner (format-support "Exactly N Sets"). Both sides can reach setsToWin (2-2 in SET4X),
+  // and reading the first side's count alone named side 1 the winner of a level match.
   if (exactly) {
     const completedSets = matchUp.score.sets.filter((s) => s.winningSide !== undefined).length;
     if (completedSets < exactly) return;
+    if (setsWon[0] === setsWon[1]) return;
   }
 
-  const matchWinner = setsWon[0] >= setsToWin ? 0 : 1;
+  const matchWinner = setsWon[0] > setsWon[1] ? 0 : 1;
   matchUp.matchUpStatus = COMPLETED;
   matchUp.winningSide = matchWinner + 1;
   matchUp.endTime = nowIso();
@@ -620,7 +632,7 @@ function checkTiebreakWon(
   isNoAD: boolean = false,
 ): number | undefined {
   const diff = Math.abs(side1Points - side2Points);
-  const minWin = isNoAD ? 1 : 2;
+  const minWin = tiebreakMargin(tiebreakTo, isNoAD);
 
   if ((side1Points >= tiebreakTo || side2Points >= tiebreakTo) && diff >= minWin) {
     return side1Points > side2Points ? 0 : 1;
