@@ -29,6 +29,12 @@ A point added after the match is `COMPLETED` is not refused, and it does not cha
 point that names no winner. To add a penalty or a note to a point already played, use
 [decoratePoint](#decoratepoint) or [editPoint](#editpoint).
 
+The timeline records every input the call supplied, including fields beyond `AddPointOptions` that a
+host passes as decorations, so a rebuild (`undo`, `redo`, `editPoint`, `removePoint`) replays the
+point exactly as recorded: its `scoreValue`, its `wrongSide`/`wrongServer`/`penaltyPoint` flags and
+its decorations survive. A server the engine calculated is not an input and is not recorded; a
+rebuild derives it again.
+
 ```js
 // 0-based convention
 engine.addPoint({ winner: 0 }); // Side 1 wins the point
@@ -164,10 +170,13 @@ engine.setInitialScore({
     { side1Score: 6, side2Score: 3 },
     { side1Score: 4, side2Score: 6 },
   ],
-  currentSet: { side1Score: 2, side2Score: 1 },
-  currentGame: { side1Score: 30, side2Score: 15 },
+  currentSetScore: { side1Score: 2, side2Score: 1 },
+  currentGameScore: { side1Points: 2, side2Points: 1 }, // 30-15
 });
 ```
+
+The initial score is an action on the timeline. A rebuild replays it where it was set, so it
+survives `setState` without a `loadSupplementaryState`, and `undo` removes it like any other action.
 
 ---
 
@@ -196,7 +205,8 @@ engine.setState(savedMatchUp);
 getState(): MatchUp
 ```
 
-Get current matchUp state as a CODES MatchUp object. Returns a direct reference (not a copy).
+Get current matchUp state as a CODES MatchUp object. Returns a deep copy: changing it does not change
+the engine.
 
 ```js
 const matchUp = engine.getState();
@@ -579,7 +589,10 @@ Use `removePoint` when the user intends to delete a specific historical point (e
 getSupplementaryState(): ScoringEngineSupplementaryState
 ```
 
-Get engine-private state for persistence. Returns the redo stack and initial lineup snapshots — data that isn't part of `getState()` but is needed to fully restore the engine.
+Get engine-private state for persistence: data that isn't part of `getState()` but is needed to fully
+restore the engine. The envelope carries a `version` (1), the redo stack, the initial lineup
+snapshots, and the scoring configuration the history was scored under: the `competitionFormat` and
+the `pointMultipliers`.
 
 ```js
 const matchUp = engine.getState();
@@ -600,6 +613,10 @@ loadSupplementaryState(state: ScoringEngineSupplementaryState): void
 
 Restore engine-private state from persistence. Call after `setState()` to fully restore engine state.
 
+A saved `competitionFormat` and `pointMultipliers` replace the ones the engine was constructed
+with: they are what the history was scored under, so a rebuild scores it the same way. An envelope
+saved before the version field carries neither, and the engine keeps its own.
+
 ```js
 const matchUp = JSON.parse(localStorage.getItem('matchUp'));
 const supplementary = JSON.parse(localStorage.getItem('supplementary'));
@@ -607,7 +624,7 @@ const supplementary = JSON.parse(localStorage.getItem('supplementary'));
 engine.setState(matchUp);
 engine.loadSupplementaryState(supplementary);
 
-// Redo stack and lineups are now restored
+// Redo stack, lineups and scoring configuration are now restored
 engine.canRedo(); // true (if there were undone actions)
 ```
 
