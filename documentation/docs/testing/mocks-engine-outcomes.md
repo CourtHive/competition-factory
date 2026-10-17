@@ -208,6 +208,13 @@ Common aggregate timed formats:
 
 The `X` modifier means "exactly" — all sets are played regardless of the running score. The `A` modifier triggers aggregate scoring where the winner is the side with the highest total points across all sets.
 
+### Validated Inputs
+
+A `matchUpStatusProfile` is whole-number percentages that sum to at most 100, each non-negative; the
+remainder is COMPLETED. A profile over 100, a negative weight, or a `winningSide` other than 1 or 2 is
+refused with `INVALID_VALUES` (before, an over-100 profile was accepted because its sum was never
+computed).
+
 ### Format Families
 
 Which scoring families `generateOutcome` produces, and what it produces for each. Every generated

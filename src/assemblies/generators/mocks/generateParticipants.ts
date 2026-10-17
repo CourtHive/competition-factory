@@ -17,7 +17,7 @@ import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { RANKING, RATING, SCALE } from '@Constants/scaleConstants';
-import { ErrorType } from '@Constants/errorConditionConstants';
+import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { HydratedParticipant } from '@Types/hydrated';
@@ -26,6 +26,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 export function generateParticipants(params): {
   participants?: HydratedParticipant[];
   error?: ErrorType;
+  info?: string;
 } {
   let {
     scaledParticipantsCount, // number of participants to assign rankings/ratings
@@ -166,9 +167,19 @@ export function generateParticipants(params): {
 
   const { postalCodesProfile, postalCodesCount, statesProfile, citiesProfile, citiesCount, statesCount } =
     addressProps ?? {};
+  // a weight is how many participants take the value: a whole number of them, never negative
+  const validWeights = (profile) =>
+    !profile ||
+    (typeof profile === 'object' &&
+      Object.values(profile).every((count) => Number.isInteger(count) && (count as number) >= 0));
+  if (![citiesProfile, statesProfile, postalCodesProfile].every(validWeights)) {
+    return { error: INVALID_VALUES, info: 'address profile weights must be whole numbers of participants' };
+  }
 
+  // each profile's own weights: every lookup read statesProfile, so a citiesProfile alone threw and a
+  // citiesProfile beside a statesProfile produced addresses with no city (M6, 2026-10-17)
   const valuesFromProfile = (profile) =>
-    Object.keys(profile).flatMap((key) => generateRange(0, statesProfile[key]).map(() => key));
+    Object.keys(profile).flatMap((key) => generateRange(0, profile[key]).map(() => key));
 
   const cities =
     (citiesProfile && valuesFromProfile(citiesProfile)) ||

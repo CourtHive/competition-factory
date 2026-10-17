@@ -41,7 +41,7 @@ export function addTournamentParticipants({
 
   const teamKey = participantsProfile?.teamKey;
 
-  const participants = generateParticipants({
+  const generated = generateParticipants({
     consideredDate: startDate,
     ...participantsProfile,
     participantsCount,
@@ -49,7 +49,9 @@ export function addTournamentParticipants({
     gendersCount,
     random,
     uuids,
-  }).participants as Participant[];
+  });
+  if (generated.error) return generated;
+  const participants = generated.participants as Participant[];
 
   let addedCount = 0;
   let result = addParticipants({ tournamentRecord, participants });
