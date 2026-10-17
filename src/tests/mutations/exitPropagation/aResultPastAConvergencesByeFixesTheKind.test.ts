@@ -23,7 +23,8 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  *
  * What a convergence decided includes the BYE it claimed for its loser seat, so a result recorded past that BYE is a
  * result on the loser's path, and the change of kind is refused over an untouched draw. With nothing recorded there,
- * the same correction is accepted and leaves the draw the played result entered directly leaves.
+ * the same correction is accepted and leaves the draw the played result entered directly leaves. A winner flip keeps
+ * the kind, so it stays accepted over the same recorded result: only the change of kind is refused.
  */
 
 type Step = [string, any];
@@ -115,4 +116,14 @@ it('with nothing recorded past the BYE the correction is accepted, as the played
 
   const direct = play([...opening, PLAYED, ...middle], 'convergence-bye-kind-direct');
   expect(corrected.draw).toEqual(direct.draw);
+});
+
+it('a winner flip that keeps the kind is accepted over the same recorded result', () => {
+  process.env.ALLOW_CHANGE_PROPAGATION = '1';
+  const flipped = play([...converged, RECORDED, ['East|1|13', { winningSide: 2 }]], 'convergence-bye-kind-flip');
+  expect(flipped.last.error).toBeUndefined();
+  expect(flipped.issueTypes).toEqual([]);
+  expect(flipped.draw['East|1|13']).toMatchObject({ matchUpStatus: WALKOVER, winningSide: 2 });
+  expect(flipped.draw['West|1|7'].matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  expect(flipped.draw['South|3|1']).toMatchObject({ matchUpStatus: RETIRED, winningSide: 1, score: '6-3' });
 });
