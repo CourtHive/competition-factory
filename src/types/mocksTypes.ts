@@ -41,7 +41,7 @@ type MockPolicyDefinitions = PolicyDefinitions | { [policyType: string]: unknown
 type MockTieFormat = TieFormat | { [key: string]: unknown };
 
 /** Whole-number percentages; the remainder is COMPLETED. */
-export type MatchUpStatusProfile = { [matchUpStatus: string]: number };
+export type MatchUpStatusProfile = Partial<Record<MatchUpStatusUnion, number>>;
 
 /** A completion option: `true` for generated scores, or a score string every matchUp receives. */
 export type CompleteAllMatchUps = boolean | string;

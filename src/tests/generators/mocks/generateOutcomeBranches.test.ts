@@ -264,7 +264,7 @@ describe('generateOutcome - uncovered branches', () => {
   it('matchUpStatusProfile with only unknown statuses produces COMPLETED', () => {
     generateRange(0, 5).forEach(() => {
       const { outcome } = mocksEngine.generateOutcome({
-        matchUpStatusProfile: { UNKNOWN_STATUS: 50 },
+        matchUpStatusProfile: { UNKNOWN_STATUS: 50 } as any,
       });
       // Unknown statuses are filtered out, so always COMPLETED
       expect(outcome.matchUpStatus).toEqual(COMPLETED);
