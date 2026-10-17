@@ -72,10 +72,13 @@ A method's own `random` function can also be passed directly: to a named engine 
 directive.
 
 For a `mocksEngine` call the seed covers **every** draw the call makes, not only those of generators that take a
-`random` parameter: for the duration of the call its stream is also the source that unthreaded code reads (ids minted
-by draw, venue and tieFormat generation among them), and the previous source is reinstated afterwards. So the same
-`nonRandom`, profile, clock and factory version give a byte-identical record whatever the process's configured source
-is and whatever was generated before it, and a seeded call draws nothing from the configured source.
+`random` parameter. Code that does not take one (ids minted by draw, venue and tieFormat generation among them) reads,
+for the duration of the call, a second stream derived from the same seed; the previous source is reinstated
+afterwards. The seed's own stream keeps exactly the draws it always had, so what a seed already determined does not
+change. So the same `nonRandom`, profile, clock and factory version give a byte-identical record whatever the
+process's configured source is and whatever was generated before it, and a seeded call draws nothing from the
+configured source. A `random` function passed directly instead of `nonRandom` does not get this: there is no seed to
+derive the second stream from.
 
 ## Process-wide, not per request
 

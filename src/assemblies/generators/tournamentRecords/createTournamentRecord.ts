@@ -14,9 +14,8 @@ import { isValidIANATimeZone } from '@Tools/timeZone';
 import { INVALID_DATE, INVALID_TIME_ZONE } from '@Constants/errorConditionConstants';
 
 export function createTournamentRecord(params): any {
-  // `random` (a per-call seeded source, from `nonRandom`) mints the id and is never a record attribute
-  const { tournamentRecord, tournamentRecords, activeTournamentId, random, ...attributes } = params ?? {};
-  attributes.tournamentId ??= UUID(undefined, random);
+  const { tournamentRecord, tournamentRecords, activeTournamentId, ...attributes } = params ?? {};
+  attributes.tournamentId ??= UUID();
   if (attributes.startDate && !isISODateString(attributes.startDate) && !validDateString.test(attributes.startDate)) {
     return { error: INVALID_DATE };
   }

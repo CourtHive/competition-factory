@@ -118,7 +118,6 @@ const namedFormats = {
 type TieFormatDefaultArgs = {
   hydrateCollections?: boolean;
   namedFormat?: string;
-  random?: () => number;
   isMock?: boolean;
   uuids?: string[];
   event?: Event;
@@ -135,8 +134,7 @@ export const tieFormatDefaults = (params?: TieFormatDefaultArgs) => {
   const template = makeDeepCopy(namedFormats[namedFormat], false, true);
 
   const getCollectionId = (index) => {
-    if ((!params?.isMock && !params?.event?.isMock) || !params.event)
-      return uuids?.pop() ?? UUID(undefined, params?.random);
+    if ((!params?.isMock && !params?.event?.isMock) || !params.event) return uuids?.pop() ?? UUID();
     const eventId = params?.event?.eventId;
     return uuids.pop() ?? `${eventId}-COL-${index + 1}`;
   };

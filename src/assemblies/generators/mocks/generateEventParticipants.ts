@@ -21,7 +21,6 @@ export function generateEventParticipants(params) {
     tournamentRecord,
     eventProfile,
     eventIndex,
-    random,
     event,
     uuids,
   } = params;
@@ -63,7 +62,6 @@ export function generateEventParticipants(params) {
     gendersCount,
     category,
     idPrefix,
-    random,
     sex,
   });
 

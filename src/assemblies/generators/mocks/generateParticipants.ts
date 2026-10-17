@@ -176,7 +176,6 @@ export function generateParticipants(params): {
     cityMocks({
       count: citiesCount || individualParticipantsCount,
       participantsCount: individualParticipantsCount,
-      random,
     }).cities;
   const states =
     (statesProfile && valuesFromProfile(statesProfile)) ||
@@ -184,7 +183,6 @@ export function generateParticipants(params): {
     stateMocks({
       count: statesCount || individualParticipantsCount,
       participantsCount: individualParticipantsCount,
-      random,
     }).states;
   const postalCodes =
     (postalCodesProfile && valuesFromProfile(postalCodesProfile)) ||
@@ -192,7 +190,6 @@ export function generateParticipants(params): {
     postalCodeMocks({
       count: postalCodesCount || individualParticipantsCount,
       participantsCount: individualParticipantsCount,
-      random,
     }).postalCodes;
 
   const addressValues = { cities, states, postalCodes };

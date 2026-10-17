@@ -98,14 +98,33 @@ export function withForkedRandomSource<T>(fn: () => T): T {
 }
 
 /**
- * Runs `fn` with `source` as the source every unthreaded draw reads, then reinstates the previous one.
+ * A second seeded stream derived from `seed`, independent of `createSeededRandom(seed)`.
  *
- * WHY: a mocksEngine call's `nonRandom` seed names its record only if EVERY draw comes from that
- * seed. Threading `random` by hand reaches the mocks' own generators, but generation also calls draw,
- * venue, tieFormat and id code that mints from the configured source (68 bare `UUID()` sites,
- * 2026-10-17). Scoped here, an unthreaded draw takes the call's own stream instead of the process's,
- * so the same seed gives the same record whatever ran before it and whatever the ambient source is.
- * Without a function (no seed) `fn` runs against the configured source unchanged.
+ * For draws a seed must determine WITHOUT taking them from the seed's own stream: adding a draw to
+ * that stream shifts every later one, which would change what every existing seed produces (census
+ * seeds, frozen arms and the tests pinned to them). `purpose` separates one derived stream from
+ * another. FNV-1a over the seed and purpose, so any finite number works as a seed.
+ */
+export function createDerivedRandom(seed: number, purpose: string): SeededRandom {
+  const text = `${seed}:${purpose}`;
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index++) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return createSeededRandom(hash >>> 0);
+}
+
+/**
+ * Runs `fn` with `source` as the configured source, then reinstates the previous one.
+ *
+ * WHY: a mocksEngine call's `nonRandom` seed names its record only if EVERY draw is determined by it.
+ * The mocks' own generators take the seeded `random`, but generation also runs draw, venue,
+ * tieFormat and id code that reads the configured source (68 bare `UUID()` sites, 2026-10-17). The
+ * mocks wrapper scopes a stream DERIVED from the seed here (`createDerivedRandom`), so those draws
+ * are determined by the seed too, whatever the process's source is and whatever ran before, while
+ * the seed's own stream keeps exactly the draws it always had. Without a function `fn` runs against
+ * the configured source unchanged.
  */
 export function withRandomSource<T>(source: RandomFunction | undefined, fn: () => T): T {
   if (typeof source !== 'function') return fn();

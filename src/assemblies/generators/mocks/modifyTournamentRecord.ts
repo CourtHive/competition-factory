@@ -43,7 +43,6 @@ function processExistingEvent({ event, eventProfile, tournamentRecord, allUnique
           ratingsParameters: eventProfile.ratingsParameters,
           tournamentRecord,
           eventProfile,
-          random: eventProfile.random,
           uuids: eventProfile.uuids,
         })
       : {};
@@ -74,7 +73,6 @@ function processExistingEvent({ event, eventProfile, tournamentRecord, allUnique
       matchUpStatusProfile: eventProfile.matchUpStatusProfile,
       completeAllMatchUps: eventProfile.completeAllMatchUps,
       randomWinningSide: eventProfile.randomWinningSide,
-      random: eventProfile.random,
       tournamentRecord,
       drawProfiles,
       isMock: eventProfile.isMock,
@@ -133,7 +131,6 @@ function handleNewEvent({
     tournamentRecord,
     eventProfile,
     eventIndex,
-    random: params.random,
     uuids: params.uuids,
   });
   if (result.error) return result;
@@ -201,7 +198,6 @@ function processDrawProfiles({ drawProfiles, tournamentRecord, allUniqueParticip
       tournamentRecord,
       drawProfile,
       drawIndex,
-      random: params.random,
       uuids: params.uuids,
     });
     if (result.error) return result;
@@ -282,7 +278,6 @@ export function modifyTournamentRecord(params) {
     participantsProfile,
     tournamentRecord,
     eventProfiles,
-    random: params.random,
     drawProfiles,
     uuids,
   });

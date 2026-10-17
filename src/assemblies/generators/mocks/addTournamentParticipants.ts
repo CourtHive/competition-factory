@@ -37,7 +37,6 @@ export function addTournamentParticipants({
     participantsProfile,
     eventProfiles,
     drawProfiles,
-    random,
   });
 
   const teamKey = participantsProfile?.teamKey;
