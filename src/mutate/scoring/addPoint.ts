@@ -703,14 +703,6 @@ export function checkStandardSetWon(
   const activeFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
   const noTiebreak = !setHasTiebreak(activeFormat);
 
-  // For setTo === 1, first to 1 game wins
-  if (setTo === 1) {
-    if (side1Games >= 1 || side2Games >= 1) {
-      return side1Games > side2Games ? 0 : 1;
-    }
-    return undefined;
-  }
-
   const winBy = activeFormat.winBy || 2;
 
   // Check if tiebreak was played and won (e.g., 7-6 after tiebreak at 6-6)

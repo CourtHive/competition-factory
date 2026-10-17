@@ -1704,14 +1704,17 @@ describe('ScoringEngine — lineUp on points', () => {
 // ============================================================================
 
 describe('addPoint — setTo:1 (short sets)', () => {
-  test('first game wins the set', () => {
-    // SET3-S:1/TB7 — sets won with just 1 game
+  // ITF Rule 6 at setTo 1 (CA 2026-10-17): a set needs a margin of two games, and the declared
+  // tiebreak decides it at one game all. 1-0 used to close the set, so the tiebreak was unreachable.
+  test('one game is not a set; two games to love are', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:1/TB7' });
 
     winGame(engine, 0);
+    expect(engine.getState().score.sets[0].winningSide).toBeUndefined();
+    winGame(engine, 0);
     const set = engine.getState().score.sets[0];
     expect(set.winningSide).toBe(1);
-    expect(set.side1Score).toBe(1);
+    expect(set.side1Score).toBe(2);
   });
 });
 
