@@ -4,8 +4,8 @@ import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { isDoubleExit, isExit } from '@Validators/isExit';
 import {
   deriveExitStateFromProvenance,
   getSideExitProvenance,
@@ -154,7 +154,11 @@ export function releaseAdvancedDrawPosition({
     // `doubleExitPropagateBye: false`), dp 7 — an empty fed seat RULE 2 had awarded `Consolation|1|2` — left `2|2` and
     // not `3|1`, where a produced walkover waited; the walkover then arriving opposite could not converge with it, and
     // the seat it fed waited forever (`aReservationGoesPastTheByeItCrossed`). The exit itself stands, for whoever arrives.
-    const pendingExit = withdrawingExit && !matchUp.winningSide && isExit(matchUp.matchUpStatus);
+    // A double exit is no result either: it advances nobody, so a position advanced into one is taken back too (census
+    // S8 policy-off, FEED_IN_CHAMPIONSHIP 16/11 21123326: a double exit's own dp 9 left `Consolation|4|1` and stayed in
+    // `5|1`, past `4|1`'s BYE, and the next arrival there was refused after a write;
+    // `aDoubleExitsOwnPositionLeavesEveryRoundItReached`).
+    const pendingExit = withdrawingExit && !matchUp.winningSide && isAnyExit(matchUp.matchUpStatus);
     // ...and, once the BYE this position passed has been taken back, a matchUp decided ONLY by the carry leaving with it,
     // for a seat nobody occupies yet, is no result of its own: RULE 2 awarded the empty seat because this occupant arrived carrying an exit, and nobody has gone on
     // from it. The carry goes home below, and the decision with it (census F2, FEED_IN_CHAMPIONSHIP_TO_SF 16/16,

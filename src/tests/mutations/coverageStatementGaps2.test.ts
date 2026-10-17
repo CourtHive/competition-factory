@@ -445,8 +445,7 @@ describe('generateOutcome uncovered paths', () => {
   });
 
   it('handles matchUpStatusProfile with large values (coverage of reduce path)', () => {
-    // The reduce uses Object.keys(matchUpStatuses) which are array indices,
-    // so this exercises the reduce branch without triggering the >100 guard
+    // 10% in all: within the limit, so an outcome is generated
     const result = generateOutcome({
       matchUpStatusProfile: { [WALKOVER]: 5, [RETIRED]: 5 },
     });

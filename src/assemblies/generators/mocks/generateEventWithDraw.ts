@@ -48,6 +48,59 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
 import { nameMocks } from './nameMocks';
 
+/** A TEAM draw's team size, and the individuals it needs, by gender (written into `gendersCount`). */
+function teamParticipantsShape({
+  qualifyingParticipantsCount,
+  drawProfileCopy,
+  gendersCount,
+  drawSize,
+  random,
+}: {
+  drawProfileCopy: {
+    teamGenders?: Record<string, number>;
+    alternatesCount?: number;
+    tieFormatName?: string;
+    tieFormat?: unknown;
+  };
+  gendersCount: Record<string, number>;
+  qualifyingParticipantsCount: number;
+  random?: () => number;
+  drawSize: number;
+}) {
+  let { teamSize, genders } = processTieFormat({
+    tieFormatName: drawProfileCopy.tieFormatName,
+    tieFormat: drawProfileCopy.tieFormat,
+    alternatesCount: drawProfileCopy.alternatesCount || 0,
+    drawSize,
+    random,
+  });
+
+  // Apply teamGenders override from drawProfile (floor, not ceiling)
+  const teamGenders = drawProfileCopy.teamGenders;
+  if (teamGenders) {
+    for (const key of Object.keys(teamGenders)) {
+      if (genders[key] !== undefined && teamGenders[key] > genders[key]) {
+        genders[key] = teamGenders[key];
+      }
+    }
+    // Ensure teamSize accommodates the overridden gender counts
+    const genderTotal = (genders[MALE] || 0) + (genders[FEMALE] || 0);
+    if (genderTotal > teamSize) teamSize = genderTotal;
+  }
+
+  Object.keys(genders).forEach((key) => {
+    const coerced = coercedGender(key);
+    if (coerced && isGendered(key) && genders[coerced]) {
+      gendersCount[coerced] = drawSize * genders[coerced];
+    }
+  });
+  return {
+    individualParticipantCount: teamSize * ((drawSize || 0) + qualifyingParticipantsCount),
+    teamSize,
+    genders,
+  };
+}
+
 function generateEventParticipants({
   qualifyingParticipantsCount,
   participantsProfile,
@@ -92,34 +145,13 @@ function generateEventParticipants({
   }
 
   if (eventType === TEAM) {
-    ({ teamSize, genders } = processTieFormat({
-      tieFormatName: drawProfileCopy.tieFormatName,
-      tieFormat: drawProfileCopy.tieFormat,
-      alternatesCount: drawProfileCopy.alternatesCount || 0,
+    ({ teamSize, genders, individualParticipantCount } = teamParticipantsShape({
+      qualifyingParticipantsCount,
+      drawProfileCopy,
+      gendersCount,
       drawSize,
       random,
     }));
-
-    // Apply teamGenders override from drawProfile (floor, not ceiling)
-    const teamGenders = drawProfileCopy.teamGenders;
-    if (teamGenders) {
-      for (const key of Object.keys(teamGenders)) {
-        if (genders[key] !== undefined && teamGenders[key] > genders[key]) {
-          genders[key] = teamGenders[key];
-        }
-      }
-      // Ensure teamSize accommodates the overridden gender counts
-      const genderTotal = (genders[MALE] || 0) + (genders[FEMALE] || 0);
-      if (genderTotal > teamSize) teamSize = genderTotal;
-    }
-
-    Object.keys(genders).forEach((key) => {
-      const coerced = coercedGender(key);
-      if (coerced && isGendered(key) && genders[coerced]) {
-        gendersCount[coerced] = drawSize * genders[coerced];
-      }
-    });
-    individualParticipantCount = teamSize * ((drawSize || 0) + qualifyingParticipantsCount);
   }
 
   const idPrefix = participantsProfile?.idPrefix ? `D-${drawIndex}-${participantsProfile?.idPrefix}` : undefined;
@@ -141,6 +173,7 @@ function generateEventParticipants({
     category,
     random,
   });
+  if (result.error) return result;
   const unique = result.participants as Participant[];
 
   // update categoryName **after** generating participants

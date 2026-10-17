@@ -41,13 +41,17 @@ const statusConstantKeys = new Set(Object.keys(matchUpStatusConstants));
 
 function validateOutcomeParams({
   matchUpStatusProfile,
+  winningSide,
   defaultWithScorePercent,
   pointsPerMinute,
   sideWeight,
   matchUpFormat,
 }) {
   if (!isValidMatchUpFormat({ matchUpFormat })) return { error: INVALID_MATCHUP_FORMAT };
-  if (typeof matchUpStatusProfile !== 'object') return { error: INVALID_VALUES };
+  if (typeof matchUpStatusProfile !== 'object' || matchUpStatusProfile === null) return { error: INVALID_VALUES };
+  // falsy means no winner was asked for (completion passes `!randomWinningSide && 1`)
+  if (winningSide && winningSide !== 1 && winningSide !== 2)
+    return { error: INVALID_VALUES, info: 'winningSide must be 1 or 2' };
   if (
     Number.isNaN(Number(defaultWithScorePercent)) ||
     Number.isNaN(Number(pointsPerMinute)) ||
@@ -62,8 +66,14 @@ function resolveMatchUpStatus({ matchUpStatusProfile, random }) {
   const matchUpStatuses = Object.keys(matchUpStatusProfile).filter(
     (matchUpStatus) => statusConstantKeys.has(matchUpStatus) && matchUpStatus !== COMPLETED,
   );
-  const matchUpStatusTotals = Object.keys(matchUpStatuses).reduce((total, key) => total + matchUpStatusProfile[key], 0);
-  if (matchUpStatusTotals > 100) return { error: INVALID_VALUES, matchUpStatusProfile };
+  // the weights themselves: summed over Object.keys of the ARRAY (its indices), the total was NaN and
+  // the guard never fired, so { WALKOVER: 80, RETIRED: 80 } and negative weights passed (M8, 2026-10-17)
+  const weights = matchUpStatuses.map((matchUpStatus) => matchUpStatusProfile[matchUpStatus]);
+  if (!weights.every((weight) => typeof weight === 'number' && Number.isFinite(weight) && weight >= 0))
+    return { error: INVALID_VALUES, info: 'status weights must be non-negative percentages', matchUpStatusProfile };
+  const matchUpStatusTotals = weights.reduce((total, weight) => total + weight, 0);
+  if (matchUpStatusTotals > 100)
+    return { error: INVALID_VALUES, info: 'status weights exceed 100', matchUpStatusProfile };
 
   const matchUpStatusMap = matchUpStatuses.reduce(
     (statusMap: { pointer: number; valueMap: any[][] }, matchUpStatus) => {
@@ -153,6 +163,7 @@ export function generateOutcome(params) {
   const clampedDefaultPercent = Math.min(rawDefaultPercent, 100);
 
   const validation = validateOutcomeParams({
+    winningSide: paramWinningSide,
     defaultWithScorePercent: clampedDefaultPercent,
     matchUpStatusProfile,
     pointsPerMinute,
