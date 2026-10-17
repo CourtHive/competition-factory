@@ -1,6 +1,6 @@
 import { competitionFormats } from '@Fixtures/scoring/competitionFormats';
-import { MATCH_ROOTS } from '@Constants/matchUpFormatConstants';
 import { matchUpFormats } from '@Fixtures/scoring/matchUpFormats';
+import { MATCH_ROOTS } from '@Constants/matchUpFormatConstants';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { EDGE_CODES } from '../corpus/grammarSource';
 import path from 'node:path';
