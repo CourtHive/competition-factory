@@ -826,6 +826,12 @@ by a named test that fails without it.
   placed again, because the losing side is still the produced exit and can never send a loser. A walkover corrected
   to a played result leaves the draw that the played result alone leaves (COMPASS 8/8 20853116:
   `aDissolvedConvergenceOwesItsLoserSeatTheByeAgain`).
+- **A double exit's own position leaves every round it reached.** A participant arriving opposite a double exit's
+  produced exit is advanced at once, past any BYE beyond; when their own exit then converges the matchUp, the
+  position is taken back from every round it went on to, a double exit there included, since a double exit
+  advances nobody. When that leaves a single produced exit, it awards no empty seat and stands pending, as forward
+  play lands it. A double default corrected to a walkover leaves the draw that the walkover alone leaves
+  (FEED_IN_CHAMPIONSHIP 16/11 21123326: `aDoubleExitsOwnPositionLeavesEveryRoundItReached`).
 
 ### Nothing to do is success, not failure
 
