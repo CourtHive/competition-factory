@@ -107,7 +107,7 @@ describe('bestOf | timed(G) — SET3-S:T10 and its kin: timed sets scored in gam
 
 describe('bestOf | timed(G) | game:traditional(deuceCap) — SET3-S:T10-G:TN3D', () => {
   const format = 'SET3-S:T10-G:TN3D';
-  // the cap itself is a point-level rule: see ENGINE DISAGREES below, where points do not build games
+  // the cap itself is a point-level rule, held by the point-input cases at the end of this file
 
   it('engine-defined: a game-capped timed set still has no game target; time closes it', () => {
     segmentConforms(format, 'g1111111', { sets: [[7, 0]], complete: false });
