@@ -255,9 +255,9 @@ describe('ScoringEngine with competitionFormat', () => {
         competitionFormat: INTENNSE_STANDARD,
       });
 
-      // Set lineUps
-      engine.setLineUp(1, [{ participantId: 'P1' }, { participantId: 'P2' }, { participantId: 'P3' }]);
-      engine.setLineUp(2, [{ participantId: 'Q1' }, { participantId: 'Q2' }, { participantId: 'Q3' }]);
+      // Set lineUps: the players on court (P3 and Q3 are on the bench)
+      engine.setLineUp(1, [{ participantId: 'P1' }, { participantId: 'P2' }]);
+      engine.setLineUp(2, [{ participantId: 'Q1' }, { participantId: 'Q2' }]);
 
       // Play some points in segment 1
       engine.addPoint({ winner: 0, result: 'Ace' }); // +2
@@ -270,11 +270,12 @@ describe('ScoringEngine with competitionFormat', () => {
       expect(score.sets[0].side2Score).toBe(3); // 1+2
 
       // Substitute P1 -> P3
-      engine.substitute({
+      const substitution = engine.substitute({
         sideNumber: 1,
         outParticipantId: 'P1',
         inParticipantId: 'P3',
       });
+      expect(substitution).toEqual({ success: true });
 
       // Verify lineUp changed
       expect(engine.getActivePlayers().side1).toContain('P3');

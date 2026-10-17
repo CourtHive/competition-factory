@@ -222,7 +222,7 @@ The ScoringEngine tracks team lineups and substitutions for doubles or team form
 
 ### Setting Up LineUps
 
-Register a side's roster before processing points. This enables substitution tracking and per-point active player snapshots.
+Register the players a side has on court before processing points. This enables substitution tracking and per-point active player snapshots. The lineUp is the players on court, not the team's roster: a reserve comes on by substitution.
 
 ```js
 engine.setLineUp(1, [
@@ -241,12 +241,13 @@ The initial lineup is saved internally so the engine can reconstruct state durin
 ### Making Substitutions
 
 ```js
-engine.substitute({
+const result = engine.substitute({
   sideNumber: 1,
   outParticipantId: 'player-B',
   inParticipantId: 'player-E',
   timestamp: new Date().toISOString(), // optional
 });
+// { success: true }, or { success: false, error: 'IN_ALREADY_ON_COURT' }
 ```
 
 When a substitution is applied:
@@ -256,7 +257,33 @@ When a substitution is applied:
 3. A `SubstitutionEvent` is recorded in `matchUp.history.substitutions[]` with a `beforePointIndex` indicating where in the point sequence it occurred
 4. An entry is added to the unified `matchUp.history.entries[]` timeline
 
-Substitutions are undoable/redoable like any other action. If the `outParticipantId` is not found in the side's lineup, the call is a no-op.
+Substitutions are undoable/redoable like any other action.
+
+A substitution that would leave the lineUp naming the wrong players is refused, with nothing recorded
+and any pending redo kept: `NO_LINEUP` (the side has none), `OUT_NOT_ON_SIDE`, `IN_ALREADY_ON_COURT`
+(for either side) and `SAME_PARTICIPANT`. A history recorded before these checks replays as it was.
+
+### Substitution Rules Are Advisory
+
+The competition format's `substitutionRules` do not refuse a substitution: a required one (a player
+out of time, a penalty removal) is the host's to allow. `evaluateSubstitution()` reports the rules a
+substitution made now would break, and the host decides:
+
+```js
+engine.evaluateSubstitution();
+// { violations: ['MAX_PER_SEGMENT'] }
+```
+
+| Violation         | Rule                                                          |
+| ----------------- | ------------------------------------------------------------- |
+| `NOT_ALLOWED`     | `allowed: false`                                              |
+| `MAX_PER_MATCHUP` | `maxPerMatchUp` substitutions already made                    |
+| `MAX_PER_SEGMENT` | `maxPerSegment` substitutions already made in the set in play |
+| `TIMING`          | `timing: 'BETWEEN_GAMES'` while a game has points in it       |
+| `MATCHUP_TYPE`    | the matchUp type is not in `allowedMatchUpTypes`              |
+
+Roster sizes and other timings are not reported: the engine holds the players on court, not the roster,
+and has no state within a point.
 
 ### Querying Active Players
 

@@ -73,6 +73,12 @@ export interface TimeoutRules {
 export interface PenaltyBoxProfile {
   durationSeconds: number;
 }
+/**
+ * A competition's substitution rules. Advisory (CA 2026-10-17): the engine reports what a substitution
+ * would break through evaluateSubstitution(), and the host decides; substitute() refuses only a
+ * substitution that would corrupt who is on court. A required substitution (a player out of time, a
+ * penalty removal) is the host's to allow.
+ */
 export interface SubstitutionRules {
   allowed: boolean;
   maxPerMatchUp?: number; // Omit = unlimited; 0 = none despite allowed: true
@@ -82,6 +88,12 @@ export interface SubstitutionRules {
   minRosterSize?: number;
   maxRosterSize?: number;
 }
+/** Why substitute() refused: each would leave the lineUp naming the wrong players. */
+export type SubstitutionError = 'NO_LINEUP' | 'OUT_NOT_ON_SIDE' | 'IN_ALREADY_ON_COURT' | 'SAME_PARTICIPANT';
+export type SubstitutionResult = { success: true } | { success: false; error: SubstitutionError };
+/** A competition substitution rule a substitution made now would break. */
+export type SubstitutionViolation = 'NOT_ALLOWED' | 'MAX_PER_MATCHUP' | 'MAX_PER_SEGMENT' | 'TIMING' | 'MATCHUP_TYPE';
+
 export interface PlayerRules {
   maxMinutesPerSegment?: number;
   matchUpTypes?: string[];
@@ -939,13 +951,17 @@ export class ScoringEngine {
     outParticipantId: string;
     inParticipantId: string;
     timestamp?: string;
-  }): void {
+  }): SubstitutionResult {
+    // Refusals keep the lineUp true to who is on court (S6); nothing is recorded and a pending redo stays
+    if (options.inParticipantId === options.outParticipantId) return { success: false, error: 'SAME_PARTICIPANT' };
     const side = this.state.sides.find((s) => s.sideNumber === options.sideNumber);
-    if (!side?.lineUp) return; // No-op without lineUp
+    if (!side?.lineUp) return { success: false, error: 'NO_LINEUP' };
 
     // Find the outgoing player in the lineUp
     const outIndex = side.lineUp.findIndex((tc) => tc.participantId === options.outParticipantId);
-    if (outIndex === -1) return; // Player not in lineUp
+    if (outIndex === -1) return { success: false, error: 'OUT_NOT_ON_SIDE' };
+    const onCourt = this.state.sides.some((s) => s.lineUp?.some((tc) => tc.participantId === options.inParticipantId));
+    if (onCourt) return { success: false, error: 'IN_ALREADY_ON_COURT' };
 
     // Record substitution event
     this.ensureHistory();
@@ -956,6 +972,7 @@ export class ScoringEngine {
       outParticipantId: options.outParticipantId,
       inParticipantId: options.inParticipantId,
       beforePointIndex: this.state.history!.points.length,
+      setNumber: openSetNumber(this.state.score.sets),
       timestamp: options.timestamp,
     };
     this.state.history!.substitutions.push(subEvent);
@@ -974,6 +991,42 @@ export class ScoringEngine {
     });
 
     this.redoStack = [];
+    return { success: true };
+  }
+
+  /**
+   * The competition substitution rules a substitution made now would break. Advisory: substitute() does
+   * not consult it, so the host decides whether a required substitution goes ahead. Rules the engine
+   * cannot know (roster sizes, timing other than between games) are not reported.
+   */
+  evaluateSubstitution(): { violations: SubstitutionViolation[] } {
+    const rules = this.competitionFormat?.substitutionRules;
+    const violations: SubstitutionViolation[] = [];
+    if (!rules) return { violations };
+
+    const substitutions = this.state.history?.substitutions ?? [];
+    const setInPlay = openSetNumber(this.state.score.sets);
+    const points = this.state.history?.points ?? [];
+    // an event recorded before setNumber existed is placed by the point it preceded
+    const setOf = (sub: SubstitutionEvent) =>
+      sub.setNumber ?? ((points[sub.beforePointIndex] as any)?.set ?? setInPlay - 1) + 1;
+
+    if (!rules.allowed) violations.push('NOT_ALLOWED');
+    if (rules.maxPerMatchUp !== undefined && substitutions.length >= rules.maxPerMatchUp)
+      violations.push('MAX_PER_MATCHUP');
+    const inSet = substitutions.filter((sub) => setOf(sub) === setInPlay).length;
+    if (rules.maxPerSegment !== undefined && inSet >= rules.maxPerSegment) violations.push('MAX_PER_SEGMENT');
+    if (rules.timing === 'BETWEEN_GAMES' && this.gameUnderWay()) violations.push('TIMING');
+    if (rules.allowedMatchUpTypes && !rules.allowedMatchUpTypes.includes(this.state.matchUpType))
+      violations.push('MATCHUP_TYPE');
+    return { violations };
+  }
+
+  /** Whether the set in play has a game with points in it. */
+  private gameUnderWay(): boolean {
+    const set = this.state.score.sets.at(-1);
+    if (!set || set.winningSide !== undefined) return false;
+    return (set.side1GameScores?.at(-1) || 0) + (set.side2GameScores?.at(-1) || 0) > 0;
   }
 
   /**
