@@ -1,6 +1,7 @@
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
@@ -108,13 +109,15 @@ it('an ungendered collection takes members in order, as before', () => {
 
 /**
  * Completion runs inside generation, and its refusal was discarded: these fixtures reported success
- * with nothing completed. A format the outcome generator cannot yet produce (combined point totals;
- * phase 3 of the hardening plan adds the producer and replaces this case) is such a refusal.
+ * with nothing completed. A status profile the outcome generator refuses is such a refusal, and it
+ * now travels both steps: generateOutcome to the completion, the completion to the generation.
  */
 it('a completion the engine refuses is the generation error, not a success with nothing played', () => {
   const result: any = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN, matchUpFormat: 'SET1-S:P32', completeAllMatchUps: true }],
+    drawProfiles: [
+      { drawSize: 4, drawType: ROUND_ROBIN, matchUpStatusProfile: 'not a profile', completeAllMatchUps: true },
+    ],
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
   expect(result.success).toBeUndefined();
 });
