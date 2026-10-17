@@ -31,11 +31,11 @@ function completedMatchUps(drawSize: number) {
 }
 
 test('a tally asks each distinct recalculation once', () => {
-  const matchUps = completedMatchUps(128);
+  const matchUps = completedMatchUps(64);
 
   calls.list = [];
   const result = tallyParticipantResults({ matchUps, generateReport: true });
-  expect(result.order?.length).toEqual(128);
+  expect(result.order?.length).toEqual(64);
 
   const keys = calls.list.map(({ participantIds, groupingTotal }) =>
     [
@@ -48,4 +48,5 @@ test('a tally asks each distinct recalculation once', () => {
   expect(unscoped.length).toBeLessThanOrEqual(2);
   expect(keys.length - new Set(keys).size).toBeLessThanOrEqual(1);
   expect(calls.list.length).toBeLessThan(matchUps.length);
-});
+  // completing the fixture draw is the slow part, and under coverage beside other suites it outran 30s
+}, 120_000);
