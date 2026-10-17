@@ -511,6 +511,10 @@ getNextServer(): 0 | 1
 
 Get who serves the next point. Uses format-driven server alternation by default, or `WINNER_SERVES` if set in the competition format.
 
+A point added without a server is recorded with the server this method returns, so the displayed,
+recorded and replayed servers agree under either rule. A server the caller supplies is recorded as
+played, and the rule resumes after it.
+
 ---
 
 ## Point Decoration & Editing

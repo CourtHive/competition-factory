@@ -678,8 +678,7 @@ describe('standalone', () => {
     });
 
     it('context tracks game/set from initial state', () => {
-      // enrichPoint overrides set/game with context values, so raw set/game
-      // are replaced. The transitions track based on enriched values.
+      // points that record no set/game take them from the context; a recorded set/game stands
       const raw = [{ code: 'A' }, { code: 'D' }, { code: 'S' }];
       const enriched = enrichPointHistory(raw);
       // All points share the same initial context

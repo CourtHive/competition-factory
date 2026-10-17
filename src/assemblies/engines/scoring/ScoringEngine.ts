@@ -344,7 +344,7 @@ export class ScoringEngine {
     const activePlayers = this.activePlayersForPoint();
 
     // Add point using pure function with multiplier config
-    this.state = addPoint(this.state, options, {
+    this.state = addPoint(this.state, this.scoredPointInput(options), {
       pointMultipliers: this.pointMultipliers,
     });
 
@@ -392,7 +392,9 @@ export class ScoringEngine {
         0,
       );
       if (curTotalGames > prevTotalGames && !this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
-        this.eventHandlers.onGameComplete?.({ ...ctx, gameWinner: options.winner! });
+        // the side that won the deciding point, whichever spelling the caller used (S11)
+        const gameWinner = this.state.history!.points.at(-1)!.winner;
+        this.eventHandlers.onGameComplete?.({ ...ctx, gameWinner });
       }
 
       // Detect set completion (number of sets with winningSide increased)
@@ -1140,6 +1142,18 @@ export class ScoringEngine {
     }
   }
 
+  /**
+   * The input the scorer receives for a point. A server the competition's rule assigns is supplied here,
+   * where getNextServer() decides it, so the server shown, the server recorded and the server a rebuild
+   * replays agree (S5). It is calculated, so the timeline does not record it (R2); a server the caller
+   * supplied is played as given.
+   */
+  private scoredPointInput(options: AddPointOptions): AddPointOptions {
+    if (options.server !== undefined || options.serverSideNumber !== undefined) return options;
+    if (this.competitionFormat?.serverRule !== 'WINNER_SERVES') return options;
+    return { ...options, server: this.getNextServer() };
+  }
+
   /** The timeline entry that replays the point at `pointIndex`, if the timeline is kept. */
   private pointEntry(pointIndex: number) {
     return this.state.history?.entries?.find((e) => e.type === 'point' && e.pointIndex === pointIndex);
@@ -1588,7 +1602,7 @@ export class ScoringEngine {
           // the players on court here are the ones who played this point.
           const activePlayers = this.activePlayersForPoint();
           const pointCount = this.state.history?.points.length || 0;
-          this.state = addPoint(this.state, entry.data, {
+          this.state = addPoint(this.state, this.scoredPointInput(entry.data), {
             pointMultipliers: this.pointMultipliers,
           });
           // Restore entries (addPoint may reset them since it mutates)
