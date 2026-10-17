@@ -1,6 +1,6 @@
 import type { ContextProfile, ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
 import { DrawDefinition, Event, Participant, PayloadProfileEnum, Tournament } from '@Types/tournamentTypes';
-import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { isTalliedStructure, refreshParticipantResults } from './refreshParticipantResults';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -11,7 +11,6 @@ import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { withContextExclusion } from '@Query/matchUps/contextExclusion';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
-import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
 import { createHydrationCache } from '@Query/matchUps/hydrationCache';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
@@ -30,7 +29,6 @@ import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefiniti
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { DISPLAY, TALLY } from '@Constants/extensionConstants';
 import { PUBLIC_DISPLAY } from '@Constants/displayConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -296,25 +294,22 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
           };
         });
 
+        // only a structure a tally describes is tallied (never elimination); a round robin is refreshed group by group
         if (
           matchUps.length &&
-          ((!participantResults?.length && params.allParticipantResults) || // don't override existing participantResults, unless { refreshresults: true }
-            (refreshResults && !structuresOf(structure))) // cannot refresh for round roubins
+          isTalliedStructure({ drawDefinition, structure }) &&
+          ((!participantResults?.length && params.allParticipantResults) || refreshResults)
         ) {
-          const { subOrderMap } = createSubOrderMap({ positionAssignments });
-
-          const hasTeamMatchUps = matchUps.some((matchUp) => matchUp.matchUpType === TEAM_MATCHUP);
-          const consideredMatchUps = hasTeamMatchUps
-            ? matchUps.filter((matchUp) => matchUp.matchUpType === TEAM_MATCHUP)
-            : matchUps;
-          const result = tallyParticipantResults({
-            matchUpFormat: structure.matchUpFormat,
-            matchUps: consideredMatchUps,
+          const result = refreshParticipantResults({
             policyDefinitions,
+            tournamentRecord,
+            drawDefinition,
             pressureRating,
-            subOrderMap,
+            structure,
+            matchUps,
+            event,
           });
-          report = result?.report;
+          report = result.report;
 
           participantResults = positionAssignments?.filter(xa(PARTICIPANT_ID)).map((assignment) => {
             const { drawPosition, participantId } = assignment;

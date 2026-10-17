@@ -3,32 +3,26 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
 // constants
-import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 
 // getDrawData held `report` once per draw and assigned it only in the structures it tallied, so a structure
-// it does not tally inherited the report of the one before it: under refreshResults, a ROUND_ROBIN main
-// returned its qualifying structure's report.
+// it does not tally inherited the report of the one before it (first seen as a ROUND_ROBIN main returning its
+// qualifying structure's report). Round robins are tallied and elimination structures are not, so the case that
+// can leak is a round robin followed by its playoff.
 
 test('a structure that is not tallied carries no report of another structure', () => {
   const {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [
-      {
-        qualifyingProfiles: [{ structureProfiles: [{ drawSize: 16, qualifyingPositions: 4 }] }],
-        drawType: ROUND_ROBIN,
-        drawSize: 16,
-      },
-    ],
+    drawProfiles: [{ drawType: ROUND_ROBIN_WITH_PLAYOFF, drawSize: 16 }],
     completeAllMatchUps: true,
     setState: true,
   });
 
   const { structures } = tournamentEngine.getDrawData({ drawId, refreshResults: true });
-  const [qualifying, main] = structures;
-  expect(qualifying.stage).toEqual('QUALIFYING');
-  expect(qualifying.report?.length).toBeGreaterThan(0);
+  const [groups, ...playoffs] = structures;
+  expect(groups.report?.length).toBeGreaterThan(0);
 
-  expect(main.stage).toEqual('MAIN');
-  expect(main.report).toBeUndefined();
+  expect(playoffs.length).toBeGreaterThan(0);
+  playoffs.forEach((playoff) => expect(playoff.report).toBeUndefined());
 });
