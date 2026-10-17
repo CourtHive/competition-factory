@@ -3,6 +3,7 @@ import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { factoryVersion } from '@Functions/global/factoryVersion';
+import { createDerivedRandom, withRandomSource } from '@Tools/prng';
 import { withCapturedClock } from '@Tools/clock';
 
 import { setState } from '@Assemblies/engines/parts/stateMethods';
@@ -29,14 +30,17 @@ export const mocksEngine = (() => {
   return engine;
 
   // enable Middleware
-  function engineInvoke(method, params) {
+  function engineInvoke(method, params, unthreadedSource?: () => number) {
     try {
-      // one instant per generation, captured before anything is written; see tools/clock.ts
-      return withCapturedClock(() => {
-        const generated = method({ ...params });
-        if (!generated?.error) notifySubscribers();
-        return generated;
-      });
+      // one instant per generation, captured before anything is written; see tools/clock.ts. And a
+      // seeded call's unthreaded draws come from a stream derived from its seed; see tools/prng.ts
+      return withRandomSource(unthreadedSource, () =>
+        withCapturedClock(() => {
+          const generated = method({ ...params });
+          if (!generated?.error) notifySubscribers();
+          return generated;
+        }),
+      );
     } finally {
       // in finally so that a throw (rethrown under devContext) cannot leave notices or an
       // invocation-scoped devContext behind for the next, unrelated call
@@ -58,11 +62,15 @@ export const mocksEngine = (() => {
 
   function createEngineMethod(governor, method) {
     return (params) => {
+      // derived BEFORE seedRandomParam consumes the seed: what nonRandom reaches through `random` is
+      // unchanged, and every draw it did not reach now comes from this stream instead of the process's
+      const unthreadedSource =
+        typeof params?.nonRandom === 'number' ? createDerivedRandom(params.nonRandom, 'unthreaded') : undefined;
       if (typeof params?.nonRandom === 'number') params = seedRandomParam({ ...params });
       // read before invoking: the invocation resets an invocation-scoped devContext
       const rethrow = getDevContext();
       try {
-        const invocationResult = engineInvoke(governor[method], params);
+        const invocationResult = engineInvoke(governor[method], params, unthreadedSource);
         if (!invocationResult?.error && params?.setState && invocationResult?.tournamentRecord) {
           // a refused install is the caller's failure too: the record they asked for is not in state
           const installed = setState(invocationResult.tournamentRecord);
