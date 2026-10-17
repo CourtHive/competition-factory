@@ -4,16 +4,20 @@ import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyPa
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
+import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
+import { createHydrationCache } from '@Query/matchUps/hydrationCache';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { applyRoundLimit } from '@Query/publishing/applyRoundLimit';
 import { structureSort } from '@Functions/sorters/structureSort';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findExtension } from '@Acquire/findExtension';
 import { findStructure } from '@Acquire/findStructure';
@@ -130,6 +134,21 @@ export function getDrawData(params: GetDrawDataArgs): {
   }
 
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  const hydrationCache = createHydrationCache();
+
+  // Built on first use, so a STUBS request builds none of it.
+  let drawFacts: ReturnType<typeof buildDrawFacts> | undefined;
+  const getDrawFacts = () => {
+    drawFacts ??= buildDrawFacts({
+      hydrate: inContext && !tournamentParticipants.length && !!tournamentRecord,
+      participantsProfile: params.participantsProfile,
+      policyDefinitions,
+      tournamentRecord,
+      contextProfile,
+      drawDefinition,
+    });
+    return drawFacts;
+  };
 
   const { matchUpFormat, updatedAt, drawType, drawName, drawId } = drawDefinition;
   const drawInfo: DrawInfo = {
@@ -240,10 +259,13 @@ export function getDrawData(params: GetDrawDataArgs): {
           context: { drawId: drawInfo.drawId, ...context },
           hydrateParticipants: params.hydrateParticipants,
           participantsProfile: params.participantsProfile,
-          tournamentParticipants,
+          tournamentParticipants: getDrawFacts().participants ?? tournamentParticipants,
+          matchUpsMap: getDrawFacts().matchUpsMap,
+          exitProfiles: getDrawFacts().exitProfiles,
           policyDefinitions,
           tournamentRecord,
           usePublishState,
+          hydrationCache,
           publishStatus,
           contextProfile,
           drawDefinition,
@@ -397,5 +419,43 @@ export function getDrawData(params: GetDrawDataArgs): {
         : undefined,
     drawInfo: noDeepCopy ? drawInfo : makeDeepCopy(drawInfo, false, true),
     ...SUCCESS,
+  };
+}
+
+/**
+ * Draw-wide inputs that getAllStructureMatchUps used to build again for every structure of a draw: the
+ * matchUps map and exit profiles always cover the whole draw, and the participants were hydrated with the
+ * same arguments each time (the arguments getAllStructureMatchUps would use). One read, one build.
+ */
+function buildDrawFacts({
+  participantsProfile,
+  policyDefinitions,
+  tournamentRecord,
+  contextProfile,
+  drawDefinition,
+  hydrate,
+}: {
+  participantsProfile?: ParticipantsProfile;
+  policyDefinitions?: PolicyDefinitions;
+  tournamentRecord?: Tournament;
+  contextProfile?: ContextProfile;
+  drawDefinition: DrawDefinition;
+  hydrate: boolean;
+}) {
+  const participants =
+    hydrate && tournamentRecord
+      ? hydrateParticipants({
+          participantsProfile,
+          policyDefinitions,
+          tournamentRecord,
+          contextProfile,
+          inContext: true,
+        }).participants
+      : undefined;
+
+  return {
+    exitProfiles: getExitProfiles({ drawDefinition }).exitProfiles,
+    matchUpsMap: getMatchUpsMap({ drawDefinition }),
+    participants,
   };
 }

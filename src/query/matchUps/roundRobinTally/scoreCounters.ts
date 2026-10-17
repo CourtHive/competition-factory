@@ -1,4 +1,4 @@
-import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { parseTallyFormat } from './parseTallyFormat';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
@@ -25,7 +25,7 @@ export function countSets({
   const setsTally: Tally = [0, 0];
   const sets = score?.sets;
   const matchUpWinnerIndex = typeof matchUpWinningSide === 'number' && matchUpWinningSide - 1;
-  const parsedMatchUpFormat = parse(matchUpFormat);
+  const parsedMatchUpFormat = parseTallyFormat(matchUpFormat);
   const setsToWin = getSetsToWin(parsedMatchUpFormat?.bestOf ?? 1);
 
   if (
@@ -69,7 +69,7 @@ export function countGames({
   if (!sets) return [0, 0];
 
   const matchUpWinnerIndex = typeof matchUpWinningSide === 'number' && matchUpWinningSide - 1;
-  const parsedMatchUpFormat = parse(matchUpFormat);
+  const parsedMatchUpFormat = parseTallyFormat(matchUpFormat);
   const bestOf = parsedMatchUpFormat?.bestOf ?? 1;
   const setsToWin = getSetsToWin(bestOf);
   const tiebreakAt = parsedMatchUpFormat?.setFormat?.tiebreakAt || 0;
@@ -153,7 +153,7 @@ export function countPoints({ matchUpFormat, score }: { matchUpFormat?: string; 
   pointsTally: Tally;
   tiebreaksTally: Tally;
 } {
-  const parsedMatchUpFormat = matchUpFormat ? parse(matchUpFormat) : undefined;
+  const parsedMatchUpFormat = matchUpFormat ? parseTallyFormat(matchUpFormat) : undefined;
   const bestOf = parsedMatchUpFormat?.bestOf ?? 1;
   const setsToWin = getSetsToWin(bestOf);
   const tiebreaksTally: Tally = [0, 0];
