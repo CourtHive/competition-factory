@@ -1,5 +1,5 @@
 import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { parseTallyFormat } from './parseTallyFormat';
 
 // constants and types
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
@@ -49,5 +49,5 @@ export function isDrawnResult(matchUp: MatchUp, fallbackFormat?: string): boolea
 }
 
 export function isCombinedPointFormat(format?: string): boolean {
-  return !!parse(format ?? '')?.setFormat?.combinedPointTotal;
+  return !!parseTallyFormat(format ?? '')?.setFormat?.combinedPointTotal;
 }
