@@ -22,8 +22,8 @@ const {
 ```typescript
 interface GenerateTournamentRecordOptions {
   // Tournament Properties
-  startDate?: string; // ISO date string (default: today)
-  endDate?: string; // ISO date string (default: startDate + 6 days)
+  startDate?: string; // ISO date string (default: endDate - 7 days, or today)
+  endDate?: string; // ISO date string (default: startDate + 7 days); before startDate is INVALID_DATE
   tournamentAttributes?: object; // Additional tournament properties
   tournamentExtensions?: array; // Extensions to attach to tournament
   tournamentId?: string; // Override generated ID
