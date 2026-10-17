@@ -820,6 +820,12 @@ by a named test that fails without it.
 - **A carrier under a stale double exit is not awarded.** An occupant carrying an exit is not awarded a produced exit
   on a matchUp that still reads a double exit from an earlier pass of the same mutation (OLYMPIC 32/30 20625776:
   `aCarrierUnderAStaleDoubleExitIsNotAwarded`).
+- **A dissolved convergence owes its loser seat the BYE again.** Under `doubleExitPropagateBye: false` a convergence
+  takes back the BYE its single exit claimed and its loser seat holds the produced exit. When the convergence dissolves
+  back into a single exit over a loser link, with its winner standing, the produced exit is withdrawn and the BYE is
+  placed again, because the losing side is still the produced exit and can never send a loser. A walkover corrected
+  to a played result leaves the draw that the played result alone leaves (COMPASS 8/8 20853116:
+  `aDissolvedConvergenceOwesItsLoserSeatTheByeAgain`).
 
 ### Nothing to do is success, not failure
 
