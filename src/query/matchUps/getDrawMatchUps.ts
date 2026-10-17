@@ -1,12 +1,17 @@
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { withContextExclusion } from './contextExclusion';
 import { getDrawMatchUps } from './drawMatchUps';
 
 // types
 import { GetMatchUpsArgs } from '@Types/factoryTypes';
 
-export function drawMatchUps({
+export function drawMatchUps(params: GetMatchUpsArgs) {
+  return withContextExclusion(params, drawMatchUpsUnredacted);
+}
+
+function drawMatchUpsUnredacted({
   participants: tournamentParticipants,
   tournamentAppliedPolicies,
   scheduleVisibilityFilters,

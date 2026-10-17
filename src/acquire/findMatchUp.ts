@@ -1,6 +1,7 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
+import { withContextExclusion } from '@Query/matchUps/contextExclusion';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { findDrawMatchUp } from './findDrawMatchUp';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -47,7 +48,11 @@ export function publicFindMatchUp(params: FindMatchUpType): FindMatchUpResult {
   return { matchUp: makeDeepCopy(matchUp, true, true), error };
 }
 
-export function findMatchUp({
+export function findMatchUp(params: FindMatchUpType) {
+  return withContextExclusion(params, findMatchUpUnredacted);
+}
+
+function findMatchUpUnredacted({
   participantsProfile,
   afterRecoveryTimes,
   tournamentRecord,
