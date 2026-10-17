@@ -826,6 +826,11 @@ by a named test that fails without it.
   placed again, because the losing side is still the produced exit and can never send a loser. A walkover corrected
   to a played result leaves the draw that the played result alone leaves (COMPASS 8/8 20853116:
   `aDissolvedConvergenceOwesItsLoserSeatTheByeAgain`).
+- **An exit re-delivered into its own seat is not sent on.** A double exit that re-settles (one side's carried exit
+  becoming a produced one) propagates again. Where its produced exit, passed on through a BYE, reaches the matchUp its
+  first pass left pending with that same exit on the arrival side, nothing new has arrived: the pending exit stays
+  pending and is not advanced from as though decided. A double walkover corrected to a default leaves the draw that
+  the default alone leaves (DOUBLE_ELIMINATION 16/11 21030358: `anExitReDeliveredIntoItsOwnSeatIsNotSentOn`).
 
 ### Nothing to do is success, not failure
 
