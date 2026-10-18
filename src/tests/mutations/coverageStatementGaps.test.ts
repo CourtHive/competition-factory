@@ -30,7 +30,8 @@ import {
 import { DOUBLE_WALKOVER, TO_BE_PLAYED, DOUBLE_DEFAULT } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
-import { TEAM } from '@Constants/matchUpTypes';
+import { SINGLES_MATCHUP, TEAM } from '@Constants/matchUpTypes';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   CONSOLATION,
   MAIN,
@@ -682,10 +683,18 @@ describe('removeTieMatchUpParticipant guard paths', () => {
 // ----------------------------------------------------------------
 describe('replaceTieMatchUpParticipant guard paths', () => {
   it('returns error without required participant ids', () => {
-    const result = tournamentEngine.replaceTieMatchUpParticipantId({
-      tieMatchUpId: 'nonexistent',
+    // a real tieMatchUp and its drawId, so the participant check is reached (without them the call is
+    // refused first, as MISSING_DRAW_ID, which this case used to accept as "some error")
+    const {
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
+      setState: true,
     });
-    expect(result.error).toBeDefined();
+    const tieMatchUpId = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { matchUpTypes: [SINGLES_MATCHUP] } })
+      .matchUps[0].matchUpId;
+    const result = tournamentEngine.replaceTieMatchUpParticipantId({ drawId, tieMatchUpId });
+    expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
   });
 });
 
