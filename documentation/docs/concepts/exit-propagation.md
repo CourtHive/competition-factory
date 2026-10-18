@@ -841,6 +841,11 @@ by a named test that fails without it.
   advances nobody. When that leaves a single produced exit, it awards no empty seat and stands pending, as forward
   play lands it. A double default corrected to a walkover leaves the draw that the walkover alone leaves
   (FEED_IN_CHAMPIONSHIP 16/11 21123326: `aDoubleExitsOwnPositionLeavesEveryRoundItReached`).
+- **A loser seat holding a BYE is not converged.** A convergence whose loser seat already holds a BYE leaves that
+  matchUp a BYE, even when the matchUp also holds a pending exit and nobody else: the BYE is the record of the loser
+  who will never arrive, and the pending exit passes through it. A BYE placed in a seat a convergence had produced into
+  therefore reaches the draw the same results reach with the BYE placed first (COMPASS 32/31 20551581:
+  `aLoserSeatHoldingAByeIsNotConverged`).
 - **A result past a convergence's BYE fixes the kind.** A convergence has nobody to lose, so it claims a BYE for its
   loser seat; what it decided includes that BYE, and a result recorded by the participant the BYE passed on is a
   result on the loser's path. Re-entering one of the converged exits as a played result is refused
