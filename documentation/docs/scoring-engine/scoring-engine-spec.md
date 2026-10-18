@@ -405,7 +405,7 @@ A game given as game input adds one game (rule 2) or one unit (rules 1 and 3).
    the rule: its total still counts (§ 9.3). Elsewhere what a level segment means for the match is
    **OPEN 3**.
 
-Ahead at time, a segment that declares a tiebreak plays none (`timedSegments`, "T{minutes}P/TB{points}").
+Ahead at time, a segment that declares a tiebreak plays none (`timedSegments`, `T{minutes}P/TB{points}`).
 
 ### 6.5 Recorded shape
 
