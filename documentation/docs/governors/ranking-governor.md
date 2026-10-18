@@ -2,6 +2,12 @@
 title: Ranking Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`getAwardPoints`](/docs/implementation/records/getAwardPoints), [`getParticipantPoints`](/docs/implementation/records/getParticipantPoints), [`getQualityWinPoints`](/docs/implementation/records/getQualityWinPoints). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { rankingGovernor } from 'tods-competition-factory';
 ```
@@ -132,41 +138,11 @@ See [Profile Selection](/docs/scale-engine/ranking-points-pipeline#profile-selec
 
 ### getAwardPoints
 
-Resolves a position value object into numeric points. The `accessor` is derived from [`finishingPositionRange`](/docs/concepts/finishing-positions#accessor).
-
-```js
-const { awardPoints, requireWin } = rankingGovernor.getAwardPoints({
-  valueObj: finishingPositionRanges[accessor],
-  level: 3,
-  drawSize: 32,
-  flightNumber: 1,
-});
-```
-
-**Purpose:** Handles level-keyed values (`{ level: { 1: 1000, 2: 500 } }`), draw size thresholds (`[{ threshold: 16, value: 800 }]`), flight lookups, and `won`/`lost` accessors.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getAwardPoints`](/docs/implementation/records/getAwardPoints). Package-export status is a separate decision.
 
 ### getQualityWinPoints
 
-Computes quality win bonus points for a participant's won matchUps.
-
-```js
-const { qualityWinPoints, qualityWins } = rankingGovernor.getQualityWinPoints({
-  qualityWinProfiles,
-  wonMatchUpIds,
-  mappedMatchUps,
-  participantSideMap,
-  tournamentParticipants,
-  tournamentStartDate: '2025-06-01',
-});
-```
-
-**Purpose:** Looks up opponent rankings from scale items, matches against ranking ranges, applies per-tournament caps.
-
-See [Quality Win Points](/docs/scale-engine/quality-win-points) for detailed documentation.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getQualityWinPoints`](/docs/implementation/records/getQualityWinPoints). Package-export status is a separate decision.
 
 ### generateRankingList
 
@@ -201,19 +177,7 @@ See [Multi-Tournament Aggregation](/docs/scale-engine/aggregation) for detailed 
 
 ### getParticipantPoints
 
-Returns a per-participant breakdown of counting and dropped results.
-
-```js
-const { buckets, totalPoints } = rankingGovernor.getParticipantPoints({
-  pointAwards: allAwards,
-  personId: 'player-abc',
-  aggregationRules,
-});
-```
-
-**Purpose:** Inspect which results count toward a participant's ranking and which are dropped.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getParticipantPoints`](/docs/implementation/records/getParticipantPoints). Package-export status is a separate decision.
 
 ## Mutation Methods
 

@@ -1,0 +1,3469 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "8.0.0",
+  "sourceRevision": "8c2aaca6801734223ef1e0a8127872344373fbd5",
+  "reachEvidence": {
+    "document": "Mentat/planning/ENGINE_REACH_2026-10-15.md",
+    "revision": "77b6060071",
+    "date": "2026-10-15",
+    "externalConfirmation": "pending; external integrators to confirm"
+  },
+  "methods": [
+    {
+      "name": "EvaluatorRegistry",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/conflictEvaluators.ts",
+        "symbol": "EvaluatorRegistry",
+        "line": 455
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/EvaluatorRegistry",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "addGoesTo",
+      "source": {
+        "path": "src/query/matchUps/addGoesTo.ts",
+        "symbol": "addGoesTo",
+        "line": 30
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": {
+        "recordStorage": "migrateTournamentRecord (stores the edges; promoted.goesTo)",
+        "providerIngest": "POST /provider-key/tournaments",
+        "newDraw": "addDrawDefinition",
+        "readProjection": "getDrawData/getStructureData/getEventData; readModel.applyProgressionEdges for flattened matchUps"
+      },
+      "destination": "implementation/records/addGoesTo",
+      "previous": [
+        {
+          "doc": "governors/draws-governor.md",
+          "anchor": "addgoesto"
+        }
+      ],
+      "documentationMentions": [
+        "concepts/performance.md",
+        "governors/draws-governor.md",
+        "governors/query-governor.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "yes",
+        "notices": "none observed",
+        "evidence": "Observed 2026-10-18: on a sync engine, engine.addGoesTo({ drawId }) on a draw of 8 with winnerMatchUpId stripped restored six stored winnerMatchUpId fields and raised no modifyMatchUp/modifyDrawDefinition notice; the source assigns stored edges and finishing ranges."
+      }
+    },
+    {
+      "name": "addNotes",
+      "source": {
+        "path": "src/mutate/base/addRemoveNotes.ts",
+        "symbol": "addNotes",
+        "line": 7
+      },
+      "governors": ["tournamentGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/addNotes",
+      "previous": [
+        {
+          "doc": "governors/tournament-governor.md",
+          "anchor": "addnotes"
+        }
+      ],
+      "documentationMentions": ["governors/tournament-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "conditional: mutates supplied element",
+        "notices": "none in helper",
+        "evidence": "Source review: Object.assign(params.element, { notes }); engine ownership depends on supplied object."
+      }
+    },
+    {
+      "name": "allPlayoffPositionsFilled",
+      "source": {
+        "path": "src/query/drawDefinition/structureActions.ts",
+        "symbol": "allPlayoffPositionsFilled",
+        "line": 47
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/allPlayoffPositionsFilled",
+      "previous": [
+        {
+          "doc": "governors/draws-governor.md",
+          "anchor": "allplayoffpositionsfilled"
+        },
+        {
+          "doc": "governors/query-governor.md",
+          "anchor": "allplayoffpositionsfilled"
+        }
+      ],
+      "documentationMentions": ["governors/draws-governor.md", "governors/query-governor.md", "migration.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "analyzeSequence",
+      "source": {
+        "path": "src/validators/scoring/mcpParser.ts",
+        "symbol": "analyzeSequence",
+        "line": 254
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/analyzeSequence",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "applyAvailabilityToTournamentRecord",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/bridge.ts",
+        "symbol": "applyAvailabilityToTournamentRecord",
+        "line": 261
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/applyAvailabilityToTournamentRecord",
+      "previous": [],
+      "documentationMentions": ["availability-engine/ui-integration-scenarios.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "buildDayRange",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "buildDayRange",
+        "line": 362
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/buildDayRange",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "buildEdges",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "buildEdges",
+        "line": 171
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/buildEdges",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "buildSchedulingProfileFromUISelections",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/bridge.ts",
+        "symbol": "buildSchedulingProfileFromUISelections",
+        "line": 321
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/buildSchedulingProfileFromUISelections",
+      "previous": [],
+      "documentationMentions": [
+        "availability-engine/block-types-and-algorithms.md",
+        "availability-engine/ui-integration-scenarios.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "calculateCourtHours",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/bridge.ts",
+        "symbol": "calculateCourtHours",
+        "line": 567
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/calculateCourtHours",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "calculateMatchUpMargin",
+      "source": {
+        "path": "src/query/matchUp/calculateMatchUpMargin.ts",
+        "symbol": "calculateMatchUpMargin",
+        "line": 44
+      },
+      "governors": ["matchUpGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/calculateMatchUpMargin",
+      "previous": [],
+      "documentationMentions": ["concepts/draw-types/lucky-draw.mdx", "migration-3.0.0.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "categoryCanContain",
+      "source": {
+        "path": "src/query/event/categoryCanContain.ts",
+        "symbol": "categoryCanContain",
+        "line": 13
+      },
+      "governors": ["eventGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/categoryCanContain",
+      "previous": [
+        {
+          "doc": "governors/event-governor.md",
+          "anchor": "categorycancontain"
+        }
+      ],
+      "documentationMentions": ["governors/event-governor.md", "migration.md", "tools/tools-overview.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "clampDragToCollisions",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/collisionDetection.ts",
+        "symbol": "clampDragToCollisions",
+        "line": 37
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/clampDragToCollisions",
+      "previous": [],
+      "documentationMentions": [
+        "availability-engine/block-types-and-algorithms.md",
+        "availability-engine/ui-integration-scenarios.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "clampToDayRange",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "clampToDayRange",
+        "line": 78
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/clampToDayRange",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "compareCapacityCurves",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/capacityCurve.ts",
+        "symbol": "compareCapacityCurves",
+        "line": 359
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/compareCapacityCurves",
+      "previous": [],
+      "documentationMentions": [
+        "availability-engine/block-types-and-algorithms.md",
+        "availability-engine/ui-integration-scenarios.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "computePlanItemId",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/planState.ts",
+        "symbol": "computePlanItemId",
+        "line": 47
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/computePlanItemId",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "courtDayKey",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "courtDayKey",
+        "line": 35
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/courtDayKey",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "createFollowByEvaluator",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/conflictEvaluators.ts",
+        "symbol": "createFollowByEvaluator",
+        "line": 494
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/createFollowByEvaluator",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "createMatchUp",
+      "source": {
+        "path": "src/mutate/scoring/createMatchUp.ts",
+        "symbol": "createMatchUp",
+        "line": 22
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/createMatchUp",
+      "previous": [],
+      "documentationMentions": ["concepts/caller-supplied-identity.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "deduceMatchUpFormat",
+      "source": {
+        "path": "src/query/scoring/deduceMatchUpFormat.ts",
+        "symbol": "deduceMatchUpFormat",
+        "line": 18
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/deduceMatchUpFormat",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "deriveRailSegments",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "deriveRailSegments",
+        "line": 228
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/deriveRailSegments",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "diffMinutes",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "diffMinutes",
+        "line": 116
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/diffMinutes",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "enrichPointHistory",
+      "source": {
+        "path": "src/query/scoring/statistics/standalone.ts",
+        "symbol": "enrichPointHistory",
+        "line": 84
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/enrichPointHistory",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "exportMatchUpJSON",
+      "source": {
+        "path": "src/validators/scoring/mcpValidator.ts",
+        "symbol": "exportMatchUpJSON",
+        "line": 722
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/exportMatchUpJSON",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "extractDay",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "extractDay",
+        "line": 355
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/extractDay",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "filterCapacityCurve",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/capacityCurve.ts",
+        "symbol": "filterCapacityCurve",
+        "line": 290
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/filterCapacityCurve",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "findBlocksContainingTime",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/collisionDetection.ts",
+        "symbol": "findBlocksContainingTime",
+        "line": 32
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/findBlocksContainingTime",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "generateCapacityCurve",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/capacityCurve.ts",
+        "symbol": "generateCapacityCurve",
+        "line": 33
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/generateCapacityCurve",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "generateDrawStructuresAndLinks",
+      "source": {
+        "path": "src/assemblies/generators/drawDefinitions/generateDrawStructuresAndLinks.ts",
+        "symbol": "generateDrawStructuresAndLinks",
+        "line": 57
+      },
+      "governors": ["drawsGovernor", "generationGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/generateDrawStructuresAndLinks",
+      "previous": [
+        {
+          "doc": "governors/draws-governor.md",
+          "anchor": "generatedrawstructuresandlinks"
+        },
+        {
+          "doc": "governors/generation-governor.md",
+          "anchor": "generatedrawstructuresandlinks"
+        }
+      ],
+      "documentationMentions": ["governors/draws-governor.md", "governors/generation-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "generateStatCrew",
+      "source": {
+        "path": "src/assemblies/generators/tournamentRecords/generateStatCrew.ts",
+        "symbol": "generateStatCrew",
+        "line": 17
+      },
+      "governors": ["generationGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/generateStatCrew",
+      "previous": [
+        {
+          "doc": "governors/generation-governor.md",
+          "anchor": "generatestatcrew"
+        }
+      ],
+      "documentationMentions": ["governors/generation-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getAllowedDrawTypes",
+      "source": {
+        "path": "src/query/tournaments/allowedTypes.ts",
+        "symbol": "getAllowedDrawTypes",
+        "line": 20
+      },
+      "governors": ["queryGovernor", "tournamentGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getAllowedDrawTypes",
+      "previous": [
+        {
+          "doc": "governors/query-governor.md",
+          "anchor": "getalloweddrawtypes"
+        },
+        {
+          "doc": "governors/tournament-governor.md",
+          "anchor": "getalloweddrawtypes"
+        }
+      ],
+      "documentationMentions": ["governors/query-governor.md", "governors/tournament-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getAwardPoints",
+      "source": {
+        "path": "src/query/scales/getAwardPoints.ts",
+        "symbol": "getAwardPoints",
+        "line": 12
+      },
+      "governors": ["rankingGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getAwardPoints",
+      "previous": [
+        {
+          "doc": "governors/ranking-governor.md",
+          "anchor": "getawardpoints"
+        }
+      ],
+      "documentationMentions": ["governors/ranking-governor.md", "scale-engine/scale-engine-api.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getDrawCompleteness",
+      "source": {
+        "path": "src/query/drawDefinition/getDrawCompleteness.ts",
+        "symbol": "getDrawCompleteness",
+        "line": 29
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/getDrawCompleteness",
+      "previous": [
+        {
+          "doc": "governors/query-governor.md",
+          "anchor": "getdrawcompleteness"
+        }
+      ],
+      "documentationMentions": ["governors/query-governor.md", "whats-new-6.0.0.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getDrawDefinitionTimeItem",
+      "source": {
+        "path": "src/query/base/timeItems.ts",
+        "symbol": "getDrawDefinitionTimeItem",
+        "line": 69
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/getDrawDefinitionTimeItem",
+      "previous": [
+        {
+          "doc": "governors/draws-governor.md",
+          "anchor": "getdrawdefinitiontimeitem"
+        }
+      ],
+      "documentationMentions": ["governors/draws-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getDrawStructures",
+      "source": {
+        "path": "src/acquire/findStructure.ts",
+        "symbol": "getDrawStructures",
+        "line": 64
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getDrawStructures",
+      "previous": [
+        {
+          "doc": "governors/draws-governor.md",
+          "anchor": "getdrawstructures"
+        }
+      ],
+      "documentationMentions": [
+        "apis/draw-engine-api.md",
+        "governors/draws-governor.md",
+        "testing/testing-overview.md",
+        "tmx/draws.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getDrawTypeCoercion",
+      "source": {
+        "path": "src/assemblies/generators/drawDefinitions/getDrawTypeCoercion.ts",
+        "symbol": "getDrawTypeCoercion",
+        "line": 9
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/getDrawTypeCoercion",
+      "previous": [
+        {
+          "doc": "governors/draws-governor.md",
+          "anchor": "getdrawtypecoercion"
+        }
+      ],
+      "documentationMentions": ["governors/draws-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getEffectiveRegistrationProfile",
+      "source": {
+        "path": "src/query/entries/getEffectiveRegistrationProfile.ts",
+        "symbol": "getEffectiveRegistrationProfile",
+        "line": 42
+      },
+      "governors": ["entriesGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getEffectiveRegistrationProfile",
+      "previous": [
+        {
+          "doc": "governors/entries-governor.md",
+          "anchor": "geteffectiveregistrationprofile"
+        }
+      ],
+      "documentationMentions": [
+        "concepts/registration-profile.md",
+        "concepts/tournament-discovery.md",
+        "governors/entries-governor.md",
+        "types/typedefs.mdx"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getEligibleEvents",
+      "source": {
+        "path": "src/query/entries/getParticipantEligibility.ts",
+        "symbol": "getEligibleEvents",
+        "line": 130
+      },
+      "governors": ["eventGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getEligibleEvents",
+      "previous": [
+        {
+          "doc": "governors/event-governor.md",
+          "anchor": "geteligibleevents"
+        }
+      ],
+      "documentationMentions": ["concepts/events/entry-eligibility.md", "governors/event-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getEntryFeeRange",
+      "source": {
+        "path": "src/query/entries/resolveEntryFee.ts",
+        "symbol": "getEntryFeeRange",
+        "line": 76
+      },
+      "governors": ["entriesGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getEntryFeeRange",
+      "previous": [
+        {
+          "doc": "governors/entries-governor.md",
+          "anchor": "getentryfeerange"
+        }
+      ],
+      "documentationMentions": ["concepts/tournament-discovery.md", "governors/entries-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getEventCompleteness",
+      "source": {
+        "path": "src/query/event/getEventCompleteness.ts",
+        "symbol": "getEventCompleteness",
+        "line": 27
+      },
+      "governors": ["eventGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getEventCompleteness",
+      "previous": [
+        {
+          "doc": "governors/query-governor.md",
+          "anchor": "geteventcompleteness"
+        }
+      ],
+      "documentationMentions": ["governors/query-governor.md", "whats-new-6.0.0.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getEventEntryFees",
+      "source": {
+        "path": "src/query/entries/getEffectiveRegistrationProfile.ts",
+        "symbol": "getEventEntryFees",
+        "line": 73
+      },
+      "governors": ["entriesGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getEventEntryFees",
+      "previous": [
+        {
+          "doc": "governors/entries-governor.md",
+          "anchor": "getevententryfees"
+        }
+      ],
+      "documentationMentions": ["concepts/registration-profile.md", "governors/entries-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getEventInconsistencies",
+      "source": {
+        "path": "src/query/event/getEventInconsistencies.ts",
+        "symbol": "getEventInconsistencies",
+        "line": 85
+      },
+      "governors": ["eventGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getEventInconsistencies",
+      "previous": [
+        {
+          "doc": "governors/query-governor.md",
+          "anchor": "geteventinconsistencies"
+        }
+      ],
+      "documentationMentions": ["governors/query-governor.md", "migration-6.0.0.md", "whats-new-6.0.0.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getLadderMovement",
+      "source": {
+        "path": "src/query/ladder/getLadderPolicy.ts",
+        "symbol": "getLadderMovement",
+        "line": 47
+      },
+      "governors": ["ladderGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getLadderMovement",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getMatchUpContextIds",
+      "source": {
+        "path": "src/query/matchUp/getMatchUpContextIds.ts",
+        "symbol": "getMatchUpContextIds",
+        "line": 6
+      },
+      "governors": ["matchUpGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getMatchUpContextIds",
+      "previous": [
+        {
+          "doc": "governors/matchup-governor.md",
+          "anchor": "getmatchupcontextids"
+        },
+        {
+          "doc": "governors/query-governor.md",
+          "anchor": "getmatchupcontextids"
+        }
+      ],
+      "documentationMentions": ["governors/matchup-governor.md", "governors/query-governor.md", "migration.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getMatchUpRatingDelta",
+      "source": {
+        "path": "src/query/matchUp/getMatchUpRatingDelta.ts",
+        "symbol": "getMatchUpRatingDelta",
+        "line": 125
+      },
+      "governors": ["matchUpGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getMatchUpRatingDelta",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getMatchUpType",
+      "source": {
+        "path": "src/query/matchUp/getMatchUpType.ts",
+        "symbol": "getMatchUpType",
+        "line": 10
+      },
+      "governors": ["matchUpGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getMatchUpType",
+      "previous": [
+        {
+          "doc": "governors/matchup-governor.md",
+          "anchor": "getmatchuptype"
+        }
+      ],
+      "documentationMentions": ["governors/matchup-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getMatchUpsToSchedule",
+      "source": {
+        "path": "src/mutate/matchUps/schedule/scheduleMatchUps/getMatchUpsToSchedule.ts",
+        "symbol": "getMatchUpsToSchedule",
+        "line": 29
+      },
+      "governors": ["queryGovernor", "scheduleGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/getMatchUpsToSchedule",
+      "previous": [
+        {
+          "doc": "governors/schedule-governor.md",
+          "anchor": "getmatchupstoschedule"
+        }
+      ],
+      "documentationMentions": ["governors/schedule-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getParticipantPoints",
+      "source": {
+        "path": "src/query/scales/getParticipantPoints.ts",
+        "symbol": "getParticipantPoints",
+        "line": 11
+      },
+      "governors": ["rankingGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getParticipantPoints",
+      "previous": [
+        {
+          "doc": "governors/ranking-governor.md",
+          "anchor": "getparticipantpoints"
+        }
+      ],
+      "documentationMentions": [
+        "governors/ranking-governor.md",
+        "migration-3.0.0.md",
+        "scale-engine/aggregation.md",
+        "scale-engine/scale-engine-api.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getParticipantTimeItem",
+      "source": {
+        "path": "src/query/base/timeItems.ts",
+        "symbol": "getParticipantTimeItem",
+        "line": 125
+      },
+      "governors": ["participantGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/getParticipantTimeItem",
+      "previous": [
+        {
+          "doc": "governors/participant-governor.md",
+          "anchor": "getparticipanttimeitem"
+        }
+      ],
+      "documentationMentions": ["governors/participant-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getPositionsPlayedOff",
+      "source": {
+        "path": "src/query/drawDefinition/getPositionsPlayedOff.ts",
+        "symbol": "getPositionsPlayedOff",
+        "line": 18
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/getPositionsPlayedOff",
+      "previous": [
+        {
+          "doc": "governors/draws-governor.md",
+          "anchor": "getpositionsplayedoff"
+        },
+        {
+          "doc": "governors/query-governor.md",
+          "anchor": "getpositionsplayedoff"
+        }
+      ],
+      "documentationMentions": ["governors/draws-governor.md", "governors/query-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getPresenceExpectation",
+      "source": {
+        "path": "src/query/participant/presencePolicy.ts",
+        "symbol": "getPresenceExpectation",
+        "line": 61
+      },
+      "governors": ["participantGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getPresenceExpectation",
+      "previous": [],
+      "documentationMentions": ["migration-7.0.0.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getPresenceRules",
+      "source": {
+        "path": "src/query/participant/presencePolicy.ts",
+        "symbol": "getPresenceRules",
+        "line": 28
+      },
+      "governors": ["participantGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getPresenceRules",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getQualityWinPoints",
+      "source": {
+        "path": "src/query/scales/getQualityWinPoints.ts",
+        "symbol": "getQualityWinPoints",
+        "line": 26
+      },
+      "governors": ["rankingGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getQualityWinPoints",
+      "previous": [
+        {
+          "doc": "governors/ranking-governor.md",
+          "anchor": "getqualitywinpoints"
+        }
+      ],
+      "documentationMentions": [
+        "governors/ranking-governor.md",
+        "migration-3.0.0.md",
+        "scale-engine/ranking-points-pipeline.md",
+        "scale-engine/scale-engine-api.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getQuickStats",
+      "source": {
+        "path": "src/query/scoring/statistics/standalone.ts",
+        "symbol": "getQuickStats",
+        "line": 125
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/getQuickStats",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getScaleValues",
+      "source": {
+        "path": "src/query/participant/getScaleValues.ts",
+        "symbol": "getScaleValues",
+        "line": 61
+      },
+      "governors": ["participantGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/getScaleValues",
+      "previous": [
+        {
+          "doc": "governors/participant-governor.md",
+          "anchor": "getscalevalues"
+        }
+      ],
+      "documentationMentions": [
+        "governors/participant-governor.md",
+        "policies/participantPolicy.md",
+        "tools/tools-overview.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getSeedingThresholds",
+      "source": {
+        "path": "src/query/drawDefinition/getSeedBlocks.ts",
+        "symbol": "getSeedingThresholds",
+        "line": 193
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/getSeedingThresholds",
+      "previous": [
+        {
+          "doc": "governors/draws-governor.md",
+          "anchor": "getseedingthresholds"
+        },
+        {
+          "doc": "governors/query-governor.md",
+          "anchor": "getseedingthresholds"
+        }
+      ],
+      "documentationMentions": ["governors/draws-governor.md", "governors/query-governor.md", "migration.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getSetScoreString",
+      "source": {
+        "path": "src/validators/scoring/validateMatchUp.ts",
+        "symbol": "getSetScoreString",
+        "line": 188
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/getSetScoreString",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "getTournamentTimeItem",
+      "source": {
+        "path": "src/query/base/timeItems.ts",
+        "symbol": "getTournamentTimeItem",
+        "line": 107
+      },
+      "governors": ["queryGovernor", "tournamentGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/getTournamentTimeItem",
+      "previous": [
+        {
+          "doc": "governors/tournament-governor.md",
+          "anchor": "gettournamenttimeitem"
+        }
+      ],
+      "documentationMentions": ["governors/tournament-governor.md", "tmx/tmx-api-surface.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "groupByMatch",
+      "source": {
+        "path": "src/validators/scoring/mcpParser.ts",
+        "symbol": "groupByMatch",
+        "line": 702
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/groupByMatch",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "groupConflictsBySeverity",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/conflictEvaluators.ts",
+        "symbol": "groupConflictsBySeverity",
+        "line": 516
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/groupConflictsBySeverity",
+      "previous": [],
+      "documentationMentions": ["availability-engine/event-system-and-validation.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "hasLuckyRounds",
+      "source": {
+        "path": "src/query/drawDefinition/isLucky.ts",
+        "symbol": "hasLuckyRounds",
+        "line": 22
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/hasLuckyRounds",
+      "previous": [
+        {
+          "doc": "governors/draws-governor.md",
+          "anchor": "hasluckyrounds"
+        }
+      ],
+      "documentationMentions": ["concepts/draw-types/lucky-draw.mdx", "governors/draws-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "hhmmToMinutes",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/timeGranularity.ts",
+        "symbol": "hhmmToMinutes",
+        "line": 16
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/hhmmToMinutes",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "inferServeSide",
+      "source": {
+        "path": "src/mutate/scoring/serveSideCalculator.ts",
+        "symbol": "inferServeSide",
+        "line": 26
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/inferServeSide",
+      "previous": [
+        {
+          "doc": "governors/score-governor.md",
+          "anchor": "inferserveside"
+        }
+      ],
+      "documentationMentions": ["governors/score-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "no writes found in helper and local helpers",
+        "notices": "none in helper",
+        "evidence": "Source review: reads score arrays, computes local parity, returns a court side; engine dispatch is positional-incompatible."
+      }
+    },
+    {
+      "name": "intervalsOverlap",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/collisionDetection.ts",
+        "symbol": "intervalsOverlap",
+        "line": 24
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/intervalsOverlap",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "isAggregateFormat",
+      "source": {
+        "path": "src/helpers/matchUpFormatCode/isAggregateFormat.ts",
+        "symbol": "isAggregateFormat",
+        "line": 7
+      },
+      "governors": ["matchUpFormatGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/isAggregateFormat",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "isIndeterminateFee",
+      "source": {
+        "path": "src/query/entries/resolveEntryFee.ts",
+        "symbol": "isIndeterminateFee",
+        "line": 49
+      },
+      "governors": ["entriesGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/isIndeterminateFee",
+      "previous": [],
+      "documentationMentions": ["governors/entries-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "isTournamentPublished",
+      "source": {
+        "path": "src/query/publishing/isTournamentPublished.ts",
+        "symbol": "isTournamentPublished",
+        "line": 14
+      },
+      "governors": ["publishingGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/isTournamentPublished",
+      "previous": [],
+      "documentationMentions": ["governors/publishing-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "isTournamentVisible",
+      "source": {
+        "path": "src/query/publishing/tournamentVisibility.ts",
+        "symbol": "isTournamentVisible",
+        "line": 109
+      },
+      "governors": ["publishingGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/isTournamentVisible",
+      "previous": [],
+      "documentationMentions": ["governors/publishing-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "isVisiblyPublished",
+      "source": {
+        "path": "src/query/publishing/isEmbargoed.ts",
+        "symbol": "isVisiblyPublished",
+        "line": 11
+      },
+      "governors": ["publishingGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/isVisiblyPublished",
+      "previous": [
+        {
+          "doc": "governors/publishing-governor.md",
+          "anchor": "isvisiblypublished"
+        }
+      ],
+      "documentationMentions": ["governors/publishing-governor.md", "migration-3.0.0.md", "migration-7.0.0.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "iterateDayTicks",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/timeGranularity.ts",
+        "symbol": "iterateDayTicks",
+        "line": 95
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/iterateDayTicks",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "mcpValidator",
+      "source": {
+        "path": "src/validators/scoring/mcpValidator.ts",
+        "symbol": "mcpValidator",
+        "line": 621
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/mcpValidator",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "mergeAdjacentSegments",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "mergeAdjacentSegments",
+        "line": 313
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/mergeAdjacentSegments",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "mergeOverlappingAvailability",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/bridge.ts",
+        "symbol": "mergeOverlappingAvailability",
+        "line": 518
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/mergeOverlappingAvailability",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "minutesToHhmm",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/timeGranularity.ts",
+        "symbol": "minutesToHhmm",
+        "line": 26
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/minutesToHhmm",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "overlappingRange",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "overlappingRange",
+        "line": 105
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/overlappingRange",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "parseCSV",
+      "source": {
+        "path": "src/validators/scoring/mcpParser.ts",
+        "symbol": "parseCSV",
+        "line": 671
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/parseCSV",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "parseMCPPoint",
+      "source": {
+        "path": "src/validators/scoring/mcpParser.ts",
+        "symbol": "parseMCPPoint",
+        "line": 544
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/parseMCPPoint",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "participantScheduledMatchUps",
+      "source": {
+        "path": "src/query/matchUps/participantScheduledMatchUps.ts",
+        "symbol": "participantScheduledMatchUps",
+        "line": 27
+      },
+      "governors": ["matchUpGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/participantScheduledMatchUps",
+      "previous": [
+        {
+          "doc": "governors/matchup-governor.md",
+          "anchor": "participantscheduledmatchups"
+        }
+      ],
+      "documentationMentions": ["governors/matchup-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "pbpValidator",
+      "source": {
+        "path": "src/validators/scoring/pbpValidator.ts",
+        "symbol": "pbpValidator",
+        "line": 64
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/pbpValidator",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "predictDrawCompetitiveBands",
+      "source": {
+        "path": "src/query/drawDefinition/predictDrawCompetitiveBands.ts",
+        "symbol": "predictDrawCompetitiveBands",
+        "line": 179
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/predictDrawCompetitiveBands",
+      "previous": [],
+      "documentationMentions": ["concepts/format-wizard/engine.md", "policies/competitiveBands.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "predictMatchUpCompetitiveBands",
+      "source": {
+        "path": "src/query/matchUp/predictMatchUpCompetitiveBands.ts",
+        "symbol": "predictMatchUpCompetitiveBands",
+        "line": 56
+      },
+      "governors": ["matchUpGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/predictMatchUpCompetitiveBands",
+      "previous": [],
+      "documentationMentions": ["concepts/format-wizard/engine.md", "policies/competitiveBands.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "publicFindVenue",
+      "source": {
+        "path": "src/query/venues/findVenue.ts",
+        "symbol": "publicFindVenue",
+        "line": 56
+      },
+      "governors": ["queryGovernor", "venueGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/publicFindVenue",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "queryOfficialRecord",
+      "source": {
+        "path": "src/query/officiating/getOfficialRecord.ts",
+        "symbol": "queryOfficialRecord",
+        "line": 12
+      },
+      "governors": ["officiatingGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/queryOfficialRecord",
+      "previous": [
+        {
+          "doc": "governors/officiating-governor.md",
+          "anchor": "queryofficialrecord"
+        }
+      ],
+      "documentationMentions": ["governors/officiating-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "querySanctioningRecord",
+      "source": {
+        "path": "src/query/sanctioning/getSanctioningRecord.ts",
+        "symbol": "querySanctioningRecord",
+        "line": 14
+      },
+      "governors": ["sanctioningGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/querySanctioningRecord",
+      "previous": [
+        {
+          "doc": "governors/sanctioning-governor.md",
+          "anchor": "querysanctioningrecord"
+        }
+      ],
+      "documentationMentions": ["governors/sanctioning-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "railsToDateAvailability",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/bridge.ts",
+        "symbol": "railsToDateAvailability",
+        "line": 141
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/railsToDateAvailability",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "rangesOverlap",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "rangesOverlap",
+        "line": 100
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/rangesOverlap",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "refreshLadderRatings",
+      "source": {
+        "path": "src/mutate/ladder/refreshLadderRatings.ts",
+        "symbol": "refreshLadderRatings",
+        "line": 41
+      },
+      "governors": ["ladderGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/refreshLadderRatings",
+      "previous": [],
+      "documentationMentions": ["concepts/draw-types/ladder.md", "migration-7.0.0.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "remapDrawDefinitionMatchUpIds",
+      "source": {
+        "path": "src/mutate/drawDefinitions/remapDrawDefinitionMatchUpIds.ts",
+        "symbol": "remapDrawDefinitionMatchUpIds",
+        "line": 25
+      },
+      "governors": ["drawsGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/remapDrawDefinitionMatchUpIds",
+      "previous": [
+        {
+          "doc": "governors/generation/remapDrawDefinitionMatchUpIds.md",
+          "anchor": "remapdrawdefinitionmatchupids"
+        }
+      ],
+      "documentationMentions": [
+        "governors/generation/generateDrawDefinition.md",
+        "governors/generation/remapDrawDefinitionMatchUpIds.md",
+        "migration-3.0.0.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "removeNotes",
+      "source": {
+        "path": "src/mutate/base/addRemoveNotes.ts",
+        "symbol": "removeNotes",
+        "line": 16
+      },
+      "governors": ["tournamentGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/removeNotes",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "conditional: mutates supplied element",
+        "notices": "none in helper",
+        "evidence": "Source review: deletes params.element.notes; no entity-ID resolution."
+      }
+    },
+    {
+      "name": "removeOrphanedTieFormats",
+      "source": {
+        "path": "src/mutate/tieFormat/writeTieFormat.ts",
+        "symbol": "removeOrphanedTieFormats",
+        "line": 160
+      },
+      "governors": ["tieFormatGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/removeOrphanedTieFormats",
+      "previous": [
+        {
+          "doc": "governors/tie-format-governor.md",
+          "anchor": "removeorphanedtieformats"
+        }
+      ],
+      "documentationMentions": ["governors/tie-format-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "removeScaleValues",
+      "source": {
+        "path": "src/mutate/entries/removeScaleValues.ts",
+        "symbol": "removeScaleValues",
+        "line": 10
+      },
+      "governors": ["eventGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/removeScaleValues",
+      "previous": [
+        {
+          "doc": "governors/event-governor.md",
+          "anchor": "removescalevalues"
+        }
+      ],
+      "documentationMentions": ["governors/event-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "resolveCourtId",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "resolveCourtId",
+        "line": 67
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/resolveCourtId",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "resolveEntryFee",
+      "source": {
+        "path": "src/query/entries/resolveEntryFee.ts",
+        "symbol": "resolveEntryFee",
+        "line": 31
+      },
+      "governors": ["entriesGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/resolveEntryFee",
+      "previous": [
+        {
+          "doc": "governors/entries-governor.md",
+          "anchor": "resolveentryfee"
+        }
+      ],
+      "documentationMentions": ["concepts/registration-profile.md", "governors/entries-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "resolvePointValue",
+      "source": {
+        "path": "src/mutate/scoring/resolvePointValue.ts",
+        "symbol": "resolvePointValue",
+        "line": 15
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/resolvePointValue",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "resolveVenueId",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "resolveVenueId",
+        "line": 59
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/resolveVenueId",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "runValidationPipeline",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/validationPipeline.ts",
+        "symbol": "runValidationPipeline",
+        "line": 274
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/runValidationPipeline",
+      "previous": [],
+      "documentationMentions": ["availability-engine/event-system-and-validation.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "sampleCapacityCurve",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/capacityCurve.ts",
+        "symbol": "sampleCapacityCurve",
+        "line": 302
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/sampleCapacityCurve",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "shotParser",
+      "source": {
+        "path": "src/validators/scoring/mcpParser.ts",
+        "symbol": "shotParser",
+        "line": 338
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/shotParser",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "shotSplitter",
+      "source": {
+        "path": "src/validators/scoring/mcpParser.ts",
+        "symbol": "shotSplitter",
+        "line": 173
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/shotSplitter",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "snapIsoToGranularity",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/timeGranularity.ts",
+        "symbol": "snapIsoToGranularity",
+        "line": 69
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/snapIsoToGranularity",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "snapToGranularity",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/timeGranularity.ts",
+        "symbol": "snapToGranularity",
+        "line": 44
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/snapToGranularity",
+      "previous": [],
+      "documentationMentions": [
+        "availability-engine/block-types-and-algorithms.md",
+        "availability-engine/ui-integration-scenarios.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "sortBlocksByStart",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/collisionDetection.ts",
+        "symbol": "sortBlocksByStart",
+        "line": 119
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/sortBlocksByStart",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "sortEdges",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "sortEdges",
+        "line": 196
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/sortEdges",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "tieFormatGenderValidityCheck",
+      "source": {
+        "path": "src/validators/tieFormatGenderValidityCheck.ts",
+        "symbol": "tieFormatGenderValidityCheck",
+        "line": 22
+      },
+      "governors": ["queryGovernor", "tieFormatGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/tieFormatGenderValidityCheck",
+      "previous": [
+        {
+          "doc": "governors/tie-format-governor.md",
+          "anchor": "tieformatgendervaliditycheck"
+        }
+      ],
+      "documentationMentions": ["governors/tie-format-governor.md", "migration.md", "tools/tools-overview.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "timeInsideBlock",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/collisionDetection.ts",
+        "symbol": "timeInsideBlock",
+        "line": 28
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/timeInsideBlock",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "todsAvailabilityToBlocks",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/bridge.ts",
+        "symbol": "todsAvailabilityToBlocks",
+        "line": 353
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/todsAvailabilityToBlocks",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "updateTeamLineUp",
+      "source": {
+        "path": "src/mutate/drawDefinitions/updateTeamLineUp.ts",
+        "symbol": "updateTeamLineUp",
+        "line": 25
+      },
+      "governors": ["drawsGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/updateTeamLineUp",
+      "previous": [
+        {
+          "doc": "governors/draws-governor.md",
+          "anchor": "updateteamlineup"
+        }
+      ],
+      "documentationMentions": ["governors/draws-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validMatchUp",
+      "source": {
+        "path": "src/validators/validMatchUp.ts",
+        "symbol": "validMatchUp",
+        "line": 4
+      },
+      "governors": ["matchUpGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/validMatchUp",
+      "previous": [
+        {
+          "doc": "governors/matchup-governor.md",
+          "anchor": "validmatchup"
+        }
+      ],
+      "documentationMentions": ["governors/matchup-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validMatchUps",
+      "source": {
+        "path": "src/validators/validMatchUp.ts",
+        "symbol": "validMatchUps",
+        "line": 17
+      },
+      "governors": ["matchUpGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/validMatchUps",
+      "previous": [
+        {
+          "doc": "governors/matchup-governor.md",
+          "anchor": "validmatchups"
+        }
+      ],
+      "documentationMentions": ["governors/matchup-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateCategory",
+      "source": {
+        "path": "src/validators/validateCategory.ts",
+        "symbol": "validateCategory",
+        "line": 9
+      },
+      "governors": ["eventGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/validateCategory",
+      "previous": [
+        {
+          "doc": "governors/event-governor.md",
+          "anchor": "validatecategory"
+        }
+      ],
+      "documentationMentions": ["governors/event-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateCollectionDefinition",
+      "source": {
+        "path": "src/validators/validateCollectionDefinition.ts",
+        "symbol": "validateCollectionDefinition",
+        "line": 24
+      },
+      "governors": ["queryGovernor", "tieFormatGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/validateCollectionDefinition",
+      "previous": [
+        {
+          "doc": "governors/tie-format-governor.md",
+          "anchor": "validatecollectiondefinition"
+        }
+      ],
+      "documentationMentions": ["governors/tie-format-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateDateAvailability",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/bridge.ts",
+        "symbol": "validateDateAvailability",
+        "line": 469
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/validateDateAvailability",
+      "previous": [],
+      "documentationMentions": ["availability-engine/block-types-and-algorithms.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateLineUp",
+      "source": {
+        "path": "src/validators/validateTeamLineUp.ts",
+        "symbol": "validateLineUp",
+        "line": 14
+      },
+      "governors": ["participantGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/validateLineUp",
+      "previous": [
+        {
+          "doc": "governors/participant-governor.md",
+          "anchor": "validatelineup"
+        }
+      ],
+      "documentationMentions": ["governors/draws-governor.md", "governors/participant-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateMCPMatch",
+      "source": {
+        "path": "src/validators/scoring/mcpValidator.ts",
+        "symbol": "validateMCPMatch",
+        "line": 369
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/validateMCPMatch",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateMatchUp",
+      "source": {
+        "path": "src/validators/scoring/validateMatchUp.ts",
+        "symbol": "validateMatchUp",
+        "line": 56
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scoring/validateMatchUp",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateOfficiatingStatusTransition",
+      "source": {
+        "path": "src/validators/officiating/validateOfficiatingStatusTransition.ts",
+        "symbol": "validateOfficiatingStatusTransition",
+        "line": 19
+      },
+      "governors": ["officiatingGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/validateOfficiatingStatusTransition",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validatePlayoffGroups",
+      "source": {
+        "path": "src/validators/validatePlayoffGroups.ts",
+        "symbol": "validatePlayoffGroups",
+        "line": 48
+      },
+      "governors": ["drawsGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/draws/validatePlayoffGroups",
+      "previous": [],
+      "documentationMentions": ["concepts/draw-types/round-robin-with-playoff.mdx"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validatePresenceAttribution",
+      "source": {
+        "path": "src/query/participant/presencePolicy.ts",
+        "symbol": "validatePresenceAttribution",
+        "line": 117
+      },
+      "governors": ["participantGovernor", "queryGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/records/validatePresenceAttribution",
+      "previous": [],
+      "documentationMentions": ["migration-7.0.0.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateScheduleScenario",
+      "source": {
+        "path": "src/validators/validateScheduleScenario.ts",
+        "symbol": "validateScheduleScenario",
+        "line": 18
+      },
+      "governors": ["scheduleGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/validateScheduleScenario",
+      "previous": [
+        {
+          "doc": "governors/schedule-governor.md",
+          "anchor": "validateschedulescenario"
+        }
+      ],
+      "documentationMentions": ["governors/schedule-governor.md"],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateSchedulingProfileFormat",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/bridge.ts",
+        "symbol": "validateSchedulingProfileFormat",
+        "line": 422
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/validateSchedulingProfileFormat",
+      "previous": [],
+      "documentationMentions": [
+        "availability-engine/block-types-and-algorithms.md",
+        "availability-engine/ui-integration-scenarios.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateSegments",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "validateSegments",
+        "line": 376
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/validateSegments",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateStatusTransition",
+      "source": {
+        "path": "src/validators/sanctioning/validateStatusTransition.ts",
+        "symbol": "validateStatusTransition",
+        "line": 13
+      },
+      "governors": ["sanctioningGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/validateStatusTransition",
+      "previous": [
+        {
+          "doc": "governors/sanctioning-governor.md",
+          "anchor": "validatestatustransition"
+        }
+      ],
+      "documentationMentions": [
+        "engines/sanctioning-engine-design.md",
+        "governors/sanctioning-governor.md",
+        "migration-3.0.0.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "validateTieFormat",
+      "source": {
+        "path": "src/validators/validateTieFormat.ts",
+        "symbol": "validateTieFormat",
+        "line": 22
+      },
+      "governors": ["scoreGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/validation/validateTieFormat",
+      "previous": [
+        {
+          "doc": "governors/score-governor.md",
+          "anchor": "validatetieformat"
+        }
+      ],
+      "documentationMentions": [
+        "governors/score-governor.md",
+        "governors/tie-format-governor.md",
+        "migration-7.0.0.md",
+        "tools/tools-overview.md"
+      ],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "venueDayKey",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "venueDayKey",
+        "line": 47
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/venueDayKey",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    },
+    {
+      "name": "venueKey",
+      "source": {
+        "path": "src/assemblies/governors/availabilityGovernor/railDerivation.ts",
+        "symbol": "venueKey",
+        "line": 43
+      },
+      "governors": ["availabilityGovernor"],
+      "engineDisposition": "candidate-for-removal",
+      "standaloneDisposition": "review-required",
+      "externalConfirmation": "pending",
+      "replacement": null,
+      "destination": "implementation/scheduling/venueKey",
+      "previous": [],
+      "documentationMentions": [],
+      "testHarnessReach": "not product usage; does not retain a production route",
+      "consumerMentions": [],
+      "consumerReview": "no-name-mentions-in-scanned-files",
+      "engineEffects": {
+        "writes": "not-assessed",
+        "notices": "not-assessed",
+        "evidence": null
+      }
+    }
+  ],
+  "consumerRefresh": {
+    "date": "2026-10-18",
+    "kind": "whole-word source mentions; a hit requires symbol-aware review and is not proof of an engine call",
+    "snapshots": [
+      {
+        "repo": "TMX",
+        "revision": "fbad64abc532c3e5c66d33ae51f841a87d49c8d3",
+        "files": 743
+      },
+      {
+        "repo": "competition-factory-server",
+        "revision": "f0156e6bb03a94aca85a674d54a2c9c8eab385dc",
+        "files": 372
+      },
+      {
+        "repo": "courthive-public",
+        "revision": "c5ca244df9d152d706509a5f69c89de6cb5cf462",
+        "files": 127
+      },
+      {
+        "repo": "courthive-components",
+        "revision": "a7bb6afbfc681ed313023bdbad33b1fa68a8350d",
+        "files": 476
+      },
+      {
+        "repo": "epixodic",
+        "revision": "7ace1bbdd97a2e5f8e44d2ea293b41549d85c777",
+        "files": 219
+      },
+      {
+        "repo": "courthive-rankings",
+        "revision": "a029485042b5147c6e7f1f4f733463be17a689fd",
+        "files": 60
+      },
+      {
+        "repo": "courthive-query",
+        "revision": "45288a5440f43f98eafe5815f4e3b8d77323b21a",
+        "files": 43
+      },
+      {
+        "repo": "pdf-factory",
+        "revision": "8c555941aa0785056fdf7669d5b9ffb86abaa27d",
+        "files": 70
+      },
+      {
+        "repo": "scoringVisualizations",
+        "revision": "a3115c58e3b737e5f26d2086da3079a09c976ddd",
+        "files": 54
+      },
+      {
+        "repo": "courthive-ams",
+        "revision": "9bb4121755cfc7c5f5e37db29592d3ab9e2fcb5b",
+        "files": 339
+      },
+      {
+        "repo": "courthive-arena",
+        "revision": "023da4a7c931f149243d66f3f0882e51b8dd5f4d",
+        "files": 26
+      },
+      {
+        "repo": "courthive-ingest",
+        "revision": "aa6982cb360b45d887a9ad55b2e4b8a8323e2d2e",
+        "files": 207
+      },
+      {
+        "repo": "ingest-core",
+        "revision": "24182d6030c558a21563620f53b1324ed68dfbaa",
+        "files": 15
+      },
+      {
+        "repo": "courthive-facilities",
+        "revision": "8898c68d0c1ef1d04b76645b2643052449d5533e",
+        "files": 23
+      },
+      {
+        "repo": "courthive-persons",
+        "revision": "8e691040edbea0963b13e40c134d36ea2a91ac5d",
+        "files": 45
+      },
+      {
+        "repo": "courthive-declarations",
+        "revision": "9272261cedc1fc7fccaf860f9f5bba284e13ec36",
+        "files": 43
+      },
+      {
+        "repo": "courthive-hiveid",
+        "revision": "d1df92b2b5c1e424fe368b08b6e519581e700a89",
+        "files": 84
+      },
+      {
+        "repo": "tmx-assistant",
+        "revision": "500ef6eb376bdae1d02066e9065dad79be88ad37",
+        "files": 28
+      },
+      {
+        "repo": "tidyScore",
+        "status": "source directory available; no Git revision",
+        "files": 19
+      },
+      {
+        "repo": "provider-config",
+        "revision": "43a84d4d927bbf3511fe76cd8fb42ad2e4e64c75",
+        "files": 10
+      },
+      {
+        "repo": "CourtHive.com",
+        "revision": "dbe7c6d8fed4fb4cc894d25e07735cb56356eda8",
+        "files": 17
+      }
+    ],
+    "selection": {
+      "extensions": ["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs", "svelte"],
+      "excludedDirectories": [
+        "node_modules",
+        "dist",
+        "build",
+        "documentation",
+        "docs",
+        "test",
+        "tests",
+        "e2e",
+        "stories",
+        ".worktrees"
+      ],
+      "excludedFileSuffixes": [".test.*", ".spec.*", ".stories.*"],
+      "trackedFilesOnly": true,
+      "exception": "tidyScore has no Git checkout; scanned its src directory with rg --files",
+      "contentBasis": "filesystem contents at scan time; repository HEADs are recorded, working-tree cleanliness was not attested"
+    }
+  },
+  "candidateCount": 125
+}

@@ -2,6 +2,12 @@
 title: Event Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`categoryCanContain`](/docs/implementation/records/categoryCanContain), [`getEligibleEvents`](/docs/implementation/records/getEligibleEvents), [`removeScaleValues`](/docs/implementation/records/removeScaleValues), [`validateCategory`](/docs/implementation/validation/validateCategory). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { eventGovernor } from 'tods-competition-factory';
 ```
@@ -106,94 +112,7 @@ engine.attachFlightProfile({ flightProfile, eventId });
 
 ## categoryCanContain
 
-Validates whether a child category can be contained within a parent category based on age ranges, rating ranges, and ball type constraints.
-
-```js
-const { valid, details } = engine.categoryCanContain({
-  category, // parent category to check against
-  childCategory, // child category to validate
-  withDetails, // optional boolean - return detailed validation info
-});
-
-if (!valid) {
-  console.log('Category constraints violated:', details);
-}
-```
-
-**Returns:**
-
-```ts
-{
-  valid: boolean;
-  details?: {
-    invalidAgeMin?: boolean;
-    invalidAgeMax?: boolean;
-    invalidAgeMinDate?: boolean;
-    invalidAgeMaxDate?: boolean;
-    invalidRatingRange?: boolean;
-    invalidBallType?: boolean;
-  };
-}
-```
-
-**Validation Rules:**
-
-1. **Age Range Validation:**
-   - Child ageMin must be greater than or equal to parent ageMin
-   - Child ageMax must be less than or equal to parent ageMax
-   - Child age range must fit within parent age range
-
-2. **Age Date Validation:**
-   - Child ageMinDate must be less than or equal to parent ageMaxDate
-   - Child ageMaxDate must be greater than or equal to parent ageMinDate
-
-3. **Rating Range Validation:**
-   - Only checked if both categories have same ratingType
-   - Child ratingMin must be greater than or equal to parent ratingMin
-   - Child ratingMax must be less than or equal to parent ratingMax
-   - Child rating range must fit within parent rating range
-
-4. **Ball Type Validation:**
-   - If both specify ballType, they must match
-
-**Use Cases:**
-
-- Validating flight/division categories within event
-- Checking if sub-event category is compatible with main event
-- Enforcing hierarchical category constraints
-- Building category selection UIs with validation
-
-**Example:**
-
-```js
-// Parent event: U18 with rating 3.0-4.5
-const parentCategory = {
-  categoryName: 'U18',
-  ageMax: 18,
-  ratingType: 'NTRP',
-  ratingMin: 3.0,
-  ratingMax: 4.5,
-};
-
-// Flight category: U16 with rating 3.5-4.0
-const flightCategory = {
-  categoryName: 'U16 Flight A',
-  ageMax: 16,
-  ratingType: 'NTRP',
-  ratingMin: 3.5,
-  ratingMax: 4.0,
-};
-
-const result = engine.categoryCanContain({
-  category: parentCategory,
-  childCategory: flightCategory,
-  withDetails: true,
-});
-
-console.log(result.valid); // true - fits within constraints
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`categoryCanContain`](/docs/implementation/records/categoryCanContain). Package-export status is a separate decision.
 
 ## deleteDrawDefinitions
 
@@ -297,22 +216,7 @@ const { events } = engine.generateEventsFromTieFormat({
 
 ## getEligibleEvents
 
-Which of a set of events a participant may enter. The bulk form of `getParticipantEligibility` — asking per event means re-resolving the participant and the tournament for each one.
-
-```js
-const { eventEligibility } = engine.getEligibleEvents({
-  participant,
-  events, // Event[]
-  tournamentRecord, // optional
-});
-// eventEligibility: [{ eventId, eligible, indeterminate, rejectionReasons }]
-```
-
-Events that cannot be evaluated at all — no resolvable date range, for instance — are returned as `indeterminate`, **never dropped**. A silently shortened list is indistinguishable from one where those events were checked and found ineligible.
-
-See [Entry Eligibility](../concepts/events/entry-eligibility.md).
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getEligibleEvents`](/docs/implementation/records/getEligibleEvents). Package-export status is a separate decision.
 
 ## getEvent
 
@@ -538,19 +442,7 @@ engine.removeEventMatchUpFormatTiming({ eventId });
 
 ## removeScaleValues
 
-Removes scale values for participants in a particular event. Optionally restrict by draw or stage.
-
-```js
-engine.removeScaleValues({
-  scaleAttributes, // { scaleType, scaleName, eventType }
-  scaleName, // optional - override default scaleName, event.category.categoryName || event.category.ageCategoryCode
-  drawId, // optional - to scope participants to entries in a specific draw
-  stage, // optinal - scope participants to entries in a specific stage of draw
-  eventId,
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`removeScaleValues`](/docs/implementation/records/removeScaleValues). Package-export status is a separate decision.
 
 ## removeSeeding
 
@@ -659,11 +551,7 @@ engine.updateDrawIdsOrder({
 
 ## validateCategory
 
-```js
-engine.validateCategory({ category });
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validateCategory`](/docs/implementation/validation/validateCategory). Package-export status is a separate decision.
 
 ## getEventData
 

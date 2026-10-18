@@ -2,6 +2,12 @@
 title: Generation Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`generateDrawStructuresAndLinks`](/docs/implementation/draws/generateDrawStructuresAndLinks), [`generateStatCrew`](/docs/implementation/records/generateStatCrew). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { generationGovernor } from 'tods-competition-factory';
 ```
@@ -388,54 +394,7 @@ const {
 
 ## generateDrawStructuresAndLinks
 
-Low-level method that generates structures and links for various draw types. Typically called internally by `generateDrawDefinition`.
-
-```js
-const { structures, links } = engine.generateDrawStructuresAndLinks({
-  drawDefinition, // required - target drawDefinition to modify
-  drawType, // required - SINGLE_ELIMINATION, ROUND_ROBIN, etc.
-  drawSize, // required - number of draw positions
-  structureName, // optional - custom name for main structure
-  matchUpType, // optional - SINGLES, DOUBLES, TEAM
-  tieFormat, // optional - for TEAM matchUps
-  qualifyingProfiles, // optional - array of qualifying structure configs
-  staggeredEntry, // optional - allows non-power-of-2 drawSizes
-  playoffAttributes, // optional - playoff structure naming
-  appliedPolicies, // optional - seeding/avoidance policies
-  enforceMinimumDrawSize, // optional boolean - defaults to true
-  drawTypeCoercion, // optional boolean - coerce to SINGLE_ELIMINATION for drawSize: 2
-  overwriteExisting, // optional boolean - replace existing structures
-  uuids, // optional - array of UUIDs for structures/matchUps
-});
-```
-
-**Returns:**
-
-```ts
-{
-  structures: Structure[];  // Generated structure objects
-  links: DrawLink[];        // Generated link objects (for multi-stage draws)
-  error?: ErrorType;
-}
-```
-
-**Purpose:** Core method for generating draw structures. Handles all draw type logic including:
-
-- Single elimination brackets
-- Round robin groups
-- Consolation structures
-- Qualifying structures
-- Playoff structures
-- Feed-in and staggered entry
-
-**Notes:**
-
-- Used internally by `generateDrawDefinition`
-- Does not attach structures to drawDefinition (returns them for manual attachment)
-- Handles complex multi-structure draw types (Curtis, FMLC, Compass, etc.)
-- Validates draw size and structure compatibility
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`generateDrawStructuresAndLinks`](/docs/implementation/draws/generateDrawStructuresAndLinks). Package-export status is a separate decision.
 
 ## generateDrawTypeAndModifyDrawDefinition
 
@@ -628,54 +587,7 @@ const { scaleItemsWithParticipantIds } = engine.generateSeedingScaleItems({
 
 ## generateStatCrew
 
-Generates XML output in StatCrew format for college tennis scoring systems.
-
-```js
-const { xml, json } = engine.generateStatCrew({
-  tournamentRecord, // required - tournament to export
-});
-
-// one <tngame> per team matchUp: save each for StatCrew import
-xml.forEach((game, index) => fs.writeFileSync(`statcrew-game-${index + 1}.xml`, game));
-```
-
-**Returns:**
-
-```ts
-{
-  xml: string[]; // one StatCrew <tngame> document per team matchUp
-  json: object[]; // the same games before XML conversion
-  success: boolean;
-}
-```
-
-**Purpose:** Export tournament data in StatCrew XML format, which is used by college tennis programs in the United States for official scoring and statistics.
-
-**Features:**
-
-- Exports tournament metadata (name, date, ID)
-- Includes all team participants
-- Exports singles and doubles matchUps
-- Handles TEAM/dual match format
-- Distinguishes between tournament and dual match formats
-- Maps participant IDs to teams and individuals
-
-**When to Use:**
-
-- College tennis tournaments requiring StatCrew integration
-- Exporting data to NCAA systems
-- Providing official match results in standardized format
-
-**Notes:**
-
-- Specifically designed for college tennis workflows
-- Handles both tournament and dual match formats
-- Each game reports ONE team matchUp: a team's `score`, its singles/doubles totals and its players' won/lost
-  records count only that matchUp's tieMatchUps, so a team that won none scores 0
-- Includes participant and matchUp mappings
-- XML format matches StatCrew import specifications
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`generateStatCrew`](/docs/implementation/records/generateStatCrew). Package-export status is a separate decision.
 
 ## generateVoluntaryConsolation
 
