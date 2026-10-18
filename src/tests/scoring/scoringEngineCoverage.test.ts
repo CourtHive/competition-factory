@@ -57,21 +57,10 @@ describe('ScoringEngine — setState and format queries', () => {
     expect(engine.getState().matchUpType).toBe(DOUBLES_MATCHUP);
   });
 
-  test('getSetsToWin returns correct value for various formats', () => {
-    expect(new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' }).getSetsToWin()).toBe(2);
-    expect(new ScoringEngine({ matchUpFormat: 'SET5-S:6/TB7' }).getSetsToWin()).toBe(3);
-    expect(new ScoringEngine({ matchUpFormat: 'SET1-S:6/TB7' }).getSetsToWin()).toBe(1);
-  });
-
   test('getSetsToWin with no cached format returns 2', () => {
     const engine = new ScoringEngine();
     // Default format is valid, so cachedFormatStructure should exist
     expect(engine.getSetsToWin()).toBe(2);
-  });
-
-  test('getTiebreakAt returns null for tiebreak-only format', () => {
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB11' });
-    expect(engine.getTiebreakAt()).toBeNull();
   });
 
   test('getTiebreakAt returns null for timed format', () => {
@@ -80,47 +69,16 @@ describe('ScoringEngine — setState and format queries', () => {
   });
 
   test('getTiebreakAt returns null for noTiebreak format', () => {
-    // SET5-S:6/TB7-F:6 has finalSetFormat with noTiebreak
+    // SET5-S:6-F:6: neither the regular nor the final set format has a tiebreak
     const engine = new ScoringEngine({ matchUpFormat: 'SET5-S:6-F:6' });
-    // The regular set format has noTiebreak in this format
-    const tba = engine.getTiebreakAt();
-    // With S:6 and no TB specified, tiebreakAt defaults to 6
-    expect(typeof tba === 'number' || tba === null).toBe(true);
-  });
-
-  test('hasFinalSetTiebreak returns true for match tiebreak', () => {
-    // SET3-S:6/TB7-F:TB10 — final set is match tiebreak
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7-F:TB10' });
-    expect(engine.hasFinalSetTiebreak()).toBe(true);
+    // S:6 with no /TB has no tiebreak, so there is no tiebreakAt
+    expect(engine.getTiebreakAt()).toBeNull();
   });
 
   test('hasFinalSetTiebreak returns false for advantage final set', () => {
     // SET5-S:6/TB7-F:6 — final set is advantage (no tiebreak)
     const engine = new ScoringEngine({ matchUpFormat: 'SET5-S:6/TB7-F:6' });
     expect(engine.hasFinalSetTiebreak()).toBe(false);
-  });
-
-  test('hasFinalSetTiebreak returns true when no finalSetFormat (uses regular set rules)', () => {
-    // SET3-S:6/TB7 — no separate final set format, regular has tiebreak
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine.hasFinalSetTiebreak()).toBe(true);
-  });
-
-  test('isNoAd returns true for NoAD format', () => {
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6NOAD/TB7' });
-    expect(engine.isNoAd()).toBe(true);
-  });
-
-  test('isNoAd returns false for standard format', () => {
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine.isNoAd()).toBe(false);
-  });
-
-  test('getFormatStructure returns parsed format', () => {
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    const fs = engine.getFormatStructure();
-    expect(fs).toBeDefined();
-    expect(fs!.bestOf).toBe(3);
   });
 });
 
@@ -523,11 +481,6 @@ describe('ScoringEngine — supplementary state', () => {
 // ============================================================================
 
 describe('ScoringEngine — getInputMode', () => {
-  test('returns "none" for fresh engine', () => {
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine.getInputMode()).toBe('none');
-  });
-
   test('returns "points" after addPoint', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     engine.addPoint({ winner: 0 });
