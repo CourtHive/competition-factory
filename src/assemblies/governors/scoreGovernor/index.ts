@@ -14,6 +14,8 @@ export type {
   SetScore,
   MatchUpHistory,
   ScoreEntry,
+  ScoringActionResult,
+  IgnoredInput,
   SubstitutionEvent,
   AddPointOptions,
   AddSetOptions,

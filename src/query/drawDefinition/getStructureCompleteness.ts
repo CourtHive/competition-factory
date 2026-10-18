@@ -10,8 +10,8 @@ import { SUCCESS } from '@Constants/resultConstants';
 // Completeness roll-up — the COMPANION to getStructureInconsistencies. Where the
 // inconsistency checker asks "is the DECIDED state self-consistent?", this asks "what is
 // still MISSING before the draw is fully populated and played?" — the question a manual
-// position-assignment workflow or a third-party CODES reconstruction pipeline (IONSport,
-// national-federation ingest) needs answered at a publish checkpoint.
+// position-assignment workflow or a third-party CODES reconstruction pipeline (a
+// provider's or a national federation's ingest) needs answered at a publish checkpoint.
 //
 // It is deliberately NOT part of the inconsistency result: an unassigned drawPosition or an
 // unplayed matchUp is a valid in-progress state, not a defect. Only structures with something

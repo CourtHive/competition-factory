@@ -18,8 +18,8 @@
 import {
   inputLevels,
   resolveSetType,
-  tiebreakMargin,
   inputLevelError,
+  isAggregateFormat,
   isLiveDecidingSet,
 } from '@Tools/scoring/scoringUtilities';
 import { finalSetGoverns, openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
@@ -29,37 +29,57 @@ import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
 import { isDecisionRequired } from '@Query/scoring/decisionRequired';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
+import { checkTiebreakWon } from '@Mutate/scoring/gameWon';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { getEpisodes } from '@Query/scoring/getEpisodes';
 import { isComplete } from '@Query/scoring/isComplete';
 import { getWinner } from '@Query/scoring/getWinner';
 import { getScore } from '@Query/scoring/getScore';
+import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 import {
   addPoint,
-  validatePointInput,
   deriveServer,
   deriveServerBase,
+  pointCountsUnits,
+  validatePointInput,
   checkStandardSetWon,
 } from '@Mutate/scoring/addPoint';
 import {
   replayAsV1,
   scoresAfter,
+  matchCompletion,
+  LEGACY_IGNORED_INPUT,
+  LEGACY_REFUSED_INPUT,
   checkAndFinalizeMatch,
   SCORING_PAST_LEVEL_CLOSE,
 } from '@Mutate/scoring/matchCompletion';
+import {
+  setFormatFor,
+  judgeSetTotal,
+  buildJudgedSet,
+  setInputRefusal,
+  settleSetWinner,
+  gameInputRefusal,
+  baselineInputRefusal,
+  endSegmentInputRefusal,
+} from '@Mutate/scoring/judgeSet';
 
 // constants and types
 import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
 import type { InputLevels } from '@Tools/scoring/scoringUtilities';
+import type { ClosableSet } from '@Mutate/scoring/judgeSet';
 import type {
   MatchUp,
+  IgnoredInput,
+  ScoringActionResult,
   AddPointOptions,
   AddSetOptions,
   AddGameOptions,
   ScoreEntry,
+  SetFormatStructure,
   EndSegmentOptions,
   InitialScoreOptions,
   SetScore,
@@ -198,6 +218,12 @@ export interface ScoringEngineSupplementaryState {
 }
 
 const SUPPLEMENTARY_STATE_VERSION = 1;
+
+/** A scoring input the timeline recorded. */
+const RECORDED: ScoringActionResult = { recorded: true };
+
+/** What the action boundary does with an input: refuse it, ignore it, or take it. */
+type Verdict = { refusal?: string; ignored?: IgnoredInput };
 
 /**
  * Point fields the scorer calculates. A replay recomputes them, so they are never replay input; every
@@ -368,12 +394,14 @@ export class ScoringEngine {
    *
    * @param options - Point options (winner, server, etc.)
    */
-  addPoint(options: AddPointOptions): void {
-    // refused before anything is written: an unscorable format or an invalid input (S9), or a segment
-    // of outs, which takes set totals (S4)
-    if (!this.cachedFormatStructure) throw new Error(`Invalid matchUpFormat: ${this.matchUpFormat}`);
+  addPoint(options: AddPointOptions): ScoringActionResult {
+    // refused before anything is written: an unscorable format or an invalid input (S9), a segment of
+    // outs, which takes set totals (S4), or a value where a point is not a unit (§ 4.4)
+    this.requireFormat();
     validatePointInput(options);
     if (!this.getInputLevels().point) throw inputLevelError('point');
+    const valueRefusal = this.pointValueRefusal(options);
+    if (valueRefusal) throw new Error(valueRefusal);
     // before the point is scored: a record without a timeline starts one from the points it already has
     this.ensureHistory();
     const pointIndex = this.state.history?.points.length || 0;
@@ -396,7 +424,8 @@ export class ScoringEngine {
     // recorded: no timeline entry (undo would pop it as a phantom), no cleared redo stack, no
     // onPoint, and no activePlayers or penaltyType stamped onto the point before it. A correction to
     // a point already played goes through decoratePoint or editPoint, which a completed match takes.
-    if ((this.state.history?.points.length || 0) === pointIndex) return;
+    if ((this.state.history?.points.length || 0) === pointIndex)
+      return { recorded: false, ignored: this.ignoredPoint(options) };
 
     // Attach activePlayers to the just-added point
     if (activePlayers) {
@@ -453,15 +482,54 @@ export class ScoringEngine {
         this.notifyMatchComplete(ctx);
       }
     }
+    return RECORDED;
+  }
+
+  /** A format that does not parse refuses every action that scores or names a server (§ 1.1, § 2). */
+  private requireFormat(): FormatStructure {
+    if (!this.cachedFormatStructure) throw new Error(`Invalid matchUpFormat: ${this.matchUpFormat}`);
+    return this.cachedFormatStructure;
   }
 
   /**
-   * A match that ended level with no declared decider (§ 9.7, CA 2026-10-18): it takes no game, set
-   * total or segment end, which would play a segment the format did not declare, and records nothing.
-   * A combined total keeps its own refusals.
+   * Input the match takes no more of, ignored and recording nothing: any after `COMPLETED` (§ 9.6), and a
+   * set beyond N in an exactly format (§ 9.2 rule 4).
    */
-  private endedLevel(): boolean {
-    return !this.cachedFormatStructure?.setFormat?.combinedPointTotal && isDecisionRequired(this.state);
+  private closedToInput(): IgnoredInput | undefined {
+    if (this.state.matchUpStatus === COMPLETED) return 'MATCH_COMPLETED';
+    const formatStructure = this.cachedFormatStructure;
+    const exactly = !isAggregateFormat(formatStructure) && formatStructure?.exactly;
+    if (exactly && openSetNumber(this.state.score.sets) > exactly) return 'NO_SET_BEYOND_N';
+    return undefined;
+  }
+
+  /** Why the pure scorer ignored a point (§ 2.1). */
+  private ignoredPoint(options: AddPointOptions): IgnoredInput {
+    if (options?.winner == null && options?.winningSide == null) return 'NO_WINNER';
+    return this.closedToInput() ?? 'MATCH_COMPLETED';
+  }
+
+  /**
+   * A `scoreValue` other than 1 where a point is not a unit (§ 2.1 rule 7, § 4.4; CA 2026-10-18): a segment
+   * whose points build games, and a combined total.
+   */
+  private pointValueRefusal(options: Partial<AddPointOptions>): string | undefined {
+    const { scoreValue } = options ?? {};
+    const formatStructure = this.cachedFormatStructure;
+    if (scoreValue === undefined || scoreValue === 1 || !formatStructure) return undefined;
+    const setsWon = this.setsWon();
+    const setType = resolveSetType(formatStructure, setsWon, openSetNumber(this.state.score.sets));
+    if (pointCountsUnits(this.state, formatStructure, setType, this.activeSetFormat())) return undefined;
+    return `A point is not a unit of this segment's score: scoreValue ${scoreValue} is refused`;
+  }
+
+  private setsWon(): [number, number] {
+    const setsWon: [number, number] = [0, 0];
+    for (const set of this.state.score.sets) {
+      if (set.winningSide === 1) setsWon[0]++;
+      if (set.winningSide === 2) setsWon[1]++;
+    }
+    return setsWon;
   }
 
   /** The game, set or segment-end action that ends a match level fires onMatchTie (§ 11.5). */
@@ -470,8 +538,11 @@ export class ScoringEngine {
   }
 
   /**
-   * The legacy shapes the last rebuild met (spec § 12.8): `scoringPastLevelClose` when a stored timeline
-   * scored past a level close, as v1 did, and was replayed as v1 replayed it.
+   * The legacy shapes the last rebuild met (spec § 12.8), each replayed as v1 replayed it:
+   * `scoringPastLevelClose` when a stored timeline scored past a level close, `refusedInput` for an entry
+   * the action boundary now refuses (invalid facts, a segment end on a set that is not timed or is closed, a
+   * value where a point is not a unit, a second baseline), and `ignoredInput` for one it now ignores (input
+   * after `COMPLETED` or past N).
    */
   getLegacyShapes(): string[] {
     return [...this.legacyShapes];
@@ -491,24 +562,31 @@ export class ScoringEngine {
   }
 
   /**
-   * Add a complete set score (set-level input)
+   * Add a set total (set-level input)
    *
-   * Used by scoring modals where users enter finished set scores directly.
-   * Does not validate the total against the format: when winningSide is not provided it is
-   * inferred from any unequal total (a level total leaves the set open). Then checks match
-   * completion and records a ScoreEntry in history. The spec's rule (scoring-engine-spec § 2.3)
-   * judges the total by its segment's rule; v1 does not yet.
+   * Used by scoring modals where users enter set scores directly. A total entered while a set is in play
+   * closes that set with the declared total, its points staying on the history, and scoring continues in
+   * the next set; otherwise it is the next set. The total is judged by its segment's
+   * rule (spec § 2.3, CA 2026-10-18): a total the rule calls finished is recorded with the rule's winner
+   * (6-4, 7-6 with a tiebreak, 7-5; a timed total is a finished segment); an explicit `winningSide`
+   * naming the loser of a finished total, or a side that is not ahead, is refused; an explicit
+   * `winningSide` for the side ahead on an unfinished total is a set-level mercy or manual end; and an
+   * unfinished total with no winner is recorded as the set in play (3-1 in a set to six).
+   *
+   * Ignored, recording nothing, after the match is `COMPLETED` and past the N sets of an exactly format.
    *
    * @param options - Set score data
    */
-  addSet(options: AddSetOptions): void {
-    // a match that ended level plays no segment the format did not declare (§ 9.7)
-    if (this.endedLevel()) return;
-    this.applyAddSet(options);
+  addSet(options: AddSetOptions): ScoringActionResult {
+    this.requireFormat();
+    const refusal = setInputRefusal(options);
+    if (refusal) throw new Error(refusal);
+    const ignored = this.closedToInput();
+    if (ignored) return { recorded: false, ignored };
+    const winningSide = this.applyAddSet(options, true);
 
     // Record entry in unified timeline
     this.ensureHistory();
-    const winningSide = this.state.score.sets.at(-1)?.winningSide;
     this.state.history!.entries!.push({
       type: 'set',
       data: { ...options, winningSide },
@@ -517,21 +595,30 @@ export class ScoringEngine {
 
     this.redoStack = [];
     this.notifyLevelClose();
+    return RECORDED;
   }
 
   /**
    * Add a game result (game-level input)
    *
-   * For scenarios where game-by-game tracking is needed without point detail.
-   * Creates a new set if needed, increments game scores, checks set/match
-   * completion, and records a ScoreEntry in history.
+   * For scenarios where game-by-game tracking is needed without point detail. Adds the game to the set
+   * in play, opening the next set when the last one is closed (won, or a timed segment ended), checks
+   * set and match completion, and records a ScoreEntry in history. In a tiebreak-only segment a game is
+   * the segment won 1-0, `tiebreakScore` its points, checked against the race to n (spec § 2.2, § 5).
+   *
+   * Ignored, recording nothing, after the match is `COMPLETED` and past the N sets of an exactly format.
    *
    * @param options - Game result data
    */
-  addGame(options: AddGameOptions): void {
+  addGame(options: AddGameOptions): ScoringActionResult {
+    this.requireFormat();
+    const refusal = gameInputRefusal(options);
+    if (refusal) throw new Error(refusal);
     this.requireGameOrTimedSegment();
     if (!this.getInputLevels().game) throw inputLevelError('game');
-    if (this.endedLevel()) return;
+    const verdict = this.gameVerdict(options);
+    if (verdict.refusal) throw new Error(verdict.refusal);
+    if (verdict.ignored) return { recorded: false, ignored: verdict.ignored };
     this.applyAddGame(options);
 
     // Record entry in unified timeline
@@ -544,19 +631,45 @@ export class ScoringEngine {
 
     this.redoStack = [];
     this.notifyLevelClose();
+    return RECORDED;
+  }
+
+  /** What the action boundary does with a game (§ 2.2): its facts, its segment, and the match's state. */
+  private gameVerdict(options: AddGameOptions): Verdict {
+    const refusal = gameInputRefusal(options);
+    if (refusal) return { refusal };
+    const ignored = this.closedToInput();
+    if (ignored) return { ignored };
+    const tiebreakSet = this.activeSetFormat()?.tiebreakSet;
+    const { winner, tiebreakScore } = options;
+    if (tiebreakSet && tiebreakScore) {
+      const tiebreakTo = tiebreakSet.tiebreakTo || 11;
+      const won = checkTiebreakWon(tiebreakScore[0], tiebreakScore[1], tiebreakTo, tiebreakSet.NoAD);
+      if (won !== winner)
+        return {
+          refusal: `tiebreakScore ${tiebreakScore.join('-')} does not win a race to ${tiebreakTo} for side ${winner + 1}`,
+        };
+    }
+    return {};
   }
 
   /**
-   * End a timed segment/period
+   * End a timed segment
    *
-   * For timed formats (S:T10P, HAL2A-S:T45, etc.), this finalizes
-   * the current set's score and checks match completion.
+   * Ends timed segments only (spec § 2.4, CA 2026-10-18): the timed segment in play, or the one
+   * `setNumber` names, by § 6.4. Refused on any other segment kind, on a segment already closed, and
+   * when there is no timed segment to end. Ignored, recording nothing, after the match is `COMPLETED` and
+   * during the tiebreak a level timed segment plays at time. `reason` is a free host string, recorded and
+   * never interpreted.
    *
    * @param options - Segment options
    */
-  endSegment(options?: EndSegmentOptions): void {
+  endSegment(options?: EndSegmentOptions): ScoringActionResult {
+    this.requireFormat();
     this.requireGameOrTimedSegment();
-    if (this.endedLevel()) return;
+    const verdict = this.endSegmentVerdict(options);
+    if (verdict.refusal) throw new Error(verdict.refusal);
+    if (verdict.ignored) return { recorded: false, ignored: verdict.ignored };
     this.applyEndSegment(options);
 
     // Record entry in unified timeline
@@ -567,42 +680,128 @@ export class ScoringEngine {
       data: { setNumber: currentSetIndex + 1, ...options },
       timestamp: options?.timestamp || nowIso(),
     });
+
+    this.redoStack = [];
     this.notifyLevelClose();
+    return RECORDED;
+  }
+
+  /** What the action boundary does with a segment end (§ 2.4, § 6.4). */
+  private endSegmentVerdict(options?: EndSegmentOptions): Verdict {
+    const refusal = endSegmentInputRefusal(options);
+    if (refusal) return { refusal };
+    if (this.state.matchUpStatus === COMPLETED) return { ignored: 'MATCH_COMPLETED' };
+    const sets = this.state.score.sets;
+    const setNumber = options?.setNumber ?? sets.length;
+    const target = sets[setNumber - 1] as ClosableSet | undefined;
+    const setFormat = target ? setFormatFor(this.cachedFormatStructure, sets, setNumber) : this.activeSetFormat();
+    if (!setFormat?.timed) return { refusal: 'endSegment ends timed segments only' };
+    if (!target) return { refusal: 'There is no timed segment to end' };
+    if (target.winningSide !== undefined || target.segmentComplete)
+      return { refusal: `Segment ${setNumber} is closed and takes no input` };
+    if (target.side1TiebreakScore !== undefined) return { ignored: 'TIEBREAK_IN_PLAY' };
+    return {};
   }
 
   /**
    * Set the initial score before beginning point-by-point tracking
    *
-   * Used when a tracker arrives mid-match and wants to set the current
-   * score before beginning to track points.
+   * A late-start baseline (spec § 2.5, CA 2026-10-18): its sets are judged by their segment rule, as addSet
+   * judges a total (6-5 is not won; the final set is the one the deciding-set rule names, read from the
+   * score; a tiebreak-only set is read from its points); a baseline that decides the match completes it;
+   * an unfinished last set is the set in play; a supplied `server` is recorded as a server correction at the
+   * baseline. Refused once the timeline holds scoring entries (a correction uses editPoint, removePoint or
+   * undo), and when a `matchUpStatus` or `winningSide` given beside the sets disagrees with them.
    *
    * @param options - Initial score state
    */
   setInitialScore(options: InitialScoreOptions): void {
-    if (this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
-      const sets = options.sets.map((set, index) => ({ ...set, setNumber: index + 1 }));
-      if (options.currentGameScore) throw new Error('Combined-point formats have no game score');
-      if (options.currentSetScore) sets.push({ ...options.currentSetScore, setNumber: sets.length + 1 });
-      this.validateCombinedScore(sets);
-    }
+    this.requireFormat();
+    const refusal = this.baselineRefusal(options);
+    if (refusal) throw new Error(refusal);
     this.initialScore = options;
-    this.redoStack = [];
 
     // Apply initial score to state
     this.applyInitialScore(this.state, options);
 
-    // Record entry in unified timeline
+    // Record entry in unified timeline, the server correction attached to it
     this.ensureHistory();
-    this.state.history!.entries!.push({
-      type: 'setInitialScore',
-      data: options,
-      timestamp: nowIso(),
-    });
-
-    // Mark as in-progress
-    if (this.state.matchUpStatus === TO_BE_PLAYED) {
-      this.state.matchUpStatus = IN_PROGRESS;
+    const entry: ScoreEntry = { type: 'setInitialScore', data: options, timestamp: nowIso() };
+    if (options.server === 0 || options.server === 1) {
+      entry.serverCorrection = options.server;
+      this.applyServerCorrection(options.server);
     }
+    this.state.history!.entries!.push(entry);
+    this.redoStack = [];
+    this.notifyLevelClose();
+  }
+
+  /** Why a baseline is refused (§ 2.5), if it is: its facts, a second baseline, or what it claims. */
+  private baselineRefusal(options: InitialScoreOptions): string | undefined {
+    const refusal = baselineInputRefusal(options) ?? this.secondBaselineRefusal();
+    if (refusal) return refusal;
+    if (this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
+      const sets = options.sets.map((set, index) => ({ ...set, setNumber: index + 1 }));
+      if (options.currentGameScore) return 'Combined-point formats have no game score';
+      if (options.currentSetScore) sets.push({ ...options.currentSetScore, setNumber: sets.length + 1 });
+      this.validateCombinedScore(sets);
+      return undefined;
+    }
+    const baseline = this.buildBaseline(options);
+    return baseline.refusal ?? this.baselineConsistencyRefusal(options, baseline.sets);
+  }
+
+  /** A second baseline once the timeline holds scoring entries (§ 2.5 rule 5). */
+  private secondBaselineRefusal(): string | undefined {
+    const history = this.state.history;
+    const scored = history?.entries ? scoresAfter(history.entries, -1) : (history?.points.length ?? 0) > 0;
+    if (!scored) return undefined;
+    return 'A baseline is refused once scoring has been recorded: correct it with editPoint, removePoint or undo';
+  }
+
+  /** A `matchUpStatus` or `winningSide` beside the sets that disagrees with them (§ 2.5 rule 6). */
+  private baselineConsistencyRefusal(options: InitialScoreOptions, sets: SetScore[]): string | undefined {
+    const { matchUpStatus, winningSide } = options;
+    const formatStructure = this.cachedFormatStructure!;
+    const setsToWin = Math.ceil((formatStructure.exactly || formatStructure.bestOf || 3) / 2);
+    const completion = matchCompletion({ score: { sets } } as MatchUp, formatStructure, setsToWin);
+    const winner = completion.complete ? completion.winningSide : undefined;
+    if (matchUpStatus === COMPLETED && !completion.complete) return 'matchUpStatus COMPLETED disagrees with the sets';
+    if ((matchUpStatus === IN_PROGRESS || matchUpStatus === TO_BE_PLAYED) && completion.complete)
+      return `matchUpStatus ${matchUpStatus} disagrees with sets that decide the match`;
+    const scoredStatus = matchUpStatus == null || matchUpStatus === COMPLETED;
+    if (winningSide != null && scoredStatus && winningSide !== winner)
+      return `winningSide ${winningSide} disagrees with the sets`;
+    return undefined;
+  }
+
+  /**
+   * Record a challenge (spec § 2.8, CA 2026-10-18): a versioned timeline action that changes no score. It
+   * records the side that challenged and any host fields, is kept through every rebuild, and `undo` takes
+   * it back when it was recorded last. It writes the entry epixodic writes by hand,
+   * `{ type: 'challenge', data: { sideNumber } }`, which the engine reads unchanged.
+   */
+  addChallenge(options: { sideNumber: 1 | 2; timestamp?: string; [key: string]: any }): void {
+    if (options?.sideNumber !== 1 && options?.sideNumber !== 2)
+      throw new Error(`Invalid sideNumber: ${options?.sideNumber}`);
+    const { timestamp, ...data } = options;
+    this.recordEntry({ type: 'challenge', data, timestamp: timestamp || nowIso() });
+  }
+
+  /** Record an annotation (spec § 2.8): host data on the timeline, changing no score. */
+  addAnnotation(data: Record<string, any>, options?: { timestamp?: string }): void {
+    this.recordEntry({
+      type: 'annotation',
+      data: isObject(data) ? { ...data } : data,
+      timestamp: options?.timestamp || nowIso(),
+    });
+  }
+
+  /** A recorded action that changes no score: on the timeline, clearing the redo stack (§ 12.3). */
+  private recordEntry(entry: ScoreEntry): void {
+    this.ensureHistory();
+    this.state.history!.entries!.push(entry);
+    this.redoStack = [];
   }
 
   // ===========================================================================
@@ -839,35 +1038,29 @@ export class ScoringEngine {
    * @param side - Who should serve the next point (0 = side 1, 1 = side 2)
    */
   setServer(side: 0 | 1, options?: { recordEntry?: boolean }): void {
-    if (!this.cachedFormatStructure) return;
+    this.requireFormat();
+    if (side !== 0 && side !== 1) throw new Error(`Invalid server: ${side}`);
+    const before = this.state.serverFlip;
+    this.applyServerCorrection(side);
+    // a correction that changes nothing records nothing and keeps the redo stack (§ 12.3)
+    if (before !== undefined && before === this.state.serverFlip) return;
 
-    const setsWon: [number, number] = [0, 0];
-    this.state.score.sets.forEach((set) => {
-      if (set.winningSide === 1) setsWon[0]++;
-      if (set.winningSide === 2) setsWon[1]++;
-    });
-    const setType = resolveSetType(this.cachedFormatStructure, setsWon, openSetNumber(this.state.score.sets));
-
-    // Compare desired server against the base derivation (which assumes
-    // side 0 served game 0). If they disagree, flip is needed.
-    const baseServer = deriveServerBase(this.state, this.cachedFormatStructure, setType);
-    this.state.serverFlip = side !== baseServer;
-
-    // Skip entry recording for derived server changes (e.g. INTENNSE post-point
-    // serving rules) so undo operates on user actions, not auto-derived state.
-    if (options?.recordEntry === false) return;
+    // A rule-driven correction (e.g. INTENNSE's post-point serving rules) is not an action of its own: it
+    // is recorded on the entry before it, replayed with it and undone with it, so undo takes back the
+    // point and its correction together (§ 2.6, CA 2026-10-18). With nothing before it there is no entry
+    // to attach it to, and it orients the next point only.
+    if (options?.recordEntry === false) {
+      this.ensureHistory();
+      const preceding = this.state.history!.entries!.at(-1);
+      if (!preceding) return;
+      preceding.serverCorrection = side;
+      this.redoStack = [];
+      return;
+    }
 
     // Record in timeline for undo/redo — store the desired side so
     // rebuild can recompute the flip at the correct position
-    this.ensureHistory();
-    this.state.history!.entries!.push({
-      type: 'setServer',
-      data: { side },
-      timestamp: nowIso(),
-    });
-
-    // Clear redo stack (new branch)
-    this.redoStack = [];
+    this.recordEntry({ type: 'setServer', data: { side }, timestamp: nowIso() });
   }
 
   /**
@@ -1482,45 +1675,42 @@ export class ScoringEngine {
   }
 
   /**
-   * Apply a set score to the current state (no entry recording)
+   * Apply a set total to the current state (no entry recording), judged by its segment's rule (§ 2.3).
+   * Strict, at the action boundary, a total the rule contradicts is refused before anything is written;
+   * on replay an explicit winner is taken as recorded. Returns the winner the set is recorded with.
    */
-  private applyAddSet(options: AddSetOptions): void {
+  private applyAddSet(options: AddSetOptions, strict = false): 1 | 2 | undefined {
     if (this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
       if (this.state.score.sets.length) throw new Error('Combined-point formats have one segment');
       const sets = [{ ...options, setNumber: 1 }];
       this.validateCombinedScore(sets);
       this.state.score.sets = sets;
       this.completeCombinedScore();
-      return;
+      return this.state.score.sets[0].winningSide as 1 | 2 | undefined;
     }
-    const { side1Score, side2Score, side1TiebreakScore, side2TiebreakScore } = options;
-
-    // Infer winningSide if not provided
-    let winningSide = options.winningSide;
-    if (winningSide === undefined) {
-      if (side1Score > side2Score) winningSide = 1;
-      else if (side2Score > side1Score) winningSide = 2;
+    const sets = this.state.score.sets;
+    // A set in play (points or games already recorded in it) is the set the total closes: its score
+    // becomes the declared total and its points stay on the history (§ 2.3, CA 2026-10-18). Otherwise
+    // the total is the next set.
+    const setNumber = openSetNumber(sets);
+    const setFormat = setFormatFor(this.cachedFormatStructure, sets, setNumber);
+    const judgement = judgeSetTotal(options, setFormat);
+    const { winningSide, refusal } = settleSetWinner(options, judgement);
+    if (refusal) {
+      if (strict) throw new Error(refusal);
+      this.legacyShapes.add(LEGACY_REFUSED_INPUT);
     }
-
-    const newSet: SetScore = {
-      setNumber: this.state.score.sets.length + 1,
-      side1Score,
-      side2Score,
-      winningSide,
-    };
-
-    if (side1TiebreakScore !== undefined) newSet.side1TiebreakScore = side1TiebreakScore;
-    if (side2TiebreakScore !== undefined) newSet.side2TiebreakScore = side2TiebreakScore;
-
-    this.state.score.sets.push(newSet);
+    const newSet = buildJudgedSet(options, setNumber, setFormat, judgement, winningSide);
+    sets[setNumber - 1] = newSet;
 
     if (this.state.matchUpStatus === TO_BE_PLAYED) {
       this.state.matchUpStatus = IN_PROGRESS;
     }
 
-    if (winningSide !== undefined) {
+    if (winningSide !== undefined || newSet.segmentComplete) {
       this.checkMatchCompletion();
     }
+    return winningSide;
   }
 
   /**
@@ -1529,16 +1719,35 @@ export class ScoringEngine {
   private applyAddGame(options: AddGameOptions): void {
     const { winner, tiebreakScore } = options;
 
-    // Get or create current set
-    let currentSet = this.state.score.sets.length > 0 ? this.state.score.sets.at(-1) : undefined;
+    // Get or create current set: a closed segment takes no input, so a game after one opens the next set,
+    // as a point does (§ 6.4, CA 2026-10-18)
+    let currentSet = this.state.score.sets.at(-1) as ClosableSet | undefined;
 
-    if (!currentSet || currentSet.winningSide !== undefined) {
+    if (!currentSet || currentSet.winningSide !== undefined || currentSet.segmentComplete) {
       currentSet = {
         setNumber: this.state.score.sets.length + 1,
         side1Score: 0,
         side2Score: 0,
       };
       this.state.score.sets.push(currentSet);
+    }
+
+    if (this.state.matchUpStatus === TO_BE_PLAYED) {
+      this.state.matchUpStatus = IN_PROGRESS;
+    }
+
+    // In a tiebreak-only segment a game is the segment won 1-0, its tiebreakScore the points (§ 2.2, § 5)
+    const setNumber = this.state.score.sets.length;
+    if (setFormatFor(this.cachedFormatStructure, this.state.score.sets, setNumber)?.tiebreakSet) {
+      currentSet.side1Score = winner === 0 ? 1 : 0;
+      currentSet.side2Score = winner === 0 ? 0 : 1;
+      currentSet.winningSide = (winner + 1) as 1 | 2;
+      if (tiebreakScore) {
+        currentSet.side1TiebreakScore = tiebreakScore[0];
+        currentSet.side2TiebreakScore = tiebreakScore[1];
+      }
+      this.checkMatchCompletion();
+      return;
     }
 
     // Increment game score
@@ -1563,10 +1772,6 @@ export class ScoringEngine {
     if (tiebreakScore) {
       currentSet.side1TiebreakScore = tiebreakScore[0];
       currentSet.side2TiebreakScore = tiebreakScore[1];
-    }
-
-    if (this.state.matchUpStatus === TO_BE_PLAYED) {
-      this.state.matchUpStatus = IN_PROGRESS;
     }
 
     // Check set completion
@@ -1691,13 +1896,8 @@ export class ScoringEngine {
     const s1 = currentSet.side1Score || 0;
     const s2 = currentSet.side2Score || 0;
 
-    if (activeSetFormat.tiebreakSet) {
-      const tbTo = activeSetFormat.tiebreakSet.tiebreakTo || 11;
-      const minWin = tiebreakMargin(tbTo, activeSetFormat.tiebreakSet.NoAD);
-      if ((s1 >= tbTo || s2 >= tbTo) && Math.abs(s1 - s2) >= minWin) {
-        currentSet.winningSide = s1 > s2 ? 1 : 2;
-      }
-    } else if (!activeSetFormat.timed) {
+    // a tiebreak-only segment is won by the game itself (applyAddGame), and a timed one by its end
+    if (!activeSetFormat.timed) {
       const setWon = checkStandardSetWon(s1, s2, activeSetFormat, isDecidingSet, formatStructure.finalSetFormat);
       if (typeof setWon === 'number') {
         currentSet.winningSide = setWon + 1;
@@ -1708,12 +1908,12 @@ export class ScoringEngine {
   /**
    * Check and apply match completion based on current sets
    */
-  private checkMatchCompletion(): void {
-    const formatStructure = parse(this.state.matchUpFormat);
+  private checkMatchCompletion(matchUp: MatchUp = this.state): void {
+    const formatStructure = parse(matchUp.matchUpFormat);
     if (!formatStructure) return;
     const bestOf = formatStructure.exactly || formatStructure.bestOf || 3;
     const setsToWin = Math.ceil(bestOf / 2);
-    checkAndFinalizeMatch(this.state, formatStructure, setsToWin);
+    checkAndFinalizeMatch(matchUp, formatStructure, setsToWin);
   }
 
   // ===========================================================================
@@ -1738,52 +1938,103 @@ export class ScoringEngine {
 
     for (const [index, entry] of entries.entries()) {
       const wasComplete = this.state.matchUpStatus === COMPLETED;
-      switch (entry.type) {
-        case 'point': {
-          // The lineUps start from their initial snapshot and the substitutions replay in order, so
-          // the players on court here are the ones who played this point.
-          const activePlayers = this.activePlayersForPoint();
-          const pointCount = this.state.history?.points.length || 0;
-          this.state = addPoint(this.state, this.scoredPointInput(entry.data), {
-            pointMultipliers: this.pointMultipliers,
-          });
-          // Restore entries (addPoint may reset them since it mutates)
-          this.state.history!.entries = newState.history!.entries;
-          const points = this.state.history!.points;
-          const played = points.length > pointCount ? points.at(-1) : undefined;
-          if (activePlayers && played) played.activePlayers = activePlayers;
-          break;
-        }
-        case 'set':
-          this.applyAddSet(entry.data);
-          break;
-        case 'game':
-          this.applyAddGame(entry.data);
-          break;
-        case 'endSegment':
-          this.applyEndSegment(entry.data);
-          break;
-        case 'substitution':
-          this.applySubstitution(entry.data);
-          break;
-        case 'setInitialScore':
-          // the late-start baseline is part of the timeline (S2): replayed where it was set, gone once undone
-          this.applyInitialScore(this.state, entry.data);
-          if (this.state.matchUpStatus === TO_BE_PLAYED) this.state.matchUpStatus = IN_PROGRESS;
-          break;
-        case 'setServer':
-          this.replaySetServerEntry(entry.data);
-          break;
-      }
+      // an entry the action boundary now refuses or ignores is replayed as v1 replayed it (§ 12.8)
+      // (input past a level close is that shape already)
+      const verdict = this.replayVerdict(entries, index);
+      const pastLevelClose = this.legacyShapes.has(SCORING_PAST_LEVEL_CLOSE);
+      if (verdict.refusal) this.legacyShapes.add(LEGACY_REFUSED_INPUT);
+      else if (verdict.ignored && !pastLevelClose) this.legacyShapes.add(LEGACY_IGNORED_INPUT);
+      this.replayEntry(entry, entries, index);
       this.replayLegacyShape(this.state, wasComplete, scoresAfter(entries, index));
+      // a server correction attached to the entry is replayed with it (§ 2.6)
+      if (entry.serverCorrection === 0 || entry.serverCorrection === 1)
+        this.applyServerCorrection(entry.serverCorrection);
     }
   }
 
-  private prepareRebuildState(entries: any[]): MatchUp {
-    const savedLineUps = this.getInitialLineUps();
+  private replayEntry(entry: ScoreEntry, entries: ScoreEntry[], index: number): void {
+    switch (entry.type) {
+      case 'point': {
+        // The lineUps start from their initial snapshot and the substitutions replay in order, so
+        // the players on court here are the ones who played this point.
+        const activePlayers = this.activePlayersForPoint();
+        const pointCount = this.state.history?.points.length || 0;
+        const timeline = this.state.history!.entries;
+        this.state = addPoint(this.state, this.scoredPointInput(entry.data), {
+          pointMultipliers: this.pointMultipliers,
+        });
+        // Restore entries (addPoint may reset them since it mutates)
+        this.state.history!.entries = timeline;
+        const points = this.state.history!.points;
+        const played = points.length > pointCount ? points.at(-1) : undefined;
+        if (activePlayers && played) played.activePlayers = activePlayers;
+        break;
+      }
+      case 'set':
+        this.applyAddSet(entry.data);
+        break;
+      case 'game':
+        this.applyAddGame(entry.data);
+        break;
+      case 'endSegment':
+        this.applyEndSegment(entry.data);
+        break;
+      case 'substitution':
+        this.applySubstitution(entry.data);
+        break;
+      case 'setInitialScore':
+        // the late-start baseline is part of the timeline (S2): replayed where it was set, gone once undone
+        this.applyInitialScore(this.state, entry.data);
+        // v1 never completed a match from its baseline: scoring after one that decides it proves v1 wrote it
+        if (this.state.matchUpStatus === COMPLETED && scoresAfter(entries, index)) {
+          this.state.matchUpStatus = IN_PROGRESS;
+          delete this.state.winningSide;
+          delete this.state.endTime;
+          this.legacyShapes.add(LEGACY_IGNORED_INPUT);
+        }
+        break;
+      case 'setServer':
+        this.applyServerCorrection(entry.data.side);
+        break;
+      // a challenge or an annotation changes no score: kept in place (§ 2.8), as is an entry of a type the
+      // engine does not know (§ 12.6)
+    }
+  }
 
-    // Only what scoring produces starts over. The matchUp's identity, participants and any other
-    // metadata a host attached are kept as they are: a rebuild is not a new matchUp.
+  /** What the action boundary would do with a stored entry at its position on the timeline (§ 12.8). */
+  private replayVerdict(entries: ScoreEntry[], index: number): Verdict {
+    const { type, data } = entries[index];
+    switch (type) {
+      case 'point': {
+        const refusal = this.pointValueRefusal(data);
+        return refusal ? { refusal } : {};
+      }
+      case 'game':
+        return this.gameVerdict(data);
+      case 'set': {
+        const refusal = setInputRefusal(data);
+        if (refusal) return { refusal };
+        const ignored = this.closedToInput();
+        return ignored ? { ignored } : {};
+      }
+      case 'endSegment':
+        return this.endSegmentVerdict(data);
+      case 'setInitialScore': {
+        const refusal = baselineInputRefusal(data);
+        if (refusal) return { refusal };
+        if (scoresAfter(entries.slice(0, index), -1)) return { refusal: 'a second baseline' };
+        return {};
+      }
+      default:
+        return {};
+    }
+  }
+
+  /**
+   * The matchUp with only what scoring produces started over (§ 12.1): the identity, participants and any
+   * other metadata a host attached are kept as they are, since a rebuild is not a new matchUp.
+   */
+  private keptIdentity(): MatchUp {
     const { score: _score, history: _history, winningSide: _winningSide, ...identity } = this.state;
     const { serverFlip: _serverFlip, endTime: _endTime, matchUpStatus: _matchUpStatus, ...kept } = identity;
     // a JSON round trip, as in getState: the state may hold framework proxies structuredClone rejects
@@ -1795,7 +2046,14 @@ export class ScoringEngine {
       isDoubles: this.isDoubles,
     });
     const newState: MatchUp = { ...copy, score: fresh.score, matchUpStatus: fresh.matchUpStatus };
+    newState.sides ??= fresh.sides;
     newState.matchUpFormat = this.matchUpFormat;
+    return newState;
+  }
+
+  private prepareRebuildState(entries: ScoreEntry[]): MatchUp {
+    const savedLineUps = this.getInitialLineUps();
+    const newState = this.keptIdentity();
 
     for (const side of newState.sides) {
       const lineUp = savedLineUps?.[side.sideNumber];
@@ -1808,19 +2066,14 @@ export class ScoringEngine {
     return newState;
   }
 
-  private replaySetServerEntry(data: { side: number }): void {
-    // Recompute the flip at this position during rebuild.
-    // The entry stores the desired side; we compare against the
-    // base derivation at the current (replayed) state to determine
-    // whether a flip is needed from this point forward.
-    const setsWon: [number, number] = [0, 0];
-    this.state.score.sets.forEach((set) => {
-      if (set.winningSide === 1) setsWon[0]++;
-      if (set.winningSide === 2) setsWon[1]++;
-    });
-    const setType = resolveSetType(this.cachedFormatStructure!, setsWon, openSetNumber(this.state.score.sets));
+  /**
+   * Orient service so `side` serves the next point: flipped exactly when it differs from the base
+   * derivation here (§ 10.6). Live, and at its position on every rebuild.
+   */
+  private applyServerCorrection(side: number): void {
+    const setType = resolveSetType(this.cachedFormatStructure!, this.setsWon(), openSetNumber(this.state.score.sets));
     const baseServer = deriveServerBase(this.state, this.cachedFormatStructure!, setType);
-    this.state.serverFlip = data.side !== baseServer;
+    this.state.serverFlip = side !== baseServer;
   }
 
   /**
@@ -1832,18 +2085,10 @@ export class ScoringEngine {
   private rebuildState(): void {
     const currentPoints = this.state.history?.points ?? [];
 
-    // Create fresh matchUp
-    let newState = createMatchUp({
-      matchUpFormat: this.matchUpFormat,
-      matchUpId: this.matchUpId,
-      isDoubles: this.isDoubles,
-    });
-
-    // Without a timeline no substitution is replayed, so the lineUps on court now are kept as they are
-    for (const side of newState.sides) {
-      const lineUp = this.state.sides.find((s) => s.sideNumber === side.sideNumber)?.lineUp;
-      if (lineUp) side.lineUp = lineUp.map((tc) => ({ ...tc }));
-    }
+    // Like every rebuild it keeps the identity, participants and host metadata (§ 12.1, § 12.6 item 2).
+    // Without a timeline no substitution is replayed, so the lineUps on court now are kept as they are.
+    let newState = this.keptIdentity();
+    newState.history = { points: [] };
 
     // Apply initial score if present (late arrival)
     if (this.initialScore) {
@@ -1871,7 +2116,8 @@ export class ScoringEngine {
   }
 
   /**
-   * Apply initial score to matchUp state
+   * Apply a baseline to matchUp state (§ 2.5): it replaces the score as it stands, and completes a match it
+   * decides.
    */
   private applyInitialScore(matchUp: MatchUp, options: InitialScoreOptions): void {
     if (this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
@@ -1882,58 +2128,74 @@ export class ScoringEngine {
       this.completeCombinedScore(matchUp);
       return;
     }
-    matchUp.score.sets = [];
-    for (let i = 0; i < options.sets.length; i++) {
-      const setData = options.sets[i];
-      const set: SetScore = {
-        setNumber: i + 1,
-        side1Score: setData.side1Score,
-        side2Score: setData.side2Score,
-      };
+    matchUp.score.sets = this.buildBaseline(options).sets;
+    matchUp.matchUpStatus = IN_PROGRESS;
+    delete matchUp.winningSide;
+    delete matchUp.endTime;
+    this.checkMatchCompletion(matchUp);
+  }
 
-      if (setData.side1TiebreakScore !== undefined) {
-        set.side1TiebreakScore = setData.side1TiebreakScore;
-      }
-      if (setData.side2TiebreakScore !== undefined) {
-        set.side2TiebreakScore = setData.side2TiebreakScore;
-      }
+  /**
+   * The sets a baseline gives, each judged by its segment's rule as addSet judges a total (§ 2.5 rule 1),
+   * the final set read from the score; an unfinished last set is the set in play (rule 3). The refusal
+   * says what the baseline cannot be: an unfinished set before another, an unfinished last set beside a
+   * `currentSetScore`, or a winner the rule contradicts.
+   */
+  private buildBaseline(options: InitialScoreOptions): { sets: SetScore[]; refusal?: string } {
+    const formatStructure = this.cachedFormatStructure;
+    const sets: SetScore[] = [];
+    let refusal: string | undefined;
+    const given = options.sets ?? [];
 
-      if (setData.winningSide === undefined) {
-        // Auto-infer winningSide only for completed sets (format-aware).
-        // A 1-2 set in SET3-S:6/TB7 is incomplete — don't mark side 2 as winner.
-        const fs = this.cachedFormatStructure;
-        const isFinalSet = finalSetGoverns(fs, i + 1, i === (fs?.bestOf ?? fs?.exactly ?? 3) - 1);
-        const setFormat = fs?.finalSetFormat && isFinalSet ? fs.finalSetFormat : fs?.setFormat;
-        const setTo = setFormat?.setTo;
-        if (setTo && (setData.side1Score >= setTo || setData.side2Score >= setTo)) {
-          if (setData.side1Score > setData.side2Score) set.winningSide = 1;
-          else if (setData.side2Score > setData.side1Score) set.winningSide = 2;
-        }
-      } else {
-        set.winningSide = setData.winningSide;
-      }
+    for (const [index, total] of given.entries()) {
+      const setNumber = index + 1;
+      const setFormat = setFormatFor(formatStructure, sets, setNumber);
+      const judgement = judgeSetTotal(total, setFormat);
+      const settled = settleSetWinner(total, judgement);
+      refusal ??= settled.refusal;
+      const set = buildJudgedSet(total, setNumber, setFormat, judgement, settled.winningSide);
+      sets.push(set);
+      if (set.winningSide !== undefined || set.segmentComplete) continue;
 
-      matchUp.score.sets.push(set);
+      if (index < given.length - 1) refusal ??= `Set ${setNumber} is not finished and is not the last set`;
+      else if (options.currentSetScore) refusal ??= `Set ${setNumber} is not finished and a currentSetScore follows it`;
+      this.openBaselineSet(set, setFormat, options);
     }
 
     if (options.currentSetScore) {
       const currentSet: SetScore = {
-        setNumber: matchUp.score.sets.length + 1,
+        setNumber: sets.length + 1,
         side1Score: options.currentSetScore.side1Score,
         side2Score: options.currentSetScore.side2Score,
-        side1GameScores: [],
-        side2GameScores: [],
+        side1GameScores: [options.currentGameScore?.side1Points ?? 0],
+        side2GameScores: [options.currentGameScore?.side2Points ?? 0],
       };
-
-      if (options.currentGameScore) {
-        currentSet.side1GameScores = [options.currentGameScore.side1Points];
-        currentSet.side2GameScores = [options.currentGameScore.side2Points];
-      } else {
-        currentSet.side1GameScores = [0];
-        currentSet.side2GameScores = [0];
-      }
-
-      matchUp.score.sets.push(currentSet);
+      sets.push(currentSet);
     }
+
+    return { sets, refusal };
+  }
+
+  /**
+   * An unfinished last set of a baseline as the set in play: the game in play's points, and in a
+   * tiebreak-only segment its running points, which are the game in play there (§ 5 rule 1).
+   */
+  private openBaselineSet(
+    set: SetScore,
+    setFormat: SetFormatStructure | undefined,
+    options: InitialScoreOptions,
+  ): void {
+    if (setFormat?.tiebreakSet) {
+      const points = [set.side1TiebreakScore ?? set.side1Score ?? 0, set.side2TiebreakScore ?? set.side2Score ?? 0];
+      Object.assign(set, { side1Score: 0, side2Score: 0 });
+      delete set.side1TiebreakScore;
+      delete set.side2TiebreakScore;
+      set.side1GameScores = [points[0]];
+      set.side2GameScores = [points[1]];
+      return;
+    }
+    if (set.isTimed) return;
+    set.side1GameScores = [options.currentGameScore?.side1Points ?? 0];
+    set.side2GameScores = [options.currentGameScore?.side2Points ?? 0];
   }
 }

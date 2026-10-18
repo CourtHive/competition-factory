@@ -214,7 +214,7 @@ describe('competitionScheduleMatchUps — public API shape', () => {
 });
 
 /**
- * Regression for the IONSport bug. CODES Phase 2 promoted
+ * Regression for a provider-reported bug. CODES Phase 2 promoted
  * `matchUp.schedule.*` to a first-class object on the source matchUp. In
  * `addMatchUpContext` the original spread order was:
  *
