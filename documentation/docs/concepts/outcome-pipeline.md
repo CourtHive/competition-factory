@@ -179,7 +179,17 @@ TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `s
    if given) and `matchUpStatusCodes` are written.
 3. **Status codes are split at this boundary**: the positional array a client sends (`['', 'DM']`)
    becomes `sideStatusCodes` keyed by side, with the exiting side taken from `winningSide`, not from
-   the index.
+   the index. **Only a client's array is split** (census A1 residue F1b, 2026-10-18). An engine write
+   whose array is not client input (a propagation in `progressExitStatus`; the convergence reconcile and the
+   forward writes in `doubleExitAdvancement`, which re-store the target's own, possibly derived,
+   array; the unwinds in `removeDoubleExit`) passes `derivedStatusCodes`, naming the matchUp it
+   describes. Its array is stored as given. It keeps the reasons the matchUp already holds, plus
+   the real reason it carries for the arriving side, on the sides that exited: both sides of a double
+   exit, the losing side of a single exit. A bare `WO` or `DEF` that the projection wrote is never a
+   reason. The choice is made by origin, not by value: a client's `['WO']` is still split as its
+   reason. v2 plans only the requested matchUp's own write, from client input, and compares
+   `matchUpStatusCodes` as display; it plans no `sideStatusCodes` and no propagation write, so there
+   is nothing to mirror there.
 4. **`scoredTime`** is stamped on `schedule` the first time the matchUp becomes scored (a score with
    value, a winner, or a completed status), kept through corrections, and deleted when the result is
    removed. It is first-class in NATIVE and has no timeItem mirror.
@@ -211,7 +221,9 @@ After the write, and only on success:
 
 1. **Direction.** A winner is advanced to the winner target; the loser is directed along the loser
    link, if the structure has one. A changed result first **removes** what the previous one directed
-   (`removeDirectedParticipants`), and that is where `ERR_ACTIVE_DRAW_POSITION` can arise.
+   (`removeDirectedParticipants`), and that is where `ERR_ACTIVE_DRAW_POSITION` can arise. A loser taken
+   back leaves every seat their loss reached, a link further on included, and no exit stays awarded to
+   a seat so emptied (census A1, `aSeatEmptiedFurtherOnLeavesNoAwardBehind`).
 2. **Exit propagation.** WALKOVER, DEFAULTED and (by policy) RETIRED carry into the consolation the
    loser is fed to; a double exit produces exits downstream. The rules are on
    [exit propagation](./exit-propagation.md) and are not repeated here. `progressExitStatus` iterates
@@ -254,7 +266,9 @@ After the write, and only on success:
    refused call included (census family F2).
 5. **The draw is settled**: held exits are released (`settleHeldExits`), including to a participant
    who already passed the BYE holding them and carries no exit of their own (only an exit whose
-   origin is still a double exit travels this way), and a final that feeds a
+   origin is still a double exit travels this way); the drawPosition opposite a lone BYE, a
+   participant or an empty seat the structure placed there, goes on where its next matchUp has room
+   (`reconcileByeAdvancements`; census A1, `theSeatLeftOppositeAByeGoesOn`); and a final that feeds a
    decider settles whether the decider is needed (`reconcileDeciders`) when a final's winner changed,
    or when the cascade moved a decider while the final's winner stayed put (7.8.0). A mutation OF the
    decider never triggers it, so a decider played anyway keeps its result; in a TEAM draw a line of the
