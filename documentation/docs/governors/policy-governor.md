@@ -60,6 +60,14 @@ type PolicyDefinitions = {
 };
 ```
 
+**What is written, and what refuses:** only the policies given are written, onto the element named (the draw, the
+event, or the tournament). Inherited policies are not copied onto it. A policy type the element already holds is
+refused with `EXISTING_POLICY_TYPE` unless `allowReplacement`; one inherited from the event or tournament does not
+refuse, and the element's own then overrides it. With several tournament records loaded and none named, each record
+that does not hold the policy takes it, and a record that does is skipped; the call is refused only if no record took
+any. The change is announced on the element's topic: `modifyDrawDefinition`, `modifyEvent` or
+`modifyTournamentDetail`.
+
 **Returns:**
 
 ```ts
