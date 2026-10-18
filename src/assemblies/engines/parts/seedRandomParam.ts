@@ -1,4 +1,4 @@
-import { createSeededRandom, type RandomFunction } from '@Tools/prng';
+import { createDerivedRandom, createSeededRandom, type RandomFunction } from '@Tools/prng';
 
 /**
  * The `nonRandom: <seed>` transform, shared by every engine entry point: a numeric seed on a call
@@ -19,4 +19,17 @@ export function seedRandomParam<T extends object>(params: T): T {
     delete seedable.nonRandom;
   }
   return params;
+}
+
+/**
+ * `seedRandomParam` for an engine call, returning the stream for the draws the seed does not reach through `random`
+ * (a bare `UUID()` reads the configured source). Derived BEFORE the seed is consumed, from the same seed and
+ * purpose as the mocksEngine's, so the seed's own stream keeps exactly the draws it always had. The caller scopes
+ * the returned stream around the call with `withCallRandomSource`; undefined when the call is not seeded.
+ */
+export function seedCall(params: object): RandomFunction | undefined {
+  const seed = (params as { nonRandom?: unknown }).nonRandom;
+  const unthreaded = typeof seed === 'number' ? createDerivedRandom(seed, 'unthreaded') : undefined;
+  seedRandomParam(params);
+  return unthreaded;
 }

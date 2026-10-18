@@ -1,6 +1,7 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { modifiedVenueNotices, venueSnapshot } from './venueNotices';
 
 // constants and types
 import { TOURNAMENT_RECORDS, VENUE_IDS } from '@Constants/attributeConstants';
@@ -23,10 +24,12 @@ export function enableVenues(params: EnableVenuesArgs) {
 
   const { venueIds, enableAll } = params;
   for (const tournamentRecord of Object.values(tournamentRecords)) {
+    const snapshot = venueSnapshot(tournamentRecord);
     for (const venue of tournamentRecord.venues ?? []) {
       if (enableAll || venueIds?.includes(venue.venueId))
         setFirstClassOrExtension({ element: venue, attribute: 'disabled', name: DISABLED, value: undefined });
     }
+    modifiedVenueNotices({ tournamentRecord, snapshot });
   }
 
   return { ...SUCCESS };

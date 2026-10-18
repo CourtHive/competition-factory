@@ -1,3 +1,4 @@
+import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 // all child matchUps need to be checked for collectionAssignments which need to be removed when collectionDefinition.collectionIds are removed
 
 import { deleteMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
@@ -58,7 +59,13 @@ type RemoveCollectionDefinitionArgs = {
   event?: Event;
 };
 
-export function removeCollectionDefinition({
+// A tieFormat written to the event, or to event.tieFormats (where a draw's, structure's or matchUp's
+// shared tieFormat lives), modifies the event: announced with MODIFY_EVENT when it changed.
+export function removeCollectionDefinition(params: RemoveCollectionDefinitionArgs) {
+  return withEventChangeNotice(params, () => removeDefinition(params));
+}
+
+function removeDefinition({
   updateInProgressMatchUps = true,
   tieFormatComparison,
   tournamentRecord,
