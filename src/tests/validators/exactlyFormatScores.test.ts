@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { INVALID_SCORE } from '@Constants/errorConditionConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -31,7 +32,11 @@ const sets = (rows: Row[]) =>
   }));
 
 function engineRecords(score: { sets: any[] }, winningSide: number) {
-  mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4, matchUpFormat: FORMAT }], setState: true });
+  // round robin: this format can end level, so an elimination draw refuses it (spec § 9.7 rule 4)
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN, matchUpFormat: FORMAT }],
+    setState: true,
+  });
   const { matchUps } = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [1] } });
   const { matchUpId, drawId } = matchUps[0];
   return tournamentEngine.setMatchUpStatus({

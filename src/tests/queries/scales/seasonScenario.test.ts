@@ -19,7 +19,8 @@ const displayTournamentPoints = false;
 const displayStandingsTable = false;
 const exportOnIncomplete = false; // enable for troubleshooting
 
-const matchUpFormat = 'SET1-S:T30';
+// a tiebreak at time: the playoff structures refuse a format that can end level (spec § 9.7 rule 4)
+const matchUpFormat = 'SET1-S:T30/TB7';
 
 const tieFormat = {
   collectionDefinitions: [

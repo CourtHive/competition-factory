@@ -1,3 +1,4 @@
+import { isDecisionRequired, decisionRequiredSituation } from './decisionRequired';
 import { analyzeRotatingPartnerScore } from '@Query/matchUp/rotatingPartnerScore';
 
 // constants and types
@@ -24,7 +25,7 @@ export function getCombinedPointScore(matchUp: MatchUp, contract: RotatingPartne
     points,
     pointDisplay: [String(points[0]), String(points[1])],
     situation: complete
-      ? undefined
+      ? tiedSituation(matchUp)
       : {
           isBreakPoint: false,
           isGamePoint: false,
@@ -34,5 +35,11 @@ export function getCombinedPointScore(matchUp: MatchUp, contract: RotatingPartne
             contract.tieResolution === 'DECIDING_POINT' && points[0] + points[1] === contract.combinedPointTotal,
           isTiebreak: false,
         },
+    decisionRequired: isDecisionRequired(matchUp),
   };
+}
+
+/** A tie at the total is complete without a winner, and a host must decide it (spec § 7, § 9.7). */
+function tiedSituation(matchUp: MatchUp): ScoreResult['situation'] {
+  return isDecisionRequired(matchUp) ? decisionRequiredSituation() : undefined;
 }

@@ -1,5 +1,5 @@
 export const FORMAT_STANDARD = 'SET3-S:6/TB7'; // Best of 3 Tiebreak Sets to 6
-export const FORMAT_STANDARD_NOAD = 'SET3-S:6NOAD'; // Best of 3 NOAD Sets to 6 with deciding game at 5-5
+export const FORMAT_STANDARD_NOAD = 'SET3-S:6NOAD'; // Best of 3 advantage sets to 6 (no tiebreak), No-Ad games
 export const FORMAT_ATP_DOUBLES = 'SET3-S:6NOAD/TB7-F:TB10'; // Best of 3 Sets to 6, no Ad, Final Set Tiebreak to 10
 export const FORMAT_SHORT_SETS = 'SET3-S:4/TB7'; // Best of 3 Sets to 4
 export const FORMAT_FAST4 = 'SET3-S:4/TB5@3'; // Best of 3 Sets to 4, Tiebreak at 3

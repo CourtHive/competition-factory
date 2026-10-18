@@ -10,7 +10,7 @@ The ScoringEngine supports **two indexing conventions** for `addPoint()`:
 - **0-based** (original): `winner: 0 | 1`, `server: 0 | 1` — where `0` = side 1, `1` = side 2
 - **1-based** ([CODES](/docs/data-standards#codes)-aligned): `winningSide: 1 | 2`, `serverSideNumber: 1 | 2`
 
-You can use either convention. Provide `winner` **or** `winningSide` (not both). Both values are always stored on the resulting `Point` record. Return values like `getWinner()` use CODES convention (1 or 2).
+You can use either convention, or both when they name the same side (two spellings that disagree are refused). Both values are always stored on the resulting `Point` record. Return values like `getWinner()` use CODES convention (1 or 2).
 :::
 
 ## Scoring Methods
@@ -104,7 +104,7 @@ interface AddPointOptions {
 ```
 
 :::tip
-Provide `winner` **or** `winningSide`, not both. The engine normalizes internally — the resulting `Point` record always contains both `winner` and `winningSide`. The same applies to `server` / `serverSideNumber`.
+Provide `winner` or `winningSide`, or both when they name the same side; spellings that disagree are refused. The engine normalizes internally — the resulting `Point` record always contains both `winner` and `winningSide`. The same applies to `server` / `serverSideNumber`.
 :::
 
 #### Stored Point Record
@@ -340,6 +340,11 @@ const score = engine.getScore();
 // { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1 }, ...], ... }
 ```
 
+`decisionRequired` is `true` when the match is `COMPLETED` without a winner: a timed, aggregate or
+exactly-N match that ended level with no declared decider, or a combined-total tie. The `situation`
+of such a match has every flag false and `decisionRequired: true`; a host running an elimination draw
+decides the match outside scoring.
+
 ---
 
 ### getScoreboard
@@ -372,7 +377,8 @@ Get the match winner. Returns `1` (side 1) or `2` (side 2), or `undefined` if no
 isComplete(): boolean
 ```
 
-Check if the match is complete.
+Check if the match is complete. A match that ended level with no declared decider is complete with no
+winner (`getWinner()` is `undefined`), and takes no further segment.
 
 ---
 
@@ -650,6 +656,18 @@ const supplementary = engine.getSupplementaryState();
 localStorage.setItem('matchUp', JSON.stringify(matchUp));
 localStorage.setItem('supplementary', JSON.stringify(supplementary));
 ```
+
+---
+
+### getLegacyShapes
+
+```ts
+getLegacyShapes(): string[]
+```
+
+The legacy shapes the last rebuild met. A stored timeline that scored past a level close, as earlier
+versions did, replays as it was scored and reports `scoringPastLevelClose`; the
+rule applies to new input only.
 
 ---
 

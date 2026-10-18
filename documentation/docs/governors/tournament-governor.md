@@ -2,6 +2,12 @@
 title: Tournament Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`addNotes`](/docs/implementation/records/addNotes), [`getAllowedDrawTypes`](/docs/implementation/records/getAllowedDrawTypes), [`getTournamentTimeItem`](/docs/implementation/scheduling/getTournamentTimeItem). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { tournamentGovernor } from 'tods-competition-factory';
 ```
@@ -60,21 +66,7 @@ record, are root extensions: their change is announced as `modifyTournamentDetai
 
 ## addNotes
 
-Adds notes to a tournament record or specific element.
-
-```js
-engine.addNotes({
-  notes, // required - string or notes object
-  tournamentId, // optional - target tournament
-  participantId, // optional - target participant
-  eventId, // optional - target event
-  drawId, // optional - target draw
-});
-```
-
-**Purpose:** Add textual notes/comments to tournament entities.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`addNotes`](/docs/implementation/records/addNotes). Package-export status is a separate decision.
 
 ## addOnlineResource
 
@@ -237,17 +229,7 @@ const { results } = engine.getAggregateTeamResults({
 
 ## getAllowedDrawTypes
 
-Returns allowed draw types for a specific event based on configuration.
-
-```js
-const { drawTypes } = engine.getAllowedDrawTypes({
-  eventId, // required
-});
-```
-
-**Purpose:** Get valid draw types for event creation.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getAllowedDrawTypes`](/docs/implementation/records/getAllowedDrawTypes). Package-export status is a separate decision.
 
 ## getAllowedMatchUpFormats
 
@@ -414,17 +396,7 @@ const { structures } = engine.getTournamentStructures();
 
 ## getTournamentTimeItem
 
-Returns time items attached to tournament.
-
-```js
-const { timeItem } = engine.getTournamentTimeItem({
-  itemType, // required - time item type
-});
-```
-
-**Purpose:** Query time-based tournament metadata.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getTournamentTimeItem`](/docs/implementation/scheduling/getTournamentTimeItem). Package-export status is a separate decision.
 
 ## hydrateTournamentRecord
 

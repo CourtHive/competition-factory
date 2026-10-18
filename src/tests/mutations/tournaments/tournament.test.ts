@@ -120,7 +120,8 @@ it('can generate a tournament with events and draws', () => {
 
   const matchUp = upcomingMatchUps[0];
   const { matchUpId } = matchUp;
-  const matchUpFormat = 'SET1-S:T10';
+  // timed formats with a tiebreak at time: an elimination draw refuses one that can end level (spec § 9.7)
+  const matchUpFormat = 'SET1-S:T10/TB7';
   tournamentEngine.setMatchUpStatus({
     matchUpFormat,
     matchUpId,
@@ -131,7 +132,7 @@ it('can generate a tournament with events and draws', () => {
   expect(modifiedMatchUp.matchUpId).toEqual(matchUpId);
   expect(modifiedMatchUp.matchUpFormat).toEqual(matchUpFormat);
 
-  const secondMatchUpFormat = 'SET3-S:T10';
+  const secondMatchUpFormat = 'SET3-S:T10/TB7';
   const sets = parseScoreString({ scoreString: '6-3' });
   const score = { sets };
   result = tournamentEngine.setMatchUpStatus({

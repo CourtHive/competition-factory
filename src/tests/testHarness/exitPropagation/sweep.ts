@@ -1,9 +1,11 @@
-import { checkDoUndoIdentity, checkIdempotence, checkMonotonicity } from './properties';
-import { checkErrorAtomicity, checkInvariants, checkIntegrity } from './transitions';
+import { checkArrivalsTrue, checkDoUndoIdentity, checkIdempotence, checkMonotonicity } from './properties';
+import { checkCodesConsistent, checkErrorAtomicity, checkInvariants, checkIntegrity } from './transitions';
 import { clearOutcome, getDrawMatchUps, observeMutation } from './transitions';
+import type { RelationalCoverage } from './properties';
 import type { PropertyFailure } from './transitions';
 
 import mocksEngine from '@Assemblies/engines/mock';
+import tournamentEngine from '@Engines/syncEngine';
 
 // constants
 import {
@@ -236,6 +238,7 @@ export function replay(
   steps: Step[],
   drawId: string,
   policyDefinitions?: any,
+  coverage?: RelationalCoverage,
 ): PropertyFailure | null {
   if (!prepareDraw(config, drawId, policyDefinitions)) return null;
 
@@ -280,6 +283,13 @@ export function replay(
 
   const integrity = checkIntegrity(drawId, '-');
   if (integrity.length) return integrity[0];
+  const arrivals = checkArrivalsTrue(drawId);
+  if (arrivals.length) return arrivals[0];
+  if (coverage) {
+    const inconsistent = checkCodesConsistent(drawId, '-');
+    coverage.codesInconsistentMatchUps += inconsistent.length;
+    if (inconsistent.length) coverage.codesInconsistentDraws += 1;
+  }
 
   // Relational properties, each on the state the schedule produced.
   //
@@ -311,14 +321,31 @@ export function replay(
     candidate,
   }));
 
+  /**
+   * EACH PROPERTY STARTS FROM THE STATE THE SCHEDULE PRODUCED, not from what the previous one left.
+   *
+   * The three ran back to back on one draw. Monotonicity applies the probe's outcome and keeps it; idempotence then
+   * applied the same outcome, saw `mutated: false`, and returned, and do/undo did the same, so neither the second
+   * apply nor the clear ever ran (assessment 2026-10-17, finding 1: on SINGLE_ELIMINATION 8/8 seed 42 every probe
+   * stopped there). Later probes also inherited earlier probes' writes. The record is restored before every
+   * `(probe, property)` instead. Restoring is the harness's own business, so the ban on production snapshot
+   * rollback does not reach it; `setState` deep-copies, so the one snapshot stays pristine across every restore.
+   */
+  const { tournamentRecord: scheduled } = tournamentEngine.getTournament();
+  const properties = [checkMonotonicity, checkIdempotence, checkDoUndoIdentity];
+
   for (const { candidate, outcome } of probes) {
     const params = {
       propagateExitStatus: config.propagateExitStatus,
-      outcome,
       matchUpId: candidate.matchUpId,
+      coverage,
+      outcome,
       drawId,
     };
-    const relational = [...checkMonotonicity(params), ...checkIdempotence(params), ...checkDoUndoIdentity(params)];
+    const relational = properties.flatMap((property) => {
+      tournamentEngine.setState(scheduled);
+      return property(params);
+    });
     if (relational.length) {
       /**
        * THE PROBE IS PART OF THE REPRODUCTION, so it is recorded with the failure.
