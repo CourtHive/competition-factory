@@ -4,7 +4,7 @@ import { convergence, isRelabel, planDirection } from './direction';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { getOutcomePipeline } from '@Global/state/globalState';
+import { cloneState, restoreState } from '@Tools/cloneState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
@@ -12,6 +12,13 @@ import { observeWrite, planWrite } from './write';
 import { refuseOutcome } from './refusals';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
+import {
+  getNoticeBuffer,
+  getOutcomePipeline,
+  readMutationStatus,
+  restoreMutationStatus,
+  setNoticeBuffer,
+} from '@Global/state/globalState';
 
 // constants and types
 import type { BuildViewArgs, DirectionPlan, OutcomeRequest, OutcomeView, Refusal, WithdrawnCarry } from './types';
@@ -53,45 +60,66 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const direction = route ? planDirection(planned, view, route) : undefined;
   const dual = route ? planDual(args, view) : undefined;
 
+  // AN ERROR CHANGES NOTHING (CA, 2026-10-18), and a divergence is an error raised after v1 has written: what the
+  // call touches is captured here, before v1 runs, and written back into the same objects before the divergence leaves
+  const before = cloneState({
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    event: args.event,
+  });
+  const notices = getNoticeBuffer();
+  const modified = readMutationStatus();
+
   return {
     compare: (v1Result) => {
-      const comparison = compareDecisions(refusal, v1Result?.error?.code);
-      if (!comparison.agree)
-        throw new OutcomePipelineDivergence({
-          matchUpId: args.request.matchUpId,
-          v1: comparison.v1,
-          v2: comparison.v2,
-        });
-      if (refusal || v1Result?.error) return differentialTally('refusal', refusal ? 'compared' : 'deferred');
-      checkNoExitBesideBye({ args, route: route ?? 'none' });
-      if (!route || !plan || !args.drawDefinition) return differentialTally(route ?? 'none', 'deferred');
-
-      const { matchUp } = findDrawMatchUp({
-        drawDefinition: args.drawDefinition,
-        matchUpId: args.request.matchUpId as string,
-        event: args.event,
-      });
-      if (!matchUp) return differentialTally(route, 'deferred');
-      const written = compareWrites(plan, observeWrite(matchUp));
-      if (!written.agree)
-        throw new OutcomePipelineDivergence({
-          matchUpId: args.request.matchUpId,
-          v1: `wrote ${written.v1}`,
-          v2: `planned ${written.v2} on route ${route}`,
-        });
-      differentialTally(route, 'compared');
-      if (planned !== args.request) differentialTally('team-autocalc', 'compared');
-
-      // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
-      if (dual) checkDual({ args, route, dual });
-      if (route === 'winner' && isExit(planned.matchUpStatus) && isRelabel(planned, view))
-        differentialTally('winner:relabel-exit', direction?.loser?.exit ? 'compared' : 'deferred');
-      if (!direction) return differentialTally(`${route}:direction`, 'deferred');
-      checkDirection({ args, route, direction });
-      differentialTally(`${route}:direction`, 'compared');
-      if (planned !== args.request) differentialTally('team-autocalc:direction', 'compared');
+      try {
+        compareWithV1(v1Result);
+      } catch (error) {
+        restoreState(before);
+        setNoticeBuffer(notices);
+        restoreMutationStatus(modified); // or the engine stamps the unchanged record as modified
+        throw error;
+      }
     },
   };
+
+  function compareWithV1(v1Result: ResultType) {
+    const comparison = compareDecisions(refusal, v1Result?.error?.code);
+    if (!comparison.agree)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: comparison.v1,
+        v2: comparison.v2,
+      });
+    if (refusal || v1Result?.error) return differentialTally('refusal', refusal ? 'compared' : 'deferred');
+    checkNoExitBesideBye({ args, route: route ?? 'none' });
+    if (!route || !plan || !args.drawDefinition) return differentialTally(route ?? 'none', 'deferred');
+
+    const { matchUp } = findDrawMatchUp({
+      drawDefinition: args.drawDefinition,
+      matchUpId: args.request.matchUpId as string,
+      event: args.event,
+    });
+    if (!matchUp) return differentialTally(route, 'deferred');
+    const written = compareWrites(plan, observeWrite(matchUp));
+    if (!written.agree)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: `wrote ${written.v1}`,
+        v2: `planned ${written.v2} on route ${route}`,
+      });
+    differentialTally(route, 'compared');
+    if (planned !== args.request) differentialTally('team-autocalc', 'compared');
+
+    // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
+    if (dual) checkDual({ args, route, dual });
+    if (route === 'winner' && isExit(planned.matchUpStatus) && isRelabel(planned, view))
+      differentialTally('winner:relabel-exit', direction?.loser?.exit ? 'compared' : 'deferred');
+    if (!direction) return differentialTally(`${route}:direction`, 'deferred');
+    checkDirection({ args, route, direction });
+    differentialTally(`${route}:direction`, 'compared');
+    if (planned !== args.request) differentialTally('team-autocalc:direction', 'compared');
+  }
 }
 
 type CheckArgs = { args: BuildViewArgs; route: string };

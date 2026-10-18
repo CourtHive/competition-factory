@@ -350,7 +350,8 @@ export function checkProfileKeys(
 
   for (const { keys: allowed, path, value } of checks) {
     if (!value || typeof value !== 'object') continue;
-    const unknown = Object.keys(value).find((key) => !allowed.includes(key));
+    const allowedKeys = new Set<string>(allowed);
+    const unknown = Object.keys(value).find((key) => !allowedKeys.has(key));
     if (unknown) {
       const option = path ? `${path}.${unknown}` : unknown;
       return { error: INVALID_VALUES, info: `unknown mocksEngine option: ${option}`, context: { option } };

@@ -1,5 +1,6 @@
 import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addExtension } from '@Mutate/extensions/addExtension';
@@ -67,6 +68,13 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
       modifyDrawNotice({
         drawDefinition: params.drawDefinition,
         tournamentId: params.tournamentId,
+      });
+    } else if (params.event && params.tournamentRecord) {
+      // applied policies are an event extension. Only a call that names its tournament is announced:
+      // the mock generators attach policies to an event before it is added to any record.
+      modifyEventNotice({
+        tournamentId: params.tournamentRecord.tournamentId,
+        event: params.event,
       });
     }
   } else if (params.tournamentRecords) {

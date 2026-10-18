@@ -1,21 +1,16 @@
+import { findResourceCourt, findResourceParticipant, onlineResourceNotice } from './onlineResourceNotices';
 import { findOnlineResourceMatchUp, onlineResourceMatchUpNotice } from './onlineResourceMatchUp';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
 
 // constants and types
+import { COURT_NOT_FOUND, INVALID_PARTICIPANT, NOT_FOUND, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, OnlineResource, Tournament } from '@Types/tournamentTypes';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { IDENTIFIER, NAME } from '@Constants/resourceConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import {
-  COURT_NOT_FOUND,
-  INVALID_PARTICIPANT,
-  NOT_FOUND,
-  PARTICIPANT_NOT_FOUND,
-  VENUE_NOT_FOUND,
-} from '@Constants/errorConditionConstants';
 
 type AddOnlineResourceArgs = {
   onlineResource: OnlineResource;
@@ -41,7 +36,8 @@ export function addOnlineResource(params: AddOnlineResourceArgs): ResultType {
     if (tournamentRecord.parentOrganisation?.parentOrganisationId !== organisationId) {
       return decorateResult({ result: { error: NOT_FOUND } });
     }
-    mergeResource({ element: tournamentRecord.parentOrganisation, onlineResource });
+    if (mergeResource({ element: tournamentRecord.parentOrganisation, onlineResource }))
+      onlineResourceNotice({ tournamentRecord, organisation: true });
   } else if (matchUpId) {
     const { matchUp, error } = findOnlineResourceMatchUp({ drawDefinition: params.drawDefinition, matchUpId });
     if (!matchUp) return decorateResult({ result: { error } });
@@ -50,36 +46,17 @@ export function addOnlineResource(params: AddOnlineResourceArgs): ResultType {
   } else if (participantId && personId && participantId !== personId) {
     return decorateResult({ result: { error: INVALID_PARTICIPANT } });
   } else if (participantId || personId) {
-    const participant = (tournamentRecord.participants ?? []).find(
-      (p) => (personId && p.person?.personId === personId) || p.participantId === participantId,
-    );
-    if (!participant) {
-      if (personId) {
-        return decorateResult({ result: { error: NOT_FOUND } });
-      } else {
-        return decorateResult({ result: { error: PARTICIPANT_NOT_FOUND } });
-      }
-    }
-
-    if (personId) {
-      if (participant.person?.personId !== personId) {
-        // both personId and participantId were provided and person does not match found participant
-        return decorateResult({ result: { error: INVALID_PARTICIPANT } });
-      }
-      mergeResource({ element: participant.person, onlineResource });
-    } else {
-      mergeResource({ element: participant, onlineResource });
-    }
+    const { participant, element, error } = findResourceParticipant({ tournamentRecord, participantId, personId });
+    if (error) return decorateResult({ result: { error } });
+    if (mergeResource({ element, onlineResource })) onlineResourceNotice({ tournamentRecord, participant });
   } else if (courtId) {
-    const court = (tournamentRecord.venues ?? [])
-      .filter((v) => !venueId || v.venueId === venueId)
-      .flatMap((v) => (v.courts ?? []).filter((c) => c.courtId === courtId))?.[0];
+    const { venue, court } = findResourceCourt({ tournamentRecord, courtId, venueId });
     if (!court) return decorateResult({ result: { error: COURT_NOT_FOUND } });
-    mergeResource({ element: court, onlineResource });
+    if (mergeResource({ element: court, onlineResource })) onlineResourceNotice({ tournamentRecord, venue });
   } else if (venueId) {
     const venue = (tournamentRecord.venues ?? []).find((v) => v.venueId === venueId);
     if (!venue) return decorateResult({ result: { error: VENUE_NOT_FOUND } });
-    mergeResource({ element: venue, onlineResource });
+    if (mergeResource({ element: venue, onlineResource })) onlineResourceNotice({ tournamentRecord, venue });
   } else {
     mergeResource({ element: tournamentRecord, onlineResource });
     addNotice({
@@ -95,7 +72,9 @@ export function addOnlineResource(params: AddOnlineResourceArgs): ResultType {
   return { ...SUCCESS };
 }
 
-function mergeResource({ element, onlineResource }: { element: any; onlineResource: OnlineResource }) {
+// true when the element's resources changed: re-adding a resource it already holds changes nothing
+function mergeResource({ element, onlineResource }: { element: any; onlineResource: OnlineResource }): boolean {
+  const before = JSON.stringify(element.onlineResources ?? []);
   const onlineResources = (element.onlineResources ?? []).filter(
     (resource) => resource?.[NAME] !== onlineResource[NAME] && resource?.[IDENTIFIER] !== onlineResource[IDENTIFIER],
   );
@@ -103,5 +82,5 @@ function mergeResource({ element, onlineResource }: { element: any; onlineResour
 
   element.onlineResources = onlineResources;
 
-  return { ...SUCCESS };
+  return JSON.stringify(onlineResources) !== before;
 }

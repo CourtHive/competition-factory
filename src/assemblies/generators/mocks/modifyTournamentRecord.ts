@@ -19,8 +19,8 @@ import { addEvent } from '@Mutate/events/addEvent';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 import type { Tournament } from '@Types/tournamentTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 
 function processExistingEvent({ event, eventProfile, tournamentRecord, allUniqueParticipantIds, drawIds }) {
   const { gender, category, eventType } = event;

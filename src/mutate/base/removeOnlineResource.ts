@@ -1,20 +1,15 @@
+import { findResourceCourt, findResourceParticipant, onlineResourceNotice } from './onlineResourceNotices';
 import { findOnlineResourceMatchUp, onlineResourceMatchUpNotice } from './onlineResourceMatchUp';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
 
 // constants and types
+import { COURT_NOT_FOUND, NOT_FOUND, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { IDENTIFIER, RESOURCE_SUB_TYPE, RESOURCE_TYPE } from '@Constants/resourceConstants';
 import { DrawDefinition, Event, OnlineResource, Tournament } from '@Types/tournamentTypes';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import {
-  COURT_NOT_FOUND,
-  INVALID_PARTICIPANT,
-  NOT_FOUND,
-  PARTICIPANT_NOT_FOUND,
-  VENUE_NOT_FOUND,
-} from '@Constants/errorConditionConstants';
 
 type RemoveOnlineResourceArgs = {
   onlineResource: OnlineResource; // only identifier, resourceType, resourceSubType
@@ -39,43 +34,25 @@ export function removeOnlineResource(params: RemoveOnlineResourceArgs) {
     if (tournamentRecord.parentOrganisation?.parentOrganisationId !== organisationId) {
       return decorateResult({ result: { error: NOT_FOUND } });
     }
-    removeResource({ element: tournamentRecord.parentOrganisation, onlineResource });
+    if (removeResource({ element: tournamentRecord.parentOrganisation, onlineResource }))
+      onlineResourceNotice({ tournamentRecord, organisation: true });
   } else if (matchUpId) {
     const { matchUp, error } = findOnlineResourceMatchUp({ drawDefinition: params.drawDefinition, matchUpId });
     if (!matchUp) return decorateResult({ result: { error } });
     removeResource({ element: matchUp, onlineResource });
     onlineResourceMatchUpNotice({ ...params, matchUp, context: 'removeOnlineResource' });
   } else if (participantId || personId) {
-    const participant = (tournamentRecord.participants ?? []).find(
-      (p) => (personId && p.person?.personId === personId) || p.participantId === participantId,
-    );
-    if (!participant) {
-      if (personId) {
-        return decorateResult({ result: { error: NOT_FOUND } });
-      } else {
-        return decorateResult({ result: { error: PARTICIPANT_NOT_FOUND } });
-      }
-    }
-
-    if (personId) {
-      if (participant.person?.personId !== personId) {
-        // both personId and participantId were provided and person does not match found participant
-        return decorateResult({ result: { error: INVALID_PARTICIPANT } });
-      }
-      removeResource({ element: participant.person, onlineResource });
-    } else {
-      removeResource({ element: participant, onlineResource });
-    }
+    const { participant, element, error } = findResourceParticipant({ tournamentRecord, participantId, personId });
+    if (error) return decorateResult({ result: { error } });
+    if (removeResource({ element, onlineResource })) onlineResourceNotice({ tournamentRecord, participant });
   } else if (courtId) {
-    const court = (tournamentRecord.venues ?? [])
-      .filter((v) => !venueId || v.venueId === venueId)
-      .flatMap((v) => (v.courts ?? []).filter((c) => c.courtId === courtId))?.[0];
+    const { venue, court } = findResourceCourt({ tournamentRecord, courtId, venueId });
     if (!court) return decorateResult({ result: { error: COURT_NOT_FOUND } });
-    removeResource({ element: court, onlineResource });
+    if (removeResource({ element: court, onlineResource })) onlineResourceNotice({ tournamentRecord, venue });
   } else if (venueId) {
     const venue = (tournamentRecord.venues ?? []).find((v) => v.venueId === venueId);
     if (!venue) return decorateResult({ result: { error: VENUE_NOT_FOUND } });
-    removeResource({ element: venue, onlineResource });
+    if (removeResource({ element: venue, onlineResource })) onlineResourceNotice({ tournamentRecord, venue });
   } else {
     removeResource({ element: tournamentRecord, onlineResource });
     addNotice({
@@ -91,7 +68,9 @@ export function removeOnlineResource(params: RemoveOnlineResourceArgs) {
   return { ...SUCCESS };
 }
 
-function removeResource({ element, onlineResource }) {
+// true when a resource was removed
+function removeResource({ element, onlineResource }): boolean {
+  const count = element.onlineResources?.length ?? 0;
   const onlineResources = (element.onlineResources ?? []).filter(
     (resource) =>
       !(
@@ -101,4 +80,5 @@ function removeResource({ element, onlineResource }) {
       ),
   );
   element.onlineResources = onlineResources;
+  return onlineResources.length !== count;
 }

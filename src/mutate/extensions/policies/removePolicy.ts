@@ -1,4 +1,5 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
@@ -45,7 +46,12 @@ export function removePolicy(params: RemovePolicyArgs) {
     params.event ??
     ((params.tournamentId || !params.tournamentRecords) && params.tournamentRecord);
   if (element) {
-    return policyDeletion(params, element);
+    const result = policyDeletion(params, element);
+    // applied policies are an event extension: removing one from the event modifies it
+    if (!result.error && !params.drawDefinition && params.event) {
+      modifyEventNotice({ tournamentId: params.tournamentRecord?.tournamentId, event: params.event });
+    }
+    return result;
   } else if (params.tournamentRecords) {
     const tournamentIds = Object.keys(params.tournamentRecords);
     if (!tournamentIds.length) return { error: MISSING_TOURNAMENT_RECORD };

@@ -1,8 +1,8 @@
 import { generateOutcome } from '@Generators/mocks/generateOutcome';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
-import { createSeededRandom } from '@Tools/prng';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { createSeededRandom } from '@Tools/prng';
 import { describe, expect, it } from 'vitest';
 
 // constants

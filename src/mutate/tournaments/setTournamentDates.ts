@@ -1,5 +1,6 @@
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { modifiedVenueNotices, venueSnapshot } from '@Mutate/venues/venueNotices';
 import { updateCourtAvailability } from '@Mutate/venues/updateCourtAvailability';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
@@ -174,7 +175,10 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
     unscheduledMatchUpIds = forcedUnscheduling.matchUpIds;
   }
 
+  // courts' dateAvailability follows the tournament dates: each venue whose courts changed is announced
+  const venuesBefore = venueSnapshot(tournamentRecord);
   updateCourtAvailability({ tournamentRecord });
+  modifiedVenueNotices({ tournamentRecord, snapshot: venuesBefore });
   addNotice({
     payload: definedAttributes({
       parentOrganisation: tournamentRecord.parentOrganisation,
