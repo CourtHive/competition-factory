@@ -3,8 +3,10 @@ import { reconcileMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/
 import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getDeciderSnapshot, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
+import { settleForwardConsequences } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
+import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { reconcileByeAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileByeAdvancements';
 import { reconcileCarriesPastByes } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
@@ -428,6 +430,14 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   });
   const drawSettled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
   if (drawSettled.error) return decorateResult({ result: drawSettled, stack });
+  // what forward play sends on from a result is sent on from one a removal re-derived: asked of the settled draw
+  const forward = settleForwardConsequences({
+    tournamentRecord: params.tournamentRecord,
+    drawDefinition: params.drawDefinition,
+    event: params.event,
+    propagateExitStatus,
+  });
+  if (forward?.error) return decorateResult({ result: forward, stack });
   // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
   // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
   reconcileLinkAdvancements({
@@ -436,6 +446,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event: params.event,
   });
   const warnings = [
+    ...(forward?.exhausted ? [{ code: FORWARD_SETTLE_EXHAUSTED, matchUpIds: [forward.exhausted] }] : []),
     ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
     ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
   ];
