@@ -825,12 +825,14 @@ Refused with `INVALID_MATCHUP` when `tieMatchUpId` names a SINGLES or DOUBLES ma
 
 ## removeDelegatedOutcome
 
-Removes a delegated outcome from a matchUp.
+Removes a delegated outcome from a matchUp. Announced with `MODIFY_MATCHUP`, as `setDelegatedOutcome` is; a matchUp with
+no delegated outcome sends nothing.
 
 ```js
 engine.removeDelegatedOutcome({
   matchUpId, // required
   drawId, // required
+  disableNotice, // optional boolean - send no notice
 });
 ```
 

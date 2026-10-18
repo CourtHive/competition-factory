@@ -119,6 +119,15 @@ are announced where they change: `addDrawEntries` (and `addEventEntries` / `addE
 send `MODIFY_DRAW_ENTRIES` and `MODIFY_EVENT_ENTRIES` for the lists they change. Seeding publication is event
 publish state announced by its own topics, `PUBLISH_EVENT_SEEDING` and `UNPUBLISH_EVENT_SEEDING`.
 
+The engine's `addExtension` and `removeExtension` announce the stored element they write: the tournament record as
+`MODIFY_TOURNAMENT_DETAIL`, an event, drawDefinition, venue or participant on its own topic. `removePolicy` announces
+the draw, event or tournament it removes from; `setTournamentStatus` sends `MODIFY_TOURNAMENT_DETAIL`;
+`removeStageEntries` and `resetDrawDefinition` send `MODIFY_DRAW_ENTRIES` for the entries they remove;
+`removeDelegatedOutcome` and `pruneDrawDefinition` send `MODIFY_MATCHUP` for the matchUps they change; and
+`generateDrawTypeAndModifyDrawDefinition` on a stored draw sends `ADD_MATCHUPS`. `generateDrawDefinition` for an
+existing `drawId` changes nothing until `addDrawDefinition({ allowReplacement: true })` commits it.
+`addEventEntryPairs` sends `ADD_PARTICIPANTS` once, from `addParticipants`, with the `tournamentId`.
+
 ## The MODIFY_MATCHUP envelope
 
 `tournamentId`, `eventId`, `drawId` and `structureId` ride the notice **envelope**, alongside the `matchUp` itself:
