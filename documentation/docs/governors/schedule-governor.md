@@ -1051,15 +1051,22 @@ engine.matchUpScheduleChange({
 
 ### modifyMatchUpFormatTiming
 
-Updates format timing parameters for scheduling.
+Updates the scheduling timing (average and recovery times) for a `matchUpFormat`, at the tournament level or, with an
+`eventId`, on that event.
 
 ```js
 engine.modifyMatchUpFormatTiming({
   matchUpFormat, // required
-  averageMinutes, // optional - average duration
-  recoveryMinutes, // optional - recovery time
+  averageTimes, // optional - [{ categoryNames?, categoryTypes?, minutes: { default, ... } }]
+  recoveryTimes, // optional - same shape as averageTimes
+  eventId, // optional - write the event's timing instead of the tournament's
+  tournamentId, // optional - only this tournament record
 });
 ```
+
+With an `eventId`, only the record that holds the event is written; an event no loaded record holds is refused with
+`EVENT_NOT_FOUND` and nothing is written. A tournament-level change sends `modifyTournamentDetail`, an event-level change
+`modifyEvent`.
 
 ---
 

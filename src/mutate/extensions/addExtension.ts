@@ -1,3 +1,4 @@
+import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { nowIso } from '@Tools/clock';
@@ -39,11 +40,13 @@ export function addExtension(params?: AddExtensionArgs): {
   if (!params.element) {
     if (params.discover && !params.tournamentId && params.tournamentRecords) {
       for (const tournamentRecord of Object.values(params.tournamentRecords)) {
+        const before = rootExtensionsFingerprint(tournamentRecord);
         const result = addExtension({
           extension: params.extension,
           element: tournamentRecord,
         });
         if (result.error) return decorateResult({ result, stack });
+        rootExtensionsNotice({ tournamentRecord, before });
       }
       return { ...SUCCESS };
     } else {

@@ -44,6 +44,11 @@ const { success, lockId } = engine.addMutationLock({
 
 **Purpose:** Control concurrent access to scoped mutations. See [Mutation Locks](../concepts/mutation-locks.md) for details.
 
+The lock is stored as an extension on the element it locks, and the change is announced on that element's topic
+(`modifyDrawDefinition`, `modifyEvent`, `modifyVenue`). A tournament-level lock, and the feature gate on the tournament
+record, are root extensions: their change is announced as `modifyTournamentDetail` with the record's `extensions`, as
+`addTournamentExtension` and `removeTournamentExtension` announce theirs.
+
 ---
 
 ## addNotes

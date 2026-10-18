@@ -1,3 +1,4 @@
+import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
 import { findParticipant } from '@Acquire/findParticipant';
 import { removeExtension } from './removeExtension';
 import { addExtension } from './addExtension';
@@ -29,11 +30,14 @@ export function addTournamentExtension(params: AddExtensionArgs): {
 } {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
   if (!params.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  return addExtension({
+  const before = rootExtensionsFingerprint(params.tournamentRecord);
+  const result = addExtension({
     creationTime: params.creationTime,
     element: params.tournamentRecord,
     extension: params.extension,
   });
+  if (!result.error) rootExtensionsNotice({ tournamentRecord: params.tournamentRecord, before });
+  return result;
 }
 
 export function addDrawDefinitionExtension(params: AddExtensionArgs) {
@@ -79,10 +83,13 @@ export function removeTournamentExtension(params): {
 } {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
   if (!params.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  return removeExtension({
+  const before = rootExtensionsFingerprint(params.tournamentRecord);
+  const result = removeExtension({
     element: params.tournamentRecord,
     name: params.name,
   });
+  if (!result.error) rootExtensionsNotice({ tournamentRecord: params.tournamentRecord, before });
+  return result;
 }
 
 export function removeDrawDefinitionExtension(params) {

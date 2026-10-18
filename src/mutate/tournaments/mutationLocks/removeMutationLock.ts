@@ -1,3 +1,4 @@
+import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { mutationLockNotice } from './mutationLockNotice';
 import { findExtension } from '@Acquire/findExtension';
@@ -69,6 +70,7 @@ export function removeMutationLock(params: RemoveMutationLockArgs): {
     return { error: UNAUTHORIZED_LOCK_OPERATION };
   }
 
+  const rootBefore = rootExtensionsFingerprint(tournamentRecord);
   locksValue.locks.splice(lockIndex, 1);
 
   addExtension({
@@ -77,6 +79,7 @@ export function removeMutationLock(params: RemoveMutationLockArgs): {
     creationTime: false,
   });
   mutationLockNotice({ tournamentRecord, drawDefinition, event, venue });
+  rootExtensionsNotice({ tournamentRecord, before: rootBefore }); // a tournament-scope lock is a root extension
 
   return { ...SUCCESS };
 }

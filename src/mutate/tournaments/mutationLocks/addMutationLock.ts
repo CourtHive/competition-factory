@@ -1,3 +1,4 @@
+import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { mutationLockNotice } from './mutationLockNotice';
 import { findExtension } from '@Acquire/findExtension';
@@ -64,9 +65,12 @@ export function addMutationLock(params: AddMutationLockArgs): {
   // Read existing locks on this element
   const { extension } = findExtension({ element, name: MUTATION_LOCKS });
   const before = JSON.stringify(extension?.value);
+  // a tournament-scope lock, and the feature gate any lock enables, are root extensions
+  const rootBefore = rootExtensionsFingerprint(tournamentRecord);
   const notice = () => {
     const after = findExtension({ element, name: MUTATION_LOCKS }).extension?.value;
     if (JSON.stringify(after) !== before) mutationLockNotice({ tournamentRecord, drawDefinition, event, venue });
+    rootExtensionsNotice({ tournamentRecord, before: rootBefore });
   };
   const locksValue: MutationLocksValue = extension?.value ?? { locks: [] };
   const now = nowIso();
