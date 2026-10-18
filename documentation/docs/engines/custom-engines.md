@@ -332,15 +332,21 @@ queryEngine.addEvent({}); // also typed — the type does not know what was impo
 
 ## Bundle Size
 
-Measured with esbuild (bundle, minify, tree shaking; ESM output; gzip) against factory 7.14.0 on
-Node 26:
+Measured together from the build at `133cbb00` (2026-10-17, post-7.15 dev), on Node 26.8.1, using
+`pnpm verify:consumer-bundle`: esbuild bundle/minify/tree shaking, ESM output and gzip level 9.
+KB below means 1,024 bytes. Exact fixture bodies and growth budgets are in
+`scripts/verify/consumerBundle.mjs` and `scripts/verify/baseline/consumer-bundle.json`.
 
-| What the application imports                                          | Bundle (gzip) |
-| --------------------------------------------------------------------- | ------------- |
-| `syncEngine` alone                                                    | ≈ 27 KB       |
-| `syncEngine` + `import { queryGovernor }` (named root export)         | ≈ 199 KB      |
-| `syncEngine` + `governors.queryGovernor` (via the `governors` object) | ≈ 523 KB      |
-| `tournamentEngine`                                                    | ≈ 523 KB      |
+| What the application imports             | Bundle (gzip)            |
+| ---------------------------------------- | ------------------------ |
+| `syncEngine` alone                       | 16.1 KB (16,486 bytes)   |
+| `syncEngine` + named `queryGovernor`     | 198.7 KB (203,466 bytes) |
+| `syncEngine` + `governors.queryGovernor` | 523.0 KB (535,550 bytes) |
+| `tournamentEngine`                       | 523.0 KB (535,528 bytes) |
+
+The older 7.14 table's bare-engine figure was about 27 KB. In 7.15, #5471 recorded
+27.1 → 15.7 KB; the current measurement above includes subsequent changes. It is an import-scenario
+measurement, not the size of an entire application. See [7.x performance](../concepts/performance.md).
 
 The third row is the trap. `governors` is an aggregate object holding every governor; once the
 application touches it — even to read a single property — the bundler must retain all of them, so
