@@ -184,9 +184,11 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   }
 
   // Resolve point multiplier for score increment
-  // If scoreValue is explicitly set on options, use it directly (parser override)
+  // If scoreValue is explicitly set on options, use it directly (parser override). A configured multiplier
+  // applies only where a point is a unit; where points build games it is not consulted (§ 4.4, CA 2026-10-18).
   const multipliers = config?.pointMultipliers ?? [];
-  const scoreIncrement = options.scoreValue ?? resolvePointValue(point, multipliers);
+  const countsUnits = pointCountsUnits(newMatchUp, formatStructure, setType, activeSetFormat);
+  const scoreIncrement = options.scoreValue ?? (countsUnits ? resolvePointValue(point, multipliers) : 1);
   if (scoreIncrement !== 1) {
     point.scoreValue = scoreIncrement;
   }
@@ -557,9 +559,32 @@ function handleTimedSet(
  * - in an aggregate format the segment's total is its units: INTENNSE bolts (`SET2XA-S:T10`) score
  *   point by point, with point multipliers.
  */
-function timedSetBuildsGames(formatStructure: FormatStructure | undefined, setFormat: SetFormatStructure): boolean {
+export function timedSetBuildsGames(
+  formatStructure: FormatStructure | undefined,
+  setFormat: SetFormatStructure,
+): boolean {
   if (!formatStructure || formatStructure.matchRoot || formatStructure.simplified) return false;
   return !formatStructure.aggregate && setFormat.based !== 'P';
+}
+
+/**
+ * Whether a point is a unit of the set in play's score, so its value counts (spec § 4.4, § 5 rule 5, § 6.2;
+ * CA 2026-10-18): a tiebreak-only segment (a match tiebreak included), and a timed segment whose points do
+ * not build games. Where points build games (a standard set, a tennis-family timed set, the tiebreak a level
+ * timed set plays at time) and in a combined total, a point is one point and nothing else.
+ */
+export function pointCountsUnits(
+  matchUp: MatchUp,
+  formatStructure: FormatStructure,
+  setType: SetType,
+  setFormat: SetFormatStructure | undefined,
+): boolean {
+  if (!setFormat || setFormat.combinedPointTotal) return false;
+  if (setType === 'tiebreakOnly' || setType === 'matchTiebreak') return true;
+  if (setType !== 'timed' || timedSetBuildsGames(formatStructure, setFormat)) return false;
+  const set = matchUp.score.sets.at(-1);
+  const inPlay = set && openSetNumber(matchUp.score.sets) === matchUp.score.sets.length;
+  return !(inPlay && set.side1TiebreakScore !== undefined && set.side2TiebreakScore !== undefined);
 }
 
 function handleTimedGamePoint(

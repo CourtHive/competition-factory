@@ -726,14 +726,14 @@ describe('ScoringEngine — endSegment', () => {
     expect(set.winningSide).toBe(1); // 2-1 → side 1 wins
   });
 
-  test('endSegment does nothing for already-completed set', () => {
+  test('endSegment on an already-completed set is refused, changing nothing', () => {
+    // a closed segment takes no input, and a second endSegment on it is refused (spec § 6.4, CA 2026-10-18)
     const engine = new ScoringEngine({ matchUpFormat: 'SET7XA-S:T10P' });
     engine.addPoint({ winner: 0 });
     engine.endSegment();
-    const beforeSets = JSON.stringify(engine.getState().score.sets);
-    engine.endSegment({ setNumber: 1 }); // Already completed
-    const afterSets = JSON.stringify(engine.getState().score.sets);
-    expect(beforeSets).toBe(afterSets);
+    const before = engine.getState();
+    expect(() => engine.endSegment({ setNumber: 1 })).toThrow(/closed/);
+    expect(engine.getState()).toEqual(before);
   });
 
   test('endSegment with tied score leaves winningSide undefined but marks segment complete', () => {

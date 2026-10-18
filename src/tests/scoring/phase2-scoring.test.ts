@@ -168,14 +168,17 @@ describe('Phase 2 - addSet() aggregate + exactly formats', () => {
     expect(engine.getState().winningSide).toBe(2);
   });
 
-  test('SET3XA-S:T10 — aggregate tied does not complete', () => {
+  test('SET3XA-S:T10 — aggregate tied completes without a winner', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3XA-S:T10' });
     engine.addSet({ side1Score: 10, side2Score: 10 });
     engine.addSet({ side1Score: 10, side2Score: 10 });
     engine.addSet({ side1Score: 10, side2Score: 10 });
 
-    // Aggregate: 30 vs 30 — tied, no winner
-    expect(engine.getState().matchUpStatus).not.toBe(COMPLETED);
+    // Aggregate: 30 vs 30 — tied, no winner. A timed total is a finished segment (spec § 2.3 rule 4) and a
+    // level aggregate with no declared decider is COMPLETED without a winner (§ 9.3, § 9.7; CA 2026-10-18)
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
+    expect(engine.getState().winningSide).toBeUndefined();
+    expect(engine.getScore().decisionRequired).toBe(true);
   });
 });
 
@@ -295,27 +298,22 @@ describe('Phase 2 - addGame()', () => {
   });
 
   test('tiebreak-only set completion via addGame', () => {
-    // Pickleball: best of 3, games to 11, win by 2
+    // Pickleball: best of 3, games to 11, win by 2. A game is the set won 1-0 (spec § 2.2, § 5; CA 2026-10-18)
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB11' });
-    for (let i = 0; i < 11; i++) engine.addGame({ winner: 0 });
+    engine.addGame({ winner: 0, tiebreakScore: [11, 4] });
 
     const set = engine.getState().score.sets[0];
     expect(set.winningSide).toBe(1);
-    expect(set.side1Score).toBe(11);
+    expect([set.side1Score, set.side2Score, set.side1TiebreakScore, set.side2TiebreakScore]).toEqual([1, 0, 11, 4]);
   });
 
   test('tiebreak-only set needs win by 2', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB11' });
-    for (let i = 0; i < 10; i++) engine.addGame({ winner: 0 });
-    for (let i = 0; i < 10; i++) engine.addGame({ winner: 1 });
+    // 11-10 does not win a race to 11 by two: refused, nothing written
+    expect(() => engine.addGame({ winner: 0, tiebreakScore: [11, 10] })).toThrow();
+    expect(engine.getState().score.sets).toEqual([]);
 
-    // 10-10, not complete yet
-    expect(engine.getState().score.sets[0].winningSide).toBeUndefined();
-
-    engine.addGame({ winner: 0 }); // 11-10
-    expect(engine.getState().score.sets[0].winningSide).toBeUndefined();
-
-    engine.addGame({ winner: 0 }); // 12-10
+    engine.addGame({ winner: 0, tiebreakScore: [12, 10] });
     expect(engine.getState().score.sets[0].winningSide).toBe(1);
   });
 });

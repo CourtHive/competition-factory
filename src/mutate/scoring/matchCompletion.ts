@@ -15,6 +15,14 @@ import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 /** The legacy shape a rebuild met: v1 scored past a level close (spec § 12.8). */
 export const SCORING_PAST_LEVEL_CLOSE = 'scoringPastLevelClose';
 
+/**
+ * The legacy shapes of an entry the action boundary now refuses, or now ignores (spec § 12.8, CA
+ * 2026-10-18): replayed as v1 replayed it. The reducer never writes such an entry live, so its presence on
+ * the timeline proves v1 wrote it.
+ */
+export const LEGACY_REFUSED_INPUT = 'refusedInput';
+export const LEGACY_IGNORED_INPUT = 'ignoredInput';
+
 /** The timeline entries that score: a stored one past a level close proves v1 wrote it (§ 12.8). */
 const SCORING_ENTRY_TYPES = new Set(['point', 'game', 'set', 'endSegment']);
 
