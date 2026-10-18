@@ -1,5 +1,6 @@
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
+import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { collectionGroupUpdate } from './collectionGroupUpdate';
@@ -7,7 +8,13 @@ import { collectionGroupUpdate } from './collectionGroupUpdate';
 // constants
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 
-export function addCollectionGroup({
+// A tieFormat written to the event, or to event.tieFormats (where a draw's, structure's or matchUp's
+// shared tieFormat lives), modifies the event: announced with MODIFY_EVENT when it changed.
+export function addCollectionGroup(params: Parameters<typeof addGroup>[0]) {
+  return withEventChangeNotice(params, () => addGroup(params));
+}
+
+function addGroup({
   updateInProgressMatchUps = true,
   tournamentRecord,
   groupDefinition,

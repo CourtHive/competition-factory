@@ -3,9 +3,9 @@ import { checkAndNotifyUnpublishTournament } from '@Mutate/publishing/checkAndNo
 import { deleteDrawNotice, deleteMatchUpsNotice } from '@Mutate/notifications/drawNotifications';
 import { checkAndUpdateSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { eventAttributesKey, modifyEventNoticeIfChanged } from './eventChangeNotice';
 import { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 import { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
-import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -103,6 +103,8 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
       stack,
     });
 
+  // the flight profile, publish state and deletion telemetry written below are all event attributes
+  const eventBefore = eventAttributesKey(event);
   const flightProfile = makeDeepCopy(getFlightProfile({ event }).flightProfile, false, true);
 
   const positionAssignmentMap = ({ participantId, drawPosition, qualifier, bye }: PositionAssignment) => ({
@@ -220,7 +222,6 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
 
   event.drawDefinitions = filteredDrawDefinitions;
 
-  let eventModified = false;
   if (flightProfile) {
     setFirstClassOrExtension({
       element: event,
@@ -228,7 +229,6 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
       name: FLIGHT_PROFILE,
       value: flightProfile,
     });
-    eventModified = true;
   }
 
   // cleanup references to drawId in schedulingProfile extension
@@ -269,9 +269,10 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
 
   drawIds.forEach((drawId) => deleteDrawNotice({ drawId }));
 
-  // the deleted draws' flightProfile entries were pruned from the event above, so
-  // the event entity changed — cover it with MODIFY_EVENT (symmetric to addDrawDefinition).
-  if (eventModified) modifyEventNotice({ tournamentId: tournamentRecord?.tournamentId, event });
+  // the deleted draws' flightProfile entries were pruned from the event above, its publish state
+  // may have dropped them, and the deletion may be recorded on it (a DRAW_DELETIONS timeItem or a
+  // telemetry extension): any of these modifies the event — cover it with MODIFY_EVENT.
+  modifyEventNoticeIfChanged({ tournamentId: tournamentRecord?.tournamentId, before: eventBefore, event });
 
   if (autoPublish && publishedDrawsDeleted) {
     const result = publishEvent({
