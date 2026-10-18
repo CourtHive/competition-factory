@@ -841,6 +841,10 @@ by a named test that fails without it.
   advances nobody. When that leaves a single produced exit, it awards no empty seat and stands pending, as forward
   play lands it. A double default corrected to a walkover leaves the draw that the walkover alone leaves
   (FEED_IN_CHAMPIONSHIP 16/11 21123326: `aDoubleExitsOwnPositionLeavesEveryRoundItReached`).
+- **An exit re-entered as the other exit relabels its carry, even after its winner played on.** A walkover
+  re-entered as a default for the same winner (or the reverse) relabels the exit its loser carries, on every route,
+  including the one taken once that winner has played on. The draw is the one the new exit entered directly reaches
+  (COMPASS 16/14 6141627: `aRelabelledExitPastAPlayedWinnerRelabelsItsCarry`).
 
 ### Nothing to do is success, not failure
 
