@@ -104,6 +104,14 @@ describe('Generate Qualifying when main exists without a placeholder', () => {
     expect(result.error).toBeUndefined();
     expect(result.success).toEqual(true);
 
+    // a generator builds on a copy of the existing draw; the caller commits it, as TMX does
+    result = tournamentEngine.addDrawDefinition({
+      drawDefinition: result.drawDefinition,
+      allowReplacement: true,
+      eventId,
+    });
+    expect(result.success).toEqual(true);
+
     ({ drawDefinition } = tournamentEngine.getEvent({ drawId }));
 
     // Main is preserved as-is.
@@ -165,6 +173,12 @@ describe('Generate Qualifying when main exists without a placeholder', () => {
       drawSize: 32,
       eventId,
       drawId,
+    });
+    expect(result.success).toEqual(true);
+    result = tournamentEngine.addDrawDefinition({
+      drawDefinition: result.drawDefinition,
+      allowReplacement: true,
+      eventId,
     });
     expect(result.success).toEqual(true);
 

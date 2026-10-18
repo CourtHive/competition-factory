@@ -21,9 +21,15 @@ export function setUpDrawGeneration(params): ResultType & {
     params;
   let { tieFormat } = params;
 
-  const existingDrawDefinition = params.drawId
+  const storedDrawDefinition = params.drawId
     ? (event?.drawDefinitions?.find((d) => d.drawId === params.drawId) as DrawDefinition)
     : undefined;
+  // A generator leaves the record alone: an existing draw (qualifying added to a generated main) is
+  // built on a COPY, which the caller commits with addDrawDefinition({ allowReplacement: true }), and
+  // that announces it. Building on the stored draw changed the record unannounced, before the commit
+  // and whether or not the commit followed.
+  const existingDrawDefinition: DrawDefinition | undefined =
+    storedDrawDefinition && makeDeepCopy(storedDrawDefinition, false, true);
 
   // find existing MAIN structureId if existingDrawDefinition
   const structureId = existingDrawDefinition?.structures?.find(
