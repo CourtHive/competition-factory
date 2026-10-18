@@ -295,6 +295,7 @@ module.exports = {
             'scoring-engine/scoring-engine-api',
             'scoring-engine/event-handlers',
             'scoring-engine/format-support',
+            'scoring-engine/scoring-engine-spec',
             'scoring-engine/visualization-applications',
           ],
         },
