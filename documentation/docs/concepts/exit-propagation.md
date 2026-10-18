@@ -1004,9 +1004,14 @@ named test that fails without it.
   21086952 under `doubleExitPropagateBye: false`, 7 census rows: `anUndoneAwardTakesBackItsLoserSeatBye`).
 - **A BYE matchUp's loser seat keeps its BYE** (A1 wave 4). A BYE matchUp's loser is a BYE, so the ordinary BYE cascade
   gives its loser seat a BYE that no double exit claims. A double exit's cascade that reaches a BYE standing unclaimed
-  records no claim on it, since the BYE predates the cascade; and unwinding a double exit keeps a loser-seat BYE while
-  the matchUp feeding it still holds a BYE. Before this a double exit cleared beside a BYE matchUp took that BYE's loser
-  seat with it (COMPASS 16/15 21036395 and 32/27 21060039, 5 census rows: `aByeMatchUpsLoserSeatKeepsItsBye`).
+  in the loser seat of a matchUp that holds a BYE records no claim on it, since the BYE predates the cascade; and
+  unwinding a double exit keeps a loser-seat BYE while the matchUp feeding it still holds a BYE. Before this a double
+  exit cleared beside a BYE matchUp took that BYE's loser seat with it (COMPASS 16/15 21036395 and 32/27 21060039, 5
+  census rows: `aByeMatchUpsLoserSeatKeepsItsBye`). An unclaimed BYE fed by a matchUp with no BYE is still claimed:
+  FIRST_MATCH_LOSER's BYE for a loser who has already won a match stands for a reason a later result can take away,
+  and the exit that makes the loser nobody is then the BYE's only lasting reason. Skipping that claim let the unwind of
+  one exit clear the seat while another exit still owed it its BYE, and the consolation stalled (FIRST_MATCH_LOSER_CONSOLATION
+  8/8 9000230, all three arms: `aFirstMatchLoserByeIsClaimedByTheExitThatOwesIt`).
 - **A carrier a BYE displaces leaves no carry in any round** (A1 wave 4). A carrier's carry is written in the seat
   they land in and in each matchUp a BYE sends them into. When a propagated BYE takes their seat, the carry is
   withdrawn from every matchUp their position reached, not only the furthest. Before this a BYE-vs-BYE matchUp could

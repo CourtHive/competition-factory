@@ -214,6 +214,7 @@ export function doubleExitAdvancement(params) {
   if (loserTargetStillOpen) {
     const result = advanceByeToLoserMatchUp({
       loserTargetLink: targetLinks?.loserTargetLink,
+      loserSourceMatchUp: sourceMatchUp,
       loserTargetDrawPosition,
       tournamentRecord,
       drawDefinition,
@@ -442,6 +443,7 @@ function handleLoserMatchUp({
       targetFedIn: !!targetFedIn,
     });
     return advanceByeToLoserMatchUp({
+      loserSourceMatchUp: sourceMatchUp,
       loserTargetDrawPosition,
       tournamentRecord,
       loserTargetLink,
@@ -1011,6 +1013,7 @@ function conditionallyAdvanceDrawPosition(params) {
     const { loserTargetLink } = targetLinks;
     const result = advanceByeToLoserMatchUp({
       loserTargetDrawPosition: nextLoserTargetDrawPosition,
+      loserSourceMatchUp: targetMatchUp,
       loserMatchUp: nextLoserMatchUp,
       tournamentRecord,
       loserTargetLink,
@@ -3167,14 +3170,27 @@ function advanceByeToLoserMatchUp(params) {
       drawPosition: loserTargetDrawPosition,
       drawDefinition,
     });
-    // ...except on a BYE that already stands there unclaimed: the BYE cascade put it there (a BYE matchUp's loser is a
-    // BYE), not a double exit, and a claim would let this cascade's unwind take it away (census A1 wave 4, COMPASS 32/27
-    // 21060039: `aByeMatchUpsLoserSeatKeepsItsBye`)
+    // ...except on a BYE that already stands there unclaimed because the matchUp feeding the seat is a BYE matchUp: the
+    // BYE cascade put it there (a BYE matchUp's loser is a BYE), not a double exit, and a claim would let this cascade's
+    // unwind take it away (census A1 wave 4, COMPASS 32/27 21060039: `aByeMatchUpsLoserSeatKeepsItsBye`).
+    // An unclaimed BYE fed by a matchUp WITHOUT a BYE stands for a reason that can lapse, such as FIRST_MATCH_LOSER's
+    // BYE for a loser who has already won a match; the exit's claim is then the BYE's only lasting reason, and skipping
+    // it let the exit's unwind clear the seat while another exit still made its loser nobody (census A1 9000230,
+    // FIRST_MATCH_LOSER_CONSOLATION 8/8: `aFirstMatchLoserByeIsClaimedByTheExitThatOwesIt`).
     const standing = getPositionAssignments({ structure }).positionAssignments?.find(
       (assignment) => assignment.drawPosition === loserTargetDrawPosition,
     );
+    const feeder = params.loserSourceMatchUp;
+    const feederHoldsBye =
+      !!feeder &&
+      matchUpHoldsBye({
+        matchUp: { drawPositions: feeder.drawPositions, structureId: loserTargetLink?.source?.structureId },
+        drawDefinition,
+      });
     const unclaimedBye =
-      !!standing?.bye && !noContextLoserMatchUp.sideExitProvenance?.[claimSide ?? 1]?.byeClaims?.length;
+      feederHoldsBye &&
+      !!standing?.bye &&
+      !noContextLoserMatchUp.sideExitProvenance?.[claimSide ?? 1]?.byeClaims?.length;
     if (!unclaimedBye)
       recordByeClaim({
         sideNumber: claimSide ?? 1,
