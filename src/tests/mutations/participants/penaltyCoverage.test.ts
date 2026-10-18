@@ -7,6 +7,7 @@ import { penaltyConstants } from '@Constants/penaltyConstants';
 import {
   INVALID_VALUES,
   MISSING_PENALTY_ID,
+  MISSING_PENALTY_TYPE,
   NO_VALID_ATTRIBUTES,
   PARTICIPANT_NOT_FOUND,
   PENALTY_NOT_FOUND,
@@ -25,7 +26,7 @@ describe('penalty edge cases', () => {
       participantIds: [tournamentRecord.participants[0].participantId],
       penaltyCode: 'X',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PENALTY_TYPE);
 
     // participantIds that don't exist in tournament
     result = competitionEngine.addPenalty({
