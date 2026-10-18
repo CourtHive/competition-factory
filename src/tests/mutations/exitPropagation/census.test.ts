@@ -1,4 +1,5 @@
 import { generateSchedule, prepareDraw, randomConfig, replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { emptyCoverage } from '@Tests/testHarness/exitPropagation/properties';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, test } from 'vitest';
@@ -109,6 +110,8 @@ test.skipIf(!enabled)(
 
     fs.writeFileSync(outPath, '');
     const byIssue: Record<string, number> = {};
+    // what the relational phase actually executed across the run: a count of schedules says nothing about it
+    const coverage = emptyCoverage();
     let failing = 0;
 
     for (const scenario of scenarios) {
@@ -132,6 +135,7 @@ test.skipIf(!enabled)(
           scenario.steps ?? [],
           `sweep-${seed}`,
           scenario.policyDefinitions ?? policyDefinitions,
+          coverage,
         );
       } catch (err: any) {
         failure = { property: 'NO_EXCEPTION_ESCAPES', matchUpId: '-', detail: String(err?.message ?? err) };
@@ -148,6 +152,9 @@ test.skipIf(!enabled)(
           property: failure.property,
           detail: failure.detail,
           matchUpId: failure.matchUpId,
+          // the relational probe completes the reproduction, and `changes` names what a round trip left behind
+          ...(failure.probe ? { probe: failure.probe } : {}),
+          ...(failure.changes ? { changes: failure.changes } : {}),
           stepCount: scenario.steps?.length,
           config,
         }) + '\n',
@@ -156,7 +163,15 @@ test.skipIf(!enabled)(
 
     fs.appendFileSync(
       outPath,
-      JSON.stringify({ kind: 'SUMMARY', seedStart, seedCount, scenarios: scenarios.length, failing, byIssue }) + '\n',
+      JSON.stringify({
+        kind: 'SUMMARY',
+        seedStart,
+        seedCount,
+        scenarios: scenarios.length,
+        failing,
+        byIssue,
+        coverage,
+      }) + '\n',
     );
 
     // The control: a census that scored no scenarios would report "0 failing" and read as good news.
