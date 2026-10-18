@@ -59,16 +59,16 @@ describe('addPenalty inner guards', () => {
     expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
-  it('hits penaltyAdd !tournamentRecord guard via undefined value in tournamentRecords', () => {
-    // The outer function iterates Object.values(tournamentRecords).
-    // If a value is undefined/null, penaltyAdd's !tournamentRecord guard fires.
+  it('an undefined value in tournamentRecords holds no participants, so none is found', () => {
+    // penaltyAdd's own !tournamentRecord guard is not reachable from here: addPenalty only calls it for a
+    // record holding a matching participant, and an undefined record holds none
     const result = addPenalty({
       tournamentRecords: { t1: undefined } as any,
       participantIds: ['p1'],
       penaltyType: BALL_ABUSE as any,
       penaltyCode: 'TEST',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   it('returns PARTICIPANT_NOT_FOUND when no participants match', () => {
