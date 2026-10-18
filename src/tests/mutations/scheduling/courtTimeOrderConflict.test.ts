@@ -24,7 +24,7 @@ import {
  * CONFLICT_COURT_TIME_ORDER — a court's times out of step with its order of play.
  *
  * TMX detected this on its own until now (`courtTimeOrderIssues.ts`), because `proConflicts` never read
- * `scheduledTime`. Reported from production on BOBOCA, 2026-10-11: the 08:00 match on Court 12 was a
+ * `scheduledTime`. Reported from production, 2026-10-11: the 08:00 match on Court 12 was a
  * walkover, so the director put the next 08:00 match on that court, and the warning fired between them
  * though only one was ever played.
  */
@@ -157,7 +157,7 @@ describe('proConflicts reports CONFLICT_COURT_TIME_ORDER', () => {
     expect(issues().filter((issue) => issue.issueType === CONFLICT_COURT_TIME_ORDER)).toEqual([]);
   });
 
-  it('not for the matchUp a director put on the court of a recorded walkover at the same time (BOBOCA)', () => {
+  it('not for the matchUp a director put on the court of a recorded walkover at the same time (the production case)', () => {
     const { drawId, court, find } = setup();
     const [walkover, next] = [find(1, 1), find(1, 2)];
     place(drawId, walkover.matchUpId, court, 1, '08:00');

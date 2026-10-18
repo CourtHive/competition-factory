@@ -258,9 +258,12 @@ test('empty tournament handles dashboard booleans gracefully', () => {
 
 test('getTournamentInfo surfaces the owning provider (parentOrganisation)', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();
-  tournamentRecord.parentOrganisation = { organisationId: 'BOBOCA', organisationName: 'Boboca Tennis' };
+  tournamentRecord.parentOrganisation = { organisationId: 'PROVIDER-1', organisationName: 'Example Tennis Club' };
   const { tournamentInfo } = getTournamentInfo({ tournamentRecord });
-  expect(tournamentInfo.parentOrganisation).toEqual({ organisationId: 'BOBOCA', organisationName: 'Boboca Tennis' });
+  expect(tournamentInfo.parentOrganisation).toEqual({
+    organisationId: 'PROVIDER-1',
+    organisationName: 'Example Tennis Club',
+  });
 });
 
 test('getTournamentInfo omits parentOrganisation when the tournament has none', () => {

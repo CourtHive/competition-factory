@@ -53,7 +53,7 @@ test('assignDrawPosition is idempotent for the same participant at the same draw
 // The actual production path: an integration re-pushes the full, already-correct
 // position set as an executionQueue batch with rollbackOnError. Pre-fix, the first
 // already-placed participant errored and rolled back the ENTIRE batch (observed with
-// an IONSport 128-method re-sync). Post-fix, each re-assertion is a no-op and the
+// a provider's 128-method re-sync). Post-fix, each re-assertion is a no-op and the
 // batch commits.
 test('a re-asserting executionQueue batch commits instead of rolling back', async () => {
   tournamentEngine.reset();
