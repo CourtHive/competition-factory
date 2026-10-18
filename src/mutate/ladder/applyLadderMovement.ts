@@ -6,6 +6,7 @@ import { isLadder } from '@Query/drawDefinition/isLadder';
 import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { getResultAttestation } from '@Query/ladder/getResultAttestation';
+import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
 
 // constants and types
 import { FORFEIT, INSERTION, RANK, RESULT, movementTriggers } from '@Constants/ladderConstants';
@@ -181,5 +182,6 @@ export function applyLadderMovement(params: MovementArgs): ResultType & { moved?
   }
 
   mirrorStandingToScale({ ...params, touched });
+  if (structure) ladderStandingNotice({ ...params, structure });
   return { ...SUCCESS, moved: true };
 }

@@ -2,9 +2,9 @@ import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems
 import { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGrid';
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { applyScenarioState, ScenarioConflict } from './scenarioState';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { extractDate } from '@Tools/dateTime';
-import { applyScenarioState, ScenarioConflict } from './scenarioState';
 import { now } from '@Tools/clock';
 
 // constants and types

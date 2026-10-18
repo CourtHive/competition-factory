@@ -17,7 +17,7 @@ type RemoveEventMatchUpFormatTimingArgs = {
 };
 export function removeEventMatchUpFormatTiming(params: RemoveEventMatchUpFormatTimingArgs) {
   if (params.event) {
-    return removeTiming({ event: params.event });
+    return removeTiming({ tournamentRecord: params.tournamentRecord, event: params.event });
   } else {
     if (params.tournamentRecord && !params.tournamentRecords) {
       params.tournamentRecords = {
@@ -30,13 +30,14 @@ export function removeEventMatchUpFormatTiming(params: RemoveEventMatchUpFormatT
     const { tournamentRecords, eventId } = params;
     for (const tournamentRecord of Object.values(tournamentRecords ?? {})) {
       const { event } = findEvent({ tournamentRecord, eventId });
-      if (event) return removeTiming({ event });
+      if (event) return removeTiming({ tournamentRecord, event });
     }
   }
 
   return { error: EVENT_NOT_FOUND };
 }
 
-function removeTiming({ event }) {
-  return removeEventExtension({ event, name: SCHEDULE_TIMING });
+// removeEventExtension announces the event when the timing extension was there to remove
+function removeTiming({ tournamentRecord, event }: { tournamentRecord?: Tournament; event: Event }) {
+  return removeEventExtension({ tournamentRecord, event, name: SCHEDULE_TIMING });
 }

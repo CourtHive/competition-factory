@@ -6,9 +6,9 @@ import { getParticipantsCount } from './getParticipantsCount';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
+import type { MockDrawProfile, MockEventProfile, MockParticipantsProfile } from '@Types/mocksTypes';
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 import { Participant, Tournament } from '@Types/tournamentTypes';
-import type { MockDrawProfile, MockEventProfile, MockParticipantsProfile } from '@Types/mocksTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { genParticipantId } from './genParticipantId';
 import { SUCCESS } from '@Constants/resultConstants';

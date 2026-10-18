@@ -40,7 +40,17 @@ type MethodTally = {
 };
 
 // `saved`: the call's notices that a delivery (deleteNotices) cleared from the buffer before its `after`
-type Open = { methodName: string; before: Record<string, any>; mark: number; saved: CapturedNotice[] };
+// `mark`: the sequence number of the first notice this call could have buffered. A sequence number, not
+// an index: a keyed supersession or a deleteNotice can remove notices buffered BEFORE the call (an
+// undelivered notice from a direct, non-engine mutation), and an index would then skip the call's own.
+// `optedOut`: the call passed `disableNotice: true`, asking for no notice; it is not measured
+type Open = {
+  methodName: string;
+  before: Record<string, any>;
+  mark: number;
+  saved: CapturedNotice[];
+  optedOut: boolean;
+};
 
 const MAX_EXAMPLES = 3;
 const MIRRORED = Symbol('noticeCoverageMirror');
@@ -51,7 +61,8 @@ export class NoticeCoverageCollector {
   // every dispatch, whatever its result or provider: which engine methods the suite reaches at all
   private readonly invoked = new Map<string, number>();
   private readonly stack: Open[] = [];
-  private buffered: (CapturedNotice & { key?: string })[] = [];
+  private buffered: (CapturedNotice & { key?: string; seq: number })[] = [];
+  private seq = 0;
   private previous: ((event: InvokeEvent) => void) | undefined;
   testFile = '';
   testName = '';
@@ -86,7 +97,7 @@ export class NoticeCoverageCollector {
       if (result?.success) {
         if (notice.key)
           this.buffered = this.buffered.filter((n) => !(n.topic === notice.topic && n.key === notice.key));
-        this.buffered.push({ topic: notice.topic, payload: notice.payload, key: notice.key });
+        this.buffered.push({ topic: notice.topic, payload: notice.payload, key: notice.key, seq: this.seq++ });
       }
       return result;
     };
@@ -98,7 +109,7 @@ export class NoticeCoverageCollector {
     provider.deleteNotices = () => {
       // engineInvoke delivers and clears BEFORE its `after`: calls still open keep what they buffered
       for (const open of this.stack) {
-        open.saved.push(...this.buffered.slice(open.mark).map(({ topic, payload }) => ({ topic, payload })));
+        open.saved.push(...this.since(open.mark));
         open.mark = 0;
       }
       this.buffered = [];
@@ -122,14 +133,16 @@ export class NoticeCoverageCollector {
 
   private observe(event: InvokeEvent) {
     if (event.phase === 'before') {
-      this.stack.push({ methodName: event.methodName, before: snapshot(), mark: this.buffered.length, saved: [] });
+      const optedOut = event.params?.disableNotice === true;
+      const before = optedOut ? {} : snapshot();
+      this.stack.push({ methodName: event.methodName, before, mark: this.seq, saved: [], optedOut });
       return;
     }
     const index = this.stack.map((open) => open.methodName).lastIndexOf(event.methodName);
     if (index < 0) return;
     const [open] = this.stack.splice(index);
     const result: any = (event as any).result;
-    if (!result || result.error) return;
+    if (!result || result.error || open.optedOut) return;
     this.record(open);
   }
 
@@ -139,10 +152,7 @@ export class NoticeCoverageCollector {
     tally.calls += 1;
 
     const ids = new Set([...Object.keys(open.before), ...Object.keys(after)]);
-    const notices: CapturedNotice[] = [
-      ...open.saved,
-      ...this.buffered.slice(open.mark).map(({ topic, payload }) => ({ topic, payload })),
-    ];
+    const notices: CapturedNotice[] = [...open.saved, ...this.since(open.mark)];
     let changed = false;
     let violating = false;
     for (const id of ids) {
@@ -166,6 +176,10 @@ export class NoticeCoverageCollector {
       const example = `${this.testFile} :: ${this.testName}`;
       if (tally.examples.length < MAX_EXAMPLES && !tally.examples.includes(example)) tally.examples.push(example);
     }
+  }
+
+  private since(mark: number): CapturedNotice[] {
+    return this.buffered.filter((notice) => notice.seq >= mark).map(({ topic, payload }) => ({ topic, payload }));
   }
 
   private methodTally(methodName: string): MethodTally {

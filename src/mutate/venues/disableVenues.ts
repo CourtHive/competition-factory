@@ -1,5 +1,6 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { modifiedVenueNotices, venueSnapshot } from './venueNotices';
 
 // constants
 import { TOURNAMENT_RECORDS, VENUE_IDS } from '@Constants/attributeConstants';
@@ -22,7 +23,9 @@ export function disableVenues(params: DisableVenuesArgs) {
 
   for (const tournamentId of tournamentIds) {
     const tournamentRecord = tournamentRecords[tournamentId];
+    const snapshot = venueSnapshot(tournamentRecord);
     venuesDisable({ tournamentRecord, venueIds });
+    modifiedVenueNotices({ tournamentRecord, snapshot });
   }
 
   return { ...SUCCESS };

@@ -20,6 +20,9 @@ type GetParticipantClashesArgs = {
  *
  * Pairs are taken within `matchUpIds`, or between `matchUpIds` and `otherMatchUpIds` when given. `depth: 'all'` reads
  * every potential however far away (the deep checks), less any `excludeParticipantIds`.
+ *
+ * `clashingPairs` holds each clashing pair once, `[matchUpId, otherMatchUpId]` when `otherMatchUpIds` is given, so a
+ * caller can cite for each matchUp only the matchUps it clashes with.
  */
 export function getParticipantClashes({
   excludeParticipantIds,
@@ -28,7 +31,12 @@ export function getParticipantClashes({
   reachability,
   matchUpIds,
   drawIdOf,
-}: GetParticipantClashesArgs): { clashingMatchUpIds: string[]; participantIds: string[] } {
+}: GetParticipantClashesArgs): {
+  clashingPairs: [string, string][];
+  clashingMatchUpIds: string[];
+  participantIds: string[];
+} {
+  const clashingPairs: [string, string][] = [];
   const clashingMatchUpIds = new Set<string>();
   const participantIds = new Set<string>();
 
@@ -45,14 +53,19 @@ export function getParticipantClashes({
     const alternatives =
       drawIdOf(a) === drawIdOf(b) && !reachability.upstream[a]?.has(b) && !reachability.upstream[b]?.has(a);
 
+    let clashes = false;
     for (const participantId of shared) {
       const certainOfBoth = reachA.certain.includes(participantId) && reachB.certain.includes(participantId);
       if (alternatives && !certainOfBoth) continue;
       participantIds.add(participantId);
+      clashes = true;
+    }
+    if (clashes) {
+      clashingPairs.push([a, b]);
       clashingMatchUpIds.add(a);
       clashingMatchUpIds.add(b);
     }
   }
 
-  return { clashingMatchUpIds: [...clashingMatchUpIds], participantIds: [...participantIds] };
+  return { clashingPairs, clashingMatchUpIds: [...clashingMatchUpIds], participantIds: [...participantIds] };
 }

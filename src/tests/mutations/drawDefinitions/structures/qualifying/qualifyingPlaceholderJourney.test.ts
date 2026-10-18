@@ -89,6 +89,14 @@ describe('two-step qualifying journey: MAIN first, qualifying later', () => {
     });
     expect(result.success).toEqual(true);
 
+    // a generator builds on a copy of the existing draw; the caller commits it, as TMX does
+    result = tournamentEngine.addDrawDefinition({
+      drawDefinition: result.drawDefinition,
+      allowReplacement: true,
+      eventId,
+    });
+    expect(result.success).toEqual(true);
+
     // Verify the regenerated draw has proper qualifying
     ({ drawDefinition } = tournamentEngine.getEvent({ drawId }));
     const newMainStructure = drawDefinition.structures.find((s: any) => s.stage === MAIN);

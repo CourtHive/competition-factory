@@ -323,6 +323,11 @@ console.log(tournamentPolicy.policyName); // "Tournament Default"
 
 Removes a specific policy type from tournaments, events, or draws. If removing the last policy from an element, the entire APPLIED_POLICIES extension is removed.
 
+Only the element's **own** applied policies are read and rewritten: a policy the element inherits from its event or
+tournament is not found on it (`POLICY_NOT_FOUND`), and removing one policy no longer copies the inherited ones onto
+the element. The change is announced on the element's topic: `MODIFY_DRAW_DEFINITION`, `MODIFY_EVENT`, or
+`MODIFY_TOURNAMENT_DETAIL` with the record's `extensions`. A refused call sends nothing.
+
 **Purpose:** Remove policy definitions to restore default behavior or remove outdated policies. Allows selective policy removal while preserving other policies.
 
 **When to Use:**
