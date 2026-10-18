@@ -204,7 +204,7 @@ const parsed = matchUpFormatGovernor.parse('INVALID');
 
 **Notes:**
 
-- Returns `undefined` for invalid format codes, including every code `isValidMatchUpFormat` refuses and every code that does not round-trip through `stringify` (since 7.5.0; see [Validation Logic](#isvalid--isvalidmatchupformat))
+- Returns `undefined` for a code that is not well-formed, including every code that does not round-trip through `stringify` (since 7.5.0; see [Validation Logic](#isvalid--isvalidmatchupformat)). It reads two well-formed kinds that `isValidMatchUpFormat` refuses for new use, so a stored format of either kind still parses and scores
 - Supports standard sets, timed sets, and tiebreak sets
 - Handles special cases like no-advantage (NoAD) games and tiebreaks
 - Timed sets can be games-based (G) or points-based (P); aggregate scoring is signaled by the match-level `A` modifier
@@ -418,9 +418,12 @@ boolean; // true if valid, false if invalid
 ```
 
 **Validation Logic:**
-A code is valid exactly when `parse` accepts it. `parse` refuses every code `isValidMatchUpFormat`
-refuses, so a malformed stored format is never quietly reinterpreted. A code is well-formed when it
-parses, and when its re-stringified form matches it after these equivalent spellings are rewritten:
+`isValidMatchUpFormat` answers whether a code is valid **for a new format**; `parse` answers whether a stored
+code can be read. `parse` refuses every code that is not well-formed, so a malformed stored format is never
+quietly reinterpreted. `isValidMatchUpFormat` also refuses two well-formed kinds, for new use only (scoring
+engine specification § 16, decision 19; CA 2026-10-18): a standard set whose tiebreak comes below S − 1, and an
+aggregate of standard sets. See [parse and stringify](/docs/codes/matchup-format#parse-and-stringify). A code is
+well-formed when it parses, and when its re-stringified form matches it after these equivalent spellings are rewritten:
 
 - a redundant `@N` equal to `setTo`: `SET3-S:6NOAD/TB7@6` is `SET3-S:6NOAD/TB7`;
 - an explicit `WB2`, the default margin of a set with no tiebreak: `SET3-S:5WB2` is `SET3-S:5`;
