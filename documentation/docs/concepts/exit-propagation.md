@@ -989,6 +989,34 @@ named test that fails without it.
   stayed onward, beside the produced exit, and the matchUp read as an undecided walkover holding two participants
   (FEED_IN_CHAMPIONSHIP_TO_SF 16/14 21089693, CURTIS_CONSOLATION 16 21143807, MODIFIED_FEED_IN_CHAMPIONSHIP 16
   21046667 under `allowChangePropagation`: `aPasserComesBackWhenTheHoldersByeGoes`).
+- **An award taken back takes back the BYE it sent over its loser link** (A1 wave 4). A produced exit awarded to the
+  participant who arrives opposite it has nobody for a loser, so its loser seat gets a BYE, which the award claims.
+  When that participant leaves again, over either link, the award goes and the exit stands pending; a pending exit
+  sends nothing over its loser link, so the BYE goes with the award, as it does when a double exit is unwound. Before
+  this the loser seat stayed a BYE that no rebuild of the standing results places (COMPASS 32/27 21081040 and 16/14
+  21086952 under `doubleExitPropagateBye: false`, 7 census rows: `anUndoneAwardTakesBackItsLoserSeatBye`).
+- **A BYE matchUp's loser seat keeps its BYE** (A1 wave 4). A BYE matchUp's loser is a BYE, so the ordinary BYE cascade
+  gives its loser seat a BYE that no double exit claims. A double exit's cascade that reaches a BYE standing unclaimed
+  records no claim on it, since the BYE predates the cascade; and unwinding a double exit keeps a loser-seat BYE while
+  the matchUp feeding it still holds a BYE. Before this a double exit cleared beside a BYE matchUp took that BYE's loser
+  seat with it (COMPASS 16/15 21036395 and 32/27 21060039, 5 census rows: `aByeMatchUpsLoserSeatKeepsItsBye`).
+- **A carrier a BYE displaces leaves no carry in any round** (A1 wave 4). A carrier's carry is written in the seat
+  they land in and in each matchUp a BYE sends them into. When a propagated BYE takes their seat, the carry is
+  withdrawn from every matchUp their position reached, not only the furthest. Before this a BYE-vs-BYE matchUp could
+  keep an entry naming a feeder that had become a BYE, in some entry orders and not others (COMPASS 32/31 21079296, 6
+  census rows: `aDisplacedCarrierLeavesNoCarryInAnyRound`).
+- **An exit carried past a BYE converges with a pending exit beyond it** (A1 wave 4). When a convergence's produced exit
+  is carried past a BYE into a matchUp that nobody has reached and that already holds a pending exit on its other
+  side, the two exits meet there and the matchUp converges, as it does when the pending exit is the one to arrive
+  second. Before this a convergence re-formed by a clear left that matchUp a single WALKOVER (COMPASS 32/29 21129718,
+  2 census rows: `aCarryPastAByeMeetsAPendingExit`).
+- **A dissolved convergence keeps the BYE its single exit sends, and only the claims a single exit makes** (A1 wave 4).
+  Unwinding a double exit that had converged with an awarded single exit re-derives the matchUp to that exit, which
+  has nobody for a loser and sends its loser seat a BYE, as forward play does (COMPASS 32/27 21034527:
+  `aDissolvedConvergenceSendsItsSingleExitsBye`). A single exit records no claim on a BYE that others already claim,
+  because forward play claims only a seat it fills. So when a convergence dissolves to a single exit, its claim on a
+  BYE that others still claim is withdrawn, and the BYE stays theirs (COMPASS 32/31 21055187 under
+  `doubleExitPropagateBye: false`: `aDissolvedConvergenceLeavesASharedByeClaim`).
 
 ### Nothing to do is success, not failure
 

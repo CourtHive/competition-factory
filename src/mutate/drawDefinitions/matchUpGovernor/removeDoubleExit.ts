@@ -1,9 +1,11 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
+import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -228,7 +230,18 @@ export function removeDoubleExit(params) {
       sideNumber: claimSideNumber,
       withdrawnSourceIds,
     });
-    if (anotherClaimSurvives) {
+    // ...and while the matchUp being unwound still holds a BYE of its own. A BYE matchUp's loser is a BYE, so the BYE
+    // cascade gave its loser seat one that no double exit claims; this unwind leaves that BYE where it found it
+    // (census A1 wave 4, COMPASS 16/15 21036395: `aByeMatchUpsLoserSeatKeepsItsBye`).
+    const unwound = inContextDrawMatchUps.find((candidate: HydratedMatchUp) => candidate.matchUpId === matchUpId);
+    const stillHoldsBye =
+      byePropagatedToLoserMatchUp &&
+      !!unwound?.structureId &&
+      matchUpHoldsBye({
+        drawDefinition,
+        matchUp: { drawPositions: unwound.drawPositions, structureId: unwound.structureId },
+      });
+    if (anotherClaimSurvives || stillHoldsBye) {
       return decorateResult({ result: { ...SUCCESS }, stack });
     }
 
@@ -782,6 +795,20 @@ export function conditionallyRemoveDrawPosition(params) {
   // this unwind has just withdrawn — so the retained subset is stamped explicitly rather than
   // inferred from what survived the reset.
   if (unwound.provenance) setSideExitProvenance({ provenance: unwound.provenance, matchUp: noContextTargetMatchUp });
+
+  // RE-DERIVED TO AN AWARDED SINGLE EXIT, the matchUp has nobody for a loser, and sends its loser seat the BYE forward
+  // play gives it (P39). The convergence's claim on that BYE was withdrawn on the way down, which left the BYE to go
+  // with it (census A1 wave 4, COMPASS 32/27 21034527: `aDissolvedConvergenceSendsItsSingleExitsBye`).
+  if (unwound.winningSide && isExit(unwound.matchUpStatus)) {
+    const propagated = propagateUnfillableLoserBye({
+      tournamentRecord: params.tournamentRecord,
+      matchUpId: targetMatchUp.matchUpId,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (propagated?.error) return decorateResult({ result: propagated, stack });
+  }
 
   return { ...SUCCESS };
 }

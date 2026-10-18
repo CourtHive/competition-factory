@@ -376,14 +376,20 @@ export function assignDrawPositionBye({
     ? roundMatchUps?.[roundNumber].find(({ drawPositions }) => drawPositions?.includes(drawPosition))
     : undefined;
 
-  withdrawDisplacedCarry({
-    assignedParticipantId,
-    isPropagationPlacement,
-    drawDefinition,
-    drawPosition,
-    structureId,
-    matchUp,
-  });
+  // The displaced carrier's carry is recorded in each matchUp their seat reached, the one they landed in and the one a
+  // BYE sent them into, so it goes from each, not only from the furthest (census A1 wave 4, COMPASS 32/31 21079296:
+  // `aDisplacedCarrierLeavesNoCarryInAnyRound`)
+  const heldPosition = matchUps.filter((candidate) => candidate.drawPositions?.includes(drawPosition));
+  heldPosition.forEach((held) =>
+    withdrawDisplacedCarry({
+      assignedParticipantId,
+      isPropagationPlacement,
+      drawDefinition,
+      drawPosition,
+      structureId,
+      matchUp: held,
+    }),
+  );
   matchUp && setMatchUpStatusBYE({ preserveScheduling, tournamentRecord, drawDefinition, matchUp, event });
 
   correctResultsAwardedToTheBye({

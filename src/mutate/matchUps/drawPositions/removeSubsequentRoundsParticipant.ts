@@ -7,6 +7,7 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { rekeySideFacts } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
+import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { releaseLinkedWinnerAdvancement } from './releaseLinkedWinnerAdvancement';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -223,8 +224,13 @@ function removeDrawPosition({
   // (exit-propagation.md, "The pending propagated exit"; only a PRODUCED exit waits for an arrival). Clearing it
   // here left a carry that no relabel or withdrawal at its source could recognise as its own (`onlyThisCarry`
   // asks for exactly that award), so the source's change never reached it (census w2 9100478, FICSF 8/5).
+  const wasAwarded = !!matchUp.winningSide;
   matchUp.winningSide = carriedAwardToEmptySeat({ matchUp, positionAssignments, drawDefinition, structureId });
   matchUp.score = undefined;
+  // An award taken back sends nothing over the loser link: the BYE it claimed for a loser who is nobody goes with it
+  // (census A1 wave 4, COMPASS 16/14 21086952: `anUndoneAwardTakesBackItsLoserSeatBye`)
+  if (wasAwarded && !matchUp.winningSide && matchUp.matchUpStatus !== BYE)
+    withdrawByeSeats({ claimantMatchUpId: matchUp.matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
 
   // A LEGACY-ARRAY GATE ON A NATIVE WRITE. Kept: removing it is measured wrong — see the long note at the
   // twin site in `drawPositionPlacement`, where the pair of removals costs 58 tests across 5 files and the

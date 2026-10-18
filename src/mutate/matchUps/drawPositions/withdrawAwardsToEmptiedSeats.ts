@@ -1,4 +1,5 @@
 import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -55,6 +56,16 @@ export function withdrawAwardsToEmptiedSeats({
     });
     if (stands) continue;
     matchUp.winningSide = undefined;
+    // ...and so does the BYE the award sent over its loser link for a loser who is nobody (P39): a pending exit sends
+    // nothing there (census A1 wave 4, COMPASS 32/27 21081040: `anUndoneAwardTakesBackItsLoserSeatBye`)
+    if (resolvedMap)
+      withdrawByeSeats({
+        claimantMatchUpId: matchUp.matchUpId,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap: resolvedMap,
+        event,
+      });
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       context: 'withdrawAwardsToEmptiedSeats',

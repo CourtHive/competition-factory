@@ -1820,6 +1820,24 @@ function advanceFromStandingExit({
   if (exitStandsOnlyOnSide(noContextNextWinnerMatchUp, arrivalSideNumber))
     return decorateResult({ result: { ...SUCCESS }, stack });
 
+  // A PENDING EXIT OPPOSITE THE ARRIVAL, in a matchUp nobody has reached, meets the exit carried in: the matchUp converges,
+  // as it does when the pending exit is the one to arrive second. Advanced from as though it were the double exit, it
+  // recorded nothing (census A1 wave 4, COMPASS 32/29 21129718: `aCarryPastAByeMeetsAPendingExit`).
+  if (arrivalSideNumber && !noContextNextWinnerMatchUp.drawPositions?.filter(Boolean).length) {
+    const converged = convergeWithStandingExit({
+      storedMatchUp: noContextNextWinnerMatchUp,
+      inContextDrawMatchUps,
+      nextWinnerMatchUp,
+      drawDefinition: params.drawDefinition,
+      matchUpsMap: params.matchUpsMap,
+      arrivalSideNumber,
+      pending: true,
+      params,
+      stack,
+    });
+    if (converged) return converged;
+  }
+
   // the exit standing on the next targetMatchUp is on the OTHER side: the arriving exit meets it
   const result = doubleExitAdvancement({
     ...params,
@@ -3107,11 +3125,20 @@ function advanceByeToLoserMatchUp(params) {
       drawPosition: loserTargetDrawPosition,
       drawDefinition,
     });
-    recordByeClaim({
-      sideNumber: claimSide ?? 1,
-      claimantMatchUpId: params.sourceMatchUp?.matchUpId,
-      matchUp: noContextLoserMatchUp,
-    });
+    // ...except on a BYE that already stands there unclaimed: the BYE cascade put it there (a BYE matchUp's loser is a
+    // BYE), not a double exit, and a claim would let this cascade's unwind take it away (census A1 wave 4, COMPASS 32/27
+    // 21060039: `aByeMatchUpsLoserSeatKeepsItsBye`)
+    const standing = getPositionAssignments({ structure }).positionAssignments?.find(
+      (assignment) => assignment.drawPosition === loserTargetDrawPosition,
+    );
+    const unclaimedBye =
+      !!standing?.bye && !noContextLoserMatchUp.sideExitProvenance?.[claimSide ?? 1]?.byeClaims?.length;
+    if (!unclaimedBye)
+      recordByeClaim({
+        sideNumber: claimSide ?? 1,
+        claimantMatchUpId: params.sourceMatchUp?.matchUpId,
+        matchUp: noContextLoserMatchUp,
+      });
   }
 
   /**
