@@ -1035,6 +1035,16 @@ named test that fails without it.
   carry is withdrawn from every matchUp the seat reached, and a BYE origin written opposite that carry goes with it,
   as it does when a double exit is unwound. Before this the origin stood opposite no exit (COMPASS 32/30 21063079:
   `aByeOriginGoesWithTheCarryItStoodOpposite`).
+- **A carry entry is written in each matchUp it is carried into past a BYE, in any round and in either entry order.**
+  A participant carrying their own walkover or default into a seat beside a BYE goes through it, and the BYE matchUp
+  records their carry beside the BYE, whether the carrier was seated first and the BYE arrived after them or the BYE
+  stood there first. Before this the BYE-first order recorded the carry only in a structure's last round, so the same
+  results entered in the two orders left two draws (COMPASS 32, census A1: `Southwest|1|2` and `Southeast|1|1`).
+  Withdrawing the copy instead, once the carry is recorded where the carrier landed, was measured and rejected: a
+  pull-back reads the BYE matchUp's copy to find the carry it takes home. Such a copy is not a held exit once its
+  carrier's seat has gone to a BYE because a correction made the carrier's origin a double exit; only that double exit's
+  produced exit is sent on from there (COMPASS 32/27 20521366: `theWholeDrawIsTheSameInEveryOrder`). Pinned by
+  `aCarryPastAnEarlierRoundByeIsRecordedInEitherOrder`.
 
 ### Nothing to do is success, not failure
 
