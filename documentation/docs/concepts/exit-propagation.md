@@ -852,6 +852,12 @@ by a named test that fails without it.
   (`CANNOT_CHANGE_OUTCOME`) over an untouched draw; before, the BYE's withdrawal took that participant back out and left
   their result standing on an undecided matchUp. With nothing recorded past the BYE the correction is accepted
   (COMPASS 32/27 21027128, under `allowChangePropagation`: `aResultPastAConvergencesByeFixesTheKind`).
+- **A BYE origin waits for its feeder to deliver.** A double exit's produced exit records an origin for the other side
+  of the matchUp it reaches, read from the paired feeder. A feeder reading `BYE` beside a seat that holds neither a
+  participant nor a BYE has delivered nothing: whoever reaches that seat goes on through the BYE, so the side is not
+  decided and records no origin, whether the BYE was placed before the double exit or after it
+  (FIRST_MATCH_LOSER_CONSOLATION 8/7 20498521, `propagateExitStatus: false`, default `doubleExitPropagateBye`:
+  `aByeOriginWaitsForItsFeederToDeliver`).
 
 ### Rules settled by the census in A1 (2026-10-17)
 
