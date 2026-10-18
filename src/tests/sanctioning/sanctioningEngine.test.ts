@@ -388,7 +388,8 @@ describe('Sanctioning Engine — executionQueue', () => {
   });
 
   it('pipes values between directives', () => {
-    let result: any = sanctioningEngine.executionQueue([
+    // the explicit sanctioningId names no record: only a piped id can reach the record just created
+    const directives = (pipe?: any) => [
       {
         method: 'createSanctioningRecord',
         params: {
@@ -399,11 +400,21 @@ describe('Sanctioning Engine — executionQueue', () => {
       },
       {
         method: 'getSanctioningRecord',
-        pipe: { sanctioningId: true },
+        params: { sanctioningId: 'no-such-record' },
+        pipe,
       },
-    ]);
+    ];
+
+    // control: without the pipe the lookup misses
+    let result: any = sanctioningEngine.executionQueue(directives(), true);
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
+    expect(result.rolledBack).toBe(true);
+
+    result = sanctioningEngine.executionQueue(directives({ sanctioningId: true }));
     expect(result.success).toBe(true);
-    expect(result.results[1].sanctioningRecord).toBeDefined();
+    const { sanctioningId } = result.results[0];
+    expect(sanctioningId).toEqual(result.results[0].sanctioningRecord.sanctioningId);
+    expect(result.results[1].sanctioningRecord.sanctioningId).toEqual(sanctioningId);
   });
 
   it('rolls back on error when rollbackOnError is true', () => {

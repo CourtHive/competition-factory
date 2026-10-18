@@ -105,7 +105,7 @@ describe('declaration toolkit — registerCreatedRecord (injected recordKey/idKe
   it('persists + activates a created record, then rejects a duplicate id', () => {
     const store = newStore();
     const created = { success: true, widget: { widgetId: 'w1' } };
-    expect(register(store, created)).toEqual(created);
+    expect(register(store, created)).toEqual({ ...created, widgetId: 'w1' }); // the id is surfaced for a pipe
     expect(store.getRecord('w1')).toEqual({ widgetId: 'w1' });
     expect(store.getActiveId()).toEqual('w1');
 

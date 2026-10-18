@@ -28,7 +28,7 @@ export function addSuspension({
   suspendedFrom,
   suspendedUntil,
   extensions,
-}: AddSuspensionArgs): { error?: any; suspension?: OfficialSuspension; success?: boolean } {
+}: AddSuspensionArgs): { error?: any; suspension?: OfficialSuspension; suspensionId?: string; success?: boolean } {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
 
   const suspension: OfficialSuspension = {
@@ -45,5 +45,5 @@ export function addSuspension({
   officialRecord.suspensions.push(suspension);
   officialRecord.updatedAt = nowIso();
 
-  return { ...SUCCESS, suspension };
+  return { ...SUCCESS, suspension, suspensionId: suspension.suspensionId };
 }
