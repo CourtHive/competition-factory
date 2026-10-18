@@ -1,6 +1,6 @@
 import { addFinishingRounds } from '@Assemblies/generators/drawDefinitions/addFinishingRounds';
+import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { buildTargetIndex, positionTargets } from '@Query/matchUp/positionTargets';
-import { getMappedStructureMatchUps } from '@Query/matchUps/getMatchUpsMap';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -168,6 +168,58 @@ export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMa
   const result = addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
   return result.error ? result : undefined;
 }
+
+/**
+ * What `ensureGoesTo` will write on a draw, held so that a call which is then refused can write it back.
+ *
+ * CA, 2026-10-18: "no, a refused call does not store a draw's missing edges. v1 should no longer do so." The edges are
+ * still written once, before anything is decided on them, because the cascade decides on the STORED ids (#5086); what
+ * that write touches is held here, before it, and the function returned puts it back on an error. A call that
+ * succeeds keeps what was written, and the draw stores its edges from then on.
+ *
+ * A draw that stores its edges has nothing written, so nothing is held: `undefined`, for the cost of the
+ * `hasStoredGoesTo` walk. Otherwise each stored matchUp's `winnerMatchUpId`, `loserMatchUpId`, `finishingRound` and
+ * `finishingPositionRange` (the object, and what it held) is noted, which is all `addGoesTo` and the finishing rounds
+ * it may add write. They are written back into the same matchUps, and the same range objects, as the differential
+ * path writes back what a divergence touched.
+ */
+export function holdGoesTo({
+  drawDefinition,
+  matchUpsMap,
+}: {
+  drawDefinition?: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+}): (() => void) | undefined {
+  if (!drawDefinition || hasStoredGoesTo({ drawDefinition })) return undefined;
+  const matchUps = (matchUpsMap ?? getMatchUpsMap({ drawDefinition })).drawMatchUps;
+  const held = matchUps.map((matchUp) => {
+    const range = matchUp.finishingPositionRange;
+    return {
+      storedValues: GOES_TO_FIELDS.map((key) => [key, key in matchUp, matchUp[key]] as const),
+      range: range && { object: range, values: { ...range } },
+      matchUp,
+    };
+  });
+
+  return () => {
+    for (const { matchUp, storedValues, range } of held) {
+      const target = matchUp as Record<(typeof GOES_TO_FIELDS)[number], unknown>;
+      for (const [key, present, value] of storedValues) {
+        if (present) target[key] = value;
+        else delete target[key];
+      }
+      if (range) {
+        for (const key of Object.keys(range.object)) if (!(key in range.values)) delete range.object[key];
+        Object.assign(range.object, range.values);
+        matchUp.finishingPositionRange = range.object;
+      } else {
+        delete matchUp.finishingPositionRange;
+      }
+    }
+  };
+}
+
+const GOES_TO_FIELDS = ['winnerMatchUpId', 'loserMatchUpId', 'finishingRound'] as const;
 
 /**
  * A draw that does not store its edges is given them (CA, 2026-10-16: a one-time backfill of stored converted records,

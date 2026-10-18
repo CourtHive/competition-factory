@@ -286,6 +286,15 @@ After the write, and only on success:
   clean-up. A refusal must not repair, as a side effect, what an earlier call left; that repair is the
   next accepted call's to make (2026-10-11: the settle step ran after a refusal and was the refused
   call's only write in 55 of 92 census refusals after a write).
+- **A refused call stores none of a draw's missing edges** (CA, 2026-10-18: "no, a refused call does
+  not store a draw's missing edges. v1 should no longer do so."). A draw stored without
+  `winnerMatchUpId` / `loserMatchUpId` (an older record, a file the factory did not produce) is given
+  them once, before anything is decided, because the cascade decides on the stored ids. What that write
+  touches (the edges, `finishingPositionRange`, `finishingRound`) is held before it and written back on
+  any error the call returns: directly, inside `bulkMatchUpStatusUpdate` or `executionQueue`, with or
+  without `rollbackOnError`, and on the async engine. A call that succeeds keeps them, and the draw
+  stores its edges from then on. v2 refuses before the write is made. Pinned by
+  `storedEdgesAreNotRequired.test.ts`.
 - **What one step hands the next is the draw itself.** A context passed between steps carries
   references to the stored matchUps, never copies: the engine's deep-copy setting governs what is
   RETURNED to a caller, never what a mutation reads or writes.
@@ -366,12 +375,13 @@ not read a second time. An entry left beside a BYE whose carrier's seat has sinc
 made the carrier's origin a double exit, is not a held exit, and the settle step does not send it on; only that double
 exit's produced exit travels from there.
 
-**What a divergence leaves behind: nothing.** An error changes nothing (2026-10-18), and a
-divergence is an error raised after v1 has written: v2 plans and never writes, v1 runs and writes,
-and only then does the comparison throw. So before v1 runs, differential mode captures what the call
-can touch (the tournament record, the draw and the event), the notice buffer and the mutation flag,
-and before the divergence leaves `setMatchUpStatus` it writes them back into the same objects. The
-record is then exactly as it was before the call, on every path:
+**What a divergence leaves behind: nothing.** An error changes nothing (2026-10-18; a refused call
+stores none of a draw's missing edges either, § 6), and a divergence is an error raised after v1 has
+written: v2 plans and never writes, v1 runs and writes, and only then does the comparison throw. So
+before v1 runs, differential mode captures what the call can touch (the tournament record, the draw
+and the event), the notice buffer and the mutation flag, and before the divergence leaves
+`setMatchUpStatus` it writes them back into the same objects. The record is then exactly as it was
+before the call, on every path:
 
 - with or without `rollbackOnError`, directly or inside `executionQueue`, and on the async engine;
 - the result is `{ error }` carrying the divergence message, and nothing is notified;

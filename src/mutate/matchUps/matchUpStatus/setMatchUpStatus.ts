@@ -28,6 +28,7 @@ import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { holdGoesTo } from '@Query/matchUps/addGoesTo';
 import { isDoubleExit } from '@Validators/isExit';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
@@ -379,6 +380,15 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   });
   if (v2.refused) return decorateResult({ result: v2.refused, stack });
 
+  // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18: "no, a refused call does not store a draw's
+  // missing edges. v1 should no longer do so."). `setMatchUpState` writes them before deciding anything, and takes
+  // them back on its own refusal; what it held is held here too, for a refusal met after it returned.
+  const releaseEdges = holdGoesTo({ drawDefinition, matchUpsMap });
+  const refuse = (refusal: ResultType) => {
+    releaseEdges?.();
+    return decorateResult({ result: refusal, stack });
+  };
+
   // DECISION: Delegate to setMatchUpState for core status/score setting logic
   // WHY: Separation of concerns - setMatchUpStatus handles API/validation/orchestration,
   // setMatchUpState handles actual state mutations and participant progression logic
@@ -410,7 +420,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     const propagated = propagateExitFrom({ context, params, propagateExitStatus });
     if (propagated?.error) {
       v2.compare?.(propagated);
-      return decorateResult({ result: propagated, stack });
+      return refuse(propagated);
     }
   }
   // A REFUSAL CHANGES NOTHING, so nothing below it runs: no step here may repair, on a refused call, what an earlier
@@ -418,7 +428,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // was the refused call's only write in 55 of 92 refusals after a write).
   if (result.error) {
     v2.compare?.(result);
-    return decorateResult({ result, stack });
+    return refuse(result);
   }
   // Everything has settled — removals, directions and exit propagation — which is the earliest point
   // at which a carried exit's ORIGIN can be asked whether it still describes one. See
@@ -426,7 +436,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   const settled = settleExitOrigins({ params, matchUpId, propagateExitStatus, doubleExitsBefore });
   if (settled?.error) {
     v2.compare?.(settled);
-    return decorateResult({ result: settled, stack });
+    return refuse(settled);
   }
   // and once settled, no matchUp left without a result keeps the `scoredTime` a cascade stamped on it
   reconcileScoredTimes({
@@ -443,7 +453,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event: params.event,
   });
   const drawSettled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
-  if (drawSettled.error) return decorateResult({ result: drawSettled, stack });
+  if (drawSettled.error) return refuse(drawSettled);
   // what forward play sends on from a result is sent on from one a removal re-derived: asked of the settled draw
   const forward = settleForwardConsequences({
     tournamentRecord: params.tournamentRecord,
@@ -451,7 +461,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event: params.event,
     propagateExitStatus,
   });
-  if (forward?.error) return decorateResult({ result: forward, stack });
+  if (forward?.error) return refuse(forward);
   // A direction the forward settle makes can put a BYE back in front of a carrier: a loser it directs re-forms a double
   // exit, whose loser seat takes its BYE again. The carry past a late BYE was asked in `settleDraw`, before that BYE
   // existed, so it is asked again (census A1 wave 3 R12, COMPASS 32: `Southeast|2|1` left TO_BE_PLAYED under its
@@ -462,7 +472,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       drawDefinition: params.drawDefinition,
       event: params.event,
     });
-    if (carried?.error) return decorateResult({ result: carried, stack });
+    if (carried?.error) return refuse(carried);
   }
   // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
   // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
