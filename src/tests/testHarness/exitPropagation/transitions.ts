@@ -133,11 +133,11 @@ export function projectDraw(drawDefinition: any): any {
  * codes, and IDEMPOTENT_REAPPLY and ERROR_IMPLIES_NO_MUTATION still catch one.
  */
 export function projectRoundTrip(drawDefinition: any): any {
-  return projectStructures(drawDefinition, (matchUp: any) => [
+  return projectStructures(drawDefinition, (matchUp: any, structure: any) => [
     matchUp.matchUpId,
     matchUp.matchUpStatus,
     matchUp.winningSide ?? null,
-    canonicalDrawPositions(matchUp.drawPositions),
+    byeRendered(canonicalDrawPositions(matchUp.drawPositions), structure),
     blankToNull(matchUp.sideStatusCodes),
     matchUp.matchUpStatusCode ?? null,
     blankToNull(matchUp.sideExitProvenance),
@@ -145,7 +145,23 @@ export function projectRoundTrip(drawDefinition: any): any {
   ]);
 }
 
-function projectStructures(drawDefinition: any, projectMatchUp: (matchUp: any) => any[]): any {
+/**
+ * A BYE's drawPosition is rendered `BYE`, not as its number (CA, 2026-09-29; census R10, 2026-10-18).
+ *
+ * When two BYEs meet, which of the two seats goes on depends on the order they were placed in, and that is not
+ * information: `correctionDivergence`'s `renderDrawPositions` already renders it so, and its docblock records the
+ * ruling and the measurement. The round trip read the number, so a probe and its clear that sent the other BYE on
+ * reported a residue (COMPASS `Southeast|2|1`, `[2,3]` in 6 entry orders and `[2,4]` in 9). WHERE the BYE sits stays.
+ */
+function byeRendered(slots: any[] | null, structure: any): any[] | null {
+  if (!slots) return slots;
+  const byes = new Set(
+    (structure?.positionAssignments ?? []).filter((assignment: any) => assignment.bye).map((a: any) => a.drawPosition),
+  );
+  return slots.map((drawPosition) => (byes.has(drawPosition) ? 'BYE' : drawPosition));
+}
+
+function projectStructures(drawDefinition: any, projectMatchUp: (matchUp: any, structure: any) => any[]): any {
   const structures: any[] = [];
   const walk = (candidates: any[]) => {
     for (const structure of candidates ?? []) {
@@ -158,7 +174,7 @@ function projectStructures(drawDefinition: any, projectMatchUp: (matchUp: any) =
         positionAssignments: (structure.positionAssignments ?? []).map((assignment: any) =>
           normalize({ ...assignment, extensions: assignment.extensions?.length ? assignment.extensions : undefined }),
         ),
-        matchUps: (structure.matchUps ?? []).map(projectMatchUp),
+        matchUps: (structure.matchUps ?? []).map((matchUp: any) => projectMatchUp(matchUp, structure)),
       });
       if (structure.structures?.length) walk(structure.structures);
     }
