@@ -40,15 +40,17 @@ export function addTournamentParticipants({
   });
 
   const teamKey = participantsProfile?.teamKey;
+  // the profile's own pool, then the call's (an undefined top-level `uuids` replaced the profile's)
+  const idPool = participantsProfile?.uuids ?? uuids;
 
   const generated = generateParticipants({
     consideredDate: startDate,
     ...participantsProfile,
     participantsCount,
     participantType,
+    uuids: idPool,
     gendersCount,
     random,
-    uuids,
   });
   if (generated.error) return generated;
   const participants = generated.participants as Participant[];
@@ -79,9 +81,9 @@ export function addTournamentParticipants({
     const participantId = genParticipantId({
       index: teamIndex,
       participantType,
+      uuids: idPool,
       idPrefix,
       random,
-      uuids,
     });
 
     return {
