@@ -155,8 +155,10 @@ const engine = new ScoringEngine({ matchUpFormat: 'SET7XA-S:TB11' });
 // Play all 7 sets, winner determined by aggregate point total across all sets
 ```
 
-Sets won are not consulted. Every set must be recorded, and a tied total names no winner until a
-deciding point breaks it.
+Sets won are not consulted. Every set must be recorded. A tied total names no winner: with a declared
+decider (`-F:` on an exactly-N aggregate) the decider breaks it; without one, the
+[specification](./scoring-engine-spec.md) (§ 9.7, decided 2026-10-18) completes the match without a
+winner, where v1 still plays on.
 
 ### Exactly N Sets
 
