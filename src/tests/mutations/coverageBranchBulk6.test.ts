@@ -130,7 +130,7 @@ describe('allowedTypes branch coverage', () => {
       categoryName: undefined,
       categoryType: undefined,
     });
-    expect(Array.isArray(result)).toBe(true);
+    expect(result).toEqual([]);
   });
 
   it('getAllowedDrawTypes returns error when tournamentRecord is missing', () => {
@@ -149,7 +149,7 @@ describe('allowedTypes branch coverage', () => {
       categoryName: undefined,
       categoryType: undefined,
     });
-    expect(Array.isArray(result)).toBe(true);
+    expect(result).toEqual([]);
   });
 
   it('getAllowedMatchUpFormats filters by categoryName', () => {

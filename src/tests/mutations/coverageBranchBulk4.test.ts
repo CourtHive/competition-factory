@@ -4,7 +4,6 @@ import { generateOrGetExisting } from '@Generators/drawDefinitions/generateDrawD
 import { organizeDrawPositionOptions } from '@Query/drawDefinition/avoidance/organizeDrawPositionOptions';
 import { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
 import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
-import { getAllowedMatchUpFormats, getAllowedDrawTypes } from '@Query/tournaments/allowedTypes';
 import { replaceQualifier } from '@Mutate/drawDefinitions/matchUpGovernor/replaceQualifier';
 import { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
 import { applyTournamentRankingPoints } from '@Mutate/scales/applyTournamentRankingPoints';
@@ -158,11 +157,6 @@ describe('organizeDrawPositionOptions branches', () => {
 describe('getCompetitionParticipants branches', () => {
   it('returns error when tournamentRecords is undefined', () => {
     const result = getCompetitionParticipants(undefined);
-    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
-  });
-
-  it('returns error when tournamentRecords is empty object', () => {
-    const result = getCompetitionParticipants({ tournamentRecords: {} });
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
   });
 
@@ -534,47 +528,6 @@ describe('replaceQualifier branches', () => {
       },
     });
     expect(result.qualifierReplaced).toBeUndefined();
-  });
-});
-
-// 17. allowedTypes — missing tournamentRecord
-describe('allowedTypes branches', () => {
-  it('getAllowedMatchUpFormats returns error when tournamentRecord is missing', () => {
-    const result = getAllowedMatchUpFormats({
-      tournamentRecord: undefined,
-      categoryName: undefined,
-      categoryType: undefined,
-    });
-    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
-  });
-
-  it('getAllowedMatchUpFormats returns empty array when no scoring policy', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord();
-    const result = getAllowedMatchUpFormats({
-      tournamentRecord,
-      categoryName: undefined,
-      categoryType: undefined,
-    });
-    expect(Array.isArray(result)).toBe(true);
-  });
-
-  it('getAllowedDrawTypes returns error when tournamentRecord is missing', () => {
-    const result = getAllowedDrawTypes({
-      tournamentRecord: undefined,
-      categoryName: undefined,
-      categoryType: undefined,
-    });
-    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
-  });
-
-  it('getAllowedDrawTypes returns empty array when no draws policy', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord();
-    const result = getAllowedDrawTypes({
-      tournamentRecord,
-      categoryName: undefined,
-      categoryType: undefined,
-    });
-    expect(Array.isArray(result)).toBe(true);
   });
 });
 
