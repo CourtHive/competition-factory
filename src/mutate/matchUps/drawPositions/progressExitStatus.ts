@@ -2,6 +2,7 @@ import { assignMatchUpDrawPosition, directWinner } from '@Mutate/matchUps/drawPo
 import { getSideStatusCode } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -197,7 +198,7 @@ export function progressExitStatus({
       const stored = getMatchUpsMap({ drawDefinition })?.drawMatchUps?.find(
         (m) => m.matchUpId === loserMatchUp.matchUpId,
       );
-      mergeSideExitProvenance({
+      const recorded = mergeSideExitProvenance({
         provenance: buildCarriedExitProvenance({
           exitingSideNumber: loserParticipantSide.sideNumber,
           previousMatchUpStatus: sourceMatchUpStatus,
@@ -206,6 +207,17 @@ export function progressExitStatus({
         }),
         matchUp: stored,
       });
+      // The BYE matchUp's state is not rewritten (it stays a BYE), so no state write announces it: the entry is
+      // announced here, or a notice-driven save (a server projection, an embedding client) never sees it.
+      if (recorded && stored)
+        modifyMatchUpNotice({
+          tournamentId: tournamentRecord?.tournamentId,
+          eventId: event?.eventId,
+          context: stack,
+          matchUp: stored,
+          drawDefinition,
+          event,
+        });
     };
 
     // RULE 1 — opponent is a BYE: the participant advances through it (the BYE

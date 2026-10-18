@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 /**
  * A completed aggregate or outs result is a validated winning score (2026-10-17).
@@ -94,23 +95,25 @@ describe('timed aggregate (INTENNSE)', () => {
 describe('the revert guard now protects these results', () => {
   it('a COMPLETED outs matchUp with a validated score is not reverted to IN_PROGRESS', () => {
     mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawId: 'blw', drawSize: 4, idPrefix: 'm', matchUpFormat: OUTS }],
+      // round robin: an aggregate with no decider can end level, which an elimination draw refuses (spec § 9.7)
+      drawProfiles: [{ drawId: 'blw', drawSize: 4, drawType: ROUND_ROBIN, matchUpFormat: OUTS }],
       setState: true,
     });
+    const matchUpId = tournamentEngine.allTournamentMatchUps().matchUps?.[0]?.matchUpId;
     let result: any = tournamentEngine.setMatchUpStatus({
       outcome: { score: { sets: ONE_RUN_WIN }, winningSide: 1, matchUpStatus: COMPLETED },
-      matchUpId: 'm-1-1',
       drawId: 'blw',
+      matchUpId,
     });
     expect(result.success).toEqual(true);
 
     result = tournamentEngine.setMatchUpStatus({
       outcome: { matchUpStatus: IN_PROGRESS },
-      matchUpId: 'm-1-1',
       drawId: 'blw',
+      matchUpId,
     });
     expect(result.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
-    const { matchUp }: any = tournamentEngine.findMatchUp({ matchUpId: 'm-1-1' });
+    const { matchUp }: any = tournamentEngine.findMatchUp({ matchUpId });
     expect(matchUp.matchUpStatus).toEqual(COMPLETED);
   });
 });

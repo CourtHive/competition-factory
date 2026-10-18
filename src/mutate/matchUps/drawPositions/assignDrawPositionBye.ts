@@ -379,17 +379,27 @@ export function assignDrawPositionBye({
   // The displaced carrier's carry is recorded in each matchUp their seat reached, the one they landed in and the one a
   // BYE sent them into, so it goes from each, not only from the furthest (census A1 wave 4, COMPASS 32/31 21079296:
   // `aDisplacedCarrierLeavesNoCarryInAnyRound`)
+  // and each matchUp it goes from is announced: only the furthest is rewritten, as a BYE, and announced by that write
   const heldPosition = matchUps.filter((candidate) => candidate.drawPositions?.includes(drawPosition));
-  heldPosition.forEach((held) =>
-    withdrawDisplacedCarry({
+  heldPosition.forEach((held) => {
+    const withdrawn = withdrawDisplacedCarry({
       assignedParticipantId,
       isPropagationPlacement,
       drawDefinition,
       drawPosition,
       structureId,
       matchUp: held,
-    }),
-  );
+    });
+    if (withdrawn)
+      modifyMatchUpNotice({
+        tournamentId: tournamentRecord?.tournamentId,
+        context: 'withdrawDisplacedCarry',
+        eventId: event?.eventId,
+        drawDefinition,
+        matchUp: held,
+        event,
+      });
+  });
   matchUp && setMatchUpStatusBYE({ preserveScheduling, tournamentRecord, drawDefinition, matchUp, event });
 
   correctResultsAwardedToTheBye({
@@ -658,19 +668,19 @@ function withdrawDisplacedCarry({
   drawPosition: number;
   structureId?: string;
   matchUp?: MatchUp;
-}): void {
+}): boolean {
   // only a participant a propagated BYE displaces carried an exit onto this seat
-  if (!matchUp || !assignedParticipantId || !isPropagationPlacement) return;
+  if (!matchUp || !assignedParticipantId || !isPropagationPlacement) return false;
   const sideNumber = getDrawPositionSideNumber({
     matchUp: { ...matchUp, sides: undefined },
     drawDefinition,
     drawPosition,
     structureId,
   });
-  if (sideNumber !== 1 && sideNumber !== 2) return;
+  if (sideNumber !== 1 && sideNumber !== 2) return false;
   const provenance = getSideExitProvenance({ matchUp });
   const entry = provenance?.[sideNumber];
-  if (!entry || !carriedExitStatus(entry)) return;
+  if (!entry || !carriedExitStatus(entry)) return false;
   const kept = { ...provenance };
   if (entry.byeClaims?.length) kept[sideNumber] = { byeClaims: [...entry.byeClaims] };
   else delete kept[sideNumber];
@@ -682,6 +692,7 @@ function withdrawDisplacedCarry({
   }
   setSideExitProvenance({ matchUp, provenance: kept });
   blankSideExitCode(matchUp, sideNumber);
+  return true;
 }
 
 /**

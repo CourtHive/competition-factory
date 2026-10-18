@@ -287,6 +287,7 @@ function checkSelectedDrawFormats(
         matchUpFormat,
         structureIds: writesDrawFormat ? undefined : selectedStructures,
         matchUpId: writesDrawFormat ? undefined : matchUpId,
+        event: evt,
         force,
       });
       if (check.error) return check;

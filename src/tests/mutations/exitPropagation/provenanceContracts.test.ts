@@ -33,7 +33,13 @@ const carried = { previousMatchUpStatus: DOUBLE_WALKOVER, matchUpStatus: WALKOVE
 
 describe('a provenance write with nothing to write to changes nothing', () => {
   it('mergeSideExitProvenance', () => {
-    expect(mergeSideExitProvenance({ matchUp: undefined as any, provenance: { 1: carried } as any })).toBeUndefined();
+    // it reports whether it wrote, so a caller can announce what it changed
+    expect(mergeSideExitProvenance({ matchUp: undefined as any, provenance: { 1: carried } as any })).toBe(false);
+
+    // CONTROL: the same call with a matchUp to write to does write, and says so
+    const matchUp: any = { matchUpId: 'm' };
+    expect(mergeSideExitProvenance({ matchUp, provenance: { 1: carried } as any })).toBe(true);
+    expect(matchUp.sideExitProvenance).toEqual({ 1: carried });
   });
 
   it('clearSideExitProvenance', () => {

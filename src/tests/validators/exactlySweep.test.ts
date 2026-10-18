@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 // constants
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { INVALID_SCORE } from '@Constants/errorConditionConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 /**
  * An `exactly` format plays every set, so a sweep is a win.
@@ -26,7 +27,8 @@ function record(matchUpFormat: string, sets: any[], winningSide: number) {
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, matchUpFormat }],
+    // round robin: an exactly-N format can end level, so an elimination draw refuses it (spec § 9.7 rule 4)
+    drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN, matchUpFormat }],
     completeAllMatchUps: false,
     nonRandom: 1,
   });

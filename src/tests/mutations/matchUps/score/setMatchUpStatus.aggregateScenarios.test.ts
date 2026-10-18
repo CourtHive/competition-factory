@@ -4,7 +4,7 @@ import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 const exactly3aggregateTimedSets = 'SET3XA-S:T10';
 
@@ -12,7 +12,7 @@ function generateMatchUpOutcome(params: { matchUpFormat: string }) {
   const drawProfiles = [
     {
       matchUpFormat: params.matchUpFormat,
-      drawType: SINGLE_ELIMINATION,
+      drawType: ROUND_ROBIN, // an elimination draw refuses a format that can end level (spec § 9.7)
       drawSize: 4,
     },
   ];
