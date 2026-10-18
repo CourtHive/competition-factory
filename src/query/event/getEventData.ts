@@ -9,7 +9,6 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import { getVenueData } from '@Query/venues/getVenueData';
-import { storeGoesTo } from '@Query/matchUps/addGoesTo';
 import { findExtension } from '@Acquire/findExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findEvent } from '@Acquire/findEvent';
@@ -87,11 +86,6 @@ function getEventDataUnredacted(params: GetEventDataArgs): {
     : (foundEvent && makeDeepCopy(foundEvent, false, true)) || undefined;
 
   if (!event) return { error: EVENT_NOT_FOUND };
-
-  // A draw built outside the factory may not store its edges until a scored matchUp stores them, and the bracket is
-  // drawn from `winnerMatchUpId` / `loserMatchUpId` (an integrator report, 2026-10-18). The event is this query's own
-  // copy, so they are derived onto it: the bracket reads the same before and after the first score.
-  for (const drawDefinition of event.drawDefinitions ?? []) storeGoesTo(drawDefinition);
 
   const { eventId } = event;
   const { tournamentId, endDate } = tournamentRecord;

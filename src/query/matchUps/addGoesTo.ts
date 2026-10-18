@@ -9,9 +9,9 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type AddGoesToArgs = {
@@ -211,6 +211,19 @@ function storedGoesTo(drawDefinition: DrawDefinition): string {
         finishingRound,
       ]),
   );
+}
+
+/**
+ * The draw as a READ should see it, without writing to it: a draw that does not store what `addGoesTo` derives is read
+ * from a copy that carries it (`storeGoesTo` on the copy), and the draw handed in is never changed. A draw that owes
+ * nothing, or that nothing can be derived for (an AD_HOC draw), is returned as it is and costs no copy.
+ */
+export function drawWithDerivedGoesTo(drawDefinition: DrawDefinition): DrawDefinition {
+  if (hasStoredGoesTo({ drawDefinition }) && !needsFinishingRounds(drawDefinition)) return drawDefinition;
+  if (drawDefinition.structures?.some((structure) => isAdHoc({ structure }))) return drawDefinition;
+  const copy = makeDeepCopy(drawDefinition, false, true);
+  storeGoesTo(copy);
+  return copy;
 }
 
 /**
