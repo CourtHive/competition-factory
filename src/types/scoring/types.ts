@@ -676,6 +676,12 @@ export interface PointSituation {
   isTiebreak: boolean;
   /** Who serves next: 0 = side 1, 1 = side 2 */
   server?: 0 | 1;
+  /**
+   * The match is COMPLETED without a winner (a level close with no declared decider, or a combined
+   * total's tie), so a host running an elimination draw must decide it (spec § 9.7, § 11.2). Present,
+   * and true, only then.
+   */
+  decisionRequired?: boolean;
 }
 
 /**
@@ -690,6 +696,8 @@ export interface ScoreResult {
   pointDisplay?: [string, string];
   /** Situation booleans for the next point to be played */
   situation?: PointSituation;
+  /** The match is COMPLETED without a winner and a host must decide it (spec § 9.7, § 11.2) */
+  decisionRequired?: boolean;
 }
 
 /**

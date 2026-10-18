@@ -17,6 +17,7 @@ import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { checkStandardGameWon, checkTiebreakWon } from './gameWon';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 import type { PointMultiplier } from './resolvePointValue';
+import { checkAndFinalizeMatch } from './matchCompletion';
 import { calculatePointsTo } from './pointsToCalculator';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { resolvePointValue } from './resolvePointValue';
@@ -667,71 +668,6 @@ function getOrCreateSet(matchUp: MatchUp, isTiebreakOnly: boolean, isTimed: bool
 
   matchUp.score.sets.push(newSet);
   return newSet;
-}
-
-/**
- * Check match completion and finalize if complete
- */
-export function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatStructure, setsToWin: number): void {
-  const setsWon: [number, number] = [0, 0];
-  matchUp.score.sets.forEach((set) => {
-    if (set.winningSide === 1) setsWon[0]++;
-    if (set.winningSide === 2) setsWon[1]++;
-  });
-
-  const isAggregate = isAggregateFormat(formatStructure);
-  const exactly = formatStructure.exactly;
-
-  if (isAggregate) {
-    // Aggregate: all sets must be played, winner by total score
-    // Use sets.length (not winningSide filter) because tied sets are valid in aggregate formats
-    const totalSets = exactly || formatStructure.bestOf || 3;
-    const playedSets = matchUp.score.sets.length;
-    if (playedSets < totalSets) return;
-
-    // Sum scores
-    const totals = matchUp.score.sets.reduce(
-      (acc, set) => {
-        // For tiebreak-only sets, use tiebreak scores. A timed set's own score is its total, even when a
-        // tiebreak at time decided it.
-        if (!set.isTimed && set.side1TiebreakScore !== undefined && set.side2TiebreakScore !== undefined) {
-          acc[0] += set.side1TiebreakScore;
-          acc[1] += set.side2TiebreakScore;
-        } else {
-          acc[0] += set.side1Score ?? 0;
-          acc[1] += set.side2Score ?? 0;
-        }
-        return acc;
-      },
-      [0, 0],
-    );
-
-    if (totals[0] !== totals[1]) {
-      matchUp.matchUpStatus = COMPLETED;
-      matchUp.winningSide = totals[0] > totals[1] ? 1 : 2;
-      matchUp.endTime = nowIso();
-    }
-    // If tied, match continues (conditional tiebreak set may be added)
-    return;
-  }
-
-  // Standard: first to setsToWin
-  const hasWinner = setsWon[0] >= setsToWin || setsWon[1] >= setsToWin;
-  if (!hasWinner) return;
-
-  // For exactly formats, all sets must be completed, and the side with more sets wins: a level count
-  // names no winner (format-support "Exactly N Sets"). Both sides can reach setsToWin (2-2 in SET4X),
-  // and reading the first side's count alone named side 1 the winner of a level match.
-  if (exactly) {
-    const completedSets = matchUp.score.sets.filter((s) => s.winningSide !== undefined).length;
-    if (completedSets < exactly) return;
-    if (setsWon[0] === setsWon[1]) return;
-  }
-
-  const matchWinner = setsWon[0] > setsWon[1] ? 0 : 1;
-  matchUp.matchUpStatus = COMPLETED;
-  matchUp.winningSide = matchWinner + 1;
-  matchUp.endTime = nowIso();
 }
 
 /**

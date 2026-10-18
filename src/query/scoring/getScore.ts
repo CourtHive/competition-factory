@@ -7,6 +7,7 @@
 
 import type { MatchUp, ScoreResult, PointSituation, FormatStructure, SetFormatStructure } from '@Types/scoring/types';
 import { resolveSetType, isLiveDecidingSet, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
+import { isDecisionRequired, decisionRequiredSituation } from './decisionRequired';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { deriveServer, formatGameScore } from '@Mutate/scoring/addPoint';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
@@ -64,6 +65,7 @@ export function getScore(matchUp: MatchUp, options?: GetScoreOptions): ScoreResu
     points,
     pointDisplay,
     situation,
+    decisionRequired: isDecisionRequired(matchUp),
   };
 }
 
@@ -115,6 +117,8 @@ function computePointDisplay(matchUp: MatchUp, points: number[]): [string, strin
  * Compute point situation booleans for the NEXT point
  */
 function computeSituation(matchUp: MatchUp): PointSituation | undefined {
+  // A match that ended level: no next point, and a decision the host must make (§ 9.7, § 11.2)
+  if (isDecisionRequired(matchUp)) return decisionRequiredSituation();
   // Only compute if match is in progress
   if (matchUp.matchUpStatus === COMPLETED || matchUp.matchUpStatus === TO_BE_PLAYED) {
     return undefined;

@@ -26,6 +26,7 @@ import { finalSetGoverns, openSetNumber } from '@Helpers/matchUpFormatCode/aggre
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
+import { isDecisionRequired } from '@Query/scoring/decisionRequired';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
@@ -40,8 +41,13 @@ import {
   deriveServer,
   deriveServerBase,
   checkStandardSetWon,
-  checkAndFinalizeMatch,
 } from '@Mutate/scoring/addPoint';
+import {
+  replayAsV1,
+  scoresAfter,
+  checkAndFinalizeMatch,
+  SCORING_PAST_LEVEL_CLOSE,
+} from '@Mutate/scoring/matchCompletion';
 
 // constants and types
 import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
@@ -280,6 +286,8 @@ export class ScoringEngine {
   private eventHandlers?: ScoringEventHandlers;
   private initialScore?: InitialScoreOptions; // For late arrival
   private redoStack: ScoreEntry[] = [];
+  // the legacy shapes the last rebuild met (spec § 12.8)
+  private legacyShapes = new Set<string>();
   private matchUpFormat: string;
   private matchUpId?: string;
   private isDoubles: boolean;
@@ -447,6 +455,36 @@ export class ScoringEngine {
     }
   }
 
+  /**
+   * A match that ended level with no declared decider (§ 9.7, CA 2026-10-18): it takes no game, set
+   * total or segment end, which would play a segment the format did not declare, and records nothing.
+   * A combined total keeps its own refusals.
+   */
+  private endedLevel(): boolean {
+    return !this.cachedFormatStructure?.setFormat?.combinedPointTotal && isDecisionRequired(this.state);
+  }
+
+  /** The game, set or segment-end action that ends a match level fires onMatchTie (§ 11.5). */
+  private notifyLevelClose(): void {
+    if (isDecisionRequired(this.state)) this.eventHandlers?.onMatchTie?.(this.buildEventContext());
+  }
+
+  /**
+   * The legacy shapes the last rebuild met (spec § 12.8): `scoringPastLevelClose` when a stored timeline
+   * scored past a level close, as v1 did, and was replayed as v1 replayed it.
+   */
+  getLegacyShapes(): string[] {
+    return [...this.legacyShapes];
+  }
+
+  /** After a replayed entry: a timeline v1 wrote past a level close replays as v1 (§ 12.8). */
+  private replayLegacyShape(matchUp: MatchUp, wasComplete: boolean, scoresLater: boolean): void {
+    const legacy = this.legacyShapes.has(SCORING_PAST_LEVEL_CLOSE);
+    const formatStructure = this.cachedFormatStructure;
+    if (replayAsV1({ matchUp, formatStructure, wasComplete, scoresLater, legacy }))
+      this.legacyShapes.add(SCORING_PAST_LEVEL_CLOSE);
+  }
+
   private notifyMatchComplete(ctx: ScoringEventContext): void {
     if (this.state.winningSide === undefined) this.eventHandlers?.onMatchTie?.(ctx);
     else this.eventHandlers?.onMatchComplete?.({ ...ctx, matchWinner: this.state.winningSide === 1 ? 0 : 1 });
@@ -464,6 +502,8 @@ export class ScoringEngine {
    * @param options - Set score data
    */
   addSet(options: AddSetOptions): void {
+    // a match that ended level plays no segment the format did not declare (§ 9.7)
+    if (this.endedLevel()) return;
     this.applyAddSet(options);
 
     // Record entry in unified timeline
@@ -476,6 +516,7 @@ export class ScoringEngine {
     });
 
     this.redoStack = [];
+    this.notifyLevelClose();
   }
 
   /**
@@ -490,6 +531,7 @@ export class ScoringEngine {
   addGame(options: AddGameOptions): void {
     this.requireGameOrTimedSegment();
     if (!this.getInputLevels().game) throw inputLevelError('game');
+    if (this.endedLevel()) return;
     this.applyAddGame(options);
 
     // Record entry in unified timeline
@@ -501,6 +543,7 @@ export class ScoringEngine {
     });
 
     this.redoStack = [];
+    this.notifyLevelClose();
   }
 
   /**
@@ -513,6 +556,7 @@ export class ScoringEngine {
    */
   endSegment(options?: EndSegmentOptions): void {
     this.requireGameOrTimedSegment();
+    if (this.endedLevel()) return;
     this.applyEndSegment(options);
 
     // Record entry in unified timeline
@@ -523,6 +567,7 @@ export class ScoringEngine {
       data: { setNumber: currentSetIndex + 1, ...options },
       timestamp: options?.timestamp || nowIso(),
     });
+    this.notifyLevelClose();
   }
 
   /**
@@ -1689,8 +1734,10 @@ export class ScoringEngine {
 
     // Swap state so apply methods work on newState
     this.state = newState;
+    this.legacyShapes.clear();
 
-    for (const entry of entries) {
+    for (const [index, entry] of entries.entries()) {
+      const wasComplete = this.state.matchUpStatus === COMPLETED;
       switch (entry.type) {
         case 'point': {
           // The lineUps start from their initial snapshot and the substitutions replay in order, so
@@ -1728,6 +1775,7 @@ export class ScoringEngine {
           this.replaySetServerEntry(entry.data);
           break;
       }
+      this.replayLegacyShape(this.state, wasComplete, scoresAfter(entries, index));
     }
   }
 
@@ -1806,9 +1854,13 @@ export class ScoringEngine {
     }
 
     // Replay all tracked points with multipliers
-    for (const point of currentPoints) {
+    this.legacyShapes.clear();
+    for (const [index, point] of currentPoints.entries()) {
       const pointCount = newState.history?.points.length || 0;
+      const wasComplete = newState.matchUpStatus === COMPLETED;
       newState = addPoint(newState, pointReplayInput(point), { pointMultipliers: this.pointMultipliers });
+      // a record without a timeline that scored past a level close replays as v1 (§ 12.8)
+      this.replayLegacyShape(newState, wasComplete, index < currentPoints.length - 1);
       // the players recorded on court for the point; with no timeline there is nothing to recompute from
       const replayed = newState.history?.points ?? [];
       const played = replayed.length > pointCount ? replayed.at(-1) : undefined;

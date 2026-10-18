@@ -24,6 +24,10 @@ import { describe, it } from 'vitest';
  * segments' totals; a timed segment closes only when its time is up (`|`); a one-point tiebreak set is
  * recorded the way a match tie-break is (`[1, 0, [1, 0]]`). `-F:TB1` is the docs' "sudden-death
  * decider", so one point decides it with or without NOAD.
+ *
+ * A level total with no declared decider is COMPLETED without a winner, and no further segment is
+ * played (scoring-engine spec § 9.3 rule 4, § 9.7; CA 2026-10-18, decision 12). Until then these cases
+ * pinned it as not complete, which is how v1 played on.
  */
 
 const seq = (...parts: string[]) => parts.join(' ');
@@ -53,7 +57,8 @@ function aggregateCases(code: string, count: number, close: (winners: string) =>
   const { win, unfinished, level } = aggregateStreams(count, close);
   segmentConforms(code, win.spec, { sets: win.sets, winningSide: 1, complete: true });
   if (count > 1) segmentConforms(code, unfinished.spec, { sets: unfinished.sets, complete: false });
-  segmentConforms(code, level.spec, { sets: level.sets, complete: false });
+  // level, with no declared decider: complete, and no winner (§ 9.7; CA 2026-10-18)
+  segmentConforms(code, level.spec, { sets: level.sets, complete: true });
 }
 
 const ROOT_CODES: [string, string, number][] = [

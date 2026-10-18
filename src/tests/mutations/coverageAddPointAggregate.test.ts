@@ -218,9 +218,11 @@ describe('checkAndFinalizeMatch — exactly non-aggregate branch (lines 570-572)
 
     // Now completedSets=2 >= exactly=2, and both sides have one set: a level count names no winner
     // (format-support "Exactly N Sets"). This test used to pin side 1 as the winner, because both
-    // sides reached setsToWin and side 1 was checked first; fixed 2026-10-17.
+    // sides reached setsToWin and side 1 was checked first; fixed 2026-10-17. With no declared decider
+    // the match is COMPLETED without a winner (scoring-engine spec § 9.2, § 9.7; CA 2026-10-18,
+    // decision 18); until then this pinned it as not complete.
     expect(result.score.sets[1].winningSide).toBe(2);
-    expect(result.matchUpStatus).not.toBe(COMPLETED);
+    expect(result.matchUpStatus).toBe(COMPLETED);
     expect(result.winningSide).toBeUndefined();
   });
 
