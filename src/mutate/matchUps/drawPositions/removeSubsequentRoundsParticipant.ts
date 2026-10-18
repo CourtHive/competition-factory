@@ -1,6 +1,7 @@
 import {
   deriveExitStateFromProvenance,
   participatesInExitCascade,
+  withdrawArrivalFrom,
   carriedExitStatus,
   blankExitCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
@@ -80,8 +81,20 @@ export function removeSubsequentRoundsParticipant({
     structureId,
   });
 
+  // the matchUp that delivered the position into each round, read before any round gives it up
+  const deliveredBy = new Map(
+    (relevantMatchUps ?? []).map((matchUp) => [
+      matchUp.matchUpId,
+      matchUps?.find(
+        (feeder) =>
+          feeder.roundNumber === (matchUp.roundNumber ?? 0) - 1 && feeder.drawPositions?.includes(targetDrawPosition),
+      )?.matchUpId,
+    ]),
+  );
+
   for (const matchUp of relevantMatchUps ?? []) {
     removeDrawPosition({
+      deliveredBy: deliveredBy.get(matchUp.matchUpId),
       structureId,
       inContextDrawMatchUps,
       sourceMatchUpStatus,
@@ -114,6 +127,7 @@ export function removeSubsequentRoundsParticipant({
 
 function removeDrawPosition({
   inContextDrawMatchUps,
+  deliveredBy,
   structureId,
   positionAssignments,
   sourceMatchUpStatus,
@@ -134,6 +148,7 @@ function removeDrawPosition({
   drawDefinition: DrawDefinition;
   sourceMatchUpStatus?: MatchUpStatusUnion;
   targetDrawPosition: number;
+  deliveredBy?: string;
   matchUpsMap: MatchUpsMap;
   sourceMatchUpId?: string;
   roundNumber: number;
@@ -162,6 +177,9 @@ function removeDrawPosition({
     .filter((drawPosition): drawPosition is number => !!drawPosition);
   rekeySideFacts({ drawPositions: remaining, drawDefinition, structureId, matchUp });
   matchUp.drawPositions = remaining;
+  // A REMOVED POSITION TAKES ITS ARRIVAL WITH IT, as a released one does (`releaseAdvancedDrawPosition`): the record
+  // that its occupant won their way here names the feeder that delivered them, which no longer sends anyone
+  withdrawArrivalFrom({ sourceMatchUpId: deliveredBy, matchUp });
   const matchUpAssignments = positionAssignments.filter(({ drawPosition }) =>
     matchUp.drawPositions?.includes(drawPosition),
   );

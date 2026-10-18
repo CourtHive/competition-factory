@@ -871,11 +871,32 @@ named test that fails without it.
 
 - **A cleared loser seat leaves no award behind.** A loser sent into a seat opposite a produced exit is awarded it on
   arrival. When the result that sent them is re-scored or cleared, their seat empties and the produced exit stands
-  pending again, on the seat's own matchUp and on one reached past a BYE; the reservation it holds for the next arrival
-  stays, and goes with the exit when that is withdrawn. A carried exit, or a produced one that came straight down its
+  pending again, on the seat's own matchUp and on one reached past a BYE. The advance the award made leaves with the
+  occupant, as direct entry of the exit alone leaves it; an exit that keeps its award keeps its advance, and that
+  reservation goes with the exit when the exit is withdrawn. A carried exit, or a produced one that came straight down its
   loser link, keeps its award, as direct entry writes it; and a source that becomes a double exit leaves the seat to its
   own cascade, which places the BYE (CURTIS_CONSOLATION 32/27 9000062, DOUBLE_ELIMINATION 8/4 20537779:
   `aClearedLoserSeatLeavesNoAwardBehind`).
+- **A seat's occupant takes their award's advance with them** (A1 int2). The release of a leaving occupant asks of the
+  produced exit beside them whether its award stands with the seat empty (`awardStands`), and keeps the advance in the
+  next round only then: read before the award was withdrawn, the award looked like the exit's own advance and stayed
+  (FEED_IN_CHAMPIONSHIP_TO_SF 16/11 21041635: `aWithdrawnAwardTakesBackTheAdvanceItMade`; 116 census rows).
+- **A Main final's exit came over its winner link.** A produced exit in a DOUBLE_ELIMINATION Main final is not one
+  that arrived over a loser link, though a walk from its source's loser target leads back to it through the Backdraw's
+  winner links: a double exit converging with it there, once cleared, leaves it awarding no empty seat (DE 8/5
+  21033335: `aMainFinalsExitCameOverItsWinnerLink`).
+- **A final decided during the settle seats its champion at once.** When a held exit is sent into a final and the
+  final is decided by it, the champion crosses into the decider within the same call (the link advancement is asked
+  again after the settle), not on the next (DE 8/5 21037067: `aFinalDecidedByAHeldExitSeatsItsChampionAtOnce`).
+- **A released position takes its BYE origin with it; a removed position, its arrival.** The BYE origin a released
+  position recorded for its feeder goes with the release, as its arrival does (COMPASS 8/8 21031039:
+  `aReleasedPositionTakesItsByeOriginWithIt`); and a position taken out of every later round by a cleared first-round
+  result takes the arrival each of those rounds recorded (SINGLE_ELIMINATION 16/14 21137642:
+  `aRemovedPositionTakesItsArrivalWithIt`).
+- **A standing result keeps what it sent over its loser link.** Unwinding a double exit visits a matchUp onward only
+  for what the double exit sent through it; when that matchUp's own result stands, its loser target is not reset, so
+  the carry it sent there stays (COMPASS 16/14 21027146 under `doubleExitPropagateBye: false`:
+  `aStandingResultKeepsWhatItSentOverItsLoserLink`).
 - **A released position takes its arrival with it.** A position released from a round it had won its way into leaves
   no record of that arrival: the feeder named there is undecided again and sent nobody (FIRST_MATCH_LOSER_CONSOLATION
   16/13 20483283 under `allowChangePropagation`: `aReleasedPositionTakesItsArrivalWithIt`).

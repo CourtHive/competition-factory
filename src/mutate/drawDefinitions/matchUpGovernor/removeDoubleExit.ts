@@ -122,6 +122,12 @@ export function removeDoubleExit(params) {
     if (winnerResult?.error) return decorateResult({ result: winnerResult, stack });
   }
 
+  // A RESULT THAT STANDS KEEPS WHAT IT SENT OVER ITS LOSER LINK. The walk reached this matchUp only to take back the
+  // winner it sent on (`sentOnThrough`); its own exit is untouched by this unwind, so the loser it directed, and the
+  // exit that loser carries, stand (census A1 int2 prov: COMPASS `West|2|1`'s carried walkover, its winner the probe's,
+  // its loser carrying the walkover into `Southwest|1|1`, which the clear reset to TO_BE_PLAYED).
+  if (params.winnerOnly) return decorateResult({ result: { ...SUCCESS }, stack });
+
   // Did this cascade place the BYE that is sitting on the loserMatchUp?
   //
   // `assignDrawPositionBye` records the answer on the positionAssignment as `byeFromPropagation`, and
@@ -668,11 +674,11 @@ export function conditionallyRemoveDrawPosition(params) {
   const { structure: targetStructure } = findStructure({ drawDefinition, structureId: targetMatchUp.structureId });
   // read before the walk goes on: a matchUp holding only origins this unwind is not withdrawing keeps its own result
   // (below), so nothing it sent on is this unwind's either
-  const keepsOwnResult =
+  const ownResultStands =
     !!getSideExitProvenance({ matchUp: noContextTargetMatchUp }) &&
     !carriesWithdrawnOrigin(noContextTargetMatchUp, withdrawnSourceIds) &&
-    !carriesDissolvedConvergence(noContextTargetMatchUp, withdrawnSourceIds, matchUpsMap) &&
-    !sentOnThrough({ sourceMatchUp, targetMatchUp, nextWinnerMatchUp });
+    !carriesDissolvedConvergence(noContextTargetMatchUp, withdrawnSourceIds, matchUpsMap);
+  const keepsOwnResult = ownResultStands && !sentOnThrough({ sourceMatchUp, targetMatchUp, nextWinnerMatchUp });
   if (keepsOwnResult) {
     pushGlobalLog({
       method: stack,
@@ -686,6 +692,8 @@ export function conditionallyRemoveDrawPosition(params) {
   let result = removeDoubleExit({
     structure: targetStructure ?? structure,
     targetData: nextTargetData,
+    // its exit stands and only the winner it sent on is taken back: the walk follows that winner, not its loser
+    winnerOnly: ownResultStands,
     matchUp: targetMatchUp,
     inContextDrawMatchUps,
     withdrawnSourceIds,
@@ -1092,8 +1100,13 @@ export function arrivedOverLoserLink({
 }): boolean {
   const targetsOf = (matchUpId: string) =>
     positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId }).targetMatchUps;
+  const sourceTargets = targetsOf(sourceMatchUpId);
+  // PROTOTYPE (census A1 int2 dpws): the target IS the source's winner target, so the exit's first hop was the winner
+  // link. A DOUBLE_ELIMINATION Main final's loser path runs through the Backdraw and back to `Main|4|1` by winner links,
+  // so the walk below also reaches it, and read the produced exit as one carried down the loser link.
+  if (sourceTargets?.winnerMatchUp?.matchUpId === targetMatchUpId) return false;
   const visited = new Set<string>();
-  let next = targetsOf(sourceMatchUpId)?.loserMatchUp;
+  let next = sourceTargets?.loserMatchUp;
   while (next && !visited.has(next.matchUpId)) {
     if (next.matchUpId === targetMatchUpId) return true;
     visited.add(next.matchUpId);

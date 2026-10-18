@@ -6,6 +6,7 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { awardStands } from './positionClear';
 import {
   deriveExitStateFromProvenance,
   getSideExitProvenance,
@@ -188,7 +189,18 @@ export function releaseAdvancedDrawPosition({
     )
       continue;
     if (advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp })) continue;
-    if (!withdrawingExit && advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp })) {
+    if (
+      !withdrawingExit &&
+      advancedByProducedExit({
+        positionAssignments: positionAssignments ?? [],
+        occupantLeaving,
+        drawDefinition,
+        drawPosition,
+        structureId,
+        matchUps,
+        matchUp,
+      })
+    ) {
       continue;
     }
 
@@ -364,12 +376,32 @@ function advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp }): b
  * `withdrawingExit` opts out: `applyWithdrawnExits` releases precisely this advancement, because
  * there the produced exit itself is what is being taken back.
  */
-function advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp }): boolean {
+function advancedByProducedExit({
+  positionAssignments,
+  occupantLeaving,
+  drawDefinition,
+  drawPosition,
+  structureId,
+  matchUps,
+  matchUp,
+}): boolean {
   const feeder = latestFeeder({ drawPosition, matchUps, matchUp });
   if (!feeder) return false;
   if (!isExit(feeder.matchUpStatus) || !feeder.winningSide) return false;
   if (getWinningSideDrawPosition({ drawDefinition, structureId, matchUp: feeder }) !== drawPosition) return false;
 
   const provenance = getSideExitProvenance({ matchUp: feeder });
-  return isDoubleExit(provenance?.[3 - feeder.winningSide]?.previousMatchUpStatus);
+  if (!isDoubleExit(provenance?.[3 - feeder.winningSide]?.previousMatchUpStatus)) return false;
+  // PROTOTYPE (census A1 int2 dpws): the advance is the produced exit's only while its award would stand with the seat
+  // empty; an award read off the occupant who is leaving is taken back (`withdrawAwardsToEmptiedSeats`), and the
+  // position it advanced goes with it
+  if (!occupantLeaving) return true;
+  return awardStands({
+    rederived: { matchUpStatus: feeder.matchUpStatus, winningSide: feeder.winningSide },
+    retained: provenance,
+    targetMatchUp: feeder,
+    positionAssignments,
+    drawDefinition,
+    structureId,
+  });
 }

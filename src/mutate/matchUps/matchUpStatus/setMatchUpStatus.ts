@@ -182,6 +182,12 @@ function settleDraw({
   const advanced = reconcileByeAdvancements({ tournamentRecord, drawDefinition, event });
   if (advanced?.error) return advanced;
 
+  // a held exit sent on above can decide a round feeding another structure, so its winner is seated there now, before
+  // the decider is settled: asked only before it, the crossing waited for the NEXT call (census int2 nonrt,
+  // DOUBLE_ELIMINATION 8/5 21037067: a double walkover at `Main|2|1` sent the Backdraw's held exit into the final,
+  // which its champion won and was not seated in the decider until the same outcome was entered again)
+  reconcileMissedLinkAdvancements({ tournamentRecord, drawDefinition, event });
+
   // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
   return reconcileDeciders({
     mutatedMatchUpId: params.matchUpId,

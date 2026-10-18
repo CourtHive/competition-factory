@@ -283,15 +283,18 @@ export function arrivedByResult(entry?: SideExitProvenanceEntry): boolean {
  *
  * An arrival (`arrivedByResult`) records that a side's occupant won their way here from `sourceMatchUpId`; it is a
  * fact about that position being here, so it goes when the position is released, whichever side the record is keyed
- * to by then. A BYE claim on the same side stays: it is the ledger, not the arrival (`withdrawArrivalsByResult`).
- * Not gated on the write mode: the write mode decides whether a record is written, never whether a stale one goes.
+ * to by then. So does a BYE origin (`{ BYE, BYE }`) naming the same feeder: it records that the position came here
+ * through that BYE, and once the position is gone it names a feeder that sent nobody, or one that is no longer a BYE
+ * (census A1 int2 `aReleasedPositionTakesItsByeOriginWithIt`). A BYE claim on the same side stays: it is the ledger, not
+ * the arrival (`withdrawArrivalsByResult`). Not gated on the write mode: the write mode decides whether a record is written, never whether a stale one goes.
  */
 export function withdrawArrivalFrom({ sourceMatchUpId, matchUp }: { sourceMatchUpId?: string; matchUp: MatchUp }) {
   const provenance = matchUp.sideExitProvenance;
   if (!sourceMatchUpId || !provenance) return;
   for (const sideNumber of [1, 2] as const) {
     const entry = provenance[sideNumber];
-    if (entry?.sourceMatchUpId !== sourceMatchUpId || !arrivedByResult(entry)) continue;
+    const originOfPosition = arrivedByResult(entry) || entry?.matchUpStatus === BYE;
+    if (entry?.sourceMatchUpId !== sourceMatchUpId || !originOfPosition) continue;
     if (entry.byeClaims?.length) provenance[sideNumber] = { byeClaims: [...entry.byeClaims] };
     else delete provenance[sideNumber];
   }
