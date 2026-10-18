@@ -1,4 +1,5 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
@@ -13,7 +14,6 @@ import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
-import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
@@ -360,11 +360,33 @@ function resolveFormat(
   });
 }
 
+/**
+ * § 2 row 4, as v1's `checkMatchUpFormatApplication` decides it (#5608, scoring engine spec § 16 decision 19, CA
+ * 2026-10-18): a format that is not well-formed is refused; one well-formed but refused for NEW use is refused only
+ * when it would change the format the matchUp plays under. A score sent back with the stored format is not a new use.
+ */
+function formatRecognizedFor(incoming: string | undefined, stored: string | undefined): boolean {
+  if (!incoming) return true;
+  if (!isWellFormedMatchUpFormat({ matchUpFormat: incoming })) return false;
+  return incoming === stored || isValidMatchUpFormat({ matchUpFormat: incoming });
+}
+
+/** the format the matchUp plays under, by v1's chain: matchUp, structure, draw, event */
+function appliedFormat(
+  matchUp: MatchUp,
+  structure: Structure | undefined,
+  drawDefinition: DrawDefinition,
+  event: Event | undefined,
+): string | undefined {
+  return matchUp.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition.matchUpFormat ?? event?.matchUpFormat;
+}
+
 export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const { tournamentRecord, drawDefinition, event, request, policyDefinitions } = args;
   const empty: OutcomeView = {
     hasDrawDefinition: !!drawDefinition,
-    formatRecognized: !request.matchUpFormat || isValidMatchUpFormat({ matchUpFormat: request.matchUpFormat }),
+    // before the matchUp is found only well-formedness is asked: v1 refuses a matchUp not found before a new use
+    formatRecognized: !request.matchUpFormat || isWellFormedMatchUpFormat({ matchUpFormat: request.matchUpFormat }),
     drawType: drawDefinition?.drawType,
     found: false,
     isTeam: false,
@@ -553,6 +575,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
 
   return {
     ...empty,
+    formatRecognized: formatRecognizedFor(
+      request.matchUpFormat,
+      appliedFormat(matchUp, structure, drawDefinition, event),
+    ),
     found: true,
     isTeam,
     matchUpTieId,
