@@ -478,6 +478,17 @@ describe('timed sets: games from points, the tiebreak at time, the final set of 
     segmentConforms('SET3-S:T10-G:TN3D', '111222 1', { sets: [[0, 0]], complete: false });
   });
 
+  // Definition: -G:{n}C "a game won by the first side to win n points in a row" (§ 3.5, § 4.1 rule 4),
+  // and -G: governs every game built from points, a timed set's included (CA 2026-10-18).
+  // Observed before: traditional games, so three points to love were 40-0, [0, 0].
+  it('SET3-S:T10-G:3C — three points in a row are a game; a point to the other side starts again', () => {
+    segmentConforms('SET3-S:T10-G:3C', '111 11211212 222', { sets: [[1, 1]], complete: false });
+  });
+
+  it('SET3-S:T10-G:3C — at time the side with more consecutive-points games wins the segment', () => {
+    segmentConforms('SET3-S:T10-G:3C', seq('111 111 222', END), { sets: [[2, 1]], complete: false });
+  });
+
   // Expected: the match-level -G: cap governs the timed final; the capped game is 1-0 in games.
   // Observed: the final set reads [6, 5] in points and the match is not decided as expected.
   it('SET3-S:T10-G:TN3D-F:T20 — the deuce cap governs the final timed segment as well', () => {

@@ -128,6 +128,7 @@ function addDefinition({
     referenceGender,
     checkCategory,
     checkGender,
+    newUse: true,
     event,
   });
   if (validationResult.error) {

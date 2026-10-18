@@ -1,7 +1,14 @@
 import { getInvariantViolations, describeViolations } from './invariants';
 import type { InvariantViolation } from './invariants';
 
+import {
+  deriveStatusCodes,
+  exitOutcomeCode,
+  getSideExitProvenance,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { isAnyExit } from '@Validators/isExit';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
@@ -94,6 +101,67 @@ const canonicalDrawPositions = (drawPositions: any): any => {
  * structural invariants and the repo's integrity checker, which read the real draw.
  */
 export function projectDraw(drawDefinition: any): any {
+  return projectStructures(drawDefinition, (matchUp: any) => [
+    matchUp.matchUpId,
+    matchUp.matchUpStatus,
+    matchUp.winningSide ?? null,
+    canonicalDrawPositions(matchUp.drawPositions),
+    blankToNull(matchUp.matchUpStatusCodes),
+    // sideExitProvenance is projected too: a field the projection cannot see is a field the
+    // properties cannot police, and an unobserved addition would look residue-free while
+    // leaving state behind on every unwind.
+    blankToNull(matchUp.sideExitProvenance),
+    blankToNull(matchUp.score),
+  ]);
+}
+
+/**
+ * The projection DO_UNDO_IDENTITY compares: {@link projectDraw} without `matchUpStatusCodes`, and with the two
+ * side-keyed and singular codes that carry the same consumer-visible facts (census F1, 2026-10-17).
+ *
+ * WHY THE ARRAY IS NOT HERE. Its writers disagree by design history, not by draw state: the forward double-exit writers
+ * in `doubleExitAdvancement` keep the policy codes and derive nothing (`retainPolicyCodes`), while the clear's writers
+ * derive from provenance (`deriveStatusCodes`). So a scheduled draw holds `null` where the same draw after a result and
+ * its clear holds `['', 'WO']`, and the round trip reported that as residue (census a1 cases 14, 24, 29, 32). Deriving
+ * the codes at settle was measured as the alternative and refused: it closed those four but opened 20 failures in the
+ * exitPropagation folder, three of them a code on the winning side (`aWithdrawnExitTakesItsCode`), and changed 4 pinned
+ * expectations outside it. `matchUpStatusCodes` is legacy and 8.x removes it (CA, 2026-10-15).
+ *
+ * The defect does not go unobserved: {@link checkCodesConsistent} asks it of a settled draw, as its own property.
+ *
+ * ONLY HERE. `hash()` keeps the array, so `observeMutation`'s `mutated` still sees a write that touches nothing but the
+ * codes, and IDEMPOTENT_REAPPLY and ERROR_IMPLIES_NO_MUTATION still catch one.
+ */
+export function projectRoundTrip(drawDefinition: any): any {
+  return projectStructures(drawDefinition, (matchUp: any, structure: any) => [
+    matchUp.matchUpId,
+    matchUp.matchUpStatus,
+    matchUp.winningSide ?? null,
+    byeRendered(canonicalDrawPositions(matchUp.drawPositions), structure),
+    blankToNull(matchUp.sideStatusCodes),
+    matchUp.matchUpStatusCode ?? null,
+    blankToNull(matchUp.sideExitProvenance),
+    blankToNull(matchUp.score),
+  ]);
+}
+
+/**
+ * A BYE's drawPosition is rendered `BYE`, not as its number (CA, 2026-09-29; census R10, 2026-10-18).
+ *
+ * When two BYEs meet, which of the two seats goes on depends on the order they were placed in, and that is not
+ * information: `correctionDivergence`'s `renderDrawPositions` already renders it so, and its docblock records the
+ * ruling and the measurement. The round trip read the number, so a probe and its clear that sent the other BYE on
+ * reported a residue (COMPASS `Southeast|2|1`, `[2,3]` in 6 entry orders and `[2,4]` in 9). WHERE the BYE sits stays.
+ */
+function byeRendered(slots: any[] | null, structure: any): any[] | null {
+  if (!slots) return slots;
+  const byes = new Set(
+    (structure?.positionAssignments ?? []).filter((assignment: any) => assignment.bye).map((a: any) => a.drawPosition),
+  );
+  return slots.map((drawPosition) => (byes.has(drawPosition) ? 'BYE' : drawPosition));
+}
+
+function projectStructures(drawDefinition: any, projectMatchUp: (matchUp: any, structure: any) => any[]): any {
   const structures: any[] = [];
   const walk = (candidates: any[]) => {
     for (const structure of candidates ?? []) {
@@ -106,18 +174,7 @@ export function projectDraw(drawDefinition: any): any {
         positionAssignments: (structure.positionAssignments ?? []).map((assignment: any) =>
           normalize({ ...assignment, extensions: assignment.extensions?.length ? assignment.extensions : undefined }),
         ),
-        matchUps: (structure.matchUps ?? []).map((matchUp: any) => [
-          matchUp.matchUpId,
-          matchUp.matchUpStatus,
-          matchUp.winningSide ?? null,
-          canonicalDrawPositions(matchUp.drawPositions),
-          blankToNull(matchUp.matchUpStatusCodes),
-          // sideExitProvenance is projected too: a field the projection cannot see is a field the
-          // properties cannot police, and an unobserved addition would look residue-free while
-          // leaving state behind on every unwind.
-          blankToNull(matchUp.sideExitProvenance),
-          blankToNull(matchUp.score),
-        ]),
+        matchUps: (structure.matchUps ?? []).map((matchUp: any) => projectMatchUp(matchUp, structure)),
       });
       if (structure.structures?.length) walk(structure.structures);
     }
@@ -275,7 +332,78 @@ export type PropertyFailure = {
    * phase for the measurement that cost a signal write-up. Absent on every other property.
    */
   probe?: { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
+  /** for DO_UNDO_IDENTITY: every projected field the round trip left changed, by coordinate */
+  changes?: ProjectionChange[];
 };
+
+export type ProjectionChange = { at: string; field: string; before: any; after: any };
+
+const MATCHUP_FIELDS = [
+  'matchUpStatus',
+  'winningSide',
+  'drawPositions',
+  'matchUpStatusCodes',
+  'sideExitProvenance',
+  'score',
+];
+
+/** The fields of {@link projectRoundTrip}'s rows, in order, for {@link projectionChanges}. */
+export const ROUND_TRIP_FIELDS = [
+  'matchUpStatus',
+  'winningSide',
+  'drawPositions',
+  'sideStatusCodes',
+  'matchUpStatusCode',
+  'sideExitProvenance',
+  'score',
+];
+
+/**
+ * The projected fields two `projectDraw` results disagree on, named by structural coordinate rather than by offset into a
+ * serialization: an offset says where two strings part, not which matchUp kept what. `coordinates` maps matchUpId to
+ * `structureName|roundNumber|roundPosition`; a positionAssignment is named by structure and drawPosition.
+ */
+export function projectionChanges(
+  before: any[],
+  after: any[],
+  coordinates: Map<string, string>,
+  fields: string[] = MATCHUP_FIELDS,
+): ProjectionChange[] {
+  const changes: ProjectionChange[] = [];
+  const afterById = new Map(after.map((structure: any) => [structure.structureId, structure]));
+  for (const structure of before) {
+    const later = afterById.get(structure.structureId);
+    const laterMatchUps = new Map((later?.matchUps ?? []).map((row: any[]) => [row[0], row]));
+    for (const row of structure.matchUps) {
+      const laterRow: any = laterMatchUps.get(row[0]);
+      fields.forEach((field, index) => {
+        const [prior, next] = [row[index + 1], laterRow?.[index + 1]];
+        if (JSON.stringify(normalize(prior)) !== JSON.stringify(normalize(next)))
+          changes.push({ at: coordinates.get(row[0]) ?? row[0], field, before: prior, after: next ?? null });
+      });
+    }
+    const laterAssignments = new Map(
+      (later?.positionAssignments ?? []).map((assignment: any) => [assignment.drawPosition, assignment]),
+    );
+    const structureName = structureNameOf(structure, coordinates);
+    for (const assignment of structure.positionAssignments) {
+      const next = laterAssignments.get(assignment.drawPosition);
+      if (JSON.stringify(assignment) !== JSON.stringify(next ?? null))
+        changes.push({
+          at: `${structureName}|dp${assignment.drawPosition}`,
+          field: 'positionAssignment',
+          before: assignment,
+          after: next ?? null,
+        });
+    }
+  }
+  return changes;
+}
+
+function structureNameOf(structure: any, coordinates: Map<string, string>): string {
+  const coordinate = structure.matchUps.map((row: any[]) => coordinates.get(row[0])).find(Boolean);
+  return coordinate?.split('|')[0] ?? structure.structureId;
+}
 
 /**
  * ERROR_IMPLIES_NO_MUTATION — the general form of the partial-mutation class.
@@ -312,4 +440,45 @@ export function checkInvariants(observation: Observation, matchUpId: string): Pr
       detail: describeViolations(observation.invariantViolations),
     },
   ];
+}
+
+/**
+ * CODES_CONSISTENT — every exit that records where it came from shows it in `matchUpStatusCodes` (census F1, 2026-10-17).
+ *
+ * The state-level half of what DO_UNDO_IDENTITY stopped comparing ({@link projectRoundTrip}). Stored codes are read
+ * against {@link deriveStatusCodes}, the derivation the clear's writers use, on every matchUp that is an exit
+ * ({@link isAnyExit}, as `codesForUnwound` gates it: a BYE deliberately holds no codes) and records provenance. A slot
+ * the derivation fills and the store leaves blank is reported; so is a slot holding a different code. Blank against
+ * absent is not a difference, as in {@link projectDraw}.
+ *
+ * A separate property because it is a known defect the forward double-exit writers carry, not residue a round trip
+ * leaves: measured 2–9 matchUps per scheduled draw on census a1 cases 14, 24, 29 and 32 before any probe ran. It is not
+ * wired into `replay`; a caller asks it of a settled draw.
+ */
+export function checkCodesConsistent(drawId: string, matchUpId: string): PropertyFailure[] {
+  const drawDefinition = getDrawDefinition(drawId);
+  const failures: PropertyFailure[] = [];
+  const coordinates = new Map(
+    getDrawMatchUps(drawId).map((matchUp: any) => [
+      matchUp.matchUpId,
+      `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`,
+    ]),
+  );
+  for (const matchUp of getMatchUpsMap({ drawDefinition }).drawMatchUps) {
+    if (!isAnyExit(matchUp.matchUpStatus) || !getSideExitProvenance({ matchUp })) continue;
+    const stored = ((matchUp.matchUpStatusCodes as any[]) ?? []).map(exitOutcomeCode);
+    const derived = deriveStatusCodes(matchUp);
+    const length = Math.max(stored.length, derived.length);
+    const disagree = Array.from({ length }, (_, index) => index).some(
+      (index) => (stored[index] || '') !== (derived[index] || ''),
+    );
+    if (!disagree) continue;
+    const at = coordinates.get(matchUp.matchUpId) ?? matchUp.matchUpId;
+    failures.push({
+      property: 'CODES_CONSISTENT',
+      matchUpId,
+      detail: `${at}: matchUpStatusCodes ${JSON.stringify(blankToNull(matchUp.matchUpStatusCodes))} where its provenance derives ${JSON.stringify(derived)}`,
+    });
+  }
+  return failures;
 }

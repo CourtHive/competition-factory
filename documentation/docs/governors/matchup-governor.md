@@ -2,6 +2,12 @@
 title: matchUp Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`getMatchUpContextIds`](/docs/implementation/records/getMatchUpContextIds), [`getMatchUpType`](/docs/implementation/records/getMatchUpType), [`participantScheduledMatchUps`](/docs/implementation/records/participantScheduledMatchUps), [`validMatchUp`](/docs/implementation/validation/validMatchUp), [`validMatchUps`](/docs/implementation/validation/validMatchUps). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { matchUpGovernor } from 'tods-competition-factory';
 ```
@@ -484,15 +490,7 @@ const { profile } = engine.getMatchUpCompetitiveProfile({
 
 ## getMatchUpContextIds
 
-Returns context IDs (tournamentId, eventId, drawId) for a matchUp.
-
-```js
-const { contextIds } = engine.getMatchUpContextIds({
-  matchUpId, // required
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getMatchUpContextIds`](/docs/implementation/records/getMatchUpContextIds). Package-export status is a separate decision.
 
 ## getMatchUpDailyLimits
 
@@ -622,15 +620,7 @@ const { schedule } = engine.getMatchUpScheduleDetails({
 
 ## getMatchUpType
 
-Returns the matchUp type (SINGLES, DOUBLES, TEAM).
-
-```js
-const { matchUpType } = engine.getMatchUpType({
-  matchUp, // required
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getMatchUpType`](/docs/implementation/records/getMatchUpType). Package-export status is a separate decision.
 
 ## getMatchUpsStats
 
@@ -756,16 +746,7 @@ const {
 
 ## participantScheduledMatchUps
 
-Returns scheduled matchUps for a specific participant.
-
-```js
-const { matchUps } = engine.participantScheduledMatchUps({
-  participantId, // required
-  scheduleDate, // optional - filter by date
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`participantScheduledMatchUps`](/docs/implementation/records/participantScheduledMatchUps). Package-export status is a separate decision.
 
 ## publicFindMatchUp
 
@@ -1311,24 +1292,8 @@ const { matchUps } = engine.tournamentMatchUps({
 
 ## validMatchUp
 
-Validates a single matchUp object.
-
-```js
-const { valid, errors } = engine.validMatchUp({
-  matchUp, // required
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validMatchUp`](/docs/implementation/validation/validMatchUp). Package-export status is a separate decision.
 
 ## validMatchUps
 
-Validates an array of matchUp objects.
-
-```js
-const { valid, errors } = engine.validMatchUps({
-  matchUps, // required
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validMatchUps`](/docs/implementation/validation/validMatchUps). Package-export status is a separate decision.

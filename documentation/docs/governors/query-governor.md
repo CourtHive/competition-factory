@@ -2,6 +2,12 @@
 title: Query Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`allPlayoffPositionsFilled`](/docs/implementation/draws/allPlayoffPositionsFilled), [`getAllowedDrawTypes`](/docs/implementation/records/getAllowedDrawTypes), [`getDrawCompleteness`](/docs/implementation/draws/getDrawCompleteness), [`getEventCompleteness`](/docs/implementation/records/getEventCompleteness), [`getEventInconsistencies`](/docs/implementation/records/getEventInconsistencies), [`getMatchUpContextIds`](/docs/implementation/records/getMatchUpContextIds), [`getPositionsPlayedOff`](/docs/implementation/draws/getPositionsPlayedOff), [`getSeedingThresholds`](/docs/implementation/draws/getSeedingThresholds). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { queryGovernor } from 'tods-competition-factory';
 ```
@@ -71,16 +77,7 @@ const { matchUps } = engine.allEventMatchUps({
 
 ## allPlayoffPositionsFilled
 
-Returns boolean value for whether playoff positions (which have been generated) are populated with `participantIds` or `BYEs`.
-
-```js
-const allPositionsFilled = engine.allPlayoffPositionsFilled({
-  structureId,
-  drawid,
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`allPlayoffPositionsFilled`](/docs/implementation/draws/allPlayoffPositionsFilled). Package-export status is a separate decision.
 
 ## allTournamentMatchUps
 
@@ -265,13 +262,7 @@ const { matchUps } = engine.getAllStructureMatchUps({ drawId, structureId });
 
 ## getAllowedDrawTypes
 
-Returns an array of names of allowed Draw Types, if any applicable policies have been applied to the tournamentRecord.
-
-```js
-const drawTypes = engine.getAllowedDrawTypes();
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getAllowedDrawTypes`](/docs/implementation/records/getAllowedDrawTypes). Package-export status is a separate decision.
 
 ## getAllowedMatchUpFormats
 
@@ -843,7 +834,7 @@ const { valid, inconsistencies } = drawsGovernor.getStructureInconsistencies({ d
 Beyond internal engine regression testing, this method is a **structural conformance check
 for drawDefinitions that were _not_ produced by the factory's own generators**. Third-party
 provisioners and ingest pipelines routinely reconstruct CODES draw structures by hand — for
-example scraping results from an external provider (IONSport) or reconstructing draws from a
+example scraping results from an external provider or reconstructing draws from a
 national federation's data (Czech Tennis, ITF, Tennis Europe). Those pipelines have to place
 participants into `positionAssignments`, wire `winnerMatchUpId` / `loserMatchUpId` feeds, and
 set `winningSide` / `matchUpStatus` on each matchUp — exactly the relationships this checker
@@ -1032,44 +1023,15 @@ Draw-level checks (in addition to every structure-level `issueType`):
 
 ## getDrawCompleteness
 
-The **draw** layer of the completeness roll-up. `getStructureCompleteness` already aggregates every
-structure of the draw, so this stamps `drawId` for provenance and is the composition point the event
-layer rolls up.
-
-```js
-const { complete, completeness } = engine.getDrawCompleteness({ drawId });
-// completeness: { drawId, unassignedPositionCount, unplayedMatchUpCount, structures: [...] }
-```
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getDrawCompleteness`](/docs/implementation/draws/getDrawCompleteness). Package-export status is a separate decision.
 
 ## getEventInconsistencies
 
-The **event** layer. Fans out to `getDrawInconsistencies` for every `drawDefinition` (stamping
-`eventId`) and adds the check only visible at the event level: whether the participantTypes actually
-assigned in the event's draws are consistent with the event's `eventType`.
-
-```js
-const { valid, inconsistencies } = engine.getEventInconsistencies({ eventId });
-```
-
-- `EVENT_PARTICIPANT_TYPE_MISMATCH` — a participant whose `participantType` is inconsistent with the
-  `eventType` is assigned in one of the event's draws (a `DOUBLES` event carrying an `INDIVIDUAL`
-  participant, a `SINGLES` event carrying a `PAIR`, etc.). `HYBRID` events legitimately carry both
-  `INDIVIDUAL` and `PAIR`. Reads stored `positionAssignments` and resolves each participant's type
-  via the participant map. (error)
-
-> The expected participantType is derived by the shared `expectedParticipantType(eventType)` helper —
-> the same single source of truth `checkValidEntries` uses for entry validation. Entries-vs-placed
-> drift and gender/category eligibility are deferred to a later sub-phase.
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getEventInconsistencies`](/docs/implementation/records/getEventInconsistencies). Package-export status is a separate decision.
 
 ## getEventCompleteness
 
-The **event** layer of the completeness roll-up: aggregates `getDrawCompleteness` across the event's
-draws, preserving the per-draw breakdown for a director-facing progress view.
-
-```js
-const { complete, completeness } = engine.getEventCompleteness({ eventId });
-// completeness: { eventId, unassignedPositionCount, unplayedMatchUpCount, byDraw: [...] }
-```
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getEventCompleteness`](/docs/implementation/records/getEventCompleteness). Package-export status is a separate decision.
 
 ## getTournamentInconsistencies
 
@@ -1298,16 +1260,7 @@ const {
 
 ## getMatchUpContextIds
 
-Convenience method to get "context" ids for a `matchUp` by `matchUpId`. Requires an array of "inContext" `matchUps`.
-
-```js
-const { matchUpId, drawId, eventId, structureId, tournamentId } = engine.getMatchUpContextIds({
-  matchUpId,
-  matchUps,
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getMatchUpContextIds`](/docs/implementation/records/getMatchUpContextIds). Package-export status is a separate decision.
 
 ## getMatchUpDependencies
 
@@ -1746,15 +1699,7 @@ const { linkedTournamentIds } = engine.getLinkedTournamentIds();
 
 ## getPositionsPlayedOff
 
-Determines which finishing positions will be returned by a draw. For example, a First Match Loser Consolation with a draw size of 16 will playoff possitions 1, 2, 9 and 10.
-
-```js
-const { positionsPlayedOff } = engine.getPositionsPlayedOff({
-  drawDefinition,
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getPositionsPlayedOff`](/docs/implementation/draws/getPositionsPlayedOff). Package-export status is a separate decision.
 
 ## getRounds
 
@@ -2328,14 +2273,7 @@ const { seedsCount, error } = engine.getSeedsCount({
 
 ## getSeedingThresholds
 
-```js
-const { seedingThresholds } = engine.getSeedingThresholds({
-  roundRobinGroupsCount,
-  participantsCount,
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getSeedingThresholds`](/docs/implementation/draws/getSeedingThresholds). Package-export status is a separate decision.
 
 ## getStructureSeedAssignments
 

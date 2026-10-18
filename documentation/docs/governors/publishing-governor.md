@@ -2,6 +2,12 @@
 title: Publishing Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`isVisiblyPublished`](/docs/implementation/records/isVisiblyPublished). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 The **Publishing Governor** provides methods for controlling the public visibility of tournament information through publish state management. These methods work in conjunction with [Time Items](../concepts/timeItems.md) to track what's published and when.
 
 ```js
@@ -495,29 +501,7 @@ Returns `false` for `undefined`, missing `embargo` field, or expired/invalid emb
 
 ## isVisiblyPublished
 
-Returns `true` if a publishing detail is both published **and** not currently embargoed. Combines the `published` flag check with the embargo expiry check.
-
-```js
-import { publishingGovernor } from 'tods-competition-factory';
-
-const drawDetail = publishState?.status?.drawDetails?.[drawId]?.publishingDetail;
-
-if (publishingGovernor.isVisiblyPublished(drawDetail)) {
-  // Draw is published and any embargo has expired — show to public
-}
-```
-
-**Parameters:**
-
-| Parameter | Type                            | Description                                                                  |
-| --------- | ------------------------------- | ---------------------------------------------------------------------------- |
-| `detail`  | `PublishingDetail \| undefined` | Any publishing detail object with `published` and optional `embargo` fields. |
-
-**Returns:** `boolean` — `true` when `detail.published === true` and `isEmbargoed(detail)` is `false`.
-
-**Purpose:** Determine if content should be visible to end users, respecting both the publish flag and any active embargo.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`isVisiblyPublished`](/docs/implementation/records/isVisiblyPublished). Package-export status is a separate decision.
 
 ## getVenueData
 
