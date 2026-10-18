@@ -157,8 +157,8 @@ const engine = new ScoringEngine({ matchUpFormat: 'SET7XA-S:TB11' });
 
 Sets won are not consulted. Every set must be recorded. A tied total names no winner: with a declared
 decider (`-F:` on an exactly-N aggregate) the decider breaks it; without one, the
-[specification](./scoring-engine-spec.md) (§ 9.7, decided 2026-10-18) completes the match without a
-winner, where v1 still plays on.
+match is completed without a winner, `getScore().situation.decisionRequired` is true and `onMatchTie` fires
+([specification](./scoring-engine-spec.md) § 9.7, decided 2026-10-18).
 
 ### Exactly N Sets
 
