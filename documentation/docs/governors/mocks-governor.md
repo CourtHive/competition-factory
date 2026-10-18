@@ -527,6 +527,7 @@ const result = mocksEngine.completeDrawMatchUps({
 });
 
 console.log(result.completedCount); // 15
+console.log(result.remainingCount); // 0: nothing left to play (BYEs and double exits are settled)
 ```
 
 ### Stage Filter

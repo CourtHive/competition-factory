@@ -4,6 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { MISSING_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { TEAM } from '@Constants/eventConstants';
 
 /**
@@ -82,7 +83,7 @@ describe('updateTieFormat error propagation', () => {
     // The precise assertion is "not a false success". Whatever error the engine
     // decides on, it must not silently report modification counts.
     expect(result.success).not.toEqual(true);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TIE_FORMAT);
   });
 
   it('propagates through the DRAWDEFINITION path (no structureId)', () => {
@@ -99,7 +100,7 @@ describe('updateTieFormat error propagation', () => {
     });
 
     expect(result.success).not.toEqual(true);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TIE_FORMAT);
   });
 
   it('propagates through the EVENT path (eventId supplied)', () => {
@@ -116,7 +117,7 @@ describe('updateTieFormat error propagation', () => {
     });
 
     expect(result.success).not.toEqual(true);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TIE_FORMAT);
   });
 
   it('processDrawDefinition returns a result object, not a bare count', () => {

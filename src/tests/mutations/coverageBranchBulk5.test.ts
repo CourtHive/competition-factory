@@ -37,6 +37,7 @@ import {
   MISSING_MATCHUP,
   MISSING_TOURNAMENT_RECORD,
   NOT_FOUND,
+  MISSING_MATCHUP_ID,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -592,13 +593,13 @@ describe('resetTieFormat branch coverage', () => {
   it('returns error when tournamentRecord is missing', () => {
     // @ts-expect-error testing missing params
     const result = resetTieFormat({ matchUpId: 'm1', drawDefinition: {} });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('returns error when matchUpId is missing', () => {
     // @ts-expect-error testing missing matchUpId
     const result = resetTieFormat({ tournamentRecord: { tournamentId: 't1' }, drawDefinition: {} });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_MATCHUP_ID);
   });
 
   it('returns INVALID_MATCHUP when matchUp has no tieMatchUps', () => {

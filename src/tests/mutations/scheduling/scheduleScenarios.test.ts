@@ -3,8 +3,12 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
-import { SCHEDULE_SCENARIO_EXISTS, SCHEDULE_SCENARIO_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import {
+  SCHEDULE_SCENARIO_EXISTS,
+  SCHEDULE_SCENARIO_NOT_FOUND,
+  INVALID_VALUES,
+} from '@Constants/errorConditionConstants';
 
 const venueId = 'scenario-venue';
 const startDate = '2024-05-01';
@@ -189,12 +193,12 @@ it('rejects invalid schedule scenarios', () => {
     tournamentId,
     scenario: { scenarioName: 'x', placements: [{ tournamentId: 'nope', matchUpId: 'm', schedule: {} }] },
   });
-  expect(bad.error).toBeDefined();
+  expect(bad.error).toEqual(INVALID_VALUES);
 
   // invalid scheduledDates
   const badDates = competitionEngine.addScheduleScenario({
     tournamentId,
     scenario: { scenarioName: 'x', scheduledDates: ['not-a-date'], placements: [] },
   });
-  expect(badDates.error).toBeDefined();
+  expect(badDates.error).toEqual(INVALID_VALUES);
 });

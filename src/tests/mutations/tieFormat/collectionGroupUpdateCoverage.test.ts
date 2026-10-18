@@ -43,7 +43,7 @@ describe('collectionGroupUpdate and related operations coverage', () => {
       collectionGroupNumber: Number.NaN,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
   });
 
   it('addCollectionGroup returns error when collectionIds is not an array', () => {

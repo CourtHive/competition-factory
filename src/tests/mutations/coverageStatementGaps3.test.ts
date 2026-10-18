@@ -35,6 +35,7 @@ import {
   MISSING_DRAW_DEFINITION,
   MISSING_MATCHUPS,
   MISSING_TOURNAMENT_RECORD,
+  INVALID_END_TIME,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -566,7 +567,7 @@ function teamScoreTotals(json) {
 describe('generateStatCrew with TEAM tournament', () => {
   it('returns error without tournamentRecord', () => {
     const result: any = generateStatCrew({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('exercises dual match (single team matchUp) path', () => {
@@ -1201,7 +1202,7 @@ describe('scheduleItems additional paths', () => {
         endTime: '08:00',
       });
       // Should return an error because endTime is before startTime
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual(INVALID_END_TIME);
     }
   });
 

@@ -7,7 +7,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { INVALID_TIME_ZONE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { INVALID_TIME_ZONE, INVALID_VALUES, INVALID_RECORDS } from '@Constants/errorConditionConstants';
 
 /**
  * A mocksEngine result is true: `success` means the record was generated, and an error in any stage
@@ -97,7 +97,7 @@ describe('setState installs only what was generated', () => {
 
     // not a record and not a { [tournamentId]: record } map
     const result: any = tournamentEngine.setState({ error: 'not a record' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_RECORDS);
     expect(tournamentEngine.getTournament().tournamentRecord?.tournamentId).toEqual(KEEP_ID);
   });
 });

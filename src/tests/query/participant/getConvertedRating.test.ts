@@ -11,25 +11,25 @@ describe('getConvertedRating', () => {
   it('returns error when ratings parameter is missing', () => {
     const result = getConvertedRating({} as any);
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error when ratings is not an object', () => {
     const result = getConvertedRating({ ratings: 'not an object' as any });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error when ratings is null', () => {
     const result = getConvertedRating({ ratings: null as any });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error when ratings is an array', () => {
     const result = getConvertedRating({ ratings: [] as any });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   // Unit tests for matchUpType handling

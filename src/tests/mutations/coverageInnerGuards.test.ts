@@ -30,6 +30,7 @@ import {
   EVENT_NOT_FOUND,
   MISSING_TIME_ITEM,
   INVALID_TIME_ITEM,
+  MATCHUP_NOT_FOUND,
   MISSING_PENALTY_TYPE,
 } from '@Constants/errorConditionConstants';
 
@@ -297,7 +298,7 @@ describe('checkInParticipant param guards', () => {
       participantId: 'p1',
       matchUpId: 'nonexistent-matchup',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 });
 
@@ -331,7 +332,7 @@ describe('checkOutParticipant param guards', () => {
       participantId: 'p1',
       matchUpId: 'nonexistent-matchup',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 
   it('returns error for invalid participantId', () => {
@@ -345,7 +346,7 @@ describe('checkOutParticipant param guards', () => {
       participantId: undefined as any,
       matchUpId: 'm1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
   });
 });
 

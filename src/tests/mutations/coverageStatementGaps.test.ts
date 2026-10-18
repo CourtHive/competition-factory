@@ -54,6 +54,8 @@ import {
   STRUCTURE_NOT_FOUND,
   UNLINKED_STRUCTURES,
   MISSING_DRAW_POSITION,
+  INVALID_DRAW_SIZE,
+  MATCHUP_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -143,7 +145,7 @@ describe('scheduleItems guard paths', () => {
       schedule: { scheduledDate: '2020-01-01' },
       matchUpId: 'm1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('addMatchUpScheduleItems returns error without schedule object', () => {
@@ -151,7 +153,7 @@ describe('scheduleItems guard paths', () => {
       drawDefinition: { drawId: 'd1', structures: [] },
       matchUpId: 'm1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('addMatchUpScheduleItems exercises homeParticipantId, courtAnnotation, timeModifiers branches', () => {
@@ -341,7 +343,7 @@ describe('getDrawData guard paths', () => {
 describe('applyLineUps guard paths', () => {
   it('returns error without required params', () => {
     const result = applyLineUps({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('returns error with non-array lineUps', () => {
@@ -351,7 +353,7 @@ describe('applyLineUps guard paths', () => {
       matchUpId: 'm1',
       lineUps: 'not-an-array',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns MATCHUP_NOT_FOUND when matchUp does not exist', () => {
@@ -361,7 +363,7 @@ describe('applyLineUps guard paths', () => {
       matchUpId: 'nonexistent',
       lineUps: [],
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 
   it('returns INVALID_VALUES when lineUp entry is not an array', () => {
@@ -618,7 +620,7 @@ describe('generateVoluntaryConsolation guard paths', () => {
       drawType: FEED_IN,
     });
     // No VOLUNTARY_CONSOLATION entries exist so drawSize would be 0
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DRAW_SIZE);
   });
 });
 
@@ -671,7 +673,7 @@ describe('removeTieMatchUpParticipant guard paths', () => {
     const result = tournamentEngine.removeTieMatchUpParticipantId({
       tieMatchUpId: 'nonexistent',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
   });
 });
 

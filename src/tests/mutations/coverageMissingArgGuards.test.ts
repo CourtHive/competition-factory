@@ -7,8 +7,12 @@ import { address } from '@Assemblies/generators/mocks/address';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';
+import {
+  MISSING_TOURNAMENT_RECORD,
+  INVALID_VALUES,
+  MISSING_TOURNAMENT_RECORDS,
+} from '@Constants/errorConditionConstants';
 
 // Single-statement guard coverage. Each target's coverage report shows exactly
 // one uncovered statement: an early-return path that no other test exercises.
@@ -34,21 +38,21 @@ describe('transitionCertificationStatus !officialRecord guard', () => {
 describe('savePersonRequests paramsCheck guard', () => {
   it('returns paramsCheck error when tournamentRecords missing', () => {
     const result: any = savePersonRequests({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
   });
 });
 
 describe('generateTimeSlots paramsCheck guard', () => {
   it('returns paramsCheck error when courtDate missing', () => {
     const result: any = generateTimeSlots({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
 describe('getDailyLimit paramCheck guard', () => {
   it('returns paramCheck error when tournamentRecord missing', () => {
     const result: any = getDailyLimit({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 });
 
