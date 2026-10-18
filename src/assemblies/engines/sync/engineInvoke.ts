@@ -2,10 +2,11 @@ import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/op
 import { deleteNotices, getInvokeObserver, getMethods } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
-import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
+import { seedCall } from '@Assemblies/engines/parts/seedRandomParam';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { isFunction, isObject, isString } from '@Tools/objects';
+import { withCallRandomSource } from '@Tools/prng';
 import { withCapturedClock } from '@Tools/clock';
 
 // constants
@@ -29,8 +30,9 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
   const params = args?.params ? { ...args.params } : { ...remainingArgs };
 
   // nonRandom: <seed> middleware, applied to `params` (not `args`) so it stays clear of the
-  // function-count guard above, which is load-bearing for method dispatch.
-  seedRandomParam(params);
+  // function-count guard above, which is load-bearing for method dispatch. The seed also determines the
+  // draws it does not reach through `random`: see seedCall and tools/prng.ts withCallRandomSource
+  const unthreadedSource = seedCall(params);
 
   const method = passedMethod || engine[methodName] || getMethods()[methodName];
   if (!method) return logMethodNotFound({ methodName, params });
@@ -43,7 +45,8 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
 
     let result: ReturnType<typeof executeFunction>;
     try {
-      result = executeFunction(engine, method, params, methodName, 'sync') ?? {};
+      result =
+        withCallRandomSource(unthreadedSource, () => executeFunction(engine, method, params, methodName, 'sync')) ?? {};
     } catch (err) {
       // thrown only under devContext (otherwise executeFunction catches): restore, then surface it
       if (captured) restoreOperation(captured);

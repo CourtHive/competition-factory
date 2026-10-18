@@ -1,6 +1,7 @@
 import { addTournamentExtension, removeTournamentExtension } from '@Mutate/extensions/addRemoveExtensions';
 import { getRecordLinkedTournamentIds } from '@Acquire/getRecordLinkedTournamentIds';
 import { writeLegacyEnabled, writeNativeEnabled } from '@Global/state/globalState';
+import { modifyTournamentDetailNotice } from './tournamentDetailNotice';
 import { getTournamentIds } from '@Query/tournaments/getTournamentIds';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -22,6 +23,23 @@ import { Tournament } from '@Types/tournamentTypes';
  * writes both. When `tournamentIds` is empty, both surfaces are cleared.
  */
 function writeRecordLinkedTournamentIds(tournamentRecord: Tournament, tournamentIds: string[]): void {
+  const before = linkSurfaces(tournamentRecord);
+  linkedTournamentIdsWrite(tournamentRecord, tournamentIds);
+  if (linkSurfaces(tournamentRecord) !== before) {
+    modifyTournamentDetailNotice({
+      detail: { linkedTournamentIds: getRecordLinkedTournamentIds(tournamentRecord) ?? [] },
+      tournamentRecord,
+    });
+  }
+}
+
+// both surfaces the links can live on, so a write that changes either is announced and one that changes neither is not
+function linkSurfaces(tournamentRecord: Tournament): string {
+  const extension = tournamentRecord?.extensions?.find(({ name }) => name === LINKED_TOURNAMENTS);
+  return JSON.stringify([tournamentRecord?.linkedTournamentIds, extension?.value]);
+}
+
+function linkedTournamentIdsWrite(tournamentRecord: Tournament, tournamentIds: string[]): void {
   const isClear = !tournamentIds.length;
   if (writeNativeEnabled() && !isClear) {
     tournamentRecord.linkedTournamentIds = [...tournamentIds];

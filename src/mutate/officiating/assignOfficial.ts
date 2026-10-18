@@ -43,6 +43,7 @@ export function assignOfficial(params: AssignOfficialArgs): {
   error?: any;
   context?: { message: string };
   assignment?: OfficialAssignment;
+  assignmentId?: string;
   conflicts?: OfficialConflict[];
   success?: boolean;
 } {
@@ -106,5 +107,7 @@ export function assignOfficial(params: AssignOfficialArgs): {
 
   // Non-blocking (WARN) conflicts are returned so the caller can surface them
   // alongside the successful assignment rather than discarding them.
-  return conflicts.length ? { ...SUCCESS, assignment, conflicts } : { ...SUCCESS, assignment };
+  return conflicts.length
+    ? { ...SUCCESS, assignment, assignmentId: assignment.assignmentId, conflicts }
+    : { ...SUCCESS, assignment, assignmentId: assignment.assignmentId };
 }

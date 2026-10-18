@@ -1,3 +1,4 @@
+import { groupLeafFingerprint, modifyTournamentDetailNotice } from './tournamentDetailNotice';
 import { setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 
 // constants and types
@@ -35,14 +36,13 @@ export function setMatchUpDailyLimits(params: SetMatchUpDailyLimitsArgs): Result
 
   for (const currentTournamentId of tournamentIds) {
     const tournamentRecord = tournamentRecords[currentTournamentId];
-    const result = setGroupLeafOrExtension({
-      element: tournamentRecord,
-      groupAttribute: 'scheduling',
-      leafAttribute: 'dailyLimits',
-      name: SCHEDULE_LIMITS,
-      value: { dailyLimits },
-    });
+    const surface = { element: tournamentRecord, groupAttribute: 'scheduling', leafAttribute: 'dailyLimits' };
+    const before = groupLeafFingerprint({ ...surface, name: SCHEDULE_LIMITS });
+    const result = setGroupLeafOrExtension({ ...surface, name: SCHEDULE_LIMITS, value: { dailyLimits } });
     if (result.error) return result;
+    if (groupLeafFingerprint({ ...surface, name: SCHEDULE_LIMITS }) !== before) {
+      modifyTournamentDetailNotice({ tournamentRecord, detail: { dailyLimits } });
+    }
   }
 
   return { ...SUCCESS };

@@ -40,6 +40,7 @@ export function addCertification({
   error?: any;
   context?: { message: string };
   certification?: OfficialCertification;
+  certificationId?: string;
   success?: boolean;
 } {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
@@ -73,5 +74,5 @@ export function addCertification({
   officialRecord.certifications.push(certification);
   officialRecord.updatedAt = now;
 
-  return { ...SUCCESS, certification };
+  return { ...SUCCESS, certification, certificationId: certification.certificationId };
 }

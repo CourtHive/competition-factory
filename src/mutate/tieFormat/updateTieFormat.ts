@@ -284,6 +284,15 @@ export function updateTieFormat({
 
         if (changesArePossible && !matchUp.tieFormat && !matchUp.tieFormatId) {
           makeChanges({ changes, matchUp, tieFormat, uuids });
+          // the TEAM matchUp now carries its own tieFormat: announced, though not counted as modified
+          modifyMatchUpNotice({
+            tournamentId: tournamentRecord?.tournamentId,
+            drawDefinition,
+            context: stack,
+            eventId,
+            matchUp,
+            event,
+          });
         } else if (inheritedTieFormat) {
           const matchUpTieFormat =
             matchUp.tieFormat ??

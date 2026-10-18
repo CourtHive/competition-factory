@@ -365,7 +365,8 @@ export function modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, 
   const paramsCheck = requireParams({ drawDefinition, structure }, [DRAW_DEFINITION, STRUCTURE]);
   if (paramsCheck.error) return paramsCheck;
 
-  const positionAssignments = getPositionAssignments({ structure });
+  // the getter returns `{ positionAssignments }`: the notice carries the array, which every consumer iterates
+  const { positionAssignments } = getPositionAssignments({ structure });
   const structureId = structure.structureId;
   const drawId = drawDefinition.drawId;
   const eventId = event?.eventId;

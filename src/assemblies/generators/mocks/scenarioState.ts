@@ -1,8 +1,8 @@
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
-import { checkInParticipant } from '@Mutate/timeItems/matchUps/checkInParticipant';
-import { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 import { proConflicts } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proConflicts';
+import { checkInParticipant } from '@Mutate/timeItems/matchUps/checkInParticipant';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
+import { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 
 // constants and types
@@ -30,6 +30,7 @@ export const SCENARIO_CONFLICT_TYPES = [
   CONFLICT_COURT_TIME_ORDER,
   CONFLICT_MATCHUP_ORDER,
 ] as const;
+const SCENARIO_CONFLICT_TYPE_SET = new Set<string>(SCENARIO_CONFLICT_TYPES);
 
 export type ScenarioConflict = { type: (typeof SCENARIO_CONFLICT_TYPES)[number] | string; count?: number };
 
@@ -47,14 +48,14 @@ type Placed = { matchUp: HydratedMatchUp; instant: number };
 const refuse = (info: string) => ({ error: INVALID_VALUES, info });
 
 function invalidScenarioState({ called, checkedIn, conflicts, assignCourts }: ScenarioStateArgs) {
-  for (const window of [called, checkedIn]) {
-    if (window !== undefined && !(Number.isFinite(window?.withinMinutes) && window.withinMinutes >= 0))
+  for (const timeWindow of [called, checkedIn]) {
+    if (timeWindow !== undefined && !(Number.isFinite(timeWindow?.withinMinutes) && timeWindow.withinMinutes >= 0))
       return refuse('called and checkedIn take { withinMinutes }, a non-negative number');
   }
   if (conflicts !== undefined && !Array.isArray(conflicts)) return refuse('conflicts is an array of { type, count }');
   if (conflicts?.length && !assignCourts) return refuse('conflicts are placed on courts: they need assignCourts');
   for (const conflict of conflicts ?? []) {
-    if (!(SCENARIO_CONFLICT_TYPES as readonly string[]).includes(conflict?.type))
+    if (!SCENARIO_CONFLICT_TYPE_SET.has(conflict?.type))
       return refuse(`conflict type must be one of ${SCENARIO_CONFLICT_TYPES.join(', ')}`);
     const count = conflict.count ?? 1;
     if (!Number.isInteger(count) || count < 1) return refuse('a conflict count is a whole number, at least 1');
@@ -156,14 +157,16 @@ function checkInSides({
   return undefined;
 }
 
-function issuedMatchUpIds(tournamentRecord: Tournament): Set<string> {
+// a detector error is returned, not read as "no issues": a conflict placed on a matchUp that already has one could
+// be masked by it, and the fixture would report a conflict proConflicts never shows
+function issuedMatchUpIds(tournamentRecord: Tournament): Set<string> | { error: ErrorType; info?: string } {
   const tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
   const matchUps = (
     allCompetitionMatchUps({ tournamentRecords, nextMatchUps: true, inContext: true }).matchUps ?? []
   ).filter((matchUp) => matchUp.schedule?.courtOrder);
   if (!matchUps.length) return new Set();
   const result = proConflicts({ tournamentRecords, matchUps });
-  if ('error' in result) return new Set();
+  if ('error' in result) return { error: result.error, info: result.info };
   return new Set(
     Object.values(result.rowIssues)
       .flat()
@@ -208,6 +211,7 @@ function placeConflict({ type, tournamentRecord, drawMap, used }: PlaceConflictA
   // issue, so a conflict placed on it could be masked (measured: the anchored grid's own matchUp-order issues
   // hid a court-time-order warning)
   const issued = issuedMatchUpIds(tournamentRecord);
+  if ('error' in issued) return issued;
   const placed = placedMatchUps(tournamentRecord).filter(
     ({ matchUp }) =>
       matchUp.schedule?.courtId &&
@@ -242,10 +246,11 @@ function placeConflict({ type, tournamentRecord, drawMap, used }: PlaceConflictA
           earlier.schedule?.scheduledDate === later.schedule?.scheduledDate,
       )
       .sort((a, b) => (a.later.roundNumber ?? 0) - (b.later.roundNumber ?? 0));
-    for (const { earlier, later } of pairs) {
-      const result = write(later, { scheduledTime: earlier.schedule?.scheduledTime });
+    const [pair] = pairs;
+    if (pair) {
+      const result = write(pair.later, { scheduledTime: pair.earlier.schedule?.scheduledTime });
       if (result.error) return { error: result.error, info: result.info };
-      return done([later.matchUpId, earlier.matchUpId]);
+      return done([pair.later.matchUpId, pair.earlier.matchUpId]);
     }
   }
 

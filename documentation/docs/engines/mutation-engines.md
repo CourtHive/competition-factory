@@ -211,7 +211,9 @@ if (result.error) {
 changes, so a failure in the third call leaves the first two applied.
 
 The same holds **inside** an `executionQueue` submitted without rollback: when a directive fails, the writes of the
-directives before it stay in the records, and **no notices are delivered** for any of them. A caller that persists
+directives before it stay in the records, and **no notices are delivered** for any of them, then or on any later call. The
+record is stamped as modified at the queue's own instant, and the result carries `rolledBack: false` and `results`, the
+directives that were applied before the refusal. A caller that persists
 from notices, or that lent the engine its own objects (`setDeepCopy(false)`), must then discard the in-memory records
 — for example by aborting its database transaction — because they no longer match what was announced. To make several mutations
 succeed or fail together, submit them as one `executionQueue` with rollback enabled — the second

@@ -3819,6 +3819,13 @@ function getHeldExit({
   const opponentSide = target.sides?.find((side) => side.sideNumber === 3 - arrivalSideNumber);
   // an entry on a side that is itself a BYE is no exit waiting there: its carrier went home when the BYE took the seat
   const exitSideIsBye = !!matchUp.sides?.find((side) => side.sideNumber === exitSideNumber)?.bye;
+  // A PARTICIPANT'S OWN CARRY on that side is no held exit at all (F2, 2026-10-17). A BYE matchUp records the carry of
+  // a carrier who passed it (RULE 1, `recordCarryBesideBye`), and the entry stays when a correction makes the carrier's
+  // origin a double exit and gives their seat to a BYE. It names nobody now. Sent on, it met the produced exit that
+  // double exit sent to the next matchUp and made that BYE matchUp a double walkover (census s14, COMPASS 32/27 seed
+  // 20521366, `South|3|1` from `South|2|1`, round by round: `theWholeDrawIsTheSameInEveryOrder`). A double exit's
+  // produced exit on a BYE side is still asked of below, as before.
+  if (exitSideIsBye && !isDoubleExit(origin.previousMatchUpStatus)) return undefined;
   // an exit standing on the other side is settled too: the held exit meets it, and they converge (RULE 4;
   // `convergesAtTarget` in the carrier). Declining here was the policy-off stall budget's whole population.
   // judged on the target as it stands once the holder's BYE arrival is taken back out (`releaseHoldersByeFromTarget`):

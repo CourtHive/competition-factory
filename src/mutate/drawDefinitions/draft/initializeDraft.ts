@@ -1,3 +1,4 @@
+import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -126,12 +127,15 @@ export function initializeDraft({
     unassignedDrawPositions: unassignedPositions,
   };
 
+  const attributes = ['draftState'];
+  const before = attributesSnapshot(drawDefinition, attributes);
   setFirstClassOrExtension({
     element: drawDefinition,
     attribute: 'draftState',
     name: DRAFT_STATE,
     value: draftState,
   });
+  announceDrawChange({ tournamentRecord, drawDefinition, attributes, before, event });
 
   return {
     ...SUCCESS,
