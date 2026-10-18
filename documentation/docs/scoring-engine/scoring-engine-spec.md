@@ -653,8 +653,13 @@ no `winningSide`**, and `onMatchTie` fires, as for a combined-total tie (§ 7) (
    (`src/validators/tiedFormatCompatibility.ts`), checked at draw generation and by
    `checkDrawFormatCompatibility`, today reports only a `P{n}` combined total that can tie, so only that
    is refused in a structure that advances a winner. It extends to every format that can end level by this rule: timed,
-   aggregate and exactly-N formats with no declared decider. Stored draws are untouched: the check runs
-   at generation and at a format change. This is a v1 change to make (§ 16, 3).
+   aggregate and exactly-N formats with no declared decider; a best-of format with an even N (CA 2026-10-18:
+   `SET2-S:6/TB7` can end 1-1); and a format whose only decider can itself end level (CA 2026-10-18: a timed `-F:`
+   with no `/TB`, as in `SET3XA-S:T10-F:T10P`, is not a decider). A real decider is untimed (`-F:TB1`, `-F:TB10`)
+   or timed with a tiebreak (`-F:T10P/TB1`). Only a format CHANGE is refused, so a stored draw is untouched and a
+   score submitted with the matchUp's existing format is accepted; TEAM structures are skipped (the tieFormat
+   decides the dual). A policy may still offer such a format for round robin and team play (CA 2026-10-18:
+   `POLICY_SCORING_USTA`'s `SET1-S:T20` stays as it is). This is a v1 change (§ 16, 3).
 
 v1 opens further segments after a level timed segment and after a level aggregate, and keeps a level
 exactly-N match `IN_PROGRESS`: v1 defects (§ 16, 3, 12, 18). Entries v1 recorded past a level close
@@ -1027,7 +1032,8 @@ flagged as a legacy shape, with no version flag (§ 12.8). Nothing is left open.
 3. **DECIDED: a match that ends level with no declared decider is `COMPLETED` without a winner**,
    `onMatchTie` fires, no undeclared segment is played, and the views expose `decisionRequired`
    (§ 6.4, § 9.1, § 9.7, § 11.2). The elimination guard `formatCanEndTied` extends to timed, aggregate
-   and exactly-N formats with no declared decider (§ 9.7 rule 4). v1 defect: further segments are
+   and exactly-N formats with no declared decider, even best-of formats, and formats whose decider can end level
+   (§ 9.7 rule 4). v1 defect: further segments are
    opened; v1 change: the guard.
 4. **DECIDED: a closed segment takes no input** (§ 2, § 6.4). v1 defect: `addGame` reopens it.
 5. **DECIDED: a completed match takes no scoring input**; a set and a game are ignored with a result
