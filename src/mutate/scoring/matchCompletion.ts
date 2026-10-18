@@ -54,7 +54,7 @@ function sideAhead(counts: [number, number]): 1 | 2 | undefined {
  * A segment's total in an aggregate format: a tiebreak-only segment's points, and a timed segment's own
  * score, even when a tiebreak at time decided it (§ 9.3 rule 3).
  */
-function aggregateTotals(sets: SetScore[]): [number, number] {
+export function aggregateTotals(sets: SetScore[]): [number, number] {
   const totals: [number, number] = [0, 0];
   for (const set of sets) {
     if (!set.isTimed && set.side1TiebreakScore !== undefined && set.side2TiebreakScore !== undefined) {

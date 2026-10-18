@@ -34,6 +34,8 @@ export function getCombinedPointScore(matchUp: MatchUp, contract: RotatingPartne
           isGoldenPoint:
             contract.tieResolution === 'DECIDING_POINT' && points[0] + points[1] === contract.combinedPointTotal,
           isTiebreak: false,
+          // a combined total derives no server (§ 10.4)
+          serverDerived: false,
         },
     decisionRequired: isDecisionRequired(matchUp),
   };

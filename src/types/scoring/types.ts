@@ -476,7 +476,7 @@ export interface AddPointOptions {
   /** Specific participant serving (for doubles rotation tracking) */
   serverParticipantId?: string;
 
-  /** Override score increment for this point (default 1, used by timed/IONSport formats) */
+  /** Override score increment for this point (default 1, used by timed formats) */
   scoreValue?: number;
 
   /** ISO 8601 timestamp when point was played */
@@ -706,8 +706,14 @@ export interface PointSituation {
   isGoldenPoint: boolean;
   /** Currently in a tiebreak game */
   isTiebreak: boolean;
-  /** Who serves next: 0 = side 1, 1 = side 2 */
+  /** Who serves next: 0 = side 1, 1 = side 2 (a placeholder when `serverDerived` is false) */
   server?: 0 | 1;
+  /**
+   * Whether `server` is the engine's derivation (spec § 10.4, § 11.2; CA 2026-10-18). False where no
+   * server is derived (a combined total `P{n}`, a tiebreak-only format): `server` is then only a
+   * placeholder, and no game point or break point is reported.
+   */
+  serverDerived?: boolean;
   /**
    * The match is COMPLETED without a winner (a level close with no declared decider, or a combined
    * total's tie), so a host running an elimination draw must decide it (spec § 9.7, § 11.2). Present,

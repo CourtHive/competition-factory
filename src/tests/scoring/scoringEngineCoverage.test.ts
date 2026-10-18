@@ -1072,14 +1072,17 @@ describe('addPoint — tiebreak-only sets', () => {
 // ============================================================================
 
 describe('addPoint — rally scoring', () => {
-  test('rally scoring skips auto server derivation', () => {
-    // SET3-S:TB21@RALLY — rally scoring tiebreak
+  test('under rally scoring the rally winner serves next', () => {
+    // SET3-S:TB21@RALLY — rally scoring tiebreak. Spec § 10.4 (CA 2026-10-18, decision 15): the server of a
+    // point is the winner of the point before it; the first point's server follows the orientation (side 1).
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB21@RALLY' });
 
+    engine.addPoint({ winner: 1 });
     engine.addPoint({ winner: 0 });
-    const point = engine.getState().history!.points[0];
-    // Rally scoring should NOT derive server automatically
-    expect(point.server).toBeUndefined();
+    const points = engine.getState().history!.points;
+    expect(points.map((point) => point.server)).toEqual([0, 1]);
+    expect(engine.getNextServer()).toBe(0);
+    expect(engine.isServerDerived()).toBe(true);
   });
 });
 

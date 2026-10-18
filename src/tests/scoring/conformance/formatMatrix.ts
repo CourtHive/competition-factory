@@ -136,6 +136,7 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
   'bestOf | SET | set:timed(G) | final:timed(G) | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
   'bestOf | SET | set:timed(G) | final:timed(G) | game:traditional(deuceCap) | noClock | knownModifiers':
     TIMED_SEGMENTS,
+  'bestOf | SET | set:timed(G) | final:timed(G,tiebreak) | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
   'bestOf | SET | set:timed(P,tiebreak) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
   'bestOf | SET | set:timed(P) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
   'bestOf+aggregate | HAL | set:outs | final:same | game:traditional | noClock | knownModifiers': {

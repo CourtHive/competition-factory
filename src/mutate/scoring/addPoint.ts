@@ -134,11 +134,10 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
     isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
   if (!inputLevels(activeSetFormat).point) throw inputLevelError('point');
 
-  // Detect rally scoring (skip auto server derivation)
-  const isRallyScoring = !!(activeSetFormat?.tiebreakSet?.modifier === RALLY || activeSetFormat?.modifier === RALLY);
-
-  // Derive server if not provided and not rally scoring
-  if (server === undefined && !isRallyScoring) {
+  // Derive the server if not provided, where the set in play derives one (§ 10): none is derived in a
+  // tiebreak-only format, so its points record a server only when the caller supplies it
+  const rule = serviceRule(formatStructure, activeSetFormat);
+  if (server === undefined && rule !== 'none') {
     server = deriveServer(newMatchUp, formatStructure, setType);
   }
 
@@ -217,6 +216,9 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
       handleStandardSet(newMatchUp, point, winner, formatStructure, activeSetFormat!, setsToWin, isDecidingSet);
       break;
   }
+
+  // Under @RALLY a setServer correction names the server of one point; then the rally winner serves (§ 10.4)
+  if (rule === 'rallyWinner') delete newMatchUp.serverFlip;
 
   return newMatchUp;
 }
@@ -755,11 +757,52 @@ export function validatePointInput(options: Partial<AddPointOptions>): void {
 }
 
 /**
- * Derive server from match state
+ * How the side due to serve is known in a set (spec § 10, CA 2026-10-18):
+ * - `rotation`: derived by the format (§ 10.1–10.3): game by game in standard sets, Rule 5(b) in a tiebreak
+ *   (a tennis match tiebreak `-F:TB{n}` included), and unit by unit in timed segments, continuously across
+ *   segments;
+ * - `rallyWinner`: under `@RALLY` the rally winner serves next (§ 10.4);
+ * - `none`: no server is derived (§ 10.2 rule 2, § 10.4): a combined total `P{n}`, and a tiebreak-only
+ *   format (`S:TB{n}`: squash, table tennis, pickleball and badminton shapes) until each sport's own rule is
+ *   added. A point there records a server only when the caller supplies one.
+ */
+export type ServiceRule = 'rotation' | 'rallyWinner' | 'none';
+
+export function serviceRule(
+  formatStructure: FormatStructure | undefined,
+  setFormat: SetFormatStructure | undefined,
+): ServiceRule {
+  if (!formatStructure || !setFormat || setFormat.combinedPointTotal) return 'none';
+  if (setFormat.modifier === RALLY || setFormat.tiebreakSet?.modifier === RALLY) return 'rallyWinner';
+  if (setFormat.tiebreakSet && formatStructure.setFormat?.tiebreakSet) return 'none';
+  return 'rotation';
+}
+
+/** The format governing the set the next point lands in (§ 3.2). */
+export function liveSetFormat(matchUp: MatchUp, formatStructure: FormatStructure): SetFormatStructure | undefined {
+  const setsWon: [number, number] = [0, 0];
+  for (const set of matchUp.score.sets) {
+    if (set.winningSide === 1) setsWon[0]++;
+    if (set.winningSide === 2) setsWon[1]++;
+  }
+  const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, openSetNumber(matchUp.score.sets));
+  return isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
+}
+
+/** The service rule of the set the next point lands in. */
+export function liveServiceRule(matchUp: MatchUp, formatStructure: FormatStructure | undefined): ServiceRule {
+  if (!formatStructure) return 'none';
+  return serviceRule(formatStructure, liveSetFormat(matchUp, formatStructure));
+}
+
+/**
+ * The side due to serve the next point. Where no server is derived (`none`) this is a placeholder kept for
+ * API compatibility: the side a `setServer` named, or side 1 (`liveServiceRule` says which it is).
  *
  * Exported for use by ScoringEngine.getNextServer() and getScore() situation.
  */
 export function deriveServer(matchUp: MatchUp, formatStructure: FormatStructure, setType: SetType): 0 | 1 {
+  const rule = liveServiceRule(matchUp, formatStructure);
   const baseServer = deriveServerBase(matchUp, formatStructure, setType);
 
   // Priority 1: Explicit serverFlip (set via ScoringEngine.setServer()).
@@ -767,76 +810,85 @@ export function deriveServer(matchUp: MatchUp, formatStructure: FormatStructure,
   // This replaces first-point inference for the current position onward.
   // During rebuild, serverFlip is only set when the setServer timeline entry
   // is replayed, so points before it use first-point inference naturally.
+  // Under @RALLY a correction names the server of the next point only: the rule resumes after it.
   if (matchUp.serverFlip !== undefined) {
     return matchUp.serverFlip ? ((1 - baseServer) as 0 | 1) : baseServer;
   }
+  if (rule !== 'rotation') return baseServer;
 
   // Priority 2: Infer from the first recorded point's explicit server.
   // If it disagrees with the base derivation at that point's position, flip all
   // subsequent derivations. This handles both starting from scratch (where
   // side 1 starts) and mid-match entry (where the first recorded point may
   // be in set 2+ after addSet calls).
-  const firstPoint = matchUp.history?.points?.[0];
-  if (firstPoint?.server !== undefined) {
-    const firstPointSetIndex = (firstPoint as any).set ?? 0;
-    const firstPointGameIndex = (firstPoint as any).game ?? 0;
-    let gamesBeforeFirstPoint = 0;
-    for (let i = 0; i < firstPointSetIndex; i++) {
-      const s = matchUp.score.sets[i];
-      gamesBeforeFirstPoint += (s.side1Score || 0) + (s.side2Score || 0);
-    }
-    gamesBeforeFirstPoint += firstPointGameIndex;
-    const baseAtFirstPoint = (gamesBeforeFirstPoint % 2) as 0 | 1;
-
-    if (firstPoint.server !== baseAtFirstPoint) {
-      return (1 - baseServer) as 0 | 1;
-    }
+  const firstPoint = matchUp.history?.points?.[0] as PlacedPoint | undefined;
+  if (firstPoint?.server !== undefined && firstPoint.server !== baseAtPoint(matchUp, firstPoint)) {
+    return (1 - baseServer) as 0 | 1;
   }
   return baseServer;
 }
 
+/** Games (or units) a set recorded: a tiebreak and a tiebreak-only set count as one. */
+function unitsOf(set: SetScore): number {
+  return (set.side1Score || 0) + (set.side2Score || 0);
+}
+
+/**
+ * The rotation's server at a recorded point's position: the units played before it, across every set. In a
+ * timed segment whose points are units (no games) a point is one unit; elsewhere a game is.
+ */
+function baseAtPoint(matchUp: MatchUp, point: PlacedPoint): 0 | 1 {
+  const setIndex = point.set ?? 0;
+  let unitsBefore = 0;
+  for (const set of matchUp.score.sets.slice(0, setIndex)) unitsBefore += unitsOf(set);
+  const set = matchUp.score.sets[setIndex];
+  const unitPoints = !!set?.isTimed && !set.side1GameScores?.length;
+  unitsBefore += (unitPoints ? point.number : point.game) ?? 0;
+  return (unitsBefore % 2) as 0 | 1;
+}
+
+/**
+ * The derivation before any orientation (§ 10.6). Rotation: side 1 serves the first unit of the match and
+ * service alternates every unit, counted across every set however it was recorded (by points, `addGame`,
+ * `addSet` or a baseline), so a new set's first unit is served by the side that did not serve the last
+ * unit before it (§ 10.1, § 10.3). A unit is a game in a standard set and in a timed set whose points build
+ * games, and a point (or unit) in a timed segment whose points are units. A tiebreak (in a standard set, a
+ * match tiebreak, or the tiebreak a level timed segment plays at time) is opened by the side due to serve
+ * the next unit and follows Rule 5(b). Rally: the winner of the point before (§ 10.4). None: side 1.
+ */
 export function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStructure, setType: SetType): 0 | 1 {
-  const currentSetIndex = matchUp.score.sets.length - 1;
-  const currentSet = currentSetIndex >= 0 ? matchUp.score.sets[currentSetIndex] : undefined;
+  const rule = liveServiceRule(matchUp, formatStructure);
+  if (rule === 'none') return 0;
+  if (rule === 'rallyWinner') return matchUp.history?.points?.at(-1)?.winner ?? 0;
+
+  const sets = matchUp.score.sets;
+  const setNumber = openSetNumber(sets);
+  const inPlay = setNumber <= sets.length ? sets[setNumber - 1] : undefined;
+  let unitsBefore = 0;
+  for (const set of sets.slice(0, setNumber - 1)) unitsBefore += unitsOf(set);
+  const nextUnit = ((unitsBefore + (inPlay ? unitsOf(inPlay) : 0)) % 2) as 0 | 1;
 
   if (setType === 'tiebreakOnly' || setType === 'matchTiebreak') {
-    return deriveTiebreakServer(matchUp, currentSet);
+    const pointsPlayed = (inPlay?.side1GameScores?.[0] || 0) + (inPlay?.side2GameScores?.[0] || 0);
+    // the side due to serve the next game opens the match tiebreak
+    return tiebreakServer((unitsBefore % 2) as 0 | 1, pointsPlayed);
   }
 
   if (setType === 'timed') {
-    return deriveTimedServer(currentSet);
+    const tiebreakAtTime = inPlay?.side1TiebreakScore !== undefined && inPlay?.side2TiebreakScore !== undefined;
+    if (tiebreakAtTime) return tiebreakServer(nextUnit, inPlay.side1TiebreakScore! + inPlay.side2TiebreakScore!);
+    return nextUnit;
   }
-
-  // Standard sets
-  const side1Games = currentSet?.side1Score || 0;
-  const side2Games = currentSet?.side2Score || 0;
-
-  let totalPreviousGames = 0;
-  for (let i = 0; i < matchUp.score.sets.length - 1; i++) {
-    const s = matchUp.score.sets[i];
-    totalPreviousGames += (s.side1Score || 0) + (s.side2Score || 0);
-  }
-  const totalGames = totalPreviousGames + side1Games + side2Games;
 
   // the format governing the set in play — the scorer's own choice, so both agree on a tiebreak
-  const setsWon: [number, number] = [0, 0];
-  matchUp.score.sets.forEach((set) => {
-    if (set.winningSide === 1) setsWon[0]++;
-    if (set.winningSide === 2) setsWon[1]++;
-  });
-  const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, openSetNumber(matchUp.score.sets));
-  const activeSetFormat =
-    isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
-
-  if (isStandardSetTiebreak(activeSetFormat, side1Games, side2Games)) {
-    const side1GameScores = currentSet?.side1GameScores ?? [];
-    const side2GameScores = currentSet?.side2GameScores ?? [];
-    const tiebreakPoints = (side1GameScores.at(-1) || 0) + (side2GameScores.at(-1) || 0);
+  const activeSetFormat = liveSetFormat(matchUp, formatStructure);
+  if (inPlay && isStandardSetTiebreak(activeSetFormat, inPlay.side1Score || 0, inPlay.side2Score || 0)) {
+    const tiebreakPoints = (inPlay.side1GameScores?.at(-1) || 0) + (inPlay.side2GameScores?.at(-1) || 0);
     // the side due to serve the next game opens the tiebreak
-    return tiebreakServer((totalGames % 2) as 0 | 1, tiebreakPoints);
+    return tiebreakServer(nextUnit, tiebreakPoints);
   }
 
-  return (totalGames % 2) as 0 | 1;
+  return nextUnit;
 }
 
 /**
@@ -845,25 +897,6 @@ export function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStruct
  */
 export function tiebreakServer(openingServer: 0 | 1, pointsPlayed: number): 0 | 1 {
   return ((openingServer + Math.floor((pointsPlayed + 1) / 2)) % 2) as 0 | 1;
-}
-
-function deriveTiebreakServer(matchUp: MatchUp, currentSet: SetScore | undefined): 0 | 1 {
-  const side1GameScores = currentSet?.side1GameScores ?? [];
-  const side2GameScores = currentSet?.side2GameScores ?? [];
-  const pointsPlayed = (side1GameScores[0] || 0) + (side2GameScores[0] || 0);
-
-  let totalPreviousGames = 0;
-  for (let i = 0; i < matchUp.score.sets.length - 1; i++) {
-    const s = matchUp.score.sets[i];
-    totalPreviousGames += (s.side1Score || 0) + (s.side2Score || 0);
-  }
-
-  return tiebreakServer((totalPreviousGames % 2) as 0 | 1, pointsPlayed);
-}
-
-function deriveTimedServer(currentSet: SetScore | undefined): 0 | 1 {
-  const totalEvents = (currentSet?.side1Score || 0) + (currentSet?.side2Score || 0);
-  return (totalEvents % 2) as 0 | 1;
 }
 
 /**
