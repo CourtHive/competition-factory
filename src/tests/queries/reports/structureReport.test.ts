@@ -41,7 +41,6 @@ it('can identify winningParticipants and map WTN and ranking', () => {
   ];
   const participantsProfile = {
     participantsCount: 100,
-    withScaleValues: true,
     personExtensions,
   };
 

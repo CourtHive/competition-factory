@@ -93,10 +93,19 @@ The `executionQueue` method accepts an array of imported governor methods and as
 allowing for multiple queries or mutations in a single API call, which is significant if a client is making a
 request of a server and the server needs to prepare context by loading a tournament record.
 
-An additional benefit of the `executionQueue` is that subscribers to `engine` events are not notified
-until all methods in the queue have completed successfully, and a failure of any one method can be used to roll back state
-with the assurance that there are no side-effects caused by subscribers responding to notifications. This also means
-that the server context can not be blocked by any long-running external processes.
+Queue notifications are deferred until successful completion. The rollback option controls whether
+an error also restores earlier writes:
+
+| Result                     | Record state                        | Queued notices                                                                            |
+| -------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| All directives succeed     | Writes retained                     | Delivered after the queue                                                                 |
+| Refusal, rollback disabled | Earlier writes may remain           | Not delivered by this call; they stay buffered and the next successful call delivers them |
+| Refusal, rollback enabled  | Restored from the rollback snapshot | Queued notices discarded                                                                  |
+
+Subscribers run synchronously when dispatched; batching does not make slow callbacks nonblocking.
+Restoring records cannot undo external work already performed by subscribers or other host code.
+A single rollback-enabled queue is one transaction boundary; separate calls do not share it. See
+[Mutation Engines](./mutation-engines.md#rollback-on-error) for the canonical rollback and ownership contract.
 
 ```js
 syncEngine.importMethods({ getParticipants });

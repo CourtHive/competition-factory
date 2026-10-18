@@ -99,6 +99,9 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
   if (eventUpdates.eventType) event.eventType = eventUpdates.eventType;
   if (eventUpdates.eventName) event.eventName = eventUpdates.eventName;
   if (eventUpdates.gender) event.gender = eventUpdates.gender;
+  // validated above (checkCategoryUpdates: age, team and collection fit) and then never applied, so a
+  // category edit reported success and changed nothing (2026-10-18)
+  if (eventUpdates.category) event.category = eventUpdates.category;
 
   if (eventUpdates.competitionFormat !== undefined) {
     if (eventUpdates.competitionFormat === null) {

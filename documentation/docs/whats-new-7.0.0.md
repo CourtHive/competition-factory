@@ -1,5 +1,5 @@
 ---
-title: What's New in 7.0.0
+title: 7.0 and the 7.x Journey
 ---
 
 # Provenance
@@ -17,6 +17,8 @@ self-reported results, `RANK` or `RATING` ordering, and eighteen new engine meth
 - **Upgrading?** Start at [what you must act on](#what-you-must-act-on) — it is a short list.
 - **Upgrade mechanics** in detail: the [6.x to 7.0.0 migration guide](./migration-7.0.0.md).
 - **Every commit**: [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
+- **Measured gains**: [performance across 7.x](#performance-across-7x).
+- **After 7.15**: [unreleased adoption notes](#after-715-unreleased-adoption-notes).
 - **Where it led**: [7.0.0 began a journey](#700-began-a-journey) that the 7.x releases continued.
 
 ## 7.0.0 began a journey
@@ -27,25 +29,64 @@ the means of testing those promises: probes, confluence sweeps and an exit-propa
 they were running, the harness kept finding cases the promises did not yet cover. The 7.x releases
 have been about closing them.
 
-| Release         | What it settled                                                                                                                                                                                                                                                                  |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.3.0           | **The legacy codes array stopped deciding exits.** Exit logic reads `sideExitProvenance`, and a gate keeps new logic off `matchUpStatusCodes`. A double exit now places a BYE in the linked structure by default (`doubleExitPropagateBye: true`).                               |
-| 7.5.0           | **[The outcome pipeline](./concepts/outcome-pipeline.md) is written down as a specification.** A golden corpus pins it. A scoring policy now governs the propagation flags in both directions. An exit can be recorded before the second opponent arrives.                       |
-| 7.7.0           | **The frozen census arms read zero**, and no writer leaves a hole in a draw.                                                                                                                                                                                                     |
-| 7.10.0          | **`STALLED_POSITION` became an error**, after an at-scale randomized census read zero stalls. The detector reports a position nobody can reach.                                                                                                                                  |
-| 7.11.0 – 7.14.1 | **The failure families found at scale were closed:**<ul><li>feed-in consolations under change propagation;</li><li>refused calls that still wrote;</li><li>BYE claims, reservations and carries;</li><li>results whose effect depended on the order they were entered.</li></ul> |
+| Release         | What it settled                                                                                                                                                                                                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.3.0           | **The legacy codes array stopped deciding exits.** Exit logic reads `sideExitProvenance`, and a gate keeps new logic off `matchUpStatusCodes`. A double exit now places a BYE in the linked structure by default (`doubleExitPropagateBye: true`).                                    |
+| 7.5.0           | **[The outcome pipeline](./concepts/outcome-pipeline.md) is written down as a specification.** A golden corpus pins it. A scoring policy now governs the propagation flags in both directions. An exit can be recorded before the second opponent arrives.                            |
+| 7.7.0           | **The frozen census fixtures at that revision read zero**; later seeds/settings continued to expose failures.                                                                                                                                                                         |
+| 7.10.0          | **`STALLED_POSITION` became an error**, after an at-scale randomized census read zero stalls. The detector reports a position nobody can reach.                                                                                                                                       |
+| 7.11.0 – 7.14.1 | **Fixes addressed the then-reproduced failure families:**<ul><li>feed-in consolations under change propagation;</li><li>refused calls that still wrote;</li><li>BYE claims, reservations and carries;</li><li>results whose effect depended on the order they were entered.</li></ul> |
 
-**Where it stands, October 2026.** The randomized census plays each draw forward in a random order, in
-three configurations at 135,000 seeds each. Its most recent complete run, on 15 October 2026,
-reported 2, 4 and 8 failures per 135,000 seeds. The run of 10 October, at 40,000 seeds per
-configuration, reported 39, 302 and 110: a failure rate roughly a hundred times higher. Every
-failing schedule stored since 10 October now replays clean except one. That one concerns only
-`matchUpStatusCodes`, which 8.0 removes.
+## Performance across 7.x
 
-The census continues, and the guarantees it confirms are recorded in
-[Exit Propagation](./concepts/exit-propagation.md#guarantees). The settings that shape the pipeline
-are listed together under
-[`setMatchUpStatus`](./governors/matchup-governor.md#what-one-call-sets-in-motion).
+Repeated whole-draw work was replaced by targeted hydration and invocation-scoped reuse. These selected
+measurements cover different workloads, not a single factory-wide speedup.
+
+| First release / status | Workload                                          | Recorded improvement                                                              |
+| ---------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 7.5.0                  | Fixed 2,026-call scoring workload                 | Draw hydrations 6,034 → 3,408: **44% fewer**                                      |
+| 7.10.0                 | Readiness/rest with large supplied matchUp arrays | Avoid unnecessary copies of unused logging parameters; gains depend on array size |
+| 7.15.0                 | Bare syncEngine consumer                          | 27.1 → 15.7 KB gzip: **42% smaller** for this import scenario                     |
+| 7.15.0                 | FMLC128 bare-ID lookup                            | **223 → 1** hydration; work count, not a latency multiplier                       |
+| After 7.15, unreleased | Standalone SE512 tally                            | Historical paired timing 546 → 6.9 ms (**79×**)                                   |
+
+The same tally change recorded public projection at 413 → 72 ms (**5.7×**) at its revision. A later
+change stopped tallying elimination structures in public projections entirely; 72 ms is not a current
+benchmark. These synthetic local timings, work counts and bundle bytes cannot be added or multiplied.
+See [performance evidence and methodology](./concepts/performance.md) for sources and workload details.
+
+## Census evidence and continuing work
+
+As of this review (2026-10-17), historical frozen zeroes and replay closure counts do not establish
+that every draw/settings/mode path is defect-free. Later S7/S8 work and fresh seeds exposed additional
+failures. The release table records progress at those revisions, not universal closure. Intended
+behavior is documented in [Exit Propagation](./concepts/exit-propagation.md#guarantees). The
+[harness limits](./testing/exit-propagation-harness.md#measurement-limits) distinguish measured
+projections, independent trials and cross-mode evidence. Census reports must identify revision,
+seed range, settings and replay disposition; an exception count from an older run is not current status.
+The [pipeline](./concepts/outcome-pipeline.md#71-two-implementations-s2) still uses v1 for accepted
+writes. Future v2 work is not independent proof of v1 correctness.
+
+## After 7.15: unreleased adoption notes
+
+These notes describe `dev` through `97ad4dbe` (2026-10-17), beyond tag 7.15.0. They become release
+claims only when a later tag contains the changes.
+
+| Area                                                 | Caller action                                                                                                                                                                                                      |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Validation/input levels (#5518, #5520, #5536)        | Read `getInputLevels()` before offering point/game input. Outs segments take validated set totals. Catch thrown validation errors and retain the draft; prefer supported levels over deprecated hard-boundary use. |
+| Replay/configuration (#5515, #5517, #5520)           | Persist state plus supplementary configuration. Edit through methods rather than mutating returned copies. Recorded inputs/decorations replay; derived service fields are calculated again.                        |
+| Substitution/service metadata (#5521)                | Honor `substitute()` success/refusal. `evaluateSubstitution()` is advisory. Use `observedServeSide` for observed court half; clocks and participant-level service rotation remain host-owned.                      |
+| Service correction (#5512)                           | Use zero-based `setServer`; corrections survive replay. Tiebreak turns and different final-set formats use the applicable format.                                                                                  |
+| Timed/exactly/aggregate (#5529, #5530, #5533, #5536) | Respect declared input levels and segment counts. Timed games can finish with a one-game margin; exactly formats can tie.                                                                                          |
+| Participant results (#5516, #5522, #5525)            | Request `refreshResults` for fresh eligible tallies. RR refresh is group-local; public projections do not tally elimination structures. Read each structure's own report.                                          |
+| Query ownership (#5502–#5507, #5514, #5538)          | Choose thin/full participants and recovery fields deliberately. Query-derived progression edges are copied; use migration for stored repairs.                                                                      |
+
+Exact contracts: [scoring API](./scoring-engine/scoring-engine-api.md),
+[format support](./scoring-engine/format-support.md), [event integration](./scoring-engine/event-handlers.md),
+[query options](./governors/query-governor.md#matchup-query-options-and-ownership),
+[migration](./engines/migrate-tournament-record.md), and
+[conformance scope](./testing/testing-overview.md#scoring-format-conformance).
 
 ## Why provenance
 
@@ -84,9 +125,8 @@ tournaments live.
 **Undoability.** A result can be corrected, and the correction has to leave the draw where it would
 have been had the correction been the original entry. That sounds obvious and is surprisingly hard:
 a cascade that writes several matchUps forward must take back exactly what it placed and nothing a
-different cascade placed. 7.0.0 makes that hold across every draw type the engine generates, with one
-characterised exception in the compass family, and it is enforced by a sweep rather than by
-inspection.
+different cascade placed. The 7.0.0 sweep measured this on its generated draw-type fixtures, with a characterised compass
+exception. Later broader census work found additional cases; see the revision-qualified evidence above.
 
 Most of the resulting changes are technically breaking and practically invisible: a BYE is never the
 winning side, a person cannot be on both sides of a matchUp, removing a result takes back the exits

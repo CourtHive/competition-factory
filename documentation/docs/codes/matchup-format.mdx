@@ -88,10 +88,11 @@ The `-S:` section describes how each segment is scored:
 | `T{minutes}@{modifier}`     | Timed set with modifier                        | `-S:T20@RALLY`                                    |
 | `O{outs}`                   | Outs-based segment (baseball/wiffle ball)      | `-S:O3` (3 outs per team per inning)              |
 
-**`@RALLY`** is the one modifier the engine acts on: **rally scoring**, where every rally scores whoever
-served. Pickleball plays it — `SET3-S:TB11@RALLY` is best of three rally games to 11, win by two, and
-`SET3-S:TB11NOAD@RALLY` the same won by one. Without it a pickleball game is scored side-out: only the
-serving side scores. `NOAD` is written **before** the modifier; a modifier cannot contain `NOAD`, so
+**`@RALLY`** identifies rally scoring: `SET3-S:TB11@RALLY` is best of three games to 11, win by two,
+and `SET3-S:TB11NOAD@RALLY` the same won by one. In point scoring it suppresses automatic server
+derivation for the modified set. Omitting it does not enforce side-out scoring: the engine accepts
+and counts a receiving-side winner under either format. A side-out host supplies only scoring points
+and tracks non-scoring rallies/service changes itself. See [format support](../scoring-engine/format-support.md). `NOAD` is written **before** the modifier; a modifier cannot contain `NOAD`, so
 `TB11@RALLYNOAD` is refused rather than read as a modifier named `RALLYNOAD`.
 
 ### Game Format Specification (`-G:`)

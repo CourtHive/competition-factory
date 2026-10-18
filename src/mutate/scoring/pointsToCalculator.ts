@@ -13,7 +13,8 @@
  */
 
 import type { MatchUp, FormatStructure, SetFormatStructure, SetScore } from '@Types/scoring/types';
-import { isStandardSetTiebreak, tiebreakMargin } from '@Tools/scoring/scoringUtilities';
+import { isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
+import { checkStandardGameWon, checkTiebreakWon } from './gameWon';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 
 export interface PointsToDecoration {
@@ -163,7 +164,7 @@ function calcPointsToGame(
 }
 
 /**
- * Standard game: 4 points, win by 2 (or NoAD: win by 1 at deuce)
+ * Standard game: 4 points, win by 2 (NoAD and deuceAfter: the next point decides at deuce)
  */
 function calcStandardGamePointsTo(
   p1: number,
@@ -171,82 +172,46 @@ function calcStandardGamePointsTo(
   setFormat: SetFormatStructure,
   formatStructure?: FormatStructure,
 ): [number, number] {
-  const isNoAD = setFormat.gameFormat?.NoAD || setFormat.NoAD || false;
-  const deuceAfter = formatStructure?.gameFormat?.deuceAfter;
-  const pointsTo = 4;
-
-  return [
-    calcSidePointsToGame(p1, p2, pointsTo, isNoAD, deuceAfter),
-    calcSidePointsToGame(p2, p1, pointsTo, isNoAD, deuceAfter),
-  ];
-}
-
-function calcSidePointsToGame(
-  myPoints: number,
-  oppPoints: number,
-  pointsTo: number,
-  isNoAD: boolean,
-  deuceAfter?: number,
-): number {
-  if (myPoints >= pointsTo - 1 && oppPoints >= pointsTo - 1) {
-    // Deuce/advantage territory
-    if (isNoAD) {
-      // Golden point: whoever wins next point wins game
-      if (myPoints > oppPoints) return 0;
-      if (myPoints === oppPoints) return 1;
-      return 2;
-    }
-
-    // deuceAfter: once both sides reach (2 + deuceAfter), it's golden point
-    if (deuceAfter && myPoints >= 2 + deuceAfter && oppPoints >= 2 + deuceAfter) {
-      if (myPoints > oppPoints) return 0;
-      if (myPoints === oppPoints) return 1;
-      return 2;
-    }
-
-    // Standard deuce: need 2-point lead
-    const diff = myPoints - oppPoints;
-    if (diff >= 2) return 0; // Already won
-    if (diff === 1) return 1; // At advantage
-    if (diff === 0) return 2; // At deuce
-    return 2; // Behind: need to equalize + win 2
-  }
-
-  if (myPoints >= pointsTo) return 0; // Already won
-  return pointsTo - myPoints;
+  return pointsUntilWon(p1, p2, (s1, s2) => checkStandardGameWon(s1, s2, setFormat, false, formatStructure));
 }
 
 /**
  * Tiebreak: play to tiebreakTo, win by 2 (or NoAD: win by 1)
  */
 function calcTiebreakPointsTo(p1: number, p2: number, tiebreakTo: number, isNoAD: boolean): [number, number] {
-  // a tiebreak won by one point's margin plays as no-ad (see tiebreakMargin)
-  const suddenDeath = tiebreakMargin(tiebreakTo, isNoAD) === 1;
-  return [
-    calcSideTiebreakPointsTo(p1, p2, tiebreakTo, suddenDeath),
-    calcSideTiebreakPointsTo(p2, p1, tiebreakTo, suddenDeath),
-  ];
+  return pointsUntilWon(p1, p2, (s1, s2) => checkTiebreakWon(s1, s2, tiebreakTo, isNoAD));
 }
 
-function calcSideTiebreakPointsTo(myPoints: number, oppPoints: number, tiebreakTo: number, isNoAD: boolean): number {
-  if (myPoints >= tiebreakTo && (myPoints - oppPoints >= 2 || (isNoAD && myPoints > oppPoints))) {
-    return 0; // Already won
+/**
+ * The minimum points each side needs: how many points in a row it must win, the opponent scoring none, before
+ * `gameWon` names it the winner. A trailing side must first take away the opponent's lead, so at 5-6 in a
+ * tiebreak to 7 the trailing side needs 3 (6-6, 7-6, 8-6), and at 15-40 it needs 4 (30-40, deuce, ad, game).
+ * Counting against the predicate addPoint completes games with keeps NoAD, deuceAfter and margins in agreement.
+ */
+function pointsUntilWon(
+  p1: number,
+  p2: number,
+  gameWon: (side1Points: number, side2Points: number) => number | undefined,
+): [number, number] {
+  // a decided game has nothing left to win in it (the engine opens the next game at 0-0 before asking)
+  if (gameWon(p1, p2) !== undefined) return [0, 0];
+  return [sidePointsUntilWon(p1, p2, 0, gameWon), sidePointsUntilWon(p2, p1, 1, gameWon)];
+}
+
+function sidePointsUntilWon(
+  myPoints: number,
+  oppPoints: number,
+  sideIndex: 0 | 1,
+  gameWon: (side1Points: number, side2Points: number) => number | undefined,
+): number {
+  // Winning every point, a side wins once it leads by the margin past the target: the bound only guards a
+  // malformed format from looping.
+  for (let needed = 1; needed <= oppPoints + 1000; needed++) {
+    const mine = myPoints + needed;
+    const winner = sideIndex === 0 ? gameWon(mine, oppPoints) : gameWon(oppPoints, mine);
+    if (winner === sideIndex) return needed;
   }
-  if (myPoints >= tiebreakTo - 1 && oppPoints >= tiebreakTo - 1) {
-    // Extended play territory
-    if (isNoAD) {
-      if (myPoints > oppPoints) return 0;
-      if (myPoints === oppPoints) return 1;
-      return 2;
-    }
-    const diff = myPoints - oppPoints;
-    if (diff >= 2) return 0;
-    if (diff === 1) return 1;
-    if (diff === 0) return 2;
-    return 2;
-  }
-  if (myPoints >= tiebreakTo) return 0;
-  return tiebreakTo - myPoints;
+  return 0;
 }
 
 /**

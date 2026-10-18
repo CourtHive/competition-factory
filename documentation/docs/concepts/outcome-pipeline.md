@@ -270,16 +270,20 @@ After the write, and only on success:
 - **A completed matchUp with a valid winning score cannot be reverted to a live status without a new
   result**; submit a corrected outcome or clear first.
 - The properties the exit-propagation harness checks (`DO_UNDO_IDENTITY`, `IDEMPOTENT_REAPPLY`,
-  `MONOTONIC_DECISION`) are stated in the corpus vocabulary (`corpus/INVARIANTS.md`) and hold on
-  generated draws across the 600-cell matrix and the census; on real records, see § 8
-  (real-record do/undo) and the clear that normalises in § 4.
+  `MONOTONIC_DECISION`) are stated in the corpus vocabulary (`corpus/INVARIANTS.md`) and measured on
+  the generated fixtures in the matrix and census. These are intended invariants, not a universal proof.
+  On real records, see § 8 (real-record do/undo) and the clear that normalises in § 4.
 
 ## 7. Write mode
 
-In NATIVE mode (the default since 5.0.0) `scoredTime` is written on `matchUp.schedule` and nothing
-here touches `timeItems`. In LEGACY and BRIDGE modes the pipeline is unchanged; the schedule
-attributes it stamps follow `setFirstClassOrTimeItem`. The result, status and codes are first-class
-in every mode.
+In NATIVE mode (the default since 5.0.0), schedule stamps such as `scoredTime` use first-class
+`matchUp.schedule` attributes. LEGACY uses the corresponding timeItems; BRIDGE writes both via
+`setFirstClassOrTimeItem`. Result, status and scoring codes remain first-class.
+
+This storage mapping is not evidence that exit behavior is identical across modes. Provenance writes
+are mode-gated and propagation decisions read provenance; a NATIVE census result must not be reported
+as LEGACY/BRIDGE validation. Cross-mode compatibility requires its own fixtures and replay evidence.
+See [harness measurement limits](../testing/exit-propagation-harness.md#measurement-limits).
 
 ## 7.1 Two implementations (S2)
 
@@ -327,7 +331,7 @@ it, and v2 plans the two converging, as v1's settle step converges them (census 
 | `setMatchUpStatus` steps recorded | 50,559 (recorded tests, matrix, census, route flips, fixtures)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | refusal codes observed            | 18 (§ 2), none declared in the entry file                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `setMatchUpState`                 | exported as an engine method, eleven declared codes, **no caller** in the corpus: an internal that leaked onto the surface. **Deprecated** on the engine surface in 7.5.0 and removed at the next major; its internal callers keep it, and consumers call `setMatchUpStatus`                                                                                                                                                                                                                                                                                        |
-| `bulkMatchUpStatusUpdate`         | 1 recorded step; its two declared codes pinned by `authored/outcome-pipeline/bulk-update-refusals`: `ERR_MISSING_VALUE` for no `outcomes`, `ERR_MISSING_TOURNAMENT` for an unknown `tournamentId`                                                                                                                                                                                                                                                                                                                                                                   |
+| `bulkMatchUpStatusUpdate`         | 1 recorded step; its two declared codes pinned by `authored/outcome-pipeline/bulk-update-refusals`: `ERR_MISSING_VALUE` for no `outcomes`, `ERR_MISSING_TOURNAMENT` for an unknown `tournamentId`. It forwards every per-call `setMatchUpStatus` option (the three flags of § 1 among them), set on the call or on one outcome, so a bulk entry follows the same rules as a single one                                                                                                                                                                              |
 | real-record do/undo               | 7 of 11 probed fixtures restore the draw projection; 4 do not (§ 4)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | authored scenarios                | 13 (`pnpm corpus:authored`), one per rule above that the recorded sources did not reach: the flag precedence (§ 1, three scenarios), rows 5, 9, 10 and 14 of § 2 with every condition of row 9, the swap (§ 3), a double exit entered over a completed result (§ 4), the FMLC loser kept out and a decider's settlement (§ 5), the double-exit no-op (§ 6), two double exits converging, a TEAM dual handed back to auto-calc, the bulk refusals. Each asserts the result code of every step and, where a flag's effect is the claim, the state the patches rebuild |
 

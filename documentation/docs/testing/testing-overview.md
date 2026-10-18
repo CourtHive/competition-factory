@@ -225,8 +225,12 @@ function createStandardTournament() {
 
 test('can get draw positions', () => {
   const { drawId } = createStandardTournament();
-  const { drawPositions } = tournamentEngine.getDrawPositions({ drawId });
-  expect(drawPositions.length).toBe(32);
+  const { structures } = tournamentEngine.getDrawStructures({ drawId });
+  const { positionAssignments } = tournamentEngine.getPositionAssignments({
+    drawId,
+    structureId: structures[0].structureId,
+  });
+  expect(positionAssignments.length).toBe(32);
 });
 ```
 
@@ -292,3 +296,34 @@ under it by design; they pass in the ordinary run.
 - **[Tools Overview](../tools/tools-overview.md)** - Utility functions for tests
 
 ---
+
+## Scoring format conformance
+
+Post-7.15 work (#5523/#5524/#5526 and follow-ups) adds independently authored rule cases alongside
+replay/round-trip checks. At revision `97ad4dbe` (2026-10-17), the harvest contained 263 format codes
+in 79 cells: 75 conformance-backed, four deliberately refused input-level cells, none classified as
+missing. This is a revision-bound inventory, not a universal zero-defect proof.
+
+`src/tests/scoring/conformance/formatMatrix.ts` maps cells to rule cases. `formatMatrix.test.ts`
+rejects missing/unreachable classifications; conformance cases use rule-authored outcomes rather
+than another engine path as the oracle. Run:
+
+```sh
+TZ=UTC pnpm exec vitest run src/tests/scoring/conformance --maxWorkers=2
+```
+
+Refused cells describe point/game input the scorer cannot model, such as outs segments supplied as
+set totals. Unharvested formats, arbitrary new combinations, host clocks, non-scoring side-out rallies,
+doubles participant rotation and external roster enforcement are outside this inventory's proof.
+Scoring conformance does not prove tournament exit propagation. See
+[format support](../scoring-engine/format-support.md) and
+[adoption notes](../whats-new-7.0.0.md#after-715-unreleased-adoption-notes).
+
+## Checking documentation contracts
+
+After building the package, run `pnpm verify:docs-model`, `pnpm verify:docs-examples`,
+`pnpm verify:docs-imports` and `pnpm verify:docs-methods`. The example check extracts selected
+fences from these pages, compiles them strictly against the built declarations and executes their
+output checks; it also checks that every public ScoringEngine method has an API heading. It is a
+focused gate, not an assertion that every narrative fence is standalone. Model reference regeneration
+uses `node scripts/generateModelDocs.mjs`. The Docusaurus build separately validates site syntax/links.

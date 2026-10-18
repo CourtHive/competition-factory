@@ -1,3 +1,4 @@
+import { checkProfileKeys, ENGINE_SUPPLIED_KEYS, MODIFY_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
 import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -10,7 +11,6 @@ import { generateEventWithFlights } from './generateEventWithFlights';
 import { generateEventWithDraw } from './generateEventWithDraw';
 import { publishEvent } from '@Mutate/publishing/publishEvent';
 import { generateVenues } from '@Mutate/venues/generateVenues';
-import { checkProfileKeys, MODIFY_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { generateFlights } from './generateFlights';
 import { addEvent } from '@Mutate/events/addEvent';
@@ -266,7 +266,7 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
 export function modifyTournamentRecord(params) {
   if (!params?.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   // checked before anything is written: an option the generators do not read is refused, not ignored
-  const unknownOption = checkProfileKeys(params, MODIFY_TOURNAMENT_RECORD_KEYS);
+  const unknownOption = checkProfileKeys(params, MODIFY_TOURNAMENT_RECORD_KEYS, ENGINE_SUPPLIED_KEYS);
   if (unknownOption) return unknownOption;
   const keepPartial = params.keepPartial === true;
   const before = recordIds(params.tournamentRecord);
