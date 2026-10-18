@@ -14,19 +14,18 @@ import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 /**
  * WHAT A DIVERGENCE LEAVES BEHIND (CA, 2026-10-15: "after a divergence throws, is the record left with v1's writes,
- * partially written, or rolled back?"). Stated in outcome-pipeline.md § 7.1.
+ * partially written, or rolled back?"; CA, 2026-10-18: "In setMatchUpStatus there should be nothing changed if an
+ * error is returned"). Stated in outcome-pipeline.md § 7.1.
  *
  * Under `differential`, v2 plans and never writes. v1 runs and writes, and only then does `compare` throw
- * `OutcomePipelineDivergence`, either after v1's complete write (the final compare) or on one of v1's refusal paths,
- * where a refusal changes nothing. So a divergence is never half-written by the pipeline: the record holds v1's
- * complete result or nothing. From there the divergence is an ordinary throw, under the engine contract every thrown
- * method has (asyncWrapperContract.test.ts, item 5):
+ * `OutcomePipelineDivergence`. Before it throws, `compare` writes back what the call touched (the tournament, the
+ * draw and the event, captured before v1 ran) and the notice buffer. So a divergence changes nothing, on every path:
  *
- *   - with `rollbackOnError`, the record is restored;
- *   - without it, v1's write stays; the result is an error and nothing is notified;
- *   - under devContext the divergence is rethrown, after the same restore.
+ *   - with or without `rollbackOnError`, directly or inside `executionQueue`, the record is as it was;
+ *   - nothing is notified;
+ *   - under devContext the divergence is rethrown, over the same unchanged record.
  *
- * A divergence is forced here by stubbing `compareDecisions`, so each case asserts the engine's handling of a real
+ * A divergence is forced here by stubbing `compareDecisions`, so each case asserts the handling of a real
  * `OutcomePipelineDivergence` thrown from its real call site, after v1's real write.
  */
 
@@ -60,6 +59,7 @@ function setup() {
 
 const winnerOf = (matchUpId: string) =>
   tournamentEngine.findMatchUp({ matchUpId, inContext: false }).matchUp?.winningSide;
+const recordNow = () => structuredClone(tournamentEngine.getTournament().tournamentRecord);
 
 function watchModified() {
   const modified: string[] = [];
@@ -73,7 +73,7 @@ function watchModified() {
 
 const DIVERGENCE = /^outcome pipeline divergence on .*: v1 ok, v2 forced$/;
 
-describe('differential: a divergence is an ordinary throw, after v1 has written', () => {
+describe('differential: a divergence changes nothing', () => {
   useEngineCatch();
 
   it('positive control: the same call without a divergence writes and notifies', () => {
@@ -91,32 +91,26 @@ describe('differential: a divergence is an ordinary throw, after v1 has written'
         ? tournamentEngine.setMatchUpStatus({ ...params, rollbackOnError })
         : tournamentEngine.executionQueue([{ method: 'setMatchUpStatus', params }], rollbackOnError);
 
-    it(`${via}, with rollbackOnError: the record is restored and nothing is notified`, () => {
-      const { drawId, matchUpId, outcome } = setup();
-      const modified = watchModified();
-      force.diverge = true;
-      const result: any = call({ drawId, matchUpId, outcome }, true);
-      force.diverge = false;
-      expect(result.error).toMatch(DIVERGENCE);
-      expect(winnerOf(matchUpId)).toBeUndefined();
-      expect(modified).toEqual([]);
-    });
-
-    it(`${via}, without rollbackOnError: v1's write stays, the result is an error, nothing is notified`, () => {
-      const { drawId, matchUpId, outcome } = setup();
-      const modified = watchModified();
-      force.diverge = true;
-      const result: any = call({ drawId, matchUpId, outcome }, false);
-      force.diverge = false;
-      expect(result.error).toMatch(DIVERGENCE);
-      expect(winnerOf(matchUpId)).toEqual(1);
-      expect(modified).toEqual([]);
-    });
+    for (const rollbackOnError of [true, false]) {
+      it(`${via}, rollbackOnError ${rollbackOnError}: the record is unchanged and nothing is notified`, () => {
+        const { drawId, matchUpId, outcome } = setup();
+        const before = recordNow();
+        const modified = watchModified();
+        force.diverge = true;
+        const result: any = call({ drawId, matchUpId, outcome }, rollbackOnError);
+        force.diverge = false;
+        expect(result.error).toMatch(DIVERGENCE);
+        expect(winnerOf(matchUpId)).toBeUndefined();
+        expect(recordNow()).toEqual(before);
+        expect(modified).toEqual([]);
+      });
+    }
   }
 
   for (const rollbackOnError of [true, false]) {
-    it(`devContext, rollbackOnError ${rollbackOnError}: the divergence is rethrown, restored only when asked`, () => {
+    it(`devContext, rollbackOnError ${rollbackOnError}: the divergence is rethrown over an unchanged record`, () => {
       const { drawId, matchUpId, outcome } = setup();
+      const before = recordNow();
       setDevContext(true);
       force.diverge = true;
       expect(() => tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome, rollbackOnError })).toThrow(
@@ -124,9 +118,25 @@ describe('differential: a divergence is an ordinary throw, after v1 has written'
       );
       force.diverge = false;
       setDevContext(false);
-      expect(winnerOf(matchUpId)).toEqual(rollbackOnError ? undefined : 1);
+      expect(winnerOf(matchUpId)).toBeUndefined();
+      expect(recordNow()).toEqual(before);
     });
   }
+
+  it('a provider without the optional setMutationStatus: the flag is cleared, so the record is still not stamped', () => {
+    const { drawId, matchUpId, outcome } = setup();
+    const before = recordNow();
+    setStateProvider({ ...syncGlobalState, setMutationStatus: undefined });
+    try {
+      force.diverge = true;
+      const result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
+      force.diverge = false;
+      expect(result.error).toMatch(DIVERGENCE);
+    } finally {
+      setStateProvider(syncGlobalState);
+    }
+    expect(recordNow()).toEqual(before);
+  });
 
   it('async engine: the same, per request context', async () => {
     const { tournamentRecord, drawId, matchUpId, outcome } = setup();
@@ -142,7 +152,7 @@ describe('differential: a divergence is an ordinary throw, after v1 has written'
           force.diverge = false;
           expect(result.error).toMatch(DIVERGENCE);
           const { matchUp } = await asyncEngine.findMatchUp({ matchUpId, inContext: false });
-          expect(matchUp?.winningSide).toEqual(rollbackOnError ? undefined : 1);
+          expect(matchUp?.winningSide).toBeUndefined();
         });
       }
     } finally {
