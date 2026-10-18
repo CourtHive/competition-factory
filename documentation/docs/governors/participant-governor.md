@@ -428,13 +428,31 @@ const {
   withDraws, // optional boolean — include draw entries
   withISO2, // optional boolean — include ISO2 country codes
   withIOC, // optional boolean — include IOC country codes
-  returnParticipantMap, // optional boolean — defaults to true
+  returnParticipantMap, // optional boolean — defaults to true; false also lets filtered calls build less (below)
   returnMatchUps, // optional boolean — defaults to true
   internalUse, // optional boolean
 });
 ```
 
 **Purpose:** Primary method for retrieving participants with rich context.
+
+**Filtered lookups are cheapest with `returnParticipantMap: false`.** The `participantMap` holds every participant
+whether or not the filters keep it, so returning it means building the whole pool. When it is not returned, the
+`participantFilters` are applied to the stored participants first, and only those kept are built, together with their
+individuals and the groups they belong to (so groupings read the same). The result is the same as building
+everything; on a 3,600-participant tournament, a lookup of the officials goes from ~118 ms to ~1 ms.
+
+The whole pool is still built when a filter uses `accessorValues` (which may read attributes only a built participant
+holds), or when any of `withMatchUps`, `withDraws`, `withOpponents`, `withStatistics`, `withScheduleItems`,
+`withPotentialMatchUps`, `withTeamMatchUps`, `withRankingProfile` or `scheduleAnalysis` is requested, since those read
+other participants.
+
+```js
+const { participants: officials } = engine.getParticipants({
+  participantFilters: { participantRoles: [OFFICIAL] },
+  returnParticipantMap: false,
+});
+```
 
 ---
 

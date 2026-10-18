@@ -19,7 +19,23 @@ type GetReferencedParticipantsArgs = {
  */
 export function getReferencedParticipants({ participants, record }: GetReferencedParticipantsArgs) {
   const byId = new Map(participants.map((participant) => [participant.participantId, participant]));
-  const scoped = collectReferencedIds(record, byId);
+  return withGroupings({ participants, participantIds: collectReferencedIds(record, byId), byId });
+}
+
+type WithGroupingsArgs = {
+  byId?: Map<string, Participant>;
+  participantIds: Set<string>;
+  participants: Participant[];
+};
+
+/**
+ * The participants named by `participantIds`, their individuals, and every group one of those individuals belongs to
+ * with all of that group's members, in stored order: the set whose built participants read the same as when the
+ * whole pool is built.
+ */
+export function withGroupings({ participants, participantIds, byId }: WithGroupingsArgs) {
+  byId ??= new Map(participants.map((participant) => [participant.participantId, participant]));
+  const scoped = new Set(participantIds);
 
   const addIndividuals = (participantId: string) => {
     for (const individualId of byId.get(participantId)?.individualParticipantIds ?? []) {

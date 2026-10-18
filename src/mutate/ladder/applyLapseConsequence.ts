@@ -1,6 +1,7 @@
 import { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant';
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
+import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getLapses } from '@Query/ladder/getLapses';
@@ -113,5 +114,6 @@ function dropPositions(params: ConsequenceArgs & { dropBy: number }): ResultType
   touched.push(target);
 
   mirrorStandingToScale({ ...params, touched });
+  ladderStandingNotice(params);
   return { ...SUCCESS };
 }

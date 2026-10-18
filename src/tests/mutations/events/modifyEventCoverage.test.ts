@@ -14,6 +14,7 @@ import {
   MISSING_ENTRIES,
   MISSING_PARTICIPANT_IDS,
   INVALID_VALUES,
+  CATEGORY_MISMATCH,
 } from '@Constants/errorConditionConstants';
 
 test('modifyEvent updates eventName', () => {
@@ -200,8 +201,9 @@ test('modifyEvent rejects category mismatch for entered participants ages', () =
   const endDate = '2024-06-30';
 
   // Generate participants with birthDates that won't match a restrictive category
+  // U18 gives every participant a birthDate (without one the change is refused as MISSING_BIRTH_DATE first)
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    participantsProfile: { participantsCount: 10 },
+    participantsProfile: { participantsCount: 10, category: { ageCategoryCode: 'U18' } },
     startDate,
     endDate,
   });
@@ -230,9 +232,7 @@ test('modifyEvent rejects category mismatch for entered participants ages', () =
     eventId,
   });
 
-  // Should either fail with CATEGORY_MISMATCH or MISSING_BIRTH_DATE
-  // depending on whether mock participants have birthDates
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(CATEGORY_MISMATCH);
 });
 
 test('addDrawEntries adds alternate participants to a draw', () => {

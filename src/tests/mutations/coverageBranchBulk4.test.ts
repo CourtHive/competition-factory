@@ -26,8 +26,9 @@ import {
 
 // constants
 import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { MAIN, AD_HOC } from '@Constants/drawDefinitionConstants';
-import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   MISSING_TOURNAMENT_RECORDS,
   MISSING_TOURNAMENT_RECORD,
@@ -558,18 +559,20 @@ describe('allocateTeamMatchUpCourts branches', () => {
   });
 
   it('returns error for invalid courtIds (non-array, non-undefined)', () => {
+    // a TEAM matchUp, so the courtIds check is reached (a SINGLES matchUp is refused first, as INVALID_MATCHUP)
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4 }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const matchUpId = drawDefinition.structures[0].matchUps[0].matchUpId;
-    const result = allocateTeamMatchUpCourts({
-      tournamentRecord,
-      drawDefinition,
-      matchUpId,
-      courtIds: 'invalid' as any,
-    });
-    // Will get INVALID_MATCHUP (not team) or INVALID_VALUES, either is valid branch hit
-    expect(result.error).toBeDefined();
+    const matchUpId = drawDefinition.structures[0].matchUps.find((m) => m.matchUpType === TEAM_MATCHUP).matchUpId;
+    for (const courtIds of ['invalid', [], [1]]) {
+      const result: any = allocateTeamMatchUpCourts({
+        tournamentRecord,
+        drawDefinition,
+        matchUpId,
+        courtIds: courtIds as any,
+      });
+      expect({ courtIds, error: result.error }).toEqual({ courtIds, error: INVALID_VALUES });
+    }
   });
 });

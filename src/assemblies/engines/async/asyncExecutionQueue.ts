@@ -1,9 +1,11 @@
-import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
-import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
 import { deleteNotices, getDevContext, getInvokeObserver, getMethods } from '@Global/state/globalState';
-import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
+import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
 import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
+import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
+import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
+import { keepWrites } from '@Assemblies/engines/parts/keepWrites';
+import { withCallRandomSourceAsync } from '@Tools/prng';
 import { withCapturedClockAsync } from '@Tools/clock';
 
 // types
@@ -30,11 +32,13 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
     try {
       for (const directive of directives) {
         const methodName = directive.method;
-        const params = prepareDirective(directive, results);
+        const { params, unthreadedSource } = prepareDirective(directive, results);
         current = { methodName, params };
 
         // awaited, as asyncEngineInvoke awaits it: an imported async method returns a promise
-        const result = await executeFunction(engine, methods[methodName], params, methodName, 'async');
+        const result = await withCallRandomSourceAsync(unthreadedSource, async () =>
+          executeFunction(engine, methods[methodName], params, methodName, 'async'),
+        );
         getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
 
         if (result?.error) {
@@ -48,14 +52,19 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
       // returned. Restore, then answer as the sync engine does: rethrow under devContext, otherwise the
       // caught-error envelope, marked rolledBack like any other refusal
       if (captured) restoreOperation(captured);
+      else keepWrites(timeStamp);
       if (getDevContext()) throw err;
       const caught = caughtErrorResult({ methodName: current?.methodName ?? '', params: current?.params, err });
-      return { ...caught, rolledBack: !!captured };
+      return captured ? { ...caught, rolledBack: true } : { ...caught, rolledBack: false, results };
     }
 
     if (refusal) {
-      if (captured) restoreOperation(captured);
-      return { ...refusal, rolledBack: !!captured };
+      if (captured) {
+        restoreOperation(captured);
+        return { ...refusal, rolledBack: true };
+      }
+      keepWrites(timeStamp);
+      return { ...refusal, rolledBack: false, results };
     }
 
     const mutationStatus = getMutationStatus({ timeStamp }); // timeStamp reaches the record via the factory extension

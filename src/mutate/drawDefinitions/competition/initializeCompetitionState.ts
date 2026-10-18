@@ -5,6 +5,7 @@ import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompe
 import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getAdHocRatings';
 
 // Mutate
+import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 
 // constants
@@ -76,12 +77,15 @@ export function initializeCompetitionState(params: InitializeCompetitionStateArg
     roundStates: {},
   };
 
+  const attributes = ['competitionState'];
+  const before = attributesSnapshot(drawDefinition, attributes);
   setFirstClassOrExtension({
     element: drawDefinition,
     attribute: 'competitionState',
     name: COMPETITION_STATE,
     value: competitionState,
   });
+  announceDrawChange({ tournamentRecord, drawDefinition, attributes, before, event });
 
   return { competitionState, ...SUCCESS };
 }

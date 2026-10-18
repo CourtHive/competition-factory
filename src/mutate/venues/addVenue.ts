@@ -5,6 +5,7 @@ import { addExtension } from '@Mutate/extensions/addExtension';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { clearPrimaryVenue } from './clearPrimaryVenue';
 import { addNotice } from '@Global/state/globalState';
+import { modifyVenueNotice } from './venueNotices';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { validTimePeriod } from '@Validators/time';
 import { UUID } from '@Tools/UUID';
@@ -34,6 +35,12 @@ export function addVenue(params) {
     });
     if (result?.error) return result;
     addedVenue = result.venue;
+    // a venue added as primary takes the flag from the venue that held it, which is modified too
+    if (!disableNotice) {
+      for (const cleared of result.clearedPrimaryVenues ?? []) {
+        modifyVenueNotice({ tournamentId: tournamentRecord.tournamentId, venue: cleared });
+      }
+    }
   }
 
   if (!disableNotice) {
@@ -52,6 +59,7 @@ type AddVenueArgs = {
 
 function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueArgs): {
   success?: boolean;
+  clearedPrimaryVenues?: Venue[];
   error?: ErrorType;
   venue?: Venue;
   info?: string;
@@ -93,9 +101,7 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
     addExtension({ element: venue, extension });
   }
 
-  if (venue.isPrimary) {
-    clearPrimaryVenue({ tournamentRecord });
-  }
+  const clearedPrimaryVenues = venue.isPrimary ? clearPrimaryVenue({ tournamentRecord }) : [];
 
   tournamentRecord.venues.push(venue);
 
@@ -106,5 +112,5 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
     });
   }
 
-  return { ...SUCCESS, venue: makeDeepCopy(venue) };
+  return { ...SUCCESS, venue: makeDeepCopy(venue), clearedPrimaryVenues };
 }

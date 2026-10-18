@@ -1,12 +1,18 @@
+import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
+import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { entriesKey } from '@Mutate/events/eventChangeNotice';
 import { isString } from '@Tools/objects';
 
-// constants
+// constants and types
 import { ERROR, EVENT, TOURNAMENT_RECORD, UUIDS, VALIDATE } from '@Constants/attributeConstants';
+import { DrawDefinition, Event, PositionAssignment, Structure } from '@Types/tournamentTypes';
 import { UNGROUPED, UNPAIRED } from '@Constants/entryStatusConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { PAIR } from '@Constants/participantConstants';
@@ -90,41 +96,32 @@ export function modifyPairAssignment(params) {
   } else {
     newPairParticipantId = existingPairParticipant.participantId;
   }
+  const tournamentId = tournamentRecord.tournamentId;
   const { flightProfile } = getFlightProfile({ event });
   if (drawDefinition) {
     // modify all positionAssignments in event, drawDefinition and flight
     const flight = flightProfile?.flights?.find(({ drawId }) => drawId === drawDefinition.drawId);
     if (flight) {
+      const before = entriesKey(flight.drawEntries);
       flight.drawEntries = flight.drawEntries.map((entry) =>
         entry.participantId === participantId ? { ...entry, participantId: newPairParticipantId } : entry,
       );
+      // a flight's drawEntries live in the event's flight profile: changing them modifies the event
+      if (entriesKey(flight.drawEntries) !== before) modifyEventNotice({ tournamentId, event });
     }
 
+    const drawEntriesBefore = entriesKey(drawDefinition.entries);
     drawDefinition.entries = drawDefinition.entries.map((entry) =>
       entry.participantId === participantId ? { ...entry, participantId: newPairParticipantId } : entry,
     );
-
-    // update positionAssignments for all structures within the drawDefinition
-    for (const structure of drawDefinition.structures ?? []) {
-      if (structure.structures) {
-        structure.positionAssignments = undefined;
-        for (const subStructure of structure.structures) {
-          subStructure.positionAssignments = subStructure.positionAssignments.map((assignment) =>
-            assignment.participantId === participantId
-              ? { ...assignment, participantId: newPairParticipantId }
-              : assignment,
-          );
-        }
-      } else if (structure.positionAssignments) {
-        structure.positionAssignments = structure.positionAssignments.map((assignment) =>
-          assignment.participantId === participantId
-            ? { ...assignment, participantId: newPairParticipantId }
-            : assignment,
-        );
-      }
+    if (entriesKey(drawDefinition.entries) !== drawEntriesBefore) {
+      modifyDrawEntriesNotice({ eventId: event.eventId, drawDefinition, tournamentId });
     }
+
+    reassignPositionAssignments({ drawDefinition, participantId, newPairParticipantId, tournamentId, event });
   }
 
+  const eventEntriesBefore = entriesKey(event.entries);
   event.entries = event.entries.map(
     (entry) =>
       // replace previous pair participantId with newPairParticipantid
@@ -140,6 +137,7 @@ export function modifyPairAssignment(params) {
       }) ||
       entry,
   );
+  if (entriesKey(event.entries) !== eventEntriesBefore) modifyEventEntriesNotice({ tournamentId, event });
 
   // if participant has no other entries then the pair can be destroyed
   const participantOtherEntries = tournamentRecord.events.some(({ entries, eventId, drawDefinitions }) => {
@@ -162,4 +160,52 @@ export function modifyPairAssignment(params) {
   }
 
   return { ...SUCCESS, participantOtherEntries, newPairParticipantId };
+}
+
+// a structure's own positionAssignments, or those of its child structures (round robin groups)
+function positionAssignmentsKey(structure: Structure) {
+  return JSON.stringify([
+    positionAssignmentsOf(structure),
+    structuresOf(structure)?.map((subStructure) => positionAssignmentsOf(subStructure)),
+  ]);
+}
+
+// replace the PAIR in every structure's positionAssignments, announcing each structure that changed
+type ReassignPositionAssignmentsArgs = {
+  newPairParticipantId: string;
+  drawDefinition: DrawDefinition;
+  participantId: string;
+  tournamentId: string;
+  event: Event;
+};
+function reassignPositionAssignments({
+  newPairParticipantId,
+  drawDefinition,
+  participantId,
+  tournamentId,
+  event,
+}: ReassignPositionAssignmentsArgs) {
+  const swap = (assignments: PositionAssignment[]) =>
+    assignments.map((assignment) =>
+      assignment.participantId === participantId ? { ...assignment, participantId: newPairParticipantId } : assignment,
+    );
+
+  // update positionAssignments for all structures within the drawDefinition
+  for (const structure of drawDefinition.structures ?? []) {
+    const assignmentsBefore = positionAssignmentsKey(structure);
+    if ('structures' in structure && structure.structures) {
+      // a container holds no positionAssignments of its own (Object.assign: the 8.0.0 form types it `never`)
+      Object.assign(structure, { positionAssignments: undefined });
+      for (const subStructure of structure.structures) {
+        if ('positionAssignments' in subStructure && subStructure.positionAssignments) {
+          subStructure.positionAssignments = swap(subStructure.positionAssignments);
+        }
+      }
+    } else if ('positionAssignments' in structure && structure.positionAssignments) {
+      structure.positionAssignments = swap(structure.positionAssignments);
+    }
+    if (positionAssignmentsKey(structure) !== assignmentsBefore) {
+      modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event });
+    }
+  }
 }

@@ -668,7 +668,8 @@ Since 7.10.0 two more cases hold. **A carry past a BYE in a structure's last rou
 BYE's withdrawal**: there is nowhere further for the carrier to land, so the carried exit is recorded
 beside the BYE, and when the BYE is withdrawn the matchUp re-derives to the exit the carrier holds
 rather than becoming an ordinary match (census 20318646, COMPASS 8/8 — the South final). Both arrival
-orders, carrier first or BYE first, now reach the same state. And **a carry written past a late BYE
+orders, carrier first or BYE first, now reach the same state. Since A1 (2026-10-17) the carry is recorded beside the
+BYE in every round, not only the last ([below](#rules-settled-by-the-census-in-a1-2026-10-17)). And **a carry written past a late BYE
 names the exit's origin**, as every other hop does, not the BYE matchUp it passed, so a convergence it
 later dissolves still re-advances its winner (census 20267598, FEED_IN_CHAMPIONSHIP_TO_SF 16/15).
 
@@ -846,6 +847,35 @@ by a named test that fails without it.
   who will never arrive, and the pending exit passes through it. A BYE placed in a seat a convergence had produced into
   therefore reaches the draw the same results reach with the BYE placed first (COMPASS 32/31 20551581:
   `aLoserSeatHoldingAByeIsNotConverged`).
+- **A result past a convergence's BYE fixes the kind.** A convergence has nobody to lose, so it claims a BYE for its
+  loser seat; what it decided includes that BYE, and a result recorded by the participant the BYE passed on is a
+  result on the loser's path. Re-entering one of the converged exits as a played result is refused
+  (`CANNOT_CHANGE_OUTCOME`) over an untouched draw; before, the BYE's withdrawal took that participant back out and left
+  their result standing on an undecided matchUp. With nothing recorded past the BYE the correction is accepted
+  (COMPASS 32/27 21027128, under `allowChangePropagation`: `aResultPastAConvergencesByeFixesTheKind`).
+- **An exit re-entered as the other exit relabels its carry, even after its winner played on.** A walkover
+  re-entered as a default for the same winner (or the reverse) relabels the exit its loser carries, on every route,
+  including the one taken once that winner has played on. The draw is the one the new exit entered directly reaches
+  (COMPASS 16/14 6141627: `aRelabelledExitPastAPlayedWinnerRelabelsItsCarry`).
+- **A BYE origin waits for its feeder to deliver.** A double exit's produced exit records an origin for the other side
+  of the matchUp it reaches, read from the paired feeder. A feeder reading `BYE` beside a seat that holds neither a
+  participant nor a BYE has delivered nothing: whoever reaches that seat goes on through the BYE, so the side is not
+  decided and records no origin, whether the BYE was placed before the double exit or after it
+  (FIRST_MATCH_LOSER_CONSOLATION 8/7 20498521, `propagateExitStatus: false`, default `doubleExitPropagateBye`:
+  `aByeOriginWaitsForItsFeederToDeliver`).
+
+### Rules settled by the census in A1 (2026-10-17)
+
+- **A carry entry is written in each matchUp it is carried into past a BYE, in any round and in either entry order.**
+  A participant carrying their own walkover or default into a seat beside a BYE goes through it, and the BYE matchUp
+  records their carry beside the BYE, whether the carrier was seated first and the BYE arrived after them or the BYE
+  stood there first. Before this the BYE-first order recorded the carry only in a structure's last round, so the same
+  results entered in the two orders left two draws (COMPASS 32, census A1: `Southwest|1|2` and `Southeast|1|1`).
+  Withdrawing the copy instead, once the carry is recorded where the carrier landed, was measured and rejected: a
+  pull-back reads the BYE matchUp's copy to find the carry it takes home. Such a copy is not a held exit once its
+  carrier's seat has gone to a BYE because a correction made the carrier's origin a double exit; only that double exit's
+  produced exit is sent on from there (COMPASS 32/27 20521366: `theWholeDrawIsTheSameInEveryOrder`). Pinned by
+  `aCarryPastAnEarlierRoundByeIsRecordedInEitherOrder`.
 
 ### Rules settled by the census in A1 (2026-10-17)
 
