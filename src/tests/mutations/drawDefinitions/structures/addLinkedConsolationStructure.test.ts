@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { MISSING_STRUCTURE, UNRECOGNIZED_DRAW_TYPE } from '@Constants/errorConditionConstants';
+import { MISSING_STRUCTURE, UNRECOGNIZED_DRAW_TYPE, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import {
   CONSOLATION,
   MAIN,
@@ -236,7 +236,7 @@ describe('addLinkedConsolationStructure', () => {
       links: [],
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('returns error when main structure is not found', () => {

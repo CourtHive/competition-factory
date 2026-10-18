@@ -18,6 +18,7 @@ import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { TEAM } from '@Constants/eventConstants';
 
@@ -92,7 +93,7 @@ describe('getDrawFormat — TEAM tieFormat resolution', () => {
 
     const result: any = getDrawFormat({ matchUpType: TEAM, eventType: TEAM, existingDrawDefinition });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIE_FORMAT);
     expect(result.tieFormat).toBeUndefined();
   });
 });

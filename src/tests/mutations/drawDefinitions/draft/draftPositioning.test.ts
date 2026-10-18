@@ -15,6 +15,7 @@ import {
   INVALID_PARTICIPANT_ID,
   INVALID_VALUES,
   NOT_FOUND,
+  NO_VALID_ATTRIBUTES,
 } from '@Constants/errorConditionConstants';
 
 function getRatingForParticipant(pid: string, scaleName: string) {
@@ -93,7 +94,7 @@ describe('Draft Positioning - Full Lifecycle', () => {
 
     // re-init on completed draw with all positions filled returns NO_VALID_ATTRIBUTES
     const reInit = tournamentEngine.initializeDraft({ drawId: drawId2 });
-    expect(reInit.error).toBeDefined();
+    expect(reInit.error).toEqual(NO_VALID_ATTRIBUTES);
   });
 
   it('sets participant preferences', () => {
@@ -352,7 +353,7 @@ describe('Draft Positioning - Full Lifecycle', () => {
       participantId,
       preferences: [1, 2, 3],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('rejects duplicate resolve on completed draft', () => {

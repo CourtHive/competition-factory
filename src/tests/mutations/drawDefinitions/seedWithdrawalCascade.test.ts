@@ -12,6 +12,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, test, expect } from 'vitest';
 
+// constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+
 /** Helper: get draw definition and main structure from a drawId */
 function getDrawInfo(drawId: string) {
   let result: any = tournamentEngine.getEvent({ drawId });
@@ -208,7 +211,7 @@ describe('seedWithdrawalCascade', () => {
       structureId,
       drawPosition: unseededPos.drawPosition,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('error: round robin structure', () => {
@@ -225,7 +228,7 @@ describe('seedWithdrawalCascade', () => {
       structureId: structure.structureId,
       drawPosition: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('error: matchUps already in progress', () => {
@@ -253,7 +256,7 @@ describe('seedWithdrawalCascade', () => {
       structureId,
       drawPosition: seed1DrawPos,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 

@@ -531,7 +531,7 @@ describe('lucky draw bye limit', () => {
       drawId,
     });
     // Lucky draw limit check runs at line 115-120 before position-filled check
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(LUCKY_DRAW_BYE_LIMIT);
     expect([LUCKY_DRAW_BYE_LIMIT, DRAW_POSITION_ASSIGNED]).toContain(result.error);
   });
 });

@@ -5,12 +5,21 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { DUPLICATE_VALUE, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { TEAM } from '@Constants/eventConstants';
+import {
+  DUPLICATE_VALUE,
+  NOT_FOUND,
+  INVALID_BOOKINGS,
+  INVALID_DATE_AVAILABILITY,
+  INVALID_EMBARGO,
+  INVALID_TIME,
+  MISSING_DATE_AVAILABILITY,
+  NOT_IMPLEMENTED,
+} from '@Constants/errorConditionConstants';
 
 const scoringPolicy = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -266,7 +275,7 @@ describe('modifyCollectionDefinition branch coverage', () => {
       matchUpValue: 2,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(NOT_IMPLEMENTED);
   });
 
   it('removes tieFormatName when modifications exist without new tieFormatName', () => {
@@ -486,22 +495,22 @@ describe('addCollectionDefinition branch coverage', () => {
 describe('validateDateAvailability branch coverage', () => {
   it('returns error for missing dateAvailability', () => {
     let result: any = validDateAvailability({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DATE_AVAILABILITY);
   });
 
   it('returns error for non-array dateAvailability', () => {
     let result: any = validDateAvailability({ dateAvailability: 'string' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DATE_AVAILABILITY);
   });
 
   it('returns error for non-object availability item', () => {
     let result: any = validDateAvailability({ dateAvailability: [42] });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DATE_AVAILABILITY);
   });
 
   it('returns error when startTime or endTime missing', () => {
     let result: any = validDateAvailability({ dateAvailability: [{ date: '2025-01-01' }] });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DATE_AVAILABILITY);
   });
 
   it('returns valid for correct dateAvailability with bookings', () => {
@@ -529,7 +538,7 @@ describe('validateDateAvailability branch coverage', () => {
         },
       ],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_BOOKINGS);
   });
 
   it('returns error for non-object booking item', () => {
@@ -543,7 +552,7 @@ describe('validateDateAvailability branch coverage', () => {
         },
       ],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_BOOKINGS);
   });
 
   it('returns error for booking with invalid startTime', () => {
@@ -557,7 +566,7 @@ describe('validateDateAvailability branch coverage', () => {
         },
       ],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIME);
   });
 
   it('returns error for booking with invalid endTime', () => {
@@ -571,7 +580,7 @@ describe('validateDateAvailability branch coverage', () => {
         },
       ],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIME);
   });
 
   it('returns error for booking where startTime equals endTime', () => {
@@ -585,7 +594,7 @@ describe('validateDateAvailability branch coverage', () => {
         },
       ],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIME);
   });
 
   it('returns error for booking where endTime is before startTime', () => {
@@ -599,7 +608,7 @@ describe('validateDateAvailability branch coverage', () => {
         },
       ],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIME);
   });
 
   it('returns valid for availability without date (date is optional)', () => {
@@ -646,7 +655,7 @@ describe('publishEvent embargo validation branch coverage', () => {
       },
       eventId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_EMBARGO);
   });
 
   it('returns INVALID_EMBARGO for invalid stageDetails embargo', () => {
@@ -668,7 +677,7 @@ describe('publishEvent embargo validation branch coverage', () => {
       },
       eventId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_EMBARGO);
   });
 
   it('returns INVALID_EMBARGO for invalid structureDetails embargo', () => {
@@ -693,7 +702,7 @@ describe('publishEvent embargo validation branch coverage', () => {
       },
       eventId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_EMBARGO);
   });
 
   it('returns INVALID_EMBARGO for invalid scheduledRounds embargo', () => {
@@ -722,7 +731,7 @@ describe('publishEvent embargo validation branch coverage', () => {
       },
       eventId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_EMBARGO);
   });
 
   it('succeeds with valid embargo dates at all levels', () => {

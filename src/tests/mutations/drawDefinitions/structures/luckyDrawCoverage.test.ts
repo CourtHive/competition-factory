@@ -9,7 +9,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, test, expect } from 'vitest';
 
 // constants
-import { MISSING_DRAW_DEFINITION, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { MISSING_DRAW_DEFINITION, INVALID_VALUES, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { LUCKY_PARTICIPANT } from '@Constants/positionActionConstants';
 import {
@@ -1099,7 +1099,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       roundNumber: 1,
     });
     // getLuckyDrawRoundStatus returns empty rounds, so roundStatus is not found => error
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('advancement with pre-feed round places lucky loser correctly', () => {
@@ -1267,7 +1267,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       participantId: 'pid-1',
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -2135,7 +2135,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
       drawDefinition,
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('pre-feed round without participantId returns MISSING_PARTICIPANT_ID', () => {
@@ -2196,7 +2196,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
       drawDefinition,
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
   });
 
   test('pre-feed round with ineligible participantId returns error', () => {
@@ -2258,7 +2258,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
       participantId: 'p1',
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('LUCKY_DRAW with playoff structures via engine — full workflow', () => {

@@ -8,6 +8,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, test, expect } from 'vitest';
 
 // constants
+import { INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { SINGLE_ELIMINATION, MAIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
@@ -253,7 +254,7 @@ describe('HYBRID eventType', () => {
       participantIds: ['team-1'],
     });
     // TEAM participant should not be accepted in a HYBRID event
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
   });
 
   test('checkValidEntries passes for mixed INDIVIDUAL/PAIR entries', () => {

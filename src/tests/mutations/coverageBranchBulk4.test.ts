@@ -36,6 +36,10 @@ import {
   MISSING_STRUCTURE_ID,
   MISSING_MATCHUP_ID,
   MISSING_VALUE,
+  INVALID_DRAW_SIZE,
+  INVALID_PARTICIPANT_ID,
+  INVALID_VALUES,
+  MISSING_POLICY_DEFINITION,
 } from '@Constants/errorConditionConstants';
 
 // 1. methodImporter — hit setStateMethods error branch (non-object submittedMethods)
@@ -44,7 +48,7 @@ describe('methodImporter branches', () => {
     const engine = {};
     const engineInvoke = () => ({});
     const result = methodImporter(engine, engineInvoke, 'not-an-object', false, 1, false);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('succeeds with valid empty object methods', () => {
@@ -94,7 +98,7 @@ describe('generateAdHocRounds branches', () => {
       participantIds: ['nonexistent'],
       structureId: 's1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_PARTICIPANT_ID);
   });
 
   it('handles multiple rounds count', () => {
@@ -208,7 +212,7 @@ describe('generateOrGetExisting branches', () => {
       tournamentRecord,
       event: {} as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DRAW_SIZE);
   });
 
   it('succeeds with proper event and entries', () => {
@@ -236,7 +240,7 @@ describe('policyAttachment branches', () => {
       drawDefinition: { drawId: 'd1' },
       stack: 'test',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('attaches default seeding policy when none provided', () => {
@@ -286,7 +290,7 @@ describe('applyTournamentRankingPoints branches', () => {
     });
     const result = applyTournamentRankingPoints({ tournamentRecord });
     // getTournamentPoints requires a POLICY_TYPE_RANKING_POINTS policy
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_POLICY_DEFINITION);
   });
 });
 

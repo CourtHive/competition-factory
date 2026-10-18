@@ -4,14 +4,19 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { MALE, FEMALE, MIXED, ANY } from '@Constants/genderConstants';
+import { SINGLES, DOUBLES, TEAM } from '@Constants/eventConstants';
 import {
   CATEGORY_MISMATCH,
   INVALID_EVENT_TYPE,
   INVALID_GENDER,
   MISSING_BIRTH_DATE,
+  EVENT_NOT_FOUND,
+  INVALID_DATE,
+  INVALID_VALUES,
+  MISSING_EVENT,
+  MISSING_TOURNAMENT_RECORD,
 } from '@Constants/errorConditionConstants';
-import { MALE, FEMALE, MIXED, ANY } from '@Constants/genderConstants';
-import { SINGLES, DOUBLES, TEAM } from '@Constants/eventConstants';
 
 const eventId = 'e1';
 
@@ -24,7 +29,7 @@ describe('modifyEvent - Extended Coverage', () => {
       event: {} as any,
       eventUpdates: {},
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('returns error when eventId missing', () => {
@@ -37,7 +42,7 @@ describe('modifyEvent - Extended Coverage', () => {
       event: {} as any,
       eventUpdates: {},
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(EVENT_NOT_FOUND);
   });
 
   it('returns error when event missing', () => {
@@ -50,7 +55,7 @@ describe('modifyEvent - Extended Coverage', () => {
       event: null as any,
       eventUpdates: {},
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_EVENT);
   });
 
   it('returns error when eventUpdates is not an object', () => {
@@ -64,7 +69,7 @@ describe('modifyEvent - Extended Coverage', () => {
       event,
       eventUpdates: 'invalid' as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   // Gender update tests
@@ -429,7 +434,7 @@ describe('modifyEvent - Extended Coverage', () => {
       event,
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DATE);
   });
 
   it('updates event end date', () => {
