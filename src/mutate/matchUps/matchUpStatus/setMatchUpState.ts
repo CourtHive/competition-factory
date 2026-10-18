@@ -26,6 +26,7 @@ import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { ensureGoesTo, holdGoesTo } from '@Query/matchUps/addGoesTo';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -34,7 +35,6 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { validateScore } from '@Validators/validateScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit } from '@Validators/isExit';
@@ -148,6 +148,15 @@ type SetMatchUpStateArgs = {
  * consumers call `setMatchUpStatus`.
  */
 export function setMatchUpState(params: SetMatchUpStateArgs): any {
+  // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18): what `ensureGoesTo` writes below is held, and
+  // written back if the call returns an error. See `holdGoesTo`.
+  const release = holdGoesTo({ drawDefinition: params.drawDefinition, matchUpsMap: params.matchUpsMap });
+  const result = writeMatchUpState(params);
+  if (result?.error) release?.();
+  return result;
+}
+
+function writeMatchUpState(params: SetMatchUpStateArgs) {
   const stack = 'setMatchUpStatus';
 
   const rotating = resolveRotatingPartnerOutcome(params);
@@ -578,10 +587,12 @@ function resolveMatchUpAndContext({
    * computed `winnerTo`, `loserTo` and `potentialParticipants` for every matchUp, a `positionTargets`
    * each, which nothing a `setMatchUpStatus` reaches reads: 89,071 -> 20,459 calls in the census.
    *
-   * THE WRITE PRECEDES VALIDATION, deliberately. A call that is then refused has still stored the
-   * missing edges — CA: a mutation is acceptable under an error response when it is specifically the
-   * addition of missing winner and loser matchUpIds. They are derived from the draw's own links and
-   * are what it would have stored had the factory generated it.
+   * THE WRITE PRECEDES VALIDATION, and a refusal takes it back. CA, 2026-10-18: "no, a refused call
+   * does not store a draw's missing edges. v1 should no longer do so." What this write touches is held
+   * before it (`holdGoesTo`, in `setMatchUpState` and `setMatchUpStatus`) and written back on any error
+   * the call returns, so a refused call leaves the record as it was, edges included. A call that
+   * succeeds keeps them: they are derived from the draw's own links, are what it would have stored had
+   * the factory generated it, and are written once.
    */
   const goesTo = inContextDrawMatchUps && ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
   if (goesTo?.error) return goesTo;

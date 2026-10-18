@@ -549,8 +549,9 @@ function handleTimedSet(
 
 /**
  * Whether points in this timed set build games. A games-based timed set (`T{minutes}`, `T{minutes}G`)
- * under the SET root is a tennis-family set: its points make traditional games, with deuce, No-Ad and
- * deuce caps, and the set counts games (CA 2026-10-17). Elsewhere a point stays one scoring unit:
+ * under the SET root is a tennis-family set: its points make games of the match's game format (`-G:`:
+ * traditional, with deuce, No-Ad and deuce caps, or consecutive points, CA 2026-10-18), and the set
+ * counts games (CA 2026-10-17). Elsewhere a point stays one scoring unit:
  * - under another root (HAL, QTR, PER, RND, INN) and in the standalone form, a game is the sport's own
  *   unit (a goal, a basket);
  * - in an aggregate format the segment's total is its units: INTENNSE bolts (`SET2XA-S:T10`) score
@@ -581,11 +582,22 @@ function handleTimedGamePoint(
   if (winner === 0) side1GameScores[last] += 1;
   else side2GameScores[last] += 1;
 
-  const gameWon = checkStandardGameWon(side1GameScores[last], side2GameScores[last], setFormat, false, formatStructure);
+  // the games are of the match's declared game format, a consecutive-points one included (§ 3.5, CA 2026-10-18)
+  const gameFormat = formatStructure?.gameFormat;
+  const consecutiveCount = gameFormat?.type === 'CONSECUTIVE' ? gameFormat.count || 3 : undefined;
+  let gameWon: number | undefined;
+  if (consecutiveCount) {
+    const streak = currentSet.currentStreak;
+    currentSet.currentStreak = { side: winner, count: streak?.side === winner ? streak.count + 1 : 1 };
+    gameWon = currentSet.currentStreak.count >= consecutiveCount ? winner : undefined;
+  } else {
+    gameWon = checkStandardGameWon(side1GameScores[last], side2GameScores[last], setFormat, false, formatStructure);
+  }
   if (gameWon === undefined) {
-    point.score = formatGameScore(side1GameScores[last], side2GameScores[last], false);
+    point.score = formatGameScore(side1GameScores[last], side2GameScores[last], false, !!consecutiveCount);
     return;
   }
+  currentSet.currentStreak = undefined;
   if (gameWon === 0) currentSet.side1Score = (currentSet.side1Score || 0) + 1;
   else currentSet.side2Score = (currentSet.side2Score || 0) + 1;
   side1GameScores.push(0);

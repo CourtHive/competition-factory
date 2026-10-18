@@ -1,12 +1,16 @@
 import { MATRIX_CELLS, cellExitOutcome } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
+import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import type { MatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
+import { setStateProvider, setSubscriptions } from '@Global/state/globalState';
 import { nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
-import { setSubscriptions } from '@Global/state/globalState';
+import syncGlobalState from '@Global/state/syncGlobalState';
 import { hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
+import * as governors from '@Assemblies/governors';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { expect, it } from 'vitest';
+import asyncEngine from '@Engines/asyncEngine';
+import { describe, expect, it } from 'vitest';
 
 // constants
 import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
@@ -115,41 +119,135 @@ it.each([
   180_000,
 );
 
-it('a call that is refused has still stored the missing edges', () => {
-  const [cell] = CELLS;
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawType: cell.drawType, drawSize: 8, drawId: 'refused' }],
-    nonRandom: 1,
-  });
-  expect(stripEdges(tournamentRecord)).toBeGreaterThan(0);
-  tournamentEngine.setState(tournamentRecord);
-  expect(hasStoredGoesTo({ drawDefinition: tournamentEngine.getEvent({ drawId: 'refused' }).drawDefinition })).toEqual(
-    false,
-  );
+/**
+ * A REFUSED CALL STORES NONE OF THE MISSING EDGES.
+ *
+ * CA, 2026-10-18: "no, a refused call does not store a draw's missing edges. v1 should no longer do so." A case of
+ * CA's earlier ruling the same day: "In setMatchUpStatus there should be nothing changed if an error is returned".
+ *
+ * v1 writes a draw's missing edges once, before anything is decided on them (#5086), because the cascade decides on
+ * the STORED ids. What that write touched is held, and written back on any error the call returns, so a refusal
+ * leaves the record exactly as it was, edges included. A call that succeeds keeps them, and the draw stores its edges
+ * from then on. Asked through every engine entry that reaches `setMatchUpStatus`.
+ */
+describe('a call that is refused stores none of the missing edges', () => {
+  const NINE_ALL = { winningSide: 1, score: { sets: [{ side1Score: 9, side2Score: 9 }] } };
 
-  // a refusal taken BEFORE the draw is read changes nothing at all
-  const target = nextPlayable('refused');
-  let result: any = tournamentEngine.setMatchUpStatus({
-    outcome: { winningSide: 3 },
-    matchUpId: target.matchUpId,
-    drawId: 'refused',
-  });
-  expect(result.error).toEqual(INVALID_WINNING_SIDE);
-  expect(hasStoredGoesTo({ drawDefinition: tournamentEngine.getEvent({ drawId: 'refused' }).drawDefinition })).toEqual(
-    false,
-  );
+  function bareDraw() {
+    setSubscriptions({});
+    const [cell] = CELLS;
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawType: cell.drawType, drawSize: 8, drawId: 'refused' }],
+      nonRandom: 1,
+    });
+    expect(stripEdges(tournamentRecord)).toBeGreaterThan(0);
+    return tournamentRecord;
+  }
+  const storesEdges = () =>
+    hasStoredGoesTo({ drawDefinition: tournamentEngine.getEvent({ drawId: 'refused' }).drawDefinition });
+  const recordNow = () => structuredClone(tournamentEngine.getTournament().tournamentRecord);
 
-  // a refusal taken AFTER it — a score its format cannot produce — leaves the edges stored
-  result = tournamentEngine.setMatchUpStatus({
-    outcome: { winningSide: 1, score: { sets: [{ side1Score: 9, side2Score: 9 }] } },
-    matchUpId: target.matchUpId,
-    drawId: 'refused',
+  it('directly: a refusal before the draw is read, and one after it, leave the record as it was', () => {
+    tournamentEngine.setState(bareDraw());
+    expect(storesEdges()).toEqual(false);
+    const before = recordNow();
+
+    // a refusal taken BEFORE the draw is read
+    const target = nextPlayable('refused');
+    let result: any = tournamentEngine.setMatchUpStatus({
+      outcome: { winningSide: 3 },
+      matchUpId: target.matchUpId,
+      drawId: 'refused',
+    });
+    expect(result.error).toEqual(INVALID_WINNING_SIDE);
+    expect(storesEdges()).toEqual(false);
+    expect(recordNow()).toEqual(before);
+
+    // a refusal taken AFTER it: a score its format cannot produce
+    result = tournamentEngine.setMatchUpStatus({ outcome: NINE_ALL, matchUpId: target.matchUpId, drawId: 'refused' });
+    expect(result.error).toBeDefined();
+    expect(storesEdges()).toEqual(false);
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId: 'refused' });
+    const stored = drawDefinition.structures[0].matchUps.find((matchUp: any) => matchUp.matchUpId === target.matchUpId);
+    expect(stored.winningSide).toBeUndefined();
+    expect(stored.score?.sets ?? []).toEqual([]);
+    expect(recordNow()).toEqual(before);
+
+    // POSITIVE CONTROL: the same matchUp scored as it can be scored stores the edges, and they stay
+    const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 });
+    result = tournamentEngine.setMatchUpStatus({
+      outcome,
+      matchUpId: target.matchUpId,
+      drawId: 'refused',
+    });
+    expect(result.success).toEqual(true);
+    expect(storesEdges()).toEqual(true);
   });
-  expect(result.error).toBeDefined();
-  const { drawDefinition } = tournamentEngine.getEvent({ drawId: 'refused' });
-  expect(hasStoredGoesTo({ drawDefinition })).toEqual(true);
-  // and nothing else: the matchUp is as it was
-  const stored = drawDefinition.structures[0].matchUps.find((matchUp: any) => matchUp.matchUpId === target.matchUpId);
-  expect(stored.winningSide).toBeUndefined();
-  expect(stored.score?.sets ?? []).toEqual([]);
+
+  for (const rollbackOnError of [true, false]) {
+    it(`setMatchUpStatus and executionQueue, rollbackOnError ${rollbackOnError}: the record is as it was`, () => {
+      for (const via of ['direct', 'executionQueue'] as const) {
+        tournamentEngine.setState(bareDraw());
+        const before = recordNow();
+        const params = { outcome: NINE_ALL, matchUpId: nextPlayable('refused').matchUpId, drawId: 'refused' };
+        const result: any =
+          via === 'direct'
+            ? tournamentEngine.setMatchUpStatus({ ...params, rollbackOnError })
+            : tournamentEngine.executionQueue([{ method: 'setMatchUpStatus', params }], rollbackOnError);
+        expect(result.error).toBeDefined();
+        expect(storesEdges()).toEqual(false);
+        expect(recordNow()).toEqual(before);
+      }
+    });
+  }
+
+  it('bulkMatchUpStatusUpdate: an outcome refused leaves the draw it was refused in as it was', () => {
+    const tournamentRecord = bareDraw();
+    tournamentEngine.setState(tournamentRecord);
+    const before = recordNow();
+    const { eventId } = tournamentEngine.getEvent({ drawId: 'refused' }).event;
+    const result: any = tournamentEngine.bulkMatchUpStatusUpdate({
+      outcomes: [
+        {
+          ...NINE_ALL,
+          tournamentId: tournamentRecord.tournamentId,
+          matchUpId: nextPlayable('refused').matchUpId,
+          drawId: 'refused',
+          eventId,
+        },
+      ],
+    });
+    expect(result.error).toBeDefined();
+    expect(storesEdges()).toEqual(false);
+    expect(recordNow()).toEqual(before);
+  });
+
+  it('async engine: the same, per request context', async () => {
+    const tournamentRecord = bareDraw();
+    tournamentEngine.setState(structuredClone(tournamentRecord));
+    const matchUpId = nextPlayable('refused').matchUpId;
+    setStateProvider(asyncGlobalState);
+    try {
+      asyncEngine.importMethods(governors);
+      for (const rollbackOnError of [true, false]) {
+        await asyncGlobalState.runWithInstanceState(async () => {
+          await asyncEngine.setState(structuredClone(tournamentRecord));
+          const before = structuredClone((await asyncEngine.getTournament()).tournamentRecord);
+          const result: any = await asyncEngine.setMatchUpStatus({
+            outcome: NINE_ALL,
+            drawId: 'refused',
+            rollbackOnError,
+            matchUpId,
+          });
+          expect(result.error).toBeDefined();
+          const { drawDefinition } = await asyncEngine.getEvent({ drawId: 'refused' });
+          expect(hasStoredGoesTo({ drawDefinition })).toEqual(false);
+          const { tournamentRecord: after } = await asyncEngine.getTournament();
+          expect(after).toEqual(before);
+        });
+      }
+    } finally {
+      setStateProvider(syncGlobalState);
+    }
+  });
 });

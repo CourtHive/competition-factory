@@ -138,6 +138,14 @@ In an `XA` format, `-F:` describes the sudden-death decider that settles level a
 
 ## parse and stringify
 
+`isValidMatchUpFormat` answers whether a code is valid **for a new format**; `parse` answers whether a
+stored code can be read. They differ on two kinds of well-formed code that are refused for new use
+(scoring engine specification § 16, decision 19; CA 2026-10-18): a standard set whose tiebreak comes
+below S − 1 (a tiebreak at four all in a set to six), and an aggregate of standard sets (aggregation is
+defined over timed, tiebreak-only and outs segments). A record that already holds one still parses and
+scores as it always did; setting one as a matchUp, structure, draw or collection format is refused
+(`UNRECOGNIZED_MATCHUP_FORMAT`).
+
 ```js
 import { matchUpFormatCode } from 'tods-competition-factory';
 

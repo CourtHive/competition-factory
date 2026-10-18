@@ -2,6 +2,12 @@
 title: Score Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`inferServeSide`](/docs/implementation/scoring/inferServeSide), [`validateTieFormat`](/docs/implementation/validation/validateTieFormat). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { scoreGovernor } from 'tods-competition-factory';
 ```
@@ -132,19 +138,7 @@ per point and exposes the result as `episode.needed` — see
 
 ## inferServeSide
 
-Which court side the serve comes from, at the current score. Also positional.
-
-```js
-const side = scoreGovernor.inferServeSide(matchUp, formatStructure, 'standard');
-// 'deuce' | 'ad' | undefined
-```
-
-The rule is parity, and what is counted depends on the format: total points in the game for standard
-tennis, aggregate score for aggregate formats such as INTENNSE, total tiebreak points inside a
-tiebreak. A **timed** set returns `undefined` — there is no countable point structure to take a
-parity of.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`inferServeSide`](/docs/implementation/scoring/inferServeSide). Package-export status is a separate decision.
 
 ## getEpisodes and EpisodeNeeded
 
@@ -590,21 +584,7 @@ const { isValid } = scoreGovernor.validateMatchUpScore(sets, 'SET3-S:TB10');
 
 ## validateTieFormat
 
-Provides validation for `tieFormat` objects. See [tieFormats](/docs/concepts/tieFormat).
-
-```js
-const {
-  valid, // boolean whether valid or not
-  error,
-} = scoreGovernor.validateTieFormat({
-  checkCollectionIds, // ensure collectionId is present on all collections
-  enforceGender,
-  tieFormat,
-  gender,
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validateTieFormat`](/docs/implementation/validation/validateTieFormat). Package-export status is a separate decision.
 
 ## ScoringEngine Methods
 

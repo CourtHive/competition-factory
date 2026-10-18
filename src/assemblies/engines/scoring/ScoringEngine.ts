@@ -494,8 +494,10 @@ export class ScoringEngine {
    * Add a complete set score (set-level input)
    *
    * Used by scoring modals where users enter finished set scores directly.
-   * Validates against format, infers winningSide if not provided,
-   * checks match completion, and records a ScoreEntry in history.
+   * Does not validate the total against the format: when winningSide is not provided it is
+   * inferred from any unequal total (a level total leaves the set open). Then checks match
+   * completion and records a ScoreEntry in history. The spec's rule (scoring-engine-spec § 2.3)
+   * judges the total by its segment's rule; v1 does not yet.
    *
    * @param options - Set score data
    */
