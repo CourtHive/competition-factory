@@ -547,12 +547,12 @@ const result = officiatingEngine.executionQueue(
     {
       method: 'addCertification',
       params: { organisationId: 'ITF', certificationFamily: 'UMPIRE' },
-      pipe: { officialRecordId: true }, // pipes officialRecordId from previous result
+      pipe: { officialRecordId: true }, // pipes officialRecordId from the createOfficialRecord result
     },
     {
-      method: 'assignOfficial',
-      params: { tournamentId: 'tourn-001', roleSubtype: 'CHAIR_UMPIRE' },
-      pipe: { officialRecordId: true },
+      method: 'transitionCertificationStatus',
+      params: { toStatus: 'SUSPENDED', reason: 'Pending review' },
+      pipe: { certificationId: true }, // pipes certificationId from the addCertification result
     },
   ],
   true,
@@ -562,7 +562,7 @@ const result = officiatingEngine.executionQueue(
 // On error: { error, rolledBack: true }
 ```
 
-**Piping**: The `pipe` object maps keys from the previous result into the current directive's params. This enables chaining operations where a later step needs an ID produced by an earlier one.
+**Piping**: The `pipe` object maps keys from the previous result into the current directive's params. This enables chaining operations where a later step needs an ID produced by an earlier one. Only the immediately previous result is read, and only its top-level keys: a key it does not have leaves the directive's own param in place, and a key it has replaces it. Methods that create something return its id at the top level for this purpose: `createOfficialRecord` (`officialRecordId`), `addCertification` (`certificationId`), `addEvaluation` (`evaluationId`), `assignOfficial` (`assignmentId`), `addSuspension` (`suspensionId`), `addConflictDeclaration` (`declarationId`) and `addCertificationRequirement` (`requirementId`).
 
 **Rollback**: When `rollbackOnError` is `true`, the engine snapshots state before execution and restores it if any directive fails.
 

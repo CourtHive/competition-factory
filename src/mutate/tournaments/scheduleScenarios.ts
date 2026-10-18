@@ -1,5 +1,6 @@
 import { computeScheduleFingerprint } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
 import { validateScheduleScenario } from '@Validators/validateScheduleScenario';
+import { modifyTournamentDetailNotice } from './tournamentDetailNotice';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
@@ -32,6 +33,16 @@ function resolveRecord({
   const values = Object.values(tournamentRecords);
   return values.length === 1 ? values[0] : undefined;
 }
+
+// scenarios are tournament data (`scheduling.scenarios`): each write announces the scenarios as they now stand
+function scenariosNotice(record: Tournament) {
+  modifyTournamentDetailNotice({
+    tournamentRecord: record,
+    detail: { scheduleScenarios: record.scheduling?.scenarios ?? [] },
+  });
+}
+
+const sameScenario = (a: ScheduleScenario, b: ScheduleScenario) => JSON.stringify(a) === JSON.stringify(b);
 
 function recordsFor(record: Tournament, tournamentRecords?: TournamentRecords): TournamentRecords {
   return tournamentRecords ?? { [record.tournamentId]: record };
@@ -92,6 +103,7 @@ export function addScheduleScenario(params: AddScheduleScenarioArgs): {
     matchUpIds: newScenario.placements.map((p) => p.matchUpId),
   });
   record.scheduling.scenarios.push(newScenario);
+  scenariosNotice(record);
 
   return { ...SUCCESS, scenario: newScenario, scenarioId };
 }
@@ -129,7 +141,10 @@ export function updateScheduleScenario(params: UpdateScheduleScenarioArgs): {
   });
   if (!validity.valid) return { error: validity.error, info: validity.info };
 
-  scenarios[index] = merged;
+  if (!sameScenario(scenarios[index], merged)) {
+    scenarios[index] = merged;
+    scenariosNotice(record);
+  }
   return { ...SUCCESS, scenario: merged };
 }
 
@@ -151,7 +166,10 @@ export function rebaseScheduleScenario(params: RecordResolution & { scenarioId: 
     tournamentRecords: recordsFor(record, params.tournamentRecords),
     matchUpIds: scenarios[index].placements.map((p) => p.matchUpId),
   });
-  scenarios[index] = { ...scenarios[index], basedOnHash };
+  if (scenarios[index].basedOnHash !== basedOnHash) {
+    scenarios[index] = { ...scenarios[index], basedOnHash };
+    scenariosNotice(record);
+  }
   return { ...SUCCESS, scenario: scenarios[index] };
 }
 
@@ -167,5 +185,6 @@ export function removeScheduleScenario(params: RecordResolution & { scenarioId: 
   if (remaining.length === scenarios.length) return { error: SCHEDULE_SCENARIO_NOT_FOUND };
 
   record.scheduling!.scenarios = remaining;
+  scenariosNotice(record);
   return { ...SUCCESS };
 }

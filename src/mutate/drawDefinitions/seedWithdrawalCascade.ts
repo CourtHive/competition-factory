@@ -2,6 +2,7 @@ import { modifyPositionAssignmentsNotice, modifySeedAssignmentsNotice } from '@M
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
 import { findStructure } from '@Acquire/findStructure';
 
@@ -164,14 +165,15 @@ export function seedWithdrawalCascade({
     }
   }
 
-  // Mark the withdrawn participant as WITHDRAWN in draw entries
-  const entry = drawDefinition.entries?.find((e) => e.participantId === withdrawnParticipantId);
-  if (entry) {
-    entry.entryStatus = WITHDRAWN;
-  }
-
   // Send notifications
   const tournamentId = tournamentRecord?.tournamentId;
+
+  // Mark the withdrawn participant as WITHDRAWN in draw entries
+  const entry = drawDefinition.entries?.find((e) => e.participantId === withdrawnParticipantId);
+  if (entry && entry.entryStatus !== WITHDRAWN) {
+    entry.entryStatus = WITHDRAWN;
+    modifyDrawEntriesNotice({ eventId: event?.eventId, drawDefinition, tournamentId });
+  }
 
   modifyPositionAssignmentsNotice({
     drawDefinition,

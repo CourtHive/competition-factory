@@ -4,8 +4,8 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
+import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 /**
  * A completed aggregate or outs result is a validated winning score (2026-10-17).

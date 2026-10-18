@@ -87,9 +87,9 @@ describe('operational state at the anchor', () => {
 });
 
 /**
- * The anchored court grid already carries some issues of its own (measured: matchUp-order and participant
- * conflicts where a second-round matchUp lands in the row after its sources). So each assertion is about
- * the conflict the profile PLACED: reported for its matchUps after, absent from the same seed before.
+ * The anchored court grid can carry issues of its own (adjacent-row WARNINGs, where a second-round matchUp lands
+ * in the row after its sources without time for recovery). So each assertion is about the conflict the profile
+ * PLACED: reported for its matchUps after, absent from the same seed before.
  */
 const issueKeys = () => new Set(issuesFor().map((issue) => `${issue.issueType}|${issue.matchUpId}`));
 

@@ -1,7 +1,9 @@
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
 import { modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { refreshEntryPositions } from '@Mutate/entries/refreshEntryPositions';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { entriesKey } from '@Mutate/events/eventChangeNotice';
 import { overlap } from '@Tools/arrays';
 
 // constants
@@ -44,11 +46,16 @@ export function removeDrawEntries({
   const { flightProfile } = getFlightProfile({ event });
   const flight = flightProfile?.flights?.find((flight) => flight.drawId === drawId);
   if (flight?.drawEntries) {
+    const before = entriesKey(flight.drawEntries);
     flight.drawEntries = flight.drawEntries.filter(filterEntry);
     if (autoEntryPositions) {
       flight.drawEntries = refreshEntryPositions({
         entries: flight.drawEntries,
       });
+    }
+    // a flight's drawEntries live in the event's flight profile: changing them modifies the event
+    if (!disableNotice && entriesKey(flight.drawEntries) !== before) {
+      modifyEventNotice({ tournamentId: tournamentRecord?.tournamentId, event });
     }
   }
 

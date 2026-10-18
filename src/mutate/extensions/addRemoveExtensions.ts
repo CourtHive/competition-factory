@@ -1,4 +1,5 @@
 import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
+import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { findParticipant } from '@Acquire/findParticipant';
 import { removeExtension } from './removeExtension';
 import { addExtension } from './addExtension';
@@ -54,14 +55,18 @@ export function addDrawDefinitionExtension(params: AddExtensionArgs) {
   return result;
 }
 
+// an event's extensions are event attributes: a change to them is announced with MODIFY_EVENT
 export function addEventExtension(params: AddExtensionArgs) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
-  if (!params.event) return { error: EVENT_NOT_FOUND };
-  return addExtension({
-    creationTime: params.creationTime,
-    extension: params.extension,
-    element: params.event,
-  });
+  const event = params.event;
+  if (!event) return { error: EVENT_NOT_FOUND };
+  return withEventChangeNotice(params, () =>
+    addExtension({
+      creationTime: params.creationTime,
+      extension: params.extension,
+      element: event,
+    }),
+  );
 }
 
 export function addParticipantExtension(params?) {
@@ -108,7 +113,7 @@ export function removeDrawDefinitionExtension(params) {
 export function removeEventExtension(params) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
   if (!params?.event) return { error: EVENT_NOT_FOUND };
-  return removeExtension({ element: params.event, name: params.name });
+  return withEventChangeNotice(params, () => removeExtension({ element: params.event, name: params.name }));
 }
 
 export function removeParticipantExtension(params?) {

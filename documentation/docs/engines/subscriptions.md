@@ -106,6 +106,19 @@ normalised values, and the draw notices it sends carry `tournamentId` and `event
 too: `scaledTeamAssignment` sends `MODIFY_PARTICIPANTS` for the teams it fills and `MODIFY_EVENT_ENTRIES` /
 `MODIFY_DRAW_ENTRIES` for the entries it moves, and `removeEventEntries` sends `MODIFY_EVENT` when it changes a flight.
 
+`MODIFY_EVENT` covers everything stored on the event itself, not only its named attributes: its extensions
+(`addEventExtension`, `removeEventExtension`, `attachPolicies` / `removePolicy` on an event,
+`modifyEventMatchUpFormatTiming`, `removeEventMatchUpFormatTiming`), its timeItems (`addEventTimeItem`, `addTimeItem`
+naming an event, the event context of `setParticipantScaleItems`, the record `deleteDrawDefinitions` keeps of a
+deletion), its `tieFormat` and `tieFormats` (`aggregateTieFormats` and the collection definition and collection group
+writers at any scope, since a fork or a centralised tieFormat lives on the event), and its flight profile
+(`addDrawEntries`, `removeDrawEntries`, `modifyEntriesStatus`, `modifyPairAssignment` and
+`deleteFlightProfileAndFlightDraws` when they change a flight). Each is sent only when the event changed. Entries
+are announced where they change: `addDrawEntries` (and `addEventEntries` / `addEventEntryPairs` with a `drawId`),
+`promoteAlternate(s)`, `seedWithdrawalCascade`, `modifyPairAssignment` and `resetVoluntaryConsolationStructure`
+send `MODIFY_DRAW_ENTRIES` and `MODIFY_EVENT_ENTRIES` for the lists they change. Seeding publication is event
+publish state announced by its own topics, `PUBLISH_EVENT_SEEDING` and `UNPUBLISH_EVENT_SEEDING`.
+
 ## The MODIFY_MATCHUP envelope
 
 `tournamentId`, `eventId`, `drawId` and `structureId` ride the notice **envelope**, alongside the `matchUp` itself:

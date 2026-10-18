@@ -5,6 +5,7 @@ import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { courtTimeOrderConflicts } from './courtTimeOrder';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { generateRange, unique } from '@Tools/arrays';
+import { makeRestedBetween } from './restedBetween';
 import { ensureInt } from '@Tools/ensureInt';
 import {
   getParticipantReachability,
@@ -80,6 +81,17 @@ export function proConflicts({
   const positionDeps = useDeepDependencies ? (depsResult.positionDependencies ?? {}) : {};
   const reachability = getParticipantReachability({ matchUpDependencies: deps, matchUps });
   const drawIdOf = (matchUpId: string) => mappedMatchUps[matchUpId]?.drawId;
+  const restedBetween = makeRestedBetween({ tournamentRecords, matchUpOf: (matchUpId) => mappedMatchUps[matchUpId] });
+
+  // each matchUp of a clashing pair cites the other, so an issue names only the matchUps it actually clashes with
+  const partnersOf = (pairs: [string, string][]): { [key: string]: string[] } => {
+    const partners: { [key: string]: Set<string> } = {};
+    for (const [a, b] of pairs) {
+      (partners[a] ??= new Set()).add(b);
+      (partners[b] ??= new Set()).add(a);
+    }
+    return Object.fromEntries(Object.entries(partners).map(([matchUpId, ids]) => [matchUpId, [...ids]]));
+  };
 
   type Profile = {
     sourceMatchUpIds: string[];
@@ -143,27 +155,27 @@ export function proConflicts({
     participantConflicts: { [key: string]: any },
   ) => {
     if (!participantConflicts[matchUpId]) participantConflicts[matchUpId] = {};
-    if (!participantConflicts[matchUpId][SCHEDULE_WARNING]) {
-      participantConflicts[matchUpId][SCHEDULE_WARNING] = warnedMatchUpIds.filter((id) => id !== matchUpId);
-    }
+    participantConflicts[matchUpId][SCHEDULE_WARNING] ??= warnedMatchUpIds;
   };
 
-  // a participant who can play a matchUp on each of two adjacent rows has them back to back; winner and loser paths of
-  // one feeder are alternatives, not back to back (see getParticipantClashes)
+  // a participant who can play a matchUp on each of two adjacent rows has them back to back, which is a warning only
+  // when the time between them is short of recovery (see restedBetween); winner and loser paths of one feeder are
+  // alternatives, not back to back (see getParticipantClashes)
   const processParticipantWarnings = (
     previousRow: Profile,
     row: Profile,
     participantConflicts: { [key: string]: any },
   ) => {
-    const { clashingMatchUpIds: warnedMatchUpIds } = getParticipantClashes({
+    const { clashingPairs } = getParticipantClashes({
       otherMatchUpIds: previousRow.matchUpIds,
       matchUpIds: row.matchUpIds,
       reachability,
       drawIdOf,
     });
-    warnedMatchUpIds.forEach((matchUpId) => {
+    const shortOfRecovery = clashingPairs.filter(([matchUpId, previousId]) => !restedBetween(previousId, matchUpId));
+    for (const [matchUpId, warnedMatchUpIds] of Object.entries(partnersOf(shortOfRecovery))) {
       addWarningToMatchUp(matchUpId, warnedMatchUpIds, participantConflicts);
-    });
+    }
   };
 
   const addConflictToMatchUp = (
@@ -172,19 +184,17 @@ export function proConflicts({
     participantConflicts: { [key: string]: any },
   ) => {
     if (!participantConflicts[matchUpId]) participantConflicts[matchUpId] = {};
-    if (!participantConflicts[matchUpId][SCHEDULE_CONFLICT]) {
-      participantConflicts[matchUpId][SCHEDULE_CONFLICT] = conflictedMatchUpIds.filter((id) => id !== matchUpId);
-    }
+    participantConflicts[matchUpId][SCHEDULE_CONFLICT] ??= conflictedMatchUpIds;
   };
 
   // a participant who can play two matchUps on one row is asked to be in two places at once, unless the two are
   // alternatives for them (a feeder's winner path and loser path)
   const processParticipantConflicts = (row: Profile): { [key: string]: any } => {
     const participantConflicts: { [key: string]: any } = {};
-    const { clashingMatchUpIds } = getParticipantClashes({ matchUpIds: row.matchUpIds, reachability, drawIdOf });
-    clashingMatchUpIds.forEach((matchUpId) => {
-      addConflictToMatchUp(matchUpId, clashingMatchUpIds, participantConflicts);
-    });
+    const { clashingPairs } = getParticipantClashes({ matchUpIds: row.matchUpIds, reachability, drawIdOf });
+    for (const [matchUpId, conflictedMatchUpIds] of Object.entries(partnersOf(clashingPairs))) {
+      addConflictToMatchUp(matchUpId, conflictedMatchUpIds, participantConflicts);
+    }
     return participantConflicts;
   };
 
@@ -318,13 +328,17 @@ export function proConflicts({
         annotate(matchUpId, SCHEDULE_WARNING, CONFLICT_PARTICIPANTS, participantConflicts[matchUpId][SCHEDULE_WARNING]);
       }
       if (previousRow?.targetMatchUpIds?.includes(matchUpId)) {
-        // IF: connected matchUps are on the same court with sufficient time between them
-        // OR: connected matchUps are on the same court and the target matchUp has 'FOLLOWED_BY'
-        // THEN: no WARNING will be given
+        // a source in the previous row is a WARNING unless it is on the same court (the target follows it there)
+        // or the time between them leaves its participants their recovery (see restedBetween)
         const consideredCourtId = mappedMatchUps[matchUpId].schedule.courtId;
-        const warningMatchUpIds = sourceMatchUpIds.filter((id) => previousRow.matchUpIds.includes(id));
-        const allSameCourt = warningMatchUpIds.some((id) => mappedMatchUps[id].schedule.courtId === consideredCourtId);
-        if (!allSameCourt) {
+        const previousRowIds = new Set(previousRow.matchUpIds);
+        const warningMatchUpIds = sourceMatchUpIds.filter(
+          (id) =>
+            previousRowIds.has(id) &&
+            mappedMatchUps[id].schedule.courtId !== consideredCourtId &&
+            !restedBetween(id, matchUpId),
+        );
+        if (warningMatchUpIds.length) {
           warningMatchUpIds.forEach((id) => annotate(id, SCHEDULE_WARNING, CONFLICT_MATCHUP_ORDER, [matchUpId]));
           annotate(matchUpId, SCHEDULE_WARNING, CONFLICT_MATCHUP_ORDER, warningMatchUpIds);
         }
@@ -356,7 +370,7 @@ export function proConflicts({
     const rowParticipantIds = (row: Profile) =>
       new Set(row.matchUpIds.flatMap((matchUpId) => getReachableParticipantIds(reachability, matchUpId).near));
     const warnDeep = (matchUpIds: string[], otherMatchUpIds?: string[], excludeParticipantIds?: Set<string>) => {
-      const { clashingMatchUpIds } = getParticipantClashes({
+      const { clashingPairs } = getParticipantClashes({
         excludeParticipantIds,
         otherMatchUpIds,
         depth: 'all',
@@ -364,13 +378,12 @@ export function proConflicts({
         matchUpIds,
         drawIdOf,
       });
-      for (const matchUpId of clashingMatchUpIds) {
-        annotate(
-          matchUpId,
-          SCHEDULE_WARNING,
-          CONFLICT_POTENTIAL_PARTICIPANTS,
-          clashingMatchUpIds.filter((id) => id !== matchUpId),
-        );
+      // across adjacent rows, as for the near potentials: a warning only when short of recovery
+      const pairs = otherMatchUpIds
+        ? clashingPairs.filter(([matchUpId, previousId]) => !restedBetween(previousId, matchUpId))
+        : clashingPairs;
+      for (const [matchUpId, clashingMatchUpIds] of Object.entries(partnersOf(pairs))) {
+        annotate(matchUpId, SCHEDULE_WARNING, CONFLICT_POTENTIAL_PARTICIPANTS, clashingMatchUpIds);
       }
     };
 
