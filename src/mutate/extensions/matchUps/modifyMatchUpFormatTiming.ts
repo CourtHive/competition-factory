@@ -33,12 +33,18 @@ export function modifyMatchUpFormatTiming(params) {
 
   if (tournamentId && !tournamentIds.includes(tournamentId)) return { error: INVALID_VALUES };
 
-  let eventModified;
-  for (const currentTournamentId of tournamentIds) {
-    const tournamentRecord = tournamentRecords[currentTournamentId];
-    const { event } = findEvent({ tournamentRecord, eventId });
-    if (eventId && event) eventModified = true;
+  // With an `eventId` only the records that hold the event are written, and the event is found before anything is.
+  // Each record was written on its own: with several loaded, every record lacking the event had its TOURNAMENT-level
+  // timing changed, and an event found in none returned EVENT_NOT_FOUND after those writes (CA 2026-10-18: a bug).
+  const targets = tournamentIds
+    .map((currentTournamentId) => {
+      const tournamentRecord = tournamentRecords[currentTournamentId];
+      return { tournamentRecord, event: eventId ? findEvent({ tournamentRecord, eventId }).event : undefined };
+    })
+    .filter(({ event }) => !eventId || event);
+  if (eventId && !targets.length) return { error: EVENT_NOT_FOUND };
 
+  for (const { tournamentRecord, event } of targets) {
     const result = modifyTiming({
       tournamentRecord,
       event,
@@ -50,7 +56,7 @@ export function modifyMatchUpFormatTiming(params) {
     if (result.error) return result;
   }
 
-  return !eventId || eventModified ? { ...SUCCESS } : { error: EVENT_NOT_FOUND };
+  return { ...SUCCESS };
 }
 
 function modifyTiming({ tournamentRecord, recoveryTimes, matchUpFormat, averageTimes, event }) {

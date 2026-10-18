@@ -47,3 +47,17 @@ export function groupLeafFingerprint({
   const leaf = group && typeof group === 'object' ? (group as Record<string, unknown>)[leafAttribute] : undefined;
   return JSON.stringify([leaf, extension?.value]);
 }
+
+/** The tournament's own (root) extensions, as `rootExtensionsNotice` compares them after a write. */
+export const rootExtensionsFingerprint = (tournamentRecord?: Tournament): string =>
+  JSON.stringify(tournamentRecord?.extensions ?? []);
+
+/**
+ * MODIFY_TOURNAMENT_DETAIL with the record's root `extensions` when a write changed them (CA 2026-10-18: root-extension
+ * writes are announced). Tournament-scope mutation locks, the lock feature gate and `addTournamentExtension` live
+ * there, and an integrator persisting only from notices lost them.
+ */
+export function rootExtensionsNotice({ tournamentRecord, before }: { tournamentRecord?: Tournament; before: string }) {
+  if (rootExtensionsFingerprint(tournamentRecord) === before) return;
+  modifyTournamentDetailNotice({ tournamentRecord, detail: { extensions: tournamentRecord?.extensions ?? [] } });
+}
