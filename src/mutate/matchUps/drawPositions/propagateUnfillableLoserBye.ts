@@ -1,5 +1,6 @@
 import { assignDrawPositionBye, assignFedDrawPositionBye } from './assignDrawPositionBye';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
@@ -9,6 +10,7 @@ import {
   carriedExitStatus,
   getSideExitProvenance,
   recordByeClaim,
+  sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -257,7 +259,18 @@ export function propagateUnfillableLoserBye({
     const rawLoserMatchUp = matchUpsMap.drawMatchUps?.find(
       (candidate) => candidate.matchUpId === loserMatchUp.matchUpId,
     );
+    const record = sideRecordOf(rawLoserMatchUp);
     recordByeClaim({ claimantMatchUpId: matchUpId, sideNumber: claimSideNumber, matchUp: rawLoserMatchUp });
+    // recorded after the BYE is placed, so the placement's notice does not carry it: announced here
+    if (rawLoserMatchUp && record !== sideRecordOf(rawLoserMatchUp))
+      modifyMatchUpNotice({
+        tournamentId: tournamentRecord?.tournamentId,
+        context: 'propagateUnfillableLoserBye',
+        matchUp: rawLoserMatchUp,
+        eventId: event?.eventId,
+        drawDefinition,
+        event,
+      });
   }
 
   return undefined;

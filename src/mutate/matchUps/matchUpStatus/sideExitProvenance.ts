@@ -339,17 +339,22 @@ export function refreshArrivalsFrom({
   matchUpStatus?: MatchUpStatusUnion;
   matchUps?: MatchUp[];
   matchUpId?: string;
-}): void {
-  if (!matchUpId || !matchUpStatus || !writeNativeEnabled()) return;
+}): MatchUp[] {
+  const refreshed: MatchUp[] = [];
+  if (!matchUpId || !matchUpStatus || !writeNativeEnabled()) return refreshed;
   for (const matchUp of matchUps ?? []) {
     const provenance = matchUp.sideExitProvenance;
     if (!provenance) continue;
     for (const sideNumber of [1, 2] as const) {
       const entry = provenance[sideNumber];
       if (entry?.sourceMatchUpId !== matchUpId || carriedExitStatus(entry) || !entry.previousMatchUpStatus) continue;
+      if (entry.previousMatchUpStatus === matchUpStatus) continue;
       entry.previousMatchUpStatus = matchUpStatus;
+      if (!refreshed.includes(matchUp)) refreshed.push(matchUp);
     }
   }
+  // written in place, so no write announces them: the caller does
+  return refreshed;
 }
 
 /**
@@ -590,17 +595,34 @@ export function withdrawByeClaimsFrom({
 }: {
   claimantMatchUpId?: string;
   matchUps?: MatchUp[];
-}): void {
-  if (!claimantMatchUpId) return;
+}): MatchUp[] {
+  const withdrawn: MatchUp[] = [];
+  if (!claimantMatchUpId) return withdrawn;
   for (const matchUp of matchUps ?? []) {
     const provenance = matchUp?.sideExitProvenance;
     if (!provenance) continue;
     for (const sideNumber of [1, 2]) {
       if (provenance[sideNumber]?.byeClaims?.includes(claimantMatchUpId)) {
         withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
+        if (!withdrawn.includes(matchUp)) withdrawn.push(matchUp);
       }
     }
   }
+  // the matchUps it wrote to, for the caller to announce
+  return withdrawn;
+}
+
+/**
+ * What a matchUp's side record holds: its exit provenance and the status codes projected from it. Compared before and
+ * after a write that no state write announces, so the caller announces the matchUp only when the write changed it.
+ */
+export function sideRecordOf(matchUp?: MatchUp): string {
+  return JSON.stringify([
+    matchUp?.sideExitProvenance,
+    matchUp?.matchUpStatusCodes,
+    matchUp?.sideStatusCodes,
+    matchUp?.matchUpStatusCode,
+  ]);
 }
 
 /**

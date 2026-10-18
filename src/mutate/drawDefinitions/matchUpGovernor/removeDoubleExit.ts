@@ -5,6 +5,7 @@ import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositio
 import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -22,6 +23,7 @@ import {
   withdrawByeClaimsFrom,
   byeClaimSurvives,
   withdrawByeClaim,
+  sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   deriveExitStateFromProvenance,
@@ -174,10 +176,22 @@ export function removeDoubleExit(params) {
       drawPosition: loserTargetDrawPosition,
       drawDefinition,
     }) || 1;
+  const loserRecord = sideRecordOf(rawLoserMatchUp);
   withdrawByeClaim({ matchUp: rawLoserMatchUp, sideNumber: claimSideNumber, claimantMatchUpId: matchUpId });
   // ...and wherever else this cascade claimed one: a BYE that WALKS is claimed on a downstream
   // matchUp the unwind never revisits at this coordinate
-  withdrawByeClaimsFrom({ matchUps: matchUpsMap?.drawMatchUps, claimantMatchUpId: matchUpId });
+  const claimsWithdrawn = withdrawByeClaimsFrom({ matchUps: matchUpsMap?.drawMatchUps, claimantMatchUpId: matchUpId });
+  // a claim is the matchUp's own record, and the unwind below need not rewrite the matchUp it leaves: each is announced
+  if (rawLoserMatchUp && loserRecord !== sideRecordOf(rawLoserMatchUp)) claimsWithdrawn.push(rawLoserMatchUp);
+  for (const withdrawnFrom of new Set(claimsWithdrawn))
+    modifyMatchUpNotice({
+      tournamentId: params.tournamentRecord?.tournamentId,
+      eventId: params.event?.eventId,
+      context: 'removeDoubleExit',
+      matchUp: withdrawnFrom,
+      event: params.event,
+      drawDefinition,
+    });
 
   /**
    * THE FMLC "PAIRED ROUND-1 DOUBLE EXIT" TEST THAT STOOD HERE IS GONE. It asked whether the BYE on

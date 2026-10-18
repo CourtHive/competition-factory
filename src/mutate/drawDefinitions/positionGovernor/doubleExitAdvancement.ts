@@ -8,7 +8,7 @@ import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/prop
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
-import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
+import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { clearDrawPosition, drawPositionRemovals } from '@Mutate/matchUps/drawPositions/positionClear';
@@ -31,6 +31,7 @@ import {
   buildCarriedExitProvenance,
   carriedExitStatus,
   recordByeClaim,
+  sideRecordOf,
   collapseDoubleExitStatus,
   retainPolicyCodes,
   buildSideExitProvenance,
@@ -3191,11 +3192,22 @@ function advanceByeToLoserMatchUp(params) {
       feederHoldsBye &&
       !!standing?.bye &&
       !noContextLoserMatchUp.sideExitProvenance?.[claimSide ?? 1]?.byeClaims?.length;
+    const record = sideRecordOf(noContextLoserMatchUp);
     if (!unclaimedBye)
       recordByeClaim({
         sideNumber: claimSide ?? 1,
         claimantMatchUpId: params.sourceMatchUp?.matchUpId,
         matchUp: noContextLoserMatchUp,
+      });
+    // the claim is the loser matchUp's own record, and placing the BYE can write nothing (see above): announced here
+    if (record !== sideRecordOf(noContextLoserMatchUp))
+      modifyMatchUpNotice({
+        tournamentId: tournamentRecord?.tournamentId,
+        context: 'advanceByeToLoserMatchUp',
+        matchUp: noContextLoserMatchUp,
+        eventId: event?.eventId,
+        drawDefinition,
+        event,
       });
   }
 

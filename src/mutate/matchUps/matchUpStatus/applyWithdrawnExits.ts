@@ -306,6 +306,15 @@ export function withdrawByeSeats({
         const claims = matchUp.sideExitProvenance?.[sideNumber]?.byeClaims ?? [];
         if (!claims.includes(claimantMatchUpId) || matchUp.matchUpId === keepAt) continue;
         withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
+        // the claim was the matchUp's own record; a BYE the withdrawal clears below is announced again by that clear
+        modifyMatchUpNotice({
+          tournamentId: tournamentRecord?.tournamentId,
+          context: 'withdrawByeSeats',
+          eventId: event?.eventId,
+          drawDefinition,
+          matchUp,
+          event,
+        });
         if (matchUp.sideExitProvenance?.[sideNumber]?.byeClaims?.length) continue;
         if (claimantIsBye) continue;
         const drawPosition = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber });
