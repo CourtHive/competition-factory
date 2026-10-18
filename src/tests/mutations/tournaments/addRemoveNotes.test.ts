@@ -93,7 +93,7 @@ describe('addNotes', () => {
 
     const result: any = addNotes({ element, notes });
 
-    expect(result.error).toBeDefined(); // missing value
+    expect(result.error).toEqual(MISSING_VALUE); // missing value
     expect(element.notes).toEqual(undefined);
   });
 });

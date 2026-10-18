@@ -52,7 +52,10 @@ export function generateFlightDrawDefinitions({
 
   if (!Array.isArray(flightProfile?.flights)) return { ...SUCCESS, drawIds };
 
-  for (const [index, flight] of flightProfile.flights.entries()) {
+  // the drawProfiles describe the flights this call added: on an existing event (modifyTournamentRecord) the
+  // flights already drawn come first, and pairing by position matched profile 0 to the old draw and stopped
+  const newFlights = flightProfile.flights.filter(({ drawId }) => !existingDrawIdSet.has(drawId));
+  for (const [index, flight] of newFlights.entries()) {
     const { drawId, stage, drawName, drawEntries } = flight;
     drawIds.push(flight.drawId);
 
@@ -71,8 +74,6 @@ export function generateFlightDrawDefinitions({
       startDate,
       eventType,
     });
-
-    if (existingDrawIdSet.has(drawId)) break;
 
     const genResult = generateAndAddDraw({
       drawProfile: drawProfiles[index],

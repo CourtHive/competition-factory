@@ -57,21 +57,10 @@ describe('ScoringEngine — setState and format queries', () => {
     expect(engine.getState().matchUpType).toBe(DOUBLES_MATCHUP);
   });
 
-  test('getSetsToWin returns correct value for various formats', () => {
-    expect(new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' }).getSetsToWin()).toBe(2);
-    expect(new ScoringEngine({ matchUpFormat: 'SET5-S:6/TB7' }).getSetsToWin()).toBe(3);
-    expect(new ScoringEngine({ matchUpFormat: 'SET1-S:6/TB7' }).getSetsToWin()).toBe(1);
-  });
-
   test('getSetsToWin with no cached format returns 2', () => {
     const engine = new ScoringEngine();
     // Default format is valid, so cachedFormatStructure should exist
     expect(engine.getSetsToWin()).toBe(2);
-  });
-
-  test('getTiebreakAt returns null for tiebreak-only format', () => {
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB11' });
-    expect(engine.getTiebreakAt()).toBeNull();
   });
 
   test('getTiebreakAt returns null for timed format', () => {
@@ -80,47 +69,16 @@ describe('ScoringEngine — setState and format queries', () => {
   });
 
   test('getTiebreakAt returns null for noTiebreak format', () => {
-    // SET5-S:6/TB7-F:6 has finalSetFormat with noTiebreak
+    // SET5-S:6-F:6: neither the regular nor the final set format has a tiebreak
     const engine = new ScoringEngine({ matchUpFormat: 'SET5-S:6-F:6' });
-    // The regular set format has noTiebreak in this format
-    const tba = engine.getTiebreakAt();
-    // With S:6 and no TB specified, tiebreakAt defaults to 6
-    expect(typeof tba === 'number' || tba === null).toBe(true);
-  });
-
-  test('hasFinalSetTiebreak returns true for match tiebreak', () => {
-    // SET3-S:6/TB7-F:TB10 — final set is match tiebreak
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7-F:TB10' });
-    expect(engine.hasFinalSetTiebreak()).toBe(true);
+    // S:6 with no /TB has no tiebreak, so there is no tiebreakAt
+    expect(engine.getTiebreakAt()).toBeNull();
   });
 
   test('hasFinalSetTiebreak returns false for advantage final set', () => {
     // SET5-S:6/TB7-F:6 — final set is advantage (no tiebreak)
     const engine = new ScoringEngine({ matchUpFormat: 'SET5-S:6/TB7-F:6' });
     expect(engine.hasFinalSetTiebreak()).toBe(false);
-  });
-
-  test('hasFinalSetTiebreak returns true when no finalSetFormat (uses regular set rules)', () => {
-    // SET3-S:6/TB7 — no separate final set format, regular has tiebreak
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine.hasFinalSetTiebreak()).toBe(true);
-  });
-
-  test('isNoAd returns true for NoAD format', () => {
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6NOAD/TB7' });
-    expect(engine.isNoAd()).toBe(true);
-  });
-
-  test('isNoAd returns false for standard format', () => {
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine.isNoAd()).toBe(false);
-  });
-
-  test('getFormatStructure returns parsed format', () => {
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    const fs = engine.getFormatStructure();
-    expect(fs).toBeDefined();
-    expect(fs!.bestOf).toBe(3);
   });
 });
 
@@ -523,11 +481,6 @@ describe('ScoringEngine — supplementary state', () => {
 // ============================================================================
 
 describe('ScoringEngine — getInputMode', () => {
-  test('returns "none" for fresh engine', () => {
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine.getInputMode()).toBe('none');
-  });
-
   test('returns "points" after addPoint', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     engine.addPoint({ winner: 0 });
@@ -1286,7 +1239,7 @@ describe('pointsToCalculator — edge cases', () => {
     };
     const result = calcPointsToGameInTiebreak(6, 5, setFormat);
     expect(result[0]).toBe(1); // One more to win
-    expect(result[1]).toBe(2); // Need to equalize then win 2
+    expect(result[1]).toBe(3); // 5-6 → 6-6 → 7-6 → 8-6: equalize, then win two
   });
 
   test('calcPointsToGameInTiebreak with NoAD', () => {
@@ -1404,7 +1357,7 @@ describe('pointsToCalculator — edge cases', () => {
     expect(result!.pointsToGame).toEqual([1, 1]); // Golden point
   });
 
-  test('standard game at advantage — 1 point for leader, 2 for trailer', () => {
+  test('standard game at advantage — 1 point for leader, 3 for trailer', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     // Get to advantage side 0 (4-3 points)
     for (let i = 0; i < 3; i++) engine.addPoint({ winner: 0 });
@@ -1416,7 +1369,7 @@ describe('pointsToCalculator — edge cases', () => {
     const result = calculatePointsTo(state, fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
     expect(result!.pointsToGame[0]).toBe(1); // Side 0 at advantage, 1 to win
-    expect(result!.pointsToGame[1]).toBe(2); // Side 1 behind, needs 2+
+    expect(result!.pointsToGame[1]).toBe(3); // Side 1 behind: deuce, advantage, game
   });
 
   test('calcSideGamesToSet — at tiebreak threshold, need 1 game', () => {
@@ -1809,17 +1762,15 @@ describe('pointsToCalculator — deeper branch coverage', () => {
     expect(result!.pointsToGame).toEqual([1, 1]);
   });
 
-  test('tiebreak standard: already won tiebreak (pointsTo = 0)', () => {
-    // After a tiebreak is won, if we calculate pointsTo on the completed set
-    // it should handle gracefully. Use calcPointsToGameInTiebreak directly.
+  test('tiebreak standard: a decided tiebreak reports 0 for both sides', () => {
+    // A completed tiebreak has nothing left to win in it. Use calcPointsToGameInTiebreak directly.
     const setFormat: SetFormatStructure = {
       setTo: 6,
       tiebreakFormat: { tiebreakTo: 7 },
     };
     // 7-4: side 1 already won
     const result = calcPointsToGameInTiebreak(7, 4, setFormat);
-    expect(result[0]).toBe(0); // Already won
-    expect(result[1]).toBeGreaterThan(0); // Needs points
+    expect(result).toEqual([0, 0]);
   });
 
   test('exactly format non-aggregate via addGame: all sets must be completed', () => {

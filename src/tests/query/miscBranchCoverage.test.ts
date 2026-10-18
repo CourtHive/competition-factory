@@ -8,6 +8,12 @@ import { expect, test } from 'vitest';
 // constants
 import { MALE, FEMALE } from '@Constants/genderConstants';
 import { SINGLES, AGE } from '@Constants/eventConstants';
+import {
+  INVALID_COLLECTION_DEFINITION,
+  INVALID_GENDER,
+  INVALID_OBJECT,
+  INVALID_TIE_FORMAT,
+} from '@Constants/errorConditionConstants';
 
 // stringify branches
 test('stringify with non-object returns undefined', () => {
@@ -111,7 +117,7 @@ test('stringify with timed set with modifier', () => {
 // validateCollectionDefinition branches
 test('validateCollectionDefinition with non-object', () => {
   const result = validateCollectionDefinition({ collectionDefinition: 'invalid' as any });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_OBJECT);
 });
 
 test('validateCollectionDefinition with checkCollectionIds missing collectionId', () => {
@@ -123,7 +129,7 @@ test('validateCollectionDefinition with checkCollectionIds missing collectionId'
       matchUpValue: 1,
     } as any,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_COLLECTION_DEFINITION);
 });
 
 test('validateCollectionDefinition with collectionGroupNumber as string', () => {
@@ -136,7 +142,7 @@ test('validateCollectionDefinition with collectionGroupNumber as string', () => 
       collectionGroupNumber: 'invalid' as any,
     } as any,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_COLLECTION_DEFINITION);
 });
 
 test('validateCollectionDefinition with invalid matchUpFormat', () => {
@@ -149,7 +155,7 @@ test('validateCollectionDefinition with invalid matchUpFormat', () => {
       matchUpFormat: 'INVALID-FORMAT',
     } as any,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_COLLECTION_DEFINITION);
 });
 
 test('validateCollectionDefinition with gender check failure', () => {
@@ -164,7 +170,7 @@ test('validateCollectionDefinition with gender check failure', () => {
       gender: FEMALE,
     } as any,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_GENDER);
 });
 
 test('validateCollectionDefinition with category check', () => {
@@ -186,21 +192,21 @@ test('validateCollectionDefinition with category check', () => {
 // validateTieFormat branches
 test('validateTieFormat with no params', () => {
   const result = validateTieFormat({} as any);
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_TIE_FORMAT);
 });
 
 test('validateTieFormat with invalid winCriteria', () => {
   const result = validateTieFormat({
     tieFormat: { collectionDefinitions: [], winCriteria: 'invalid' },
   } as any);
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_TIE_FORMAT);
 });
 
 test('validateTieFormat with no collectionDefinitions', () => {
   const result = validateTieFormat({
     tieFormat: { winCriteria: { valueGoal: 2 } },
   } as any);
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_TIE_FORMAT);
 });
 
 test('validateTieFormat with aggregateValue imperative and no aggregateValue', () => {
@@ -217,7 +223,7 @@ test('validateTieFormat with aggregateValue imperative and no aggregateValue', (
       ],
     },
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_TIE_FORMAT);
 });
 
 test('validateTieFormat with duplicate collectionIds and checkCollectionIds', () => {
@@ -232,7 +238,7 @@ test('validateTieFormat with duplicate collectionIds and checkCollectionIds', ()
     },
   });
   // Duplicate collectionIds should cause validation failure
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_TIE_FORMAT);
 });
 
 // getParticipants with tournamentIds filter via contextFilters

@@ -8,6 +8,9 @@ import { describe, expect, it } from 'vitest';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { UnifiedTournamentID } from '@Types/tournamentTypes';
 
+// constants
+import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
+
 /**
  * `tournamentOtherIds` was declared on the `Tournament` type with NO write path, no
  * reader, and no read-model column, while the event grain had all three. A record
@@ -91,7 +94,7 @@ describe('addTournamentOtherId', () => {
       organisationId: 'ITA',
       isOrigin: true,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.info).toContain('UTR');
 
     const { tournamentRecord } = tournamentEngine.getTournament();
@@ -208,7 +211,7 @@ describe('setTournamentOtherIds', () => {
         { organisationId: 'ITA', tournamentId: 'ita-4471', isOrigin: true },
       ],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.info).toContain('isOrigin');
     expect(tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds).toBeUndefined();
   });
@@ -220,7 +223,7 @@ describe('setTournamentOtherIds', () => {
 
     for (const tournamentOtherIds of ['nope', 42, {}, undefined] as any[]) {
       const result: any = tournamentEngine.setTournamentOtherIds({ tournamentOtherIds });
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual(INVALID_VALUES);
       expect(result.info).toContain('array');
     }
     expect(tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds).toBeUndefined();
@@ -232,7 +235,7 @@ describe('setTournamentOtherIds', () => {
     const result: any = tournamentEngine.setTournamentOtherIds({
       tournamentOtherIds: [{ tournamentId: '306618' } as any],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
     expect(tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds).toBeUndefined();
   });
 });

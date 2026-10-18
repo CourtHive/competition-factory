@@ -226,6 +226,12 @@ legacyMode('can add events, venues, and schedule matchUps and modify drawDefinit
     });
     expect(result.success).toEqual(true);
 
+    // the venue unassign/reassign above is what moves updatedAt; this check used to follow the refused
+    // assignMatchUpCourt below, which credited the bump to a call that changed nothing
+    ({ drawDefinition } = tournamentEngine.getEvent({ drawId }));
+    expect(new Date(lastUpdatedAt).getTime()).toBeLessThan(new Date(drawDefinition.updatedAt).getTime());
+    lastUpdatedAt = drawDefinition.updatedAt;
+
     await forceDelay();
 
     result = tournamentEngine.assignMatchUpCourt({
@@ -235,9 +241,9 @@ legacyMode('can add events, venues, and schedule matchUps and modify drawDefinit
     });
     expect(result.error).toEqual(MISSING_MATCHUP_ID);
 
+    // a refused call leaves the draw untouched
     ({ drawDefinition } = tournamentEngine.getEvent({ drawId }));
-    expect(new Date(lastUpdatedAt).getTime()).toBeLessThan(new Date(drawDefinition.updatedAt).getTime());
-    lastUpdatedAt = drawDefinition.updatedAt;
+    expect(drawDefinition.updatedAt).toEqual(lastUpdatedAt);
 
     result = tournamentEngine.assignMatchUpCourt({
       courtDayDate: scheduledDate,

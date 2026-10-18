@@ -4,6 +4,14 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { penaltyConstants } from '@Constants/penaltyConstants';
+import {
+  INVALID_VALUES,
+  MISSING_PENALTY_ID,
+  MISSING_PENALTY_TYPE,
+  NO_VALID_ATTRIBUTES,
+  PARTICIPANT_NOT_FOUND,
+  PENALTY_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 const { BALL_ABUSE, VERBAL_ABUSE } = penaltyConstants;
 
 describe('penalty edge cases', () => {
@@ -18,7 +26,7 @@ describe('penalty edge cases', () => {
       participantIds: [tournamentRecord.participants[0].participantId],
       penaltyCode: 'X',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PENALTY_TYPE);
 
     // participantIds that don't exist in tournament
     result = competitionEngine.addPenalty({
@@ -26,7 +34,7 @@ describe('penalty edge cases', () => {
       penaltyType: BALL_ABUSE,
       penaltyCode: 'X',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   it('addPenalty supports extensions', () => {
@@ -87,25 +95,25 @@ describe('penalty edge cases', () => {
 
     // no modifications param
     result = competitionEngine.modifyPenalty({ penaltyId });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
 
     // no valid attributes (penaltyId can't be modified)
     result = competitionEngine.modifyPenalty({
       penaltyId,
       modifications: { penaltyId: 'newId', nonExistentField: 'value' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(NO_VALID_ATTRIBUTES);
 
     // missing penaltyId
     result = competitionEngine.modifyPenalty({ modifications: { notes: 'test' } });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PENALTY_ID);
 
     // nonexistent penaltyId
     result = competitionEngine.modifyPenalty({
       penaltyId: 'nonexistent',
       modifications: { notes: 'test' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PENALTY_NOT_FOUND);
   });
 
   it('removePenalty returns error for missing/invalid penaltyId', () => {
@@ -116,7 +124,7 @@ describe('penalty edge cases', () => {
 
     // missing penaltyId
     let result = competitionEngine.removePenalty({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PENALTY_ID);
 
     // nonexistent penaltyId — removePenalty at competition level returns success
     // because it iterates all tournaments and none error fatally

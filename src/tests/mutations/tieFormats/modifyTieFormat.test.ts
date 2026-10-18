@@ -4,13 +4,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { INVALID_TIE_FORMAT, MISSING_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { modifyTieFormat as modifyTieFormatFn } from '@Mutate/tieFormat/modifyTieFormat';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
-import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { TEAM_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
+import { SINGLES_EVENT, TEAM } from '@Constants/eventConstants';
 import { COLLEGE_D3 } from '@Constants/tieFormatConstants';
 import { FEMALE } from '@Constants/genderConstants';
-import { TEAM } from '@Constants/eventConstants';
 
 it('can add collectionDefinitions to tieFormat in a structure', () => {
   const drawSize = 4;
@@ -204,13 +204,11 @@ it('returns error when getTieFormat fails (no drawDefinition for structureId)', 
   const tieFormatResult = tournamentEngine.getTieFormat({ eventId, drawId });
   const modifiedTieFormat = copyTieFormat(tieFormatResult.tieFormat);
 
-  // Calling with eventId only (no drawId) but eventId doesn't match an event with tieFormat
-  // causes getTieFormat to return MISSING_TIE_FORMAT error
-  const result = tournamentEngine.modifyTieFormat({
-    modifiedTieFormat,
-    eventId: 'nonexistent-event-id',
-  });
-  expect(result.error).toBeDefined();
+  // a real event that has no tieFormat, so getTieFormat is what refuses (an unknown eventId is refused
+  // before modifyTieFormat runs, as EVENT_NOT_FOUND, which this case used to accept as "some error")
+  const { event } = tournamentEngine.addEvent({ event: { eventName: 'No tieFormat', eventType: SINGLES_EVENT } });
+  const result = tournamentEngine.modifyTieFormat({ modifiedTieFormat, eventId: event.eventId });
+  expect(result.error).toEqual(MISSING_TIE_FORMAT);
 });
 
 it('returns INVALID_TIE_FORMAT when comparison finds invalid value assignments', () => {

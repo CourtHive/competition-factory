@@ -4,9 +4,19 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { INVALID_EVENT_TYPE, INVALID_GENDER, MISSING_BIRTH_DATE } from '@Constants/errorConditionConstants';
 import { MALE, FEMALE, MIXED, ANY } from '@Constants/genderConstants';
 import { SINGLES, DOUBLES, TEAM } from '@Constants/eventConstants';
+import {
+  CATEGORY_MISMATCH,
+  INVALID_EVENT_TYPE,
+  INVALID_GENDER,
+  MISSING_BIRTH_DATE,
+  EVENT_NOT_FOUND,
+  INVALID_DATE,
+  INVALID_VALUES,
+  MISSING_EVENT,
+  MISSING_TOURNAMENT_RECORD,
+} from '@Constants/errorConditionConstants';
 
 const eventId = 'e1';
 
@@ -19,7 +29,7 @@ describe('modifyEvent - Extended Coverage', () => {
       event: {} as any,
       eventUpdates: {},
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('returns error when eventId missing', () => {
@@ -32,7 +42,7 @@ describe('modifyEvent - Extended Coverage', () => {
       event: {} as any,
       eventUpdates: {},
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(EVENT_NOT_FOUND);
   });
 
   it('returns error when event missing', () => {
@@ -45,7 +55,7 @@ describe('modifyEvent - Extended Coverage', () => {
       event: null as any,
       eventUpdates: {},
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_EVENT);
   });
 
   it('returns error when eventUpdates is not an object', () => {
@@ -59,7 +69,7 @@ describe('modifyEvent - Extended Coverage', () => {
       event,
       eventUpdates: 'invalid' as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   // Gender update tests
@@ -310,43 +320,42 @@ describe('modifyEvent - Extended Coverage', () => {
     expect(result.success).toBe(true);
   });
 
-  it('checks participant ages against category', () => {
+  // This test asserted `error ?? success` was defined, which always holds. It also gave no participant a
+  // birthdate, and added its entries to the engine's copy while calling modifyEvent on the original, so
+  // the age check never ran. Now: participants born 2010-01-01, an event in January 2024, entered
+  // through the engine, and the category change made through the engine.
+  const ageCheckedEvent = () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      eventProfiles: [
-        {
-          eventId,
-          eventName: 'Test Event',
-          // an eventProfile's participantsProfile is read only for its count on this path (a
-          // personExtensions entry here was never read, and was not an extension)
-          participantsProfile: { participantsCount: 2 },
-        },
-      ],
+      eventProfiles: [{ eventId, eventName: 'Test Event' }],
+      participantsProfile: { participantsCount: 2 },
+      startDate: '2024-01-01',
+      endDate: '2024-01-07',
     });
+    for (const participant of tournamentRecord.participants) participant.person.birthDate = '2010-01-01';
     tournamentEngine.setState(tournamentRecord);
+    const participantIds = tournamentRecord.participants.map(({ participantId }) => participantId);
+    const entered = tournamentEngine.addEventEntries({ eventId, participantIds });
+    expect(entered.success).toEqual(true);
+  };
 
-    const event = tournamentRecord.events[0];
-    event.startDate = '2024-01-01';
-
-    tournamentEngine.addEventEntries({
-      event,
-      participantIds: [tournamentRecord.participants[0].participantId],
+  it('checks participant ages against category: a 14-year-old cannot be moved into U12', () => {
+    ageCheckedEvent();
+    const result = tournamentEngine.modifyEvent({
+      eventUpdates: { category: { categoryName: 'U12', ageCategoryCode: 'U12' } },
+      eventId,
     });
+    expect(result.error).toEqual(CATEGORY_MISMATCH);
+    expect(tournamentEngine.getEvent({ eventId }).event.category?.ageCategoryCode).toBeUndefined();
+  });
 
-    // Category U12 would be too young for a 2010 birthdate in 2024
-    const result = modifyEvent({
-      tournamentRecord,
-      eventId: event.eventId,
-      event,
-      eventUpdates: {
-        category: {
-          categoryName: 'U12',
-          ageCategoryCode: 'U12',
-        },
-      },
+  it('the same participants fit U18, and the category is applied', () => {
+    ageCheckedEvent();
+    const result = tournamentEngine.modifyEvent({
+      eventUpdates: { category: { categoryName: 'U18', ageCategoryCode: 'U18' } },
+      eventId,
     });
-
-    // Might fail age check
-    expect(result.error ?? result.success).toBeDefined();
+    expect(result.success).toEqual(true);
+    expect(tournamentEngine.getEvent({ eventId }).event.category?.ageCategoryCode).toEqual('U18');
   });
 
   it('returns error when participant missing birth date for age category', () => {
@@ -425,7 +434,7 @@ describe('modifyEvent - Extended Coverage', () => {
       event,
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DATE);
   });
 
   it('updates event end date', () => {

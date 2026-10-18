@@ -1,32 +1,29 @@
 import { deepCopyEnabled } from '@Global/state/globalState';
 
-function getDefinedKeys(obj, ignoreValues, ignoreEmptyArrays) {
-  return Object.keys(obj).filter(
-    (key) =>
-      !ignoreValues.includes(obj[key]) && (!ignoreEmptyArrays || (Array.isArray(obj[key]) ? obj[key].length : true)),
-  );
-}
-
 export function definedAttributes(obj: object, ignoreFalse?: boolean, ignoreEmptyArrays?: boolean, shallow?: boolean) {
   if (typeof obj !== 'object' || obj === null) return obj;
-  const deepCopy = deepCopyEnabled();
-  if (!deepCopy?.enabled) shallow = true;
+  if (!deepCopyEnabled()?.enabled) shallow = true;
+  return defined(obj, ignoreFalse, ignoreEmptyArrays, shallow);
+}
 
-  const ignoreValues: any[] = ['', undefined, null];
-  if (ignoreFalse) ignoreValues.push(false);
+// The result is built in one object: a one-key object per attribute, merged by Object.assign, made this a large
+// share of every getParticipants call. Nested values are filtered with the defaults, as they always were.
+// The result is typed `any`, as the merged result always was: callers read attributes of their own input from it.
+function defined(obj: object, ignoreFalse?: boolean, ignoreEmptyArrays?: boolean, shallow?: boolean): any {
+  if (typeof obj !== 'object' || obj === null) return obj;
 
-  const definedKeys = getDefinedKeys(obj, ignoreValues, ignoreEmptyArrays);
-
-  return Object.assign(
-    {},
-    ...definedKeys.map((key) => {
-      return Array.isArray(obj[key])
-        ? {
-            [key]: shallow ? obj[key] : obj[key].map(definedElement),
-          } // doesn't filter out undefined array elements
-        : { [key]: shallow ? obj[key] : definedAttributes(obj[key]) };
-    }),
-  );
+  const result = {};
+  for (const key of Object.keys(obj)) {
+    const value = obj[key];
+    if (value === '' || value === undefined || value === null || (ignoreFalse && value === false)) continue;
+    if (Array.isArray(value)) {
+      if (ignoreEmptyArrays && !value.length) continue;
+      result[key] = shallow ? value : value.map(definedElement); // doesn't filter out undefined array elements
+    } else {
+      result[key] = shallow ? value : defined(value);
+    }
+  }
+  return result;
 }
 
 /**
@@ -39,5 +36,5 @@ export function definedAttributes(obj: object, ignoreFalse?: boolean, ignoreEmpt
  * before rotating rounds: 0 of 49,929 production tournaments on 2026-10-11.
  */
 function definedElement(element: unknown): unknown {
-  return Array.isArray(element) ? element.map(definedElement) : definedAttributes(element as object);
+  return Array.isArray(element) ? element.map(definedElement) : defined(element as object);
 }

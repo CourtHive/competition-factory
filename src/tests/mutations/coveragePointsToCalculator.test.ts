@@ -65,7 +65,7 @@ describe('NoAD game scoring — calcSidePointsToGame NoAD paths', () => {
     expect(result.score.sets[0].side2Score).toBe(0);
   });
 
-  it('direct calculation: NoAD behind (myPoints < oppPoints) returns 2 — L206', () => {
+  it('a NoAD game decided at 3-4 reports 0 for both sides', () => {
     // Construct matchUp state where one side is behind in NoAD deuce territory
     // Use a matchUp at 4-3 in a standard game with NoAD. This can't happen in
     // normal play (NoAD ends at deuce), so test via calculatePointsTo directly.
@@ -90,13 +90,11 @@ describe('NoAD game scoring — calcSidePointsToGame NoAD paths', () => {
       },
     };
 
-    // side1 has 3, side2 has 4 — both >= pointsTo-1=3, NoAD:
-    // For side1: myPoints(3) < oppPoints(4) → return 2 (L206)
-    // For side2: myPoints(4) > oppPoints(3) → return 0 (L204)
+    // 3-4 in a NoAD game is decided (the deciding point was played): both sides report 0
     let result: any = calculatePointsTo(mu, fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
-    expect(result.pointsToGame[0]).toBe(2); // Behind in NoAD → 2
-    expect(result.pointsToGame[1]).toBe(0); // Ahead in NoAD → 0
+    expect(result.pointsToGame[0]).toBe(0);
+    expect(result.pointsToGame[1]).toBe(0);
   });
 });
 
@@ -121,7 +119,7 @@ describe('deuceAfter golden point territory — L210-213', () => {
     expect(result.pointsToGame).toEqual([1, 1]);
   });
 
-  it('direct: deuceAfter one side ahead past cap → 0, behind → 2 — L211,L213', () => {
+  it('a game decided past the deuce cap at 5-4 reports 0 for both sides', () => {
     const format = 'SET1-S:6/TB7-G:TN2D';
     const fs = parse(format)!;
     // deuceAfter=2 → golden point at myPoints >= 2+2=4 && oppPoints >= 4
@@ -147,11 +145,9 @@ describe('deuceAfter golden point territory — L210-213', () => {
 
     let result: any = calculatePointsTo(mu, fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
-    // side1=5, side2=4, both >= 4, deuceAfter territory:
-    // side1: myPoints(5) > oppPoints(4) → return 0 (L211)
-    // side2: myPoints(4) < oppPoints(5) → return 2 (L213)
+    // 5-4 past the deuce cap is decided by the golden point: both sides report 0
     expect(result.pointsToGame[0]).toBe(0);
-    expect(result.pointsToGame[1]).toBe(2);
+    expect(result.pointsToGame[1]).toBe(0);
   });
 });
 
@@ -160,7 +156,7 @@ describe('deuceAfter golden point territory — L210-213', () => {
 //    and myPoints >= pointsTo (already won) — L224
 // ============================================================================
 describe('calcSidePointsToGame — already-won paths', () => {
-  it('standard deuce diff >= 2: already won — L218', () => {
+  it('a game decided at 5-3 reports 0 for both sides', () => {
     const format = 'SET1-S:6/TB7';
     const fs = parse(format)!;
     // Construct state at 5-3 in a game (both >= pointsTo-1=3, diff=2)
@@ -185,13 +181,12 @@ describe('calcSidePointsToGame — already-won paths', () => {
 
     let result: any = calculatePointsTo(mu, fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
-    // side1: 5-3, diff=2 >= 2 → return 0 (L218, already won)
+    // 5-3 is a decided game: nothing is left to win in it, so both sides report 0
     expect(result.pointsToGame[0]).toBe(0);
-    // side2: 3-5, diff=-2, behind → return 2
-    expect(result.pointsToGame[1]).toBe(2);
+    expect(result.pointsToGame[1]).toBe(0);
   });
 
-  it('myPoints >= pointsTo (already won pre-deuce territory) — L224', () => {
+  it('a game decided at 4-0 reports 0 for both sides', () => {
     const format = 'SET1-S:6/TB7';
     const fs = parse(format)!;
     // Construct state at 4-0 in a game (myPoints=4 >= pointsTo=4, not in deuce)
@@ -216,10 +211,9 @@ describe('calcSidePointsToGame — already-won paths', () => {
 
     let result: any = calculatePointsTo(mu, fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
-    // side1: myPoints=4 >= pointsTo=4, not in deuce territory → return 0 (L224)
+    // 4-0 is a decided game: both sides report 0
     expect(result.pointsToGame[0]).toBe(0);
-    // side2: myPoints=0 → return 4-0=4
-    expect(result.pointsToGame[1]).toBe(4);
+    expect(result.pointsToGame[1]).toBe(0);
   });
 });
 
@@ -247,7 +241,7 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
     expect(result.pointsToGame).toEqual([1, 1]);
   });
 
-  it('direct: tiebreak NoAD one side ahead → 0, behind → 2 — L242, L244', () => {
+  it('a NoAD tiebreak decided at 7-6 reports 0 for both sides', () => {
     const format = 'SET1-S:6/TB7NOAD';
     const fs = parse(format)!;
     // Construct state at tiebreak 7-6 with NoAD (side1 ahead in extended play)
@@ -272,13 +266,12 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
 
     let result: any = calculatePointsTo(mu, fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
-    // side1: 7 > 6, NoAD, extended play → return 0 (L242)
-    // side2: 6 < 7, NoAD, extended play → return 2 (L244)
+    // 7-6 in a NoAD tiebreak is decided: both sides report 0
     expect(result.pointsToGame[0]).toBe(0);
-    expect(result.pointsToGame[1]).toBe(2);
+    expect(result.pointsToGame[1]).toBe(0);
   });
 
-  it('tiebreak standard extended play: diff >= 2 already won — L247', () => {
+  it('a tiebreak decided at 8-6 reports 0 for both sides', () => {
     const format = 'SET1-S:6/TB7';
     const fs = parse(format)!;
     // Construct tiebreak at 8-6 (diff=2, already won)
@@ -303,12 +296,12 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
 
     let result: any = calculatePointsTo(mu, fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
-    // side1: 8-6, both >= 6 (tiebreakTo-1), diff=2 >= 2 → return 0 (L247)
+    // 8-6 is a decided tiebreak: both sides report 0
     expect(result.pointsToGame[0]).toBe(0);
-    expect(result.pointsToGame[1]).toBe(2);
+    expect(result.pointsToGame[1]).toBe(0);
   });
 
-  it('tiebreak past tiebreakTo but not in extended range — L252', () => {
+  it('a tiebreak decided at 7-3 reports 0 for both sides', () => {
     const format = 'SET1-S:6/TB7';
     const fs = parse(format)!;
     // Construct tiebreak at 7-3 (myPoints >= tiebreakTo, but not both in extended)
@@ -333,10 +326,9 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
 
     let result: any = calculatePointsTo(mu, fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
-    // side1: 7 >= 7, diff=4 >= 2 → already won via first check (L236) → 0
-    // side2: 3 < 6 (tiebreakTo-1), not in extended → tiebreakTo - myPoints = 7-3 = 4
+    // 7-3 is a decided tiebreak: both sides report 0
     expect(result.pointsToGame[0]).toBe(0);
-    expect(result.pointsToGame[1]).toBe(4);
+    expect(result.pointsToGame[1]).toBe(0);
   });
 });
 
@@ -583,10 +575,9 @@ describe('Standard game at advantage — pointsToGame via ScoringEngine', () => 
     const fs = parse('SET1-S:6/TB7')!;
     let result: any = calculatePointsTo(engine.getState(), fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
-    // Side 0 at advantage: diff=1 → needs 1 (L219)
-    // Side 1 behind: diff=-1 → needs 2 (L221)
+    // Side 0 at advantage needs 1; side 1 needs 3 (deuce, advantage, game)
     expect(result.pointsToGame[0]).toBe(1);
-    expect(result.pointsToGame[1]).toBe(2);
+    expect(result.pointsToGame[1]).toBe(3);
   });
 
   it('at deuce (4-4 standard), both need 2', () => {

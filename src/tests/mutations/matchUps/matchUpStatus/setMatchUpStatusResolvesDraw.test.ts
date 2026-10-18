@@ -4,8 +4,12 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
-import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import {
+  MISSING_DRAW_DEFINITION,
+  DRAW_DEFINITION_NOT_FOUND,
+  MISSING_MATCHUP_ID,
+} from '@Constants/errorConditionConstants';
 
 /**
  * `setMatchUpStatus` FINDS THE DRAW WHEN IT IS GIVEN A `drawId`.
@@ -76,7 +80,7 @@ it('refuses a draw that does not exist, and says what is missing', () => {
   } as any);
 
   expect(result.success).toBeUndefined();
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(DRAW_DEFINITION_NOT_FOUND);
   expect(stored(tournamentRecord).winningSide).toBeUndefined();
 });
 
@@ -89,5 +93,5 @@ it('says a drawDefinition is missing when there is no id to find one by', () => 
 it('still refuses a call with no matchUpId', () => {
   const tournamentRecord = generate();
   const result: any = setMatchUpStatus({ drawId: DRAW_ID, tournamentRecord } as any);
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_MATCHUP_ID);
 });

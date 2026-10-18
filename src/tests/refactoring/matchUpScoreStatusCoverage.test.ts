@@ -299,7 +299,7 @@ describe('setMatchUpState downstream compatibility branches', () => {
     expect(result.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
   });
 
-  it('rejects same winningSide with non-directing status when downstream active', () => {
+  it('refuses a non-directing status (INCOMPLETE) given with a winningSide, as invalid input', () => {
     const drawId = 'drawId';
     mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawId, drawSize: 4, idPrefix: 'm' }],
@@ -368,8 +368,9 @@ describe('setMatchUpState downstream compatibility branches', () => {
       matchUpId: 'm-1-1',
       drawId,
     });
-    // INCOMPLETE + winningSide is rejected by validateMatchUpStateInputs
-    expect(result.error).toBeDefined();
+    // INCOMPLETE + winningSide is rejected by validateMatchUpStateInputs whatever the downstream state, so
+    // the downstream branch this case was written for is not reached this way
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 

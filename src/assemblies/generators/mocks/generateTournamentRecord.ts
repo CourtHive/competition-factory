@@ -12,6 +12,7 @@ import { formatDate, isValidDateString } from '@Tools/dateTime';
 import { addDays, extractDate } from '@Tools/plainDate';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { generateVenues } from '@Mutate/venues/generateVenues';
+import { checkProfileKeys, GENERATE_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { applyScenarioProfile } from './applyScenarioProfile';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addEvent } from '@Mutate/events/addEvent';
@@ -53,6 +54,9 @@ const mockTournamentNames = [
 ];
 
 export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
+  // an option the generators do not read is refused, not ignored (phase 4c)
+  const unknownOption = checkProfileKeys(params, GENERATE_TOURNAMENT_RECORD_KEYS);
+  if (unknownOption) return unknownOption;
   const {
     tournamentName = randomMember(mockTournamentNames, params?.random),
     ratingsParameters = defaultRatingsParameters,

@@ -5,6 +5,7 @@ import { getChallengeState } from '@Query/ladder/getChallengeState';
 import { issueChallenge } from '@Mutate/ladder/issueChallenge';
 
 // constants
+import { INVALID_VALUES, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { ACCEPTED, DECLINED, EXPIRED, PENDING } from '@Constants/ladderConstants';
 import { LADDER, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CHALLENGED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -53,19 +54,19 @@ describe('issuing a challenge', () => {
   test('refuses a challenge outside the policy range, naming the range', () => {
     // p9 challenging p1 is eight positions — the default range is three.
     const result = issue(ladder(), 'p9', 'p1');
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.info).toMatch(/may not challenge/);
   });
 
   test('refuses a DOWNWARD challenge — that is not a ladder move', () => {
     const result = issue(ladder(), 'p1', 'p4');
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('refuses a participant not seated on the ladder', () => {
     // Someone who has not joined has no position, so there is no range to judge.
     const result = issue(ladder(), 'ghost', 'p1');
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   test('refuses self-challenge, and refuses a non-LADDER drawType', () => {
@@ -111,7 +112,7 @@ describe('responding', () => {
     const { matchUpId } = issue(drawDefinition, 'p4', 'p1');
     const result: any = acceptChallenge({ drawDefinition, matchUpId, respondedAt: '2026-03-20T10:00:00.000Z' });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.info).toMatch(/expired/);
     expect(drawDefinition.structures[0].matchUps[0].matchUpStatus).toEqual(CHALLENGED);
   });
@@ -134,6 +135,6 @@ describe('responding', () => {
     const { matchUpId } = issue(drawDefinition, 'p4', 'p1');
     acceptChallenge({ drawDefinition, matchUpId, respondedAt: '2026-03-02T10:00:00.000Z' });
     const again: any = acceptChallenge({ drawDefinition, matchUpId, respondedAt: '2026-03-03T10:00:00.000Z' });
-    expect(again.error).toBeDefined();
+    expect(again.error).toEqual(INVALID_VALUES);
   });
 });

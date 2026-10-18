@@ -9,6 +9,9 @@ import { describe, expect, it } from 'vitest';
 
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
+// constants
+import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
+
 /**
  * A losing tiebreak score of 0 is a score. The tiebreak is still played to 7 (or 10); the side that
  * lost it simply won no points, which is what 7-6(0) records.
@@ -101,7 +104,7 @@ describe('the revert guard no longer fails open when a tiebreak loser scored 0 p
     });
     expect(result.success).toBe(true);
     result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome: { matchUpStatus: IN_PROGRESS } });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
     expect(typeof setMatchUpStatus).toBe('function');
   });
 });

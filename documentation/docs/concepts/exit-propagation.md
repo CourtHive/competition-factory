@@ -846,6 +846,12 @@ by a named test that fails without it.
   who will never arrive, and the pending exit passes through it. A BYE placed in a seat a convergence had produced into
   therefore reaches the draw the same results reach with the BYE placed first (COMPASS 32/31 20551581:
   `aLoserSeatHoldingAByeIsNotConverged`).
+- **A result past a convergence's BYE fixes the kind.** A convergence has nobody to lose, so it claims a BYE for its
+  loser seat; what it decided includes that BYE, and a result recorded by the participant the BYE passed on is a
+  result on the loser's path. Re-entering one of the converged exits as a played result is refused
+  (`CANNOT_CHANGE_OUTCOME`) over an untouched draw; before, the BYE's withdrawal took that participant back out and left
+  their result standing on an undecided matchUp. With nothing recorded past the BYE the correction is accepted
+  (COMPASS 32/27 21027128, under `allowChangePropagation`: `aResultPastAConvergencesByeFixesTheKind`).
 - **An exit re-entered as the other exit relabels its carry, even after its winner played on.** A walkover
   re-entered as a default for the same winner (or the reverse) relabels the exit its loser carries, on every route,
   including the one taken once that winner has played on. The draw is the one the new exit entered directly reaches

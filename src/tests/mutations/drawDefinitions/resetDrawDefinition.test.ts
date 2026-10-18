@@ -4,6 +4,7 @@ import { expect, it, test } from 'vitest';
 
 // constants
 import { DIRECT_ACCEPTANCE, ALTERNATE } from '@Constants/entryStatusConstants';
+import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POSITION_ACTIONS } from '@Constants/extensionConstants';
 import {
@@ -68,7 +69,7 @@ it('returns error when drawDefinition is missing', () => {
 
   // passing a bogus drawId that won't resolve to a drawDefinition
   const result = tournamentEngine.resetDrawDefinition({ drawId: 'bogusDrawId' });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
 });
 
 it('removes scheduling timeItems when removeScheduling is true', () => {

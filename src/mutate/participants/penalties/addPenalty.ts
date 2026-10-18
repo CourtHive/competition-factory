@@ -42,6 +42,10 @@ export function addPenalty(params: AddPenaltyArgs): ResultType & { penaltyId?: s
     }) ??
     {};
 
+  // refuse a malformed call before any record is written, so a multi-tournament call cannot half-apply
+  const paramsCheck = requireParams({ penaltyType: params.penaltyType }, [PENALTY_TYPE]);
+  if (paramsCheck.error) return paramsCheck;
+
   let penaltyId;
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     const participants =

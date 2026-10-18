@@ -152,7 +152,7 @@ describe('getEliminationDrawSize branch coverage', () => {
 describe('getEventIdsAndDrawIds branch coverage', () => {
   it('returns error when tournamentRecords is missing', () => {
     const result = getEventIdsAndDrawIds({ tournamentRecords: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
   });
 
   it('handles tournaments with no events', () => {
@@ -299,7 +299,7 @@ describe('removeRatings branch coverage', () => {
       eventType: SINGLES_EVENT,
       ratingType: WTN,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('returns error for invalid ratingType', () => {
@@ -308,7 +308,7 @@ describe('removeRatings branch coverage', () => {
       eventType: SINGLES_EVENT,
       ratingType: 'INVALID_RATING',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('handles participants with no timeItems', () => {
@@ -587,7 +587,7 @@ describe('disableVenues branch coverage', () => {
       tournamentRecords: undefined as any,
       venueIds: ['v1'],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
   });
 
   it('returns error when venueIds is missing', () => {
@@ -595,7 +595,7 @@ describe('disableVenues branch coverage', () => {
       tournamentRecords: { t1: { tournamentId: 't1' } } as any,
       venueIds: undefined as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
   });
 
   it('filters by tournamentId when provided', () => {

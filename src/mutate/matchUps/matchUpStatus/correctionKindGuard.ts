@@ -74,7 +74,7 @@ export function correctionKindChange(params: {
   const playedOnFromTheLoss = loserPlayedOn(standing, inContextDrawMatchUps, drawDefinition, loserParticipantId);
   if (wasCarried && onlyThisCarry(standing, loserParticipantId, matchUp.matchUpId)) {
     // the matchUp holds only the carried exit: what blocks is a result recorded by the exit's winner onward
-    const onward = winnerPlayedOn(standing, inContextDrawMatchUps, drawDefinition);
+    const onward = winnerPlayedOn(standing, inContextDrawMatchUps, drawDefinition, { byeClaims: true });
     if (onward.error || onward.playedOn || playedOnFromTheLoss) return { blockingMatchUpId: standing.matchUpId };
     return undefined;
   }

@@ -324,6 +324,25 @@ setting. An exit arriving at a BYE in its structure's last round meets the exit 
 it, and v2 plans the two converging, as v1's settle step converges them (census run-17 baseline, DOUBLE_ELIMINATION
 8/5 under `doubleExitPropagateBye: false`).
 
+**What a divergence leaves behind.** v2 plans and never writes; v1 runs and writes; only then does
+the comparison throw, either after v1's complete write or on one of v1's refusal paths, where a
+refusal changes nothing. So a divergence is never half-written by the pipeline: the record holds
+v1's complete result, exactly what `v1` mode leaves. From there `OutcomePipelineDivergence` is an
+ordinary throw under the engine contract every thrown method has:
+
+- with `rollbackOnError`, the whole call is restored (every method of an `executionQueue`);
+- without it, v1's write stays, the result is `{ error }` carrying the divergence message, and
+  nothing is notified;
+- under `devContext` the divergence is rethrown, after the same restore when one was captured.
+
+That holds for a direct call, inside `executionQueue` and on the async engine, and is pinned by
+`divergenceLeavesBehind.test.ts`. Differential mode takes no snapshot of its own (2026-10-18):
+a restore inside `setMatchUpStatus` would undo only the matchUp that diverged and leave the rest of a
+bulk call written, and atomicity for the whole call is what `rollbackOnError` already provides. A
+divergence is a failing signal, not a result to build on: the suite's rethrowing provider fails the
+test, and the exit-propagation census records it as `NO_EXCEPTION_ESCAPES`, and its play-forward driver stops
+that cell at the first failure.
+
 ## 8. What the corpus pins
 
 |                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -331,7 +350,7 @@ it, and v2 plans the two converging, as v1's settle step converges them (census 
 | `setMatchUpStatus` steps recorded | 50,559 (recorded tests, matrix, census, route flips, fixtures)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | refusal codes observed            | 18 (§ 2), none declared in the entry file                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `setMatchUpState`                 | exported as an engine method, eleven declared codes, **no caller** in the corpus: an internal that leaked onto the surface. **Deprecated** on the engine surface in 7.5.0 and removed at the next major; its internal callers keep it, and consumers call `setMatchUpStatus`                                                                                                                                                                                                                                                                                        |
-| `bulkMatchUpStatusUpdate`         | 1 recorded step; its two declared codes pinned by `authored/outcome-pipeline/bulk-update-refusals`: `ERR_MISSING_VALUE` for no `outcomes`, `ERR_MISSING_TOURNAMENT` for an unknown `tournamentId`                                                                                                                                                                                                                                                                                                                                                                   |
+| `bulkMatchUpStatusUpdate`         | 1 recorded step; its two declared codes pinned by `authored/outcome-pipeline/bulk-update-refusals`: `ERR_MISSING_VALUE` for no `outcomes`, `ERR_MISSING_TOURNAMENT` for an unknown `tournamentId`. It forwards every per-call `setMatchUpStatus` option (the three flags of § 1 among them), set on the call or on one outcome, so a bulk entry follows the same rules as a single one                                                                                                                                                                              |
 | real-record do/undo               | 7 of 11 probed fixtures restore the draw projection; 4 do not (§ 4)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | authored scenarios                | 13 (`pnpm corpus:authored`), one per rule above that the recorded sources did not reach: the flag precedence (§ 1, three scenarios), rows 5, 9, 10 and 14 of § 2 with every condition of row 9, the swap (§ 3), a double exit entered over a completed result (§ 4), the FMLC loser kept out and a decider's settlement (§ 5), the double-exit no-op (§ 6), two double exits converging, a TEAM dual handed back to auto-calc, the bulk refusals. Each asserts the result code of every step and, where a flag's effect is the claim, the state the patches rebuild |
 

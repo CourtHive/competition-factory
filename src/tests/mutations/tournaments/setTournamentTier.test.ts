@@ -3,6 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
+import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { ITF_JUNIOR } from '@Constants/pointsAuthorityConstants';
 
 describe('setTournamentTier', () => {
@@ -103,7 +104,7 @@ describe('setTournamentTier', () => {
     let result: any = tournamentEngine.setTournamentTier({
       tournamentTier: { system: 'ATP', value: '500' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   // Phase 3 of Mentat/planning/TOURNAMENT_LEVEL_AND_TIER.md: surface the tier

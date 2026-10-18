@@ -5,6 +5,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
+import { INVALID_VALUES, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { NATIVE } from '@Constants/schemaWriteModeConstants';
 
 const ISO_A = '2026-05-27T13:58:42.000Z';
@@ -95,12 +96,12 @@ describe('setMatchUpCalledAt — matchUp.schedule.calledAt mutation', () => {
       matchUpId: 'no-such-matchUp',
       calledAt: ISO_A,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 
   it('rejects non-string calledAt values', () => {
     const { drawId, matchUpId } = seedTournament();
     const result: any = tournamentEngine.setMatchUpCalledAt({ drawId, matchUpId, calledAt: 12345 as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });

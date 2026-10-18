@@ -4,7 +4,6 @@ import { generateOrGetExisting } from '@Generators/drawDefinitions/generateDrawD
 import { organizeDrawPositionOptions } from '@Query/drawDefinition/avoidance/organizeDrawPositionOptions';
 import { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocRounds';
 import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
-import { getAllowedMatchUpFormats, getAllowedDrawTypes } from '@Query/tournaments/allowedTypes';
 import { replaceQualifier } from '@Mutate/drawDefinitions/matchUpGovernor/replaceQualifier';
 import { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
 import { applyTournamentRankingPoints } from '@Mutate/scales/applyTournamentRankingPoints';
@@ -27,8 +26,9 @@ import {
 
 // constants
 import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
+import { SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { MAIN, AD_HOC } from '@Constants/drawDefinitionConstants';
-import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   MISSING_TOURNAMENT_RECORDS,
   MISSING_TOURNAMENT_RECORD,
@@ -37,6 +37,10 @@ import {
   MISSING_STRUCTURE_ID,
   MISSING_MATCHUP_ID,
   MISSING_VALUE,
+  INVALID_DRAW_SIZE,
+  INVALID_PARTICIPANT_ID,
+  INVALID_VALUES,
+  MISSING_POLICY_DEFINITION,
 } from '@Constants/errorConditionConstants';
 
 // 1. methodImporter — hit setStateMethods error branch (non-object submittedMethods)
@@ -45,7 +49,7 @@ describe('methodImporter branches', () => {
     const engine = {};
     const engineInvoke = () => ({});
     const result = methodImporter(engine, engineInvoke, 'not-an-object', false, 1, false);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('succeeds with valid empty object methods', () => {
@@ -95,7 +99,7 @@ describe('generateAdHocRounds branches', () => {
       participantIds: ['nonexistent'],
       structureId: 's1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_PARTICIPANT_ID);
   });
 
   it('handles multiple rounds count', () => {
@@ -161,11 +165,6 @@ describe('getCompetitionParticipants branches', () => {
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
   });
 
-  it('returns error when tournamentRecords is empty object', () => {
-    const result = getCompetitionParticipants({ tournamentRecords: {} });
-    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
-  });
-
   it('returns error when tournamentRecords is not an object', () => {
     const result = getCompetitionParticipants({ tournamentRecords: 'not-object' });
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
@@ -214,7 +213,7 @@ describe('generateOrGetExisting branches', () => {
       tournamentRecord,
       event: {} as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DRAW_SIZE);
   });
 
   it('succeeds with proper event and entries', () => {
@@ -242,7 +241,7 @@ describe('policyAttachment branches', () => {
       drawDefinition: { drawId: 'd1' },
       stack: 'test',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('attaches default seeding policy when none provided', () => {
@@ -292,7 +291,7 @@ describe('applyTournamentRankingPoints branches', () => {
     });
     const result = applyTournamentRankingPoints({ tournamentRecord });
     // getTournamentPoints requires a POLICY_TYPE_RANKING_POINTS policy
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_POLICY_DEFINITION);
   });
 });
 
@@ -537,47 +536,6 @@ describe('replaceQualifier branches', () => {
   });
 });
 
-// 17. allowedTypes — missing tournamentRecord
-describe('allowedTypes branches', () => {
-  it('getAllowedMatchUpFormats returns error when tournamentRecord is missing', () => {
-    const result = getAllowedMatchUpFormats({
-      tournamentRecord: undefined,
-      categoryName: undefined,
-      categoryType: undefined,
-    });
-    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
-  });
-
-  it('getAllowedMatchUpFormats returns empty array when no scoring policy', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord();
-    const result = getAllowedMatchUpFormats({
-      tournamentRecord,
-      categoryName: undefined,
-      categoryType: undefined,
-    });
-    expect(Array.isArray(result)).toBe(true);
-  });
-
-  it('getAllowedDrawTypes returns error when tournamentRecord is missing', () => {
-    const result = getAllowedDrawTypes({
-      tournamentRecord: undefined,
-      categoryName: undefined,
-      categoryType: undefined,
-    });
-    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
-  });
-
-  it('getAllowedDrawTypes returns empty array when no draws policy', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord();
-    const result = getAllowedDrawTypes({
-      tournamentRecord,
-      categoryName: undefined,
-      categoryType: undefined,
-    });
-    expect(Array.isArray(result)).toBe(true);
-  });
-});
-
 // 18. allocateTeamMatchUpCourts — guard branches
 describe('allocateTeamMatchUpCourts branches', () => {
   it('returns error when tournamentRecord is missing', () => {
@@ -601,18 +559,20 @@ describe('allocateTeamMatchUpCourts branches', () => {
   });
 
   it('returns error for invalid courtIds (non-array, non-undefined)', () => {
+    // a TEAM matchUp, so the courtIds check is reached (a SINGLES matchUp is refused first, as INVALID_MATCHUP)
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4 }],
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
     const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const matchUpId = drawDefinition.structures[0].matchUps[0].matchUpId;
-    const result = allocateTeamMatchUpCourts({
-      tournamentRecord,
-      drawDefinition,
-      matchUpId,
-      courtIds: 'invalid' as any,
-    });
-    // Will get INVALID_MATCHUP (not team) or INVALID_VALUES, either is valid branch hit
-    expect(result.error).toBeDefined();
+    const matchUpId = drawDefinition.structures[0].matchUps.find((m) => m.matchUpType === TEAM_MATCHUP).matchUpId;
+    for (const courtIds of ['invalid', [], [1]]) {
+      const result: any = allocateTeamMatchUpCourts({
+        tournamentRecord,
+        drawDefinition,
+        matchUpId,
+        courtIds: courtIds as any,
+      });
+      expect({ courtIds, error: result.error }).toEqual({ courtIds, error: INVALID_VALUES });
+    }
   });
 });

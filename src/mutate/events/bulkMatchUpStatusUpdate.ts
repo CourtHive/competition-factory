@@ -5,6 +5,42 @@ import { findEvent } from '@Acquire/findEvent';
 import { MISSING_TOURNAMENT_RECORD, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
+// types
+import type { PolicyDefinitions } from '@Types/factoryTypes';
+import type { Tournament } from '@Types/tournamentTypes';
+
+// The per-call options of setMatchUpStatus that a bulk entry carries, each settable on the call (every outcome) or
+// on one outcome (that outcome only). Forwarding none of them made a result entered in bulk propagate differently
+// from the same result entered singly. setMatchUpStatus still applies `policy ?? param ?? default` to the three
+// propagation flags, so an applied scoring policy that speaks on a flag wins over either.
+const FORWARDED_OPTIONS = [
+  'propagateRetirementAsExit',
+  'disableScoreValidation',
+  'allowChangePropagation',
+  'propagateExitStatus',
+  'disableAutoCalc',
+  'enableAutoCalc',
+  'setTBlast',
+] as const;
+
+type ForwardedOptions = { [K in (typeof FORWARDED_OPTIONS)[number]]?: boolean };
+type BulkOutcome = ForwardedOptions & {
+  matchUpFormat?: string;
+  tournamentId: string;
+  matchUpId: string;
+  eventId: string;
+  drawId: string;
+  notes?: string;
+  schedule?: object;
+};
+type BulkUpdateArgs = {
+  tournamentRecords: { [key: string]: Tournament };
+  policyDefinitions?: PolicyDefinitions;
+  tournamentRecord: Tournament;
+  params: ForwardedOptions;
+  outcomes: BulkOutcome[];
+};
+
 export function bulkMatchUpStatusUpdate(params) {
   if (!params?.outcomes) return { error: MISSING_VALUE };
   if (!Array.isArray(params.outcomes)) return { error: MISSING_VALUE, info: { outcomes: params.outcomes } };
@@ -30,8 +66,11 @@ export function bulkMatchUpStatusUpdate(params) {
     const tournamentOutcomes = outcomes.filter((outcome) => outcome.tournamentId === tournamentId);
     if (tournamentOutcomes.length) {
       const result = bulkUpdate({
+        policyDefinitions: params.policyDefinitions,
         outcomes: tournamentOutcomes,
+        tournamentRecords,
         tournamentRecord,
+        params,
       });
       if (result.error) return result;
     }
@@ -40,9 +79,12 @@ export function bulkMatchUpStatusUpdate(params) {
   return { ...SUCCESS };
 }
 
-function bulkUpdate(params) {
-  const { tournamentRecords, tournamentRecord, outcomes, policyDefinitions } = params;
-  const events = {};
+function forwardedOptions(params: ForwardedOptions, outcome: BulkOutcome): ForwardedOptions {
+  return Object.fromEntries(FORWARDED_OPTIONS.map((key) => [key, outcome[key] ?? params[key]]));
+}
+
+function bulkUpdate({ tournamentRecords, tournamentRecord, outcomes, policyDefinitions, params }: BulkUpdateArgs) {
+  const events: { [eventId: string]: BulkOutcome[] } = {};
 
   // group outcomes by events to optimize
   outcomes.forEach((outcome) => {
@@ -58,8 +100,9 @@ function bulkUpdate(params) {
       const { drawId } = outcome;
       const drawDefinition = event?.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === drawId);
       if (drawDefinition && drawId) {
-        const { matchUpFormat, matchUpId } = outcome;
+        const { matchUpFormat, matchUpId, notes } = outcome;
         const result = setMatchUpStatus({
+          ...forwardedOptions(params, outcome),
           schedule: outcome?.schedule,
           tournamentRecords,
           policyDefinitions,
@@ -69,6 +112,7 @@ function bulkUpdate(params) {
           matchUpId,
           outcome,
           drawId,
+          notes,
           event,
         });
         if (result.error) {

@@ -66,10 +66,12 @@ const mockScenarios = [
 ];
 
 it.each(mockScenarios)('can generate events with scaled participants', (scenario) => {
+  // the scenario's expectation is the test's, not a mocksEngine option
+  const { expectation, ...profile } = scenario;
   const {
     tournamentRecord,
     drawIds: [drawId],
-  } = mocksEngine.generateTournamentRecord(scenario);
+  } = mocksEngine.generateTournamentRecord(profile);
   tournamentEngine.setState(tournamentRecord);
 
   const {
