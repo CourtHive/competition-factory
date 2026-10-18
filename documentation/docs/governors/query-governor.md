@@ -387,7 +387,7 @@ const { abandonedMatchUps, completedMatchUps, upcomingMatchUps, pendingMatchUps,
 
 ## getCompetitionPenalties
 
-Returns an array of all penalties issued for all tournaments loaded into engine. `penaltyType` is returned as stored: a penalty written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until the record is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified.
+Returns an array of all penalties issued for all tournaments loaded into engine. `penaltyType` is returned as its code: a record written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until it is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified, and the query returns that label's code without changing the record. A value outside the legacy labels is returned as stored.
 
 ```js
 const { penalties } = engine.getCompetitionPenalties();
@@ -2551,7 +2551,7 @@ const { tournamentPersons } = engine.getTournamentPersons({
 
 ## getTournamentPenalties
 
-Returns an array of all penalties issued during a tournament. `penaltyType` is returned as stored: a penalty written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until the record is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified.
+Returns an array of all penalties issued during a tournament. `penaltyType` is returned as its code: a record written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until it is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified, and the query returns that label's code without changing the record. A value outside the legacy labels is returned as stored.
 
 ```js
 const { penalties } = engine.getTournamentPenalties();

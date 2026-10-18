@@ -1,9 +1,9 @@
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { normalizePenaltyType } from '@Query/participants/normalizePenaltyType';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { addExtension } from '@Mutate/extensions/addExtension';
-import { normalizePenaltyType } from './normalizePenaltyType';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
