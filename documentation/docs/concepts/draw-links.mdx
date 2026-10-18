@@ -149,38 +149,32 @@ drawDefinition.links = [
 
 ## Creating Custom Linked Structures
 
-While pre-defined draw types cover most scenarios, you can create custom configurations:
+Generate the main draw first, attach it to the event, then add a linked consolation. The convenience
+mutation generates the consolation and its LOSER links together; it does not require assembling UUIDs
+or calling a separate engine structure generator.
 
 ```js
-// Generate structures separately
-const { structure: mainStructure } = tournamentEngine.generateStructure({
-  structureName: 'Main Draw',
-  stage: 'MAIN',
+const { drawDefinition } = tournamentEngine.generateDrawDefinition({
+  eventId,
   drawSize: 16,
+  drawType: 'SINGLE_ELIMINATION',
+  automated: false,
 });
-
-const { structure: consolationStructure } = tournamentEngine.generateStructure({
+if (!drawDefinition) throw new Error('Draw generation failed');
+const { drawId } = drawDefinition;
+tournamentEngine.addDrawDefinition({ eventId, drawDefinition });
+const result = tournamentEngine.addLinkedConsolationStructure({
+  drawId,
   structureName: 'Consolation',
-  stage: 'CONSOLATION',
+  structureType: 'SINGLE_ELIMINATION',
   drawSize: 8,
+  links: [{ sourceRoundNumber: 1, targetRoundNumber: 1 }],
 });
-
-// Define custom links
-const links = [
-  {
-    linkType: 'LOSER',
-    source: { structureId: mainStructure.structureId, roundNumber: 1 },
-    target: { structureId: consolationStructure.structureId, roundNumber: 1 },
-  },
-];
-
-// Combine into draw definition
-const drawDefinition = {
-  drawId: UUID(),
-  structures: [mainStructure, consolationStructure],
-  links: links,
-};
+if (result.error) throw new Error(result.error.message);
 ```
+
+For more specialized topology, use `attachConsolationStructures` with generated structures and explicit
+links. Validate the resulting draw with `getDrawInconsistencies` before accepting play.
 
 ## Qualifying Conceptual Model
 

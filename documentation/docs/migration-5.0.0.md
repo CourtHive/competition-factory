@@ -198,11 +198,11 @@ This returns first-class when present, falls back to extension when not.
 
 ## Engine write mode flags
 
-| Flag                                                     | Default in 5.0.0 | Purpose                                                                                                                                                                                                                                                                         |
-| -------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `engine.schemaWriteMode('native' \| 'dual' \| 'legacy')` | `'native'`       | Controls write-side behavior. `'native'` writes first-class only. `'dual'` writes both. `'legacy'` writes extension only. **Reads always handle all three modes via `firstClassOrExtension`** — set it only to control write surface during transition.                         |
-| `engine.saveDrawDeletions(boolean)`                      | `false`          | Opt-in to persist `drawDeletions` audit on the tournament record (Phase 6). When `false` the factory suppresses the local timeItem/extension writes but still emits the `AUDIT` topic notice.                                                                                   |
-| `engine.auditAuthorityServer(boolean)`                   | `false`          | Declare that an external system (e.g. `competition-factory-server`) is the canonical audit trail for `deleteDrawDefinitions`. When `true`, factory unconditionally suppresses local audit writes, regardless of `saveDrawDeletions`. Server engines should set this at startup. |
+| Flag                                                       | Default in 5.0.0 | Purpose                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `engine.schemaWriteMode('native' \| 'bridge' \| 'legacy')` | `'native'`       | Controls write-side behavior. `'native'` writes first-class only. `'bridge'` writes both. `'legacy'` writes extension only. **Reads always handle all three modes via `firstClassOrExtension`** — set it only to control write surface during transition.                       |
+| `engine.saveDrawDeletions(boolean)`                        | `false`          | Opt-in to persist `drawDeletions` audit on the tournament record (Phase 6). When `false` the factory suppresses the local timeItem/extension writes but still emits the `AUDIT` topic notice.                                                                                   |
+| `engine.auditAuthorityServer(boolean)`                     | `false`          | Declare that an external system (e.g. `competition-factory-server`) is the canonical audit trail for `deleteDrawDefinitions`. When `true`, factory unconditionally suppresses local audit writes, regardless of `saveDrawDeletions`. Server engines should set this at startup. |
 
 ## New mutations and queries added in 5.0.0
 
@@ -261,4 +261,6 @@ The same migration was performed on TMX and courthive-components alongside the 5
 
 ## Upgrading a v4 record
 
-Use the `engine.migrateTournamentRecord({ tournamentRecord })` one-shot utility. It walks the record and promotes all 17 canonical legacy extensions / schedule timeItems to first-class. Idempotent — safe to call multiple times. Pass `clearLegacy: true` to also remove the legacy `extensions[]` / `timeItems[]` entries after promotion (destructive); default is to leave both surfaces populated (shadow mode).
+Use the `engine.migrateTournamentRecord({ tournamentRecord })` one-shot utility. It walks the record and promotes all 17 canonical legacy extensions / schedule timeItems to first-class. Idempotent — safe to call multiple times. By default (`clearLegacy: true`) it also removes the legacy `extensions[]` / `timeItems[]` entries after promotion (destructive); pass `clearLegacy: false` to leave both surfaces populated (shadow mode).
+
+Current accepted mode names and read precedence are listed in the [shared write-mode reference](./engines/get-tally.md#supported-write-mode-names).

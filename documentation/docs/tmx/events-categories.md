@@ -149,51 +149,33 @@ TMX supports all factory event types:
 
 ### Flight Profile Configuration
 
-TMX uses [Flight Profiles](../concepts/events/flights.mdx) for sophisticated event structures:
+TMX uses [Flight Profiles](../concepts/events/flights.mdx). Attach a profile before adding draw
+definitions. A profile lives on the event; replacing one requires `deleteExisting: true` and is
+refused if the event already has draws.
 
 ```js
-// Single flight
-tournamentEngine.setEventFlightProfile({
+const result = tournamentEngine.attachFlightProfile({
   eventId,
-  flightProfile: {
-    flights: [{ flightNumber: 1, drawSize: 16 }],
-  },
+  flightProfile: { flights: [{ flightNumber: 1, drawId: flightDrawId, drawName: 'Gold Flight', drawEntries: [] }] },
 });
-
-// Multiple flights with rating ranges
-tournamentEngine.setEventFlightProfile({
-  eventId,
-  flightProfile: {
-    flights: [
-      {
-        flightNumber: 1,
-        drawSize: 16,
-        flightName: 'Gold Flight',
-        ratingMin: 30,
-        ratingMax: 40,
-      },
-      {
-        flightNumber: 2,
-        drawSize: 16,
-        flightName: 'Silver Flight',
-        ratingMin: 20,
-        ratingMax: 30,
-      },
-    ],
-  },
-});
+if (result.error) throw new Error(result.error.message);
 ```
+
+For rating-based splitting, use `generateFlightProfile` with a scale, a split method and
+`flightsCount`, rather than assuming `ratingMin`/`ratingMax` configure a split on attachment.
 
 ### Draw Definition Configuration
 
 ```js
-// Set draw type and size
-tournamentEngine.addDrawDefinition({
+const { drawDefinition, error } = tournamentEngine.generateDrawDefinition({
   eventId,
   drawSize: 32,
   drawType: 'SINGLE_ELIMINATION',
-  seedingProfile: 'WATERFALL',
+  automated: false,
 });
+if (error) throw new Error(error.message);
+if (!drawDefinition) throw new Error('Draw generation failed');
+tournamentEngine.addDrawDefinition({ eventId, drawDefinition });
 ```
 
 ## UI Components
@@ -358,25 +340,17 @@ tournamentEngine.addEventEntries({
 ## Publishing Configuration
 
 ```js
-// Set event publishing state
-tournamentEngine.setEventPublishState({
-  eventId,
-  published: true,
-});
+// Publish the event's draws under the PUBLIC status key.
+tournamentEngine.publishEvent({ eventId, status: 'PUBLIC' });
 
-// Configure what to publish
-tournamentEngine.setEventPublishingDetail({
-  eventId,
-  publishingDetail: {
-    published: {
-      draws: true,
-      entries: true,
-      results: true,
-      schedule: false,
-    },
-  },
-});
+// Restrict the publication to selected draws.
+tournamentEngine.publishEvent({ eventId, status: 'PUBLIC', drawIds: [drawId] });
 ```
+
+Entries, participants and order of play have their own publishing APIs and visibility policies;
+there is no event-level `published: { draws, entries, results, schedule }` switch. See the
+[Publishing Governor](../governors/publishing-governor.md) and
+[publishing status keys](../concepts/publishing/publishing-status-keys.md).
 
 ## Best Practices
 

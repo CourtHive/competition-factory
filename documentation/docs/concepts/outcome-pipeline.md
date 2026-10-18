@@ -270,16 +270,20 @@ After the write, and only on success:
 - **A completed matchUp with a valid winning score cannot be reverted to a live status without a new
   result**; submit a corrected outcome or clear first.
 - The properties the exit-propagation harness checks (`DO_UNDO_IDENTITY`, `IDEMPOTENT_REAPPLY`,
-  `MONOTONIC_DECISION`) are stated in the corpus vocabulary (`corpus/INVARIANTS.md`) and hold on
-  generated draws across the 600-cell matrix and the census; on real records, see § 8
-  (real-record do/undo) and the clear that normalises in § 4.
+  `MONOTONIC_DECISION`) are stated in the corpus vocabulary (`corpus/INVARIANTS.md`) and measured on
+  the generated fixtures in the matrix and census. These are intended invariants, not a universal proof.
+  On real records, see § 8 (real-record do/undo) and the clear that normalises in § 4.
 
 ## 7. Write mode
 
-In NATIVE mode (the default since 5.0.0) `scoredTime` is written on `matchUp.schedule` and nothing
-here touches `timeItems`. In LEGACY and BRIDGE modes the pipeline is unchanged; the schedule
-attributes it stamps follow `setFirstClassOrTimeItem`. The result, status and codes are first-class
-in every mode.
+In NATIVE mode (the default since 5.0.0), schedule stamps such as `scoredTime` use first-class
+`matchUp.schedule` attributes. LEGACY uses the corresponding timeItems; BRIDGE writes both via
+`setFirstClassOrTimeItem`. Result, status and scoring codes remain first-class.
+
+This storage mapping is not evidence that exit behavior is identical across modes. Provenance writes
+are mode-gated and propagation decisions read provenance; a NATIVE census result must not be reported
+as LEGACY/BRIDGE validation. Cross-mode compatibility requires its own fixtures and replay evidence.
+See [harness measurement limits](../testing/exit-propagation-harness.md#measurement-limits).
 
 ## 7.1 Two implementations (S2)
 
