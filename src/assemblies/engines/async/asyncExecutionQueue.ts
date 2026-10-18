@@ -5,6 +5,7 @@ import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
 import { keepWrites } from '@Assemblies/engines/parts/keepWrites';
+import { withCallRandomSourceAsync } from '@Tools/prng';
 import { withCapturedClockAsync } from '@Tools/clock';
 
 // types
@@ -31,11 +32,13 @@ export async function asyncExecutionQueue(engine: FactoryEngine, directives: Dir
     try {
       for (const directive of directives) {
         const methodName = directive.method;
-        const params = prepareDirective(directive, results);
+        const { params, unthreadedSource } = prepareDirective(directive, results);
         current = { methodName, params };
 
         // awaited, as asyncEngineInvoke awaits it: an imported async method returns a promise
-        const result = await executeFunction(engine, methods[methodName], params, methodName, 'async');
+        const result = await withCallRandomSourceAsync(unthreadedSource, async () =>
+          executeFunction(engine, methods[methodName], params, methodName, 'async'),
+        );
         getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'async', params, result });
 
         if (result?.error) {

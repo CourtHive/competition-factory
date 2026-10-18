@@ -116,6 +116,8 @@ export default {
   setCapturedClock,
   getCapturedCompetitionClock,
   setCapturedCompetitionClock,
+  getCallRandomSource,
+  setCallRandomSource,
   deleteNotice,
   deleteNotices,
   disableNotifications,
@@ -155,6 +157,15 @@ export function getCapturedCompetitionClock(): number | undefined {
 
 export function setCapturedCompetitionClock(timeStamp?: number) {
   getInstanceState().capturedCompetitionClock = timeStamp;
+}
+
+// Per request, like the captured clock: a seeded call's stream must not reach a request overlapping it.
+export function getCallRandomSource(): (() => number) | undefined {
+  return asyncLocalStorage.getStore()?.callRandomSource;
+}
+
+export function setCallRandomSource(source?: () => number) {
+  getInstanceState().callRandomSource = source;
 }
 
 export function disableNotifications() {

@@ -36,6 +36,8 @@ export default {
   setCapturedClock,
   getCapturedCompetitionClock,
   setCapturedCompetitionClock,
+  getCallRandomSource,
+  setCallRandomSource,
   deleteNotice,
   deleteNotices,
   disableNotifications,
@@ -73,6 +75,14 @@ export function getCapturedCompetitionClock(): number | undefined {
 
 export function setCapturedCompetitionClock(timeStamp?: number): void {
   syncGlobalState.capturedCompetitionClock = timeStamp;
+}
+
+export function getCallRandomSource(): (() => number) | undefined {
+  return syncGlobalState.callRandomSource;
+}
+
+export function setCallRandomSource(source?: () => number): void {
+  syncGlobalState.callRandomSource = source;
 }
 
 export function disableNotifications(): void {
