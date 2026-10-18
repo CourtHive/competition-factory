@@ -1,6 +1,9 @@
 import { JSON2CSV, flattenJSON } from '@Tools/json';
 import { describe, expect, test } from 'vitest';
 
+// constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+
 describe('flattenJSON', () => {
   test('flattens nested objects', () => {
     const obj = {
@@ -271,12 +274,12 @@ describe('JSON2CSV', () => {
     const data = [{ name: 'Alice' }];
 
     const result1 = JSON2CSV(data, 'invalid' as any);
-    expect(result1.error).toBeDefined();
+    expect(result1.error).toEqual(INVALID_VALUES);
   });
 
   test('returns error for non-array input', () => {
     const result = JSON2CSV('not an array' as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('handles sortOrder option', () => {

@@ -11,6 +11,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { INVALID_CONFIGURATION } from '@Constants/errorConditionConstants';
 import { FIRST_ROUND_LOSER_CONSOLATION, AD_HOC, ROUND_OUTCOME } from '@Constants/drawDefinitionConstants';
 import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
@@ -470,7 +471,7 @@ describe('processPlayoffGroups uncovered branches', () => {
       isMock: true,
     } as any);
     // bestOf 999 exceeds total participants, should trigger validation error
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_CONFIGURATION);
   });
 });
 

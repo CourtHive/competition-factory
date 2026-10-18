@@ -6,7 +6,12 @@ import { expect, test, describe } from 'vitest';
 
 // constants
 import { LUCKY_DRAW, MAIN, LOSER, TOP_DOWN } from '@Constants/drawDefinitionConstants';
-import { INVALID_DRAW_SIZE } from '@Constants/errorConditionConstants';
+import {
+  INVALID_DRAW_SIZE,
+  INVALID_VALUES,
+  LUCKY_DRAW_BYE_LIMIT,
+  MISSING_MATCHUP,
+} from '@Constants/errorConditionConstants';
 import {
   COMPLETED,
   BYE,
@@ -408,7 +413,7 @@ describe('luckyDrawAdvancement', () => {
       structureId,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('rejects advancement with invalid participant', () => {
@@ -437,7 +442,7 @@ describe('luckyDrawAdvancement', () => {
       structureId,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('prevents double advancement', () => {
@@ -475,7 +480,7 @@ describe('luckyDrawAdvancement', () => {
       structureId,
       drawId,
     });
-    expect(result2.error).toBeDefined();
+    expect(result2.error).toEqual(INVALID_VALUES);
   });
 
   test('round 2 matchUps can be scored after advancement', () => {
@@ -1125,21 +1130,21 @@ describe('calculateMatchUpMargin — no-score outcomes', () => {
 describe('calculateMatchUpMargin — edge cases', () => {
   test('returns error for missing matchUp', () => {
     const result = calculateMatchUpMargin({ matchUp: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_MATCHUP);
   });
 
   test('returns error for matchUp without winningSide', () => {
     const result = calculateMatchUpMargin({
       matchUp: { score: { sets: [] } } as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('returns error for matchUp without score', () => {
     const result = calculateMatchUpMargin({
       matchUp: { winningSide: 1 } as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('handles empty sets array gracefully', () => {
@@ -1874,7 +1879,7 @@ describe('lucky draw BYE handling — odd participant count', () => {
       structureId,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(LUCKY_DRAW_BYE_LIMIT);
     expect(result.error.code).toBe('ERR_LUCKY_DRAW_BYE_LIMIT');
   });
 
@@ -2003,7 +2008,7 @@ describe('lucky draw — invalid drawSize rejection', () => {
   test('drawSize 3 is rejected for LUCKY_DRAW', () => {
     const drawProfiles = [{ drawSize: 3, drawType: LUCKY_DRAW }];
     const result = mocksEngine.generateTournamentRecord({ drawProfiles });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DRAW_SIZE);
     expect(result.error.code).toBe(INVALID_DRAW_SIZE.code);
   });
 

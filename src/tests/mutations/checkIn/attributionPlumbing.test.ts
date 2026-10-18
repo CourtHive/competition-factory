@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { DECLARED_ATTRIBUTION, USER_ATTRIBUTION } from '@Constants/presenceConstants';
+import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { ContactRelationshipEnum } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { DOUBLES } from '@Constants/matchUpTypes';
@@ -111,6 +112,6 @@ it('reports a missing matchUp rather than an empty history', () => {
   const { drawId } = seeded();
 
   const result: any = tournamentEngine.getMatchUpCheckInHistory({ matchUpId: 'nope', drawId });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   expect(result.checkIns).toBeUndefined();
 });

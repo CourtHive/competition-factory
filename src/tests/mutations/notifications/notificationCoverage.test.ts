@@ -12,6 +12,14 @@ import {
   modifyPositionAssignmentsNotice,
 } from '@Mutate/notifications/drawNotifications';
 
+// constants
+import {
+  MISSING_DRAW_DEFINITION,
+  MISSING_EVENT,
+  MISSING_MATCHUP,
+  MISSING_STRUCTURE,
+} from '@Constants/errorConditionConstants';
+
 describe('drawNotifications edge cases', () => {
   it('addMatchUpsNotice without drawDefinition', () => {
     const result = addMatchUpsNotice({
@@ -55,7 +63,7 @@ describe('drawNotifications edge cases', () => {
 
   it('modifyMatchUpNotice returns error for missing matchUp', () => {
     const result = modifyMatchUpNotice({ matchUp: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_MATCHUP);
   });
 
   it('modifyMatchUpNotice with drawDefinition and structureId', () => {
@@ -126,7 +134,7 @@ describe('drawNotifications edge cases', () => {
 
   it('updateInContextMatchUp returns error for missing matchUp', () => {
     const result = updateInContextMatchUp({ tournamentId: 't1', inContextMatchUp: undefined });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_MATCHUP);
   });
 
   it('updateInContextMatchUp succeeds with valid matchUp', () => {
@@ -139,7 +147,7 @@ describe('drawNotifications edge cases', () => {
 
   it('addDrawNotice returns error for missing drawDefinition', () => {
     const result: any = addDrawNotice({ tournamentId: 't1' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('addDrawNotice succeeds with drawDefinition', () => {
@@ -155,7 +163,7 @@ describe('drawNotifications edge cases', () => {
 
   it('modifyDrawNotice returns error for missing drawDefinition', () => {
     const result: any = modifyDrawNotice({ drawDefinition: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('modifyDrawNotice with structureIds filters update', () => {
@@ -177,7 +185,7 @@ describe('drawNotifications edge cases', () => {
       structure: { structureId: 's1', seedAssignments: [] },
       tournamentId: 't1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('modifySeedAssignmentsNotice returns error for missing structure', () => {
@@ -185,7 +193,7 @@ describe('drawNotifications edge cases', () => {
       drawDefinition: { drawId: 'd1', structures: [] },
       tournamentId: 't1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_STRUCTURE);
   });
 
   it('modifySeedAssignmentsNotice succeeds', () => {
@@ -207,7 +215,7 @@ describe('drawNotifications edge cases', () => {
       structure: { structureId: 's1', positionAssignments: [] },
       tournamentId: 't1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('modifyPositionAssignmentsNotice returns error for missing structure', () => {
@@ -215,7 +223,7 @@ describe('drawNotifications edge cases', () => {
       drawDefinition: { drawId: 'd1' },
       tournamentId: 't1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_STRUCTURE);
   });
 
   it('modifyPositionAssignmentsNotice succeeds', () => {
@@ -257,7 +265,7 @@ describe('drawNotifications edge cases', () => {
 describe('eventNotifications edge cases', () => {
   it('addEventNotice returns error for missing event', () => {
     const result: any = addEventNotice({ tournamentId: 't1' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_EVENT);
   });
 
   it('addEventNotice succeeds with event', () => {

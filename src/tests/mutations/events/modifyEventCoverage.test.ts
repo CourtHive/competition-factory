@@ -13,6 +13,7 @@ import {
   INVALID_GENDER,
   MISSING_ENTRIES,
   MISSING_PARTICIPANT_IDS,
+  INVALID_VALUES,
 } from '@Constants/errorConditionConstants';
 
 test('modifyEvent updates eventName', () => {
@@ -74,7 +75,7 @@ test('modifyEvent rejects invalid category', () => {
     eventUpdates: { category: 'invalid' as any },
     eventId,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
 });
 
 test('modifyEvent updates startDate and endDate', () => {

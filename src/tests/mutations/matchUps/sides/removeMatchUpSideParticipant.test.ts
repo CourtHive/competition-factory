@@ -4,8 +4,15 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { INVALID_DRAW_TYPE, INVALID_VALUES, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
+import {
+  INVALID_DRAW_TYPE,
+  INVALID_VALUES,
+  MATCHUP_NOT_FOUND,
+  MISSING_DRAW_DEFINITION,
+  MISSING_MATCHUP_ID,
+  MISSING_TOURNAMENT_RECORD,
+} from '@Constants/errorConditionConstants';
 
 describe('removeMatchUpSideParticipant', () => {
   // Unit tests for parameter validation
@@ -15,7 +22,7 @@ describe('removeMatchUpSideParticipant', () => {
       matchUpId: 'test',
     } as any);
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('returns error when drawDefinition is missing', () => {
@@ -24,7 +31,7 @@ describe('removeMatchUpSideParticipant', () => {
       matchUpId: 'test',
     } as any);
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('returns error when matchUpId is missing', () => {
@@ -33,7 +40,7 @@ describe('removeMatchUpSideParticipant', () => {
       drawDefinition: {} as any,
     } as any);
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_MATCHUP_ID);
   });
 
   it('returns error when sideNumber is invalid (not 1 or 2)', () => {
