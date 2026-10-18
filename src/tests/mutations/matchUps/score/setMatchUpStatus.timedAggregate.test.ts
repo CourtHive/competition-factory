@@ -3,14 +3,14 @@ import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 it('can set score for timed aggregate format SET3XA-S:T10', () => {
   const drawProfiles = [
     {
       drawSize: 4,
-      drawType: SINGLE_ELIMINATION,
+      drawType: ROUND_ROBIN, // an elimination draw refuses a format that can end level (spec § 9.7)
     },
   ];
   const {
@@ -103,7 +103,7 @@ it('can set score for timed non-aggregate format SET3X-S:T10', () => {
   const drawProfiles = [
     {
       drawSize: 4,
-      drawType: SINGLE_ELIMINATION,
+      drawType: ROUND_ROBIN, // an elimination draw refuses a format that can end level (spec § 9.7)
     },
   ];
   const {
