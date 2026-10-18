@@ -1,10 +1,13 @@
 import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
 import { addDrawEntries as addEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
+import { modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { refreshEntryPositions } from '@Mutate/entries/refreshEntryPositions';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
+import { entriesKey } from '@Mutate/events/eventChangeNotice';
 import { isUngrouped } from '@Query/entries/isUngrouped';
 
 // constants and types
@@ -103,7 +106,11 @@ export function addDrawEntries({
     }
   }
 
+  const tournamentId = tournamentRecord?.tournamentId;
+  const eventId = event.eventId;
+
   if (drawDefinition) {
+    const drawEntriesBefore = entriesKey(drawDefinition.entries);
     const result = addEntries({
       stageSequence: entryStageSequence,
       suppressDuplicateEntries,
@@ -117,12 +124,16 @@ export function addDrawEntries({
       extension,
     });
     if (result.error) return result;
+    if (entriesKey(drawDefinition.entries) !== drawEntriesBefore) {
+      modifyDrawEntriesNotice({ drawDefinition, tournamentId, eventId });
+    }
   }
 
   const { flightProfile } = getFlightProfile({ event });
   const flight = flightProfile?.flights.find((flight) => flight.drawId === drawId);
 
   if (flight?.drawEntries) {
+    const flightEntriesBefore = entriesKey(flight.drawEntries);
     participantIds.forEach((participantId) => {
       const invalidLuckyLoser =
         entryStatus === LUCKY_LOSER &&
@@ -157,6 +168,9 @@ export function addDrawEntries({
         entries: flight.drawEntries,
       });
     }
+
+    // a flight's drawEntries live in the event's flight profile: changing them modifies the event
+    if (entriesKey(flight.drawEntries) !== flightEntriesBefore) modifyEventNotice({ tournamentId, event });
   }
 
   return { ...SUCCESS };

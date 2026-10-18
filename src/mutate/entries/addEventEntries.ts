@@ -8,6 +8,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
+import { entriesKey } from '@Mutate/events/eventChangeNotice';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { removeEventEntries } from './removeEventEntries';
 import { isUngrouped } from '@Query/entries/isUngrouped';
@@ -592,6 +593,7 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
     });
   }
 
+  const eventEntriesBefore = entriesKey(event.entries);
   event.entries ??= [];
   const existingIds = new Set(event.entries.map((e: any) => e.participantId || e.participant?.participantId));
 
@@ -663,8 +665,10 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
   const removedEntriesCount = removedEntries.length;
 
   // event.entries changed → dispatch MODIFY_EVENT_ENTRIES so projections and the
-  // record's modified flag reflect the roster change.
-  if (addedEntriesCount || removedEntriesCount || updatedEntryStatuses) {
+  // record's modified flag reflect the roster change. Compared as well as counted: refreshing
+  // entryPositions changes entries that were neither added nor removed.
+  const eventEntriesChanged = entriesKey(event.entries) !== eventEntriesBefore;
+  if (addedEntriesCount || removedEntriesCount || updatedEntryStatuses || eventEntriesChanged) {
     modifyEventEntriesNotice({ event, tournamentId: tournamentRecord?.tournamentId });
   }
 

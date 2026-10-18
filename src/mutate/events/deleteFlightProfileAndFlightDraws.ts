@@ -1,4 +1,5 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { deleteDrawDefinitions } from './deleteDrawDefinitions';
@@ -28,12 +29,15 @@ export function deleteFlightProfileAndFlightDraws({ autoPublish = true, tourname
     });
     if (result.error) return result;
 
-    return setFirstClassOrExtension({
+    const removal = setFirstClassOrExtension({
       element: event,
       attribute: 'flightProfile',
       name: FLIGHT_PROFILE,
       value: undefined,
     });
+    // the flight profile is an event attribute: removing it modifies the event
+    if (!removal.error) modifyEventNotice({ tournamentId: tournamentRecord.tournamentId, event });
+    return removal;
   }
 
   return { ...SUCCESS };
