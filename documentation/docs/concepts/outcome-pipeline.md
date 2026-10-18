@@ -324,6 +324,25 @@ setting. An exit arriving at a BYE in its structure's last round meets the exit 
 it, and v2 plans the two converging, as v1's settle step converges them (census run-17 baseline, DOUBLE_ELIMINATION
 8/5 under `doubleExitPropagateBye: false`).
 
+**What a divergence leaves behind.** v2 plans and never writes; v1 runs and writes; only then does
+the comparison throw, either after v1's complete write or on one of v1's refusal paths, where a
+refusal changes nothing. So a divergence is never half-written by the pipeline: the record holds
+v1's complete result, exactly what `v1` mode leaves. From there `OutcomePipelineDivergence` is an
+ordinary throw under the engine contract every thrown method has:
+
+- with `rollbackOnError`, the whole call is restored (every method of an `executionQueue`);
+- without it, v1's write stays, the result is `{ error }` carrying the divergence message, and
+  nothing is notified;
+- under `devContext` the divergence is rethrown, after the same restore when one was captured.
+
+That holds for a direct call, inside `executionQueue` and on the async engine, and is pinned by
+`divergenceLeavesBehind.test.ts`. Differential mode takes no snapshot of its own (2026-10-18):
+a restore inside `setMatchUpStatus` would undo only the matchUp that diverged and leave the rest of a
+bulk call written, and atomicity for the whole call is what `rollbackOnError` already provides. A
+divergence is a failing signal, not a result to build on: the suite's rethrowing provider fails the
+test, and the exit-propagation census records it as `NO_EXCEPTION_ESCAPES`, and its play-forward driver stops
+that cell at the first failure.
+
 ## 8. What the corpus pins
 
 |                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
