@@ -1,4 +1,5 @@
 import { getResultAttestation } from '@Query/ladder/getResultAttestation';
+import { ladderMatchUpNotice } from '@Mutate/ladder/ladderNotices';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
@@ -47,7 +48,7 @@ export function submitResult(
 ): ResultType {
   const resolved: any = resolve(params);
   if (resolved.error) return resolved;
-  const { matchUp } = resolved;
+  const { matchUp, structure } = resolved;
   const { participantId, submittedAt, outcome } = params;
 
   if (!participantId || !submittedAt) return { error: INVALID_VALUES, info: 'participantId and submittedAt required' };
@@ -68,6 +69,7 @@ export function submitResult(
     timeItem: { itemType: RESULT_SUBMITTED, itemValue: { participantId, outcome }, itemDate: submittedAt },
     element: matchUp,
   });
+  ladderMatchUpNotice({ ...params, structure, matchUp });
 
   return { ...SUCCESS };
 }
@@ -102,6 +104,7 @@ export function confirmResult(
   // demand an operator, and self-confirmation is never enough.
   const attestation = getResultAttestation({ matchUp, policy: getLadderPolicy({ ...params, structure }) });
   if (attestation.attested) matchUp.matchUpStatus = COMPLETED;
+  ladderMatchUpNotice({ ...params, structure, matchUp });
 
   return { ...SUCCESS, ...(attestation.attested ? {} : { info: attestation.reason }) };
 }
@@ -118,7 +121,7 @@ export function disputeResult(
 ): ResultType {
   const resolved: any = resolve(params);
   if (resolved.error) return resolved;
-  const { matchUp } = resolved;
+  const { matchUp, structure } = resolved;
   const { participantId, disputedAt, reason } = params;
 
   if (!participantId || !disputedAt) return { error: INVALID_VALUES, info: 'participantId and disputedAt required' };
@@ -134,6 +137,7 @@ export function disputeResult(
     element: matchUp,
   });
   matchUp.matchUpStatus = AWAITING_RESULT;
+  ladderMatchUpNotice({ ...params, structure, matchUp });
 
   return { ...SUCCESS };
 }

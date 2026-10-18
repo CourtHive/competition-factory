@@ -7,7 +7,7 @@ import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { xa } from '@Tools/extractAttributes';
 
 // constants and types
-import { DrawDefinition, DrawLink, Event, Structure, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, DrawLink, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
@@ -111,6 +111,15 @@ export function attachStructures({
   const newStructures = structures?.filter(({ structureId }) => !existingStructureIds?.includes(structureId));
   if (newStructures.length) drawDefinition.structures.push(...newStructures);
 
+  // addGoesTo writes the stored edges (and loser finishing ranges) of the matchUps that feed the new
+  // structures: those matchUps changed, and each is announced below unless a modification covers it
+  const existingMatchUps = (drawDefinition.structures ?? [])
+    .filter(({ structureId }) => existingStructureIds?.includes(structureId) && !generatedStructureIds.has(structureId))
+    .flatMap((structure) => getAllStructureMatchUps({ structure })?.matchUps ?? []);
+  const edgesOf = (matchUp: MatchUp) =>
+    JSON.stringify([matchUp.winnerMatchUpId, matchUp.loserMatchUpId, matchUp.finishingPositionRange]);
+  const edgesBefore = new Map(existingMatchUps.map((matchUp) => [matchUp.matchUpId, edgesOf(matchUp)]));
+
   const goesTo = addGoesTo({ drawDefinition });
   if (goesTo.error) return decorateResult({ result: goesTo, stack });
 
@@ -174,6 +183,18 @@ export function attachStructures({
           modifyStructureMatchUps(structure);
         }
       }
+    });
+  }
+
+  const modifiedMatchUpIds = new Set(matchUpModifications?.map((modification) => modification.matchUp?.matchUpId));
+  for (const matchUp of existingMatchUps) {
+    if (modifiedMatchUpIds.has(matchUp.matchUpId) || edgesBefore.get(matchUp.matchUpId) === edgesOf(matchUp)) continue;
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: itemType,
+      drawDefinition,
+      matchUp,
+      event,
     });
   }
 
