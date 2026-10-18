@@ -18,7 +18,7 @@ You can use either convention, or both when they name the same side (two spellin
 ### addPoint
 
 ```ts
-addPoint(options: AddPointOptions): void
+addPoint(options: AddPointOptions): ScoringActionResult
 ```
 
 Add a point to the match. This is the primary input method for point-by-point scoring.
@@ -41,7 +41,17 @@ An input the scorer cannot take is refused with an error before anything is writ
 timeline entry, no event): a `winner` other than 0 or 1, a `winningSide` other than 1 or 2, the two
 spellings of a side naming different sides (likewise `server`/`serverSideNumber`), or a `scoreValue`
 that is negative or not finite. A zero `scoreValue` is allowed. A point that names no winner is
-ignored, as before.
+ignored, as before. A `scoreValue` other than 1 is refused where a point is not a unit of the score:
+in a set whose points build games (a standard set, a tennis-family timed set, the tiebreak a level
+timed set plays at time) and in a combined total. A configured point multiplier is not consulted
+there either.
+
+**The result.** `addPoint`, `addGame`, `addSet` and `endSegment` return `{ recorded: true }`, or
+`{ recorded: false, ignored }` for an input the engine accepted and recorded nothing for: `NO_WINNER`
+(a point naming no winner), `MATCH_COMPLETED` (any input after the match is `COMPLETED`),
+`NO_SET_BEYOND_N` (input past the N sets of an exactly format) and `TIEBREAK_IN_PLAY` (a segment end
+during the tiebreak at time). A refusal throws and also writes nothing. Ignored input keeps the redo
+stack; every recorded action clears it.
 
 **What the engine records about service.** The server is side-level. `serverParticipantId` is host
 metadata, recorded as given and never validated or derived. `serveSide` is the _expected_ court half,
@@ -131,10 +141,14 @@ interface Point {
 ### addGame
 
 ```ts
-addGame(options: AddGameOptions): void
+addGame(options: AddGameOptions): ScoringActionResult
 ```
 
-Add a complete game result. Used for game-by-game tracking without point detail.
+Add a complete game result. Used for game-by-game tracking without point detail. `winner` must be 0
+or 1 and a `tiebreakScore` two non-negative integers. A game after a closed set (won, or a timed
+segment ended level) opens the next set, as a point does. In a tiebreak-only set (`SET3-S:TB11`, or
+a match tiebreak in lieu of the final set) a game is the set won 1-0, its `tiebreakScore` the points,
+which must win the race to the set's target for `winner` (11-9 in `SET3-S:TB11`; 11-10 is refused).
 
 ```js
 engine.addGame({ winner: 0 }); // Side 1 wins a game
@@ -146,15 +160,25 @@ engine.addGame({ winner: 1, tiebreakScore: [7, 5] }); // Side 2 wins tiebreak 7-
 ### addSet
 
 ```ts
-addSet(options: AddSetOptions): void
+addSet(options: AddSetOptions): ScoringActionResult
 ```
 
-Add a complete set score. Used by scoring modals where users enter finished set scores directly.
+Add a set total. Used by scoring modals where users enter set scores directly. The total is judged by
+the rule of the set it is entered for:
+
+- a total the rule calls finished is recorded with the rule's winner (6-4, 7-6, 7-5; a tiebreak-only
+  set read from its points; a timed total is a finished segment, the side with more winning it);
+- an explicit `winningSide` naming the loser of a finished total, or a side that is not ahead, is
+  refused;
+- an explicit `winningSide` for the side ahead on an unfinished total is accepted: a set-level mercy
+  or manual end;
+- an unfinished total with no winner (3-1, 6-5 in a set to six) is recorded as the set in play.
 
 ```js
 engine.addSet({ side1Score: 6, side2Score: 4 }); // 6-4
 engine.addSet({ side1Score: 7, side2Score: 6, side1TiebreakScore: 7, side2TiebreakScore: 3 }); // 7-6(3)
-engine.addSet({ side1Score: 3, side2Score: 6, winningSide: 2 }); // Explicit winner
+engine.addSet({ side1Score: 3, side2Score: 6 }); // 3-6, won by side 2
+engine.addSet({ side1Score: 4, side2Score: 1, winningSide: 1 }); // a manual end at 4-1
 ```
 
 ---
@@ -162,14 +186,20 @@ engine.addSet({ side1Score: 3, side2Score: 6, winningSide: 2 }); // Explicit win
 ### endSegment
 
 ```ts
-endSegment(options?: EndSegmentOptions): void
+endSegment(options?: EndSegmentOptions): ScoringActionResult
 ```
 
-End a timed segment/period. For timed formats (`S:T10P`, etc.), this finalizes the current set's score and checks match completion.
+End a timed segment. For timed formats (`S:T10P`, etc.), this finalizes the segment's score and checks
+match completion. It ends timed segments only: it is refused on any other kind of set, on a segment
+already closed, and when there is no timed segment to end. A set-level mercy or manual end is `addSet`
+with an explicit `winningSide`; a match-level stop is a `matchUpStatus` set outside scoring. During
+the tiebreak a level segment plays at time it is ignored. `reason` is a free host string, recorded and
+never interpreted.
 
 ```js
 engine.endSegment(); // End current segment
 engine.endSegment({ setNumber: 2 }); // End specific segment
+engine.endSegment({ reason: 'bolt_expired' });
 ```
 
 ---
@@ -195,6 +225,14 @@ engine.setInitialScore({
 
 The initial score is an action on the timeline. A rebuild replays it where it was set, so it
 survives `setState` without a `loadSupplementaryState`, and `undo` removes it like any other action.
+
+Its sets are judged by their set's rule, as `addSet` judges a total: 6-5 is not won, the deciding set
+is judged by the final-set format, and a tiebreak-only set is read from its points. A baseline that
+decides the match completes it. An unfinished last set is the set in play. A supplied `server` is
+recorded as a server correction at the baseline, so it survives undo and rebuild. A second baseline
+is refused once the timeline holds scoring; a correction uses `editPoint`, `removePoint` or `undo`.
+A `matchUpStatus` or `winningSide` passed beside the sets is checked against them and refused only
+when they disagree; a status set outside scoring (`RETIRED`, `DEFAULTED`) is not checked.
 
 ---
 
@@ -667,7 +705,10 @@ getLegacyShapes(): string[]
 
 The legacy shapes the last rebuild met. A stored timeline that scored past a level close, as earlier
 versions did, replays as it was scored and reports `scoringPastLevelClose`; the
-rule applies to new input only.
+rule applies to new input only. Likewise a stored entry the engine now refuses (invalid facts, a
+segment end on a set that is not timed or is closed, a `scoreValue` where a point is not a unit, a
+second baseline) reports `refusedInput`, and one it now ignores (input after `COMPLETED` or past N)
+reports `ignoredInput`; each replays as it was recorded.
 
 ---
 
@@ -706,13 +747,40 @@ setServer(side: 0 | 1, options?: { recordEntry?: boolean }): void
 
 Correct the side serving the next point (zero-based). Earlier recorded servers stay unchanged. By
 default this records a timeline action, clears redo and survives rebuilding/undo/redo. Internal
-rule-driven corrections can use `recordEntry: false`; that change is not an independently undoable
-action. Without a parsed format it returns without changing state. This typed API does not validate
-arbitrary JavaScript side values. It corrects sides, not individual doubles rotation.
+rule-driven corrections can use `recordEntry: false`: the correction is then attached to the entry
+before it (the point just played), replayed with it and undone with it, so `undo` takes back the
+point and its correction together and a rebuild keeps the server. With nothing on the timeline before
+it, it orients the next point only. A correction that changes nothing records nothing. A side other
+than 0 or 1 is refused, and so is any call on a format that does not parse. It corrects sides, not
+individual doubles rotation.
 
 Tennis tiebreak derivation uses one point for the first server, then alternating two-point turns.
 The applicable final-set format is resolved independently; do not apply the opening-set service
 pattern to a different final-set tiebreak. `setServer(1)` means side 2 should serve next.
+
+## Challenges and annotations
+
+### addChallenge
+
+```ts
+addChallenge(options: { sideNumber: 1 | 2; timestamp?: string; [key: string]: any }): void
+```
+
+Record a challenge: the side that challenged and any host fields, as a timeline entry
+`{ type: 'challenge', data: { sideNumber, ... } }`. It changes no score, is kept through every rebuild,
+clears redo, and `undo` takes it back when it was recorded last. A challenge entry a host wrote onto the
+timeline itself in that shape is read the same way. A `sideNumber` other than 1 or 2 is refused.
+
+### addAnnotation
+
+```ts
+addAnnotation(data: Record<string, any>, options?: { timestamp?: string }): void
+```
+
+Record host data on the timeline (`{ type: 'annotation', data }`). It changes no score and is kept and
+undone like a challenge.
+
+---
 
 ## Additional statistics
 

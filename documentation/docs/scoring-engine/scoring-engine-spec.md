@@ -913,7 +913,8 @@ timeline undone.
    replay as given, and the old result stands (`replayLossless.test.ts`, "a record with no timeline
    replays its points with their recorded facts"). **The first recorded action on such a record first
    builds a timeline from its points**, so a later rebuild keeps them ("a new point on a record with no
-   timeline keeps the points before it through a rebuild").
+   timeline keeps the points before it through a rebuild"). Its rebuild keeps the matchUp's identity,
+   participants and host metadata, like every rebuild (§ 12.1; `aLegacyRebuildKeepsIdentity.test.ts`).
 3. **Points saved under the old tiebreak rotation** (before #5512): loaded as stored; calculated servers
    are re-derived on the next rebuild, supplied ones kept.
 4. **Substitution events without `setNumber`** (before 2026-10-17): placed by the point they preceded.
