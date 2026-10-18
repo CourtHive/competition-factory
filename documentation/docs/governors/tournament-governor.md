@@ -87,6 +87,11 @@ contains it (tieMatchUps included). The resource is merged as on every other ele
 or `identifier` is replaced), and a `modifyMatchUp` notice is emitted so subscribers refresh. Public projections
 (`getEventData`, published or not) carry it on the matchUp.
 
+Every other element announces the change on its own topic, and only when its resources changed (re-adding a
+resource it already holds, or removing one it does not hold, announces nothing): a participant or person
+`modifyParticipants`, a venue or court `modifyVenue`, the parent organisation or the tournament itself
+`modifyTournamentDetail`. `removeOnlineResource` does the same.
+
 ```js
 engine.addOnlineResource({
   onlineResource: {
