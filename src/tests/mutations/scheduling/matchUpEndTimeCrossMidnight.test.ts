@@ -8,6 +8,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { INVALID_END_TIME } from '@Constants/errorConditionConstants';
 import { END_DATE, END_TIME } from '@Constants/timeItemConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
@@ -62,7 +63,7 @@ describe('addMatchUpEndTime cross-midnight handling', () => {
     // rolling 09:00 to the next day yields a 23h span — beyond the sanity cap, so it stays an error
     const endResult: any = addMatchUpEndTime({ drawDefinition, matchUpId, endTime: '09:00' });
     expect(endResult.success).toBeUndefined();
-    expect(endResult.error).toBeDefined();
+    expect(endResult.error).toEqual(INVALID_END_TIME);
 
     const { matchUp }: any = publicFindDrawMatchUp({ drawDefinition, matchUpId });
     expect(matchUp.timeItems.find((timeItem: any) => timeItem.itemType === END_DATE)).toBeUndefined();

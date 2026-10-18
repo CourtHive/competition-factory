@@ -7,6 +7,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
+import { INVALID_PARTICIPANT_IDS, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { MALE } from '@Constants/genderConstants';
 
 function seed(participantsCount = 32) {
@@ -203,7 +204,7 @@ describe('engine.build.event — fluent EventBuilder', () => {
     tournamentEngine.reset();
     const result: any = tournamentEngine.build.event({ eventName: 'No state' }).singles().draw(8).create();
     expect(result.success).toEqual(false);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
     expect(result.eventId).toBeDefined();
     expect(result.directives.length).toBeGreaterThan(0);
   });
@@ -219,6 +220,6 @@ describe('engine.build.event — fluent EventBuilder', () => {
       .create({ rollbackOnError: true });
     // executionQueue surfaces a rolledBack flag in the error envelope
     expect(result.success).toEqual(false);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
   });
 });

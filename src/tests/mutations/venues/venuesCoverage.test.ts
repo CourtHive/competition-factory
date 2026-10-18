@@ -8,8 +8,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { BLOCKED } from '@Constants/bookingTypeConstants';
+import {
+  VENUE_NOT_FOUND,
+  COURT_EXISTS,
+  INVALID_DATE,
+  SCHEDULE_CONFLICT_COURT_UNAVAILABLE,
+} from '@Constants/errorConditionConstants';
 import {
   BOOKING_NOT_FOUND,
   COURT_NOT_FOUND,
@@ -114,7 +119,7 @@ describe('addVenue guards', () => {
         dateAvailability: [{ date: 'bad-date', startTime: '08:00', endTime: '18:00' }],
       },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DATE);
   });
 
   it('validates defaultStartTime and defaultEndTime are both present', () => {
@@ -189,7 +194,7 @@ describe('modifyVenue guards', () => {
         dateAvailability: [{ date: 'bad-date', startTime: '08:00', endTime: '18:00' }],
       },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DATE);
 
     // Empty array should be accepted (clears dateAvailability)
     result = tournamentEngine.modifyVenue({
@@ -440,7 +445,7 @@ describe('addCourt edge cases', () => {
       courtId: 'fixed-court-id',
       court: { courtName: 'C2' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(COURT_EXISTS);
   });
 
   it('addCourts with courtTimings and default availability', () => {
@@ -602,7 +607,7 @@ describe('courtAvailability conflict detection with deterministic court assignme
       });
 
       // Should get conflict error since matchUp is outside the new window
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual(SCHEDULE_CONFLICT_COURT_UNAVAILABLE);
       expect(result.matchUpIds).toBeDefined();
     }
   });

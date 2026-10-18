@@ -4,9 +4,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { MISSING_PARTICIPANT_IDS, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { DOUBLES } from '@Constants/eventConstants';
+import {
+  MISSING_PARTICIPANT_IDS,
+  MISSING_TOURNAMENT_RECORD,
+  PARTICIPANT_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 
 it('can destroy multiple pair entries at once', () => {
   const doublesId = 'doublesId';
@@ -77,7 +81,7 @@ it('returns errors when participantIds are invalid', () => {
     eventId: doublesId,
   });
   // All fail, so error should be returned
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   expect(result.success).toBeUndefined();
 });
 

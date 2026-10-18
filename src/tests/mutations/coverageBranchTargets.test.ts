@@ -14,7 +14,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import {
+  INVALID_VALUES,
+  MISSING_DRAW_DEFINITION,
+  MISSING_TOURNAMENT_RECORD,
+  INVALID_PARTICIPANT_ID,
+  NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 import { COMPLETED, DEFAULTED } from '@Constants/matchUpStatusConstants';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 
@@ -253,7 +259,7 @@ describe('personRequests branch coverage', () => {
       personId,
       requests: [{ date: '2025-01-01' }], // no requestType
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('addPersonRequests with DO_NOT_SCHEDULE request', () => {
@@ -561,7 +567,7 @@ describe('getDraftState branch coverage', () => {
     const result = getDraftState({
       drawDefinition: { drawId: 'd1', structures: [] } as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(NOT_FOUND);
   });
 
   it('returns summary for a valid draft state', () => {
@@ -611,7 +617,7 @@ describe('setDrawPositionPreferences branch coverage', () => {
       participantId: '',
       preferences: [1, 2],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_PARTICIPANT_ID);
   });
 
   it('returns error for non-array preferences', () => {
@@ -629,7 +635,7 @@ describe('setDrawPositionPreferences branch coverage', () => {
       participantId: 'p1',
       preferences: [1, 2],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(NOT_FOUND);
   });
 });
 

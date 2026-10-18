@@ -8,6 +8,7 @@ import {
   MISSING_TIME_ITEMS,
   MISSING_TOURNAMENT_RECORD,
   NOT_FOUND,
+  PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 import {
   getTimeItem,
@@ -407,7 +408,7 @@ describe('getParticipantTimeItem', () => {
       itemType: 'TEST',
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   it('returns NOT_FOUND info when participant has no timeItems', () => {

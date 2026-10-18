@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@Fixtures/policies/POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import {
   CERT_ACTIVE,
   CERT_SUSPENDED,
@@ -21,6 +22,12 @@ import {
   ASSIGN_CONFIRMED,
   ASSIGN_COMPLETED,
   CONFLICT_BLOCK,
+  CERTIFICATION_NOT_FOUND,
+  EVALUATION_NOT_EDITABLE,
+  INVALID_EVALUATION_SCORES,
+  INVALID_OFFICIATING_STATUS_TRANSITION,
+  OFFICIAL_RECORD_EXISTS,
+  OFFICIAL_RECORD_NOT_FOUND,
 } from '@Constants/officiatingConstants';
 
 function createTestRecord(overrides?: any) {
@@ -65,7 +72,7 @@ describe('Officiating Engine — State Management', () => {
     expect(result.success).toBe(true);
 
     result = createTestRecord({ officialRecordId: 'rec-1' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(OFFICIAL_RECORD_EXISTS);
   });
 
   it('setState and getState round-trip', () => {
@@ -94,12 +101,12 @@ describe('Officiating Engine — State Management', () => {
 
   it('setActiveOfficialRecordId validates record exists', () => {
     let result: any = officiatingEngine.setActiveOfficialRecordId('nonexistent');
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(OFFICIAL_RECORD_NOT_FOUND);
   });
 
   it('requires personId to create a record', () => {
     let result: any = officiatingEngine.createOfficialRecord({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -181,7 +188,7 @@ describe('Officiating Engine — Certifications', () => {
       certificationId,
       toStatus: CERT_ACTIVE,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
   });
 
   it('validates certification', () => {
@@ -283,7 +290,7 @@ describe('Officiating Engine — Evaluations', () => {
       evaluationId,
       updates: { overallRating: 5.0 },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(EVALUATION_NOT_EDITABLE);
   });
 
   it('transitions evaluation through full workflow', () => {
@@ -313,7 +320,7 @@ describe('Officiating Engine — Evaluations', () => {
     const { evaluationId } = result.evaluation;
 
     result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: EVAL_APPROVED });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
   });
 
   it('rejected evaluation can return to DRAFT', () => {
@@ -350,7 +357,7 @@ describe('Officiating Engine — Evaluations', () => {
       evaluatorPersonId: 'evaluator-001',
       overallRating: -1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -393,7 +400,7 @@ describe('Officiating Engine — Assignments', () => {
     const { assignmentId } = result.assignment;
 
     result = officiatingEngine.transitionAssignmentStatus({ assignmentId, toStatus: ASSIGN_COMPLETED });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
   });
 
   it('removes an assignment', () => {
@@ -599,7 +606,7 @@ describe('Officiating Engine — Evaluation Policy & Template', () => {
       evaluationId,
       toStatus: EVAL_SUBMITTED,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_EVALUATION_SCORES);
     expect(result.error.code).toBe('ERR_INVALID_EVALUATION_SCORES');
   });
 
@@ -680,7 +687,7 @@ describe('Officiating Engine — Execution Queue', () => {
       true,
     );
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(CERTIFICATION_NOT_FOUND);
     expect(result.rolledBack).toBe(true);
 
     // State should be rolled back — no certifications
@@ -711,10 +718,10 @@ describe('Officiating Engine — Execution Queue', () => {
 
   it('rejects invalid directives', () => {
     let result: any = officiatingEngine.executionQueue('not an array' as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
 
     result = officiatingEngine.executionQueue([{ method: 'nonexistentMethod' }]);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -824,7 +831,7 @@ describe('Officiating Engine — setOfficialRecord Validation', () => {
 
   it('setOfficialRecord with missing officialRecordId returns error', () => {
     let result: any = officiatingEngine.setOfficialRecord({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.message).toContain('Missing officialRecordId');
   });
 });
@@ -861,7 +868,7 @@ describe('Officiating Engine — Execution Queue Extended', () => {
 
   it('rejects non-object directive in array', () => {
     let result: any = officiatingEngine.executionQueue([42 as any]);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.message).toContain('directive must be an object');
   });
 
@@ -882,7 +889,7 @@ describe('Officiating Engine — Execution Queue Extended', () => {
       false,
     );
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(CERTIFICATION_NOT_FOUND);
     expect(result.rolledBack).toBe(false);
 
     // State should NOT be rolled back — certification from first directive should persist

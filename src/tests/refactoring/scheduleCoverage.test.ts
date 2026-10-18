@@ -24,6 +24,10 @@ import {
   NO_VALID_DATES,
   PARTICIPANT_NOT_FOUND,
   SCHEDULE_CONFLICT_DOUBLE_BOOKING,
+  INVALID_TIME,
+  MISSING_DRAW_DEFINITION,
+  MISSING_TOURNAMENT_RECORD,
+  VENUE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
 const VENUE_ID = 'venue1';
@@ -139,7 +143,7 @@ describe('assignMatchUpVenue coverage', () => {
       venueId: 'nonexistent-venue',
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(VENUE_NOT_FOUND);
   });
 });
 
@@ -509,7 +513,7 @@ describe('removeMatchUpCourtAssignment coverage', () => {
       courtId: 'c1',
       drawId: 'nonexistent-draw',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 });
 
@@ -876,7 +880,7 @@ describe('schedule timing coverage', () => {
       drawId,
       schedule: { stopTime: 'bad' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIME);
   });
 
   it('addMatchUpStopTime returns INVALID_STOP_TIME when before start', () => {
@@ -911,7 +915,7 @@ describe('schedule timing coverage', () => {
       drawId,
       schedule: { resumeTime: 'bad' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIME);
   });
 
   it('stop/resume returns EXISTING_END_TIME when end already set', () => {
@@ -973,7 +977,7 @@ describe('setMatchUpHomeParticipantId coverage', () => {
   it('returns error for missing params', () => {
     setupTournament();
     let result: any = tournamentEngine.setMatchUpHomeParticipantId({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('returns error for invalid participantId', () => {
@@ -1020,7 +1024,7 @@ describe('bulkScheduleMatchUps coverage', () => {
     let result: any = tournamentEngine.bulkScheduleMatchUps({
       matchUpContextIds: [{ matchUpId: matchUps[0].matchUpId, drawId, tournamentId }],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
   });
 
   it('schedules with matchUpContextIds and schedule', () => {
@@ -1042,7 +1046,7 @@ describe('bulkUpdateCourtAssignments coverage', () => {
     let result: any = tournamentEngine.bulkUpdateCourtAssignments({
       courtDayDate: '2026-06-15',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
   });
 
   it('updates court assignments for matchUps', () => {
@@ -1062,7 +1066,7 @@ describe('bulkUpdateCourtAssignments coverage', () => {
       courtDayDate: startDate,
       courtAssignments: [{ tournamentId: 'nonexistent-tournament', matchUpId: matchUps[0].matchUpId, courtId, drawId }],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 });
 
@@ -1308,7 +1312,7 @@ describe('matchUpScheduleChange coverage', () => {
       sourceMatchUpContextIds: {},
       targetMatchUpContextIds: {},
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
   });
 
   it('assigns source matchUp to target court (one-way move)', () => {
@@ -1339,7 +1343,7 @@ describe('matchUpScheduleChange coverage', () => {
       targetMatchUpContextIds: { matchUpId: matchUps[1].matchUpId, drawId, tournamentId },
       courtDayDate: startDate,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
   });
 
   it('swaps courts between two matchUps', () => {
@@ -1398,7 +1402,7 @@ describe('addMatchUpTimeModifiers coverage', () => {
       drawId,
       schedule: { scheduledDate: startDate, timeModifiers: 'not-an-array' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('does not add duplicate timeModifiers', () => {

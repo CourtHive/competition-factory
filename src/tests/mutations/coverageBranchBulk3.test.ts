@@ -46,6 +46,9 @@ import {
   POLICY_NOT_FOUND,
   SCORES_PRESENT,
   STRUCTURE_NOT_FOUND,
+  INVALID_CONFIGURATION,
+  INVALID_PARTICIPANT_IDS,
+  INVALID_PARTICIPANT_TYPE,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -91,7 +94,7 @@ describe('generateRoundRobinWithPlayOff branch coverage', () => {
       drawSize: 0,
       isMock: true,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_CONFIGURATION);
   });
 
   it('uses default playoffGroups when structureOptions is undefined', () => {
@@ -117,7 +120,7 @@ describe('generateAdHocRounds branch coverage', () => {
       roundsCount: 1,
       event: {} as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('handles roundsCount of 0 gracefully', () => {
@@ -402,14 +405,14 @@ describe('setEventDisplay branch coverage', () => {
 describe('enableCourts branch coverage', () => {
   it('returns error when no tournamentRecords', () => {
     const result = enableCourts({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
   });
 
   it('returns error when no courtIds and no enableAll', () => {
     const result = enableCourts({
       tournamentRecords: { t1: { tournamentId: 't1', venues: [] } },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
   });
 
   it('succeeds with enableAll and empty venues', () => {
@@ -713,7 +716,7 @@ describe('getAccessorValue branch coverage', () => {
 describe('removePolicy branch coverage', () => {
   it('returns error when required params are missing', () => {
     const result = removePolicy({ policyType: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns POLICY_NOT_FOUND when no policies applied', () => {
@@ -863,7 +866,7 @@ describe('modifyIndividualParticipantIds branch coverage', () => {
       groupingParticipantId: 'g1',
       individualParticipantIds: ['p1'],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_PARTICIPANT_TYPE);
   });
 
   it('returns error when individualParticipantIds contains non-INDIVIDUAL participants', () => {
@@ -878,7 +881,7 @@ describe('modifyIndividualParticipantIds branch coverage', () => {
       groupingParticipantId: 'g1',
       individualParticipantIds: ['p1'],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
   });
 });
 
@@ -1098,6 +1101,6 @@ describe('assignSeedPositions branch coverage', () => {
       drawId: 'd1',
       event: {} as any,
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
   });
 });

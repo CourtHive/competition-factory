@@ -7,13 +7,20 @@ import { INDIVIDUAL, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { TEAM_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { RANKING } from '@Constants/scaleConstants';
 import { WTN } from '@Constants/ratingConstants';
+import {
+  INVALID_EVENT_TYPE,
+  INVALID_VALUES,
+  MISSING_TOURNAMENT_RECORD,
+  MISSING_VALUE,
+  TEAM_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 
 test('scaledTeamAssignment with no tournamentRecord returns error', () => {
   const result = tournamentEngine.scaledTeamAssignment({
     teamParticipantIds: [],
     scaleAttributes: { scaleName: WTN, scaleType: RANKING, eventType: SINGLES_EVENT },
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
 });
 
 test('scaledTeamAssignment with invalid params returns error', () => {
@@ -26,21 +33,21 @@ test('scaledTeamAssignment with invalid params returns error', () => {
   const result = tournamentEngine.scaledTeamAssignment({
     scaledParticipants: [{ participantId: 'test', scaleValue: 1 }],
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
 
   // Invalid: scaledParticipants is not an array
   const result2 = tournamentEngine.scaledTeamAssignment({
     teamParticipantIds: ['team1'],
     scaledParticipants: 'invalid' as any,
   });
-  expect(result2.error).toBeDefined();
+  expect(result2.error).toEqual(INVALID_VALUES);
 
   // Invalid: scaleAttributes is not an object or has no keys
   const result3 = tournamentEngine.scaledTeamAssignment({
     teamParticipantIds: ['team1'],
     scaleAttributes: {} as any,
   });
-  expect(result3.error).toBeDefined();
+  expect(result3.error).toEqual(INVALID_VALUES);
 });
 
 test('scaledTeamAssignment with missing scaling details returns error', () => {
@@ -53,7 +60,7 @@ test('scaledTeamAssignment with missing scaling details returns error', () => {
   const result = tournamentEngine.scaledTeamAssignment({
     teamParticipantIds: ['team1'],
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_VALUE);
 });
 
 test('scaledTeamAssignment via eventId', () => {
@@ -91,7 +98,7 @@ test('scaledTeamAssignment with eventId on non-TEAM event returns error', () => 
     individualParticipantIds: ['test-id'],
     eventId,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_EVENT_TYPE);
 });
 
 test('scaledTeamAssignment with teamsCount creates teams', () => {
@@ -234,7 +241,7 @@ test('scaledTeamAssignment with no relevant teams returns error', () => {
     teamParticipantIds: ['nonexistent-team'],
     scaledParticipants: [{ participantId: 'test', scaleValue: 1 }],
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(TEAM_NOT_FOUND);
 });
 
 test('scaledTeamAssignment with initialTeamIndex exceeding array length resets to 0', () => {

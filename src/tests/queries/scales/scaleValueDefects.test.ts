@@ -5,6 +5,7 @@ import { getAvgWTN } from '@Query/scales/getAvgWTN';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { RATING, SEEDING } from '@Constants/scaleConstants';
@@ -100,7 +101,7 @@ describe('getConvertedRating — an empty rating must not become the worst ratin
       matchUpType: SINGLES,
     });
     expect(result.convertedRating).toBeUndefined();
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('agrees between the string and number representations', () => {

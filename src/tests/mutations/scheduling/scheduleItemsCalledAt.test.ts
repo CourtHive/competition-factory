@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 /**
@@ -107,7 +108,7 @@ describe('addMatchUpScheduleItems covers calledAt', () => {
       drawId,
       schedule: { calledAt: 1234 },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(storedSchedule(matchUpId, drawId).calledAt).toBeUndefined();
   });
 });

@@ -4,7 +4,7 @@ import { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant'
 import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 
 // constants
-import { RESULT_NOT_VALIDATED } from '@Constants/errorConditionConstants';
+import { RESULT_NOT_VALIDATED, INVALID_VALUES, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { CHALLENGED, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
@@ -122,7 +122,7 @@ describe('when nothing should move', () => {
     const { drawDefinition, structure } = ladder();
     playedMatchUp({ structure, challenger: 'p2', defender: 'p4' }); // p2 is already above p4
     const result: any = moveOnResult({ drawDefinition, structure });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -157,7 +157,7 @@ describe('manual removal — the escape hatch policy deliberately does not provi
   test('removing someone not on the ladder is an error, not a silent no-op', () => {
     const { drawDefinition } = ladder();
     const result: any = removeLadderParticipant({ participantId: 'ghost', removedAt: AT, drawDefinition });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 });
 
@@ -231,7 +231,7 @@ describe('the attestation GATE — a provisional score must not move a standing'
     const matchUp = playedMatchUp({ structure, challenger: 'p4', defender: 'p2' });
     matchUp.matchUpStatus = CHALLENGED;
     const result: any = moveOnResult({ drawDefinition, structure });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(standing(structure)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
   });
 });
@@ -263,13 +263,13 @@ describe('FORFEIT — the one trigger with no score to attest', () => {
       structure,
       appliedAt: AT,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('an unknown trigger is refused', () => {
     const { drawDefinition, structure } = ladder();
     const result: any = applyLadderMovement({ drawDefinition, structure, appliedAt: AT, trigger: 'WISHFUL' } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
