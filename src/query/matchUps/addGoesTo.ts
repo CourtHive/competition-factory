@@ -195,16 +195,16 @@ export function holdGoesTo({
   const held = matchUps.map((matchUp) => {
     const range = matchUp.finishingPositionRange;
     return {
-      fields: GOES_TO_FIELDS.map((key) => [key, key in matchUp, matchUp[key]] as const),
+      storedValues: GOES_TO_FIELDS.map((key) => [key, key in matchUp, matchUp[key]] as const),
       range: range && { object: range, values: { ...range } },
       matchUp,
     };
   });
 
   return () => {
-    for (const { matchUp, fields, range } of held) {
+    for (const { matchUp, storedValues, range } of held) {
       const target = matchUp as Record<(typeof GOES_TO_FIELDS)[number], unknown>;
-      for (const [key, present, value] of fields) {
+      for (const [key, present, value] of storedValues) {
         if (present) target[key] = value;
         else delete target[key];
       }
