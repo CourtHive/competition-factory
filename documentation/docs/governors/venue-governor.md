@@ -78,7 +78,7 @@ engine.addVenue({
 - `defaultStartTime` and `defaultEndTime` must be provided **together** — setting only one returns an error
 - `defaultEndTime` must be after `defaultStartTime`
 - These defaults are inherited by all courts in the venue. See [Venue-Level Scheduling Constraints](../concepts/venues-courts.md#venue-level-scheduling-constraints)
-- Setting `isPrimary: true` automatically clears `isPrimary` from any previously-primary venue (at most one venue can be primary). See [Primary Venue](../concepts/venues-courts.md#primary-venue)
+- Setting `isPrimary: true` automatically clears `isPrimary` from any previously-primary venue (at most one venue can be primary). See [Primary Venue](../concepts/venues-courts.md#primary-venue). The venue that loses the flag is announced with a `modifyVenue` notice (as with `modifyVenue`)
 
 ---
 
@@ -168,6 +168,9 @@ engine.disableCourts({
   dates, // optional - if not provided, courts will be disalbed for all dates
 });
 ```
+
+`disableCourts`, `enableCourts`, `disableVenues` and `enableVenues` send a `modifyVenue` notice for each venue
+they changed, and none for a venue already in the requested state.
 
 ---
 

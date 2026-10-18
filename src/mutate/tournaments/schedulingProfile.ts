@@ -1,12 +1,13 @@
 import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
-import {
-  getMultipleVenueRoundIssues,
-  getUpdatedSchedulingProfile,
-} from '@Query/matchUps/scheduling/getUpdatedSchedulingProfile';
 import { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 import { getEventIdsAndDrawIds } from '@Query/tournaments/getEventIdsAndDrawIds';
 import { getCompetitionVenues } from '@Query/venues/venuesAndCourtsGetter';
 import { addNotice } from '@Global/state/globalState';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import {
+  getMultipleVenueRoundIssues,
+  getUpdatedSchedulingProfile,
+} from '@Query/matchUps/scheduling/getUpdatedSchedulingProfile';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
@@ -73,17 +74,22 @@ export function getSchedulingProfile({ tournamentRecords, tournamentRecord }: Ge
       if (result.error) return result;
 
       issues.push(...getMultipleVenueRoundIssues({ schedulingProfile }));
-      return { schedulingProfile, modifications, issues };
+      return { schedulingProfile: profileCopy(schedulingProfile), modifications, issues };
     }
 
     const multipleVenueRoundIssues = getMultipleVenueRoundIssues({ schedulingProfile });
     if (multipleVenueRoundIssues.length) {
-      return { schedulingProfile, modifications: 0, issues: multipleVenueRoundIssues };
+      return { schedulingProfile: profileCopy(schedulingProfile), modifications: 0, issues: multipleVenueRoundIssues };
     }
   }
 
-  return { schedulingProfile, modifications: 0 };
+  return { schedulingProfile: profileCopy(schedulingProfile), modifications: 0 };
 }
+
+// A copy, never the stored profile: the schedulers annotate the rounds they are handed
+// (`canScheduledMatchUpIds`, `possibleToSchedulePct`), and on the stored profile that was a write
+// no notice announced. The profile is changed only by setSchedulingProfile, which announces it.
+const profileCopy = <T>(schedulingProfile: T): T => makeDeepCopy(schedulingProfile, false, true);
 
 type SetSchedulingProfileArgs = {
   tournamentRecords: TournamentRecords;
