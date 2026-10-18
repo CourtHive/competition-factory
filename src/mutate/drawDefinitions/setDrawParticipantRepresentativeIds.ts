@@ -33,7 +33,8 @@ export function setDrawParticipantRepresentativeIds({
     value: representativeParticipantIds,
   };
 
-  const result = addDrawDefinitionExtension({ drawDefinition, extension });
+  // announced below, where the caller's disableNotice is honoured
+  const result = addDrawDefinitionExtension({ drawDefinition, extension, disableNotice: true });
   if (result.error) return result;
 
   if (!disableNotice) {

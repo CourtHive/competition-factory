@@ -1,4 +1,5 @@
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
+import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
@@ -74,6 +75,7 @@ export function removeLadderParticipant(params: RemoveArgs): ResultType & { vaca
   // The shared writer, as every other standing move uses: it skips an assignment with no
   // participantId and supplies the eventType without which no scale item is written at all.
   mirrorStandingToScale({ ...params, appliedAt: removedAt, touched });
+  ladderStandingNotice({ ...params, structure });
 
   return { ...SUCCESS, vacatedPosition };
 }

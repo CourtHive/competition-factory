@@ -3,8 +3,9 @@ import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompe
 import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
 
 // Mutate
-import { processCompetitionMatchUp } from './processCompetitionMatchUp';
+import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { processCompetitionMatchUp } from './processCompetitionMatchUp';
 
 // constants
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -37,6 +38,10 @@ export function processCompetitionRound(params: ProcessCompetitionRoundArgs): Re
   // Check if this round was already processed
   if (competitionState.roundStates[roundNumber]?.processed) return { ...SUCCESS };
 
+  // the state is the live value, which processCompetitionMatchUp edits in place: snapshot it first
+  const attributes = ['competitionState'];
+  const before = attributesSnapshot(drawDefinition, attributes);
+
   // Process all completed matchUps in this round
   const roundMatchUps = matchUps.filter(
     (m) =>
@@ -62,6 +67,8 @@ export function processCompetitionRound(params: ProcessCompetitionRoundArgs): Re
       value: updatedState,
     });
   }
+
+  announceDrawChange({ tournamentRecord, drawDefinition, attributes, before, event });
 
   return { ...SUCCESS };
 }

@@ -1,8 +1,9 @@
+import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 
 // constants and types
-import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { DRAFT_STATE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -17,12 +18,15 @@ type SetDrawPositionPreferencesArgs = {
   drawDefinition?: DrawDefinition;
   participantId: string;
   preferences: number[];
+  event?: Event;
 };
 
 export function setDrawPositionPreferences({
+  tournamentRecord,
   drawDefinition,
   participantId,
   preferences,
+  event,
 }: SetDrawPositionPreferencesArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!participantId) return { error: INVALID_PARTICIPANT_ID };
@@ -50,6 +54,10 @@ export function setDrawPositionPreferences({
   const maxPrefs = draftState.preferencesCount ?? 3;
   const trimmedPreferences = preferences.slice(0, maxPrefs);
 
+  // the draft state is the live value, edited in place below: snapshot it first
+  const attributes = ['draftState'];
+  const before = attributesSnapshot(drawDefinition, attributes);
+
   // store preferences
   draftState.preferences[participantId] = trimmedPreferences;
 
@@ -64,6 +72,8 @@ export function setDrawPositionPreferences({
     name: DRAFT_STATE,
     value: draftState,
   });
+
+  announceDrawChange({ tournamentRecord, drawDefinition, attributes, before, event });
 
   return { ...SUCCESS };
 }

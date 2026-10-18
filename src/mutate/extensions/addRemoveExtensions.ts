@@ -1,3 +1,4 @@
+import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { findParticipant } from '@Acquire/findParticipant';
 import { removeExtension } from './removeExtension';
@@ -19,6 +20,7 @@ type AddExtensionArgs = {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   participantId?: string;
+  disableNotice?: boolean;
   creationTime?: boolean;
   extension: Extension;
   event?: Event;
@@ -39,12 +41,18 @@ export function addTournamentExtension(params: AddExtensionArgs): {
 
 export function addDrawDefinitionExtension(params: AddExtensionArgs) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
-  if (!params.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
-  return addExtension({
+  const { tournamentRecord, drawDefinition, disableNotice, event } = params;
+  if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
+  const before = attributesSnapshot(drawDefinition, []);
+  const result = addExtension({
     creationTime: params.creationTime,
-    element: params.drawDefinition,
     extension: params.extension,
+    element: drawDefinition,
   });
+  if (!result.error && !disableNotice) {
+    announceDrawChange({ tournamentRecord, drawDefinition, attributes: [], before, event });
+  }
+  return result;
 }
 
 // an event's extensions are event attributes: a change to them is announced with MODIFY_EVENT
@@ -92,8 +100,14 @@ export function removeTournamentExtension(params): {
 
 export function removeDrawDefinitionExtension(params) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
-  if (!params.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
-  return removeExtension({ element: params.drawDefinition, name: params.name });
+  const { tournamentRecord, drawDefinition, disableNotice, event } = params;
+  if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
+  const before = attributesSnapshot(drawDefinition, []);
+  const result = removeExtension({ element: drawDefinition, name: params.name });
+  if (!result.error && !disableNotice) {
+    announceDrawChange({ tournamentRecord, drawDefinition, attributes: [], before, event });
+  }
+  return result;
 }
 
 export function removeEventExtension(params) {

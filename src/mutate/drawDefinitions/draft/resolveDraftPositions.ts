@@ -4,6 +4,7 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { randomSource } from '@Tools/prng';
 
 // constants and types
@@ -32,8 +33,15 @@ export function resolveDraftPositions({
 }: ResolveDraftPositionsArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  const draftState = firstClassOrExtension({ element: drawDefinition, attribute: 'draftState', name: DRAFT_STATE });
-  if (!draftState) return { error: NOT_FOUND, info: 'No active draft found' };
+  const storedDraftState = firstClassOrExtension({
+    element: drawDefinition,
+    attribute: 'draftState',
+    name: DRAFT_STATE,
+  });
+  if (!storedDraftState) return { error: NOT_FOUND, info: 'No active draft found' };
+  // A preview resolves a COPY. The tiers are marked resolved as they are worked, and marking the
+  // stored ones would change the record and make the real resolution skip every previewed tier.
+  const draftState = applyResults ? storedDraftState : makeDeepCopy(storedDraftState, false, true);
   if (draftState.status === 'COMPLETED') return { error: INVALID_VALUES, info: 'Draft is already complete' };
 
   const structureId = draftState.structureId;

@@ -609,29 +609,24 @@ function buildMatchUpModifications({
     structure: sourceStructure,
   });
 
+  // The source matchUps are the STORED ones, and this is a generator: it describes the edges the
+  // attached structures will need and leaves the record alone. Writing them here pointed stored
+  // matchUps at structures that only exist if the caller goes on to attach them, unannounced.
+  // attachStructures applies each modification (and re-derives the edges) when it attaches.
   sourceStructureMatchUps.forEach((matchUp) => {
+    const edges: { loserMatchUpId?: string; winnerMatchUpId?: string } = {};
     const loserMatchUpId = goesToMap?.loserMatchUpIds[matchUp.matchUpId];
-    if (loserMatchUpId && matchUp.loserMatchUpId !== loserMatchUpId) {
-      matchUp.loserMatchUpId = loserMatchUpId;
-      const modification = {
-        tournamentId: tournamentRecord?.tournamentId,
-        eventId: params.event?.eventId,
-        context: stack,
-        matchUp,
-      };
-      matchUpModifications.push(modification);
-    }
+    if (loserMatchUpId && matchUp.loserMatchUpId !== loserMatchUpId) edges.loserMatchUpId = loserMatchUpId;
     const winnerMatchUpId = goesToMap?.winnerMatchUpIds[matchUp.matchUpId];
-    if (winnerMatchUpId && matchUp.winnerMatchUpId !== winnerMatchUpId) {
-      matchUp.winnerMatchUpId = winnerMatchUpId;
-      const modification = {
-        tournamentId: tournamentRecord?.tournamentId,
-        eventId: params.event?.eventId,
-        context: stack,
-        matchUp,
-      };
-      matchUpModifications.push(modification);
-    }
+    if (winnerMatchUpId && matchUp.winnerMatchUpId !== winnerMatchUpId) edges.winnerMatchUpId = winnerMatchUpId;
+    if (!Object.keys(edges).length) return;
+    matchUpModifications.push({
+      tournamentId: tournamentRecord?.tournamentId,
+      eventId: params.event?.eventId,
+      // the edges alone: a copy of the whole matchUp would undo anything written to it before attach
+      matchUp: { matchUpId: matchUp.matchUpId, ...edges },
+      context: stack,
+    });
   });
 
   return matchUpModifications;
