@@ -624,6 +624,8 @@ export function relabelWithoutDirection(params: {
     propagateExitStatus: params.propagateExitStatus,
     tournamentRecord: params.tournamentRecord,
     matchUpsMap: params.matchUpsMap,
+    // the status being entered: without it a WALKOVER <-> DEFAULTED re-entry never relabels the carry (`relabelsTheCarry`)
+    sourceMatchUpStatus: matchUpStatus,
     sourceMatchUpId: matchUpId,
     event: params.event,
     loserParticipantId,
