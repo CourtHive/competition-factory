@@ -45,6 +45,7 @@ export function addEvaluation({
   error?: any;
   context?: { message: string };
   evaluation?: OfficialEvaluation;
+  evaluationId?: string;
   success?: boolean;
 } {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
@@ -84,5 +85,5 @@ export function addEvaluation({
   officialRecord.evaluations.push(evaluation);
   officialRecord.updatedAt = now;
 
-  return { ...SUCCESS, evaluation };
+  return { ...SUCCESS, evaluation, evaluationId: evaluation.evaluationId };
 }
