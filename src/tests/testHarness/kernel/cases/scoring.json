@@ -1,0 +1,90 @@
+[
+  {
+    "caseId": "scoring.points-to-game.tb7.one-behind.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET1-S:6/TB7", "games": [6, 6], "points": [5, 6] },
+    "expected": { "kind": "value", "value": [3, 1] },
+    "note": "the 2026-10-17 survey's witness: 6-6, 7-6, 8-6"
+  },
+  {
+    "caseId": "scoring.points-to-game.tb7.two-behind.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET1-S:6/TB7", "games": [6, 6], "points": [4, 6] },
+    "expected": { "kind": "value", "value": [4, 1] }
+  },
+  {
+    "caseId": "scoring.points-to-game.tb7.level-extended.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET1-S:6/TB7", "games": [6, 6], "points": [6, 6] },
+    "expected": { "kind": "value", "value": [2, 2] }
+  },
+  {
+    "caseId": "scoring.points-to-game.tb7-noad.one-behind.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET1-S:6/TB7NOAD", "games": [6, 6], "points": [5, 6] },
+    "expected": { "kind": "value", "value": [2, 1] },
+    "note": "win by one: 6-6, 7-6"
+  },
+  {
+    "caseId": "scoring.points-to-game.tiebreak-only.one-behind.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET1-S:TB7", "points": [5, 6] },
+    "expected": { "kind": "value", "value": [3, 1] }
+  },
+  {
+    "caseId": "scoring.points-to-game.standard.love-all.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET3-S:6/TB7", "points": [0, 0] },
+    "expected": { "kind": "value", "value": [4, 4] }
+  },
+  {
+    "caseId": "scoring.points-to-game.standard.fifteen-forty.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET3-S:6/TB7", "points": [1, 3] },
+    "expected": { "kind": "value", "value": [4, 1] },
+    "note": "30-40, deuce, advantage, game"
+  },
+  {
+    "caseId": "scoring.points-to-game.standard.deuce.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET3-S:6/TB7", "points": [3, 3] },
+    "expected": { "kind": "value", "value": [2, 2] }
+  },
+  {
+    "caseId": "scoring.points-to-game.standard.advantage-out.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET3-S:6/TB7", "points": [3, 4] },
+    "expected": { "kind": "value", "value": [3, 1] }
+  },
+  {
+    "caseId": "scoring.points-to-game.noad.deciding-point.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET3-S:6NOAD/TB7", "points": [3, 3] },
+    "expected": { "kind": "value", "value": [1, 1] }
+  },
+  {
+    "caseId": "scoring.points-to-game.noad.fifteen-forty.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET3-S:6NOAD/TB7", "points": [1, 3] },
+    "expected": { "kind": "value", "value": [3, 1] }
+  },
+  {
+    "caseId": "scoring.points-to-game.decided-game.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET3-S:6/TB7", "points": [4, 1] },
+    "expected": { "kind": "value", "value": [0, 0] },
+    "note": "a decided game has nothing left to win in it"
+  },
+  {
+    "caseId": "scoring.points-to-game.unparseable-format.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "NOT-A-FORMAT", "points": [0, 0] },
+    "expected": { "kind": "error", "code": "UNPARSEABLE_FORMAT" }
+  },
+  {
+    "caseId": "scoring.points-to-game.negative-points.v1",
+    "operation": "kernel.scoring.pointsToGame@1",
+    "input": { "matchUpFormat": "SET3-S:6/TB7", "points": [-1, 0] },
+    "expected": { "kind": "refused", "reason": "INVALID_INPUT" }
+  }
+]
