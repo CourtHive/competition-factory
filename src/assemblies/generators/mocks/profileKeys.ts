@@ -306,13 +306,24 @@ export const profileKeysInSync = [
 type Check = { keys: readonly string[]; path: string; value: unknown };
 
 /**
+ * What an engine adds to a method's params on the way in (`executeMethod`, `paramsMiddleware`): the held
+ * records, the active tournament's id, and the `tournamentId` that selects a record. A caller of
+ * `tournamentEngine.modifyTournamentRecord` did not pass these, so they are not its options to refuse.
+ */
+export const ENGINE_SUPPLIED_KEYS = ['activeTournamentId', 'tournamentRecords', 'tournamentId'] as const;
+
+/**
  * The first key, in any profile the call carries, that the generators do not read. A misplaced option
  * was silently ignored (the 2026-10-15 sweep found 26 drawProfiles whose `completeAllMatchUps` did
  * nothing, and typos such as `mathcUpType`); refused, it names itself.
  */
-export function checkProfileKeys(params: Record<string, unknown> | undefined, keys: readonly string[]) {
+export function checkProfileKeys(
+  params: Record<string, unknown> | undefined,
+  keys: readonly string[],
+  supplied: readonly string[] = [],
+) {
   if (!params || typeof params !== 'object') return undefined;
-  const checks: Check[] = [{ keys, path: '', value: params }];
+  const checks: Check[] = [{ keys: [...keys, ...supplied], path: '', value: params }];
   const add = (key: string, profileKeys: readonly string[], value: unknown) => {
     if (Array.isArray(value))
       value.forEach((item, index) => checks.push({ keys: profileKeys, path: `${key}[${index}]`, value: item }));
