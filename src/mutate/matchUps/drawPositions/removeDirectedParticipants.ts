@@ -8,6 +8,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { withdrawUndeliveredByeOrigins } from './withdrawUndeliveredByeOrigins';
 import { withdrawAwardsToEmptiedSeats } from './withdrawAwardsToEmptiedSeats';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
@@ -447,6 +448,18 @@ function removeDirectedLoser({
       event,
     });
   }
+
+  // A BYE matchUp whose participant seat was just emptied has delivered nothing, so the BYE origin it gave the side it
+  // feeds goes too (census A1 G1b, `aByeOriginGoesWhenItsFeederSeatEmpties`)
+  withdrawUndeliveredByeOrigins({
+    positionAssignments: positionAssignments ?? [],
+    clearedDrawPositions,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    structureId,
+    event,
+  });
 
   // A seat that keeps its BYE advancement releases no round above, so nothing asked the links out of this
   // structure: a loser removed from a Backdraw they had BYE-advanced through stayed in the grand final (mode D).

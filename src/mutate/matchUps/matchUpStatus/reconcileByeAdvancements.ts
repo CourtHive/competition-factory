@@ -85,7 +85,10 @@ function owedAdvance(
  * reached `Northwest|2|1`, where every entry order of the standing results puts it; `theSeatLeftOppositeAByeGoesOn`).
  *
  * Only a structural seat, one no earlier round of the structure holds: a position advanced into this round is a
- * reservation, and is its own matchUp's to send on.
+ * reservation, and is its own matchUp's to send on. A seat a BYE carried into this round is structural as well: the BYE
+ * there advanced it as this one would (census A1 wave 3 G4, MODIFIED_FEED_IN_CHAMPIONSHIP 32/27 21029862: dp 23,
+ * carried into `Consolation|2|8` by `Consolation|1|8`'s BYE, never reached `Consolation|3|4` when the BYE opposite it in
+ * `2|8` stayed and the other went; `aSeatAByeCarriedInGoesOnPastTheNextBye`).
  */
 function owedSeatAdvance(
   matchUp: HydratedMatchUp,
@@ -102,11 +105,20 @@ function owedSeatAdvance(
   if (!next || next.structureId !== matchUp.structureId) return undefined;
   const held = (next.drawPositions ?? []).filter(Boolean);
   if (held.length >= 2 || held.includes(drawPosition)) return undefined;
+  // a seat a BYE carried into this round is structural too: the BYE opposite it there advanced it as this one does
   const advancedHere = inContextDrawMatchUps.some(
     (other) =>
       other.structureId === matchUp.structureId &&
       (other.roundNumber ?? 0) < (matchUp.roundNumber ?? 0) &&
-      (other.drawPositions ?? []).includes(drawPosition),
+      (other.drawPositions ?? []).includes(drawPosition) &&
+      !carriedByBye(other, drawPosition),
   );
   return advancedHere ? undefined : { matchUpId, drawPosition };
+}
+
+/** `drawPosition` stands empty opposite a BYE in `matchUp`, and that BYE advanced it */
+function carriedByBye(matchUp: HydratedMatchUp, drawPosition: number): boolean {
+  const seat = matchUp.sides?.find((side) => side?.drawPosition === drawPosition);
+  const opposite = matchUp.sides?.find((side) => side && side.drawPosition !== drawPosition);
+  return !!seat && !seat.participantId && !seat.qualifier && !seat.bye && !!opposite?.bye;
 }

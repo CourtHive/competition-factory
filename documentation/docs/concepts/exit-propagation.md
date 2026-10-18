@@ -947,6 +947,44 @@ named test that fails without it.
   stays there, and a BYE another live double exit still claims stays as well (COMPASS 32/30 20694910 and 20485116:
   `aClearedSeatKeepsTheByeItsReDerivedExitHolds`, `aClearedSeatKeepsTheLoserItsReDerivedResultDirected`; COMPASS 16,
   built by hand: `aClearedSeatKeepsTheByeALiveDoubleExitClaims`).
+- **A BYE origin goes when its feeder stops delivering.** A BYE matchUp delivers once both its seats are filled, a BYE
+  in one and a participant in the other, and only then is the `{ BYE, BYE }` origin it gives the side it feeds true.
+  When that participant leaves again (a result clearing whose loser had been sent there), their position stays advanced
+  past the BYE, so no release reaches the matchUp holding the origin; the origin goes with the delivery, and the draw is
+  the one in which the participant never arrived (FIRST_ROUND_LOSER_CONSOLATION 16/14 21029590:
+  `aByeOriginGoesWhenItsFeederSeatEmpties`; 9 census rows on three draw types).
+- **A carry past a BYE the forward settle puts back is carried again.** A direction the forward settle makes can
+  re-form a double exit whose loser seat takes its BYE again, in front of a carrier whose carry past it a removal had
+  taken back. The carry past a late BYE is asked again once the forward settle has written, so the carrier's exit
+  stands in the matchUp beyond as forward play writes it (COMPASS 32/32 21097909:
+  `aCarryPastAByeTheSettleReplacesIsCarriedAgain`).
+- **A carrier arriving at the seat an exit awaits converges with it** (A1 wave 3). A single exit awarded to a seat
+  nobody has reached is waiting for whoever arrives there. When the arrival is a participant carrying their own walkover
+  or default past a BYE, two exits meet, and the matchUp is the double exit their convergence makes, as it is when the
+  carrier's exit was recorded first and the other arrived after. The convergence then produces onward and serves its
+  loser link as any convergence does: what the single exit had sent on is withdrawn, and the first carrier, sent over
+  the loser link as that exit's loser, comes back, since a double exit has no loser. Before this the carrier took the
+  award and won on the exit they had brought, and which of the two draws a schedule reached depended on its order
+  (COMPASS 32/27 21028022, 25 census rows: `aCarrierArrivingAtTheSeatAnExitAwaitsConverges`; COMPASS 16/16 20672521:
+  `aByeRecordsNoArrivalByResult`; DOUBLE_ELIMINATION 8/5 20722665, where re-entering a double default now returns the
+  draw the same results reach entered once: `aDeciderHoldsNobodyUntilItsFinalIsDecided`).
+- **A carrier sent into a BYE matchUp records its carry there** (A1 wave 3). A carrier a late BYE sends on, into a
+  matchUp a BYE already holds, writes their exit beside that BYE, as the carry rule above states for every matchUp a
+  carry passes. Before this the second BYE matchUp recorded nothing, so when its BYE went, the exit coming back stood
+  alone and awarded the carrier a match they had walked over (COMPASS 32/27 21137946, 8 census rows:
+  `aCarrierPassingIntoAByeMatchUpRecordsItsCarry`).
+- **A seat a BYE carried into a round goes on past the next BYE** (A1 wave 3). The settle pass that sends on the seat
+  left opposite a BYE (above) treats a position that entered the round from an earlier one as a reservation, and does
+  not move it. A position a BYE carried in, empty opposite that BYE in the earlier round, is not a reservation: the BYE
+  there advanced it, and the BYE here advances it again, as forward play does in every order (MODIFIED_FEED_IN_CHAMPIONSHIP
+  32/27 21029862, FEED_IN_CHAMPIONSHIP_TO_SF 32 21072304, 4 census rows: `aSeatAByeCarriedInGoesOnPastTheNextBye`).
+- **A passer comes back when the holder's BYE goes, even beside a held seat** (A1 wave 3). A carrier who passed a BYE
+  that a BYE holder had left in the next round goes back with that BYE when the holder's exit is sent on, and the exit
+  meets their carry there. The matchUp they had decided onward keeps its award where the seat opposite is held: its
+  occupant may have gone on, and the convergence's produced exit awards them the same seat. Before this the carrier
+  stayed onward, beside the produced exit, and the matchUp read as an undecided walkover holding two participants
+  (FEED_IN_CHAMPIONSHIP_TO_SF 16/14 21089693, CURTIS_CONSOLATION 16 21143807, MODIFIED_FEED_IN_CHAMPIONSHIP 16
+  21046667 under `allowChangePropagation`: `aPasserComesBackWhenTheHoldersByeGoes`).
 
 ### Nothing to do is success, not failure
 

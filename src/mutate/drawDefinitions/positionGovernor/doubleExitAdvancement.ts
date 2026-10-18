@@ -3267,6 +3267,18 @@ function produceStrandedConvergences({
     );
     if (!stranded) return produced.size ? { ...SUCCESS, produced: true } : undefined;
     produced.add(stranded.matchUpId);
+    // what it sent on as a single exit, before an arrival converged it, is withdrawn first, as `convergeCarriedExit` does
+    applyWithdrawnExits({
+      withdrawnExits: withdrawProducedExits({
+        mappedMatchUps: matchUpsMap.mappedMatchUps,
+        sourceMatchUpId: stranded.matchUpId,
+        drawDefinition,
+      }),
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    });
     const { structure } = findStructure({ drawDefinition, structureId: stranded.structureId });
     const result = advanceConvergedWinner({
       params: {
@@ -3285,6 +3297,27 @@ function produceStrandedConvergences({
       matchUpsMap,
     });
     if (result?.error) return result;
+    // ...and serves its loser link as a convergence does: an arrival that converged a single exit awarded to its seat
+    // had already sent the first carrier on as that exit's loser, and a double exit has no loser (census A1 wave 3 G5,
+    // COMPASS 16/16 20672521: `West|2|1`'s first carrier stayed in `Southwest|1|1` when the second came through a BYE;
+    // `aByeRecordsNoArrivalByResult`)
+    const served = serveConvergedLoserLink({
+      params: {
+        matchUpStatus: stranded.matchUpStatus,
+        tournamentRecord,
+        appliedPolicies,
+        inContextDrawMatchUps,
+        drawDefinition,
+        matchUpsMap,
+        structure,
+        event,
+      },
+      convergedMatchUp: stranded,
+      stack: 'settleHeldExits',
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (served?.error) return served;
   }
   return produced.size ? { ...SUCCESS, produced: true } : undefined;
 }

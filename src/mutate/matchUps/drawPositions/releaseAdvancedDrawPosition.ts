@@ -168,19 +168,21 @@ export function releaseAdvancedDrawPosition({
     // `5|1`, past `4|1`'s BYE, and the next arrival there was refused after a write;
     // `aDoubleExitsOwnPositionLeavesEveryRoundItReached`).
     const pendingExit = withdrawingExit && !matchUp.winningSide && isAnyExit(matchUp.matchUpStatus);
-    // ...and, once the BYE this position passed has been taken back, a matchUp decided ONLY by the carry leaving with it,
-    // for a seat nobody occupies yet, is no result of its own: RULE 2 awarded the empty seat because this occupant arrived carrying an exit, and nobody has gone on
-    // from it. The carry goes home below, and the decision with it (census F2, FEED_IN_CHAMPIONSHIP_TO_SF 16/16,
-    // 20501324: `Consolation|4|1` DEFAULTED for its empty fed seat by the default Jane carried past a BYE that has since
-    // gone). An award to a seat somebody holds is left alone: they may have gone on from it, which is a
-    // withdrawn exit's release (`releaseLinkedWinnerAdvancement`), not this one's.
+    // ...and, once the BYE this position passed has been taken back, a matchUp decided ONLY by the carry leaving with it
+    // is no result of its own: RULE 2 awarded the seat opposite because this occupant arrived carrying an exit. The carry
+    // goes home below and the position with it (census F2, FEED_IN_CHAMPIONSHIP_TO_SF 16/16, 20501324: `Consolation|4|1`
+    // DEFAULTED for its empty fed seat by the default Jane carried past a BYE that has since gone). The award stays where
+    // the seat opposite is held: whoever holds it may have gone on from it, and the BYE is taken back only because the
+    // holder's exit is being sent on, where it meets the carry and the convergence produces into this matchUp for that
+    // same seat. Kept out, the carrier stood here beside the produced exit, the matchUp a round on read both, and the
+    // forward order decided which (census A1 wave 3 R11b: FEED_IN_CHAMPIONSHIP_TO_SF 16 21089693, CURTIS_CONSOLATION 16
+    // 21143807, MODIFIED_FEED_IN_CHAMPIONSHIP 16 21046667: `aPasserComesBackWhenTheHoldersByeGoes`).
     const awardedPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
     const decidedByLeavingCarry =
       passedByeReleased &&
       !!matchUp.winningSide &&
       !!carriesLeaving.get(matchUp.matchUpId) &&
-      awardedPosition !== drawPosition &&
-      !(positionAssignments ?? []).find((assignment) => assignment.drawPosition === awardedPosition)?.participantId;
+      awardedPosition !== drawPosition;
     if (
       !heldOpenForArrival &&
       !pendingExit &&
