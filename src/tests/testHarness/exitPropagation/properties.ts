@@ -1,5 +1,6 @@
 import { clearOutcome, getDrawDefinition, getDrawMatchUps, hash, observeMutation, stableHash } from './transitions';
-import { checkErrorAtomicity, decidedMatchUpIds, projectDraw, projectionChanges } from './transitions';
+import { checkErrorAtomicity, decidedMatchUpIds, projectionChanges, projectRoundTrip } from './transitions';
+import { ROUND_TRIP_FIELDS } from './transitions';
 import type { Observation, PropertyFailure } from './transitions';
 import { isDoubleExit } from '@Validators/isExit';
 
@@ -37,6 +38,13 @@ export type RelationalCoverage = {
   clear: number;
   /** clears refused: a legitimate refusal, but the round trip did not complete */
   clearRefused: number;
+  /**
+   * CODES_CONSISTENT, as a ledger, not a failure: scheduled draws whose stored `matchUpStatusCodes` disagree with what
+   * provenance derives, and the matchUps that do. The round trip leaves the legacy array out (census F1, 2026-10-17:
+   * `projectRoundTrip`), so this is where a code-output defect stays visible.
+   */
+  codesInconsistentDraws: number;
+  codesInconsistentMatchUps: number;
 };
 
 export const emptyCoverage = (): RelationalCoverage => ({
@@ -46,6 +54,8 @@ export const emptyCoverage = (): RelationalCoverage => ({
   secondApply: 0,
   clear: 0,
   clearRefused: 0,
+  codesInconsistentDraws: 0,
+  codesInconsistentMatchUps: 0,
 });
 
 type RelationalParams = {
@@ -71,11 +81,12 @@ function countForward(coverage: RelationalCoverage | undefined, applied: Observa
  * later in a real tournament. It is also the general form of the partial-mutation class: a write
  * that errors halfway cannot be undone, so the round trip diverges.
  */
-/** the `sideExitProvenance` slot of a `projectDraw` matchUp row */
-const PROVENANCE = 5;
+/** the `sideExitProvenance` slot of a `projectRoundTrip` matchUp row */
+const PROVENANCE = 6;
 
 /**
- * What a round trip must restore: the projection, less the ARRIVAL entries.
+ * What a round trip must restore: {@link projectRoundTrip} (the projection without the legacy codes array), less the
+ * ARRIVAL entries.
  *
  * An arrival entry records a winner's origin and no exit (`{ previousMatchUpStatus, sourceMatchUpId }`); the docs
  * call it a fact a matchUp "may record". Forward play writes it only in some entry orders. It is written by whichever
@@ -94,7 +105,7 @@ function projectForRoundTrip(drawDefinition: any): any[] {
     if (entry?.matchUpStatus) return entry;
     return entry?.byeClaims?.length ? { byeClaims: entry.byeClaims } : undefined;
   };
-  return projectDraw(drawDefinition).map((structure: any) => ({
+  return projectRoundTrip(drawDefinition).map((structure: any) => ({
     ...structure,
     matchUps: structure.matchUps.map((row: any[]) => {
       const provenance = row[PROVENANCE];
@@ -189,7 +200,7 @@ export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[]
       property: 'DO_UNDO_IDENTITY',
       matchUpId,
       detail: `clear succeeded but the draw did not return to its prior state\n  ${firstDifference(before, after)}`,
-      changes: projectionChanges(beforeProjection, afterProjection, coordinates),
+      changes: projectionChanges(beforeProjection, afterProjection, coordinates, ROUND_TRIP_FIELDS),
     },
   ];
 }

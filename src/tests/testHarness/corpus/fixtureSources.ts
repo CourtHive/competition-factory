@@ -1,4 +1,4 @@
-import { clearOutcome, getDrawDefinition, projectDraw, stableHash } from '../exitPropagation/transitions';
+import { clearOutcome, getDrawDefinition, projectRoundTrip, stableHash } from '../exitPropagation/transitions';
 import { CorpusWriteError, writeScenario, type Directive } from './writeScenario';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -95,15 +95,15 @@ export function recordFixtures({
         seed,
         clock,
       });
-      // DO_UNDO_IDENTITY as the harness defines it (INVARIANTS.md): the DRAW's projection with the
+      // DO_UNDO_IDENTITY as the harness defines it (INVARIANTS.md): the DRAW's round-trip projection with the
       // volatile keys stripped, not the whole record's hash, which the clock stamps move anyway.
       // The writer leaves the engine at the final state; the initial state is reloaded to compare.
       if (scenario.steps.length === 2 && scenario.steps.every((step: any) => step.result.success)) {
         const drawId = scenario.steps[0].directive.params.drawId;
-        const after = stableHash(projectDraw(getDrawDefinition(drawId)));
+        const after = stableHash(projectRoundTrip(getDrawDefinition(drawId)));
         tournamentEngine.reset();
         tournamentEngine.setState(scenario.initial.record);
-        const before = stableHash(projectDraw(getDrawDefinition(drawId)));
+        const before = stableHash(projectRoundTrip(getDrawDefinition(drawId)));
         if (after === before) scenario.properties = ['DO_UNDO_IDENTITY'];
       }
       fs.appendFileSync(outPath, JSON.stringify(scenario) + '\n');

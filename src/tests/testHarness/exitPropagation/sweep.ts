@@ -1,5 +1,5 @@
 import { checkArrivalsTrue, checkDoUndoIdentity, checkIdempotence, checkMonotonicity } from './properties';
-import { checkErrorAtomicity, checkInvariants, checkIntegrity } from './transitions';
+import { checkCodesConsistent, checkErrorAtomicity, checkInvariants, checkIntegrity } from './transitions';
 import { clearOutcome, getDrawMatchUps, observeMutation } from './transitions';
 import type { RelationalCoverage } from './properties';
 import type { PropertyFailure } from './transitions';
@@ -285,6 +285,11 @@ export function replay(
   if (integrity.length) return integrity[0];
   const arrivals = checkArrivalsTrue(drawId);
   if (arrivals.length) return arrivals[0];
+  if (coverage) {
+    const inconsistent = checkCodesConsistent(drawId, '-');
+    coverage.codesInconsistentMatchUps += inconsistent.length;
+    if (inconsistent.length) coverage.codesInconsistentDraws += 1;
+  }
 
   // Relational properties, each on the state the schedule produced.
   //
