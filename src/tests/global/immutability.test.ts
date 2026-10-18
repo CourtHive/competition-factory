@@ -55,7 +55,8 @@ test('setting deepCopy option to false will allow source objects to be modified'
     attribute: 'factory',
     name: FACTORY,
   }).timeStamp;
-  expect(factoryTimeStamp).toEqual(latestFactoryTimeStamp);
+  // a root extension is a modification of the record (announced since CA 2026-10-18), so it is stamped like any other
+  expect(latestFactoryTimeStamp).toBeGreaterThanOrEqual(factoryTimeStamp);
 
   setTimeout(() => {
     const nextStartDate = dateStringDaysChange(startDate, 1);

@@ -1,6 +1,7 @@
 import { addNotice, writeLegacyEnabled, writeNativeEnabled } from '@Global/state/globalState';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
+import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { getParticipantPresence } from '@Acquire/presenceAttestations';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { deriveElement } from '@Query/base/deriveElement';
@@ -42,6 +43,18 @@ type AddTimeItemArgs = {
 };
 
 export function addTimeItem(params: AddTimeItemArgs) {
+  // An engine call naming an event (`eventId`, resolved to `event`) writes to that event, which is an
+  // event modification. Internal callers name their `element` and announce what they change themselves.
+  const eventElement = !params?.element && !params?.participantId && !params?.drawDefinition && params?.event;
+  if (eventElement && params.tournamentRecord) {
+    return withEventChangeNotice({ tournamentRecord: params.tournamentRecord, event: eventElement }, () =>
+      writeTimeItem(params),
+    );
+  }
+  return writeTimeItem(params);
+}
+
+function writeTimeItem(params: AddTimeItemArgs) {
   const { duplicateValues = true, creationTime = true, removePriorValues, timeItem } = params;
   if (!timeItem) return { error: MISSING_TIME_ITEM };
 
@@ -221,16 +234,23 @@ export function addTournamentTimeItem(params) {
   return result;
 }
 
+/**
+ * A call that names its `tournamentRecord` (every engine call does) is announced with MODIFY_EVENT when
+ * it changes the event. Internal callers pass the event alone: the publishing writers announce the
+ * change with their own topics, and the mock generators write to an event that is not yet in a record.
+ */
 export function addEventTimeItem(params) {
-  const { removePriorValues, duplicateValues, creationTime, timeItem, event } = params;
+  const { removePriorValues, duplicateValues, tournamentRecord, disableNotice, creationTime, timeItem, event } = params;
   if (!event) return { error: EVENT_NOT_FOUND };
-  return addTimeItem({
-    removePriorValues,
-    duplicateValues,
-    element: event,
-    creationTime,
-    timeItem,
-  });
+  const write = () =>
+    addTimeItem({
+      removePriorValues,
+      duplicateValues,
+      element: event,
+      creationTime,
+      timeItem,
+    });
+  return tournamentRecord && !disableNotice ? withEventChangeNotice({ tournamentRecord, event }, write) : write();
 }
 
 export function resetTimeItems({ element }) {

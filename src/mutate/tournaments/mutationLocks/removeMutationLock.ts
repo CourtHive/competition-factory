@@ -1,11 +1,13 @@
+import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
 import { addExtension } from '@Mutate/extensions/addExtension';
+import { mutationLockNotice } from './mutationLockNotice';
 import { findExtension } from '@Acquire/findExtension';
 import { findVenue } from '@Query/venues/findVenue';
 
 // constants and types
 import { MutationLockScope, MutationLocksValue } from '@Types/mutationLockTypes';
+import { Extension, Tournament, Venue } from '@Types/tournamentTypes';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
-import { Extension, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ErrorType,
@@ -38,6 +40,7 @@ export function removeMutationLock(params: RemoveMutationLockArgs): {
 
   // Resolve target element: draw > event > venue > tournament
   let element: { extensions?: Extension[] } | undefined;
+  let venue: Venue | undefined;
   if (drawDefinition) {
     element = drawDefinition;
   } else if (event) {
@@ -45,7 +48,8 @@ export function removeMutationLock(params: RemoveMutationLockArgs): {
   } else if (venueId) {
     const venueResult = findVenue({ tournamentRecord, venueId });
     if (venueResult.error) return { error: venueResult.error };
-    element = venueResult.venue;
+    venue = venueResult.venue;
+    element = venue;
   } else {
     element = tournamentRecord;
   }
@@ -66,6 +70,7 @@ export function removeMutationLock(params: RemoveMutationLockArgs): {
     return { error: UNAUTHORIZED_LOCK_OPERATION };
   }
 
+  const rootBefore = rootExtensionsFingerprint(tournamentRecord);
   locksValue.locks.splice(lockIndex, 1);
 
   addExtension({
@@ -73,6 +78,8 @@ export function removeMutationLock(params: RemoveMutationLockArgs): {
     extension: { name: MUTATION_LOCKS, value: locksValue },
     creationTime: false,
   });
+  mutationLockNotice({ tournamentRecord, drawDefinition, event, venue });
+  rootExtensionsNotice({ tournamentRecord, before: rootBefore }); // a tournament-scope lock is a root extension
 
   return { ...SUCCESS };
 }

@@ -76,6 +76,7 @@ export type ImplemtationGlobalStateTypes = {
   modified: boolean;
   capturedClock?: number; // epoch ms an outer engine call captured; see tools/clock.ts
   capturedCompetitionClock?: number; // likewise, when a competition provider is installed
+  callRandomSource?: () => number; // a seeded engine call's stream for unthreaded draws; see tools/prng.ts
 };
 
 const globalState: GlobalStateTypes = {
@@ -297,6 +298,20 @@ export function setCapturedCompetitionClock(timeStamp?: number) {
   _globalStateProvider.setCapturedCompetitionClock?.(timeStamp);
 }
 
+/**
+ * The random stream a seeded engine call scoped for the draws its seed does not reach through `random`
+ * (tools/prng.ts `withCallRandomSource`). Optional provider hooks, like the captured clock: a provider without
+ * them scopes nothing, and is deliberately NOT given a process-wide fallback, which would hand one request's
+ * seeded stream to every request running concurrently with it.
+ */
+export function getCallRandomSource(): (() => number) | undefined {
+  return _globalStateProvider.getCallRandomSource?.();
+}
+
+export function setCallRandomSource(source?: () => number) {
+  _globalStateProvider.setCallRandomSource?.(source);
+}
+
 export function setSchemaWriteMode(mode?: SchemaWriteMode): {
   success?: boolean;
   error?: ErrorType;
@@ -432,6 +447,28 @@ export function setMethods(params?: { [key: string]: any }) {
 }
 
 export function cycleMutationStatus() {
+  return _globalStateProvider.cycleMutationStatus();
+}
+
+/**
+ * The mutation flag as it stands, read WITHOUT clearing it, for an operation that may need to restore it (a
+ * differential divergence). `undefined` when the provider cannot set the flag back (the optional `setMutationStatus`):
+ * reading it through `cycleMutationStatus` alone would clear it.
+ */
+export function readMutationStatus(): boolean | undefined {
+  if (!isFunction(_globalStateProvider.setMutationStatus)) return undefined;
+  const status = _globalStateProvider.cycleMutationStatus();
+  _globalStateProvider.setMutationStatus(status);
+  return status;
+}
+
+/**
+ * Restores a flag captured by `readMutationStatus`. Without the optional hook the flag is cleared, as a rollback
+ * clears it: a record left unstamped after an enclosing write is the lesser fault, beside stamping one left unchanged.
+ */
+export function restoreMutationStatus(status?: boolean) {
+  if (status !== undefined && isFunction(_globalStateProvider.setMutationStatus))
+    return _globalStateProvider.setMutationStatus(status);
   return _globalStateProvider.cycleMutationStatus();
 }
 
