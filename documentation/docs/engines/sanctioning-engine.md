@@ -421,6 +421,8 @@ const result = sanctioningEngine.executionQueue([
 ], true); // rollbackOnError
 ```
 
+`createSanctioningRecord` returns `sanctioningId` at the top level, so a later directive can name the new record with `pipe: { sanctioningId: true }` (the pipe reads only the previous result's top-level keys).
+
 ---
 
 ## Policy Fixtures

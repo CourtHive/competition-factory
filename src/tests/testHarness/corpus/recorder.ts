@@ -1,14 +1,14 @@
 import { getInvariantViolations } from '../exitPropagation/invariants';
 import { factoryVersion } from '@Functions/global/factoryVersion';
-import { canonicalHash, canonicalObject } from './hash';
-import { generatePatch } from '../../../forge/jsonPatch';
 import { randomSource, type SeededRandom } from '@Tools/prng';
+import { generatePatch } from '../../../forge/jsonPatch';
+import { canonicalHash, canonicalObject } from './hash';
 import { isCoreMethod } from './coreMethods';
 import { setClock } from '@Tools/clock';
 import addFormats from 'ajv-formats';
+import path from 'path';
 import Ajv from 'ajv';
 import fs from 'fs';
-import path from 'path';
 import {
   getCapturedClock,
   getInvokeObserver,

@@ -44,6 +44,11 @@ const { success, lockId } = engine.addMutationLock({
 
 **Purpose:** Control concurrent access to scoped mutations. See [Mutation Locks](../concepts/mutation-locks.md) for details.
 
+The lock is stored as an extension on the element it locks, and the change is announced on that element's topic
+(`modifyDrawDefinition`, `modifyEvent`, `modifyVenue`). A tournament-level lock, and the feature gate on the tournament
+record, are root extensions: their change is announced as `modifyTournamentDetail` with the record's `extensions`, as
+`addTournamentExtension` and `removeTournamentExtension` announce theirs.
+
 ---
 
 ## addNotes
@@ -86,6 +91,11 @@ A matchUp's recording, stream or stats page belongs on the matchUp: pass `matchU
 contains it (tieMatchUps included). The resource is merged as on every other element (one with the same `name`
 or `identifier` is replaced), and a `modifyMatchUp` notice is emitted so subscribers refresh. Public projections
 (`getEventData`, published or not) carry it on the matchUp.
+
+Every other element announces the change on its own topic, and only when its resources changed (re-adding a
+resource it already holds, or removing one it does not hold, announces nothing): a participant or person
+`modifyParticipants`, a venue or court `modifyVenue`, the parent organisation or the tournament itself
+`modifyTournamentDetail`. `removeOnlineResource` does the same.
 
 ```js
 engine.addOnlineResource({
@@ -274,7 +284,7 @@ const { startDate, endDate } = engine.getCompetitionDateRange({
 
 ## getCompetitionPenalties
 
-Returns all penalties across multiple tournaments in a competition. `penaltyType` is returned as stored: a penalty written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until the record is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified.
+Returns all penalties across multiple tournaments in a competition. `penaltyType` is returned as its code: a record written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until it is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified, and the query returns that label's code without changing the record. A value outside the legacy labels is returned as stored.
 
 ```js
 const { penalties } = engine.getCompetitionPenalties({
@@ -349,7 +359,7 @@ Only that last case admits a fallback. The factory's own reads, such as "today" 
 
 ## getTournamentPenalties
 
-Returns all penalties issued in the tournament. `penaltyType` is returned as stored: a penalty written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until the record is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified.
+Returns all penalties issued in the tournament. `penaltyType` is returned as its code: a record written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until it is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified, and the query returns that label's code without changing the record. A value outside the legacy labels is returned as stored.
 
 ```js
 const { penalties } = engine.getTournamentPenalties();

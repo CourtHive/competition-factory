@@ -10,6 +10,7 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { clearPrimaryVenue } from './clearPrimaryVenue';
 import { addNotice } from '@Global/state/globalState';
 import { findVenue } from '@Query/venues/findVenue';
+import { modifyVenueNotice } from './venueNotices';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { validTimePeriod } from '@Validators/time';
 import { modifyCourt } from './modifyCourt';
@@ -220,10 +221,11 @@ export function venueModify({ tournamentRecord, modifications, venueId, force }:
 
   validReplacementAttributes.forEach((attribute) => Object.assign(venue, { [attribute]: modifications[attribute] }));
 
-  // Handle isPrimary modifications
+  // Handle isPrimary modifications; a venue that loses its primary flag to this one is modified too
+  let clearedPrimaryVenues: Venue[] = [];
   if ('isPrimary' in modifications) {
     if (modifications.isPrimary) {
-      clearPrimaryVenue({ tournamentRecord: record });
+      clearedPrimaryVenues = clearPrimaryVenue({ tournamentRecord: record, exceptVenueId: venueId });
       venue.isPrimary = true;
     } else {
       delete venue.isPrimary;
@@ -267,6 +269,9 @@ export function venueModify({ tournamentRecord, modifications, venueId, force }:
       topic: MODIFY_VENUE,
       key: venue?.venueId,
     });
+  }
+  for (const cleared of clearedPrimaryVenues) {
+    modifyVenueNotice({ tournamentId: record.tournamentId, venue: cleared });
   }
 
   return { ...SUCCESS, venue: makeDeepCopy(venue) };

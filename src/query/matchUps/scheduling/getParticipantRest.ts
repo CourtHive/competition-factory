@@ -170,7 +170,7 @@ export type RestDailyLimits = { SINGLES?: number; DOUBLES?: number; total?: numb
 type Frame = { utcOffsetMinutes: number; timeZone?: string };
 
 /** Every time on a matchUp, as UTC milliseconds. */
-type NormalizedTimes = {
+export type NormalizedTimes = {
   endMs: number | null;
   scoredMs: number | null;
   /** Venue calendar date of `scoredTime` — what dates a matchUp carrying no `scheduledDate`. */
@@ -326,7 +326,7 @@ function placedOnlyAfter(matchUp: HydratedMatchUp, times: NormalizedTimes, targe
 }
 
 /** Recovery owed after `prior`, accounting for a singles ↔ doubles change into `target`. */
-function requirementFor(
+export function requirementFor(
   prior: HydratedMatchUp,
   target: HydratedMatchUp,
   timing: SchedulingTiming,
