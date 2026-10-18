@@ -672,7 +672,8 @@ Since 7.10.0 two more cases hold. **A carry past a BYE in a structure's last rou
 BYE's withdrawal**: there is nowhere further for the carrier to land, so the carried exit is recorded
 beside the BYE, and when the BYE is withdrawn the matchUp re-derives to the exit the carrier holds
 rather than becoming an ordinary match (census 20318646, COMPASS 8/8 — the South final). Both arrival
-orders, carrier first or BYE first, now reach the same state. And **a carry written past a late BYE
+orders, carrier first or BYE first, now reach the same state. Since A1 (2026-10-17) the carry is recorded beside the
+BYE in every round, not only the last ([below](#rules-settled-by-the-census-in-a1-2026-10-17)). And **a carry written past a late BYE
 names the exit's origin**, as every other hop does, not the BYE matchUp it passed, so a convergence it
 later dissolves still re-advances its winner (census 20267598, FEED_IN_CHAMPIONSHIP_TO_SF 16/15).
 

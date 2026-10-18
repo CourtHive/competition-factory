@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 /**
  * A round-robin CHILD structureId selects that group only; the CONTAINER's id selects every group.

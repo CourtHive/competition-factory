@@ -1,5 +1,5 @@
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
-import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
+import { seedCall } from '@Assemblies/engines/parts/seedRandomParam';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -40,13 +40,14 @@ export function validateDirectives(
 
 /**
  * The params one directive is dispatched with: the caller's own copy, the `nonRandom: <seed>`
- * transform applied, and piped values from the previous result. ONE copy for every queue and for
- * dryRun, so a preview receives the same inputs as the commit it previews.
+ * transform applied, and piped values from the previous result, with the stream a seeded directive
+ * scopes around itself (see seedCall). ONE copy for every queue and for dryRun, so a preview receives
+ * the same inputs as the commit it previews.
  */
 export function prepareDirective(directive: Directives[number], results: { [key: string]: unknown }[]) {
   const params: { [key: string]: unknown } = directive.params ? { ...directive.params } : {};
 
-  seedRandomParam(params); // nonRandom: <seed> middleware
+  const unthreadedSource = seedCall(params); // nonRandom: <seed> middleware
 
   if (directive.pipe) {
     const lastResult = results.at(-1);
@@ -55,5 +56,5 @@ export function prepareDirective(directive: Directives[number], results: { [key:
     }
   }
 
-  return params;
+  return { params, unthreadedSource };
 }

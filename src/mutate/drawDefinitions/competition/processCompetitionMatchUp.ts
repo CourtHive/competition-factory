@@ -8,6 +8,7 @@ import { computeActualOutput } from '@Generators/scales/competition/actualOutput
 import { expectedScore } from '@Generators/scales/competition/expectedScore';
 
 // Mutate
+import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 
 // constants
@@ -45,6 +46,10 @@ export function processCompetitionMatchUp(params: ProcessCompetitionMatchUpArgs)
   const s1 = competitionState.participantStates[p1Id];
   const s2 = competitionState.participantStates[p2Id];
   if (!s1 || !s2) return { ...SUCCESS };
+
+  // the state is the live value and is edited in place below: snapshot it first
+  const attributes = ['competitionState'];
+  const before = attributesSnapshot(drawDefinition, attributes);
 
   const { winningSide } = matchUp;
 
@@ -134,6 +139,7 @@ export function processCompetitionMatchUp(params: ProcessCompetitionMatchUpArgs)
     name: COMPETITION_STATE,
     value: competitionState,
   });
+  announceDrawChange({ tournamentRecord, drawDefinition, attributes, before, event });
 
   return { ...SUCCESS };
 }

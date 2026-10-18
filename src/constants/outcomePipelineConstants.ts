@@ -4,7 +4,7 @@
  * `v1` is the pipeline as written across `setMatchUpState` and the matchUpGovernor routes. `v2` is
  * the clean-room re-implementation under `src/mutate/matchUps/outcome/`, written from the spec
  * (`documentation/docs/concepts/outcome-pipeline.md`) and the golden corpus. `differential` runs
- * both: v2 decides first, v1 runs, and a disagreement throws before anything is written.
+ * both: v2 decides first, v1 runs, and a disagreement throws once what v1 wrote has been put back.
  *
  * A global-state mode, not an environment read: the engine source reads no `process.env` outside
  * `src/server/`, and library consumers choose through `engine.outcomePipeline(mode)`.

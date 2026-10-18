@@ -33,6 +33,7 @@ import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { RATING } from '@Constants/scaleConstants';
 import { UTR } from '@Constants/ratingConstants';
 import {
+  EVENT_NOT_FOUND,
   INVALID_OBJECT,
   INVALID_VALUES,
   MISSING_ASSIGNMENTS,
@@ -978,11 +979,11 @@ describe('bulkMatchUpStatusUpdate branch coverage', () => {
       outcomes: [{ tournamentId: 't1', eventId: 'e1', drawId: 'd1', matchUpId: 'm1' }],
       tournamentRecord: { tournamentId: 't1', events: [] } as any,
     });
-    // Event not found so drawDefinition won't be found, just skips silently
-    expect(result.success).toBe(true);
+    // an event that is not there is refused before anything is applied (CA, 2026-10-18), no longer skipped
+    expect(result.error).toEqual(EVENT_NOT_FOUND);
   });
 
-  it('deduplicates tournamentIds from outcomes', () => {
+  it('refuses the first outcome it cannot locate', () => {
     const result: any = bulkMatchUpStatusUpdate({
       outcomes: [
         { tournamentId: 't1', eventId: 'e1', drawId: 'd1', matchUpId: 'm1' },
@@ -990,7 +991,8 @@ describe('bulkMatchUpStatusUpdate branch coverage', () => {
       ],
       tournamentRecord: { tournamentId: 't1', events: [] } as any,
     });
-    expect(result.success).toBe(true);
+    expect(result.error).toEqual(EVENT_NOT_FOUND);
+    expect(result.context.outcomeIndex).toEqual(0);
   });
 });
 
