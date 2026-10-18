@@ -1,17 +1,18 @@
-import { hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
+import { drawWithDerivedGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { queryGovernor } from '@Assemblies/governors';
 import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../..';
 import { expect, it } from 'vitest';
 
 // constants
-import { FIRST_MATCH_LOSER_CONSOLATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { AD_HOC, FIRST_MATCH_LOSER_CONSOLATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * A draw built outside the factory (an integrator report, 2026-10-18) stored no `winnerMatchUpId` / `loserMatchUpId`, so
  * `getEventData` returned no progression links and the bracket could not be drawn until the first scored matchUp
- * stored them. `addDrawDefinition` now stores them with the draw (CA, 2026-10-18), and `getEventData` derives them onto
- * its own copy of a draw already stored without them.
+ * stored them. `addDrawDefinition` now stores them with the draw (CA, 2026-10-18). `getDrawData`, and through it
+ * `getEventData` and `getStructureData`, derives them onto a copy of a draw already stored without them: they reach the
+ * returned data and never the record (CA, 2026-10-18: "confirming that only the return data is getting the goesTo").
  */
 const stripEdges = (drawDefinition: any) => {
   for (const structure of drawDefinition.structures)
@@ -26,25 +27,82 @@ const storedMatchUps = (drawDefinition: any) => drawDefinition.structures.flatMa
 const withWinner = (matchUps: any[]) => matchUps.filter((matchUp) => matchUp.winnerMatchUpId).length;
 const withLoser = (matchUps: any[]) => matchUps.filter((matchUp) => matchUp.loserMatchUpId).length;
 
-it('getEventData returns the edges of a draw stored without them, and leaves the record as it was', () => {
-  const { tournamentRecord, eventIds } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-  });
+const roundMatchUps = (structure: any) => Object.values(structure?.roundMatchUps ?? {}).flat() as any[];
+
+// a record whose one draw stores no edges, as it was before any query read it
+const recordWithoutEdges = (drawType: string) => {
+  const {
+    tournamentRecord,
+    eventIds: [eventId],
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 16, drawType }] });
   const drawDefinition = stripEdges(tournamentRecord.events[0].drawDefinitions[0]);
   expect(hasStoredGoesTo({ drawDefinition })).toEqual(false);
+  return { tournamentRecord, drawDefinition, eventId, drawId, before: JSON.stringify(tournamentRecord) };
+};
 
-  let result: any = queryGovernor.getEventData({ tournamentRecord, eventId: eventIds[0] });
+it('getEventData returns the edges of a draw stored without them, and leaves the record as it was', () => {
+  const { tournamentRecord, eventId, before } = recordWithoutEdges(SINGLE_ELIMINATION);
+
+  for (const call of [1, 2]) {
+    const result: any = queryGovernor.getEventData({ tournamentRecord, eventId });
+    expect(result.success).toEqual(true);
+    const matchUps = roundMatchUps(result.eventData.drawsData[0].structures[0]);
+    expect(matchUps.length).toEqual(15);
+    expect([call, withWinner(matchUps)]).toEqual([call, 14]); // every matchUp but the final
+    expect(JSON.stringify(tournamentRecord)).toEqual(before);
+  }
+});
+
+it('getDrawData returns the winner and loser edges of a draw stored without them, and leaves the record as it was', () => {
+  const { tournamentRecord, drawDefinition, before } = recordWithoutEdges(FIRST_MATCH_LOSER_CONSOLATION);
+
+  const result: any = queryGovernor.getDrawData({ tournamentRecord, drawDefinition });
   expect(result.success).toEqual(true);
-  const matchUps = result.eventData.drawsData[0].structures[0].roundMatchUps;
-  const eventDataMatchUps = Object.values(matchUps).flat() as any[];
-  expect(eventDataMatchUps.length).toEqual(7);
-  expect(withWinner(eventDataMatchUps)).toEqual(6); // every matchUp but the final
+  const [main, consolation] = result.structures;
+  expect(withWinner(roundMatchUps(main))).toEqual(14);
+  expect(withLoser(roundMatchUps(main))).toBeGreaterThan(0);
+  expect(withWinner(roundMatchUps(consolation))).toBeGreaterThan(0);
 
+  expect(JSON.stringify(tournamentRecord)).toEqual(before);
+  expect(hasStoredGoesTo({ drawDefinition })).toEqual(false);
+});
+
+it('getStructureData returns the edges of a structure stored without them, and leaves the record as it was', () => {
+  const { tournamentRecord, drawDefinition, before } = recordWithoutEdges(SINGLE_ELIMINATION);
+  const structureId = drawDefinition.structures[0].structureId;
+
+  const result: any = queryGovernor.getStructureData({ tournamentRecord, drawDefinition, structureId });
+  expect(result.success).toEqual(true);
+  expect(withWinner(roundMatchUps(result.structure))).toEqual(14);
+  expect(JSON.stringify(tournamentRecord)).toEqual(before);
+});
+
+it('getDrawData through the engine leaves the engine state without edges', () => {
+  const { tournamentRecord, drawId } = recordWithoutEdges(SINGLE_ELIMINATION);
+  tournamentEngine.setState(tournamentRecord);
+
+  const result: any = tournamentEngine.getDrawData({ drawId });
+  expect(result.success).toEqual(true);
+  expect(withWinner(roundMatchUps(result.structures[0]))).toEqual(14);
+
+  const stored = tournamentEngine.getEvent({ drawId }).drawDefinition;
+  expect(withWinner(storedMatchUps(stored))).toEqual(0);
+});
+
+it('a draw that owes nothing is read as it is, never copied', () => {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8 }, { drawSize: 8, drawType: AD_HOC, automated: true, roundsCount: 2 }],
+  });
+  const [generated, adHoc] = tournamentRecord.events.map((event: any) => event.drawDefinitions[0]);
+  expect(drawWithDerivedGoesTo(generated)).toBe(generated);
+  expect(drawWithDerivedGoesTo(adHoc)).toBe(adHoc);
+
+  const { drawDefinition } = recordWithoutEdges(SINGLE_ELIMINATION);
+  const derived = drawWithDerivedGoesTo(drawDefinition);
+  expect(derived).not.toBe(drawDefinition);
+  expect(withWinner(storedMatchUps(derived))).toEqual(14);
   expect(withWinner(storedMatchUps(drawDefinition))).toEqual(0);
-  result = queryGovernor.getEventData({ tournamentRecord, eventId: eventIds[0] });
-  expect(withWinner(Object.values(result.eventData.drawsData[0].structures[0].roundMatchUps).flat() as any[])).toEqual(
-    6,
-  );
 });
 
 it('addDrawDefinition stores the winner and loser edges of a draw built without them', () => {

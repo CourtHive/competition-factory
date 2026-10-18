@@ -207,6 +207,8 @@ console.log(courtInfo.dateAvailability);
 
 Returns comprehensive draw data including structures, matchUps, and participant assignments, formatted for display.
 
+Every `matchUp` carries its progression links (`winnerMatchUpId`, and `loserMatchUpId` where a loser link leaves its structure), including in a draw that does not store them: they are derived onto a copy of the draw, and the record is not changed.
+
 ```js
 const { drawInfo, structures } = engine.getDrawData({
   drawDefinition, // required
