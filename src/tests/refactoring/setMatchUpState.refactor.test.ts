@@ -9,6 +9,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
+import { INVALID_SCORE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 
@@ -160,7 +161,7 @@ it('setMatchUpState: invalid score is rejected', () => {
     drawId,
   });
   // Should fail validation — winningSide 1 but score says side 2 won
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_SCORE);
 });
 
 // ─── Scenario 5: Incompatible matchUpStatus/winningSide ───────────────────
@@ -185,5 +186,5 @@ it('setMatchUpState: incompatible status and winningSide rejected', () => {
     },
     drawId,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
 });

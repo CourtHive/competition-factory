@@ -17,6 +17,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
 import { TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CLEAR_SCORE, SCORE } from '@Constants/matchUpActionConstants';
@@ -86,7 +87,7 @@ describe('CLEAR_SCORE', () => {
       outcome: clearOutcome,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
   });
 
   it('is NOT offered for a matchUp with no outcome to remove', () => {

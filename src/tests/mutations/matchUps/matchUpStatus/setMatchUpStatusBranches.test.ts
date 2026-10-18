@@ -476,7 +476,7 @@ describe('setMatchUpStatus branch coverage', () => {
       tournamentRecord: {} as any,
     } as any);
     // Should fail on first missing required param
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_MATCHUP_ID);
   });
 
   // ─── matchUpFormat from outcome fallback (not direct param) ────────

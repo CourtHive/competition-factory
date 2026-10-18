@@ -39,9 +39,25 @@ import type {
 } from '@Types/sanctioningTypes';
 
 // constants
-import { UNDER_REVIEW, POST_EVENT, ISSUES_FLAGGED, APPROVED, SUBMITTED, DRAFT } from '@Constants/sanctioningConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
+import {
+  UNDER_REVIEW,
+  POST_EVENT,
+  ISSUES_FLAGGED,
+  APPROVED,
+  SUBMITTED,
+  DRAFT,
+  AMENDMENT_NOT_FOUND,
+  COMPLIANCE_NOT_APPLICABLE,
+  ENDORSEMENT_REQUIRED,
+  INVALID_STATUS_TRANSITION,
+  MISSING_ENDORSEMENT,
+  MISSING_EVENT_PROPOSAL,
+  MISSING_SANCTIONING_RECORD,
+  OUTSTANDING_COMPLIANCE,
+} from '@Constants/sanctioningConstants';
 
 const testApplicant: Applicant = {
   organisationId: 'org-mut',
@@ -104,7 +120,8 @@ describe('transitionStatus — transition guard branches', () => {
       transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: UNDER_REVIEW, to: APPROVED }],
     };
     let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
+    expect(result.context?.guard).toEqual('ENDORSEMENT_REQUIRED');
     expect(result.context.guard).toEqual('ENDORSEMENT_REQUIRED');
   });
 
@@ -120,7 +137,8 @@ describe('transitionStatus — transition guard branches', () => {
       transitionGuards: [{ guard: 'PROPOSAL_VALID', from: UNDER_REVIEW, to: APPROVED }],
     };
     let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
+    expect(result.context?.guard).toEqual('PROPOSAL_VALID');
     expect(result.context.guard).toEqual('PROPOSAL_VALID');
   });
 
@@ -166,7 +184,8 @@ describe('transitionStatus — transition guard branches', () => {
       transitionGuards: [{ guard: 'ALL_CONDITIONS_MET', from: UNDER_REVIEW, to: APPROVED }],
     };
     let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
+    expect(result.context?.guard).toEqual('ALL_CONDITIONS_MET');
   });
 
   it('evaluates COMPLIANCE_COMPLETE guard — fails when required items not verified', () => {
@@ -186,7 +205,8 @@ describe('transitionStatus — transition guard branches', () => {
       transitionGuards: [{ guard: 'COMPLIANCE_COMPLETE', from: UNDER_REVIEW, to: APPROVED }],
     };
     let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
+    expect(result.context?.guard).toEqual('COMPLIANCE_COMPLETE');
     expect(result.context.guard).toEqual('COMPLIANCE_COMPLETE');
   });
 
@@ -242,7 +262,8 @@ describe('transitionStatus — transition guard branches', () => {
       transitionGuards: [{ guard: 'CUSTOM', from: UNDER_REVIEW, to: APPROVED, customGuardField: 'nonExistent.path' }],
     };
     let result: any = transitionStatus({ sanctioningRecord: record, toStatus: APPROVED as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
+    expect(result.context?.guard).toEqual('CUSTOM');
   });
 
   it('CUSTOM guard without customGuardField returns true', () => {
@@ -318,7 +339,7 @@ describe('transitionStatus — transition guard branches', () => {
 
   it('returns MISSING_SANCTIONING_RECORD when record is undefined', () => {
     let result: any = transitionStatus({ sanctioningRecord: undefined as any, toStatus: SUBMITTED as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
     expect(result.error.code).toContain('MISSING');
   });
 
@@ -332,13 +353,20 @@ describe('transitionStatus — transition guard branches', () => {
       tiers: [],
       transitionGuards: [{ guard: 'ENDORSEMENT_REQUIRED', from: UNDER_REVIEW, to: APPROVED }],
     };
+    // the record's own snapshot has no guards; the param's guard must still apply
+    record.policySnapshot = { ...policy, policyName: 'Snapshot', transitionGuards: [] };
     // No endorsement, so guard should fail
     let result: any = transitionStatus({
       sanctioningRecord: record,
       toStatus: APPROVED as any,
       sanctioningPolicy: policy,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
+    expect(result.context?.guard).toEqual('ENDORSEMENT_REQUIRED');
+
+    // control: without the param, the permissive snapshot governs and the same transition succeeds
+    result = transitionStatus({ sanctioningRecord: { ...record }, toStatus: APPROVED as any });
+    expect(result.success).toBe(true);
   });
 });
 
@@ -418,7 +446,7 @@ describe('amendments — applyChanges with array bracket notation', () => {
       amendmentId: 'a1',
       approved: true,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('reviewAmendment returns error when amendment not found', () => {
@@ -428,7 +456,7 @@ describe('amendments — applyChanges with array bracket notation', () => {
       amendmentId: 'nonexistent',
       approved: true,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(AMENDMENT_NOT_FOUND);
   });
 
   it('proposeAmendment rejects non-array changes', () => {
@@ -437,7 +465,7 @@ describe('amendments — applyChanges with array bracket notation', () => {
       sanctioningRecord: record,
       changes: 'bad' as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('classifySeverity with substantialChangeWindowWeeks marks withinTimeline false when outside window', () => {
@@ -480,7 +508,7 @@ describe('endorsement — edge cases', () => {
   it('requestEndorsement returns error when missing endorserId', () => {
     const record = makeRecord();
     let result: any = requestEndorsement({ sanctioningRecord: record, endorserId: '' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('requestEndorsement replaces existing endorsement for same endorserId', () => {
@@ -501,12 +529,12 @@ describe('endorsement — edge cases', () => {
   it('endorseApplication returns MISSING_ENDORSEMENT when no endorsement exists', () => {
     const record = makeRecord();
     let result: any = endorseApplication({ sanctioningRecord: record });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_ENDORSEMENT);
   });
 
   it('endorseApplication returns error for missing sanctioningRecord', () => {
     let result: any = endorseApplication({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('endorseApplication sets notes and conditions', () => {
@@ -525,13 +553,13 @@ describe('endorsement — edge cases', () => {
 
   it('declineEndorsement returns error for missing sanctioningRecord', () => {
     let result: any = declineEndorsement({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('declineEndorsement returns MISSING_ENDORSEMENT when no endorsement', () => {
     const record = makeRecord();
     let result: any = declineEndorsement({ sanctioningRecord: record });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_ENDORSEMENT);
   });
 
   it('declineEndorsement sets declineReason', () => {
@@ -548,7 +576,7 @@ describe('endorsement — edge cases', () => {
 
   it('requestEndorsement returns error for missing sanctioningRecord', () => {
     let result: any = requestEndorsement({ sanctioningRecord: undefined as any, endorserId: 'e1' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('findEndorsement falls back to endorsements[0] when no endorserId', () => {
@@ -623,17 +651,17 @@ describe('compliance — PENDING status branch and guards', () => {
 
   it('transitionToPostEvent returns error for missing record', () => {
     let result: any = transitionToPostEvent({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('flagComplianceIssues returns error for missing record', () => {
     let result: any = flagComplianceIssues({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('closeApplication returns error for missing record', () => {
     let result: any = closeApplication({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('closeApplication without compliance skips compliance update', () => {
@@ -654,7 +682,7 @@ describe('compliance — PENDING status branch and guards', () => {
       },
     });
     let result: any = submitComplianceItem({ sanctioningRecord: record, itemId: 'bogus' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('submitComplianceItem stores value when provided', () => {
@@ -680,7 +708,7 @@ describe('compliance — PENDING status branch and guards', () => {
       compliance: { status: 'PENDING', items: [] },
     });
     let result: any = verifyComplianceItem({ sanctioningRecord: record, itemId: '' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('verifyComplianceItem returns error for non-existent item', () => {
@@ -692,7 +720,7 @@ describe('compliance — PENDING status branch and guards', () => {
       },
     });
     let result: any = verifyComplianceItem({ sanctioningRecord: record, itemId: 'bogus' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('verifyComplianceItem returns allCompliant true when all required verified', () => {
@@ -713,13 +741,13 @@ describe('compliance — PENDING status branch and guards', () => {
 
   it('waiveComplianceItem returns error for missing record', () => {
     let result: any = waiveComplianceItem({ sanctioningRecord: undefined as any, itemId: 'x' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('waiveComplianceItem returns error for missing compliance', () => {
     const record = makeRecord();
     let result: any = waiveComplianceItem({ sanctioningRecord: record, itemId: 'x' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(COMPLIANCE_NOT_APPLICABLE);
   });
 
   it('waiveComplianceItem returns error for missing itemId', () => {
@@ -727,7 +755,7 @@ describe('compliance — PENDING status branch and guards', () => {
       compliance: { status: 'PENDING', items: [] },
     });
     let result: any = waiveComplianceItem({ sanctioningRecord: record, itemId: '' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('waiveComplianceItem returns error for non-existent item', () => {
@@ -738,7 +766,7 @@ describe('compliance — PENDING status branch and guards', () => {
       },
     });
     let result: any = waiveComplianceItem({ sanctioningRecord: record, itemId: 'bogus' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('waiveComplianceItem without reason does not add extension', () => {
@@ -756,7 +784,7 @@ describe('compliance — PENDING status branch and guards', () => {
   it('checkComplianceDeadlines returns error for missing compliance', () => {
     const record = makeRecord();
     let result: any = checkComplianceDeadlines({ sanctioningRecord: record });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(COMPLIANCE_NOT_APPLICABLE);
   });
 
   it('checkComplianceDeadlines uses current date when asOfDate not provided', () => {
@@ -794,13 +822,13 @@ describe('addEventProposal — missing-record and guard paths', () => {
       sanctioningRecord: undefined as any,
       eventProposal: { eventName: 'S', eventType: SINGLES_EVENT },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('returns error for missing eventProposal', () => {
     const record = makeRecord();
     let result: any = addEventProposal({ sanctioningRecord: record, eventProposal: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_EVENT_PROPOSAL);
   });
 
   it('returns error for missing eventName', () => {
@@ -809,7 +837,7 @@ describe('addEventProposal — missing-record and guard paths', () => {
       sanctioningRecord: record,
       eventProposal: { eventName: '', eventType: SINGLES_EVENT },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for missing eventType', () => {
@@ -818,52 +846,52 @@ describe('addEventProposal — missing-record and guard paths', () => {
       sanctioningRecord: record,
       eventProposal: { eventName: 'S', eventType: '' as any },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
 describe('removeEventProposal — missing-record guard', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = removeEventProposal({ sanctioningRecord: undefined as any, eventProposalId: 'x' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('returns error for missing eventProposalId', () => {
     const record = makeRecord();
     let result: any = removeEventProposal({ sanctioningRecord: record, eventProposalId: '' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
 describe('updateEventProposal — missing-record and guard paths', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = updateEventProposal({ sanctioningRecord: undefined as any, eventProposalId: 'x', updates: {} });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('returns error for missing eventProposalId', () => {
     const record = makeRecord();
     let result: any = updateEventProposal({ sanctioningRecord: record, eventProposalId: '', updates: {} });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for missing updates (non-object)', () => {
     const record = makeRecord();
     let result: any = updateEventProposal({ sanctioningRecord: record, eventProposalId: 'x', updates: null as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
 describe('meetCondition — missing-record and guard paths', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = meetCondition({ sanctioningRecord: undefined as any, conditionId: 'x' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('returns error for missing conditionId', () => {
     const record = makeRecord();
     let result: any = meetCondition({ sanctioningRecord: record, conditionId: '' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('allConditionsMet returns false when some conditions unmet', () => {
@@ -894,51 +922,51 @@ describe('meetCondition — missing-record and guard paths', () => {
 describe('addReviewNote — missing-record guard', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = addReviewNote({ sanctioningRecord: undefined as any, note: 'test' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('returns error for missing note', () => {
     const record = makeRecord();
     let result: any = addReviewNote({ sanctioningRecord: record, note: '' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
 describe('conditionallyApprove — guard paths', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = conditionallyApprove({ sanctioningRecord: undefined as any, conditions: [{ description: 'x' }] });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('returns error for empty conditions array', () => {
     const record = makeRecord({ status: UNDER_REVIEW });
     let result: any = conditionallyApprove({ sanctioningRecord: record, conditions: [] });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for non-array conditions', () => {
     const record = makeRecord({ status: UNDER_REVIEW });
     let result: any = conditionallyApprove({ sanctioningRecord: record, conditions: 'bad' as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error when transition is invalid from current status', () => {
     const record = makeRecord({ status: DRAFT });
     let result: any = conditionallyApprove({ sanctioningRecord: record, conditions: [{ description: 'x' }] });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
   });
 });
 
 describe('requestModification — guard paths', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = requestModification({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('returns error for invalid transition', () => {
     const record = makeRecord({ status: DRAFT });
     let result: any = requestModification({ sanctioningRecord: record, note: 'Fix it' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
   });
 
   it('adds review note when note provided', () => {
@@ -960,34 +988,34 @@ describe('requestModification — guard paths', () => {
 describe('rejectApplication — guard paths', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = rejectApplication({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 });
 
 describe('reviewApplication — guard paths', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = reviewApplication({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 });
 
 describe('withdrawApplication — guard paths', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = withdrawApplication({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 });
 
 describe('activateFromSanctioning — guard paths', () => {
   it('returns error for missing sanctioningRecord', () => {
     let result: any = activateFromSanctioning({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('returns error when status is not APPROVED', () => {
     const record = makeRecord({ status: DRAFT });
     let result: any = activateFromSanctioning({ sanctioningRecord: record });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.message).toContain(DRAFT);
   });
 
@@ -1049,12 +1077,12 @@ describe('submitApplication — prior compliance gate and guards', () => {
       sanctioningRecord: record,
       priorSanctioningRecords: [priorRecord],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(OUTSTANDING_COMPLIANCE);
   });
 
   it('returns error for missing sanctioningRecord', () => {
     let result: any = submitApplication({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('blocks submission when endorsement required but not met', () => {
@@ -1069,7 +1097,7 @@ describe('submitApplication — prior compliance gate and guards', () => {
       requiredEndorsementCount: 1,
     };
     let result: any = submitApplication({ sanctioningRecord: record, sanctioningPolicy: policy });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(ENDORSEMENT_REQUIRED);
   });
 
   it('allows submission when endorsement count met via legacy endorsement field', () => {

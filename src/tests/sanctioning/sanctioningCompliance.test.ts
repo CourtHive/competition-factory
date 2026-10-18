@@ -8,6 +8,7 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
   POST_EVENT,
@@ -206,7 +207,7 @@ describe('Post-Event Compliance — Lifecycle', () => {
     sanctioningEngine.transitionToPostEvent({});
 
     let result: any = sanctioningEngine.submitComplianceItem({ itemId: 'bogus' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error when no compliance record exists', () => {

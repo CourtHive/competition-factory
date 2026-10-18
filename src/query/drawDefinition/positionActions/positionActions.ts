@@ -7,6 +7,7 @@ import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsG
 import { getValidModifyAssignedPairAction } from './getValidModifyAssignedPairAction';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { matchUpActions } from '@Query/drawDefinition/matchUpActions/matchUpActions';
+import { getEventScopedRecord } from '@Query/participants/getEventScopedRecord';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -511,9 +512,10 @@ function resolvePositionContext(params: PositionActionsArgs) {
   const tournamentParticipants =
     params.tournamentParticipants ??
     (tournamentRecord &&
+      // the position's actions offer participants from this event only (alternates, lucky losers, qualifiers, pairs)
       getParticipants({
+        tournamentRecord: getEventScopedRecord({ tournamentRecord, event }),
         withIndividualParticipants: true,
-        tournamentRecord,
       }).participants) ??
     [];
 

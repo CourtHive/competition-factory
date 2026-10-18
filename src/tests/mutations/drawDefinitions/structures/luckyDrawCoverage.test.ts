@@ -9,7 +9,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, test, expect } from 'vitest';
 
 // constants
-import { MISSING_DRAW_DEFINITION, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { MISSING_DRAW_DEFINITION, INVALID_VALUES, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { LUCKY_PARTICIPANT } from '@Constants/positionActionConstants';
 import {
@@ -1076,12 +1076,14 @@ describe('luckyDrawAdvancement — additional coverage', () => {
     return { drawDefinition, round1MatchUps, round2MatchUps, pids };
   }
 
-  test('statusResult.error is propagated', () => {
+  test('a lucky draw with no structures is refused before any round status is read', () => {
+    // the round-status refusal cannot be reached from here: getLuckyDrawRoundStatus repeats the same
+    // structure guards, which refuse first
     let result: any = luckyDrawAdvancement({
       drawDefinition: { drawType: LUCKY_DRAW, structures: [] } as any,
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('structure.matchUps fallback to empty array', () => {
@@ -1099,7 +1101,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       roundNumber: 1,
     });
     // getLuckyDrawRoundStatus returns empty rounds, so roundStatus is not found => error
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('advancement with pre-feed round places lucky loser correctly', () => {
@@ -1267,7 +1269,7 @@ describe('luckyDrawAdvancement — additional coverage', () => {
       participantId: 'pid-1',
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -2089,11 +2091,16 @@ describe('getLuckyDrawRoundStatus — BYE-advanced and additional branches', () 
 
 describe('luckyDrawAdvancement — deeper branch coverage', () => {
   test('advancement with non-lucky draw type returns error', () => {
+    // one structure, so the lucky-draw check is reached (with no structures it is refused earlier)
     let result: any = luckyDrawAdvancement({
-      drawDefinition: { drawType: SINGLE_ELIMINATION, structures: [] } as any,
+      drawDefinition: {
+        drawType: SINGLE_ELIMINATION,
+        structures: [{ structureId: 'main', stage: MAIN, stageSequence: 1, matchUps: [], positionAssignments: [] }],
+      } as any,
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result.info).toEqual('Not a lucky draw');
   });
 
   test('advancement with missing drawDefinition returns error', () => {
@@ -2135,7 +2142,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
       drawDefinition,
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('pre-feed round without participantId returns MISSING_PARTICIPANT_ID', () => {
@@ -2196,7 +2203,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
       drawDefinition,
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
   });
 
   test('pre-feed round with ineligible participantId returns error', () => {
@@ -2258,7 +2265,7 @@ describe('luckyDrawAdvancement — deeper branch coverage', () => {
       participantId: 'p1',
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('LUCKY_DRAW with playoff structures via engine — full workflow', () => {

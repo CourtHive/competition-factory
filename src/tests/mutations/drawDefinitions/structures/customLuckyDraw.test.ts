@@ -5,6 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test, describe } from 'vitest';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -206,6 +207,6 @@ describe('LUCKY_DRAW with explicit roundProfile end-to-end', () => {
       drawId,
     });
     expect(result.success).toBeFalsy();
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });

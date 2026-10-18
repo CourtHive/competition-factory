@@ -126,7 +126,7 @@ describe('findDrawDefinition', () => {
     it('returns error when draw is not found', () => {
       const { tournamentRecord } = mocksEngine.generateTournamentRecord();
       const result = publicFindDrawDefinition({ tournamentRecord, drawId: 'missing-draw' });
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual(DRAW_DEFINITION_NOT_FOUND);
       expect(result.drawDefinition).toBeUndefined();
     });
 

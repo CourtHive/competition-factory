@@ -1120,29 +1120,19 @@ it('complex tally scenario with multiple tied participants at different levels',
     },
   };
 
+  // a tally is per group: a round robin of 8 has two groups of 4, and tallying both at once is refused
+  // ('Maximum one structureId'), which an early return here used to hide, so nothing below ever ran
+  const [groupStructureId] = [...new Set<string>(matchUps.map((m) => m.structureId))].sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true }),
+  );
   const result = tallyParticipantResults({
+    matchUps: matchUps.filter((m) => m.structureId === groupStructureId),
     policyDefinitions: complexPolicy,
-    matchUps,
   });
+  expect(result.error).toBeUndefined();
 
-  // Check for errors first (valid when errors occur)
-  if (result.error) {
-    // If there's an error, participantResults may be undefined - this is valid
-    expect(result.error).toBeDefined();
-    return;
-  }
-
-  // If no error, participantResults should be defined
-  expect(result.participantResults).toBeDefined();
-
-  // All participants should have results
-  expect(Object.keys(result.participantResults).length).toBe(8);
-
-  // All participants should have groupOrder (when bracket is complete)
+  // every participant in the group has a result and a group order from 1 to 4 (a tie may share one)
+  expect(Object.keys(result.participantResults).length).toBe(4);
   const orders = Object.values(result.participantResults).map((r: any) => r.groupOrder);
-  expect(orders.filter((o) => o !== undefined)).toHaveLength(8);
-
-  // Orders should be between 1 and 8
-  expect(Math.max(...orders.filter(Boolean))).toBeLessThanOrEqual(8);
-  expect(Math.min(...orders.filter(Boolean))).toBeGreaterThanOrEqual(1);
+  expect(orders.every((order) => Number.isInteger(order) && order >= 1 && order <= 4)).toBe(true);
 });

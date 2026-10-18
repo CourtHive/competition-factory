@@ -8,6 +8,9 @@ import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFA
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 
+// constants
+import { MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
+
 /**
  * Readiness answers "can this placement happen at the time it is scheduled
  * for", and the four findings are the four ways the answer is no. Each block
@@ -280,6 +283,6 @@ describe('getMatchUpReadiness — the engine method and its parameters', () => {
   it('refuses a call with no matchUpId rather than answering about nothing', () => {
     seed({ drawSize: 4 });
     const result: any = tournamentEngine.getMatchUpReadiness({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_MATCHUP_ID);
   });
 });

@@ -9,6 +9,8 @@ import type { Applicant, TournamentProposal, SanctioningPolicy, ProposalChange }
 
 // constants
 import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { AMENDMENT_NOT_ALLOWED } from '@Constants/sanctioningConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 const testApplicant: Applicant = {
@@ -137,14 +139,14 @@ describe('Amendment Workflow — Propose', () => {
     let result: any = sanctioningEngine.proposeAmendment({
       changes: [{ field: 'tournamentName', previousValue: 'x', proposedValue: 'y', changeType: 'MODIFIED' }],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(AMENDMENT_NOT_ALLOWED);
     expect(result.error.code).toEqual('ERR_AMENDMENT_NOT_ALLOWED');
   });
 
   it('rejects amendments with empty changes', () => {
     createApprovedRecord();
     let result: any = sanctioningEngine.proposeAmendment({ changes: [] });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -243,7 +245,7 @@ describe('Amendment Workflow — Review', () => {
     const amendmentId = record.amendments[0].amendmentId;
 
     let result: any = sanctioningEngine.reviewAmendment({ amendmentId, approved: true });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 

@@ -4,11 +4,17 @@ import { xa } from '@Tools/extractAttributes';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { MISSING_TOURNAMENT_RECORD, INVALID_MATCHUP, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
+import {
+  MISSING_TOURNAMENT_RECORD,
+  INVALID_MATCHUP,
+  MISSING_MATCHUPS,
+  INVALID_PARTICIPANT_IDS,
+  PARTICIPANT_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 
 const policyDefinitions = { [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false } };
 
@@ -57,7 +63,7 @@ describe('getParticipantStats error conditions', () => {
       setState: true,
     });
     const result = tournamentEngine.getParticipantStats({ teamParticipantId: 'nonexistent' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   it('returns error when opponentParticipantId is not found', () => {
@@ -76,7 +82,7 @@ describe('getParticipantStats error conditions', () => {
       teamParticipantId: teamId,
       opponentParticipantId: 'nonexistent',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   it('returns INVALID_PARTICIPANT_IDS when participant is not TEAM type', () => {
@@ -93,7 +99,7 @@ describe('getParticipantStats error conditions', () => {
     });
     const individualId = participants[0].participantId;
     const result = tournamentEngine.getParticipantStats({ teamParticipantId: individualId });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
   });
 });
 

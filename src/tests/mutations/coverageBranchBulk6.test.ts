@@ -28,6 +28,7 @@ import {
   PARTICIPANT_NOT_FOUND,
   STRUCTURE_NOT_FOUND,
   VENUE_NOT_FOUND,
+  MISSING_POLICY_DEFINITION,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -130,7 +131,7 @@ describe('allowedTypes branch coverage', () => {
       categoryName: undefined,
       categoryType: undefined,
     });
-    expect(Array.isArray(result)).toBe(true);
+    expect(result).toEqual([]);
   });
 
   it('getAllowedDrawTypes returns error when tournamentRecord is missing', () => {
@@ -149,7 +150,7 @@ describe('allowedTypes branch coverage', () => {
       categoryName: undefined,
       categoryType: undefined,
     });
-    expect(Array.isArray(result)).toBe(true);
+    expect(result).toEqual([]);
   });
 
   it('getAllowedMatchUpFormats filters by categoryName', () => {
@@ -615,7 +616,7 @@ describe('applyTournamentRankingPoints branch coverage', () => {
     });
     const result = applyTournamentRankingPoints({ tournamentRecord });
     // getTournamentPoints requires policyDefinitions
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_POLICY_DEFINITION);
   });
 });
 

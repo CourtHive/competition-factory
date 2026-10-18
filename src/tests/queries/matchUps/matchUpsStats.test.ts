@@ -8,7 +8,7 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { DEFAULTED, WALKOVER as WALKOVER_STATUS } from '@Constants/matchUpStatusConstants';
 import { COMPETITIVE, DECISIVE, ROUTINE, WALKOVER } from '@Constants/statsConstants';
-import { MISSING_EVENT } from '@Constants/errorConditionConstants';
+import { MISSING_EVENT, EVENT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { CLAY, HARD, GRASS } from '@Constants/surfaceConstants';
 import { OUTDOOR, INDOOR } from '@Constants/venueConstants';
@@ -561,6 +561,6 @@ describe('eventMatchUps branch coverage', () => {
 
     tournamentEngine.setState(tournamentRecord);
     const result = tournamentEngine.allEventMatchUps({ eventId: 'non-existent' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(EVENT_NOT_FOUND);
   });
 });

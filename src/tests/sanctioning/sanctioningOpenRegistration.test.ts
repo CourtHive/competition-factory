@@ -8,6 +8,7 @@ import { POLICY_SANCTIONING_GENERIC } from '@Fixtures/policies/POLICY_SANCTIONIN
 import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { MALE } from '@Constants/genderConstants';
 
@@ -88,7 +89,7 @@ describe('openProposalRegistration', () => {
       { method: 'rejectApplication', params: { reason: 'incomplete' } },
     ]);
     let result: any = sanctioningEngine.openProposalRegistration({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('the tournamentId opened before activation is the id activation materializes', () => {

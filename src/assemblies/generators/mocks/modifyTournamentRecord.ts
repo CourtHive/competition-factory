@@ -1,3 +1,4 @@
+import { checkProfileKeys, ENGINE_SUPPLIED_KEYS, MODIFY_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
 import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -103,10 +104,32 @@ function findEventByProfile(events, eventProfile) {
   );
 }
 
+/**
+ * The call's options an existing event falls back to when its eventProfile does not set them. The profile's
+ * own setting wins; `{ ...eventProfile, ...params }` let every top-level key replace it, an undefined one
+ * included, and handed the event the call's top-level `drawProfiles` in place of its own.
+ */
+const EVENT_FALLBACK_KEYS = [
+  'autoEntryPositions',
+  'completeAllMatchUps',
+  'isMock',
+  'matchUpStatusProfile',
+  'participantsProfile',
+  'randomWinningSide',
+  'ratingsParameters',
+  'uuids',
+] as const;
+
+function withFallbacks(eventProfile, params) {
+  const resolved = { ...eventProfile };
+  for (const key of EVENT_FALLBACK_KEYS) resolved[key] ??= params[key];
+  return resolved;
+}
+
 function handleExistingEvent({ event, eventProfile, tournamentRecord, allUniqueParticipantIds, drawIds, params }) {
   const result = processExistingEvent({
     event,
-    eventProfile: { ...eventProfile, ...params },
+    eventProfile: withFallbacks(eventProfile, params),
     tournamentRecord,
     allUniqueParticipantIds,
     drawIds,
@@ -264,6 +287,9 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
  */
 export function modifyTournamentRecord(params) {
   if (!params?.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  // checked before anything is written: an option the generators do not read is refused, not ignored
+  const unknownOption = checkProfileKeys(params, MODIFY_TOURNAMENT_RECORD_KEYS, ENGINE_SUPPLIED_KEYS);
+  if (unknownOption) return unknownOption;
   const keepPartial = params.keepPartial === true;
   const before = recordIds(params.tournamentRecord);
   const snapshot = keepPartial ? undefined : cloneState(params.tournamentRecord);

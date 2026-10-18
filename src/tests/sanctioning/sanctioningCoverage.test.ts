@@ -19,10 +19,22 @@ import type {
 } from '@Types/sanctioningTypes';
 
 // constants
-import { POST_EVENT, DRAFT, APPROVED, SUBMITTED, CLOSED } from '@Constants/sanctioningConstants';
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FEMALE, MALE } from '@Constants/genderConstants';
+import {
+  POST_EVENT,
+  DRAFT,
+  APPROVED,
+  SUBMITTED,
+  CLOSED,
+  CHANGE_WINDOW_CLOSED,
+  COMPLIANCE_NOT_APPLICABLE,
+  MISSING_PROPOSAL,
+  MISSING_SANCTIONING_POLICY,
+  MISSING_SANCTIONING_RECORD,
+} from '@Constants/sanctioningConstants';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -257,13 +269,13 @@ describe('validateProposal — maxQualifyingDrawSize', () => {
 describe('validateProposal — error boundaries', () => {
   it('returns error when proposal is missing', () => {
     let result: any = validateProposal({ proposal: undefined as any, sanctioningPolicy: basePolicy });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PROPOSAL);
     expect(result.error.code).toEqual('ERR_MISSING_PROPOSAL');
   });
 
   it('returns error when policy is missing', () => {
     let result: any = validateProposal({ proposal: minimalProposal(), sanctioningPolicy: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_POLICY);
     expect(result.error.code).toEqual('ERR_MISSING_SANCTIONING_POLICY');
   });
 });
@@ -307,7 +319,7 @@ describe('getCompleteness — policy requirement checks', () => {
 
   it('returns error when sanctioningRecord is missing', () => {
     let result: any = getCompleteness({ sanctioningRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 });
 
@@ -360,13 +372,13 @@ describe('getEligibleTiers — maximumPrizeMoney', () => {
 
   it('returns error when proposal is missing', () => {
     let result: any = getEligibleTiers({ proposal: undefined as any, sanctioningPolicy: basePolicy });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PROPOSAL);
     expect(result.error.code).toEqual('ERR_MISSING_PROPOSAL');
   });
 
   it('returns error when policy is missing', () => {
     let result: any = getEligibleTiers({ proposal: minimalProposal(), sanctioningPolicy: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_POLICY);
     expect(result.error.code).toEqual('ERR_MISSING_SANCTIONING_POLICY');
   });
 });
@@ -471,7 +483,7 @@ describe('Amendment edge cases', () => {
     ];
     // Policy has noChangeWindowWeeks: 4 and event is 2 weeks away
     let result: any = sanctioningEngine.proposeAmendment({ changes, sanctioningPolicy: basePolicy });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(CHANGE_WINDOW_CLOSED);
     expect(result.error.code).toEqual('ERR_CHANGE_WINDOW_CLOSED');
   });
 
@@ -497,7 +509,7 @@ describe('Amendment edge cases', () => {
       amendmentId: '',
       approved: true,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('proposeAmendment returns error for missing sanctioningRecord', () => {
@@ -505,7 +517,7 @@ describe('Amendment edge cases', () => {
       sanctioningRecord: undefined as any,
       changes: [{ field: 'tournamentName', previousValue: 'a', proposedValue: 'b', changeType: 'MODIFIED' }],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 });
 
@@ -540,7 +552,7 @@ describe('Compliance edge cases', () => {
     sanctioningEngine.verifyComplianceItem({ itemId: item.itemId });
 
     let result: any = sanctioningEngine.submitComplianceItem({ itemId: item.itemId });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context?.message).toContain('VERIFIED');
   });
 
@@ -567,7 +579,7 @@ describe('Compliance edge cases', () => {
     sanctioningEngine.waiveComplianceItem({ itemId: item.itemId, reason: 'Not applicable' });
 
     let result: any = sanctioningEngine.submitComplianceItem({ itemId: item.itemId });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context?.message).toContain('WAIVED');
   });
 
@@ -642,13 +654,13 @@ describe('Compliance edge cases', () => {
       compliance: { status: 'PENDING', items: [] },
     });
     let result: any = submitComplianceItem({ sanctioningRecord: record, itemId: '' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('verifyComplianceItem returns error when compliance is absent', () => {
     const record = makeRecord({ status: POST_EVENT });
     let result: any = verifyComplianceItem({ sanctioningRecord: record, itemId: 'x' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(COMPLIANCE_NOT_APPLICABLE);
     expect(result.error.code).toEqual('ERR_COMPLIANCE_NOT_APPLICABLE');
   });
 });

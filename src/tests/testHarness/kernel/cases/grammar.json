@@ -1,0 +1,106 @@
+[
+  {
+    "caseId": "grammar.parse.standard-best-of-3.v1",
+    "operation": "kernel.format.parse@1",
+    "input": { "matchUpFormat": "SET3-S:6/TB7" },
+    "expected": {
+      "kind": "value",
+      "value": { "bestOf": 3, "setFormat": { "setTo": 6, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } } }
+    }
+  },
+  {
+    "caseId": "grammar.parse.noad-best-of-5.v1",
+    "operation": "kernel.format.parse@1",
+    "input": { "matchUpFormat": "SET5-S:6NOAD/TB7" },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 5,
+        "setFormat": { "setTo": 6, "NoAD": true, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } }
+      }
+    }
+  },
+  {
+    "caseId": "grammar.parse.match-tiebreak-final.v1",
+    "operation": "kernel.format.parse@1",
+    "input": { "matchUpFormat": "SET3-S:6/TB7-F:TB10" },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": { "setTo": 6, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } },
+        "finalSetFormat": { "tiebreakSet": { "tiebreakTo": 10 } }
+      }
+    }
+  },
+  {
+    "caseId": "grammar.parse.tiebreak-only-set.v1",
+    "operation": "kernel.format.parse@1",
+    "input": { "matchUpFormat": "SET1-S:TB10" },
+    "expected": { "kind": "value", "value": { "bestOf": 1, "setFormat": { "tiebreakSet": { "tiebreakTo": 10 } } } }
+  },
+  {
+    "caseId": "grammar.parse.unknown-section.v1",
+    "operation": "kernel.format.parse@1",
+    "input": { "matchUpFormat": "SET3-S:6/TB7-Q:1" },
+    "expected": { "kind": "error", "code": "UNPARSEABLE_FORMAT" }
+  },
+  {
+    "caseId": "grammar.parse.not-a-format.v1",
+    "operation": "kernel.format.parse@1",
+    "input": { "matchUpFormat": "BOGUS" },
+    "expected": { "kind": "error", "code": "UNPARSEABLE_FORMAT" }
+  },
+  {
+    "caseId": "grammar.stringify.standard-best-of-3.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": { "setTo": 6, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } }
+      }
+    },
+    "expected": { "kind": "value", "value": "SET3-S:6/TB7" }
+  },
+  {
+    "caseId": "grammar.stringify.noad-best-of-5.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 5,
+        "setFormat": { "setTo": 6, "NoAD": true, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } }
+      }
+    },
+    "expected": { "kind": "value", "value": "SET5-S:6NOAD/TB7" }
+  },
+  {
+    "caseId": "grammar.stringify.match-tiebreak-final.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": { "setTo": 6, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } },
+        "finalSetFormat": { "tiebreakSet": { "tiebreakTo": 10 } }
+      }
+    },
+    "expected": { "kind": "value", "value": "SET3-S:6/TB7-F:TB10" }
+  },
+  {
+    "caseId": "grammar.stringify.redundant-tiebreak-at.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 1,
+        "setFormat": { "setTo": 4, "tiebreakAt": 4, "tiebreakFormat": { "tiebreakTo": 7 } }
+      }
+    },
+    "expected": { "kind": "value", "value": "SET1-S:4/TB7" },
+    "note": "@n is omitted when tiebreakAt equals setTo"
+  },
+  {
+    "caseId": "grammar.stringify.not-an-object.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": { "formatStructure": "SET3-S:6/TB7" },
+    "expected": { "kind": "refused", "reason": "INVALID_INPUT" }
+  }
+]
