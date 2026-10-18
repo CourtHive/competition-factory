@@ -1,45 +1,51 @@
 // types
-import { DrawDefinition, Participant } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Participant } from '@Types/tournamentTypes';
 
-type GetDrawScopedParticipantsArgs = {
-  drawDefinition: DrawDefinition;
+type GetReferencedParticipantsArgs = {
+  record: DrawDefinition | Event;
   participants: Participant[];
 };
 
 /**
- * The participants hydrating one draw's matchUps can read, in their stored order:
- * - every participant whose id appears anywhere in the draw, as a value or as a key (entries, position
+ * The participants a query over one draw or one event can read, in their stored order:
+ * - every participant whose id appears anywhere in the record, as a value or as a key (entries, position
  *   assignments, sides, lineUps, officials on timeItems, extensions keyed by participantId);
  * - the individuals of those participants;
  * - every group participant (pair, team, group) one of those individuals belongs to, which the individual's
- *   groupings name.
+ *   groupings name, with all of that group's individuals: a group in the list is never missing a member, so a
+ *   reader that walks a group's members always finds them.
  *
- * Reading the draw costs a walk of the draw, where hydrating every participant costs a copy of the whole pool.
+ * Reading the record costs a walk of the record, where building every participant costs a copy of the whole pool.
  */
-export function getDrawScopedParticipants({ participants, drawDefinition }: GetDrawScopedParticipantsArgs) {
+export function getReferencedParticipants({ participants, record }: GetReferencedParticipantsArgs) {
   const byId = new Map(participants.map((participant) => [participant.participantId, participant]));
-  const scoped = collectReferencedIds(drawDefinition, byId);
+  const scoped = collectReferencedIds(record, byId);
 
-  for (const participantId of [...scoped]) {
+  const addIndividuals = (participantId: string) => {
     for (const individualId of byId.get(participantId)?.individualParticipantIds ?? []) {
       if (byId.has(individualId)) scoped.add(individualId);
     }
-  }
+  };
+
+  for (const participantId of [...scoped]) addIndividuals(participantId);
 
   const groups = participants.filter(
     ({ participantId, individualParticipantIds }) =>
       !scoped.has(participantId) && individualParticipantIds?.some((individualId) => scoped.has(individualId)),
   );
-  for (const { participantId } of groups) scoped.add(participantId);
+  for (const { participantId } of groups) {
+    scoped.add(participantId);
+    addIndividuals(participantId);
+  }
 
   return participants.filter(({ participantId }) => scoped.has(participantId));
 }
 
-function collectReferencedIds(drawDefinition: DrawDefinition, byId: Map<string, Participant>) {
+function collectReferencedIds(record: DrawDefinition | Event, byId: Map<string, Participant>) {
   const found = new Set<string>();
   // a provider's record may be a document instance rather than plain JSON, so each object is walked once
   const visited = new Set<object>();
-  const pending: unknown[] = [drawDefinition];
+  const pending: unknown[] = [record];
 
   while (pending.length) {
     const value = pending.pop();

@@ -1,4 +1,4 @@
-import { getDrawScopedParticipants } from '@Query/participants/getDrawScopedParticipants';
+import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
 import { findMatchUp, publicFindMatchUp } from '@Acquire/findMatchUp';
 import { POLICY_PRIVACY_DEFAULT } from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -27,16 +27,16 @@ import {
 // participant pool returned, so each matchUp is found twice, with the scope in force and with it replaced by the
 // whole pool (what findMatchUp did before), and the two results are compared.
 let scoping = true;
-vi.mock('@Query/participants/getDrawScopedParticipants', async (importOriginal) => {
+vi.mock('@Query/participants/getReferencedParticipants', async (importOriginal) => {
   const actual: any = await importOriginal();
   return {
     ...actual,
-    getDrawScopedParticipants: vi.fn((params) =>
-      scoping ? actual.getDrawScopedParticipants(params) : params.participants,
+    getReferencedParticipants: vi.fn((params) =>
+      scoping ? actual.getReferencedParticipants(params) : params.participants,
     ),
   };
 });
-const scopeCalls = vi.mocked(getDrawScopedParticipants);
+const scopeCalls = vi.mocked(getReferencedParticipants);
 
 afterEach(() => {
   scoping = true;
@@ -181,14 +181,14 @@ describe('findMatchUp returns what hydrating every participant returned', () => 
   );
 });
 
-describe('getDrawScopedParticipants', () => {
+describe('getReferencedParticipants', () => {
   it("keeps the draw's participants, their individuals and every group they belong to, in stored order", () => {
     const tournamentRecord = generate({ nonRandom: 4, completeAllMatchUps: false, privacy: false });
     const { participants } = tournamentRecord;
     const doubles = tournamentRecord.events.find(({ eventType }) => eventType === DOUBLES);
     const drawDefinition = doubles.drawDefinitions[0];
 
-    const scoped = getDrawScopedParticipants({ participants, drawDefinition });
+    const scoped = getReferencedParticipants({ participants, record: drawDefinition });
     const scopedIds = scoped.map(({ participantId }) => participantId);
 
     const pairIds = drawDefinition.entries.map(({ participantId }) => participantId);
@@ -209,7 +209,7 @@ describe('getDrawScopedParticipants', () => {
     drawDefinition.self = drawDefinition;
     drawDefinition.entries.push(drawDefinition.entries);
 
-    const scoped = getDrawScopedParticipants({ participants, drawDefinition });
+    const scoped = getReferencedParticipants({ participants, record: drawDefinition });
     expect(scoped.map(({ participantId }) => participantId)).toEqual(['P1', 'P2']);
   });
 });
