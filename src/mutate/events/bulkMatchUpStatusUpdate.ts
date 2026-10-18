@@ -1,13 +1,25 @@
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
+import { decorateResult } from '@Functions/global/decorateResult';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants
-import { MISSING_TOURNAMENT_RECORD, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import {
+  DRAW_DEFINITION_NOT_FOUND,
+  ErrorType,
+  EVENT_NOT_FOUND,
+  MATCHUP_NOT_FOUND,
+  MISSING_DRAW_ID,
+  MISSING_EVENT,
+  MISSING_MATCHUP_ID,
+  MISSING_TOURNAMENT_RECORD,
+  MISSING_VALUE,
+} from '@Constants/errorConditionConstants';
 
 // types
-import type { PolicyDefinitions } from '@Types/factoryTypes';
-import type { Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import type { ResultType } from '@Types/factoryTypes';
 
 // The per-call options of setMatchUpStatus that a bulk entry carries, each settable on the call (every outcome) or
 // on one outcome (that outcome only). Forwarding none of them made a result entered in bulk propagate differently
@@ -33,13 +45,6 @@ type BulkOutcome = ForwardedOptions & {
   notes?: string;
   schedule?: object;
 };
-type BulkUpdateArgs = {
-  tournamentRecords: { [key: string]: Tournament };
-  policyDefinitions?: PolicyDefinitions;
-  tournamentRecord: Tournament;
-  params: ForwardedOptions;
-  outcomes: BulkOutcome[];
-};
 
 export function bulkMatchUpStatusUpdate(params) {
   if (!params?.outcomes) return { error: MISSING_VALUE };
@@ -52,28 +57,29 @@ export function bulkMatchUpStatusUpdate(params) {
     }) ||
     {};
 
-  const outcomes = params.outcomes ?? [];
+  // EVERY OUTCOME IS LOCATED BEFORE ANY IS APPLIED. An error changes nothing (CA, 2026-10-18): an outcome naming a
+  // tournament, event, draw or matchUp that is not there is refused here, before the outcomes ahead of it are written.
+  // It used to be skipped while the call reported SUCCESS, so a caller could not tell a typo from a write.
+  const located = locateOutcomes(tournamentRecords, params.outcomes);
+  if (located.error || !located.targets) return located;
 
-  const tournamentIds = outcomes.reduce(
-    (tournamentIds, outcome) =>
-      tournamentIds.includes(outcome.tournamentId) ? tournamentIds : tournamentIds.concat(outcome.tournamentId),
-    [],
-  );
-
-  for (const tournamentId of tournamentIds) {
-    const tournamentRecord = tournamentRecords[tournamentId];
-    if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-    const tournamentOutcomes = outcomes.filter((outcome) => outcome.tournamentId === tournamentId);
-    if (tournamentOutcomes.length) {
-      const result = bulkUpdate({
-        policyDefinitions: params.policyDefinitions,
-        outcomes: tournamentOutcomes,
-        tournamentRecords,
-        tournamentRecord,
-        params,
-      });
-      if (result.error) return result;
-    }
+  for (const { outcome, tournamentRecord, event, drawDefinition } of located.targets) {
+    const { matchUpFormat, matchUpId, drawId, notes } = outcome;
+    const result = setMatchUpStatus({
+      ...forwardedOptions(params, outcome),
+      policyDefinitions: params.policyDefinitions,
+      schedule: outcome?.schedule,
+      tournamentRecords,
+      tournamentRecord,
+      drawDefinition,
+      matchUpFormat,
+      matchUpId,
+      outcome,
+      drawId,
+      notes,
+      event,
+    });
+    if (result.error) return result;
   }
 
   return { ...SUCCESS };
@@ -83,44 +89,39 @@ function forwardedOptions(params: ForwardedOptions, outcome: BulkOutcome): Forwa
   return Object.fromEntries(FORWARDED_OPTIONS.map((key) => [key, outcome[key] ?? params[key]]));
 }
 
-function bulkUpdate({ tournamentRecords, tournamentRecord, outcomes, policyDefinitions, params }: BulkUpdateArgs) {
-  const events: { [eventId: string]: BulkOutcome[] } = {};
+type Target = { outcome: BulkOutcome; tournamentRecord: Tournament; event: Event; drawDefinition: DrawDefinition };
 
-  // group outcomes by events to optimize
-  outcomes.forEach((outcome) => {
-    const { eventId } = outcome;
-    if (!events[eventId]) events[eventId] = [];
-    events[eventId].push(outcome);
-  });
+/** each outcome's tournament, event, draw and matchUp, in the order given; the first that is not there refuses all */
+function locateOutcomes(
+  tournamentRecords: { [key: string]: Tournament },
+  outcomes: BulkOutcome[],
+): ResultType & { targets?: Target[] } {
+  const matchUpIds = new Map<DrawDefinition, Set<string>>();
+  const targets: Target[] = [];
 
-  for (const eventId of Object.keys(events)) {
+  for (const [outcomeIndex, outcome] of outcomes.entries()) {
+    const { tournamentId, eventId, drawId, matchUpId } = outcome ?? {};
+    const refuse = (error: ErrorType) =>
+      decorateResult({ result: { error }, context: { outcomeIndex, tournamentId, eventId, drawId, matchUpId } });
+
+    const tournamentRecord = tournamentRecords[tournamentId];
+    if (!tournamentRecord) return refuse(MISSING_TOURNAMENT_RECORD);
+    if (!eventId) return refuse(MISSING_EVENT);
     const { event } = findEvent({ tournamentRecord, eventId });
+    if (!event) return refuse(EVENT_NOT_FOUND);
+    if (!drawId) return refuse(MISSING_DRAW_ID);
+    const drawDefinition = event.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === drawId);
+    if (!drawDefinition) return refuse(DRAW_DEFINITION_NOT_FOUND);
+    if (!matchUpId) return refuse(MISSING_MATCHUP_ID);
+    if (!matchUpIds.has(drawDefinition))
+      matchUpIds.set(
+        drawDefinition,
+        new Set(getMatchUpsMap({ drawDefinition }).drawMatchUps.map((matchUp) => matchUp.matchUpId)),
+      );
+    if (!matchUpIds.get(drawDefinition)?.has(matchUpId)) return refuse(MATCHUP_NOT_FOUND);
 
-    for (const outcome of events[eventId]) {
-      const { drawId } = outcome;
-      const drawDefinition = event?.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === drawId);
-      if (drawDefinition && drawId) {
-        const { matchUpFormat, matchUpId, notes } = outcome;
-        const result = setMatchUpStatus({
-          ...forwardedOptions(params, outcome),
-          schedule: outcome?.schedule,
-          tournamentRecords,
-          policyDefinitions,
-          tournamentRecord,
-          drawDefinition,
-          matchUpFormat,
-          matchUpId,
-          outcome,
-          drawId,
-          notes,
-          event,
-        });
-        if (result.error) {
-          return result;
-        }
-      }
-    }
+    targets.push({ outcome, tournamentRecord, event, drawDefinition });
   }
 
-  return { ...SUCCESS };
+  return { targets };
 }

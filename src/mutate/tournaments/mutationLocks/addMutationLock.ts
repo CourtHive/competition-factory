@@ -1,4 +1,6 @@
+import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
 import { addExtension } from '@Mutate/extensions/addExtension';
+import { mutationLockNotice } from './mutationLockNotice';
 import { findExtension } from '@Acquire/findExtension';
 import { findVenue } from '@Query/venues/findVenue';
 import { nowIso } from '@Tools/clock';
@@ -6,8 +8,8 @@ import { UUID } from '@Tools/UUID';
 
 // constants and types
 import { MutationLock, MutationLockScope, MutationLocksValue } from '@Types/mutationLockTypes';
+import { Extension, Tournament, Venue } from '@Types/tournamentTypes';
 import { MUTATION_LOCKS } from '@Constants/extensionConstants';
-import { Extension, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ErrorType,
@@ -46,6 +48,7 @@ export function addMutationLock(params: AddMutationLockArgs): {
 
   // Resolve target element: draw > event > venue > tournament
   let element: { extensions?: Extension[] } | undefined;
+  let venue: Venue | undefined;
   if (drawDefinition) {
     element = drawDefinition;
   } else if (event) {
@@ -53,13 +56,22 @@ export function addMutationLock(params: AddMutationLockArgs): {
   } else if (venueId) {
     const venueResult = findVenue({ tournamentRecord, venueId });
     if (venueResult.error) return { error: venueResult.error };
-    element = venueResult.venue;
+    venue = venueResult.venue;
+    element = venue;
   } else {
     element = tournamentRecord;
   }
 
   // Read existing locks on this element
   const { extension } = findExtension({ element, name: MUTATION_LOCKS });
+  const before = JSON.stringify(extension?.value);
+  // a tournament-scope lock, and the feature gate any lock enables, are root extensions
+  const rootBefore = rootExtensionsFingerprint(tournamentRecord);
+  const notice = () => {
+    const after = findExtension({ element, name: MUTATION_LOCKS }).extension?.value;
+    if (JSON.stringify(after) !== before) mutationLockNotice({ tournamentRecord, drawDefinition, event, venue });
+    rootExtensionsNotice({ tournamentRecord, before: rootBefore });
+  };
   const locksValue: MutationLocksValue = extension?.value ?? { locks: [] };
   const now = nowIso();
 
@@ -90,6 +102,7 @@ export function addMutationLock(params: AddMutationLockArgs): {
         extension: { name: MUTATION_LOCKS, value: locksValue },
         creationTime: false,
       });
+      notice();
 
       return { ...SUCCESS, lockId: conflicting.lockId };
     }
@@ -121,6 +134,7 @@ export function addMutationLock(params: AddMutationLockArgs): {
 
   // Ensure tournament-level feature gate is enabled
   ensureFeatureGate(tournamentRecord, element);
+  notice();
 
   return { ...SUCCESS, lockId };
 }

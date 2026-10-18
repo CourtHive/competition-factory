@@ -1,6 +1,6 @@
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { normalizePenaltyType } from '@Query/participants/normalizePenaltyType';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { normalizePenaltyType } from './normalizePenaltyType';
 
 import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
 import { TOURNAMENT_RECORD, PENALTY_ID } from '@Constants/attributeConstants';
