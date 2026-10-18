@@ -2,6 +2,12 @@
 title: Sanctioning Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`querySanctioningRecord`](/docs/implementation/records/querySanctioningRecord), [`validateStatusTransition`](/docs/implementation/validation/validateStatusTransition). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { governors } from 'tods-competition-factory';
 
@@ -301,15 +307,7 @@ Transitions to `CLOSED` (terminal).
 
 ### querySanctioningRecord
 
-Returns a deep copy of the sanctioning record.
-
-```ts
-{
-  sanctioningRecord;
-}
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`querySanctioningRecord`](/docs/implementation/records/querySanctioningRecord). Package-export status is a separate decision.
 
 ### getAvailableTransitions
 
@@ -399,13 +397,4 @@ Checks: insurance, safety plan, medical plan, anti-corruption, safeguarding, lea
 
 ### validateStatusTransition
 
-Validates whether a status transition is allowed.
-
-```ts
-{
-  fromStatus: SanctioningStatus;
-  toStatus: SanctioningStatus;
-}
-```
-
-**Returns:** `{ success, valid }` or `{ error }` with valid targets in context.
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validateStatusTransition`](/docs/implementation/validation/validateStatusTransition). Package-export status is a separate decision.

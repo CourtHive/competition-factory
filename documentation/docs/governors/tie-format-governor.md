@@ -2,6 +2,12 @@
 title: tieFormat Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`removeOrphanedTieFormats`](/docs/implementation/validation/removeOrphanedTieFormats), [`tieFormatGenderValidityCheck`](/docs/implementation/validation/tieFormatGenderValidityCheck), [`validateCollectionDefinition`](/docs/implementation/validation/validateCollectionDefinition). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { tieFormatGovernor } from 'tods-competition-factory';
 ```
@@ -421,93 +427,12 @@ engine.removeCollectionGroup({
 
 ## removeOrphanedTieFormats
 
-Removes entries from `event.tieFormats[]` that are no longer referenced by any drawDefinition, structure, or matchUp in the event.
-
-```js
-engine.removeOrphanedTieFormats({ eventId });
-```
-
-**Purpose:** After resetting or removing tieFormats from individual matchUps or structures, centralised entries may become orphaned. This method scans the event hierarchy for all `tieFormatId` references and removes any `event.tieFormats[]` entries that no longer have references.
-
-**When to use:**
-
-- After calling `resetTieFormat` on matchUps
-- After bulk removal of structures or matchUps
-- As a cleanup step after tieFormat modifications
-- Periodically to keep tournament records lean
-
-**Notes:**
-
-- Scans event, drawDefinitions, structures, and TEAM matchUps for `tieFormatId` references
-- Removes the `tieFormats` array entirely if no entries remain
-- Safe to run multiple times (idempotent)
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`removeOrphanedTieFormats`](/docs/implementation/validation/removeOrphanedTieFormats). Package-export status is a separate decision.
 
 ## tieFormatGenderValidityCheck
 
-Validates that a collection's gender specification is compatible with the reference gender (event or category gender).
-
-```js
-const { valid, error, info } = engine.tieFormatGenderValidityCheck({
-  referenceGender, // gender of event or category (e.g., 'MALE', 'FEMALE', 'MIXED', 'ANY')
-  matchUpType, // 'SINGLES' or 'DOUBLES'
-  gender, // gender of the collection being validated
-});
-
-if (!valid) {
-  console.error(error, info);
-}
-```
-
-**Returns:**
-
-```ts
-{
-  valid: boolean;
-  error?: ErrorType;  // INVALID_GENDER if validation fails
-  info?: string;      // Explanation of validation failure
-}
-```
-
-**Validation rules:**
-
-1. **Gendered events (MALE/FEMALE):** Collection gender must match reference gender
-2. **MIXED events:** Cannot contain MIXED singles (only MIXED doubles); cannot contain `gender: ANY`
-3. **ANY gender events:** Cannot contain MIXED singles (only MIXED doubles)
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`tieFormatGenderValidityCheck`](/docs/implementation/validation/tieFormatGenderValidityCheck). Package-export status is a separate decision.
 
 ## validateCollectionDefinition
 
-Validates that a collectionDefinition is properly formed and compatible with event/category constraints.
-
-```js
-const { valid } = engine.validateCollectionDefinition({
-  collectionDefinition, // required
-  checkCollectionIds, // optional boolean - check that collectionIds are present
-  referenceCategory, // optional - category for comparison if eventId is not provided
-  referenceGender, // optional - expected gender if eventId is not provided
-  checkCategory, // optional boolean - defaults to true
-  checkGender, // optional boolean - defaults to true
-  eventId, // required only for checking gender
-});
-```
-
-**Returns:**
-
-```ts
-{
-  valid: boolean;
-  error?: ErrorType;
-}
-```
-
-**Validation checks:**
-
-- Collection structure is valid (has required fields)
-- CollectionIds are present (if `checkCollectionIds: true`)
-- Gender compatibility with event/category (if `checkGender: true`)
-- Category compatibility (if `checkCategory: true`)
-- MatchUp formats are valid
-- Scoring values are properly configured
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validateCollectionDefinition`](/docs/implementation/validation/validateCollectionDefinition). Package-export status is a separate decision.

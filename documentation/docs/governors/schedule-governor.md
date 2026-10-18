@@ -2,6 +2,12 @@
 title: Schedule Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`getMatchUpsToSchedule`](/docs/implementation/scheduling/getMatchUpsToSchedule), [`validateScheduleScenario`](/docs/implementation/validation/validateScheduleScenario). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 The **Schedule Governor** provides methods for assigning dates, times, venues, and courts to tournament matchUps. It supports manual assignment, automated scheduling, and hybrid approaches for tournaments ranging from simple club events to complex multi-day professional circuits.
 
 ```js
@@ -939,16 +945,7 @@ const { courts } = engine.generateVirtualCourts({
 
 ### getMatchUpsToSchedule
 
-Returns matchUps that are ready to be scheduled.
-
-```js
-const { matchUps } = engine.getMatchUpsToSchedule({
-  eventId, // optional
-  drawId, // optional
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getMatchUpsToSchedule`](/docs/implementation/scheduling/getMatchUpsToSchedule). Package-export status is a separate decision.
 
 ### getPersonRequests
 
@@ -1414,13 +1411,7 @@ const result = engine.applyScheduleScenario({
 
 ### validateScheduleScenario
 
-Shape + light referential validation for a scenario object (used internally by add/update).
-
-```js
-engine.validateScheduleScenario({ scenario }); // → { valid: boolean, error?, info? }
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validateScheduleScenario`](/docs/implementation/validation/validateScheduleScenario). Package-export status is a separate decision.
 
 ### getScenarioScheduleProjection
 

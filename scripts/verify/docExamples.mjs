@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
@@ -71,6 +71,64 @@ if (positions.positionAssignments?.length !== 32) throw new Error('positions');`
     check: `const found = tournamentEngine.getParticipants({participantFilters:{participantIds:[participantId]}}).participants?.[0];
 if (found?.person?.contacts?.[0]?.mobileTelephone !== '+1-555-0123') throw new Error('contact persistence');`,
   },
+
+  {
+    page: 'implementation/draws/getDrawTypeCoercion.md',
+    contains: 'const drawTypeCoercion = engine.getDrawTypeCoercion',
+    setup:
+      factorySetup +
+      `
+const engine = tournamentEngine; const policyDefinitions = { draws: { drawTypeCoercion: false } }; const appliedPolicies = {}; const drawType = 'SINGLE_ELIMINATION';`,
+    check: `if (drawTypeCoercion !== false) throw new Error('coercion policy must return boolean false');`,
+  },
+  {
+    page: 'implementation/records/participantScheduledMatchUps.md',
+    contains: 'const scheduledResult = engine.participantScheduledMatchUps',
+    setup:
+      factorySetup +
+      `
+const engine = tournamentEngine; const matchUps: any[] = [{ matchUpId: 'late', schedule: { scheduledDate: '2026-10-18', scheduledTime: '12:00' } }, { matchUpId: 'early', schedule: { scheduledDate: '2026-10-18', scheduledTime: '09:00' } }];`,
+    check: `const grouped = 'scheduledMatchUps' in scheduledResult ? scheduledResult.scheduledMatchUps : undefined;
+const rows = grouped && Object.values(grouped)[0];
+if (!Array.isArray(rows) || rows.map((m) => m.matchUpId).join(',') !== 'early,late') throw new Error('grouping/sort result');`,
+  },
+  {
+    page: 'implementation/records/getMatchUpContextIds.md',
+    contains: 'const { drawId, eventId, structureId, tournamentId, error }',
+    setup:
+      factorySetup.replace("const eventId = 'event';", '') +
+      `
+const engine = tournamentEngine; const matchUpId = 'context'; const matchUps = [{ matchUpId, drawId: 'd', eventId: 'e', structureId: 's', tournamentId: 't' }];`,
+    check: `if (error || drawId !== 'd' || eventId !== 'e' || structureId !== 's' || tournamentId !== 't') throw new Error('top-level context ids');`,
+  },
+
+  {
+    page: 'implementation/records/addNotes.md',
+    contains: 'tournamentGovernor.addNotes({ element, notes })',
+    setup: `const element: { notes?: string } = {}; const notes = 'documented notes';`,
+    check: `if (element.notes !== notes) throw new Error('notes must mutate the supplied element');`,
+  },
+
+  {
+    page: 'implementation/validation/validMatchUp.md',
+    contains: 'const valid = matchUpGovernor.validMatchUp(matchUp)',
+    setup: `const matchUp = { matchUpId: 'shape' };`,
+    check: `if (valid !== true) throw new Error('raw matchUp boolean validation');`,
+  },
+  {
+    page: 'implementation/validation/validMatchUps.md',
+    contains: 'const valid = matchUpGovernor.validMatchUps(matchUps)',
+    setup: `const matchUps = [{ matchUpId: 'shape' }];`,
+    check: `if (valid !== true) throw new Error('raw array boolean validation');`,
+  },
+  {
+    page: 'implementation/records/categoryCanContain.md',
+    contains: '  childCategory,\n  withDetails: true,',
+    setup:
+      factorySetup +
+      `\nconst engine = tournamentEngine; const category = { ageMax: 16 }; const childCategory = { ageMax: 18 };`,
+    check: `if (result.valid || !result.invalidAgeMax || !result.categoryDetails || !result.childCategoryDetails || 'details' in result) throw new Error('flat category flags and source details');`,
+  },
 ];
 // Keep the advertised complete index synchronized with public class methods.
 const source = ts.createSourceFile(
@@ -104,7 +162,7 @@ try {
     example.code = `${example.setup ?? ''}\n${fences[0]}\n${example.check}`;
     const body = example.code.replaceAll("from 'tods-competition-factory'", `from ${JSON.stringify(packageTypes)}`);
     const file = join(workdir, `example-${index}.ts`);
-    const imports = `import { scoreGovernor, tournamentEngine, mocksEngine } from ${JSON.stringify(packageTypes)};\n`;
+    const imports = `import { scoreGovernor, tournamentEngine, mocksEngine, tournamentGovernor, matchUpGovernor } from ${JSON.stringify(packageTypes)};\n`;
     // The overview already imports scoreGovernor; avoid a duplicate import.
     writeFileSync(file, (body.includes('import { scoreGovernor }') ? '' : imports) + body + '\nexport {};\n');
     return file;
@@ -134,10 +192,12 @@ try {
     const code = ts.transpileModule(sourceCode, {
       compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
     }).outputText;
-    new Function('scoreGovernor', 'tournamentEngine', 'mocksEngine', code)(
+    new Function('scoreGovernor', 'tournamentEngine', 'mocksEngine', 'tournamentGovernor', 'matchUpGovernor', code)(
       factory.scoreGovernor,
       factory.tournamentEngine,
       factory.mocksEngine,
+      factory.tournamentGovernor,
+      factory.matchUpGovernor,
     );
     console.log(`[docs-examples] PASS ${example.page}: ${example.contains}`);
   }
