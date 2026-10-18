@@ -891,6 +891,11 @@ named test that fails without it.
   winning seat. Pending, or awarded to a seat still awaiting its arrival, it records no arrival on the side it feeds,
   as a BYE matchUp awaiting its other side records no BYE origin (COMPASS 32/31 20551581 under
   `doubleExitPropagateBye: false`: `anExitThatDeliveredNobodyIsNoOrigin`).
+- **A dissolved convergence keeps an award that came down its loser link.** A convergence a correction dissolves
+  settles as the kept exit alone would leave it, and that includes the award: a produced exit that came straight down
+  its loser link keeps its award to the seat still awaiting its arrival, and reserves that seat in the next round, as
+  entering the same results once each does in any order. Only an exit relayed past a BYE stands pending (COMPASS 32/31
+  20551581 under `doubleExitPropagateBye: false`: `aDissolvedConvergenceKeepsItsLoserLinkAward`).
 - **The seat left opposite a BYE goes on.** A BYE advances the drawPosition opposite it when it lands, occupied or
   not, and two BYEs meeting send one BYE on. When one of the two is withdrawn, the empty seat now opposite the BYE that
   stays goes on into the next matchUp, where it has room, as it would have had that BYE landed alone; a position that

@@ -4,6 +4,7 @@ import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/d
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
+import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { bringCarryHome, carriedEntryAt } from '@Mutate/matchUps/drawPositions/carryHome';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -1011,22 +1012,6 @@ export function awardStands({
   });
   const assignment = positionAssignments.find((candidate) => candidate.drawPosition === drawPosition);
   return !!(assignment?.participantId || assignment?.qualifier);
-}
-
-/** the target is the source's own loser target: the exit reached it over the link, not relayed past a BYE */
-function cameDownLoserLink({
-  drawDefinition,
-  targetMatchUp,
-  sourceMatchUpId,
-}: {
-  drawDefinition: DrawDefinition;
-  sourceMatchUpId?: string;
-  targetMatchUp: MatchUp;
-}): boolean {
-  if (!sourceMatchUpId) return false;
-  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition })?.matchUps ?? [];
-  const targets = positionTargets({ matchUpId: sourceMatchUpId, inContextDrawMatchUps, drawDefinition });
-  return targets.targetMatchUps?.loserMatchUp?.matchUpId === targetMatchUp.matchUpId;
 }
 
 /**

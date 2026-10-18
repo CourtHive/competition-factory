@@ -18,9 +18,11 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * from it (`{ previousMatchUpStatus: DEFAULTED }` on side 1), as though someone had won the DEFAULTED and were waiting
  * there. "A side that has not been decided has no origin" (exit-propagation.md): a single exit delivers its winner
  * only once someone holds the winning seat, as a BYE matchUp awaiting its other side delivers nobody (F3,
- * `aByeOriginWaitsForItsFeederToDeliver`). The entry was written in the census order, the probe `East|1|14` last (the
- * exit pending), and in the round-by-round order (the exit awarded to the empty seat), and not when the results were
- * entered last to first.
+ * `aByeOriginWaitsForItsFeederToDeliver`). The entry was written in the census order, the probe `East|1|14` last, and
+ * in the round-by-round order, and not when the results were entered last to first. In every order the exit is awarded
+ * to the empty seat it came straight down its loser link to: in the census order it once stood pending, because
+ * correcting `East|1|11` dissolved a convergence there and the award was taken back (census A1 R9,
+ * `aDissolvedConvergenceKeepsItsLoserLinkAward`).
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
@@ -78,13 +80,14 @@ function play(steps: Step[], drawId: string) {
   return { pending: find('South|1|3'), fed: find('South|2|2') };
 }
 
-it('the side a pending exit feeds records no arrival from it', () => {
+it('the side an exit awarded to nobody feeds records no arrival from it', () => {
   const { pending, fed } = play(CENSUS_SCHEDULE, 'delivered-nobody-census');
   expect(pending.matchUpStatus).toEqual(DEFAULTED);
-  expect(pending.winningSide).toBeUndefined();
+  // awarded, as direct entry awards it, to the seat awaiting `West|1|6`'s loser, which nobody has reached
+  expect(pending.winningSide).toEqual(2);
   expect(pending.sides.map((side: any) => side.participantId)).toEqual([undefined, undefined]);
 
-  // side 2 is `South|1|4`'s produced walkover; side 1, fed by the pending DEFAULTED, has no origin
+  // side 2 is `South|1|4`'s produced walkover; side 1, fed by the undelivered DEFAULTED, has no origin
   expect(fed.matchUpStatus).toEqual(WALKOVER);
   expect(fed.sideExitProvenance?.[2]?.matchUpStatus).toEqual(WALKOVER);
   expect(fed.sideExitProvenance?.[1]).toBeUndefined();

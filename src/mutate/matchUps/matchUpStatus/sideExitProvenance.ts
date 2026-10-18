@@ -1,5 +1,6 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { writeNativeEnabled } from '@Global/state/globalState';
@@ -1177,7 +1178,18 @@ function awardsEmptySeat({
   matchUp: MatchUp;
 }): boolean {
   const winningSide = derived.winningSide as 1 | 2;
-  if (!isDoubleExit(exitsRetained[(3 - winningSide) as 1 | 2]?.previousMatchUpStatus)) return false;
+  const exitEntry = exitsRetained[(3 - winningSide) as 1 | 2];
+  if (!isDoubleExit(exitEntry?.previousMatchUpStatus)) return false;
+  // ...but one that came straight down its source's LOSER link keeps its award to the seat that will receive the next
+  // arrival, as direct entry writes it and as `positionClear`'s `awardStands` keeps it ("A convergence a correction
+  // dissolves settles as the kept exit alone would leave it", exit-propagation.md). Taken back here, a dissolved
+  // convergence left that exit pending and its reservation unmade, where entering the same results once each, in any
+  // order, awards it (census A1 R9, COMPASS 32/31 policy-off 20551581: `South|1|3`, and `South|2|2`'s dp 6)
+  if (
+    drawDefinition &&
+    cameDownLoserLink({ drawDefinition, targetMatchUp: matchUp, sourceMatchUpId: exitEntry?.sourceMatchUpId })
+  )
+    return false;
   const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
   const seat = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber: winningSide });
   return !positionAssignmentsOf(structure)?.find((assignment) => assignment.drawPosition === seat)?.participantId;
