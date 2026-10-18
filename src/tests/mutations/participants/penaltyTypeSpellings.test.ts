@@ -1,4 +1,4 @@
-import { normalizePenaltyType } from '@Mutate/participants/penalties/normalizePenaltyType';
+import { normalizePenaltyType } from '@Query/participants/normalizePenaltyType';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';

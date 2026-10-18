@@ -1,4 +1,4 @@
-import { LEGACY_PENALTY_TYPES, normalizePenaltyType } from '@Mutate/participants/penalties/normalizePenaltyType';
+import { LEGACY_PENALTY_TYPES, normalizePenaltyType } from '@Query/participants/normalizePenaltyType';
 import { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
