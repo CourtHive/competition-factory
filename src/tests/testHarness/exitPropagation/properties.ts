@@ -71,9 +71,87 @@ function countForward(coverage: RelationalCoverage | undefined, applied: Observa
  * later in a real tournament. It is also the general form of the partial-mutation class: a write
  * that errors halfway cannot be undone, so the round trip diverges.
  */
+/** the `sideExitProvenance` slot of a `projectDraw` matchUp row */
+const PROVENANCE = 5;
+
+/**
+ * What a round trip must restore: the projection, less the ARRIVAL entries.
+ *
+ * An arrival entry records a winner's origin and no exit (`{ previousMatchUpStatus, sourceMatchUpId }`); the docs
+ * call it a fact a matchUp "may record". Forward play writes it only in some entry orders. It is written by whichever
+ * of two events comes second, and some orderings have no writer at all, so a draw reached two ways can differ by an
+ * arrival entry and nothing else (A1 triage cases 28, 30 and 31). No decision reads one: measured over 76 + 67
+ * single-step continuations and 69 full playouts of those cases with the entry present and absent, no decision
+ * differed. Requiring it here reported forward play's own order dependence as an undo residue.
+ *
+ * An opposed debate (2026-10-17) agreed to keep it out of the round trip until one settle step derives it, and to
+ * police the entries that ARE present with {@link checkArrivalsTrue} instead. Exit-bearing entries and BYE claims
+ * stay projected in full.
+ */
+function projectForRoundTrip(drawDefinition: any): any[] {
+  // an exit-bearing entry is kept whole; of an arrival only its BYE claims, if any
+  const roundTripEntry = (entry: any) => {
+    if (entry?.matchUpStatus) return entry;
+    return entry?.byeClaims?.length ? { byeClaims: entry.byeClaims } : undefined;
+  };
+  return projectDraw(drawDefinition).map((structure: any) => ({
+    ...structure,
+    matchUps: structure.matchUps.map((row: any[]) => {
+      const provenance = row[PROVENANCE];
+      if (!provenance) return row;
+      const kept = Object.fromEntries(
+        Object.entries(provenance)
+          .map(([side, entry]) => [side, roundTripEntry(entry)])
+          .filter(([, entry]) => entry),
+      );
+      const next = [...row];
+      next[PROVENANCE] = Object.keys(kept).length ? kept : null;
+      return next;
+    }),
+  }));
+}
+
+/**
+ * ARRIVAL_TRUE — an arrival entry that is present tells the truth.
+ *
+ * The companion of {@link projectForRoundTrip}: absence of an arrival entry is allowed (the docs: "treat a missing side
+ * as unknown"), falsehood is not. An entry with no `matchUpStatus` and a `sourceMatchUpId` must name a matchUp that
+ * exists, is decided, sends its winner here, and whose status is the `previousMatchUpStatus` recorded (a same-winner
+ * re-score rewrites it: `refreshArrivalsFrom`); a participant on that side must be the source's winner.
+ */
+export function checkArrivalsTrue(drawId: string): PropertyFailure[] {
+  const matchUps = getDrawMatchUps(drawId);
+  const byId = new Map(matchUps.map((matchUp: any) => [matchUp.matchUpId, matchUp]));
+  const failures: PropertyFailure[] = [];
+  for (const matchUp of matchUps) {
+    for (const [side, entry] of Object.entries(matchUp.sideExitProvenance ?? {}) as [string, any][]) {
+      if (!entry?.sourceMatchUpId || entry.matchUpStatus) continue;
+      const source: any = byId.get(entry.sourceMatchUpId);
+      const occupant = matchUp.sides?.find((s: any) => s?.sideNumber === Number(side))?.participantId;
+      const winner = source?.sides?.find((s: any) => s?.sideNumber === source?.winningSide)?.participantId;
+      const reason =
+        (!source && 'names no matchUp in the draw') ||
+        (!source.winningSide && `names ${source.matchUpStatus} ${coordinate(source)}, which is undecided`) ||
+        (source.winnerMatchUpId !== matchUp.matchUpId && `names ${coordinate(source)}, whose winner goes elsewhere`) ||
+        (entry.previousMatchUpStatus !== source.matchUpStatus &&
+          `says ${entry.previousMatchUpStatus} where ${coordinate(source)} is ${source.matchUpStatus}`) ||
+        (occupant && winner && occupant !== winner && `side ${side} holds someone other than its winner`);
+      if (reason)
+        failures.push({
+          property: 'ARRIVAL_TRUE',
+          matchUpId: matchUp.matchUpId,
+          detail: `${coordinate(matchUp)} side ${side}: an arrival entry ${reason}`,
+        });
+    }
+  }
+  return failures;
+}
+
+const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
+
 export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[] {
   const { propagateExitStatus, matchUpId, drawId, outcome, coverage } = params;
-  const beforeProjection = projectDraw(getDrawDefinition(drawId));
+  const beforeProjection = projectForRoundTrip(getDrawDefinition(drawId));
   const before = stableHash(beforeProjection);
 
   const applied = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome });
@@ -94,9 +172,11 @@ export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[]
     return checkErrorAtomicity(cleared, matchUpId);
   }
 
-  const afterProjection = projectDraw(getDrawDefinition(drawId));
+  const afterProjection = projectForRoundTrip(getDrawDefinition(drawId));
   const after = stableHash(afterProjection);
-  if (after === before) return [];
+  // what the round trip may leave out it must not leave false: a released position's arrival entry naming an
+  // origin the clear made undecided is a residue (A1 triage case 25)
+  if (after === before) return checkArrivalsTrue(drawId);
 
   const coordinates = new Map(
     getDrawMatchUps(drawId).map((matchUp: any) => [

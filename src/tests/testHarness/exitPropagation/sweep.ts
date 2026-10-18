@@ -1,4 +1,4 @@
-import { checkDoUndoIdentity, checkIdempotence, checkMonotonicity } from './properties';
+import { checkArrivalsTrue, checkDoUndoIdentity, checkIdempotence, checkMonotonicity } from './properties';
 import { checkErrorAtomicity, checkInvariants, checkIntegrity } from './transitions';
 import { clearOutcome, getDrawMatchUps, observeMutation } from './transitions';
 import type { RelationalCoverage } from './properties';
@@ -283,6 +283,8 @@ export function replay(
 
   const integrity = checkIntegrity(drawId, '-');
   if (integrity.length) return integrity[0];
+  const arrivals = checkArrivalsTrue(drawId);
+  if (arrivals.length) return arrivals[0];
 
   // Relational properties, each on the state the schedule produced.
   //
