@@ -1,21 +1,25 @@
 import { competitionFormats } from '@Fixtures/scoring/competitionFormats';
+import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { matchUpFormats } from '@Fixtures/scoring/matchUpFormats';
 import { MATCH_ROOTS } from '@Constants/matchUpFormatConstants';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { EDGE_CODES } from '../corpus/grammarSource';
 import path from 'node:path';
 import fs from 'node:fs';
 
 /**
- * Every parseable matchUpFormat code the factory names: its format fixtures, its competition
- * profiles, the grammar corpus's edge codes, and every literal in its tests and scoring docs. A
- * format a test or a doc uses is a format someone expects to score, so each one lands in a matrix
- * cell that must be classified. Returns code → the first source it was seen in.
+ * Every matchUpFormat code valid for new use that the factory names: its format fixtures, its
+ * competition profiles, the grammar corpus's edge codes, and every literal in its tests and scoring
+ * docs. A format a test or a doc uses is a format someone expects to score, so each one lands in a
+ * matrix cell that must be classified. A code that parses but is refused for new use (a tiebreak below
+ * S − 1, an aggregate of standard sets; CA 2026-10-18, scoring engine spec § 16 decision 19) is only
+ * replayed, never scored live, so it is no cell's (the tests that pin the refusal name such codes).
+ * Returns code → the first source it was seen in.
  */
 export function harvestFormats(root = '.'): Map<string, string> {
   const found = new Map<string, string>();
   const add = (code: unknown, source: string) => {
-    if (typeof code === 'string' && !found.has(code) && parse(code)) found.set(code, source);
+    if (typeof code === 'string' && !found.has(code) && isValidMatchUpFormat({ matchUpFormat: code }))
+      found.set(code, source);
   };
 
   for (const code of Object.values(matchUpFormats)) add(code, 'fixtures/matchUpFormats');

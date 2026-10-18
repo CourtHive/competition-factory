@@ -117,8 +117,8 @@ segment score. What a point does in a games-based segment (`T{minutes}`, `T{minu
 format:
 
 - **Under the SET root, not aggregate** (`SET3-S:T10`, `SET3-S:T10-G:TN3D`): a tennis-family timed set.
-  Points build traditional games, with deuce, No-Ad (`NOAD`) and deuce caps (`-G:TN{n}D`), and the
-  segment score counts games. Service alternates game by game.
+  Points build games of the match's game format: traditional, with deuce, No-Ad (`NOAD`) and deuce caps
+  (`-G:TN{n}D`), or consecutive points (`SET3-S:T10-G:3C`), and the segment score counts games. Service alternates game by game.
 - **Under another root** (`HAL2A-S:T45`, `QTR4A-S:T12`, `RND12A-S:T3`), **standalone** (`T90`), or in an
   **aggregate** format (`SET2XA-S:T10`): a point is one of the sport's own scoring units (a goal, a
   basket, an INTENNSE bolt's point), so each point adds one (or its `scoreValue`).

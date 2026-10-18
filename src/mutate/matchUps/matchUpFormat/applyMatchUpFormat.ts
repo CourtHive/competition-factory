@@ -1,7 +1,7 @@
+import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { checkDrawFormatCompatibility } from '@Validators/tiedFormatCompatibility';
-import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findStructure } from '@Acquire/findStructure';
 
@@ -118,12 +118,23 @@ export function checkMatchUpFormatApplication(params: {
 }): { matchUp?: any; error?: ErrorType; info?: string } {
   const { drawDefinition, matchUpFormat, matchUpId, event } = params;
 
-  if (!isValidMatchUpFormat({ matchUpFormat })) return { error: UNRECOGNIZED_MATCHUP_FORMAT };
+  if (!isWellFormedMatchUpFormat({ matchUpFormat })) return { error: UNRECOGNIZED_MATCHUP_FORMAT };
 
   const compatibility = checkDrawFormatCompatibility(params);
   if (compatibility.error) return compatibility;
   const result = findDrawMatchUp({ drawDefinition, matchUpId, event });
   if (result.error) return { error: result.error };
+
+  // A format refused for new use (CA 2026-10-18, scoring engine spec § 16 decision 19) is refused when it
+  // would CHANGE the matchUp's format. The one it already plays under is not a new use: `setMatchUpStatus`
+  // callers send the stored format back with a score, and a persisted format keeps scoring as v1 scored it.
+  const storedFormat =
+    result.matchUp?.matchUpFormat ??
+    result.structure?.matchUpFormat ??
+    drawDefinition.matchUpFormat ??
+    event?.matchUpFormat;
+  if (matchUpFormat !== storedFormat && !isValidMatchUpFormat({ matchUpFormat }))
+    return { error: UNRECOGNIZED_MATCHUP_FORMAT };
 
   if (result.matchUp?.matchUpType === TEAM)
     return {

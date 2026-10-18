@@ -1,4 +1,4 @@
-import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { getMatchUpFormatTiming } from './getMatchUpFormatTiming';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { findExtension } from '@Acquire/findExtension';
@@ -44,7 +44,7 @@ export function getEventMatchUpFormatTiming({
       .map((definition) => {
         const definitionObject = typeof definition === 'string' ? { matchUpFormat: definition } : definition;
         if (uniqueMatchUpFormats.includes(definitionObject?.matchUpFormat)) return undefined;
-        if (!isValidMatchUpFormat({ matchUpFormat: definitionObject?.matchUpFormat })) return undefined;
+        if (!isWellFormedMatchUpFormat({ matchUpFormat: definitionObject?.matchUpFormat })) return undefined;
         uniqueMatchUpFormats.push(definitionObject.matchUpFormat);
         return definitionObject;
       })
