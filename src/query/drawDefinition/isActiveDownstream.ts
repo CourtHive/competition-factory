@@ -1,13 +1,14 @@
 import { getSideExitProvenance, isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
+import { AWAITING_RESULT, BYE, IN_PROGRESS, INCOMPLETE, SUSPENDED } from '@Constants/matchUpStatusConstants';
+import { DrawDefinition, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
-import { BYE } from '@Constants/matchUpStatusConstants';
-import { DrawDefinition } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 /** one walk: the answers already given, and the first refusal met (a malformed round link downstream) */
@@ -285,11 +286,13 @@ function activeBelow(params, walk: Walk): boolean {
   // `Main|2|1` was let through to `noDownstreamDependencies`, which unwound the semifinal and was then refused placing
   // the old winner, already in the Backdraw final, as the new loser — after mutating. With the BYE policy on, the loser
   // target is a BYE and the same flip is refused up front.
-  const loserSideActive = !!loserMatchUp?.winningSide && !loserMatchUpExit && !isLoserMatchUpWalkoverWithOnePlayer;
+  const loserSideActive =
+    (!!loserMatchUp?.winningSide && !loserMatchUpExit && !isLoserMatchUpWalkoverWithOnePlayer) || inPlay(loserMatchUp);
   const winnerSideActive =
-    !!winnerMatchUp?.winningSide &&
-    winnerDrawPositionsCount === 2 &&
-    (!isExit(winnerMatchUp?.matchUpStatus) || winnerSideResolved);
+    (!!winnerMatchUp?.winningSide &&
+      winnerDrawPositionsCount === 2 &&
+      (!isExit(winnerMatchUp?.matchUpStatus) || winnerSideResolved)) ||
+    inPlay(winnerMatchUp);
   if (loserSideActive || recordedWinnerExit || winnerSideActive) {
     return true;
   }
@@ -317,6 +320,35 @@ function activeBelow(params, walk: Walk): boolean {
       drawDefinition,
       walk,
     })
+  );
+}
+
+/** the statuses of a matchUp whose play has started and has no result yet */
+const IN_PLAY_STATUSES: MatchUpStatusUnion[] = [AWAITING_RESULT, IN_PROGRESS, INCOMPLETE, SUSPENDED];
+
+/**
+ * A MATCHUP IN PLAY DOWNSTREAM IS ACTIVE, though nothing has been decided there (CA, 2026-10-18, P57).
+ *
+ * Every result test in `activeBelow` opens with `winningSide`, so a downstream matchUp being PLAYED — a score, or a
+ * status that says play has started — read as inactive. A completed source above it could then be re-scored as
+ * unfinished through `noDownstreamDependencies`, which took back the participant it had advanced and wiped the
+ * live score: SINGLE_ELIMINATION 4, the final IN_PROGRESS at 3-2, `m-1-1` re-scored IN_PROGRESS 4-3 — accepted,
+ * and the final left TO_BE_PLAYED with no score and one side empty.
+ *
+ * CA: *"downstream matchUps e.g. "the match it feeds" should be considered active and a source matchUp (a matchUp
+ * earler in the dependency chain) should not be able to be re-scored as unfinished! a downstream matchUp
+ * AWAITING_RESULT should be considered an active matchUp also"*.
+ *
+ * In play is a status in `IN_PLAY_STATUSES`, or a score with a value. A matchUp with a `winningSide` is not asked
+ * here (the result tests above own it), and neither is a BYE or an exit, whose activity is a matter of provenance
+ * (`isPropagatedExit`, `contestedDoubleExit`) rather than of play.
+ */
+function inPlay(candidate?: HydratedMatchUp): boolean {
+  if (!candidate || candidate.winningSide) return false;
+  const matchUpStatus = candidate.matchUpStatus;
+  if (matchUpStatus === BYE || isExit(matchUpStatus) || isDoubleExit(matchUpStatus)) return false;
+  return (
+    (!!matchUpStatus && IN_PLAY_STATUSES.includes(matchUpStatus)) || checkScoreHasValue({ score: candidate.score })
   );
 }
 

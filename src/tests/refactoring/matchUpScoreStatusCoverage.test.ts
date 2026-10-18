@@ -26,6 +26,7 @@ import {
   INVALID_MATCHUP_STATUS_BYE,
   MISSING_TOURNAMENT_RECORD,
   MATCHUP_NOT_FOUND,
+  NO_VALID_ACTIONS,
   INVALID_VALUES,
 } from '@Constants/errorConditionConstants';
 import {
@@ -436,7 +437,12 @@ describe('setMatchUpState resolveAndApplyOutcome NO_VALID_ACTIONS', () => {
     });
     expect(result.success).toEqual(true);
 
-    // Try to set score on first round match (which now has activeDownstream but no winningSide)
+    const finalBefore = tournamentEngine.findMatchUp({ matchUpId: 'm-2-1', inContext: true, drawId }).matchUp;
+    expect(finalBefore.matchUpStatus).toEqual(IN_PROGRESS);
+
+    // Re-score the first round match with a score and no winner (the final it feeds is in play, so downstream is
+    // active — CA, 2026-10-18, P57). Score validation is disabled so the outcome reaches the dispatch: validated,
+    // a 4-3 score with no status is refused earlier as INVALID_SCORE, which is how this test used to pass.
     result = tournamentEngine.setMatchUpStatus({
       outcome: {
         score: {
@@ -445,11 +451,19 @@ describe('setMatchUpState resolveAndApplyOutcome NO_VALID_ACTIONS', () => {
           sets: [{ setNumber: 1, side1Score: 4, side2Score: 3 }],
         },
       },
+      disableScoreValidation: true,
       matchUpId: 'm-1-1',
       drawId,
     });
-    // This should hit INCOMPATIBLE_MATCHUP_STATUS or NO_VALID_ACTIONS
-    expect(result.error).toBeDefined();
+    expect(result.error?.code).toEqual(NO_VALID_ACTIONS.code);
+
+    // ...and the final keeps its score and both participants
+    const finalAfter = tournamentEngine.findMatchUp({ matchUpId: 'm-2-1', inContext: true, drawId }).matchUp;
+    expect(finalAfter.matchUpStatus).toEqual(IN_PROGRESS);
+    expect(finalAfter.score?.scoreStringSide1).toEqual('3-2');
+    expect(finalAfter.sides.map((side: any) => side.participantId)).toEqual(
+      finalBefore.sides.map((side: any) => side.participantId),
+    );
   });
 });
 

@@ -146,6 +146,21 @@ anything there, so a first entry always takes the propagating branch. With both 
 goes to `winningSideWithDownstreamDependencies`; a directing status or disabled auto-calc goes to
 `applyMatchUpValues`; anything else is `ERR_NO_VALID_ACTIONS`.
 
+**A matchUp in play downstream is active** (CA, 2026-10-18, P57): _"downstream matchUps e.g. "the
+match it feeds" should be considered active and a source matchUp (a matchUp earler in the dependency
+chain) should not be able to be re-scored as unfinished! a downstream matchUp AWAITING_RESULT should
+be considered an active matchUp also"_. `isActiveDownstream` counts a winner or loser target as active
+when it has a decided result, as before, **or** when it is in play: its status is IN_PROGRESS,
+SUSPENDED, AWAITING_RESULT or INCOMPLETE, or its score has a value. A BYE or an exit is not judged by
+play; its activity remains a question of provenance. So with the final in play, re-scoring a
+completed semifinal as unfinished is refused the way it is when the final is COMPLETED: IN_PROGRESS,
+AWAITING_RESULT or a clear is row 9 (`ERR_INCOMPATIBLE_MATCHUP_STATUS`), a score with no status and
+no winner is row 15 (`ERR_NO_VALID_ACTIONS`), and another winner is row 14. A correction that keeps
+the winner is still accepted, and `allowChangePropagation` still swaps. Both implementations read
+the one query (`getTargetsDownstream`), so v1 and v2 change together. Before 2026-10-18 the re-score
+was accepted through `noDownstreamDependencies`, which took the advanced participant back out of the
+final and left it TO_BE_PLAYED with no score (`inPlayDownstreamIsActive.test.ts`).
+
 **`allowChangePropagation` with a different winner on a matchUp that has one** swaps winner and
 loser everywhere they have gone (`swapWinnerLoser`), rather than refusing.
 
