@@ -564,7 +564,9 @@ export class ScoringEngine {
   /**
    * Add a set total (set-level input)
    *
-   * Used by scoring modals where users enter set scores directly. The total is judged by its segment's
+   * Used by scoring modals where users enter set scores directly. A total entered while a set is in play
+   * closes that set with the declared total, its points staying on the history, and scoring continues in
+   * the next set; otherwise it is the next set. The total is judged by its segment's
    * rule (spec § 2.3, CA 2026-10-18): a total the rule calls finished is recorded with the rule's winner
    * (6-4, 7-6 with a tiebreak, 7-5; a timed total is a finished segment); an explicit `winningSide`
    * naming the loser of a finished total, or a side that is not ahead, is refused; an explicit
@@ -1687,7 +1689,10 @@ export class ScoringEngine {
       return this.state.score.sets[0].winningSide as 1 | 2 | undefined;
     }
     const sets = this.state.score.sets;
-    const setNumber = sets.length + 1;
+    // A set in play (points or games already recorded in it) is the set the total closes: its score
+    // becomes the declared total and its points stay on the history (§ 2.3, CA 2026-10-18). Otherwise
+    // the total is the next set.
+    const setNumber = openSetNumber(sets);
     const setFormat = setFormatFor(this.cachedFormatStructure, sets, setNumber);
     const judgement = judgeSetTotal(options, setFormat);
     const { winningSide, refusal } = settleSetWinner(options, judgement);
@@ -1696,7 +1701,7 @@ export class ScoringEngine {
       this.legacyShapes.add(LEGACY_REFUSED_INPUT);
     }
     const newSet = buildJudgedSet(options, setNumber, setFormat, judgement, winningSide);
-    sets.push(newSet);
+    sets[setNumber - 1] = newSet;
 
     if (this.state.matchUpStatus === TO_BE_PLAYED) {
       this.state.matchUpStatus = IN_PROGRESS;

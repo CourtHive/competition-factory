@@ -74,7 +74,7 @@ describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
     expect(engine.getState().winningSide).toBe(2);
   });
 
-  test('aggregate tie does not complete the match', () => {
+  test('aggregate tie completes the match without a winner', () => {
     const engine = new ScoringEngine({ matchUpFormat: BLW_FORMAT });
 
     engine.addSet({ side1Score: 3, side2Score: 1 });
@@ -82,8 +82,11 @@ describe('ScoringEngine with INN4XA-S:O3-M:T50', () => {
     engine.addSet({ side1Score: 2, side2Score: 2 });
     engine.addSet({ side1Score: 1, side2Score: 1 });
 
-    // Aggregate: 7 vs 7 — tied, not complete
-    expect(engine.getState().matchUpStatus).not.toBe(COMPLETED);
+    // Aggregate: 7 vs 7 — tied. A level inning is a played inning (spec § 2.3), and a level aggregate with no
+    // declared decider is COMPLETED without a winner (§ 9.3, § 9.7; CA 2026-10-18, decision 12)
+    expect(engine.getState().score.sets).toHaveLength(4);
+    expect(engine.getState().matchUpStatus).toBe(COMPLETED);
+    expect(engine.getState().winningSide).toBeUndefined();
   });
 
   test('tied innings have no winningSide', () => {

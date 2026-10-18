@@ -10,7 +10,15 @@
  * functionality directly from the engine.
  */
 
-import type { MatchUp, Episode, EpisodeNeeded, FormatStructure, Point, ScoreEntry } from '@Types/scoring/types';
+import type {
+  MatchUp,
+  Episode,
+  EpisodeNeeded,
+  FormatStructure,
+  Point,
+  ScoreEntry,
+  SetScore,
+} from '@Types/scoring/types';
 import { isLiveDecidingSet, resolveSetType, setHasTiebreak } from '@Tools/scoring/scoringUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
@@ -142,10 +150,25 @@ function resolvePointGames(matchUp: MatchUp, points: PlacedPoint[], gaps: Marker
 
     const set = sets?.[point.set ?? 0];
     if (!set) return { completesGame: !!next, completesSet: false };
+    // A set total entered while this set was in play closed it with the declared score (scoring-engine spec
+    // § 2.3, CA 2026-10-18): the point won its game only if it scored one ('0-0' after it), and the total,
+    // not the point, closed the set.
+    if (firstSet !== -1 && closedByTotal(point, set, awards))
+      return { completesGame: point.score === '0-0', completesSet: false };
     const total = (set.side1Score ?? 0) + (set.side2Score ?? 0);
     const completesGame = total - game - trailing >= 1;
     return { completesGame, completesSet: completesGame && trailing === 0 && set.winningSide !== undefined };
   });
+}
+
+/**
+ * Whether the set total after a point closed the point's own set: the point left its game unfinished, or the
+ * set's declared games are more than the point's game, the game it won, and the games awarded after it.
+ */
+function closedByTotal(point: PlacedPoint, set: SetScore, awards: number): boolean {
+  if (point.score !== '0-0') return true;
+  const total = (set.side1Score ?? 0) + (set.side2Score ?? 0);
+  return total !== (point.game ?? 0) + 1 + awards;
 }
 
 function resolveSetWinner(setComplete: boolean, matchUp: MatchUp, pointSet: number): 0 | 1 | undefined {

@@ -106,8 +106,9 @@ function judgeTimed(total: SetTotal, setFormat: SetFormatStructure): SetJudgemen
 export function judgeSetTotal(total: SetTotal, setFormat: SetFormatStructure | undefined): SetJudgement {
   const { side1Score: s1, side2Score: s2 } = total;
   const ahead = sideAhead(s1, s2);
-  // a segment of outs: the side with more runs wins it
-  if (!setFormat || setFormat.outs) return { finished: !!ahead, winningSide: ahead, ahead };
+  // an inning total is a played inning: the side with more runs wins it, and a level one is closed level
+  if (setFormat?.outs) return { finished: true, winningSide: ahead, ahead };
+  if (!setFormat) return { finished: !!ahead, winningSide: ahead, ahead };
   if (setFormat.tiebreakSet) return judgeTiebreakOnly(total, setFormat.tiebreakSet);
   if (setFormat.timed) return judgeTimed(total, setFormat);
   const won = checkStandardSetWon(s1, s2, setFormat, false);
@@ -143,6 +144,7 @@ export function buildJudgedSet(
   const set: ClosableSet = { setNumber, side1Score: total.side1Score, side2Score: total.side2Score, winningSide };
   if (given(total.side1TiebreakScore)) set.side1TiebreakScore = total.side1TiebreakScore;
   if (given(total.side2TiebreakScore)) set.side2TiebreakScore = total.side2TiebreakScore;
+  if (setFormat?.outs && judgement.finished) set.segmentComplete = true;
   if (setFormat?.timed) {
     set.isTimed = true;
     if (winningSide !== undefined || judgement.finished) set.segmentComplete = true;
