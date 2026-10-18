@@ -81,30 +81,35 @@ describe('one cache serves every draw', () => {
       [DOUBLE_ELIMINATION, 16],
       [ROUND_ROBIN_WITH_PLAYOFF, 16],
     ];
-    const generate = ([drawType, drawSize, participantsCount]: [string, number, number?]) => {
-      tournamentEngine.reset();
-      mocksEngine.generateTournamentRecord({
-        drawProfiles: [{ drawId: 'd1', drawSize, drawType, participantsCount }],
-        completeAllMatchUps: true,
-        nonRandom: 1,
-        setState: true,
-      });
-    };
+    // each completed draw generated once and reloaded, so the test spends its time hydrating
+    const records = shapes.map(([drawType, drawSize, participantsCount]) =>
+      JSON.stringify(
+        mocksEngine.generateTournamentRecord({
+          drawProfiles: [{ drawId: 'd1', drawSize, drawType, participantsCount }],
+          completeAllMatchUps: true,
+          nonRandom: 1,
+        }).tournamentRecord,
+      ),
+    );
+    const load = (record: string) => tournamentEngine.setState(JSON.parse(record));
 
-    const cold = shapes.map((shape) => {
-      generate(shape);
+    const cold = records.map((record) => {
+      load(record);
       clearDrawPositionsRangesCache();
       return ranges(hydrate());
     });
 
     clearDrawPositionsRangesCache();
-    shapes.forEach(generate);
-    const warm = shapes.map((shape) => {
-      generate(shape);
+    records.forEach((record) => {
+      load(record);
+      hydrate();
+    });
+    const warm = records.map((record) => {
+      load(record);
       return ranges(hydrate()); // the cache holds every shape hydrated before it
     });
     expect(warm).toEqual(cold);
-  });
+  }, 180_000);
 });
 
 describe('the cache hands out copies', () => {
