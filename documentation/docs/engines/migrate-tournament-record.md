@@ -2,7 +2,7 @@
 title: migrateTournamentRecord
 ---
 
-One-shot helper that walks an entire `tournamentRecord` and promotes every legacy `extensions[]` envelope and schedule `timeItems[]` entry the **CODES** initiative has promoted to first-class attributes. The output is a record shaped for the v5.0.0 default (`schemaWriteMode: 'native'`).
+An idempotent ingest/upgrade helper that walks a `tournamentRecord`, promotes the legacy envelopes listed below, and applies versioned repairs. The set of repairs evolves across releases, including 7.x native-record repairs. It mutates the supplied record; inspect `promoted` and `totalPromoted` before persisting the upgrade.
 
 ```ts
 import { tournamentEngine } from 'tods-competition-factory';
@@ -16,7 +16,7 @@ const { promoted, totalPromoted } = migrateTournamentRecord({ tournamentRecord: 
 
 ## When to call it
 
-You only need this once per record, at the seam where a legacy v4 (or older) record enters a v5 codebase. After the call the record is native-shaped and reads through `firstClassOrExtension` / dedicated query methods will find values in their new home.
+Run it at ingest and after upgrading to a version with new repair categories, including for already-native records. Repeating the same supported repairs is safe; an unchanged record can report zero promotions. It is best-effort: unknown envelopes/penalty labels and non-derivable edges remain unchanged, so success does not certify a purely native or fully valid record. It does not reconstruct missing historical exit provenance. Use integrity queries separately.
 
 Common seams:
 
@@ -73,10 +73,10 @@ type MigrateTournamentRecordArgs = {
 };
 ```
 
-| Value            | Behavior                                                                                                                                                                                                                                   |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `true` (default) | After promoting an entry, the legacy extension / timeItem is **removed**. Output is purely native-shaped.                                                                                                                                  |
-| `false`          | Promoted values are copied to their new home; legacy entries are kept. Useful when you want to migrate readers but defer dropping the legacy envelope (e.g., to keep an in-flight `schemaWriteMode: 'dual'` deployment safe to roll back). |
+| Value            | Behavior                                                                                                                                                                                                                                     |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `true` (default) | After promoting an entry, the legacy extension / timeItem is **removed**, so the promoted entries no longer have a legacy copy.                                                                                                              |
+| `false`          | Promoted values are copied to their new home; legacy entries are kept. Useful when you want to migrate readers but defer dropping the legacy envelope (e.g., to keep an in-flight `schemaWriteMode: 'bridge'` deployment safe to roll back). |
 
 Existing first-class values are never overwritten — the helper only fills `element[attribute] === undefined`. Running migration twice is a no-op on the second pass.
 
@@ -122,3 +122,5 @@ The walker is defensive: missing intermediate collections (`events`, `extensions
 - The [4.x to 5.0.0 migration guide](../migration-5.0.0) — full context on the CODES schema initiative and the typed engine default.
 - [`schemaWriteMode`](../migration-5.0.0#engine-write-mode-flags) — the engine flag this helper coordinates with.
 - [`getTally`](./get-tally.md) — example of a mode-agnostic reader that works against both pre- and post-migration shapes.
+
+Current accepted mode names and read precedence are listed in the [shared write-mode reference](./get-tally.md#supported-write-mode-names).

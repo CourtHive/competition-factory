@@ -714,7 +714,7 @@ describe('publicFindParticipant branch coverage', () => {
 // 18. getCompetitionParticipants — 4 uncovered branches
 // ----------------------------------------------------------------
 describe('getCompetitionParticipants branch coverage', () => {
-  it('returns error when tournamentRecords is not an object', () => {
+  it('returns error when tournamentRecords is undefined', () => {
     const result = getCompetitionParticipants({ tournamentRecords: undefined });
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
   });

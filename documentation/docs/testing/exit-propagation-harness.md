@@ -135,7 +135,7 @@ That is what a before/after measurement needs. "Sixteen closed, one new" is a st
 and a deduplicated file cannot support it. Every census figure quoted in this area's history is this
 measurement rather than the sweep's.
 
-### Frozen schedules, for an honest A/B
+### Frozen schedules, for a fair A/B
 
 `generateSchedule` walks the **live** draw and picks among matchUps that currently hold two
 participants — so it calls the engine under test. A fix therefore changes the schedules themselves,
@@ -245,3 +245,19 @@ Each of these cost real time and produced confident, wholly incorrect results.
 - [Exit Propagation](/docs/concepts/exit-propagation) — the behaviour these suites guard
 - [Testing Overview](./testing-overview.md) — the wider testing toolkit
 - [mocksEngine](./mocks-engine-overview.md) — draw generation used throughout the harness
+
+## Measurement limits
+
+As inspected on 2026-10-17, the census replay invokes its relational properties sequentially against
+the same generated draw. The fresh-draw rule above is a requirement for isolated evidence, not a
+claim that this runner already satisfies it. Later properties can inherit earlier mutations.
+
+The census comparison observes `projectDraw`, not every byte of engine/global/subscriber state.
+A clean refusal projection is therefore narrower than full-state refusal atomicity. Empty/absent
+normalization also limits which differences are observable. Record the revision, settings, mode,
+seed range, replay disposition and projection when reporting a zero. Native-mode evidence does not
+establish LEGACY/BRIDGE behavior. A frozen zero describes those fixtures; new seeds can find failures.
+
+The original v1 write pipeline remains the acceptance target. The v2 preparation/differential work
+still delegates accepted writes to v1; it is not an independent write implementation proving v1
+correctness. See [pipeline implementation status](../concepts/outcome-pipeline.md#71-two-implementations-s2).

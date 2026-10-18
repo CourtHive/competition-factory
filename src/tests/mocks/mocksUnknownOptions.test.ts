@@ -1,3 +1,4 @@
+import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -76,5 +77,19 @@ describe('modifyTournamentRecord', () => {
     });
     expect(refusedOption(result)).toEqual('drawProfiles[1].drawSzie');
     expect(JSON.stringify(tournamentRecord)).toEqual(before);
+  });
+
+  it("through tournamentEngine, the params the engine adds are not the caller's options", () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
+    tournamentEngine.setState(tournamentRecord);
+    const result: any = tournamentEngine.modifyTournamentRecord({
+      tournamentId: tournamentRecord.tournamentId,
+      drawProfiles: [{ drawSize: 4 }],
+    });
+    expect(result.success).toEqual(true);
+    expect(tournamentEngine.getEvents().events.length).toEqual(2);
+
+    const refused: any = tournamentEngine.modifyTournamentRecord({ drawProfiles: [{ drawSzie: 4 }] });
+    expect(refusedOption(refused)).toEqual('drawProfiles[0].drawSzie');
   });
 });

@@ -1,4 +1,5 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { withContextExclusion } from '@Query/matchUps/contextExclusion';
@@ -98,7 +99,13 @@ function findMatchUpUnredacted({
     drawId,
   };
 
+  // one draw's matchUps read only the participants that draw references (and their groupings), so only those are
+  // copied: hydrating the whole pool made one lookup linear in the tournament's participants
   const { participants: tournamentParticipants = [] } = hydrateParticipants({
+    participants: getReferencedParticipants({
+      participants: tournamentRecord.participants ?? [],
+      record: drawDefinition,
+    }),
     participantsProfile,
     tournamentRecord,
     contextProfile,

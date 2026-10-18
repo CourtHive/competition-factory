@@ -976,14 +976,13 @@ const { courts } = tournamentEngine.getCourts({
 });
 
 // Get specific court
-const { court } = tournamentEngine.getCourt({
+const { court } = tournamentEngine.publicFindCourt({
   courtId: 'court-uuid',
 });
 
 // Get matchUps scheduled on a court
-const { matchUps } = tournamentEngine.getCourtMatchUps({
-  courtId: 'court-uuid',
-  date: '2024-03-20',
+const { matchUps } = tournamentEngine.allTournamentMatchUps({
+  matchUpFilters: { courtIds: ['court-uuid'], scheduledDate: '2024-03-20' },
 });
 ```
 

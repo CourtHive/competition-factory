@@ -10,6 +10,7 @@ import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sa
 // constants
 import { SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT, AGE, DOUBLES_EVENT } from '@Constants/eventConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { MALE, FEMALE } from '@Constants/genderConstants';
 import { OUTDOOR } from '@Constants/venueConstants';
 import { HARD } from '@Constants/surfaceConstants';
@@ -215,7 +216,7 @@ describe('Activation — Tournament Generation', () => {
     });
 
     let result: any = sanctioningEngine.activateFromSanctioning({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('deduplicates tournament categories', () => {

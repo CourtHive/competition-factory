@@ -1900,3 +1900,7 @@ Anyone holding a hand-written sanctioning policy or proposal with display-string
 no longer matches anything, so the requirement reports as unfilled: it fails closed, never silently
 satisfied. No CourtHive consumer writes `personnelRules` or proposal `officials`; courthive-ams selects
 the built-in policies by name.
+
+## Later 7.x adoption
+
+See the [dated post-7.15 adoption notes](./whats-new-7.0.0.md#after-715-unreleased-adoption-notes) for input levels, validation errors, replay/configuration, service metadata, substitution results and refreshed tallies. These dev changes remain labeled unreleased until a tag contains them.
