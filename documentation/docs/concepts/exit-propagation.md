@@ -297,6 +297,10 @@ Three rules fell out of making this hold, each a defect that only the order of e
   produced exit records how they won the matchUp they came from. Correcting that matchUp to another
   result for the same winner (a default to a played win, say) rewrites the record, so it reads what
   entering the played win directly would have written (census 20500008, COMPASS 16/16).
+- **A flip rewrites it too.** Under `allowChangePropagation`, a correction to the other winner puts the new winner in
+  the old winner's seat onward, and the arrival record there now reads the new result: a walkover won by one side
+  corrected to a retirement won by the other reads RETIRED (census intgate, SINGLE_ELIMINATION 16/16 9100138:
+  `anArrivalTellsTheTruthAfterAFlipOrAPendingExit`).
 
 ### A team dual's double exit is unwound by its lines, or protected from them
 
