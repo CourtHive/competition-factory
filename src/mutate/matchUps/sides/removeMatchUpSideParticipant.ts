@@ -25,7 +25,9 @@ export function removeMatchUpSideParticipant(params: RemoveMatchUpSideParticipan
 
   const { drawDefinition, sideNumber, matchUpId, event } = params;
 
-  if (sideNumber && ![1, 2].includes(sideNumber)) return { error: INVALID_VALUES, sideNumber };
+  // no sideNumber clears both sides; any sideNumber given must be 1 or 2 (0 is falsy, not "both sides")
+  const sideGiven = sideNumber !== undefined && sideNumber !== null;
+  if (sideGiven && ![1, 2].includes(sideNumber)) return { error: INVALID_VALUES, sideNumber };
 
   const { matchUp, structure } = findDrawMatchUp({
     drawDefinition,
@@ -37,7 +39,7 @@ export function removeMatchUpSideParticipant(params: RemoveMatchUpSideParticipan
   if (!isAdHoc({ structure })) return { error: INVALID_DRAW_TYPE };
 
   matchUp.sides?.forEach((side) => {
-    if (!sideNumber || side.sideNumber === sideNumber) delete side.participantId;
+    if (!sideGiven || side.sideNumber === sideNumber) delete side.participantId;
   });
 
   modifyMatchUpNotice({
