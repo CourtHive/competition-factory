@@ -1,8 +1,8 @@
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { addGoesTo, hasStoredGoesTo, needsFinishingRounds } from '@Query/matchUps/addGoesTo';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
-import { normalizePenaltyType } from '@Mutate/participants/penalties/normalizePenaltyType';
 import { getMatchUpPresence, getParticipantPresence } from '@Acquire/presenceAttestations';
+import { normalizePenaltyType } from '@Query/participants/normalizePenaltyType';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 

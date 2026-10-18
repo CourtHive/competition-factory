@@ -368,19 +368,25 @@ function hasResult(matchUp: HydratedMatchUp): boolean {
  * would leave whoever won it standing a round further on, advanced out of an undecided matchUp (F2, FMLC 8:
  * `Consolation|2|1`'s produced walkover won, then `Consolation|3|1` played). A clear of the origin is refused
  * there, and the relabel leaves the convergence as it stands.
+ *
+ * `byeClaims` also asks, of a convergence, what its BYE claim passed on (`byeClaimPlayedOn`). Only the kind guard asks
+ * it: a change of kind dissolves the convergence and withdraws the claim, where a relabel that keeps the winner leaves
+ * both standing.
  */
 export function winnerPlayedOn(
   standing: HydratedMatchUp,
   matchUps: HydratedMatchUp[] | undefined,
   drawDefinition: DrawDefinition,
-  depth = 0,
+  { depth = 0, byeClaims = false }: { depth?: number; byeClaims?: boolean } = {},
 ): ResultType & { playedOn?: boolean } {
   // bounded as a draw is: each step moves at least one round on
   if (depth > 32) return { playedOn: true };
   if (isDoubleExit(standing.matchUpStatus)) {
+    const claimed = byeClaims ? byeClaimPlayedOn(standing, matchUps, drawDefinition, depth) : { playedOn: false };
+    if (claimed.error || claimed.playedOn) return claimed;
     const produced = nextPlayable(standing, matchUps, drawDefinition);
     if (produced.error || !produced.next) return produced.error ? produced : { playedOn: false };
-    return winnerPlayedOn(produced.next, matchUps, drawDefinition, depth + 1);
+    return winnerPlayedOn(produced.next, matchUps, drawDefinition, { depth: depth + 1, byeClaims });
   }
   if (!standing.winningSide) return { playedOn: false };
   const onward = nextPlayable(standing, matchUps, drawDefinition);
@@ -390,7 +396,35 @@ export function winnerPlayedOn(
   // A CASCADE AWARD IS PASSED THROUGH, NOT STOPPED AT: its winner was carried on by it, and may have played on from
   // where it put them — across a link too (census de 9300887, DOUBLE_ELIMINATION 8/4: the Backdraw final awarded by a
   // carried walkover, its winner then beaten in the recorded Main final). Asked of the award's own winner, onward.
-  return winnerPlayedOn(onward.next, matchUps, drawDefinition, depth + 1);
+  return winnerPlayedOn(onward.next, matchUps, drawDefinition, { depth: depth + 1, byeClaims });
+}
+
+/**
+ * A double exit also decided the BYE it claimed for its loser seat, and whoever that BYE advanced may have played on.
+ * Withdrawing an origin dissolves the convergence and its claim, and clearing the BYE takes them back out of the
+ * matchUp they reached past it, leaving their recorded result standing on an undecided matchUp (census 21027128,
+ * COMPASS 32/27 under `allowChangePropagation`: `West|1|7`'s convergence claimed a seat of `South|1|4`, and its BYE
+ * passed a participant on into `South|3|1`, recorded RETIRED 6-3; re-entering `East|1|13`'s walkover as a played win
+ * left it TO_BE_PLAYED holding the score). Asked of the first matchUp past the BYEs, as of a winner.
+ */
+function byeClaimPlayedOn(
+  standing: HydratedMatchUp,
+  matchUps: HydratedMatchUp[] | undefined,
+  drawDefinition: DrawDefinition,
+  depth: number,
+): ResultType & { playedOn?: boolean } {
+  const claimedMatchUps = (matchUps ?? []).filter((matchUp) =>
+    Object.values(matchUp.sideExitProvenance ?? {}).some((entry) => entry?.byeClaims?.includes(standing.matchUpId)),
+  );
+  for (const claimed of claimedMatchUps) {
+    const onward = claimed.matchUpStatus === BYE ? nextPlayable(claimed, matchUps, drawDefinition) : { next: claimed };
+    if (onward.error) return onward;
+    if (!onward.next || !hasResult(onward.next)) continue;
+    if (hasEarnedResult(onward.next)) return { playedOn: true };
+    const awarded = winnerPlayedOn(onward.next, matchUps, drawDefinition, { depth: depth + 1, byeClaims: true });
+    if (awarded.error || awarded.playedOn) return awarded;
+  }
+  return { playedOn: false };
 }
 
 /**
@@ -590,6 +624,8 @@ export function relabelWithoutDirection(params: {
     propagateExitStatus: params.propagateExitStatus,
     tournamentRecord: params.tournamentRecord,
     matchUpsMap: params.matchUpsMap,
+    // the status being entered: without it a WALKOVER <-> DEFAULTED re-entry never relabels the carry (`relabelsTheCarry`)
+    sourceMatchUpStatus: matchUpStatus,
     sourceMatchUpId: matchUpId,
     event: params.event,
     loserParticipantId,

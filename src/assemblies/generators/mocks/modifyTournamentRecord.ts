@@ -104,10 +104,32 @@ function findEventByProfile(events, eventProfile) {
   );
 }
 
+/**
+ * The call's options an existing event falls back to when its eventProfile does not set them. The profile's
+ * own setting wins; `{ ...eventProfile, ...params }` let every top-level key replace it, an undefined one
+ * included, and handed the event the call's top-level `drawProfiles` in place of its own.
+ */
+const EVENT_FALLBACK_KEYS = [
+  'autoEntryPositions',
+  'completeAllMatchUps',
+  'isMock',
+  'matchUpStatusProfile',
+  'participantsProfile',
+  'randomWinningSide',
+  'ratingsParameters',
+  'uuids',
+] as const;
+
+function withFallbacks(eventProfile, params) {
+  const resolved = { ...eventProfile };
+  for (const key of EVENT_FALLBACK_KEYS) resolved[key] ??= params[key];
+  return resolved;
+}
+
 function handleExistingEvent({ event, eventProfile, tournamentRecord, allUniqueParticipantIds, drawIds, params }) {
   const result = processExistingEvent({
     event,
-    eventProfile: { ...eventProfile, ...params },
+    eventProfile: withFallbacks(eventProfile, params),
     tournamentRecord,
     allUniqueParticipantIds,
     drawIds,

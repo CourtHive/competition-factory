@@ -1,9 +1,9 @@
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { normalizePenaltyType } from '@Query/participants/normalizePenaltyType';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { addExtension } from '@Mutate/extensions/addExtension';
-import { normalizePenaltyType } from './normalizePenaltyType';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
@@ -41,6 +41,10 @@ export function addPenalty(params: AddPenaltyArgs): ResultType & { penaltyId?: s
       [tournamentRecord.tournamentId]: tournamentRecord,
     }) ??
     {};
+
+  // refuse a malformed call before any record is written, so a multi-tournament call cannot half-apply
+  const paramsCheck = requireParams({ penaltyType: params.penaltyType }, [PENALTY_TYPE]);
+  if (paramsCheck.error) return paramsCheck;
 
   let penaltyId;
   for (const tournamentRecord of Object.values(tournamentRecords)) {

@@ -824,7 +824,7 @@ describe('luckyDrawAdvancement — implicit branch edge cases', () => {
       drawDefinition: drawDef,
       roundNumber: 1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('handles next round matchUps where some drawPositions are null', () => {
@@ -881,7 +881,7 @@ describe('luckyDrawAdvancement — implicit branch edge cases', () => {
       roundNumber: 1,
     });
     // Without position assignments, round status can't determine winners
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   test('handles next round matchUps with drawPositions containing only falsy values', () => {

@@ -4,6 +4,7 @@ import { setSchemaWriteMode } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
+import { MISSING_POSITION_ASSIGNMENTS, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 
 const TALLY_VALUE = { groupOrder: 1, rankOrder: 2, MPctSum: 0.5 };
@@ -11,13 +12,13 @@ const TALLY_VALUE = { groupOrder: 1, rankOrder: 2, MPctSum: 0.5 };
 describe('getTally — mode-agnostic positionAssignment.tally read', () => {
   it('returns NOT_FOUND when no tally is present', () => {
     const result: any = tournamentEngine.getTally({ positionAssignment: { drawPosition: 1 } });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(NOT_FOUND);
     expect(result.tally).toBeUndefined();
   });
 
   it('returns MISSING_POSITION_ASSIGNMENTS when positionAssignment is missing', () => {
     const result: any = tournamentEngine.getTally({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_POSITION_ASSIGNMENTS);
   });
 
   it('reads first-class pa.tally when NATIVE-written', () => {

@@ -590,13 +590,20 @@ rowIssues.forEach((row, rowIndex) => {
 
 #### Conflict Types
 
-| Conflict Type            | Severity | Description                                                |
-| ------------------------ | -------- | ---------------------------------------------------------- |
-| `courtDoubleBooking`     | ERROR    | Two matchUps assigned to same court slot                   |
-| `participantConflict`    | CONFLICT | Same player in multiple matches on same row (simultaneous) |
-| `matchUpConflict`        | ERROR    | Dependent match scheduled before prerequisite              |
-| `participantWarning`     | WARNING  | Player has back-to-back matches (potential recovery issue) |
-| `insufficientGapWarning` | ISSUE    | Multiple rounds between dependent matches                  |
+| Conflict Type         | Severity | Description                                                                                        |
+| --------------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| `courtDoubleBooking`  | CONFLICT | Two matchUps assigned to the same court slot                                                       |
+| `participantConflict` | CONFLICT | Same player in two matchUps of one row (simultaneous)                                              |
+| `participantConflict` | WARNING  | Same player in adjacent rows (back to back) without time for recovery                              |
+| `matchUpConflict`     | ERROR    | Dependent matchUp in an earlier row than its source                                                |
+| `matchUpConflict`     | CONFLICT | Dependent matchUp in the same row as its source                                                    |
+| `matchUpConflict`     | ISSUE    | Dependent matchUp in the row after a source two or more rounds back: no row for the rounds between |
+| `matchUpConflict`     | WARNING  | Dependent matchUp in the next row, on another court, without time for recovery                     |
+
+An adjacent-row WARNING is given only when the time between the two matchUps is short of recovery: the earlier
+matchUp's finish (its `endTime`, else its start plus average minutes) plus its recovery minutes falls after the later
+matchUp begins (its `startTime`, else `calledAt`, else `scheduledTime`). See
+[proConflicts](/docs/governors/schedule-governor#proconflicts). `issueIds` names only the matchUps an issue is with.
 
 #### Conflict Resolution Workflow
 

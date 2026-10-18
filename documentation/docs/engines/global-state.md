@@ -131,6 +131,12 @@ a provider snapshot also needs `restoreSnapshot`; without it the call is refused
 restore: a mapping library that tracks changes needs its tracking put back as well, which only `restoreSnapshot` can do.
 A `makeDeepCopy` hook that ignores `purpose` keeps working, but whether its snapshot is faithful is then up to the hook.
 
+Two more optional provider methods let a restore put back what is not in the records. `getNoticeBuffer()` /
+`setNoticeBuffer(notices)` read and replace the buffered notices; without them a restore deletes every buffered notice.
+`setMutationStatus(status)` sets the mutation flag back to a value `cycleMutationStatus` returned; the outcome pipeline's
+`differential` mode uses it so that a divergence does not stamp an unchanged record as modified, and without it the flag
+is cleared instead.
+
 ---
 
 ## setTournamentRecord

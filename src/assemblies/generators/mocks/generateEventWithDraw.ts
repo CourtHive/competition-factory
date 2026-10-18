@@ -164,8 +164,9 @@ function generateEventParticipants({
     // An event gender is a person sex only when it is MALE or FEMALE. MIXED and ANY passed through
     // here gave every generated person sex MIXED or ANY, which `addParticipants` refuses.
     sex: isGendered(gender) ? gender : participantsProfile?.sex,
-    rankingRange: drawProfile.rankingRange,
-    uuids: drawProfile.uuids || uuids,
+    // the most specific setting wins: the drawProfile's, then its participantsProfile's, then the call's
+    rankingRange: drawProfile.rankingRange ?? participantsProfile?.rankingRange,
+    uuids: drawProfile.uuids || participantsProfile?.uuids || uuids,
     ratingsParameters,
     participantType,
     gendersCount,
