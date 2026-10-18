@@ -278,7 +278,14 @@ export const PARTICIPANTS_PROFILE_KEYS = [
   'withIOC',
   'withISO2',
 ] as const;
-export const SCENARIO_PROFILE_KEYS = ['anchor', 'assignCourts', 'minutesBeforeAnchor'] as const;
+export const SCENARIO_PROFILE_KEYS = [
+  'anchor',
+  'assignCourts',
+  'called',
+  'checkedIn',
+  'conflicts',
+  'minutesBeforeAnchor',
+] as const;
 
 type Missing<T, K extends readonly string[]> = Exclude<keyof T, K[number]>;
 type Extra<T, K extends readonly string[]> = Exclude<K[number], keyof T>;
