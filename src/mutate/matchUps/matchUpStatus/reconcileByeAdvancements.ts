@@ -38,7 +38,9 @@ export function reconcileByeAdvancements({
     const matchUpsMap = getMatchUpsMap({ drawDefinition });
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
     const byId = new Map(inContextDrawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
-    const owed = inContextDrawMatchUps.map((matchUp) => owedAdvance(matchUp, byId)).find(Boolean);
+    const owed = inContextDrawMatchUps
+      .map((matchUp) => owedAdvance(matchUp, byId) ?? owedSeatAdvance(matchUp, byId, inContextDrawMatchUps))
+      .find(Boolean);
     if (!owed) return undefined;
     const result = advanceDrawPosition({
       drawPositionToAdvance: owed.drawPosition,
@@ -72,4 +74,51 @@ function owedAdvance(
   // a seat for them: a pending exit standing there awaits exactly this arrival, and is theirs to take or carry past
   if ((next.drawPositions ?? []).filter(Boolean).length >= 2) return undefined;
   return { matchUpId, drawPosition };
+}
+
+/**
+ * The EMPTY seat a BYE matchUp still owes its next matchUp. A BYE advances its opponent's drawPosition when it lands,
+ * occupied or not (`assignDrawPositionBye`), so whoever reaches that seat later is already one round on. A matchUp that
+ * held two BYEs sent one BYE on instead; when one of them is withdrawn, the release takes back the BYE's advancement
+ * and nothing advanced the seat now opposite the BYE that stays (census A1 residue R7, COMPASS 32/30 policy-off
+ * 20694910: `East|1|3`'s double walkover re-scored took back the BYE it had put in `Northwest|1|1`, and dp 1 never
+ * reached `Northwest|2|1`, where every entry order of the standing results puts it; `theSeatLeftOppositeAByeGoesOn`).
+ *
+ * Only a structural seat, one no earlier round of the structure holds: a position advanced into this round is a
+ * reservation, and is its own matchUp's to send on. A seat a BYE carried into this round is structural as well: the BYE
+ * there advanced it as this one would (census A1 wave 3 G4, MODIFIED_FEED_IN_CHAMPIONSHIP 32/27 21029862: dp 23,
+ * carried into `Consolation|2|8` by `Consolation|1|8`'s BYE, never reached `Consolation|3|4` when the BYE opposite it in
+ * `2|8` stayed and the other went; `aSeatAByeCarriedInGoesOnPastTheNextBye`).
+ */
+function owedSeatAdvance(
+  matchUp: HydratedMatchUp,
+  byId: Map<string, HydratedMatchUp>,
+  inContextDrawMatchUps: HydratedMatchUp[],
+): { matchUpId: string; drawPosition: number } | undefined {
+  const { sides, winnerMatchUpId, matchUpId } = matchUp;
+  if (!sides || !winnerMatchUpId) return undefined;
+  if (sides.filter((side) => side?.bye).length !== 1) return undefined;
+  const seat = sides.find((side) => side && !side.bye);
+  const drawPosition = seat?.drawPosition;
+  if (!drawPosition || seat.participantId || seat.qualifier) return undefined;
+  const next = byId.get(winnerMatchUpId);
+  if (!next || next.structureId !== matchUp.structureId) return undefined;
+  const held = (next.drawPositions ?? []).filter(Boolean);
+  if (held.length >= 2 || held.includes(drawPosition)) return undefined;
+  // a seat a BYE carried into this round is structural too: the BYE opposite it there advanced it as this one does
+  const advancedHere = inContextDrawMatchUps.some(
+    (other) =>
+      other.structureId === matchUp.structureId &&
+      (other.roundNumber ?? 0) < (matchUp.roundNumber ?? 0) &&
+      (other.drawPositions ?? []).includes(drawPosition) &&
+      !carriedByBye(other, drawPosition),
+  );
+  return advancedHere ? undefined : { matchUpId, drawPosition };
+}
+
+/** `drawPosition` stands empty opposite a BYE in `matchUp`, and that BYE advanced it */
+function carriedByBye(matchUp: HydratedMatchUp, drawPosition: number): boolean {
+  const seat = matchUp.sides?.find((side) => side?.drawPosition === drawPosition);
+  const opposite = matchUp.sides?.find((side) => side && side.drawPosition !== drawPosition);
+  return !!seat && !seat.participantId && !seat.qualifier && !seat.bye && !!opposite?.bye;
 }

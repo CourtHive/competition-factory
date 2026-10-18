@@ -1,4 +1,5 @@
-import { splitStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import { attributeDerivedStatusCodes, splitStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
 import { modifyMatchUpNotice, updateInContextMatchUp } from '@Mutate/notifications/drawNotifications';
@@ -57,6 +58,7 @@ type ModifyMatchUpScoreArgs = {
   appliedPolicies?: PolicyDefinitions;
   tournamentRecord?: Tournament;
   matchUpStatusCodes?: string[];
+  derivedStatusCodes?: DerivedStatusCodes;
   drawDefinition?: DrawDefinition;
   removeWinningSide?: boolean;
   matchUpFormat?: string;
@@ -114,6 +116,8 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
   const wasDefaulted = matchUpStatus && matchUp?.matchUpStatus === DEFAULTED && matchUpStatus !== DEFAULTED;
 
   applyScoreAndStatus({
+    // it describes ONE matchUp: a params spread that carried it into a write elsewhere does not apply it
+    derived: params.derivedStatusCodes?.matchUpId === matchUp.matchUpId ? params.derivedStatusCodes : undefined,
     matchUpStatusCodes,
     removeWinningSide: params.removeWinningSide,
     matchUpStatus,
@@ -231,6 +235,7 @@ function resolveDualMatchUpTarget({ isDualMatchUp, drawDefinition, matchUpId, ma
 function applyScoreAndStatus({
   matchUpStatusCodes,
   removeWinningSide,
+  derived,
   matchUpStatus,
   matchUpFormat,
   removeScore,
@@ -305,14 +310,30 @@ function applyScoreAndStatus({
    * write, and `progressExitStatus` closes its twin at the carry.
    */
   if (matchUpStatusCodes) {
-    const { matchUpStatusCode, sideStatusCodes } = splitStatusCodes({
-      matchUpStatus: matchUpStatus ?? matchUp.matchUpStatus,
-      winningSide: winningSide ?? matchUp.winningSide,
-      matchUpStatusCodes: matchUpStatusCodes as any[],
-    });
-    if (matchUpStatusCode) matchUp.matchUpStatusCode = matchUpStatusCode;
+    const resolvedStatus = matchUpStatus ?? matchUp.matchUpStatus;
+    /**
+     * ATTRIBUTED BY ORIGIN, NOT BY VALUE (census A1 residue F1b, 2026-10-18). A propagation or reconcile
+     * write hands over an array `deriveStatusCodes` filled from provenance with bare outcome codes —
+     * `['', 'DEF']`, `['WO']` — for display. Sent through the client split, those became side reasons:
+     * `{ 1: 'DEF', 2: 'DEF' }` on a double default reached in one entry order and nothing in the other.
+     * Such a write says so with `derivedStatusCodes`, and its reasons come only from real reasons.
+     */
+    const attributed = derived
+      ? attributeDerivedStatusCodes({
+          // the write below removes a stale winner, so a double exit does not read one here
+          winningSide: removeWinningSide ? undefined : (winningSide ?? matchUp.winningSide),
+          carried: derived.sideStatusCodes,
+          matchUpStatus: resolvedStatus,
+          matchUp,
+        })
+      : splitStatusCodes({
+          matchUpStatusCodes: matchUpStatusCodes as any[],
+          winningSide: winningSide ?? matchUp.winningSide,
+          matchUpStatus: resolvedStatus,
+        });
+    if (attributed.matchUpStatusCode) matchUp.matchUpStatusCode = attributed.matchUpStatusCode;
     else delete matchUp.matchUpStatusCode;
-    if (sideStatusCodes) matchUp.sideStatusCodes = sideStatusCodes;
+    if (attributed.sideStatusCodes) matchUp.sideStatusCodes = attributed.sideStatusCodes;
     else delete matchUp.sideStatusCodes;
   }
   clearResolvedSideExitProvenance(matchUp);
