@@ -175,11 +175,39 @@ export interface MatchUpHistory {
  * alongside point-level entries in history
  */
 export interface ScoreEntry {
-  type: 'point' | 'game' | 'set' | 'endSegment' | 'setInitialScore' | 'substitution' | 'setServer';
+  type:
+    | 'point'
+    | 'game'
+    | 'set'
+    | 'endSegment'
+    | 'setInitialScore'
+    | 'substitution'
+    | 'setServer'
+    | 'challenge'
+    | 'annotation';
   data: any;
   timestamp: string;
   pointIndex?: number;
+  /**
+   * A server correction attached to this entry (scoring-engine spec § 2.6, § 10.6): the side due to serve
+   * the next point, replayed after the entry and undone with it. Written by `setServer(side, { recordEntry:
+   * false })` and by a baseline's `server`.
+   */
+  serverCorrection?: 0 | 1;
 }
+
+/**
+ * Why a scoring input was ignored: accepted, and nothing recorded (scoring-engine spec § 2.1, § 9.6).
+ *
+ * - `NO_WINNER`: a point that names no winner;
+ * - `MATCH_COMPLETED`: input after the match is `COMPLETED`;
+ * - `NO_SET_BEYOND_N`: input past the N sets of an exactly format;
+ * - `TIEBREAK_IN_PLAY`: a segment end during the tiebreak a level timed segment plays at time.
+ */
+export type IgnoredInput = 'NO_WINNER' | 'MATCH_COMPLETED' | 'NO_SET_BEYOND_N' | 'TIEBREAK_IN_PLAY';
+
+/** What a scoring action did: recorded on the timeline, or ignored with the reason. A refusal throws. */
+export type ScoringActionResult = { recorded: true } | { recorded: false; ignored: IgnoredInput };
 
 /**
  * Point record stored in match history
@@ -594,8 +622,8 @@ export interface EndSegmentOptions {
   setNumber?: number;
   /** When the segment ended */
   timestamp?: string;
-  /** Reason for ending */
-  reason?: 'time' | 'mercy' | 'manual';
+  /** Why the segment ended: a free host string (epixodic sends 'bolt_expired'), recorded and never interpreted */
+  reason?: string;
 }
 
 /**
@@ -620,8 +648,12 @@ export interface InitialScoreOptions {
     side1Points: number;
     side2Points: number;
   };
-  /** Who is currently serving */
+  /** Who is due to serve the next point: recorded as a server correction at the baseline (§ 2.5) */
   server?: 0 | 1;
+  /** A status beside the sets: checked for consistency with them, refused only when they disagree */
+  matchUpStatus?: string;
+  /** A winner beside the sets: checked for consistency with them, refused only when they disagree */
+  winningSide?: number;
 }
 
 /**
