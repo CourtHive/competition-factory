@@ -324,6 +324,19 @@ setting. An exit arriving at a BYE in its structure's last round meets the exit 
 it, and v2 plans the two converging, as v1's settle step converges them (census run-17 baseline, DOUBLE_ELIMINATION
 8/5 under `doubleExitPropagateBye: false`).
 
+**A carry past a BYE is recorded beside the BYE, in every round and in either entry order** (F2, census A1,
+2026-10-17). A participant carrying their own walkover or default into a seat beside a BYE goes through it, and v1
+writes their carry entry (the exit and the matchUp it came from) on the side of the BYE matchUp they passed, as well as
+where they land. It does so whether the carrier was seated first and the BYE arrived after them, or the BYE stood there
+first; before this, the BYE-first order wrote the entry only in a structure's last round, so the same results entered in
+the two orders left two draws. v2 reads that entry on the BYE matchUp as an exit standing there, as it reads any carried
+entry, and plans a convergence with it when an arriving exit meets it. A BYE matchUp written before this, BYE first
+and outside the last round, holds only the BYE claim; for it v2 still reads the carry where the carrier landed, a round
+on. One carry counts once: an entry where the carrier landed that names an origin the BYE matchUp already records is
+not read a second time. An entry left beside a BYE whose carrier's seat has since gone to a BYE, because a correction
+made the carrier's origin a double exit, is not a held exit, and the settle step does not send it on; only that double
+exit's produced exit travels from there.
+
 **What a divergence leaves behind.** v2 plans and never writes; v1 runs and writes; only then does
 the comparison throw, either after v1's complete write or on one of v1's refusal paths, where a
 refusal changes nothing. So a divergence is never half-written by the pipeline: the record holds
