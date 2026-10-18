@@ -177,10 +177,24 @@ function settleDraw({
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
   const settled = settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinition, event });
   if (settled.error) return settled;
+  // A convergence produced there serves its loser link, and the BYE it can place there stands in front of a carrier: the
+  // carry past it was asked above, before that BYE existed, so it is asked again (census A1 wave 5, COMPASS 32:
+  // `Southwest|2|1` stayed TO_BE_PLAYED under its carrier until the same outcome was entered a second time;
+  // `aCarryPastAConvergencesByeIsCarriedOnTheFirstEntry`)
+  if ((settled as { produced?: boolean }).produced) {
+    const carriedAgain = reconcileCarriesPastByes({ tournamentRecord, drawDefinition, event });
+    if (carriedAgain?.error) return carriedAgain;
+  }
 
   // and a participant opposite a BYE whose next seat was taken when the BYE landed, and is free now, goes on
   const advanced = reconcileByeAdvancements({ tournamentRecord, drawDefinition, event });
   if (advanced?.error) return advanced;
+
+  // a held exit sent on above can decide a round feeding another structure, so its winner is seated there now, before
+  // the decider is settled: asked only before it, the crossing waited for the NEXT call (census int2 nonrt,
+  // DOUBLE_ELIMINATION 8/5 21037067: a double walkover at `Main|2|1` sent the Backdraw's held exit into the final,
+  // which its champion won and was not seated in the decider until the same outcome was entered again)
+  reconcileMissedLinkAdvancements({ tournamentRecord, drawDefinition, event });
 
   // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
   return reconcileDeciders({
@@ -438,6 +452,18 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     propagateExitStatus,
   });
   if (forward?.error) return decorateResult({ result: forward, stack });
+  // A direction the forward settle makes can put a BYE back in front of a carrier: a loser it directs re-forms a double
+  // exit, whose loser seat takes its BYE again. The carry past a late BYE was asked in `settleDraw`, before that BYE
+  // existed, so it is asked again (census A1 wave 3 R12, COMPASS 32: `Southeast|2|1` left TO_BE_PLAYED under its
+  // carrier; `aCarryPastAByeTheSettleReplacesIsCarriedAgain`).
+  if (forward?.settled) {
+    const carried = reconcileCarriesPastByes({
+      tournamentRecord: params.tournamentRecord,
+      drawDefinition: params.drawDefinition,
+      event: params.event,
+    });
+    if (carried?.error) return decorateResult({ result: carried, stack });
+  }
   // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
   // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
   reconcileLinkAdvancements({

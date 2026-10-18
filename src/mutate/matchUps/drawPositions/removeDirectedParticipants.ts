@@ -8,6 +8,8 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { withdrawUndeliveredByeOrigins } from './withdrawUndeliveredByeOrigins';
+import { withdrawAwardsToEmptiedSeats } from './withdrawAwardsToEmptiedSeats';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -17,6 +19,7 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import type { MatchUp } from '@Types/tournamentTypes';
 import { clearDrawPosition } from './positionClear';
+import { isDoubleExit } from '@Validators/isExit';
 import {
   clearResolvedSideExitProvenance,
   withdrawProducedExits,
@@ -25,7 +28,7 @@ import {
 
 // constants and types
 import { ErrorType, MISSING_DRAW_POSITIONS, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { DrawDefinition, DrawLink, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
+import { MatchUpStatusUnion, DrawDefinition, Tournament, DrawLink, Event } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -421,6 +424,42 @@ function removeDirectedLoser({
       });
     }
   }
+
+  // A CLEARED LOSER SEAT LEAVES NO AWARD BEHIND. The release above never reads the seat's own matchUp (scope 1: the
+  // round where the position first appears) nor one it reached past a BYE (scope 3), so a PRODUCED exit awarded to
+  // this loser on arrival stayed won by the seat they have just left (census A1 cases 18, 20, 21, 27: CURTIS 32,
+  // DOUBLE_ELIMINATION 8 and 16, FIRST_MATCH_LOSER_CONSOLATION 16; e.g. `Consolation 1|2|4` kept ws 1 over an empty dp 4
+  // after `Main|2|5` was scored and cleared). "A produced exit awards no empty seat, on any path … it also holds when a
+  // position is cleared out of a matchUp" (exit-propagation.md); the test is `positionClear`'s `awardStands`, so a
+  // carried exit, and a produced one that came straight down its loser link, keep their award as direct entry writes it.
+  // Asked after the release, so the reservation the pending exit holds for the next arrival stays where it was. Not
+  // when the source becomes a double exit: its own cascade re-settles the seat (a BYE nobody can fill, or a produced
+  // exit), and the BYE placement reads the award to take back what it advanced (MODIFIED_FEED_IN_CHAMPIONSHIP 32/29
+  // 20655968, `aSeatThatBecomesAByeKeepsNothingItWasAwarded`: taken back here first, the BYE's opponent dp 23 was never
+  // advanced past it).
+  if (clearedDrawPositions.length && !isDoubleExit(sourceMatchUpStatus)) {
+    withdrawAwardsToEmptiedSeats({
+      positionAssignments: positionAssignments ?? [],
+      clearedDrawPositions,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      structureId,
+      event,
+    });
+  }
+
+  // A BYE matchUp whose participant seat was just emptied has delivered nothing, so the BYE origin it gave the side it
+  // feeds goes too (census A1 G1b, `aByeOriginGoesWhenItsFeederSeatEmpties`)
+  withdrawUndeliveredByeOrigins({
+    positionAssignments: positionAssignments ?? [],
+    clearedDrawPositions,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    structureId,
+    event,
+  });
 
   // A seat that keeps its BYE advancement releases no round above, so nothing asked the links out of this
   // structure: a loser removed from a Backdraw they had BYE-advanced through stayed in the grand final (mode D).

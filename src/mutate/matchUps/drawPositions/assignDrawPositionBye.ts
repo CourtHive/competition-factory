@@ -376,14 +376,20 @@ export function assignDrawPositionBye({
     ? roundMatchUps?.[roundNumber].find(({ drawPositions }) => drawPositions?.includes(drawPosition))
     : undefined;
 
-  withdrawDisplacedCarry({
-    assignedParticipantId,
-    isPropagationPlacement,
-    drawDefinition,
-    drawPosition,
-    structureId,
-    matchUp,
-  });
+  // The displaced carrier's carry is recorded in each matchUp their seat reached, the one they landed in and the one a
+  // BYE sent them into, so it goes from each, not only from the furthest (census A1 wave 4, COMPASS 32/31 21079296:
+  // `aDisplacedCarrierLeavesNoCarryInAnyRound`)
+  const heldPosition = matchUps.filter((candidate) => candidate.drawPositions?.includes(drawPosition));
+  heldPosition.forEach((held) =>
+    withdrawDisplacedCarry({
+      assignedParticipantId,
+      isPropagationPlacement,
+      drawDefinition,
+      drawPosition,
+      structureId,
+      matchUp: held,
+    }),
+  );
   matchUp && setMatchUpStatusBYE({ preserveScheduling, tournamentRecord, drawDefinition, matchUp, event });
 
   correctResultsAwardedToTheBye({
@@ -668,6 +674,12 @@ function withdrawDisplacedCarry({
   const kept = { ...provenance };
   if (entry.byeClaims?.length) kept[sideNumber] = { byeClaims: [...entry.byeClaims] };
   else delete kept[sideNumber];
+  // and a BYE origin opposite goes with the carry: it was written opposite that exit, and stands opposite none now
+  const opposite = kept[3 - sideNumber];
+  if (opposite?.matchUpStatus === BYE && opposite.previousMatchUpStatus === BYE) {
+    if (opposite.byeClaims?.length) kept[3 - sideNumber] = { byeClaims: [...opposite.byeClaims] };
+    else delete kept[3 - sideNumber];
+  }
   setSideExitProvenance({ matchUp, provenance: kept });
   blankSideExitCode(matchUp, sideNumber);
 }
@@ -1015,12 +1027,16 @@ function stampCarriedExitOnArrival({
   ontoExitingSide?: boolean;
   matchUpsMap?: MatchUpsMap;
   structureId?: string;
-}): void {
+}): boolean {
   // BYE-held, or a convergence one of whose exits came from a double exit the carrier's BYE has dissolved
   const replacesStanding =
     noContextWinnerMatchUp.matchUpStatus === BYE || isDoubleExit(noContextWinnerMatchUp.matchUpStatus);
-  if (!isExit(noContextWinnerMatchUp.matchUpStatus) && !replacesStanding) return;
-  if (!ontoExitingSide && !replacesStanding && noContextWinnerMatchUp.winningSide) return;
+  if (!isExit(noContextWinnerMatchUp.matchUpStatus) && !replacesStanding) return false;
+  // A single exit already awarded to the seat this carrier arrives on awaited exactly this arrival: the carrier brings
+  // an exit of their own, and two exits meeting converge (RULE 4), as when the carrier's exit was recorded first. Taken
+  // as the award, the carry went unrecorded and the carrier won on the exit they brought (census A1 wave 3 G5, COMPASS
+  // 32/27 21028022: `South|3|1`; `aCarrierArrivingAtTheSeatAnExitAwaitsConverges`). Returned, so the caller converges.
+  const awardedToArrival = !ontoExitingSide && !replacesStanding && !!noContextWinnerMatchUp.winningSide;
   const isFeeder = (candidate: {
     roundNumber?: number;
     roundPosition?: number;
@@ -1035,7 +1051,7 @@ function stampCarriedExitOnArrival({
   const feeder =
     storedFeeder ??
     inContextDrawMatchUps.find((candidate) => candidate.structureId === structureId && isFeeder(candidate));
-  if (!feeder) return;
+  if (!feeder) return false;
   // The feeder is read by PROVENANCE, not status: by the time the carrier passes, the BYE has settled it to BYE
   // (#5158), and its exit side still records the exit the carrier holds.
   const carrierSide = getDrawPositionSideNumber({
@@ -1044,7 +1060,7 @@ function stampCarriedExitOnArrival({
     drawDefinition,
     structureId,
   });
-  if (!carrierSide || carrierSide === feeder.winningSide) return;
+  if (!carrierSide || carrierSide === feeder.winningSide) return false;
   // a CARRIER is a participant: a produced exit relayed past a BYE holder is `sendHeldExitsOn`'s to deliver, and it
   // writes the origin's own entry (`byeAdvancesIntoPendingDoubleExit`: both sides then read DOUBLE_WALKOVER). The
   // carrier is the advancing position, so its assignment answers, as the stored feeder has no hydrated sides.
@@ -1052,10 +1068,10 @@ function stampCarriedExitOnArrival({
   const carrierAssignment = positionAssignments?.find(
     (assignment) => assignment.drawPosition === drawPositionToAdvance,
   );
-  if (!carrierAssignment?.participantId) return;
+  if (!carrierAssignment?.participantId) return false;
   const feederEntry = getSideExitProvenance({ matchUp: feeder })?.[carrierSide];
   const carried = carriedExitStatus(feederEntry);
-  if (!carried) return;
+  if (!carried) return false;
   // the side the lone arrival takes: structurally where the round profile can place it, else its bracket side, as
   // `arrivalIntoProvenanceOnlyExit` reads it (a fed round seats the fed position on side 1, the arrival on side 2)
   const bracketSide = winnerMatchUp.feedRound ? 2 : sourceRoundPosition && (sourceRoundPosition % 2 === 1 ? 1 : 2);
@@ -1078,15 +1094,22 @@ function stampCarriedExitOnArrival({
     (arrivalMovesOccupant({ matchUp: noContextWinnerMatchUp, drawPositions, drawDefinition, structureId })
       ? 3 - arrivalSide
       : arrivalSide);
+  if (awardedToArrival && !awardAwaitsCarrier(noContextWinnerMatchUp, recordSide)) return false;
   if (ontoExitingSide || replacesStanding) {
-    if (ontoExitingSide && recordSide === noContextWinnerMatchUp.winningSide) return;
+    if (ontoExitingSide && recordSide === noContextWinnerMatchUp.winningSide) return false;
     const standing = getSideExitProvenance({ matchUp: noContextWinnerMatchUp })?.[recordSide as 1 | 2];
     const standingSource = matchUpsMap?.drawMatchUps?.find(
       (candidate) => candidate.matchUpId === standing?.sourceMatchUpId,
     );
     const fromDissolvedDoubleExit =
       isDoubleExit(standing?.previousMatchUpStatus) && !!standingSource && !isDoubleExit(standingSource.matchUpStatus);
-    if (standing?.sourceMatchUpId !== feeder.matchUpId && !fromDissolvedDoubleExit) return;
+    // a BYE matchUp recording nothing on the carrier's side is passed with the carry written beside the BYE, as when
+    // the BYE stood there before the carrier came (A1: "a carry entry is written in each matchUp it is carried into
+    // past a BYE, in either entry order"). Unwritten, a carrier a late BYE sent on into a BYE-held matchUp left no carry
+    // there, and when that BYE went the exit coming back stood alone (census A1 wave 3 G5, COMPASS 32/27 21137946:
+    // `South|3|1`; `aCarrierPassingIntoAByeMatchUpRecordsItsCarry`).
+    const passesBye = noContextWinnerMatchUp.matchUpStatus === BYE && !standing;
+    if (standing?.sourceMatchUpId !== feeder.matchUpId && !fromDissolvedDoubleExit && !passesBye) return false;
   }
   const supersedesProducedExit = supersedesDissolvedProducedExit({
     matchUp: noContextWinnerMatchUp,
@@ -1124,6 +1147,13 @@ function stampCarriedExitOnArrival({
       matchUpsMap,
       structureId,
     });
+  return awardedToArrival;
+}
+
+/** the single exit standing opposite `recordSide` is awarded to it: the seat the carrier arrives on */
+function awardAwaitsCarrier(matchUp: MatchUp, recordSide?: number): boolean {
+  if (!recordSide || recordSide !== matchUp.winningSide) return false;
+  return !!carriedExitStatus(getSideExitProvenance({ matchUp })?.[(3 - recordSide) as 1 | 2]);
 }
 
 /**
@@ -1259,7 +1289,7 @@ function advanceWinner({
   // come through) was stamped presumptively with its status, as though an exit were certain to arrive from it. An
   // arrival records no status (CA, 2026-10-07; F9), so the presumptive stamp is gone and the exit is written at the
   // moment it is true, and only there: a carrier passing a BYE into an undecided matchUp is left as it was.
-  stampCarriedExitOnArrival({
+  const convergesOnArrival = stampCarriedExitOnArrival({
     inContextDrawMatchUps,
     noContextWinnerMatchUp,
     drawPositionToAdvance,
@@ -1380,6 +1410,8 @@ function advanceWinner({
   if (
     isExit(noContextWinnerMatchUp.matchUpStatus) &&
     noContextWinnerMatchUp.winningSide &&
+    // a carrier arriving at the awarded seat with an exit of their own converges, below (`standingExitStatus`)
+    !convergesOnArrival &&
     !drawPositionIsBye &&
     !pairedDrawPositionIsBye
   ) {

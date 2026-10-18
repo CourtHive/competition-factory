@@ -297,6 +297,10 @@ Three rules fell out of making this hold, each a defect that only the order of e
   produced exit records how they won the matchUp they came from. Correcting that matchUp to another
   result for the same winner (a default to a played win, say) rewrites the record, so it reads what
   entering the played win directly would have written (census 20500008, COMPASS 16/16).
+- **A flip rewrites it too.** Under `allowChangePropagation`, a correction to the other winner puts the new winner in
+  the old winner's seat onward, and the arrival record there now reads the new result: a walkover won by one side
+  corrected to a retirement won by the other reads RETIRED (census intgate, SINGLE_ELIMINATION 16/16 9100138:
+  `anArrivalTellsTheTruthAfterAFlipOrAPendingExit`).
 
 ### A team dual's double exit is unwound by its lines, or protected from them
 
@@ -872,22 +876,72 @@ by a named test that fails without it.
 
 ### Rules settled by the census in A1 (2026-10-17)
 
-- **A carry entry is written in each matchUp it is carried into past a BYE, in any round and in either entry order.**
-  A participant carrying their own walkover or default into a seat beside a BYE goes through it, and the BYE matchUp
-  records their carry beside the BYE, whether the carrier was seated first and the BYE arrived after them or the BYE
-  stood there first. Before this the BYE-first order recorded the carry only in a structure's last round, so the same
-  results entered in the two orders left two draws (COMPASS 32, census A1: `Southwest|1|2` and `Southeast|1|1`).
-  Withdrawing the copy instead, once the carry is recorded where the carrier landed, was measured and rejected: a
-  pull-back reads the BYE matchUp's copy to find the carry it takes home. Such a copy is not a held exit once its
-  carrier's seat has gone to a BYE because a correction made the carrier's origin a double exit; only that double exit's
-  produced exit is sent on from there (COMPASS 32/27 20521366: `theWholeDrawIsTheSameInEveryOrder`). Pinned by
-  `aCarryPastAnEarlierRoundByeIsRecordedInEitherOrder`.
-
-### Rules settled by the census in A1 (2026-10-17)
-
 Read from the A1 do-undo triage: a probe applied to the scheduled draw and then cleared must leave the draw it found.
 In each case the scheduled draw is the one forward play reaches from the standing results; each rule is pinned by a
 named test that fails without it.
+
+- **A cleared loser seat leaves no award behind.** A loser sent into a seat opposite a produced exit is awarded it on
+  arrival. When the result that sent them is re-scored or cleared, their seat empties and the produced exit stands
+  pending again, on the seat's own matchUp and on one reached past a BYE. The advance the award made leaves with the
+  occupant, as direct entry of the exit alone leaves it; an exit that keeps its award keeps its advance, and that
+  reservation goes with the exit when the exit is withdrawn. A carried exit, or a produced one that came straight down its
+  loser link, keeps its award, as direct entry writes it; and a source that becomes a double exit leaves the seat to its
+  own cascade, which places the BYE (CURTIS_CONSOLATION 32/27 9000062, DOUBLE_ELIMINATION 8/4 20537779:
+  `aClearedLoserSeatLeavesNoAwardBehind`).
+- **A seat's occupant takes their award's advance with them** (A1 int2). The release of a leaving occupant asks of the
+  produced exit beside them whether its award stands with the seat empty (`awardStands`), and keeps the advance in the
+  next round only then: read before the award was withdrawn, the award looked like the exit's own advance and stayed
+  (FEED_IN_CHAMPIONSHIP_TO_SF 16/11 21041635: `aWithdrawnAwardTakesBackTheAdvanceItMade`; 116 census rows).
+- **A Main final's exit came over its winner link.** A produced exit in a DOUBLE_ELIMINATION Main final is not one
+  that arrived over a loser link, though a walk from its source's loser target leads back to it through the Backdraw's
+  winner links: a double exit converging with it there, once cleared, leaves it awarding no empty seat (DE 8/5
+  21033335: `aMainFinalsExitCameOverItsWinnerLink`).
+- **A final decided during the settle seats its champion at once.** When a held exit is sent into a final and the
+  final is decided by it, the champion crosses into the decider within the same call (the link advancement is asked
+  again after the settle), not on the next (DE 8/5 21037067: `aFinalDecidedByAHeldExitSeatsItsChampionAtOnce`).
+- **A released position takes its BYE origin with it; a removed position, its arrival.** The BYE origin a released
+  position recorded for its feeder goes with the release, as its arrival does (COMPASS 8/8 21031039:
+  `aReleasedPositionTakesItsByeOriginWithIt`); and a position taken out of every later round by a cleared first-round
+  result takes the arrival each of those rounds recorded (SINGLE_ELIMINATION 16/14 21137642:
+  `aRemovedPositionTakesItsArrivalWithIt`).
+- **A standing result keeps what it sent over its loser link.** Unwinding a double exit visits a matchUp onward only
+  for what the double exit sent through it; when that matchUp's own result stands, its loser target is not reset, so
+  the carry it sent there stays (COMPASS 16/14 21027146 under `doubleExitPropagateBye: false`:
+  `aStandingResultKeepsWhatItSentOverItsLoserLink`).
+- **A released position takes its arrival with it.** A position released from a round it had won its way into leaves
+  no record of that arrival: the feeder named there is undecided again and sent nobody (FIRST_MATCH_LOSER_CONSOLATION
+  16/13 20483283 under `allowChangePropagation`: `aReleasedPositionTakesItsArrivalWithIt`).
+- **A BYE origin goes with the exit opposite it.** The BYE origin a produced exit writes opposite itself on meeting a
+  BYE is withdrawn with that exit, so a BYE matchUp reads as it did before the exit arrived (FEED_IN_CHAMPIONSHIP 16/11
+  20532286: `aByeOriginLivesAsLongAsTheExitOppositeIt`).
+- **A seat emptied further on leaves no award behind.** A loser taken back is released from every placement their
+  loss led to, a link further on as well as in the structure they were fed into; a produced exit awarded to a seat
+  they no longer hold stands pending again, and its reservation in the next round stays, as the seat the loser was fed
+  into already did (COMPASS 32/30 20733408 under `doubleExitPropagateBye: false`:
+  `aSeatEmptiedFurtherOnLeavesNoAwardBehind`).
+- **An exit that has delivered nobody is no origin.** A single exit delivers its winner only once someone holds the
+  winning seat. Pending, or awarded to a seat still awaiting its arrival, it records no arrival on the side it feeds,
+  as a BYE matchUp awaiting its other side records no BYE origin (COMPASS 32/31 20551581 under
+  `doubleExitPropagateBye: false`: `anExitThatDeliveredNobodyIsNoOrigin`).
+- **A dissolved convergence keeps an award that came down its loser link.** A convergence a correction dissolves
+  settles as the kept exit alone would leave it, and that includes the award: a produced exit that came straight down
+  its loser link keeps its award to the seat still awaiting its arrival, and reserves that seat in the next round, as
+  entering the same results once each does in any order. Only an exit relayed past a BYE stands pending (COMPASS 32/31
+  20551581 under `doubleExitPropagateBye: false`: `aDissolvedConvergenceKeepsItsLoserLinkAward`).
+- **The seat left opposite a BYE goes on.** A BYE advances the drawPosition opposite it when it lands, occupied or
+  not, and two BYEs meeting send one BYE on. When one of the two is withdrawn, the empty seat now opposite the BYE that
+  stays goes on into the next matchUp, where it has room, as it would have had that BYE landed alone; a position that
+  entered the round from an earlier one is a reservation, and is not moved (COMPASS 32/30 20694910 under
+  `doubleExitPropagateBye: false`: `theSeatLeftOppositeAByeGoesOn`).
+- **A reason is attributed by where it came from, not by what it says.** `sideStatusCodes` holds the scoring
+  policy's reason per side (`{ 2: 'DM' }`), split from the positional `matchUpStatusCodes` a client submits. A
+  propagation or convergence write stores the array `deriveStatusCodes` builds from provenance, where a side that
+  exited with no recorded reason shows the bare outcome code (`['DEF']`, `['WO']`), or re-stores the matchUp's own
+  array, which may be such a display. Either array is display only and is not split: the write keeps the reasons the matchUp already holds and the source's own side-keyed reason, on the side
+  it arrived at. The source's positional array is read for display only, never as a reason. Before this, a double
+  default reached in one entry order stored `{ 1: 'DEF', 2: 'DEF' }` and in the other stored nothing. A client's array
+  is split as before, and no code is reserved by value (FIRST_MATCH_LOSER_CONSOLATION 32:
+  `aDerivedOutcomeCodeIsNeverASideReason`).
 
 - **What forward play sends on from a result is sent on from a re-derived one.** A removal re-derives the matchUp it
   vacates (a cleared BYE or double exit puts it back to the exit it held) and used to stop there. It is now asked of
@@ -904,6 +958,104 @@ named test that fails without it.
   stays there, and a BYE another live double exit still claims stays as well (COMPASS 32/30 20694910 and 20485116:
   `aClearedSeatKeepsTheByeItsReDerivedExitHolds`, `aClearedSeatKeepsTheLoserItsReDerivedResultDirected`; COMPASS 16,
   built by hand: `aClearedSeatKeepsTheByeALiveDoubleExitClaims`).
+- **A BYE origin goes when its feeder stops delivering.** A BYE matchUp delivers once both its seats are filled, a BYE
+  in one and a participant in the other, and only then is the `{ BYE, BYE }` origin it gives the side it feeds true.
+  When that participant leaves again (a result clearing whose loser had been sent there), their position stays advanced
+  past the BYE, so no release reaches the matchUp holding the origin; the origin goes with the delivery, and the draw is
+  the one in which the participant never arrived (FIRST_ROUND_LOSER_CONSOLATION 16/14 21029590:
+  `aByeOriginGoesWhenItsFeederSeatEmpties`; 9 census rows on three draw types).
+- **A carry past a BYE the forward settle puts back is carried again.** A direction the forward settle makes can
+  re-form a double exit whose loser seat takes its BYE again, in front of a carrier whose carry past it a removal had
+  taken back. The carry past a late BYE is asked again once the forward settle has written, so the carrier's exit
+  stands in the matchUp beyond as forward play writes it (COMPASS 32/32 21097909:
+  `aCarryPastAByeTheSettleReplacesIsCarriedAgain`).
+- **A carrier arriving at the seat an exit awaits converges with it** (A1 wave 3). A single exit awarded to a seat
+  nobody has reached is waiting for whoever arrives there. When the arrival is a participant carrying their own walkover
+  or default past a BYE, two exits meet, and the matchUp is the double exit their convergence makes, as it is when the
+  carrier's exit was recorded first and the other arrived after. The convergence then produces onward and serves its
+  loser link as any convergence does: what the single exit had sent on is withdrawn, and the first carrier, sent over
+  the loser link as that exit's loser, comes back, since a double exit has no loser. Before this the carrier took the
+  award and won on the exit they had brought, and which of the two draws a schedule reached depended on its order
+  (COMPASS 32/27 21028022, 25 census rows: `aCarrierArrivingAtTheSeatAnExitAwaitsConverges`; COMPASS 16/16 20672521:
+  `aByeRecordsNoArrivalByResult`; DOUBLE_ELIMINATION 8/5 20722665, where re-entering a double default now returns the
+  draw the same results reach entered once: `aDeciderHoldsNobodyUntilItsFinalIsDecided`).
+- **A carrier sent into a BYE matchUp records its carry there** (A1 wave 3). A carrier a late BYE sends on, into a
+  matchUp a BYE already holds, writes their exit beside that BYE, as the carry rule above states for every matchUp a
+  carry passes. Before this the second BYE matchUp recorded nothing, so when its BYE went, the exit coming back stood
+  alone and awarded the carrier a match they had walked over (COMPASS 32/27 21137946, 8 census rows:
+  `aCarrierPassingIntoAByeMatchUpRecordsItsCarry`).
+- **A seat a BYE carried into a round goes on past the next BYE** (A1 wave 3). The settle pass that sends on the seat
+  left opposite a BYE (above) treats a position that entered the round from an earlier one as a reservation, and does
+  not move it. A position a BYE carried in, empty opposite that BYE in the earlier round, is not a reservation: the BYE
+  there advanced it, and the BYE here advances it again, as forward play does in every order (MODIFIED_FEED_IN_CHAMPIONSHIP
+  32/27 21029862, FEED_IN_CHAMPIONSHIP_TO_SF 32 21072304, 4 census rows: `aSeatAByeCarriedInGoesOnPastTheNextBye`).
+- **A passer comes back when the holder's BYE goes, even beside a held seat** (A1 wave 3). A carrier who passed a BYE
+  that a BYE holder had left in the next round goes back with that BYE when the holder's exit is sent on, and the exit
+  meets their carry there. The matchUp they had decided onward keeps its award where the seat opposite is held: its
+  occupant may have gone on, and the convergence's produced exit awards them the same seat. Before this the carrier
+  stayed onward, beside the produced exit, and the matchUp read as an undecided walkover holding two participants
+  (FEED_IN_CHAMPIONSHIP_TO_SF 16/14 21089693, CURTIS_CONSOLATION 16 21143807, MODIFIED_FEED_IN_CHAMPIONSHIP 16
+  21046667 under `allowChangePropagation`: `aPasserComesBackWhenTheHoldersByeGoes`).
+- **An award taken back takes back the BYE it sent over its loser link** (A1 wave 4). A produced exit awarded to the
+  participant who arrives opposite it has nobody for a loser, so its loser seat gets a BYE, which the award claims.
+  When that participant leaves again, over either link, the award goes and the exit stands pending; a pending exit
+  sends nothing over its loser link, so the BYE goes with the award, as it does when a double exit is unwound. Before
+  this the loser seat stayed a BYE that no rebuild of the standing results places (COMPASS 32/27 21081040 and 16/14
+  21086952 under `doubleExitPropagateBye: false`, 7 census rows: `anUndoneAwardTakesBackItsLoserSeatBye`).
+- **A BYE matchUp's loser seat keeps its BYE** (A1 wave 4). A BYE matchUp's loser is a BYE, so the ordinary BYE cascade
+  gives its loser seat a BYE that no double exit claims. A double exit's cascade that reaches a BYE standing unclaimed
+  in the loser seat of a matchUp that holds a BYE records no claim on it, since the BYE predates the cascade; and
+  unwinding a double exit keeps a loser-seat BYE while the matchUp feeding it still holds a BYE. Before this a double
+  exit cleared beside a BYE matchUp took that BYE's loser seat with it (COMPASS 16/15 21036395 and 32/27 21060039, 5
+  census rows: `aByeMatchUpsLoserSeatKeepsItsBye`). An unclaimed BYE fed by a matchUp with no BYE is still claimed:
+  FIRST_MATCH_LOSER's BYE for a loser who has already won a match stands for a reason a later result can take away,
+  and the exit that makes the loser nobody is then the BYE's only lasting reason. Skipping that claim let the unwind of
+  one exit clear the seat while another exit still owed it its BYE, and the consolation stalled (FIRST_MATCH_LOSER_CONSOLATION
+  8/8 9000230, all three arms: `aFirstMatchLoserByeIsClaimedByTheExitThatOwesIt`).
+- **A carrier a BYE displaces leaves no carry in any round** (A1 wave 4). A carrier's carry is written in the seat
+  they land in and in each matchUp a BYE sends them into. When a propagated BYE takes their seat, the carry is
+  withdrawn from every matchUp their position reached, not only the furthest. Before this a BYE-vs-BYE matchUp could
+  keep an entry naming a feeder that had become a BYE, in some entry orders and not others (COMPASS 32/31 21079296, 6
+  census rows: `aDisplacedCarrierLeavesNoCarryInAnyRound`).
+- **An exit carried past a BYE converges with a pending exit beyond it** (A1 wave 4). When a convergence's produced exit
+  is carried past a BYE into a matchUp that nobody has reached and that already holds a pending exit on its other
+  side, the two exits meet there and the matchUp converges, as it does when the pending exit is the one to arrive
+  second. Before this a convergence re-formed by a clear left that matchUp a single WALKOVER (COMPASS 32/29 21129718,
+  2 census rows: `aCarryPastAByeMeetsAPendingExit`).
+- **A dissolved convergence keeps the BYE its single exit sends, and only the claims a single exit makes** (A1 wave 4).
+  Unwinding a double exit that had converged with an awarded single exit re-derives the matchUp to that exit, which
+  has nobody for a loser and sends its loser seat a BYE, as forward play does (COMPASS 32/27 21034527:
+  `aDissolvedConvergenceSendsItsSingleExitsBye`). A single exit records no claim on a BYE that others already claim,
+  because forward play claims only a seat it fills. So when a convergence dissolves to a single exit, its claim on a
+  BYE that others still claim is withdrawn, and the BYE stays theirs (COMPASS 32/31 21055187 under
+  `doubleExitPropagateBye: false`: `aDissolvedConvergenceLeavesASharedByeClaim`).
+- **A carry past a convergence's BYE is written on the first entry** (A1 wave 5). A convergence the settle produces
+  serves its loser link, and the BYE it places there can stand in front of a carrier. That carry is written in the
+  same call, not when the same outcome is entered a second time. Before this the matchUp beyond the BYE stayed
+  TO_BE_PLAYED under the carrier until a second, identical entry wrote it (COMPASS 32, 6 census rows, e.g. 32/27
+  21138626: `aCarryPastAConvergencesByeIsCarriedOnTheFirstEntry`).
+- **A carrier who went on only as a carrier is released with the carry** (A1 wave 5). When the exit that sent a carrier
+  over its loser link converges, the carrier no longer lost anything and leaves the loser seat. If they had gone on
+  from that seat past a BYE, or out of a matchUp only exits decided, into matchUps where nothing was played and only
+  carried exits decided anything, the release takes the whole carry back and the seat is served as a double exit's
+  loser seat. Before this the release refused the position as active, because an award made by the opponent's carried
+  exit had reached it, and the director's call was refused ERR_ACTIVE_DRAW_POSITION after the draw had moved (COMPASS
+  32/27 21155795 and 32/30 21063079, 4 census rows: `aCarrierPastAByeIsReleasedWhenItsExitConverges`). A carrier who
+  went on by a played result is cleared, and refused, as before.
+- **A BYE origin goes with the carry a BYE displaces** (A1 wave 5). When a propagated BYE takes a carrier's seat, the
+  carry is withdrawn from every matchUp the seat reached, and a BYE origin written opposite that carry goes with it,
+  as it does when a double exit is unwound. Before this the origin stood opposite no exit (COMPASS 32/30 21063079:
+  `aByeOriginGoesWithTheCarryItStoodOpposite`).
+- **A carry entry is written in each matchUp it is carried into past a BYE, in any round and in either entry order.**
+  A participant carrying their own walkover or default into a seat beside a BYE goes through it, and the BYE matchUp
+  records their carry beside the BYE, whether the carrier was seated first and the BYE arrived after them or the BYE
+  stood there first. Before this the BYE-first order recorded the carry only in a structure's last round, so the same
+  results entered in the two orders left two draws (COMPASS 32, census A1: `Southwest|1|2` and `Southeast|1|1`).
+  Withdrawing the copy instead, once the carry is recorded where the carrier landed, was measured and rejected: a
+  pull-back reads the BYE matchUp's copy to find the carry it takes home. Such a copy is not a held exit once its
+  carrier's seat has gone to a BYE because a correction made the carrier's origin a double exit; only that double exit's
+  produced exit is sent on from there (COMPASS 32/27 20521366: `theWholeDrawIsTheSameInEveryOrder`). Pinned by
+  `aCarryPastAnEarlierRoundByeIsRecordedInEitherOrder`.
 
 ### Nothing to do is success, not failure
 

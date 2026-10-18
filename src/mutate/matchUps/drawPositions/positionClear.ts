@@ -4,6 +4,7 @@ import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/d
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
+import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { bringCarryHome, carriedEntryAt } from '@Mutate/matchUps/drawPositions/carryHome';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -785,7 +786,11 @@ function releaseUndecidedAdvancements({
 }) {
   const roundNumber = targetMatchUp.roundNumber;
   if (!roundNumber || targetMatchUp.winningSide || targetMatchUp.matchUpStatus !== TO_BE_PLAYED) return;
-  if (!initialWinningSide && initialMatchUpStatus !== BYE) return;
+  // ...and a PENDING exit's reservation: "a pending exit's reservation goes with it" (exit-propagation.md). Read off the
+  // award alone, a pending exit left undecided here kept the empty seat it had advanced (census A1 group R3: once a
+  // cleared loser seat no longer leaves its award behind, FIRST_MATCH_LOSER_CONSOLATION 16/11 20704784 re-scored
+  // `Main|1|5` and dp 4 stayed in `Consolation|4|1`, `aRemovalClearsItsSideInTheRecordsFrame`).
+  if (!initialWinningSide && initialMatchUpStatus !== BYE && !isAnyExit(initialMatchUpStatus)) return;
   for (const advanced of initialDrawPositions ?? []) {
     if (!advanced || advanced === drawPosition) continue;
     releaseAdvancedDrawPositionAcrossLinks({
@@ -975,7 +980,7 @@ function updateMatchUpStatusAfterRemoval({
  * way, so the award stands here only for a carried exit or a seat that holds a participant. Census de 9302775
  * (DE 16/11): a produced DEFAULTED retained on `Backdraw|3|2` side 1 was otherwise won by an empty dp 7.
  */
-function awardStands({
+export function awardStands({
   rederived,
   retained,
   positionAssignments,
@@ -1007,22 +1012,6 @@ function awardStands({
   });
   const assignment = positionAssignments.find((candidate) => candidate.drawPosition === drawPosition);
   return !!(assignment?.participantId || assignment?.qualifier);
-}
-
-/** the target is the source's own loser target: the exit reached it over the link, not relayed past a BYE */
-function cameDownLoserLink({
-  drawDefinition,
-  targetMatchUp,
-  sourceMatchUpId,
-}: {
-  drawDefinition: DrawDefinition;
-  sourceMatchUpId?: string;
-  targetMatchUp: MatchUp;
-}): boolean {
-  if (!sourceMatchUpId) return false;
-  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition })?.matchUps ?? [];
-  const targets = positionTargets({ matchUpId: sourceMatchUpId, inContextDrawMatchUps, drawDefinition });
-  return targets.targetMatchUps?.loserMatchUp?.matchUpId === targetMatchUp.matchUpId;
 }
 
 /**

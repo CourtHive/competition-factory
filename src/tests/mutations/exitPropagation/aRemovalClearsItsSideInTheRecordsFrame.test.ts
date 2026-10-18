@@ -94,7 +94,10 @@ it('the produced exit leaves with dp 9, and the award it made takes dp 4 back ou
   const states = play('cleared-side-frame-steps', SCHEDULE);
   expect(states[2]['Consolation|3|2'].drawPositions).toEqual([4, 9]);
   expect(states[2]['Consolation|3|2'].matchUpStatus).toEqual(WALKOVER);
-  expect(states[2]['Consolation|4|1'].drawPositions).toContain(4);
+  // dp 4's occupant has left, so the advance their award made left with them: `Main|1|5`'s double walkover entered
+  // alone leaves dp 4 out of `4|1` (census A1 int2 dpws, `aWithdrawnAwardTakesBackTheAdvanceItMade`; this read
+  // `toContain(4)`, the residue of the release keeping an occupant's advance as the produced exit's own)
+  expect(states[2]['Consolation|4|1'].drawPositions).not.toContain(4);
 
   const rescored = states[3];
   expect(rescored['Consolation|3|2'].drawPositions).toEqual([4]);
