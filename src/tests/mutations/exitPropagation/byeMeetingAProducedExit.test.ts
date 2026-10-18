@@ -373,13 +373,12 @@ test('a BYE carries a produced exit onward, gives it back on undo, then carries 
 
   expect(matchUp('rt-1-2').matchUpStatus).toEqual(TO_BE_PLAYED);
 
-  // the BYE keeps its own origin and loses only the exit's — the two are independent facts and the
-  // unwind must not take the wrong one
+  // the BYE is still a BYE, and holds no record at all, as before the double walkover. Its `{ BYE -> BYE }` origin on
+  // side 1 was written as the PAIR of the exit that met it (none stood there before), so it goes with that exit: a BYE
+  // origin lives exactly as long as the exit opposite it (census A1 group R5, `aByeOriginLivesAsLongAsTheExitOppositeIt`).
+  // This test asserted the origin stayed, which left the BYE holding a record the draw never had before the exit.
   expect(matchUp('rt-2-1').matchUpStatus).toEqual(BYE);
-  expect(exitFor(matchUp('rt-2-1'), 1)).toEqual({
-    previousMatchUpStatus: BYE,
-    matchUpStatus: BYE,
-  });
+  expect(exitFor(matchUp('rt-2-1'), 1)).toBeUndefined();
   expect(exitFor(matchUp('rt-2-1'), 2)).toBeUndefined();
   expect(matchUp('rt-2-1').sideExitProvenance?.[2]).toBeUndefined();
 
@@ -525,8 +524,8 @@ test('a double exit records its loser slot in the consolation and the exit walks
     // the BYEs are still BYEs — the clear must not take the DRAW's own state with it
     expect(restored.matchUpStatus, matchUpId).toEqual(BYE);
     // and they carry NO codes at all, not a reserved slot: these BYEs came from the draw and were
-    // never stamped, so there is no surviving origin to project. `fl-2-1` below is the contrast —
-    // its side 1 keeps `{BYE -> BYE}` because the BYE propagation DID record it.
+    // never stamped, so there is no surviving origin to project. `fl-2-1` below holds none either:
+    // its `{BYE -> BYE}` was the pair of the exit being removed (census A1 group R5).
     expect(restored.matchUpStatusCodes ?? [], matchUpId).toEqual([]);
     expect(restored.sideExitProvenance, matchUpId).toBeUndefined();
   }
@@ -544,6 +543,7 @@ test('a double exit records its loser slot in the consolation and the exit walks
   expect(matchUp('fl-3-1').matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(matchUp('fl-3-1').winningSide).toBeUndefined();
   expect(matchUp('fl-2-1').matchUpStatus).toEqual(BYE);
-  expect(exitFor(matchUp('fl-2-1'), 1)).toEqual({ previousMatchUpStatus: BYE, matchUpStatus: BYE });
+  // the `{ BYE -> BYE }` origin was the exit's pair, and goes with it (census A1 group R5)
+  expect(exitFor(matchUp('fl-2-1'), 1)).toBeUndefined();
   expect(exitFor(matchUp('fl-2-1'), 2)).toBeUndefined();
 });

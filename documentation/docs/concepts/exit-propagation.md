@@ -847,6 +847,25 @@ by a named test that fails without it.
   therefore reaches the draw the same results reach with the BYE placed first (COMPASS 32/31 20551581:
   `aLoserSeatHoldingAByeIsNotConverged`).
 
+### Rules settled by the census in A1 (2026-10-17)
+
+Read from the A1 do/undo triage, which applies a probe outcome to each scheduled draw and clears it; each rule is
+pinned by a named test that fails without it.
+
+- **A cleared loser seat leaves no award behind.** A loser sent into a seat opposite a produced exit is awarded it on
+  arrival. When the result that sent them is re-scored or cleared, their seat empties and the produced exit stands
+  pending again, on the seat's own matchUp and on one reached past a BYE; the reservation it holds for the next arrival
+  stays, and goes with the exit when that is withdrawn. A carried exit, or a produced one that came straight down its
+  loser link, keeps its award, as direct entry writes it; and a source that becomes a double exit leaves the seat to its
+  own cascade, which places the BYE (CURTIS_CONSOLATION 32/27 9000062, DOUBLE_ELIMINATION 8/4 20537779:
+  `aClearedLoserSeatLeavesNoAwardBehind`).
+- **A released position takes its arrival with it.** A position released from a round it had won its way into leaves
+  no record of that arrival: the feeder named there is undecided again and sent nobody (FIRST_MATCH_LOSER_CONSOLATION
+  16/13 20483283 under `allowChangePropagation`: `aReleasedPositionTakesItsArrivalWithIt`).
+- **A BYE origin goes with the exit opposite it.** The BYE origin a produced exit writes opposite itself on meeting a
+  BYE is withdrawn with that exit, so a BYE matchUp reads as it did before the exit arrived (FEED_IN_CHAMPIONSHIP 16/11
+  20532286: `aByeOriginLivesAsLongAsTheExitOppositeIt`).
+
 ### Nothing to do is success, not failure
 
 Several situations look like a failure to place a participant but are simply an absence of one. The
