@@ -10,7 +10,7 @@ The ScoringEngine supports **two indexing conventions** for `addPoint()`:
 - **0-based** (original): `winner: 0 | 1`, `server: 0 | 1` — where `0` = side 1, `1` = side 2
 - **1-based** ([CODES](/docs/data-standards#codes)-aligned): `winningSide: 1 | 2`, `serverSideNumber: 1 | 2`
 
-You can use either convention. Provide `winner` **or** `winningSide` (not both). Both values are always stored on the resulting `Point` record. Return values like `getWinner()` use CODES convention (1 or 2).
+You can use either convention, or both when they name the same side (two spellings that disagree are refused). Both values are always stored on the resulting `Point` record. Return values like `getWinner()` use CODES convention (1 or 2).
 :::
 
 ## Scoring Methods
@@ -104,7 +104,7 @@ interface AddPointOptions {
 ```
 
 :::tip
-Provide `winner` **or** `winningSide`, not both. The engine normalizes internally — the resulting `Point` record always contains both `winner` and `winningSide`. The same applies to `server` / `serverSideNumber`.
+Provide `winner` or `winningSide`, or both when they name the same side; spellings that disagree are refused. The engine normalizes internally — the resulting `Point` record always contains both `winner` and `winningSide`. The same applies to `server` / `serverSideNumber`.
 :::
 
 #### Stored Point Record
