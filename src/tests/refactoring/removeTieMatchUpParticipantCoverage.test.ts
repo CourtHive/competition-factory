@@ -491,53 +491,51 @@ describe('removeTieMatchUpParticipantId coverage', () => {
     });
 
     const substitutionAction = result.validActions?.find(({ type }) => type === 'SUBSTITUTION');
-    if (substitutionAction) {
-      const { method, payload, availableParticipantIds, existingParticipantIds } = substitutionAction;
-      const substituteParticipantId = availableParticipantIds[0];
-      const existingParticipantId = existingParticipantIds[0];
+    expect(substitutionAction).toBeDefined();
+    const { method, payload, availableParticipantIds, existingParticipantIds } = substitutionAction;
+    const substituteParticipantId = availableParticipantIds[0];
+    const existingParticipantId = existingParticipantIds[0];
 
-      Object.assign(payload, { substituteParticipantId, existingParticipantId });
+    Object.assign(payload, { substituteParticipantId, existingParticipantId });
 
-      result = tournamentEngine[method](payload);
-      expect(result.success).toEqual(true);
+    result = tournamentEngine[method](payload);
+    expect(result.success).toEqual(true);
 
-      // verify processCodes were added to the tieMatchUp
-      let targetMatchUp = getMatchUp(tieMatchUpId, false);
-      expect(targetMatchUp.processCodes?.length).toBeGreaterThan(0);
+    // verify processCodes were added to the tieMatchUp
+    let targetMatchUp = getMatchUp(tieMatchUpId, false);
+    expect(targetMatchUp.processCodes?.length).toBeGreaterThan(0);
 
-      // complete the matchUp
-      const { outcome: completedOutcome } = mocksEngine.generateOutcomeFromScoreString({
-        scoreString: '6-3 6-4',
-        winningSide: 1,
-      });
-      result = tournamentEngine.setMatchUpStatus({
-        outcome: completedOutcome,
-        matchUpId: tieMatchUpId,
-        drawId,
-      });
-      expect(result.success).toEqual(true);
+    // complete the matchUp
+    const { outcome: completedOutcome } = mocksEngine.generateOutcomeFromScoreString({
+      scoreString: '6-3 6-4',
+      winningSide: 1,
+    });
+    result = tournamentEngine.setMatchUpStatus({
+      outcome: completedOutcome,
+      matchUpId: tieMatchUpId,
+      drawId,
+    });
+    expect(result.success).toEqual(true);
 
-      // now remove the substituted participant — should clean up processCodes
-      result = tournamentEngine.matchUpActions({
-        matchUpId: tieMatchUpId,
-        sideNumber,
-        drawId,
-      });
+    // now remove the substituted participant — should clean up processCodes
+    result = tournamentEngine.matchUpActions({
+      matchUpId: tieMatchUpId,
+      sideNumber,
+      drawId,
+    });
 
-      const removeAction = result.validActions?.find(({ type }) => type === REMOVE_PARTICIPANT);
-      if (removeAction) {
-        const { method: removeMethod, payload: removePayload } = removeAction;
-        removePayload.participantId = substituteParticipantId;
+    const removeAction = result.validActions?.find(({ type }) => type === REMOVE_PARTICIPANT);
+    expect(removeAction).toBeDefined();
+    const { method: removeMethod, payload: removePayload } = removeAction;
+    removePayload.participantId = substituteParticipantId;
 
-        result = tournamentEngine[removeMethod](removePayload);
-        expect(result.success).toEqual(true);
+    result = tournamentEngine[removeMethod](removePayload);
+    expect(result.success).toEqual(true);
 
-        // after removing the only substitution on this side,
-        // processCodes should be cleaned up if the other side has no substitutions
-        targetMatchUp = getMatchUp(tieMatchUpId, false);
-        expect(targetMatchUp.processCodes?.length ?? 0).toEqual(0);
-      }
-    }
+    // after removing the only substitution on this side,
+    // processCodes should be cleaned up if the other side has no substitutions
+    targetMatchUp = getMatchUp(tieMatchUpId, false);
+    expect(targetMatchUp.processCodes?.length ?? 0).toEqual(0);
   });
 
   it('handles doubles pair removal when pair is not in any draws (modifyOrDeleteUnattachedPair)', () => {
@@ -966,51 +964,49 @@ describe('removeTieMatchUpParticipantId coverage', () => {
     });
 
     const substitutionAction = result.validActions?.find(({ type }) => type === 'SUBSTITUTION');
-    if (substitutionAction) {
-      const { method, payload, availableParticipantIds, existingParticipantIds } = substitutionAction;
-      Object.assign(payload, {
-        substituteParticipantId: availableParticipantIds[0],
-        existingParticipantId: existingParticipantIds[0],
-      });
+    expect(substitutionAction).toBeDefined();
+    const { method, payload, availableParticipantIds, existingParticipantIds } = substitutionAction;
+    Object.assign(payload, {
+      substituteParticipantId: availableParticipantIds[0],
+      existingParticipantId: existingParticipantIds[0],
+    });
 
-      result = tournamentEngine[method](payload);
-      expect(result.success).toEqual(true);
+    result = tournamentEngine[method](payload);
+    expect(result.success).toEqual(true);
 
-      // complete the matchUp
-      const { outcome: completedOutcome } = mocksEngine.generateOutcomeFromScoreString({
-        scoreString: '6-4 6-2',
-        winningSide: 1,
-      });
-      result = tournamentEngine.setMatchUpStatus({
-        outcome: completedOutcome,
-        matchUpId: tieMatchUpId,
-        drawId,
-      });
-      expect(result.success).toEqual(true);
+    // complete the matchUp
+    const { outcome: completedOutcome } = mocksEngine.generateOutcomeFromScoreString({
+      scoreString: '6-4 6-2',
+      winningSide: 1,
+    });
+    result = tournamentEngine.setMatchUpStatus({
+      outcome: completedOutcome,
+      matchUpId: tieMatchUpId,
+      drawId,
+    });
+    expect(result.success).toEqual(true);
 
-      // the substitution added processCodes
-      let targetMatchUp = getMatchUp(tieMatchUpId, false);
-      const processCodesBeforeRemoval = targetMatchUp.processCodes?.length ?? 0;
-      expect(processCodesBeforeRemoval).toBeGreaterThan(0);
+    // the substitution added processCodes
+    let targetMatchUp = getMatchUp(tieMatchUpId, false);
+    const processCodesBeforeRemoval = targetMatchUp.processCodes?.length ?? 0;
+    expect(processCodesBeforeRemoval).toBeGreaterThan(0);
 
-      // remove the substitute participant — triggers removeSubstitutionProcessCodes
-      // because side.substitutions.length === 1
-      result = tournamentEngine.matchUpActions({
-        matchUpId: tieMatchUpId,
-        sideNumber,
-        drawId,
-      });
-      const removeAction = result.validActions?.find(({ type }) => type === REMOVE_PARTICIPANT);
-      if (removeAction) {
-        removeAction.payload.participantId = availableParticipantIds[0];
-        result = tournamentEngine[removeAction.method](removeAction.payload);
-        expect(result.success).toEqual(true);
+    // remove the substitute participant — triggers removeSubstitutionProcessCodes
+    // because side.substitutions.length === 1
+    result = tournamentEngine.matchUpActions({
+      matchUpId: tieMatchUpId,
+      sideNumber,
+      drawId,
+    });
+    const removeAction = result.validActions?.find(({ type }) => type === REMOVE_PARTICIPANT);
+    expect(removeAction).toBeDefined();
+    removeAction.payload.participantId = availableParticipantIds[0];
+    result = tournamentEngine[removeAction.method](removeAction.payload);
+    expect(result.success).toEqual(true);
 
-        targetMatchUp = getMatchUp(tieMatchUpId, false);
-        // processCodes should be removed when the last substitution is removed from both sides
-        expect(targetMatchUp.processCodes?.length ?? 0).toEqual(0);
-      }
-    }
+    targetMatchUp = getMatchUp(tieMatchUpId, false);
+    // processCodes should be removed when the last substitution is removed from both sides
+    expect(targetMatchUp.processCodes?.length ?? 0).toEqual(0);
   });
 
   it('returns MATCHUP_NOT_FOUND when tieMatchUpId is bogus', () => {
@@ -1180,15 +1176,14 @@ describe('removeTieMatchUpParticipantId coverage', () => {
     // so removeSubstitutionProcessCodes condition is false (codes preserved)
     result = tournamentEngine.matchUpActions({ matchUpId: tieMatchUpId, sideNumber: 1, drawId });
     const removeAction = result.validActions?.find(({ type }) => type === REMOVE_PARTICIPANT);
-    if (removeAction) {
-      removeAction.payload.participantId = sub1Action.availableParticipantIds[0];
-      result = tournamentEngine[removeAction.method](removeAction.payload);
-      expect(result.success).toEqual(true);
+    expect(removeAction).toBeDefined();
+    removeAction.payload.participantId = sub1Action.availableParticipantIds[0];
+    result = tournamentEngine[removeAction.method](removeAction.payload);
+    expect(result.success).toEqual(true);
 
-      // processCodes should be preserved because the other side still has substitutions
-      targetMatchUp = getMatchUp(tieMatchUpId, false);
-      expect(targetMatchUp.processCodes?.length).toBeGreaterThan(0);
-    }
+    // processCodes should be preserved because the other side still has substitutions
+    targetMatchUp = getMatchUp(tieMatchUpId, false);
+    expect(targetMatchUp.processCodes?.length).toBeGreaterThan(0);
   });
 
   it('returns EXISTING_OUTCOME when matchUp has winningSide but no score', () => {
