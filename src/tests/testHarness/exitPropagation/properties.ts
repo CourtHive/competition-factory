@@ -2,7 +2,9 @@ import { clearOutcome, getDrawDefinition, getDrawMatchUps, hash, observeMutation
 import { checkErrorAtomicity, decidedMatchUpIds, projectionChanges, projectRoundTrip } from './transitions';
 import { ROUND_TRIP_FIELDS } from './transitions';
 import type { Observation, PropertyFailure } from './transitions';
+import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { isDoubleExit } from '@Validators/isExit';
+import { BYE } from '@Constants/matchUpStatusConstants';
 
 /**
  * Relational properties — statements about a mutation and its inverse, which no single-state
@@ -98,11 +100,19 @@ const PROVENANCE = 6;
  * An opposed debate (2026-10-17) agreed to keep it out of the round trip until one settle step derives it, and to
  * police the entries that ARE present with {@link checkArrivalsTrue} instead. Exit-bearing entries and BYE claims
  * stay projected in full.
+ *
+ * A BYE ORIGIN IS TREATED THE SAME WAY (F5, opposed debate 2026-10-18). The `{ BYE, BYE }` pair a produced exit writes
+ * opposite itself is written in some entry orders and not others (14-order splits of 1/14 and 11/14). Across 7,358
+ * single-step continuations and 99 playouts with and without a true pair, no engine decision and no rendering
+ * differed; only a FALSE pair did harm (a WO on an empty seat through `sidesCarryingExit`). So absence is unknown, and
+ * falsehood is policed: one that names a BYE matchUp that has delivered nothing, or stands opposite no exit, fails.
+ * Promote it back into the round trip once a settle step derives it.
  */
 function projectForRoundTrip(drawDefinition: any): any[] {
   // an exit-bearing entry is kept whole; of an arrival only its BYE claims, if any
   const roundTripEntry = (entry: any) => {
-    if (entry?.matchUpStatus) return entry;
+    // a BYE origin (`{ BYE, BYE }`) is arrival-class too: "may record", policed by checkArrivalsTrue (F5)
+    if (entry?.matchUpStatus && !isByeOrigin(entry)) return entry;
     return entry?.byeClaims?.length ? { byeClaims: entry.byeClaims } : undefined;
   };
   return projectRoundTrip(drawDefinition).map((structure: any) => ({
@@ -136,6 +146,11 @@ export function checkArrivalsTrue(drawId: string): PropertyFailure[] {
   const failures: PropertyFailure[] = [];
   for (const matchUp of matchUps) {
     for (const [side, entry] of Object.entries(matchUp.sideExitProvenance ?? {}) as [string, any][]) {
+      if (isByeOrigin(entry)) {
+        const failure = byeOriginFalse(matchUp, Number(side), entry, byId);
+        if (failure) failures.push({ property: 'ARRIVAL_TRUE', matchUpId: matchUp.matchUpId, detail: failure });
+        continue;
+      }
       if (!entry?.sourceMatchUpId || entry.matchUpStatus) continue;
       const source: any = byId.get(entry.sourceMatchUpId);
       const occupant = matchUp.sides?.find((s: any) => s?.sideNumber === Number(side))?.participantId;
@@ -156,6 +171,34 @@ export function checkArrivalsTrue(drawId: string): PropertyFailure[] {
     }
   }
   return failures;
+}
+
+/** a BYE's own origin, `{ matchUpStatus: BYE, previousMatchUpStatus: BYE }`: the pair a produced exit writes opposite itself */
+const isByeOrigin = (entry: any) => entry?.matchUpStatus === BYE && entry?.previousMatchUpStatus === BYE;
+
+/**
+ * A BYE origin that is present tells the truth (census F5, 2026-10-18): it names a BYE matchUp in the draw whose winner comes
+ * here, the side's position (if it holds one) is that matchUp's, and the exit it was written opposite still stands.
+ */
+function byeOriginFalse(matchUp: any, side: number, entry: any, byId: Map<string, any>): string | undefined {
+  const source: any = entry.sourceMatchUpId && byId.get(entry.sourceMatchUpId);
+  const held = matchUp.sides?.find((s: any) => s?.sideNumber === side);
+  const opposite = matchUp.sideExitProvenance?.[3 - side];
+  const reason =
+    (!source && 'names no matchUp in the draw') ||
+    (source.winnerMatchUpId !== matchUp.matchUpId && `names ${coordinate(source)}, whose winner goes elsewhere`) ||
+    (source.matchUpStatus !== BYE && `names ${coordinate(source)}, which is ${source.matchUpStatus}`) ||
+    // a BYE matchUp with a seat nobody holds has delivered nothing (`deliveredStatus`, F3)
+    ([1, 2].some((n) => {
+      const seat = source.sides?.find((s: any) => s?.sideNumber === n);
+      return !seat?.participantId && !seat?.bye;
+    }) &&
+      `names ${coordinate(source)}, which has delivered nothing`) ||
+    (held?.drawPosition &&
+      !(source.drawPositions ?? []).includes(held.drawPosition) &&
+      `side ${side} holds dp${held.drawPosition}, which ${coordinate(source)} did not send`) ||
+    (!carriedExitStatus(opposite) && 'stands opposite no exit');
+  return reason ? `${coordinate(matchUp)} side ${side}: a BYE origin ${reason}` : undefined;
 }
 
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;

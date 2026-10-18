@@ -1,6 +1,6 @@
-import { emptyCoverage } from '@Tests/testHarness/exitPropagation/properties';
+import { checkArrivalsTrue, emptyCoverage } from '@Tests/testHarness/exitPropagation/properties';
 import { clearOutcome } from '@Tests/testHarness/exitPropagation/transitions';
-import { replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import { afterEach, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -8,7 +8,7 @@ import tournamentEngine from '@Engines/syncEngine';
 // constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * CENSUS REPLAY EXECUTES THE ROUND TRIPS IT CLAIMS, AND POLICES EVERY WRITE THEY MAKE (assessment 2026-10-17,
@@ -108,4 +108,24 @@ it('a clear that writes and then refuses is caught through replay', () => {
 
   const failure = replay(config, [], 'relational-planted-clear');
   expect(failure?.property).toEqual('ERROR_IMPLIES_NO_MUTATION');
+});
+
+it('a BYE origin the round trip leaves out is still policed for truth', () => {
+  setSubscriptions({});
+  const drawId = 'relational-bye-origin-truth';
+  expect(prepareDraw(config, drawId)).toEqual(true);
+  expect(checkArrivalsTrue(drawId)).toEqual([]);
+
+  // the planted defect: a BYE origin naming a matchUp that is no BYE, opposite no exit
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  const [structure] = tournamentRecord.events[0].drawDefinitions[0].structures;
+  const [feeder, , , , target] = structure.matchUps;
+  target.sideExitProvenance = {
+    1: { matchUpStatus: BYE, previousMatchUpStatus: BYE, sourceMatchUpId: feeder.matchUpId },
+  };
+  tournamentEngine.setState(tournamentRecord);
+
+  const [failure] = checkArrivalsTrue(drawId);
+  expect(failure?.property).toEqual('ARRIVAL_TRUE');
+  expect(failure?.detail).toContain('a BYE origin');
 });
