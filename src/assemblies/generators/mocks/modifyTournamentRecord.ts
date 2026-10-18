@@ -10,6 +10,7 @@ import { generateEventWithFlights } from './generateEventWithFlights';
 import { generateEventWithDraw } from './generateEventWithDraw';
 import { publishEvent } from '@Mutate/publishing/publishEvent';
 import { generateVenues } from '@Mutate/venues/generateVenues';
+import { cloneState, restoreState } from '@Tools/cloneState';
 import { generateFlights } from './generateFlights';
 import { addEvent } from '@Mutate/events/addEvent';
 
@@ -18,6 +19,7 @@ import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
 function processExistingEvent({ event, eventProfile, tournamentRecord, allUniqueParticipantIds, drawIds }) {
   const { gender, category, eventType } = event;
@@ -248,10 +250,72 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
   return { scheduledRounds, schedulerResult };
 }
 
+/**
+ * All or nothing by default: a refusal (or a throw) leaves the record exactly as it was passed, in the
+ * caller's own objects, and the caller's `uuids` pool is consumed only when the call succeeds.
+ *
+ * Before (assessment M10, 2026-10-17): a valid draw followed by an unrecognized draw type returned
+ * ERR_UNRECOGNIZED_DRAW_TYPE with 4 participants and an event already written, and the error said
+ * nothing about them; a corrected retry then stacked onto the half-built record.
+ *
+ * `keepPartial: true` keeps what was written before the refusal and reports it as `retained` (the ids
+ * the record gained, read from the record itself), for a caller who would rather inspect or keep a
+ * partial build than start again.
+ */
 export function modifyTournamentRecord(params) {
+  if (!params?.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  const keepPartial = params.keepPartial === true;
+  const before = recordIds(params.tournamentRecord);
+  const snapshot = keepPartial ? undefined : cloneState(params.tournamentRecord);
+  const uuids = !keepPartial && Array.isArray(params.uuids) ? [...params.uuids] : params.uuids;
+
+  let result;
+  try {
+    result = applyModifications({ ...params, uuids });
+  } catch (err) {
+    if (snapshot) restoreState(snapshot);
+    throw err;
+  }
+
+  if (result?.error) {
+    if (snapshot) {
+      restoreState(snapshot);
+      return result;
+    }
+    return { ...result, retained: retainedSince(before, params.tournamentRecord) };
+  }
+
+  // the pool was drawn from a copy: commit what the successful call consumed
+  if (uuids !== params.uuids && Array.isArray(params.uuids)) params.uuids.splice(0, params.uuids.length, ...uuids);
+  return result;
+}
+
+type RecordIds = { participantIds: string[]; eventIds: string[]; drawIds: string[]; venueIds: string[] };
+
+function recordIds(tournamentRecord: Tournament): RecordIds {
+  const events = tournamentRecord.events ?? [];
+  return {
+    participantIds: (tournamentRecord.participants ?? []).map(({ participantId }) => participantId),
+    drawIds: events.flatMap((event) => (event.drawDefinitions ?? []).map(({ drawId }) => drawId)),
+    venueIds: (tournamentRecord.venues ?? []).map(({ venueId }) => venueId),
+    eventIds: events.map(({ eventId }) => eventId),
+  };
+}
+
+function retainedSince(before: RecordIds, tournamentRecord: Tournament): RecordIds {
+  const after = recordIds(tournamentRecord);
+  const added = (key: keyof RecordIds) => after[key].filter((id) => !before[key].includes(id));
+  return {
+    participantIds: added('participantIds'),
+    eventIds: added('eventIds'),
+    drawIds: added('drawIds'),
+    venueIds: added('venueIds'),
+  };
+}
+
+function applyModifications(params) {
   const { schedulingProfile, tournamentRecord, autoSchedule, periodLength, venueProfiles, drawProfiles, uuids } =
     params;
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   // the caller's profiles are configuration, not scratch space: the gender and idPrefix adjustments
   // below are made on copies, so passing the same profile twice asks for the same thing twice
