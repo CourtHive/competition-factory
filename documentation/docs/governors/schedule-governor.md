@@ -1089,13 +1089,24 @@ const { courtIssues, rowIssues } = engine.proConflicts({
 
 `courtIssues` is keyed by `courtId`, `rowIssues` by row index; each issue is
 `{ matchUpId, issue, issueType, issueIds }`, where `issue` is the severity (`SCHEDULE_ERROR`,
-`SCHEDULE_CONFLICT`, `SCHEDULE_ISSUE`, `SCHEDULE_WARNING`) and `issueIds` names the matchUps it is with.
+`SCHEDULE_CONFLICT`, `SCHEDULE_ISSUE`, `SCHEDULE_WARNING`) and `issueIds` names the matchUps it is with:
+for a participant issue, only the matchUps that matchUp's own participants clash with.
 A matchUp carries one issue, the first and most severe found. The `issueType`s are `scheduleConstants`:
 
 - `CONFLICT_PARTICIPANTS`, `CONFLICT_POTENTIAL_PARTICIPANTS` — the same participant, or one who may
   advance there, in two matchUps of one row;
 - `CONFLICT_MATCHUP_ORDER` — a matchUp in the same row as, or earlier than, a matchUp that feeds it;
 - `CONFLICT_COURT_DOUBLE_BOOKING` — two matchUps in the same court and `courtOrder`;
+- in adjacent rows, `CONFLICT_PARTICIPANTS`, `CONFLICT_POTENTIAL_PARTICIPANTS` and `CONFLICT_MATCHUP_ORDER` are
+  a `SCHEDULE_WARNING` (back to back), and only when the time between the two matchUps is short of the
+  participants' recovery: the earlier matchUp's finish plus its recovery minutes falls after the later
+  matchUp begins. The finish is the earlier matchUp's `endTime`, else its `scoredTime`, else its
+  `startTime`, `calledAt` or `scheduledTime` plus its average minutes; the later matchUp begins at its
+  `startTime`, else its `calledAt`, else its `scheduledTime`. Average and recovery minutes come from the
+  scheduling policy, with the singles ↔ doubles figure when the type changes. `calledAt` and `scoredTime` are
+  UTC instants and are read only when the tournament's time zone is known (`localTimeZone`, or the venues'
+  address zones). Without times the warning stands. A source on the same court as the matchUp it feeds is
+  not warned of: the court plays them in order;
 - `CONFLICT_BYE_SCHEDULED`, `CONFLICT_EXIT_SCHEDULED` — a court held by a matchUp that will never be
   played (see below);
 - `CONFLICT_POSITION_LINK` — with `useDeepDependencies`, a matchUp whose position-linked source is
