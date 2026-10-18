@@ -228,9 +228,12 @@ export function inputLevelError(level: 'point' | 'game'): Error {
 }
 
 /**
- * Whether the set in play is the one the final-set format governs. Mid-match that is the set played with
- * both sides one set from winning, except an aggregate format's sudden-death decider, which is set N + 1
- * by number and never one of the N (`aggregateDeciderSetNumber`).
+ * Whether the set in play is the one the final-set format governs (spec § 3.2). In a best of N that is the
+ * set played with both sides one set from winning, and set N whatever the count when it starts: a timed
+ * segment closed level wins no set, so `SET3-S:T10-F:T10/TB7` can reach set three at 1-0, and set three
+ * still plays its declared `/TB7` (CA 2026-10-18). An exactly format's final set is set N, and an
+ * aggregate format's sudden-death decider is set N + 1 by number and never one of the N
+ * (`aggregateDeciderSetNumber`).
  */
 export function isLiveDecidingSet(
   formatStructure: FormatStructure,
@@ -239,7 +242,8 @@ export function isLiveDecidingSet(
 ): boolean {
   const bestOf = formatStructure.bestOf || formatStructure.exactly || 3;
   const setsToWin = Math.ceil(bestOf / 2);
-  return finalSetGoverns(formatStructure, setNumber, setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1);
+  const bothOneFromWinning = setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1;
+  return finalSetGoverns(formatStructure, setNumber, bothOneFromWinning || setNumber === bestOf);
 }
 
 /**

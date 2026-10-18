@@ -394,10 +394,14 @@ decides the match outside scoring.
 getScoreboard(options?: GetScoreboardOptions): string
 ```
 
-Get the score as a display string.
+Get the score as a display string. The game in play is read by the format governing the set in play:
+tennis points in a game, numeric points in a tiebreak-only set, a match tiebreak, a set tiebreak, the
+tiebreak a level timed segment plays at time, and a consecutive-points game.
 
 ```js
-engine.getScoreboard(); // '6-4 3-6 2-1 30-15'
+engine.getScoreboard(); // '6-4, 3-6, 2-1 (30-15)'
+// SET3-S:TB11 at 5-3 in the first game
+engine.getScoreboard(); // '0-0 (5-3)'
 ```
 
 ---
@@ -528,9 +532,14 @@ engine.addSet({ side1Score: 2, side2Score: 1 }); // an inning's runs
 getInputMode(): 'points' | 'games' | 'sets' | 'mixed' | 'none'
 ```
 
-Get the input mode based on what types of entries have been recorded.
+Get the input mode based on what types of scoring inputs have been recorded: points, games and set
+totals. Baselines, segment ends, server corrections, substitutions, challenges and annotations are not
+inputs.
 
 ```js
+engine.setServer(1);
+engine.getInputMode(); // 'none'
+
 engine.addPoint({ winner: 0 });
 engine.getInputMode(); // 'points'
 
@@ -585,6 +594,31 @@ Get who serves the next point. Uses format-driven server alternation by default,
 A point added without a server is recorded with the server this method returns, so the displayed,
 recorded and replayed servers agree under either rule. A server the caller supplies is recorded as
 played, and the rule resumes after it.
+
+The format's rule: game by game in standard sets, with Rule 5(b) in a tiebreak (a tennis match
+tiebreak included); unit by unit in timed segments, continuously across segments, with Rule 5(b) in a
+tiebreak at time; and under `@RALLY` the winner of the point before. A combined total (`P{n}`) and a
+tiebreak-only format (`S:TB{n}`) derive no server: this method still returns 0 or 1 there, a
+placeholder (the side the last `setServer` named, or side 1), and points record a server only when
+the caller supplies one. `isServerDerived()` says which it is.
+
+---
+
+### isServerDerived
+
+```ts
+isServerDerived(): boolean
+```
+
+Whether `getNextServer()` is the engine's derivation (`true`) or only a placeholder (`false`: a
+combined total, or a tiebreak-only format until each sport's own service rule is added). The score
+situation carries the same answer as `serverDerived`; where it is `false`, no game point or break
+point is reported and no server-based statistic is produced.
+
+```js
+const engine = new ScoringEngine({ matchUpFormat: 'SET5-S:TB11' });
+engine.isServerDerived(); // false
+```
 
 ---
 

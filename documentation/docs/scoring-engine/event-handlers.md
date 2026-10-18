@@ -61,16 +61,16 @@ engine.setEventHandlers(undefined);
 
 ### Handler Descriptions
 
-| Handler           | Trigger                                                    | Extra context         |
-| ----------------- | ---------------------------------------------------------- | --------------------- |
-| `onPoint`         | A point is accepted and recorded                           | —                     |
-| `onGameComplete`  | That point completes a game (not a combined-point segment) | `gameWinner: 0 \| 1`  |
-| `onSetComplete`   | That point completes a set with a winner                   | `setWinner: 0 \| 1`   |
-| `onMatchComplete` | That point completes a match with a winner                 | `matchWinner: 0 \| 1` |
-| `onMatchTie`      | That point completes a match without a winner              | —                     |
-| `onUndo`          | `undo()` succeeds                                          | —                     |
-| `onRedo`          | `redo()` succeeds                                          | —                     |
-| `onReset`         | `reset()` is called                                        | —                     |
+| Handler           | Trigger                                                                                                    | Extra context         |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- | --------------------- |
+| `onPoint`         | A point is accepted and recorded                                                                           | —                     |
+| `onGameComplete`  | That point completes a game (not a combined-point segment, not a point of a timed segment scored in units) | `gameWinner: 0 \| 1`  |
+| `onSetComplete`   | That point completes a set with a winner                                                                   | `setWinner: 0 \| 1`   |
+| `onMatchComplete` | That point completes a match with a winner                                                                 | `matchWinner: 0 \| 1` |
+| `onMatchTie`      | That point completes a match without a winner                                                              | —                     |
+| `onUndo`          | `undo()` succeeds                                                                                          | —                     |
+| `onRedo`          | `redo()` succeeds                                                                                          | —                     |
+| `onReset`         | `reset()` is called                                                                                        | —                     |
 
 | Input level/action                                       | Scoring completion dispatch                                                 |
 | -------------------------------------------------------- | --------------------------------------------------------------------------- |

@@ -68,13 +68,17 @@ describe('tiebreak service order (ITF Rule 5(b))', () => {
     expectServers(played, OPENER_0.slice(0, 8));
   });
 
-  it('a standalone tiebreak set, both opening servers', () => {
-    const opener0 = playTiebreak(engineFor('SET1-S:TB7'), alternating(6));
-    expectServers(opener0, OPENER_0.slice(0, 6));
+  // Rule 5(b) is tennis's: a tiebreak-only format (squash, table tennis, pickleball and badminton shapes)
+  // derives no server until each sport's own rule is added (spec § 10.2 rule 2; CA 2026-10-18, decision 17).
+  // Pinned in serviceTiebreakOnlyFormats.test.ts; this rotation used to be applied to `SET1-S:TB7` here.
+  it('a standalone tiebreak set derives no server, whichever side a setServer names', () => {
+    const played = playTiebreak(engineFor('SET1-S:TB7'), alternating(6));
+    expect(played.recorded).toEqual(new Array(6).fill(undefined));
 
     const engine = engineFor('SET1-S:TB7');
     engine.setServer(1);
-    expectServers(playTiebreak(engine, alternating(6)), OPENER_1.slice(0, 6));
+    expect(playTiebreak(engine, alternating(6)).recorded).toEqual(new Array(6).fill(undefined));
+    expect(engine.isServerDerived()).toBe(false);
   });
 
   it('a set tiebreak opened by side 2 after a setServer correction', () => {
@@ -166,8 +170,11 @@ describe('tiebreak service order (ITF Rule 5(b))', () => {
  * the old rotation is corrected on its next rebuild, while a caller-supplied server is kept as recorded.
  */
 describe('tiebreak servers on records saved under the old rotation', () => {
+  // a set tiebreak at six all: a tiebreak-only format derives no server (decision 17), so the rotation is
+  // shown where Rule 5(b) still applies
   function legacyRecord() {
-    const engine = engineFor('SET1-S:TB7');
+    const engine = engineFor('SET3-S:6/TB7');
+    gamesAllIn(engine, 12);
     engine.addPoint({ winner: 0 });
     engine.addPoint({ winner: 1, server: 0 }); // caller-supplied: the scorer saw side 1 serve
     engine.addPoint({ winner: 0 });
@@ -179,7 +186,7 @@ describe('tiebreak servers on records saved under the old rotation', () => {
   }
 
   it('loads the snapshot as stored, and re-derives calculated servers on the next rebuild', () => {
-    const engine = engineFor('SET1-S:TB7');
+    const engine = engineFor('SET3-S:6/TB7');
     engine.setState(legacyRecord());
     expect(engine.getState().history!.points.map((point) => point.server)).toEqual([0, 0, 1, 1]);
 

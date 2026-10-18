@@ -153,6 +153,49 @@ describe('bestOf | timed(G) | final:timed(G) — a timed final segment of anothe
   );
 });
 
+/*
+ * The final set of a best of N is set N whatever the count when it starts (scoring-engine spec § 3.2 rule 1;
+ * CA 2026-10-18): a timed segment closed level wins no set, so a best of three can reach set three at one set
+ * to love, and set three still plays the final format's declared tiebreak at time.
+ */
+describe('bestOf | timed(G) | final:timed(G,tiebreak) — SET3-S:T10-F:T10/TB7: the final set is set N', () => {
+  const format = 'SET3-S:T10-F:T10/TB7';
+
+  it('engine-defined: level at time in set one closes it with no winner; the ordinary format has no tiebreak', () => {
+    segmentConforms(format, seq(segment('12'), 'g1'), {
+      sets: [
+        [1, 1],
+        [1, 0],
+      ],
+      complete: false,
+    });
+  });
+
+  it('engine-defined: set three at one set to love, level at time, plays its /TB7', () => {
+    segmentConforms(format, seq(segment('12'), segment('1'), segment('12'), '1111111'), {
+      sets: [
+        [1, 1],
+        [1, 0],
+        [2, 1, [7, 0]],
+      ],
+      winningSide: 1,
+      complete: true,
+    });
+  });
+
+  it('engine-defined: set three at one set all, level at time, plays its /TB7', () => {
+    segmentConforms(format, seq(segment('1'), segment('2'), segment('12'), '2222222'), {
+      sets: [
+        [1, 0],
+        [0, 1],
+        [1, 2, [0, 7]],
+      ],
+      winningSide: 2,
+      complete: true,
+    });
+  });
+});
+
 describe('bestOf | timed(G) | final:timed(G) | game:traditional(deuceCap) — SET3-S:T10-G:TN3D-F:T20', () => {
   const format = 'SET3-S:T10-G:TN3D-F:T20';
 

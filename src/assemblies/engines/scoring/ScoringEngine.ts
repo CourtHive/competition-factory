@@ -22,9 +22,9 @@ import {
   isAggregateFormat,
   isLiveDecidingSet,
 } from '@Tools/scoring/scoringUtilities';
-import { finalSetGoverns, openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
+import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
 import { isDecisionRequired } from '@Query/scoring/decisionRequired';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
@@ -40,6 +40,7 @@ import { nowIso } from '@Tools/clock';
 import {
   addPoint,
   deriveServer,
+  liveServiceRule,
   deriveServerBase,
   pointCountsUnits,
   validatePointInput,
@@ -221,6 +222,9 @@ const SUPPLEMENTARY_STATE_VERSION = 1;
 
 /** A scoring input the timeline recorded. */
 const RECORDED: ScoringActionResult = { recorded: true };
+
+/** The timeline entries `getInputMode()` reports: the scoring inputs (§ 11.4). */
+const INPUT_MODE_TYPES = new Set(['point', 'game', 'set']);
 
 /** What the action boundary does with an input: refuse it, ignore it, or take it. */
 type Verdict = { refusal?: string; ignored?: IgnoredInput };
@@ -410,6 +414,8 @@ export class ScoringEngine {
     const prevTotalGames = this.state.score.sets.reduce((sum, s) => sum + (s.side1Score || 0) + (s.side2Score || 0), 0);
     const prevCompletedSets = this.state.score.sets.filter((s) => s.winningSide !== undefined).length;
     const prevComplete = this.state.matchUpStatus === COMPLETED;
+    // a point that is a unit of a timed segment's score completes no game (§ 11.5)
+    const pointBuildsGames = !this.pointIsTimedUnit();
 
     // Decorate active players from lineUp before adding point
     const activePlayers = this.activePlayersForPoint();
@@ -463,7 +469,8 @@ export class ScoringEngine {
         (sum, s) => sum + (s.side1Score || 0) + (s.side2Score || 0),
         0,
       );
-      if (curTotalGames > prevTotalGames && !this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
+      const gameCompleted = curTotalGames > prevTotalGames && pointBuildsGames;
+      if (gameCompleted && !this.cachedFormatStructure?.setFormat?.combinedPointTotal) {
         // the side that won the deciding point, whichever spelling the caller used (S11)
         const gameWinner = this.state.history!.points.at(-1)!.winner;
         this.eventHandlers.onGameComplete?.({ ...ctx, gameWinner });
@@ -521,6 +528,19 @@ export class ScoringEngine {
     const setType = resolveSetType(formatStructure, setsWon, openSetNumber(this.state.score.sets));
     if (pointCountsUnits(this.state, formatStructure, setType, this.activeSetFormat())) return undefined;
     return `A point is not a unit of this segment's score: scoreValue ${scoreValue} is refused`;
+  }
+
+  /**
+   * Whether the next point is a unit of a timed segment's score (§ 6.2 rules 1 and 3), not a point of a
+   * game: points-based timed segments, and games-based ones whose games are the sport's own units. The
+   * tiebreak a level segment plays at time is a game.
+   */
+  private pointIsTimedUnit(): boolean {
+    const formatStructure = this.cachedFormatStructure;
+    if (!formatStructure) return false;
+    const setType = resolveSetType(formatStructure, this.setsWon(), openSetNumber(this.state.score.sets));
+    if (setType !== 'timed') return false;
+    return pointCountsUnits(this.state, formatStructure, setType, this.activeSetFormat());
   }
 
   private setsWon(): [number, number] {
@@ -930,7 +950,11 @@ export class ScoringEngine {
   getScore(): ReturnType<typeof getScore> {
     // a copy: the score's sets are the engine's own (S9)
     // eslint-disable-next-line no-restricted-syntax
-    return JSON.parse(JSON.stringify(getScore(this.state)));
+    const score = JSON.parse(JSON.stringify(getScore(this.state)));
+    // the competition's rule decides the server shown, as it decides the server played (§ 10.7)
+    if (score.situation && !score.situation.decisionRequired && this.competitionFormat?.serverRule === 'WINNER_SERVES')
+      Object.assign(score.situation, { server: this.getNextServer(), serverDerived: true });
+    return score;
   }
 
   /**
@@ -1006,6 +1030,7 @@ export class ScoringEngine {
    * @returns 0 = side 1 serves, 1 = side 2 serves
    */
   getNextServer(): 0 | 1 {
+    // where no server is derived the answer is a placeholder: see isServerDerived()
     const serverRule = this.competitionFormat?.serverRule;
 
     if (serverRule === 'WINNER_SERVES') {
@@ -1024,6 +1049,17 @@ export class ScoringEngine {
     const setType = resolveSetType(this.cachedFormatStructure, setsWon, openSetNumber(this.state.score.sets));
 
     return deriveServer(this.state, this.cachedFormatStructure, setType);
+  }
+
+  /**
+   * Whether `getNextServer()` is the engine's derivation (spec § 10.4, CA 2026-10-18). False where no server
+   * is derived: in a combined total `P{n}`, and in a tiebreak-only format (`S:TB{n}`) until each sport's own
+   * service rule is added. `getNextServer()` still answers 0 or 1 there, for API compatibility, but the
+   * answer is only a placeholder: the side a `setServer` named, or side 1.
+   */
+  isServerDerived(): boolean {
+    if (this.competitionFormat?.serverRule === 'WINNER_SERVES') return true;
+    return liveServiceRule(this.state, this.cachedFormatStructure) !== 'none';
   }
 
   /**
@@ -1180,9 +1216,9 @@ export class ScoringEngine {
       return 'none';
     }
 
-    const types = new Set(
-      entries.filter((e) => e.type !== 'setInitialScore' && e.type !== 'endSegment').map((e) => e.type),
-    );
+    // only scoring inputs count: not baselines, segment ends, server corrections, substitutions,
+    // challenges or annotations (§ 11.4, CA 2026-10-18)
+    const types = new Set(entries.filter((e) => INPUT_MODE_TYPES.has(e.type)).map((e) => e.type));
 
     if (types.size === 0) return 'none';
     if (types.size === 1) {
@@ -1874,8 +1910,6 @@ export class ScoringEngine {
   private checkSetCompletion(currentSet: SetScore): void {
     const formatStructure = parse(this.state.matchUpFormat);
     if (!formatStructure) return;
-    const bestOf = formatStructure.exactly || formatStructure.bestOf || 3;
-    const setsToWin = Math.ceil(bestOf / 2);
 
     const setsWon: [number, number] = [0, 0];
     this.state.score.sets.forEach((set) => {
@@ -1883,11 +1917,8 @@ export class ScoringEngine {
       if (set.winningSide === 2) setsWon[1]++;
     });
     const setNumber = (currentSet as any).setNumber ?? this.state.score.sets.indexOf(currentSet) + 1;
-    const isDecidingSet = finalSetGoverns(
-      formatStructure,
-      setNumber,
-      setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1,
-    );
+    // the set's own win is not counted yet: it is the one being judged
+    const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, setNumber);
     const activeSetFormat =
       isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 

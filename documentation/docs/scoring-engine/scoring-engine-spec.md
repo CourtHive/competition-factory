@@ -330,7 +330,9 @@ it without replaying it, and `undo` pops it, which is already the rule.
 The ordinary format (`-S:`) governs every set except the one the final-segment format (`-F:`) governs:
 
 1. **best of N**: the set played with both sides one set from winning (the deciding set), read from
-   the score, not the set number;
+   the score, **and set N whatever the count when it starts** (CA 2026-10-18): a timed segment closed
+   level wins no set, so `SET3-S:T10-F:T10/TB7` can reach set three at one set to love, and set three
+   still plays its declared `/TB7` (`timedSegments`, "the final set is set N"). v1 read the score only;
 2. **exactly N, not aggregate**: set N, by number, whatever the count before it
    (`timedSegments`, "SET4X-S:T20P-F:T20 — the fourth segment is scored in games … and must be played");
 3. **exactly N, aggregate**: set N + 1, the decider, and never one of the N (§ 9.4;
@@ -728,7 +730,9 @@ without `@RALLY` (§ 10.2).
 **Whether the server is derived is its own indicator** (CA 2026-10-18). `getNextServer()` keeps
 returning 0 or 1 for API compatibility (epixodic computes `1 - getNextServer()`); `isServerDerived()`,
 and `serverDerived` in the score situation (§ 11.2), say whether that answer is the engine's
-derivation or only a placeholder. v1 derives no server under `@RALLY` and answers a side anyway
+derivation or only a placeholder. The placeholder is the side the last `setServer` named, and side 1
+without one. Under `@RALLY` a `setServer` names the server of the next point only, and the rule resumes
+after it, as a supplied server does under `WINNER_SERVES`. v1 derives no server under `@RALLY` and answers a side anyway
 (`SET3-S:TB11@RALLY` after two points: 1), with no indicator: a v1 defect (§ 16, 15).
 
 ### 10.5 The court half
@@ -810,7 +814,9 @@ Computed before each point, from the score at the serve, for the set in play's f
   rally that would complete it with a winner, and its golden point is the `DP` rally.
 
 Points-to-match counts by the match's completion rule: sets to win in best of N, all N in exactly N,
-the total in an aggregate. v1 counts by best-of sets in exactly and aggregate formats (`HAL3X-S:TB11` at
+the total in an aggregate (and, level, the declared decider). A side that cannot win the match however
+many points in a row it wins (in exactly N, more sets than the other once all N are played; in an
+aggregate, the greater total) has no count: its `pointsToMatch` is `-1`, and it has no match point. v1 counts by best-of sets in exactly and aggregate formats (`HAL3X-S:TB11` at
 one half to love and 10-0 reports a match point; `SET3A-S:TB11` at two games to love and 9-0 gives
 `pointsToMatch` `[0, 22]`): a v1 defect (§ 16, 13).
 
@@ -1023,7 +1029,7 @@ an additive action, not a format change.
 
 |                    |                                                                                                                                                                                        |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| conformance matrix | 79 cells from the factory's harvested formats: 75 held by independent cases, 4 refused, none missing (`formatMatrix.test.ts`); every cell placed in § 17                               |
+| conformance matrix | 80 cells from the factory's harvested formats: 76 held by independent cases, 4 refused, none missing (`formatMatrix.test.ts`); every cell placed in § 17                               |
 | conformance cases  | about 300, written from rulebooks (ITF, USA Pickleball, World Squash, ITTF, BWF, FIVB, VALORANT) or from the format definitions, each held five ways (see the opening)                 |
 | engine tests       | the S1–S13 fixes (#5511–#5521), the defects the cases found (#5529, #5530, #5533) and the replay, boundary and service tests cited above                                               |
 | scoring corpus     | 72 seeded streams (8 formats × 3 biases × 3 seeds) through the pure `createMatchUp`/`addPoint`, each step's result pinned by the manifest (#5511), and one point after completion each |
@@ -1171,6 +1177,7 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 - `bestOf | SET | set:timed(G) | final:same | game:traditional(deuceCap) | noClock | knownModifiers` — § 3.5, § 4.1 rule 3, § 6.2 rule 2; `timedSegments` (`SET3-S:T10-G:TN3D`)
 - `bestOf | SET | set:timed(G) | final:same | game:consecutive | noClock | knownModifiers` — § 3.5, § 6.2 rule 2; `timedSegments` (`SET3-S:T10-G:3C`)
 - `bestOf | SET | set:timed(G) | final:timed(G) | game:traditional | noClock | knownModifiers` — § 3.2, § 6.1, § 6.4; `timedSegments` (`SET3-S:T20-F:T60`, `SET3-S:T15-F:T10`)
+- `bestOf | SET | set:timed(G) | final:timed(G,tiebreak) | game:traditional | noClock | knownModifiers` — § 3.2 rule 1, § 6.4 rule 2, § 9.1; `timedSegments` (`SET3-S:T10-F:T10/TB7`), `viewsReadTheGoverningFormat.test.ts`
 - `bestOf | SET | set:timed(G) | final:timed(G) | game:traditional(deuceCap) | noClock | knownModifiers` — § 3.2, § 3.5, § 6.2 rule 2; `timedSegments` (`SET3-S:T10-G:TN3D-F:T20`)
 - `bestOf | SET | set:timed(G,@RALLY) | final:same | game:traditional | noClock | knownModifiers` — § 6.3; `timedSegments` (`SET3-S:T20@RALLY`)
 - `bestOf | SET | set:timed(G,tiebreak) | final:same | game:traditional | noClock | knownModifiers` — § 4.3, § 6.4 rule 2; `timedSegments` (`SET3-S:T20/TB7`, `SET3-S:T10/TB1`, `SET3-S:T10G/TB1`), `timedSetTiebreak.test.ts`
