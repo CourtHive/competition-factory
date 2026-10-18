@@ -131,6 +131,7 @@ export default {
   removeTournamentRecord,
   setMethods,
   setNoticeBuffer,
+  setMutationStatus,
   setSubscriptions,
   setTournamentId,
   setTournamentRecord,
@@ -259,6 +260,11 @@ function cycleMutationStatus() {
   const status = instanceState.modified;
   instanceState.modified = false;
   return status;
+}
+
+// optional: sets the flag back to a value `cycleMutationStatus` returned (see globalState.readMutationStatus)
+function setMutationStatus(status: boolean) {
+  getInstanceState().modified = status;
 }
 
 function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?: boolean) {

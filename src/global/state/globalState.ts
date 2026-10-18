@@ -435,6 +435,28 @@ export function cycleMutationStatus() {
   return _globalStateProvider.cycleMutationStatus();
 }
 
+/**
+ * The mutation flag as it stands, read WITHOUT clearing it, for an operation that may need to restore it (a
+ * differential divergence). `undefined` when the provider cannot set the flag back (the optional `setMutationStatus`):
+ * reading it through `cycleMutationStatus` alone would clear it.
+ */
+export function readMutationStatus(): boolean | undefined {
+  if (!isFunction(_globalStateProvider.setMutationStatus)) return undefined;
+  const status = _globalStateProvider.cycleMutationStatus();
+  _globalStateProvider.setMutationStatus(status);
+  return status;
+}
+
+/**
+ * Restores a flag captured by `readMutationStatus`. Without the optional hook the flag is cleared, as a rollback
+ * clears it: a record left unstamped after an enclosing write is the lesser fault, beside stamping one left unchanged.
+ */
+export function restoreMutationStatus(status?: boolean) {
+  if (status !== undefined && isFunction(_globalStateProvider.setMutationStatus))
+    return _globalStateProvider.setMutationStatus(status);
+  return _globalStateProvider.cycleMutationStatus();
+}
+
 export function addNotice(notice: Notice) {
   if (typeof notice?.topic !== 'string') return;
   const isGlobalSubscription = globalState.globalSubscriptions[notice.topic];

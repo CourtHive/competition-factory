@@ -437,13 +437,14 @@ export function authoredScenarios(): Authored[] {
     });
   }
 
-  // § 8 UNPINNED: bulkMatchUpStatusUpdate's two declared refusals
+  // § 8: bulkMatchUpStatusUpdate's declared refusals. Every outcome is located before any is applied (CA, 2026-10-18),
+  // so an outcome without an eventId is refused, where it used to be skipped while the call reported 'ok'
   {
     const { tournamentRecord, at } = generate({ drawSize: 4 });
     const m1 = at(MAIN, 1, 1);
     out.push({
       scenarioId: 'authored/outcome-pipeline/bulk-update-refusals',
-      ref: 'spec § 8: bulkMatchUpStatusUpdate MISSING_VALUE and MISSING_TOURNAMENT_RECORD',
+      ref: 'spec § 8: bulkMatchUpStatusUpdate MISSING_VALUE, MISSING_TOURNAMENT_RECORD and MISSING_EVENT',
       initialRecord: tournamentRecord,
       directives: [
         { method: 'bulkMatchUpStatusUpdate', params: {} },
@@ -468,8 +469,22 @@ export function authoredScenarios(): Authored[] {
             ],
           },
         },
+        {
+          method: 'bulkMatchUpStatusUpdate',
+          params: {
+            outcomes: [
+              {
+                tournamentId: tournamentRecord.tournamentId,
+                eventId: m1.eventId,
+                drawId: m1.drawId,
+                matchUpId: m1.matchUpId,
+                ...win(),
+              },
+            ],
+          },
+        },
       ],
-      expected: ['ERR_MISSING_VALUE', 'ERR_MISSING_TOURNAMENT', 'ok'],
+      expected: ['ERR_MISSING_VALUE', 'ERR_MISSING_TOURNAMENT', 'ERR_MISSING_EVENT_ID', 'ok'],
     });
   }
 
