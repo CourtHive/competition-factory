@@ -9,7 +9,7 @@ import tournamentEngine from '@Engines/syncEngine';
  * must NOT carry over — otherwise the match renders on the same numbered row on
  * the new day with empty rows above it.
  *
- * Regression: a production BOBOCA re-date (provisioner payload of
+ * Regression: a production re-date (provisioner payload of
  * `{ scheduledDate, scheduledTime }` only, removePriorValues:true) left the prior
  * day's courtOrder attached, so the day's first matches appeared on rows 5-6.
  */

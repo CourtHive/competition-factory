@@ -57,7 +57,7 @@ Remap specific matchUpIds on a fully generated draw definition using targeted lo
 
 ## The Problem
 
-When converting draws from external tournament management platforms (UTR, TennisLink, TP, etc.) into the CODES data format, each matchUp already has an ID assigned by the source system. These IDs are important to preserve because:
+When converting draws from external tournament management platforms into the CODES data format, each matchUp already has an ID assigned by the source system. These IDs are important to preserve because:
 
 - **External references** — scoring apps, public-facing brackets, and reporting systems reference matchUps by their original IDs
 - **Data synchronization** — ongoing sync between systems requires stable ID mappings
