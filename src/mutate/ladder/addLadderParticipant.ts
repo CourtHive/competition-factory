@@ -1,6 +1,7 @@
 import { getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
+import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isLadder } from '@Query/drawDefinition/isLadder';
@@ -84,6 +85,7 @@ export function addLadderParticipant(params: AddArgs): ResultType & { drawPositi
   // A RATING-ordered standing is derived, so a position here is only a placeholder.
   if (getLadderOrdering({ ...params, structure }) !== RANK || placement === BOTTOM) {
     assignments.push({ drawPosition: bottom, participantId });
+    ladderStandingNotice({ ...params, structure });
     return { ...SUCCESS, drawPosition: bottom };
   }
 
@@ -104,6 +106,7 @@ export function addLadderParticipant(params: AddArgs): ResultType & { drawPositi
   if (!parameters || typeof value !== 'number') {
     // No rating to place by — the bottom, not the top.
     assignments.push({ drawPosition: bottom, participantId });
+    ladderStandingNotice({ ...params, structure });
     return { ...SUCCESS, drawPosition: bottom };
   }
 
@@ -136,5 +139,6 @@ export function addLadderParticipant(params: AddArgs): ResultType & { drawPositi
   assignments.push({ drawPosition: target, participantId });
 
   mirrorStandingToScale({ ...params, appliedAt: addedAt, touched });
+  ladderStandingNotice({ ...params, structure });
   return { ...SUCCESS, drawPosition: target };
 }

@@ -1,9 +1,11 @@
 import { validateCollectionValueProfiles } from '@Validators/validateCollectionValueProfiles';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
 import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { coercedGender, normalizeGender } from '@Helpers/coercedGender';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
@@ -58,7 +60,13 @@ type ModifyCollectionDefinitionArgs = {
   setValue?: number;
 };
 
-export function modifyCollectionDefinition({
+// A tieFormat written to the event, or to event.tieFormats (where a draw's, structure's or matchUp's
+// shared tieFormat lives), modifies the event: announced with MODIFY_EVENT when it changed.
+export function modifyCollectionDefinition(params: ModifyCollectionDefinitionArgs) {
+  return withEventChangeNotice(params, () => modifyDefinition(params));
+}
+
+function modifyDefinition({
   updateInProgressMatchUps = false,
   tournamentRecord,
   collectionOrder,
@@ -263,7 +271,18 @@ export function modifyCollectionDefinition({
     if (genderModified) {
       const affectedMatchUps = getAffectedMatchUps({ matchUp, structure, drawDefinition });
       for (const affectedMatchUp of affectedMatchUps) {
+        const sidesBefore = JSON.stringify(affectedMatchUp?.sides ?? []);
         removeCollectionAssignmentsForCollection(affectedMatchUp, collectionId);
+        // the lineUps live on the TEAM matchUp's sides: a pruned collectionAssignment modifies it
+        if (JSON.stringify(affectedMatchUp?.sides ?? []) !== sidesBefore) {
+          modifyMatchUpNotice({
+            tournamentId: tournamentRecord?.tournamentId,
+            eventId: event?.eventId ?? eventId,
+            matchUp: affectedMatchUp,
+            drawDefinition,
+            event,
+          });
+        }
       }
     }
 

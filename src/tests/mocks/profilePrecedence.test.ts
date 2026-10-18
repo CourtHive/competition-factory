@@ -15,6 +15,7 @@ import { RANKING } from '@Constants/scaleConstants';
  */
 
 const UUIDS = ['u-1', 'u-2', 'u-3', 'u-4', 'u-5', 'u-6', 'u-7', 'u-8'];
+const UUID_SET = new Set(UUIDS);
 const CATEGORY = { categoryName: 'U18' };
 
 const individualIds = () =>
@@ -37,7 +38,7 @@ describe('uuids', () => {
       drawProfiles: [{ drawSize: 4 }],
       setState: true,
     });
-    expect(individualIds().filter((id) => UUIDS.includes(id)).length).toEqual(4);
+    expect(individualIds().filter((id) => UUID_SET.has(id)).length).toEqual(4);
   });
 
   it('drawProfiles: participantsProfile.uuids reach a draw that generates its own participants', () => {
@@ -47,7 +48,7 @@ describe('uuids', () => {
       drawProfiles: [{ drawSize: 4, uniqueParticipants: true }],
       setState: true,
     });
-    expect(individualIds().filter((id) => UUIDS.includes(id)).length).toEqual(4);
+    expect(individualIds().filter((id) => UUID_SET.has(id)).length).toEqual(4);
   });
 
   it('drawProfiles: the drawProfile own uuids win over participantsProfile', () => {
@@ -58,7 +59,7 @@ describe('uuids', () => {
       setState: true,
     });
     const ids = individualIds();
-    expect(ids.filter((id) => UUIDS.includes(id)).length).toEqual(4);
+    expect(ids.filter((id) => UUID_SET.has(id)).length).toEqual(4);
     expect(ids.some((id) => id.startsWith('x-'))).toEqual(false);
   });
 
@@ -70,7 +71,7 @@ describe('uuids', () => {
       setState: true,
     });
     const ids = individualIds();
-    expect(ids.filter((id) => UUIDS.includes(id)).length).toEqual(4);
+    expect(ids.filter((id) => UUID_SET.has(id)).length).toEqual(4);
     expect(ids.some((id) => id.startsWith('x-'))).toEqual(false);
   });
 });

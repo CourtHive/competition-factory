@@ -1,5 +1,6 @@
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
+import { checkProfileKeys, GENERATE_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { addTournamentParticipants } from './addTournamentParticipants';
 import { addParticipants } from '@Mutate/participants/addParticipants';
@@ -9,20 +10,19 @@ import { generateEventWithDraw } from './generateEventWithDraw';
 import { processLeagueProfiles } from './processLeagueProfiles';
 import { cycleMutationStatus } from '@Global/state/globalState';
 import { formatDate, isValidDateString } from '@Tools/dateTime';
-import { addDays, extractDate } from '@Tools/plainDate';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { generateVenues } from '@Mutate/venues/generateVenues';
-import { checkProfileKeys, GENERATE_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { applyScenarioProfile } from './applyScenarioProfile';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { addDays, extractDate } from '@Tools/plainDate';
 import { addEvent } from '@Mutate/events/addEvent';
 import { randomMember } from '@Tools/arrays';
 import { now } from '@Tools/clock';
 
 // constants and fixtures
 import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import type { GenerateTournamentRecordArgs } from '@Types/mocksTypes';
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
+import type { GenerateTournamentRecordArgs } from '@Types/mocksTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // SELECTED WITH `randomMember`, NEVER `randomPop`. `randomPop` SPLICES, and this array is a

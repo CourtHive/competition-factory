@@ -1,5 +1,6 @@
 import { applyLapseConsequence } from '@Mutate/ladder/applyLapseConsequence';
 import { getChallengeState } from '@Query/ladder/getChallengeState';
+import { ladderMatchUpNotice } from '@Mutate/ladder/ladderNotices';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { isLadder } from '@Query/drawDefinition/isLadder';
@@ -62,6 +63,7 @@ export function acceptChallenge(params: RespondArgs): ResultType {
     element: matchUp,
   });
   matchUp.matchUpStatus = TO_BE_PLAYED;
+  ladderMatchUpNotice({ ...params, structure, matchUp });
 
   return { ...SUCCESS };
 }
@@ -95,6 +97,7 @@ export function declineChallenge(
     timeItem: { itemType: CHALLENGE_DECLINED, itemValue: true, itemDate: params.respondedAt },
     element: matchUp,
   });
+  ladderMatchUpNotice({ ...params, structure, matchUp });
 
   // The challenger of THIS challenge is who a forfeited position goes to — only the challenge in
   // front of us knows that, which is why the consequence is applied here rather than anywhere else.

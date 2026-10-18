@@ -1,4 +1,6 @@
 import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
+import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
+import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { findParticipant } from '@Acquire/findParticipant';
 import { removeExtension } from './removeExtension';
 import { addExtension } from './addExtension';
@@ -19,6 +21,7 @@ type AddExtensionArgs = {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   participantId?: string;
+  disableNotice?: boolean;
   creationTime?: boolean;
   extension: Extension;
   event?: Event;
@@ -42,22 +45,32 @@ export function addTournamentExtension(params: AddExtensionArgs): {
 
 export function addDrawDefinitionExtension(params: AddExtensionArgs) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
-  if (!params.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
-  return addExtension({
+  const { tournamentRecord, drawDefinition, disableNotice, event } = params;
+  if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
+  const before = attributesSnapshot(drawDefinition, []);
+  const result = addExtension({
     creationTime: params.creationTime,
-    element: params.drawDefinition,
     extension: params.extension,
+    element: drawDefinition,
   });
+  if (!result.error && !disableNotice) {
+    announceDrawChange({ tournamentRecord, drawDefinition, attributes: [], before, event });
+  }
+  return result;
 }
 
+// an event's extensions are event attributes: a change to them is announced with MODIFY_EVENT
 export function addEventExtension(params: AddExtensionArgs) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
-  if (!params.event) return { error: EVENT_NOT_FOUND };
-  return addExtension({
-    creationTime: params.creationTime,
-    extension: params.extension,
-    element: params.event,
-  });
+  const event = params.event;
+  if (!event) return { error: EVENT_NOT_FOUND };
+  return withEventChangeNotice(params, () =>
+    addExtension({
+      creationTime: params.creationTime,
+      extension: params.extension,
+      element: event,
+    }),
+  );
 }
 
 export function addParticipantExtension(params?) {
@@ -94,14 +107,20 @@ export function removeTournamentExtension(params): {
 
 export function removeDrawDefinitionExtension(params) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
-  if (!params.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
-  return removeExtension({ element: params.drawDefinition, name: params.name });
+  const { tournamentRecord, drawDefinition, disableNotice, event } = params;
+  if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
+  const before = attributesSnapshot(drawDefinition, []);
+  const result = removeExtension({ element: drawDefinition, name: params.name });
+  if (!result.error && !disableNotice) {
+    announceDrawChange({ tournamentRecord, drawDefinition, attributes: [], before, event });
+  }
+  return result;
 }
 
 export function removeEventExtension(params) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
   if (!params?.event) return { error: EVENT_NOT_FOUND };
-  return removeExtension({ element: params.event, name: params.name });
+  return withEventChangeNotice(params, () => removeExtension({ element: params.event, name: params.name }));
 }
 
 export function removeParticipantExtension(params?) {

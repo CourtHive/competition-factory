@@ -2,11 +2,12 @@ import { handleCaughtError, deleteNotices, setDevContext, setDeepCopy, getDevCon
 import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
-import { factoryVersion } from '@Functions/global/factoryVersion';
 import { createDerivedRandom, withRandomSource } from '@Tools/prng';
+import { factoryVersion } from '@Functions/global/factoryVersion';
 import { withCapturedClock } from '@Tools/clock';
 
 import { setState } from '@Assemblies/engines/parts/stateMethods';
+import { FactoryEngine } from '@Types/factoryTypes';
 import type {
   GenerateTournamentRecordArgs,
   ModifyTournamentRecordArgs,
@@ -14,7 +15,6 @@ import type {
   GenerateParticipantsArgs,
   GenerateOutcomeArgs,
 } from '@Types/mocksTypes';
-import { FactoryEngine } from '@Types/factoryTypes';
 
 let devContextSet = false;
 

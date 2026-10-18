@@ -44,7 +44,9 @@ import {
   MODIFY_SCHEDULING_PROFILE,
   MODIFY_TOURNAMENT_DETAIL,
   PUBLISH_EVENT,
+  PUBLISH_EVENT_SEEDING,
   UNPUBLISH_EVENT,
+  UNPUBLISH_EVENT_SEEDING,
   UNPUBLISH_TOURNAMENT,
   UPDATE_INCONTEXT_MATCHUP,
   topicConstants,
@@ -111,7 +113,12 @@ export const entityTopicSpec: Record<EntityKind, Partial<Record<ChangeType, stri
     modified: [MODIFY_DRAW_DEFINITION, MODIFY_SEED_ASSIGNMENTS, MODIFY_POSITION_ASSIGNMENTS],
     removed: [DELETED_DRAW_IDS, MODIFY_DRAW_DEFINITION],
   },
-  event: { added: [ADD_EVENT], modified: [MODIFY_EVENT, PUBLISH_EVENT, UNPUBLISH_EVENT], removed: [DELETE_EVENT] },
+  // seeding publication is event publish state with topics of its own (CFS records an events intent on them)
+  event: {
+    added: [ADD_EVENT],
+    modified: [MODIFY_EVENT, PUBLISH_EVENT, UNPUBLISH_EVENT, PUBLISH_EVENT_SEEDING, UNPUBLISH_EVENT_SEEDING],
+    removed: [DELETE_EVENT],
+  },
   entries: {
     added: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
     modified: [MODIFY_EVENT_ENTRIES, MODIFY_DRAW_ENTRIES],
@@ -414,6 +421,10 @@ export function noticedEntityKeys(captured: CapturedNotice[]): Set<string> {
         break;
       case UNPUBLISH_TOURNAMENT:
         add('tournament', payload?.tournamentId);
+        break;
+      case PUBLISH_EVENT_SEEDING:
+      case UNPUBLISH_EVENT_SEEDING:
+        add('event', payload?.eventId);
         break;
       case DELETE_VENUE:
         add('venue', payload?.venueId);

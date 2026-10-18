@@ -11,13 +11,25 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { getMatchUpId } from '@Functions/global/extractors';
-import { generateOutcome } from './generateOutcome';
-import { intersection } from '@Tools/arrays';
 import { coercedGender } from '@Helpers/coercedGender';
+import { generateOutcome } from './generateOutcome';
 import { isGendered } from '@Validators/isGendered';
 import { isMixed } from '@Validators/isMixed';
+import { intersection } from '@Tools/arrays';
 
 // constants and types
+import { MAIN, PLAY_OFF, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { addParticipants } from '@Mutate/participants/addParticipants';
+import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
+import type { DrawDefinition } from '@Types/tournamentTypes';
+import { FEMALE, MALE } from '@Constants/genderConstants';
+import { LINEUPS } from '@Constants/extensionConstants';
+import { ASCENDING } from '@Constants/sortingConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
+import { SUCCESS } from '@Constants/resultConstants';
+import { RANKING } from '@Constants/scaleConstants';
 import {
   ABANDONED,
   BYE,
@@ -27,18 +39,6 @@ import {
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import { MAIN, PLAY_OFF, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
-import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { addParticipants } from '@Mutate/participants/addParticipants';
-import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
-import { LINEUPS } from '@Constants/extensionConstants';
-import type { HydratedMatchUp } from '@Types/hydrated';
-import type { DrawDefinition } from '@Types/tournamentTypes';
-import { FEMALE, MALE } from '@Constants/genderConstants';
-import { ASCENDING } from '@Constants/sortingConstants';
-import { SUCCESS } from '@Constants/resultConstants';
-import { RANKING } from '@Constants/scaleConstants';
 
 // Helper to assign participants for dual matchups
 function assignParticipantsToDualMatchUps({ firstRoundDualMatchUps, event, tournamentRecord, drawDefinition }) {

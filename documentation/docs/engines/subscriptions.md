@@ -86,7 +86,7 @@ setSubscriptions(subscriptions);
 
 The **goal** is a complete, faithful change-log of the tournament record: every mutation that changes the record dispatches at least one notice whose topic covers the changed entity, so an external cache, read-model or reactive UI can be kept in sync from notices alone.
 
-**It is not yet complete.** A conformance harness (`src/tests/mutations/notifications/noticeConformance`) runs a catalog of mutation scenarios, structurally diffs the record before and after, and fails CI when a changed entity is not covered by an emitted notice. That guarantee holds for the scenarios in the catalog. Measured over **every** engine call in the whole test suite (2026-10-15), some methods still change the record without a covering notice in some calls — among them parts of exit propagation in `setMatchUpStatus`, `generateLineUps`, `setDrawPositionPreferences`, and court and venue changes. Fixes are landing method by method. Until they are complete, a consumer that must not miss a change should re-read what it caches after a mutation that may not announce itself, or persist the whole record.
+**It is not yet complete.** A conformance harness (`src/tests/mutations/notifications/noticeConformance`) runs a catalog of mutation scenarios, structurally diffs the record before and after, and fails CI when a changed entity is not covered by an emitted notice. That guarantee holds for the scenarios in the catalog. Measured over **every** engine call in the whole test suite (2026-10-15), some methods still change the record without a covering notice in some calls — among them parts of exit propagation in `setMatchUpStatus`, and court and venue changes. The draw, draft, ladder and competition-state writers announce what they change since 2026-10-18 (`MODIFY_DRAW_DEFINITION`, `MODIFY_POSITION_ASSIGNMENTS` for a ladder standing, `MODIFY_MATCHUP` for a challenge). Fixes are landing method by method. Until they are complete, a consumer that must not miss a change should re-read what it caches after a mutation that may not announce itself, or persist the whole record.
 
 To measure it yourself, see [Measuring notice coverage](/docs/testing/testing-overview#measuring-notice-coverage).
 
@@ -105,6 +105,19 @@ Notices describe the record **as stored**: `addEvent`'s `ADD_EVENT` carries the 
 normalised values, and the draw notices it sends carry `tournamentId` and `eventId`. Grouping changes are announced
 too: `scaledTeamAssignment` sends `MODIFY_PARTICIPANTS` for the teams it fills and `MODIFY_EVENT_ENTRIES` /
 `MODIFY_DRAW_ENTRIES` for the entries it moves, and `removeEventEntries` sends `MODIFY_EVENT` when it changes a flight.
+
+`MODIFY_EVENT` covers everything stored on the event itself, not only its named attributes: its extensions
+(`addEventExtension`, `removeEventExtension`, `attachPolicies` / `removePolicy` on an event,
+`modifyEventMatchUpFormatTiming`, `removeEventMatchUpFormatTiming`), its timeItems (`addEventTimeItem`, `addTimeItem`
+naming an event, the event context of `setParticipantScaleItems`, the record `deleteDrawDefinitions` keeps of a
+deletion), its `tieFormat` and `tieFormats` (`aggregateTieFormats` and the collection definition and collection group
+writers at any scope, since a fork or a centralised tieFormat lives on the event), and its flight profile
+(`addDrawEntries`, `removeDrawEntries`, `modifyEntriesStatus`, `modifyPairAssignment` and
+`deleteFlightProfileAndFlightDraws` when they change a flight). Each is sent only when the event changed. Entries
+are announced where they change: `addDrawEntries` (and `addEventEntries` / `addEventEntryPairs` with a `drawId`),
+`promoteAlternate(s)`, `seedWithdrawalCascade`, `modifyPairAssignment` and `resetVoluntaryConsolationStructure`
+send `MODIFY_DRAW_ENTRIES` and `MODIFY_EVENT_ENTRIES` for the lists they change. Seeding publication is event
+publish state announced by its own topics, `PUBLISH_EVENT_SEEDING` and `UNPUBLISH_EVENT_SEEDING`.
 
 ## The MODIFY_MATCHUP envelope
 

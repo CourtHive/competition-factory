@@ -1,3 +1,4 @@
+import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
@@ -195,7 +196,12 @@ export function generateLineUps(params: GenerateLineUpsArgs): ResultType & {
         tournamentRecord,
       });
     }
-    setFirstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS, value: lineUps });
+    if (drawDefinition) {
+      const attributes = ['lineUps'];
+      const before = attributesSnapshot(drawDefinition, attributes);
+      setFirstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS, value: lineUps });
+      announceDrawChange({ tournamentRecord, drawDefinition, attributes, before, event });
+    }
   }
 
   return { ...SUCCESS, lineUps, participantsToAdd };
