@@ -221,6 +221,9 @@ export function buildCarriedExitProvenance({
  * sides. A carried exit describes one side at a time and can reach a matchUp whose OTHER side was
  * stamped by an earlier propagation — `progressExitStatus` RULE 4, where two carried exits meet and
  * become a DOUBLE_WALKOVER. Replacing there would discard a still-true entry.
+ *
+ * Returns whether it wrote, so a caller that writes outside a notice-emitting path can announce the
+ * matchUp it changed and only that one.
  */
 export function mergeSideExitProvenance({
   provenance,
@@ -228,11 +231,12 @@ export function mergeSideExitProvenance({
 }: {
   provenance?: SideExitProvenance;
   matchUp?: MatchUp;
-}): void {
-  if (!matchUp || !writeNativeEnabled()) return;
+}): boolean {
+  if (!matchUp || !writeNativeEnabled()) return false;
   const admitted = admissibleOn(matchUp, provenance);
-  if (!admitted || !Object.keys(admitted).length) return;
+  if (!admitted || !Object.keys(admitted).length) return false;
   matchUp.sideExitProvenance = { ...matchUp.sideExitProvenance, ...admitted };
+  return true;
 }
 
 /**
