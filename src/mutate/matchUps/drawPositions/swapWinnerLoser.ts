@@ -311,11 +311,21 @@ export function swapWinnerLoser(params) {
    * intgate, flag ON: SINGLE_ELIMINATION 16/16 9100138 `Main|2|1`). The same rewrite the same-winner re-score makes
    * (`refreshArrivals`); a carried exit naming this source is the loser's, and `relabelWithoutDirection` settles it.
    */
-  refreshArrivalsFrom({
+  const refreshed = refreshArrivalsFrom({
     matchUps: (params.matchUpsMap ?? getMatchUpsMap({ drawDefinition }))?.drawMatchUps,
     matchUpStatus: matchUp?.matchUpStatus,
     matchUpId: matchUp?.matchUpId,
   });
+  // rewritten in place, so nothing else announces them
+  for (const arrival of refreshed)
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: 'refreshArrivalsFrom',
+      eventId: event?.eventId,
+      matchUp: arrival,
+      drawDefinition,
+      event,
+    });
 
   /**
    * Reconciled AFTER the result is applied, deliberately.

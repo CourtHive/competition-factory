@@ -24,6 +24,7 @@ import {
   clearResolvedSideExitProvenance,
   withdrawProducedExits,
   deriveStatusCodes,
+  sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -497,6 +498,7 @@ function removeDirectedLoser({
     //has been removed from the draw positions and this is now a straight double WO.
     //In case the loser matchup was not a double WO we jsut remove the status codes.
     const targetMatchUp = matchUpsMap?.drawMatchUps?.find(({ matchUpId }) => matchUpId === loserMatchUp.matchUpId);
+    const record = sideRecordOf(targetMatchUp);
     // Provenance stamped for the exit being removed is stale — but only once the status itself has
     // resolved. While the matchUp is still an exit the provenance still describes it, and clearing it
     // would leave an exit with no marker at all.
@@ -520,6 +522,16 @@ function removeDirectedLoser({
      * `codes=['WO','WO']`, `winningSide=1`, and provenance holding side 2 alone.
      */
     targetMatchUp.matchUpStatusCodes = deriveStatusCodes(targetMatchUp);
+    // the loser target's side record is rewritten here and by nothing else in this removal: announced when it changed
+    if (record !== sideRecordOf(targetMatchUp))
+      modifyMatchUpNotice({
+        tournamentId: tournamentRecord?.tournamentId,
+        context: 'removeDirectedLoser',
+        matchUp: targetMatchUp,
+        eventId: event?.eventId,
+        drawDefinition,
+        event,
+      });
   }
 
   // remove participant from seedAssignments
