@@ -1,7 +1,7 @@
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
-import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
+import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
