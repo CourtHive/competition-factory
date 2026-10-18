@@ -846,6 +846,12 @@ by a named test that fails without it.
   who will never arrive, and the pending exit passes through it. A BYE placed in a seat a convergence had produced into
   therefore reaches the draw the same results reach with the BYE placed first (COMPASS 32/31 20551581:
   `aLoserSeatHoldingAByeIsNotConverged`).
+- **A BYE origin waits for its feeder to deliver.** A double exit's produced exit records an origin for the other side
+  of the matchUp it reaches, read from the paired feeder. A feeder reading `BYE` beside a seat that holds neither a
+  participant nor a BYE has delivered nothing: whoever reaches that seat goes on through the BYE, so the side is not
+  decided and records no origin, whether the BYE was placed before the double exit or after it
+  (FIRST_MATCH_LOSER_CONSOLATION 8/7 20498521, `propagateExitStatus: false`, default `doubleExitPropagateBye`:
+  `aByeOriginWaitsForItsFeederToDeliver`).
 
 ### Nothing to do is success, not failure
 
