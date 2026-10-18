@@ -64,7 +64,7 @@ it('round robins with points based timed formats to tally points not games', () 
 it('can tally points when different finalSet format', () => {
   const matchUpFormat = 'SET3-S:6/TB7-F:T20P';
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawSize: 4, matchUpFormat }],
+    drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN, matchUpFormat }],
   });
 
   let result = tournamentEngine.setState(tournamentRecord);

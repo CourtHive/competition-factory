@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and fixtures
-import { FORMAT_FAST4, FORMAT_SHORT_SETS, FORMAT_STANDARD, TIMED20 } from '@Fixtures/scoring/matchUpFormats';
+import { FORMAT_FAST4, FORMAT_SHORT_SETS, FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { TEAM_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
@@ -15,6 +15,9 @@ import {
   NO_MODIFICATIONS_APPLIED,
   UNRECOGNIZED_MATCHUP_FORMAT,
 } from '@Constants/errorConditionConstants';
+
+// a tiebreak at time decides the set: the elimination draw below refuses a timed set that can end level (spec § 9.7)
+const TIMED20 = 'SET1-S:T20/TB7';
 
 it('can set and return matchUpFormat codes', () => {
   const matchUpFormat = FORMAT_STANDARD;

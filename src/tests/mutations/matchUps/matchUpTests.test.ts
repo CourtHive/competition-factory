@@ -26,7 +26,8 @@ import {
   UNRECOGNIZED_MATCHUP_FORMAT,
 } from '@Constants/errorConditionConstants';
 
-const FORMAT_TIMED_10_1 = 'SET1-S:T10';
+// a tiebreak at time decides the set: an elimination draw refuses a format that can end level (spec § 9.7)
+const FORMAT_TIMED_10_1 = 'SET1-S:T10/TB7';
 
 it('can return matchUps from an SINGLE_ELIMINATION structure', () => {
   const drawDefinition: DrawDefinition = newDrawDefinition();

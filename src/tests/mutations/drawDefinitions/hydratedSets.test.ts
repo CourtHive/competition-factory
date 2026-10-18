@@ -2,9 +2,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../..';
 import { expect, test } from 'vitest';
 
+// constants
+import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+
 test('inContext matchUp score.sets include timed boolean for timed sets', () => {
   const mockProfile = {
-    drawProfiles: [{ drawSize: 4, matchUpFormat: 'SET3-S:T20' }],
+    // round robin: SET3-S:T20 can end level, so an elimination draw refuses it (spec § 9.7 rule 4)
+    drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN, matchUpFormat: 'SET3-S:T20' }],
     completeAllMatchUps: true,
   };
   const { tournamentRecord } = mocksEngine.generateTournamentRecord(mockProfile);
