@@ -465,6 +465,11 @@ draw's `qualifiersCount` reserves no positions in the qualifying structure, and 
 be read is reported as an error rather than thrown. A malformed `drawName` is refused by `modifyDrawDefinition`
 as `{ error }` rather than read as success.
 
+With the `drawId` of a draw already in the event (adding qualifying to a generated main), the draw is built on a
+**copy** and the record is left as it was: commit the result with
+`addDrawDefinition({ drawDefinition, allowReplacement: true })`, which announces it. Until 2026-10 the stored draw was
+changed in place, unannounced, whether or not the commit followed.
+
 ---
 
 ## generateDrawMaticRound
@@ -514,6 +519,9 @@ engine.generateDrawTypeAndModifyDrawDefinition({
 ```
 
 **Purpose:** Convert draw to different format.
+
+On a draw stored in the event the matchUps it adds are announced as `ADD_MATCHUPS`, with `MODIFY_DRAW_DEFINITION`;
+`modifyOriginal: false` works on a copy and sends nothing.
 
 ---
 

@@ -271,7 +271,7 @@ node scripts/noticeCoverageReport.mjs --json        # the same summary as JSON
 The tally goes to `.notice-coverage/tally.jsonl` (git-ignored); `NOTICE_COVERAGE_OUT` overrides the path. For each
 call that changed a record, the harness diffs the record before and after and applies the same rules as the catalog.
 A call is **silent** when it changed the record and buffered no notice at all, and **violating** when a changed entity
-was covered by no notice.
+was covered by no notice. A call made with `disableNotice: true` asked for no notice and is not measured.
 
 The harness subscribes to every topic, because many mutations build a notice only when its topic has a subscriber. A
 handful of tests that assert behaviour gated on having **no** subscribers (audit trails, draw-deletion records) fail

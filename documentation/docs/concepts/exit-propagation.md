@@ -867,6 +867,12 @@ by a named test that fails without it.
   decided and records no origin, whether the BYE was placed before the double exit or after it
   (FIRST_MATCH_LOSER_CONSOLATION 8/7 20498521, `propagateExitStatus: false`, default `doubleExitPropagateBye`:
   `aByeOriginWaitsForItsFeederToDeliver`).
+- **A Decider is not a loser seat a BYE can fill.** The Decider is the one target that the Main final's winner link and
+  loser link both feed, and `reconcileDecider` writes both of its seats from the final. A final won against an exit has
+  no loser, and the Decider is a `DEAD_RUBBER` holding the champion, under either policy and in every entry order.
+  Before, the BYE owed to the final's loser seat was placed in the Decider, in the seat the champion was owed, in some
+  entry orders only (census R11, DOUBLE_ELIMINATION 8/5 21037067, `propagateExitStatus: true`:
+  `aFinalWonWithNoLoserLeavesItsDeciderADeadRubberInEveryOrder`).
 
 ### Rules settled by the census in A1 (2026-10-17)
 

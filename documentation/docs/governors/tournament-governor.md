@@ -24,6 +24,13 @@ engine.addExtension({
 
 **Purpose:** Attach custom metadata to tournament elements.
 
+When the `element` passed is one stored in a loaded record, the change is announced on its topic: the tournament
+record itself as `MODIFY_TOURNAMENT_DETAIL` with its `extensions`, an event as `MODIFY_EVENT`, a drawDefinition as
+`MODIFY_DRAW_DEFINITION`, a structure as `MODIFY_DRAW_DEFINITION` naming it, a matchUp (a TEAM matchUp's tieMatchUps
+included) as `MODIFY_MATCHUP`, a venue as `MODIFY_VENUE`, a participant as `MODIFY_PARTICIPANTS`. A copy (what `getEvent` or
+`getParticipants` returns) is not in the record, so writing to it announces nothing; nor does a write that leaves the
+element's extensions as they were.
+
 ---
 
 ## addMutationLock
@@ -473,6 +480,9 @@ engine.removeExtension({
 
 **Purpose:** Remove custom metadata from tournament elements.
 
+Announced as `addExtension` is; with `discover: true` each record whose root extensions changed is announced as
+`MODIFY_TOURNAMENT_DETAIL`. Removing a name the element does not carry sends nothing.
+
 ---
 
 ## removeMutationLock
@@ -563,6 +573,8 @@ engine.setTournamentNotes({ notes });
 ```js
 engine.setTournamentStatus({ status: CANCELLED });
 ```
+
+Announced as `MODIFY_TOURNAMENT_DETAIL` with `tournamentStatus`; setting the status the record already has sends nothing.
 
 ---
 

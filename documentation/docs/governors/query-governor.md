@@ -460,6 +460,8 @@ const { courts } = engine.getCourts({
 
 Primarily used by `getEventData` for publishing purposes.
 
+Every `matchUp` carries its progression links (`winnerMatchUpId`, and `loserMatchUpId` where a loser link leaves its structure), including in a draw that does not store them: they are derived onto a copy of the draw, and the record is not changed.
+
 ```js
 const {
   drawInfo: {
@@ -648,6 +650,8 @@ One structure's data — the drill-in tier of the payload decomposition. A clien
 [`structuresProfile: 'STUBS'`](#structuresprofile), then fetches exactly the structure it is about to
 render.
 
+As with [`getDrawData`](#getdrawdata), a draw that does not store its progression links is read from a copy that carries them.
+
 ```js
 const { structure, drawInfo } = engine.getStructureData({
   drawId,
@@ -673,6 +677,8 @@ empty result for a public reader rather than an error.
 ## getEventData
 
 Returns event information optimized for publishing: `matchUps` have context and separated into rounds for consumption by visualization libraries such as `tods-react-draws`. See examples: [Event Data Payload](../concepts/publishing/publishing-data-subscriptions.md#event-data-payload), [Event Data](../concepts/publishing/publishing-workflows.md#event-data), [Test Publish State](../concepts/publishing/publishing-workflows.md#test-publish-state).
+
+Every `matchUp` carries its progression links (`winnerMatchUpId`, and `loserMatchUpId` where a loser link leaves its structure), including in a draw that does not store them: they are derived onto a copy of the draw, and the record is not changed.
 
 See [Policies](../concepts/policies.md) for more details on `policyDefinitions`.
 

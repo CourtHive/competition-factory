@@ -43,7 +43,14 @@ type MethodTally = {
 // `mark`: the sequence number of the first notice this call could have buffered. A sequence number, not
 // an index: a keyed supersession or a deleteNotice can remove notices buffered BEFORE the call (an
 // undelivered notice from a direct, non-engine mutation), and an index would then skip the call's own.
-type Open = { methodName: string; before: Record<string, any>; mark: number; saved: CapturedNotice[] };
+// `optedOut`: the call passed `disableNotice: true`, asking for no notice; it is not measured
+type Open = {
+  methodName: string;
+  before: Record<string, any>;
+  mark: number;
+  saved: CapturedNotice[];
+  optedOut: boolean;
+};
 
 const MAX_EXAMPLES = 3;
 const MIRRORED = Symbol('noticeCoverageMirror');
@@ -126,14 +133,16 @@ export class NoticeCoverageCollector {
 
   private observe(event: InvokeEvent) {
     if (event.phase === 'before') {
-      this.stack.push({ methodName: event.methodName, before: snapshot(), mark: this.seq, saved: [] });
+      const optedOut = event.params?.disableNotice === true;
+      const before = optedOut ? {} : snapshot();
+      this.stack.push({ methodName: event.methodName, before, mark: this.seq, saved: [], optedOut });
       return;
     }
     const index = this.stack.map((open) => open.methodName).lastIndexOf(event.methodName);
     if (index < 0) return;
     const [open] = this.stack.splice(index);
     const result: any = (event as any).result;
-    if (!result || result.error) return;
+    if (!result || result.error || open.optedOut) return;
     this.record(open);
   }
 

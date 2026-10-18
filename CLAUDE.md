@@ -47,7 +47,7 @@ Full rationale and the CI/release compatibility table:
 pnpm install
 pnpm build                # Rollup + esbuild → dist/
 pnpm start                # Rollup watch mode
-pnpm test                 # Vitest: the default suite, 16,800+ tests (CI adds the TEAM arms: 18,000+)
+pnpm test                 # Vitest: the default suite, 18,000+ tests (CI adds the TEAM arms: 20,000+)
 pnpm tui                  # Vitest interactive UI
 pnpm coverage             # Coverage report (thresholds: 95/97/87/97.5%)
 pnpm lint                 # ESLint — non-mutating, fails on any warning

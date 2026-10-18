@@ -1,6 +1,7 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { clearSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
@@ -57,9 +58,14 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
     });
   }
 
-  // Remove all VOLUNTARY_CONSOLATION entries
+  // Remove all VOLUNTARY_CONSOLATION entries, and announce the draw's entries when there were any
   if (drawDefinition.entries?.length) {
+    const count = drawDefinition.entries.length;
     drawDefinition.entries = drawDefinition.entries.filter((entry) => entry.entryStage !== VOLUNTARY_CONSOLATION);
+    if (drawDefinition.entries.length !== count) {
+      const tournamentId = tournamentRecord?.tournamentId;
+      modifyDrawEntriesNotice({ tournamentId, eventId: event?.eventId, drawDefinition });
+    }
   }
 
   drawDefinition.extensions = drawDefinition.extensions.filter(

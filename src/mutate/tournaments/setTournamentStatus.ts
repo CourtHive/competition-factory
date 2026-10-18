@@ -1,3 +1,4 @@
+import { modifyTournamentDetailNotice } from './tournamentDetailNotice';
 import { tournamentStatuses } from '@Constants/tournamentConstants';
 
 // constants
@@ -11,7 +12,11 @@ export function setTournamentStatus({ tournamentRecord, status }) {
 
   if (status && !validStatuses.has(status)) return { error: INVALID_VALUES, info: 'Unknown status' };
 
+  const changed = tournamentRecord.tournamentStatus !== status;
   tournamentRecord.tournamentStatus = status;
+
+  // MODIFY_TOURNAMENT_DETAIL when the status changed; setting the status it already has sends nothing
+  if (changed) modifyTournamentDetailNotice({ tournamentRecord, detail: { tournamentStatus: status } });
 
   return { ...SUCCESS };
 }

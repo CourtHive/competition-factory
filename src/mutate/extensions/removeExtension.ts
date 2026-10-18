@@ -1,3 +1,4 @@
+import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
 import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and types
@@ -24,11 +25,14 @@ export function removeExtension(params?: {
     if (params.discover && params.tournamentRecords) {
       for (const tournamentId of Object.keys(params.tournamentRecords)) {
         const tournamentRecord = params.tournamentRecords[tournamentId];
+        const before = rootExtensionsFingerprint(tournamentRecord);
         const result = removeExtension({
           element: tournamentRecord,
           name: params.name,
         });
         if (result.error) return decorateResult({ result, stack: 'removeExtension' });
+        // the root extensions, announced as addExtension's discover path announces them
+        rootExtensionsNotice({ tournamentRecord, before });
       }
       return { ...SUCCESS };
     }
