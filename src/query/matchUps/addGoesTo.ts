@@ -4,6 +4,7 @@ import { getMappedStructureMatchUps } from '@Query/matchUps/getMatchUpsMap';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -166,6 +167,50 @@ export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMa
   if (hasStoredGoesTo({ drawDefinition })) return undefined;
   const result = addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
   return result.error ? result : undefined;
+}
+
+/**
+ * A draw that does not store its edges is given them (CA, 2026-10-16: a one-time backfill of stored converted records,
+ * and this migration a standard requirement of ingest). `migrateTournamentRecord` runs it on every draw, and
+ * `addDrawDefinition` on the draw it adds (CA, 2026-10-18): a draw built outside the factory is stored with its edges.
+ *
+ * The factory stores `winnerMatchUpId` / `loserMatchUpId` on every draw it generates, and `finishingPositionRange` on
+ * every matchUp; a record converted from elsewhere may hold neither. A query used to write them as a side effect, which
+ * the server then saved, so a converted record gained them only once something had scheduled it. No query writes now
+ * (`getMatchUpDependencies` derives on a copy), so the migration writes what `addGoesTo` derives: the edges, the loser
+ * ranges widened over the loser target, and a lone foreign structure's finishing rounds.
+ *
+ * Unconditional, like `compactDrawPositions`: an edge is never a legacy fact worth keeping out. A draw with a MALFORMED
+ * ROUND LINK (CA, 2026-10-06: it is an error) is left as it was: `addGoesTo` stops where it meets the link, so the
+ * derivation is tried on a copy first and the draw is never half given its edges. An AD_HOC draw has no positions to
+ * derive from (its rounds are paired, not linked), so it is skipped, as the query's write always skipped it.
+ */
+export function storeGoesTo(drawDefinition: DrawDefinition): number {
+  if (hasStoredGoesTo({ drawDefinition }) && !needsFinishingRounds(drawDefinition)) return 0;
+  if (drawDefinition.structures?.some((structure) => isAdHoc({ structure }))) return 0;
+  if (addGoesTo({ drawDefinition: makeDeepCopy(drawDefinition, false, true) }).error) return 0;
+  // counted only where a stored value changed: a draw whose edges cannot be derived (no links, nothing to follow) is
+  // asked again on every run and given nothing each time
+  const before = storedGoesTo(drawDefinition);
+  addGoesTo({ drawDefinition });
+  return storedGoesTo(drawDefinition) === before ? 0 : 1;
+}
+
+function storedGoesTo(drawDefinition: DrawDefinition): string {
+  const structures = (drawDefinition.structures ?? []).flatMap((structure) => [
+    structure,
+    ...(structuresOf(structure) ?? []),
+  ]);
+  return JSON.stringify(
+    structures
+      .flatMap((structure) => matchUpsOf(structure) ?? [])
+      .map(({ winnerMatchUpId, loserMatchUpId, finishingPositionRange, finishingRound }) => [
+        winnerMatchUpId,
+        loserMatchUpId,
+        finishingPositionRange,
+        finishingRound,
+      ]),
+  );
 }
 
 /**
