@@ -13,11 +13,11 @@ import { nameMocks } from './nameMocks';
 import { UUID } from '@Tools/UUID';
 
 // constants and fixtures
+import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { RANKING, RATING, SCALE } from '@Constants/scaleConstants';
-import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { HydratedParticipant } from '@Types/hydrated';

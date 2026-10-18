@@ -3,9 +3,9 @@ import { matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeSchedulin
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { courtTimeOrderConflicts } from './courtTimeOrder';
-import { makeRestedBetween } from './restedBetween';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { generateRange, unique } from '@Tools/arrays';
+import { makeRestedBetween } from './restedBetween';
 import { ensureInt } from '@Tools/ensureInt';
 import {
   getParticipantReachability,
@@ -331,9 +331,10 @@ export function proConflicts({
         // a source in the previous row is a WARNING unless it is on the same court (the target follows it there)
         // or the time between them leaves its participants their recovery (see restedBetween)
         const consideredCourtId = mappedMatchUps[matchUpId].schedule.courtId;
+        const previousRowIds = new Set(previousRow.matchUpIds);
         const warningMatchUpIds = sourceMatchUpIds.filter(
           (id) =>
-            previousRow.matchUpIds.includes(id) &&
+            previousRowIds.has(id) &&
             mappedMatchUps[id].schedule.courtId !== consideredCourtId &&
             !restedBetween(id, matchUpId),
         );
