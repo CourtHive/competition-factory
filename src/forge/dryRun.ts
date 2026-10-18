@@ -48,9 +48,9 @@
  */
 import { captureOperation, OperationState, restoreOperation } from '@Assemblies/engines/parts/operationState';
 import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
+import { withCallRandomSource, withForkedRandomSource } from '@Tools/prng';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { generatePatch, JsonPatch } from './jsonPatch';
-import { withForkedRandomSource } from '@Tools/prng';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { withCapturedClock } from '@Tools/clock';
 import {
@@ -164,9 +164,11 @@ function previewAgainstLiveState(
   let error: DryRunResult['error'];
   for (const directive of directives) {
     const methodName = directive.method;
-    const params = prepareDirective(directive, results);
+    const { params, unthreadedSource } = prepareDirective(directive, results);
 
-    const result = executeFunction(engine, methods[methodName], params, methodName, 'sync', { dryRun: true });
+    const result = withCallRandomSource(unthreadedSource, () =>
+      executeFunction(engine, methods[methodName], params, methodName, 'sync', { dryRun: true }),
+    );
     results.push({ ...result, methodName });
 
     if (result?.error) {

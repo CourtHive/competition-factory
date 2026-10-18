@@ -76,6 +76,7 @@ export type ImplemtationGlobalStateTypes = {
   modified: boolean;
   capturedClock?: number; // epoch ms an outer engine call captured; see tools/clock.ts
   capturedCompetitionClock?: number; // likewise, when a competition provider is installed
+  callRandomSource?: () => number; // a seeded engine call's stream for unthreaded draws; see tools/prng.ts
 };
 
 const globalState: GlobalStateTypes = {
@@ -295,6 +296,20 @@ export function getCapturedCompetitionClock(): number | undefined {
 
 export function setCapturedCompetitionClock(timeStamp?: number) {
   _globalStateProvider.setCapturedCompetitionClock?.(timeStamp);
+}
+
+/**
+ * The random stream a seeded engine call scoped for the draws its seed does not reach through `random`
+ * (tools/prng.ts `withCallRandomSource`). Optional provider hooks, like the captured clock: a provider without
+ * them scopes nothing, and is deliberately NOT given a process-wide fallback, which would hand one request's
+ * seeded stream to every request running concurrently with it.
+ */
+export function getCallRandomSource(): (() => number) | undefined {
+  return _globalStateProvider.getCallRandomSource?.();
+}
+
+export function setCallRandomSource(source?: () => number) {
+  _globalStateProvider.setCallRandomSource?.(source);
 }
 
 export function setSchemaWriteMode(mode?: SchemaWriteMode): {

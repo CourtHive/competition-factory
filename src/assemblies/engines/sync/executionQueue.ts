@@ -5,6 +5,7 @@ import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { keepWrites } from '@Assemblies/engines/parts/keepWrites';
+import { withCallRandomSource } from '@Tools/prng';
 import { withCapturedClock } from '@Tools/clock';
 
 // types
@@ -29,9 +30,11 @@ export function executionQueue(engine: FactoryEngine, directives: Directives, ro
     try {
       for (const directive of directives) {
         const methodName = directive.method;
-        const params = prepareDirective(directive, results);
+        const { params, unthreadedSource } = prepareDirective(directive, results);
 
-        const result = executeFunction(engine, methods[methodName], params, methodName, 'sync');
+        const result = withCallRandomSource(unthreadedSource, () =>
+          executeFunction(engine, methods[methodName], params, methodName, 'sync'),
+        );
         getInvokeObserver()?.({ phase: 'after', methodName, engineType: 'sync', params, result });
 
         if (result?.error) {

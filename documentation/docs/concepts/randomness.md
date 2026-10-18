@@ -21,8 +21,9 @@ Every random step asks for a random function, and takes the first of these that 
 | Precedence | Source                           | Set by                                                                        | Scope             |
 | ---------- | -------------------------------- | ----------------------------------------------------------------------------- | ----------------- |
 | 1          | the call's own `random` function | a method's `random` parameter, or `nonRandom: <seed>` on the call (see below) | that call only    |
-| 2          | the configured source            | `engine.setRandomSource(seed \| fn)` or `tools.setRandomSource(seed \| fn)`   | the whole process |
-| 3          | `Math.random`                    | default                                                                       | the whole process |
+| 2          | a stream derived from the seed   | `nonRandom: <seed>` on the call, for the code that takes no `random` (below)  | that call only    |
+| 3          | the configured source            | `engine.setRandomSource(seed \| fn)` or `tools.setRandomSource(seed \| fn)`   | the whole process |
+| 4          | `Math.random`                    | default                                                                       | the whole process |
 
 The source is read at the moment of each draw, never captured when a module loads, so configuring or resetting it
 takes effect on the next call.
@@ -71,10 +72,12 @@ become `random`, so a nested dispatch does not start a second stream.
 A method's own `random` function can also be passed directly: to a named engine method, through `execute`, or in a
 directive.
 
-For a `mocksEngine` call the seed covers **every** draw the call makes, not only those of generators that take a
-`random` parameter. Code that does not take one (ids minted by draw, venue and tieFormat generation among them) reads,
-for the duration of the call, a second stream derived from the same seed; the previous source is reinstated
-afterwards. The seed's own stream keeps exactly the draws it always had, so what a seed already determined does not
+The seed covers **every** draw the call makes, not only those of code that takes a `random` parameter, on every entry
+point: a named engine method, `execute`, each directive of `executionQueue`, `dryRun`, their async twins, and
+`mocksEngine`. Code that does not take one (ids minted by draw, venue and tieFormat generation among them) reads, for
+the duration of the call, a second stream derived from the same seed; the previous source is reinstated afterwards.
+So a seeded `generateDrawDefinition` mints the same `drawId`, structure ids and matchUpIds every time, not only the
+same placements. The seed's own stream keeps exactly the draws it always had, so what a seed already determined does not
 change. So the same `nonRandom`, profile, clock and factory version give a byte-identical record whatever the
 process's configured source is and whatever was generated before it, and a seeded call draws nothing from the
 configured source. A `random` function passed directly instead of `nonRandom` does not get this: there is no seed to
@@ -90,8 +93,13 @@ A server handling concurrent requests should know two things:
 - Requests share one configured source. Setting a seeded source for one request changes the draws of every request
   running at the same time, and interleaves their streams.
 - This differs from the [clock](./competition-clock.md): `setClock` is captured once per call, and a server's async
-  state provider can scope it per request through `getCapturedClock`/`setCapturedClock`. The random source has no
-  equivalent per-request scoping.
+  state provider can scope it per request through `getCapturedClock`/`setCapturedClock`. The configured random source
+  has no equivalent per-request scoping.
+- A seeded engine call's derived stream is per request. It is held in the state provider through the optional
+  `getCallRandomSource`/`setCallRandomSource` hooks, as the captured clock is, so one request's seeded stream never
+  reaches a request running at the same time. A provider without the hooks scopes nothing: a seeded call there
+  reproduces its placements but draws its ids from the configured source. `mocksEngine` scopes its derived stream
+  process-wide for the duration of its synchronous call.
 
 ## Generate once, send the result
 
@@ -274,7 +282,7 @@ expect(() => tools.randomSource()()).toThrow('DEGENERATE_RANDOM_SOURCE');
 ### The async engine
 
 The same directive carrying `nonRandom` produces the same draw on the asynchronous engine as on the synchronous one,
-through `executionQueue`, `execute` and a named method, whatever source each process has configured. Before the shared
+ids included, through `executionQueue`, `execute` and a named method, whatever source each process has configured. Before the shared
 transform the asynchronous engine ignored `nonRandom` and drew from its configured source.
 
 ## A seed is not a fairness guarantee

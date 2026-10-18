@@ -1,3 +1,5 @@
+import { getCallRandomSource, setCallRandomSource } from '@Global/state/globalState';
+
 // constants
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -137,7 +139,51 @@ export function withRandomSource<T>(source: RandomFunction | undefined, fn: () =
   }
 }
 
-/** The function to draw randomness from right now. Read at the call, never captured at import. */
+/**
+ * Runs `fn` with `source` as the CALL's stream, held in the global state provider, then reinstates the previous one.
+ *
+ * WHY: an engine call's `nonRandom` seed reached only the code that takes its `random` parameter. Everything that
+ * reads the configured source instead, every bare `UUID()` among it, drew from the process: a seeded
+ * `generateDrawDefinition` placed the same participants every time and minted different ids every time (measured
+ * 2026-10-18: 0 of 31 matchUpIds alike across two runs). The engines now scope a stream DERIVED from the seed
+ * here, as the mocksEngine does with `withRandomSource`, so the seed's own stream keeps exactly the draws it always
+ * had and what it did not determine now is.
+ *
+ * Per call and in the provider, not process-wide like `withRandomSource`: the async engine awaits inside a call,
+ * and a process-wide source would hand one request's stream to every request running concurrently with it. A
+ * provider without the hooks scopes nothing (globalState `getCallRandomSource`). Without a function `fn` runs
+ * unchanged.
+ */
+export function withCallRandomSource<T>(source: RandomFunction | undefined, fn: () => T): T {
+  if (typeof source !== 'function') return fn();
+  const previous = getCallRandomSource();
+  setCallRandomSource(source);
+  try {
+    return fn();
+  } finally {
+    setCallRandomSource(previous);
+  }
+}
+
+/** `withCallRandomSource` for an async `fn`: the stream is released only once `fn` settles. */
+export async function withCallRandomSourceAsync<T>(
+  source: RandomFunction | undefined,
+  fn: () => Promise<T>,
+): Promise<T> {
+  if (typeof source !== 'function') return fn();
+  const previous = getCallRandomSource();
+  setCallRandomSource(source);
+  try {
+    return await fn();
+  } finally {
+    setCallRandomSource(previous);
+  }
+}
+
+/**
+ * The function to draw randomness from right now: a seeded call's stream, then the configured source, then
+ * `Math.random`. Read at the call, never captured at import.
+ */
 export function randomSource(): RandomFunction {
-  return configuredSource ?? Math.random;
+  return getCallRandomSource() ?? configuredSource ?? Math.random;
 }
