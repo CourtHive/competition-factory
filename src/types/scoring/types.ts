@@ -651,7 +651,7 @@ export interface InitialScoreOptions {
   /** Who is due to serve the next point: recorded as a server correction at the baseline (§ 2.5) */
   server?: 0 | 1;
   /** A status beside the sets: checked for consistency with them, refused only when they disagree */
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatus;
   /** A winner beside the sets: checked for consistency with them, refused only when they disagree */
   winningSide?: number;
 }

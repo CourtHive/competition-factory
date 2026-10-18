@@ -2,8 +2,9 @@ import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { LEGACY_IGNORED_INPUT } from '@Mutate/scoring/matchCompletion';
 import { describe, expect, it } from 'vitest';
 
-// constants
+// constants and types
 import { COMPLETED, IN_PROGRESS, RETIRED } from '@Constants/matchUpStatusConstants';
+import type { InitialScoreOptions } from '@Types/scoring/types';
 
 /*
  * The late-start baseline (scoring-engine spec § 2.5; § 16 decision 8, CA 2026-10-18):
@@ -173,7 +174,7 @@ describe('§ 2.5 rule 6 matchUpStatus and winningSide are checked for consistenc
   });
 
   it('a status or winner that disagrees with the sets is refused', () => {
-    const disagreeing = [
+    const disagreeing: InitialScoreOptions[] = [
       { sets, winningSide: 2 },
       { sets, matchUpStatus: IN_PROGRESS },
       { sets: sets.slice(0, 1), matchUpStatus: COMPLETED },
