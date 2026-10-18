@@ -5,8 +5,8 @@ import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { validateLineUp } from '@Validators/validateTeamLineUp';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { describe, expect, it } from 'vitest';
 import { intersection } from '@Tools/arrays';
-import { expect, it } from 'vitest';
 
 // constants and fixtures
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
@@ -742,4 +742,113 @@ it('can substitute a single individual participant in a TEAM tieMatchUp when onl
     REPLACE_PARTICIPANT,
     REMOVE_SUBSTITUTION,
   ]);
+});
+
+// Obligations the first journey pinned only in passing, on their own fixtures (2026-10-17 test-infrastructure
+// survey, plan item F: the journeys stay as integration witnesses; these name each contract).
+describe('substituteParticipant refusals', () => {
+  it('refuses a substitution that names the wrong participants, matchUp or side, and changes nothing', () => {
+    const { tournamentRecord, drawId } = generateTeamTournament(scenario);
+    tournamentEngine.setState(tournamentRecord);
+    const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+    const { participants: teamParticipants } = tournamentEngine.getParticipants({
+      participantFilters: { participantTypes: [TEAM_PARTICIPANT] },
+    });
+    const { matchUps: teamMatchUps } = tournamentEngine.allTournamentMatchUps({
+      matchUpFilters: { matchUpTypes: [TEAM_PARTICIPANT] },
+    });
+    assignIndividualParticipants({ teamParticipants, drawDefinition, teamMatchUps });
+
+    const doublesMatchUpId = tournamentEngine
+      .allTournamentMatchUps({ matchUpFilters: { readyToScore: true } })
+      .matchUps.find(({ matchUpType }) => matchUpType === DOUBLES_MATCHUP).matchUpId;
+    const substitution = tournamentEngine
+      .matchUpActions({
+        policyDefinitions: { [POLICY_TYPE_MATCHUP_ACTIONS]: { substituteWithoutScore: true } },
+        matchUpId: doublesMatchUpId,
+        sideNumber: 2,
+        drawId,
+      })
+      .validActions.find(({ type }) => type === SUBSTITUTION);
+    const { method, availableParticipantIds, existingParticipantIds } = substitution;
+    const [substituteParticipantId] = availableParticipantIds;
+    const [existingParticipantId] = existingParticipantIds;
+    const payload = { ...substitution.payload, substituteParticipantId, existingParticipantId };
+    const before = tournamentEngine.getEvent({ drawId }).drawDefinition;
+
+    const refusals: [string, any, any][] = [
+      ['no existing participant', { ...payload, existingParticipantId: undefined }, MISSING_PARTICIPANT_ID],
+      ['an unknown matchUp', { ...payload, matchUpId: 'unknown' }, MATCHUP_NOT_FOUND],
+      [
+        'the dual matchUp instead of a tieMatchUp',
+        { ...payload, matchUpId: teamMatchUps[0].matchUpId },
+        INVALID_MATCHUP,
+      ],
+      [
+        'the substitute as the existing participant',
+        { ...payload, existingParticipantId: substituteParticipantId },
+        INVALID_PARTICIPANT_ID,
+      ],
+      [
+        'the existing participant as the substitute',
+        { ...payload, substituteParticipantId: existingParticipantId },
+        INVALID_PARTICIPANT_ID,
+      ],
+      ['a side the participants are not on', { ...payload, sideNumber: 1 }, INVALID_PARTICIPANT_ID],
+    ];
+    for (const [premise, params, error] of refusals) {
+      expect({ premise, error: tournamentEngine[method](params).error }).toEqual({ premise, error });
+    }
+    expect(tournamentEngine.getEvent({ drawId }).drawDefinition).toEqual(before);
+
+    // control: the same payload, corrected, is accepted
+    expect(tournamentEngine[method](payload).success).toEqual(true);
+  });
+});
+
+describe('removeLineUpSubstitutions', () => {
+  it('keeps each position for whoever holds it after substitutions, without the substitution marks', () => {
+    const lineUp: any = [
+      {
+        participantId: 'a',
+        collectionAssignments: [
+          { collectionId: 'singles', collectionPosition: 1 },
+          { collectionId: 'doubles', collectionPosition: 1 },
+        ],
+      },
+      {
+        participantId: 'b',
+        collectionAssignments: [
+          { collectionId: 'singles', collectionPosition: 1, substitutionOrder: 1, previousParticipantId: 'a' },
+        ],
+      },
+    ];
+    // the order of the competitors is not part of the result
+    const pruned = removeLineUpSubstitutions({ lineUp })?.sort((x, y) =>
+      x.participantId.localeCompare(y.participantId, undefined, { numeric: true }),
+    );
+    expect(pruned).toEqual([
+      { participantId: 'a', collectionAssignments: [{ collectionId: 'doubles', collectionPosition: 1 }] },
+      { participantId: 'b', collectionAssignments: [{ collectionId: 'singles', collectionPosition: 1 }] },
+    ]);
+  });
+
+  it('drops a participant whose only position was substituted away', () => {
+    const lineUp: any = [
+      { participantId: 'a', collectionAssignments: [{ collectionId: 'singles', collectionPosition: 1 }] },
+      {
+        participantId: 'b',
+        collectionAssignments: [
+          { collectionId: 'singles', collectionPosition: 1, substitutionOrder: 1, previousParticipantId: 'a' },
+        ],
+      },
+    ];
+    expect(removeLineUpSubstitutions({ lineUp })).toEqual([
+      { participantId: 'b', collectionAssignments: [{ collectionId: 'singles', collectionPosition: 1 }] },
+    ]);
+  });
+
+  it('returns nothing for a lineUp that is not an array', () => {
+    expect(removeLineUpSubstitutions({ lineUp: undefined as any })).toBeUndefined();
+  });
 });
