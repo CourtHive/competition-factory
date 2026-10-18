@@ -38,7 +38,9 @@ export function reconcileByeAdvancements({
     const matchUpsMap = getMatchUpsMap({ drawDefinition });
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
     const byId = new Map(inContextDrawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
-    const owed = inContextDrawMatchUps.map((matchUp) => owedAdvance(matchUp, byId)).find(Boolean);
+    const owed = inContextDrawMatchUps
+      .map((matchUp) => owedAdvance(matchUp, byId) ?? owedSeatAdvance(matchUp, byId, inContextDrawMatchUps))
+      .find(Boolean);
     if (!owed) return undefined;
     const result = advanceDrawPosition({
       drawPositionToAdvance: owed.drawPosition,
@@ -72,4 +74,39 @@ function owedAdvance(
   // a seat for them: a pending exit standing there awaits exactly this arrival, and is theirs to take or carry past
   if ((next.drawPositions ?? []).filter(Boolean).length >= 2) return undefined;
   return { matchUpId, drawPosition };
+}
+
+/**
+ * The EMPTY seat a BYE matchUp still owes its next matchUp. A BYE advances its opponent's drawPosition when it lands,
+ * occupied or not (`assignDrawPositionBye`), so whoever reaches that seat later is already one round on. A matchUp that
+ * held two BYEs sent one BYE on instead; when one of them is withdrawn, the release takes back the BYE's advancement
+ * and nothing advanced the seat now opposite the BYE that stays (census A1 residue R7, COMPASS 32/30 policy-off
+ * 20694910: `East|1|3`'s double walkover re-scored took back the BYE it had put in `Northwest|1|1`, and dp 1 never
+ * reached `Northwest|2|1`, where every entry order of the standing results puts it; `theSeatLeftOppositeAByeGoesOn`).
+ *
+ * Only a structural seat, one no earlier round of the structure holds: a position advanced into this round is a
+ * reservation, and is its own matchUp's to send on.
+ */
+function owedSeatAdvance(
+  matchUp: HydratedMatchUp,
+  byId: Map<string, HydratedMatchUp>,
+  inContextDrawMatchUps: HydratedMatchUp[],
+): { matchUpId: string; drawPosition: number } | undefined {
+  const { sides, winnerMatchUpId, matchUpId } = matchUp;
+  if (!sides || !winnerMatchUpId) return undefined;
+  if (sides.filter((side) => side?.bye).length !== 1) return undefined;
+  const seat = sides.find((side) => side && !side.bye);
+  const drawPosition = seat?.drawPosition;
+  if (!drawPosition || seat.participantId || seat.qualifier) return undefined;
+  const next = byId.get(winnerMatchUpId);
+  if (!next || next.structureId !== matchUp.structureId) return undefined;
+  const held = (next.drawPositions ?? []).filter(Boolean);
+  if (held.length >= 2 || held.includes(drawPosition)) return undefined;
+  const advancedHere = inContextDrawMatchUps.some(
+    (other) =>
+      other.structureId === matchUp.structureId &&
+      (other.roundNumber ?? 0) < (matchUp.roundNumber ?? 0) &&
+      (other.drawPositions ?? []).includes(drawPosition),
+  );
+  return advancedHere ? undefined : { matchUpId, drawPosition };
 }

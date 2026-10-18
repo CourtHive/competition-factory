@@ -1,6 +1,7 @@
 import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { withdrawAwardsToEmptiedSeats } from './withdrawAwardsToEmptiedSeats';
 import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
@@ -126,6 +127,23 @@ function releaseInertPlacements({
       tournamentRecord,
       drawDefinition,
       drawPosition,
+      matchUpsMap,
+    });
+  }
+
+  // A seat emptied a link further on leaves no award behind either, as one emptied by `removeDirectedLoser` does: a
+  // PRODUCED exit the carrier's seat was awarded while they held it is pending again once they leave (census A1
+  // residue R3b, COMPASS 32/30 20733408 policy-off, the schedule of `aLoserWhoIsNobodyHoldsNoSeat`: clearing
+  // `East|1|4` withdrew its carrier from `South|1|1` dp 2, and `South|2|1`, where `South|1|2`'s produced walkover had
+  // been awarded to them, kept ws 1 over the emptied seat; `aSeatEmptiedFurtherOnLeavesNoAwardBehind`). Asked after
+  // the release, so the pending exit's reservation is the settle's to make again.
+  if (clearedDrawPositions.length) {
+    withdrawAwardsToEmptiedSeats({
+      positionAssignments: positionAssignments ?? [],
+      structureId: targetStructureId,
+      clearedDrawPositions,
+      tournamentRecord,
+      drawDefinition,
       matchUpsMap,
     });
   }

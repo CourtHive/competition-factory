@@ -877,6 +877,20 @@ pinned by a named test that fails without it.
 - **A BYE origin goes with the exit opposite it.** The BYE origin a produced exit writes opposite itself on meeting a
   BYE is withdrawn with that exit, so a BYE matchUp reads as it did before the exit arrived (FEED_IN_CHAMPIONSHIP 16/11
   20532286: `aByeOriginLivesAsLongAsTheExitOppositeIt`).
+- **A seat emptied further on leaves no award behind.** A loser taken back is released from every placement their
+  loss led to, a link further on as well as in the structure they were fed into; a produced exit awarded to a seat
+  they no longer hold stands pending again, and its reservation in the next round stays, as the seat the loser was fed
+  into already did (COMPASS 32/30 20733408 under `doubleExitPropagateBye: false`:
+  `aSeatEmptiedFurtherOnLeavesNoAwardBehind`).
+- **An exit that has delivered nobody is no origin.** A single exit delivers its winner only once someone holds the
+  winning seat. Pending, or awarded to a seat still awaiting its arrival, it records no arrival on the side it feeds,
+  as a BYE matchUp awaiting its other side records no BYE origin (COMPASS 32/31 20551581 under
+  `doubleExitPropagateBye: false`: `anExitThatDeliveredNobodyIsNoOrigin`).
+- **The seat left opposite a BYE goes on.** A BYE advances the drawPosition opposite it when it lands, occupied or
+  not, and two BYEs meeting send one BYE on. When one of the two is withdrawn, the empty seat now opposite the BYE that
+  stays goes on into the next matchUp, where it has room, as it would have had that BYE landed alone; a position that
+  entered the round from an earlier one is a reservation, and is not moved (COMPASS 32/30 20694910 under
+  `doubleExitPropagateBye: false`: `theSeatLeftOppositeAByeGoesOn`).
 
 ### Rules settled by the census in A1 (2026-10-17)
 

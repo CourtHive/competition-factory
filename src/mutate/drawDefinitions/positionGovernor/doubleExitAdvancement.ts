@@ -2260,8 +2260,9 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
 
 /**
  * The status a feeder has delivered to the side it feeds. A BYE matchUp whose other seat holds neither a participant
- * nor a BYE yet has delivered nothing, so it gives none. Read from the structure's positionAssignments and the stored
- * drawPositions rather than the hydrated copy, which can predate a placement made in this cascade.
+ * nor a BYE yet has delivered nothing, so it gives none; nor does a single exit nobody has won yet (`exitDelivered`).
+ * Read from the structure's positionAssignments and the stored drawPositions rather than the hydrated copy, which can
+ * predate a placement made in this cascade.
  */
 function deliveredStatus({
   drawDefinition,
@@ -2272,6 +2273,7 @@ function deliveredStatus({
   structureId?: string;
   matchUp?: MatchUp;
 }): MatchUpStatusUnion | undefined {
+  if (isExit(matchUp?.matchUpStatus) && !exitDelivered({ drawDefinition, structureId, matchUp })) return undefined;
   if (matchUp?.matchUpStatus !== BYE || !structureId) return matchUp?.matchUpStatus;
   const { positionAssignments } = getPositionAssignments({ structureId, drawDefinition });
   const filled = (matchUp.drawPositions ?? []).filter((drawPosition: number) =>
@@ -2280,6 +2282,32 @@ function deliveredStatus({
     ),
   );
   return filled.length < 2 ? undefined : BYE;
+}
+
+/**
+ * A SINGLE EXIT HAS DELIVERED SOMEONE only once a participant holds its winning seat. Pending (no winningSide), or
+ * awarded to a seat awaiting its arrival, it has sent nobody on: whoever reaches that seat wins it, and until then the
+ * side it feeds has no origin ("a side that has not been decided has no origin", exit-propagation.md). Recorded, the
+ * side kept an arrival entry naming an undecided source, and only in the orders where the seat was still empty as the
+ * exit opposite arrived (census A1 residue F3b, COMPASS 32/31 policy-off 20551581: `South|2|2` side 1 from
+ * `South|1|3`'s DEFAULTED, pending in the census order and awarded to its empty dp 6 round by round;
+ * `anExitThatDeliveredNobodyIsNoOrigin`).
+ */
+function exitDelivered({
+  drawDefinition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition: DrawDefinition;
+  structureId?: string;
+  matchUp?: MatchUp;
+}): boolean {
+  if (!matchUp?.winningSide) return false;
+  if (!structureId) return true;
+  const drawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
+  const { positionAssignments } = getPositionAssignments({ structureId, drawDefinition });
+  const seat = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
+  return !!(seat?.participantId || seat?.qualifier);
 }
 
 /** an exit already awarded to a seat nobody has reached yet: whoever reaches that seat is delivered onward */

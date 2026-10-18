@@ -196,7 +196,9 @@ After the write, and only on success:
 
 1. **Direction.** A winner is advanced to the winner target; the loser is directed along the loser
    link, if the structure has one. A changed result first **removes** what the previous one directed
-   (`removeDirectedParticipants`), and that is where `ERR_ACTIVE_DRAW_POSITION` can arise.
+   (`removeDirectedParticipants`), and that is where `ERR_ACTIVE_DRAW_POSITION` can arise. A loser taken
+   back leaves every seat their loss reached, a link further on included, and no exit stays awarded to
+   a seat so emptied (census A1, `aSeatEmptiedFurtherOnLeavesNoAwardBehind`).
 2. **Exit propagation.** WALKOVER, DEFAULTED and (by policy) RETIRED carry into the consolation the
    loser is fed to; a double exit produces exits downstream. The rules are on
    [exit propagation](./exit-propagation.md) and are not repeated here. `progressExitStatus` iterates
@@ -239,7 +241,9 @@ After the write, and only on success:
    refused call included (census family F2).
 5. **The draw is settled**: held exits are released (`settleHeldExits`), including to a participant
    who already passed the BYE holding them and carries no exit of their own (only an exit whose
-   origin is still a double exit travels this way), and a final that feeds a
+   origin is still a double exit travels this way); the drawPosition opposite a lone BYE, a
+   participant or an empty seat the structure placed there, goes on where its next matchUp has room
+   (`reconcileByeAdvancements`; census A1, `theSeatLeftOppositeAByeGoesOn`); and a final that feeds a
    decider settles whether the decider is needed (`reconcileDeciders`) when a final's winner changed,
    or when the cascade moved a decider while the final's winner stayed put (7.8.0). A mutation OF the
    decider never triggers it, so a decider played anyway keeps its result; in a TEAM draw a line of the

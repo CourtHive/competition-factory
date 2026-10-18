@@ -8,34 +8,26 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { withdrawAwardsToEmptiedSeats } from './withdrawAwardsToEmptiedSeats';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { awardStands, clearDrawPosition } from './positionClear';
-import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import type { MatchUp } from '@Types/tournamentTypes';
-import { isDoubleExit, isExit } from '@Validators/isExit';
+import { clearDrawPosition } from './positionClear';
+import { isDoubleExit } from '@Validators/isExit';
 import {
   clearResolvedSideExitProvenance,
   withdrawProducedExits,
-  getSideExitProvenance,
   deriveStatusCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_POSITIONS, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
-import {
-  MatchUpStatusUnion,
-  PositionAssignment,
-  DrawDefinition,
-  Tournament,
-  DrawLink,
-  Event,
-} from '@Types/tournamentTypes';
+import { MatchUpStatusUnion, DrawDefinition, Tournament, DrawLink, Event } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -585,55 +577,6 @@ export function removeDirectedBye({
   });
 
   return decorateResult({ result, stack });
-}
-
-function withdrawAwardsToEmptiedSeats({
-  clearedDrawPositions,
-  positionAssignments,
-  tournamentRecord,
-  drawDefinition,
-  matchUpsMap,
-  structureId,
-  event,
-}: {
-  positionAssignments: PositionAssignment[];
-  clearedDrawPositions: number[];
-  tournamentRecord?: Tournament;
-  drawDefinition: DrawDefinition;
-  matchUpsMap?: MatchUpsMap;
-  structureId: string;
-  event?: Event;
-}) {
-  const resolvedMap = matchUpsMap ?? getMatchUpsMap({ drawDefinition });
-  for (const matchUp of resolvedMap?.mappedMatchUps?.[structureId]?.matchUps ?? []) {
-    const { winningSide, matchUpStatus } = matchUp;
-    if (!winningSide || !matchUpStatus || !isExit(matchUpStatus)) continue;
-    const seat = getSideDrawPosition({
-      matchUp: { ...matchUp, sides: undefined },
-      sideNumber: winningSide,
-      drawDefinition,
-      structureId,
-    });
-    if (!seat || !clearedDrawPositions.includes(seat)) continue;
-    const stands = awardStands({
-      rederived: { matchUpStatus, winningSide },
-      retained: getSideExitProvenance({ matchUp }),
-      targetMatchUp: matchUp,
-      positionAssignments,
-      drawDefinition,
-      structureId,
-    });
-    if (stands) continue;
-    matchUp.winningSide = undefined;
-    modifyMatchUpNotice({
-      tournamentId: tournamentRecord?.tournamentId,
-      context: 'withdrawAwardsToEmptiedSeats',
-      eventId: event?.eventId,
-      drawDefinition,
-      matchUp,
-      event,
-    });
-  }
 }
 
 // Preserve includes(undefined), including an unfilled slot, without claiming the position is a number.
