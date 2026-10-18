@@ -294,7 +294,9 @@ After the write, and only on success:
   any error the call returns: directly, inside `bulkMatchUpStatusUpdate` or `executionQueue`, with or
   without `rollbackOnError`, and on the async engine. A call that succeeds keeps them, and the draw
   stores its edges from then on. v2 refuses before the write is made. Pinned by
-  `storedEdgesAreNotRequired.test.ts`.
+  `storedEdgesAreNotRequired.test.ts`. A successful call that repairs them announces the draw once,
+  with one `MODIFY_DRAW_DEFINITION` and no `MODIFY_MATCHUP` for a matchUp whose only change is an
+  edge (CA, 2026-10-18; `anEdgeRepairAnnouncesItsDraw.test.ts`).
 - **What one step hands the next is the draw itself.** A context passed between steps carries
   references to the stored matchUps, never copies: the engine's deep-copy setting governs what is
   RETURNED to a caller, never what a mutation reads or writes.
