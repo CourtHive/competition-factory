@@ -367,6 +367,8 @@ export type ModifyTournamentRecordArgs = MockEngineCall &
     hydrateCollections?: boolean;
     autoEntryPositions?: boolean;
     tournamentRecord: Tournament;
+    /** keep what was written before a refusal and report it as `retained` (default: all or nothing) */
+    keepPartial?: boolean;
     random?: () => number;
     autoSchedule?: boolean;
     periodLength?: number;
