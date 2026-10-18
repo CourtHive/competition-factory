@@ -1,12 +1,12 @@
 import { modifyTournamentRecord } from '@Generators/mocks/modifyTournamentRecord';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { randomSource, setRandomSource } from '@Tools/prng';
 import mocksEngine from '@Assemblies/engines/mock';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { DOUBLES, TEAM } from '@Constants/eventConstants';
 import { ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { DOUBLES, TEAM } from '@Constants/eventConstants';
 
 /**
  * A mocksEngine seed names its record (2026-10-17 mocks assessment, M3 and M5).

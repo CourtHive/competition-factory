@@ -3,6 +3,7 @@ import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
 import { tieFormatTelemetry } from '@Mutate/tieFormat/tieFormatTelemetry';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -23,7 +24,13 @@ type RemoveCollectionGroupArgs = {
   eventId?: string;
   event?: Event;
 };
-export function removeCollectionGroup({
+// A tieFormat written to the event, or to event.tieFormats (where a draw's, structure's or matchUp's
+// shared tieFormat lives), modifies the event: announced with MODIFY_EVENT when it changed.
+export function removeCollectionGroup(params: RemoveCollectionGroupArgs) {
+  return withEventChangeNotice(params, () => removeGroup(params));
+}
+
+function removeGroup({
   updateInProgressMatchUps = true,
   collectionGroupNumber,
   tournamentRecord,

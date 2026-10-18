@@ -1,7 +1,22 @@
-import { Tournament } from '@Types/tournamentTypes';
+import { Tournament, Venue } from '@Types/tournamentTypes';
 
-export function clearPrimaryVenue({ tournamentRecord }: { tournamentRecord: Tournament }) {
+/**
+ * Clear `isPrimary` from every venue but `exceptVenueId`. Returns the venues it changed, so the
+ * caller can announce them: they are venues the caller did not ask to modify.
+ */
+export function clearPrimaryVenue({
+  tournamentRecord,
+  exceptVenueId,
+}: {
+  tournamentRecord: Tournament;
+  exceptVenueId?: string;
+}): Venue[] {
+  const cleared: Venue[] = [];
   for (const venue of tournamentRecord.venues ?? []) {
-    if (venue.isPrimary) delete venue.isPrimary;
+    if (venue.isPrimary && venue.venueId !== exceptVenueId) {
+      delete venue.isPrimary;
+      cleared.push(venue);
+    }
   }
+  return cleared;
 }

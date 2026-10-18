@@ -1,5 +1,6 @@
 import { modifyEventEntriesNotice, modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
+import { entriesKey, eventAttributesKey } from '@Mutate/events/eventChangeNotice';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
@@ -97,6 +98,10 @@ export function modifyEntriesStatus({
   const flightProfile = event && getFlightProfile({ event }).flightProfile;
   const flight = flightProfile?.flights?.find((f) => f.drawId === drawId);
 
+  // What the flags below miss (re-sequenced entryPositions, a WITHDRAWN cascade through every flight
+  // and draw) is caught by comparing each entries list, and the event's flight profile, at the end.
+  const snapshot = snapshotEntries({ drawDefinition, event });
+
   const updateEntryStatus = buildUpdateEntryStatus({
     assignedParticipantIds,
     ignoreAssignment,
@@ -177,12 +182,15 @@ export function modifyEntriesStatus({
 
   if (autoEntryPositions) autoPosition({ flight, drawDefinition });
 
+  const changed = changedSinceSnapshot({ snapshot, modifiedDrawIds, event });
+
   dispatchEntriesStatusNotices({
+    flightProfileModified: flightProfileModified || changed.event,
+    eventEntriesModified: eventEntriesModified || changed.eventEntries,
+    drawDefinitions: snapshot.drawDefinitions,
     tournamentRecord,
-    event,
     modifiedDrawIds,
-    eventEntriesModified,
-    flightProfileModified,
+    event,
   });
 
   return { ...SUCCESS };
@@ -192,16 +200,61 @@ export function modifyEntriesStatus({
 // MODIFY_DRAW_ENTRIES for any draw whose entries were updated; MODIFY_EVENT_ENTRIES
 // when event.entries statuses changed; and MODIFY_EVENT when a flight's drawEntries
 // (which live in event.flightProfile) were re-sequenced.
-function dispatchEntriesStatusNotices({
-  tournamentRecord,
-  event,
+type EntriesSnapshot = {
+  drawEntries: Map<string, string>;
+  drawDefinitions: DrawDefinition[];
+  eventEntries: string;
+  event?: string;
+};
+function snapshotEntries({ drawDefinition, event }: { drawDefinition?: DrawDefinition; event?: Event }) {
+  const drawDefinitions: DrawDefinition[] = event?.drawDefinitions ?? (drawDefinition ? [drawDefinition] : []);
+  return {
+    drawEntries: new Map(drawDefinitions.map((dd) => [dd.drawId, entriesKey(dd.entries)])),
+    eventEntries: entriesKey(event?.entries),
+    event: eventAttributesKey(event),
+    drawDefinitions,
+  };
+}
+
+// adds each draw whose entries changed to modifiedDrawIds; reports event entries and attributes
+function changedSinceSnapshot({
   modifiedDrawIds,
+  snapshot,
+  event,
+}: {
+  snapshot: EntriesSnapshot;
+  modifiedDrawIds: string[];
+  event?: Event;
+}) {
+  for (const dd of snapshot.drawDefinitions) {
+    const changed = entriesKey(dd.entries) !== snapshot.drawEntries.get(dd.drawId);
+    if (changed && !modifiedDrawIds.includes(dd.drawId)) modifiedDrawIds.push(dd.drawId);
+  }
+  return {
+    eventEntries: !!event && entriesKey(event.entries) !== snapshot.eventEntries,
+    event: !!event && eventAttributesKey(event) !== snapshot.event,
+  };
+}
+
+type DispatchEntriesStatusNoticesArgs = {
+  drawDefinitions: DrawDefinition[];
+  flightProfileModified: boolean;
+  eventEntriesModified: boolean;
+  tournamentRecord?: Tournament;
+  modifiedDrawIds: string[];
+  event?: Event;
+};
+function dispatchEntriesStatusNotices({
   eventEntriesModified,
   flightProfileModified,
-}) {
-  const tournamentId = tournamentRecord.tournamentId;
+  tournamentRecord,
+  drawDefinitions,
+  modifiedDrawIds,
+  event,
+}: DispatchEntriesStatusNoticesArgs) {
+  const tournamentId = tournamentRecord?.tournamentId;
   const eventId = event?.eventId;
-  for (const dd of event?.drawDefinitions ?? []) {
+  for (const dd of drawDefinitions) {
     if (modifiedDrawIds.length && !modifiedDrawIds.includes(dd.drawId)) continue;
     modifyDrawNotice({ tournamentId, eventId, drawDefinition: dd });
     if (modifiedDrawIds.includes(dd.drawId)) modifyDrawEntriesNotice({ drawDefinition: dd, tournamentId, eventId });

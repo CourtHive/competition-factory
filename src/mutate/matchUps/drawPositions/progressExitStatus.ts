@@ -169,7 +169,7 @@ export function progressExitStatus({
     carriedReason = sourceReason;
 
     /**
-     * A CARRY PAST A BYE IN THE STRUCTURE'S LAST ROUND IS RECORDED BESIDE THE BYE (P51).
+     * A CARRY PAST A BYE IS RECORDED BESIDE THE BYE, in every round (P51; F2, measured 2026-10-17).
      *
      * RULE 1 re-propagates the exit onto wherever the carrier lands. In a structure's last round there is nowhere
      * further, and nothing was written: the BYE matchUp kept no entry for the exit its carrier held. A BYE placed by a
@@ -181,8 +181,19 @@ export function progressExitStatus({
      * Recorded as the BYE's own carried entry, the shape `reconcileCarriesPastByes` and `writeCarryPastLateBye`
      * already read on a BYE matchUp: the matchUp stays a BYE while the BYE stands, and when it is withdrawn what is
      * retained re-derives it to the exit the carrier holds (RULE 2: the side without the exit wins).
+     *
+     * It is recorded before an earlier round's BYE too, not only the last round's. When the carrier is seated first and
+     * the BYE arrives after them, their entry is already on the matchUp and is kept (`stampCarriedExitOnArrival`).
+     * Writing it only in the last round when the BYE came first meant the same results, entered in the two orders,
+     * left two draws (census A1 cases 11 and 17, COMPASS 32: `Southwest|1|2` and `Southeast|1|1` kept the entry in
+     * one order and lost it in the other). The opposite normalisation was built and measured: withdraw the entry at
+     * settle once the carry is recorded where the carrier landed. It broke five tests in the exitPropagation folder
+     * against none for this one. A pull-back reads the BYE matchUp's copy to find the carry it takes home
+     * (`aRelabelWithdrawsTheCarryFromEveryByeHeldMatchUp`), and a pinned shape records it there
+     * (`anEmptyPositionResolvesNothing`). A copy whose carrier has since been replaced by a BYE is not a held exit
+     * (`getHeldExit`).
      */
-    const recordCarryBesideFinalBye = () => {
+    const recordCarryBesideBye = () => {
       const stored = getMatchUpsMap({ drawDefinition })?.drawMatchUps?.find(
         (m) => m.matchUpId === loserMatchUp.matchUpId,
       );
@@ -198,8 +209,9 @@ export function progressExitStatus({
     };
 
     // RULE 1 — opponent is a BYE: the participant advances through it (the BYE
-    // cascade has already moved them forward), so this matchUp stays a BYE and we
-    // re-propagate the exit onto wherever the participant landed. NOT a WALKOVER.
+    // cascade has already moved them forward), so this matchUp stays a BYE, records
+    // the carry beside the BYE, and we re-propagate the exit onto wherever the
+    // participant landed. NOT a WALKOVER.
     if (opponentIsBye) {
       const advancementMatchUp = findAdvancementMatchUp(inContextMatchUps, updatedLoserMatchUp, loserParticipantId);
       pushGlobalLog({
@@ -209,7 +221,7 @@ export function progressExitStatus({
         from: updatedLoserMatchUp.matchUpId?.slice(0, 8),
         to: advancementMatchUp?.matchUpId?.slice(0, 8) ?? 'none',
       });
-      if (!advancementMatchUp) recordCarryBesideFinalBye();
+      recordCarryBesideBye();
       const context = advancementMatchUp
         ? { progressExitStatus: true, loserMatchUp: advancementMatchUp, loserParticipantId }
         : { progressExitStatus: true };

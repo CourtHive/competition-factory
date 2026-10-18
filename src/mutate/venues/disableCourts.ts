@@ -1,6 +1,7 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { modifiedVenueNotices, venueSnapshot } from './venueNotices';
 
 // constants
 import { COURT_IDS, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
@@ -22,7 +23,9 @@ export function disableCourts(params: DisableCourtsArgs) {
   if (paramCheck.error) return paramCheck;
 
   for (const tournamentRecord of Object.values(tournamentRecords)) {
+    const snapshot = venueSnapshot(tournamentRecord);
     courtsDisable({ tournamentRecord, courtIds, dates });
+    modifiedVenueNotices({ tournamentRecord, snapshot });
   }
 
   return { ...SUCCESS };
