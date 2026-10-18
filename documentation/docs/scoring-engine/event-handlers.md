@@ -72,12 +72,13 @@ engine.setEventHandlers(undefined);
 | `onRedo`          | `redo()` succeeds                                          | —                     |
 | `onReset`         | `reset()` is called                                        | —                     |
 
-| Input level/action                                     | Scoring completion dispatch                                                 |
-| ------------------------------------------------------ | --------------------------------------------------------------------------- |
-| Recorded `addPoint`                                    | Point, then any game/set completion, then match winner or tie               |
-| Winnerless point, completed-match no-op, refused point | No scoring callbacks                                                        |
-| `addGame`, `addSet`, `endSegment`, `setInitialScore`   | Update state/history without the point-driven game/set/match callbacks      |
-| Undo/redo                                              | Their own callbacks; rebuilding does not re-emit historical point callbacks |
+| Input level/action                                       | Scoring completion dispatch                                                 |
+| -------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Recorded `addPoint`                                      | Point, then any game/set completion, then match winner or tie               |
+| Winnerless point, completed-match no-op, refused point   | No scoring callbacks                                                        |
+| `addGame`, `addSet`, `endSegment`, `setInitialScore`     | Update state/history without the point-driven game/set/match callbacks      |
+| `addGame`, `addSet`, `endSegment` that end a match level | `onMatchTie` only (a level close with no declared decider)                  |
+| Undo/redo                                                | Their own callbacks; rebuilding does not re-emit historical point callbacks |
 
 Use the returned state after aggregate input rather than relying on `onPoint` or completion handlers
 to refresh the UI. A single accepted point can dispatch multiple callbacks in the listed order.
@@ -392,3 +393,14 @@ For a combined-point segment such as `SET1-S:P32`, `onMatchTie` fires when the f
 score is tied. `onMatchComplete` continues to require a winner. Rally increments do
 not fire `onGameComplete`; a tied segment does not fire the winner-bearing `onSetComplete`.
 Undo and redo retain their existing callbacks.
+
+### A match that ends level
+
+A timed, aggregate or exactly-N match that ends level with no declared decider (a `/TB{n}` on the
+timed segment, or the `-F:` decider of an exactly-N aggregate) is `COMPLETED` without a winner, and
+`onMatchTie` fires, whether a point, a set total or the end of the last timed segment closed it. No
+further segment is played: a later point, game, set total or segment end is ignored and records
+nothing. `getScore().decisionRequired` (and `situation.decisionRequired`) is `true`, so a host running
+an elimination draw knows to ask for a decision; the engine records none. A stored timeline that
+scored past a level close, as engines before this rule did, replays as it was scored, and
+`getLegacyShapes()` reports `scoringPastLevelClose` (scoring-engine specification, § 9.7 and § 12.8).
