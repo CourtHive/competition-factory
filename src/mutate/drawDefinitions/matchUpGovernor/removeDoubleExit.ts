@@ -31,7 +31,14 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import type { DrawDefinition, DrawLink, MatchUp, MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
+import type {
+  SideExitProvenanceEntry,
+  MatchUpStatusUnion,
+  SideExitProvenance,
+  DrawDefinition,
+  DrawLink,
+  MatchUp,
+} from '@Types/tournamentTypes';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -886,10 +893,17 @@ function getUnwoundState({
   // alone would keep an exit that no longer exists. Retaining by source identity is what keeps the
   // BYE's OWN origin (`{ previousMatchUpStatus: BYE, matchUpStatus: BYE }`, written by the bye
   // propagation, not by this cascade) while dropping the withdrawn one.
+  //
+  // ...but only while the exit opposite it stands. A BYE-origin entry is written as the PAIR of a produced exit meeting
+  // the BYE (`buildSideExitProvenance` with a BYE paired status), and lives exactly as long as that exit: withdrawn with
+  // it here, so the BYE matchUp reads as it did before the exit arrived (census A1 case 22, FEED_IN_CHAMPIONSHIP 16/11
+  // 20532286: `Consolation|2|2`'s double walkover entered and cleared left `Consolation|3|1` a BYE holding the BYE
+  // origin and nothing opposite). Provenance "records where each side came from" (exit-propagation.md): the pair
+  // explained an exit meeting the BYE, and with no exit there is nothing for it to explain.
   if (noContextTargetMatchUp.matchUpStatus === BYE) {
     return {
       matchUpStatus: BYE,
-      provenance: retainForeignProvenance(
+      provenance: retainByeOriginsBesideExits(
         getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
         withdrawnSourceIds,
       ),
@@ -918,7 +932,7 @@ function getUnwoundState({
   if (targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp })) {
     return {
       matchUpStatus: BYE,
-      provenance: retainForeignProvenance(
+      provenance: retainByeOriginsBesideExits(
         getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
         withdrawnSourceIds,
       ),
@@ -961,6 +975,31 @@ function getUnwoundState({
   }
 
   return { matchUpStatus: TO_BE_PLAYED };
+}
+
+/** a BYE's own origin: the pair a produced exit meeting the BYE writes opposite itself */
+function isByeOrigin(entry?: SideExitProvenanceEntry): boolean {
+  return entry?.matchUpStatus === BYE && entry?.previousMatchUpStatus === BYE;
+}
+
+/** `retainForeignProvenance`, and a BYE origin goes with the exit opposite it when that exit is withdrawn */
+function retainByeOriginsBesideExits(
+  provenance: SideExitProvenance | undefined,
+  withdrawnSourceIds: Set<string>,
+): SideExitProvenance | undefined {
+  const retained = retainForeignProvenance(provenance, withdrawnSourceIds);
+  if (!retained) return undefined;
+  const kept: SideExitProvenance = { ...retained };
+  for (const sideNumber of [1, 2] as const) {
+    const opposite = provenance?.[3 - sideNumber];
+    const oppositeWithdrawn =
+      !!opposite?.sourceMatchUpId && withdrawnSourceIds.has(opposite.sourceMatchUpId) && !!carriedExitStatus(opposite);
+    if (!isByeOrigin(kept[sideNumber]) || !oppositeWithdrawn) continue;
+    const claims = kept[sideNumber]?.byeClaims;
+    if (claims?.length) kept[sideNumber] = { byeClaims: [...claims] };
+    else delete kept[sideNumber];
+  }
+  return Object.keys(kept).length ? kept : undefined;
 }
 
 function producedAwardStands({

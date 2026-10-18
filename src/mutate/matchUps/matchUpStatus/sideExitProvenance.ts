@@ -277,6 +277,26 @@ export function arrivedByResult(entry?: SideExitProvenanceEntry): boolean {
   return !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
 }
 
+/**
+ * Take back the arrival record a feeder left on a matchUp, when the position it delivered leaves.
+ *
+ * An arrival (`arrivedByResult`) records that a side's occupant won their way here from `sourceMatchUpId`; it is a
+ * fact about that position being here, so it goes when the position is released, whichever side the record is keyed
+ * to by then. A BYE claim on the same side stays: it is the ledger, not the arrival (`withdrawArrivalsByResult`).
+ * Not gated on the write mode: the write mode decides whether a record is written, never whether a stale one goes.
+ */
+export function withdrawArrivalFrom({ sourceMatchUpId, matchUp }: { sourceMatchUpId?: string; matchUp: MatchUp }) {
+  const provenance = matchUp.sideExitProvenance;
+  if (!sourceMatchUpId || !provenance) return;
+  for (const sideNumber of [1, 2] as const) {
+    const entry = provenance[sideNumber];
+    if (entry?.sourceMatchUpId !== sourceMatchUpId || !arrivedByResult(entry)) continue;
+    if (entry.byeClaims?.length) provenance[sideNumber] = { byeClaims: [...entry.byeClaims] };
+    else delete provenance[sideNumber];
+  }
+  if (!Object.keys(provenance).length) delete matchUp.sideExitProvenance;
+}
+
 /** Write provenance onto a matchUp, honouring the schema write mode. */
 export function setSideExitProvenance({
   provenance,

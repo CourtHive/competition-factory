@@ -9,6 +9,7 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import {
   deriveExitStateFromProvenance,
   getSideExitProvenance,
+  withdrawArrivalFrom,
   withdrawRelayedExit,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -140,6 +141,13 @@ export function releaseAdvancedDrawPosition({
     ]),
   );
 
+  // ...and the feeder that delivered the position into each round, for the same reason: it is released first
+  const deliveredBy = new Map(
+    matchUps
+      .filter(releasable)
+      .map((matchUp) => [matchUp.matchUpId, latestFeeder({ drawPosition, matchUps, matchUp })?.matchUpId]),
+  );
+
   const releasedRoundNumbers: number[] = [];
   const vacatedByes: { roundNumber: number; remaining: number[] }[] = [];
   for (const matchUp of matchUps) {
@@ -201,6 +209,13 @@ export function releaseAdvancedDrawPosition({
       matchUp,
     });
     releasedRoundNumbers.push(matchUp.roundNumber);
+    // A RELEASED POSITION TAKES ITS ARRIVAL WITH IT. The record that its occupant won their way here names the feeder
+    // that delivered them, and that feeder is undecided again once the position goes; left behind, the record named a
+    // source that had sent nobody (census A1 case 25, FIRST_MATCH_LOSER_CONSOLATION 16/13 20483283 `on`: a double
+    // walkover at `Main|2|4` and its clear took dp 3 out of `Consolation|4|1` and left `Consolation|3|2`'s arrival on
+    // side 2, ARRIVAL_TRUE). Provenance "records where each side came from" (exit-propagation.md), so a side nobody
+    // came to has no record.
+    withdrawArrivalFrom({ sourceMatchUpId: deliveredBy.get(matchUp.matchUpId), matchUp });
 
     if (byeDrawPositions.has(drawPosition)) {
       // whoever stayed advanced past this BYE on its strength (`yieldSquattingPropagatedBye`), and comes back with it —
