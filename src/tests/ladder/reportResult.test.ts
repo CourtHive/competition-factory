@@ -5,7 +5,7 @@ import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 
 // constants
 import { AWAITING_RESULT, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { RESULT_NOT_VALIDATED } from '@Constants/errorConditionConstants';
+import { RESULT_NOT_VALIDATED, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { OPERATOR, RANK, RESULT, SWAP } from '@Constants/ladderConstants';
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
@@ -71,7 +71,7 @@ describe('submitting a result', () => {
       drawDefinition,
       matchUpId: 'm1',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.info).toMatch(/only a participant/);
   });
 });
@@ -189,6 +189,6 @@ describe('disputing', () => {
   test('there is nothing to dispute before a score is reported', () => {
     const { drawDefinition } = ladder();
     const result: any = disputeResult({ participantId: 'defender', disputedAt: T(1), drawDefinition, matchUpId: 'm1' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });

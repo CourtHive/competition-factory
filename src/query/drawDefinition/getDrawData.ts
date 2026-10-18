@@ -16,6 +16,7 @@ import { createHydrationCache } from '@Query/matchUps/hydrationCache';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { applyRoundLimit } from '@Query/publishing/applyRoundLimit';
+import { drawWithDerivedGoesTo } from '@Query/matchUps/addGoesTo';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
@@ -122,7 +123,6 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
     pressureRating,
     refreshResults,
     contextProfile,
-    drawDefinition,
     noDeepCopy,
     sortConfig,
     context,
@@ -136,7 +136,11 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
     return { error: INVALID_VALUES };
   }
 
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  if (!params.drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  // A draw built outside the factory may not store its progression edges (`winnerMatchUpId` / `loserMatchUpId`) until a
+  // scored matchUp stores them, and every bracket is drawn from them (an integrator report, 2026-10-18). Such a draw is
+  // read from a copy that carries them: they reach the returned data and never the draw this query was handed.
+  const drawDefinition = drawWithDerivedGoesTo(params.drawDefinition);
   const hydrationCache = createHydrationCache();
 
   // Built on first use, so a STUBS request builds none of it.

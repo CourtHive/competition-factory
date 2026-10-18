@@ -60,6 +60,14 @@ type PolicyDefinitions = {
 };
 ```
 
+**What is written, and what refuses:** only the policies given are written, onto the element named (the draw, the
+event, or the tournament). Inherited policies are not copied onto it. A policy type the element already holds is
+refused with `EXISTING_POLICY_TYPE` unless `allowReplacement`; one inherited from the event or tournament does not
+refuse, and the element's own then overrides it. With several tournament records loaded and none named, each record
+that does not hold the policy takes it, and a record that does is skipped; the call is refused only if no record took
+any. The change is announced on the element's topic: `modifyDrawDefinition`, `modifyEvent` or
+`modifyTournamentDetail`.
+
 **Returns:**
 
 ```ts
@@ -322,6 +330,11 @@ console.log(tournamentPolicy.policyName); // "Tournament Default"
 ## removePolicy
 
 Removes a specific policy type from tournaments, events, or draws. If removing the last policy from an element, the entire APPLIED_POLICIES extension is removed.
+
+Only the element's **own** applied policies are read and rewritten: a policy the element inherits from its event or
+tournament is not found on it (`POLICY_NOT_FOUND`), and removing one policy no longer copies the inherited ones onto
+the element. The change is announced on the element's topic: `MODIFY_DRAW_DEFINITION`, `MODIFY_EVENT`, or
+`MODIFY_TOURNAMENT_DETAIL` with the record's `extensions`. A refused call sends nothing.
 
 **Purpose:** Remove policy definitions to restore default behavior or remove outdated policies. Allows selective policy removal while preserving other policies.
 

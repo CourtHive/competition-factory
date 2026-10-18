@@ -33,6 +33,14 @@ const BASELINE = join(FACTORY_ROOT, 'scripts/verify/baseline/consumer-bundle.jso
 // Each body keeps its imports live (an unused import would itself be shaken away) and
 // reads the way custom-engines.md tells a consumer to write it.
 const FIXTURES = {
+  'syncEngine + governors.queryGovernor': {
+    imports: ['syncEngine', 'governors'],
+    body: 'syncEngine.importMethods(governors.queryGovernor);\nconsole.log(typeof syncEngine.getParticipants);',
+  },
+  tournamentEngine: {
+    imports: ['tournamentEngine'],
+    body: 'console.log(typeof tournamentEngine.getParticipants);',
+  },
   syncEngine: {
     imports: ['syncEngine'],
     body: 'console.log(typeof syncEngine.setState);',

@@ -48,6 +48,8 @@ import {
   MISSING_VALUE,
   NOT_FOUND,
   STRUCTURE_NOT_FOUND,
+  INVALID_STRUCTURE,
+  MISSING_VENUE_ID,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -56,7 +58,7 @@ import {
 describe('getRandomQualifierList branch coverage', () => {
   it('returns error when drawDefinition is missing', () => {
     const result: any = getRandomQualifierList({ drawDefinition: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('returns error when no main structure found', () => {
@@ -163,7 +165,7 @@ describe('autoSeeding branch coverage', () => {
       sortDescending: false,
       scaleSortMethod: undefined,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_EVENT);
   });
 
   it('returns INVALID_VALUES when no stageEntries or seedsCount', () => {
@@ -335,7 +337,7 @@ describe('getCourtsAvailableAtPeriodStart branch coverage', () => {
       courts: [],
       date: '2024-01-01',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error when courts is not an array', () => {
@@ -345,7 +347,7 @@ describe('getCourtsAvailableAtPeriodStart branch coverage', () => {
       courts: 'bad' as any,
       date: '2024-01-01',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns zero available courts when courts have no dateAvailability', () => {
@@ -370,7 +372,7 @@ describe('generateAdHocRounds branch coverage', () => {
       restrictRoundsCount: true,
       event: { eventId: 'e1' } as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns empty matchUps for zero rounds', () => {
@@ -446,7 +448,7 @@ describe('organizeDrawPositionOptions branch coverage', () => {
 describe('getPersonRequests branch coverage', () => {
   it('returns error when tournamentRecords is missing', () => {
     const result = getPersonRequests({ tournamentRecords: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
   });
 
   it('returns empty personRequests when no extensions exist', () => {
@@ -580,7 +582,7 @@ describe('getScheduledVenueMatchUps branch coverage', () => {
       tournamentRecord: { tournamentId: 't1' } as any,
       venueId: undefined as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VENUE_ID);
   });
 });
 
@@ -590,7 +592,7 @@ describe('getScheduledVenueMatchUps branch coverage', () => {
 describe('removeMatchUpCourtAssignment branch coverage', () => {
   it('returns error when tournamentRecords is missing', () => {
     const result = removeMatchUpCourtAssignment({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
   });
 
   it('returns error when tournamentRecord not found for tournamentId', () => {
@@ -714,7 +716,7 @@ describe('publicFindParticipant branch coverage', () => {
 // 18. getCompetitionParticipants — 4 uncovered branches
 // ----------------------------------------------------------------
 describe('getCompetitionParticipants branch coverage', () => {
-  it('returns error when tournamentRecords is not an object', () => {
+  it('returns error when tournamentRecords is undefined', () => {
     const result = getCompetitionParticipants({ tournamentRecords: undefined });
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORDS);
   });
@@ -971,7 +973,7 @@ describe('removeSeededParticipant branch coverage', () => {
       participantId: 'p1',
       structureId: 's1',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STRUCTURE);
   });
 
   it('returns NOT_FOUND when participant is not seeded', () => {

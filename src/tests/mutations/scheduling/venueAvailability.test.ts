@@ -5,8 +5,8 @@ import { expect, test } from 'vitest';
 
 // constants and fixtures
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import { INVALID_VALUES, INVALID_DATE_AVAILABILITY } from '@Constants/errorConditionConstants';
 import { MAINTENANCE, PRACTICE } from '@Constants/bookingTypeConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 test('court with no dateAvailability inherits venue defaults', () => {
   const venueId = 'venueId';
@@ -410,7 +410,7 @@ test('addVenue validation rejects invalid dateAvailability', () => {
   };
 
   const result = tournamentEngine.addVenue({ venue });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_DATE_AVAILABILITY);
 });
 
 test('addVenue validation rejects invalid defaultStartTime/defaultEndTime', () => {

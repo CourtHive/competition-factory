@@ -315,6 +315,12 @@ export type MockSchedulingProfile = {
 }[];
 
 export type MockScenarioProfile = {
+  /** the matchUps due within this many minutes of the anchor are checked in (both sides' individuals) */
+  checkedIn?: { withinMinutes: number };
+  /** the matchUps due within this many minutes of the anchor are called (`calledAt` set to the anchor) */
+  called?: { withinMinutes: number };
+  /** deliberate conflicts, each the one `proConflicts` reports; they need `assignCourts` */
+  conflicts?: { type: string; count?: number }[];
   minutesBeforeAnchor?: number;
   assignCourts?: boolean;
   /** 'NOW', or an ISO datetime for a deterministic anchor */
@@ -367,6 +373,8 @@ export type ModifyTournamentRecordArgs = MockEngineCall &
     hydrateCollections?: boolean;
     autoEntryPositions?: boolean;
     tournamentRecord: Tournament;
+    /** keep what was written before a refusal and report it as `retained` (default: all or nothing) */
+    keepPartial?: boolean;
     random?: () => number;
     autoSchedule?: boolean;
     periodLength?: number;

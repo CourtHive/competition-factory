@@ -12,7 +12,12 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import {
+  MISSING_DRAW_DEFINITION,
+  STRUCTURE_NOT_FOUND,
+  EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
+  INVALID_DRAW_POSITION,
+} from '@Constants/errorConditionConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { TEAM_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
@@ -112,7 +117,7 @@ describe('positionAssignment: guard branches', () => {
       structureId,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DRAW_POSITION);
   });
 
   it('returns DRAW_POSITION_ACTIVE when replacing a participant at an active position', () => {
@@ -139,7 +144,7 @@ describe('positionAssignment: guard branches', () => {
         structureId,
         drawId,
       });
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual(EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT);
     }
   });
 });

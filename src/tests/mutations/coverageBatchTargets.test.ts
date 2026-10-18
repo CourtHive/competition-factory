@@ -8,8 +8,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants and fixtures
+import { INVALID_VALUES, INVALID_STAGE, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { DEFAULTED, RETIRED, WALKOVER, SUSPENDED, INCOMPLETE } from '@Constants/matchUpStatusConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { WTN, UTR } from '@Constants/ratingConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
@@ -517,7 +517,7 @@ describe('getSourceDrawPositionRanges additional coverage', () => {
       drawDefinition,
       matchUpsMap,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STAGE);
   });
 
   it('handles larger draw with multiple feed rounds', () => {
@@ -633,7 +633,7 @@ describe('finishingPositions uncovered branches', () => {
       drawDefinition: undefined as any,
       tournamentRecord: {} as any,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('multi-bracket RR without playoff returns finishing positions', () => {

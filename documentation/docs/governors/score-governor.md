@@ -328,7 +328,7 @@ Utility for generating score strings based on key entry. Please see `keyValueSco
 Produces CODES sets objects.
 
 ```js
-const sets = mocksEngine.parseScoreString({ scoreString: '1-6 1-6' });
+const sets = scoreGovernor.parseScoreString({ scoreString: '1-6 1-6' });
 
 /*
 console.log(sets)

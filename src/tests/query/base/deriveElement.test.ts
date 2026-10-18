@@ -1,4 +1,4 @@
-import { MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { deriveElement } from '@Query/base/deriveElement';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
@@ -34,7 +34,7 @@ describe('deriveElement', () => {
 
     const result = deriveElement({ tournamentRecord, participantId: 'nonexistent' });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   it('derives element from direct element parameter', () => {
@@ -161,13 +161,13 @@ describe('deriveElement', () => {
   it('handles participantId with missing tournamentRecord', () => {
     const result = deriveElement({ participantId: 'someId' });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   it('handles participantId with null tournamentRecord', () => {
     const result = deriveElement({ participantId: 'someId', tournamentRecord: null as any });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   it('prioritizes participantId over all other parameters', () => {

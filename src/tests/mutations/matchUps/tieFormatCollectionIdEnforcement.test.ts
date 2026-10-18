@@ -5,7 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants and fixtures
-import { INVALID_TIE_FORMAT } from '@Constants/errorConditionConstants';
+import { INVALID_TIE_FORMAT, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { SINGLES } from '@Constants/matchUpTypes';
 
@@ -62,7 +62,7 @@ it('rejects an id-less tieFormat at the API boundary', () => {
   // the boundary refuses. The code is the parameter-checker's, not the validator's — assert the
   // refusal rather than pinning a code this test does not own.
   const result: any = tournamentEngine.generateEventsFromTieFormat({ tieFormat: idLessTieFormat() });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
 
   // and accepts it once minted — the two lines a consumer writes after upgrading
   const tieFormat = idLessTieFormat();

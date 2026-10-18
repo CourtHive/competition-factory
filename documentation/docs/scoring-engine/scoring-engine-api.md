@@ -85,8 +85,9 @@ interface AddPointOptions {
   winningSide?: 1 | 2; // Which side won (1 = side 1, 2 = side 2)
   serverSideNumber?: 1 | 2; // Which side served
 
-  // Doubles rotation
-  serverParticipantId?: string; // Specific participant serving
+  // Host-owned service metadata
+  serverParticipantId?: string; // Recorded without identity/rotation validation
+  observedServeSide?: 'deuce' | 'ad'; // Observed half, beside derived serveSide
 
   // Score override
   scoreValue?: number; // Override score increment (default: 1)
@@ -504,7 +505,7 @@ Get match statistics calculated from point history. Returns counters, calculated
 
 ```js
 const stats = engine.getStatistics();
-const set1Stats = engine.getStatistics({ setFilter: 1 });
+const set1Stats = engine.getStatistics({ setFilter: 0 });
 ```
 
 ---
@@ -519,7 +520,9 @@ Get the point history enriched with game/set/match context. Each episode contain
 
 ```js
 const episodes = engine.getEpisodes();
-// [{ point, gameScore, setScore, matchScore, gameNumber, setNumber, ... }, ...]
+// [{ action, point, game, set, needed, nextService, result, complete }, ...]
+// point: { index, number, winner, server, score, result }
+// game: { index, isTiebreak, complete, winner }; set: { index, complete, winner }
 ```
 
 ---
@@ -674,6 +677,170 @@ engine.canRedo(); // true (if there were undone actions)
 ```
 
 ---
+
+## Service correction
+
+### setServer
+
+```ts
+setServer(side: 0 | 1, options?: { recordEntry?: boolean }): void
+```
+
+Correct the side serving the next point (zero-based). Earlier recorded servers stay unchanged. By
+default this records a timeline action, clears redo and survives rebuilding/undo/redo. Internal
+rule-driven corrections can use `recordEntry: false`; that change is not an independently undoable
+action. Without a parsed format it returns without changing state. This typed API does not validate
+arbitrary JavaScript side values. It corrects sides, not individual doubles rotation.
+
+Tennis tiebreak derivation uses one point for the first server, then alternating two-point turns.
+The applicable final-set format is resolved independently; do not apply the opening-set service
+pattern to a different final-set tiebreak. `setServer(1)` means side 2 should serve next.
+
+## Additional statistics
+
+### getStatObjects
+
+```ts
+getStatObjects(options?: StatisticsOptions): StatObject[]
+```
+
+Returns display-ready objects converted from `getStatistics(options)`, with the same zero-based
+`setFilter`. It calculates a result without adding an undo action. Import the published `StatObject`
+type rather than a local display shape.
+
+## Lineups and substitution
+
+### setLineUp
+
+```ts
+setLineUp(sideNumber: 1 | 2, lineUp: TeamCompetitor[]): void
+```
+
+Sets a side's starting lineup and its rebuild snapshot. The side number is one-based. This is setup,
+not a timeline action; establish it before recording substitutions/points. Unknown sides do not gain
+an on-court lineup. The input's competitor objects are shallow-copied.
+
+### substitute
+
+```ts
+substitute(options: {
+  sideNumber: 1 | 2; outParticipantId: string; inParticipantId: string; timestamp?: string;
+}): SubstitutionResult
+```
+
+Returns `{ success: true }` after replacing an on-court participant and recording a pre-point timeline
+action, or `{ success: false, error }` with `SAME_PARTICIPANT`, `NO_LINEUP`, `OUT_NOT_ON_SIDE` or
+`IN_ALREADY_ON_COURT`. Refusal does not record an action or clear redo. Accepted substitutions clear
+redo and are restored by timeline replay. See [substitution integration](./event-handlers.md#making-substitutions).
+
+### evaluateSubstitution
+
+```ts
+evaluateSubstitution(): { violations: SubstitutionViolation[] }
+```
+
+Advisory evaluation of configured permission, match/segment limits, between-game timing and matchUp
+type. Possible values are `NOT_ALLOWED`, `MAX_PER_MATCHUP`, `MAX_PER_SEGMENT`, `TIMING`, `MATCHUP_TYPE`.
+It neither writes history nor vetoes `substitute`; hosts enforce roster/time rules the scorer cannot
+observe. No configured rules yields an empty list.
+
+### getActivePlayers
+
+```ts
+getActivePlayers(): { side1: string[]; side2: string[] }
+```
+
+Returns current lineup participant IDs (empty arrays without lineups). No history action. See
+[event handlers and integration](./event-handlers.md) for tracking active players on points.
+
+## Multipliers and profiles
+
+### setPointMultipliers
+
+```ts
+setPointMultipliers(multipliers: PointMultiplier[]): void
+```
+
+Replaces scoring configuration with a deep copy. No timeline action and no immediate rescore. Persist
+configuration with supplementary state; keep the configuration consistent when replaying history.
+
+### getPointMultipliers
+
+```ts
+getPointMultipliers(): PointMultiplier[]
+```
+
+Returns a deep copy; editing it does not configure the scorer. Neither getter nor setter is an undo step.
+
+### getPenaltyProfile
+
+```ts
+getPenaltyProfile(): PenaltyProfile | undefined
+```
+
+### getPointProfile
+
+```ts
+getPointProfile(): PointProfile | undefined
+```
+
+### getTimerProfile
+
+```ts
+getTimerProfile(): TimerProfile | undefined
+```
+
+### getTimeoutRules
+
+```ts
+getTimeoutRules(): TimeoutRules | undefined
+```
+
+### getPenaltyBoxProfile
+
+```ts
+getPenaltyBoxProfile(): PenaltyBoxProfile | undefined
+```
+
+### getSubstitutionRules
+
+```ts
+getSubstitutionRules(): SubstitutionRules | undefined
+```
+
+### getPlayerRules
+
+```ts
+getPlayerRules(): PlayerRules | undefined
+```
+
+These seven accessors return the corresponding configured competition-format object, or `undefined`
+if absent. They do not validate or execute its rules, throw on absence, or create undo actions. They
+currently expose those configuration references: treat them as read-only. Host clocks, timeouts,
+penalty-box timing and roster enforcement remain host responsibilities. See
+[format support](./format-support.md) and [event integration](./event-handlers.md).
+
+## Runtime handlers
+
+### setEventHandlers
+
+```ts
+setEventHandlers(handlers: ScoringEventHandlers | undefined): void
+```
+
+Replaces all handlers; pass `undefined` to clear them. Callback registration is not part of undo/redo
+or serializable scoring state.
+
+### getEventHandlers
+
+```ts
+getEventHandlers(): ScoringEventHandlers | undefined
+```
+
+Returns the currently installed handler object (a reference). Neither method emits a scoring event.
+See the [dispatch matrix](./event-handlers.md#handler-descriptions) for when callbacks run.
+
+`StatisticsOptions.setFilter`, episode point/game/set indices and stored point indices are zero-based. The first set is `setFilter: 0`; CODES `winningSide` remains one-based.
 
 ## Related Documentation
 

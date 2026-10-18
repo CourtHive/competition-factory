@@ -65,43 +65,34 @@ tournamentEngine.modifyVenue({
 
 ### Scheduling MatchUps
 
-```js
-// Schedule single matchUp
-tournamentEngine.scheduleMatchUps({
-  scheduleAttributes: [{
-    eventId,
-    matchUpId,
-    venueId,
-    courtId,
-    schedule: {
-      scheduledDate: '2024-06-15',
-      scheduledTime: '09:00'
-    }
-  }]
-});
+Use `bulkScheduleMatchUps` for explicit placements. Each detail carries its own `schedule`; the
+engine resolves tournament context from the matchUp ID and reports missing/locked/skipped IDs.
+`scheduledDuration` is not an explicit placement field; configure expected durations in scheduling
+policy when using an automatic scheduler.
 
-// Bulk schedule matchUps
-tournamentEngine.bulkScheduleMatchUps({
-  scheduleAttributes: [
-    { matchUpId: id1, courtId, scheduledTime: '09:00' },
-    { matchUpId: id2, courtId, scheduledTime: '10:30' },
-    { matchUpId: id3, courtId: scheduledTime: '12:00' }
-  ]
+```js
+const result = tournamentEngine.bulkScheduleMatchUps({
+  matchUpDetails: [
+    { matchUpId: id1, schedule: { venueId, courtId, scheduledDate: '2024-06-15', scheduledTime: '09:00' } },
+    { matchUpId: id2, schedule: { venueId, courtId, scheduledDate: '2024-06-15', scheduledTime: '10:30' } },
+  ],
 });
+if (result.error) throw new Error(result.error.message);
 ```
 
 ### Auto-Scheduling
 
+Configure court availability and attach a [scheduling profile](../concepts/scheduling-profile.mdx)
+that identifies the tournament, event, draw, structure and rounds for each date/venue. The scheduler
+uses that profile; event IDs and start/end times alone do not define one.
+
 ```js
-// Automatic schedule generation
-tournamentEngine.autoSchedule({
-  eventIds: [eventId],
-  venueIds: [venueId],
-  periodLength: 90, // minutes per match
-  startTime: '09:00',
-  endTime: '18:00',
+// schedulingProfile is the reviewed date/venue/round profile built by the UI.
+tournamentEngine.setSchedulingProfile({ schedulingProfile });
+const result = tournamentEngine.scheduleProfileRounds({
   scheduleDates: ['2024-06-15', '2024-06-16'],
 });
+if (result.error) throw new Error(result.error.message);
 ```
 
 ### Schedule Queries
@@ -115,13 +106,12 @@ const { courts } = tournamentEngine.getCourts({ venueId });
 
 // Get scheduled matchUps
 const { dateMatchUps } = tournamentEngine.competitionScheduleMatchUps({
-  scheduledDate: '2024-06-15',
+  matchUpFilters: { scheduledDate: '2024-06-15' },
 });
 
 // Get court schedule
-const { courtMatchUps } = tournamentEngine.getCourtMatchUps({
-  courtId,
-  scheduledDate: '2024-06-15',
+const { matchUps: courtMatchUps } = tournamentEngine.allTournamentMatchUps({
+  matchUpFilters: { courtIds: [courtId], scheduledDate: '2024-06-15' },
 });
 ```
 
@@ -244,14 +234,13 @@ Object.entries(byRound).forEach(([round, matches], index) => {
 
 ```js
 // Add schedule with time
-tournamentEngine.scheduleMatchUps({
-  scheduleAttributes: [
+tournamentEngine.bulkScheduleMatchUps({
+  matchUpDetails: [
     {
       matchUpId,
       schedule: {
         scheduledDate: '2024-06-15',
         scheduledTime: '14:00',
-        scheduledDuration: 90, // minutes
         courtId,
         venueId,
       },
@@ -341,21 +330,20 @@ const scheduleDate = '2024-06-15';
 const startTime = '09:00';
 const matchDuration = 90;
 
-const scheduleAttributes = [];
+const matchUpDetails = [];
 let currentTime = startTime;
 let courtIndex = 0;
 
 matchUps.forEach((matchUp) => {
   const court = venue.courts[courtIndex % venue.courts.length];
 
-  scheduleAttributes.push({
+  matchUpDetails.push({
     matchUpId: matchUp.matchUpId,
-    venueId: venue.venueId,
-    courtId: court.courtId,
     schedule: {
+      venueId: venue.venueId,
+      courtId: court.courtId,
       scheduledDate: scheduleDate,
       scheduledTime: currentTime,
-      scheduledDuration: matchDuration,
     },
   });
 
@@ -368,7 +356,7 @@ matchUps.forEach((matchUp) => {
 });
 
 // 4. Apply schedule
-tournamentEngine.bulkScheduleMatchUps({ scheduleAttributes });
+tournamentEngine.bulkScheduleMatchUps({ matchUpDetails });
 ```
 
 ### Order of Play Generation
@@ -376,7 +364,7 @@ tournamentEngine.bulkScheduleMatchUps({ scheduleAttributes });
 ```js
 // Get all matches for a date
 const { dateMatchUps } = tournamentEngine.competitionScheduleMatchUps({
-  scheduledDate: '2024-06-15',
+  matchUpFilters: { scheduledDate: '2024-06-15' },
 });
 
 // Group by court
@@ -411,12 +399,12 @@ const orderOfPlay = {
 
 ```js
 // Move match to different court
-tournamentEngine.scheduleMatchUps({
-  scheduleAttributes: [
+tournamentEngine.bulkScheduleMatchUps({
+  matchUpDetails: [
     {
       matchUpId,
-      courtId: newCourtId,
       schedule: {
+        courtId: newCourtId,
         scheduledDate: existingDate,
         scheduledTime: existingTime,
       },
@@ -425,12 +413,12 @@ tournamentEngine.scheduleMatchUps({
 });
 
 // Reschedule to different time
-tournamentEngine.scheduleMatchUps({
-  scheduleAttributes: [
+tournamentEngine.bulkScheduleMatchUps({
+  matchUpDetails: [
     {
       matchUpId,
-      courtId: existingCourtId,
       schedule: {
+        courtId: existingCourtId,
         scheduledDate: existingDate,
         scheduledTime: newTime,
       },
@@ -439,8 +427,8 @@ tournamentEngine.scheduleMatchUps({
 });
 
 // Remove scheduling
-tournamentEngine.removeMatchUpSchedule({
-  matchUpIds: [matchUpId],
+tournamentEngine.clearMatchUpSchedule({
+  matchUpId,
 });
 ```
 

@@ -2,6 +2,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+
 describe('setTournamentDates activeDates with scheduled matchUps', () => {
   it('prevents removing an activeDate that has scheduled matchUps', () => {
     const startDate = '2024-06-01';
@@ -46,7 +49,7 @@ describe('setTournamentDates activeDates with scheduled matchUps', () => {
     result = tournamentEngine.setTournamentDates({
       activeDates: ['2024-06-01', '2024-06-02', '2024-06-04', '2024-06-05'],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error.code).toEqual(INVALID_VALUES.code); // the message names the dates
     expect(result.error.message).toContain('2024-06-03');
     expect(result.info).toContain('1 matchUp(s) scheduled');
 
@@ -133,7 +136,7 @@ describe('setTournamentDates activeDates with scheduled matchUps', () => {
     result = tournamentEngine.setTournamentDates({
       activeDates: ['2024-06-01', '2024-06-03', '2024-06-05'],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error.code).toEqual(INVALID_VALUES.code); // the message names the dates
     expect(result.error.message).toContain('2024-06-02');
     expect(result.error.message).toContain('2024-06-04');
     expect(result.info).toContain('4 matchUp(s) scheduled');

@@ -7,6 +7,16 @@ import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 import {
+  ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT,
+  EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
+  INVALID_ENTRY_STATUS,
+  INVALID_PARTICIPANT_ID,
+  INVALID_STAGE,
+  INVALID_VALUES,
+  MISSING_EVENT,
+  MISSING_VALUE,
+} from '@Constants/errorConditionConstants';
+import {
   ALTERNATE,
   DIRECT_ACCEPTANCE,
   LUCKY_LOSER,
@@ -25,7 +35,7 @@ test('modifyEntriesStatus with invalid participantIds returns error', () => {
     participantIds: 'not-an-array' as any,
     entryStatus: ALTERNATE,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_PARTICIPANT_ID);
 });
 
 test('modifyEntriesStatus without event or drawDefinition returns error', () => {
@@ -39,7 +49,7 @@ test('modifyEntriesStatus without event or drawDefinition returns error', () => 
     participantIds: ['some-id'],
     entryStatus: ALTERNATE,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_EVENT);
 });
 
 test('modifyEntriesStatus with invalid entryStatus', () => {
@@ -55,7 +65,7 @@ test('modifyEntriesStatus with invalid entryStatus', () => {
     entryStatus: 'INVALID_STATUS' as any,
     eventId,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_ENTRY_STATUS);
 });
 
 test('modifyEntriesStatus with invalid entryStage', () => {
@@ -72,7 +82,7 @@ test('modifyEntriesStatus with invalid entryStage', () => {
     entryStatus: ALTERNATE,
     eventId,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_STAGE);
 });
 
 test('modifyEntriesStatus with no entryStatus or extension returns error', () => {
@@ -87,7 +97,7 @@ test('modifyEntriesStatus with no entryStatus or extension returns error', () =>
     participantIds: ['some-id'],
     eventId,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_VALUE);
 });
 
 test('modifyEntriesStatus with invalid extension returns error', () => {
@@ -103,7 +113,7 @@ test('modifyEntriesStatus with invalid extension returns error', () => {
     extension: {} as any, // no name
     eventId,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
 });
 
 test('modifyEntriesStatus with extension with value', () => {
@@ -230,7 +240,7 @@ test('modifyEntriesStatus with ignoreAssignment overrides assignment check', () 
     drawId,
   });
 
-  expect(failResult.error).toBeDefined();
+  expect(failResult.error).toEqual(EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT);
 
   // With ignoreAssignment should succeed
   const result = tournamentEngine.modifyEntriesStatus({
@@ -261,7 +271,7 @@ test('modifyEntriesStatus with DRAW_SPECIFIC status without draw returns error',
     entryStatus: LUCKY_LOSER,
     eventId,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT);
 });
 
 test('modifyEntriesStatus PAIR/TEAM participant with ungrouped status returns error', () => {
@@ -283,7 +293,7 @@ test('modifyEntriesStatus PAIR/TEAM participant with ungrouped status returns er
     entryStatus: UNGROUPED as any,
     eventId,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_ENTRY_STATUS);
 });
 
 test('modifyEntriesStatus with eventSync and single draw', () => {

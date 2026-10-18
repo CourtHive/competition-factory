@@ -24,7 +24,7 @@ If consumers branched on the mode flag, every site would have to know whether th
 | ----------------------------------------------- | -------------------------------------------------------------------------- |
 | `native` (5.0.0 default)                        | `positionAssignment.tally`                                                 |
 | `legacy` (4.x default; opt-in for v5 consumers) | `positionAssignment.extensions[{name: 'tally'}].value`                     |
-| `dual` (interim)                                | Both locations carry the same value — `getTally` reads the first-class one |
+| `bridge` (interim)                              | Both locations carry the same value — `getTally` reads the first-class one |
 
 Under the hood the helper is a thin wrapper around `firstClassOrExtension({ element, attribute: 'tally', name: TALLY })`.
 
@@ -46,3 +46,11 @@ Errors come back as the legacy `{ error: { code } }` envelope; wrap with [`unwra
 - The [4.x to 5.0.0 migration guide](../migration-5.0.0) — the table of promoted attributes and their mode-agnostic readers.
 - [`migrateTournamentRecord`](./migrate-tournament-record.md) — one-shot helper that lifts the legacy shape to native in place.
 - [Round Robin tally policy](../policies/roundRobinTallyPolicy.md) — the policy that drives what the tally contains.
+
+## Supported write-mode names
+
+Current write modes are `native`, `bridge` and `legacy`. The old name `dual` is rejected with
+`ERR_INVALID_VALUES`. Use this table as the shared mode reference for
+[migration](./migrate-tournament-record.md) and the [5.0 migration guide](../migration-5.0.0.md).
+The read fallback depends on the record's fields, not the current write setting: the first-class
+attribute wins when present, otherwise the legacy extension is read.

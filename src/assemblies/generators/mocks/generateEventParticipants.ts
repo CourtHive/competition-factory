@@ -51,11 +51,12 @@ export function generateEventParticipants(params) {
 
   const idPrefix = participantsProfile?.idPrefix ? `E-${eventIndex}-${participantsProfile?.idPrefix}` : undefined;
   const generated = generateParticipants({
-    uuids: eventProfile.uuids || uuids,
     ...participantsProfile,
-    scaledParticipantsCount: eventProfile.scaledParticipantsCount,
+    // the most specific setting wins: the eventProfile's, then its participantsProfile's, then the call's
+    scaledParticipantsCount: eventProfile.scaledParticipantsCount ?? participantsProfile?.scaledParticipantsCount,
+    rankingRange: eventProfile.rankingRange ?? participantsProfile?.rankingRange,
+    uuids: eventProfile.uuids || participantsProfile?.uuids || uuids,
     consideredDate: tournamentRecord?.startDate,
-    rankingRange: eventProfile.rankingRange,
     participantType: eventParticipantType,
     participantsCount,
     ratingsParameters,

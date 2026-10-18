@@ -17,6 +17,9 @@ import {
   FIRST_MATCH_LOSER_CONSOLATION,
 } from '@Constants/drawDefinitionConstants';
 
+// constants
+import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+
 /** Collect all matchUps across all structures (including nested RR groups) */
 function allMatchUps(drawDefinition: any): any[] {
   let result: any = [];
@@ -229,7 +232,7 @@ describe('remapDrawDefinitionMatchUpIds', () => {
         targetMatchUpIds: [{ matchUpId: 'x', roundNumber: 1, roundPosition: 1 }],
         drawDefinition: undefined as any,
       });
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
     });
 
     test('returns error for empty targetMatchUpIds', () => {
@@ -237,7 +240,7 @@ describe('remapDrawDefinitionMatchUpIds', () => {
         targetMatchUpIds: [],
         drawDefinition: { structures: [] } as any,
       });
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual(INVALID_VALUES);
     });
   });
 

@@ -1,4 +1,4 @@
-import { deleteMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { deleteMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { analyzeDraws } from '@Query/tournaments/analyzeDraws';
 import { getMatchUpId } from '@Functions/global/extractors';
@@ -67,6 +67,7 @@ export function pruneDrawDefinition({
       );
 
       matchPlayMatchUps.forEach((matchUp: any) => {
+        const before = JSON.stringify(matchUp.drawPositions);
         if (matchPlayDrawPositions) {
           // Renumbering, and self-normalising: `drawPositionsMap` assigns 1..n in the order the
           // positions are encountered, so the output is ascending whatever the input was. Still a
@@ -74,6 +75,15 @@ export function pruneDrawDefinition({
           matchUp.drawPositions = matchUp.drawPositions.map((drawPosition) => drawPositionsMap[drawPosition]);
         } else {
           delete matchUp.drawPositions;
+        }
+        // a kept matchUp whose drawPositions were renumbered or dropped is a modified matchUp
+        if (JSON.stringify(matchUp.drawPositions) !== before) {
+          modifyMatchUpNotice({
+            tournamentId: tournamentRecord?.tournamentId,
+            structureId: mainStructure.structureId,
+            drawDefinition,
+            matchUp,
+          });
         }
       });
 

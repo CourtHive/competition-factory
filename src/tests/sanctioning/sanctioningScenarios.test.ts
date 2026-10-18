@@ -19,6 +19,7 @@ import type { Applicant, TournamentProposal, SanctioningPolicy } from '@Types/sa
 // constants
 import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT, DOUBLES_EVENT, AGE } from '@Constants/eventConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { CLAY, HARD } from '@Constants/surfaceConstants';
 import { OUTDOOR } from '@Constants/venueConstants';
@@ -34,6 +35,7 @@ import {
   ACTIVE,
   CLOSED,
   REJECTED,
+  INVALID_STATUS_TRANSITION,
 } from '@Constants/sanctioningConstants';
 
 // ---------------------------------------------------------------------------
@@ -382,16 +384,16 @@ describe('Scenario: Application Rejection — Terminal State', () => {
 
     // All transitions should fail
     let result: any = sanctioningEngine.submitApplication({ sanctioningPolicy: POLICY_SANCTIONING_GENERIC });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
 
     result = sanctioningEngine.approveApplication({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
 
     result = sanctioningEngine.withdrawApplication({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
 
     result = sanctioningEngine.reviewApplication({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
 
     let transitions: any = sanctioningEngine.getAvailableTransitions();
     expect(transitions.availableTransitions).toHaveLength(0);
@@ -744,7 +746,7 @@ describe('Scenario: Post-Event Compliance Issues (USATF pattern)', () => {
 
     // Try to resubmit — should fail
     let result: any = sanctioningEngine.submitComplianceItem({ itemId: item.itemId });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -913,7 +915,7 @@ describe('Scenario: Execution Queue Rollback Integrity', () => {
       true,
     );
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
     expect(result.rolledBack).toBe(true);
 
     // Verify name was NOT changed (rolled back)
@@ -975,7 +977,7 @@ describe('Scenario: Policy Transition Guards', () => {
     sanctioningEngine.setSanctioningRecord(record);
 
     let result: any = sanctioningEngine.approveApplication({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
     expect(result.context?.guard).toEqual('PROPOSAL_VALID');
   });
 
@@ -1004,7 +1006,7 @@ describe('Scenario: Policy Transition Guards', () => {
 
     // Try to close without completing compliance — guard should block
     let result: any = sanctioningEngine.closeApplication({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
     expect(result.context?.guard).toEqual('COMPLIANCE_COMPLETE');
 
     // Now complete compliance
@@ -1038,7 +1040,7 @@ describe('Scenario: Policy Transition Guards', () => {
 
     // Try to approve without meeting conditions
     let result: any = sanctioningEngine.approveApplication({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
     expect(result.context?.guard).toEqual('ALL_CONDITIONS_MET');
 
     // Meet the condition

@@ -31,6 +31,7 @@ module.exports = {
       type: 'category',
       label: 'Concepts',
       items: [
+        'concepts/performance',
         {
           type: 'category',
           label: 'Tournament Setup',

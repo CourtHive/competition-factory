@@ -61,19 +61,42 @@ engine.setEventHandlers(undefined);
 
 ### Handler Descriptions
 
-| Handler           | Fired When                           | Extra Context         |
-| ----------------- | ------------------------------------ | --------------------- |
-| `onPoint`         | After every `addPoint()` call        | —                     |
-| `onGameComplete`  | A game completes (within `addPoint`) | `gameWinner: 0 \| 1`  |
-| `onSetComplete`   | A set completes (within `addPoint`)  | `setWinner: 0 \| 1`   |
-| `onMatchComplete` | The match completes                  | `matchWinner: 0 \| 1` |
-| `onUndo`          | After `undo()` succeeds              | —                     |
-| `onRedo`          | After `redo()` succeeds              | —                     |
-| `onReset`         | After `reset()` is called            | —                     |
+| Handler           | Trigger                                                    | Extra context         |
+| ----------------- | ---------------------------------------------------------- | --------------------- |
+| `onPoint`         | A point is accepted and recorded                           | —                     |
+| `onGameComplete`  | That point completes a game (not a combined-point segment) | `gameWinner: 0 \| 1`  |
+| `onSetComplete`   | That point completes a set with a winner                   | `setWinner: 0 \| 1`   |
+| `onMatchComplete` | That point completes a match with a winner                 | `matchWinner: 0 \| 1` |
+| `onMatchTie`      | That point completes a match without a winner              | —                     |
+| `onUndo`          | `undo()` succeeds                                          | —                     |
+| `onRedo`          | `redo()` succeeds                                          | —                     |
+| `onReset`         | `reset()` is called                                        | —                     |
 
-:::note
-Multiple handlers can fire for a single `addPoint()` call. For example, a point that completes a game, a set, and the match will fire `onPoint`, `onGameComplete`, `onSetComplete`, and `onMatchComplete` in that order.
-:::
+| Input level/action                                     | Scoring completion dispatch                                                 |
+| ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| Recorded `addPoint`                                    | Point, then any game/set completion, then match winner or tie               |
+| Winnerless point, completed-match no-op, refused point | No scoring callbacks                                                        |
+| `addGame`, `addSet`, `endSegment`, `setInitialScore`   | Update state/history without the point-driven game/set/match callbacks      |
+| Undo/redo                                              | Their own callbacks; rebuilding does not re-emit historical point callbacks |
+
+Use the returned state after aggregate input rather than relying on `onPoint` or completion handlers
+to refresh the UI. A single accepted point can dispatch multiple callbacks in the listed order.
+
+### Accepted points and no-ops
+
+```ts
+import { scoreGovernor } from 'tods-competition-factory';
+
+const notifications: string[] = [];
+const scorer = new scoreGovernor.ScoringEngine({
+  matchUpFormat: 'SET1-S:TB1',
+  eventHandlers: { onPoint: () => notifications.push('point') },
+});
+scorer.addPoint({}); // winnerless: no callback
+scorer.addPoint({ winner: 0 }); // accepted, completes this one-point match
+scorer.addPoint({ winner: 1 }); // completed-match no-op
+// notifications is ['point']
+```
 
 ### Example: Live Scoreboard
 

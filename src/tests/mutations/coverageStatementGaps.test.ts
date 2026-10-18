@@ -30,7 +30,8 @@ import {
 import { DOUBLE_WALKOVER, TO_BE_PLAYED, DOUBLE_DEFAULT } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
-import { TEAM } from '@Constants/matchUpTypes';
+import { SINGLES_MATCHUP, TEAM } from '@Constants/matchUpTypes';
+import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   CONSOLATION,
   MAIN,
@@ -54,6 +55,8 @@ import {
   STRUCTURE_NOT_FOUND,
   UNLINKED_STRUCTURES,
   MISSING_DRAW_POSITION,
+  INVALID_DRAW_SIZE,
+  MATCHUP_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -143,7 +146,7 @@ describe('scheduleItems guard paths', () => {
       schedule: { scheduledDate: '2020-01-01' },
       matchUpId: 'm1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
   it('addMatchUpScheduleItems returns error without schedule object', () => {
@@ -151,7 +154,7 @@ describe('scheduleItems guard paths', () => {
       drawDefinition: { drawId: 'd1', structures: [] },
       matchUpId: 'm1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('addMatchUpScheduleItems exercises homeParticipantId, courtAnnotation, timeModifiers branches', () => {
@@ -341,7 +344,7 @@ describe('getDrawData guard paths', () => {
 describe('applyLineUps guard paths', () => {
   it('returns error without required params', () => {
     const result = applyLineUps({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('returns error with non-array lineUps', () => {
@@ -351,7 +354,7 @@ describe('applyLineUps guard paths', () => {
       matchUpId: 'm1',
       lineUps: 'not-an-array',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns MATCHUP_NOT_FOUND when matchUp does not exist', () => {
@@ -361,7 +364,7 @@ describe('applyLineUps guard paths', () => {
       matchUpId: 'nonexistent',
       lineUps: [],
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 
   it('returns INVALID_VALUES when lineUp entry is not an array', () => {
@@ -618,7 +621,7 @@ describe('generateVoluntaryConsolation guard paths', () => {
       drawType: FEED_IN,
     });
     // No VOLUNTARY_CONSOLATION entries exist so drawSize would be 0
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_DRAW_SIZE);
   });
 });
 
@@ -671,7 +674,7 @@ describe('removeTieMatchUpParticipant guard paths', () => {
     const result = tournamentEngine.removeTieMatchUpParticipantId({
       tieMatchUpId: 'nonexistent',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
   });
 });
 
@@ -680,10 +683,18 @@ describe('removeTieMatchUpParticipant guard paths', () => {
 // ----------------------------------------------------------------
 describe('replaceTieMatchUpParticipant guard paths', () => {
   it('returns error without required participant ids', () => {
-    const result = tournamentEngine.replaceTieMatchUpParticipantId({
-      tieMatchUpId: 'nonexistent',
+    // a real tieMatchUp and its drawId, so the participant check is reached (without them the call is
+    // refused first, as MISSING_DRAW_ID, which this case used to accept as "some error")
+    const {
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
+      setState: true,
     });
-    expect(result.error).toBeDefined();
+    const tieMatchUpId = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { matchUpTypes: [SINGLES_MATCHUP] } })
+      .matchUps[0].matchUpId;
+    const result = tournamentEngine.replaceTieMatchUpParticipantId({ drawId, tieMatchUpId });
+    expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
   });
 });
 

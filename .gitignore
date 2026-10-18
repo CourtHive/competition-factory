@@ -62,3 +62,6 @@ dist
 # golden corpus harvest output (never committed; see corpus/README.md)
 .corpus-out/
 .notice-coverage/
+
+# verify:docs-examples scratch (removed in finally; ignored in case a run is killed)
+.doc-examples-*/

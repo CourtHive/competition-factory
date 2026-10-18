@@ -7,6 +7,9 @@ import { PAIR, TEAM, INDIVIDUAL } from '@Constants/participantConstants';
 import { UnifiedParticipantID } from '@Types/tournamentTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 
+// constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+
 /**
  * `participantOtherIds` is the participant-grain member of the `Unified*ID` family. It
  * exists because `personOtherIds` cannot cover every competitor: it hangs off
@@ -156,7 +159,7 @@ describe('addParticipantOtherId', () => {
       organisationId: 'ITA',
       personId: 'ita-p-1',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
 
     // the participant-grain mutation accepts
     result = tournamentEngine.addParticipantOtherId({

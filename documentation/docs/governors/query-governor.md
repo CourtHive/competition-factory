@@ -6,6 +6,26 @@ title: Query Governor
 import { queryGovernor } from 'tods-competition-factory';
 ```
 
+## MatchUp query options and ownership
+
+The all-draw, all-event and all-tournament query layers forward these options through drawn matchUps,
+including TEAM child lines. `getDrawData` and `getEventData` expose public structure projections;
+they forward `hydrateParticipants` but do not expose every low-level matchUp option.
+
+| Option / contract                   | Meaning and default                                                                                                                                                                                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `inContext`                         | Tournament query defaults to `true`; draw/event callers should request `true` explicitly when they need hydration. Raw `false` results are mutation references. Other options requiring context can trigger it.                                  |
+| `hydrateParticipants`               | Omitted means full participants on hydrated sides. `false` preserves side IDs, draw positions and scoring facts, but replaces `side.participant` with entry-stage/status and lucky-advancement metadata. It does not disable structural context. |
+| `afterRecoveryTimes`                | Opt-in recovery calculation from the scheduling policy; needs in-context matchUps. Forwarded through event/draw queries and TEAM children. Omit when the consumer does not need readiness/rest fields.                                           |
+| `matchUpFilters.matchUpIds`         | Narrows requested output and hydration early. TEAM parents needed to derive a requested line's context are still considered; structural completion/dependency facts come from the whole structure.                                               |
+| `contextFilters` / `matchUpFilters` | Applied to the relevant raw/context fields. A narrow payload is not permission to omit structural inputs needed to compute it.                                                                                                                   |
+| `contextProfile.exclude`            | Final output redaction, including nested TEAM lines; computation, filtering and completion happen first.                                                                                                                                         |
+| Standalone tournament matchUps      | Also returned by the tournament query, with applicable filters; lack draw/structure/event context. In-context output is copied and strips check-in attribution; raw output exposes stored references.                                            |
+
+Hydrated objects are read projections, not a write API. Apply changes through engine mutations;
+editing a copy returned by `getState`, `getEvent` or an in-context query does not persist them.
+See [performance](../concepts/performance.md) for invocation-scoped reuse and payload/cost choices.
+
 ## allDrawMatchUps
 
 Returns all matchUps from all structures within a draw. See examples in [Draw-Specific](../concepts/matchup-overview.md#draw-specific), [Next MatchUps (Winner/Loser Progression)](../concepts/matchup-overview.md#next-matchups-winnerloser-progression), [Next MatchUps (Progression)](../concepts/matchup-context.mdx#next-matchups-progression), [Build Draw Bracket](../concepts/matchup-context.mdx#build-draw-bracket).
@@ -34,7 +54,7 @@ const { matchUps } = engine.allDrawMatchUps({
 Returns all matchUps for an event. See examples: [Event-Specific](../concepts/matchup-overview.md#event-specific).
 
 ```js
-const { matchUps } = allEventMatchUps({
+const { matchUps } = engine.allEventMatchUps({
   scheduleVisibilityFilters, // { visibilityThreshold: dateString, eventIds, drawIds }
   participantsProfile, // optional - ability to specify additions to context (see parameters of getParticipants())
   matchUpFilters, // optional; [ scheduledDates: [], courtIds: [], stages: [], roundNumbers: [], matchUpStatuses: [], matchUpFormats: []]
@@ -64,7 +84,7 @@ const allPositionsFilled = engine.allPlayoffPositionsFilled({
 
 ## allTournamentMatchUps
 
-Return an array of all matchUps contained within a tournament. These matchUps are returned **inContext**. See examples in [Extension Hydration](../concepts/extensions.md#extension-hydration), [Clear Separation](../concepts/publishing/publishing-workflows.md#clear-separation), [Clear Separation](../concepts/publishing/publishing-workflows.md#clear-separation), [MatchUp Time Items](../concepts/timeItems.md#matchup-time-items), [Example Usage](../concepts/matchup-overview.md#example-usage), and 2 more.
+Return an array of all matchUps contained within a tournament. These matchUps default to **inContext**; `inContext: false` returns stored references. See examples in [Extension Hydration](../concepts/extensions.md#extension-hydration), [Clear Separation](../concepts/publishing/publishing-workflows.md#clear-separation), [Clear Separation](../concepts/publishing/publishing-workflows.md#clear-separation), [MatchUp Time Items](../concepts/timeItems.md#matchup-time-items), [Example Usage](../concepts/matchup-overview.md#example-usage), and 2 more.
 
 ```js
 const { matchUps, groupInfo } = engine.allTournamentMatchUps({
@@ -367,7 +387,7 @@ const { abandonedMatchUps, completedMatchUps, upcomingMatchUps, pendingMatchUps,
 
 ## getCompetitionPenalties
 
-Returns an array of all penalties issued for all tournaments loaded into engine. `penaltyType` is returned as stored: a penalty written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until the record is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified.
+Returns an array of all penalties issued for all tournaments loaded into engine. `penaltyType` is returned as its code: a record written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until it is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified, and the query returns that label's code without changing the record. A value outside the legacy labels is returned as stored.
 
 ```js
 const { penalties } = engine.getCompetitionPenalties();
@@ -440,6 +460,8 @@ const { courts } = engine.getCourts({
 
 Primarily used by `getEventData` for publishing purposes.
 
+Every `matchUp` carries its progression links (`winnerMatchUpId`, and `loserMatchUpId` where a loser link leaves its structure), including in a draw that does not store them: they are derived onto a copy of the draw, and the record is not changed.
+
 ```js
 const {
   drawInfo: {
@@ -450,11 +472,40 @@ const {
   },
   structures,
 } = engine.getDrawData({
-  allParticipantResults, // optional boolean; include round statistics per structure even for elimination structures
+  refreshResults, // optional boolean; recalculate eligible structures rather than using stored results
+  allParticipantResults, // optional boolean; allow missing participant results to be calculated for tally-bearing structures
   contextProfile, // optional: { inferGender: true, withCompetitiveness: true, withScaleValues: true, exclude: ['attribute', 'to', 'exclude']}
   structuresProfile, // optional: 'FULL' (default) | 'STUBS' — how much of each structure to return
   drawId,
 });
+```
+
+---
+
+### Participant results and refresh
+
+`getDrawData` and `getEventData` read stored position-assignment tallies by default. A returned
+participant placement can exist without a stored tally. `allParticipantResults` permits calculation
+when the assembled participant-results list is empty; it is not a guarantee that every placement
+receives fresh statistics. Use `refreshResults: true` to request recalculation explicitly.
+
+Recalculation is limited to tally-bearing structures: round-robin containers, AD_HOC, and LUCKY
+structures as identified by the implementation. Elimination structures are never tallied by these
+projection flags. Use `tallyParticipantResults` explicitly for an analytical tally of supplied
+matchUps, with an appropriate format/policy; do not request it by relying on an elimination projection.
+
+Round-robin containers refresh each group from that group's matchUps, with the caller's tally policy
+or the effective draw/event/tournament policy. A TEAM group tallies parent duals, excluding child
+lines from the ranking input. A structure's `report` belongs to that structure's refresh and is not
+carried into a subsequent qualifying/playoff/elimination structure. Refresh operates on the query
+projection; it is not a mutation that stores replacement tallies.
+
+```js
+// For a draw containing RR groups plus qualifying/playoff structures:
+const { structures, error } = engine.getDrawData({ drawId, refreshResults: true });
+if (error) throw new Error(error.message);
+// Read each structure's participantResults/report separately. RR results are group-local;
+// an elimination playoff is not ranked and does not inherit an RR report.
 ```
 
 ---
@@ -599,6 +650,8 @@ One structure's data — the drill-in tier of the payload decomposition. A clien
 [`structuresProfile: 'STUBS'`](#structuresprofile), then fetches exactly the structure it is about to
 render.
 
+As with [`getDrawData`](#getdrawdata), a draw that does not store its progression links is read from a copy that carries them.
+
 ```js
 const { structure, drawInfo } = engine.getStructureData({
   drawId,
@@ -625,11 +678,14 @@ empty result for a public reader rather than an error.
 
 Returns event information optimized for publishing: `matchUps` have context and separated into rounds for consumption by visualization libraries such as `tods-react-draws`. See examples: [Event Data Payload](../concepts/publishing/publishing-data-subscriptions.md#event-data-payload), [Event Data](../concepts/publishing/publishing-workflows.md#event-data), [Test Publish State](../concepts/publishing/publishing-workflows.md#test-publish-state).
 
+Every `matchUp` carries its progression links (`winnerMatchUpId`, and `loserMatchUpId` where a loser link leaves its structure), including in a draw that does not store them: they are derived onto a copy of the draw, and the record is not changed.
+
 See [Policies](../concepts/policies.md) for more details on `policyDefinitions`.
 
 ```js
 const { eventData } = engine.getEventData({
-  allParticipantResults, // optional boolean; include round statistics per structure even for elimination structures
+  refreshResults, // optional boolean; recalculate eligible structures rather than using stored results
+  allParticipantResults, // optional boolean; allow missing participant results to be calculated for tally-bearing structures
   participantsProfile, // optional - ability to specify additions to context (see parameters of getParticipants())
   policyDefinitions, // optional
   usePublishState, // optional - filter out draws which are not published; enforces embargo timestamps
@@ -2501,7 +2557,7 @@ const { tournamentPersons } = engine.getTournamentPersons({
 
 ## getTournamentPenalties
 
-Returns an array of all penalties issued during a tournament. `penaltyType` is returned as stored: a penalty written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until the record is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified.
+Returns an array of all penalties issued during a tournament. `penaltyType` is returned as its code: a record written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until it is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified, and the query returns that label's code without changing the record. A value outside the legacy labels is returned as stored.
 
 ```js
 const { penalties } = engine.getTournamentPenalties();

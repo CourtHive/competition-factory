@@ -106,7 +106,7 @@ This is incredibly useful for:
 // Get specific data
 const { events } = dev.tournamentEngine.getEvents();
 const { participants } = dev.tournamentEngine.getParticipants();
-const { drawDefinitions } = dev.tournamentEngine.getDrawDefinitions();
+const drawDefinitions = events.flatMap((event) => event.drawDefinitions ?? []);
 
 // Inspect event details
 events.forEach((event) => {
@@ -291,13 +291,10 @@ console.timeEnd('generateDraw');
 ### Data Validation
 
 ```js
-// Check tournament validity
-const { valid, errors } = dev.tournamentEngine.validateTournament();
-
-if (!valid) {
-  console.error('Tournament validation errors:', errors);
-  errors.forEach((e) => console.log(`- ${e.type}: ${e.message}`));
-}
+// Check the implemented integrity rules (not every possible tournament constraint)
+const { valid, inconsistencies = [], error } = dev.tournamentEngine.getTournamentInconsistencies();
+if (error) console.error(error);
+if (!valid || inconsistencies.length) console.table(inconsistencies);
 ```
 
 ### Export for Support
@@ -413,7 +410,9 @@ const helpers = {
   count: () => ({
     participants: dev.tournamentEngine.getParticipants().participants.length,
     events: dev.tournamentEngine.getEvents().events.length,
-    draws: dev.tournamentEngine.getDrawDefinitions().drawDefinitions.length,
+    draws: dev.tournamentEngine
+      .getEvents()
+      .events.reduce((count, event) => count + (event.drawDefinitions?.length ?? 0), 0),
   }),
 
   // Export tournament

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { INVALID_CONFIGURATION } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import {
@@ -83,7 +84,7 @@ describe('PAGE_PLAYOFF draw type', () => {
     let result: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: PAGE_PLAYOFF }],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_CONFIGURATION);
   });
 
   it('structure abbreviations are set correctly', () => {

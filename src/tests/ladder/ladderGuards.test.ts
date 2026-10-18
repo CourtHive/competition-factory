@@ -12,6 +12,7 @@ import { getChallengeState } from '@Query/ladder/getChallengeState';
 import { issueChallenge } from '@Mutate/ladder/issueChallenge';
 
 // constants
+import { INVALID_VALUES, MATCHUP_NOT_FOUND, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { FORFEIT, FORFEIT_POSITION, RANK, RATING, RESULT, SWAP, PENDING } from '@Constants/ladderConstants';
 import { LADDER, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { CHALLENGED, COMPLETED } from '@Constants/matchUpStatusConstants';
@@ -208,7 +209,7 @@ describe('resolution failures', () => {
       drawDefinition,
       appliedAt: AT,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 
   test('a FORFEIT movement naming a participant who is not seated', () => {
@@ -221,7 +222,7 @@ describe('resolution failures', () => {
       drawDefinition,
       appliedAt: AT,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   test('FORFEIT_POSITION with nobody to take the position is refused', () => {
@@ -245,7 +246,7 @@ describe('resolution failures', () => {
       ],
     });
     const result: any = applyLapseConsequence({ participantId: 'p1', appliedAt: AT, structure, drawDefinition });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.info).toMatch(/challenger/);
   });
 });

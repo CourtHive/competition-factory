@@ -146,6 +146,21 @@ anything there, so a first entry always takes the propagating branch. With both 
 goes to `winningSideWithDownstreamDependencies`; a directing status or disabled auto-calc goes to
 `applyMatchUpValues`; anything else is `ERR_NO_VALID_ACTIONS`.
 
+**A matchUp in play downstream is active** (CA, 2026-10-18, P57): _"downstream matchUps e.g. "the
+match it feeds" should be considered active and a source matchUp (a matchUp earler in the dependency
+chain) should not be able to be re-scored as unfinished! a downstream matchUp AWAITING_RESULT should
+be considered an active matchUp also"_. `isActiveDownstream` counts a winner or loser target as active
+when it has a decided result, as before, **or** when it is in play: its status is IN_PROGRESS,
+SUSPENDED, AWAITING_RESULT or INCOMPLETE, or its score has a value. A BYE or an exit is not judged by
+play; its activity remains a question of provenance. So with the final in play, re-scoring a
+completed semifinal as unfinished is refused the way it is when the final is COMPLETED: IN_PROGRESS,
+AWAITING_RESULT or a clear is row 9 (`ERR_INCOMPATIBLE_MATCHUP_STATUS`), a score with no status and
+no winner is row 15 (`ERR_NO_VALID_ACTIONS`), and another winner is row 14. A correction that keeps
+the winner is still accepted, and `allowChangePropagation` still swaps. Both implementations read
+the one query (`getTargetsDownstream`), so v1 and v2 change together. Before 2026-10-18 the re-score
+was accepted through `noDownstreamDependencies`, which took the advanced participant back out of the
+final and left it TO_BE_PLAYED with no score (`inPlayDownstreamIsActive.test.ts`).
+
 **`allowChangePropagation` with a different winner on a matchUp that has one** swaps winner and
 loser everywhere they have gone (`swapWinnerLoser`), rather than refusing.
 
@@ -164,7 +179,17 @@ TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `s
    if given) and `matchUpStatusCodes` are written.
 3. **Status codes are split at this boundary**: the positional array a client sends (`['', 'DM']`)
    becomes `sideStatusCodes` keyed by side, with the exiting side taken from `winningSide`, not from
-   the index.
+   the index. **Only a client's array is split** (census A1 residue F1b, 2026-10-18). An engine write
+   whose array is not client input (a propagation in `progressExitStatus`; the convergence reconcile and the
+   forward writes in `doubleExitAdvancement`, which re-store the target's own, possibly derived,
+   array; the unwinds in `removeDoubleExit`) passes `derivedStatusCodes`, naming the matchUp it
+   describes. Its array is stored as given. It keeps the reasons the matchUp already holds, plus
+   the real reason it carries for the arriving side, on the sides that exited: both sides of a double
+   exit, the losing side of a single exit. A bare `WO` or `DEF` that the projection wrote is never a
+   reason. The choice is made by origin, not by value: a client's `['WO']` is still split as its
+   reason. v2 plans only the requested matchUp's own write, from client input, and compares
+   `matchUpStatusCodes` as display; it plans no `sideStatusCodes` and no propagation write, so there
+   is nothing to mirror there.
 4. **`scoredTime`** is stamped on `schedule` the first time the matchUp becomes scored (a score with
    value, a winner, or a completed status), kept through corrections, and deleted when the result is
    removed. It is first-class in NATIVE and has no timeItem mirror.
@@ -196,7 +221,9 @@ After the write, and only on success:
 
 1. **Direction.** A winner is advanced to the winner target; the loser is directed along the loser
    link, if the structure has one. A changed result first **removes** what the previous one directed
-   (`removeDirectedParticipants`), and that is where `ERR_ACTIVE_DRAW_POSITION` can arise.
+   (`removeDirectedParticipants`), and that is where `ERR_ACTIVE_DRAW_POSITION` can arise. A loser taken
+   back leaves every seat their loss reached, a link further on included, and no exit stays awarded to
+   a seat so emptied (census A1, `aSeatEmptiedFurtherOnLeavesNoAwardBehind`).
 2. **Exit propagation.** WALKOVER, DEFAULTED and (by policy) RETIRED carry into the consolation the
    loser is fed to; a double exit produces exits downstream. The rules are on
    [exit propagation](./exit-propagation.md) and are not repeated here. `progressExitStatus` iterates
@@ -239,7 +266,9 @@ After the write, and only on success:
    refused call included (census family F2).
 5. **The draw is settled**: held exits are released (`settleHeldExits`), including to a participant
    who already passed the BYE holding them and carries no exit of their own (only an exit whose
-   origin is still a double exit travels this way), and a final that feeds a
+   origin is still a double exit travels this way); the drawPosition opposite a lone BYE, a
+   participant or an empty seat the structure placed there, goes on where its next matchUp has room
+   (`reconcileByeAdvancements`; census A1, `theSeatLeftOppositeAByeGoesOn`); and a final that feeds a
    decider settles whether the decider is needed (`reconcileDeciders`) when a final's winner changed,
    or when the cascade moved a decider while the final's winner stayed put (7.8.0). A mutation OF the
    decider never triggers it, so a decider played anyway keeps its result; in a TEAM draw a line of the
@@ -270,16 +299,20 @@ After the write, and only on success:
 - **A completed matchUp with a valid winning score cannot be reverted to a live status without a new
   result**; submit a corrected outcome or clear first.
 - The properties the exit-propagation harness checks (`DO_UNDO_IDENTITY`, `IDEMPOTENT_REAPPLY`,
-  `MONOTONIC_DECISION`) are stated in the corpus vocabulary (`corpus/INVARIANTS.md`) and hold on
-  generated draws across the 600-cell matrix and the census; on real records, see § 8
-  (real-record do/undo) and the clear that normalises in § 4.
+  `MONOTONIC_DECISION`) are stated in the corpus vocabulary (`corpus/INVARIANTS.md`) and measured on
+  the generated fixtures in the matrix and census. These are intended invariants, not a universal proof.
+  On real records, see § 8 (real-record do/undo) and the clear that normalises in § 4.
 
 ## 7. Write mode
 
-In NATIVE mode (the default since 5.0.0) `scoredTime` is written on `matchUp.schedule` and nothing
-here touches `timeItems`. In LEGACY and BRIDGE modes the pipeline is unchanged; the schedule
-attributes it stamps follow `setFirstClassOrTimeItem`. The result, status and codes are first-class
-in every mode.
+In NATIVE mode (the default since 5.0.0), schedule stamps such as `scoredTime` use first-class
+`matchUp.schedule` attributes. LEGACY uses the corresponding timeItems; BRIDGE writes both via
+`setFirstClassOrTimeItem`. Result, status and scoring codes remain first-class.
+
+This storage mapping is not evidence that exit behavior is identical across modes. Provenance writes
+are mode-gated and propagation decisions read provenance; a NATIVE census result must not be reported
+as LEGACY/BRIDGE validation. Cross-mode compatibility requires its own fixtures and replay evidence.
+See [harness measurement limits](../testing/exit-propagation-harness.md#measurement-limits).
 
 ## 7.1 Two implementations (S2)
 
@@ -320,16 +353,49 @@ setting. An exit arriving at a BYE in its structure's last round meets the exit 
 it, and v2 plans the two converging, as v1's settle step converges them (census run-17 baseline, DOUBLE_ELIMINATION
 8/5 under `doubleExitPropagateBye: false`).
 
+**A carry past a BYE is recorded beside the BYE, in every round and in either entry order** (F2, census A1,
+2026-10-17). A participant carrying their own walkover or default into a seat beside a BYE goes through it, and v1
+writes their carry entry (the exit and the matchUp it came from) on the side of the BYE matchUp they passed, as well as
+where they land. It does so whether the carrier was seated first and the BYE arrived after them, or the BYE stood there
+first; before this, the BYE-first order wrote the entry only in a structure's last round, so the same results entered in
+the two orders left two draws. v2 reads that entry on the BYE matchUp as an exit standing there, as it reads any carried
+entry, and plans a convergence with it when an arriving exit meets it. A BYE matchUp written before this, BYE first
+and outside the last round, holds only the BYE claim; for it v2 still reads the carry where the carrier landed, a round
+on. One carry counts once: an entry where the carrier landed that names an origin the BYE matchUp already records is
+not read a second time. An entry left beside a BYE whose carrier's seat has since gone to a BYE, because a correction
+made the carrier's origin a double exit, is not a held exit, and the settle step does not send it on; only that double
+exit's produced exit travels from there.
+
+**What a divergence leaves behind: nothing.** An error changes nothing (2026-10-18), and a
+divergence is an error raised after v1 has written: v2 plans and never writes, v1 runs and writes,
+and only then does the comparison throw. So before v1 runs, differential mode captures what the call
+can touch (the tournament record, the draw and the event), the notice buffer and the mutation flag,
+and before the divergence leaves `setMatchUpStatus` it writes them back into the same objects. The
+record is then exactly as it was before the call, on every path:
+
+- with or without `rollbackOnError`, directly or inside `executionQueue`, and on the async engine;
+- the result is `{ error }` carrying the divergence message, and nothing is notified;
+- the record is not stamped as modified (a state provider without the optional
+  `setMutationStatus` has its flag cleared instead, as a rollback clears it);
+- under `devContext` the divergence is rethrown, over the same unchanged record.
+
+Pinned by `divergenceLeavesBehind.test.ts`. The capture is taken only in `differential` mode;
+`v1` and `v2` take none. A divergence is still a failing signal, not a result to build on: the
+suite's rethrowing provider fails the test, and the exit-propagation census records it as
+`NO_EXCEPTION_ESCAPES`. Inside a `bulkMatchUpStatusUpdate`, the outcomes applied before the one
+that diverged stay written unless the call asked for `rollbackOnError`, the same as for any refusal
+a later outcome meets (§ 8).
+
 ## 8. What the corpus pins
 
-|                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setMatchUpStatus` steps recorded | 50,559 (recorded tests, matrix, census, route flips, fixtures)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| refusal codes observed            | 18 (§ 2), none declared in the entry file                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `setMatchUpState`                 | exported as an engine method, eleven declared codes, **no caller** in the corpus: an internal that leaked onto the surface. **Deprecated** on the engine surface in 7.5.0 and removed at the next major; its internal callers keep it, and consumers call `setMatchUpStatus`                                                                                                                                                                                                                                                                                        |
-| `bulkMatchUpStatusUpdate`         | 1 recorded step; its two declared codes pinned by `authored/outcome-pipeline/bulk-update-refusals`: `ERR_MISSING_VALUE` for no `outcomes`, `ERR_MISSING_TOURNAMENT` for an unknown `tournamentId`                                                                                                                                                                                                                                                                                                                                                                   |
-| real-record do/undo               | 7 of 11 probed fixtures restore the draw projection; 4 do not (§ 4)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| authored scenarios                | 13 (`pnpm corpus:authored`), one per rule above that the recorded sources did not reach: the flag precedence (§ 1, three scenarios), rows 5, 9, 10 and 14 of § 2 with every condition of row 9, the swap (§ 3), a double exit entered over a completed result (§ 4), the FMLC loser kept out and a decider's settlement (§ 5), the double-exit no-op (§ 6), two double exits converging, a TEAM dual handed back to auto-calc, the bulk refusals. Each asserts the result code of every step and, where a flag's effect is the claim, the state the patches rebuild |
+|                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setMatchUpStatus` steps recorded | 50,559 (recorded tests, matrix, census, route flips, fixtures)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| refusal codes observed            | 18 (§ 2), none declared in the entry file                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `setMatchUpState`                 | exported as an engine method, eleven declared codes, **no caller** in the corpus: an internal that leaked onto the surface. **Deprecated** on the engine surface in 7.5.0 and removed at the next major; its internal callers keep it, and consumers call `setMatchUpStatus`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `bulkMatchUpStatusUpdate`         | 1 recorded step; its declared codes pinned by `authored/outcome-pipeline/bulk-update-refusals`: `ERR_MISSING_VALUE` for no `outcomes`, `ERR_MISSING_TOURNAMENT` for an unknown `tournamentId`, `ERR_MISSING_EVENT_ID` for an outcome without an `eventId`. Every outcome is located (tournament, event, draw, matchUp) before any is applied, so an outcome naming something not there is refused with its `outcomeIndex` in `context` and nothing is written; it used to be skipped while the call reported success (2026-10-18). A refusal `setMatchUpStatus` raises for a later outcome still leaves the earlier ones written unless the call asked for `rollbackOnError`. It forwards every per-call `setMatchUpStatus` option (the three flags of § 1 among them), set on the call or on one outcome, so a bulk entry follows the same rules as a single one |
+| real-record do/undo               | 7 of 11 probed fixtures restore the draw projection; 4 do not (§ 4)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| authored scenarios                | 13 (`pnpm corpus:authored`), one per rule above that the recorded sources did not reach: the flag precedence (§ 1, three scenarios), rows 5, 9, 10 and 14 of § 2 with every condition of row 9, the swap (§ 3), a double exit entered over a completed result (§ 4), the FMLC loser kept out and a decider's settlement (§ 5), the double-exit no-op (§ 6), two double exits converging, a TEAM dual handed back to auto-calc, the bulk refusals. Each asserts the result code of every step and, where a flag's effect is the claim, the state the patches rebuild                                                                                                                                                                                                                                                                                               |
 
 ## 9. Open questions — decided 2026-10-01 (CA)
 

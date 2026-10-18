@@ -1,4 +1,5 @@
 import { deleteMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
+import { modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 
 // constants
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -26,7 +27,15 @@ export function resetVoluntaryConsolationStructure({ tournamentRecord, drawDefin
   });
 
   if (resetEntries) {
+    const before = drawDefinition.entries.length;
     drawDefinition.entries = drawDefinition.entries.filter((entry) => entry.entryStage !== VOLUNTARY_CONSOLATION);
+    if (drawDefinition.entries.length !== before) {
+      modifyDrawEntriesNotice({
+        tournamentId: tournamentRecord?.tournamentId,
+        eventId: event?.eventId,
+        drawDefinition,
+      });
+    }
   }
 
   modifyDrawNotice({

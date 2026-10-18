@@ -14,6 +14,7 @@ import {
 } from '@Global/state/globalState';
 
 // constants
+import { MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
 // An integrator's flow, as a document-database integration described it (2026-10-15):
@@ -184,7 +185,7 @@ describe('borrowed mode with a per-request provider', () => {
       return { result, modified, matchUpId };
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
     expect(result.rolledBack).toEqual(false);
     // the borrowed record holds the write made before the refusal...
     expect(storedMatchUp(tournamentRecord, matchUpId).winningSide).toEqual(1);

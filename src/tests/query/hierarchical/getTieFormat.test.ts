@@ -4,8 +4,14 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { MISSING_DRAW_ID, MISSING_TOURNAMENT_RECORD, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
+import {
+  MISSING_DRAW_ID,
+  MISSING_TOURNAMENT_RECORD,
+  MISSING_VALUE,
+  MATCHUP_NOT_FOUND,
+  STRUCTURE_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 
 describe('getTieFormat', () => {
   // Unit tests - parameter validation
@@ -65,7 +71,7 @@ describe('getTieFormat', () => {
       matchUpId: undefined as any,
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
   });
 
   it('returns error when matchUpId is invalid', () => {
@@ -78,7 +84,7 @@ describe('getTieFormat', () => {
       matchUpId: 'nonexistent',
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 
   // Integration tests with team events
@@ -413,6 +419,6 @@ describe('getTieFormat', () => {
     });
 
     // Should handle gracefully
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 });

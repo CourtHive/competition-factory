@@ -355,6 +355,10 @@ withPlayoffs: {
 
 See also: [Custom Playoff Topologies](../concepts/draw-links.mdx#custom-playoff-topologies), [addPlayoffStructures](/docs/governors/draws-governor#addplayoffstructures)
 
+With the `drawId` of a draw already in the event (adding qualifying to a generated main), the draw is built on a
+**copy** and the record is left as it was: commit the result with
+`addDrawDefinition({ drawDefinition, allowReplacement: true })`, which announces it.
+
 ---
 
 ## generateDrawMaticRound

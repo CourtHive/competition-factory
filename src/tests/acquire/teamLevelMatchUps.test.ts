@@ -1,5 +1,5 @@
-import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -11,6 +11,9 @@ import { SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
+
+// constants
+import { MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
 
 test('in context, a TEAM draw reads as its TEAM matchUps: the rubbers sharing their round are left out', () => {
   const {
@@ -99,7 +102,7 @@ test('the structure getter stays tie-inclusive in raw and contextual modes', () 
 
 test('the structure getter keeps empty result collections on refusal', () => {
   const result = getAllStructureMatchUps({});
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_STRUCTURE);
   expect(result.matchUps).toEqual([]);
   expect(result.roundMatchUps).toEqual({});
   expect(result.collectionPositionMatchUps).toEqual({});

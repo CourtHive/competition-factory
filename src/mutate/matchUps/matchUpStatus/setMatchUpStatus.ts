@@ -3,8 +3,10 @@ import { reconcileMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/
 import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getDeciderSnapshot, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
+import { settleForwardConsequences } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { reconcileStaleExitOrigins } from '@Mutate/matchUps/matchUpStatus/reconcileStaleExitOrigins';
 import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
+import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { reconcileByeAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileByeAdvancements';
 import { reconcileCarriesPastByes } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
@@ -175,10 +177,24 @@ function settleDraw({
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
   const settled = settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinition, event });
   if (settled.error) return settled;
+  // A convergence produced there serves its loser link, and the BYE it can place there stands in front of a carrier: the
+  // carry past it was asked above, before that BYE existed, so it is asked again (census A1 wave 5, COMPASS 32:
+  // `Southwest|2|1` stayed TO_BE_PLAYED under its carrier until the same outcome was entered a second time;
+  // `aCarryPastAConvergencesByeIsCarriedOnTheFirstEntry`)
+  if ((settled as { produced?: boolean }).produced) {
+    const carriedAgain = reconcileCarriesPastByes({ tournamentRecord, drawDefinition, event });
+    if (carriedAgain?.error) return carriedAgain;
+  }
 
   // and a participant opposite a BYE whose next seat was taken when the BYE landed, and is free now, goes on
   const advanced = reconcileByeAdvancements({ tournamentRecord, drawDefinition, event });
   if (advanced?.error) return advanced;
+
+  // a held exit sent on above can decide a round feeding another structure, so its winner is seated there now, before
+  // the decider is settled: asked only before it, the crossing waited for the NEXT call (census int2 nonrt,
+  // DOUBLE_ELIMINATION 8/5 21037067: a double walkover at `Main|2|1` sent the Backdraw's held exit into the final,
+  // which its champion won and was not seated in the decider until the same outcome was entered again)
+  reconcileMissedLinkAdvancements({ tournamentRecord, drawDefinition, event });
 
   // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
   return reconcileDeciders({
@@ -428,6 +444,26 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   });
   const drawSettled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
   if (drawSettled.error) return decorateResult({ result: drawSettled, stack });
+  // what forward play sends on from a result is sent on from one a removal re-derived: asked of the settled draw
+  const forward = settleForwardConsequences({
+    tournamentRecord: params.tournamentRecord,
+    drawDefinition: params.drawDefinition,
+    event: params.event,
+    propagateExitStatus,
+  });
+  if (forward?.error) return decorateResult({ result: forward, stack });
+  // A direction the forward settle makes can put a BYE back in front of a carrier: a loser it directs re-forms a double
+  // exit, whose loser seat takes its BYE again. The carry past a late BYE was asked in `settleDraw`, before that BYE
+  // existed, so it is asked again (census A1 wave 3 R12, COMPASS 32: `Southeast|2|1` left TO_BE_PLAYED under its
+  // carrier; `aCarryPastAByeTheSettleReplacesIsCarriedAgain`).
+  if (forward?.settled) {
+    const carried = reconcileCarriesPastByes({
+      tournamentRecord: params.tournamentRecord,
+      drawDefinition: params.drawDefinition,
+      event: params.event,
+    });
+    if (carried?.error) return decorateResult({ result: carried, stack });
+  }
   // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
   // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
   reconcileLinkAdvancements({
@@ -436,6 +472,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event: params.event,
   });
   const warnings = [
+    ...(forward?.exhausted ? [{ code: FORWARD_SETTLE_EXHAUSTED, matchUpIds: [forward.exhausted] }] : []),
     ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
     ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
   ];

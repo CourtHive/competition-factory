@@ -2,6 +2,7 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { modifiedVenueNotices, venueSnapshot } from './venueNotices';
 
 // constants
 import { COURT_IDS, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
@@ -17,7 +18,9 @@ export function enableCourts(params) {
 
   const { enableAll, courtIds, dates } = params;
   for (const tournamentRecord of Object.values(tournamentRecords)) {
+    const snapshot = venueSnapshot(tournamentRecord);
     courtsEnable({ tournamentRecord, courtIds, enableAll, dates });
+    modifiedVenueNotices({ tournamentRecord, snapshot });
   }
 
   return { ...SUCCESS };

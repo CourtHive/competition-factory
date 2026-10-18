@@ -19,6 +19,9 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * provenance entry as an exit, so the BYE's claim made the lone pending exit look like a convergence, the rule
  * declined, and the generic advance overwrote the matchUp TO_BE_PLAYED while its provenance still recorded the
  * walkover (ORIGIN_ON_UNDECIDED_MATCHUP, PROPAGATED_EXIT_LOST). It counts exits only.
+ *
+ * Since a BYE origin waits for its feeder to deliver, this schedule no longer records the BYE's claim: the BYE in
+ * `South|2|2` still awaits its other seat. The outcome below is unchanged.
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
@@ -59,9 +62,11 @@ it('the produced walkover stands, pending, with the advanced position beside it'
     expect(result.success).toEqual(true);
   }
   const matchUp = find('South|3|1');
-  // CONTROL: the shape is reached, a position advanced into the produced walkover beside the BYE's claim
+  // CONTROL: the shape is reached, a position advanced into the produced walkover. The BYE's claim is no longer
+  // recorded beside it: `South|2|2` is a BYE whose other seat (drawPosition 5) holds nobody yet, so it has delivered
+  // nothing and the side records no origin (`aByeOriginWaitsForItsFeederToDeliver`)
   expect(matchUp.drawPositions.filter(Boolean)).toHaveLength(1);
-  expect(Object.values(matchUp.sideExitProvenance ?? {}).map((entry: any) => entry.matchUpStatus)).toContain('BYE');
+  expect(Object.values(matchUp.sideExitProvenance ?? {}).map((entry: any) => entry.matchUpStatus)).toEqual([WALKOVER]);
   expect(matchUp.matchUpStatus).toEqual(WALKOVER);
   expect(matchUp.winningSide).toBeUndefined();
   expect(tournamentEngine.getDrawInconsistencies({ drawId }).inconsistencies ?? []).toEqual([]);

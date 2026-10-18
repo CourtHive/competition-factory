@@ -30,6 +30,8 @@ import {
   EVENT_NOT_FOUND,
   MISSING_TIME_ITEM,
   INVALID_TIME_ITEM,
+  MATCHUP_NOT_FOUND,
+  MISSING_PENALTY_TYPE,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -48,26 +50,27 @@ const minimalTournament = (id = 't1') => ({
 // 1. penalties/addPenalty  – !penaltyType guard (line 86)
 // ----------------------------------------------------------------
 describe('addPenalty inner guards', () => {
-  it('hits penaltyAdd !penaltyType guard when called with matching participantIds but no penaltyType', () => {
+  it('refuses a missing penaltyType as such, before any record is touched', () => {
     const result = addPenalty({
       tournamentRecords: { t1: minimalTournament() } as any,
       participantIds: ['p1'],
       penaltyType: undefined as any,
       penaltyCode: 'TEST',
     });
-    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
+    // this used to report PARTICIPANT_NOT_FOUND: the per-record refusal was discarded
+    expect(result.error).toEqual(MISSING_PENALTY_TYPE);
   });
 
-  it('hits penaltyAdd !tournamentRecord guard via undefined value in tournamentRecords', () => {
-    // The outer function iterates Object.values(tournamentRecords).
-    // If a value is undefined/null, penaltyAdd's !tournamentRecord guard fires.
+  it('an undefined value in tournamentRecords holds no participants, so none is found', () => {
+    // penaltyAdd's own !tournamentRecord guard is not reachable from here: addPenalty only calls it for a
+    // record holding a matching participant, and an undefined record holds none
     const result = addPenalty({
       tournamentRecords: { t1: undefined } as any,
       participantIds: ['p1'],
       penaltyType: BALL_ABUSE as any,
       penaltyCode: 'TEST',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_FOUND);
   });
 
   it('returns PARTICIPANT_NOT_FOUND when no participants match', () => {
@@ -295,7 +298,7 @@ describe('checkInParticipant param guards', () => {
       participantId: 'p1',
       matchUpId: 'nonexistent-matchup',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 });
 
@@ -329,7 +332,7 @@ describe('checkOutParticipant param guards', () => {
       participantId: 'p1',
       matchUpId: 'nonexistent-matchup',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 
   it('returns error for invalid participantId', () => {
@@ -343,7 +346,7 @@ describe('checkOutParticipant param guards', () => {
       participantId: undefined as any,
       matchUpId: 'm1',
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
   });
 });
 

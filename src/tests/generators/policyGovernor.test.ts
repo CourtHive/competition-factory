@@ -120,7 +120,9 @@ it('can set and remove policies from tournamentRecords and events', () => {
 
   const { tournamentRecord: updatedRecord3 } = tournamentEngine.getTournament();
   expect(updatedRecord3.events.length).toEqual(1);
-  expect(updatedRecord3.events[0].extensions.length).toEqual(1);
+  // the event held only its own avoidance policy: the tournament's scoring policy is inherited, not copied onto it
+  // (attaching once wrote every inherited policy onto the element, CA 2026-10-18: a bug)
+  expect(updatedRecord3.events[0].extensions.length).toEqual(0);
 
   result = tournamentEngine.attachPolicies({
     policyDefinitions: { ...AVOIDANCE_COUNTRY, ...POLICY_SCORING_DEFAULT },
@@ -202,11 +204,18 @@ it('can find policies whether on event or tournamentRecord', () => {
   }));
   expect(policy.policyName).toEqual('Nationality Code');
 
+  // a policy inherited from the tournament does not block the event's own (CA 2026-10-18: it refused with
+  // EXISTING_POLICY_TYPE); a second attach to the SAME event does, unless allowReplacement
   result = tournamentEngine.attachPolicies({
     policyDefinitions: scoringPolicy,
     eventId,
   });
+  expect(result.success).toEqual(true);
 
+  result = tournamentEngine.attachPolicies({
+    policyDefinitions: scoringPolicy,
+    eventId,
+  });
   expect(result.error).toEqual(EXISTING_POLICY_TYPE);
 
   result = tournamentEngine.attachPolicies({

@@ -212,7 +212,7 @@ describe('resetScorecard', () => {
       drawDefinition,
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_MATCHUP);
   });
 
   it('handles matchUp with empty tieMatchUps array', () => {

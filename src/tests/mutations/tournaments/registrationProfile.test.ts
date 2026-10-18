@@ -3,6 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
+import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 
 describe('registrationProfile', () => {
@@ -117,7 +118,7 @@ describe('registrationProfile', () => {
     const result: any = tournamentEngine.setRegistrationProfile({
       registrationProfile: { entryFees: [{ amount: 50, currencyCode: 'USD' }] },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('sets regulations and sponsors', () => {
@@ -205,9 +206,9 @@ describe('registrationProfile', () => {
     let result: any = tournamentEngine.setRegistrationProfile({
       registrationProfile: { entriesOpen: '2026-05-01' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
 
     let queryResult: any = tournamentEngine.getRegistrationProfile();
-    expect(queryResult.error).toBeDefined();
+    expect(queryResult.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 });

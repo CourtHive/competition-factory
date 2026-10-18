@@ -37,6 +37,9 @@ import {
   MISSING_VALUE,
   NOT_FOUND,
   PARTICIPANT_NOT_FOUND,
+  INVALID_MATCHUP_STATUS,
+  INVALID_TIE_FORMAT,
+  MISSING_MATCHUP,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -240,7 +243,7 @@ describe('getNumericSeedValue branch coverage', () => {
 describe('getHomeParticipantId branch coverage', () => {
   it('returns error when matchUp is missing', () => {
     const result = getHomeParticipantId({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_MATCHUP);
   });
 
   it('returns homeParticipantId when schedule is falsy', () => {
@@ -320,7 +323,7 @@ describe('attemptToSetMatchUpStatusBYE branch coverage', () => {
       structure: undefined,
       matchUp: { winningSide: 1 },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
   });
 
   it('returns error when matchUp does not include BYE position', () => {
@@ -411,7 +414,7 @@ describe('regenerateParticipantNames branch coverage', () => {
 describe('checkTieFormat branch coverage', () => {
   it('returns error for invalid tieFormat', () => {
     const result = checkTieFormat({ tieFormat: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIE_FORMAT);
   });
 
   it('adds collectionIds when missing', () => {

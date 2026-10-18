@@ -2,6 +2,7 @@ import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems
 import { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGrid';
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { applyScenarioState, ScenarioConflict } from './scenarioState';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { extractDate } from '@Tools/dateTime';
 import { now } from '@Tools/clock';
@@ -34,6 +35,9 @@ import { HydratedMatchUp } from '@Types/hydrated';
  */
 
 type ScenarioProfile = {
+  checkedIn?: { withinMinutes: number };
+  called?: { withinMinutes: number };
+  conflicts?: ScenarioConflict[];
   minutesBeforeAnchor?: number;
   assignCourts?: boolean;
   anchor?: string;
@@ -179,8 +183,13 @@ export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: Appl
     if (scheduleDates.length) scheduleProfileGrid({ tournamentRecords, scheduleDates });
   }
 
+  // operational state and deliberate conflicts come last of all: they describe the schedule as it stands
+  const state = applyScenarioState({ ...scenarioProfile, tournamentRecord, anchorDate });
+  if ('error' in state) return decorateResult({ result: state, stack: 'applyScenarioProfile' });
+
   return {
     ...SUCCESS,
+    ...state,
     anchoredTo: anchorDate.toISOString(),
     shiftMinutes: Math.round(deltaMs / 60_000),
     shiftedCount,

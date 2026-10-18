@@ -14,20 +14,12 @@ const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
 // ... score points ...
 
 const episodes = engine.getEpisodes();
-// Returns an array of Episode objects, one per point:
-// {
-//   point,         // Original point data (winner, server, result, etc.)
-//   gameScore,     // Game score at this point
-//   setScore,      // Set score at this point
-//   matchScore,    // Match score at this point
-//   gameNumber,    // Current game number within the set
-//   setNumber,     // Current set number
-//   isBreakPoint,  // Whether this point was a break point
-//   isGamePoint,   // Whether this point was a game point
-//   isSetPoint,    // Whether this point was a set point
-//   isMatchPoint,  // Whether this point was a match point
-//   ...
-// }
+// One episode per recorded point:
+// { action: 'addPoint', point, game, set, needed, nextService, result, complete }
+// point: { index, number, winner, server, score, result }
+// game: { index, isTiebreak, complete, winner }
+// set: { index, complete, winner }
+// needed: { pointsToGame, pointsToSet, pointsToMatch, gamesToSet, isBreakpoint }
 ```
 
 Episodes are the primary data source for building point-by-point visualizations. They provide the narrative arc of a match in a format ready for charting libraries.
@@ -91,11 +83,12 @@ Arrange points in a grid layout where cell size represents rally length and colo
 ```js
 const episodes = engine.getEpisodes();
 
+const points = engine.getState().history?.points ?? [];
 const grid = episodes.map((ep) => ({
-  size: ep.point.rallyLength || 1,
+  size: points[ep.point.index]?.rallyLength ?? 1,
   color: ep.point.winner === 0 ? 'blue' : 'red',
-  game: ep.gameNumber,
-  set: ep.setNumber,
+  game: ep.game.index,
+  set: ep.set.index,
 }));
 ```
 
@@ -105,7 +98,7 @@ Combine `getStatistics()` with `getEpisodes()` to build multi-panel dashboards.
 
 ```js
 const stats = engine.getStatistics();
-const set1Stats = engine.getStatistics({ setFilter: 1 });
+const set1Stats = engine.getStatistics({ setFilter: 0 });
 
 // Render statistics panels
 renderAceCount(stats);
@@ -164,6 +157,30 @@ A typical live scoring app architecture:
 ```
 
 The engine's persistence methods (`getState`, `setState`, `getSupplementaryState`, `loadSupplementaryState`) enable saving and restoring match state across app restarts, making it suitable for mobile applications where the app may be backgrounded.
+
+## Mixed input timelines
+
+Episodes project recorded points; `addGame` and `addSet` do not invent point records. They still affect
+where later points belong. A game entered after a partial point game supersedes that partial game;
+the last tracked point is not credited with winning it.
+
+```js
+const mixed = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+mixed.addPoint({ winner: 0, rallyLength: 9 });
+mixed.addGame({ winner: 1 }); // interrupts the partial game
+for (let game = 0; game < 6; game++) mixed.addGame({ winner: 0 }); // completes set 1
+mixed.addSet({ side1Score: 4, side2Score: 6 }); // appends completed set 2
+mixed.addPoint({ winner: 1 });
+const timeline = mixed.getEpisodes();
+// timeline.length === 2; timeline[0].game.complete === false
+// timeline[1].set.index === 2
+```
+
+Metadata such as `rallyLength` is absent from the episode point projection. Join the stored history by
+`episode.point.index`, as the grid example does. `needed` describes opportunities before that point;
+`game.complete` and `set.complete` describe completions on it. See the [core API](./scoring-engine-api.md#getepisodes).
+
+`StatisticsOptions.setFilter`, episode point/game/set indices and stored point indices are zero-based. The first set is `setFilter: 0`; CODES `winningSide` remains one-based.
 
 ## Related Documentation
 

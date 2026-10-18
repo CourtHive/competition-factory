@@ -6,12 +6,20 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { COLLEGE_D3, USTA_BREWER_CUP } from '@Constants/tieFormatConstants';
 import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DELETED_MATCHUP_IDS } from '@Constants/topicConstants';
 import { TEAM } from '@Constants/eventConstants';
+import {
+  INVALID_VALUES,
+  MISSING_TOURNAMENT_RECORD,
+  NOT_FOUND,
+  INVALID_MATCHUP,
+  INVALID_TIE_FORMAT,
+  MISSING_MATCHUP_ID,
+  MISSING_VALUE,
+} from '@Constants/errorConditionConstants';
 
 const scoringPolicy = {
   [POLICY_TYPE_SCORING]: { requireParticipantsForScoring: false },
@@ -20,12 +28,12 @@ const scoringPolicy = {
 describe('checkTieFormat branch coverage', () => {
   it('returns error for invalid tieFormat', () => {
     let result: any = checkTieFormat({ tieFormat: {} as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIE_FORMAT);
   });
 
   it('returns error for null tieFormat', () => {
     let result: any = checkTieFormat({ tieFormat: null as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIE_FORMAT);
   });
 
   it('assigns collectionIds when missing', () => {
@@ -136,7 +144,7 @@ describe('modifyCollectionDefinition collectionValueProfiles coverage', () => {
       collectionId,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('applies valid collectionValueProfiles modification', () => {
@@ -264,7 +272,7 @@ describe('modifyTieFormat branch coverage', () => {
       modifiedTieFormat: {} as any,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIE_FORMAT);
   });
 
   it('returns INVALID_TIE_FORMAT when comparison detects invalid structure', () => {
@@ -345,7 +353,7 @@ describe('resetTieFormat branch coverage', () => {
     let result: any = tournamentEngine.resetTieFormat({
       matchUpId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_MATCHUP);
   });
 
   it('returns success when matchUp has no tieFormat or tieFormatId', () => {
@@ -440,7 +448,7 @@ describe('resetTieFormat branch coverage', () => {
     });
 
     let result: any = tournamentEngine.resetTieFormat({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_MATCHUP_ID);
   });
 });
 
@@ -617,7 +625,7 @@ describe('removeCollectionGroup NaN guard', () => {
     let result: any = tournamentEngine.removeCollectionGroup({
       collectionGroupNumber: NaN,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
   });
 
   it('returns INVALID_VALUES for non-numeric string collectionGroupNumber', () => {

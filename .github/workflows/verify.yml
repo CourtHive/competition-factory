@@ -254,6 +254,10 @@ jobs:
       - name: verify:docs-methods
         run: pnpm verify:docs-methods
 
+      # Strict, executed examples from the actual doc fences (verify:docs-model runs in verify:generated).
+      - name: verify:docs-examples
+        run: pnpm verify:docs-examples
+
       - name: verify:pack
         run: pnpm verify:pack
 

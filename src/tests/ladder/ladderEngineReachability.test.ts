@@ -4,6 +4,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
+import { INVALID_VALUES, RESULT_NOT_VALIDATED } from '@Constants/errorConditionConstants';
 import { ACCEPTED, PENDING, RESULT, RANK } from '@Constants/ladderConstants';
 import { LADDER } from '@Constants/drawDefinitionConstants';
 
@@ -133,7 +134,7 @@ describe('the ladder lifecycle is reachable through the engine', () => {
       matchUpId,
       drawId,
     });
-    expect(blocked.error).toBeDefined();
+    expect(blocked.error).toEqual(RESULT_NOT_VALIDATED);
 
     expect(
       tournamentEngine.confirmResult({
@@ -178,7 +179,7 @@ describe('the ladder lifecycle is reachable through the engine', () => {
       issuedAt: ISO(1),
       drawId,
     });
-    expect(downward.error).toBeDefined();
+    expect(downward.error).toEqual(INVALID_VALUES);
   });
 
   test('getLapses and getLadderPolicy answer from drawId alone', () => {

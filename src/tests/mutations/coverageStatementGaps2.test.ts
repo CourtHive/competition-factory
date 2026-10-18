@@ -36,6 +36,7 @@ import {
   INVALID_DATE,
   MISSING_POLICY_DEFINITION,
   INVALID_PARTICIPANT_IDS,
+  INVALID_MATCHUP_FORMAT,
 } from '@Constants/errorConditionConstants';
 import {
   BYE,
@@ -431,7 +432,7 @@ describe('getTournamentPoints guard paths', () => {
 describe('generateOutcome uncovered paths', () => {
   it('returns error for invalid matchUpFormat', () => {
     const result = generateOutcome({ matchUpFormat: 'INVALID' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_MATCHUP_FORMAT);
   });
 
   it('returns error for non-object matchUpStatusProfile', () => {

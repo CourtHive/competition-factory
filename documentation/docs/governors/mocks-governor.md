@@ -305,6 +305,25 @@ mocksGovernor.modifyTournamentRecord({
 // Tournament now has both singles and doubles events
 ```
 
+### All or Nothing
+
+A refusal leaves the record exactly as it was passed: the same objects, with the same contents, and a
+`uuids` pool you passed is consumed only when the call succeeds. So a corrected call can simply be made
+again on the same record.
+
+To keep what was written before a refusal instead, pass `keepPartial: true`. The error result then
+reports what the record gained as `retained`:
+
+```js
+const result = mocksGovernor.modifyTournamentRecord({
+  tournamentRecord,
+  drawProfiles: [{ drawSize: 4 }, { drawSize: 4, drawType: 'NOT_A_DRAW_TYPE' }],
+  keepPartial: true,
+});
+// result.error -> UNRECOGNIZED_DRAW_TYPE
+// result.retained -> { participantIds: [...], eventIds: [...], drawIds: [...], venueIds: [] }
+```
+
 ### Modification Complete Options
 
 ```js
@@ -508,6 +527,7 @@ const result = mocksEngine.completeDrawMatchUps({
 });
 
 console.log(result.completedCount); // 15
+console.log(result.remainingCount); // 0: nothing left to play (BYEs and double exits are settled)
 ```
 
 ### Stage Filter

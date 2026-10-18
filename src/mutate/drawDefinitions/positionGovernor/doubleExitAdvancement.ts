@@ -11,7 +11,7 @@ import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getE
 import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
+import { clearDrawPosition, drawPositionRemovals } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -214,6 +214,7 @@ export function doubleExitAdvancement(params) {
   if (loserTargetStillOpen) {
     const result = advanceByeToLoserMatchUp({
       loserTargetLink: targetLinks?.loserTargetLink,
+      loserSourceMatchUp: sourceMatchUp,
       loserTargetDrawPosition,
       tournamentRecord,
       drawDefinition,
@@ -442,6 +443,7 @@ function handleLoserMatchUp({
       targetFedIn: !!targetFedIn,
     });
     return advanceByeToLoserMatchUp({
+      loserSourceMatchUp: sourceMatchUp,
       loserTargetDrawPosition,
       tournamentRecord,
       loserTargetLink,
@@ -451,6 +453,26 @@ function handleLoserMatchUp({
       matchUpsMap,
       event,
     });
+  }
+
+  /**
+   * A LOSER SEAT THAT ALREADY HOLDS A BYE IS SETTLED, and the BYE is its record: nothing is produced onto it. A produced
+   * walkover awarded to an empty seat claims the BYE its loser would have taken (P39); when a carrier later converges
+   * that matchUp, the double exit's own loser seat is that BYE. Forward entry leaves it so in every order; the
+   * correction route recorded the produced exit on the BYE's own seat and sent it on, and the matchUp beyond read a
+   * pending walkover in that order alone (census S6 Class B 20694910, COMPASS 32/30 policy-off: `South|1|2` dp 3,
+   * `South|2|1`). Two opposed debate agents measured keeping the BYE against owing the seat the produced exit; both
+   * concluded the BYE stays.
+   *
+   * It is asked BEFORE the empty-exit branch. A seat can become a BYE while its matchUp holds only a pending exit from
+   * the other side: a convergence of two carriers loses one to a double exit upstream, is re-derived and withdrawn from
+   * the seat, and is owed a BYE there instead. Re-converging, it found a pending walkover with nobody in it and made it
+   * a double walkover over the BYE; entered with the BYE first, the matchUp is a BYE relaying the other exit (census
+   * policy-off 20551581, COMPASS 32/31: `South|1|4`'s loser seat in `Southeast|1|2`).
+   */
+  const { positionAssignments } = getPositionAssignments({ structureId: loserMatchUp.structureId, drawDefinition });
+  if (positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition)?.bye) {
+    return { ...SUCCESS };
   }
 
   if (loserMatchUpIsEmptyExit) {
@@ -474,19 +496,6 @@ function handleLoserMatchUp({
     return { ...SUCCESS };
   }
 
-  /**
-   * A LOSER SEAT THAT ALREADY HOLDS A BYE IS SETTLED, and the BYE is its record: nothing is produced onto it. A produced
-   * walkover awarded to an empty seat claims the BYE its loser would have taken (P39); when a carrier later converges
-   * that matchUp, the double exit's own loser seat is that BYE. Forward entry leaves it so in every order; the
-   * correction route recorded the produced exit on the BYE's own seat and sent it on, and the matchUp beyond read a
-   * pending walkover in that order alone (census S6 Class B 20694910, COMPASS 32/30 policy-off: `South|1|2` dp 3,
-   * `South|2|1`). Two opposed debate agents measured keeping the BYE against owing the seat the produced exit; both
-   * concluded the BYE stays.
-   */
-  const { positionAssignments } = getPositionAssignments({ structureId: loserMatchUp.structureId, drawDefinition });
-  if (positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition)?.bye) {
-    return { ...SUCCESS };
-  }
   const { feedRound, matchUpId } = loserMatchUp;
   // the side opposite the loser's target position, read structurally: a lone position's side is not its index
   const loserTargetSide = getDrawPositionSideNumber({
@@ -595,6 +604,7 @@ function stampExitOnByeHeldLoserTarget({
 
   const result = modifyMatchUpScore({
     matchUpStatusCodes: retainPolicyCodes(noContextLoserMatchUp),
+    derivedStatusCodes: { matchUpId: noContextLoserMatchUp.matchUpId },
     appliedPolicies: params.appliedPolicies,
     matchUpId: loserMatchUp.matchUpId,
     matchUp: noContextLoserMatchUp,
@@ -692,6 +702,7 @@ function handleEmptyExitLoser({
       matchUpId: loserMatchUp.matchUpId,
       matchUpStatus: DOUBLE_EXIT,
       matchUpStatusCodes,
+      derivedStatusCodes: { matchUpId: noContextLoserMatchUp.matchUpId },
       winningSide: undefined,
       removeScore: true,
       context: stack,
@@ -1002,6 +1013,7 @@ function conditionallyAdvanceDrawPosition(params) {
     const { loserTargetLink } = targetLinks;
     const result = advanceByeToLoserMatchUp({
       loserTargetDrawPosition: nextLoserTargetDrawPosition,
+      loserSourceMatchUp: targetMatchUp,
       loserMatchUp: nextLoserMatchUp,
       tournamentRecord,
       loserTargetLink,
@@ -1181,7 +1193,18 @@ function conditionallyAdvanceDrawPosition(params) {
   });
 
   const sourceMatchUpStatus = params.matchUpStatus;
-  const pairedMatchUpStatus = pairedPreviousMatchUp?.matchUpStatus;
+  // A BYE ORIGIN WAITS FOR ITS FEEDER TO DELIVER. A paired feeder reading `BYE` beside a seat nobody has reached yet
+  // has delivered nothing: whoever reaches that seat advances through the BYE, so the side it feeds is not decided.
+  // "A side that has not been decided has no origin" (exit-propagation.md). Read as decided, the side recorded
+  // `{ BYE }` only when the BYE was placed before this exit, never when it came after (census A1 case 26,
+  // FIRST_MATCH_LOSER_CONSOLATION 8/7, `propagateExitStatus: false`, seed 20498521: `Consolation|3|1` side 2 in 8 of
+  // 12 entry orders).
+  // The same pending-not-dead reading `opponentFeederCanDeliver` makes of a BYE feeder (CA, 2026-09-24).
+  const pairedMatchUpStatus = deliveredStatus({
+    structureId: inContextPairedPreviousMatchUp?.structureId,
+    matchUp: pairedPreviousMatchUp,
+    drawDefinition,
+  });
 
   // CODES first-class: the facts, keyed by sideNumber and attributed to their source.
   const newProvenance = keepCarriedExitOnPairedSide({
@@ -1217,6 +1240,7 @@ function conditionallyAdvanceDrawPosition(params) {
     winningSide: awardedWinningSide,
     matchUp: noContextTargetMatchUp,
     matchUpStatusCodes,
+    derivedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
     context: stack,
     matchUpStatus,
   });
@@ -1335,6 +1359,8 @@ function conditionallyAdvanceDrawPosition(params) {
         matchUp: noContextTargetMatchUp,
         matchUpStatus: derived.matchUpStatus,
         matchUpStatusCodes: deriveStatusCodes(noContextTargetMatchUp),
+        // display only: the reasons the target retains are kept, and no derived `WO`/`DEF` becomes one
+        derivedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
         context: `${stack}-reconcile`,
       });
       if (reconcile.error) return decorateResult({ result: reconcile, stack });
@@ -1797,6 +1823,24 @@ function advanceFromStandingExit({
   if (exitStandsOnlyOnSide(noContextNextWinnerMatchUp, arrivalSideNumber))
     return decorateResult({ result: { ...SUCCESS }, stack });
 
+  // A PENDING EXIT OPPOSITE THE ARRIVAL, in a matchUp nobody has reached, meets the exit carried in: the matchUp converges,
+  // as it does when the pending exit is the one to arrive second. Advanced from as though it were the double exit, it
+  // recorded nothing (census A1 wave 4, COMPASS 32/29 21129718: `aCarryPastAByeMeetsAPendingExit`).
+  if (arrivalSideNumber && !noContextNextWinnerMatchUp.drawPositions?.filter(Boolean).length) {
+    const converged = convergeWithStandingExit({
+      storedMatchUp: noContextNextWinnerMatchUp,
+      inContextDrawMatchUps,
+      nextWinnerMatchUp,
+      drawDefinition: params.drawDefinition,
+      matchUpsMap: params.matchUpsMap,
+      arrivalSideNumber,
+      pending: true,
+      params,
+      stack,
+    });
+    if (converged) return converged;
+  }
+
   // the exit standing on the next targetMatchUp is on the OTHER side: the arriving exit meets it
   const result = doubleExitAdvancement({
     ...params,
@@ -2039,6 +2083,7 @@ function advanceByeAdvancedDrawPosition({
     const byeAdvances = !advancingParticipantId && matchUpHoldsBye({ drawDefinition, matchUp: nextWinnerMatchUp });
     const result = modifyMatchUpScore({
       matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
+      derivedStatusCodes: { matchUpId: noContextNextWinnerMatchUp.matchUpId },
       appliedPolicies: params.appliedPolicies,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       matchUp: noContextNextWinnerMatchUp,
@@ -2238,6 +2283,58 @@ function opponentFeederCanDeliver({ inContextDrawMatchUps, nextWinnerMatchUp, so
     if (pendingExitAwaitsArrival(feeder)) return true;
     return !isAnyExit(feeder.matchUpStatus);
   });
+}
+
+/**
+ * The status a feeder has delivered to the side it feeds. A BYE matchUp whose other seat holds neither a participant
+ * nor a BYE yet has delivered nothing, so it gives none; nor does a single exit nobody has won yet (`exitDelivered`).
+ * Read from the structure's positionAssignments and the stored drawPositions rather than the hydrated copy, which can
+ * predate a placement made in this cascade.
+ */
+function deliveredStatus({
+  drawDefinition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition: DrawDefinition;
+  structureId?: string;
+  matchUp?: MatchUp;
+}): MatchUpStatusUnion | undefined {
+  if (isExit(matchUp?.matchUpStatus) && !exitDelivered({ drawDefinition, structureId, matchUp })) return undefined;
+  if (matchUp?.matchUpStatus !== BYE || !structureId) return matchUp?.matchUpStatus;
+  const { positionAssignments } = getPositionAssignments({ structureId, drawDefinition });
+  const filled = (matchUp.drawPositions ?? []).filter((drawPosition: number) =>
+    positionAssignments?.some(
+      (assignment) => assignment.drawPosition === drawPosition && (assignment.bye || assignment.participantId),
+    ),
+  );
+  return filled.length < 2 ? undefined : BYE;
+}
+
+/**
+ * A SINGLE EXIT HAS DELIVERED SOMEONE only once a participant holds its winning seat. Pending (no winningSide), or
+ * awarded to a seat awaiting its arrival, it has sent nobody on: whoever reaches that seat wins it, and until then the
+ * side it feeds has no origin ("a side that has not been decided has no origin", exit-propagation.md). Recorded, the
+ * side kept an arrival entry naming an undecided source, and only in the orders where the seat was still empty as the
+ * exit opposite arrived (census A1 residue F3b, COMPASS 32/31 policy-off 20551581: `South|2|2` side 1 from
+ * `South|1|3`'s DEFAULTED, pending in the census order and awarded to its empty dp 6 round by round;
+ * `anExitThatDeliveredNobodyIsNoOrigin`).
+ */
+function exitDelivered({
+  drawDefinition,
+  structureId,
+  matchUp,
+}: {
+  drawDefinition: DrawDefinition;
+  structureId?: string;
+  matchUp?: MatchUp;
+}): boolean {
+  if (!matchUp?.winningSide) return false;
+  if (!structureId) return true;
+  const drawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
+  const { positionAssignments } = getPositionAssignments({ structureId, drawDefinition });
+  const seat = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
+  return !!(seat?.participantId || seat?.qualifier);
 }
 
 /** an exit already awarded to a seat nobody has reached yet: whoever reaches that seat is delivered onward */
@@ -2548,6 +2645,7 @@ function carryExitOnward({
 
   const result = modifyMatchUpScore({
     matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
+    derivedStatusCodes: { matchUpId: noContextNextWinnerMatchUp.matchUpId },
     matchUpId: noContextNextWinnerMatchUp.matchUpId,
     appliedPolicies: params.appliedPolicies,
     matchUp: noContextNextWinnerMatchUp,
@@ -2760,6 +2858,7 @@ function convergeCarriedExit({
   });
   const result = modifyMatchUpScore({
     matchUpStatusCodes: retainPolicyCodes(stored),
+    derivedStatusCodes: { matchUpId: stored.matchUpId },
     appliedPolicies: params.appliedPolicies,
     matchUpId: stored.matchUpId,
     matchUpStatus: DOUBLE_EXIT,
@@ -2905,8 +3004,9 @@ function serveConvergedLoserLink({
  * that seat as active once the exits there have awarded it (census s14 policy off, COMPASS 32/27 seeds 20517704 and
  * 20521746: `West|2|3` and `West|2|4`'s carriers converged in `Southwest|1|2`; `East|1|13`'s double default then
  * converged at `West|2|4`, whose withdrawn exit left the walkover there awarded to its carrier, and the clear was refused
- * ERR_ACTIVE_DRAW_POSITION after the draw had moved). A seat whose matchUp has a played result, or whose carrier went on
- * from it, is cleared as before.
+ * ERR_ACTIVE_DRAW_POSITION after the draw had moved). A carrier who went on from the seat only as a carrier is released
+ * with everything the carry decided (`carriedOnByExitsOnly`). A seat whose matchUp has a played result, or whose carrier
+ * went on from it by one, is cleared as before.
  */
 function releaseCarrier({
   loserTargetDrawPosition,
@@ -2927,12 +3027,33 @@ function releaseCarrier({
   const decidedByExitsOnly =
     !!stored && isAnyExit(stored.matchUpStatus) && !checkScoreHasValue({ score: stored.score });
   // and they went no further: a carrier the exits there sent on is taken back by the clear, which unwinds that
-  const wentOn = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps?.some(
-    (candidate) =>
-      candidate.structureId === loserMatchUp.structureId &&
-      (candidate.roundNumber ?? 0) > (loserMatchUp.roundNumber ?? 0) &&
-      candidate.sides?.some((side) => side?.participantId === seat.participantId),
-  );
+  const onward =
+    getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps?.filter(
+      (candidate) =>
+        candidate.structureId === loserMatchUp.structureId &&
+        (candidate.roundNumber ?? 0) > (loserMatchUp.roundNumber ?? 0) &&
+        candidate.sides?.some((side) => side?.participantId === seat.participantId),
+    ) ?? [];
+  const wentOn = onward.length > 0;
+  if (wentOn && carriedOnByExitsOnly({ seatMatchUp: stored, onward })) {
+    const removed = drawPositionRemovals({
+      drawPosition: loserTargetDrawPosition,
+      structureId: loserMatchUp.structureId,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (removed.error) return removed;
+    const { structure } = findStructure({ drawDefinition, structureId: loserMatchUp.structureId });
+    modifyPositionAssignmentsNotice({
+      tournamentId: params.tournamentRecord?.tournamentId,
+      event: params.event,
+      drawDefinition,
+      structure,
+    });
+    return undefined;
+  }
   if (!decidedByExitsOnly || wentOn) {
     return clearDrawPosition({
       drawPosition: loserTargetDrawPosition,
@@ -2954,6 +3075,26 @@ function releaseCarrier({
     structure,
   });
   return undefined;
+}
+
+/**
+ * The carrier went on from its seat only AS a carrier: past a BYE, or out of a matchUp its exit decided, into matchUps
+ * where nothing was played and every decision is one a carried exit made. Nobody won anything there, so the release
+ * takes the whole carry back with it, as the position clear would, without the clear's refusal of a position that an
+ * exit's award made active (census A1 wave 5, COMPASS 32/27 21155795 and 32/30 21063079: `West|2|4` converged after its
+ * carrier had gone past `Southwest|1|2`'s BYE and been awarded `Southwest|2|1` by its opponent's carried default, and
+ * the call was refused ERR_ACTIVE_DRAW_POSITION after the draw had moved; `aCarrierPastAByeIsReleasedWhenItsExitConverges`).
+ */
+function carriedOnByExitsOnly({ seatMatchUp, onward }: { seatMatchUp?: MatchUp; onward: HydratedMatchUp[] }): boolean {
+  if (!seatMatchUp || checkScoreHasValue({ score: seatMatchUp.score })) return false;
+  if (seatMatchUp.matchUpStatus !== BYE && !isAnyExit(seatMatchUp.matchUpStatus)) return false;
+  return onward.every((matchUp) => {
+    if (checkScoreHasValue({ score: matchUp.score })) return false;
+    if (matchUp.matchUpStatus === BYE || (!matchUp.winningSide && !isAnyExit(matchUp.matchUpStatus))) return true;
+    // decided: only by an exit carried into it
+    const entries = Object.values(getSideExitProvenance({ matchUp }) ?? {});
+    return isAnyExit(matchUp.matchUpStatus) && entries.some((entry) => !!entry && carriedExitStatus(entry));
+  });
 }
 
 function directExitWinnerAcrossLink({
@@ -3029,11 +3170,33 @@ function advanceByeToLoserMatchUp(params) {
       drawPosition: loserTargetDrawPosition,
       drawDefinition,
     });
-    recordByeClaim({
-      sideNumber: claimSide ?? 1,
-      claimantMatchUpId: params.sourceMatchUp?.matchUpId,
-      matchUp: noContextLoserMatchUp,
-    });
+    // ...except on a BYE that already stands there unclaimed because the matchUp feeding the seat is a BYE matchUp: the
+    // BYE cascade put it there (a BYE matchUp's loser is a BYE), not a double exit, and a claim would let this cascade's
+    // unwind take it away (census A1 wave 4, COMPASS 32/27 21060039: `aByeMatchUpsLoserSeatKeepsItsBye`).
+    // An unclaimed BYE fed by a matchUp WITHOUT a BYE stands for a reason that can lapse, such as FIRST_MATCH_LOSER's
+    // BYE for a loser who has already won a match; the exit's claim is then the BYE's only lasting reason, and skipping
+    // it let the exit's unwind clear the seat while another exit still made its loser nobody (census A1 9000230,
+    // FIRST_MATCH_LOSER_CONSOLATION 8/8: `aFirstMatchLoserByeIsClaimedByTheExitThatOwesIt`).
+    const standing = getPositionAssignments({ structure }).positionAssignments?.find(
+      (assignment) => assignment.drawPosition === loserTargetDrawPosition,
+    );
+    const feeder = params.loserSourceMatchUp;
+    const feederHoldsBye =
+      !!feeder &&
+      matchUpHoldsBye({
+        matchUp: { drawPositions: feeder.drawPositions, structureId: loserTargetLink?.source?.structureId },
+        drawDefinition,
+      });
+    const unclaimedBye =
+      feederHoldsBye &&
+      !!standing?.bye &&
+      !noContextLoserMatchUp.sideExitProvenance?.[claimSide ?? 1]?.byeClaims?.length;
+    if (!unclaimedBye)
+      recordByeClaim({
+        sideNumber: claimSide ?? 1,
+        claimantMatchUpId: params.sourceMatchUp?.matchUpId,
+        matchUp: noContextLoserMatchUp,
+      });
   }
 
   /**
@@ -3152,7 +3315,7 @@ export function settleHeldExits({
   const relabelled = settleHoldersToBye({ drawDefinition, matchUpsMap, params: { appliedPolicies } });
   if (relabelled?.error) return decorateResult({ result: relabelled, stack });
 
-  return { ...SUCCESS };
+  return { ...SUCCESS, ...(produced?.produced ? { produced: true } : {}) };
 }
 
 /**
@@ -3189,6 +3352,18 @@ function produceStrandedConvergences({
     );
     if (!stranded) return produced.size ? { ...SUCCESS, produced: true } : undefined;
     produced.add(stranded.matchUpId);
+    // what it sent on as a single exit, before an arrival converged it, is withdrawn first, as `convergeCarriedExit` does
+    applyWithdrawnExits({
+      withdrawnExits: withdrawProducedExits({
+        mappedMatchUps: matchUpsMap.mappedMatchUps,
+        sourceMatchUpId: stranded.matchUpId,
+        drawDefinition,
+      }),
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    });
     const { structure } = findStructure({ drawDefinition, structureId: stranded.structureId });
     const result = advanceConvergedWinner({
       params: {
@@ -3207,6 +3382,27 @@ function produceStrandedConvergences({
       matchUpsMap,
     });
     if (result?.error) return result;
+    // ...and serves its loser link as a convergence does: an arrival that converged a single exit awarded to its seat
+    // had already sent the first carrier on as that exit's loser, and a double exit has no loser (census A1 wave 3 G5,
+    // COMPASS 16/16 20672521: `West|2|1`'s first carrier stayed in `Southwest|1|1` when the second came through a BYE;
+    // `aByeRecordsNoArrivalByResult`)
+    const served = serveConvergedLoserLink({
+      params: {
+        matchUpStatus: stranded.matchUpStatus,
+        tournamentRecord,
+        appliedPolicies,
+        inContextDrawMatchUps,
+        drawDefinition,
+        matchUpsMap,
+        structure,
+        event,
+      },
+      convergedMatchUp: stranded,
+      stack: 'settleHeldExits',
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (served?.error) return served;
   }
   return produced.size ? { ...SUCCESS, produced: true } : undefined;
 }
@@ -3485,6 +3681,7 @@ function settleHolderToBye({
   const provenance = getSideExitProvenance({ matchUp: holder });
   const result = modifyMatchUpScore({
     matchUpStatusCodes: retainPolicyCodes(holder),
+    derivedStatusCodes: { matchUpId: holder.matchUpId },
     appliedPolicies: params.appliedPolicies,
     matchUpId: holder.matchUpId,
     context: 'settleHeldExits',
@@ -3638,6 +3835,13 @@ function getHeldExit({
   const opponentSide = target.sides?.find((side) => side.sideNumber === 3 - arrivalSideNumber);
   // an entry on a side that is itself a BYE is no exit waiting there: its carrier went home when the BYE took the seat
   const exitSideIsBye = !!matchUp.sides?.find((side) => side.sideNumber === exitSideNumber)?.bye;
+  // A PARTICIPANT'S OWN CARRY on that side is no held exit at all (F2, 2026-10-17). A BYE matchUp records the carry of
+  // a carrier who passed it (RULE 1, `recordCarryBesideBye`), and the entry stays when a correction makes the carrier's
+  // origin a double exit and gives their seat to a BYE. It names nobody now. Sent on, it met the produced exit that
+  // double exit sent to the next matchUp and made that BYE matchUp a double walkover (census s14, COMPASS 32/27 seed
+  // 20521366, `South|3|1` from `South|2|1`, round by round: `theWholeDrawIsTheSameInEveryOrder`). A double exit's
+  // produced exit on a BYE side is still asked of below, as before.
+  if (exitSideIsBye && !isDoubleExit(origin.previousMatchUpStatus)) return undefined;
   // an exit standing on the other side is settled too: the held exit meets it, and they converge (RULE 4;
   // `convergesAtTarget` in the carrier). Declining here was the policy-off stall budget's whole population.
   // judged on the target as it stands once the holder's BYE arrival is taken back out (`releaseHoldersByeFromTarget`):

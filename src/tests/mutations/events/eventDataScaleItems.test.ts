@@ -46,10 +46,8 @@ test('ratings values should be present on tournamentParticipants in getEventData
     { name: 'districtCode', value: 'Z' },
     { name: 'sectionCode', value: '123' },
   ];
-  const participantsProfile = {
-    withScaleValues: true,
-    personExtensions,
-  };
+  // the mocksEngine's participantsProfile generates; the queries' participantsProfile hydrates (withScaleValues)
+  const participantsProfile = { withScaleValues: true };
 
   const {
     tournamentRecord,
@@ -57,7 +55,7 @@ test('ratings values should be present on tournamentParticipants in getEventData
   } = mocksEngine.generateTournamentRecord({
     scheduleCompletedMatchUps: true,
     completeAllMatchUps: true,
-    participantsProfile,
+    participantsProfile: { personExtensions },
     autoSchedule: true,
     schedulingProfile,
     venueProfiles,

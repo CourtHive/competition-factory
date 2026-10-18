@@ -26,89 +26,50 @@ Draw management in TMX includes:
 
 ## Factory Methods Used
 
+These examples use factory engine methods. TMX's UI helpers are separate application code.
+A generated draw is returned to the caller; attach it explicitly before issuing mutations by draw ID.
+
 ### Creating Draws
 
 ```js
-// Generate draw with automatic placement
-tournamentEngine.generateDrawDefinition({
-  eventId,
-  drawSize: 32,
-  drawType: 'SINGLE_ELIMINATION',
-  seedingProfile: 'WATERFALL',
-  automated: true,
-  seedsCount: 8,
-});
-
-// Create empty draw for manual placement
-tournamentEngine.addDrawDefinition({
+const { drawDefinition, error } = tournamentEngine.generateDrawDefinition({
   eventId,
   drawSize: 32,
   drawType: 'SINGLE_ELIMINATION',
   automated: false,
+  seedsCount: 8,
 });
+if (error) throw new Error(error.message);
+if (!drawDefinition) throw new Error('Draw generation failed');
+const result = tournamentEngine.addDrawDefinition({ eventId, drawDefinition });
+if (result.error) throw new Error(result.error.message);
+const drawId = drawDefinition.drawId;
+const structureId = drawDefinition.structures?.[0]?.structureId;
+if (!structureId) throw new Error('Missing main structure');
 ```
 
 ### Seeding Participants
 
 ```js
-// Auto-seed from rankings
-tournamentEngine.autoSeeding({
-  eventId,
-  drawId,
-  policyDefinitions: SEEDING_POLICY
-});
-
-// Manual seeding
-tournamentEngine.assignSeed({
-  eventId,
-  drawId,
-  participantId,
-  seedNumber: 1,
-  seedValue: '1'
-});
-
-// Set all seeds at once
-tournamentEngine.setParticipantScaleItems({
-  eventId,
-  participantIds: [...],
-  seedAssignments: [
-    { participantId: id1, seedNumber: 1, seedValue: '1' },
-    { participantId: id2, seedNumber: 2, seedValue: '2' }
-  ]
-});
+// Set a displayed seed on an existing participant in this structure.
+tournamentEngine.modifySeedAssignment({ drawId, structureId, participantId, seedValue: '1' });
+// Position the seeded and unseeded entries using the chosen positioning policy.
+tournamentEngine.automatedPositioning({ drawId, structureId });
 ```
+
+`seedNumber` identifies an assignment; `seedValue` is its display value. For ranked automatic seeding,
+see the [Seeding Policy](../policies/seedingPolicy.md). Participant scale items are not seed assignments.
 
 ### Position Assignment
 
 ```js
-// Assign to specific position
-tournamentEngine.assignDrawPosition({
-  eventId,
-  drawId,
-  structureId,
-  drawPosition: 1,
-  participantId,
-});
-
-// Assign to multiple positions
-tournamentEngine.assignDrawPosition({
-  eventId,
-  drawId,
-  structureId,
-  assignments: [
-    { drawPosition: 1, participantId: id1 },
-    { drawPosition: 2, participantId: id2 },
-  ],
-});
-
-// Automatic positioning of seeds
-tournamentEngine.automatedPositioning({
-  eventId,
-  drawId,
-  structureId,
-  seedingProfile: 'WATERFALL',
-});
+for (const assignment of assignments) {
+  const result = tournamentEngine.assignDrawPosition({ drawId, structureId, ...assignment });
+  if (result.error) throw new Error(result.error.message);
+}
 ```
+
+Review position actions and errors before changing a draw in play.
 
 ## Draw Types
 
@@ -230,96 +191,24 @@ const result = tournamentEngine.generateDrawDefinition({
 
 ### Manual Draw Control
 
-Step-by-step draw construction:
-
-```js
-// 1. Create empty draw
-const { drawDefinition } = tournamentEngine.addDrawDefinition({
-  eventId,
-  drawSize: 32,
-  drawType: 'SINGLE_ELIMINATION',
-});
-
-// 2. Assign seeds
-tournamentEngine.setParticipantScaleItems({
-  eventId,
-  participantIds,
-  seedAssignments: [...seeding],
-});
-
-// 3. Position seeds
-tournamentEngine.automatedPositioning({
-  eventId,
-  drawId: drawDefinition.drawId,
-  seedingProfile: 'WATERFALL',
-});
-
-// 4. Position remaining participants
-tournamentEngine.assignDrawPosition({
-  eventId,
-  drawId: drawDefinition.drawId,
-  assignments: [...unseeded],
-});
-```
-
-### Bye Management
-
-```js
-// Get available positions for byes
-const { positionAssignments } = tournamentEngine.getPositionAssignments({
-  eventId,
-  drawId,
-});
-
-const byePositions = positionAssignments.filter((p) => p.bye);
-
-// Place bye
-tournamentEngine.assignDrawPositionBye({
-  eventId,
-  drawId,
-  structureId,
-  drawPosition: position,
-});
-```
-
-### Qualifying Integration
-
-```js
-// Add qualifying structure
-tournamentEngine.addDrawDefinition({
-  eventId,
-  drawSize: 16,
-  drawType: 'SINGLE_ELIMINATION',
-  drawName: 'Qualifying',
-  entryStage: 'QUALIFYING',
-});
-
-// Link qualifier positions to main draw
-tournamentEngine.attachQualifyingStructure({
-  eventId,
-  mainDrawId,
-  qualifyingDrawId,
-  qualifyingPositions: 4, // Number of qualifiers
-});
-```
+Generate with `automated: false`, attach the returned definition, then assign seeds and positions as
+above. Use `getPositionAssignments({ drawId, structureId })` to inspect empty, BYE and occupied slots.
+Qualifying structures belong to the same draw; see [Draw Links](../concepts/draw-links.mdx) for the
+link model and [Draws Governor](../governors/draws-governor.md) for qualifying attachment parameters.
 
 ### Lucky Loser Assignment
 
-```js
-// Get available lucky loser positions
-const { availablePositions } = tournamentEngine.getLuckyLoserAvailability({
-  eventId,
-  drawId,
-});
+Use [position actions](../concepts/actions.mdx) to discover which replacements are legal for a
+specific position. There is no draw-wide lucky-loser availability query.
 
-// Assign lucky loser
-tournamentEngine.assignLuckyLoser({
-  eventId,
+```js
+const result = tournamentEngine.luckyLoserDrawPositionAssignment({
   drawId,
   structureId,
   drawPosition,
-  participantId, // From qualifying losers
+  luckyLoserParticipantId: participantId,
 });
+if (result.error) throw new Error(result.error.message);
 ```
 
 ## UI Components
@@ -337,59 +226,24 @@ TMX uses these [courthive-components](https://courthive.github.io/courthive-comp
 ### Complete Draw Generation
 
 ```js
-// Get event entries
-const { eventEntries } = tournamentEngine.getEventEntries({ eventId });
-
-// Calculate draw size
-const drawSize = getDrawSize(eventEntries.length);
-
-// Generate draw
-const { drawDefinition } = tournamentEngine.generateDrawDefinition({
+const { event } = tournamentEngine.getEvent({ eventId });
+const mainEntries = (event.entries ?? []).filter((entry) => entry.entryStage === 'MAIN');
+const drawSize = Math.max(2, 2 ** Math.ceil(Math.log2(mainEntries.length || 1)));
+const { drawDefinition, error } = tournamentEngine.generateDrawDefinition({
   eventId,
   drawSize,
   drawType: 'SINGLE_ELIMINATION',
-  seedingProfile: 'WATERFALL',
   automated: true,
   seedsCount: Math.min(8, Math.floor(drawSize / 4)),
   matchUpFormat: 'SET3-S:6/TB7',
 });
-
-console.log(`Draw created: ${drawDefinition.drawId}`);
+if (error) throw new Error(error.message);
+if (!drawDefinition) throw new Error('Draw generation failed');
+tournamentEngine.addDrawDefinition({ eventId, drawDefinition });
 ```
 
-### Manual Seeding Workflow
-
-```js
-// 1. Get unseeded participants
-const { participants } = tournamentEngine.getParticipants({
-  withSeeding: true,
-});
-
-const unseeded = participants.filter((p) => !p.seedValue);
-
-// 2. Show seeding UI to tournament director
-// User assigns seed numbers
-
-// 3. Apply seeding
-const seedAssignments = unseeded.map((p, i) => ({
-  participantId: p.participantId,
-  seedNumber: i + 1,
-  seedValue: `${i + 1}`,
-}));
-
-tournamentEngine.setParticipantScaleItems({
-  eventId,
-  participantIds: unseeded.map((p) => p.participantId),
-  seedAssignments,
-});
-
-// 4. Generate draw with seeds
-tournamentEngine.generateDrawDefinition({
-  eventId,
-  drawSize: 32,
-  automated: true,
-});
-```
+The UI must select the intended entry statuses/stage and seeds before generation. Preview the returned
+definition before replacing a published or already-played draw.
 
 ### Draw Modification
 
@@ -454,10 +308,11 @@ flightProfile.flights.forEach((flight) => {
 
 ```js
 // Get all draws for event
-const { drawDefinitions } = tournamentEngine.getEventDraws({ eventId });
+const { event } = tournamentEngine.getEvent({ eventId });
+const drawDefinitions = event.drawDefinitions ?? [];
 
 // Get specific draw details
-const { drawDefinition } = tournamentEngine.getDrawDefinition({
+const { drawDefinition } = tournamentEngine.getEvent({
   eventId,
   drawId,
 });
@@ -476,7 +331,7 @@ const { positionAssignments } = tournamentEngine.getPositionAssignments({
 });
 
 // Check draw validity
-const { valid, errors } = tournamentEngine.checkDrawValidity({
+const { valid, inconsistencies, error } = tournamentEngine.getDrawInconsistencies({
   eventId,
   drawId,
 });
