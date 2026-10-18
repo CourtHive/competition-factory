@@ -1,5 +1,6 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { writeNativeEnabled } from '@Global/state/globalState';
@@ -275,6 +276,29 @@ export function arrivedByResult(entry?: SideExitProvenanceEntry): boolean {
   if (!entry) return false;
   if (!entry.matchUpStatus) return !!entry.previousMatchUpStatus && entry.previousMatchUpStatus !== BYE;
   return !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
+}
+
+/**
+ * Take back the arrival record a feeder left on a matchUp, when the position it delivered leaves.
+ *
+ * An arrival (`arrivedByResult`) records that a side's occupant won their way here from `sourceMatchUpId`; it is a
+ * fact about that position being here, so it goes when the position is released, whichever side the record is keyed
+ * to by then. So does a BYE origin (`{ BYE, BYE }`) naming the same feeder: it records that the position came here
+ * through that BYE, and once the position is gone it names a feeder that sent nobody, or one that is no longer a BYE
+ * (census A1 int2 `aReleasedPositionTakesItsByeOriginWithIt`). A BYE claim on the same side stays: it is the ledger, not
+ * the arrival (`withdrawArrivalsByResult`). Not gated on the write mode: the write mode decides whether a record is written, never whether a stale one goes.
+ */
+export function withdrawArrivalFrom({ sourceMatchUpId, matchUp }: { sourceMatchUpId?: string; matchUp: MatchUp }) {
+  const provenance = matchUp.sideExitProvenance;
+  if (!sourceMatchUpId || !provenance) return;
+  for (const sideNumber of [1, 2] as const) {
+    const entry = provenance[sideNumber];
+    const originOfPosition = arrivedByResult(entry) || entry?.matchUpStatus === BYE;
+    if (entry?.sourceMatchUpId !== sourceMatchUpId || !originOfPosition) continue;
+    if (entry.byeClaims?.length) provenance[sideNumber] = { byeClaims: [...entry.byeClaims] };
+    else delete provenance[sideNumber];
+  }
+  if (!Object.keys(provenance).length) delete matchUp.sideExitProvenance;
 }
 
 /** Write provenance onto a matchUp, honouring the schema write mode. */
@@ -1157,7 +1181,18 @@ function awardsEmptySeat({
   matchUp: MatchUp;
 }): boolean {
   const winningSide = derived.winningSide as 1 | 2;
-  if (!isDoubleExit(exitsRetained[(3 - winningSide) as 1 | 2]?.previousMatchUpStatus)) return false;
+  const exitEntry = exitsRetained[(3 - winningSide) as 1 | 2];
+  if (!isDoubleExit(exitEntry?.previousMatchUpStatus)) return false;
+  // ...but one that came straight down its source's LOSER link keeps its award to the seat that will receive the next
+  // arrival, as direct entry writes it and as `positionClear`'s `awardStands` keeps it ("A convergence a correction
+  // dissolves settles as the kept exit alone would leave it", exit-propagation.md). Taken back here, a dissolved
+  // convergence left that exit pending and its reservation unmade, where entering the same results once each, in any
+  // order, awards it (census A1 R9, COMPASS 32/31 policy-off 20551581: `South|1|3`, and `South|2|2`'s dp 6)
+  if (
+    drawDefinition &&
+    cameDownLoserLink({ drawDefinition, targetMatchUp: matchUp, sourceMatchUpId: exitEntry?.sourceMatchUpId })
+  )
+    return false;
   const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
   const seat = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber: winningSide });
   return !positionAssignmentsOf(structure)?.find((assignment) => assignment.drawPosition === seat)?.participantId;

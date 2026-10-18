@@ -5,7 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { DEFAULTED, DOUBLE_DEFAULT, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -89,8 +89,22 @@ it('the decider is seated before the correction, and empty once the Main final i
   expect(byCoordinate(corrected)).toEqual(byCoordinate(direct));
 });
 
-it('the Main final is then decided without a refusal, and the schedule replays clean', () => {
-  play(schedule, 'decider-full');
+/**
+ * Re-scoring `Main|2|1` as the double default again leaves the standing results the draw held after `Main|1|3`'s walkover,
+ * and the draw is the one those results reach entered once each: `Backdraw|3|1` converged, its produced walkover deciding
+ * the Main final for `Main|3|1`'s winner, who takes the decider's first seat. The Main final's own result is then not
+ * enterable (the census replay skips a matchUp no longer holding two participants). This test used to enter it: the
+ * second carrier passing a BYE into `Backdraw|3|1`, at the seat the carried default had been awarded to, took that award
+ * instead of converging, and the Main final stood open (census A1 wave 3 G5,
+ * `aCarrierArrivingAtTheSeatAnExitAwaitsConverges`).
+ */
+it('the Main final is then decided by the convergence, as the same results entered once decide it, and the schedule replays clean', () => {
+  const corrected = byCoordinate(play(schedule.slice(0, 6), 'decider-full'));
+  const direct = byCoordinate(play(schedule.slice(0, 4), 'decider-same-results'));
+  expect(corrected['Main|4|1']).toEqual(direct['Main|4|1']);
+  expect(corrected['Main|4|1'].matchUpStatus).toEqual(WALKOVER);
+  expect(corrected['Backdraw|3|1'].matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  expect(corrected).toEqual(direct);
   setSubscriptions({});
   expect(
     replay(

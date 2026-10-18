@@ -115,6 +115,10 @@ export function applyWithdrawnExits({
      * The one exception is the reconciliation's own: a re-derived exit whose winning seat is a BYE still relays.
      */
     if (withdrawnExit.rederived && !isDoubleExit(withdrawnMatchUp.matchUpStatus)) {
+      // A single exit records no claim on a BYE others already hold (`propagateUnfillableLoserBye` claims only a seat it
+      // fills), so the claim the convergence shared there goes and the BYE stays theirs (census A1 wave 4, COMPASS 32/31
+      // 21055187: `aDissolvedConvergenceLeavesASharedByeClaim`)
+      if (matchUpsMap) withdrawSharedByeClaims({ claimantMatchUpId: withdrawnMatchUp.matchUpId, matchUpsMap });
       const winnerDrawPosition = getWinningSideDrawPosition({
         structureId: withdrawnExit.structureId,
         matchUp: withdrawnMatchUp,
@@ -302,6 +306,23 @@ export function withdrawByeSeats({
         if (!assignment?.bye || !assignment.byeFromPropagation) continue;
         clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
       }
+    }
+  }
+}
+
+/** withdraw a claimant's BYE claims only where another claim still holds the BYE */
+function withdrawSharedByeClaims({
+  claimantMatchUpId,
+  matchUpsMap,
+}: {
+  claimantMatchUpId: string;
+  matchUpsMap: MatchUpsMap;
+}) {
+  for (const matchUp of matchUpsMap.drawMatchUps) {
+    for (const sideNumber of [1, 2]) {
+      const claims = matchUp.sideExitProvenance?.[sideNumber]?.byeClaims ?? [];
+      if (claims.includes(claimantMatchUpId) && claims.length > 1)
+        withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
     }
   }
 }
