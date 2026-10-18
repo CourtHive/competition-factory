@@ -164,7 +164,17 @@ TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `s
    if given) and `matchUpStatusCodes` are written.
 3. **Status codes are split at this boundary**: the positional array a client sends (`['', 'DM']`)
    becomes `sideStatusCodes` keyed by side, with the exiting side taken from `winningSide`, not from
-   the index.
+   the index. **Only a client's array is split** (census A1 residue F1b, 2026-10-18). An engine write
+   whose array is not client input (a propagation in `progressExitStatus`; the convergence reconcile and the
+   forward writes in `doubleExitAdvancement`, which re-store the target's own, possibly derived,
+   array; the unwinds in `removeDoubleExit`) passes `derivedStatusCodes`, naming the matchUp it
+   describes. Its array is stored as given. It keeps the reasons the matchUp already holds, plus
+   the real reason it carries for the arriving side, on the sides that exited: both sides of a double
+   exit, the losing side of a single exit. A bare `WO` or `DEF` that the projection wrote is never a
+   reason. The choice is made by origin, not by value: a client's `['WO']` is still split as its
+   reason. v2 plans only the requested matchUp's own write, from client input, and compares
+   `matchUpStatusCodes` as display; it plans no `sideStatusCodes` and no propagation write, so there
+   is nothing to mirror there.
 4. **`scoredTime`** is stamped on `schedule` the first time the matchUp becomes scored (a score with
    value, a winner, or a completed status), kept through corrections, and deleted when the result is
    removed. It is first-class in NATIVE and has no timeItem mirror.

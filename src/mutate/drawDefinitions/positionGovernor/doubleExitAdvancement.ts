@@ -602,6 +602,7 @@ function stampExitOnByeHeldLoserTarget({
 
   const result = modifyMatchUpScore({
     matchUpStatusCodes: retainPolicyCodes(noContextLoserMatchUp),
+    derivedStatusCodes: { matchUpId: noContextLoserMatchUp.matchUpId },
     appliedPolicies: params.appliedPolicies,
     matchUpId: loserMatchUp.matchUpId,
     matchUp: noContextLoserMatchUp,
@@ -699,6 +700,7 @@ function handleEmptyExitLoser({
       matchUpId: loserMatchUp.matchUpId,
       matchUpStatus: DOUBLE_EXIT,
       matchUpStatusCodes,
+      derivedStatusCodes: { matchUpId: noContextLoserMatchUp.matchUpId },
       winningSide: undefined,
       removeScore: true,
       context: stack,
@@ -1235,6 +1237,7 @@ function conditionallyAdvanceDrawPosition(params) {
     winningSide: awardedWinningSide,
     matchUp: noContextTargetMatchUp,
     matchUpStatusCodes,
+    derivedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
     context: stack,
     matchUpStatus,
   });
@@ -1353,6 +1356,8 @@ function conditionallyAdvanceDrawPosition(params) {
         matchUp: noContextTargetMatchUp,
         matchUpStatus: derived.matchUpStatus,
         matchUpStatusCodes: deriveStatusCodes(noContextTargetMatchUp),
+        // display only: the reasons the target retains are kept, and no derived `WO`/`DEF` becomes one
+        derivedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
         context: `${stack}-reconcile`,
       });
       if (reconcile.error) return decorateResult({ result: reconcile, stack });
@@ -2057,6 +2062,7 @@ function advanceByeAdvancedDrawPosition({
     const byeAdvances = !advancingParticipantId && matchUpHoldsBye({ drawDefinition, matchUp: nextWinnerMatchUp });
     const result = modifyMatchUpScore({
       matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
+      derivedStatusCodes: { matchUpId: noContextNextWinnerMatchUp.matchUpId },
       appliedPolicies: params.appliedPolicies,
       matchUpId: noContextNextWinnerMatchUp.matchUpId,
       matchUp: noContextNextWinnerMatchUp,
@@ -2618,6 +2624,7 @@ function carryExitOnward({
 
   const result = modifyMatchUpScore({
     matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
+    derivedStatusCodes: { matchUpId: noContextNextWinnerMatchUp.matchUpId },
     matchUpId: noContextNextWinnerMatchUp.matchUpId,
     appliedPolicies: params.appliedPolicies,
     matchUp: noContextNextWinnerMatchUp,
@@ -2830,6 +2837,7 @@ function convergeCarriedExit({
   });
   const result = modifyMatchUpScore({
     matchUpStatusCodes: retainPolicyCodes(stored),
+    derivedStatusCodes: { matchUpId: stored.matchUpId },
     appliedPolicies: params.appliedPolicies,
     matchUpId: stored.matchUpId,
     matchUpStatus: DOUBLE_EXIT,
@@ -3555,6 +3563,7 @@ function settleHolderToBye({
   const provenance = getSideExitProvenance({ matchUp: holder });
   const result = modifyMatchUpScore({
     matchUpStatusCodes: retainPolicyCodes(holder),
+    derivedStatusCodes: { matchUpId: holder.matchUpId },
     appliedPolicies: params.appliedPolicies,
     matchUpId: holder.matchUpId,
     context: 'settleHeldExits',

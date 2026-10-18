@@ -445,6 +445,7 @@ function withdrawExitFromByeChain({
 
   const result = modifyMatchUpScore({
     matchUpStatusCodes: codesForUnwound(noContextTargetMatchUp, unwound),
+    derivedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
     removeWinningSide: unwound.winningSide === undefined,
     matchUpStatus: unwound.matchUpStatus,
     matchUpId: fromMatchUp.matchUpId,
@@ -751,6 +752,7 @@ export function conditionallyRemoveDrawPosition(params) {
   result = modifyMatchUpScore({
     ...params,
     matchUpStatusCodes: codesForUnwound(noContextTargetMatchUp, unwound),
+    derivedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
     removeWinningSide: unwound.winningSide === undefined,
     matchUpId: targetMatchUp.matchUpId,
     matchUp: noContextTargetMatchUp,

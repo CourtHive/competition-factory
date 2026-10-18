@@ -865,8 +865,9 @@ by a named test that fails without it.
 
 ### Rules settled by the census in A1 (2026-10-17)
 
-Read from the A1 do/undo triage, which applies a probe outcome to each scheduled draw and clears it; each rule is
-pinned by a named test that fails without it.
+Read from the A1 do-undo triage: a probe applied to the scheduled draw and then cleared must leave the draw it found.
+In each case the scheduled draw is the one forward play reaches from the standing results; each rule is pinned by a
+named test that fails without it.
 
 - **A cleared loser seat leaves no award behind.** A loser sent into a seat opposite a produced exit is awarded it on
   arrival. When the result that sent them is re-scored or cleared, their seat empties and the produced exit stands
@@ -895,12 +896,15 @@ pinned by a named test that fails without it.
   stays goes on into the next matchUp, where it has room, as it would have had that BYE landed alone; a position that
   entered the round from an earlier one is a reservation, and is not moved (COMPASS 32/30 20694910 under
   `doubleExitPropagateBye: false`: `theSeatLeftOppositeAByeGoesOn`).
-
-### Rules settled by the census in A1 (2026-10-17)
-
-Read from the A1 do-undo triage: a probe applied to the scheduled draw and then cleared must leave the draw it found.
-In each case the scheduled draw is the one forward play reaches from the standing results; each rule is pinned by a
-named test that fails without it.
+- **A reason is attributed by where it came from, not by what it says.** `sideStatusCodes` holds the scoring
+  policy's reason per side (`{ 2: 'DM' }`), split from the positional `matchUpStatusCodes` a client submits. A
+  propagation or convergence write stores the array `deriveStatusCodes` builds from provenance, where a side that
+  exited with no recorded reason shows the bare outcome code (`['DEF']`, `['WO']`), or re-stores the matchUp's own
+  array, which may be such a display. Either array is display only and is not split: the write keeps the reasons the matchUp already holds and the source's own side-keyed reason, on the side
+  it arrived at. The source's positional array is read for display only, never as a reason. Before this, a double
+  default reached in one entry order stored `{ 1: 'DEF', 2: 'DEF' }` and in the other stored nothing. A client's array
+  is split as before, and no code is reserved by value (FIRST_MATCH_LOSER_CONSOLATION 32:
+  `aDerivedOutcomeCodeIsNeverASideReason`).
 
 - **What forward play sends on from a result is sent on from a re-derived one.** A removal re-derives the matchUp it
   vacates (a cleared BYE or double exit puts it back to the exit it held) and used to stop there. It is now asked of

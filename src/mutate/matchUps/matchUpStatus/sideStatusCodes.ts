@@ -81,6 +81,67 @@ export function splitStatusCodes({
   return code ? { sideStatusCodes: { [exitingSide]: code } } : {};
 }
 
+/**
+ * Marks an ENGINE write whose `matchUpStatusCodes` were derived for display. It names the matchUp it
+ * describes, so a params object spread into a nested write on another matchUp cannot carry it there.
+ * `sideStatusCodes`: real reasons the write attributes by side — the source's own keyed reason a
+ * propagation carries with the arriving side.
+ */
+export type DerivedStatusCodes = { matchUpId: string; sideStatusCodes?: Record<number, string> };
+
+/**
+ * The reasons an ENGINE write keeps, when the `matchUpStatusCodes` it stores were DERIVED, not submitted.
+ *
+ * `deriveStatusCodes` builds the positional array from provenance for display, and where a side exited with
+ * no recorded reason it fills that side with the bare outcome code: `['', 'DEF']`, `['WO']`. That is a
+ * display of the status, not a reason anybody gave. {@link splitStatusCodes} cannot tell the two apart and
+ * must not try — a client's `['WO']` is its own input, and no code is reserved by value. So the decision is
+ * made by ORIGIN: an engine write that derived its array says so, and its reasons come only from real
+ * reasons — those the matchUp already retains, plus any the write attributes explicitly (`carried`: the
+ * source's own side-keyed reason a propagation brings with the arriving side).
+ *
+ * Census A1 residue F1b, 2026-10-18. Routed through the split, a propagation onto a matchUp that already held
+ * a delivered double default stored `{ 1: 'DEF', 2: 'DEF' }` — one bare code covering both sides of a double
+ * exit — while the same results entered in the other order stored nothing; four pinned census schedules
+ * failed do-undo on exactly this field.
+ *
+ * WHO PASSES IT: every engine write whose array is not client input — `progressExitStatus`, the convergence
+ * reconcile and the forward writes in `doubleExitAdvancement` (which re-store the target's own array through
+ * `retainPolicyCodes`, and that array may itself be an earlier derived display), and the unwinds in
+ * `removeDoubleExit`. The forward writes were found by tracing: marking only the two derived writers left
+ * `handleEmptyExitLoser` re-splitting a stored `['', 'DEF']` into `{ 2: 'DEF' }`.
+ *
+ * WHICH SIDES KEEP ONE is the same rule the split applies: both sides of a double exit, the side that did not
+ * win a single exit, and nobody for a status that attributes to the match — whose own `matchUpStatusCode` is
+ * retained as it stands.
+ */
+export function attributeDerivedStatusCodes({
+  matchUpStatus,
+  winningSide,
+  carried,
+  matchUp,
+}: {
+  matchUpStatus?: MatchUpStatusUnion | string;
+  carried?: Record<number, string>;
+  winningSide?: number;
+  matchUp?: MatchUp;
+}): { matchUpStatusCode?: string; sideStatusCodes?: Record<number, string> } {
+  if (!reasonAttributesToSide(matchUpStatus)) {
+    return matchUp?.matchUpStatusCode ? { matchUpStatusCode: matchUp.matchUpStatusCode } : {};
+  }
+
+  const reasons = { ...matchUp?.sideStatusCodes, ...carried };
+  let exitingSides: number[] = [];
+  if (isDoubleExit(matchUpStatus)) exitingSides = [1, 2];
+  else if (winningSide) exitingSides = [3 - winningSide];
+  const sideStatusCodes: Record<number, string> = {};
+  for (const sideNumber of exitingSides) {
+    const code = reasons[sideNumber];
+    if (code) sideStatusCodes[sideNumber] = code;
+  }
+  return Object.keys(sideStatusCodes).length ? { sideStatusCodes } : {};
+}
+
 /** The reason code a side carries, if any. Keyed, never positional. */
 export function getSideStatusCode({
   sideNumber,
