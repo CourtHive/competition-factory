@@ -1,7 +1,7 @@
 import { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming';
 import { modifyMatchUpFormatTiming } from '@Mutate/extensions/matchUps/modifyMatchUpFormatTiming';
+import { isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
-import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { Event, Tournament } from '@Types/tournamentTypes';
@@ -28,7 +28,7 @@ export function modifyEventMatchUpFormatTiming(params: ModifyEventMatchUpFormatT
 
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
-  if (!isValidMatchUpFormat({ matchUpFormat })) return { error: INVALID_VALUES };
+  if (!isWellFormedMatchUpFormat({ matchUpFormat })) return { error: INVALID_VALUES };
 
   const eventCheck = requireParams({ event }, [EVENT]);
   if (eventCheck.error) return eventCheck;

@@ -1148,6 +1148,7 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 
 - `bestOf | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers` — § 6.1, § 6.2 rule 2, § 6.4, § 9.1; `timedSegments` (`SET3-S:T10`, `SET1-S:T20`, `SET5-S:T10`, `SET1X-S:T10`)
 - `bestOf | SET | set:timed(G) | final:same | game:traditional(deuceCap) | noClock | knownModifiers` — § 3.5, § 4.1 rule 3, § 6.2 rule 2; `timedSegments` (`SET3-S:T10-G:TN3D`)
+- `bestOf | SET | set:timed(G) | final:same | game:consecutive | noClock | knownModifiers` — § 3.5, § 6.2 rule 2; `timedSegments` (`SET3-S:T10-G:3C`)
 - `bestOf | SET | set:timed(G) | final:timed(G) | game:traditional | noClock | knownModifiers` — § 3.2, § 6.1, § 6.4; `timedSegments` (`SET3-S:T20-F:T60`, `SET3-S:T15-F:T10`)
 - `bestOf | SET | set:timed(G) | final:timed(G) | game:traditional(deuceCap) | noClock | knownModifiers` — § 3.2, § 3.5, § 6.2 rule 2; `timedSegments` (`SET3-S:T10-G:TN3D-F:T20`)
 - `bestOf | SET | set:timed(G,@RALLY) | final:same | game:traditional | noClock | knownModifiers` — § 6.3; `timedSegments` (`SET3-S:T20@RALLY`)
