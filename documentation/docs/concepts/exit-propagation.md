@@ -1017,6 +1017,23 @@ named test that fails without it.
   because forward play claims only a seat it fills. So when a convergence dissolves to a single exit, its claim on a
   BYE that others still claim is withdrawn, and the BYE stays theirs (COMPASS 32/31 21055187 under
   `doubleExitPropagateBye: false`: `aDissolvedConvergenceLeavesASharedByeClaim`).
+- **A carry past a convergence's BYE is written on the first entry** (A1 wave 5). A convergence the settle produces
+  serves its loser link, and the BYE it places there can stand in front of a carrier. That carry is written in the
+  same call, not when the same outcome is entered a second time. Before this the matchUp beyond the BYE stayed
+  TO_BE_PLAYED under the carrier until a second, identical entry wrote it (COMPASS 32, 6 census rows, e.g. 32/27
+  21138626: `aCarryPastAConvergencesByeIsCarriedOnTheFirstEntry`).
+- **A carrier who went on only as a carrier is released with the carry** (A1 wave 5). When the exit that sent a carrier
+  over its loser link converges, the carrier no longer lost anything and leaves the loser seat. If they had gone on
+  from that seat past a BYE, or out of a matchUp only exits decided, into matchUps where nothing was played and only
+  carried exits decided anything, the release takes the whole carry back and the seat is served as a double exit's
+  loser seat. Before this the release refused the position as active, because an award made by the opponent's carried
+  exit had reached it, and the director's call was refused ERR_ACTIVE_DRAW_POSITION after the draw had moved (COMPASS
+  32/27 21155795 and 32/30 21063079, 4 census rows: `aCarrierPastAByeIsReleasedWhenItsExitConverges`). A carrier who
+  went on by a played result is cleared, and refused, as before.
+- **A BYE origin goes with the carry a BYE displaces** (A1 wave 5). When a propagated BYE takes a carrier's seat, the
+  carry is withdrawn from every matchUp the seat reached, and a BYE origin written opposite that carry goes with it,
+  as it does when a double exit is unwound. Before this the origin stood opposite no exit (COMPASS 32/30 21063079:
+  `aByeOriginGoesWithTheCarryItStoodOpposite`).
 
 ### Nothing to do is success, not failure
 

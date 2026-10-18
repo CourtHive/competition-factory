@@ -11,7 +11,7 @@ import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getE
 import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
+import { clearDrawPosition, drawPositionRemovals } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -3001,8 +3001,9 @@ function serveConvergedLoserLink({
  * that seat as active once the exits there have awarded it (census s14 policy off, COMPASS 32/27 seeds 20517704 and
  * 20521746: `West|2|3` and `West|2|4`'s carriers converged in `Southwest|1|2`; `East|1|13`'s double default then
  * converged at `West|2|4`, whose withdrawn exit left the walkover there awarded to its carrier, and the clear was refused
- * ERR_ACTIVE_DRAW_POSITION after the draw had moved). A seat whose matchUp has a played result, or whose carrier went on
- * from it, is cleared as before.
+ * ERR_ACTIVE_DRAW_POSITION after the draw had moved). A carrier who went on from the seat only as a carrier is released
+ * with everything the carry decided (`carriedOnByExitsOnly`). A seat whose matchUp has a played result, or whose carrier
+ * went on from it by one, is cleared as before.
  */
 function releaseCarrier({
   loserTargetDrawPosition,
@@ -3023,12 +3024,33 @@ function releaseCarrier({
   const decidedByExitsOnly =
     !!stored && isAnyExit(stored.matchUpStatus) && !checkScoreHasValue({ score: stored.score });
   // and they went no further: a carrier the exits there sent on is taken back by the clear, which unwinds that
-  const wentOn = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps?.some(
-    (candidate) =>
-      candidate.structureId === loserMatchUp.structureId &&
-      (candidate.roundNumber ?? 0) > (loserMatchUp.roundNumber ?? 0) &&
-      candidate.sides?.some((side) => side?.participantId === seat.participantId),
-  );
+  const onward =
+    getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps?.filter(
+      (candidate) =>
+        candidate.structureId === loserMatchUp.structureId &&
+        (candidate.roundNumber ?? 0) > (loserMatchUp.roundNumber ?? 0) &&
+        candidate.sides?.some((side) => side?.participantId === seat.participantId),
+    ) ?? [];
+  const wentOn = onward.length > 0;
+  if (wentOn && carriedOnByExitsOnly({ seatMatchUp: stored, onward })) {
+    const removed = drawPositionRemovals({
+      drawPosition: loserTargetDrawPosition,
+      structureId: loserMatchUp.structureId,
+      tournamentRecord: params.tournamentRecord,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (removed.error) return removed;
+    const { structure } = findStructure({ drawDefinition, structureId: loserMatchUp.structureId });
+    modifyPositionAssignmentsNotice({
+      tournamentId: params.tournamentRecord?.tournamentId,
+      event: params.event,
+      drawDefinition,
+      structure,
+    });
+    return undefined;
+  }
   if (!decidedByExitsOnly || wentOn) {
     return clearDrawPosition({
       drawPosition: loserTargetDrawPosition,
@@ -3050,6 +3072,26 @@ function releaseCarrier({
     structure,
   });
   return undefined;
+}
+
+/**
+ * The carrier went on from its seat only AS a carrier: past a BYE, or out of a matchUp its exit decided, into matchUps
+ * where nothing was played and every decision is one a carried exit made. Nobody won anything there, so the release
+ * takes the whole carry back with it, as the position clear would, without the clear's refusal of a position that an
+ * exit's award made active (census A1 wave 5, COMPASS 32/27 21155795 and 32/30 21063079: `West|2|4` converged after its
+ * carrier had gone past `Southwest|1|2`'s BYE and been awarded `Southwest|2|1` by its opponent's carried default, and
+ * the call was refused ERR_ACTIVE_DRAW_POSITION after the draw had moved; `aCarrierPastAByeIsReleasedWhenItsExitConverges`).
+ */
+function carriedOnByExitsOnly({ seatMatchUp, onward }: { seatMatchUp?: MatchUp; onward: HydratedMatchUp[] }): boolean {
+  if (!seatMatchUp || checkScoreHasValue({ score: seatMatchUp.score })) return false;
+  if (seatMatchUp.matchUpStatus !== BYE && !isAnyExit(seatMatchUp.matchUpStatus)) return false;
+  return onward.every((matchUp) => {
+    if (checkScoreHasValue({ score: matchUp.score })) return false;
+    if (matchUp.matchUpStatus === BYE || (!matchUp.winningSide && !isAnyExit(matchUp.matchUpStatus))) return true;
+    // decided: only by an exit carried into it
+    const entries = Object.values(getSideExitProvenance({ matchUp }) ?? {});
+    return isAnyExit(matchUp.matchUpStatus) && entries.some((entry) => !!entry && carriedExitStatus(entry));
+  });
 }
 
 function directExitWinnerAcrossLink({
@@ -3257,7 +3299,7 @@ export function settleHeldExits({
   const relabelled = settleHoldersToBye({ drawDefinition, matchUpsMap, params: { appliedPolicies } });
   if (relabelled?.error) return decorateResult({ result: relabelled, stack });
 
-  return { ...SUCCESS };
+  return { ...SUCCESS, ...(produced?.produced ? { produced: true } : {}) };
 }
 
 /**

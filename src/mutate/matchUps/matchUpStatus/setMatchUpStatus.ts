@@ -177,6 +177,14 @@ function settleDraw({
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
   const settled = settleHeldExits({ tournamentRecord, appliedPolicies, drawDefinition, event });
   if (settled.error) return settled;
+  // A convergence produced there serves its loser link, and the BYE it can place there stands in front of a carrier: the
+  // carry past it was asked above, before that BYE existed, so it is asked again (census A1 wave 5, COMPASS 32:
+  // `Southwest|2|1` stayed TO_BE_PLAYED under its carrier until the same outcome was entered a second time;
+  // `aCarryPastAConvergencesByeIsCarriedOnTheFirstEntry`)
+  if ((settled as { produced?: boolean }).produced) {
+    const carriedAgain = reconcileCarriesPastByes({ tournamentRecord, drawDefinition, event });
+    if (carriedAgain?.error) return carriedAgain;
+  }
 
   // and a participant opposite a BYE whose next seat was taken when the BYE landed, and is free now, goes on
   const advanced = reconcileByeAdvancements({ tournamentRecord, drawDefinition, event });

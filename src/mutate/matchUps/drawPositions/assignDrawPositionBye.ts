@@ -674,6 +674,12 @@ function withdrawDisplacedCarry({
   const kept = { ...provenance };
   if (entry.byeClaims?.length) kept[sideNumber] = { byeClaims: [...entry.byeClaims] };
   else delete kept[sideNumber];
+  // and a BYE origin opposite goes with the carry: it was written opposite that exit, and stands opposite none now
+  const opposite = kept[3 - sideNumber];
+  if (opposite?.matchUpStatus === BYE && opposite.previousMatchUpStatus === BYE) {
+    if (opposite.byeClaims?.length) kept[3 - sideNumber] = { byeClaims: [...opposite.byeClaims] };
+    else delete kept[3 - sideNumber];
+  }
   setSideExitProvenance({ matchUp, provenance: kept });
   blankSideExitCode(matchUp, sideNumber);
 }
