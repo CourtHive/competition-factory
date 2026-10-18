@@ -208,6 +208,13 @@ already closed level, and counts a game in a tiebreak-only segment as one of its
 4. a timed segment's total is a finished segment: the side with more wins it, and a level one follows
    § 9.7 (or its declared tiebreak, § 6.4).
 
+**A total entered while a set is in play closes that set** (CA 2026-10-18): a scorer who scored part
+of a set point by point or game by game, then lost track, declares the set's total and keeps scoring.
+The open set takes the declared total and its winner, judged by the rules above; the points and games
+already recorded in it stay on the history; scoring continues in the next set. Mixed entry (games then
+points, points then a total) behaves the same way (`aSetTotalClosesTheSetInPlay.test.ts`). Undoing the
+total restores the set as it was. v1 appended the total as a new set beside the open one.
+
 A set with a winner triggers § 9. This is the only input a segment of outs takes (§ 8). In a
 combined total the set is the one segment, validated by § 7. **No set beyond N** in an exactly format:
 a set total after the N sets, like one after `COMPLETED`, is ignored (§ 9.2, § 9.6).
@@ -952,6 +959,13 @@ changes on load. The shapes are those of the decisions recorded in § 16:
 
 The reducer never produces such an entry live. **No version flag is needed**: an entry's presence on
 the timeline proves v1 wrote it.
+
+**The replay rule covers only entries distinguishable as v1's.** Four entries look the same whether v1
+or the current engine wrote them, and they take the current rule on rebuild (CA 2026-10-18: "Accept the
+change"; no version stamp): a game in a tiebreak-only set (§ 5), a game after a timed segment closed
+level (§ 6.4), a baseline set v1 judged by "reached setTo" (6-5 is no longer won, § 2.5), and a set total
+entered while a set is in play (§ 2.3). A stored archive holding one of them can rebuild to a different
+score.
 
 ## 13. What is deliberately not modelled
 

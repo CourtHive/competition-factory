@@ -174,6 +174,9 @@ the rule of the set it is entered for:
   or manual end;
 - an unfinished total with no winner (3-1, 6-5 in a set to six) is recorded as the set in play.
 
+A total entered while a set is in play (points or games already recorded in it) closes that set with
+the declared total; its points stay on the history and scoring continues in the next set.
+
 ```js
 engine.addSet({ side1Score: 6, side2Score: 4 }); // 6-4
 engine.addSet({ side1Score: 7, side2Score: 6, side1TiebreakScore: 7, side2TiebreakScore: 3 }); // 7-6(3)
