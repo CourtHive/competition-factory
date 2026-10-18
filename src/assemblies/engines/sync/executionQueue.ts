@@ -4,6 +4,7 @@ import { deleteNotices, getInvokeObserver, getMethods } from '@Global/state/glob
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
+import { keepWrites } from '@Assemblies/engines/parts/keepWrites';
 import { withCapturedClock } from '@Tools/clock';
 
 // types
@@ -42,12 +43,17 @@ export function executionQueue(engine: FactoryEngine, directives: Directives, ro
     } catch (err) {
       // thrown only under devContext (otherwise executeFunction catches): restore, then surface it
       if (captured) restoreOperation(captured);
+      else keepWrites(timeStamp);
       throw err;
     }
 
     if (refusal) {
-      if (captured) restoreOperation(captured);
-      return { ...refusal, rolledBack: !!captured };
+      if (captured) {
+        restoreOperation(captured);
+        return { ...refusal, rolledBack: true };
+      }
+      keepWrites(timeStamp);
+      return { ...refusal, rolledBack: false, results };
     }
 
     const mutationStatus = getMutationStatus({ timeStamp }); // timeStamp reaches the record via the factory extension
