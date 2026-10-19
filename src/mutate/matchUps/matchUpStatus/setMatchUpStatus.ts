@@ -12,13 +12,13 @@ import { reconcileByeAdvancements } from '@Mutate/matchUps/matchUpStatus/reconci
 import { reconcileCarriesPastByes } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
+import { announceGoesTo, setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import type { DeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -383,9 +383,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18: "no, a refused call does not store a draw's
   // missing edges. v1 should no longer do so."). `setMatchUpState` writes them before deciding anything, and takes
   // them back on its own refusal; what it held is held here too, for a refusal met after it returned.
-  const releaseEdges = holdGoesTo({ drawDefinition, matchUpsMap });
+  const heldEdges = holdGoesTo({ drawDefinition, matchUpsMap });
   const refuse = (refusal: ResultType) => {
-    releaseEdges?.();
+    heldEdges?.release();
     return decorateResult({ result: refusal, stack });
   };
 
@@ -395,6 +395,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   const result = setMatchUpState({
     matchUpStatusCodes: outcome?.matchUpStatusCodes,
     matchUpsMap,
+    edgesHeld: !!heldEdges,
     matchUpStatus: outcome?.matchUpStatus,
     winningSide: outcome?.winningSide,
     allowChangePropagation,
@@ -487,6 +488,9 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
   ];
   if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
+
+  // nothing is refused past here: a call that wrote the draw's missing edges announces the draw, once
+  announceGoesTo({ hold: heldEdges, tournamentRecord, drawDefinition, event });
 
   v2.compare?.(result);
 

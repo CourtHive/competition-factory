@@ -182,6 +182,9 @@ export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMa
  * `finishingPositionRange` (the object, and what it held) is noted, which is all `addGoesTo` and the finishing rounds
  * it may add write. They are written back into the same matchUps, and the same range objects, as the differential
  * path writes back what a divergence touched.
+ *
+ * `written` says whether any of what was held has changed since: a call that succeeds announces the draw once when it
+ * did (CA, 2026-10-18: "Option 2"), with a `MODIFY_DRAW_DEFINITION` rather than a `MODIFY_MATCHUP` per matchUp.
  */
 export function holdGoesTo({
   drawDefinition,
@@ -189,7 +192,7 @@ export function holdGoesTo({
 }: {
   drawDefinition?: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
-}): (() => void) | undefined {
+}): GoesToHold | undefined {
   if (!drawDefinition || hasStoredGoesTo({ drawDefinition })) return undefined;
   const matchUps = (matchUpsMap ?? getMatchUpsMap({ drawDefinition })).drawMatchUps;
   const held = matchUps.map((matchUp) => {
@@ -201,7 +204,7 @@ export function holdGoesTo({
     };
   });
 
-  return () => {
+  const release = () => {
     for (const { matchUp, storedValues, range } of held) {
       const target = matchUp as Record<(typeof GOES_TO_FIELDS)[number], unknown>;
       for (const [key, present, value] of storedValues) {
@@ -217,7 +220,23 @@ export function holdGoesTo({
       }
     }
   };
+
+  const written = () =>
+    held.some(({ matchUp, storedValues, range }) => {
+      const moved = storedValues.some(([key, present, value]) => {
+        const isPresent = key in matchUp;
+        return isPresent !== present || matchUp[key] !== value;
+      });
+      if (moved) return true;
+      if (!range) return !!matchUp.finishingPositionRange;
+      if (matchUp.finishingPositionRange !== range.object) return true;
+      return JSON.stringify(range.object) !== JSON.stringify(range.values);
+    });
+
+  return { release, written };
 }
+
+export type GoesToHold = { release: () => void; written: () => boolean };
 
 const GOES_TO_FIELDS = ['winnerMatchUpId', 'loserMatchUpId', 'finishingRound'] as const;
 

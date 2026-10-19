@@ -332,8 +332,10 @@ export function collectEntities(record: any): EntityMaps {
 
 /** Structural diff of two records → the list of changed entities (kind + id + change). */
 export function changedEntities(before: any, after: any): EntityChange[] {
-  const b = collectEntities(before);
-  const a = collectEntities(after);
+  return diffEntities(collectEntities(before), collectEntities(after));
+}
+
+function diffEntities(b: EntityMaps, a: EntityMaps): EntityChange[] {
   const changes: EntityChange[] = [];
   for (const kind of Object.keys(b) as EntityKind[]) {
     const bm = b[kind];
@@ -435,11 +437,42 @@ export function noticedEntityKeys(captured: CapturedNotice[]): Set<string> {
 }
 
 /**
+ * The fields of a stored matchUp that say where it leads and what it finishes: its edges. A draw stored without them
+ * (hand assembled, CA 2026-10-18) has them written by the first call that needs them (`ensureGoesTo`).
+ */
+const EDGE_FIELDS = ['winnerMatchUpId', 'loserMatchUpId', 'finishingRound', 'finishingPositionRange'];
+
+/**
+ * A matchUp whose ONLY change is its edges is covered by a notice for its draw (CA, 2026-10-18: a call that repairs a
+ * draw's missing edges announces the draw once, not each matchUp): a consumer told "this draw changed" re-projects the
+ * draw's subtree, which is the record-hierarchy rule `ancestorScopeCovers` already applies to a removal.
+ *
+ * Narrow by construction: the matchUp is compared with the edge fields removed and must be otherwise identical, so a
+ * status, score, side, schedule or provenance change still needs its own `MODIFY_MATCHUP`, draw notice or not. An
+ * added or removed matchUp is not an edge change. Only the matchUp's OWN draw counts, and not its event.
+ */
+function isEdgeRepairCovered(
+  change: EntityChange,
+  before: EntityMaps,
+  after: EntityMaps,
+  noticed: Set<string>,
+  parentage: Parentage,
+): boolean {
+  if (change.kind !== 'matchUp' || change.change !== 'modified') return false;
+  const drawId = parentage.drawOfMatchUp.get(change.id);
+  if (!drawId || !noticed.has(`drawDefinition:${drawId}`)) return false;
+  const withoutEdges = (matchUp: any) => stableStringify(omit(matchUp, EDGE_FIELDS));
+  return withoutEdges(before.matchUp.get(change.id)) === withoutEdges(after.matchUp.get(change.id));
+}
+
+/**
  * COMPLETENESS check: every changed entity must be covered by a notice whose
  * topic is legitimate for its kind + change. Returns the violations (empty = OK).
  */
 export function conformanceViolations(before: any, after: any, captured: CapturedNotice[]): Violation[] {
-  const changes = changedEntities(before, after);
+  const entitiesBefore = collectEntities(before);
+  const entitiesAfter = collectEntities(after);
+  const changes = diffEntities(entitiesBefore, entitiesAfter);
   const noticed = noticedEntityKeys(captured);
   const parentage = buildParentage(before);
   const violations: Violation[] = [];
@@ -450,6 +483,7 @@ export function conformanceViolations(before: any, after: any, captured: Capture
       violations.push({ ...change, reason: `no notice topic exists to cover ${change.kind} ${change.change}` });
       continue;
     }
+    if (isEdgeRepairCovered(change, entitiesBefore, entitiesAfter, noticed, parentage)) continue;
     if (!isEntityCovered(change, noticed, parentage)) {
       violations.push({ ...change, reason: `changed but not covered by a notice (${legitTopics.join('|')})` });
     }

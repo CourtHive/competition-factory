@@ -13,6 +13,7 @@ import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelL
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { ensureGoesTo, holdGoesTo, type GoesToHold } from '@Query/matchUps/addGoesTo';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
@@ -23,10 +24,10 @@ import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
+import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import { ensureGoesTo, holdGoesTo } from '@Query/matchUps/addGoesTo';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -114,6 +115,8 @@ type SetMatchUpStateArgs = {
   disableScoreValidation?: boolean;
   projectedWinningSide?: number;
   propagateExitStatus?: boolean;
+  /** set ONLY by `setMatchUpStatus`, which holds the draw's missing edges and announces them itself (`announceGoesTo`) */
+  edgesHeld?: boolean;
   /** set ONLY by `progressExitStatus` — see `checkParticipants` */
   propagatingExit?: boolean;
   propagateRetirementAsExit?: boolean;
@@ -150,10 +153,36 @@ type SetMatchUpStateArgs = {
 export function setMatchUpState(params: SetMatchUpStateArgs): any {
   // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18): what `ensureGoesTo` writes below is held, and
   // written back if the call returns an error. See `holdGoesTo`.
-  const release = holdGoesTo({ drawDefinition: params.drawDefinition, matchUpsMap: params.matchUpsMap });
+  const hold = holdGoesTo({ drawDefinition: params.drawDefinition, matchUpsMap: params.matchUpsMap });
   const result = writeMatchUpState(params);
-  if (result?.error) release?.();
+  if (result?.error) hold?.release();
+  // a call that succeeds and wrote the edges announces the draw once; a caller holding them itself announces them
+  else if (!params.edgesHeld) announceGoesTo({ hold, ...params });
   return result;
+}
+
+/**
+ * A CALL THAT REPAIRS A DRAW'S MISSING EDGES ANNOUNCES THE DRAW ONCE (CA, 2026-10-18: "Option 2 and document the
+ * decision in tasks. Missing edges are most likely from hand assembled draws and themselves an edge case.")
+ *
+ * One `MODIFY_DRAW_DEFINITION`, keyed by the draw, not a `MODIFY_MATCHUP` per matchUp whose only change is an edge: a
+ * subscriber told the draw changed re-projects it, edges included. Sent only by a call that succeeds and only when the
+ * edges were written (`hold.written`); a refused call writes them back and announces nothing, so this is asked only
+ * once the call's own refusals are behind it.
+ */
+export function announceGoesTo({
+  tournamentRecord,
+  drawDefinition,
+  event,
+  hold,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  hold?: GoesToHold;
+  event?: Event;
+}) {
+  if (!drawDefinition || !hold?.written()) return;
+  modifyDrawNotice({ drawDefinition, tournamentId: tournamentRecord?.tournamentId, eventId: event?.eventId });
 }
 
 function writeMatchUpState(params: SetMatchUpStateArgs) {
