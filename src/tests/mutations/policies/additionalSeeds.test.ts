@@ -9,6 +9,7 @@ import {
   INVALID_PARTICIPANT_ID,
   SEEDSCOUNT_GREATER_THAN_DRAW_SIZE,
   STRUCTURE_NOT_FOUND,
+  INVALID_DRAW_POSITION_FOR_SEEDING,
 } from '@Constants/errorConditionConstants';
 
 // A governing body that protects a returning player adds a seed ABOVE the draw's normal count,
@@ -249,7 +250,7 @@ it('restores seedLimit when the seed assignment itself fails', () => {
     seedingBasis: PROTECTED_RANKING,
     drawId,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_DRAW_POSITION_FOR_SEEDING);
 
   const updated: any = tournamentEngine.getEvent({ drawId }).drawDefinition.structures[0];
   expect(updated.seedLimit).toEqual(8);

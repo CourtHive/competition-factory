@@ -8,6 +8,9 @@ import { describe, expect, it } from 'vitest';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { UnifiedTournamentID } from '@Types/tournamentTypes';
 
+// constants
+import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
+
 /**
  * `tournamentOtherIds` was declared on the `Tournament` type with NO write path, no
  * reader, and no read-model column, while the event grain had all three. A record
@@ -26,7 +29,7 @@ describe('addTournamentOtherId', () => {
   };
 
   function seed() {
-    mocksEngine.generateTournamentRecord({ participantsProfile: { nonRandom: 1 }, setState: true });
+    mocksEngine.generateTournamentRecord({ setState: true });
     return tournamentEngine.getTournament().tournamentRecord;
   }
 
@@ -91,7 +94,7 @@ describe('addTournamentOtherId', () => {
       organisationId: 'ITA',
       isOrigin: true,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.info).toContain('UTR');
 
     const { tournamentRecord } = tournamentEngine.getTournament();
@@ -162,9 +165,7 @@ describe('addTournamentOtherId', () => {
   });
 
   it('round-trips a fully-formed entry supplied at record creation', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-      participantsProfile: { nonRandom: 1 },
-    });
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({});
     tournamentRecord.tournamentOtherIds = [{ ...utrId, isOrigin: true }];
     tournamentEngine.setState(tournamentRecord);
 
@@ -175,7 +176,7 @@ describe('addTournamentOtherId', () => {
 
 describe('setTournamentOtherIds', () => {
   function seed() {
-    mocksEngine.generateTournamentRecord({ participantsProfile: { nonRandom: 1 }, setState: true });
+    mocksEngine.generateTournamentRecord({ setState: true });
   }
 
   it('replaces the array wholesale, which is how the origin is re-pointed', () => {
@@ -210,7 +211,7 @@ describe('setTournamentOtherIds', () => {
         { organisationId: 'ITA', tournamentId: 'ita-4471', isOrigin: true },
       ],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.info).toContain('isOrigin');
     expect(tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds).toBeUndefined();
   });
@@ -222,7 +223,7 @@ describe('setTournamentOtherIds', () => {
 
     for (const tournamentOtherIds of ['nope', 42, {}, undefined] as any[]) {
       const result: any = tournamentEngine.setTournamentOtherIds({ tournamentOtherIds });
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual(INVALID_VALUES);
       expect(result.info).toContain('array');
     }
     expect(tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds).toBeUndefined();
@@ -234,14 +235,14 @@ describe('setTournamentOtherIds', () => {
     const result: any = tournamentEngine.setTournamentOtherIds({
       tournamentOtherIds: [{ tournamentId: '306618' } as any],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
     expect(tournamentEngine.getTournament().tournamentRecord.tournamentOtherIds).toBeUndefined();
   });
 });
 
 describe('tournamentOrigin + the tournaments read-model row', () => {
   it('projects the flagged entry, independently of the record’s own tournamentId', () => {
-    mocksEngine.generateTournamentRecord({ participantsProfile: { nonRandom: 1 }, setState: true });
+    mocksEngine.generateTournamentRecord({ setState: true });
     tournamentEngine.addTournamentOtherId({ organisationId: 'UTR', otherTournamentId: '306618', isOrigin: true });
 
     const { tournamentRecord } = tournamentEngine.getTournament();
@@ -261,7 +262,6 @@ describe('tournamentOrigin + the tournaments read-model row', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     tournamentEngine.addTournamentOtherId({ organisationId: 'UTR', otherTournamentId: '306618', isOrigin: true });

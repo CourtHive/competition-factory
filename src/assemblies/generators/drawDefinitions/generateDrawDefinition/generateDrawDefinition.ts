@@ -87,7 +87,10 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
   const drawFormatResult = getDrawFormat({ ...params, enforceGender, eventType, matchUpType });
   if (drawFormatResult.error) return decorateResult({ result: drawFormatResult, stack });
   const { matchUpFormat, tieFormat } = drawFormatResult;
-  if (formatCanEndTied(matchUpFormat) && generationNeedsWinner(drawType, !!params.withPlayoffs))
+  // The draw's matchUps inherit the event's format when the draw declares none; a TEAM draw's dual is
+  // decided by its tieFormat, whose tieMatchUps may end level.
+  const governingFormat = tieFormat ? undefined : (matchUpFormat ?? event?.matchUpFormat);
+  if (formatCanEndTied(governingFormat) && generationNeedsWinner(drawType, !!params.withPlayoffs))
     return { error: INVALID_VALUES, info: 'tie-capable formats are not allowed in elimination structures' };
 
   const invalidDrawId = params.drawId && typeof params.drawId !== 'string';

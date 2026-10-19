@@ -2,7 +2,7 @@
 title: Scoring Engine Overview
 ---
 
-The **ScoringEngine** is a stateful mutation engine for point-by-point match scoring. It wraps the pure functions provided by `scoreGovernor` into a convenient, stateful facade with built-in undo/redo, event handlers, and multi-sport format support.
+The **ScoringEngine** is a stateful mutation engine for point-by-point match scoring. It wraps the direct scoring functions provided by `scoreGovernor` into a convenient, stateful facade with built-in undo/redo, event handlers, and multi-sport format support.
 
 ## When to Use ScoringEngine vs scoreGovernor
 
@@ -19,8 +19,8 @@ The **ScoringEngine** is a stateful mutation engine for point-by-point match sco
 
 - **Multi-level scoring** — Points, games, sets, and segments can all be added through a unified timeline
 - **Undo/redo** — Full undo/redo stack across all input modes (points, games, sets, segments)
-- **Event handlers** — Callbacks for point, game completion, set completion, match completion, undo, redo, and reset
-- **Multi-sport format support** — [matchUpFormat codes](/docs/codes/matchup-format) convering many sports
+- **Event handlers** — Callbacks for point, game completion, set completion, match completion, match tie, undo, redo, and reset
+- **Multi-sport format support** — [matchUpFormat codes](/docs/codes/matchup-format) covering many sports
 - **[CODES](/docs/data-standards#codes)-compliant state** — Internal state is a standard CODES `MatchUp` object
 - **Mixed-mode input** — Combine point-level, game-level, and set-level input in the same match
 - **competitionFormat integration** — support for penalty types, timer profiles, substitution rules, and more
@@ -49,7 +49,7 @@ const pointCount = engine.getPointCount(); // 4
 
 // Undo last point
 engine.undo();
-engine.getScoreboard(); // '40-0'
+engine.getScoreboard(); // '0-0 (40-0)'
 
 // Redo the undone point
 engine.redo();
@@ -62,7 +62,7 @@ engine.getWinner(); // undefined
 
 ## Architecture
 
-The ScoringEngine follows the Competition Factory's architecture pattern where **governors** provide pure functions and **engines** provide stateful facades:
+The ScoringEngine follows the Competition Factory's architecture pattern where **governors** provide direct functions and **engines** provide stateful facades:
 
 ```text
 ┌──────────────────────────┐
@@ -70,7 +70,7 @@ The ScoringEngine follows the Competition Factory's architecture pattern where *
 │  (undo/redo, events,     │
 │   format introspection)  │
 ├──────────────────────────┤
-│    scoreGovernor         │  Pure scoring functions
+│    scoreGovernor         │  Direct scoring functions
 │  (addPoint, getScore,    │
 │   isComplete, ...)       │
 ├──────────────────────────┤
@@ -104,4 +104,6 @@ If you provide a `competitionFormat`, the engine extracts `matchUpFormat`, `poin
 - **[Multi-Sport Format Support](./format-support.md)** — Format string grammar and sport-specific examples
 - **[Visualization Applications](./visualization-applications.md)** — Building visualizations with ScoringEngine data
 - **[matchUpFormat Codes](/docs/codes/matchup-format)** — Format string reference
-- **[Score Governor](/docs/governors/score-governor)** — Pure scoring functions
+- **[Score Governor](/docs/governors/score-governor)** — Direct scoring functions
+
+Direct governor calls have their own ownership contracts: `scoreGovernor.addPoint` mutates the supplied matchUp. Use the engine facade when you need managed state and undo/redo.

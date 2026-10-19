@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Applicant, TournamentProposal, CalendarEvent } from '@Types/sanctioningTypes';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 const testApplicant: Applicant = {
@@ -241,7 +242,7 @@ describe('Calendar Conflict Detection', () => {
   it('returns error without calendarContext', () => {
     createRecord('2027-06-01', '2027-06-07');
     let result: any = sanctioningEngine.getCalendarConflicts({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('auto-loads calendarRules from policy snapshot when not provided in context', () => {

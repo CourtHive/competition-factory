@@ -50,7 +50,6 @@ describe('engine.inspect — live state snapshot', () => {
 
   it('counts loaded records correctly', () => {
     const result = mocksEngine.generateTournamentRecord({
-      inContext: true,
       setState: true,
       drawProfiles: [{ participantsCount: 8, drawSize: 8 }],
       venueProfiles: [{ courtsCount: 4 }],

@@ -2,6 +2,12 @@
 title: Draws Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`addGoesTo`](/docs/implementation/records/addGoesTo), [`allPlayoffPositionsFilled`](/docs/implementation/draws/allPlayoffPositionsFilled), [`generateDrawStructuresAndLinks`](/docs/implementation/draws/generateDrawStructuresAndLinks), [`getDrawDefinitionTimeItem`](/docs/implementation/scheduling/getDrawDefinitionTimeItem), [`getDrawStructures`](/docs/implementation/records/getDrawStructures), [`getDrawTypeCoercion`](/docs/implementation/draws/getDrawTypeCoercion), [`getPositionsPlayedOff`](/docs/implementation/draws/getPositionsPlayedOff), [`getSeedingThresholds`](/docs/implementation/draws/getSeedingThresholds), [`hasLuckyRounds`](/docs/implementation/draws/hasLuckyRounds), [`updateTeamLineUp`](/docs/implementation/draws/updateTeamLineUp). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { drawsGovernor } from 'tods-competition-factory';
 ```
@@ -54,20 +60,7 @@ engine.addFinishingRounds({
 
 ## addGoesTo
 
-Adds a link between structures indicating progression path.
-
-```js
-engine.addGoesTo({
-  drawId, // required
-  sourceStructureId, // required
-  targetStructureId, // required
-  roundNumber, // optional - specific round
-});
-```
-
-**Purpose:** Define progression paths between structures.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`addGoesTo`](/docs/implementation/records/addGoesTo). Package-export status is a separate decision. Use `migrateTournamentRecord` for stored edges, `addDrawDefinition` for new draws, or `getDrawData` for read-only projection; see the full migration guidance.
 
 ## adHocPositionSwap
 
@@ -192,18 +185,7 @@ engine.addVoluntaryConsolationStructure({
 
 ## allPlayoffPositionsFilled
 
-Checks if all playoff positions for a structure have been filled.
-
-```js
-const { allFilled } = engine.allPlayoffPositionsFilled({
-  drawId, // required
-  structureId, // required
-});
-```
-
-**Returns:** Boolean indicating if all playoff positions are assigned.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`allPlayoffPositionsFilled`](/docs/implementation/draws/allPlayoffPositionsFilled). Package-export status is a separate decision.
 
 ## alternateDrawPositionAssignment
 
@@ -465,6 +447,11 @@ draw's `qualifiersCount` reserves no positions in the qualifying structure, and 
 be read is reported as an error rather than thrown. A malformed `drawName` is refused by `modifyDrawDefinition`
 as `{ error }` rather than read as success.
 
+With the `drawId` of a draw already in the event (adding qualifying to a generated main), the draw is built on a
+**copy** and the record is left as it was: commit the result with
+`addDrawDefinition({ drawDefinition, allowReplacement: true })`, which announces it. Until 2026-10 the stored draw was
+changed in place, unannounced, whether or not the commit followed.
+
 ---
 
 ## generateDrawMaticRound
@@ -486,20 +473,7 @@ engine.generateDrawMaticRound({
 
 ## generateDrawStructuresAndLinks
 
-Generates multiple structures with linking for complex draw formats.
-
-```js
-const { structures, links } = engine.generateDrawStructuresAndLinks({
-  structuresCount, // required
-  drawType, // required
-  drawSize, // required
-  stageSequence, // optional
-});
-```
-
-**Purpose:** Create multi-structure draws with automatic linking.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`generateDrawStructuresAndLinks`](/docs/implementation/draws/generateDrawStructuresAndLinks). Package-export status is a separate decision.
 
 ## generateDrawTypeAndModifyDrawDefinition
 
@@ -514,6 +488,9 @@ engine.generateDrawTypeAndModifyDrawDefinition({
 ```
 
 **Purpose:** Convert draw to different format.
+
+On a draw stored in the event the matchUps it adds are announced as `ADD_MATCHUPS`, with `MODIFY_DRAW_DEFINITION`;
+`modifyOriginal: false` works on a copy and sends nothing.
 
 ---
 
@@ -656,18 +633,7 @@ const { valid, targets } = engine.getAvailableQualifyingTargets({
 
 ## getDrawDefinitionTimeItem
 
-Returns time items attached to a draw definition.
-
-```js
-const { timeItem } = engine.getDrawDefinitionTimeItem({
-  drawId, // required
-  itemType, // required - time item type
-});
-```
-
-**Purpose:** Query draw-level time metadata.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getDrawDefinitionTimeItem`](/docs/implementation/scheduling/getDrawDefinitionTimeItem). Package-export status is a separate decision.
 
 ## getDrawParticipantRepresentativeIds
 
@@ -686,33 +652,11 @@ const { representativeIds } = engine.getDrawParticipantRepresentativeIds({
 
 ## getDrawStructures
 
-Returns all structures in a draw.
-
-```js
-const { structures } = engine.getDrawStructures({
-  drawId, // required
-  stage, // optional - filter by stage
-});
-```
-
-**Purpose:** Get draw structure details.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getDrawStructures`](/docs/implementation/records/getDrawStructures). Package-export status is a separate decision.
 
 ## getDrawTypeCoercion
 
-Determines if a draw type can be coerced to another type.
-
-```js
-const { valid, targetDrawType } = engine.getDrawTypeCoercion({
-  drawId, // required
-  drawSize, // required
-});
-```
-
-**Purpose:** Validate draw type conversions.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getDrawTypeCoercion`](/docs/implementation/draws/getDrawTypeCoercion). Package-export status is a separate decision.
 
 ## getEligibleVoluntaryConsolationParticipants
 
@@ -789,18 +733,7 @@ const { positionAssignments } = engine.getPositionAssignments({
 
 ## getPositionsPlayedOff
 
-Returns positions that have playoff matchUps.
-
-```js
-const { positions } = engine.getPositionsPlayedOff({
-  drawId, // required
-  structureId, // required
-});
-```
-
-**Purpose:** Identify playoff positions in structure.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getPositionsPlayedOff`](/docs/implementation/draws/getPositionsPlayedOff). Package-export status is a separate decision.
 
 ## getRandomQualifierList
 
@@ -819,18 +752,7 @@ const { qualifiers } = engine.getRandomQualifierList({
 
 ## getSeedingThresholds
 
-Returns seeding threshold values based on draw size.
-
-```js
-const { thresholds } = engine.getSeedingThresholds({
-  drawSize, // required
-  policyDefinitions, // optional
-});
-```
-
-**Purpose:** Determine valid seed counts for draw.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getSeedingThresholds`](/docs/implementation/draws/getSeedingThresholds). Package-export status is a separate decision.
 
 ## getSeedsCount
 
@@ -1404,18 +1326,7 @@ engine.swapDrawPositionAssignments({
 
 ## updateTeamLineUp
 
-See [validateLineUp](/docs/governors/participant-governor#validatelineup)
-
-```js
-engine.updateTeamLineUp({
-  participantId, // id of the team for which lineUp is being updated
-  tieFormat, // valid tieFormat - used to validate collectionIds
-  lineUp, // valid lineUp array
-  drawId, // required as latest lineUp modification is stored in an extension on drawDefinition
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`updateTeamLineUp`](/docs/implementation/draws/updateTeamLineUp). Package-export status is a separate decision.
 
 ## withdrawParticipantAtDrawPosition
 
@@ -1453,19 +1364,7 @@ engine.luckyDrawAdvancement({
 
 ## hasLuckyRounds
 
-Determines whether a structure contains "lucky rounds" — rounds where the matchUp count transitions from odd to even, meaning one participant advances without playing. This is the definitive structural test for lucky-style draws, independent of `drawType` or `stage`.
-
-```js
-const result = engine.hasLuckyRounds({
-  structure, // optional — structure object with matchUps
-  matchUps, // optional — array of matchUps (alternative to structure)
-});
-// returns boolean
-```
-
-A lucky round is identified when round _N_ has an **odd** matchUp count and round _N+1_ has an **even** count. Qualifying structures with non-power-of-2 draw sizes are correctly identified as non-lucky because their round transitions don't follow this pattern.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`hasLuckyRounds`](/docs/implementation/draws/hasLuckyRounds). Package-export status is a separate decision.
 
 ## getLuckyDrawRoundStatus
 

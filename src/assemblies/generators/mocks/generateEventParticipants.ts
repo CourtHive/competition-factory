@@ -50,12 +50,13 @@ export function generateEventParticipants(params) {
   const gendersCount = isMixedDoubles ? { [MALE]: participantsCount, [FEMALE]: participantsCount } : undefined;
 
   const idPrefix = participantsProfile?.idPrefix ? `E-${eventIndex}-${participantsProfile?.idPrefix}` : undefined;
-  const { participants: uniqueFlightParticipants } = generateParticipants({
-    uuids: eventProfile.uuids || uuids,
+  const generated = generateParticipants({
     ...participantsProfile,
-    scaledParticipantsCount: eventProfile.scaledParticipantsCount,
+    // the most specific setting wins: the eventProfile's, then its participantsProfile's, then the call's
+    scaledParticipantsCount: eventProfile.scaledParticipantsCount ?? participantsProfile?.scaledParticipantsCount,
+    rankingRange: eventProfile.rankingRange ?? participantsProfile?.rankingRange,
+    uuids: eventProfile.uuids || participantsProfile?.uuids || uuids,
     consideredDate: tournamentRecord?.startDate,
-    rankingRange: eventProfile.rankingRange,
     participantType: eventParticipantType,
     participantsCount,
     ratingsParameters,
@@ -64,6 +65,8 @@ export function generateEventParticipants(params) {
     idPrefix,
     sex,
   });
+  if (generated.error) return generated;
+  const uniqueFlightParticipants = generated.participants;
 
   const participants = uniqueFlightParticipants as Participant[];
   if (isMixedDoubles) {

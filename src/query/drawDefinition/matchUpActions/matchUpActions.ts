@@ -4,6 +4,7 @@ import { getDisabledMatchUpStatuses } from '@Query/matchUps/getDisabledMatchUpSt
 import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
+import { getEventScopedRecord } from '@Query/participants/getEventScopedRecord';
 import { exitAwardable } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -15,8 +16,8 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { adHocMatchUpActions } from './adHocMatchUpActions';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { locateMatchUp } from '@Acquire/locateMatchUp';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
+import { locateMatchUp } from '@Acquire/locateMatchUp';
 import { isString } from '@Tools/objects';
 import {
   getEnabledStructures,
@@ -114,9 +115,11 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
 
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
+  // every sub-action offers participants from this event (entries, other flights, lucky losers, lineUps), so only the
+  // participants the event references are built: building the whole pool made one click linear in the tournament
   const tournamentParticipants = getParticipants({
+    tournamentRecord: getEventScopedRecord({ tournamentRecord, event }),
     withIndividualParticipants: true,
-    tournamentRecord,
   }).participants;
 
   const { drawId } = drawDefinition;

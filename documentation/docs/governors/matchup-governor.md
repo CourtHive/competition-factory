@@ -2,6 +2,12 @@
 title: matchUp Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`getMatchUpContextIds`](/docs/implementation/records/getMatchUpContextIds), [`getMatchUpType`](/docs/implementation/records/getMatchUpType), [`participantScheduledMatchUps`](/docs/implementation/records/participantScheduledMatchUps), [`validMatchUp`](/docs/implementation/validation/validMatchUp), [`validMatchUps`](/docs/implementation/validation/validMatchUps). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { matchUpGovernor } from 'tods-competition-factory';
 ```
@@ -147,22 +153,41 @@ Refused with `INVALID_MATCHUP` when `tieMatchUpId` names a SINGLES or DOUBLES ma
 
 ## bulkMatchUpStatusUpdate
 
-Provides the ability to update the outcomes of multiple matchUps at once.
+Provides the ability to update the outcomes of multiple matchUps at once. Each outcome is applied with [setMatchUpStatus](#setmatchupstatus), and a result entered in bulk propagates exactly as the same result entered singly.
 
 ```js
 const outcomes = [
   {
-    eventId,
-    drawId,
-    matchUpId,
-    matchUpFormat,
+    tournamentId, // required
+    eventId, // required
+    drawId, // required — a draw of that event
+    matchUpId, // required
+    matchUpFormat, // optional
     matchUpStatus,
     winningSide,
     score,
+    schedule, // optional
+    notes, // optional
+    // optional — any option below, for this outcome only
   },
 ];
-engine.bulkMatchUpStatusUpdate({ outcomes });
+engine.bulkMatchUpStatusUpdate({
+  outcomes,
+  policyDefinitions, // optional
+  // optional — applied to every outcome; one set on an outcome wins over the same one set here
+  allowChangePropagation,
+  propagateExitStatus,
+  propagateRetirementAsExit,
+  disableScoreValidation,
+  disableAutoCalc,
+  enableAutoCalc,
+  setTBlast,
+});
 ```
+
+The options mean what they mean on `setMatchUpStatus`, with the same precedence for the three propagation flags: an applied scoring policy that speaks on a flag wins over the call, and the call decides only where the policy is silent.
+
+Every outcome is located before any is applied: its tournament, event, draw (which must belong to that event) and matchUp. If one is missing or not found, the call is refused and nothing is written. The error names what is missing (`MISSING_TOURNAMENT_RECORD`, `MISSING_EVENT`, `EVENT_NOT_FOUND`, `MISSING_DRAW_ID`, `DRAW_DEFINITION_NOT_FOUND`, `MISSING_MATCHUP_ID` or `MATCHUP_NOT_FOUND`), and `context.outcomeIndex` says which outcome. Outcomes are then applied in the order given. If `setMatchUpStatus` refuses one of them, the call returns that error and the outcomes before it stay written; pass `rollbackOnError: true` to make the whole call all or nothing.
 
 ---
 
@@ -465,15 +490,7 @@ const { profile } = engine.getMatchUpCompetitiveProfile({
 
 ## getMatchUpContextIds
 
-Returns context IDs (tournamentId, eventId, drawId) for a matchUp.
-
-```js
-const { contextIds } = engine.getMatchUpContextIds({
-  matchUpId, // required
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getMatchUpContextIds`](/docs/implementation/records/getMatchUpContextIds). Package-export status is a separate decision.
 
 ## getMatchUpDailyLimits
 
@@ -603,15 +620,7 @@ const { schedule } = engine.getMatchUpScheduleDetails({
 
 ## getMatchUpType
 
-Returns the matchUp type (SINGLES, DOUBLES, TEAM).
-
-```js
-const { matchUpType } = engine.getMatchUpType({
-  matchUp, // required
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getMatchUpType`](/docs/implementation/records/getMatchUpType). Package-export status is a separate decision.
 
 ## getMatchUpsStats
 
@@ -737,16 +746,7 @@ const {
 
 ## participantScheduledMatchUps
 
-Returns scheduled matchUps for a specific participant.
-
-```js
-const { matchUps } = engine.participantScheduledMatchUps({
-  participantId, // required
-  scheduleDate, // optional - filter by date
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`participantScheduledMatchUps`](/docs/implementation/records/participantScheduledMatchUps). Package-export status is a separate decision.
 
 ## publicFindMatchUp
 
@@ -806,12 +806,14 @@ Refused with `INVALID_MATCHUP` when `tieMatchUpId` names a SINGLES or DOUBLES ma
 
 ## removeDelegatedOutcome
 
-Removes a delegated outcome from a matchUp.
+Removes a delegated outcome from a matchUp. Announced with `MODIFY_MATCHUP`, as `setDelegatedOutcome` is; a matchUp with
+no delegated outcome sends nothing.
 
 ```js
 engine.removeDelegatedOutcome({
   matchUpId, // required
   drawId, // required
+  disableNotice, // optional boolean - send no notice
 });
 ```
 
@@ -1290,24 +1292,8 @@ const { matchUps } = engine.tournamentMatchUps({
 
 ## validMatchUp
 
-Validates a single matchUp object.
-
-```js
-const { valid, errors } = engine.validMatchUp({
-  matchUp, // required
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validMatchUp`](/docs/implementation/validation/validMatchUp). Package-export status is a separate decision.
 
 ## validMatchUps
 
-Validates an array of matchUp objects.
-
-```js
-const { valid, errors } = engine.validMatchUps({
-  matchUps, // required
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validMatchUps`](/docs/implementation/validation/validMatchUps). Package-export status is a separate decision.

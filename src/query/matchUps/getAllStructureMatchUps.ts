@@ -9,18 +9,20 @@ import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getSourceDrawPositionRanges } from './getSourceDrawPositionRanges';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
+import { createHydrationCache, HydrationCache } from './hydrationCache';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
 import { getDrawPositionsRanges } from './getDrawPositionsRanges';
 import { getRoundContextProfile } from './getRoundContextProfile';
+import { withContextExclusion } from './contextExclusion';
 import { structuresOf } from '@Acquire/structureMembers';
 import { addMatchUpContext } from './addMatchUpContext';
 import { filterMatchUps } from '@Query/filterMatchUps';
 import { getRoundMatchUps } from './getRoundMatchUps';
 
 // constants and types
-import type { ErrorType } from '@Constants/errorConditionConstants';
 import { MISSING_STRUCTURE } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
+import type { ErrorType } from '@Constants/errorConditionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import {
   ContextContent,
@@ -68,6 +70,8 @@ type GetAllStructureMatchUps = {
   drawDefinition?: DrawDefinition;
   contextProfile?: ContextProfile;
   tournamentRecord?: Tournament;
+  /** Shared by every structure of one read; created here when the caller has none. */
+  hydrationCache?: HydrationCache;
   afterRecoveryTimes?: boolean;
   useParticipantMap?: boolean;
   usePublishState?: boolean;
@@ -103,6 +107,10 @@ export function getAllStructureMatchUps(
 export function getAllStructureMatchUps(params: GetAllStructureMatchUps): AllStructureMatchUpsResult;
 // eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
 export function getAllStructureMatchUps(params: GetAllStructureMatchUps): AllStructureMatchUpsResult {
+  return withContextExclusion(params, getAllStructureMatchUpsUnredacted);
+}
+
+function getAllStructureMatchUpsUnredacted(params: GetAllStructureMatchUps): AllStructureMatchUpsResult {
   const {
     provisionalPositioning,
     tournamentRecord,
@@ -235,14 +243,10 @@ export function getAllStructureMatchUps(params: GetAllStructureMatchUps): AllStr
   }
 
   if (inContext) {
-    if (params.hydrateMatchUpId) {
-      const matchUpId = params.hydrateMatchUpId;
-      matchUps = matchUps.filter(
-        (matchUp) =>
-          matchUp.matchUpId === matchUpId ||
-          matchUp.tieMatchUps?.some((tieMatchUp) => tieMatchUp.matchUpId === matchUpId),
-      );
-    }
+    matchUps = selectProjectionCandidates({
+      matchUpIds: params.hydrateMatchUpId ? [params.hydrateMatchUpId] : matchUpFilters?.matchUpIds,
+      matchUps,
+    });
     matchUps = hydrateMatchUpsInContext({
       positionAssignments,
       initialRoundOfPlay,
@@ -317,6 +321,23 @@ export function getAllStructureMatchUps(params: GetAllStructureMatchUps): AllStr
   };
 }
 
+/**
+ * Only the matchUps that can be returned are hydrated: those named, and the dual each named line belongs
+ * to (a line is hydrated inside its dual, from the dual's lineUps). Every structure-level profile above was
+ * already taken from all of the structure's matchUps, and each matchUp is hydrated independently of the
+ * others, so narrowing here changes the work and not the result. The matchUpIds filter after hydration
+ * still decides what is returned: a dual kept for its line is dropped there unless it was named too.
+ */
+function selectProjectionCandidates({ matchUpIds, matchUps }: { matchUpIds?: string[]; matchUps: MatchUp[] }) {
+  const targetIds = new Set(Array.isArray(matchUpIds) ? matchUpIds.filter(Boolean) : []);
+  if (!targetIds.size) return matchUps;
+  return matchUps.filter(
+    (matchUp) =>
+      targetIds.has(matchUp.matchUpId) ||
+      matchUp.tieMatchUps?.some((tieMatchUp) => targetIds.has(tieMatchUp.matchUpId)),
+  );
+}
+
 function appendTieMatchUps(matchUps: MatchUp[]): MatchUp[] {
   const matchUpTies = matchUps?.filter((matchUp) => Array.isArray(matchUp.tieMatchUps));
   let result = matchUps;
@@ -387,6 +408,7 @@ function hydrateMatchUpsInContext({
 
   let tournamentParticipants = params.tournamentParticipants;
   let participantMap = params.participantMap;
+  const hydrationCache = params.hydrationCache ?? createHydrationCache();
 
   if (!tournamentParticipants?.length && !participantMap && tournamentRecord) {
     ({ participants: tournamentParticipants = [], participantMap } = hydrateParticipants({
@@ -416,6 +438,7 @@ function hydrateMatchUpsInContext({
       tournamentRecord,
       appliedPolicies,
       seedAssignments,
+      hydrationCache,
       contextContent,
       participantMap,
       contextProfile,

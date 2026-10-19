@@ -1,11 +1,16 @@
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
+import { withContextExclusion } from './contextExclusion';
 import { getAllDrawMatchUps } from './drawMatchUps';
 
 // types
 import { GetMatchUpsArgs } from '@Types/factoryTypes';
 
 export function allDrawMatchUps(params: GetMatchUpsArgs) {
+  return withContextExclusion(params, allDrawMatchUpsUnredacted);
+}
+
+function allDrawMatchUpsUnredacted(params: GetMatchUpsArgs) {
   let { participants: tournamentParticipants, participantMap, contextContent } = params;
 
   const {
@@ -16,10 +21,12 @@ export function allDrawMatchUps(params: GetMatchUpsArgs) {
     policyDefinitions,
     useParticipantMap,
     tournamentRecord,
+    usePublishState,
     matchUpFilters,
     contextFilters,
     contextProfile,
     drawDefinition,
+    publishStatus,
     nextMatchUps,
     inContext,
     context,
@@ -67,6 +74,8 @@ export function allDrawMatchUps(params: GetMatchUpsArgs) {
   }
 
   const allDrawMatchUpsResult = getAllDrawMatchUps({
+    hydrateParticipants: params.hydrateParticipants,
+    hydrationCache: params.hydrationCache,
     context: additionalContext,
     tournamentAppliedPolicies,
     scheduleVisibilityFilters,
@@ -75,12 +84,14 @@ export function allDrawMatchUps(params: GetMatchUpsArgs) {
     afterRecoveryTimes,
     policyDefinitions,
     tournamentRecord,
+    usePublishState,
     drawDefinition,
     contextContent,
     contextFilters,
     contextProfile,
     matchUpFilters,
     participantMap,
+    publishStatus,
     nextMatchUps,
     inContext,
     event,

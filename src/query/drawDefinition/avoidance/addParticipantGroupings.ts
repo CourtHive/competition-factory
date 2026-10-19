@@ -26,6 +26,24 @@ export function addParticipantGroupings({
   // should pairParticipants only consider those that are in the same event as current draw?
   const pairParticipants = participantsWithGroupings.filter((participant) => participant.participantType === PAIR);
 
+  // individualParticipantId → the teams / pairs / groups listing it, in array order. Each individual used to
+  // scan every team, pair and group (individuals × memberships); reading this index visits the same
+  // containers in the same order, so the lists, their de-duplication and groupInfo's key order are unchanged.
+  const membersOf = (containers: typeof participantsWithGroupings) => {
+    const index = new Map<string, typeof participantsWithGroupings>();
+    for (const container of containers) {
+      for (const individualParticipantId of container?.individualParticipantIds ?? []) {
+        const list = index.get(individualParticipantId);
+        if (!list) index.set(individualParticipantId, [container]);
+        else if (list.at(-1) !== container) list.push(container);
+      }
+    }
+    return index;
+  };
+  const teamsOf = membersOf(teamParticipants);
+  const pairsOf = membersOf(pairParticipants);
+  const groupsOf = membersOf(groupParticipants);
+
   participantsWithGroupings.forEach((participant) => {
     if (participant.participantType === INDIVIDUAL) {
       const { participantId } = participant;
@@ -35,53 +53,38 @@ export function addParticipantGroupings({
       participant.groups = [];
       participant.teams = [];
 
-      teamParticipants.forEach((team) => {
-        (team?.individualParticipantIds ?? []).forEach((individualParticipantId) => {
-          if (
-            individualParticipantId === participantId &&
-            !participant.teamParticipantIds?.includes(team.participantId)
-          ) {
-            participant.teamParticipantIds.push(team.participantId);
-            if (!groupMap.get(team.participantId))
-              groupMap.set(team.participantId, {
-                participantName: team.participantName,
-                participantId: team.participantId,
-              });
-            participant.teams.push({
-              participantRoleResponsibilities: team.participantRoleResponsibilities,
-              participantOtherName: team.participantOtherName,
+      (teamsOf.get(participantId) ?? []).forEach((team) => {
+        if (!participant.teamParticipantIds?.includes(team.participantId)) {
+          participant.teamParticipantIds.push(team.participantId);
+          if (!groupMap.get(team.participantId))
+            groupMap.set(team.participantId, {
               participantName: team.participantName,
               participantId: team.participantId,
-              teamId: team.teamId,
             });
-          }
-        });
+          participant.teams.push({
+            participantRoleResponsibilities: team.participantRoleResponsibilities,
+            participantOtherName: team.participantOtherName,
+            participantName: team.participantName,
+            participantId: team.participantId,
+            teamId: team.teamId,
+          });
+        }
       });
-      pairParticipants.forEach((pair) => {
-        (pair?.individualParticipantIds ?? []).forEach((individualParticipantId) => {
-          if (
-            individualParticipantId === participantId &&
-            !participant.pairParticipantIds.includes(pair.participantId)
-          ) {
-            participant.pairParticipantIds.push(pair.participantId);
-          }
-        });
+      (pairsOf.get(participantId) ?? []).forEach((pair) => {
+        if (!participant.pairParticipantIds.includes(pair.participantId)) {
+          participant.pairParticipantIds.push(pair.participantId);
+        }
       });
-      groupParticipants.forEach((group) => {
-        (group?.individualParticipantIds ?? []).forEach((individualParticipantId) => {
-          if (
-            individualParticipantId === participantId &&
-            !participant.groupParticipantIds.includes(group.participantId)
-          ) {
-            participant.groupParticipantIds.push(group.participantId);
-            participant.groups.push({
-              participantRoleResponsibilities: group.participantRoleResponsibilities,
-              participantOtherName: group.participantOtherName,
-              participantName: group.participantName,
-              participantId: group.participantId,
-            });
-          }
-        });
+      (groupsOf.get(participantId) ?? []).forEach((group) => {
+        if (!participant.groupParticipantIds.includes(group.participantId)) {
+          participant.groupParticipantIds.push(group.participantId);
+          participant.groups.push({
+            participantRoleResponsibilities: group.participantRoleResponsibilities,
+            participantOtherName: group.participantOtherName,
+            participantName: group.participantName,
+            participantId: group.participantId,
+          });
+        }
       });
     }
   });

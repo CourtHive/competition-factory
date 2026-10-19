@@ -305,6 +305,25 @@ mocksGovernor.modifyTournamentRecord({
 // Tournament now has both singles and doubles events
 ```
 
+### All or Nothing
+
+A refusal leaves the record exactly as it was passed: the same objects, with the same contents, and a
+`uuids` pool you passed is consumed only when the call succeeds. So a corrected call can simply be made
+again on the same record.
+
+To keep what was written before a refusal instead, pass `keepPartial: true`. The error result then
+reports what the record gained as `retained`:
+
+```js
+const result = mocksGovernor.modifyTournamentRecord({
+  tournamentRecord,
+  drawProfiles: [{ drawSize: 4 }, { drawSize: 4, drawType: 'NOT_A_DRAW_TYPE' }],
+  keepPartial: true,
+});
+// result.error -> UNRECOGNIZED_DRAW_TYPE
+// result.retained -> { participantIds: [...], eventIds: [...], drawIds: [...], venueIds: [] }
+```
+
 ### Modification Complete Options
 
 ```js
@@ -508,6 +527,7 @@ const result = mocksEngine.completeDrawMatchUps({
 });
 
 console.log(result.completedCount); // 15
+console.log(result.remainingCount); // 0: nothing left to play (BYEs and double exits are settled)
 ```
 
 ### Stage Filter
@@ -538,6 +558,24 @@ mocksEngine.completeDrawMatchUps({
 });
 ```
 
+### Structure Filter
+
+Complete only the matchUps of named structures. Omitted, every structure is completed.
+
+```js
+mocksEngine.completeDrawMatchUps({
+  tournamentRecord,
+  drawDefinition,
+  event,
+  structureIds: [eastStructureId],
+  completeAllMatchUps: true,
+});
+```
+
+For a round robin, the **container's** `structureId` completes every group, and a **group's** (child)
+`structureId` completes that group only; its siblings are left exactly as they were. A matchUp ended
+as `DOUBLE_WALKOVER` or `DOUBLE_DEFAULT` is never overwritten. An unknown id matches nothing.
+
 ### Combined Filters
 
 Filters can be combined for precise targeting:
@@ -566,6 +604,7 @@ mocksEngine.completeDrawMatchUps({
 | `stage`                | string            | Filter: only complete matchUps in this stage                                        |
 | `stageSequence`        | number            | Filter: for multi-sequence qualifying                                               |
 | `roundNumber`          | number            | Filter: only complete matchUps in this round                                        |
+| `structureIds`         | string[]          | Filter: only these structures; a round-robin group id selects that group only       |
 | `randomWinningSide`    | boolean           | Randomize winning side                                                              |
 | `matchUpStatusProfile` | object            | Status distribution (see [Outcome Generation](../testing/mocks-engine-outcomes.md)) |
 

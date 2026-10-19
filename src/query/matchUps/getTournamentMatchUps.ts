@@ -3,13 +3,18 @@ import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { withContextExclusion } from './contextExclusion';
 
 // Constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { GetMatchUpsArgs, GroupsMatchUpsResult } from '@Types/factoryTypes';
 import { eventMatchUps } from './getEventMatchUps';
 
-export function tournamentMatchUps(params: GetMatchUpsArgs): GroupsMatchUpsResult {
+export function tournamentMatchUps(params: GetMatchUpsArgs) {
+  return withContextExclusion(params, tournamentMatchUpsUnredacted);
+}
+
+function tournamentMatchUpsUnredacted(params: GetMatchUpsArgs): GroupsMatchUpsResult {
   if (!params?.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   let contextContent = params.contextContent;
   const {

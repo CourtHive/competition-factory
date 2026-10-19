@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { PARTICIPANT_NOT_FOUND, VALUE_UNCHANGED } from '@Constants/errorConditionConstants';
+import { PARTICIPANT_NOT_FOUND, VALUE_UNCHANGED, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { RANKING } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SINGLES } from '@Constants/eventConstants';
@@ -209,7 +209,7 @@ it('addDynamicRatings returns error for invalid modifiedScaleValues type', () =>
   const result = tournamentEngine.addDynamicRatings({
     modifiedScaleValues: 'not-an-object',
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
 });
 
 it('addDynamicRatings returns error when participantId is not found', () => {

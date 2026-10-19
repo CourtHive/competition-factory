@@ -52,7 +52,7 @@ it('can extract and collate event and tournament structures', () => {
   ];
 
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    eventProfiles,
+    eventProfiles: eventProfiles.map(({ expectation: _expectation, ...eventProfile }) => eventProfile),
   });
 
   tournamentEngine.setState(tournamentRecord);

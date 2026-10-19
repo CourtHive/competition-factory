@@ -1,4 +1,5 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
@@ -13,7 +14,6 @@ import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
-import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
@@ -128,12 +128,17 @@ function arrivedByWinning(
 
 /**
  * The exit an occupant of a BYE-held seat carries, written where they LANDED: since #5331 a carry follows its carrier
- * to their furthest round, so a holder the carrier merely passed through records only the BYE claim. When this request
- * withdraws the BYE its double exit placed on the loser target, v1 brings the occupant back and their exit with them
- * (`reconcileCarriesPastByes` re-carries from the origin record), and the arriving loser's exit converges with it —
- * census 20178071 (FEED_IN_CHAMPIONSHIP 8/7, `Consolation|2|2`), where this view, reading the holder alone, had
- * planned the loser's walkover won by the occupant; and census 20057285 (P50), where v1 itself lost the carry until the
- * origin record was kept on the holder (`progressExitStatus` RULE 1).
+ * to their furthest round. When this request withdraws the BYE its double exit placed on the loser target, v1 brings
+ * the occupant back and their exit with them (`reconcileCarriesPastByes` re-carries from the origin record), and the
+ * arriving loser's exit converges with it — census 20178071 (FEED_IN_CHAMPIONSHIP 8/7, `Consolation|2|2`), where this
+ * view, reading the holder alone, had planned the loser's walkover won by the occupant; and census 20057285 (P50),
+ * where v1 itself lost the carry until the origin record was kept on the holder (`progressExitStatus` RULE 1).
+ *
+ * Since F2 (census A1, 2026-10-17) v1 also records the carry on the holder itself, beside the BYE, in every round and
+ * in either entry order (`recordCarryBesideBye`), so `carriedStatuses` reads it there. A holder the carrier passed
+ * before that, BYE first and outside the last round, records only the BYE claim, and for it the carry is still read
+ * where the carrier landed. One carry is one exit: an onward entry from an origin the holder already records is not
+ * read twice.
  */
 function carriedOnwardFromHolder(
   matchUp?: HydratedMatchUp,
@@ -143,6 +148,11 @@ function carriedOnwardFromHolder(
   if (!draw || !matchUp || !sourceMatchUpId || matchUp.matchUpStatus !== BYE) return [];
   const provenance = getSideExitProvenance({ matchUp }) ?? {};
   if (!Object.values(provenance).some((entry) => entry?.byeClaims?.includes(sourceMatchUpId))) return [];
+  const recordedHere = new Set(
+    Object.values(provenance)
+      .filter((entry) => !!entry?.sourceMatchUpId && !!carriedExitStatus(entry))
+      .map((entry) => entry?.sourceMatchUpId),
+  );
   const statuses: MatchUpStatusUnion[] = [];
   for (const side of matchUp.sides ?? []) {
     if (!side?.participantId) continue;
@@ -156,7 +166,8 @@ function carriedOnwardFromHolder(
       const sideNumber = candidate.sides?.find((s) => s?.participantId === side.participantId)?.sideNumber;
       const entry = sideNumber ? getSideExitProvenance({ matchUp: candidate })?.[sideNumber] : undefined;
       const status = carriedExitStatus(entry);
-      if (status && entry?.sourceMatchUpId !== sourceMatchUpId) statuses.push(status);
+      if (status && entry?.sourceMatchUpId !== sourceMatchUpId && !recordedHere.has(entry?.sourceMatchUpId))
+        statuses.push(status);
     }
   }
   return statuses;
@@ -166,7 +177,8 @@ function carriedOnwardFromHolder(
 /**
  * An exit HELD beside a BYE one round back, reached through that BYE in the structure's LAST round. v1 carries an
  * arriving exit past a BYE, and in the last round, with nowhere further, records it beside the BYE
- * (`recordCarryBesideFinalBye`); the settle step then converges it with the exit the feeding BYE matchUp holds (RULE 4).
+ * (`recordCarryBesideBye`, which since F2 records it beside a BYE in every round); the settle step then converges it
+ * with the exit the feeding BYE matchUp holds (RULE 4).
  * So that held exit stands for the arrival to meet (census run-17 baseline, DOUBLE_ELIMINATION 8/5 seeds 20622028 and
  * 20630577, policy off: `Backdraw|2|1`'s double walkover relayed past `Backdraw|3|1`'s BYE, and the Main final's walkover
  * loser reaching `Backdraw|4|1` converged with it, where v2 had planned a walkover awarded to the BYE's seat).
@@ -348,11 +360,33 @@ function resolveFormat(
   });
 }
 
+/**
+ * § 2 row 4, as v1's `checkMatchUpFormatApplication` decides it (#5608, scoring engine spec § 16 decision 19, CA
+ * 2026-10-18): a format that is not well-formed is refused; one well-formed but refused for NEW use is refused only
+ * when it would change the format the matchUp plays under. A score sent back with the stored format is not a new use.
+ */
+function formatRecognizedFor(incoming: string | undefined, stored: string | undefined): boolean {
+  if (!incoming) return true;
+  if (!isWellFormedMatchUpFormat({ matchUpFormat: incoming })) return false;
+  return incoming === stored || isValidMatchUpFormat({ matchUpFormat: incoming });
+}
+
+/** the format the matchUp plays under, by v1's chain: matchUp, structure, draw, event */
+function appliedFormat(
+  matchUp: MatchUp,
+  structure: Structure | undefined,
+  drawDefinition: DrawDefinition,
+  event: Event | undefined,
+): string | undefined {
+  return matchUp.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition.matchUpFormat ?? event?.matchUpFormat;
+}
+
 export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const { tournamentRecord, drawDefinition, event, request, policyDefinitions } = args;
   const empty: OutcomeView = {
     hasDrawDefinition: !!drawDefinition,
-    formatRecognized: !request.matchUpFormat || isValidMatchUpFormat({ matchUpFormat: request.matchUpFormat }),
+    // before the matchUp is found only well-formedness is asked: v1 refuses a matchUp not found before a new use
+    formatRecognized: !request.matchUpFormat || isWellFormedMatchUpFormat({ matchUpFormat: request.matchUpFormat }),
     drawType: drawDefinition?.drawType,
     found: false,
     isTeam: false,
@@ -541,6 +575,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
 
   return {
     ...empty,
+    formatRecognized: formatRecognizedFor(
+      request.matchUpFormat,
+      appliedFormat(matchUp, structure, drawDefinition, event),
+    ),
     found: true,
     isTeam,
     matchUpTieId,

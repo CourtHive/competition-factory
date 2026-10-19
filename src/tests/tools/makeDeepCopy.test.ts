@@ -93,7 +93,6 @@ it('can disable deepCopy without compromising source document', () => {
   ];
   let { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

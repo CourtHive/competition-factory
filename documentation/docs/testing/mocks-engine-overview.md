@@ -112,6 +112,21 @@ mocksEngine.generateTournamentRecord({
 const { matchUps } = tournamentEngine.allTournamentMatchUps();
 ```
 
+**Results are true.** `success: true` means the whole record was generated. A refusal in any stage
+(an invalid `tournamentAttributes.localTimeZone`, a venue that cannot be built, a `schedulingProfile`
+the scheduler refuses, a `scenarioProfile` that cannot be anchored) is the call's `{ error }`, and no
+record is returned. With `setState: true`, nothing is installed on a refusal and the tournament that
+was selected stays selected. If a generator throws, the call returns `{ error }` (under `devContext`
+it rethrows, and an invocation-scoped `devContext` is switched off again either way).
+
+```js
+const result = mocksEngine.generateTournamentRecord({
+  tournamentAttributes: { localTimeZone: 'NOT_A_ZONE' },
+  setState: true,
+});
+// result.error -> INVALID_TIME_ZONE; the previously loaded tournament is still loaded
+```
+
 **Fully hydrated matchUps with `inContext: true`:**
 
 ```js

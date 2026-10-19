@@ -216,12 +216,14 @@ describe('checkAndFinalizeMatch — exactly non-aggregate branch (lines 570-572)
     // Set 2: side 1 wins 11-0
     result = winTiebreakSet(result, 1, 11);
 
-    // Now completedSets=2 >= exactly=2, and hasWinner is still true (setsWon[0]=1 >= 1)
-    // Both sides have 1 set each, setsToWin=1, both qualify — matchWinner is side 0 (checked first)
+    // Now completedSets=2 >= exactly=2, and both sides have one set: a level count names no winner
+    // (format-support "Exactly N Sets"). This test used to pin side 1 as the winner, because both
+    // sides reached setsToWin and side 1 was checked first; fixed 2026-10-17. With no declared decider
+    // the match is COMPLETED without a winner (scoring-engine spec § 9.2, § 9.7; CA 2026-10-18,
+    // decision 18); until then this pinned it as not complete.
     expect(result.score.sets[1].winningSide).toBe(2);
     expect(result.matchUpStatus).toBe(COMPLETED);
-    // setsWon[0] >= setsToWin → matchWinner = 0, winningSide = 1
-    expect(result.winningSide).toBe(1);
+    expect(result.winningSide).toBeUndefined();
   });
 
   it('exactly format: side 0 wins all sets, still waits for all to complete', () => {

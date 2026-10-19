@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 
 // constants
+import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { ASSIGN_COURT, END_TIME, SCHEDULED_DATE, SCHEDULED_TIME, START_TIME } from '@Constants/timeItemConstants';
 import {
   COMPETITION_STATE,
@@ -226,7 +227,7 @@ describe('migrateTournamentRecord — promotion coverage', () => {
 
   it('returns an error when tournamentRecord is missing', () => {
     const result = migrateTournamentRecord({ tournamentRecord: undefined as any });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   // Covers the multi-timeItem sort branch: when a single matchUp has more

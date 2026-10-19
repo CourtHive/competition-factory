@@ -1,5 +1,6 @@
 import { assignDrawPositionBye, assignFedDrawPositionBye } from './assignDrawPositionBye';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
@@ -9,6 +10,7 @@ import {
   carriedExitStatus,
   getSideExitProvenance,
   recordByeClaim,
+  sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -173,6 +175,21 @@ export function propagateUnfillableLoserBye({
   if (!loserMatchUp || !loserTargetDrawPosition || !loserTargetLink) return undefined;
 
   /**
+   * A DECIDER IS NOT A LOSER TARGET THIS CASCADE MAY FILL — census R11, 2026-10-18.
+   *
+   * A decider is the one target that a final's winner link AND loser link both feed, and both feed
+   * drawPosition 1. `reconcileDecider` owns its seats: they are written from the final, and a final
+   * won with no loser leaves it a DEAD_RUBBER holding the champion. A BYE placed here landed in the
+   * WINNER's seat, and `seatFinalists` cannot repair a seat a BYE holds.
+   *
+   * Traced on DOUBLE_ELIMINATION 8/5, seed 21037067: `Main|2|2` WO, `Main|1|2` WO and `Main|2|1`
+   * DOUBLE_WALKOVER leave `Main|4|1` won against an exit relayed from the Backdraw. In some entry
+   * orders only, the decider ended `[BYE, champion]` rather than the DEAD_RUBBER the docs table in
+   * `double-elimination.mdx` publishes ("won against an exit (no loser to send) → DEAD_RUBBER").
+   */
+  if (targetData.targetMatchUps?.winnerMatchUp?.matchUpId === loserMatchUp.matchUpId) return undefined;
+
+  /**
    * A CONNECTED structure, at ANY round — corrected by CA 2026-09-27.
    *
    * This was gated on `roundNumber === 1`. CA: *"it should be able to produce a BYE for feed rounds in
@@ -242,7 +259,18 @@ export function propagateUnfillableLoserBye({
     const rawLoserMatchUp = matchUpsMap.drawMatchUps?.find(
       (candidate) => candidate.matchUpId === loserMatchUp.matchUpId,
     );
+    const record = sideRecordOf(rawLoserMatchUp);
     recordByeClaim({ claimantMatchUpId: matchUpId, sideNumber: claimSideNumber, matchUp: rawLoserMatchUp });
+    // recorded after the BYE is placed, so the placement's notice does not carry it: announced here
+    if (rawLoserMatchUp && record !== sideRecordOf(rawLoserMatchUp))
+      modifyMatchUpNotice({
+        tournamentId: tournamentRecord?.tournamentId,
+        context: 'propagateUnfillableLoserBye',
+        matchUp: rawLoserMatchUp,
+        eventId: event?.eventId,
+        drawDefinition,
+        event,
+      });
   }
 
   return undefined;

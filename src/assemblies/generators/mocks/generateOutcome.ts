@@ -41,13 +41,17 @@ const statusConstantKeys = new Set(Object.keys(matchUpStatusConstants));
 
 function validateOutcomeParams({
   matchUpStatusProfile,
+  winningSide,
   defaultWithScorePercent,
   pointsPerMinute,
   sideWeight,
   matchUpFormat,
 }) {
   if (!isValidMatchUpFormat({ matchUpFormat })) return { error: INVALID_MATCHUP_FORMAT };
-  if (typeof matchUpStatusProfile !== 'object') return { error: INVALID_VALUES };
+  if (typeof matchUpStatusProfile !== 'object' || matchUpStatusProfile === null) return { error: INVALID_VALUES };
+  // falsy means no winner was asked for (completion passes `!randomWinningSide && 1`)
+  if (winningSide && winningSide !== 1 && winningSide !== 2)
+    return { error: INVALID_VALUES, info: 'winningSide must be 1 or 2' };
   if (
     Number.isNaN(Number(defaultWithScorePercent)) ||
     Number.isNaN(Number(pointsPerMinute)) ||
@@ -62,8 +66,14 @@ function resolveMatchUpStatus({ matchUpStatusProfile, random }) {
   const matchUpStatuses = Object.keys(matchUpStatusProfile).filter(
     (matchUpStatus) => statusConstantKeys.has(matchUpStatus) && matchUpStatus !== COMPLETED,
   );
-  const matchUpStatusTotals = Object.keys(matchUpStatuses).reduce((total, key) => total + matchUpStatusProfile[key], 0);
-  if (matchUpStatusTotals > 100) return { error: INVALID_VALUES, matchUpStatusProfile };
+  // the weights themselves: summed over Object.keys of the ARRAY (its indices), the total was NaN and
+  // the guard never fired, so { WALKOVER: 80, RETIRED: 80 } and negative weights passed (M8, 2026-10-17)
+  const weights = matchUpStatuses.map((matchUpStatus) => matchUpStatusProfile[matchUpStatus]);
+  if (!weights.every((weight) => typeof weight === 'number' && Number.isFinite(weight) && weight >= 0))
+    return { error: INVALID_VALUES, info: 'status weights must be non-negative percentages', matchUpStatusProfile };
+  const matchUpStatusTotals = weights.reduce((total, weight) => total + weight, 0);
+  if (matchUpStatusTotals > 100)
+    return { error: INVALID_VALUES, info: 'status weights exceed 100', matchUpStatusProfile };
 
   const matchUpStatusMap = matchUpStatuses.reduce(
     (statusMap: { pointer: number; valueMap: any[][] }, matchUpStatus) => {
@@ -153,6 +163,7 @@ export function generateOutcome(params) {
   const clampedDefaultPercent = Math.min(rawDefaultPercent, 100);
 
   const validation = validateOutcomeParams({
+    winningSide: paramWinningSide,
     defaultWithScorePercent: clampedDefaultPercent,
     matchUpStatusProfile,
     pointsPerMinute,
@@ -339,12 +350,28 @@ function generateSet({
   random,
 }) {
   const set: SetType = { setNumber };
-  const { setTo, tiebreakFormat, tiebreakAt, tiebreakSet, timed, minutes, outs } = setFormat;
+  const { setTo, tiebreakFormat, tiebreakAt, tiebreakSet, timed, minutes, outs, combinedPointTotal } = setFormat;
 
   // will tend to be more likely to either reverse or not revderse all sets
   // preserves randomness of winningSide while reducing deciding set outcomes
   const weightIndex = randomInt(0, weightedRange.length - 1, random);
   const reverseScores = weightedRange[weightIndex];
+
+  // a combined point total has no games, no setTo and no tiebreak: it fell through to the standard
+  // set and came back COMPLETED with no score and no winner (30 of 30 seeds, 2026-10-17 assessment M4).
+  // Placed after the draws every format makes, so no other format's stream moves
+  if (combinedPointTotal) {
+    return generateCombinedPointSet({
+      combinedPointTotal,
+      reverseScores,
+      weightedRange,
+      matchUpStatus,
+      weightIndex,
+      incomplete,
+      random,
+      set,
+    });
+  }
 
   if (timed) {
     return generateTimedSet({
@@ -430,6 +457,53 @@ function generateTimedSet({
   return { set };
 }
 
+/**
+ * A rally segment to a combined total: the loser takes fewer than half of it and the winner the rest,
+ * which is complete and decisive under every tie resolution (ALLOW, DP, WB). A tie is never generated:
+ * whether a level ALLOW total is legal depends on the structure (a winner-advancing draw refuses it),
+ * which an outcome generator cannot see. An incomplete segment stops short of the total.
+ */
+function generateCombinedPointSet({
+  combinedPointTotal,
+  reverseScores,
+  weightedRange,
+  matchUpStatus,
+  weightIndex,
+  incomplete,
+  random,
+  set,
+}: {
+  matchUpStatus: MatchUpStatusUnion;
+  random?: () => number;
+  combinedPointTotal: number;
+  weightedRange: number[];
+  reverseScores: number;
+  weightIndex: number;
+  incomplete?: boolean;
+  set: SetType;
+}) {
+  const winningSideNumber = weightedRange[weightIndex] + 1;
+
+  if (incomplete) {
+    const played = randomInt(0, combinedPointTotal - 1, random);
+    const side1Score = randomInt(0, played, random);
+    Object.assign(set, { side1Score, side2Score: played - side1Score });
+    if (completedMatchUpStatuses.includes(matchUpStatus)) return { set, incomplete, winningSideNumber };
+    return { set, incomplete };
+  }
+
+  const loserScore = randomInt(0, Math.floor((combinedPointTotal - 1) / 2), random);
+  const scores = [combinedPointTotal - loserScore, loserScore];
+  if (weightedRange.length === 1) {
+    if (winningSideNumber === 2) scores.reverse();
+  } else if (reverseScores) {
+    scores.reverse();
+  }
+  const [side1Score, side2Score] = scores;
+  Object.assign(set, { side1Score, side2Score, winningSide: side1Score > side2Score ? 1 : 2 });
+  return { set };
+}
+
 function generateOutsSet({ reverseScores, weightedRange, matchUpStatus, weightIndex, incomplete, random, outs, set }) {
   // Outs-based scoring (e.g., wiffle ball innings with 3 outs)
   // Generates single-digit scores (0 to outs * 3)
@@ -482,7 +556,15 @@ function generateStandardSet({
   set,
 }) {
   // weight the range of possible low scores such that tiebreak sets are less likely
-  const range = generateRange(1, setTo + 1).flatMap((value) => generateRange(0, setTo + 2 - value).map(() => value));
+  // A one-game margin with no tiebreak (`5WB1`) ends the moment a side reaches setTo, so the loser holds
+  // at most setTo - 1; with setTo itself in the range and no `winBy` passed to the complement it
+  // generated 5-7, a set that should have ended at 5-4 (5 of 30 seeds, assessment M4). Only that
+  // format's range changes, so no other format's draws move.
+  const { winBy } = setFormat;
+  const lowCeiling = winBy === 1 && !tiebreakAt ? setTo - 1 : setTo;
+  const range = generateRange(1, lowCeiling + 1).flatMap((value) =>
+    generateRange(0, setTo + 2 - value).map(() => value),
+  );
   const lowValue = range[randomInt(0, range.length - 1, random)];
 
   const scores =
@@ -492,6 +574,7 @@ function generateStandardSet({
       tiebreakAt,
       lowValue,
       setTo,
+      winBy,
     });
   const isTiebreakSet = !scores;
   const specifiedWinningSide = weightedRange.length === 1 && weightedRange[weightIndex] + 1;

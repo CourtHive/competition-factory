@@ -48,6 +48,59 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
 import { nameMocks } from './nameMocks';
 
+/** A TEAM draw's team size, and the individuals it needs, by gender (written into `gendersCount`). */
+function teamParticipantsShape({
+  qualifyingParticipantsCount,
+  drawProfileCopy,
+  gendersCount,
+  drawSize,
+  random,
+}: {
+  drawProfileCopy: {
+    teamGenders?: Record<string, number>;
+    alternatesCount?: number;
+    tieFormatName?: string;
+    tieFormat?: unknown;
+  };
+  gendersCount: Record<string, number>;
+  qualifyingParticipantsCount: number;
+  random?: () => number;
+  drawSize: number;
+}) {
+  let { teamSize, genders } = processTieFormat({
+    tieFormatName: drawProfileCopy.tieFormatName,
+    tieFormat: drawProfileCopy.tieFormat,
+    alternatesCount: drawProfileCopy.alternatesCount || 0,
+    drawSize,
+    random,
+  });
+
+  // Apply teamGenders override from drawProfile (floor, not ceiling)
+  const teamGenders = drawProfileCopy.teamGenders;
+  if (teamGenders) {
+    for (const key of Object.keys(teamGenders)) {
+      if (genders[key] !== undefined && teamGenders[key] > genders[key]) {
+        genders[key] = teamGenders[key];
+      }
+    }
+    // Ensure teamSize accommodates the overridden gender counts
+    const genderTotal = (genders[MALE] || 0) + (genders[FEMALE] || 0);
+    if (genderTotal > teamSize) teamSize = genderTotal;
+  }
+
+  Object.keys(genders).forEach((key) => {
+    const coerced = coercedGender(key);
+    if (coerced && isGendered(key) && genders[coerced]) {
+      gendersCount[coerced] = drawSize * genders[coerced];
+    }
+  });
+  return {
+    individualParticipantCount: teamSize * ((drawSize || 0) + qualifyingParticipantsCount),
+    teamSize,
+    genders,
+  };
+}
+
 function generateEventParticipants({
   qualifyingParticipantsCount,
   participantsProfile,
@@ -92,34 +145,13 @@ function generateEventParticipants({
   }
 
   if (eventType === TEAM) {
-    ({ teamSize, genders } = processTieFormat({
-      tieFormatName: drawProfileCopy.tieFormatName,
-      tieFormat: drawProfileCopy.tieFormat,
-      alternatesCount: drawProfileCopy.alternatesCount || 0,
+    ({ teamSize, genders, individualParticipantCount } = teamParticipantsShape({
+      qualifyingParticipantsCount,
+      drawProfileCopy,
+      gendersCount,
       drawSize,
       random,
     }));
-
-    // Apply teamGenders override from drawProfile (floor, not ceiling)
-    const teamGenders = drawProfileCopy.teamGenders;
-    if (teamGenders) {
-      for (const key of Object.keys(teamGenders)) {
-        if (genders[key] !== undefined && teamGenders[key] > genders[key]) {
-          genders[key] = teamGenders[key];
-        }
-      }
-      // Ensure teamSize accommodates the overridden gender counts
-      const genderTotal = (genders[MALE] || 0) + (genders[FEMALE] || 0);
-      if (genderTotal > teamSize) teamSize = genderTotal;
-    }
-
-    Object.keys(genders).forEach((key) => {
-      const coerced = coercedGender(key);
-      if (coerced && isGendered(key) && genders[coerced]) {
-        gendersCount[coerced] = drawSize * genders[coerced];
-      }
-    });
-    individualParticipantCount = teamSize * ((drawSize || 0) + qualifyingParticipantsCount);
   }
 
   const idPrefix = participantsProfile?.idPrefix ? `D-${drawIndex}-${participantsProfile?.idPrefix}` : undefined;
@@ -132,8 +164,9 @@ function generateEventParticipants({
     // An event gender is a person sex only when it is MALE or FEMALE. MIXED and ANY passed through
     // here gave every generated person sex MIXED or ANY, which `addParticipants` refuses.
     sex: isGendered(gender) ? gender : participantsProfile?.sex,
-    rankingRange: drawProfile.rankingRange,
-    uuids: drawProfile.uuids || uuids,
+    // the most specific setting wins: the drawProfile's, then its participantsProfile's, then the call's
+    rankingRange: drawProfile.rankingRange ?? participantsProfile?.rankingRange,
+    uuids: drawProfile.uuids || participantsProfile?.uuids || uuids,
     ratingsParameters,
     participantType,
     gendersCount,
@@ -141,6 +174,7 @@ function generateEventParticipants({
     category,
     random,
   });
+  if (result.error) return result;
   const unique = result.participants as Participant[];
 
   // update categoryName **after** generating participants
@@ -400,7 +434,12 @@ function processOutcomes({
 
   // NOTE: completionGoal implies something less than "all matchUps"
   // ==> do this first with the assumption that any outcomes must come after
-  if (completionGoal) goComplete({ completionGoal });
+  // a completion error is the generation's error: discarded, a fixture reported success with its
+  // matchUps unplayed (2026-10-17: gendered TEAM lineups refused, nothing completed, success: true)
+  if (completionGoal) {
+    const goalResult = goComplete({ completionGoal });
+    if (goalResult?.error) return goalResult;
+  }
 
   if (drawProfile.outcomes) {
     const outcomesResult = applyDefinedOutcomes({
@@ -413,7 +452,10 @@ function processOutcomes({
   }
 
   // NOTE: do this last => complete any matchUps which have not already been completed
-  if (completeAllMatchUps) goComplete({ completeAllMatchUps });
+  if (completeAllMatchUps) {
+    const completeResult = goComplete({ completeAllMatchUps });
+    if (completeResult?.error) return completeResult;
+  }
 
   return { goComplete };
 }
@@ -718,7 +760,7 @@ function generateAndAttachDraw({
 
   if (Array.isArray(drawExtensions)) {
     drawExtensions
-      .filter(isValidExtension)
+      .filter((extension) => isValidExtension({ extension }))
       .forEach((extension) => addExtension({ element: drawDefinition, extension }));
   }
 
@@ -1036,7 +1078,7 @@ function buildMockEvent({
   Object.assign(event, eventAttributes);
 
   if (eventExtensions?.length && Array.isArray(eventExtensions)) {
-    const extensions = eventExtensions.filter(isValidExtension);
+    const extensions = eventExtensions.filter((extension) => isValidExtension({ extension }));
     if (extensions?.length) Object.assign(event, { extensions });
   }
 

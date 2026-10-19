@@ -2,6 +2,7 @@ import { assignMatchUpDrawPosition, directWinner } from '@Mutate/matchUps/drawPo
 import { getSideStatusCode } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -123,7 +124,7 @@ export function progressExitStatus({
   let winningSide: number | undefined = undefined;
   // the side the carried exit arrives at, and the reason it brings — recorded after the state write
   let carriedReasonSide: number | undefined = undefined;
-  let sourceCodeForSide: string | undefined = undefined;
+  let carriedReason: string | undefined = undefined;
   // CODES first-class: the side that EXITED, attributed to the matchUp whose result produced the
   // exit. Written alongside the legacy string codes, exactly as doubleExitAdvancement does — see
   // sideExitProvenance.ts on why the legacy write is not yet gated.
@@ -149,22 +150,27 @@ export function progressExitStatus({
      * `sideExitProvenance` was byte-identical across both runs, so nothing was unknowable — the engine
      * had the exiting side and read the wrong slot anyway.
      *
-     * PREFERRED SOURCE: the source's own `sideStatusCodes`, keyed by side, which `modifyMatchUpScore`
-     * writes at the scoring boundary. The positional reads below it are the fallback for a record stored
-     * before that field existed — same side index first, then index 0 for a double exit, where both sides
-     * exited and the first slot is as good an answer as the second. `sourceWinningSide` is threaded
-     * through the context for this, having already been computed for `directLoser`.
+     * TWO READS, TWO JOBS (census A1 residue F1b, 2026-10-18).
+     *
+     *  - The REASON the arriving side carries is the source's own `sideStatusCodes`, keyed by side, which
+     *    `modifyMatchUpScore` writes at the scoring boundary. Only that. A source's positional array may be
+     *    a DERIVED one — a matchUp the cascade itself wrote, holding `['WO']` or `['', 'DEF']` from
+     *    provenance — and a bare outcome code read from it is not a reason anybody gave; filed as one it was
+     *    the order-dependent `sideStatusCodes` of F1b. CA, 2026-10-15: no new logic may depend on
+     *    `matchUpStatusCodes`.
+     *  - The DISPLAY code placed at the arriving side's index still falls back to the positional array, same
+     *    side index first, then index 0 for a double exit. It is display, and changes nothing a reader
+     *    attributes.
      */
     const sourceExitingSide = sourceWinningSide ? 3 - sourceWinningSide : 1;
+    const sourceReason = getSideStatusCode({ matchUp: sourceMatchUp, sideNumber: sourceExitingSide });
     const sourceCode =
-      getSideStatusCode({ matchUp: sourceMatchUp, sideNumber: sourceExitingSide }) ??
-      sourceMatchUpStatusCodes?.[sourceExitingSide - 1] ??
-      sourceMatchUpStatusCodes?.[0];
+      sourceReason ?? sourceMatchUpStatusCodes?.[sourceExitingSide - 1] ?? sourceMatchUpStatusCodes?.[0];
     carriedReasonSide = loserParticipantSide.sideNumber;
-    sourceCodeForSide = sourceCode;
+    carriedReason = sourceReason;
 
     /**
-     * A CARRY PAST A BYE IN THE STRUCTURE'S LAST ROUND IS RECORDED BESIDE THE BYE (P51).
+     * A CARRY PAST A BYE IS RECORDED BESIDE THE BYE, in every round (P51; F2, measured 2026-10-17).
      *
      * RULE 1 re-propagates the exit onto wherever the carrier lands. In a structure's last round there is nowhere
      * further, and nothing was written: the BYE matchUp kept no entry for the exit its carrier held. A BYE placed by a
@@ -176,12 +182,23 @@ export function progressExitStatus({
      * Recorded as the BYE's own carried entry, the shape `reconcileCarriesPastByes` and `writeCarryPastLateBye`
      * already read on a BYE matchUp: the matchUp stays a BYE while the BYE stands, and when it is withdrawn what is
      * retained re-derives it to the exit the carrier holds (RULE 2: the side without the exit wins).
+     *
+     * It is recorded before an earlier round's BYE too, not only the last round's. When the carrier is seated first and
+     * the BYE arrives after them, their entry is already on the matchUp and is kept (`stampCarriedExitOnArrival`).
+     * Writing it only in the last round when the BYE came first meant the same results, entered in the two orders,
+     * left two draws (census A1 cases 11 and 17, COMPASS 32: `Southwest|1|2` and `Southeast|1|1` kept the entry in
+     * one order and lost it in the other). The opposite normalisation was built and measured: withdraw the entry at
+     * settle once the carry is recorded where the carrier landed. It broke five tests in the exitPropagation folder
+     * against none for this one. A pull-back reads the BYE matchUp's copy to find the carry it takes home
+     * (`aRelabelWithdrawsTheCarryFromEveryByeHeldMatchUp`), and a pinned shape records it there
+     * (`anEmptyPositionResolvesNothing`). A copy whose carrier has since been replaced by a BYE is not a held exit
+     * (`getHeldExit`).
      */
-    const recordCarryBesideFinalBye = () => {
+    const recordCarryBesideBye = () => {
       const stored = getMatchUpsMap({ drawDefinition })?.drawMatchUps?.find(
         (m) => m.matchUpId === loserMatchUp.matchUpId,
       );
-      mergeSideExitProvenance({
+      const recorded = mergeSideExitProvenance({
         provenance: buildCarriedExitProvenance({
           exitingSideNumber: loserParticipantSide.sideNumber,
           previousMatchUpStatus: sourceMatchUpStatus,
@@ -190,11 +207,23 @@ export function progressExitStatus({
         }),
         matchUp: stored,
       });
+      // The BYE matchUp's state is not rewritten (it stays a BYE), so no state write announces it: the entry is
+      // announced here, or a notice-driven save (a server projection, an embedding client) never sees it.
+      if (recorded && stored)
+        modifyMatchUpNotice({
+          tournamentId: tournamentRecord?.tournamentId,
+          eventId: event?.eventId,
+          context: stack,
+          matchUp: stored,
+          drawDefinition,
+          event,
+        });
     };
 
     // RULE 1 — opponent is a BYE: the participant advances through it (the BYE
-    // cascade has already moved them forward), so this matchUp stays a BYE and we
-    // re-propagate the exit onto wherever the participant landed. NOT a WALKOVER.
+    // cascade has already moved them forward), so this matchUp stays a BYE, records
+    // the carry beside the BYE, and we re-propagate the exit onto wherever the
+    // participant landed. NOT a WALKOVER.
     if (opponentIsBye) {
       const advancementMatchUp = findAdvancementMatchUp(inContextMatchUps, updatedLoserMatchUp, loserParticipantId);
       pushGlobalLog({
@@ -204,7 +233,7 @@ export function progressExitStatus({
         from: updatedLoserMatchUp.matchUpId?.slice(0, 8),
         to: advancementMatchUp?.matchUpId?.slice(0, 8) ?? 'none',
       });
-      if (!advancementMatchUp) recordCarryBesideFinalBye();
+      recordCarryBesideBye();
       const context = advancementMatchUp
         ? { progressExitStatus: true, loserMatchUp: advancementMatchUp, loserParticipantId }
         : { progressExitStatus: true };
@@ -326,21 +355,23 @@ export function progressExitStatus({
   /**
    * THE REASON RIDES WITH THE SIDE INTO THE CONNECTED STRUCTURE.
    *
-   * `setMatchUpState` writes the positional array as the display projection; this records the same fact
-   * where it can be read without an index, on the side the exit actually arrived at. Merged rather than
-   * replaced: the other side may already carry its own reason from an earlier propagation, which is RULE
-   * 4's convergence.
+   * `statusCodes` is DERIVED display, so it is marked as such and not split as a client's array would be: a
+   * bare `WO` / `DEF` that `deriveStatusCodes` placed for a side with no recorded reason is not a reason
+   * (census A1 residue F1b). The reasons this write keeps are the target's own, plus the source's real
+   * reason recorded on the side the exit actually arrived at. The other side may already carry its own
+   * reason from an earlier propagation, which is RULE 4's convergence, and it is retained.
    */
-  if (carriedReasonSide && sourceCodeForSide) {
-    const existing = loserMatchUp.sideStatusCodes ?? {};
-    loserMatchUp.sideStatusCodes = { ...existing, [carriedReasonSide]: sourceCodeForSide };
-  }
+  const derivedStatusCodes = {
+    sideStatusCodes: carriedReasonSide && carriedReason ? { [carriedReasonSide]: carriedReason } : undefined,
+    matchUpId: loserMatchUp.matchUpId,
+  };
 
   const result = setMatchUpState({
     matchUpStatus: loserMatchUpStatus,
     matchUpId: loserMatchUp.matchUpId,
     matchUpStatusCodes: statusCodes,
     allowChangePropagation: true,
+    derivedStatusCodes,
     // THE CASCADE IDENTIFIES ITSELF. `checkParticipants` waives the two-participant requirement for
     // a one-sided exit, and until now it waived it on `propagateExitStatus` — a REQUEST FLAG any
     // caller can set — so a directly-entered WALKOVER could be awarded to an empty side and was.

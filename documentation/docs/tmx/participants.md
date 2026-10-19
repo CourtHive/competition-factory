@@ -62,9 +62,8 @@ const { participant } = tournamentEngine.findParticipant({
 });
 
 // Search by name
-const results = tournamentEngine.searchParticipants({
-  searchText: 'John Doe',
-});
+const { participants: searchable = [] } = tournamentEngine.getParticipants();
+const results = searchable.filter((p) => p.participantName?.toLowerCase().includes('john doe'));
 ```
 
 ### Updating Participants
@@ -72,8 +71,8 @@ const results = tournamentEngine.searchParticipants({
 ```js
 // Update participant details
 tournamentEngine.modifyParticipant({
-  participantId,
   participant: {
+    participantId,
     person: {
       standardGivenName: 'John',
       standardFamilyName: 'Smith',
@@ -81,12 +80,11 @@ tournamentEngine.modifyParticipant({
   },
 });
 
-// Add participant contact info
-tournamentEngine.addParticipantContact({
-  participantId,
-  contact: {
-    emailAddress: 'john@example.com',
-    phoneNumber: '+1-555-0123',
+// Replace the person's contact list; retain any contacts the UI should keep.
+tournamentEngine.modifyParticipant({
+  participant: {
+    participantId,
+    person: { contacts: [{ emailAddress: 'john@example.com', mobileTelephone: '+1-555-0123' }] },
   },
 });
 ```

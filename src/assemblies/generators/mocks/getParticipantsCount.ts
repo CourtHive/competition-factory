@@ -110,7 +110,9 @@ export function getParticipantsCount({ participantsProfile, eventProfiles, drawP
 
   if (Array.isArray(drawProfiles)) {
     for (const drawProfile of drawProfiles) {
-      processDrawProfile(drawProfile);
+      // the generator takes `matchUpType` for `eventType`, so the count must too: a DOUBLES draw named by
+      // matchUpType was sized for individuals, not PAIRs (M17, 2026-10-17)
+      processDrawProfile({ ...drawProfile, eventType: drawProfile?.eventType ?? drawProfile?.matchUpType });
     }
   }
   const individualCompetitorsCount = Math.max(

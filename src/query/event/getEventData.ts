@@ -4,6 +4,7 @@ import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
+import { withContextExclusion } from '@Query/matchUps/contextExclusion';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
@@ -44,7 +45,11 @@ type GetEventDataArgs = {
   event?: Event;
 };
 
-export function getEventData(params: GetEventDataArgs): {
+export function getEventData(params: GetEventDataArgs) {
+  return withContextExclusion(params, getEventDataUnredacted);
+}
+
+function getEventDataUnredacted(params: GetEventDataArgs): {
   participants?: HydratedParticipant[];
   participantsVersion?: string;
   error?: ErrorType;
@@ -86,7 +91,7 @@ export function getEventData(params: GetEventDataArgs): {
   const { tournamentId, endDate } = tournamentRecord;
 
   const publishStatus = getEventPublishStatus({ event, status });
-  const eventPublishState = getPublishState({ event }).publishState ?? {};
+  const eventPublishState = getPublishState({ event, status }).publishState ?? {};
   const eventPublished = !!eventPublishState?.status?.published;
 
   const { participants: tournamentParticipants } = getParticipants({

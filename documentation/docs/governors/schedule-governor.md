@@ -2,6 +2,12 @@
 title: Schedule Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`getMatchUpsToSchedule`](/docs/implementation/scheduling/getMatchUpsToSchedule), [`validateScheduleScenario`](/docs/implementation/validation/validateScheduleScenario). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 The **Schedule Governor** provides methods for assigning dates, times, venues, and courts to tournament matchUps. It supports manual assignment, automated scheduling, and hybrid approaches for tournaments ranging from simple club events to complex multi-day professional circuits.
 
 ```js
@@ -939,16 +945,7 @@ const { courts } = engine.generateVirtualCourts({
 
 ### getMatchUpsToSchedule
 
-Returns matchUps that are ready to be scheduled.
-
-```js
-const { matchUps } = engine.getMatchUpsToSchedule({
-  eventId, // optional
-  drawId, // optional
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getMatchUpsToSchedule`](/docs/implementation/scheduling/getMatchUpsToSchedule). Package-export status is a separate decision.
 
 ### getPersonRequests
 
@@ -1051,15 +1048,22 @@ engine.matchUpScheduleChange({
 
 ### modifyMatchUpFormatTiming
 
-Updates format timing parameters for scheduling.
+Updates the scheduling timing (average and recovery times) for a `matchUpFormat`, at the tournament level or, with an
+`eventId`, on that event.
 
 ```js
 engine.modifyMatchUpFormatTiming({
   matchUpFormat, // required
-  averageMinutes, // optional - average duration
-  recoveryMinutes, // optional - recovery time
+  averageTimes, // optional - [{ categoryNames?, categoryTypes?, minutes: { default, ... } }]
+  recoveryTimes, // optional - same shape as averageTimes
+  eventId, // optional - write the event's timing instead of the tournament's
+  tournamentId, // optional - only this tournament record
 });
 ```
+
+With an `eventId`, only the record that holds the event is written; an event no loaded record holds is refused with
+`EVENT_NOT_FOUND` and nothing is written. A tournament-level change sends `modifyTournamentDetail`, an event-level change
+`modifyEvent`.
 
 ---
 
@@ -1089,13 +1093,24 @@ const { courtIssues, rowIssues } = engine.proConflicts({
 
 `courtIssues` is keyed by `courtId`, `rowIssues` by row index; each issue is
 `{ matchUpId, issue, issueType, issueIds }`, where `issue` is the severity (`SCHEDULE_ERROR`,
-`SCHEDULE_CONFLICT`, `SCHEDULE_ISSUE`, `SCHEDULE_WARNING`) and `issueIds` names the matchUps it is with.
+`SCHEDULE_CONFLICT`, `SCHEDULE_ISSUE`, `SCHEDULE_WARNING`) and `issueIds` names the matchUps it is with:
+for a participant issue, only the matchUps that matchUp's own participants clash with.
 A matchUp carries one issue, the first and most severe found. The `issueType`s are `scheduleConstants`:
 
 - `CONFLICT_PARTICIPANTS`, `CONFLICT_POTENTIAL_PARTICIPANTS` — the same participant, or one who may
   advance there, in two matchUps of one row;
 - `CONFLICT_MATCHUP_ORDER` — a matchUp in the same row as, or earlier than, a matchUp that feeds it;
 - `CONFLICT_COURT_DOUBLE_BOOKING` — two matchUps in the same court and `courtOrder`;
+- in adjacent rows, `CONFLICT_PARTICIPANTS`, `CONFLICT_POTENTIAL_PARTICIPANTS` and `CONFLICT_MATCHUP_ORDER` are
+  a `SCHEDULE_WARNING` (back to back), and only when the time between the two matchUps is short of the
+  participants' recovery: the earlier matchUp's finish plus its recovery minutes falls after the later
+  matchUp begins. The finish is the earlier matchUp's `endTime`, else its `scoredTime`, else its
+  `startTime`, `calledAt` or `scheduledTime` plus its average minutes; the later matchUp begins at its
+  `startTime`, else its `calledAt`, else its `scheduledTime`. Average and recovery minutes come from the
+  scheduling policy, with the singles ↔ doubles figure when the type changes. `calledAt` and `scoredTime` are
+  UTC instants and are read only when the tournament's time zone is known (`localTimeZone`, or the venues'
+  address zones). Without times the warning stands. A source on the same court as the matchUp it feeds is
+  not warned of: the court plays them in order;
 - `CONFLICT_BYE_SCHEDULED`, `CONFLICT_EXIT_SCHEDULED` — a court held by a matchUp that will never be
   played (see below);
 - `CONFLICT_POSITION_LINK` — with `useDeepDependencies`, a matchUp whose position-linked source is
@@ -1396,13 +1411,7 @@ const result = engine.applyScheduleScenario({
 
 ### validateScheduleScenario
 
-Shape + light referential validation for a scenario object (used internally by add/update).
-
-```js
-engine.validateScheduleScenario({ scenario }); // → { valid: boolean, error?, info? }
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validateScheduleScenario`](/docs/implementation/validation/validateScheduleScenario). Package-export status is a separate decision.
 
 ### getScenarioScheduleProjection
 

@@ -110,13 +110,40 @@ engine.endSegment();
 // Segment score is finalized, next segment begins
 ```
 
+### Points-based and games-based segments
+
+A points-based segment (`T{minutes}P`) counts points: each point adds one (or its `scoreValue`) to the
+segment score. What a point does in a games-based segment (`T{minutes}`, `T{minutes}G`) depends on the
+format:
+
+- **Under the SET root, not aggregate** (`SET3-S:T10`, `SET3-S:T10-G:TN3D`): a tennis-family timed set.
+  Points build games of the match's game format: traditional, with deuce, No-Ad (`NOAD`) and deuce caps
+  (`-G:TN{n}D`), or consecutive points (`SET3-S:T10-G:3C`), and the segment score counts games. Service alternates game by game, and runs on across segments.
+- **Under another root** (`HAL2A-S:T45`, `QTR4A-S:T12`, `RND12A-S:T3`), **standalone** (`T90`), or in an
+  **aggregate** format (`SET2XA-S:T10`): a point is one of the sport's own scoring units (a goal, a
+  basket, an INTENNSE bolt's point), so each point adds one (or its `scoreValue`).
+
+### A tiebreak at time
+
+A timed segment that declares a tiebreak (`T20/TB7`, `T10P/TB1`) plays it when the segment is level at
+time. `endSegment` on a level segment opens the tiebreak instead of closing the segment; points then go
+to the tiebreak, and its winner takes the segment by one game (or point), recorded like a tennis
+tiebreak: `SET3-S:T20/TB7` level 1-1 and won 7-0 in the tiebreak is `2-1 (7-0)`. A tiebreak to one
+(`TB1`) is sudden death.
+
+### The final segment of an exactly format
+
+In a non-aggregate exactly format, `-F:` governs set N: `SET4X-S:T20P-F:T20` plays its fourth segment
+in games, whatever the count before it.
+
 ## Consecutive Game Formats
 
-The `-G:NC` modifier indicates N consecutive games within a set, used by formats like TYPTI.
+The `-G:NC` game modifier makes a game a run of N consecutive points: the first side to win N points
+in a row wins the game. It is used by formats like TYPTI.
 
 ```js
-const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7-G:3C' });
-// Standard tennis with 3 consecutive games per rotation
+const engine = new ScoringEngine({ matchUpFormat: 'SET5-S:5-G:3C' });
+// A game goes to the first side to win 3 points in a row; first to 5 games wins the set
 ```
 
 ## Aggregate Scoring
@@ -128,8 +155,10 @@ const engine = new ScoringEngine({ matchUpFormat: 'SET7XA-S:TB11' });
 // Play all 7 sets, winner determined by aggregate point total across all sets
 ```
 
-Sets won are not consulted. Every set must be recorded, and a tied total names no winner until a
-deciding point breaks it.
+Sets won are not consulted. Every set must be recorded. A tied total names no winner: with a declared
+decider (`-F:` on an exactly-N aggregate) the decider breaks it; without one, the
+match is completed without a winner, `getScore().situation.decisionRequired` is true and `onMatchTie` fires
+([specification](./scoring-engine-spec.md) § 9.7, decided 2026-10-18).
 
 ### Exactly N Sets
 
@@ -151,6 +180,31 @@ A non-aggregate exactly format is decided on sets won, but only once all N sets 
 
 An aggregate exactly format (`XA`) may record one set more than N: a level total goes to a
 sudden-death decider (`-F:`), which is set N + 1 and not one of the N sets (since 7.5.0).
+
+## Input Levels
+
+A parser-valid format is not a promise of a point model. `getInputLevels()` reports what the set in
+play can be scored with, and `addPoint` and `addGame` refuse what it reports as unavailable:
+
+| Segment                           | `point` | `game` | `set` |
+| --------------------------------- | ------- | ------ | ----- |
+| Standard, tiebreak-only, timed    | yes     | yes    | yes   |
+| Combined point total (`S:P32`)    | yes     | no     | yes   |
+| Outs (`S:O3`, e.g. `INN4XA-S:O3`) | no      | no     | yes   |
+
+A segment of outs has no point or game model here, so it is scored with set totals (`addSet`): its
+points are refused rather than scored as tennis sets. A final set of outs (`-F:O3`) refuses points
+only once it is the set in play.
+
+A tiebreak-only set to 11 (`SET3-S:TB11`) is how pickleball, squash and table tennis all write a
+game, so the code cannot say whether only the serving side scores. The engine scores every point it
+is given; a host recording side-out pickleball adds only the points the serving side won. For the same
+reason no server is derived in a tiebreak-only format until each sport's own service rule is added: a
+point records a server only when the host supplies one, `isServerDerived()` is `false`, and no
+server-based statistic (S/R codes, break points) is produced. Under `@RALLY` the rally winner serves.
+
+A match constraint such as `-M:T50` (a 50-minute match) is parsed and kept, and the clock is the
+host's to enforce, as it is for timed segments.
 
 ## Format Introspection
 
@@ -213,3 +267,7 @@ Manual `setMatchUpStatus` refuses a conflicting format or illegal score even whe
 score validation is disabled. A tied result uses `COMPLETED` without `winningSide`.
 Live completion fires `onMatchTie` for a tie and `onMatchComplete` for a winner.
 Individual standings and separate deciding-phase records are subsequent work.
+
+## Later 7.x adoption
+
+See the [dated post-7.15 adoption notes](../whats-new-7.0.0.md#after-715-unreleased-adoption-notes) for input levels, validation errors, replay/configuration, service metadata, substitution results and refreshed tallies. These dev changes remain labeled unreleased until a tag contains them.

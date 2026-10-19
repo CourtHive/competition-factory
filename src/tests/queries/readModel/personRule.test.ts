@@ -26,7 +26,7 @@ describe('resolvePersonLink', () => {
     expect(link.linkSource).toEqual('providerId');
   });
 
-  it('populates a non-UUID provider personId even when reused as the participantId (IONSPORT/BOBOCA)', () => {
+  it('populates a non-UUID provider personId even when reused as the participantId (provider ingest)', () => {
     const link = resolvePersonLink('424106', '424106');
     expect(link.personId).toEqual('424106');
     expect(link.linkSource).toEqual('providerId');

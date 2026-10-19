@@ -33,7 +33,6 @@ it('supports transitive BYE removal in large structures', () => {
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -146,7 +145,6 @@ function swapTest({ swapPosition }) {
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

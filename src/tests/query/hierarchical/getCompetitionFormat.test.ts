@@ -4,8 +4,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
-import { MISSING_DRAW_ID } from '@Constants/errorConditionConstants';
 import { competitionFormat } from '@Types/competitionFormat';
+import {
+  MISSING_DRAW_ID,
+  INVALID_VALUES,
+  MISSING_TOURNAMENT_RECORD,
+  STRUCTURE_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 
 // Fixtures
 import INTENNSE_STANDARD from '@Fixtures/scoring/competitionFormats/INTENNSE_STANDARD.json';
@@ -151,7 +156,7 @@ describe('getCompetitionFormat', () => {
       tournamentRecord,
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error when tournamentRecord is missing', () => {
@@ -159,7 +164,7 @@ describe('getCompetitionFormat', () => {
       tournamentRecord: null as any,
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('returns error when structureId provided without drawDefinition', () => {
@@ -239,6 +244,6 @@ describe('getCompetitionFormat', () => {
       drawDefinition,
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
   });
 });

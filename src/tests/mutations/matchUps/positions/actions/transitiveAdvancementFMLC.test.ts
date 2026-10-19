@@ -16,7 +16,6 @@ it('can generate FMLC and properly place BYEs in consolation structure', () => {
     },
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -48,7 +47,6 @@ it('can advance participants when double BYEs are created removing 3-4', () => {
     },
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -163,7 +161,6 @@ it('can advance participants when double BYEs are created removing 5-6', () => {
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -275,7 +272,6 @@ it('does not remove CONSOLATION BYE if at least one source position is a BYE', (
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

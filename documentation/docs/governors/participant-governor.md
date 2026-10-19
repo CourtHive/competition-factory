@@ -2,6 +2,12 @@
 title: Participant Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`getParticipantTimeItem`](/docs/implementation/scheduling/getParticipantTimeItem), [`getScaleValues`](/docs/implementation/records/getScaleValues), [`validateLineUp`](/docs/implementation/validation/validateLineUp). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { participantGovernor } from 'tods-competition-factory';
 ```
@@ -374,19 +380,7 @@ const { signInStatus } = engine.getParticipantSignInStatus({
 
 ## getParticipantTimeItem
 
-Returns time items attached to a participant.
-
-```js
-const { timeItem } = engine.getParticipantTimeItem({
-  participantId, // required
-  itemType, // required - time item type
-  tournamentRecord, // required
-});
-```
-
-**Purpose:** Query time-based metadata for participants.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getParticipantTimeItem`](/docs/implementation/scheduling/getParticipantTimeItem). Package-export status is a separate decision.
 
 ## getParticipants
 
@@ -428,13 +422,31 @@ const {
   withDraws, // optional boolean — include draw entries
   withISO2, // optional boolean — include ISO2 country codes
   withIOC, // optional boolean — include IOC country codes
-  returnParticipantMap, // optional boolean — defaults to true
+  returnParticipantMap, // optional boolean — defaults to true; false also lets filtered calls build less (below)
   returnMatchUps, // optional boolean — defaults to true
   internalUse, // optional boolean
 });
 ```
 
 **Purpose:** Primary method for retrieving participants with rich context.
+
+**Filtered lookups are cheapest with `returnParticipantMap: false`.** The `participantMap` holds every participant
+whether or not the filters keep it, so returning it means building the whole pool. When it is not returned, the
+`participantFilters` are applied to the stored participants first, and only those kept are built, together with their
+individuals and the groups they belong to (so groupings read the same). The result is the same as building
+everything; on a 3,600-participant tournament, a lookup of the officials goes from ~118 ms to ~1 ms.
+
+The whole pool is still built when a filter uses `accessorValues` (which may read attributes only a built participant
+holds), or when any of `withMatchUps`, `withDraws`, `withOpponents`, `withStatistics`, `withScheduleItems`,
+`withPotentialMatchUps`, `withTeamMatchUps`, `withRankingProfile` or `scheduleAnalysis` is requested, since those read
+other participants.
+
+```js
+const { participants: officials } = engine.getParticipants({
+  participantFilters: { participantRoles: [OFFICIAL] },
+  returnParticipantMap: false,
+});
+```
 
 ---
 
@@ -481,40 +493,7 @@ Pure: reads only the record. Storage keys, timestamps and server-specific projec
 
 ## getScaleValues
 
-Resolves one participant's scale timeItems into ratings, rankings and seedings.
-
-```js
-const { ratings, rankings, seedings } = engine.getScaleValues({
-  participant, // required
-});
-```
-
-Each of `ratings` / `rankings` / `seedings` is keyed by event type
-(`SINGLES`, `DOUBLES`, `TEAM`), and **each event type holds an ARRAY** with one
-entry per distinct `scaleName` — a participant may hold WTN and UTR at once:
-
-```js
-// { scaleName, scaleDate, scaleValue }
-const wtn = ratings.SINGLES?.find(({ scaleName }) => scaleName === 'WTN');
-const rating = wtn?.scaleValue?.wtnRating;
-```
-
-Within a single `scaleName` the entry is the **latest** value, so "current" is
-resolved for you. Across scale names nothing is: the set of rating and ranking
-scales is open — any number of scales, from any number of bodies, including ones
-not yet invented — so the array has no canonical order and never will.
-
-:::warning
-**Address entries by `scaleName`, never by index.** `ratings.SINGLES[0]` is the
-scale you want only for as long as it is the only one present; the day a second
-appears, `[0]` returns a different rating system's number in the same shape and
-nothing throws.
-:::
-
-**Purpose:** Read a participant's current value for a given scale, with the date
-it was recorded.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getScaleValues`](/docs/implementation/records/getScaleValues). Package-export status is a separate decision.
 
 ## mergeParticipants
 
@@ -919,14 +898,7 @@ engine.setParticipantScaleItems({
 
 ## validateLineUp
 
-```js
-const { valid, error, errors } = engine.validateLineUp({
-  tieFormat, // required to validate collectionIds in lineUp
-  lineUp,
-});
-```
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`validateLineUp`](/docs/implementation/validation/validateLineUp). Package-export status is a separate decision.
 
 ## removeIndividualParticipantIds
 

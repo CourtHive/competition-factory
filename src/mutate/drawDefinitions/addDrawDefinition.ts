@@ -7,6 +7,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { addNotice, hasTopic } from '@Global/state/globalState';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { storeGoesTo } from '@Query/matchUps/addGoesTo';
 import { ensureInt } from '@Tools/ensureInt';
 import {
   addDrawNotice,
@@ -175,6 +176,13 @@ export function addDrawDefinition(
     // wipe completed results. The AUDIT snapshot below still fires when the replace proceeds.
     if (replacementBlockedByScores({ existingDrawDefinition, tournamentRecord, event, force }))
       return { error: SCORES_PRESENT };
+  }
+
+  // A draw built outside the factory may carry no `winnerMatchUpId` / `loserMatchUpId`. It is stored with the edges
+  // the factory would have generated (CA, 2026-10-18), before the notices, so they announce the draw as stored.
+  storeGoesTo(drawDefinition);
+
+  if (existingDrawDefinition) {
     replaceExistingDraw({
       existingDrawDefinition,
       suppressNotifications,

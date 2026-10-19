@@ -2,6 +2,12 @@
 title: Tournament Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`addNotes`](/docs/implementation/records/addNotes), [`getAllowedDrawTypes`](/docs/implementation/records/getAllowedDrawTypes), [`getTournamentTimeItem`](/docs/implementation/scheduling/getTournamentTimeItem). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { tournamentGovernor } from 'tods-competition-factory';
 ```
@@ -24,6 +30,13 @@ engine.addExtension({
 
 **Purpose:** Attach custom metadata to tournament elements.
 
+When the `element` passed is one stored in a loaded record, the change is announced on its topic: the tournament
+record itself as `MODIFY_TOURNAMENT_DETAIL` with its `extensions`, an event as `MODIFY_EVENT`, a drawDefinition as
+`MODIFY_DRAW_DEFINITION`, a structure as `MODIFY_DRAW_DEFINITION` naming it, a matchUp (a TEAM matchUp's tieMatchUps
+included) as `MODIFY_MATCHUP`, a venue as `MODIFY_VENUE`, a participant as `MODIFY_PARTICIPANTS`. A copy (what `getEvent` or
+`getParticipants` returns) is not in the record, so writing to it announces nothing; nor does a write that leaves the
+element's extensions as they were.
+
 ---
 
 ## addMutationLock
@@ -44,25 +57,16 @@ const { success, lockId } = engine.addMutationLock({
 
 **Purpose:** Control concurrent access to scoped mutations. See [Mutation Locks](../concepts/mutation-locks.md) for details.
 
+The lock is stored as an extension on the element it locks, and the change is announced on that element's topic
+(`modifyDrawDefinition`, `modifyEvent`, `modifyVenue`). A tournament-level lock, and the feature gate on the tournament
+record, are root extensions: their change is announced as `modifyTournamentDetail` with the record's `extensions`, as
+`addTournamentExtension` and `removeTournamentExtension` announce theirs.
+
 ---
 
 ## addNotes
 
-Adds notes to a tournament record or specific element.
-
-```js
-engine.addNotes({
-  notes, // required - string or notes object
-  tournamentId, // optional - target tournament
-  participantId, // optional - target participant
-  eventId, // optional - target event
-  drawId, // optional - target draw
-});
-```
-
-**Purpose:** Add textual notes/comments to tournament entities.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`addNotes`](/docs/implementation/records/addNotes). Package-export status is a separate decision.
 
 ## addOnlineResource
 
@@ -86,6 +90,11 @@ A matchUp's recording, stream or stats page belongs on the matchUp: pass `matchU
 contains it (tieMatchUps included). The resource is merged as on every other element (one with the same `name`
 or `identifier` is replaced), and a `modifyMatchUp` notice is emitted so subscribers refresh. Public projections
 (`getEventData`, published or not) carry it on the matchUp.
+
+Every other element announces the change on its own topic, and only when its resources changed (re-adding a
+resource it already holds, or removing one it does not hold, announces nothing): a participant or person
+`modifyParticipants`, a venue or court `modifyVenue`, the parent organisation or the tournament itself
+`modifyTournamentDetail`. `removeOnlineResource` does the same.
 
 ```js
 engine.addOnlineResource({
@@ -220,17 +229,7 @@ const { results } = engine.getAggregateTeamResults({
 
 ## getAllowedDrawTypes
 
-Returns allowed draw types for a specific event based on configuration.
-
-```js
-const { drawTypes } = engine.getAllowedDrawTypes({
-  eventId, // required
-});
-```
-
-**Purpose:** Get valid draw types for event creation.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getAllowedDrawTypes`](/docs/implementation/records/getAllowedDrawTypes). Package-export status is a separate decision.
 
 ## getAllowedMatchUpFormats
 
@@ -274,7 +273,7 @@ const { startDate, endDate } = engine.getCompetitionDateRange({
 
 ## getCompetitionPenalties
 
-Returns all penalties across multiple tournaments in a competition. `penaltyType` is returned as stored: a penalty written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until the record is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified.
+Returns all penalties across multiple tournaments in a competition. `penaltyType` is returned as its code: a record written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until it is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified, and the query returns that label's code without changing the record. A value outside the legacy labels is returned as stored.
 
 ```js
 const { penalties } = engine.getCompetitionPenalties({
@@ -349,7 +348,7 @@ Only that last case admits a fallback. The factory's own reads, such as "today" 
 
 ## getTournamentPenalties
 
-Returns all penalties issued in the tournament. `penaltyType` is returned as stored: a penalty written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until the record is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified.
+Returns all penalties issued in the tournament. `penaltyType` is returned as its code: a record written before 7.x stored penalty codes may still hold a display label (`'Ball Abuse'`) until it is run through [migrateTournamentRecord](/docs/engines/migrate-tournament-record) or the penalty is modified, and the query returns that label's code without changing the record. A value outside the legacy labels is returned as stored.
 
 ```js
 const { penalties } = engine.getTournamentPenalties();
@@ -397,17 +396,7 @@ const { structures } = engine.getTournamentStructures();
 
 ## getTournamentTimeItem
 
-Returns time items attached to tournament.
-
-```js
-const { timeItem } = engine.getTournamentTimeItem({
-  itemType, // required - time item type
-});
-```
-
-**Purpose:** Query time-based tournament metadata.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getTournamentTimeItem`](/docs/implementation/scheduling/getTournamentTimeItem). Package-export status is a separate decision.
 
 ## hydrateTournamentRecord
 
@@ -462,6 +451,9 @@ engine.removeExtension({
 ```
 
 **Purpose:** Remove custom metadata from tournament elements.
+
+Announced as `addExtension` is; with `discover: true` each record whose root extensions changed is announced as
+`MODIFY_TOURNAMENT_DETAIL`. Removing a name the element does not carry sends nothing.
 
 ---
 
@@ -553,6 +545,8 @@ engine.setTournamentNotes({ notes });
 ```js
 engine.setTournamentStatus({ status: CANCELLED });
 ```
+
+Announced as `MODIFY_TOURNAMENT_DETAIL` with `tournamentStatus`; setting the status the record already has sends nothing.
 
 ---
 

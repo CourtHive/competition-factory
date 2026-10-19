@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 
 /**
@@ -25,7 +26,6 @@ describe('addDrawOtherId', () => {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     return { drawId, eventId };
@@ -98,7 +98,7 @@ describe('addDrawOtherId', () => {
       isOrigin: true,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.info).toContain('UTR');
     expect(readModel.drawOrigin(drawOf(drawId))?.organisationId).toEqual('UTR');
   });
@@ -132,7 +132,6 @@ describe('setDrawOtherIds', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     return drawId;
@@ -173,7 +172,7 @@ describe('setDrawOtherIds', () => {
   it('REJECTS a non-array rather than storing it', () => {
     const drawId = seed();
     const result: any = tournamentEngine.setDrawOtherIds({ drawOtherIds: 'nope' as any, drawId });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.info).toContain('array');
     expect(drawOf(drawId).drawOtherIds).toBeUndefined();
   });
@@ -188,7 +187,7 @@ describe('setDrawOtherIds', () => {
       ],
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(drawOf(drawId).drawOtherIds).toBeUndefined();
   });
 });
@@ -200,7 +199,6 @@ describe('drawOrigin + the draws read-model row', () => {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     tournamentEngine.addDrawOtherId({

@@ -119,6 +119,11 @@ it('can update a schedulingProfile when venues change', () => {
   expect(result.issues.length).toEqual(2);
   expect(result.updatedSchedulingProfile.length).toEqual(0);
 
+  // store the invalid profile on both surfaces. getSchedulingProfile returns a copy, so the push above
+  // did not reach the stored profile; setSchedulingProfile would refuse it, so it is written directly.
+  const { tournamentRecord: stored } = tournamentEngine.getTournament();
+  stored.scheduling = { ...stored.scheduling, profile: schedulingProfile };
+  tournamentEngine.setState(stored);
   const extension = {
     name: SCHEDULING_PROFILE,
     value: schedulingProfile,

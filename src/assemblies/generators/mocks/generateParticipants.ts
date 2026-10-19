@@ -13,11 +13,11 @@ import { nameMocks } from './nameMocks';
 import { UUID } from '@Tools/UUID';
 
 // constants and fixtures
+import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { RANKING, RATING, SCALE } from '@Constants/scaleConstants';
-import { ErrorType } from '@Constants/errorConditionConstants';
 import { DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { HydratedParticipant } from '@Types/hydrated';
@@ -26,6 +26,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 export function generateParticipants(params): {
   participants?: HydratedParticipant[];
   error?: ErrorType;
+  info?: string;
 } {
   let {
     scaledParticipantsCount, // number of participants to assign rankings/ratings
@@ -90,8 +91,9 @@ export function generateParticipants(params): {
     scaledParticipantsCount && scaledParticipantsCount > defaultRankingRange
       ? scaledParticipantsCount
       : defaultRankingRange;
-  rankingRange = rankingRange || [1, rankingUpperBound];
-  rankingRange[1] += 1; // so that behavior is as expected
+  // a new array: the caller's rankingRange is read, never incremented in place (it grew by one on
+  // every reuse of the same profile: [1,2] -> [1,3] -> [1,4])
+  rankingRange = rankingRange ? [rankingRange[0], rankingRange[1] + 1] : [1, rankingUpperBound + 1]; // upper bound exclusive below
 
   // a team-only competition enumerates no individuals at all, so no persons are generated for them
   const teamsOnly = !!team && enumerateIndividuals === false;
@@ -165,9 +167,19 @@ export function generateParticipants(params): {
 
   const { postalCodesProfile, postalCodesCount, statesProfile, citiesProfile, citiesCount, statesCount } =
     addressProps ?? {};
+  // a weight is how many participants take the value: a whole number of them, never negative
+  const validWeights = (profile) =>
+    !profile ||
+    (typeof profile === 'object' &&
+      Object.values(profile).every((count) => Number.isInteger(count) && (count as number) >= 0));
+  if (![citiesProfile, statesProfile, postalCodesProfile].every(validWeights)) {
+    return { error: INVALID_VALUES, info: 'address profile weights must be whole numbers of participants' };
+  }
 
+  // each profile's own weights: every lookup read statesProfile, so a citiesProfile alone threw and a
+  // citiesProfile beside a statesProfile produced addresses with no city (M6, 2026-10-17)
   const valuesFromProfile = (profile) =>
-    Object.keys(profile).flatMap((key) => generateRange(0, statesProfile[key]).map(() => key));
+    Object.keys(profile).flatMap((key) => generateRange(0, profile[key]).map(() => key));
 
   const cities =
     (citiesProfile && valuesFromProfile(citiesProfile)) ||

@@ -15,7 +15,8 @@ export function generateScheduledRounds({ schedulingProfile, tournamentRecord }:
   scheduledRounds?: any;
   error?: ErrorType;
 } {
-  if (typeof schedulingProfile !== 'object') return { error: INVALID_VALUES };
+  // an object that is not an array passed this check and threw in the loop below (M15, 2026-10-17)
+  if (!Array.isArray(schedulingProfile)) return { error: INVALID_VALUES };
 
   const containedStructures = getContainedStructures({
     tournamentRecord,

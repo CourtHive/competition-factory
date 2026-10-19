@@ -1,7 +1,7 @@
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
+import { checkProfileKeys, GENERATE_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
-import { Extension, Participant, Tournament } from '@Types/tournamentTypes';
 import { addTournamentParticipants } from './addTournamentParticipants';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
@@ -14,14 +14,15 @@ import { isValidExtension } from '@Validators/isValidExtension';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { applyScenarioProfile } from './applyScenarioProfile';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { addDays, extractDate } from '@Tools/plainDate';
 import { addEvent } from '@Mutate/events/addEvent';
 import { randomMember } from '@Tools/arrays';
 import { now } from '@Tools/clock';
 
 // constants and fixtures
-import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { ParticipantsProfile, PolicyDefinitions } from '@Types/factoryTypes';
+import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
+import type { GenerateTournamentRecordArgs } from '@Types/mocksTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // SELECTED WITH `randomMember`, NEVER `randomPop`. `randomPop` SPLICES, and this array is a
@@ -38,6 +39,8 @@ import { SUCCESS } from '@Constants/resultConstants';
 // drawPosition 23 to 10. In the exit-propagation sweep this made three of thirty-one failing seeds
 // unreproducible in isolation, which is why per-seed attribution in that census could not be
 // trusted. See `mockTournamentNameReuse.test.ts`.
+const DEFAULT_SPAN_DAYS = 7;
+
 const mockTournamentNames = [
   'Generated Tournament',
   'CourtHive Challenge',
@@ -50,37 +53,10 @@ const mockTournamentNames = [
   'Stats Fail',
 ];
 
-type GenerateTournamentRecordArgs = {
-  // Pre-built participants supplied by the caller. When non-empty, factory
-  // adds them directly to the tournament instead of synthesizing mocks via
-  // `addTournamentParticipants` / `generateEventParticipants`. Used by
-  // ingest pipelines (courthive-ingest's federation adapters) where stable
-  // provider-issued IDs need to be preserved through the generated shape.
-  participants?: Participant[];
-  participantsProfile?: ParticipantsProfile;
-  scheduleCompletedMatchUps?: boolean;
-  tournamentExtensions?: Extension[];
-  policyDefinitions?: PolicyDefinitions;
-  completeAllMatchUps?: boolean;
-  tournamentAttributes?: Partial<Tournament>;
-  ratingsParameters?: any;
-  tournamentName?: string;
-  schedulingProfile?: any;
-  scenarioProfile?: any;
-  random?: () => number;
-  autoSchedule?: boolean;
-  leagueProfiles?: any[];
-  eventProfiles?: any[];
-  venueProfiles?: any[];
-  drawProfiles?: any[];
-  startDate?: string;
-  endDate?: string;
-  isMock?: boolean;
-  uuids?: string[];
-};
-
 export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
-  let { startDate, endDate } = params ?? {};
+  // an option the generators do not read is refused, not ignored (phase 4c)
+  const unknownOption = checkProfileKeys(params, GENERATE_TOURNAMENT_RECORD_KEYS);
+  if (unknownOption) return unknownOption;
   const {
     tournamentName = randomMember(mockTournamentNames, params?.random),
     ratingsParameters = defaultRatingsParameters,
@@ -93,12 +69,11 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
 
   const isMock = params?.isMock === false ? undefined : true;
 
-  if ((startDate && !isValidDateString(startDate)) || (endDate && !isValidDateString(endDate)))
-    return { error: INVALID_DATE };
+  const dates = resolveDates(params?.startDate, params?.endDate);
+  if (dates.error) return dates;
+  const { startDate, endDate } = dates;
 
   if (!areValidProfiles(params)) return { error: INVALID_VALUES };
-
-  ({ startDate, endDate } = resolveDates(startDate, endDate));
 
   const tournamentRecord = createTournamentRecord({
     ...params.tournamentAttributes,
@@ -107,8 +82,12 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
     endDate,
     isMock,
   });
+  // an invalid header (a bad localTimeZone, say) comes back as an error envelope; carrying on would
+  // decorate that envelope with participants and events and report it as a generated tournament
+  if (tournamentRecord.error) return tournamentRecord;
 
   const venueIds = venueProfiles?.length ? generateVenues({ tournamentRecord, venueProfiles, uuids }) : [];
+  if (!Array.isArray(venueIds)) return venueIds;
 
   // attach any valid tournamentExtensions
   if (tournamentExtensions?.length && Array.isArray(tournamentExtensions)) {
@@ -166,9 +145,11 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   });
   if (profilesResult?.error) return profilesResult;
 
-  const { scheduledRounds = undefined, schedulerResult = {} } = schedulingProfile
-    ? scheduleRounds({ ...params, tournamentRecord })
-    : {};
+  const scheduled = schedulingProfile ? scheduleRounds({ ...params, tournamentRecord }) : {};
+  // a refused schedule is a refusal, not an empty schedule
+  if (scheduled.error) return scheduled;
+  if (scheduled.schedulerResult?.error) return scheduled.schedulerResult;
+  const { scheduledRounds = undefined, schedulerResult = {} } = scheduled;
 
   // Anchoring runs AFTER scheduling: it shifts the times the scheduler produced rather than
   // replacing them, so matchUp average and recovery spacing survive intact.
@@ -245,7 +226,7 @@ function processEventProfiles(params) {
   }
 }
 
-function scheduleRounds(params): { scheduledRounds?: any; schedulerResult?: any } {
+function scheduleRounds(params): { scheduledRounds?: any; schedulerResult?: any; error?: ErrorType } {
   const { schedulingProfile, tournamentRecord, autoSchedule, periodLength, scheduleCompletedMatchUps } = params;
   const result = generateScheduledRounds({
     schedulingProfile,
@@ -278,21 +259,32 @@ function areValidProfiles(params) {
   );
 }
 
-function resolveDates(startDate, endDate) {
-  let resolvedStart = startDate;
-  let resolvedEnd = endDate;
+/**
+ * A bound the caller gives is kept; a missing one is derived from it by the default span of a week.
+ *
+ * Before (M7, 2026-10-17): an `endDate` alone became the START, and the end was overwritten with
+ * today + 7, so `endDate: 2027-02-01` produced 2027-02-01 to 2026-10-24. And a `startDate` alone was
+ * parsed as UTC then advanced in local time, which is start + 6 west of UTC. Calendar dates only.
+ */
+function resolveDates(
+  startDate?: string,
+  endDate?: string,
+): { startDate: string; endDate: string; error?: undefined } | { error: ErrorType; info?: string } {
+  if ((startDate && !isValidDateString(startDate)) || (endDate && !isValidDateString(endDate)))
+    return { error: INVALID_DATE };
+  const resolved = deriveMissingDate(startDate, endDate);
+  // an inverted range is refused before any participant or schedule is generated for it
+  if (extractDate(resolved.endDate) < extractDate(resolved.startDate))
+    return { error: INVALID_DATE, info: 'endDate precedes startDate' };
+  return resolved;
+}
 
-  if (!resolvedStart) {
-    const tournamentDate = now();
-    resolvedStart = formatDate(resolvedEnd ?? tournamentDate);
-    resolvedEnd = formatDate(tournamentDate.setDate(tournamentDate.getDate() + 7));
-  }
-  if (!resolvedEnd) {
-    const tournamentDate = new Date(resolvedStart);
-    resolvedEnd = formatDate(tournamentDate.setDate(tournamentDate.getDate() + 7));
-  }
-
-  return { startDate: resolvedStart, endDate: resolvedEnd };
+function deriveMissingDate(startDate?: string, endDate?: string) {
+  if (startDate && endDate) return { startDate, endDate };
+  if (startDate) return { startDate, endDate: addDays(startDate, DEFAULT_SPAN_DAYS) };
+  if (endDate) return { startDate: addDays(endDate, -DEFAULT_SPAN_DAYS), endDate };
+  const today = formatDate(now());
+  return { startDate: today, endDate: addDays(today, DEFAULT_SPAN_DAYS) };
 }
 
 function processAllProfiles({

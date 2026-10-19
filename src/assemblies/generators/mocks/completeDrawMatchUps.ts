@@ -11,20 +11,34 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { coercedGender } from '@Helpers/coercedGender';
 import { generateOutcome } from './generateOutcome';
+import { isGendered } from '@Validators/isGendered';
+import { isMixed } from '@Validators/isMixed';
 import { intersection } from '@Tools/arrays';
 
 // constants and types
-import { BYE, COMPLETED, DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MAIN, PLAY_OFF, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
+import type { DrawDefinition } from '@Types/tournamentTypes';
+import { FEMALE, MALE } from '@Constants/genderConstants';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { ASCENDING } from '@Constants/sortingConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import { RANKING } from '@Constants/scaleConstants';
+import {
+  ABANDONED,
+  BYE,
+  CANCELLED,
+  COMPLETED,
+  DEAD_RUBBER,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
+} from '@Constants/matchUpStatusConstants';
 
 // Helper to assign participants for dual matchups
 function assignParticipantsToDualMatchUps({ firstRoundDualMatchUps, event, tournamentRecord, drawDefinition }) {
@@ -68,65 +82,132 @@ function assignParticipantsToDualMatchUps({ firstRoundDualMatchUps, event, tourn
     });
   }
 
-  function assignSinglesMatchUpParticipants(singlesMatchUp, i, tieMatchUpId) {
-    singlesMatchUp.sides.forEach((side) => {
-      const { drawPosition } = side;
-      const teamParticipant = findTeamParticipantByDrawPosition(drawPosition);
+  // persons, to choose each collection's players by its gender
+  const sexByParticipantId = new Map<string, string | undefined>(
+    (tournamentRecord.participants ?? []).map((participant) => [participant.participantId, participant.person?.sex]),
+  );
 
-      if (teamParticipant) {
-        const individualParticipantId = teamParticipant.individualParticipantIds?.[i];
+  // an inContext tieMatchUp does not always carry its collection's gender; the definition does
+  const collectionGenders = new Map<string, string | undefined>(
+    (drawDefinition.tieFormat ?? event?.tieFormat)?.collectionDefinitions?.map((collectionDefinition) => [
+      collectionDefinition.collectionId,
+      collectionDefinition.gender,
+    ]) ?? [],
+  );
 
-        if (individualParticipantId) {
-          assignTieMatchUpParticipantId({
-            teamParticipantId: teamParticipant.participantId,
-            participantId: individualParticipantId,
-            tournamentRecord,
-            drawDefinition,
-            tieMatchUpId,
-            event,
-          });
-        }
-        return undefined;
-      }
-    });
+  for (const dualMatchUp of firstRoundDualMatchUps) {
+    // per side and matchUpType, the individuals already placed in this dual: a player is used once in
+    // its singles and once in its doubles, which is the index rule this replaces for ungendered formats
+    const placed = new Map<string, Set<string>>();
+    const tieMatchUps = [
+      ...dualMatchUp.tieMatchUps.filter(isMatchUpEventType(SINGLES)),
+      ...dualMatchUp.tieMatchUps.filter(isMatchUpEventType(DOUBLES)),
+    ];
+
+    for (const tieMatchUp of tieMatchUps) {
+      const result = assignTieMatchUpSides({
+        gender: tieMatchUp.gender ?? collectionGenders.get(tieMatchUp.collectionId),
+        findTeamParticipantByDrawPosition,
+        sexByParticipantId,
+        tournamentRecord,
+        drawDefinition,
+        tieMatchUp,
+        placed,
+        event,
+      });
+      if (result?.error) return result;
+    }
   }
-
-  function assignDoublesMatchUpParticipants(doublesMatchUp, i, tieMatchUpId) {
-    doublesMatchUp.sides.forEach((side) => {
-      const { drawPosition } = side;
-      const teamParticipant = findTeamParticipantByDrawPosition(drawPosition);
-
-      if (teamParticipant) {
-        const individualParticipantIds = teamParticipant.individualParticipantIds?.slice(i * 2, i * 2 + 2);
-        individualParticipantIds?.forEach((individualParticipantId) => {
-          assignTieMatchUpParticipantId({
-            teamParticipantId: teamParticipant.participantId,
-            participantId: individualParticipantId,
-            tournamentRecord,
-            drawDefinition,
-            tieMatchUpId,
-            event,
-          });
-        });
-      }
-    });
-  }
-
-  firstRoundDualMatchUps.forEach((dualMatchUp) => {
-    const singlesMatchUps = dualMatchUp.tieMatchUps.filter(isMatchUpEventType(SINGLES));
-    const doublesMatchUps = dualMatchUp.tieMatchUps.filter(isMatchUpEventType(DOUBLES));
-
-    singlesMatchUps.forEach((singlesMatchUp, i) => {
-      const tieMatchUpId = singlesMatchUp.matchUpId;
-      assignSinglesMatchUpParticipants(singlesMatchUp, i, tieMatchUpId);
-    });
-
-    doublesMatchUps.forEach((doublesMatchUp, i) => {
-      const tieMatchUpId = doublesMatchUp.matchUpId;
-      assignDoublesMatchUpParticipants(doublesMatchUp, i, tieMatchUpId);
-    });
-  });
   return undefined;
+}
+
+function assignTieMatchUpSides({
+  findTeamParticipantByDrawPosition,
+  gender,
+  sexByParticipantId,
+  tournamentRecord,
+  drawDefinition,
+  tieMatchUp,
+  placed,
+  event,
+}) {
+  const isDoubles = isMatchUpEventType(DOUBLES)(tieMatchUp.matchUpType);
+  for (const side of tieMatchUp.sides ?? []) {
+    const teamParticipant = findTeamParticipantByDrawPosition(side.drawPosition);
+    if (!teamParticipant) continue;
+
+    const key = `${side.drawPosition}|${isDoubles ? DOUBLES : SINGLES}`;
+    if (!placed.has(key)) placed.set(key, new Set());
+    const used = placed.get(key);
+
+    const participantIds = chooseLineUpIndividuals({
+      individualParticipantIds: teamParticipant.individualParticipantIds ?? [],
+      needed: isDoubles ? 2 : 1,
+      gender,
+      sexByParticipantId,
+      used,
+    });
+
+    for (const participantId of participantIds) {
+      const result = assignTieMatchUpParticipantId({
+        teamParticipantId: teamParticipant.participantId,
+        tieMatchUpId: tieMatchUp.matchUpId,
+        tournamentRecord,
+        drawDefinition,
+        participantId,
+        event,
+      });
+      if (result?.error) return result;
+      used.add(participantId);
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The team members a tieMatchUp side gets: as many as it `needed`, of the collection's gender, one of
+ * each sex for MIXED, and not already `used` by this side in the dual's matchUps of the same type.
+ *
+ * Before, singles took the i-th member and doubles the i-th pair BY INDEX, whatever the collection's
+ * gender; the engine refused every mismatch ("Gender mismatch", "Mixed doubles pair requires one
+ * participant of each gender") and the refusal was discarded, so gendered TEAM fixtures carried
+ * first-round tieMatchUps with unassigned sides (182 refusals across the suite, 2026-10-17). For an
+ * ungendered collection this chooses exactly what the index rule chose.
+ */
+function chooseLineUpIndividuals({
+  individualParticipantIds,
+  sexByParticipantId,
+  needed,
+  gender,
+  used,
+}: {
+  sexByParticipantId: Map<string, string | undefined>;
+  individualParticipantIds: string[];
+  gender?: string;
+  used: Set<string>;
+  needed: number;
+}): string[] {
+  const sexOf = (participantId: string) => coercedGender(sexByParticipantId.get(participantId));
+  const unused = individualParticipantIds.filter((participantId) => !used.has(participantId));
+  const ofSex = (sex) => unused.filter((participantId) => sexOf(participantId) === sex);
+
+  if (isGendered(gender)) return ofSex(coercedGender(gender)).slice(0, needed);
+  if (isMixed(gender) && needed === 2) {
+    const [male] = ofSex(MALE);
+    const [female] = ofSex(FEMALE);
+    return male && female ? [male, female] : [];
+  }
+  return unused.slice(0, needed);
+}
+
+// played, or settled without being played: anything else is still to play
+const SETTLED_STATUSES = new Set<string>([BYE, DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEAD_RUBBER, ABANDONED, CANCELLED]);
+
+function remainingMatchUps(drawDefinition: DrawDefinition): number {
+  return (getAllDrawMatchUps({ drawDefinition, inContext: true }).matchUps ?? []).filter(
+    (matchUp) =>
+      !matchUp.winningSide && !SETTLED_STATUSES.has(matchUp.matchUpStatus as string) && !matchUp.collectionId,
+  ).length;
 }
 
 // Helper to complete matchups for a structure
@@ -144,6 +225,7 @@ function completeStructureMatchUps({
   completionGoal,
   completedCount,
   roundNumber: roundNumberFilter,
+  leafStructureIds,
   random,
 }) {
   const matchUps = getAllStructureMatchUps({
@@ -158,25 +240,48 @@ function completeStructureMatchUps({
   }).matchUps;
 
   const sortedMatchUpIds = matchUps
-    .filter(({ winningSide, roundNumber }) => !winningSide && (!roundNumberFilter || roundNumber === roundNumberFilter))
+    .filter(
+      ({ winningSide, roundNumber, structureId }) =>
+        !winningSide &&
+        (!roundNumberFilter || roundNumber === roundNumberFilter) &&
+        (!leafStructureIds || leafStructureIds.includes(structureId)),
+    )
     .sort(matchUpSort)
     .map(getMatchUpId);
+
+  /**
+   * The structure is re-read (hydrated) once per ROUND, not once per matchUp. Within a structure a round's
+   * matchUps do not depend on one another: completing one advances its winner into the NEXT round, so the
+   * readiness and sides of its siblings read before it are the readiness and sides they still have.
+   * Re-reading per matchUp made completion quadratic (measured 2026-10-18: 1.8 s at 32, 7.7 s at 64, 32 s at
+   * 128). The exception is a TEAM dual's tieMatchUps, where one result can decide the dual for the
+   * others: those are still read one by one. The outcome draws keep their order, so the record is the same.
+   */
+  const roundKeyOf = new Map(
+    matchUps.map((matchUp) => [matchUp.matchUpId, matchUp.matchUpTieId ? undefined : String(matchUp.roundNumber)]),
+  );
+  let readRound: string | undefined;
+  let roundMatchUps: HydratedMatchUp[] = [];
 
   for (const matchUpId of sortedMatchUpIds) {
     if (!Number.isNaN(Number(completionGoal)) && completedCount.value >= completionGoal) break;
 
-    const { matchUps } = getAllStructureMatchUps({
-      matchUpFilters: { matchUpTypes: [DOUBLES, SINGLES] },
-      afterRecoveryTimes: false,
-      tournamentRecord,
-      inContext: true,
-      drawDefinition,
-      matchUpsMap,
-      structure,
-      event,
-    });
+    const roundKey = roundKeyOf.get(matchUpId);
+    if (roundKey === undefined || roundKey !== readRound) {
+      roundMatchUps = getAllStructureMatchUps({
+        matchUpFilters: { matchUpTypes: [DOUBLES, SINGLES] },
+        afterRecoveryTimes: false,
+        tournamentRecord,
+        inContext: true,
+        drawDefinition,
+        matchUpsMap,
+        structure,
+        event,
+      }).matchUps;
+      readRound = roundKey;
+    }
 
-    const targetMatchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
+    const targetMatchUp = roundMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
 
     const isDoubleExit =
       targetMatchUp?.matchUpStatus !== undefined &&
@@ -208,6 +313,7 @@ function completeStructureMatchUps({
 export function completeDrawMatchUps(params): {
   completeRoundRobinPlayoffs?: boolean;
   completedCount?: number;
+  remainingCount?: number;
   success?: boolean;
   error?: ErrorType;
 } {
@@ -294,6 +400,23 @@ export function completeDrawMatchUps(params): {
     )
     .map(({ structureId }) => structureId);
 
+  /**
+   * ...but matching a container BY a child id must not widen the request to the whole container.
+   * Completion reads every matchUp of the container, so without a leaf scope one round-robin group
+   * completed all of them — measured: ROUND_ROBIN 16, one child id -> 24 completed across four
+   * groups. Named by its own id, a container still completes every group; named by child ids, only
+   * those children's matchUps (inContext they carry the CHILD's structureId) are completed.
+   */
+  const getLeafStructureIds = (structure: {
+    structureId: string;
+    structures?: { structureId: string }[];
+  }): string[] | undefined => {
+    if (!requestedStructureIds?.length || requestedStructureIds.includes(structure.structureId)) return undefined;
+    return (structure.structures ?? [])
+      .map((child) => child.structureId)
+      .filter((childId) => requestedStructureIds.includes(childId));
+  };
+
   // Multi-pass loop: after each pass, cross-structure advancement (via directParticipants)
   // may populate positions in downstream structures, making new matchUps ready to complete.
   // This is necessary for DOUBLE_ELIMINATION where the main final and decider depend on
@@ -339,6 +462,7 @@ export function completeDrawMatchUps(params): {
         completionGoal,
         completedCount,
         roundNumber,
+        leafStructureIds: getLeafStructureIds(structure),
         random,
       });
       if (result?.error) return result;
@@ -353,7 +477,8 @@ export function completeDrawMatchUps(params): {
     }
   }
 
-  return { ...SUCCESS, completedCount: completedCount.value };
+  // the certificate: what is still to play. `success` says the calls succeeded, not that the draw is done
+  return { ...SUCCESS, completedCount: completedCount.value, remainingCount: remainingMatchUps(drawDefinition) };
 }
 
 export function completeDrawMatchUp(params) {
@@ -421,6 +546,9 @@ function smartComplete(params) {
     winningSide,
     random,
   });
+  // a refused outcome is the completion's error: passed on, `setMatchUpStatus` received `outcome:
+  // undefined` and refused with an error that named the status rather than the format
+  if (generatedResult.error) return generatedResult;
   const { outcome } = generatedResult;
 
   return setMatchUpStatus({

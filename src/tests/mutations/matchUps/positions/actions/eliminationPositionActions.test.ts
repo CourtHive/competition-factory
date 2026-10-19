@@ -50,7 +50,6 @@ it('can return accurate position details when requesting positionActions', () =>
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -114,7 +113,6 @@ it('returns correct positionActions for participants in completed matchUps', () 
     },
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -216,7 +214,6 @@ it('returns correct positionActions for BYE positions where paired participants 
     },
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 

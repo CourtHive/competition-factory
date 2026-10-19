@@ -1,4 +1,5 @@
 import { tiebreakSetGames } from '@Query/matchUp/tiebreakAtRules';
+import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
 import { ensureInt } from '@Tools/ensureInt';
 
 type SetComplementArgs = {
@@ -88,7 +89,7 @@ type HighTiebreakValueArgs = {
 
 function getHighTiebreakValue(params: HighTiebreakValueArgs): number {
   const { lowValue, NoAD, tiebreakTo } = params;
-  const winBy = NoAD ? 1 : 2;
+  const winBy = tiebreakMargin(tiebreakTo, NoAD);
   if (lowValue + 1 >= tiebreakTo) {
     return lowValue + winBy;
   }

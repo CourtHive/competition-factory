@@ -20,6 +20,7 @@ import {
   TERMINAL_STATUSES,
   EDITABLE_STATUSES,
   AMENDABLE_STATUSES,
+  INVALID_STATUS_TRANSITION,
 } from '@Constants/sanctioningConstants';
 
 // types
@@ -209,7 +210,7 @@ describe('Status Transition Validation', () => {
 
   it.each(invalidTransitions)('rejects transition from %s to %s', (from, to) => {
     let result: any = validateStatusTransition({ fromStatus: from, toStatus: to });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
     expect(result.error.code).toEqual('ERR_INVALID_STATUS_TRANSITION');
     expect(result.context).toBeDefined();
   });
@@ -219,7 +220,7 @@ describe('Status Transition Validation', () => {
       fromStatus: 'BOGUS' as SanctioningStatus,
       toStatus: SUBMITTED,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
     expect(result.error.code).toEqual('ERR_INVALID_STATUS_TRANSITION');
   });
 

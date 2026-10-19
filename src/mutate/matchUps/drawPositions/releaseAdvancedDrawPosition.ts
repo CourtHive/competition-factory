@@ -4,11 +4,13 @@ import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { isDoubleExit, isExit } from '@Validators/isExit';
+import { awardStands } from './positionClear';
 import {
   deriveExitStateFromProvenance,
   getSideExitProvenance,
+  withdrawArrivalFrom,
   withdrawRelayedExit,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -140,6 +142,13 @@ export function releaseAdvancedDrawPosition({
     ]),
   );
 
+  // ...and the feeder that delivered the position into each round, for the same reason: it is released first
+  const deliveredBy = new Map(
+    matchUps
+      .filter(releasable)
+      .map((matchUp) => [matchUp.matchUpId, latestFeeder({ drawPosition, matchUps, matchUp })?.matchUpId]),
+  );
+
   const releasedRoundNumbers: number[] = [];
   const vacatedByes: { roundNumber: number; remaining: number[] }[] = [];
   for (const matchUp of matchUps) {
@@ -154,20 +163,26 @@ export function releaseAdvancedDrawPosition({
     // `doubleExitPropagateBye: false`), dp 7 — an empty fed seat RULE 2 had awarded `Consolation|1|2` — left `2|2` and
     // not `3|1`, where a produced walkover waited; the walkover then arriving opposite could not converge with it, and
     // the seat it fed waited forever (`aReservationGoesPastTheByeItCrossed`). The exit itself stands, for whoever arrives.
-    const pendingExit = withdrawingExit && !matchUp.winningSide && isExit(matchUp.matchUpStatus);
-    // ...and, once the BYE this position passed has been taken back, a matchUp decided ONLY by the carry leaving with it,
-    // for a seat nobody occupies yet, is no result of its own: RULE 2 awarded the empty seat because this occupant arrived carrying an exit, and nobody has gone on
-    // from it. The carry goes home below, and the decision with it (census F2, FEED_IN_CHAMPIONSHIP_TO_SF 16/16,
-    // 20501324: `Consolation|4|1` DEFAULTED for its empty fed seat by the default Jane carried past a BYE that has since
-    // gone). An award to a seat somebody holds is left alone: they may have gone on from it, which is a
-    // withdrawn exit's release (`releaseLinkedWinnerAdvancement`), not this one's.
+    // A double exit is no result either: it advances nobody, so a position advanced into one is taken back too (census
+    // S8 policy-off, FEED_IN_CHAMPIONSHIP 16/11 21123326: a double exit's own dp 9 left `Consolation|4|1` and stayed in
+    // `5|1`, past `4|1`'s BYE, and the next arrival there was refused after a write;
+    // `aDoubleExitsOwnPositionLeavesEveryRoundItReached`).
+    const pendingExit = withdrawingExit && !matchUp.winningSide && isAnyExit(matchUp.matchUpStatus);
+    // ...and, once the BYE this position passed has been taken back, a matchUp decided ONLY by the carry leaving with it
+    // is no result of its own: RULE 2 awarded the seat opposite because this occupant arrived carrying an exit. The carry
+    // goes home below and the position with it (census F2, FEED_IN_CHAMPIONSHIP_TO_SF 16/16, 20501324: `Consolation|4|1`
+    // DEFAULTED for its empty fed seat by the default Jane carried past a BYE that has since gone). The award stays where
+    // the seat opposite is held: whoever holds it may have gone on from it, and the BYE is taken back only because the
+    // holder's exit is being sent on, where it meets the carry and the convergence produces into this matchUp for that
+    // same seat. Kept out, the carrier stood here beside the produced exit, the matchUp a round on read both, and the
+    // forward order decided which (census A1 wave 3 R11b: FEED_IN_CHAMPIONSHIP_TO_SF 16 21089693, CURTIS_CONSOLATION 16
+    // 21143807, MODIFIED_FEED_IN_CHAMPIONSHIP 16 21046667: `aPasserComesBackWhenTheHoldersByeGoes`).
     const awardedPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
     const decidedByLeavingCarry =
       passedByeReleased &&
       !!matchUp.winningSide &&
       !!carriesLeaving.get(matchUp.matchUpId) &&
-      awardedPosition !== drawPosition &&
-      !(positionAssignments ?? []).find((assignment) => assignment.drawPosition === awardedPosition)?.participantId;
+      awardedPosition !== drawPosition;
     if (
       !heldOpenForArrival &&
       !pendingExit &&
@@ -176,7 +191,18 @@ export function releaseAdvancedDrawPosition({
     )
       continue;
     if (advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp })) continue;
-    if (!withdrawingExit && advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp })) {
+    if (
+      !withdrawingExit &&
+      advancedByProducedExit({
+        positionAssignments: positionAssignments ?? [],
+        occupantLeaving,
+        drawDefinition,
+        drawPosition,
+        structureId,
+        matchUps,
+        matchUp,
+      })
+    ) {
       continue;
     }
 
@@ -197,6 +223,13 @@ export function releaseAdvancedDrawPosition({
       matchUp,
     });
     releasedRoundNumbers.push(matchUp.roundNumber);
+    // A RELEASED POSITION TAKES ITS ARRIVAL WITH IT. The record that its occupant won their way here names the feeder
+    // that delivered them, and that feeder is undecided again once the position goes; left behind, the record named a
+    // source that had sent nobody (census A1 case 25, FIRST_MATCH_LOSER_CONSOLATION 16/13 20483283 `on`: a double
+    // walkover at `Main|2|4` and its clear took dp 3 out of `Consolation|4|1` and left `Consolation|3|2`'s arrival on
+    // side 2, ARRIVAL_TRUE). Provenance "records where each side came from" (exit-propagation.md), so a side nobody
+    // came to has no record.
+    withdrawArrivalFrom({ sourceMatchUpId: deliveredBy.get(matchUp.matchUpId), matchUp });
 
     if (byeDrawPositions.has(drawPosition)) {
       // whoever stayed advanced past this BYE on its strength (`yieldSquattingPropagatedBye`), and comes back with it —
@@ -345,12 +378,32 @@ function advancedByBye({ byeDrawPositions, drawPosition, matchUps, matchUp }): b
  * `withdrawingExit` opts out: `applyWithdrawnExits` releases precisely this advancement, because
  * there the produced exit itself is what is being taken back.
  */
-function advancedByProducedExit({ drawDefinition, structureId, drawPosition, matchUps, matchUp }): boolean {
+function advancedByProducedExit({
+  positionAssignments,
+  occupantLeaving,
+  drawDefinition,
+  drawPosition,
+  structureId,
+  matchUps,
+  matchUp,
+}): boolean {
   const feeder = latestFeeder({ drawPosition, matchUps, matchUp });
   if (!feeder) return false;
   if (!isExit(feeder.matchUpStatus) || !feeder.winningSide) return false;
   if (getWinningSideDrawPosition({ drawDefinition, structureId, matchUp: feeder }) !== drawPosition) return false;
 
   const provenance = getSideExitProvenance({ matchUp: feeder });
-  return isDoubleExit(provenance?.[3 - feeder.winningSide]?.previousMatchUpStatus);
+  if (!isDoubleExit(provenance?.[3 - feeder.winningSide]?.previousMatchUpStatus)) return false;
+  // PROTOTYPE (census A1 int2 dpws): the advance is the produced exit's only while its award would stand with the seat
+  // empty; an award read off the occupant who is leaving is taken back (`withdrawAwardsToEmptiedSeats`), and the
+  // position it advanced goes with it
+  if (!occupantLeaving) return true;
+  return awardStands({
+    rederived: { matchUpStatus: feeder.matchUpStatus, winningSide: feeder.winningSide },
+    retained: provenance,
+    targetMatchUp: feeder,
+    positionAssignments,
+    drawDefinition,
+    structureId,
+  });
 }

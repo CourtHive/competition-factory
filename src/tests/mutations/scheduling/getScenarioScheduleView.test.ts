@@ -3,6 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
+import { SCHEDULE_SCENARIO_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 const venueId = 'view-venue';
@@ -87,5 +88,5 @@ it('getScenarioScheduleView errors for an unknown scenario', () => {
     tournamentId: tournamentRecord.tournamentId,
     scenarioId: 'nope',
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(SCHEDULE_SCENARIO_NOT_FOUND);
 });

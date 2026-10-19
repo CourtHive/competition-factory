@@ -862,7 +862,7 @@ describe('Phase 3: COMPASS multi-hop exit status clearing', () => {
       outcome: toBePlayed,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
   });
 
   test('3.3 Multi-hop cascade: DOUBLE_WALKOVER clearing (drawSize 32) through East→West→South→Southeast', () => {

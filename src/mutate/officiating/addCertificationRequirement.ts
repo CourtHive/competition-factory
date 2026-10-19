@@ -41,6 +41,7 @@ export function addCertificationRequirement({
   error?: any;
   context?: { message: string };
   certificationRequirement?: CertificationRequirement;
+  requirementId?: string;
   success?: boolean;
 } {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
@@ -70,5 +71,5 @@ export function addCertificationRequirement({
   officialRecord.certificationRequirements.push(certificationRequirement);
   officialRecord.updatedAt = nowIso();
 
-  return { ...SUCCESS, certificationRequirement };
+  return { ...SUCCESS, certificationRequirement, requirementId: certificationRequirement.requirementId };
 }

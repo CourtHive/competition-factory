@@ -208,6 +208,32 @@ Common aggregate timed formats:
 
 The `X` modifier means "exactly" — all sets are played regardless of the running score. The `A` modifier triggers aggregate scoring where the winner is the side with the highest total points across all sets.
 
+### Validated Inputs
+
+A `matchUpStatusProfile` is whole-number percentages that sum to at most 100, each non-negative; the
+remainder is COMPLETED. A profile over 100, a negative weight, or a `winningSide` other than 1 or 2 is
+refused with `INVALID_VALUES` (before, an over-100 profile was accepted because its sum was never
+computed).
+
+### Format Families
+
+Which scoring families `generateOutcome` produces, and what it produces for each. Every generated
+outcome is one `analyzeMatchUp` accepts as a validated winning score.
+
+| family                       | example                         | generated                                                                                                                                                                                                                 |
+| ---------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| standard sets                | `SET3-S:6/TB7`                  | games to `setTo`, tiebreak at `tiebreakAt`; the losing score is drawn from 1 upward, so 6-0 and 7-6(0) are never generated (author them with a score string)                                                              |
+| one-game margin, no tiebreak | `SET1-S:5WB1`                   | ends when a side reaches `setTo`: 5-0 to 5-4                                                                                                                                                                              |
+| tiebreak-only sets           | `SET3-S:TB10`                   | tiebreak points                                                                                                                                                                                                           |
+| timed sets                   | `SET1-S:T20`                    | point totals from `pointsPerMinute`                                                                                                                                                                                       |
+| aggregate timed              | `SET2XA-S:T10`                  | point totals, every set played, the higher total wins; a level total goes to the decider                                                                                                                                  |
+| outs (innings)               | `INN4XA-S:O3-M:T50`             | inning totals from 0 to `outs × 3`, a level inning has no winner, the higher aggregate wins                                                                                                                               |
+| combined point total         | `SET1-S:P32`, `P32DP`, `P32WB2` | always decisive: the loser takes fewer than half the total. A level total is never generated, because whether it is legal depends on the structure (a winner-advancing draw refuses it); author one where a test needs it |
+
+An invalid `matchUpFormat`, or a status profile the generator cannot read, is refused with an error,
+and `completeAllMatchUps` passes that error on as the generation's error rather than recording an empty
+result.
+
 ## generateOutcomeFromScoreString {#generateOutcomeFromScoreString}
 
 Create outcomes from score strings:

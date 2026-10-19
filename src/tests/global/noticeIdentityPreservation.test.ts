@@ -84,7 +84,6 @@ describe('keyed notice de-dup preserves identity', () => {
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
 

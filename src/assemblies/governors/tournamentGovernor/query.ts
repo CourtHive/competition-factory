@@ -4,7 +4,6 @@ export { getPolicyDefinitions, getAppliedPolicies } from '@Query/extensions/getA
 export { getApplicableAwardProfileLevels } from '@Query/scales/getApplicableAwardProfileLevels';
 export { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
 export { getTournamentCalendarEntry } from '@Query/tournaments/getTournamentCalendarEntry';
-export { cleanExpiredMutationLocks } from '@Query/tournaments/cleanExpiredMutationLocks';
 export { getTournamentCompleteness } from '@Query/tournaments/getTournamentCompleteness';
 export { getCompetitionPenalties } from '@Query/participants/getCompetitionPenalties';
 export { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
@@ -24,3 +23,7 @@ export { getTierMovement } from '@Query/tournaments/getTierMovement';
 export { analyzeDraws } from '@Query/tournaments/analyzeDraws';
 export { getTournamentTimeItem } from '@Query/base/timeItems';
 export { cast } from '@Query/readModel/cast';
+
+// DEPRECATED here: cleanExpiredMutationLocks writes (it removes expired locks), so it lives in `mutate`. Kept as a
+// re-export of the SAME function so `tournamentGovernor.query.cleanExpiredMutationLocks` still resolves; remove at 8.0.0
+export { cleanExpiredMutationLocks } from '@Mutate/tournaments/mutationLocks/cleanExpiredMutationLocks';

@@ -7,6 +7,7 @@ import tournamentEngine from '@Engines/syncEngine';
 
 // constants
 import { BRIDGE, LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 const TALLY_NAME = 'tally';
 const TALLY_VALUE = { wins: 2, losses: 1 };
@@ -33,7 +34,7 @@ it('engine exposes schemaWriteMode setter + getter', () => {
 it('engine rejects invalid schemaWriteMode values', () => {
   const original = getSchemaWriteMode();
   const result = tournamentEngine.schemaWriteMode('bogus');
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
   expect(tournamentEngine.getSchemaWriteMode()).toEqual(original);
 });
 

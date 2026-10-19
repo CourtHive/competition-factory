@@ -167,9 +167,73 @@ export function resolveSetType(
 }
 
 /**
- * Whether the set in play is the one the final-set format governs. Mid-match that is the set played with
- * both sides one set from winning, except an aggregate format's sudden-death decider, which is set N + 1
- * by number and never one of the N (`aggregateDeciderSetNumber`).
+ * Whether the set this format describes is decided by a tiebreak at games-all.
+ *
+ * `parse` writes `noTiebreak: true` and no `tiebreakAt` for an advantage set (`S:6`, `F:6`, `S:5WB1`);
+ * a hand-built format carrying neither tiebreak field is read the same way. Every site below used to
+ * derive `tiebreakAt ?? setTo` and treat games-all as a tiebreak whatever the format said — measured
+ * 2026-10-02, the engine played a full TB7 at six-all in `SET1-S:6` and ended it 7-6(7-0) COMPLETED,
+ * a set `checkSetIsComplete` then called unfinished. Only the deciding set's `noTiebreak` was read.
+ */
+export function setHasTiebreak(setFormat?: SetFormatStructure): boolean {
+  if (!setFormat || setFormat.noTiebreak) return false;
+  return !!setFormat.tiebreakFormat || typeof setFormat.tiebreakAt === 'number';
+}
+
+/**
+ * Whether a standard set at these games is playing its tiebreak. `activeSetFormat` must be the format
+ * governing the set in play (the final-set format in the live deciding set): scoring, the score
+ * situation, points-to and server derivation all read this one predicate, so they cannot disagree
+ * about whether a tiebreak is under way.
+ */
+export function isStandardSetTiebreak(
+  activeSetFormat: SetFormatStructure | undefined,
+  side1Games: number,
+  side2Games: number,
+): boolean {
+  if (!activeSetFormat || !setHasTiebreak(activeSetFormat)) return false;
+  const setTo = activeSetFormat.setTo || 6;
+  const tiebreakAt = (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
+  return side1Games === tiebreakAt && side2Games === tiebreakAt;
+}
+
+/**
+ * The margin a tiebreak is won by: one when it is no-ad, or when its target is one (an `F:TB1` decider is
+ * a single sudden-death point, CA 2026-10-17); otherwise two. Scoring, points-to, score entry, the
+ * complement and the validators all read this one rule.
+ */
+export function tiebreakMargin(tiebreakTo: number | undefined, NoAD?: boolean): number {
+  if (NoAD) return 1;
+  return typeof tiebreakTo === 'number' ? Math.min(2, tiebreakTo) : 2;
+}
+
+/** Which inputs a segment can be scored with: points, games, or set totals (addSet). */
+export type InputLevels = { point: boolean; game: boolean; set: boolean };
+
+/**
+ * The inputs a set format can be scored with. A parser-valid format is not a promise of a point model:
+ * a segment of outs (innings, halves) has no point or game model here, so it takes set totals only
+ * rather than having its points scored as tennis; a combined-point total has no games. The engine's
+ * refusals read this, so what it reports and what it accepts cannot disagree.
+ */
+export function inputLevels(setFormat?: SetFormatStructure): InputLevels {
+  if (setFormat?.outs) return { point: false, game: false, set: true };
+  if (setFormat?.combinedPointTotal) return { point: true, game: false, set: true };
+  return { point: true, game: true, set: true };
+}
+
+/** The refusal for an input a segment cannot take. */
+export function inputLevelError(level: 'point' | 'game'): Error {
+  return new Error(`This segment takes set totals (addSet), not ${level} input`);
+}
+
+/**
+ * Whether the set in play is the one the final-set format governs (spec § 3.2). In a best of N that is the
+ * set played with both sides one set from winning, and set N whatever the count when it starts: a timed
+ * segment closed level wins no set, so `SET3-S:T10-F:T10/TB7` can reach set three at 1-0, and set three
+ * still plays its declared `/TB7` (CA 2026-10-18). An exactly format's final set is set N, and an
+ * aggregate format's sudden-death decider is set N + 1 by number and never one of the N
+ * (`aggregateDeciderSetNumber`).
  */
 export function isLiveDecidingSet(
   formatStructure: FormatStructure,
@@ -178,7 +242,8 @@ export function isLiveDecidingSet(
 ): boolean {
   const bestOf = formatStructure.bestOf || formatStructure.exactly || 3;
   const setsToWin = Math.ceil(bestOf / 2);
-  return finalSetGoverns(formatStructure, setNumber, setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1);
+  const bothOneFromWinning = setsWon[0] === setsToWin - 1 && setsWon[1] === setsToWin - 1;
+  return finalSetGoverns(formatStructure, setNumber, bothOneFromWinning || setNumber === bestOf);
 }
 
 /**

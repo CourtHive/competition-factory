@@ -5,7 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { MISSING_TOURNAMENT_RECORD, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
+import { MISSING_TOURNAMENT_RECORD, MISSING_MATCHUP_ID, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { COACH, OFFICIAL, OTHER } from '@Constants/participantRoles';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
@@ -147,7 +147,7 @@ describe('getMatchUpOfficialConflicts — side expansion', () => {
       tournamentRecord,
       drawDefinition,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
     expect(result.conflicts).toBeUndefined();
   });
 });

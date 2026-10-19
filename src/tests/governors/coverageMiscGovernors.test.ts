@@ -6,9 +6,9 @@ import { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUp
 import { addFlight } from '@Mutate/events/addFlight';
 
 // Query
+import { MISSING_MATCHUP, COURT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { querySanctioningRecord } from '@Query/sanctioning/getSanctioningRecord';
 import { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
-import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { getScaleValues } from '@Query/participant/getScaleValues';
 
 // Validators
@@ -195,7 +195,7 @@ describe('publicFindCourt', () => {
     });
 
     let result: any = tournamentEngine.publicFindCourt({ courtId: 'nonexistent' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(COURT_NOT_FOUND);
   });
 });
 

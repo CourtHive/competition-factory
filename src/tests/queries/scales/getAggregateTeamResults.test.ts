@@ -35,7 +35,8 @@ it('can aggregate team scores across SINGLES/DOUBLES events', () => {
     const { eventId, eventType } = event;
     if (eventType === SINGLES_EVENT) {
       const result = tournamentEngine.generateDrawDefinition({
-        matchUpFormat: 'SET1-S:T20',
+        // a tiebreak at time: an elimination draw refuses a format that can end level (spec § 9.7)
+        matchUpFormat: 'SET1-S:T20/TB7',
         eventId,
       });
       expect(result.success).toBe(true);

@@ -6,19 +6,19 @@ import { getParticipantsCount } from './getParticipantsCount';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
+import type { MockDrawProfile, MockEventProfile, MockParticipantsProfile } from '@Types/mocksTypes';
 import { INDIVIDUAL, TEAM } from '@Constants/participantConstants';
 import { Participant, Tournament } from '@Types/tournamentTypes';
-import { ParticipantsProfile } from '@Types/factoryTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { genParticipantId } from './genParticipantId';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AddTournamentParticipantsArgs = {
-  participantsProfile?: ParticipantsProfile;
+  participantsProfile?: MockParticipantsProfile;
   tournamentRecord: Tournament;
   random?: () => number;
-  eventProfiles?: any[];
-  drawProfiles?: any[];
+  eventProfiles?: MockEventProfile[];
+  drawProfiles?: MockDrawProfile[];
   startDate?: string;
   uuids?: string[];
 };
@@ -40,16 +40,20 @@ export function addTournamentParticipants({
   });
 
   const teamKey = participantsProfile?.teamKey;
+  // the profile's own pool, then the call's (an undefined top-level `uuids` replaced the profile's)
+  const idPool = participantsProfile?.uuids ?? uuids;
 
-  const participants = generateParticipants({
+  const generated = generateParticipants({
     consideredDate: startDate,
     ...participantsProfile,
     participantsCount,
     participantType,
+    uuids: idPool,
     gendersCount,
     random,
-    uuids,
-  }).participants as Participant[];
+  });
+  if (generated.error) return generated;
+  const participants = generated.participants as Participant[];
 
   let addedCount = 0;
   let result = addParticipants({ tournamentRecord, participants });
@@ -77,9 +81,9 @@ export function addTournamentParticipants({
     const participantId = genParticipantId({
       index: teamIndex,
       participantType,
+      uuids: idPool,
       idPrefix,
       random,
-      uuids,
     });
 
     return {

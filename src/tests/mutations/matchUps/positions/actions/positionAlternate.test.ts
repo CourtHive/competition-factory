@@ -20,7 +20,6 @@ it('can generate drawSize: 8 with 6 participants', () => {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -64,7 +63,6 @@ it('can generate drawSize: 8 with only 4 participants', () => {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -95,7 +93,6 @@ it('can generate drawSize: 8 with only 2 participants', () => {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

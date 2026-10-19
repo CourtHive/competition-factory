@@ -275,13 +275,14 @@ it('initial rally totals resume live scoring and invalid replacements leave stat
   expect(engine.getState()).toEqual(before);
 });
 
-it('whole-segment entry infers a winner or a completed tie and refuses a second segment', () => {
+it('whole-segment entry infers a winner or a completed tie and takes no second segment', () => {
   const engine = new ScoringEngine({ matchUpFormat: 'SET1-S:P32' });
   engine.addSet({ side1Score: 16, side2Score: 16 });
   expect(engine.getState()).toMatchObject({ matchUpStatus: COMPLETED });
   expect(engine.getState().winningSide).toBeUndefined();
   const before = engine.getState();
-  expect(() => engine.addSet({ side1Score: 17, side2Score: 15 })).toThrow();
+  // a set total after COMPLETED is ignored, recording nothing (scoring-engine spec § 9.6, CA 2026-10-18)
+  expect(engine.addSet({ side1Score: 17, side2Score: 15 })).toEqual({ recorded: false, ignored: 'MATCH_COMPLETED' });
   expect(engine.getState()).toEqual(before);
   engine.undo();
   engine.addSet({ side1Score: 17, side2Score: 15 });

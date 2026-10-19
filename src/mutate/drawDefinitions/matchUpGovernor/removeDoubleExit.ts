@@ -1,9 +1,12 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
+import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -20,6 +23,7 @@ import {
   withdrawByeClaimsFrom,
   byeClaimSurvives,
   withdrawByeClaim,
+  sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   deriveExitStateFromProvenance,
@@ -31,7 +35,14 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import type { DrawDefinition, DrawLink, MatchUp, MatchUpStatusUnion, SideExitProvenance } from '@Types/tournamentTypes';
+import type {
+  SideExitProvenanceEntry,
+  MatchUpStatusUnion,
+  SideExitProvenance,
+  DrawDefinition,
+  DrawLink,
+  MatchUp,
+} from '@Types/tournamentTypes';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -115,6 +126,12 @@ export function removeDoubleExit(params) {
     if (winnerResult?.error) return decorateResult({ result: winnerResult, stack });
   }
 
+  // A RESULT THAT STANDS KEEPS WHAT IT SENT OVER ITS LOSER LINK. The walk reached this matchUp only to take back the
+  // winner it sent on (`sentOnThrough`); its own exit is untouched by this unwind, so the loser it directed, and the
+  // exit that loser carries, stand (census A1 int2 prov: COMPASS `West|2|1`'s carried walkover, its winner the probe's,
+  // its loser carrying the walkover into `Southwest|1|1`, which the clear reset to TO_BE_PLAYED).
+  if (params.winnerOnly) return decorateResult({ result: { ...SUCCESS }, stack });
+
   // Did this cascade place the BYE that is sitting on the loserMatchUp?
   //
   // `assignDrawPositionBye` records the answer on the positionAssignment as `byeFromPropagation`, and
@@ -159,10 +176,22 @@ export function removeDoubleExit(params) {
       drawPosition: loserTargetDrawPosition,
       drawDefinition,
     }) || 1;
+  const loserRecord = sideRecordOf(rawLoserMatchUp);
   withdrawByeClaim({ matchUp: rawLoserMatchUp, sideNumber: claimSideNumber, claimantMatchUpId: matchUpId });
   // ...and wherever else this cascade claimed one: a BYE that WALKS is claimed on a downstream
   // matchUp the unwind never revisits at this coordinate
-  withdrawByeClaimsFrom({ matchUps: matchUpsMap?.drawMatchUps, claimantMatchUpId: matchUpId });
+  const claimsWithdrawn = withdrawByeClaimsFrom({ matchUps: matchUpsMap?.drawMatchUps, claimantMatchUpId: matchUpId });
+  // a claim is the matchUp's own record, and the unwind below need not rewrite the matchUp it leaves: each is announced
+  if (rawLoserMatchUp && loserRecord !== sideRecordOf(rawLoserMatchUp)) claimsWithdrawn.push(rawLoserMatchUp);
+  for (const withdrawnFrom of new Set(claimsWithdrawn))
+    modifyMatchUpNotice({
+      tournamentId: params.tournamentRecord?.tournamentId,
+      eventId: params.event?.eventId,
+      context: 'removeDoubleExit',
+      matchUp: withdrawnFrom,
+      event: params.event,
+      drawDefinition,
+    });
 
   /**
    * THE FMLC "PAIRED ROUND-1 DOUBLE EXIT" TEST THAT STOOD HERE IS GONE. It asked whether the BYE on
@@ -215,7 +244,18 @@ export function removeDoubleExit(params) {
       sideNumber: claimSideNumber,
       withdrawnSourceIds,
     });
-    if (anotherClaimSurvives) {
+    // ...and while the matchUp being unwound still holds a BYE of its own. A BYE matchUp's loser is a BYE, so the BYE
+    // cascade gave its loser seat one that no double exit claims; this unwind leaves that BYE where it found it
+    // (census A1 wave 4, COMPASS 16/15 21036395: `aByeMatchUpsLoserSeatKeepsItsBye`).
+    const unwound = inContextDrawMatchUps.find((candidate: HydratedMatchUp) => candidate.matchUpId === matchUpId);
+    const stillHoldsBye =
+      byePropagatedToLoserMatchUp &&
+      !!unwound?.structureId &&
+      matchUpHoldsBye({
+        drawDefinition,
+        matchUp: { drawPositions: unwound.drawPositions, structureId: unwound.structureId },
+      });
+    if (anotherClaimSurvives || stillHoldsBye) {
       return decorateResult({ result: { ...SUCCESS }, stack });
     }
 
@@ -316,6 +356,55 @@ function carriesDissolvedConvergence(
   });
 }
 
+type PositionedMatchUp =
+  | {
+      drawPositions?: (number | undefined)[];
+      sides?: { drawPosition?: number; participantId?: string }[];
+      structureId?: string;
+    }
+  | undefined;
+
+/**
+ * Did the participant this unwind takes back out of `targetMatchUp` go on through it? A drawPosition that came from the
+ * source and sits in the target was sent on by the target's result as its winner if it has also reached the target's
+ * next winner matchUp. The target's exit can stand while that advance cannot: the walk goes on to take it back.
+ *
+ * Census S8 policy-off, DOUBLE_ELIMINATION 8/6 (20590443): `Main|1|3`'s double walkover let the participant past
+ * `Main|1|4`'s BYE win `Main|2|2`, then `Main|3|1` on `Main|2|1`'s produced walkover, then the Main final, and so into
+ * the Decider. Re-scoring `Main|1|3` as a played win reached `Main|3|1`, whose walkover is `Main|2|1`'s and stands, and
+ * stopped: the participant stayed in the Decider, and the next Main final result was refused after a write.
+ *
+ * Across a link the next winner matchUp numbers its positions in its own structure, so there the participant is
+ * followed instead (census S8 `allowChangePropagation`, DOUBLE_ELIMINATION 8/6, 20701264: the walk stopped at the Main
+ * final, whose walkover had sent the participant the unwind takes back on into the Decider).
+ */
+function sentOnThrough({
+  nextWinnerMatchUp,
+  sourceMatchUp,
+  targetMatchUp,
+}: {
+  nextWinnerMatchUp: PositionedMatchUp;
+  sourceMatchUp: PositionedMatchUp;
+  targetMatchUp: PositionedMatchUp;
+}): boolean {
+  const sourceDrawPositions = sourceMatchUp?.drawPositions?.filter(Boolean) ?? [];
+  const passing = (targetMatchUp?.drawPositions?.filter(Boolean) ?? []).filter((drawPosition) =>
+    sourceDrawPositions.includes(drawPosition),
+  );
+  if (!passing.length || !nextWinnerMatchUp) return false;
+  if (!nextWinnerMatchUp.structureId || nextWinnerMatchUp.structureId === targetMatchUp?.structureId) {
+    return (nextWinnerMatchUp.drawPositions ?? []).some(
+      (drawPosition) => !!drawPosition && passing.includes(drawPosition),
+    );
+  }
+  const passingParticipantIds = (targetMatchUp?.sides ?? [])
+    .filter((side) => side?.drawPosition && passing.includes(side.drawPosition) && side.participantId)
+    .map((side) => side.participantId);
+  return (nextWinnerMatchUp.sides ?? []).some(
+    (side) => !!side?.participantId && passingParticipantIds.includes(side.participantId),
+  );
+}
+
 /**
  * Take back an exit that was carried through BYE-held matchUps, following the same chain out.
  *
@@ -389,6 +478,7 @@ function withdrawExitFromByeChain({
 
   const result = modifyMatchUpScore({
     matchUpStatusCodes: codesForUnwound(noContextTargetMatchUp, unwound),
+    derivedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
     removeWinningSide: unwound.winningSide === undefined,
     matchUpStatus: unwound.matchUpStatus,
     matchUpId: fromMatchUp.matchUpId,
@@ -611,10 +701,11 @@ export function conditionallyRemoveDrawPosition(params) {
   const { structure: targetStructure } = findStructure({ drawDefinition, structureId: targetMatchUp.structureId });
   // read before the walk goes on: a matchUp holding only origins this unwind is not withdrawing keeps its own result
   // (below), so nothing it sent on is this unwind's either
-  const keepsOwnResult =
+  const ownResultStands =
     !!getSideExitProvenance({ matchUp: noContextTargetMatchUp }) &&
     !carriesWithdrawnOrigin(noContextTargetMatchUp, withdrawnSourceIds) &&
     !carriesDissolvedConvergence(noContextTargetMatchUp, withdrawnSourceIds, matchUpsMap);
+  const keepsOwnResult = ownResultStands && !sentOnThrough({ sourceMatchUp, targetMatchUp, nextWinnerMatchUp });
   if (keepsOwnResult) {
     pushGlobalLog({
       method: stack,
@@ -628,6 +719,8 @@ export function conditionallyRemoveDrawPosition(params) {
   let result = removeDoubleExit({
     structure: targetStructure ?? structure,
     targetData: nextTargetData,
+    // its exit stands and only the winner it sent on is taken back: the walk follows that winner, not its loser
+    winnerOnly: ownResultStands,
     matchUp: targetMatchUp,
     inContextDrawMatchUps,
     withdrawnSourceIds,
@@ -694,6 +787,7 @@ export function conditionallyRemoveDrawPosition(params) {
   result = modifyMatchUpScore({
     ...params,
     matchUpStatusCodes: codesForUnwound(noContextTargetMatchUp, unwound),
+    derivedStatusCodes: { matchUpId: noContextTargetMatchUp.matchUpId },
     removeWinningSide: unwound.winningSide === undefined,
     matchUpId: targetMatchUp.matchUpId,
     matchUp: noContextTargetMatchUp,
@@ -715,6 +809,20 @@ export function conditionallyRemoveDrawPosition(params) {
   // this unwind has just withdrawn — so the retained subset is stamped explicitly rather than
   // inferred from what survived the reset.
   if (unwound.provenance) setSideExitProvenance({ provenance: unwound.provenance, matchUp: noContextTargetMatchUp });
+
+  // RE-DERIVED TO AN AWARDED SINGLE EXIT, the matchUp has nobody for a loser, and sends its loser seat the BYE forward
+  // play gives it (P39). The convergence's claim on that BYE was withdrawn on the way down, which left the BYE to go
+  // with it (census A1 wave 4, COMPASS 32/27 21034527: `aDissolvedConvergenceSendsItsSingleExitsBye`).
+  if (unwound.winningSide && isExit(unwound.matchUpStatus)) {
+    const propagated = propagateUnfillableLoserBye({
+      tournamentRecord: params.tournamentRecord,
+      matchUpId: targetMatchUp.matchUpId,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+    if (propagated?.error) return decorateResult({ result: propagated, stack });
+  }
 
   return { ...SUCCESS };
 }
@@ -836,10 +944,17 @@ function getUnwoundState({
   // alone would keep an exit that no longer exists. Retaining by source identity is what keeps the
   // BYE's OWN origin (`{ previousMatchUpStatus: BYE, matchUpStatus: BYE }`, written by the bye
   // propagation, not by this cascade) while dropping the withdrawn one.
+  //
+  // ...but only while the exit opposite it stands. A BYE-origin entry is written as the PAIR of a produced exit meeting
+  // the BYE (`buildSideExitProvenance` with a BYE paired status), and lives exactly as long as that exit: withdrawn with
+  // it here, so the BYE matchUp reads as it did before the exit arrived (census A1 case 22, FEED_IN_CHAMPIONSHIP 16/11
+  // 20532286: `Consolation|2|2`'s double walkover entered and cleared left `Consolation|3|1` a BYE holding the BYE
+  // origin and nothing opposite). Provenance "records where each side came from" (exit-propagation.md): the pair
+  // explained an exit meeting the BYE, and with no exit there is nothing for it to explain.
   if (noContextTargetMatchUp.matchUpStatus === BYE) {
     return {
       matchUpStatus: BYE,
-      provenance: retainForeignProvenance(
+      provenance: retainByeOriginsBesideExits(
         getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
         withdrawnSourceIds,
       ),
@@ -868,7 +983,7 @@ function getUnwoundState({
   if (targetDrawPositionIsBye({ drawDefinition, noContextTargetMatchUp, targetMatchUp })) {
     return {
       matchUpStatus: BYE,
-      provenance: retainForeignProvenance(
+      provenance: retainByeOriginsBesideExits(
         getSideExitProvenance({ matchUp: noContextTargetMatchUp }),
         withdrawnSourceIds,
       ),
@@ -911,6 +1026,31 @@ function getUnwoundState({
   }
 
   return { matchUpStatus: TO_BE_PLAYED };
+}
+
+/** a BYE's own origin: the pair a produced exit meeting the BYE writes opposite itself */
+function isByeOrigin(entry?: SideExitProvenanceEntry): boolean {
+  return entry?.matchUpStatus === BYE && entry?.previousMatchUpStatus === BYE;
+}
+
+/** `retainForeignProvenance`, and a BYE origin goes with the exit opposite it when that exit is withdrawn */
+function retainByeOriginsBesideExits(
+  provenance: SideExitProvenance | undefined,
+  withdrawnSourceIds: Set<string>,
+): SideExitProvenance | undefined {
+  const retained = retainForeignProvenance(provenance, withdrawnSourceIds);
+  if (!retained) return undefined;
+  const kept: SideExitProvenance = { ...retained };
+  for (const sideNumber of [1, 2] as const) {
+    const opposite = provenance?.[3 - sideNumber];
+    const oppositeWithdrawn =
+      !!opposite?.sourceMatchUpId && withdrawnSourceIds.has(opposite.sourceMatchUpId) && !!carriedExitStatus(opposite);
+    if (!isByeOrigin(kept[sideNumber]) || !oppositeWithdrawn) continue;
+    const claims = kept[sideNumber]?.byeClaims;
+    if (claims?.length) kept[sideNumber] = { byeClaims: [...claims] };
+    else delete kept[sideNumber];
+  }
+  return Object.keys(kept).length ? kept : undefined;
 }
 
 function producedAwardStands({
@@ -1001,8 +1141,13 @@ export function arrivedOverLoserLink({
 }): boolean {
   const targetsOf = (matchUpId: string) =>
     positionTargets({ inContextDrawMatchUps, drawDefinition, matchUpId }).targetMatchUps;
+  const sourceTargets = targetsOf(sourceMatchUpId);
+  // PROTOTYPE (census A1 int2 dpws): the target IS the source's winner target, so the exit's first hop was the winner
+  // link. A DOUBLE_ELIMINATION Main final's loser path runs through the Backdraw and back to `Main|4|1` by winner links,
+  // so the walk below also reaches it, and read the produced exit as one carried down the loser link.
+  if (sourceTargets?.winnerMatchUp?.matchUpId === targetMatchUpId) return false;
   const visited = new Set<string>();
-  let next = targetsOf(sourceMatchUpId)?.loserMatchUp;
+  let next = sourceTargets?.loserMatchUp;
   while (next && !visited.has(next.matchUpId)) {
     if (next.matchUpId === targetMatchUpId) return true;
     visited.add(next.matchUpId);

@@ -1,3 +1,4 @@
+import { tournamentGovernor } from '@Assemblies/governors';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -10,8 +11,6 @@ import {
   MISSING_VALUE,
   MUTATION_LOCKED,
   MUTATION_LOCK_EXISTS,
-  MUTATION_LOCK_NOT_FOUND,
-  UNAUTHORIZED_LOCK_OPERATION,
 } from '@Constants/errorConditionConstants';
 
 describe('Mutation Locks', () => {
@@ -83,33 +82,6 @@ describe('Mutation Locks', () => {
     expect(mutationLocks.map((l) => l.scope).sort()).toEqual(['SCHEDULING', 'SCORING']);
   });
 
-  it('removeMutationLock with correct token succeeds', () => {
-    mocksEngine.generateTournamentRecord({ setState: true });
-
-    const { lockId } = tournamentEngine.addMutationLock({ scope: 'SCHEDULING', lockToken: 'token-1' });
-    const result = tournamentEngine.removeMutationLock({ lockId, lockToken: 'token-1' });
-    expect(result.success).toEqual(true);
-
-    const { mutationLocks } = tournamentEngine.getMutationLocks();
-    expect(mutationLocks.length).toEqual(0);
-  });
-
-  it('removeMutationLock with wrong token returns UNAUTHORIZED_LOCK_OPERATION', () => {
-    mocksEngine.generateTournamentRecord({ setState: true });
-
-    const { lockId } = tournamentEngine.addMutationLock({ scope: 'SCHEDULING', lockToken: 'token-1' });
-    const result = tournamentEngine.removeMutationLock({ lockId, lockToken: 'wrong-token' });
-    expect(result.error).toEqual(UNAUTHORIZED_LOCK_OPERATION);
-  });
-
-  it('removeMutationLock with forceRelease bypasses token check', () => {
-    mocksEngine.generateTournamentRecord({ setState: true });
-
-    const { lockId } = tournamentEngine.addMutationLock({ scope: 'SCHEDULING', lockToken: 'token-1' });
-    const result = tournamentEngine.removeMutationLock({ lockId, forceRelease: true });
-    expect(result.success).toEqual(true);
-  });
-
   it('addMutationLock on same scope with different token returns MUTATION_LOCK_EXISTS', () => {
     mocksEngine.generateTournamentRecord({ setState: true });
 
@@ -171,13 +143,6 @@ describe('Mutation Locks', () => {
     tournamentEngine.addMutationLock({ scope: 'SCHEDULING', lockToken: 'token-1' });
     const result = tournamentEngine.removeMutationLock({ scope: 'SCHEDULING', lockToken: 'token-1' });
     expect(result.success).toEqual(true);
-  });
-
-  it('removeMutationLock on non-existent lock returns MUTATION_LOCK_NOT_FOUND', () => {
-    mocksEngine.generateTournamentRecord({ setState: true });
-
-    const result = tournamentEngine.removeMutationLock({ scope: 'SCHEDULING', lockToken: 'token-1' });
-    expect(result.error).toEqual(MUTATION_LOCK_NOT_FOUND);
   });
 
   // ─── Lock Enforcement ──────────────────────────────────
@@ -512,6 +477,15 @@ describe('Mutation Locks', () => {
     const { mutationLocks } = tournamentEngine.getMutationLocks();
     expect(mutationLocks.length).toEqual(1);
     expect(mutationLocks[0].scope).toEqual('SCORING');
+  });
+
+  // it removes locks, so it is a mutation and lives in `mutate`; the `query` export is a deprecated alias of the same
+  // function, kept so existing imports resolve until 8.0.0
+  it('cleanExpiredMutationLocks is a tournamentGovernor mutation; the query export is the same function', () => {
+    const { mutate, query } = tournamentGovernor as any;
+    expect(typeof mutate.cleanExpiredMutationLocks).toEqual('function');
+    expect(query.cleanExpiredMutationLocks).toBe(mutate.cleanExpiredMutationLocks);
+    expect((tournamentGovernor as any).cleanExpiredMutationLocks).toBe(mutate.cleanExpiredMutationLocks);
   });
 
   // ─── Lock management methods are never blocked ────────

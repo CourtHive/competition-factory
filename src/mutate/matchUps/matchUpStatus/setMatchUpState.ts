@@ -13,6 +13,7 @@ import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelL
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { ensureGoesTo, holdGoesTo, type GoesToHold } from '@Query/matchUps/addGoesTo';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
@@ -23,6 +24,7 @@ import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
+import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -34,7 +36,6 @@ import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { validateScore } from '@Validators/validateScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { isDoubleExit } from '@Validators/isExit';
@@ -45,6 +46,7 @@ import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatus
 
 // constants and types
 import { QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -113,10 +115,14 @@ type SetMatchUpStateArgs = {
   disableScoreValidation?: boolean;
   projectedWinningSide?: number;
   propagateExitStatus?: boolean;
+  /** set ONLY by `setMatchUpStatus`, which holds the draw's missing edges and announces them itself (`announceGoesTo`) */
+  edgesHeld?: boolean;
   /** set ONLY by `progressExitStatus` — see `checkParticipants` */
   propagatingExit?: boolean;
   propagateRetirementAsExit?: boolean;
   matchUpStatusCodes?: string[];
+  /** set ONLY by engine writers whose `matchUpStatusCodes` are derived display — see `attributeDerivedStatusCodes` */
+  derivedStatusCodes?: DerivedStatusCodes;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   autoCalcDisabled?: boolean;
@@ -145,6 +151,41 @@ type SetMatchUpStateArgs = {
  * consumers call `setMatchUpStatus`.
  */
 export function setMatchUpState(params: SetMatchUpStateArgs): any {
+  // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18): what `ensureGoesTo` writes below is held, and
+  // written back if the call returns an error. See `holdGoesTo`.
+  const hold = holdGoesTo({ drawDefinition: params.drawDefinition, matchUpsMap: params.matchUpsMap });
+  const result = writeMatchUpState(params);
+  if (result?.error) hold?.release();
+  // a call that succeeds and wrote the edges announces the draw once; a caller holding them itself announces them
+  else if (!params.edgesHeld) announceGoesTo({ hold, ...params });
+  return result;
+}
+
+/**
+ * A CALL THAT REPAIRS A DRAW'S MISSING EDGES ANNOUNCES THE DRAW ONCE (CA, 2026-10-18: "Option 2 and document the
+ * decision in tasks. Missing edges are most likely from hand assembled draws and themselves an edge case.")
+ *
+ * One `MODIFY_DRAW_DEFINITION`, keyed by the draw, not a `MODIFY_MATCHUP` per matchUp whose only change is an edge: a
+ * subscriber told the draw changed re-projects it, edges included. Sent only by a call that succeeds and only when the
+ * edges were written (`hold.written`); a refused call writes them back and announces nothing, so this is asked only
+ * once the call's own refusals are behind it.
+ */
+export function announceGoesTo({
+  tournamentRecord,
+  drawDefinition,
+  event,
+  hold,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  hold?: GoesToHold;
+  event?: Event;
+}) {
+  if (!drawDefinition || !hold?.written()) return;
+  modifyDrawNotice({ drawDefinition, tournamentId: tournamentRecord?.tournamentId, eventId: event?.eventId });
+}
+
+function writeMatchUpState(params: SetMatchUpStateArgs) {
   const stack = 'setMatchUpStatus';
 
   const rotating = resolveRotatingPartnerOutcome(params);
@@ -575,10 +616,12 @@ function resolveMatchUpAndContext({
    * computed `winnerTo`, `loserTo` and `potentialParticipants` for every matchUp, a `positionTargets`
    * each, which nothing a `setMatchUpStatus` reaches reads: 89,071 -> 20,459 calls in the census.
    *
-   * THE WRITE PRECEDES VALIDATION, deliberately. A call that is then refused has still stored the
-   * missing edges — CA: a mutation is acceptable under an error response when it is specifically the
-   * addition of missing winner and loser matchUpIds. They are derived from the draw's own links and
-   * are what it would have stored had the factory generated it.
+   * THE WRITE PRECEDES VALIDATION, and a refusal takes it back. CA, 2026-10-18: "no, a refused call
+   * does not store a draw's missing edges. v1 should no longer do so." What this write touches is held
+   * before it (`holdGoesTo`, in `setMatchUpState` and `setMatchUpStatus`) and written back on any error
+   * the call returns, so a refused call leaves the record as it was, edges included. A call that
+   * succeeds keeps them: they are derived from the draw's own links, are what it would have stored had
+   * the factory generated it, and are written once.
    */
   const goesTo = inContextDrawMatchUps && ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
   if (goesTo?.error) return goesTo;

@@ -48,15 +48,16 @@ export function enrichPoint(
 ): PointWithMetadata {
   const point: PointWithMetadata = { ...rawPoint };
 
-  // Add context fields
-  point.server = context.server;
+  // Context fills what the point did not record; a server, set or game it recorded stands (S13)
+  const server: 0 | 1 = rawPoint.server ?? context.server;
+  point.server = server;
   point.index = context.index;
-  point.set = context.set;
-  point.game = context.game;
+  point.set = rawPoint.set ?? context.set;
+  point.game = rawPoint.game ?? context.game;
 
-  // Handle code-only points (e.g., { code: "A" })
-  if (point.code && !point.winner) {
-    point.winner = deriveWinnerFromCode(point.code, context.server);
+  // Handle code-only points (e.g., { code: "A" }); a winner of 0 is a winner
+  if (point.code && point.winner === undefined) {
+    point.winner = deriveWinnerFromCode(point.code, server);
   }
 
   // Derive result from code if missing
@@ -156,10 +157,10 @@ export function categorizePoint(point: PointWithMetadata): { winner: string[]; l
   if (result.includes('double fault')) {
     loser.push('doubleFaults');
   }
+  // "forced error" is a substring of "unforced error": a point is one or the other (S12)
   if (result.includes('unforced error')) {
     loser.push('unforcedErrors');
-  }
-  if (result.includes('forced error')) {
+  } else if (result.includes('forced error')) {
     loser.push('forcedErrors');
   }
 

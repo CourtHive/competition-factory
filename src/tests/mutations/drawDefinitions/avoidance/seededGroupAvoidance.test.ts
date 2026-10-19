@@ -27,7 +27,7 @@ import { GROUP, INDIVIDUAL } from '@Constants/participantConstants';
 const GROUP_DIRECTIVE = [{ directive: 'groupParticipants' }];
 
 it('resolves a GROUP directive only when idCollections is supplied — the omitted argument', () => {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({ participantsCount: 8 });
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({ participantsProfile: { participantsCount: 8 } });
   tournamentEngine.setState(tournamentRecord);
 
   const individuals =

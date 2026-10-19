@@ -1,4 +1,5 @@
 import { getStructureReports } from '@Query/structure/structureReport';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
@@ -24,9 +25,8 @@ export function wrapStructureReport({
     for (const draw of event.drawDefinitions ?? []) {
       drawNameMap[draw.drawId] = draw.drawName ?? '';
       const mainStructure = draw.structures?.find((s) => s.stage === 'MAIN' && s.stageSequence === 1);
-      if (mainStructure?.positionAssignments) {
-        drawSizeMap[draw.drawId] = mainStructure.positionAssignments.length;
-      }
+      const mainAssignments = positionAssignmentsOf(mainStructure);
+      if (mainAssignments) drawSizeMap[draw.drawId] = mainAssignments.length;
     }
   }
 

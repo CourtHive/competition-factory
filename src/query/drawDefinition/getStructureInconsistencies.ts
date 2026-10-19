@@ -1,6 +1,7 @@
 import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLinkAdvancements';
-import { getByeCrossings } from '@Query/drawDefinition/getByeCrossings';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
+import { getByeCrossings } from '@Query/drawDefinition/getByeCrossings';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import {
@@ -195,8 +196,8 @@ function assignmentOccupied(assignment: PositionAssignment | undefined): boolean
 // that govern its drawPositions.
 function collectAssignedStructures(structures: Structure[] | undefined, collected: Structure[]): void {
   for (const structure of structures ?? []) {
-    if (structure.positionAssignments?.length && structure.matchUps?.length) collected.push(structure);
-    if (structure.structures?.length) collectAssignedStructures(structure.structures, collected);
+    if (positionAssignmentsOf(structure)?.length && matchUpsOf(structure)?.length) collected.push(structure);
+    if (structuresOf(structure)?.length) collectAssignedStructures(structuresOf(structure), collected);
   }
 }
 
@@ -208,9 +209,9 @@ function collectAssignedStructures(structures: Structure[] | undefined, collecte
 function collectRoundRobinGroupStructureIds(structures: Structure[] | undefined, ids: Set<string>): void {
   for (const structure of structures ?? []) {
     if (structure.structureType === CONTAINER) {
-      for (const child of structure.structures ?? []) ids.add(child.structureId);
+      for (const child of structuresOf(structure) ?? []) ids.add(child.structureId);
     }
-    if (structure.structures?.length) collectRoundRobinGroupStructureIds(structure.structures, ids);
+    if (structuresOf(structure)?.length) collectRoundRobinGroupStructureIds(structuresOf(structure), ids);
   }
 }
 
@@ -227,10 +228,10 @@ function getPhantomPositionInconsistencies(
   for (const structure of assignedStructures) {
     if (structureId && structure.structureId !== structureId) continue;
     const assignmentByPosition = new Map<number, PositionAssignment>(
-      (structure.positionAssignments ?? []).map((assignment) => [assignment.drawPosition, assignment]),
+      (positionAssignmentsOf(structure) ?? []).map((assignment) => [assignment.drawPosition, assignment]),
     );
 
-    for (const matchUp of (structure.matchUps ?? []) as MatchUp[]) {
+    for (const matchUp of matchUpsOf(structure) ?? []) {
       // decided, non-exit only — a pending propagated exit may legitimately hold an empty slot
       if (!matchUp.winningSide || matchUp.collectionId || isExit(matchUp.matchUpStatus)) continue;
       const filledPositions = (matchUp.drawPositions ?? []).filter(

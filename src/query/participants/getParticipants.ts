@@ -1,3 +1,4 @@
+import { canPreFilter, getMissingParticipantIds, getPreFilteredParticipants } from './getPreFilteredParticipants';
 import { getParticipantEntries } from '@Query/participants/getParticipantEntries';
 import { filterParticipants } from '@Query/participants/filterParticipants';
 import { getParticipantMap } from '@Query/participants/getParticipantMap';
@@ -102,9 +103,14 @@ export function getParticipants(params: GetParticipantsArgs): {
 
   if (!tournamentRecord) return decorateResult({ stack, result: { error: MISSING_TOURNAMENT_RECORD } });
 
+  // when the map is not returned, only the participants the filters can keep are built (with their groupings); the
+  // filters below still decide, so what is returned is what building the whole pool returned
+  const preFilter = canPreFilter(params);
   const mapResult = getParticipantMap({
+    tournamentRecord: preFilter
+      ? { ...tournamentRecord, participants: getPreFilteredParticipants({ participantFilters, tournamentRecord }) }
+      : tournamentRecord,
     convertExtensions,
-    tournamentRecord,
     withSignInStatus,
     withScaleValues,
     internalUse,
@@ -233,7 +239,9 @@ export function getParticipants(params: GetParticipantsArgs): {
     participantMap: params.returnParticipantMap !== false ? emittedParticipantMap : undefined,
     mappedMatchUps: params.returnMatchUps !== false ? mappedMatchUps : undefined,
     matchUps: params.returnMatchUps !== false ? stripCheckInAttribution(matchUps) : undefined,
-    missingParticipantIds: mapResult.missingParticipantIds,
+    missingParticipantIds: preFilter
+      ? getMissingParticipantIds(tournamentRecord.participants ?? [])
+      : mapResult.missingParticipantIds,
     participantIdsWithConflicts,
     eventsPublishStatuses,
     derivedEventInfo,

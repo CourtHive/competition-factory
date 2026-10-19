@@ -1,7 +1,7 @@
 import { findMatchupFormatAverageTimes, findMatchupFormatRecoveryTimes } from '@Acquire/findMatchUpFormatTimes';
 import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
@@ -25,7 +25,7 @@ export function getModifiedMatchUpFormatTiming(params: GetModifiedMatchUpFormatT
   const paramCheck = checkRequiredParameters(params, [
     { [TOURNAMENT_RECORD]: true },
     {
-      [VALIDATE]: (matchUpFormat) => isValidMatchUpFormat({ matchUpFormat }),
+      [VALIDATE]: (matchUpFormat) => isWellFormedMatchUpFormat({ matchUpFormat }),
       [INVALID]: UNRECOGNIZED_MATCHUP_FORMAT,
       [MATCHUP_FORMAT]: true,
     },

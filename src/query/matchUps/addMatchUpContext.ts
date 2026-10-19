@@ -22,6 +22,7 @@ import { getSide } from './getSide';
 
 // constants and types
 import type { RoundNamingProfile } from '@Query/matchUps/getRoundContextProfile';
+import type { HydrationCache } from '@Query/matchUps/hydrationCache';
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { isEmbargoed } from '@Query/publishing/isEmbargoed';
@@ -62,6 +63,7 @@ type AddMatchUpContextArgs = {
   contextContent?: ContextContent;
   sourceDrawPositionRanges?: any;
   contextProfile?: ContextProfile;
+  hydrationCache?: HydrationCache;
   hydrateParticipants?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
@@ -148,6 +150,7 @@ export function addMatchUpContext({
   isCollectionBye,
   seedAssignments,
   usePublishState,
+  hydrationCache,
   participantMap,
   contextContent,
   scheduleTiming,
@@ -196,6 +199,7 @@ export function addMatchUpContext({
     afterRecoveryTimes,
     tournamentRecord,
     usePublishState,
+    hydrationCache,
     scheduleTiming,
     drawDefinition,
     matchUpFormat,
@@ -390,6 +394,8 @@ export function addMatchUpContext({
       drawPositions,
       scheduleVisibilityFilters,
       sourceDrawPositionRanges,
+      hydrateParticipants,
+      afterRecoveryTimes,
       drawPositionsRanges,
       initialRoundOfPlay,
       roundNamingProfile,
@@ -402,6 +408,7 @@ export function addMatchUpContext({
       tournamentParticipants,
       positionAssignments,
       tournamentRecord,
+      hydrationCache,
       seedAssignments,
       participantMap,
       contextContent,
@@ -444,10 +451,8 @@ export function addMatchUpContext({
     matchUpWithContext.checkIns = stripCheckInAttribution([matchUpWithContext])?.[0]?.checkIns;
   }
 
-  if (Array.isArray(contextProfile?.exclude)) {
-    // loop through all attributes and delete them from matchUpWithContext
-    contextProfile?.exclude.forEach((attribute) => delete matchUpWithContext[attribute]);
-  }
+  // `contextProfile.exclude` is not applied here: what this returns is still read (completion, filters, schedule
+  // order), so the exclusion is a redaction of the final result. See contextExclusion.ts.
 
   return matchUpWithContext;
 }
@@ -730,6 +735,10 @@ function processTieMatchUps(params) {
       tieDrawPositions: params.drawPositions,
       scheduleVisibilityFilters: params.scheduleVisibilityFilters,
       sourceDrawPositionRanges: params.sourceDrawPositionRanges,
+      // a line's sides are participants of the same draw: emitted thin when the dual's are
+      hydrateParticipants: params.hydrateParticipants,
+      // a line is played by individuals, and their schedule conflicts are judged by its recovery time
+      afterRecoveryTimes: params.afterRecoveryTimes,
       sideLineUps: lineUps,
       drawPositionsRanges: params.drawPositionsRanges,
       initialRoundOfPlay: params.initialRoundOfPlay,
@@ -748,6 +757,7 @@ function processTieMatchUps(params) {
       tournamentParticipants: params.tournamentParticipants,
       positionAssignments: params.positionAssignments,
       tournamentRecord: params.tournamentRecord,
+      hydrationCache: params.hydrationCache,
       seedAssignments: params.seedAssignments,
       participantMap: params.participantMap,
       contextContent: params.contextContent,

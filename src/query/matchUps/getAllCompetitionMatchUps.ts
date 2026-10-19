@@ -1,10 +1,12 @@
 import { allTournamentMatchUps } from './getAllTournamentMatchUps';
+import { withContextExclusion } from './contextExclusion';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
+  ContextProfile,
   MatchUpFilters,
   ParticipantsProfile,
   PolicyDefinitions,
@@ -19,13 +21,23 @@ type CompetitionMatchUpsArgs = {
   policyDefinitions?: PolicyDefinitions;
   matchUpFilters?: MatchUpFilters;
   contextFilters?: MatchUpFilters;
+  contextProfile?: ContextProfile;
   afterRecoveryTimes?: boolean;
   usePublishState?: boolean;
   nextMatchUps?: boolean;
   inContext?: boolean;
 };
 
-export function allCompetitionMatchUps({
+type CompetitionMatchUpsResult = {
+  matchUps?: HydratedMatchUp[];
+  error?: ErrorType;
+};
+
+export function allCompetitionMatchUps(params: CompetitionMatchUpsArgs): CompetitionMatchUpsResult {
+  return withContextExclusion(params, allCompetitionMatchUpsUnredacted);
+}
+
+function allCompetitionMatchUpsUnredacted({
   scheduleVisibilityFilters,
   afterRecoveryTimes,
   participantsProfile,
@@ -34,12 +46,10 @@ export function allCompetitionMatchUps({
   usePublishState,
   matchUpFilters,
   contextFilters,
+  contextProfile,
   nextMatchUps,
   inContext,
-}: CompetitionMatchUpsArgs): {
-  matchUps?: HydratedMatchUp[];
-  error?: ErrorType;
-} {
+}: CompetitionMatchUpsArgs): CompetitionMatchUpsResult {
   if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length)
     return { error: MISSING_TOURNAMENT_RECORDS };
 
@@ -57,6 +67,7 @@ export function allCompetitionMatchUps({
           usePublishState,
           matchUpFilters,
           contextFilters,
+          contextProfile,
           nextMatchUps,
           inContext,
         }).matchUps ?? []

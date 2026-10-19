@@ -12,7 +12,8 @@ Publishing methods prepare optimized data payloads for public display.
 const { eventData } = engine.publishEvent({
   eventId,
   eventDataParams: {
-    allParticipantResults: true, // Include round statistics
+    allParticipantResults: true, // Calculate results for tallied structures that store none
+    refreshResults: true, // Recalculate those results for this projection
     participantsProfile: {
       withISO2: true, // Include country codes
       withIOC: true,
@@ -180,3 +181,8 @@ Handle subscription failures gracefully:
   }
 }
 ```
+
+Participant-result flags do not calculate elimination standings. Round-robin results refresh group
+by group; AD_HOC and LUCKY structures are also eligible. Stored placements can lack tallies, so use
+`refreshResults` when fresh eligible results are required. Reports remain structure-local, including
+in draws with qualifying/playoff structures. See the [query contract](../../governors/query-governor.md#participant-results-and-refresh).

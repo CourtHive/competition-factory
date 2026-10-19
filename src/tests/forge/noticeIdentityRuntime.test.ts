@@ -83,7 +83,6 @@ function collectNotices(drawType: string) {
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8, drawType }],
-    participantsProfile: { nonRandom: 1 },
     setState: true,
   });
 

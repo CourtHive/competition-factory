@@ -83,7 +83,10 @@ describe('trap 2 — a directive needs GROUP participants present in the partici
    * INDIVIDUAL empties the directive silently — the call succeeds and returns nothing.
    */
   it('finds nothing when GROUPs are filtered out, and finds the group when they are not', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({ participantsCount: 8, setState: true });
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      participantsProfile: { participantsCount: 8 },
+      setState: true,
+    });
     const individuals =
       tournamentEngine.getParticipants({ participantFilters: { participantTypes: [INDIVIDUAL] } }).participants ?? [];
     const memberIds = individuals.slice(0, 2).map(({ participantId }: any) => participantId);

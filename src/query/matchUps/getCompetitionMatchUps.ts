@@ -1,9 +1,11 @@
 import { tournamentMatchUps } from './getTournamentMatchUps';
+import { withContextExclusion } from './contextExclusion';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import {
+  ContextProfile,
   GroupInfo,
   MatchUpFilters,
   ParticipantsProfile,
@@ -20,6 +22,7 @@ type CompetitionMatchUpsArgs = {
   policyDefinitions?: PolicyDefinitions;
   matchUpFilters?: MatchUpFilters;
   contextFilters?: MatchUpFilters;
+  contextProfile?: ContextProfile;
   hydrateParticipants?: boolean;
   afterRecoveryTimes?: boolean;
   useParticipantMap?: boolean;
@@ -28,19 +31,7 @@ type CompetitionMatchUpsArgs = {
   inContext?: boolean;
 };
 
-export function getCompetitionMatchUps({
-  scheduleVisibilityFilters,
-  hydrateParticipants,
-  participantsProfile,
-  tournamentRecords,
-  useParticipantMap,
-  policyDefinitions,
-  usePublishState,
-  matchUpFilters,
-  contextFilters,
-  nextMatchUps,
-  inContext,
-}: CompetitionMatchUpsArgs): ResultType & {
+type CompetitionMatchUpsResult = ResultType & {
   mappedParticipants?: { [key: string]: HydratedParticipant };
   abandonedMatchUps?: HydratedMatchUp[];
   completedMatchUps?: HydratedMatchUp[];
@@ -48,7 +39,27 @@ export function getCompetitionMatchUps({
   pendingMatchUps?: HydratedMatchUp[];
   byeMatchUps?: HydratedMatchUp[];
   groupInfo?: GroupInfo;
-} {
+};
+
+export function getCompetitionMatchUps(params: CompetitionMatchUpsArgs): CompetitionMatchUpsResult {
+  return withContextExclusion(params, competitionMatchUpsUnredacted);
+}
+
+function competitionMatchUpsUnredacted({
+  scheduleVisibilityFilters,
+  hydrateParticipants,
+  afterRecoveryTimes,
+  participantsProfile,
+  tournamentRecords,
+  useParticipantMap,
+  policyDefinitions,
+  usePublishState,
+  matchUpFilters,
+  contextFilters,
+  contextProfile,
+  nextMatchUps,
+  inContext,
+}: CompetitionMatchUpsArgs): CompetitionMatchUpsResult {
   if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length)
     return { error: MISSING_TOURNAMENT_RECORDS };
 
@@ -58,6 +69,7 @@ export function getCompetitionMatchUps({
     return tournamentMatchUps({
       scheduleVisibilityFilters,
       hydrateParticipants,
+      afterRecoveryTimes,
       participantsProfile,
       useParticipantMap,
       policyDefinitions,
@@ -65,6 +77,7 @@ export function getCompetitionMatchUps({
       usePublishState,
       matchUpFilters,
       contextFilters,
+      contextProfile,
       nextMatchUps,
       inContext,
     });

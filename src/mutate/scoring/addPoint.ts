@@ -13,10 +13,11 @@
  * - NoAD games and tiebreaks
  */
 
-import { resolveSetType, isAggregateFormat, isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { checkStandardGameWon, checkTiebreakWon } from './gameWon';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 import type { PointMultiplier } from './resolvePointValue';
+import { checkAndFinalizeMatch } from './matchCompletion';
 import { calculatePointsTo } from './pointsToCalculator';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { resolvePointValue } from './resolvePointValue';
@@ -24,6 +25,15 @@ import { inferServeSide } from './serveSideCalculator';
 import { addCombinedPoint } from './addCombinedPoint';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
+import {
+  inputLevels,
+  resolveSetType,
+  setHasTiebreak,
+  inputLevelError,
+  isLiveDecidingSet,
+  isAggregateFormat,
+  isStandardSetTiebreak,
+} from '@Tools/scoring/scoringUtilities';
 import type {
   MatchUp,
   AddPointOptions,
@@ -55,6 +65,7 @@ export interface AddPointConfig {
 export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: AddPointConfig): MatchUp {
   // IMPORTANT: Do NOT clone matchUp! The v3 adapter needs mutation to work.
   if (!isObject(options)) return matchUp;
+  validatePointInput(options);
 
   // Normalize between 0-indexed (winner/server) and 1-indexed (winningSide/serverSideNumber)
   let winner = options.winner;
@@ -85,6 +96,14 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   if (!formatStructure) {
     throw new Error(`Invalid matchUpFormat: ${matchUp.matchUpFormat}`);
   }
+  // An exactly format plays N sets and no more ("Exactly N Sets"): once all N are closed a level count
+  // names no winner, and a point after it starts nothing. Ignored, as a point after the match is.
+  if (
+    formatStructure.exactly &&
+    !isAggregateFormat(formatStructure) &&
+    openSetNumber(matchUp.score.sets) > formatStructure.exactly
+  )
+    return matchUp;
   if (formatStructure.setFormat?.combinedPointTotal)
     return addCombinedPoint(matchUp, options, winner, server, {
       combinedPointTotal: formatStructure.setFormat.combinedPointTotal,
@@ -113,12 +132,12 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, setNumber);
   const activeSetFormat: SetFormatStructure | undefined =
     isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
+  if (!inputLevels(activeSetFormat).point) throw inputLevelError('point');
 
-  // Detect rally scoring (skip auto server derivation)
-  const isRallyScoring = !!(activeSetFormat?.tiebreakSet?.modifier === RALLY || activeSetFormat?.modifier === RALLY);
-
-  // Derive server if not provided and not rally scoring
-  if (server === undefined && !isRallyScoring) {
+  // Derive the server if not provided, where the set in play derives one (§ 10): none is derived in a
+  // tiebreak-only format, so its points record a server only when the caller supplies it
+  const rule = serviceRule(formatStructure, activeSetFormat);
+  if (server === undefined && rule !== 'none') {
     server = deriveServer(newMatchUp, formatStructure, setType);
   }
 
@@ -164,9 +183,11 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   }
 
   // Resolve point multiplier for score increment
-  // If scoreValue is explicitly set on options, use it directly (parser override)
+  // If scoreValue is explicitly set on options, use it directly (parser override). A configured multiplier
+  // applies only where a point is a unit; where points build games it is not consulted (§ 4.4, CA 2026-10-18).
   const multipliers = config?.pointMultipliers ?? [];
-  const scoreIncrement = options.scoreValue ?? resolvePointValue(point, multipliers);
+  const countsUnits = pointCountsUnits(newMatchUp, formatStructure, setType, activeSetFormat);
+  const scoreIncrement = options.scoreValue ?? (countsUnits ? resolvePointValue(point, multipliers) : 1);
   if (scoreIncrement !== 1) {
     point.scoreValue = scoreIncrement;
   }
@@ -188,13 +209,16 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
       handleMatchTiebreak(newMatchUp, point, winner, formatStructure, setsToWin, scoreIncrement);
       break;
     case 'timed':
-      handleTimedSet(newMatchUp, point, winner, activeSetFormat!, scoreIncrement);
+      handleTimedSet(newMatchUp, point, winner, activeSetFormat!, scoreIncrement, formatStructure, setsToWin);
       break;
     case 'standard':
     default:
       handleStandardSet(newMatchUp, point, winner, formatStructure, activeSetFormat!, setsToWin, isDecidingSet);
       break;
   }
+
+  // Under @RALLY a setServer correction names the server of one point; then the rally winner serves (§ 10.4)
+  if (rule === 'rallyWinner') delete newMatchUp.serverFlip;
 
   return newMatchUp;
 }
@@ -242,12 +266,6 @@ function handleStandardSet(
   (point as any).game = gameOffset + currentGameIndex;
   (point as any).number = side1Points + side2Points;
 
-  // Get format details
-  const setTo = activeSetFormat.setTo || 6;
-  const tiebreakAt = (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-  // the ACTIVE format's say, deciding set or not — see `setHasTiebreak`
-  const noTiebreak = !setHasTiebreak(activeSetFormat);
-
   // Add point to winner
   if (winner === 0) {
     side1Points++;
@@ -274,8 +292,8 @@ function handleStandardSet(
     }
   }
 
-  // Check if in tiebreak
-  const isTiebreak = !noTiebreak && side1Games === tiebreakAt && side2Games === tiebreakAt;
+  // Check if in tiebreak: the ACTIVE format's say, deciding set or not — see `setHasTiebreak`
+  const isTiebreak = isStandardSetTiebreak(activeSetFormat, side1Games, side2Games);
 
   // Check if game is won
   let gameWon: number | undefined;
@@ -489,20 +507,37 @@ function handleMatchTiebreak(
  * Points are recorded but the set does NOT auto-complete.
  * The set completes via endSegment() on the engine.
  */
+/** A point with the set, game and point-in-game coordinates the scorer writes onto it. */
+type PlacedPoint = Point & { set?: number; game?: number; number?: number };
+/** A set a timed segment or tiebreak closes. */
+type ClosableSet = SetScore & { segmentComplete?: boolean };
+
 function handleTimedSet(
   matchUp: MatchUp,
   point: Point,
   winner: 0 | 1,
-  _activeSetFormat: SetFormatStructure,
+  activeSetFormat: SetFormatStructure,
   scoreIncrement: number = 1,
+  formatStructure?: FormatStructure,
+  setsToWin: number = 2,
 ): void {
   const currentSet = getOrCreateSet(matchUp, false, true);
   const currentSetIndex = matchUp.score.sets.indexOf(currentSet);
+  (point as PlacedPoint).set = currentSetIndex;
 
-  // V3-compatible point metadata
-  (point as any).set = currentSetIndex;
-  (point as any).game = 0;
-  (point as any).number = (currentSet.side1Score || 0) + (currentSet.side2Score || 0);
+  // Level at time with a declared `/TB{n}`: endSegment opened a tiebreak, and the set waits on it
+  if (currentSet.side1TiebreakScore !== undefined && currentSet.side2TiebreakScore !== undefined) {
+    handleTimedTiebreakPoint(matchUp, currentSet, point, winner, activeSetFormat, formatStructure, setsToWin);
+    return;
+  }
+
+  if (timedSetBuildsGames(formatStructure, activeSetFormat)) {
+    handleTimedGamePoint(currentSet, point, winner, activeSetFormat, formatStructure);
+    return;
+  }
+
+  (point as PlacedPoint).game = 0;
+  (point as PlacedPoint).number = (currentSet.side1Score || 0) + (currentSet.side2Score || 0);
 
   // Just increment the score — set doesn't auto-complete (with multiplier support)
   if (winner === 0) {
@@ -514,6 +549,123 @@ function handleTimedSet(
   const s1 = currentSet.side1Score || 0;
   const s2 = currentSet.side2Score || 0;
   point.score = `${s1}-${s2}`;
+}
+
+/**
+ * Whether points in this timed set build games. A games-based timed set (`T{minutes}`, `T{minutes}G`)
+ * under the SET root is a tennis-family set: its points make games of the match's game format (`-G:`:
+ * traditional, with deuce, No-Ad and deuce caps, or consecutive points, CA 2026-10-18), and the set
+ * counts games (CA 2026-10-17). Elsewhere a point stays one scoring unit:
+ * - under another root (HAL, QTR, PER, RND, INN) and in the standalone form, a game is the sport's own
+ *   unit (a goal, a basket);
+ * - in an aggregate format the segment's total is its units: INTENNSE bolts (`SET2XA-S:T10`) score
+ *   point by point, with point multipliers.
+ */
+export function timedSetBuildsGames(
+  formatStructure: FormatStructure | undefined,
+  setFormat: SetFormatStructure,
+): boolean {
+  if (!formatStructure || formatStructure.matchRoot || formatStructure.simplified) return false;
+  return !formatStructure.aggregate && setFormat.based !== 'P';
+}
+
+/**
+ * Whether a point is a unit of the set in play's score, so its value counts (spec § 4.4, § 5 rule 5, § 6.2;
+ * CA 2026-10-18): a tiebreak-only segment (a match tiebreak included), and a timed segment whose points do
+ * not build games. Where points build games (a standard set, a tennis-family timed set, the tiebreak a level
+ * timed set plays at time) and in a combined total, a point is one point and nothing else.
+ */
+export function pointCountsUnits(
+  matchUp: MatchUp,
+  formatStructure: FormatStructure,
+  setType: SetType,
+  setFormat: SetFormatStructure | undefined,
+): boolean {
+  if (!setFormat || setFormat.combinedPointTotal) return false;
+  if (setType === 'tiebreakOnly' || setType === 'matchTiebreak') return true;
+  if (setType !== 'timed' || timedSetBuildsGames(formatStructure, setFormat)) return false;
+  const set = matchUp.score.sets.at(-1);
+  const inPlay = set && openSetNumber(matchUp.score.sets) === matchUp.score.sets.length;
+  return !(inPlay && set.side1TiebreakScore !== undefined && set.side2TiebreakScore !== undefined);
+}
+
+function handleTimedGamePoint(
+  currentSet: SetScore,
+  point: Point,
+  winner: 0 | 1,
+  setFormat: SetFormatStructure,
+  formatStructure?: FormatStructure,
+): void {
+  const side1GameScores = (currentSet.side1GameScores ??= []);
+  const side2GameScores = (currentSet.side2GameScores ??= []);
+  if (!side1GameScores.length) {
+    side1GameScores.push(0);
+    side2GameScores.push(0);
+  }
+  const last = side1GameScores.length - 1;
+  (point as PlacedPoint).game = (currentSet.side1Score || 0) + (currentSet.side2Score || 0);
+  (point as PlacedPoint).number = side1GameScores[last] + side2GameScores[last];
+
+  if (winner === 0) side1GameScores[last] += 1;
+  else side2GameScores[last] += 1;
+
+  // the games are of the match's declared game format, a consecutive-points one included (§ 3.5, CA 2026-10-18)
+  const gameFormat = formatStructure?.gameFormat;
+  const consecutiveCount = gameFormat?.type === 'CONSECUTIVE' ? gameFormat.count || 3 : undefined;
+  let gameWon: number | undefined;
+  if (consecutiveCount) {
+    const streak = currentSet.currentStreak;
+    currentSet.currentStreak = { side: winner, count: streak?.side === winner ? streak.count + 1 : 1 };
+    gameWon = currentSet.currentStreak.count >= consecutiveCount ? winner : undefined;
+  } else {
+    gameWon = checkStandardGameWon(side1GameScores[last], side2GameScores[last], setFormat, false, formatStructure);
+  }
+  if (gameWon === undefined) {
+    point.score = formatGameScore(side1GameScores[last], side2GameScores[last], false, !!consecutiveCount);
+    return;
+  }
+  currentSet.currentStreak = undefined;
+  if (gameWon === 0) currentSet.side1Score = (currentSet.side1Score || 0) + 1;
+  else currentSet.side2Score = (currentSet.side2Score || 0) + 1;
+  side1GameScores.push(0);
+  side2GameScores.push(0);
+  point.score = '0-0';
+}
+
+/**
+ * A point of the tiebreak a level timed set plays at time (`T{minutes}/TB{n}`, CA 2026-10-17). The
+ * tiebreak's winner takes the set by one more game (or point, in a points-based set), as a tennis
+ * tiebreak wins 7-6, and the set is closed.
+ */
+function handleTimedTiebreakPoint(
+  matchUp: MatchUp,
+  currentSet: SetScore,
+  point: Point,
+  winner: 0 | 1,
+  setFormat: SetFormatStructure,
+  formatStructure: FormatStructure | undefined,
+  setsToWin: number,
+): void {
+  // endSegment opened the tiebreak with the games and the tiebreak points all set
+  const games = [currentSet.side1Score!, currentSet.side2Score!];
+  (point as PlacedPoint).game = games[0] + games[1];
+  (point as PlacedPoint).number = currentSet.side1TiebreakScore! + currentSet.side2TiebreakScore!;
+  if (winner === 0) currentSet.side1TiebreakScore! += 1;
+  else currentSet.side2TiebreakScore! += 1;
+
+  const tb1 = currentSet.side1TiebreakScore!;
+  const tb2 = currentSet.side2TiebreakScore!;
+  // only a set that declares `/TB{n}` opens one, so its tiebreak format is there
+  const tiebreak = setFormat.tiebreakFormat!;
+  const won = checkTiebreakWon(tb1, tb2, tiebreak.tiebreakTo!, tiebreak.NoAD);
+  point.score = `${tb1}-${tb2}`;
+  if (won === undefined) return;
+
+  if (won === 0) currentSet.side1Score = games[0] + 1;
+  else currentSet.side2Score = games[1] + 1;
+  currentSet.winningSide = won + 1;
+  (currentSet as ClosableSet).segmentComplete = true;
+  if (formatStructure) checkAndFinalizeMatch(matchUp, formatStructure, setsToWin);
 }
 
 // ============================================================================
@@ -546,147 +698,6 @@ function getOrCreateSet(matchUp: MatchUp, isTiebreakOnly: boolean, isTimed: bool
 }
 
 /**
- * Check match completion and finalize if complete
- */
-export function checkAndFinalizeMatch(matchUp: MatchUp, formatStructure: FormatStructure, setsToWin: number): void {
-  const setsWon: [number, number] = [0, 0];
-  matchUp.score.sets.forEach((set) => {
-    if (set.winningSide === 1) setsWon[0]++;
-    if (set.winningSide === 2) setsWon[1]++;
-  });
-
-  const isAggregate = isAggregateFormat(formatStructure);
-  const exactly = formatStructure.exactly;
-
-  if (isAggregate) {
-    // Aggregate: all sets must be played, winner by total score
-    // Use sets.length (not winningSide filter) because tied sets are valid in aggregate formats
-    const totalSets = exactly || formatStructure.bestOf || 3;
-    const playedSets = matchUp.score.sets.length;
-    if (playedSets < totalSets) return;
-
-    // Sum scores
-    const totals = matchUp.score.sets.reduce(
-      (acc, set) => {
-        // For tiebreak-only sets, use tiebreak scores
-        if (set.side1TiebreakScore !== undefined && set.side2TiebreakScore !== undefined) {
-          acc[0] += set.side1TiebreakScore;
-          acc[1] += set.side2TiebreakScore;
-        } else {
-          acc[0] += set.side1Score ?? 0;
-          acc[1] += set.side2Score ?? 0;
-        }
-        return acc;
-      },
-      [0, 0],
-    );
-
-    if (totals[0] !== totals[1]) {
-      matchUp.matchUpStatus = COMPLETED;
-      matchUp.winningSide = totals[0] > totals[1] ? 1 : 2;
-      matchUp.endTime = nowIso();
-    }
-    // If tied, match continues (conditional tiebreak set may be added)
-    return;
-  }
-
-  // Standard: first to setsToWin
-  const hasWinner = setsWon[0] >= setsToWin || setsWon[1] >= setsToWin;
-  if (!hasWinner) return;
-
-  // For exactly formats, all sets must be completed
-  if (exactly) {
-    const completedSets = matchUp.score.sets.filter((s) => s.winningSide !== undefined).length;
-    if (completedSets < exactly) return;
-  }
-
-  const matchWinner = setsWon[0] >= setsToWin ? 0 : 1;
-  matchUp.matchUpStatus = COMPLETED;
-  matchUp.winningSide = matchWinner + 1;
-  matchUp.endTime = nowIso();
-}
-
-/**
- * Check if a tiebreak game is won
- */
-function checkTiebreakWon(
-  side1Points: number,
-  side2Points: number,
-  tiebreakTo: number,
-  isNoAD: boolean = false,
-): number | undefined {
-  const diff = Math.abs(side1Points - side2Points);
-  const minWin = isNoAD ? 1 : 2;
-
-  if ((side1Points >= tiebreakTo || side2Points >= tiebreakTo) && diff >= minWin) {
-    return side1Points > side2Points ? 0 : 1;
-  }
-  return undefined;
-}
-
-/**
- * Check if a standard game is won (regular game or tiebreak within a standard set)
- */
-function checkStandardGameWon(
-  side1Points: number,
-  side2Points: number,
-  setFormat: SetFormatStructure,
-  isTiebreak: boolean,
-  formatStructure?: FormatStructure,
-): number | undefined {
-  const isNoAd = setFormat.gameFormat?.NoAD || setFormat.NoAD || false;
-
-  if (isTiebreak) {
-    const tiebreakTo = setFormat.tiebreakFormat?.tiebreakTo || 7;
-    const tiebreakNoAD = setFormat.tiebreakFormat?.NoAD || false;
-    return checkTiebreakWon(side1Points, side2Points, tiebreakTo, tiebreakNoAD);
-  }
-
-  const pointsTo = 4;
-  const diff = Math.abs(side1Points - side2Points);
-
-  // No-AD scoring (golden point at deuce)
-  if (isNoAd) {
-    if (side1Points >= pointsTo || side2Points >= pointsTo) {
-      return side1Points > side2Points ? 0 : 1;
-    }
-    return undefined;
-  }
-
-  // deuceAfter: after N deuces, the next point decides (golden point)
-  // Deuce #1 is at 3-3, deuce #N is at (2+N)-(2+N)
-  const deuceAfter = formatStructure?.gameFormat?.deuceAfter;
-  if (deuceAfter && side1Points >= 2 + deuceAfter && side2Points >= 2 + deuceAfter) {
-    // Past the deuce cap — next point wins (like NoAD)
-    if (side1Points !== side2Points) {
-      return side1Points > side2Points ? 0 : 1;
-    }
-    return undefined;
-  }
-
-  // Regular tennis scoring (deuce/advantage)
-  if ((side1Points >= pointsTo || side2Points >= pointsTo) && diff >= 2) {
-    return side1Points > side2Points ? 0 : 1;
-  }
-
-  return undefined;
-}
-
-/**
- * Whether the set this format describes is decided by a tiebreak at games-all.
- *
- * `parse` writes `noTiebreak: true` and no `tiebreakAt` for an advantage set (`S:6`, `F:6`, `S:5WB1`);
- * a hand-built format carrying neither tiebreak field is read the same way. Every site below used to
- * derive `tiebreakAt ?? setTo` and treat games-all as a tiebreak whatever the format said — measured
- * 2026-10-02, the engine played a full TB7 at six-all in `SET1-S:6` and ended it 7-6(7-0) COMPLETED,
- * a set `checkSetIsComplete` then called unfinished. Only the deciding set's `noTiebreak` was read.
- */
-export function setHasTiebreak(setFormat?: SetFormatStructure): boolean {
-  if (!setFormat || setFormat.noTiebreak) return false;
-  return !!setFormat.tiebreakFormat || typeof setFormat.tiebreakAt === 'number';
-}
-
-/**
  * Check if a standard set is won
  */
 export function checkStandardSetWon(
@@ -700,14 +711,6 @@ export function checkStandardSetWon(
   const tiebreakAt = (typeof setFormat.tiebreakAt === 'number' ? setFormat.tiebreakAt : undefined) ?? setTo;
   const activeFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
   const noTiebreak = !setHasTiebreak(activeFormat);
-
-  // For setTo === 1, first to 1 game wins
-  if (setTo === 1) {
-    if (side1Games >= 1 || side2Games >= 1) {
-      return side1Games > side2Games ? 0 : 1;
-    }
-    return undefined;
-  }
 
   const winBy = activeFormat.winBy || 2;
 
@@ -727,12 +730,79 @@ export function checkStandardSetWon(
   return undefined;
 }
 
+const SIDE_INDEX = new Set([0, 1]);
+const SIDE_NUMBER = new Set([1, 2]);
+
 /**
- * Derive server from match state
+ * Refuse a point input the scorer cannot take, before anything is written: a side outside 0/1 (or 1/2),
+ * the two spellings of a side naming different sides, or a scoreValue that is negative or not finite.
+ * A zero scoreValue is allowed. A missing winner is not an error here: such a point is ignored.
+ */
+export function validatePointInput(options: Partial<AddPointOptions>): void {
+  const { winner, winningSide, server, serverSideNumber, scoreValue } = options;
+  if (winner != null && !SIDE_INDEX.has(winner)) throw new Error(`Invalid winner: ${winner}`);
+  if (winningSide != null && !SIDE_NUMBER.has(winningSide)) throw new Error(`Invalid winningSide: ${winningSide}`);
+  if (winner != null && winningSide != null && winner + 1 !== winningSide)
+    throw new Error(`winner ${winner} and winningSide ${winningSide} disagree`);
+  if (server != null && !SIDE_INDEX.has(server)) throw new Error(`Invalid server: ${server}`);
+  if (serverSideNumber != null && !SIDE_NUMBER.has(serverSideNumber))
+    throw new Error(`Invalid serverSideNumber: ${serverSideNumber}`);
+  if (server != null && serverSideNumber != null && server + 1 !== serverSideNumber)
+    throw new Error(`server ${server} and serverSideNumber ${serverSideNumber} disagree`);
+  const { observedServeSide } = options;
+  if (observedServeSide !== undefined && observedServeSide !== 'deuce' && observedServeSide !== 'ad')
+    throw new Error(`Invalid observedServeSide: ${observedServeSide}`);
+  if (scoreValue !== undefined && !(Number.isFinite(scoreValue) && scoreValue >= 0))
+    throw new Error(`Invalid scoreValue: ${scoreValue}`);
+}
+
+/**
+ * How the side due to serve is known in a set (spec § 10, CA 2026-10-18):
+ * - `rotation`: derived by the format (§ 10.1–10.3): game by game in standard sets, Rule 5(b) in a tiebreak
+ *   (a tennis match tiebreak `-F:TB{n}` included), and unit by unit in timed segments, continuously across
+ *   segments;
+ * - `rallyWinner`: under `@RALLY` the rally winner serves next (§ 10.4);
+ * - `none`: no server is derived (§ 10.2 rule 2, § 10.4): a combined total `P{n}`, and a tiebreak-only
+ *   format (`S:TB{n}`: squash, table tennis, pickleball and badminton shapes) until each sport's own rule is
+ *   added. A point there records a server only when the caller supplies one.
+ */
+export type ServiceRule = 'rotation' | 'rallyWinner' | 'none';
+
+export function serviceRule(
+  formatStructure: FormatStructure | undefined,
+  setFormat: SetFormatStructure | undefined,
+): ServiceRule {
+  if (!formatStructure || !setFormat || setFormat.combinedPointTotal) return 'none';
+  if (setFormat.modifier === RALLY || setFormat.tiebreakSet?.modifier === RALLY) return 'rallyWinner';
+  if (setFormat.tiebreakSet && formatStructure.setFormat?.tiebreakSet) return 'none';
+  return 'rotation';
+}
+
+/** The format governing the set the next point lands in (§ 3.2). */
+export function liveSetFormat(matchUp: MatchUp, formatStructure: FormatStructure): SetFormatStructure | undefined {
+  const setsWon: [number, number] = [0, 0];
+  for (const set of matchUp.score.sets) {
+    if (set.winningSide === 1) setsWon[0]++;
+    if (set.winningSide === 2) setsWon[1]++;
+  }
+  const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, openSetNumber(matchUp.score.sets));
+  return isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
+}
+
+/** The service rule of the set the next point lands in. */
+export function liveServiceRule(matchUp: MatchUp, formatStructure: FormatStructure | undefined): ServiceRule {
+  if (!formatStructure) return 'none';
+  return serviceRule(formatStructure, liveSetFormat(matchUp, formatStructure));
+}
+
+/**
+ * The side due to serve the next point. Where no server is derived (`none`) this is a placeholder kept for
+ * API compatibility: the side a `setServer` named, or side 1 (`liveServiceRule` says which it is).
  *
  * Exported for use by ScoringEngine.getNextServer() and getScore() situation.
  */
 export function deriveServer(matchUp: MatchUp, formatStructure: FormatStructure, setType: SetType): 0 | 1 {
+  const rule = liveServiceRule(matchUp, formatStructure);
   const baseServer = deriveServerBase(matchUp, formatStructure, setType);
 
   // Priority 1: Explicit serverFlip (set via ScoringEngine.setServer()).
@@ -740,98 +810,93 @@ export function deriveServer(matchUp: MatchUp, formatStructure: FormatStructure,
   // This replaces first-point inference for the current position onward.
   // During rebuild, serverFlip is only set when the setServer timeline entry
   // is replayed, so points before it use first-point inference naturally.
+  // Under @RALLY a correction names the server of the next point only: the rule resumes after it.
   if (matchUp.serverFlip !== undefined) {
     return matchUp.serverFlip ? ((1 - baseServer) as 0 | 1) : baseServer;
   }
+  if (rule !== 'rotation') return baseServer;
 
   // Priority 2: Infer from the first recorded point's explicit server.
   // If it disagrees with the base derivation at that point's position, flip all
   // subsequent derivations. This handles both starting from scratch (where
   // side 1 starts) and mid-match entry (where the first recorded point may
   // be in set 2+ after addSet calls).
-  const firstPoint = matchUp.history?.points?.[0];
-  if (firstPoint?.server !== undefined) {
-    const firstPointSetIndex = (firstPoint as any).set ?? 0;
-    const firstPointGameIndex = (firstPoint as any).game ?? 0;
-    let gamesBeforeFirstPoint = 0;
-    for (let i = 0; i < firstPointSetIndex; i++) {
-      const s = matchUp.score.sets[i];
-      gamesBeforeFirstPoint += (s.side1Score || 0) + (s.side2Score || 0);
-    }
-    gamesBeforeFirstPoint += firstPointGameIndex;
-    const baseAtFirstPoint = (gamesBeforeFirstPoint % 2) as 0 | 1;
-
-    if (firstPoint.server !== baseAtFirstPoint) {
-      return (1 - baseServer) as 0 | 1;
-    }
+  const firstPoint = matchUp.history?.points?.[0] as PlacedPoint | undefined;
+  if (firstPoint?.server !== undefined && firstPoint.server !== baseAtPoint(matchUp, firstPoint)) {
+    return (1 - baseServer) as 0 | 1;
   }
   return baseServer;
 }
 
+/** Games (or units) a set recorded: a tiebreak and a tiebreak-only set count as one. */
+function unitsOf(set: SetScore): number {
+  return (set.side1Score || 0) + (set.side2Score || 0);
+}
+
+/**
+ * The rotation's server at a recorded point's position: the units played before it, across every set. In a
+ * timed segment whose points are units (no games) a point is one unit; elsewhere a game is.
+ */
+function baseAtPoint(matchUp: MatchUp, point: PlacedPoint): 0 | 1 {
+  const setIndex = point.set ?? 0;
+  let unitsBefore = 0;
+  for (const set of matchUp.score.sets.slice(0, setIndex)) unitsBefore += unitsOf(set);
+  const set = matchUp.score.sets[setIndex];
+  const unitPoints = !!set?.isTimed && !set.side1GameScores?.length;
+  unitsBefore += (unitPoints ? point.number : point.game) ?? 0;
+  return (unitsBefore % 2) as 0 | 1;
+}
+
+/**
+ * The derivation before any orientation (§ 10.6). Rotation: side 1 serves the first unit of the match and
+ * service alternates every unit, counted across every set however it was recorded (by points, `addGame`,
+ * `addSet` or a baseline), so a new set's first unit is served by the side that did not serve the last
+ * unit before it (§ 10.1, § 10.3). A unit is a game in a standard set and in a timed set whose points build
+ * games, and a point (or unit) in a timed segment whose points are units. A tiebreak (in a standard set, a
+ * match tiebreak, or the tiebreak a level timed segment plays at time) is opened by the side due to serve
+ * the next unit and follows Rule 5(b). Rally: the winner of the point before (§ 10.4). None: side 1.
+ */
 export function deriveServerBase(matchUp: MatchUp, formatStructure: FormatStructure, setType: SetType): 0 | 1 {
-  const currentSetIndex = matchUp.score.sets.length - 1;
-  const currentSet = currentSetIndex >= 0 ? matchUp.score.sets[currentSetIndex] : undefined;
+  const rule = liveServiceRule(matchUp, formatStructure);
+  if (rule === 'none') return 0;
+  if (rule === 'rallyWinner') return matchUp.history?.points?.at(-1)?.winner ?? 0;
+
+  const sets = matchUp.score.sets;
+  const setNumber = openSetNumber(sets);
+  const inPlay = setNumber <= sets.length ? sets[setNumber - 1] : undefined;
+  let unitsBefore = 0;
+  for (const set of sets.slice(0, setNumber - 1)) unitsBefore += unitsOf(set);
+  const nextUnit = ((unitsBefore + (inPlay ? unitsOf(inPlay) : 0)) % 2) as 0 | 1;
 
   if (setType === 'tiebreakOnly' || setType === 'matchTiebreak') {
-    return deriveTiebreakServer(matchUp, currentSet);
+    const pointsPlayed = (inPlay?.side1GameScores?.[0] || 0) + (inPlay?.side2GameScores?.[0] || 0);
+    // the side due to serve the next game opens the match tiebreak
+    return tiebreakServer((unitsBefore % 2) as 0 | 1, pointsPlayed);
   }
 
   if (setType === 'timed') {
-    return deriveTimedServer(currentSet);
+    const tiebreakAtTime = inPlay?.side1TiebreakScore !== undefined && inPlay?.side2TiebreakScore !== undefined;
+    if (tiebreakAtTime) return tiebreakServer(nextUnit, inPlay.side1TiebreakScore! + inPlay.side2TiebreakScore!);
+    return nextUnit;
   }
 
-  // Standard sets
-  const side1Games = currentSet?.side1Score || 0;
-  const side2Games = currentSet?.side2Score || 0;
-
-  let totalPreviousGames = 0;
-  for (let i = 0; i < matchUp.score.sets.length - 1; i++) {
-    const s = matchUp.score.sets[i];
-    totalPreviousGames += (s.side1Score || 0) + (s.side2Score || 0);
+  // the format governing the set in play — the scorer's own choice, so both agree on a tiebreak
+  const activeSetFormat = liveSetFormat(matchUp, formatStructure);
+  if (inPlay && isStandardSetTiebreak(activeSetFormat, inPlay.side1Score || 0, inPlay.side2Score || 0)) {
+    const tiebreakPoints = (inPlay.side1GameScores?.at(-1) || 0) + (inPlay.side2GameScores?.at(-1) || 0);
+    // the side due to serve the next game opens the tiebreak
+    return tiebreakServer(nextUnit, tiebreakPoints);
   }
 
-  const setTo = formatStructure.setFormat?.setTo || 6;
-  const tiebreakAt =
-    (typeof formatStructure.setFormat?.tiebreakAt === 'number' ? formatStructure.setFormat.tiebreakAt : undefined) ??
-    setTo;
-  const noTiebreak = formatStructure.finalSetFormat?.noTiebreak || !setHasTiebreak(formatStructure.setFormat);
-
-  const inTiebreak = !noTiebreak && side1Games === tiebreakAt && side2Games === tiebreakAt;
-
-  if (inTiebreak) {
-    const side1GameScores = currentSet?.side1GameScores ?? [];
-    const side2GameScores = currentSet?.side2GameScores ?? [];
-    const tiebreakPoints = (side1GameScores.at(-1) || 0) + (side2GameScores.at(-1) || 0);
-
-    const totalGames = totalPreviousGames + side1Games + side2Games;
-    const tiebreakInitialServer = totalGames % 2;
-    const serverOffset = Math.floor(tiebreakPoints / 2) % 2;
-    return ((tiebreakInitialServer + serverOffset) % 2) as 0 | 1;
-  }
-
-  const totalGames = totalPreviousGames + side1Games + side2Games;
-  return (totalGames % 2) as 0 | 1;
+  return nextUnit;
 }
 
-function deriveTiebreakServer(matchUp: MatchUp, currentSet: SetScore | undefined): 0 | 1 {
-  const side1GameScores = currentSet?.side1GameScores ?? [];
-  const side2GameScores = currentSet?.side2GameScores ?? [];
-  const pointsPlayed = (side1GameScores[0] || 0) + (side2GameScores[0] || 0);
-
-  let totalPreviousGames = 0;
-  for (let i = 0; i < matchUp.score.sets.length - 1; i++) {
-    const s = matchUp.score.sets[i];
-    totalPreviousGames += (s.side1Score || 0) + (s.side2Score || 0);
-  }
-
-  const tiebreakInitialServer = totalPreviousGames % 2;
-  const serverOffset = Math.floor(pointsPlayed / 2) % 2;
-  return ((tiebreakInitialServer + serverOffset) % 2) as 0 | 1;
-}
-
-function deriveTimedServer(currentSet: SetScore | undefined): 0 | 1 {
-  const totalEvents = (currentSet?.side1Score || 0) + (currentSet?.side2Score || 0);
-  return (totalEvents % 2) as 0 | 1;
+/**
+ * The server of the next point of a tiebreak: the opening server serves one point, then each side
+ * serves two in turn (ITF Rules of Tennis, Rule 5(b)) — servers 0, 1, 1, 0, 0, 1, 1, … for opener 0.
+ */
+export function tiebreakServer(openingServer: 0 | 1, pointsPlayed: number): 0 | 1 {
+  return ((openingServer + Math.floor((pointsPlayed + 1) / 2)) % 2) as 0 | 1;
 }
 
 /**

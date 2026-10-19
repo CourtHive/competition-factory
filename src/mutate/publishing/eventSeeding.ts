@@ -72,7 +72,7 @@ export function unPublishEventSeeding({
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
   if (paramsCheck.error) return paramsCheck;
 
-  const eventPubStatus = getEventPublishStatus({ event });
+  const eventPubStatus = getEventPublishStatus({ event, status });
 
   if (eventPubStatus) {
     const seeding = eventPubStatus.seeding;

@@ -8,6 +8,9 @@ import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFA
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 
+// constants
+import { MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
+
 /**
  * Rest is anchored on a caller-supplied `asOf`, which is the whole reason it
  * can live in the factory: there is no clock here, and every case below states
@@ -246,6 +249,6 @@ describe('getParticipantRest — the engine method', () => {
   it('refuses a call with no matchUpId', () => {
     seed();
     const result: any = tournamentEngine.getParticipantRest({ asOf: at('08:00') });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_MATCHUP_ID);
   });
 });

@@ -1,4 +1,5 @@
 import { getDrawStructures } from '@Acquire/findStructure';
+import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
@@ -29,11 +30,11 @@ export function feedInChampionship(params): ResultType & {
   const {
     structures: [mainStructure],
   } = getDrawStructures({ drawDefinition, stage: MAIN });
-  const mainDrawMatchUps = mainStructure?.matchUps;
+  const mainDrawMatchUps = matchUpsOf(mainStructure);
   const {
     structures: [consolationStructure],
   } = getDrawStructures({ drawDefinition, stage: CONSOLATION });
-  const consolationMatchUps = consolationStructure?.matchUps;
+  const consolationMatchUps = matchUpsOf(consolationStructure);
 
   return {
     consolationStructure,

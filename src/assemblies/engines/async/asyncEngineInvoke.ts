@@ -1,11 +1,12 @@
+import { deleteNotices, getDevContext, getInvokeObserver, getMethods } from '@Global/state/globalState';
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
-import { deleteNotices, getInvokeObserver, getMethods } from '@Global/state/globalState';
+import { caughtErrorResult, executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
-import { seedRandomParam } from '@Assemblies/engines/parts/seedRandomParam';
-import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
+import { seedCall } from '@Assemblies/engines/parts/seedRandomParam';
 import { isFunction, isObject, isString } from '@Tools/objects';
+import { withCallRandomSourceAsync } from '@Tools/prng';
 import { withCapturedClockAsync } from '@Tools/clock';
 
 // constants
@@ -29,7 +30,7 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
   const params = args?.params ? { ...args.params } : { ...remainingArgs };
 
   // nonRandom: <seed> middleware; see engineInvoke.ts
-  seedRandomParam(params);
+  const unthreadedSource = seedCall(params);
 
   const method = passedMethod || engine[methodName] || getMethods()[methodName];
   if (!method) return logMethodNotFound({ methodName, params });
@@ -42,11 +43,17 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
 
     let result: ReturnType<typeof executeFunction>;
     try {
-      result = (await executeFunction(engine, method, params, methodName, 'async')) ?? {};
+      result =
+        (await withCallRandomSourceAsync(unthreadedSource, async () =>
+          executeFunction(engine, method, params, methodName, 'async'),
+        )) ?? {};
     } catch (err) {
-      // thrown only under devContext (otherwise executeFunction catches): restore, then surface it
+      // executeFunction catches a SYNC throw outside devContext, but an async method's rejection arrives after it has
+      // returned. Restore, then answer as the sync engine does: rethrow under devContext, otherwise the
+      // caught-error envelope
       if (captured) restoreOperation(captured);
-      throw err;
+      if (getDevContext()) throw err;
+      return caughtErrorResult({ methodName, params, err });
     }
 
     if (result?.error && captured) {

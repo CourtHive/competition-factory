@@ -3,6 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
+import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 import { WTN } from '@Constants/ratingConstants';
 
@@ -11,7 +12,7 @@ test('getPredictiveAccuracy with no tournamentRecord and no matchUps returns err
     scaleName: WTN,
     matchUpType: SINGLES,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
 });
 
 test('getPredictiveAccuracy with invalid matchUpType returns error', () => {
@@ -23,7 +24,7 @@ test('getPredictiveAccuracy with invalid matchUpType returns error', () => {
     matchUpType: 'INVALID' as any,
     scaleName: WTN,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
 });
 
 test('getPredictiveAccuracy with invalid matchUps returns error', () => {
@@ -35,7 +36,7 @@ test('getPredictiveAccuracy with invalid matchUps returns error', () => {
     matchUps: 'notAnArray' as any,
     scaleName: WTN,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
 });
 
 test('getPredictiveAccuracy with completed matchUps', () => {

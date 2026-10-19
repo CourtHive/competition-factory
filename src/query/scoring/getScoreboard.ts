@@ -4,7 +4,9 @@
  * Pure function that formats score for display
  */
 
-import type { MatchUp, GetScoreboardOptions } from '@Types/scoring/types';
+import type { MatchUp, GetScoreboardOptions, SetScore, FormatStructure } from '@Types/scoring/types';
+import { isLiveDecidingSet, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
+import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
@@ -25,6 +27,11 @@ export function getScoreboard(matchUp: MatchUp, options?: GetScoreboardOptions):
   }
 
   const perspective = options?.perspective;
+  const currentSet = sets.at(-1);
+  const inPlay = matchUp.matchUpStatus === IN_PROGRESS && !!currentSet && !isClosed(currentSet);
+  // a level timed segment playing its declared tiebreak at time: the tiebreak is the game in play
+  const tiebreakAtTime =
+    inPlay && currentSet.side1TiebreakScore !== undefined && currentSet.side2TiebreakScore !== undefined;
 
   // Format each set
   const setStrings = sets.map((set) => {
@@ -37,7 +44,8 @@ export function getScoreboard(matchUp: MatchUp, options?: GetScoreboardOptions):
     }
 
     // Check if tiebreak was played
-    if (set.side1TiebreakScore !== undefined || set.side2TiebreakScore !== undefined) {
+    const tiebreakPlayed = set.side1TiebreakScore !== undefined || set.side2TiebreakScore !== undefined;
+    if (tiebreakPlayed && !(tiebreakAtTime && set === currentSet)) {
       let tb1 = set.side1TiebreakScore || 0;
       let tb2 = set.side2TiebreakScore || 0;
 
@@ -57,55 +65,64 @@ export function getScoreboard(matchUp: MatchUp, options?: GetScoreboardOptions):
     return `${s1}-${s2}`;
   });
 
-  // Get current game score if match in progress
-  const currentSet = sets.at(-1);
-  if (matchUp.matchUpStatus === IN_PROGRESS && currentSet && !currentSet.winningSide) {
-    const gameScores = currentSet.side1GameScores ?? [];
-    const gameIndex = gameScores.length - 1;
+  if (!inPlay) return setStrings.join(', ');
 
-    if (gameIndex >= 0 && gameScores.length > 0) {
-      let p1 = gameScores[gameIndex] || 0;
-      let p2 = (currentSet.side2GameScores ?? [])[gameIndex] || 0;
-
-      // Don't show game score if it's 0-0 at start of new game
-      if (p1 === 0 && p2 === 0) {
-        return setStrings.join(', ');
-      }
-
-      // Apply perspective
-      if (perspective === 1) {
-        [p1, p2] = [p2, p1];
-      }
-
-      // Check if it's a tiebreak or consecutive format
-      const s1 = currentSet.side1Score || 0;
-      const s2 = currentSet.side2Score || 0;
-
-      // Parse format to determine tiebreak threshold and game format
-      const formatStructure = matchUp.matchUpFormat ? parse(matchUp.matchUpFormat) : undefined;
-      const setTo = formatStructure?.setFormat?.setTo || 6;
-      const tiebreakAt =
-        (typeof formatStructure?.setFormat?.tiebreakAt === 'number'
-          ? formatStructure.setFormat.tiebreakAt
-          : undefined) ?? setTo;
-      const isTiebreak = s1 === tiebreakAt && s2 === tiebreakAt;
-      const isConsecutive = formatStructure?.gameFormat?.type === 'CONSECUTIVE';
-
-      const lastSetString = setStrings.at(-1);
-      const prefix = `${setStrings.slice(0, -1).join(', ')}${setStrings.length > 1 ? ', ' : ''}${lastSetString}`;
-
-      if (isTiebreak || isConsecutive) {
-        // Tiebreak or consecutive: show numeric score
-        return `${prefix} (${p1}-${p2})`;
-      } else {
-        // Regular game: convert to tennis score
-        const tennisScore = formatTennisScore(p1, p2);
-        return `${prefix} (${tennisScore})`;
-      }
-    }
+  // The game in play, read by the format governing the set in play (spec § 3.2, § 11.3; CA 2026-10-18)
+  let p1: number;
+  let p2: number;
+  if (tiebreakAtTime) {
+    p1 = currentSet.side1TiebreakScore!;
+    p2 = currentSet.side2TiebreakScore!;
+  } else {
+    const gameIndex = (currentSet.side1GameScores ?? []).length - 1;
+    if (gameIndex < 0) return setStrings.join(', ');
+    p1 = currentSet.side1GameScores![gameIndex] || 0;
+    p2 = (currentSet.side2GameScores ?? [])[gameIndex] || 0;
   }
 
-  return setStrings.join(', ');
+  // Don't show game score if it's 0-0 at start of new game
+  if (p1 === 0 && p2 === 0) {
+    return setStrings.join(', ');
+  }
+
+  // Apply perspective
+  if (perspective === 1) {
+    [p1, p2] = [p2, p1];
+  }
+
+  const formatStructure = matchUp.matchUpFormat ? parse(matchUp.matchUpFormat) : undefined;
+  const setFormat = formatStructure ? liveSetFormat(matchUp, formatStructure) : undefined;
+  // numeric points: a tiebreak-only set (a match tiebreak included), a standard set's tiebreak, the
+  // tiebreak at time, and a consecutive-points game; tennis points otherwise
+  const isTiebreak =
+    tiebreakAtTime ||
+    !!setFormat?.tiebreakSet ||
+    (!setFormat?.timed && isStandardSetTiebreak(setFormat, currentSet.side1Score || 0, currentSet.side2Score || 0));
+  const isConsecutive = formatStructure?.gameFormat?.type === 'CONSECUTIVE';
+
+  const prefix = setStrings.join(', ');
+  if (isTiebreak || isConsecutive) {
+    // Tiebreak or consecutive: show numeric score
+    return `${prefix} (${p1}-${p2})`;
+  }
+  // Regular game: convert to tennis score
+  return `${prefix} (${formatTennisScore(p1, p2)})`;
+}
+
+/** The format governing the set in play (spec § 3.2): the final-set format in the deciding set. */
+function liveSetFormat(matchUp: MatchUp, formatStructure: FormatStructure) {
+  const setsWon: [number, number] = [0, 0];
+  for (const set of matchUp.score.sets) {
+    if (set.winningSide === 1) setsWon[0]++;
+    if (set.winningSide === 2) setsWon[1]++;
+  }
+  const isDecidingSet = isLiveDecidingSet(formatStructure, setsWon, openSetNumber(matchUp.score.sets));
+  return isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
+}
+
+/** A set that is over: won, or a timed segment closed with or without a winner. */
+function isClosed(set: SetScore): boolean {
+  return set.winningSide !== undefined || !!(set as SetScore & { segmentComplete?: boolean }).segmentComplete;
 }
 
 /**

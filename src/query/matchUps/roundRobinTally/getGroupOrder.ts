@@ -102,8 +102,12 @@ export function getGroupOrder(params) {
     .sort((a, b) => b - a)
     .map((key) => orderedTallyGroups[key]);
 
+  // One getGroupOrder reads one set of matchUps under one format and policy, so a recalculation is decided by its
+  // grouping total and its participant scope alone. An elimination draw ties hundreds of participants, and its
+  // sub-sorts asked for the same unscoped recalculation hundreds of times: 809 times for one 512 draw.
+  const recalculations = new Map();
   const sortedOrder = sortedTallyGroups.map((participantIds) => {
-    const result = groupSubSort({ participantIds, ...params });
+    const result = groupSubSort({ participantIds, ...params, recalculations });
     report.push(...(result.report ?? []));
     return result.order;
   });
@@ -207,6 +211,7 @@ function isComplete({ participantResults, participantsCount }) {
 
 function processAttribute({
   disableHeadToHead,
+  recalculations,
   participantIds,
   matchUpFormat,
   groupTotals,
@@ -216,9 +221,10 @@ function processAttribute({
   matchUps,
   reversed, // reverses default which is greatest to least
 }) {
-  const participantResultsOutcome = getParticipantResults({
+  const participantResultsOutcome = recalculate({
     participantIds: idsFilter && participantIds,
     groupingTotal: groupTotals && attribute,
+    recalculations,
     matchUpFormat,
     tallyPolicy,
     matchUps,
@@ -248,6 +254,7 @@ function processAttribute({
       const result = groupSubSort({
         participantResults,
         disableHeadToHead,
+        recalculations,
         participantIds,
         matchUpFormat,
         tallyPolicy,
@@ -265,7 +272,15 @@ function processAttribute({
   return { order, report };
 }
 
-function groupSubSort({ participantResults, disableHeadToHead, participantIds, matchUpFormat, tallyPolicy, matchUps }) {
+function groupSubSort({
+  participantResults,
+  disableHeadToHead,
+  recalculations,
+  participantIds,
+  matchUpFormat,
+  tallyPolicy,
+  matchUps,
+}) {
   const excludedDirectives: any[] = [];
   const report: any[] = [];
   let result;
@@ -303,6 +318,7 @@ function groupSubSort({ participantResults, disableHeadToHead, participantIds, m
   filteredDirectives.every(({ attribute, reversed, idsFilter, groupTotals, disableHeadToHead }) => {
     result = processAttribute({
       disableHeadToHead,
+      recalculations,
       participantIds,
       matchUpFormat,
       groupTotals,
@@ -324,6 +340,23 @@ function groupSubSort({ participantResults, disableHeadToHead, participantIds, m
     order: participantIds?.map((participantId) => ({ participantId })),
     report,
   };
+}
+
+/**
+ * A recalculation depends only on which participants' matchUps it counts (membership, not order) and on the
+ * grouping total; everything else is fixed for the getGroupOrder that owns `recalculations`. Nothing downstream
+ * writes to a result, so one is shared by every sub-sort that asks the same question.
+ */
+function recalculate({ participantIds, groupingTotal, recalculations, matchUpFormat, tallyPolicy, matchUps }) {
+  const scope = participantIds?.length ? [...participantIds].sort((a, b) => a.localeCompare(b)).join('|') : '';
+  const key = `${groupingTotal || ''}:${scope}`;
+  if (!recalculations.has(key)) {
+    recalculations.set(
+      key,
+      getParticipantResults({ participantIds, groupingTotal, matchUpFormat, tallyPolicy, matchUps }),
+    );
+  }
+  return recalculations.get(key);
 }
 
 // NOTE: This currently considers one victory rather than a head2head win/loss record (considering rounds of play where participants may encounter each other more than once)

@@ -42,7 +42,6 @@ describe('MODIFY_MATCHUP structureId', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [drawProfile],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
 
@@ -98,7 +97,6 @@ describe('MODIFY_MATCHUP structureId', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
 
@@ -139,7 +137,6 @@ describe('MODIFY_MATCHUP structureId', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
 
@@ -177,7 +174,6 @@ describe('MODIFY_MATCHUP structureId', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: COMPASS }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     const notices = capture([MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS]);

@@ -1,7 +1,6 @@
 import { getLinkedTournamentIds } from '@Query/tournaments/getLinkedTournamentIds';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { addVenue } from '@Mutate/venues/addVenue';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -48,15 +47,13 @@ export function findCourt({ tournamentRecords, tournamentRecord, courtId }: Find
 
     const relevantIds = linkedTournamentIds[tournamentRecord!.tournamentId];
 
-    // if there are linked tournaments search for court in all linked tournaments
+    // if there are linked tournaments search for the court in all linked tournaments. A QUERY: it used to add the
+    // linked venue to tournamentRecord (the linked record's own object, so both records shared it); the one caller
+    // that needs the venue on this record, assignMatchUpCourt, gets an owned copy through assignMatchUpVenue
     for (const tournamentId of relevantIds) {
       const record = tournamentRecords[tournamentId];
       const result = findCourt({ tournamentRecord: record, courtId });
-      // if court is found in linked tournamentRecords, add venue to original tournamentRecord
-      if (result.success) {
-        result.venue && addVenue({ tournamentRecord, venue: result.venue });
-        return { ...SUCCESS, court: result.court, venue: result.venue };
-      }
+      if (result.success) return { ...SUCCESS, court: result.court, venue: result.venue };
     }
   }
 

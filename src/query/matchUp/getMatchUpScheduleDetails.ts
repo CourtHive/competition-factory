@@ -1,12 +1,12 @@
 import { addMinutesToTimeString, extractDate, extractTime, getIsoDateString } from '@Tools/dateTime';
 import { matchUpFormatTimes } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
+import { getCachedVenueData, HydrationCache } from '@Query/matchUps/hydrationCache';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
 import { matchUpDuration } from '@Query/matchUp/matchUpDuration';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { matchUpStartTime } from '@Query/matchUp/startTime';
-import { getVenueData } from '@Query/venues/getVenueData';
 import { attributeFilter } from '@Tools/attributeFilter';
 import { matchUpEndTime } from '@Query/matchUp/endTime';
 import { findEvent } from '@Acquire/findEvent';
@@ -39,6 +39,7 @@ type GetMatchUpScheduleDetailsArgs = {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   matchUpType?: EventTypeUnion;
+  hydrationCache?: HydrationCache;
   afterRecoveryTimes?: boolean;
   usePublishState?: boolean;
   matchUp: HydratedMatchUp;
@@ -79,6 +80,7 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
     afterRecoveryTimes,
     tournamentRecord,
     usePublishState,
+    hydrationCache,
     scheduleTiming,
     matchUpFormat,
     publishStatus,
@@ -128,6 +130,7 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
   let schedule = isVisible
     ? buildFullSchedule({
         tournamentRecord,
+        hydrationCache,
         scheduleTiming,
         afterRecoveryTimes,
         matchUpFormat,
@@ -184,6 +187,7 @@ export function getMatchUpScheduleDetails(params: GetMatchUpScheduleDetailsArgs)
 
 function buildFullSchedule({
   tournamentRecord,
+  hydrationCache,
   scheduleTiming,
   afterRecoveryTimes,
   matchUpFormat,
@@ -251,6 +255,7 @@ function buildFullSchedule({
 
   const { venueName, venueAbbreviation, courtName, hydratedAllocatedCourts } = resolveVenueAndCourt({
     tournamentRecord,
+    hydrationCache,
     allocatedCourts,
     venueId,
     courtId,
@@ -330,9 +335,10 @@ function computeRecoveryTimes({
 
 type AllocatedCourt = { venueId?: string; courtId?: string; [key: string]: unknown };
 
-function resolveVenueAndCourt({ tournamentRecord, allocatedCourts, venueId, courtId }) {
+function resolveVenueAndCourt({ tournamentRecord, hydrationCache, allocatedCourts, venueId, courtId }) {
   const venueDataMap = {};
-  const venueData = (tournamentRecord && venueId && getVenueData({ tournamentRecord, venueId }))?.venueData ?? {};
+  const venueData =
+    (tournamentRecord && venueId && getCachedVenueData({ hydrationCache, tournamentRecord, venueId })) ?? {};
 
   if (venueId) venueDataMap[venueId] = venueData;
   const { venueName, venueAbbreviation, courtsInfo } = venueData;
@@ -344,10 +350,11 @@ function resolveVenueAndCourt({ tournamentRecord, allocatedCourts, venueId, cour
   const hydratedAllocatedCourts = allocatedCourts?.map((allocatedCourt: AllocatedCourt) => {
     if (!tournamentRecord) return { ...allocatedCourt };
     if (allocatedCourt.venueId && !venueDataMap[allocatedCourt.venueId]) {
-      venueDataMap[allocatedCourt.venueId] = getVenueData({
+      venueDataMap[allocatedCourt.venueId] = getCachedVenueData({
         venueId: allocatedCourt.venueId,
         tournamentRecord,
-      })?.venueData;
+        hydrationCache,
+      });
     }
     const vData = allocatedCourt.venueId ? venueDataMap[allocatedCourt.venueId] : undefined;
     const cInfo = vData?.courtsInfo?.find((ci) => ci.courtId === allocatedCourt.courtId);

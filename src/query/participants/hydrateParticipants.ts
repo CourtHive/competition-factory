@@ -8,7 +8,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 // types
 import { ContextProfile, ParticipantMap, ParticipantsProfile, PolicyDefinitions } from '@Types/factoryTypes';
 import { HydratedParticipant } from '@Types/hydrated';
-import { Tournament } from '@Types/tournamentTypes';
+import { Participant, Tournament } from '@Types/tournamentTypes';
 
 /**
  * ⚠️ `policyDefinitions` is accepted for signature parity with the query surfaces that call this, and
@@ -27,6 +27,8 @@ type HydrateParticipantsArgs = {
   contextProfile?: ContextProfile;
   tournamentRecord: Tournament;
   useParticipantMap?: boolean;
+  // the subset to hydrate, in place of every tournament participant (not applied with useParticipantMap)
+  participants?: Participant[];
   inContext?: boolean;
 };
 export function hydrateParticipants({
@@ -35,6 +37,7 @@ export function hydrateParticipants({
   policyDefinitions,
   tournamentRecord,
   contextProfile,
+  participants: subset,
   inContext,
 }: HydrateParticipantsArgs): {
   participants?: HydratedParticipant[];
@@ -58,7 +61,7 @@ export function hydrateParticipants({
     };
   }
 
-  let participants: HydratedParticipant[] = makeDeepCopy(tournamentRecord.participants, false, true) ?? [];
+  let participants: HydratedParticipant[] = makeDeepCopy(subset ?? tournamentRecord.participants, false, true) ?? [];
 
   if (participantsProfile?.withIOC || participantsProfile?.withISO2)
     participants.forEach((participant) => addNationalityCode({ participant, ...participantsProfile }));

@@ -12,7 +12,6 @@ it('can return event matchUps with context and upcoming matchUps', () => {
     },
   ];
   const { drawIds, tournamentRecord } = generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -56,7 +55,6 @@ it('can return event matchUps with context and upcoming matchUps for FEED_IN_CHA
   ];
   const { drawIds, tournamentRecord } = generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   const drawId = drawIds[0];
@@ -103,7 +101,6 @@ it('can return enerate upcoming matchUps for FEED_IN_CHAMPIONSHIP with BYEs in C
     tournamentRecord,
   } = generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

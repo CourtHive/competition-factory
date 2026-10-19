@@ -1,5 +1,6 @@
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { writeNativeEnabled } from '@Global/state/globalState';
@@ -220,6 +221,9 @@ export function buildCarriedExitProvenance({
  * sides. A carried exit describes one side at a time and can reach a matchUp whose OTHER side was
  * stamped by an earlier propagation — `progressExitStatus` RULE 4, where two carried exits meet and
  * become a DOUBLE_WALKOVER. Replacing there would discard a still-true entry.
+ *
+ * Returns whether it wrote, so a caller that writes outside a notice-emitting path can announce the
+ * matchUp it changed and only that one.
  */
 export function mergeSideExitProvenance({
   provenance,
@@ -227,11 +231,12 @@ export function mergeSideExitProvenance({
 }: {
   provenance?: SideExitProvenance;
   matchUp?: MatchUp;
-}): void {
-  if (!matchUp || !writeNativeEnabled()) return;
+}): boolean {
+  if (!matchUp || !writeNativeEnabled()) return false;
   const admitted = admissibleOn(matchUp, provenance);
-  if (!admitted || !Object.keys(admitted).length) return;
+  if (!admitted || !Object.keys(admitted).length) return false;
   matchUp.sideExitProvenance = { ...matchUp.sideExitProvenance, ...admitted };
+  return true;
 }
 
 /**
@@ -277,6 +282,29 @@ export function arrivedByResult(entry?: SideExitProvenanceEntry): boolean {
   return !isAnyExit(entry.matchUpStatus) && entry.matchUpStatus !== BYE;
 }
 
+/**
+ * Take back the arrival record a feeder left on a matchUp, when the position it delivered leaves.
+ *
+ * An arrival (`arrivedByResult`) records that a side's occupant won their way here from `sourceMatchUpId`; it is a
+ * fact about that position being here, so it goes when the position is released, whichever side the record is keyed
+ * to by then. So does a BYE origin (`{ BYE, BYE }`) naming the same feeder: it records that the position came here
+ * through that BYE, and once the position is gone it names a feeder that sent nobody, or one that is no longer a BYE
+ * (census A1 int2 `aReleasedPositionTakesItsByeOriginWithIt`). A BYE claim on the same side stays: it is the ledger, not
+ * the arrival (`withdrawArrivalsByResult`). Not gated on the write mode: the write mode decides whether a record is written, never whether a stale one goes.
+ */
+export function withdrawArrivalFrom({ sourceMatchUpId, matchUp }: { sourceMatchUpId?: string; matchUp: MatchUp }) {
+  const provenance = matchUp.sideExitProvenance;
+  if (!sourceMatchUpId || !provenance) return;
+  for (const sideNumber of [1, 2] as const) {
+    const entry = provenance[sideNumber];
+    const originOfPosition = arrivedByResult(entry) || entry?.matchUpStatus === BYE;
+    if (entry?.sourceMatchUpId !== sourceMatchUpId || !originOfPosition) continue;
+    if (entry.byeClaims?.length) provenance[sideNumber] = { byeClaims: [...entry.byeClaims] };
+    else delete provenance[sideNumber];
+  }
+  if (!Object.keys(provenance).length) delete matchUp.sideExitProvenance;
+}
+
 /** Write provenance onto a matchUp, honouring the schema write mode. */
 export function setSideExitProvenance({
   provenance,
@@ -311,17 +339,22 @@ export function refreshArrivalsFrom({
   matchUpStatus?: MatchUpStatusUnion;
   matchUps?: MatchUp[];
   matchUpId?: string;
-}): void {
-  if (!matchUpId || !matchUpStatus || !writeNativeEnabled()) return;
+}): MatchUp[] {
+  const refreshed: MatchUp[] = [];
+  if (!matchUpId || !matchUpStatus || !writeNativeEnabled()) return refreshed;
   for (const matchUp of matchUps ?? []) {
     const provenance = matchUp.sideExitProvenance;
     if (!provenance) continue;
     for (const sideNumber of [1, 2] as const) {
       const entry = provenance[sideNumber];
       if (entry?.sourceMatchUpId !== matchUpId || carriedExitStatus(entry) || !entry.previousMatchUpStatus) continue;
+      if (entry.previousMatchUpStatus === matchUpStatus) continue;
       entry.previousMatchUpStatus = matchUpStatus;
+      if (!refreshed.includes(matchUp)) refreshed.push(matchUp);
     }
   }
+  // written in place, so no write announces them: the caller does
+  return refreshed;
 }
 
 /**
@@ -562,17 +595,34 @@ export function withdrawByeClaimsFrom({
 }: {
   claimantMatchUpId?: string;
   matchUps?: MatchUp[];
-}): void {
-  if (!claimantMatchUpId) return;
+}): MatchUp[] {
+  const withdrawn: MatchUp[] = [];
+  if (!claimantMatchUpId) return withdrawn;
   for (const matchUp of matchUps ?? []) {
     const provenance = matchUp?.sideExitProvenance;
     if (!provenance) continue;
     for (const sideNumber of [1, 2]) {
       if (provenance[sideNumber]?.byeClaims?.includes(claimantMatchUpId)) {
         withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
+        if (!withdrawn.includes(matchUp)) withdrawn.push(matchUp);
       }
     }
   }
+  // the matchUps it wrote to, for the caller to announce
+  return withdrawn;
+}
+
+/**
+ * What a matchUp's side record holds: its exit provenance and the status codes projected from it. Compared before and
+ * after a write that no state write announces, so the caller announces the matchUp only when the write changed it.
+ */
+export function sideRecordOf(matchUp?: MatchUp): string {
+  return JSON.stringify([
+    matchUp?.sideExitProvenance,
+    matchUp?.matchUpStatusCodes,
+    matchUp?.sideStatusCodes,
+    matchUp?.matchUpStatusCode,
+  ]);
 }
 
 /**
@@ -1142,6 +1192,38 @@ export type WithdrawnExit = {
   matchUpId: string;
 };
 
+/** The single exit a re-derivation leaves was PRODUCED by a double exit, and the seat it would award holds nobody. */
+function awardsEmptySeat({
+  drawDefinition,
+  exitsRetained,
+  structureId,
+  derived,
+  matchUp,
+}: {
+  derived: { winningSide?: number };
+  exitsRetained: SideExitProvenance;
+  drawDefinition?: DrawDefinition;
+  structureId: string;
+  matchUp: MatchUp;
+}): boolean {
+  const winningSide = derived.winningSide as 1 | 2;
+  const exitEntry = exitsRetained[(3 - winningSide) as 1 | 2];
+  if (!isDoubleExit(exitEntry?.previousMatchUpStatus)) return false;
+  // ...but one that came straight down its source's LOSER link keeps its award to the seat that will receive the next
+  // arrival, as direct entry writes it and as `positionClear`'s `awardStands` keeps it ("A convergence a correction
+  // dissolves settles as the kept exit alone would leave it", exit-propagation.md). Taken back here, a dissolved
+  // convergence left that exit pending and its reservation unmade, where entering the same results once each, in any
+  // order, awards it (census A1 R9, COMPASS 32/31 policy-off 20551581: `South|1|3`, and `South|2|2`'s dp 6)
+  if (
+    drawDefinition &&
+    cameDownLoserLink({ drawDefinition, targetMatchUp: matchUp, sourceMatchUpId: exitEntry?.sourceMatchUpId })
+  )
+    return false;
+  const structure = drawDefinition?.structures?.find((candidate) => candidate.structureId === structureId);
+  const seat = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber: winningSide });
+  return !positionAssignmentsOf(structure)?.find((assignment) => assignment.drawPosition === seat)?.participantId;
+}
+
 /** Does a BYE hold one of this matchUp's drawPositions? Read from the structure's assignments. */
 function holdsBye({
   drawDefinition,
@@ -1218,6 +1300,22 @@ export function withdrawRelayedExit({
   return record ? [record] : [];
 }
 
+/** Split a matchUp's provenance into the entries a withdrawal keeps and whether it removed any, or any exit. */
+function splitWithdrawnEntries(provenance: SideExitProvenance, sources: Set<string>) {
+  const retained: SideExitProvenance = {};
+  let removedAny = false;
+  let removedAnExit = false;
+  for (const sideNumber of [1, 2] as const) {
+    const entry = provenance[sideNumber];
+    if (!entry) continue;
+    if (entry.sourceMatchUpId && sources.has(entry.sourceMatchUpId)) {
+      removedAny = true;
+      if (isAnyExit(entry.matchUpStatus)) removedAnExit = true;
+    } else retained[sideNumber] = entry;
+  }
+  return { retained, removedAny, removedAnExit };
+}
+
 /**
  * Withdraw one matchUp's entries, if any of them name a source in `sources`.
  *
@@ -1234,14 +1332,7 @@ function withdrawFromMatchUp(
   const provenance = getSideExitProvenance({ matchUp });
   if (!provenance) return undefined;
 
-  const retained: SideExitProvenance = {};
-  let removedAny = false;
-  for (const sideNumber of [1, 2] as const) {
-    const entry = provenance[sideNumber];
-    if (!entry) continue;
-    if (entry.sourceMatchUpId && sources.has(entry.sourceMatchUpId)) removedAny = true;
-    else retained[sideNumber] = entry;
-  }
+  const { retained, removedAny, removedAnExit } = splitWithdrawnEntries(provenance, sources);
   if (!removedAny) return undefined;
 
   /**
@@ -1306,12 +1397,23 @@ function withdrawFromMatchUp(
     const derived = deriveExitStateFromProvenance(exitsRetained);
     // Only an award that STOOD is re-read: a pending exit (no winningSide) is left pending, as forward play leaves it;
     // whether one waiting exit should have two representations is not this function's to settle (S4, CA 2026-10-12).
-    const winnerChanged = !!derived && !!matchUp.winningSide && derived.winningSide !== matchUp.winningSide;
+    //
+    // ...and only when an EXIT was withdrawn. Withdrawing an arrival record (the side a result now being taken back sent
+    // somebody to) changes no exit here: that result's own withdrawal releases the position it sent. Re-read anyway, the
+    // award moved onto a position that had arrived through the stale result and kept it as the winner (census S8
+    // policy-off, CURTIS_CONSOLATION 16/13, 20669990: `Consolation 1|4|1` kept the loser `Main|1|2`'s correction sent
+    // through `Consolation 1|3|1`, and the next result there was refused ERR_EXISTING_POSITION_ASSIGNMENT after a write).
+    const winnerChanged =
+      removedAnExit && !!derived && !!matchUp.winningSide && derived.winningSide !== matchUp.winningSide;
     if (derived && (derived.matchUpStatus !== matchUp.matchUpStatus || winnerChanged)) {
       // read structurally, as the undecided branch below does: a lone position sits at index 0 whatever its side
       const previousWinnerDrawPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
       matchUp.matchUpStatus = derived.matchUpStatus as any;
-      if (derived.winningSide) matchUp.winningSide = derived.winningSide;
+      // ...and a PRODUCED exit left alone awards no empty seat: it stands pending, as forward play lands it (census S8
+      // policy-off, FEED_IN_CHAMPIONSHIP 16/11 21123326: `Consolation|5|1`, a double walkover dissolved to the walkover
+      // `Consolation|3|1` produced, was awarded to the side nobody had reached)
+      if (derived.winningSide && !awardsEmptySeat({ derived, exitsRetained, drawDefinition, structureId, matchUp }))
+        matchUp.winningSide = derived.winningSide;
       else delete matchUp.winningSide;
       return {
         winnerDrawPosition: previousWinnerDrawPosition,

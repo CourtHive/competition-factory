@@ -22,7 +22,6 @@ it('can recognize valid SWAP positions', () => {
     },
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -106,7 +105,6 @@ it('can SWAP assignment.bye with assignment.participantId with 32 drawSize', () 
     },
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -183,7 +181,6 @@ it('can SWAP assignment.bye with assignment.participantId', () => {
     },
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -261,7 +258,6 @@ it('can SWAP assigned participantIds', () => {
     },
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -344,7 +340,6 @@ it('can SWAP assigned participantIds in a ROUND_ROBIN', () => {
     },
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 

@@ -1,10 +1,23 @@
 import { addMatchUpTimeItem, resetMatchUpTimeItems } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { addTimeItem, resetTimeItems, addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
-import { INVALID_ATTESTATION_SUBJECT } from '@Constants/errorConditionConstants';
 import { getTimeItemValues } from '@Mutate/timeItems/getTimeItemValues';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
+import {
+  INVALID_ATTESTATION_SUBJECT,
+  EVENT_NOT_FOUND,
+  INVALID_ACTION,
+  INVALID_EMBARGO,
+  INVALID_PARTICIPANT_ID,
+  INVALID_TIME_ITEM,
+  INVALID_VALUES,
+  MATCHUP_NOT_FOUND,
+  MISSING_PARTICIPANT_ID,
+  MISSING_TIME_ITEM,
+  MISSING_VALUE,
+  PARTICIPANT_NOT_CHECKED_IN,
+} from '@Constants/errorConditionConstants';
 
 // constants
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
@@ -15,7 +28,7 @@ describe('addTimeItem edge cases', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const result = tournamentEngine.addTournamentTimeItem({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TIME_ITEM);
   });
 
   it('returns error for invalid timeItem structure', () => {
@@ -26,13 +39,13 @@ describe('addTimeItem edge cases', () => {
     let result = tournamentEngine.addTournamentTimeItem({
       timeItem: { itemType: 'test' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIME_ITEM);
 
     // itemType not a string
     result = tournamentEngine.addTournamentTimeItem({
       timeItem: { itemType: 123, itemValue: 'test' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_TIME_ITEM);
   });
 
   it('handles duplicate value prevention', () => {
@@ -98,7 +111,7 @@ describe('addTimeItem edge cases', () => {
     const result = tournamentEngine.addEventTimeItem({
       timeItem: { itemType: 'test', itemValue: 'x' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(EVENT_NOT_FOUND);
   });
 
   it('addParticipantTimeItem returns errors for missing params', () => {
@@ -111,7 +124,7 @@ describe('addTimeItem edge cases', () => {
     let result = tournamentEngine.addParticipantTimeItem({
       timeItem: { itemType: 'test', itemValue: 'x' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
 
     // valid participantId
     const { participantId } = tournamentRecord.participants[0];
@@ -144,7 +157,7 @@ describe('publishOrderOfPlay edge cases', () => {
 
     // invalid embargo
     result = tournamentEngine.publishOrderOfPlay({ embargo: 'not-a-date' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_EMBARGO);
   });
 
   it('publishOrderOfPlay with language', () => {
@@ -198,7 +211,7 @@ describe('publishParticipants edge cases', () => {
 
     // invalid embargo
     result = tournamentEngine.publishParticipants({ embargo: 'invalid' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_EMBARGO);
   });
 
   it('publishParticipants with columns config', () => {
@@ -269,7 +282,7 @@ describe('matchUp timeItems: checkIn/checkOut', () => {
       drawId,
       participantId: 'invalid-id',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_PARTICIPANT_ID);
   });
 
   it('checkOut returns error when matchUp is active/completed', () => {
@@ -307,7 +320,7 @@ describe('matchUp timeItems: checkIn/checkOut', () => {
 
     // checkOut should fail — matchUp is completed
     const result = tournamentEngine.checkOutParticipant({ matchUpId, drawId, participantId });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_ACTION);
   });
 
   it('checkOut returns error for participant not checked in', () => {
@@ -327,7 +340,7 @@ describe('matchUp timeItems: checkIn/checkOut', () => {
 
     // checkOut without checkIn
     const result = tournamentEngine.checkOutParticipant({ matchUpId, drawId, participantId });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PARTICIPANT_NOT_CHECKED_IN);
   });
 
   it('toggleParticipantCheckInState toggles correctly', () => {
@@ -402,7 +415,7 @@ describe('matchUp timeItems: checkIn/checkOut', () => {
       drawId,
       participantId: 'invalid-id',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_PARTICIPANT_ID);
   });
 });
 
@@ -412,7 +425,7 @@ describe('addTimeItem and getTimeItemValues direct calls', () => {
       timeItem: { itemType: 'test', itemValue: 'x' },
       element: undefined,
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
   });
 
   it('addTimeItem with creationTime false does not set createdAt', () => {
@@ -442,7 +455,7 @@ describe('addTimeItem and getTimeItemValues direct calls', () => {
 
   it('resetTimeItems returns error for missing element', () => {
     const result = resetTimeItems({ element: undefined });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_VALUE);
   });
 
   it('resetTimeItems clears timeItems array', () => {
@@ -455,7 +468,7 @@ describe('addTimeItem and getTimeItemValues direct calls', () => {
   it('getTimeItemValues handles edge cases', () => {
     // missing element
     let result = getTimeItemValues({ element: undefined });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
 
     // no timeItems
     result = getTimeItemValues({ element: {} });
@@ -463,7 +476,7 @@ describe('addTimeItem and getTimeItemValues direct calls', () => {
 
     // non-array timeItems
     result = getTimeItemValues({ element: { timeItems: 'invalid' } });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
 
     // valid timeItems
     result = getTimeItemValues({
@@ -540,7 +553,7 @@ describe('matchUpTimeItems direct calls', () => {
       matchUpId: 'nonexistent',
       timeItem: { itemType: 'test', itemValue: 'x' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 
   it('addMatchUpTimeItem with disableNotice', () => {
@@ -598,13 +611,13 @@ describe('matchUpTimeItems direct calls', () => {
       drawDefinition,
       matchUpId: 'nonexistent',
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MATCHUP_NOT_FOUND);
   });
 
   it('addEventTimeItem directly with missing event', () => {
     const result = addEventTimeItem({
       timeItem: { itemType: 'test', itemValue: 'x' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(EVENT_NOT_FOUND);
   });
 });

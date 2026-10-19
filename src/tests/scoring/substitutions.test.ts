@@ -119,11 +119,8 @@ describe('Substitutions', () => {
         isDoubles: true,
       });
 
-      engine.setLineUp(1, [
-        { participantId: 'A1' },
-        { participantId: 'A2' },
-        { participantId: 'A3' }, // Reserve
-      ]);
+      // the lineUp is the players on court; A3, the reserve, comes on from the bench
+      engine.setLineUp(1, [{ participantId: 'A1' }, { participantId: 'A2' }]);
       engine.setLineUp(2, [{ participantId: 'B1' }, { participantId: 'B2' }]);
 
       engine.addPoint({ winner: 0 });
@@ -139,7 +136,7 @@ describe('Substitutions', () => {
       const points = engine.getState().history!.points;
       // After sub: A1, A3 (A2 replaced by A3)
       expect(points[1].activePlayers).toEqual([
-        ['A1', 'A3', 'A3'],
+        ['A1', 'A3'],
         ['B1', 'B2'],
       ]);
     });

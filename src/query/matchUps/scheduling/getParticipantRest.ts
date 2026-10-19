@@ -170,7 +170,7 @@ export type RestDailyLimits = { SINGLES?: number; DOUBLES?: number; total?: numb
 type Frame = { utcOffsetMinutes: number; timeZone?: string };
 
 /** Every time on a matchUp, as UTC milliseconds. */
-type NormalizedTimes = {
+export type NormalizedTimes = {
   endMs: number | null;
   scoredMs: number | null;
   /** Venue calendar date of `scoredTime` — what dates a matchUp carrying no `scheduledDate`. */
@@ -304,7 +304,7 @@ function isUnderWay(matchUp: HydratedMatchUp, times: NormalizedTimes, asOfMs: nu
   const evidence = times.startMs ?? times.calledMs;
   if (evidence !== null) return evidence <= asOfMs;
   // Placed by its scheduled time alone, a matchUp can be on court only if it holds a court: one that is on no
-  // grid cell is not being played (CA, 2026-10-11, BOBOCA: two unplaced R16s read as "on court now").
+  // grid cell is not being played (CA, 2026-10-11, from a production report: two unplaced R16s read as "on court now").
   if (!matchUp.schedule?.courtId) return false;
   return times.scheduledMs !== null && times.scheduledMs <= asOfMs;
 }
@@ -315,7 +315,7 @@ function isUnderWay(matchUp: HydratedMatchUp, times: NormalizedTimes, asOfMs: nu
  * `isUnderWay` reads a matchUp nobody has called or started as under way from its scheduled time, so rest errs
  * toward "on court" for a venue that does not call matches (the August choice, kept). But the schedule is then
  * the only evidence of order, and it says this matchUp comes after the one being inspected, so it is not load
- * already spent before it. BOBOCA, 2026-10-11: two R16s scheduled 15:30, never called, read as "on court now —
+ * already spent before it. A production report, 2026-10-11: two R16s scheduled 15:30, never called, read as "on court now —
  * ready 18:00" against the 14:30 doubles quarterfinal the same players were waiting for (CA chose this rule).
  * A call or a start is evidence the matchUp is really under way, and keeps it whatever its scheduled time.
  */
@@ -326,7 +326,7 @@ function placedOnlyAfter(matchUp: HydratedMatchUp, times: NormalizedTimes, targe
 }
 
 /** Recovery owed after `prior`, accounting for a singles ↔ doubles change into `target`. */
-function requirementFor(
+export function requirementFor(
   prior: HydratedMatchUp,
   target: HydratedMatchUp,
   timing: SchedulingTiming,

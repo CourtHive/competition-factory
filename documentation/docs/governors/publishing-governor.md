@@ -2,6 +2,12 @@
 title: Publishing Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`isVisiblyPublished`](/docs/implementation/records/isVisiblyPublished). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 The **Publishing Governor** provides methods for controlling the public visibility of tournament information through publish state management. These methods work in conjunction with [Time Items](../concepts/timeItems.md) to track what's published and when.
 
 ```js
@@ -32,6 +38,15 @@ const {
   publishedDrawIds, // array of published draw IDs
   drawDetails, // granular stage/structure details
 } = eventState;
+```
+
+### Query Another Status Key
+
+Every read is taken from one publish status key, `PUBLIC` unless `status` names another. See
+[Status Keys](../concepts/publishing/publishing-status-keys.md).
+
+```js
+const { publishState } = engine.getPublishState({ status: 'INTERNAL' });
 ```
 
 ### Query Specific Event
@@ -197,6 +212,8 @@ console.log(courtInfo.dateAvailability);
 ## getDrawData
 
 Returns comprehensive draw data including structures, matchUps, and participant assignments, formatted for display.
+
+Every `matchUp` carries its progression links (`winnerMatchUpId`, and `loserMatchUpId` where a loser link leaves its structure), including in a draw that does not store them: they are derived onto a copy of the draw, and the record is not changed.
 
 ```js
 const { drawInfo, structures } = engine.getDrawData({
@@ -484,29 +501,7 @@ Returns `false` for `undefined`, missing `embargo` field, or expired/invalid emb
 
 ## isVisiblyPublished
 
-Returns `true` if a publishing detail is both published **and** not currently embargoed. Combines the `published` flag check with the embargo expiry check.
-
-```js
-import { publishingGovernor } from 'tods-competition-factory';
-
-const drawDetail = publishState?.status?.drawDetails?.[drawId]?.publishingDetail;
-
-if (publishingGovernor.isVisiblyPublished(drawDetail)) {
-  // Draw is published and any embargo has expired — show to public
-}
-```
-
-**Parameters:**
-
-| Parameter | Type                            | Description                                                                  |
-| --------- | ------------------------------- | ---------------------------------------------------------------------------- |
-| `detail`  | `PublishingDetail \| undefined` | Any publishing detail object with `published` and optional `embargo` fields. |
-
-**Returns:** `boolean` — `true` when `detail.published === true` and `isEmbargoed(detail)` is `false`.
-
-**Purpose:** Determine if content should be visible to end users, respecting both the publish flag and any active embargo.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`isVisiblyPublished`](/docs/implementation/records/isVisiblyPublished). Package-export status is a separate decision.
 
 ## getVenueData
 

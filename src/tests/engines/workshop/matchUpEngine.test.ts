@@ -212,7 +212,7 @@ describe('matchUpEngine', () => {
       setupMatchUp();
       // Trigger a state where engine.error is set
       matchUpEngineSync.setState();
-      expect(matchUpEngineSync.error).toBeDefined();
+      expect(matchUpEngineSync.error).toEqual(MISSING_VALUE);
 
       // Call a governor method - invoke should reset error/success
       matchUpEngineSync.setState(setupMatchUp());
@@ -227,14 +227,14 @@ describe('matchUpEngine', () => {
       setupMatchUp();
       // generateScoreString without sets returns { error: MISSING_VALUE }
       const result = matchUpEngineSync.generateScoreString({});
-      expect(result?.error).toBeDefined();
+      expect(result?.error).toEqual(MISSING_VALUE);
       expect(result?.rolledBack).toBe(false);
     });
 
     it('rolls back state and returns rolledBack: true with rollbackOnError', () => {
       setupMatchUp();
       const result = matchUpEngineSync.generateScoreString({ rollbackOnError: true });
-      expect(result?.error).toBeDefined();
+      expect(result?.error).toEqual(MISSING_VALUE);
       expect(result?.rolledBack).toBe(true);
       // State should be preserved (rolled back)
       const state = matchUpEngineSync.getState();

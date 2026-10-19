@@ -7,6 +7,7 @@ import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
 import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { tieFormatTelemetry } from '@Mutate/tieFormat/tieFormatTelemetry';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
@@ -74,7 +75,13 @@ type AddCollectionDefinitionArgs = {
   event?: Event;
 };
 
-export function addCollectionDefinition({
+// A tieFormat written to the event, or to event.tieFormats (where a draw's, structure's or matchUp's
+// shared tieFormat lives), modifies the event: announced with MODIFY_EVENT when it changed.
+export function addCollectionDefinition(params: AddCollectionDefinitionArgs) {
+  return withEventChangeNotice(params, () => addDefinition(params));
+}
+
+function addDefinition({
   updateInProgressMatchUps = true,
   collectionDefinition,
   referenceCategory,
@@ -121,6 +128,7 @@ export function addCollectionDefinition({
     referenceGender,
     checkCategory,
     checkGender,
+    newUse: true,
     event,
   });
   if (validationResult.error) {

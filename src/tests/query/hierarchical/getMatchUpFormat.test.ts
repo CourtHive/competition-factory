@@ -1,8 +1,13 @@
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
-import { MISSING_DRAW_ID } from '@Constants/errorConditionConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
+import {
+  MISSING_DRAW_ID,
+  INVALID_VALUES,
+  MISSING_TOURNAMENT_RECORD,
+  STRUCTURE_NOT_FOUND,
+} from '@Constants/errorConditionConstants';
 
 // constants
 import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
@@ -147,7 +152,7 @@ describe('getMatchUpFormat', () => {
       tournamentRecord: null as any,
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('returns error when no identifying parameters provided', () => {
@@ -157,7 +162,7 @@ describe('getMatchUpFormat', () => {
       tournamentRecord,
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('handles invalid matchUpId gracefully', () => {
@@ -202,7 +207,7 @@ describe('getMatchUpFormat', () => {
       drawDefinition,
     });
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
   });
 
   it('handles undefined matchUpFormat in all contexts', () => {

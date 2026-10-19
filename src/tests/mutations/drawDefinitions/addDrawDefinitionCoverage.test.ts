@@ -210,7 +210,7 @@ describe('addDrawDefinition coverage', () => {
       eventId: event.eventId,
       existingDrawCount: 999, // doesn't match
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('can add a new draw definition with modifyEventEntries', () => {

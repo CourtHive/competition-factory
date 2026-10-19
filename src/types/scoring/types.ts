@@ -109,6 +109,8 @@ export interface SubstitutionEvent {
   outParticipantId: string;
   inParticipantId: string;
   beforePointIndex: number;
+  /** The set in play when it was recorded (1-based); absent on events recorded before 2026-10-17 */
+  setNumber?: number;
   timestamp?: string;
 }
 
@@ -134,7 +136,11 @@ export interface SetScore {
   side2GameScores?: number[];
   winningSide?: number;
   setFormat?: string;
-  /** Game indices that are hard boundaries (not recalculated past) */
+  /**
+   * Game indices recorded by markHardBoundary.
+   * @deprecated An annotation only, removed in the next major: recalculation does not respect it and a
+   * rebuild discards it.
+   */
   hardBoundaries?: number[];
   /** Current consecutive point streak for TYPTI format */
   currentStreak?: { side: 0 | 1; count: number };
@@ -169,11 +175,39 @@ export interface MatchUpHistory {
  * alongside point-level entries in history
  */
 export interface ScoreEntry {
-  type: 'point' | 'game' | 'set' | 'endSegment' | 'setInitialScore' | 'substitution' | 'setServer';
+  type:
+    | 'point'
+    | 'game'
+    | 'set'
+    | 'endSegment'
+    | 'setInitialScore'
+    | 'substitution'
+    | 'setServer'
+    | 'challenge'
+    | 'annotation';
   data: any;
   timestamp: string;
   pointIndex?: number;
+  /**
+   * A server correction attached to this entry (scoring-engine spec § 2.6, § 10.6): the side due to serve
+   * the next point, replayed after the entry and undone with it. Written by `setServer(side, { recordEntry:
+   * false })` and by a baseline's `server`.
+   */
+  serverCorrection?: 0 | 1;
 }
+
+/**
+ * Why a scoring input was ignored: accepted, and nothing recorded (scoring-engine spec § 2.1, § 9.6).
+ *
+ * - `NO_WINNER`: a point that names no winner;
+ * - `MATCH_COMPLETED`: input after the match is `COMPLETED`;
+ * - `NO_SET_BEYOND_N`: input past the N sets of an exactly format;
+ * - `TIEBREAK_IN_PLAY`: a segment end during the tiebreak a level timed segment plays at time.
+ */
+export type IgnoredInput = 'NO_WINNER' | 'MATCH_COMPLETED' | 'NO_SET_BEYOND_N' | 'TIEBREAK_IN_PLAY';
+
+/** What a scoring action did: recorded on the timeline, or ignored with the reason. A refusal throws. */
+export type ScoringActionResult = { recorded: true } | { recorded: false; ignored: IgnoredInput };
 
 /**
  * Point record stored in match history
@@ -257,8 +291,11 @@ export interface Point {
   /** Games each side needs to win current set: [side1, side2] */
   gamesToSet?: [number, number];
 
-  /** Which court side the serve is from */
+  /** Which court side the serve is expected from, inferred from the score */
   serveSide?: 'deuce' | 'ad';
+
+  /** The court half recorded as observed by the caller, when it supplied one */
+  observedServeSide?: 'deuce' | 'ad';
 
   /** Whether the receiver is one point from winning the game */
   isBreakpoint?: boolean;
@@ -283,7 +320,7 @@ export interface Point {
   /** Specific penalty type from competition format profile */
   penaltyType?: string;
 
-  /** Game boundary after this point should not be recalculated past */
+  /** @deprecated Never written or read by the engine; removed in the next major. */
   hardBoundary?: boolean;
 }
 
@@ -439,7 +476,7 @@ export interface AddPointOptions {
   /** Specific participant serving (for doubles rotation tracking) */
   serverParticipantId?: string;
 
-  /** Override score increment for this point (default 1, used by timed/IONSport formats) */
+  /** Override score increment for this point (default 1, used by timed formats) */
   scoreValue?: number;
 
   /** ISO 8601 timestamp when point was played */
@@ -463,6 +500,9 @@ export interface AddPointOptions {
 
   /** Point was awarded as a penalty */
   penaltyPoint?: boolean;
+
+  /** The court half the server was observed serving from; `serveSide` stays the expected half */
+  observedServeSide?: 'deuce' | 'ad';
 }
 
 /**
@@ -582,8 +622,8 @@ export interface EndSegmentOptions {
   setNumber?: number;
   /** When the segment ended */
   timestamp?: string;
-  /** Reason for ending */
-  reason?: 'time' | 'mercy' | 'manual';
+  /** Why the segment ended: a free host string (epixodic sends 'bolt_expired'), recorded and never interpreted */
+  reason?: string;
 }
 
 /**
@@ -608,8 +648,12 @@ export interface InitialScoreOptions {
     side1Points: number;
     side2Points: number;
   };
-  /** Who is currently serving */
+  /** Who is due to serve the next point: recorded as a server correction at the baseline (§ 2.5) */
   server?: 0 | 1;
+  /** A status beside the sets: checked for consistency with them, refused only when they disagree */
+  matchUpStatus?: MatchUpStatus;
+  /** A winner beside the sets: checked for consistency with them, refused only when they disagree */
+  winningSide?: number;
 }
 
 /**
@@ -662,8 +706,20 @@ export interface PointSituation {
   isGoldenPoint: boolean;
   /** Currently in a tiebreak game */
   isTiebreak: boolean;
-  /** Who serves next: 0 = side 1, 1 = side 2 */
+  /** Who serves next: 0 = side 1, 1 = side 2 (a placeholder when `serverDerived` is false) */
   server?: 0 | 1;
+  /**
+   * Whether `server` is the engine's derivation (spec § 10.4, § 11.2; CA 2026-10-18). False where no
+   * server is derived (a combined total `P{n}`, a tiebreak-only format): `server` is then only a
+   * placeholder, and no game point or break point is reported.
+   */
+  serverDerived?: boolean;
+  /**
+   * The match is COMPLETED without a winner (a level close with no declared decider, or a combined
+   * total's tie), so a host running an elimination draw must decide it (spec § 9.7, § 11.2). Present,
+   * and true, only then.
+   */
+  decisionRequired?: boolean;
 }
 
 /**
@@ -678,6 +734,8 @@ export interface ScoreResult {
   pointDisplay?: [string, string];
   /** Situation booleans for the next point to be played */
   situation?: PointSituation;
+  /** The match is COMPLETED without a winner and a host must decide it (spec § 9.7, § 11.2) */
+  decisionRequired?: boolean;
 }
 
 /**

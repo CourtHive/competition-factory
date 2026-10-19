@@ -27,7 +27,6 @@ it('correctly identifies active drawPositions', () => {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);
@@ -80,7 +79,6 @@ it('correctly identifies active BYE drawPositions', () => {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

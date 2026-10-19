@@ -21,12 +21,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { WTN } from '@Constants/ratingConstants';
 
 test('missing drawProfile returns a checkRequiredParameters error (line 775)', () => {
   let result: any = generateEventWithDraw({});
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
 });
 
 test('TEAM event with teamGenders override exceeding defaults and teamSize (106, 111, 112, 243-245)', () => {

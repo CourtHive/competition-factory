@@ -43,6 +43,7 @@ export function addConflictDeclaration({
   error?: any;
   context?: { message: string };
   declaration?: OfficialConflictDeclaration;
+  declarationId?: string;
   success?: boolean;
 } {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
@@ -70,5 +71,5 @@ export function addConflictDeclaration({
   officialRecord.conflictDeclarations = [...(officialRecord.conflictDeclarations ?? []), declaration];
   officialRecord.updatedAt = now;
 
-  return { ...SUCCESS, declaration };
+  return { ...SUCCESS, declaration, declarationId: declaration.declarationId };
 }

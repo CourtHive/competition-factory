@@ -1,4 +1,5 @@
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { ReportAvailability } from '@Types/reportTypes';
 import { Tournament } from '@Types/tournamentTypes';
@@ -140,7 +141,9 @@ export function getAvailableReports({
   const hasEvents = (tournamentRecord.events?.length ?? 0) > 0;
   const hasVenues = (tournamentRecord.venues?.length ?? 0) > 0;
   const hasCompletedDraws = (tournamentRecord.events ?? []).some((e) =>
-    (e.drawDefinitions ?? []).some((d) => (d.structures ?? []).some((s) => (s.positionAssignments ?? []).length > 0)),
+    (e.drawDefinitions ?? []).some((d) =>
+      (d.structures ?? []).some((s) => (positionAssignmentsOf(s) ?? []).length > 0),
+    ),
   );
   const hasSeededParticipants = (tournamentRecord.events ?? []).some((e) =>
     (e.drawDefinitions ?? []).some((d) => (d.structures ?? []).some((s) => (s.seedAssignments ?? []).length > 0)),
@@ -152,7 +155,7 @@ export function getAvailableReports({
   const hasScheduledMatchUps = (tournamentRecord.events ?? []).some((e) =>
     (e.drawDefinitions ?? []).some((d) =>
       (d.structures ?? []).some((s) =>
-        (s.matchUps ?? []).some((m) => m.schedule?.scheduledTime || m.schedule?.startTime || m.schedule?.calledAt),
+        (matchUpsOf(s) ?? []).some((m) => m.schedule?.scheduledTime || m.schedule?.startTime || m.schedule?.calledAt),
       ),
     ),
   );

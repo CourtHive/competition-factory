@@ -10,7 +10,7 @@ The ScoringEngine supports **two indexing conventions** for `addPoint()`:
 - **0-based** (original): `winner: 0 | 1`, `server: 0 | 1` — where `0` = side 1, `1` = side 2
 - **1-based** ([CODES](/docs/data-standards#codes)-aligned): `winningSide: 1 | 2`, `serverSideNumber: 1 | 2`
 
-You can use either convention. Provide `winner` **or** `winningSide` (not both). Both values are always stored on the resulting `Point` record. Return values like `getWinner()` use CODES convention (1 or 2).
+You can use either convention, or both when they name the same side (two spellings that disagree are refused). Both values are always stored on the resulting `Point` record. Return values like `getWinner()` use CODES convention (1 or 2).
 :::
 
 ## Scoring Methods
@@ -18,7 +18,7 @@ You can use either convention. Provide `winner` **or** `winningSide` (not both).
 ### addPoint
 
 ```ts
-addPoint(options: AddPointOptions): void
+addPoint(options: AddPointOptions): ScoringActionResult
 ```
 
 Add a point to the match. This is the primary input method for point-by-point scoring.
@@ -28,6 +28,39 @@ A point added after the match is `COMPLETED` is not refused, and it does not cha
 `onPoint` event, and its `penaltyType` is not stamped on the last point played. The same holds for a
 point that names no winner. To add a penalty or a note to a point already played, use
 [decoratePoint](#decoratepoint) or [editPoint](#editpoint).
+
+The timeline records every input the call supplied, including fields beyond `AddPointOptions` that a
+host passes as decorations, so a rebuild (`undo`, `redo`, `editPoint`, `removePoint`) replays the
+point exactly as recorded: its `scoreValue`, its `wrongSide`/`wrongServer`/`penaltyPoint` flags and
+its decorations survive. A server the engine calculated is not an input and is not recorded; a
+rebuild derives it again. Nor is any other field the scorer calculates (`serveSide`, `score`,
+`pointNumber`, the points-to fields): passed in, it is overwritten on the point and left out of the
+timeline.
+
+An input the scorer cannot take is refused with an error before anything is written (no point, no
+timeline entry, no event): a `winner` other than 0 or 1, a `winningSide` other than 1 or 2, the two
+spellings of a side naming different sides (likewise `server`/`serverSideNumber`), or a `scoreValue`
+that is negative or not finite. A zero `scoreValue` is allowed. A point that names no winner is
+ignored, as before. A `scoreValue` other than 1 is refused where a point is not a unit of the score:
+in a set whose points build games (a standard set, a tennis-family timed set, the tiebreak a level
+timed set plays at time) and in a combined total. A configured point multiplier is not consulted
+there either.
+
+**The result.** `addPoint`, `addGame`, `addSet` and `endSegment` return `{ recorded: true }`, or
+`{ recorded: false, ignored }` for an input the engine accepted and recorded nothing for: `NO_WINNER`
+(a point naming no winner), `MATCH_COMPLETED` (any input after the match is `COMPLETED`),
+`NO_SET_BEYOND_N` (input past the N sets of an exactly format) and `TIEBREAK_IN_PLAY` (a segment end
+during the tiebreak at time). A refusal throws and also writes nothing. Ignored input keeps the redo
+stack; every recorded action clears it.
+
+**What the engine records about service.** The server is side-level. `serverParticipantId` is host
+metadata, recorded as given and never validated or derived. `serveSide` is the _expected_ court half,
+inferred from the score (a No-Ad deciding point, where the receiver chooses, is still reported as
+`deuce`). A caller that saw the court half supplies it as `observedServeSide` (`'deuce'` or `'ad'`),
+recorded beside the expected `serveSide`. `wrongSide` and `wrongServer` are host decorations that do
+not affect scoring. A server
+correction (`setServer`) flips the side due to serve from that point on. An individual doubles
+rotation, receiver identity and rule-based corrections (ITF Rule 27) are not modelled.
 
 ```js
 // 0-based convention
@@ -62,8 +95,9 @@ interface AddPointOptions {
   winningSide?: 1 | 2; // Which side won (1 = side 1, 2 = side 2)
   serverSideNumber?: 1 | 2; // Which side served
 
-  // Doubles rotation
-  serverParticipantId?: string; // Specific participant serving
+  // Host-owned service metadata
+  serverParticipantId?: string; // Recorded without identity/rotation validation
+  observedServeSide?: 'deuce' | 'ad'; // Observed half, beside derived serveSide
 
   // Score override
   scoreValue?: number; // Override score increment (default: 1)
@@ -80,7 +114,7 @@ interface AddPointOptions {
 ```
 
 :::tip
-Provide `winner` **or** `winningSide`, not both. The engine normalizes internally — the resulting `Point` record always contains both `winner` and `winningSide`. The same applies to `server` / `serverSideNumber`.
+Provide `winner` or `winningSide`, or both when they name the same side; spellings that disagree are refused. The engine normalizes internally — the resulting `Point` record always contains both `winner` and `winningSide`. The same applies to `server` / `serverSideNumber`.
 :::
 
 #### Stored Point Record
@@ -107,10 +141,14 @@ interface Point {
 ### addGame
 
 ```ts
-addGame(options: AddGameOptions): void
+addGame(options: AddGameOptions): ScoringActionResult
 ```
 
-Add a complete game result. Used for game-by-game tracking without point detail.
+Add a complete game result. Used for game-by-game tracking without point detail. `winner` must be 0
+or 1 and a `tiebreakScore` two non-negative integers. A game after a closed set (won, or a timed
+segment ended level) opens the next set, as a point does. In a tiebreak-only set (`SET3-S:TB11`, or
+a match tiebreak in lieu of the final set) a game is the set won 1-0, its `tiebreakScore` the points,
+which must win the race to the set's target for `winner` (11-9 in `SET3-S:TB11`; 11-10 is refused).
 
 ```js
 engine.addGame({ winner: 0 }); // Side 1 wins a game
@@ -122,15 +160,28 @@ engine.addGame({ winner: 1, tiebreakScore: [7, 5] }); // Side 2 wins tiebreak 7-
 ### addSet
 
 ```ts
-addSet(options: AddSetOptions): void
+addSet(options: AddSetOptions): ScoringActionResult
 ```
 
-Add a complete set score. Used by scoring modals where users enter finished set scores directly.
+Add a set total. Used by scoring modals where users enter set scores directly. The total is judged by
+the rule of the set it is entered for:
+
+- a total the rule calls finished is recorded with the rule's winner (6-4, 7-6, 7-5; a tiebreak-only
+  set read from its points; a timed total is a finished segment, the side with more winning it);
+- an explicit `winningSide` naming the loser of a finished total, or a side that is not ahead, is
+  refused;
+- an explicit `winningSide` for the side ahead on an unfinished total is accepted: a set-level mercy
+  or manual end;
+- an unfinished total with no winner (3-1, 6-5 in a set to six) is recorded as the set in play.
+
+A total entered while a set is in play (points or games already recorded in it) closes that set with
+the declared total; its points stay on the history and scoring continues in the next set.
 
 ```js
 engine.addSet({ side1Score: 6, side2Score: 4 }); // 6-4
 engine.addSet({ side1Score: 7, side2Score: 6, side1TiebreakScore: 7, side2TiebreakScore: 3 }); // 7-6(3)
-engine.addSet({ side1Score: 3, side2Score: 6, winningSide: 2 }); // Explicit winner
+engine.addSet({ side1Score: 3, side2Score: 6 }); // 3-6, won by side 2
+engine.addSet({ side1Score: 4, side2Score: 1, winningSide: 1 }); // a manual end at 4-1
 ```
 
 ---
@@ -138,14 +189,20 @@ engine.addSet({ side1Score: 3, side2Score: 6, winningSide: 2 }); // Explicit win
 ### endSegment
 
 ```ts
-endSegment(options?: EndSegmentOptions): void
+endSegment(options?: EndSegmentOptions): ScoringActionResult
 ```
 
-End a timed segment/period. For timed formats (`S:T10P`, etc.), this finalizes the current set's score and checks match completion.
+End a timed segment. For timed formats (`S:T10P`, etc.), this finalizes the segment's score and checks
+match completion. It ends timed segments only: it is refused on any other kind of set, on a segment
+already closed, and when there is no timed segment to end. A set-level mercy or manual end is `addSet`
+with an explicit `winningSide`; a match-level stop is a `matchUpStatus` set outside scoring. During
+the tiebreak a level segment plays at time it is ignored. `reason` is a free host string, recorded and
+never interpreted.
 
 ```js
 engine.endSegment(); // End current segment
 engine.endSegment({ setNumber: 2 }); // End specific segment
+engine.endSegment({ reason: 'bolt_expired' });
 ```
 
 ---
@@ -164,10 +221,21 @@ engine.setInitialScore({
     { side1Score: 6, side2Score: 3 },
     { side1Score: 4, side2Score: 6 },
   ],
-  currentSet: { side1Score: 2, side2Score: 1 },
-  currentGame: { side1Score: 30, side2Score: 15 },
+  currentSetScore: { side1Score: 2, side2Score: 1 },
+  currentGameScore: { side1Points: 2, side2Points: 1 }, // 30-15
 });
 ```
+
+The initial score is an action on the timeline. A rebuild replays it where it was set, so it
+survives `setState` without a `loadSupplementaryState`, and `undo` removes it like any other action.
+
+Its sets are judged by their set's rule, as `addSet` judges a total: 6-5 is not won, the deciding set
+is judged by the final-set format, and a tiebreak-only set is read from its points. A baseline that
+decides the match completes it. An unfinished last set is the set in play. A supplied `server` is
+recorded as a server correction at the baseline, so it survives undo and rebuild. A second baseline
+is refused once the timeline holds scoring; a correction uses `editPoint`, `removePoint` or `undo`.
+A `matchUpStatus` or `winningSide` passed beside the sets is checked against them and refused only
+when they disagree; a status set outside scoring (`RETIRED`, `DEFAULTED`) is not checked.
 
 ---
 
@@ -180,6 +248,9 @@ setState(matchUp: MatchUp): void
 ```
 
 Load matchUp state from a CODES MatchUp JSON object. Replaces all internal state, clears redo stack.
+The engine keeps a copy, so changing the object afterwards does not change the engine; `setLineUp`
+and `setPointMultipliers` copy their arguments the same way, and `getPointMultipliers` and
+`getSupplementaryState` return copies.
 The initial lineups a rebuild starts from are the matchUp's lineups with its substitutions undone
 (since 7.7.0); `loadSupplementaryState` replaces them with the saved snapshot.
 
@@ -196,7 +267,8 @@ engine.setState(savedMatchUp);
 getState(): MatchUp
 ```
 
-Get current matchUp state as a CODES MatchUp object. Returns a direct reference (not a copy).
+Get current matchUp state as a CODES MatchUp object. Returns a deep copy: changing it does not change
+the engine.
 
 ```js
 const matchUp = engine.getState();
@@ -301,12 +373,18 @@ Get the number of actions that can be redone.
 getScore(): ScoreResult
 ```
 
-Get the current score as a structured object with sets, current game score, and set scores.
+Get the current score as a structured object with sets, current game score, and set scores. Returns a
+copy: changing it does not change the engine.
 
 ```js
 const score = engine.getScore();
 // { sets: [{ side1Score: 6, side2Score: 4, winningSide: 1 }, ...], ... }
 ```
+
+`decisionRequired` is `true` when the match is `COMPLETED` without a winner: a timed, aggregate or
+exactly-N match that ended level with no declared decider, or a combined-total tie. The `situation`
+of such a match has every flag false and `decisionRequired: true`; a host running an elimination draw
+decides the match outside scoring.
 
 ---
 
@@ -316,10 +394,14 @@ const score = engine.getScore();
 getScoreboard(options?: GetScoreboardOptions): string
 ```
 
-Get the score as a display string.
+Get the score as a display string. The game in play is read by the format governing the set in play:
+tennis points in a game, numeric points in a tiebreak-only set, a match tiebreak, a set tiebreak, the
+tiebreak a level timed segment plays at time, and a consecutive-points game.
 
 ```js
-engine.getScoreboard(); // '6-4 3-6 2-1 30-15'
+engine.getScoreboard(); // '6-4, 3-6, 2-1 (30-15)'
+// SET3-S:TB11 at 5-3 in the first game
+engine.getScoreboard(); // '0-0 (5-3)'
 ```
 
 ---
@@ -340,7 +422,8 @@ Get the match winner. Returns `1` (side 1) or `2` (side 2), or `undefined` if no
 isComplete(): boolean
 ```
 
-Check if the match is complete.
+Check if the match is complete. A match that ended level with no declared decider is complete with no
+winner (`getWinner()` is `undefined`), and takes no further segment.
 
 ---
 
@@ -425,15 +508,38 @@ Get the parsed format structure for advanced consumers. Returns `undefined` if t
 
 ---
 
+### getInputLevels
+
+```ts
+getInputLevels(): { point: boolean; game: boolean; set: boolean }
+```
+
+The inputs the set in play can be scored with: points, games, or set totals (`addSet`). `addPoint` and
+`addGame` refuse an input this reports as unavailable, and throw before recording anything. A segment
+of outs takes set totals only (see [Input Levels](./format-support#input-levels)).
+
+```js
+const engine = new ScoringEngine({ matchUpFormat: 'INN4XA-S:O3' });
+engine.getInputLevels(); // { point: false, game: false, set: true }
+engine.addSet({ side1Score: 2, side2Score: 1 }); // an inning's runs
+```
+
+---
+
 ### getInputMode
 
 ```ts
 getInputMode(): 'points' | 'games' | 'sets' | 'mixed' | 'none'
 ```
 
-Get the input mode based on what types of entries have been recorded.
+Get the input mode based on what types of scoring inputs have been recorded: points, games and set
+totals. Baselines, segment ends, server corrections, substitutions, challenges and annotations are not
+inputs.
 
 ```js
+engine.setServer(1);
+engine.getInputMode(); // 'none'
+
 engine.addPoint({ winner: 0 });
 engine.getInputMode(); // 'points'
 
@@ -455,7 +561,7 @@ Get match statistics calculated from point history. Returns counters, calculated
 
 ```js
 const stats = engine.getStatistics();
-const set1Stats = engine.getStatistics({ setFilter: 1 });
+const set1Stats = engine.getStatistics({ setFilter: 0 });
 ```
 
 ---
@@ -470,7 +576,9 @@ Get the point history enriched with game/set/match context. Each episode contain
 
 ```js
 const episodes = engine.getEpisodes();
-// [{ point, gameScore, setScore, matchScore, gameNumber, setNumber, ... }, ...]
+// [{ action, point, game, set, needed, nextService, result, complete }, ...]
+// point: { index, number, winner, server, score, result }
+// game: { index, isTiebreak, complete, winner }; set: { index, complete, winner }
 ```
 
 ---
@@ -482,6 +590,35 @@ getNextServer(): 0 | 1
 ```
 
 Get who serves the next point. Uses format-driven server alternation by default, or `WINNER_SERVES` if set in the competition format.
+
+A point added without a server is recorded with the server this method returns, so the displayed,
+recorded and replayed servers agree under either rule. A server the caller supplies is recorded as
+played, and the rule resumes after it.
+
+The format's rule: game by game in standard sets, with Rule 5(b) in a tiebreak (a tennis match
+tiebreak included); unit by unit in timed segments, continuously across segments, with Rule 5(b) in a
+tiebreak at time; and under `@RALLY` the winner of the point before. A combined total (`P{n}`) and a
+tiebreak-only format (`S:TB{n}`) derive no server: this method still returns 0 or 1 there, a
+placeholder (the side the last `setServer` named, or side 1), and points record a server only when
+the caller supplies one. `isServerDerived()` says which it is.
+
+---
+
+### isServerDerived
+
+```ts
+isServerDerived(): boolean
+```
+
+Whether `getNextServer()` is the engine's derivation (`true`) or only a placeholder (`false`: a
+combined total, or a tiebreak-only format until each sport's own service rule is added). The score
+situation carries the same answer as `serverDerived`; where it is `false`, no game point or break
+point is reported and no server-based statistic is produced.
+
+```js
+const engine = new ScoringEngine({ matchUpFormat: 'SET5-S:TB11' });
+engine.isServerDerived(); // false
+```
 
 ---
 
@@ -541,7 +678,9 @@ engine.editPoint(5, { result: 'Ace' }, { recalculate: false });
 markHardBoundary(options: { setIndex: number; gameIndex: number }): void
 ```
 
-Mark a game boundary as "hard". Edits before this boundary won't cascade past it during recalculation.
+**Deprecated, removed in the next major.** Records the game index on its set's `hardBoundaries` as an
+annotation only. Recalculation does not respect it: an edit before it still changes what follows, and a
+rebuild (`undo`, `redo`, `editPoint`, `removePoint`) discards it.
 
 ```js
 engine.markHardBoundary({ setIndex: 0, gameIndex: 4 });
@@ -579,7 +718,10 @@ Use `removePoint` when the user intends to delete a specific historical point (e
 getSupplementaryState(): ScoringEngineSupplementaryState
 ```
 
-Get engine-private state for persistence. Returns the redo stack and initial lineup snapshots — data that isn't part of `getState()` but is needed to fully restore the engine.
+Get engine-private state for persistence: data that isn't part of `getState()` but is needed to fully
+restore the engine. The envelope carries a `version` (1), the redo stack, the initial lineup
+snapshots, and the scoring configuration the history was scored under: the `competitionFormat` and
+the `pointMultipliers`.
 
 ```js
 const matchUp = engine.getState();
@@ -592,6 +734,21 @@ localStorage.setItem('supplementary', JSON.stringify(supplementary));
 
 ---
 
+### getLegacyShapes
+
+```ts
+getLegacyShapes(): string[]
+```
+
+The legacy shapes the last rebuild met. A stored timeline that scored past a level close, as earlier
+versions did, replays as it was scored and reports `scoringPastLevelClose`; the
+rule applies to new input only. Likewise a stored entry the engine now refuses (invalid facts, a
+segment end on a set that is not timed or is closed, a `scoreValue` where a point is not a unit, a
+second baseline) reports `refusedInput`, and one it now ignores (input after `COMPLETED` or past N)
+reports `ignoredInput`; each replays as it was recorded.
+
+---
+
 ### loadSupplementaryState
 
 ```ts
@@ -600,6 +757,10 @@ loadSupplementaryState(state: ScoringEngineSupplementaryState): void
 
 Restore engine-private state from persistence. Call after `setState()` to fully restore engine state.
 
+A saved `competitionFormat` and `pointMultipliers` replace the ones the engine was constructed
+with: they are what the history was scored under, so a rebuild scores it the same way. An envelope
+saved before the version field carries neither, and the engine keeps its own.
+
 ```js
 const matchUp = JSON.parse(localStorage.getItem('matchUp'));
 const supplementary = JSON.parse(localStorage.getItem('supplementary'));
@@ -607,11 +768,202 @@ const supplementary = JSON.parse(localStorage.getItem('supplementary'));
 engine.setState(matchUp);
 engine.loadSupplementaryState(supplementary);
 
-// Redo stack and lineups are now restored
+// Redo stack, lineups and scoring configuration are now restored
 engine.canRedo(); // true (if there were undone actions)
 ```
 
 ---
+
+## Service correction
+
+### setServer
+
+```ts
+setServer(side: 0 | 1, options?: { recordEntry?: boolean }): void
+```
+
+Correct the side serving the next point (zero-based). Earlier recorded servers stay unchanged. By
+default this records a timeline action, clears redo and survives rebuilding/undo/redo. Internal
+rule-driven corrections can use `recordEntry: false`: the correction is then attached to the entry
+before it (the point just played), replayed with it and undone with it, so `undo` takes back the
+point and its correction together and a rebuild keeps the server. With nothing on the timeline before
+it, it orients the next point only. A correction that changes nothing records nothing. A side other
+than 0 or 1 is refused, and so is any call on a format that does not parse. It corrects sides, not
+individual doubles rotation.
+
+Tennis tiebreak derivation uses one point for the first server, then alternating two-point turns.
+The applicable final-set format is resolved independently; do not apply the opening-set service
+pattern to a different final-set tiebreak. `setServer(1)` means side 2 should serve next.
+
+## Challenges and annotations
+
+### addChallenge
+
+```ts
+addChallenge(options: { sideNumber: 1 | 2; timestamp?: string; [key: string]: any }): void
+```
+
+Record a challenge: the side that challenged and any host fields, as a timeline entry
+`{ type: 'challenge', data: { sideNumber, ... } }`. It changes no score, is kept through every rebuild,
+clears redo, and `undo` takes it back when it was recorded last. A challenge entry a host wrote onto the
+timeline itself in that shape is read the same way. A `sideNumber` other than 1 or 2 is refused.
+
+### addAnnotation
+
+```ts
+addAnnotation(data: Record<string, any>, options?: { timestamp?: string }): void
+```
+
+Record host data on the timeline (`{ type: 'annotation', data }`). It changes no score and is kept and
+undone like a challenge.
+
+---
+
+## Additional statistics
+
+### getStatObjects
+
+```ts
+getStatObjects(options?: StatisticsOptions): StatObject[]
+```
+
+Returns display-ready objects converted from `getStatistics(options)`, with the same zero-based
+`setFilter`. It calculates a result without adding an undo action. Import the published `StatObject`
+type rather than a local display shape.
+
+## Lineups and substitution
+
+### setLineUp
+
+```ts
+setLineUp(sideNumber: 1 | 2, lineUp: TeamCompetitor[]): void
+```
+
+Sets a side's starting lineup and its rebuild snapshot. The side number is one-based. This is setup,
+not a timeline action; establish it before recording substitutions/points. Unknown sides do not gain
+an on-court lineup. The input's competitor objects are shallow-copied.
+
+### substitute
+
+```ts
+substitute(options: {
+  sideNumber: 1 | 2; outParticipantId: string; inParticipantId: string; timestamp?: string;
+}): SubstitutionResult
+```
+
+Returns `{ success: true }` after replacing an on-court participant and recording a pre-point timeline
+action, or `{ success: false, error }` with `SAME_PARTICIPANT`, `NO_LINEUP`, `OUT_NOT_ON_SIDE` or
+`IN_ALREADY_ON_COURT`. Refusal does not record an action or clear redo. Accepted substitutions clear
+redo and are restored by timeline replay. See [substitution integration](./event-handlers.md#making-substitutions).
+
+### evaluateSubstitution
+
+```ts
+evaluateSubstitution(): { violations: SubstitutionViolation[] }
+```
+
+Advisory evaluation of configured permission, match/segment limits, between-game timing and matchUp
+type. Possible values are `NOT_ALLOWED`, `MAX_PER_MATCHUP`, `MAX_PER_SEGMENT`, `TIMING`, `MATCHUP_TYPE`.
+It neither writes history nor vetoes `substitute`; hosts enforce roster/time rules the scorer cannot
+observe. No configured rules yields an empty list.
+
+### getActivePlayers
+
+```ts
+getActivePlayers(): { side1: string[]; side2: string[] }
+```
+
+Returns current lineup participant IDs (empty arrays without lineups). No history action. See
+[event handlers and integration](./event-handlers.md) for tracking active players on points.
+
+## Multipliers and profiles
+
+### setPointMultipliers
+
+```ts
+setPointMultipliers(multipliers: PointMultiplier[]): void
+```
+
+Replaces scoring configuration with a deep copy. No timeline action and no immediate rescore. Persist
+configuration with supplementary state; keep the configuration consistent when replaying history.
+
+### getPointMultipliers
+
+```ts
+getPointMultipliers(): PointMultiplier[]
+```
+
+Returns a deep copy; editing it does not configure the scorer. Neither getter nor setter is an undo step.
+
+### getPenaltyProfile
+
+```ts
+getPenaltyProfile(): PenaltyProfile | undefined
+```
+
+### getPointProfile
+
+```ts
+getPointProfile(): PointProfile | undefined
+```
+
+### getTimerProfile
+
+```ts
+getTimerProfile(): TimerProfile | undefined
+```
+
+### getTimeoutRules
+
+```ts
+getTimeoutRules(): TimeoutRules | undefined
+```
+
+### getPenaltyBoxProfile
+
+```ts
+getPenaltyBoxProfile(): PenaltyBoxProfile | undefined
+```
+
+### getSubstitutionRules
+
+```ts
+getSubstitutionRules(): SubstitutionRules | undefined
+```
+
+### getPlayerRules
+
+```ts
+getPlayerRules(): PlayerRules | undefined
+```
+
+These seven accessors return the corresponding configured competition-format object, or `undefined`
+if absent. They do not validate or execute its rules, throw on absence, or create undo actions. They
+currently expose those configuration references: treat them as read-only. Host clocks, timeouts,
+penalty-box timing and roster enforcement remain host responsibilities. See
+[format support](./format-support.md) and [event integration](./event-handlers.md).
+
+## Runtime handlers
+
+### setEventHandlers
+
+```ts
+setEventHandlers(handlers: ScoringEventHandlers | undefined): void
+```
+
+Replaces all handlers; pass `undefined` to clear them. Callback registration is not part of undo/redo
+or serializable scoring state.
+
+### getEventHandlers
+
+```ts
+getEventHandlers(): ScoringEventHandlers | undefined
+```
+
+Returns the currently installed handler object (a reference). Neither method emits a scoring event.
+See the [dispatch matrix](./event-handlers.md#handler-descriptions) for when callbacks run.
+
+`StatisticsOptions.setFilter`, episode point/game/set indices and stored point indices are zero-based. The first set is `setFilter: 0`; CODES `winningSide` remains one-based.
 
 ## Related Documentation
 

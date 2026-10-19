@@ -1,3 +1,4 @@
+import { checkProfileKeys, ENGINE_SUPPLIED_KEYS, MODIFY_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
 import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -10,6 +11,7 @@ import { generateEventWithFlights } from './generateEventWithFlights';
 import { generateEventWithDraw } from './generateEventWithDraw';
 import { publishEvent } from '@Mutate/publishing/publishEvent';
 import { generateVenues } from '@Mutate/venues/generateVenues';
+import { cloneState, restoreState } from '@Tools/cloneState';
 import { generateFlights } from './generateFlights';
 import { addEvent } from '@Mutate/events/addEvent';
 
@@ -17,6 +19,7 @@ import { addEvent } from '@Mutate/events/addEvent';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 function processExistingEvent({ event, eventProfile, tournamentRecord, allUniqueParticipantIds, drawIds }) {
@@ -35,7 +38,7 @@ function processExistingEvent({ event, eventProfile, tournamentRecord, allUnique
       gender,
     });
 
-    const { uniqueDrawParticipants = [], uniqueParticipantIds = [] } = uniqueParticipantStages
+    const eventParticipants = uniqueParticipantStages
       ? generateEventParticipants({
           event: { eventType, category, gender },
           uniqueParticipantsCount,
@@ -46,6 +49,8 @@ function processExistingEvent({ event, eventProfile, tournamentRecord, allUnique
           uuids: eventProfile.uuids,
         })
       : {};
+    if (eventParticipants?.error) return eventParticipants;
+    const { uniqueDrawParticipants = [], uniqueParticipantIds = [] } = eventParticipants ?? {};
 
     allUniqueParticipantIds.push(...uniqueParticipantIds);
 
@@ -99,10 +104,32 @@ function findEventByProfile(events, eventProfile) {
   );
 }
 
+/**
+ * The call's options an existing event falls back to when its eventProfile does not set them. The profile's
+ * own setting wins; `{ ...eventProfile, ...params }` let every top-level key replace it, an undefined one
+ * included, and handed the event the call's top-level `drawProfiles` in place of its own.
+ */
+const EVENT_FALLBACK_KEYS = [
+  'autoEntryPositions',
+  'completeAllMatchUps',
+  'isMock',
+  'matchUpStatusProfile',
+  'participantsProfile',
+  'randomWinningSide',
+  'ratingsParameters',
+  'uuids',
+] as const;
+
+function withFallbacks(eventProfile, params) {
+  const resolved = { ...eventProfile };
+  for (const key of EVENT_FALLBACK_KEYS) resolved[key] ??= params[key];
+  return resolved;
+}
+
 function handleExistingEvent({ event, eventProfile, tournamentRecord, allUniqueParticipantIds, drawIds, params }) {
   const result = processExistingEvent({
     event,
-    eventProfile: { ...eventProfile, ...params },
+    eventProfile: withFallbacks(eventProfile, params),
     tournamentRecord,
     allUniqueParticipantIds,
     drawIds,
@@ -246,19 +273,80 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
   return { scheduledRounds, schedulerResult };
 }
 
+/**
+ * All or nothing by default: a refusal (or a throw) leaves the record exactly as it was passed, in the
+ * caller's own objects, and the caller's `uuids` pool is consumed only when the call succeeds.
+ *
+ * Before (assessment M10, 2026-10-17): a valid draw followed by an unrecognized draw type returned
+ * ERR_UNRECOGNIZED_DRAW_TYPE with 4 participants and an event already written, and the error said
+ * nothing about them; a corrected retry then stacked onto the half-built record.
+ *
+ * `keepPartial: true` keeps what was written before the refusal and reports it as `retained` (the ids
+ * the record gained, read from the record itself), for a caller who would rather inspect or keep a
+ * partial build than start again.
+ */
 export function modifyTournamentRecord(params) {
-  const {
-    participantsProfile = {},
-    schedulingProfile,
-    tournamentRecord,
-    autoSchedule,
-    eventProfiles,
-    periodLength,
-    venueProfiles,
-    drawProfiles,
-    uuids,
-  } = params;
-  if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  if (!params?.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
+  // checked before anything is written: an option the generators do not read is refused, not ignored
+  const unknownOption = checkProfileKeys(params, MODIFY_TOURNAMENT_RECORD_KEYS, ENGINE_SUPPLIED_KEYS);
+  if (unknownOption) return unknownOption;
+  const keepPartial = params.keepPartial === true;
+  const before = recordIds(params.tournamentRecord);
+  const snapshot = keepPartial ? undefined : cloneState(params.tournamentRecord);
+  const uuids = !keepPartial && Array.isArray(params.uuids) ? [...params.uuids] : params.uuids;
+
+  let result;
+  try {
+    result = applyModifications({ ...params, uuids });
+  } catch (err) {
+    if (snapshot) restoreState(snapshot);
+    throw err;
+  }
+
+  if (result?.error) {
+    if (snapshot) {
+      restoreState(snapshot);
+      return result;
+    }
+    return { ...result, retained: retainedSince(before, params.tournamentRecord) };
+  }
+
+  // the pool was drawn from a copy: commit what the successful call consumed
+  if (uuids !== params.uuids && Array.isArray(params.uuids)) params.uuids.splice(0, params.uuids.length, ...uuids);
+  return result;
+}
+
+type RecordIds = { participantIds: string[]; eventIds: string[]; drawIds: string[]; venueIds: string[] };
+
+function recordIds(tournamentRecord: Tournament): RecordIds {
+  const events = tournamentRecord.events ?? [];
+  return {
+    participantIds: (tournamentRecord.participants ?? []).map(({ participantId }) => participantId),
+    drawIds: events.flatMap((event) => (event.drawDefinitions ?? []).map(({ drawId }) => drawId)),
+    venueIds: (tournamentRecord.venues ?? []).map(({ venueId }) => venueId),
+    eventIds: events.map(({ eventId }) => eventId),
+  };
+}
+
+function retainedSince(before: RecordIds, tournamentRecord: Tournament): RecordIds {
+  const after = recordIds(tournamentRecord);
+  const added = (key: keyof RecordIds) => after[key].filter((id) => !before[key].includes(id));
+  return {
+    participantIds: added('participantIds'),
+    eventIds: added('eventIds'),
+    drawIds: added('drawIds'),
+    venueIds: added('venueIds'),
+  };
+}
+
+function applyModifications(params) {
+  const { schedulingProfile, tournamentRecord, autoSchedule, periodLength, venueProfiles, drawProfiles, uuids } =
+    params;
+
+  // the caller's profiles are configuration, not scratch space: the gender and idPrefix adjustments
+  // below are made on copies, so passing the same profile twice asks for the same thing twice
+  const participantsProfile = { ...params.participantsProfile };
+  const eventProfiles = params.eventProfiles?.map((eventProfile) => ({ ...eventProfile }));
 
   const allUniqueParticipantIds: string[] = [];
   const eventIds: string[] = [];
@@ -287,6 +375,13 @@ export function modifyTournamentRecord(params) {
   });
   if (!result.success) return result;
 
+  // what the nested generators read as `params`: the adjusted copies, never the caller's objects
+  const generationParams = {
+    ...params,
+    participantsProfile: params.participantsProfile ? participantsProfile : undefined,
+    eventProfiles,
+  };
+
   if (eventProfiles) {
     const eventResult = processEventProfiles({
       eventProfiles,
@@ -294,7 +389,7 @@ export function modifyTournamentRecord(params) {
       allUniqueParticipantIds,
       eventIds,
       drawIds,
-      params,
+      params: generationParams,
     });
     if (eventResult.error) return eventResult;
   }
@@ -306,12 +401,13 @@ export function modifyTournamentRecord(params) {
       allUniqueParticipantIds,
       eventIds,
       drawIds,
-      params,
+      params: generationParams,
     });
     if (drawResult.error) return drawResult;
   }
 
   const venueIds = venueProfiles?.length ? generateVenues({ tournamentRecord, venueProfiles }) : [];
+  if (!Array.isArray(venueIds)) return venueIds;
 
   const schedulingResult = applySchedulingProfile({
     tournamentRecord,

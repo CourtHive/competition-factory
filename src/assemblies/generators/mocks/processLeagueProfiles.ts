@@ -6,6 +6,7 @@ import { generateVenues } from '@Mutate/venues/generateVenues';
 import { generateParticipants } from './generateParticipants';
 import { genParticipantId } from './genParticipantId';
 import { processTieFormat } from './processTieFormat';
+import { isGendered } from '@Validators/isGendered';
 import { generateRange } from '@Tools/arrays';
 import { isObject } from '@Tools/objects';
 import { isNumeric } from '@Tools/math';
@@ -88,7 +89,9 @@ export function processLeagueProfiles(params) {
               consideredDate,
               gendersCount,
               category,
-              gender,
+              // persons have a sex, and only a MALE or FEMALE league names one: `gender` was passed under its
+              // own name, which generateParticipants never reads (M14, 2026-10-17)
+              sex: isGendered(gender) ? gender : undefined,
               random,
               uuids,
             }).participants as Participant[]);
@@ -166,5 +169,6 @@ export function processLeagueProfiles(params) {
 
   // add venues - can get more sophisticated with this and generate number of courts
   const venueProfiles = venueIds.map((venueId) => ({ venueId }));
-  generateVenues({ tournamentRecord, ignoreExistingVenues: true, venueProfiles, uuids });
+  const venuesResult = generateVenues({ tournamentRecord, ignoreExistingVenues: true, venueProfiles, uuids });
+  if (!Array.isArray(venuesResult)) return venuesResult;
 }

@@ -72,7 +72,6 @@ function compassByesTest({ expectations, drawSize, participantsCount, matchUpsCo
   ];
   const result = mocksEngine.generateTournamentRecord({
     completeAllMatchUps: true,
-    inContext: true,
     drawProfiles,
   });
 

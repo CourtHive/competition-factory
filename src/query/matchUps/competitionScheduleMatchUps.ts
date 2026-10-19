@@ -9,11 +9,12 @@ import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { getCompetitionMatchUps } from './getCompetitionMatchUps';
 import { getTournamentId } from '@Global/state/globalState';
+import { withContextExclusion } from './contextExclusion';
 import { isConvertableInteger } from '@Tools/math';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
-import { MatchUpFilters, PolicyDefinitions, TournamentRecords } from '@Types/factoryTypes';
+import { ContextProfile, MatchUpFilters, PolicyDefinitions, TournamentRecords } from '@Types/factoryTypes';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';
@@ -28,6 +29,7 @@ type CompetitionScheduleMatchUpsArgs = {
   alwaysReturnCompleted?: boolean;
   contextFilters?: MatchUpFilters;
   matchUpFilters?: MatchUpFilters;
+  contextProfile?: ContextProfile;
   hydrateParticipants?: boolean;
   withCourtGridRows?: boolean;
   activeTournamentId?: string;
@@ -39,7 +41,7 @@ type CompetitionScheduleMatchUpsArgs = {
   status?: string;
 };
 
-export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsArgs): {
+type CompetitionScheduleMatchUpsResult = {
   mappedParticipants?: { [key: string]: HydratedParticipant };
   completedMatchUps?: HydratedMatchUp[];
   dateMatchUps?: HydratedMatchUp[];
@@ -48,7 +50,18 @@ export function competitionScheduleMatchUps(params: CompetitionScheduleMatchUpsA
   venues?: Venue[];
   courtsData?: any;
   rows?: any[];
-} {
+};
+
+// the schedule is bucketed, filtered and sorted on hydrated matchUps, so `exclude` redacts only what is returned
+export function competitionScheduleMatchUps(
+  params: CompetitionScheduleMatchUpsArgs,
+): CompetitionScheduleMatchUpsResult {
+  return withContextExclusion(params, competitionScheduleMatchUpsUnredacted);
+}
+
+function competitionScheduleMatchUpsUnredacted(
+  params: CompetitionScheduleMatchUpsArgs,
+): CompetitionScheduleMatchUpsResult {
   if (typeof params?.tournamentRecords !== 'object' || !Object.keys(params?.tournamentRecords).length)
     return { error: MISSING_TOURNAMENT_RECORDS };
   const { courts, venues } = getVenuesAndCourts(params);

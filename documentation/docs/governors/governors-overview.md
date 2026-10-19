@@ -2,6 +2,12 @@
 title: Governors Overview
 ---
 
+:::warning 8.0.0 API preparation
+
+Selected methods are candidates for removal from production engine exports at 8.0.0. Their full references now live in [Implementation reference](/docs/implementation/engine-api-transition-8); affected governor pages retain links at their original anchors. Candidate status is not a completed runtime removal or an external-integrator confirmation.
+
+:::
+
 ## What Are Governors?
 
 **Governors** are functional modules that organize the Competition Factory's operations into logical domains of responsibility. Each governor provides a collection of related methods for working with tournament data - from generating draws and scheduling matchUps to querying results and publishing information.

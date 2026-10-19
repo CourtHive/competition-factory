@@ -65,7 +65,6 @@ export function generatePrivacyFixture() {
       category: { categoryName: 'U18' },
       scaledParticipantsCount: 8,
       rankingRange: [1, 20],
-      withScaleValues: true,
     },
     drawProfiles: [
       {

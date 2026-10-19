@@ -35,6 +35,7 @@ import {
   MISSING_DRAW_DEFINITION,
   MISSING_MATCHUPS,
   MISSING_TOURNAMENT_RECORD,
+  INVALID_END_TIME,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -566,7 +567,7 @@ function teamScoreTotals(json) {
 describe('generateStatCrew with TEAM tournament', () => {
   it('returns error without tournamentRecord', () => {
     const result: any = generateStatCrew({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('exercises dual match (single team matchUp) path', () => {
@@ -1006,10 +1007,13 @@ describe('randomUnseededSeparation via avoidance', () => {
         {
           drawSize: 16,
           seedsCount: 4,
-          avoidance: {
-            policyAttributes: [{ key: 'person.nationalityCode' }],
-            roundsToSeparate: 2,
-            candidatesCount: 2,
+          // in policyDefinitions: a drawProfile `avoidance` key was never read, so no avoidance ran
+          policyDefinitions: {
+            avoidance: {
+              policyAttributes: [{ key: 'person.nationalityCode' }],
+              roundsToSeparate: 2,
+              candidatesCount: 2,
+            },
           },
         },
       ],
@@ -1026,9 +1030,11 @@ describe('randomUnseededSeparation via avoidance', () => {
         {
           drawSize: 8,
           drawType: ROUND_ROBIN,
-          avoidance: {
-            policyAttributes: [{ key: 'person.nationalityCode' }],
-            roundsToSeparate: 1,
+          policyDefinitions: {
+            avoidance: {
+              policyAttributes: [{ key: 'person.nationalityCode' }],
+              roundsToSeparate: 1,
+            },
           },
         },
       ],
@@ -1196,7 +1202,7 @@ describe('scheduleItems additional paths', () => {
         endTime: '08:00',
       });
       // Should return an error because endTime is before startTime
-      expect(result.error).toBeDefined();
+      expect(result.error).toEqual(INVALID_END_TIME);
     }
   });
 

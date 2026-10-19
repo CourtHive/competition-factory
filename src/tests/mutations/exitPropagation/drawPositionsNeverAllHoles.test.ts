@@ -124,7 +124,7 @@ const scenarios: Scenario[] = [
     // `positionClear` downstream, so reverting `releaseAdvancedDrawPosition` alone leaves them
     // green — this seed was chosen by re-running the census windows with ONLY that writer reverted
     // (43/34/48/40 seeds offend per arm) and delta-debugging the shortest. Flag-OFF, the
-    // Tournament Desk production case.
+    // external-integrator production case.
     writer: 'releaseAdvancedDrawPosition (isolated)',
     drawType: 'FEED_IN_CHAMPIONSHIP_TO_SF',
     propagateExitStatus: false,
@@ -159,7 +159,7 @@ const scenarios: Scenario[] = [
     ],
   },
   {
-    // positionClear on the propagateExitStatus:false arm — the Tournament Desk production case
+    // positionClear on the propagateExitStatus:false arm — the external-integrator production case
     writer: 'positionClear',
     drawType: 'DOUBLE_ELIMINATION',
     propagateExitStatus: false,

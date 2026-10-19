@@ -1,5 +1,5 @@
 export const FORMAT_STANDARD = 'SET3-S:6/TB7'; // Best of 3 Tiebreak Sets to 6
-export const FORMAT_STANDARD_NOAD = 'SET3-S:6NOAD'; // Best of 3 NOAD Sets to 6 with deciding game at 5-5
+export const FORMAT_STANDARD_NOAD = 'SET3-S:6NOAD'; // Best of 3 advantage sets to 6 (no tiebreak), No-Ad games
 export const FORMAT_ATP_DOUBLES = 'SET3-S:6NOAD/TB7-F:TB10'; // Best of 3 Sets to 6, no Ad, Final Set Tiebreak to 10
 export const FORMAT_SHORT_SETS = 'SET3-S:4/TB7'; // Best of 3 Sets to 4
 export const FORMAT_FAST4 = 'SET3-S:4/TB5@3'; // Best of 3 Sets to 4, Tiebreak at 3
@@ -14,9 +14,12 @@ export const FORMAT_COLLEGE_PRO_SET = 'SET1-S:8/TB7@7'; // One Set to 8 with tie
 // ── Pickleball ───────────────────────────────────────────────────────────────
 // A pickleball game is a TIEBREAK SET: a race to a target, win by 2, with no games beneath it.
 // The `@RALLY` modifier is scoring-significant — every rally scores regardless of who served —
-// so the scoring engine skips server derivation for it. Without the modifier the format is
-// traditional side-out scoring, where only the serving side can score. `NOAD` on a tiebreak set
-// means sudden death at the target (win by 1) rather than win by 2.
+// so the scoring engine skips server derivation for it. Without the modifier the format names
+// traditional side-out scoring, where only the serving side can score, but the code cannot tell it
+// from a squash or badminton game to the same target: the engine scores every point it is given and
+// derives the server as for a tiebreak, with no side-out or second-server state. A host recording
+// side-out play adds only the points the serving side won. `NOAD` on a tiebreak set means sudden
+// death at the target (win by 1) rather than win by 2.
 export const FORMAT_PICKLEBALL = 'SET3-S:TB11'; // Best of 3 games to 11, win by 2, side-out
 export const FORMAT_PICKLEBALL_RALLY = 'SET3-S:TB11@RALLY'; // Best of 3 games to 11, win by 2, rally
 export const FORMAT_PICKLEBALL_15 = 'SET3-S:TB15'; // Best of 3 games to 15, win by 2, side-out

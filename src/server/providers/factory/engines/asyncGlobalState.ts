@@ -116,6 +116,8 @@ export default {
   setCapturedClock,
   getCapturedCompetitionClock,
   setCapturedCompetitionClock,
+  getCallRandomSource,
+  setCallRandomSource,
   deleteNotice,
   deleteNotices,
   disableNotifications,
@@ -131,6 +133,7 @@ export default {
   removeTournamentRecord,
   setMethods,
   setNoticeBuffer,
+  setMutationStatus,
   setSubscriptions,
   setTournamentId,
   setTournamentRecord,
@@ -154,6 +157,15 @@ export function getCapturedCompetitionClock(): number | undefined {
 
 export function setCapturedCompetitionClock(timeStamp?: number) {
   getInstanceState().capturedCompetitionClock = timeStamp;
+}
+
+// Per request, like the captured clock: a seeded call's stream must not reach a request overlapping it.
+export function getCallRandomSource(): (() => number) | undefined {
+  return asyncLocalStorage.getStore()?.callRandomSource;
+}
+
+export function setCallRandomSource(source?: () => number) {
+  getInstanceState().callRandomSource = source;
 }
 
 export function disableNotifications() {
@@ -261,6 +273,11 @@ function cycleMutationStatus() {
   return status;
 }
 
+// optional: sets the flag back to a value `cycleMutationStatus` returned (see globalState.readMutationStatus)
+function setMutationStatus(status: boolean) {
+  getInstanceState().modified = status;
+}
+
 function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?: boolean) {
   if (typeof topic !== 'string' || typeof payload !== 'object') return;
   const instanceState = getInstanceState();
@@ -360,4 +377,7 @@ export function handleCaughtError({ engineName, methodName, params, err }: Handl
     methodName,
     error,
   });
+
+  // the envelope, as the sync provider returns it: a handler that returns nothing turns a throw into `{}`
+  return { error };
 }

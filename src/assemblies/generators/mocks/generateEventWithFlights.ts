@@ -86,7 +86,7 @@ export function generateEventWithFlights(params) {
     (isMatchUpEventType(DOUBLES)(eventType) && PAIR) ||
     eventType;
 
-  const { uniqueDrawParticipants = [], uniqueParticipantIds = [] } = uniqueParticipantStages
+  const eventParticipants = uniqueParticipantStages
     ? generateEventParticipants({
         event: { eventType, category, gender },
         uniqueParticipantsCount,
@@ -98,6 +98,9 @@ export function generateEventWithFlights(params) {
         uuids,
       })
     : {};
+  // a refusal was destructured away here, and the event was generated without its participants
+  if (eventParticipants?.error) return eventParticipants;
+  const { uniqueDrawParticipants = [], uniqueParticipantIds = [] } = eventParticipants ?? {};
 
   const categoryName = category?.categoryName || category?.ageCategoryCode || category?.ratingType;
   eventName = eventName || categoryName || 'Generated Event';
@@ -236,7 +239,7 @@ function buildEventObject({
   };
 
   if (eventExtensions?.length && Array.isArray(eventExtensions)) {
-    const extensions = eventExtensions.filter(isValidExtension);
+    const extensions = eventExtensions.filter((extension) => isValidExtension({ extension }));
     if (extensions?.length) Object.assign(newEvent, { extensions });
   }
 

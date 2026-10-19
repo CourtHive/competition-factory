@@ -1,3 +1,4 @@
+import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { ensureInt } from '@Tools/ensureInt';
@@ -38,6 +39,7 @@ export function promoteAlternates({
   if (paramsCheck.error) return paramsCheck;
   if (!Array.isArray(participantIds)) return { error: INVALID_VALUES, participantIds };
   const stack = 'promoteAlternates';
+  const tournamentId = tournamentRecord.tournamentId;
 
   if (event) {
     const result = promoteWithinElement({
@@ -47,6 +49,8 @@ export function promoteAlternates({
       stage,
     });
     if (result.error) return result;
+    // announced before the draw is tried: a draw that cannot promote still leaves the event promoted
+    modifyEventEntriesNotice({ tournamentId, event });
   }
 
   if (drawDefinition) {
@@ -72,6 +76,7 @@ export function promoteAlternates({
         return result;
       }
     }
+    modifyDrawEntriesNotice({ eventId: event?.eventId, drawDefinition, tournamentId });
   }
 
   return { ...SUCCESS };

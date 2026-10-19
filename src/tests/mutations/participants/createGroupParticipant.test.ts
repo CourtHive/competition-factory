@@ -86,7 +86,7 @@ it('can create group participants', () => {
  * cannot be mistaken for a fix.
  */
 it('fires ADD_PARTICIPANTS exactly ONCE per group created', () => {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({ participantsCount: 4 });
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({ participantsProfile: { participantsCount: 4 } });
   tournamentEngine.setState(tournamentRecord);
 
   let payloadCount = 0;

@@ -9,7 +9,12 @@ import { addDays } from '@Tools/dateTime';
 test('can copy a tournamentRecord', () => {
   const startDate = '2024-05-01';
   const tournamentId = 'tid';
-  mocksEngine.generateTournamentRecord({ startDate, tournamentId, drawProfiles: [{ drawSize: 8 }], setState: true });
+  mocksEngine.generateTournamentRecord({
+    startDate,
+    tournamentAttributes: { tournamentId },
+    drawProfiles: [{ drawSize: 8 }],
+    setState: true,
+  });
   let result = tournamentEngine.copyTournamentRecord();
   expect(result.error).toEqual(INVALID_VALUES);
   result = tournamentEngine.copyTournamentRecord({ startDate: addDays(startDate, 7) });

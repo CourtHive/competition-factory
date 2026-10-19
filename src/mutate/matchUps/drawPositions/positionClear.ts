@@ -4,15 +4,16 @@ import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/d
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
+import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { bringCarryHome, carriedEntryAt } from '@Mutate/matchUps/drawPositions/carryHome';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
@@ -28,7 +29,11 @@ import {
   clearSideExitProvenance,
   withoutWinnersOrigins,
   retainByeClaimsOnly,
+  getSideExitProvenance,
   carriedExitStatus,
+  byeClaimSurvives,
+  recordByeClaim,
+  sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -553,8 +558,23 @@ function removeDrawPosition({
     event,
   });
 
-  if (loserMatchUp && loserMatchUp.structureId !== targetData.matchUp?.structureId && !matchUpContainsBye) {
+  if (
+    loserMatchUp &&
+    loserMatchUp.structureId !== targetData.matchUp?.structureId &&
+    !matchUpContainsBye &&
+    !reDerivedLoserStands({
+      matchUpId: targetMatchUp.matchUpId,
+      structureId: structure.structureId,
+      loserMatchUpDrawPositionIndex,
+      tournamentRecord,
+      drawDefinition,
+      loserMatchUp,
+      matchUpsMap,
+      event,
+    })
+  ) {
     const result = handleLoserMatchUpRemoval({
+      sourceMatchUpId: targetMatchUp.matchUpId,
       loserMatchUpDrawPositionIndex,
       inContextDrawMatchUps,
       tournamentRecord,
@@ -592,6 +612,40 @@ function removeDrawPosition({
 
 const isPosition = (drawPosition: unknown): boolean => typeof drawPosition === 'number' && drawPosition > 0;
 
+/**
+ * A HOLE'S CARRY GOES ON ONLY INTO THE MATCHUP ITS OWN MATCHUP FEEDS.
+ *
+ * A lone position's partner is nobody, but its matchUp can still have sent something on through that hole: a carried
+ * exit that met the position's BYE passed it (RULE 1) into the next round with no drawPosition of its own. Clearing
+ * the BYE takes that carry back ("a carry past a BYE a holder takes back comes back with it"), so the removal walks
+ * on, into the matchUp the lone matchUp feeds and nowhere else. That matchUp is read structurally, the way
+ * `getRoundMatchUps` chunks a round: a round that does not halve (a feed round) is fed one to one, any other by its
+ * chunk. It is walked into only while it holds a hole too, for a seat a carry can stand on; one holding two positions
+ * holds nothing that came through the hole. Census S8 FEED_IN_CHAMPIONSHIP_TO_SF 8/7 20650915 and COMPASS 32/27
+ * 20611808: with no walk at all the carry stayed one round on beside the position that replaced it, the convergence
+ * re-derived from it, and the matchUp's exit code sat on its winner. Asking the next round for ANY pair holding a hole
+ * is what reset an unrelated matchUp (20806518, `aRemovalWalksOnlyThroughARealPartner`).
+ */
+type RoundPairs = { pairedDrawPositions?: (number | undefined)[][]; matchUpsCount?: number };
+function holeCarriedOnto({
+  nextRoundProfile,
+  relevantPair,
+  profile,
+}: {
+  relevantPair?: (number | undefined)[];
+  nextRoundProfile?: RoundPairs;
+  profile?: RoundPairs;
+}): (number | undefined)[] | undefined {
+  const pairs = profile?.pairedDrawPositions;
+  const nextPairs = nextRoundProfile?.pairedDrawPositions;
+  const index = relevantPair ? (pairs?.indexOf(relevantPair) ?? -1) : -1;
+  if (index < 0 || !nextPairs?.length) return undefined;
+  const chunkFactor = (profile?.matchUpsCount ?? 0) / (nextRoundProfile?.matchUpsCount ?? 0);
+  if (!Number.isInteger(chunkFactor) || chunkFactor < 1) return undefined;
+  const fedPair = nextPairs[Math.floor(index / chunkFactor)];
+  return fedPair?.some((drawPosition: unknown) => !isPosition(drawPosition)) ? fedPair : undefined;
+}
+
 function buildPairingDetails({ roundNumbers, roundProfile, positionAssignments, drawPosition }) {
   let targetDrawPosition: any = drawPosition;
   return roundNumbers
@@ -616,12 +670,13 @@ function buildPairingDetails({ roundNumbers, roundProfile, positionAssignments, 
       // (`draw-positions.md` § 5): a lone position's partner is nobody, and `includes(undefined)` matched every
       // next-round pair holding a hole, so the removal walked into a matchUp the position never reached and reset what
       // stood there (census run 19, FIRST_MATCH_LOSER_CONSOLATION 16/15 policy-off 20806518: a withdrawn reservation at
-      // `Consolation` dp 4 reset `Consolation|3|1`'s produced walkover)
-      const pairedDrawPositionInNextRound =
-        isPosition(pairedDrawPosition) &&
-        nextRoundProfile?.pairedDrawPositions?.find((pairedPositions: any) =>
-          pairedPositions.includes(pairedDrawPosition),
-        );
+      // `Consolation` dp 4 reset `Consolation|3|1`'s produced walkover). What a hole carried on is looked for only in the
+      // matchUp the lone matchUp feeds (`holeCarriedOnto`)
+      const pairedDrawPositionInNextRound = isPosition(pairedDrawPosition)
+        ? nextRoundProfile?.pairedDrawPositions?.find((pairedPositions: any) =>
+            pairedPositions.includes(pairedDrawPosition),
+          )
+        : holeCarriedOnto({ profile, nextRoundProfile, relevantPair });
       // pairedDrawPosition is a transitiveBye if it is a BYE and if it is present in next round
       const isTransitiveBye =
         pairedDrawPositionIsBye &&
@@ -734,7 +789,11 @@ function releaseUndecidedAdvancements({
 }) {
   const roundNumber = targetMatchUp.roundNumber;
   if (!roundNumber || targetMatchUp.winningSide || targetMatchUp.matchUpStatus !== TO_BE_PLAYED) return;
-  if (!initialWinningSide && initialMatchUpStatus !== BYE) return;
+  // ...and a PENDING exit's reservation: "a pending exit's reservation goes with it" (exit-propagation.md). Read off the
+  // award alone, a pending exit left undecided here kept the empty seat it had advanced (census A1 group R3: once a
+  // cleared loser seat no longer leaves its award behind, FIRST_MATCH_LOSER_CONSOLATION 16/11 20704784 re-scored
+  // `Main|1|5` and dp 4 stayed in `Consolation|4|1`, `aRemovalClearsItsSideInTheRecordsFrame`).
+  if (!initialWinningSide && initialMatchUpStatus !== BYE && !isAnyExit(initialMatchUpStatus)) return;
   for (const advanced of initialDrawPositions ?? []) {
     if (!advanced || advanced === drawPosition) continue;
     releaseAdvancedDrawPositionAcrossLinks({
@@ -785,6 +844,8 @@ function updateMatchUpStatusAfterRemoval({
     targetMatchUp.drawPositions?.includes(drawPosition),
   );
   const matchUpContainsBye = matchUpAssignments.filter((assignment) => assignment.bye).length;
+  // what the side record held before the removal: a change there is a change to announce, whatever the status does
+  const initialSideRecord = sideRecordOf(targetMatchUp);
 
   // Collapse to BYE (when a BYE remains) or TO_BE_PLAYED. Exit-status REDUCTION on
   // removal (DOUBLE_WALKOVER -> WALKOVER) lives elsewhere — removeDoubleExit and the
@@ -894,7 +955,8 @@ function updateMatchUpStatusAfterRemoval({
   const noChange =
     initialDrawPositions?.includes(drawPosition) &&
     initialMatchUpStatus === targetMatchUp.matchUpStatus &&
-    initialWinningSide === targetMatchUp.winningSide;
+    initialWinningSide === targetMatchUp.winningSide &&
+    initialSideRecord === sideRecordOf(targetMatchUp);
 
   if (!noChange) {
     if (removedDrawPosition) {
@@ -924,7 +986,7 @@ function updateMatchUpStatusAfterRemoval({
  * way, so the award stands here only for a carried exit or a seat that holds a participant. Census de 9302775
  * (DE 16/11): a produced DEFAULTED retained on `Backdraw|3|2` side 1 was otherwise won by an empty dp 7.
  */
-function awardStands({
+export function awardStands({
   rederived,
   retained,
   positionAssignments,
@@ -956,22 +1018,6 @@ function awardStands({
   });
   const assignment = positionAssignments.find((candidate) => candidate.drawPosition === drawPosition);
   return !!(assignment?.participantId || assignment?.qualifier);
-}
-
-/** the target is the source's own loser target: the exit reached it over the link, not relayed past a BYE */
-function cameDownLoserLink({
-  drawDefinition,
-  targetMatchUp,
-  sourceMatchUpId,
-}: {
-  drawDefinition: DrawDefinition;
-  sourceMatchUpId?: string;
-  targetMatchUp: MatchUp;
-}): boolean {
-  if (!sourceMatchUpId) return false;
-  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition })?.matchUps ?? [];
-  const targets = positionTargets({ matchUpId: sourceMatchUpId, inContextDrawMatchUps, drawDefinition });
-  return targets.targetMatchUps?.loserMatchUp?.matchUpId === targetMatchUp.matchUpId;
 }
 
 /**
@@ -1116,10 +1162,181 @@ function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: numb
   return Object.keys(retained).length ? retained : undefined;
 }
 
+/**
+ * THE LOSER LINK IS SERVED FROM THE MATCHUP AS IT RE-DERIVED, NOT FROM THE REMOVAL THAT RE-DERIVED IT.
+ *
+ * `handleLoserMatchUpRemoval` takes back what this matchUp sent over its loser link, and it used to run whenever the
+ * link crossed into another structure. But the removal re-derives the matchUp first (`updateMatchUpStatusAfterRemoval`),
+ * and what the re-derived matchUp sends over the link can be exactly what is already there:
+ *
+ *  - an exit side: decided, and its losing side holds nobody. Its loser seat is the BYE nobody can fill, as forward play
+ *    leaves it ("a loser who is nobody holds no seat"); taking the BYE back left the loser structure owing a seat to an
+ *    opponent who can never arrive (census A1 cases 10 and 13, COMPASS 32 under `doubleExitPropagateBye: false`: a
+ *    probe's double walkover made `North|1|1` / `South|1|3` a BYE, and clearing it re-derived the produced exit and
+ *    took `Northwest|dp1` / `Southeast|dp3` with it). The BYE stands on the account of the double exit whose produced exit the losing side holds, as forward play
+ *    records it ("a BYE claimed further on goes the same way"), so its claim is recorded again where it is missing:
+ *    kept without it, the next unwind could not tell the BYE had a reason to exist and took it (census F2 regression
+ *    RUN16-ASSIGNMENT policyoff 20586104, COMPASS 32: `Northwest|dp2`, held for `East|2|4`'s produced exit in
+ *    `North|1|2`);
+ *  - an unchanged loser: decided, and its losing participant already stands in the loser matchUp, where `directLoser`
+ *    would find them already directed. Taking them back removed a carrier the clear never touched (case 6, COMPASS 32:
+ *    clearing a position advanced into `West|2|1` emptied `Southwest|dp1` though `West|2|1` still stood WALKOVER over
+ *    the same loser).
+ *
+ * Otherwise, undecided or with a different loser, the removal proceeds as before.
+ */
+function reDerivedLoserStands({
+  loserMatchUpDrawPositionIndex,
+  tournamentRecord,
+  drawDefinition,
+  loserMatchUp,
+  structureId,
+  matchUpsMap,
+  matchUpId,
+  event,
+}: {
+  loserMatchUpDrawPositionIndex?: number;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  event?: Event;
+  loserMatchUp: HydratedMatchUp;
+  matchUpsMap: MatchUpsMap;
+  structureId: string;
+  matchUpId: string;
+}): boolean {
+  const reDerived = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
+  if (!reDerived?.winningSide) return false;
+  const loserDrawPosition = getSideDrawPosition({
+    sideNumber: 3 - reDerived.winningSide,
+    matchUp: reDerived,
+    drawDefinition,
+    structureId,
+  });
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId });
+  const loserParticipantId = positionAssignments?.find(
+    (assignment) => loserDrawPosition && assignment.drawPosition === loserDrawPosition,
+  )?.participantId;
+  if (!loserParticipantId) {
+    if (!isExit(reDerived.matchUpStatus)) return false;
+    const origin = getSideExitProvenance({ matchUp: reDerived })?.[3 - reDerived.winningSide]?.sourceMatchUpId;
+    keepByeOnItsOriginsAccount({
+      loserMatchUpDrawPositionIndex,
+      tournamentRecord,
+      drawDefinition,
+      loserMatchUp,
+      matchUpsMap,
+      origin,
+      event,
+    });
+    return true;
+  }
+
+  const targetDrawPositions = (loserMatchUp.drawPositions ?? []).filter(Boolean);
+  const { positionAssignments: targetAssignments } = getPositionAssignments({
+    structureId: loserMatchUp.structureId,
+    drawDefinition,
+  });
+  return !!targetAssignments?.some(
+    (assignment) =>
+      assignment.participantId === loserParticipantId && targetDrawPositions.includes(assignment.drawPosition),
+  );
+}
+
+/** the seat `handleLoserMatchUpRemoval` reads: a first-round target's side by index, a fed round's fed position */
+function loserSeatOf({ loserMatchUp, loserMatchUpDrawPositionIndex, drawDefinition }): number | undefined {
+  if (loserMatchUp.roundNumber === 1)
+    return getSideDrawPosition({
+      sideNumber: (loserMatchUpDrawPositionIndex ?? 0) + 1,
+      structureId: loserMatchUp.structureId,
+      matchUp: loserMatchUp,
+      drawDefinition,
+    });
+  const held = (loserMatchUp.drawPositions ?? []).filter(Boolean);
+  return held.length ? Math.min(...held) : undefined;
+}
+
+function keepByeOnItsOriginsAccount({
+  loserMatchUpDrawPositionIndex,
+  tournamentRecord,
+  drawDefinition,
+  loserMatchUp,
+  matchUpsMap,
+  origin,
+  event,
+}: {
+  loserMatchUpDrawPositionIndex?: number;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  loserMatchUp: HydratedMatchUp;
+  matchUpsMap: MatchUpsMap;
+  origin?: string;
+  event?: Event;
+}): void {
+  const claimant = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === origin);
+  if (!claimant || !isDoubleExit(claimant.matchUpStatus)) return;
+  const seat = loserSeatOf({ loserMatchUp, loserMatchUpDrawPositionIndex, drawDefinition });
+  const structureId = loserMatchUp.structureId;
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId });
+  if (!seat || !positionAssignments?.find((assignment) => assignment.drawPosition === seat)?.bye) return;
+  const stored = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === loserMatchUp.matchUpId);
+  const record = sideRecordOf(stored);
+  recordByeClaim({
+    sideNumber: getDrawPositionSideNumber({ matchUp: stored, drawPosition: seat, structureId, drawDefinition }),
+    claimantMatchUpId: claimant.matchUpId,
+    matchUp: stored,
+  });
+  // the BYE stays, so nothing else rewrites the matchUp the claim is recorded on: announced here
+  if (stored && record !== sideRecordOf(stored))
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: 'keepByeOnItsOriginsAccount',
+      eventId: event?.eventId,
+      matchUp: stored,
+      drawDefinition,
+      event,
+    });
+}
+
+/**
+ * A BYE survives the removal while ANOTHER live claim still names it — the rule `removeDoubleExit` keeps at its own
+ * loser target (`byeClaimSurvives`). The matchUp being cleared no longer claims it; a double exit that does still owes
+ * it, and taking it back leaves that claimant's loser seat open to an opponent who can never arrive. Reached when the
+ * matchUp re-derives undecided, so `reDerivedLoserStands` has no result to serve the link from: a BYE sent on beside a
+ * double exit's produced walkover is withdrawn, and the BYE at the loser seat stands on that double exit's claim
+ * (COMPASS 16, built by hand: `aClearedSeatKeepsTheByeALiveDoubleExitClaims`).
+ */
+function aLiveClaimHoldsTheBye({
+  sourceMatchUpId,
+  drawDefinition,
+  drawPosition,
+  loserMatchUp,
+  matchUpsMap,
+}: {
+  drawDefinition: DrawDefinition;
+  loserMatchUp: HydratedMatchUp;
+  sourceMatchUpId?: string;
+  matchUpsMap?: MatchUpsMap;
+  drawPosition: number;
+}): boolean {
+  const structureId = loserMatchUp.structureId;
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId });
+  if (!positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition)?.bye) return false;
+  const drawMatchUps = matchUpsMap?.drawMatchUps ?? getMatchUpsMap({ drawDefinition }).drawMatchUps;
+  const stored = drawMatchUps.find((matchUp) => matchUp.matchUpId === loserMatchUp.matchUpId);
+  return byeClaimSurvives({
+    sideNumber: getDrawPositionSideNumber({ matchUp: stored, drawPosition, structureId, drawDefinition }),
+    isStillDoubleExit: (claimantMatchUpId) =>
+      isDoubleExit(drawMatchUps.find((matchUp) => matchUp.matchUpId === claimantMatchUpId)?.matchUpStatus),
+    withdrawnSourceIds: sourceMatchUpId ? new Set([sourceMatchUpId]) : undefined,
+    matchUp: stored,
+  });
+}
+
 function handleLoserMatchUpRemoval({
   loserMatchUpDrawPositionIndex,
   inContextDrawMatchUps,
   tournamentRecord,
+  sourceMatchUpId,
   drawDefinition,
   loserMatchUp,
   matchUpsMap,
@@ -1127,6 +1344,8 @@ function handleLoserMatchUpRemoval({
   stack,
 }): ResultType | void {
   const { drawPositions, roundNumber } = loserMatchUp;
+  const claimed = (drawPosition: number) =>
+    aLiveClaimHoldsTheBye({ sourceMatchUpId, drawDefinition, drawPosition, loserMatchUp, matchUpsMap });
 
   if (roundNumber === 1) {
     // the side's position, read structurally: index 0 is side 1
@@ -1138,6 +1357,7 @@ function handleLoserMatchUpRemoval({
     });
     // a first-round loser target holds both positions from generation
     if (!loserMatchUpDrawPosition) return decorateResult({ result: { error: MISSING_DRAW_POSITION }, stack });
+    if (claimed(loserMatchUpDrawPosition)) return;
 
     const removals = drawPositionRemovals({
       structureId: loserMatchUp.structureId,
@@ -1155,6 +1375,7 @@ function handleLoserMatchUpRemoval({
   // for fed rounds the loserMatchUpDrawPosiiton is always the fed drawPosition
   // which is always the lowest numerical drawPosition
   const loserMatchUpDrawPosition = Math.min(...drawPositions.filter(Boolean));
+  if (claimed(loserMatchUpDrawPosition)) return;
 
   const result = consolationCleanup({
     loserMatchUpDrawPosition,

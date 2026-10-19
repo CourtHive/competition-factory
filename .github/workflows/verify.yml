@@ -19,9 +19,17 @@ name: Verify
 #   coverage-shard  the coverage run split 4 ways (vitest --shard), each writing a blob report
 #   coverage        merges the 4 blobs (vitest --merge-reports --coverage): the thresholds and
 #                   coverage/coverage-summary.json are computed over the MERGED result
-#   slow-gates      route-differential, deep-corrections and team-arms, one job each
+#   slow-gates      route-differential and deep-corrections, one job each
+#   team-arms       verify:team-arms split 5 ways (vitest --shard), one extended-arm file per job
 #   verify          `verify (node N)`, the check master's branch protection requires: it passes only
 #                   when every job above passed (or, on a light run, was skipped as intended)
+#
+# TIMEOUTS (2026-10-17). Every job sets `timeout-minutes`. GitHub's default is 360, so a runner that hangs
+# after its tests pass holds the run for hours: on 2026-10-07 the 7.7.0 checkpoint's team-arms job passed
+# its tests in 22 minutes and then sat in the setup action's post step (the pnpm store cache save) for
+# over 70. Each limit is about twice the slowest run measured over the last 20 successful runs (PRs into
+# dev, and checkpoints under OUTCOME_PIPELINE=differential), so a timeout means a hang, not a slow day.
+# A timed-out job fails while its own result is fresh, and `gh run rerun --failed` is one command.
 
 on:
   pull_request:
@@ -47,6 +55,7 @@ jobs:
   # The `gates` job and the aggregating `verify` job always run, because master requires the
   # `verify (node 24)` check; the cheap gates plus the build chain still run.
   scope:
+    timeout-minutes: 10
     # Skip when the head commit is the release-please bot's release-PR
     # merge. Release-please PRs touch only CHANGELOG.md, package.json
     # (version bump), and .release-please-manifest.json — never any
@@ -84,6 +93,8 @@ jobs:
 
   gates:
     needs: scope
+    # slowest measured: 6 min
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -243,6 +254,10 @@ jobs:
       - name: verify:docs-methods
         run: pnpm verify:docs-methods
 
+      # Strict, executed examples from the actual doc fences (verify:docs-model runs in verify:generated).
+      - name: verify:docs-examples
+        run: pnpm verify:docs-examples
+
       - name: verify:pack
         run: pnpm verify:pack
 
@@ -257,6 +272,8 @@ jobs:
   coverage-shard:
     needs: scope
     if: needs.scope.outputs.light != 'true'
+    # slowest measured: 29 min (a checkpoint, under the differential)
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -290,6 +307,8 @@ jobs:
   coverage:
     needs: [scope, coverage-shard]
     if: needs.scope.outputs.light != 'true'
+    # merges the shard reports; under a minute
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -345,15 +364,15 @@ jobs:
   slow-gates:
     needs: scope
     if: needs.scope.outputs.light != 'true'
+    # slowest measured: 13 min (deep-corrections)
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
         node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
-        # team-arms: the TEAM matrix over the seven extension draw types and two more tieFormats,
-        # ~10 minutes locally, inert on `pnpm test` (2026-10-05)
-        gate: [route-differential, deep-corrections, team-arms]
+        gate: [route-differential, deep-corrections]
     name: ${{ matrix.gate }} (node ${{ matrix.node-version }})
 
     steps:
@@ -366,17 +385,48 @@ jobs:
       - name: verify:${{ matrix.gate }}
         run: pnpm verify:${{ matrix.gate }}
 
+  # verify:team-arms: the TEAM matrix over the seven extension draw types and more tieFormats, inert on
+  # `pnpm test` (2026-10-05). As one job it was the slowest in the run (up to 30 min, 2026-10). vitest
+  # --shard splits it by FILE, so with five files each shard runs exactly one, and the file list stays in
+  # package.json alone: a file added there lands in some shard without touching this workflow. A shard
+  # that receives no file fails (vitest exits 1 on "No test files found"), so raise the count only when
+  # the file count grows past it.
+  team-arms:
+    needs: scope
+    if: needs.scope.outputs.light != 'true'
+    # slowest measured as ONE job: 30 min; a shard is one file of that
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
+        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+        shard: [1, 2, 3, 4, 5]
+    name: team-arms ${{ matrix.shard }}/5 (node ${{ matrix.node-version }})
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: verify:team-arms ${{ matrix.shard }}/5
+        run: pnpm verify:team-arms --shard=${{ matrix.shard }}/5
+
   # The check master's branch protection requires is `verify (node 24)`, and this job is it. It
   # passes only when every other job passed, except that on a light run the heavy jobs must have been
   # SKIPPED (any other result, cancelled included, fails it). It runs whatever its needs did, so a red
   # job still produces a red `verify (node N)` rather than a missing one.
   verify:
-    needs: [scope, gates, coverage-shard, coverage, slow-gates]
+    needs: [scope, gates, coverage-shard, coverage, slow-gates, team-arms]
     if: >
       always() && (
         github.event_name != 'push' ||
         !contains(github.event.head_commit.message, 'release-please--branches--')
       )
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -394,6 +444,7 @@ jobs:
           SHARDS: ${{ needs.coverage-shard.result }}
           COVERAGE: ${{ needs.coverage.result }}
           SLOW: ${{ needs.slow-gates.result }}
+          TEAM: ${{ needs.team-arms.result }}
         run: |
           heavy=success
           if [ "$LIGHT" = true ]; then heavy=skipped; fi
@@ -406,4 +457,5 @@ jobs:
           check coverage-shard "$SHARDS" "$heavy"
           check coverage "$COVERAGE" "$heavy"
           check slow-gates "$SLOW" "$heavy"
+          check team-arms "$TEAM" "$heavy"
           exit $bad

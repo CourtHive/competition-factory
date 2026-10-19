@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { INVALID_VALUES, MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MAIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 
 // --- Direct function error path tests ---
@@ -68,7 +68,7 @@ test('setPositionAssignments returns error for invalid structureId', () => {
       },
     ],
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
 });
 
 test('setPositionAssignments returns INVALID_VALUES when drawPositions do not match', () => {

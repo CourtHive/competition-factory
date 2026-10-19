@@ -13,7 +13,8 @@ type RegisterCreatedRecordArgs<R> = {
 
 // Generic "register a freshly-created record" step shared by declaration engines:
 // validate the domain builder's result, reject a duplicate id, persist it, and make
-// it the active record. The domain supplies its own record builder (via `result`)
+// it the active record. The id is returned at the top level too, so an executionQueue `pipe` can carry
+// it to the next directive. The domain supplies its own record builder (via `result`)
 // and its own duplicate-id error (`existsError`); everything else is population-agnostic.
 export function registerCreatedRecord<R>({
   result,
@@ -32,5 +33,5 @@ export function registerCreatedRecord<R>({
 
   setRecord(record);
   setActiveId(record[idKey]);
-  return result;
+  return { ...result, [idKey]: record[idKey] };
 }

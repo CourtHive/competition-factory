@@ -12,6 +12,7 @@ import {
   MISSING_MAIN_STRUCTURE,
   MISSING_QUALIFIED_PARTICIPANTS,
   NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS,
+  MISSING_DRAW_DEFINITION,
 } from '@Constants/errorConditionConstants';
 
 function setupQualifyingTournament({
@@ -528,7 +529,7 @@ test('qualifierProgression skips already-assigned participants', () => {
     eventId,
   });
   // Either no qualifiers or no positions available
-  expect(result2.error).toBeDefined();
+  expect(result2.error).toEqual(NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS);
 });
 
 // --- Direct function call tests for error paths ---
@@ -566,7 +567,7 @@ test('qualifierProgression direct call with missing required params', () => {
     tournamentRecord: undefined as any,
     event: undefined as any,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
 });
 
 // --- Improved RR qualifying test ---

@@ -3,7 +3,6 @@ import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { getParticipantId } from '@Functions/global/extractors';
 import { stringSort } from '@Functions/sorters/stringSort';
-import { addNotice } from '@Global/state/globalState';
 import { addEventEntries } from './addEventEntries';
 import { intersection } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
@@ -13,7 +12,6 @@ import { DrawDefinition, EntryStatusUnion, Event, StageTypeUnion, Tournament } f
 import { INVALID_EVENT_TYPE, INVALID_PARTICIPANT_IDS } from '@Constants/errorConditionConstants';
 import { EVENT, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
@@ -117,6 +115,7 @@ export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
   let info;
   let addedParticipants: any[] = [];
   if (newParticipants) {
+    // addParticipants announces ADD_PARTICIPANTS for the pairs it actually added
     const result = addParticipants({
       allowDuplicateParticipantIdPairs,
       participants: newParticipants,
@@ -159,13 +158,6 @@ export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
     drawId,
     event,
   });
-
-  if (newParticipants.length) {
-    addNotice({
-      payload: { participants: newParticipants },
-      topic: ADD_PARTICIPANTS,
-    });
-  }
 
   const newParticipantIds = newParticipants.map(getParticipantId);
 

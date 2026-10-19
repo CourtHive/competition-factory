@@ -109,7 +109,7 @@ export function reconcileDecider({
   const winnerId = participantOn(final.winningSide);
   const loserId = final.winningSide ? participantOn(3 - final.winningSide) : undefined;
 
-  if (winnerId) {
+  if (winnerId || !final.winningSide) {
     seatFinalists({ structureId: winnerMatchUp.structureId, drawDefinition, winnerId, loserId });
   }
 
@@ -259,6 +259,15 @@ function deciderChangedByCascade({
  * Chris won it, and the decider read `[Valentina, Chris]`. Valentina stayed after Chris left, and the final's real
  * result was later refused seating its loser (`ERR_OCCUPIED_DRAW_POSITION`) after the draw had been written. So the
  * decider's two seats are written from the final: winner first, loser (or nobody) second.
+ *
+ * AND A FINAL WITH NO WINNER SEATS NOBODY (census S8 off arm, DOUBLE_ELIMINATION 8/5, 20722665). A participant can be
+ * carried into the decider by a cascade that is then taken back: `Main|2|1` re-scored from a double default to a played
+ * win sent its loser into the Backdraw, where they went on through the exits a converged `Backdraw|3|1` had produced,
+ * across the Main final (still holding the produced walkover) and into the decider's first seat. The convergence then
+ * dissolved and the Main final was left undecided, but the release stopped at the Main final, so the decider kept them,
+ * and the final's real result was refused seating its winner (`ERR_OCCUPIED_DRAW_POSITION`) after the draw had been
+ * written. Entered directly, the decider is empty until its final is decided. A final decided for a seat its winner
+ * has not reached yet (a pending exit) is decided: the links seat its loser, and that is left as it stands.
  */
 function seatFinalists({
   drawDefinition,
@@ -268,7 +277,7 @@ function seatFinalists({
 }: {
   drawDefinition: DrawDefinition;
   structureId: string;
-  winnerId: string;
+  winnerId?: string;
   loserId?: string;
 }) {
   const { structure } = findStructure({ drawDefinition, structureId });
@@ -279,7 +288,8 @@ function seatFinalists({
   if (assignments.length !== 2 || assignments.some((assignment) => assignment.bye)) return;
   if (assignments[0].participantId === winnerId && assignments[1].participantId === loserId) return;
 
-  assignments[0].participantId = winnerId;
-  if (loserId) assignments[1].participantId = loserId;
+  if (winnerId) assignments[0].participantId = winnerId;
+  else delete assignments[0].participantId;
+  if (winnerId && loserId) assignments[1].participantId = loserId;
   else delete assignments[1].participantId;
 }

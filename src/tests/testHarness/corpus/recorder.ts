@@ -1,14 +1,14 @@
 import { getInvariantViolations } from '../exitPropagation/invariants';
 import { factoryVersion } from '@Functions/global/factoryVersion';
-import { canonicalHash, canonicalObject } from './hash';
-import { generatePatch } from '../../../forge/jsonPatch';
 import { randomSource, type SeededRandom } from '@Tools/prng';
+import { generatePatch } from '../../../forge/jsonPatch';
+import { canonicalHash, canonicalObject } from './hash';
 import { isCoreMethod } from './coreMethods';
 import { setClock } from '@Tools/clock';
 import addFormats from 'ajv-formats';
+import path from 'path';
 import Ajv from 'ajv';
 import fs from 'fs';
-import path from 'path';
 import {
   getCapturedClock,
   getInvokeObserver,
@@ -56,6 +56,8 @@ type Step = {
 };
 type Open = {
   tournamentId: string;
+  /** the record object in state as the last core call left it; see `before` */
+  live: any;
   initial: { record: any; hash: string };
   state: any;
   steps: Step[];
@@ -257,8 +259,13 @@ export class CorpusRecorder {
   private before(event: InvokeEvent): void {
     if (this.skipReason) return;
     if (this.open) {
-      const ids = Object.keys(getTournamentRecords() ?? {});
-      if (ids.length !== 1 || ids[0] !== this.open.tournamentId) {
+      const records = getTournamentRecords() ?? {};
+      const ids = Object.keys(records);
+      // A record put in state BETWEEN core calls (a regeneration, a setState) is another record set
+      // even when its tournamentId is the same: a seeded mocksEngine call gives the same id every
+      // time, so the id alone cannot tell (route-differential regenerates per route). A record
+      // replaced DURING a core call (a rollback) is that step's own effect: `after` adopts it.
+      if (ids.length !== 1 || ids[0] !== this.open.tournamentId || records[ids[0]] !== this.open.live) {
         // the test moved on to another record set: close this scenario, start another
         if (this.open.steps.length) this.closed.push(this.open);
         this.open = undefined;
@@ -274,6 +281,7 @@ export class CorpusRecorder {
       const state = canonicalObject<any>(records[ids[0]]);
       this.open = {
         tournamentId: ids[0],
+        live: records[ids[0]],
         initial: { record: state, hash: canonicalHash(state) },
         state,
         steps: [],
@@ -335,6 +343,7 @@ export class CorpusRecorder {
       hash: canonicalHash(next),
     });
     open.state = next;
+    open.live = record;
   }
 
   // The two invariants the corpus names are structure-level (positionAssignments), so the raw

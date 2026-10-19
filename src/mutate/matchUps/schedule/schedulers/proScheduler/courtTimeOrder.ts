@@ -36,7 +36,7 @@ type Slot = { matchUpId: string; order: number; minutes: number };
  *
  * Adjacent comparison, so each break in the order is reported once. A matchUp without a court, an order
  * or a readable time is skipped without breaking the chain, as is one that uses no court time (a walkover
- * at 08:00 frees the court for the next 08:00 matchUp: BOBOCA, 2026-10-11). Two matchUps in the SAME
+ * at 08:00 frees the court for the next 08:00 matchUp: a production report, 2026-10-11). Two matchUps in the SAME
  * `courtOrder` are a double booking, which `proConflicts` reports itself.
  */
 export function courtTimeOrderConflicts(matchUps: HydratedMatchUp[]): CourtTimeOrderConflict[] {

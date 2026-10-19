@@ -22,39 +22,37 @@ describe('generateOutcome - uncovered branches', () => {
   });
 
   it('returns error when matchUpStatusProfile is not an object', () => {
-    const result = mocksEngine.generateOutcome({ matchUpStatusProfile: 42 });
+    const result = mocksEngine.generateOutcome({ matchUpStatusProfile: 42 as any });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
-  it('handles matchUpStatusProfile with high totals (code uses Object.keys on array)', () => {
-    // Note: the code uses Object.keys(matchUpStatuses) which returns indices not status names
-    // so matchUpStatusTotals computation may not behave as expected for > 100 check
-    // We just verify the function runs and produces an outcome
+  // This test documented the defect it tolerated: the >100 guard summed Object.keys of the status ARRAY
+  // (its indices), so it never fired. The weights are summed now, and 110% is refused (M8, 2026-10-17).
+  it('refuses a matchUpStatusProfile whose weights exceed 100', () => {
     const result = mocksEngine.generateOutcome({
       matchUpStatusProfile: { [WALKOVER]: 60, [RETIRED]: 50 },
     });
-    // The bug in the code means this doesn't return INVALID_VALUES
-    // It will produce an outcome (either WALKOVER or RETIRED)
-    expect(result.outcome || result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result.outcome).toBeUndefined();
   });
 
   it('returns error for NaN defaultWithScorePercent', () => {
     const result = mocksEngine.generateOutcome({
-      defaultWithScorePercent: 'notANumber',
+      defaultWithScorePercent: 'notANumber' as any,
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for NaN pointsPerMinute', () => {
     const result = mocksEngine.generateOutcome({
-      pointsPerMinute: 'bad',
+      pointsPerMinute: 'bad' as any,
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for NaN sideWeight', () => {
     const result = mocksEngine.generateOutcome({
-      sideWeight: 'bad',
+      sideWeight: 'bad' as any,
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });
@@ -264,7 +262,7 @@ describe('generateOutcome - uncovered branches', () => {
   it('matchUpStatusProfile with only unknown statuses produces COMPLETED', () => {
     generateRange(0, 5).forEach(() => {
       const { outcome } = mocksEngine.generateOutcome({
-        matchUpStatusProfile: { UNKNOWN_STATUS: 50 },
+        matchUpStatusProfile: { UNKNOWN_STATUS: 50 } as any,
       });
       // Unknown statuses are filtered out, so always COMPLETED
       expect(outcome.matchUpStatus).toEqual(COMPLETED);

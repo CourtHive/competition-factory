@@ -18,7 +18,6 @@ it('supports replacing a BYE with a participant (DA or ALT)', () => {
     },
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 
@@ -102,7 +101,6 @@ it('can replace BYE with ALTERNATE to Final in drawSize: 8 when 7 BYEs', () => {
   ];
   const { drawIds, tournamentRecord } = mocksEngine.generateTournamentRecord({
     participantsProfile: { participantsCount: 32 },
-    inContext: true,
     drawProfiles,
   });
 

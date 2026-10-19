@@ -1,3 +1,4 @@
+import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/removeDoubleExit';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
@@ -224,6 +225,14 @@ export function settleRederivedDoubleExit({
       drawDefinition,
       event,
     });
+    // ... and where the convergence had already given that BYE up, it is owed again: a double exit takes back the BYE its
+    // single exit claimed (`reclaimSingleExitBye`), so when the convergence dissolves the seat is left empty, and the
+    // re-derived single exit, whose losing side is the produced exit, can never send it a loser (census S8, COMPASS 8/8
+    // policy-off 20853116: `South|1|1` dp 1 after `East|1|2` went from a walkover back to a played result).
+    if (overLoserLink) {
+      const owed = propagateUnfillableLoserBye({ matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
+      if (owed?.error) return owed;
+    }
     return advanceStandingWinner({
       inContextDrawMatchUps: inContextMatchUps,
       tournamentRecord,

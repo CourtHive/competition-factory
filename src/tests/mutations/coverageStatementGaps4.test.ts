@@ -61,6 +61,7 @@ import {
   MISSING_PARTICIPANT_IDS,
   MISSING_DATE_RANGE,
   INVALID_CONFIGURATION,
+  MISSING_TIE_FORMAT,
 } from '@Constants/errorConditionConstants';
 
 // ----------------------------------------------------------------
@@ -996,7 +997,7 @@ describe('addCollectionDefinition guard paths', () => {
       } as any,
     });
     // getTieFormat returns MISSING_TIE_FORMAT since no tieFormat on draw/event/structure
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_TIE_FORMAT);
   });
 });
 

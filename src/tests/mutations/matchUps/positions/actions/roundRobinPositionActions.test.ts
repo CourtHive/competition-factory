@@ -27,7 +27,6 @@ it('can return accurate position details when requesting positionActions', () =>
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

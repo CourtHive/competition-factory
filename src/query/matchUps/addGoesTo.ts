@@ -1,16 +1,17 @@
 import { addFinishingRounds } from '@Assemblies/generators/drawDefinitions/addFinishingRounds';
+import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { buildTargetIndex, positionTargets } from '@Query/matchUp/positionTargets';
-import { getMappedStructureMatchUps } from '@Query/matchUps/getMatchUpsMap';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { DrawDefinition, Event, MatchUp } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type AddGoesToArgs = {
@@ -166,6 +167,134 @@ export function ensureGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMa
   if (hasStoredGoesTo({ drawDefinition })) return undefined;
   const result = addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
   return result.error ? result : undefined;
+}
+
+/**
+ * What `ensureGoesTo` will write on a draw, held so that a call which is then refused can write it back.
+ *
+ * CA, 2026-10-18: "no, a refused call does not store a draw's missing edges. v1 should no longer do so." The edges are
+ * still written once, before anything is decided on them, because the cascade decides on the STORED ids (#5086); what
+ * that write touches is held here, before it, and the function returned puts it back on an error. A call that
+ * succeeds keeps what was written, and the draw stores its edges from then on.
+ *
+ * A draw that stores its edges has nothing written, so nothing is held: `undefined`, for the cost of the
+ * `hasStoredGoesTo` walk. Otherwise each stored matchUp's `winnerMatchUpId`, `loserMatchUpId`, `finishingRound` and
+ * `finishingPositionRange` (the object, and what it held) is noted, which is all `addGoesTo` and the finishing rounds
+ * it may add write. They are written back into the same matchUps, and the same range objects, as the differential
+ * path writes back what a divergence touched.
+ *
+ * `written` says whether any of what was held has changed since: a call that succeeds announces the draw once when it
+ * did (CA, 2026-10-18: "Option 2"), with a `MODIFY_DRAW_DEFINITION` rather than a `MODIFY_MATCHUP` per matchUp.
+ */
+export function holdGoesTo({
+  drawDefinition,
+  matchUpsMap,
+}: {
+  drawDefinition?: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+}): GoesToHold | undefined {
+  if (!drawDefinition || hasStoredGoesTo({ drawDefinition })) return undefined;
+  const matchUps = (matchUpsMap ?? getMatchUpsMap({ drawDefinition })).drawMatchUps;
+  const held = matchUps.map((matchUp) => {
+    const range = matchUp.finishingPositionRange;
+    return {
+      storedValues: GOES_TO_FIELDS.map((key) => [key, key in matchUp, matchUp[key]] as const),
+      range: range && { object: range, values: { ...range } },
+      matchUp,
+    };
+  });
+
+  const release = () => {
+    for (const { matchUp, storedValues, range } of held) {
+      const target = matchUp as Record<(typeof GOES_TO_FIELDS)[number], unknown>;
+      for (const [key, present, value] of storedValues) {
+        if (present) target[key] = value;
+        else delete target[key];
+      }
+      if (range) {
+        for (const key of Object.keys(range.object)) if (!(key in range.values)) delete range.object[key];
+        Object.assign(range.object, range.values);
+        matchUp.finishingPositionRange = range.object;
+      } else {
+        delete matchUp.finishingPositionRange;
+      }
+    }
+  };
+
+  const written = () =>
+    held.some(({ matchUp, storedValues, range }) => {
+      const moved = storedValues.some(([key, present, value]) => {
+        const isPresent = key in matchUp;
+        return isPresent !== present || matchUp[key] !== value;
+      });
+      if (moved) return true;
+      if (!range) return !!matchUp.finishingPositionRange;
+      if (matchUp.finishingPositionRange !== range.object) return true;
+      return JSON.stringify(range.object) !== JSON.stringify(range.values);
+    });
+
+  return { release, written };
+}
+
+export type GoesToHold = { release: () => void; written: () => boolean };
+
+const GOES_TO_FIELDS = ['winnerMatchUpId', 'loserMatchUpId', 'finishingRound'] as const;
+
+/**
+ * A draw that does not store its edges is given them (CA, 2026-10-16: a one-time backfill of stored converted records,
+ * and this migration a standard requirement of ingest). `migrateTournamentRecord` runs it on every draw, and
+ * `addDrawDefinition` on the draw it adds (CA, 2026-10-18): a draw built outside the factory is stored with its edges.
+ *
+ * The factory stores `winnerMatchUpId` / `loserMatchUpId` on every draw it generates, and `finishingPositionRange` on
+ * every matchUp; a record converted from elsewhere may hold neither. A query used to write them as a side effect, which
+ * the server then saved, so a converted record gained them only once something had scheduled it. No query writes now
+ * (`getMatchUpDependencies` derives on a copy), so the migration writes what `addGoesTo` derives: the edges, the loser
+ * ranges widened over the loser target, and a lone foreign structure's finishing rounds.
+ *
+ * Unconditional, like `compactDrawPositions`: an edge is never a legacy fact worth keeping out. A draw with a MALFORMED
+ * ROUND LINK (CA, 2026-10-06: it is an error) is left as it was: `addGoesTo` stops where it meets the link, so the
+ * derivation is tried on a copy first and the draw is never half given its edges. An AD_HOC draw has no positions to
+ * derive from (its rounds are paired, not linked), so it is skipped, as the query's write always skipped it.
+ */
+export function storeGoesTo(drawDefinition: DrawDefinition): number {
+  if (hasStoredGoesTo({ drawDefinition }) && !needsFinishingRounds(drawDefinition)) return 0;
+  if (drawDefinition.structures?.some((structure) => isAdHoc({ structure }))) return 0;
+  if (addGoesTo({ drawDefinition: makeDeepCopy(drawDefinition, false, true) }).error) return 0;
+  // counted only where a stored value changed: a draw whose edges cannot be derived (no links, nothing to follow) is
+  // asked again on every run and given nothing each time
+  const before = storedGoesTo(drawDefinition);
+  addGoesTo({ drawDefinition });
+  return storedGoesTo(drawDefinition) === before ? 0 : 1;
+}
+
+function storedGoesTo(drawDefinition: DrawDefinition): string {
+  const structures = (drawDefinition.structures ?? []).flatMap((structure) => [
+    structure,
+    ...(structuresOf(structure) ?? []),
+  ]);
+  return JSON.stringify(
+    structures
+      .flatMap((structure) => matchUpsOf(structure) ?? [])
+      .map(({ winnerMatchUpId, loserMatchUpId, finishingPositionRange, finishingRound }) => [
+        winnerMatchUpId,
+        loserMatchUpId,
+        finishingPositionRange,
+        finishingRound,
+      ]),
+  );
+}
+
+/**
+ * The draw as a READ should see it, without writing to it: a draw that does not store what `addGoesTo` derives is read
+ * from a copy that carries it (`storeGoesTo` on the copy), and the draw handed in is never changed. A draw that owes
+ * nothing, or that nothing can be derived for (an AD_HOC draw), is returned as it is and costs no copy.
+ */
+export function drawWithDerivedGoesTo(drawDefinition: DrawDefinition): DrawDefinition {
+  if (hasStoredGoesTo({ drawDefinition }) && !needsFinishingRounds(drawDefinition)) return drawDefinition;
+  if (drawDefinition.structures?.some((structure) => isAdHoc({ structure }))) return drawDefinition;
+  const copy = makeDeepCopy(drawDefinition, false, true);
+  storeGoesTo(copy);
+  return copy;
 }
 
 /**

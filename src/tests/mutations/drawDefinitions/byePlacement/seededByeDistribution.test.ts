@@ -20,7 +20,9 @@ it.each(scenarios)('properly distributes byes to seeds', (scenario) => {
     drawProfiles: [
       {
         category: { categoryName: 'U18' },
-        ...scenario,
+        drawSize: scenario.drawSize,
+        participantsCount: scenario.participantsCount,
+        seedsCount: scenario.seedsCount,
       },
     ],
   });

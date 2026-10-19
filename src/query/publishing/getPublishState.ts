@@ -9,6 +9,7 @@ import { getDrawId } from '@Functions/global/extractors';
 import { DRAW_DEFINITION_NOT_FOUND, EVENT_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { PUBLIC } from '@Constants/timeItemConstants';
 import { ResultType } from '@Types/factoryTypes';
 import { findEvent } from '@Acquire/findEvent';
 import { isString } from '@Tools/objects';
@@ -19,12 +20,14 @@ type GetPublishStateArgs = {
   eventIds?: string[];
   drawIds?: string[];
   eventId?: string;
+  status?: string;
   drawId?: string;
   event?: Event;
 };
 
 export function getPublishState(params: GetPublishStateArgs): ResultType & { publishState?: any } {
-  const { tournamentRecord, drawDefinition, eventIds, eventId, drawIds, drawId, event } = params ?? {};
+  // `status` is the publish STATUS key every read below is taken from (PUBLIC unless the caller names another)
+  const { tournamentRecord, drawDefinition, eventIds, eventId, drawIds, drawId, event, status = PUBLIC } = params ?? {};
   if (tournamentRecord && !isValidTournamentRecord(tournamentRecord)) return { error: INVALID_VALUES };
 
   if (eventId && !event) return { error: EVENT_NOT_FOUND };
@@ -35,23 +38,24 @@ export function getPublishState(params: GetPublishStateArgs): ResultType & { pub
       if (!isString(eventId)) return { error: INVALID_VALUES };
       const event: Event | undefined = findEvent({ tournamentRecord, eventId })?.event;
       if (!event) return { error: EVENT_NOT_FOUND };
-      const pubStatus: any = getPubStatus({ event });
+      const pubStatus: any = getPubStatus({ event, status });
       publishState[eventId] = pubStatus;
     }
     return { ...SUCCESS, publishState };
   }
 
   if (event) {
-    return getEventPublishState({ event, drawId, drawIds, drawDefinition });
+    return getEventPublishState({ event, drawId, drawIds, drawDefinition, status });
   }
 
   const publishState: any = {};
   const { publishedEventIds, tournamentPublished: eventsPublished } = buildEventPublishState({
     publishState,
     tournamentRecord,
+    status,
   });
 
-  const embargoes: any[] = [];
+  const embargoes: EmbargoEntry[] = [];
 
   if (tournamentRecord) {
     buildTournamentPublishState({
@@ -60,18 +64,29 @@ export function getPublishState(params: GetPublishStateArgs): ResultType & { pub
       tournamentRecord,
       publishState,
       embargoes,
+      status,
     });
   }
 
-  collectEventEmbargoes({ tournamentRecord, embargoes });
+  collectEventEmbargoes({ tournamentRecord, embargoes, status });
 
   if (embargoes.length) publishState.embargoes = embargoes;
 
   return { ...SUCCESS, publishState };
 }
 
-function getEventPublishState({ event, drawId, drawIds, drawDefinition }) {
-  const pubStatus: any = getPubStatus({ event });
+// one row of publishState.embargoes
+type EmbargoEntry = { type: string; id?: string; embargo: string; embargoActive: boolean };
+
+type EventPublishStateArgs = {
+  drawDefinition?: DrawDefinition;
+  drawIds?: string[];
+  drawId?: string;
+  status: string;
+  event: Event;
+};
+function getEventPublishState({ event, drawId, drawIds, drawDefinition, status }: EventPublishStateArgs) {
+  const pubStatus: any = getPubStatus({ event, status });
   let publishState: any = {};
 
   if (drawId) {
@@ -106,12 +121,20 @@ function getEventPublishState({ event, drawId, drawIds, drawDefinition }) {
   return { ...SUCCESS, publishState };
 }
 
-function buildEventPublishState({ publishState, tournamentRecord }) {
+function buildEventPublishState({
+  tournamentRecord,
+  publishState,
+  status,
+}: {
+  tournamentRecord?: Tournament;
+  publishState: Record<string, any>;
+  status: string;
+}) {
   const publishedEventIds: string[] = [];
   let tournamentPublished = false;
 
   for (const event of tournamentRecord?.events ?? []) {
-    const pubStatus: any = getPubStatus({ event });
+    const pubStatus: any = getPubStatus({ event, status });
     publishState[event.eventId] = pubStatus;
     if (pubStatus.status.published) {
       publishedEventIds.push(event.eventId);
@@ -132,8 +155,16 @@ function buildTournamentPublishState({
   tournamentPublished,
   publishedEventIds,
   embargoes,
+  status,
+}: {
+  tournamentPublished: boolean;
+  tournamentRecord: Tournament;
+  publishedEventIds: string[];
+  embargoes: EmbargoEntry[];
+  publishState: Record<string, any>;
+  status: string;
 }) {
-  const pubStatus: any = getTournamentPublishStatus({ tournamentRecord });
+  const pubStatus: any = getTournamentPublishStatus({ tournamentRecord, status });
   publishState.tournament = pubStatus ?? {};
   // information, order of play and participants are each a tournament-level component; any one of them,
   // or any event with a published draw, makes the tournament published
@@ -170,9 +201,17 @@ function buildTournamentPublishState({
   return tournamentPublished;
 }
 
-function collectEventEmbargoes({ tournamentRecord, embargoes }) {
+function collectEventEmbargoes({
+  tournamentRecord,
+  embargoes,
+  status,
+}: {
+  tournamentRecord?: Tournament;
+  embargoes: EmbargoEntry[];
+  status: string;
+}) {
   for (const event of tournamentRecord?.events ?? []) {
-    const eventPubStatus = getEventPublishStatus({ event });
+    const eventPubStatus = getEventPublishStatus({ event, status });
     const drawDetails = eventPubStatus?.drawDetails ?? {};
     for (const [drawId, detail] of Object.entries(drawDetails) as [string, any][]) {
       collectDrawEmbargoes({ drawId, detail, embargoes });
@@ -227,8 +266,8 @@ function collectScheduledRoundEmbargoes({ structureId, structureDetail, embargoe
   }
 }
 
-function getPubStatus({ event }): any {
-  const eventPubStatus = getEventPublishStatus({ event });
+function getPubStatus({ event, status }: { event: Event; status: string }): any {
+  const eventPubStatus = getEventPublishStatus({ event, status });
   if (!eventPubStatus) return { status: { published: false } };
 
   const publishedSeeding = {

@@ -2,6 +2,8 @@ import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getSche
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { withContextExclusion } from './contextExclusion';
+import { createHydrationCache } from './hydrationCache';
 import { getAllDrawMatchUps } from './drawMatchUps';
 
 // constants and types
@@ -10,6 +12,10 @@ import { GetMatchUpsArgs } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 export function allEventMatchUps(params: GetMatchUpsArgs) {
+  return withContextExclusion(params, allEventMatchUpsUnredacted);
+}
+
+function allEventMatchUpsUnredacted(params: GetMatchUpsArgs) {
   let { participants = [], contextContent, participantMap } = params;
   const {
     scheduleVisibilityFilters,
@@ -23,6 +29,7 @@ export function allEventMatchUps(params: GetMatchUpsArgs) {
     contextFilters,
     matchUpFilters,
     contextProfile,
+    publishStatus,
     nextMatchUps,
     inContext,
     context,
@@ -73,6 +80,7 @@ export function allEventMatchUps(params: GetMatchUpsArgs) {
   }
 
   const drawDefinitions = event.drawDefinitions ?? [];
+  const hydrationCache = params.hydrationCache ?? createHydrationCache();
   const scheduleTiming = getScheduleTiming({
     tournamentRecord,
     event,
@@ -82,8 +90,10 @@ export function allEventMatchUps(params: GetMatchUpsArgs) {
     const { matchUps } = getAllDrawMatchUps({
       tournamentParticipants: participants,
       tournamentAppliedPolicies,
+      hydrationCache,
       scheduleVisibilityFilters,
       context: additionalContext,
+      hydrateParticipants: params.hydrateParticipants,
       participantsProfile,
       afterRecoveryTimes,
       policyDefinitions,
@@ -96,6 +106,7 @@ export function allEventMatchUps(params: GetMatchUpsArgs) {
       matchUpFilters,
       participantMap,
       scheduleTiming,
+      publishStatus,
       nextMatchUps,
       inContext,
       event,

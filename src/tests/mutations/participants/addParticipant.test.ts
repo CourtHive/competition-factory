@@ -155,9 +155,7 @@ it('can add individual and pair participants', () => {
 });
 
 it('will not add invalid PAIR participants', () => {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    inContext: true,
-  });
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({});
   tournamentEngine.setState(tournamentRecord);
 
   let pairParticipant = {

@@ -1,10 +1,14 @@
 import { addParticipantGroupings } from '@Query/drawDefinition/avoidance/addParticipantGroupings';
+import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
+import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { addUpcomingMatchUps } from '@Query/matchUp/addUpcomingMatchUps';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getDrawStructures } from '@Acquire/findStructure';
+import { withContextExclusion } from './contextExclusion';
+import { createHydrationCache } from './hydrationCache';
 import { filterMatchUps } from '@Query/filterMatchUps';
 import { getMatchUpsMap } from './getMatchUpsMap';
 
@@ -17,7 +21,11 @@ import { HydratedMatchUp } from '@Types/hydrated';
 /*
   return ALL matchUps within a drawDefinition, regardless of state
 */
-export function getAllDrawMatchUps(params): ResultType & {
+export function getAllDrawMatchUps(params) {
+  return withContextExclusion(params, getAllDrawMatchUpsUnredacted);
+}
+
+function getAllDrawMatchUpsUnredacted(params): ResultType & {
   matchUps?: HydratedMatchUp[];
   matchUpsMap?: MatchUpsMap;
 } {
@@ -42,7 +50,7 @@ export function getAllDrawMatchUps(params): ResultType & {
 
 export function getDrawMatchUps(params): GroupsMatchUpsResult {
   if (!params?.drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  let { tournamentParticipants, contextContent, matchUpsMap } = params;
+  let { tournamentParticipants, contextContent, matchUpsMap, scheduleTiming, publishStatus } = params;
   const {
     scheduleVisibilityFilters,
     tournamentAppliedPolicies,
@@ -54,9 +62,7 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
     usePublishState,
     contextFilters,
     matchUpFilters,
-    scheduleTiming,
     participantMap,
-    publishStatus,
     contextProfile,
     drawDefinition,
     nextMatchUps,
@@ -70,6 +76,15 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
   let allUpcomingMatchUps: HydratedMatchUp[] = [];
   let allPendingMatchUps: HydratedMatchUp[] = [];
   let allByeMatchUps: HydratedMatchUp[] = [];
+
+  // Every draw, event, tournament and competition query reaches here, and not all of them derive these first:
+  // a recovery time needs the scheduling policy's timing, and the published view needs the event's publish status.
+  if (afterRecoveryTimes && !scheduleTiming) {
+    scheduleTiming = getScheduleTiming({ policyDefinitions, tournamentRecord, event }).scheduleTiming;
+  }
+  if (usePublishState && !publishStatus && event) {
+    publishStatus = getEventPublishStatus({ event });
+  }
 
   if (contextProfile && !contextContent) {
     contextContent = getContextContent({
@@ -104,6 +119,7 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
   }
 
   const exitProfiles = drawDefinition && getExitProfiles({ drawDefinition }).exitProfiles;
+  const hydrationCache = params.hydrationCache ?? createHydrationCache();
 
   structures.forEach((structure) => {
     const {
@@ -119,6 +135,7 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
       inContext: inContext || nextMatchUps || contextFilters,
       hydrateParticipants: params.hydrateParticipants,
       tournamentAppliedPolicies,
+      hydrationCache,
       scheduleVisibilityFilters,
       tournamentParticipants,
       requireParticipants,

@@ -8,14 +8,11 @@ import { completedMatchUpStatuses, BYE, COMPLETED } from '@Constants/matchUpStat
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { PayloadProfileEnum } from '@Types/tournamentTypes';
 
-const seed = { nonRandom: 1 };
-
 function loadDraw(drawProfile: any) {
   const {
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [drawProfile],
-    participantsProfile: seed,
     setState: true,
   });
   return eventId;

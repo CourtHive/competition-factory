@@ -6,7 +6,6 @@ import tournamentEngine from '@Engines/syncEngine';
 
 function seedTournament() {
   const result = mocksEngine.generateTournamentRecord({
-    inContext: true,
     setState: true,
     drawProfiles: [{ participantsCount: 8, drawSize: 8 }],
   });

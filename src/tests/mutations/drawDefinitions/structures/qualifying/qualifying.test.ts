@@ -32,7 +32,7 @@ it('will throw an error for incorrect qualifyingStructures', () => {
   const result = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        qualifyingProfiles: [{ drawSize: 16, qualifyingPositions: 4 }],
+        qualifyingProfiles: [{ drawSize: 16, qualifyingPositions: 4 }] as any,
         drawSize: 16,
       },
     ],
@@ -97,7 +97,8 @@ const scenarios = [
 ];
 
 it.each(scenarios)('supports drawProfiles which include qualifying structures', (scenario) => {
-  const drawProfiles = [scenario];
+  const { expectation: _expectation, ...drawProfile } = scenario;
+  const drawProfiles = [drawProfile];
 
   let result = mocksEngine.generateTournamentRecord({
     completeAllMatchUps: true,

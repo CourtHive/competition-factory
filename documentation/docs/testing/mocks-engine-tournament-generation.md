@@ -22,8 +22,8 @@ const {
 ```typescript
 interface GenerateTournamentRecordOptions {
   // Tournament Properties
-  startDate?: string; // ISO date string (default: today)
-  endDate?: string; // ISO date string (default: startDate + 6 days)
+  startDate?: string; // ISO date string (default: endDate - 7 days, or today)
+  endDate?: string; // ISO date string (default: startDate + 7 days); before startDate is INVALID_DATE
   tournamentAttributes?: object; // Additional tournament properties
   tournamentExtensions?: array; // Extensions to attach to tournament
   tournamentId?: string; // Override generated ID
@@ -1032,7 +1032,9 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 
 ## Deterministic Generation
 
-The `nonRandom` parameter seeds a deterministic PRNG that replaces `Math.random` throughout the entire generation chain. This makes every random decision — participant names, IDs, nationalities, ratings, draw position assignments, and match outcomes — fully reproducible.
+The `nonRandom` parameter seeds a deterministic PRNG that replaces `Math.random` throughout the entire generation chain. This makes every random decision — participant names, IDs, nationalities, addresses, ratings, draw position assignments, and match outcomes — fully reproducible.
+
+What a seed promises: given the same `nonRandom`, the same profile, the same clock and the same factory version, the record is identical byte for byte. It does not depend on the process's random source (`setRandomSource`) or on anything generated earlier in the process, and the call draws nothing from that source. `modifyTournamentRecord` gives the same promise for what it adds. To pin the clock as well, use `setClock`. See [Randomness](../concepts/randomness.md).
 
 ### Same Seed = Same Results
 
@@ -1152,6 +1154,9 @@ const { tournamentRecord, scenarioResult } = mocksEngine.generateTournamentRecor
 | `anchor`              | `'NOW'` (default) reads the clock at call time; an ISO datetime makes the result deterministic      |
 | `minutesBeforeAnchor` | how far before the anchor the **first** scheduled matchUp starts; everything else keeps its spacing |
 | `assignCourts`        | additionally assign `courtId` / `courtOrder`, preserving the scheduled times                        |
+| `called`              | `{ withinMinutes }`: the matchUps due that soon after the anchor get `calledAt` (the anchor)        |
+| `checkedIn`           | `{ withinMinutes }`: the matchUps due that soon have both sides' individuals checked in             |
+| `conflicts`           | `[{ type, count }]`: deliberate schedule conflicts (needs `assignCourts`); see below                |
 
 ### What it does and does not do
 
@@ -1163,7 +1168,22 @@ const { tournamentRecord, scenarioResult } = mocksEngine.generateTournamentRecor
   nothing scheduled it is a **no-op, not an error** — `scenarioResult.shiftedCount` is `0`.
 - Pass an ISO `anchor` in tests. `'NOW'` is for demos and fixtures meant to stay current.
 
-`scenarioResult` reports `anchoredTo`, `shiftMinutes` and `shiftedCount`.
+`scenarioResult` reports `anchoredTo`, `shiftMinutes` and `shiftedCount`, and `calledMatchUpIds`,
+`checkedInMatchUpIds` and `conflicts` (each with its `type` and `matchUpIds`).
+
+### Deliberate conflicts
+
+A conflict is asked for by the name `proConflicts` reports it under, so a fixture keeps exercising the
+detector whatever the scheduler does next:
+
+| `type`                          | placed as                                                              |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `CONFLICT_COURT_TIME_ORDER`     | a later matchUp on a court moved to the time of the one before it      |
+| `CONFLICT_COURT_DOUBLE_BOOKING` | a matchUp moved onto another's court and order of play                 |
+| `CONFLICT_MATCHUP_ORDER`        | a matchUp moved into the same order of play as a matchUp it depends on |
+
+Each is placed on matchUps that carry no issue yet, because `proConflicts` reports only a matchUp's most
+severe issue. A type it cannot place, or one outside these, is refused with `INVALID_VALUES`.
 
 :::note
 Ensure the venue's hours contain the anchored window. Shifting a schedule far outside

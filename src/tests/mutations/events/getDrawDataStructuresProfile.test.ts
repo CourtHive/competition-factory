@@ -13,7 +13,6 @@ function seed(drawProfile: any) {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [drawProfile],
-    participantsProfile: { nonRandom: 1 },
     setState: true,
   });
   return drawId;

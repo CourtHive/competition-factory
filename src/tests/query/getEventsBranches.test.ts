@@ -3,11 +3,12 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
+import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 
 test('getEvents with no tournamentRecord returns error', () => {
   const result = tournamentEngine.getEvents({});
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
 });
 
 test('getEvents with inContext adds tournamentId', () => {

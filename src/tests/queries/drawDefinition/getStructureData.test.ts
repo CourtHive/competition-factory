@@ -20,7 +20,6 @@ function seedWithQualifying() {
         ],
       },
     ],
-    participantsProfile: { nonRandom: 1 },
     setState: true,
   });
   return drawId;
@@ -76,7 +75,6 @@ describe('getStructureData', () => {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 16, drawType: ROUND_ROBIN }],
-      participantsProfile: { nonRandom: 1 },
       setState: true,
     });
     const { drawDefinition } = tournamentEngine.getEvent({ drawId });

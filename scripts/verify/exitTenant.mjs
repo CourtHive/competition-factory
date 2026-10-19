@@ -82,6 +82,7 @@ const ALLOWED = {
   // plumbing: a caller-supplied value passed through
   'assemblies/generators/mocks/completeDrawMatchUps.ts': 'PLUMBING — mock outcome',
   'assemblies/generators/mocks/generateEventWithDraw.ts': 'PLUMBING — mock outcome',
+  'types/mocksTypes.ts': 'PLUMBING — the type of the mock outcome generateEventWithDraw applies',
   'mutate/drawDefinitions/matchUpGovernor/attemptToModifyScore.ts': 'PLUMBING',
   'mutate/matchUps/drawPositions/directParticipants.ts': 'PLUMBING — sourceMatchUpStatusCodes',
   'mutate/matchUps/drawPositions/relabelledPathFeeds.ts':

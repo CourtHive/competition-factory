@@ -282,7 +282,8 @@ function addContextTimeItem({ context, tournamentRecord }) {
       addDrawDefinitionTimeItem({ drawDefinition, timeItem });
     }
     if (eventId) {
-      addEventTimeItem({ event, timeItem });
+      // naming the tournament announces the event's new timeItem with MODIFY_EVENT
+      addEventTimeItem({ tournamentRecord, event, timeItem });
     }
   } else {
     addTournamentTimeItem({ tournamentRecord, timeItem });

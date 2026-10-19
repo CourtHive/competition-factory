@@ -3,6 +3,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
 // constants
+import { INVALID_CONFIGURATION, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import {
   FIRST_ROUND_LOSER_CONSOLATION,
@@ -37,7 +38,7 @@ test('returns error when getPositionRangeMap fails (missing drawDefinition)', ()
     playoffGroups: [{ finishingPositions: [1, 2] }],
     sourceStructureId: 'source-struct-id',
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
 });
 
 // L92-98 (L95 validation.error branch) — bestOf config fails validatePlayoffGroups
@@ -51,7 +52,7 @@ test('returns validation error when bestOf exceeds available participants', () =
     matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_CONFIGURATION);
 });
 
 // L116 + L126 — non-remainder group with empty finishingPositions against a defined
@@ -71,7 +72,7 @@ test('rejects empty finishingPositions when positionRangeMap is defined (RR sour
     groupCount: 2,
     groupSize: 4,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_VALUES);
 });
 
 // L162 (?? []) + L164 (positionRangeMap falsy) — AD_HOC group with no finishingPositions
@@ -147,7 +148,7 @@ test('PAGE_PLAYOFF with participants !== 4 returns INVALID_CONFIGURATION', () =>
     matchUpType: SINGLES_MATCHUP,
     isMock: true,
   });
-  expect(result.error).toBeDefined();
+  expect(result.error).toEqual(INVALID_CONFIGURATION);
 });
 
 // L618/622/629/633/640/644 (truthy) + L652 (matchUps present) + L653 (Math.max) —

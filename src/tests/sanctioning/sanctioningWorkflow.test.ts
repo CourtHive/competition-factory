@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Applicant, EventProposal, TournamentProposal, SanctioningPolicy } from '@Types/sanctioningTypes';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { MALE } from '@Constants/genderConstants';
 import {
@@ -16,6 +17,11 @@ import {
   APPROVED,
   REJECTED,
   WITHDRAWN,
+  CONDITION_NOT_FOUND,
+  ENDORSEMENT_REQUIRED,
+  INVALID_STATUS_TRANSITION,
+  MISSING_ENDORSEMENT,
+  OUTSTANDING_COMPLIANCE,
 } from '@Constants/sanctioningConstants';
 
 const testApplicant: Applicant = {
@@ -259,7 +265,7 @@ describe('Sanctioning Workflow — Conditional Approval', () => {
     sanctioningEngine.reviewApplication({});
 
     let result: any = sanctioningEngine.conditionallyApprove({ conditions: [] });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for unknown condition id', () => {
@@ -269,7 +275,7 @@ describe('Sanctioning Workflow — Conditional Approval', () => {
     sanctioningEngine.conditionallyApprove({ conditions: [{ description: 'Something' }] });
 
     let result: any = sanctioningEngine.meetCondition({ conditionId: 'bogus' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(CONDITION_NOT_FOUND);
     expect(result.error.code).toEqual('ERR_NOT_FOUND_CONDITION');
   });
 });
@@ -313,7 +319,7 @@ describe('Sanctioning Workflow — Endorsement', () => {
     createAndGetRecord();
 
     let result: any = sanctioningEngine.submitApplication({ sanctioningPolicy: endorsementRequiredPolicy });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(ENDORSEMENT_REQUIRED);
     expect(result.error.code).toEqual('ERR_ENDORSEMENT_REQUIRED');
   });
 
@@ -341,7 +347,7 @@ describe('Sanctioning Workflow — Endorsement', () => {
     createAndGetRecord();
 
     let result: any = sanctioningEngine.endorseApplication({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_ENDORSEMENT);
     expect(result.error.code).toEqual('ERR_MISSING_ENDORSEMENT');
   });
 });
@@ -375,7 +381,7 @@ describe('Sanctioning Workflow — Multi-Level Endorsement', () => {
     sanctioningEngine.endorseApplication({ endorserId: 'section-5' });
 
     let result: any = sanctioningEngine.submitApplication({ sanctioningPolicy: multiEndorsementPolicy });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(ENDORSEMENT_REQUIRED);
     expect(result.error.code).toEqual('ERR_ENDORSEMENT_REQUIRED');
 
     // Now endorse the second
@@ -457,7 +463,7 @@ describe('Sanctioning Workflow — Review Notes', () => {
   it('rejects empty note', () => {
     createAndGetRecord();
     let result: any = sanctioningEngine.addReviewNote({ note: '' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -480,7 +486,7 @@ describe('Sanctioning Workflow — Prior Compliance Gate', () => {
       sanctioningPolicy: testPolicy,
       priorSanctioningRecords: [priorRecord],
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(OUTSTANDING_COMPLIANCE);
     expect(result.error.code).toEqual('ERR_OUTSTANDING_COMPLIANCE');
   });
 
@@ -520,13 +526,13 @@ describe('Sanctioning Workflow — Invalid Transitions', () => {
   it('cannot approve from DRAFT', () => {
     createAndGetRecord();
     let result: any = sanctioningEngine.approveApplication({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
   });
 
   it('cannot review from DRAFT (must submit first)', () => {
     createAndGetRecord();
     let result: any = sanctioningEngine.reviewApplication({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
   });
 
   it('cannot submit from APPROVED', () => {
@@ -536,13 +542,13 @@ describe('Sanctioning Workflow — Invalid Transitions', () => {
     sanctioningEngine.approveApplication({});
 
     let result: any = sanctioningEngine.submitApplication({ sanctioningPolicy: testPolicy });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
   });
 
   it('cannot reject from DRAFT', () => {
     createAndGetRecord();
     let result: any = sanctioningEngine.rejectApplication({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_STATUS_TRANSITION);
   });
 });
 

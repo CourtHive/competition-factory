@@ -4,6 +4,7 @@ import { expect, it, describe } from 'vitest';
 
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { INVALID_VALUES, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 describe('generateAndPopulatePlayoffStructures branch coverage', () => {
@@ -20,7 +21,7 @@ describe('generateAndPopulatePlayoffStructures branch coverage', () => {
       roundProfiles: [{ '1': 1 }],
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
   });
 
   it('routes to RR playoff generation for CONTAINER structures', () => {
@@ -30,12 +31,15 @@ describe('generateAndPopulatePlayoffStructures branch coverage', () => {
       drawProfiles: [
         {
           drawType: ROUND_ROBIN_WITH_PLAYOFF,
-          playoffGroups: [
-            { finishingPositions: [1], structureName: 'Gold' },
-            { finishingPositions: [2], structureName: 'Silver' },
-          ],
+          // under structureOptions: drawProfile `playoffGroups` and `groupSize` keys were never read
+          structureOptions: {
+            playoffGroups: [
+              { finishingPositions: [1], structureName: 'Gold' },
+              { finishingPositions: [2], structureName: 'Silver' },
+            ],
+            groupSize: 4,
+          },
           drawSize: 16,
-          groupSize: 4,
         },
       ],
       setState: true,
@@ -148,7 +152,7 @@ describe('generateAndPopulatePlayoffStructures branch coverage', () => {
       structureId,
       drawId,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('handles FMLC draw type with proper playoff structure generation', () => {

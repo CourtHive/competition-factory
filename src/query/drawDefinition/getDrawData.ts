@@ -1,19 +1,24 @@
 import type { ContextProfile, ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
 import { DrawDefinition, Event, Participant, PayloadProfileEnum, Tournament } from '@Types/tournamentTypes';
-import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { isTalliedStructure, refreshParticipantResults } from './refreshParticipantResults';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getDrawIsPublished } from '@Query/publishing/getDrawIsPublished';
 import { isStructureVisible } from '@Query/publishing/isStructureVisible';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
+import { withContextExclusion } from '@Query/matchUps/contextExclusion';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
-import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
+import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
+import { createHydrationCache } from '@Query/matchUps/hydrationCache';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { applyRoundLimit } from '@Query/publishing/applyRoundLimit';
+import { drawWithDerivedGoesTo } from '@Query/matchUps/addGoesTo';
 import { structureSort } from '@Functions/sorters/structureSort';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findExtension } from '@Acquire/findExtension';
 import { findStructure } from '@Acquire/findStructure';
@@ -25,7 +30,6 @@ import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefiniti
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { DISPLAY, TALLY } from '@Constants/extensionConstants';
 import { PUBLIC_DISPLAY } from '@Constants/displayConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -98,7 +102,11 @@ type DrawInfo = Pick<DrawDefinition, 'matchUpFormat' | 'updatedAt' | 'drawName' 
 };
 
 // NOTE: if { usePublishState: true } then { eventPublishState } or { event } must be provided
-export function getDrawData(params: GetDrawDataArgs): {
+export function getDrawData(params: GetDrawDataArgs) {
+  return withContextExclusion(params, getDrawDataUnredacted);
+}
+
+function getDrawDataUnredacted(params: GetDrawDataArgs): {
   structures?: any[];
   success?: boolean;
   error?: ErrorType;
@@ -115,7 +123,6 @@ export function getDrawData(params: GetDrawDataArgs): {
     pressureRating,
     refreshResults,
     contextProfile,
-    drawDefinition,
     noDeepCopy,
     sortConfig,
     context,
@@ -129,7 +136,26 @@ export function getDrawData(params: GetDrawDataArgs): {
     return { error: INVALID_VALUES };
   }
 
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  if (!params.drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  // A draw built outside the factory may not store its progression edges (`winnerMatchUpId` / `loserMatchUpId`) until a
+  // scored matchUp stores them, and every bracket is drawn from them (an integrator report, 2026-10-18). Such a draw is
+  // read from a copy that carries them: they reach the returned data and never the draw this query was handed.
+  const drawDefinition = drawWithDerivedGoesTo(params.drawDefinition);
+  const hydrationCache = createHydrationCache();
+
+  // Built on first use, so a STUBS request builds none of it.
+  let drawFacts: ReturnType<typeof buildDrawFacts> | undefined;
+  const getDrawFacts = () => {
+    drawFacts ??= buildDrawFacts({
+      hydrate: inContext && !tournamentParticipants.length && !!tournamentRecord,
+      participantsProfile: params.participantsProfile,
+      policyDefinitions,
+      tournamentRecord,
+      contextProfile,
+      drawDefinition,
+    });
+    return drawFacts;
+  };
 
   const { matchUpFormat, updatedAt, drawType, drawName, drawId } = drawDefinition;
   const drawInfo: DrawInfo = {
@@ -143,7 +169,7 @@ export function getDrawData(params: GetDrawDataArgs): {
   drawInfo.display = findExtension({ element: drawDefinition, name: DISPLAY }).extension?.value;
 
   const qualificationStageSeedAssignments = {};
-  let mainStageSeedAssignments, report;
+  let mainStageSeedAssignments;
 
   const { allStructuresLinked, sourceStructureIds, hasDrawFeedProfile, structureGroups } = getStructureGroups({
     drawDefinition,
@@ -151,7 +177,7 @@ export function getDrawData(params: GetDrawDataArgs): {
 
   if (!allStructuresLinked) return { error: UNLINKED_STRUCTURES };
 
-  const eventPublishState = params?.eventPublishState ?? getPublishState({ event }).publishState;
+  const eventPublishState = params?.eventPublishState ?? getPublishState({ event, status }).publishState;
   const publishStatus = params?.publishStatus ?? getEventPublishStatus({ event, status });
   const drawDetails = eventPublishState?.status?.drawDetails?.[drawDefinition.drawId];
   const eventPublished = !!eventPublishState?.status?.published;
@@ -224,6 +250,9 @@ export function getDrawData(params: GetDrawDataArgs): {
         if (!structure) return undefined;
         const structureId = structure?.structureId;
         let seedAssignments = [];
+        // per structure: one that is not tallied here (a round robin under refreshResults) reports nothing,
+        // rather than the report of the structure tallied before it
+        let report;
 
         // pass seedAssignments from { stageSequence: 1 } to other stages
         if (structure.stage && [MAIN, CONSOLATION, PLAY_OFF].includes(structure.stage)) {
@@ -240,10 +269,13 @@ export function getDrawData(params: GetDrawDataArgs): {
           context: { drawId: drawInfo.drawId, ...context },
           hydrateParticipants: params.hydrateParticipants,
           participantsProfile: params.participantsProfile,
-          tournamentParticipants,
+          tournamentParticipants: getDrawFacts().participants ?? tournamentParticipants,
+          matchUpsMap: getDrawFacts().matchUpsMap,
+          exitProfiles: getDrawFacts().exitProfiles,
           policyDefinitions,
           tournamentRecord,
           usePublishState,
+          hydrationCache,
           publishStatus,
           contextProfile,
           drawDefinition,
@@ -266,25 +298,22 @@ export function getDrawData(params: GetDrawDataArgs): {
           };
         });
 
+        // only a structure a tally describes is tallied (never elimination); a round robin is refreshed group by group
         if (
           matchUps.length &&
-          ((!participantResults?.length && params.allParticipantResults) || // don't override existing participantResults, unless { refreshresults: true }
-            (refreshResults && !structuresOf(structure))) // cannot refresh for round roubins
+          isTalliedStructure({ drawDefinition, structure }) &&
+          ((!participantResults?.length && params.allParticipantResults) || refreshResults)
         ) {
-          const { subOrderMap } = createSubOrderMap({ positionAssignments });
-
-          const hasTeamMatchUps = matchUps.some((matchUp) => matchUp.matchUpType === TEAM_MATCHUP);
-          const consideredMatchUps = hasTeamMatchUps
-            ? matchUps.filter((matchUp) => matchUp.matchUpType === TEAM_MATCHUP)
-            : matchUps;
-          const result = tallyParticipantResults({
-            matchUpFormat: structure.matchUpFormat,
-            matchUps: consideredMatchUps,
+          const result = refreshParticipantResults({
             policyDefinitions,
+            tournamentRecord,
+            drawDefinition,
             pressureRating,
-            subOrderMap,
+            structure,
+            matchUps,
+            event,
           });
-          report = result?.report;
+          report = result.report;
 
           participantResults = positionAssignments?.filter(xa(PARTICIPANT_ID)).map((assignment) => {
             const { drawPosition, participantId } = assignment;
@@ -397,5 +426,43 @@ export function getDrawData(params: GetDrawDataArgs): {
         : undefined,
     drawInfo: noDeepCopy ? drawInfo : makeDeepCopy(drawInfo, false, true),
     ...SUCCESS,
+  };
+}
+
+/**
+ * Draw-wide inputs that getAllStructureMatchUps used to build again for every structure of a draw: the
+ * matchUps map and exit profiles always cover the whole draw, and the participants were hydrated with the
+ * same arguments each time (the arguments getAllStructureMatchUps would use). One read, one build.
+ */
+function buildDrawFacts({
+  participantsProfile,
+  policyDefinitions,
+  tournamentRecord,
+  contextProfile,
+  drawDefinition,
+  hydrate,
+}: {
+  participantsProfile?: ParticipantsProfile;
+  policyDefinitions?: PolicyDefinitions;
+  tournamentRecord?: Tournament;
+  contextProfile?: ContextProfile;
+  drawDefinition: DrawDefinition;
+  hydrate: boolean;
+}) {
+  const participants =
+    hydrate && tournamentRecord
+      ? hydrateParticipants({
+          participantsProfile,
+          policyDefinitions,
+          tournamentRecord,
+          contextProfile,
+          inContext: true,
+        }).participants
+      : undefined;
+
+  return {
+    exitProfiles: getExitProfiles({ drawDefinition }).exitProfiles,
+    matchUpsMap: getMatchUpsMap({ drawDefinition }),
+    participants,
   };
 }

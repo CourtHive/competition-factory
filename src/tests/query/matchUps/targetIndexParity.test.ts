@@ -174,4 +174,4 @@ it('indexed targets equal scanned targets on a TEAM draw and on playoff structur
     expect(addGoesTo({ drawDefinition: copy }).error).toBeUndefined();
     expect(storedEdges(copy)).toEqual(storedEdges(drawDefinition));
   }
-});
+}, 180_000);

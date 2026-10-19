@@ -429,18 +429,22 @@ describe('getNextServer()', () => {
       winGame(engine, 0);
       winGame(engine, 1);
     }
-    // In tiebreak: server alternates every 2 points
+    // ITF Rule 5(b): the opening server serves one point, then each side serves two in turn
     // Total games = 12, so tiebreak initial server = 12 % 2 = 0
     const firstServer = engine.getNextServer();
     expect(firstServer).toBe(0);
 
-    // After 1 point, still same server (alternates every 2)
+    // After 1 point, the opponent serves
     engine.addPoint({ winner: 0 }); // 1-0
-    expect(engine.getNextServer()).toBe(0);
+    expect(engine.getNextServer()).toBe(1);
 
-    // After 2 points, server switches
+    // ...for two points
     engine.addPoint({ winner: 0 }); // 2-0
     expect(engine.getNextServer()).toBe(1);
+
+    // After 3 points, the opening server serves two
+    engine.addPoint({ winner: 0 }); // 3-0
+    expect(engine.getNextServer()).toBe(0);
   });
 
   describe('initial server = 1', () => {
@@ -514,13 +518,15 @@ describe('getNextServer()', () => {
       const tbServer = engine.getNextServer();
       expect(tbServer).toBe(1);
 
-      // After 1 point, still same server
-      engine.addPoint({ winner: 0 });
-      expect(engine.getNextServer()).toBe(1);
-
-      // After 2 points, switch
+      // ITF Rule 5(b): after the opening point, the opponent serves two
       engine.addPoint({ winner: 0 });
       expect(engine.getNextServer()).toBe(0);
+      engine.addPoint({ winner: 0 });
+      expect(engine.getNextServer()).toBe(0);
+
+      // then the opener serves two
+      engine.addPoint({ winner: 0 });
+      expect(engine.getNextServer()).toBe(1);
     });
 
     it('handles second set server after initial server = 1', () => {

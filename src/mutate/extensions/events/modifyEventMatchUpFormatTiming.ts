@@ -1,6 +1,7 @@
 import { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming';
 import { modifyMatchUpFormatTiming } from '@Mutate/extensions/matchUps/modifyMatchUpFormatTiming';
-import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { Event, Tournament } from '@Types/tournamentTypes';
@@ -27,7 +28,7 @@ export function modifyEventMatchUpFormatTiming(params: ModifyEventMatchUpFormatT
 
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
-  if (!isValidMatchUpFormat({ matchUpFormat })) return { error: INVALID_VALUES };
+  if (!isWellFormedMatchUpFormat({ matchUpFormat })) return { error: INVALID_VALUES };
 
   const eventCheck = requireParams({ event }, [EVENT]);
   if (eventCheck.error) return eventCheck;
@@ -86,16 +87,19 @@ export function modifyEventMatchUpFormatTiming(params: ModifyEventMatchUpFormatT
 
   if (!validAverageMinutes && !validRecoveryMinutes) return { error: INVALID_VALUES };
 
-  return modifyMatchUpFormatTiming({
-    // `undefined`, not `false`, when there is nothing to write: the receiver reads these with
-    // `?? []`, which only replaces null/undefined — a `false` survives and `false.filter` throws.
-    // The previous guard produced `undefined` only by accident, as the short-circuit of
-    // `minutes && …`; saying so explicitly removes the dependency on that accident.
-    averageTimes: validAverageMinutes ? newAverageTimes : undefined,
-    recoveryTimes: validRecoveryMinutes ? newRecoveryTimes : undefined,
-    tournamentRecord,
-    matchUpFormat,
-    eventId,
-    event,
-  });
+  // the timing is an extension on the event, so writing it is announced with MODIFY_EVENT
+  return withEventChangeNotice({ tournamentRecord, event }, () =>
+    modifyMatchUpFormatTiming({
+      // `undefined`, not `false`, when there is nothing to write: the receiver reads these with
+      // `?? []`, which only replaces null/undefined — a `false` survives and `false.filter` throws.
+      // The previous guard produced `undefined` only by accident, as the short-circuit of
+      // `minutes && …`; saying so explicitly removes the dependency on that accident.
+      averageTimes: validAverageMinutes ? newAverageTimes : undefined,
+      recoveryTimes: validRecoveryMinutes ? newRecoveryTimes : undefined,
+      tournamentRecord,
+      matchUpFormat,
+      eventId,
+      event,
+    }),
+  );
 }

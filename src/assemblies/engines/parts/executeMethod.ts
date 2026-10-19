@@ -1,4 +1,5 @@
 import { engineLogging, paramsMayBeLogged } from '@Global/state/engineLogging';
+import { withContextExclusion } from '@Query/matchUps/contextExclusion';
 import { checkMutationLock } from './checkMutationLock';
 import { paramsMiddleware } from './paramsMiddleware';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -70,18 +71,41 @@ function resolve({ method, params, methodName, tournamentRecords, tournamentReco
 }
 
 function invoke({ tournamentRecords, tournamentRecord, params, methodName, method }) {
+  // every method is entered here, so this is the one boundary at which an engine caller's exclusion is applied
+  const run = () => withContextExclusion({ tournamentRecords, tournamentRecord, ...params }, method);
   if (getDevContext()) {
-    return method({ tournamentRecords, tournamentRecord, ...params });
+    return run();
   } else {
     try {
-      return method({ tournamentRecords, tournamentRecord, ...params });
+      return run();
     } catch (err) {
-      return handleCaughtError({
-        engineName: 'engine',
-        methodName,
-        params,
-        err,
-      });
+      return caughtErrorResult({ methodName, params, err });
     }
   }
+}
+
+/**
+ * The result of a method that threw, outside devContext. The state provider's `handleCaughtError` reports it and
+ * shapes the envelope, but a provider whose handler returns nothing (the reference async provider did, and so does
+ * any copy of it) would turn a throw into `{}`: no error, so no refusal, no rollback, and the partial write
+ * notified as if the call had run. Whatever the handler returns, the result carries an `error`.
+ */
+export function caughtErrorResult({
+  methodName,
+  params,
+  err,
+}: {
+  params?: Record<string, any>;
+  methodName: string;
+  err: unknown;
+}): ReturnType<typeof handleCaughtError> {
+  const caught: Record<string, any> | undefined = handleCaughtError({
+    engineName: 'engine',
+    methodName,
+    params: params ?? {},
+    err,
+  });
+  if (caught?.error) return caught;
+  const error = typeof err === 'string' ? err.toUpperCase() : ((err as Error)?.message ?? 'UNKNOWN_ERROR');
+  return { ...caught, error };
 }

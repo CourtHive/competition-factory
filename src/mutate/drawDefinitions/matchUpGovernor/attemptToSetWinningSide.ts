@@ -1,5 +1,6 @@
 import { removeDirectedParticipants } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { refreshArrivalsFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { directParticipants } from '@Mutate/matchUps/drawPositions/directParticipants';
 import { checkConnectedStructures } from './checkConnectedStructures';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -14,7 +15,7 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // types
-import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 
 export function attemptToSetWinningSide(params) {
@@ -85,15 +86,33 @@ export function attemptToSetWinningSide(params) {
 
 // the same winner, re-directed into the seat they hold: the arrival they left onward follows the new result
 export function refreshArrivals({
+  tournamentRecord,
   drawDefinition,
   matchUpsMap,
   matchUp,
+  event,
 }: {
+  tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
   matchUp: MatchUp;
+  event?: Event;
 }): void {
   const matchUps = (matchUpsMap ?? getMatchUpsMap({ drawDefinition }))?.drawMatchUps;
   const stored = matchUps?.find((m) => m.matchUpId === matchUp.matchUpId);
-  refreshArrivalsFrom({ matchUpId: matchUp.matchUpId, matchUpStatus: stored?.matchUpStatus, matchUps });
+  const refreshed = refreshArrivalsFrom({
+    matchUpId: matchUp.matchUpId,
+    matchUpStatus: stored?.matchUpStatus,
+    matchUps,
+  });
+  // rewritten in place, so nothing else announces them
+  for (const arrival of refreshed)
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: 'refreshArrivals',
+      eventId: event?.eventId,
+      matchUp: arrival,
+      drawDefinition,
+      event,
+    });
 }

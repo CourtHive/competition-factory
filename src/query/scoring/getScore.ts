@@ -6,12 +6,12 @@
  */
 
 import type { MatchUp, ScoreResult, PointSituation, FormatStructure, SetFormatStructure } from '@Types/scoring/types';
-import { resolveSetType, isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
+import { resolveSetType, isLiveDecidingSet, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
+import { deriveServer, serviceRule, formatGameScore } from '@Mutate/scoring/addPoint';
+import { isDecisionRequired, decisionRequiredSituation } from './decisionRequired';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { deriveServer, formatGameScore } from '@Mutate/scoring/addPoint';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { getCombinedPointScore } from './getCombinedPointScore';
-import { RALLY } from '@Constants/matchUpFormatConstants';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
@@ -64,6 +64,7 @@ export function getScore(matchUp: MatchUp, options?: GetScoreOptions): ScoreResu
     points,
     pointDisplay,
     situation,
+    decisionRequired: isDecisionRequired(matchUp),
   };
 }
 
@@ -100,16 +101,7 @@ function computePointDisplay(matchUp: MatchUp, points: number[]): [string, strin
     const activeSetFormat: SetFormatStructure | undefined =
       isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 
-    if (activeSetFormat) {
-      const s1Games = currentSet.side1Score || 0;
-      const s2Games = currentSet.side2Score || 0;
-      const setTo = activeSetFormat.setTo || 6;
-      const tiebreakAt =
-        (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-      const noTiebreak = activeSetFormat.noTiebreak || false;
-      const finalSetNoTiebreak = isDecidingSet && formatStructure.finalSetFormat?.noTiebreak;
-      isTiebreak = !noTiebreak && !finalSetNoTiebreak && s1Games === tiebreakAt && s2Games === tiebreakAt;
-    }
+    isTiebreak = isStandardSetTiebreak(activeSetFormat, currentSet.side1Score || 0, currentSet.side2Score || 0);
   }
 
   const scoreStr = formatGameScore(points[0], points[1], isTiebreak, isConsecutive && !isTiebreak);
@@ -124,6 +116,8 @@ function computePointDisplay(matchUp: MatchUp, points: number[]): [string, strin
  * Compute point situation booleans for the NEXT point
  */
 function computeSituation(matchUp: MatchUp): PointSituation | undefined {
+  // A match that ended level: no next point, and a decision the host must make (§ 9.7, § 11.2)
+  if (isDecisionRequired(matchUp)) return decisionRequiredSituation();
   // Only compute if match is in progress
   if (matchUp.matchUpStatus === COMPLETED || matchUp.matchUpStatus === TO_BE_PLAYED) {
     return undefined;
@@ -147,15 +141,14 @@ function computeSituation(matchUp: MatchUp): PointSituation | undefined {
   const activeSetFormat: SetFormatStructure | undefined =
     isDecidingSet && formatStructure.finalSetFormat ? formatStructure.finalSetFormat : formatStructure.setFormat;
 
-  // Derive server for the next point
-  const isRallyScoring = !!(activeSetFormat?.tiebreakSet?.modifier === RALLY || activeSetFormat?.modifier === RALLY);
-  let server: 0 | 1 | undefined;
-  if (!isRallyScoring) {
-    server = deriveServer(matchUp, formatStructure, setType);
-  }
+  // The server for the next point, and whether it is derived (§ 10.4, § 11.2): where none is derived the
+  // server is a placeholder, and nothing that turns on the server (game point, break point) is reported
+  const server = deriveServer(matchUp, formatStructure, setType);
+  const serverDerived = serviceRule(formatStructure, activeSetFormat) !== 'none';
+  const knownServer = serverDerived ? server : undefined;
 
   // Call calculatePointsTo for the current state (before next point)
-  const pointsToInfo = calculatePointsTo(matchUp, formatStructure, setType, activeSetFormat, server);
+  const pointsToInfo = calculatePointsTo(matchUp, formatStructure, setType, activeSetFormat, knownServer);
   if (!pointsToInfo) {
     // Timed sets — can't compute
     return {
@@ -166,6 +159,7 @@ function computeSituation(matchUp: MatchUp): PointSituation | undefined {
       isGoldenPoint: false,
       isTiebreak: false,
       server,
+      serverDerived,
     };
   }
 
@@ -176,14 +170,7 @@ function computeSituation(matchUp: MatchUp): PointSituation | undefined {
   if (!isTiebreak && setType === 'standard' && activeSetFormat) {
     const currentSet = matchUp.score.sets.at(-1);
     if (currentSet) {
-      const s1Games = currentSet.side1Score || 0;
-      const s2Games = currentSet.side2Score || 0;
-      const setTo = activeSetFormat.setTo || 6;
-      const tiebreakAt =
-        (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-      const noTiebreak = activeSetFormat.noTiebreak || false;
-      const finalSetNoTiebreak = isDecidingSet && formatStructure.finalSetFormat?.noTiebreak;
-      isTiebreak = !noTiebreak && !finalSetNoTiebreak && s1Games === tiebreakAt && s2Games === tiebreakAt;
+      isTiebreak = isStandardSetTiebreak(activeSetFormat, currentSet.side1Score || 0, currentSet.side2Score || 0);
     }
   }
 
@@ -205,13 +192,13 @@ function computeSituation(matchUp: MatchUp): PointSituation | undefined {
   const isGoldenPoint = pointsToGame[0] === 1 && pointsToGame[1] === 1 && (isNoAD || (!!deuceAfter && !isTiebreak));
 
   // isGamePoint: server is 1 point from winning the game
-  const isGamePoint = server === undefined ? false : pointsToGame[server] === 1;
+  const isGamePoint = knownServer === undefined ? false : pointsToGame[knownServer] === 1;
 
   // isSetPoint: either side is 1 point from winning the set
   const isSetPoint = Math.min(pointsToSet[0], pointsToSet[1]) === 1;
 
-  // isMatchPoint: either side is 1 point from winning the match
-  const isMatchPoint = Math.min(pointsToMatch[0], pointsToMatch[1]) === 1;
+  // isMatchPoint: either side is 1 point from winning the match (a side that cannot win it has no count)
+  const isMatchPoint = pointsToMatch.includes(1);
 
   return {
     isBreakPoint: isBreakpoint,
@@ -221,6 +208,7 @@ function computeSituation(matchUp: MatchUp): PointSituation | undefined {
     isGoldenPoint,
     isTiebreak,
     server,
+    serverDerived,
   };
 }
 

@@ -13,7 +13,7 @@ describe('getValidQualifiersAction branch coverage', () => {
       {
         qualifyingProfiles: [
           {
-            roundTargets: 1,
+            roundTarget: 1,
             structureProfiles: [{ drawSize: 4, qualifyingPositions: 2 }],
           },
         ],
@@ -62,7 +62,7 @@ describe('getValidQualifiersAction branch coverage', () => {
         {
           qualifyingProfiles: [
             {
-              roundTargets: 1,
+              roundTarget: 1,
               structureProfiles: [{ drawSize: 4, qualifyingPositions: 2 }],
             },
           ],
@@ -132,7 +132,7 @@ describe('getValidQualifiersAction branch coverage', () => {
         {
           qualifyingProfiles: [
             {
-              roundTargets: 1,
+              roundTarget: 1,
               structureProfiles: [{ drawSize: 4, qualifyingPositions: 2 }],
             },
           ],
@@ -178,7 +178,7 @@ describe('getValidQualifiersAction branch coverage', () => {
         {
           qualifyingProfiles: [
             {
-              roundTargets: 1,
+              roundTarget: 1,
               structureProfiles: [{ drawSize: 4, qualifyingPositions: 2 }],
             },
           ],

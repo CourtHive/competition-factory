@@ -1653,26 +1653,26 @@ tournamentEngine.getStructureSeedAssignments({
 
 ### Mutation Methods
 
-#### `assignSeed()`
+#### `modifySeedAssignment()`
 
-Assigns a seed to a specific participant.
+Assign or change a participant's displayed seed value in a structure. The mutation allocates a
+`seedNumber` when creating an assignment (the next number after the highest existing one; it does
+not fill an empty placeholder slot); `seedValue` is the caller's displayed value.
 
 ```javascript
-tournamentEngine.assignSeed({
+tournamentEngine.modifySeedAssignment({
   drawId,
+  structureId,
   participantId: 'player-123',
-  seedNumber: 1,
-  seedValue: 1,
+  seedValue: '1',
 });
 ```
 
-#### `clearDrawSeeding()`
-
-Removes all seed assignments from a draw.
-
-```javascript
-tournamentEngine.clearDrawSeeding({ drawId });
-```
+Passing an empty `seedValue` clears an existing assignment's displayed value; it does not remove all
+seed-assignment records or reposition the draw. There is no `clearDrawSeeding` engine method;
+`removeSeeding` clears entries' SEEDING scale values, not structure seed assignments. To
+rebuild an unseeded draw, generate a new definition with `seedsCount: 0` and review its positions
+before replacing the existing definition.
 
 #### `generateDrawDefinition()`
 

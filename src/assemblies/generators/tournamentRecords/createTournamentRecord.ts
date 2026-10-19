@@ -46,8 +46,10 @@ export function createTournamentRecord(params): any {
     return { error: INVALID_TIME_ZONE };
   }
 
+  // `isValidExtension` takes `{ extension }`: given each element directly it accepted only a wrapper
+  // `{ extension }` (and kept the wrapper) and dropped every well-formed extension (2026-10-17, M18)
   if (attributes.extensions) {
-    attributes.extensions = attributes.extensions.filter(isValidExtension);
+    attributes.extensions = attributes.extensions.filter((extension) => isValidExtension({ extension }));
   }
 
   // the creating factory is on file from the start; every later write refreshes `version` and keeps `createdVersion`.

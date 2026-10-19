@@ -1,13 +1,17 @@
+export { cleanExpiredMutationLocks } from '@Mutate/tournaments/mutationLocks/cleanExpiredMutationLocks';
 export { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 export { removeMutationLock } from '@Mutate/tournaments/mutationLocks/removeMutationLock';
 export { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
 export { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
 export { setTournamentStatus } from '@Mutate/tournaments/setTournamentStatus';
 export { removeOnlineResource } from '@Mutate/base/removeOnlineResource';
-export { removeExtension } from '@Mutate/extensions/removeExtension';
 export { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
 export { addOnlineResource } from '@Mutate/base/addOnlineResource';
-export { addExtension } from '@Mutate/extensions/addExtension';
+
+export {
+  addElementExtension as addExtension,
+  removeElementExtension as removeExtension,
+} from '@Mutate/extensions/elementExtensions';
 
 export { addTournamentOtherId, setTournamentOtherIds } from '@Mutate/tournaments/tournamentOtherIds';
 

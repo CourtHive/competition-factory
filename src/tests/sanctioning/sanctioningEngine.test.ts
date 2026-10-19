@@ -9,13 +9,23 @@ import {
 } from '@Assemblies/engines/sanctioning/sanctioningState';
 
 // constants
-import { DRAFT, SUBMITTED, WITHDRAWN, APPROVED } from '@Constants/sanctioningConstants';
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { MALE, FEMALE } from '@Constants/genderConstants';
 import { HARD, CLAY } from '@Constants/surfaceConstants';
 import { OUTDOOR } from '@Constants/venueConstants';
+import {
+  DRAFT,
+  SUBMITTED,
+  WITHDRAWN,
+  APPROVED,
+  EVENT_PROPOSAL_NOT_FOUND,
+  MISSING_SANCTIONING_RECORD,
+  PROPOSAL_NOT_EDITABLE,
+  SANCTIONING_RECORD_EXISTS,
+  SANCTIONING_RECORD_NOT_FOUND,
+} from '@Constants/sanctioningConstants';
 
 // types
 import type { EventProposal, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
@@ -93,7 +103,7 @@ describe('Sanctioning Engine — State Management', () => {
 
   it('removeSanctioningRecord returns error for unknown id', () => {
     let result: any = sanctioningEngine.removeSanctioningRecord('nonexistent');
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(SANCTIONING_RECORD_NOT_FOUND);
   });
 });
 
@@ -130,7 +140,7 @@ describe('Sanctioning Engine — createSanctioningRecord', () => {
   it('rejects duplicate sanctioningId', () => {
     createTestRecord({ sanctioningId: 'dup-id' });
     let result: any = createTestRecord({ sanctioningId: 'dup-id' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(SANCTIONING_RECORD_EXISTS);
     expect(result.error.code).toEqual('ERR_EXISTING_SANCTIONING_RECORD');
   });
 
@@ -139,7 +149,7 @@ describe('Sanctioning Engine — createSanctioningRecord', () => {
       applicant: testApplicant,
       proposal: testProposal,
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('requires applicant', () => {
@@ -147,7 +157,7 @@ describe('Sanctioning Engine — createSanctioningRecord', () => {
       governingBodyId: 'gov-001',
       proposal: testProposal,
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('requires proposal', () => {
@@ -155,7 +165,7 @@ describe('Sanctioning Engine — createSanctioningRecord', () => {
       governingBodyId: 'gov-001',
       applicant: testApplicant,
     } as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('requires proposal.tournamentName', () => {
@@ -164,7 +174,7 @@ describe('Sanctioning Engine — createSanctioningRecord', () => {
       applicant: testApplicant,
       proposal: { ...testProposal, tournamentName: '' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('requires at least one event in proposal', () => {
@@ -173,7 +183,7 @@ describe('Sanctioning Engine — createSanctioningRecord', () => {
       applicant: testApplicant,
       proposal: { ...testProposal, events: [] },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('sets the created record as active', () => {
@@ -219,14 +229,14 @@ describe('Sanctioning Engine — updateProposal', () => {
     result = sanctioningEngine.updateProposal({
       updates: { tournamentName: 'Should Fail' },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(PROPOSAL_NOT_EDITABLE);
     expect(result.error.code).toEqual('ERR_PROPOSAL_NOT_EDITABLE');
   });
 
   it('rejects missing updates', () => {
     createTestRecord();
     let result: any = sanctioningEngine.updateProposal({});
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -267,7 +277,7 @@ describe('Sanctioning Engine — Event Proposal CRUD', () => {
   it('returns error when removing nonexistent event proposal', () => {
     createTestRecord();
     let result: any = sanctioningEngine.removeEventProposal({ eventProposalId: 'bogus' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(EVENT_PROPOSAL_NOT_FOUND);
     expect(result.error.code).toEqual('ERR_NOT_FOUND_EVENT_PROPOSAL');
   });
 
@@ -331,7 +341,7 @@ describe('Sanctioning Engine — Queries', () => {
 
   it('getSanctioningRecord returns error when no record', () => {
     let result: any = sanctioningEngine.getSanctioningRecord();
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
   });
 
   it('getAvailableTransitions returns valid transitions for DRAFT', () => {
@@ -378,7 +388,8 @@ describe('Sanctioning Engine — executionQueue', () => {
   });
 
   it('pipes values between directives', () => {
-    let result: any = sanctioningEngine.executionQueue([
+    // the explicit sanctioningId names no record: only a piped id can reach the record just created
+    const directives = (pipe?: any) => [
       {
         method: 'createSanctioningRecord',
         params: {
@@ -389,11 +400,21 @@ describe('Sanctioning Engine — executionQueue', () => {
       },
       {
         method: 'getSanctioningRecord',
-        pipe: { sanctioningId: true },
+        params: { sanctioningId: 'no-such-record' },
+        pipe,
       },
-    ]);
+    ];
+
+    // control: without the pipe the lookup misses
+    let result: any = sanctioningEngine.executionQueue(directives(), true);
+    expect(result.error).toEqual(MISSING_SANCTIONING_RECORD);
+    expect(result.rolledBack).toBe(true);
+
+    result = sanctioningEngine.executionQueue(directives({ sanctioningId: true }));
     expect(result.success).toBe(true);
-    expect(result.results[1].sanctioningRecord).toBeDefined();
+    const { sanctioningId } = result.results[0];
+    expect(sanctioningId).toEqual(result.results[0].sanctioningRecord.sanctioningId);
+    expect(result.results[1].sanctioningRecord.sanctioningId).toEqual(sanctioningId);
   });
 
   it('rolls back on error when rollbackOnError is true', () => {
@@ -415,7 +436,7 @@ describe('Sanctioning Engine — executionQueue', () => {
       ],
       true,
     );
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(EVENT_PROPOSAL_NOT_FOUND);
     expect(result.rolledBack).toBe(true);
 
     // Name should NOT have changed because of rollback
@@ -447,12 +468,12 @@ describe('Sanctioning Engine — executionQueue', () => {
 
   it('returns error for unknown method', () => {
     let result: any = sanctioningEngine.executionQueue([{ method: 'nonExistentMethod', params: {} }]);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('rejects non-array directives', () => {
     let result: any = sanctioningEngine.executionQueue('bad' as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 

@@ -21,7 +21,6 @@ it('able to enter MAIN structure score after manually placing BYE in CONSOLATION
     drawIds: [drawId],
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
-    inContext: true,
     drawProfiles,
   });
 

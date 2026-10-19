@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE } from '@Fixtures/policies/POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import {
   CERT_ACTIVE,
   CERT_SUSPENDED,
@@ -21,6 +22,12 @@ import {
   ASSIGN_CONFIRMED,
   ASSIGN_COMPLETED,
   CONFLICT_BLOCK,
+  CERTIFICATION_NOT_FOUND,
+  EVALUATION_NOT_EDITABLE,
+  INVALID_EVALUATION_SCORES,
+  INVALID_OFFICIATING_STATUS_TRANSITION,
+  OFFICIAL_RECORD_EXISTS,
+  OFFICIAL_RECORD_NOT_FOUND,
 } from '@Constants/officiatingConstants';
 
 function createTestRecord(overrides?: any) {
@@ -65,7 +72,7 @@ describe('Officiating Engine — State Management', () => {
     expect(result.success).toBe(true);
 
     result = createTestRecord({ officialRecordId: 'rec-1' });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(OFFICIAL_RECORD_EXISTS);
   });
 
   it('setState and getState round-trip', () => {
@@ -94,12 +101,12 @@ describe('Officiating Engine — State Management', () => {
 
   it('setActiveOfficialRecordId validates record exists', () => {
     let result: any = officiatingEngine.setActiveOfficialRecordId('nonexistent');
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(OFFICIAL_RECORD_NOT_FOUND);
   });
 
   it('requires personId to create a record', () => {
     let result: any = officiatingEngine.createOfficialRecord({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -181,7 +188,7 @@ describe('Officiating Engine — Certifications', () => {
       certificationId,
       toStatus: CERT_ACTIVE,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
   });
 
   it('validates certification', () => {
@@ -283,7 +290,7 @@ describe('Officiating Engine — Evaluations', () => {
       evaluationId,
       updates: { overallRating: 5.0 },
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(EVALUATION_NOT_EDITABLE);
   });
 
   it('transitions evaluation through full workflow', () => {
@@ -313,7 +320,7 @@ describe('Officiating Engine — Evaluations', () => {
     const { evaluationId } = result.evaluation;
 
     result = officiatingEngine.transitionEvaluationStatus({ evaluationId, toStatus: EVAL_APPROVED });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
   });
 
   it('rejected evaluation can return to DRAFT', () => {
@@ -350,7 +357,7 @@ describe('Officiating Engine — Evaluations', () => {
       evaluatorPersonId: 'evaluator-001',
       overallRating: -1,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -393,7 +400,7 @@ describe('Officiating Engine — Assignments', () => {
     const { assignmentId } = result.assignment;
 
     result = officiatingEngine.transitionAssignmentStatus({ assignmentId, toStatus: ASSIGN_COMPLETED });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_OFFICIATING_STATUS_TRANSITION);
   });
 
   it('removes an assignment', () => {
@@ -599,7 +606,7 @@ describe('Officiating Engine — Evaluation Policy & Template', () => {
       evaluationId,
       toStatus: EVAL_SUBMITTED,
     });
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_EVALUATION_SCORES);
     expect(result.error.code).toBe('ERR_INVALID_EVALUATION_SCORES');
   });
 
@@ -680,7 +687,7 @@ describe('Officiating Engine — Execution Queue', () => {
       true,
     );
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(CERTIFICATION_NOT_FOUND);
     expect(result.rolledBack).toBe(true);
 
     // State should be rolled back — no certifications
@@ -691,7 +698,7 @@ describe('Officiating Engine — Execution Queue', () => {
   it('pipes result from one directive to the next', () => {
     officiatingEngine.createOfficialRecord({ personId: 'person-pipe', organisationId: 'org-001' });
 
-    let result: any = officiatingEngine.executionQueue([
+    const directives = (pipe?: any) => [
       {
         method: 'addCertification',
         params: { organisationId: 'org-001', certificationFamily: 'UMPIRE' },
@@ -699,22 +706,33 @@ describe('Officiating Engine — Execution Queue', () => {
       {
         method: 'transitionCertificationStatus',
         params: { toStatus: CERT_SUSPENDED },
-        pipe: { certificationId: true },
+        pipe,
       },
-    ]);
+    ];
 
-    // The pipe should have passed certificationId from addCertification result
-    // but certificationId is on the certification object, not top-level
-    // This tests the directive pipeline mechanism
-    expect(result.error).toBeDefined(); // certificationId not at top-level
+    // control: without the pipe the transition has no certificationId to act on
+    let result: any = officiatingEngine.executionQueue(directives(), true);
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result.context.message).toEqual('Missing certificationId');
+    expect(result.rolledBack).toBe(true);
+
+    result = officiatingEngine.executionQueue(directives({ certificationId: true }));
+    expect(result.success).toBe(true);
+    const { certificationId } = result.results[0];
+    expect(certificationId).toEqual(result.results[0].certification.certificationId);
+
+    const certifications: any[] = officiatingEngine.getOfficialRecord({}).officialRecord?.certifications ?? [];
+    expect(certifications).toHaveLength(1);
+    expect(certifications[0].certificationId).toEqual(certificationId);
+    expect(certifications[0].status).toEqual(CERT_SUSPENDED);
   });
 
   it('rejects invalid directives', () => {
     let result: any = officiatingEngine.executionQueue('not an array' as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
 
     result = officiatingEngine.executionQueue([{ method: 'nonexistentMethod' }]);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
@@ -824,7 +842,7 @@ describe('Officiating Engine — setOfficialRecord Validation', () => {
 
   it('setOfficialRecord with missing officialRecordId returns error', () => {
     let result: any = officiatingEngine.setOfficialRecord({} as any);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.message).toContain('Missing officialRecordId');
   });
 });
@@ -837,9 +855,29 @@ describe('Officiating Engine — Execution Queue Extended', () => {
   it('pipe success path transfers values from previous result to next params', () => {
     createTestRecord({ personId: 'person-pipe', officialRecordId: 'rec-pipe' });
 
-    // addCertification returns { certification: { certificationId } } at top level
-    // The pipe mechanism copies top-level keys from the previous result
-    // We need a directive sequence where the first result has a top-level key the second needs
+    const directives = (pipe?: any) => [
+      {
+        method: 'assignOfficial',
+        params: { tournamentId: 'tournament-pipe', roleSubtype: 'CHAIR_UMPIRE' },
+      },
+      { method: 'removeOfficialAssignment', params: {}, pipe },
+    ];
+
+    // control: without the pipe the removal has no assignmentId
+    let result: any = officiatingEngine.executionQueue(directives(), true);
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result.context.message).toEqual('Missing assignmentId');
+
+    result = officiatingEngine.executionQueue(directives({ assignmentId: true }));
+    expect(result.success).toBe(true);
+    expect(result.results[0].assignmentId).toEqual(result.results[0].assignment.assignmentId);
+    expect(officiatingEngine.getOfficialAssignments({}).assignments).toHaveLength(0);
+  });
+
+  it('a pipe key absent from the previous result leaves the explicit param in place', () => {
+    createTestRecord({ personId: 'person-pipe', officialRecordId: 'rec-pipe' });
+
+    // assignOfficial returns no top-level tournamentId, so the filter given here must survive the pipe
     let result: any = officiatingEngine.executionQueue([
       {
         method: 'assignOfficial',
@@ -847,21 +885,53 @@ describe('Officiating Engine — Execution Queue Extended', () => {
       },
       {
         method: 'getOfficialAssignments',
-        params: {},
+        params: { tournamentId: 'tournament-other' },
         pipe: { tournamentId: true },
       },
     ]);
-
-    // assignOfficial doesn't return tournamentId at top level,
-    // but the pipe mechanism only copies when key exists on lastResult
-    // This should succeed since getOfficialAssignments works without tournamentId filter
     expect(result.success).toBe(true);
-    expect(result.results).toHaveLength(2);
+    expect(result.results[1].assignments).toHaveLength(0);
+    expect(officiatingEngine.getOfficialAssignments({}).assignments).toHaveLength(1);
+  });
+
+  it('every creator returns the id of what it created at the top level, for a pipe to carry', () => {
+    let result: any = createTestRecord({ personId: 'person-ids', officialRecordId: 'rec-ids' });
+    expect(result.officialRecordId).toEqual('rec-ids');
+
+    const created: [string, any, string, string][] = [
+      [
+        'addCertification',
+        { organisationId: 'org-001', certificationFamily: 'UMPIRE' },
+        'certification',
+        'certificationId',
+      ],
+      ['addEvaluation', { evaluatorPersonId: 'evaluator-001', overallRating: 4 }, 'evaluation', 'evaluationId'],
+      ['assignOfficial', { tournamentId: 'tournament-ids', roleSubtype: 'CHAIR_UMPIRE' }, 'assignment', 'assignmentId'],
+      ['addSuspension', { suspendedFrom: '2026-01-01', suspendedUntil: '2026-06-30' }, 'suspension', 'suspensionId'],
+      ['addConflictDeclaration', { personId: 'person-042', relationship: 'COACH' }, 'declaration', 'declarationId'],
+      [
+        'addCertificationRequirement',
+        {
+          organisationId: 'org-001',
+          certificationFamily: 'UMPIRE',
+          certificationLevel: 'BRONZE_BADGE',
+          requirements: [{ itemId: 'r1', description: 'Training course', required: true }],
+        },
+        'certificationRequirement',
+        'requirementId',
+      ],
+    ];
+    for (const [method, params, entityKey, idKey] of created) {
+      result = (officiatingEngine as any)[method](params);
+      expect(result.success, method).toBe(true);
+      expect(result[idKey]).toBeTypeOf('string');
+      expect(result[idKey]).toEqual(result[entityKey][idKey]);
+    }
   });
 
   it('rejects non-object directive in array', () => {
     let result: any = officiatingEngine.executionQueue([42 as any]);
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.message).toContain('directive must be an object');
   });
 
@@ -882,7 +952,7 @@ describe('Officiating Engine — Execution Queue Extended', () => {
       false,
     );
 
-    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(CERTIFICATION_NOT_FOUND);
     expect(result.rolledBack).toBe(false);
 
     // State should NOT be rolled back — certification from first directive should persist

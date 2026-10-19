@@ -1,8 +1,8 @@
+import { addMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getStageDrawPositionsCount } from '@Query/drawDefinition/getStageDrawPositions';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { generateDrawStructuresAndLinks } from './generateDrawStructuresAndLinks';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
-import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -139,10 +139,17 @@ export function generateDrawTypeAndModifyDrawDefinition(params: GenerateDrawType
 
   const { inContextDrawMatchUps } = addGoesTo({ drawDefinition, matchUpsMap });
 
-  modifyDrawNotice({
-    tournamentId: params.tournamentRecord?.tournamentId,
-    drawDefinition,
-  });
+  // a copy (modifyOriginal: false) changes no record and sends nothing
+  if (modifyOriginal) {
+    const tournamentId = params.tournamentRecord?.tournamentId;
+    modifyDrawNotice({ tournamentId, drawDefinition });
+    // a draw already stored in the event gains its matchUps here, and no later addDrawDefinition announces them
+    const stored = params.event?.drawDefinitions?.includes(drawDefinition);
+    const added = (matchUps ?? []).filter(({ matchUpId }) => !existingMatchUpIds.has(matchUpId));
+    if (stored && added.length) {
+      addMatchUpsNotice({ eventId: params.event?.eventId, matchUps: added, drawDefinition, tournamentId });
+    }
+  }
 
   return {
     inContextDrawMatchUps,

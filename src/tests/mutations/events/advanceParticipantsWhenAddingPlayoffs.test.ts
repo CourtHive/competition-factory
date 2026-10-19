@@ -92,7 +92,6 @@ function tournamentEngineAddPlayoffsTest(params) {
     tournamentRecord,
   } = mocksEngine.generateTournamentRecord({
     drawProfiles,
-    inContext: true,
   });
 
   tournamentEngine.setState(tournamentRecord);

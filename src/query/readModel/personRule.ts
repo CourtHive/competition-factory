@@ -30,8 +30,8 @@ export function isFactoryUuid(id?: string | null): boolean {
  *   2. `personId` IS a factory UUID → synthetic/generated → skip.
  *   3. otherwise (a non-UUID id) → REAL person → populate, link_source='providerId'.
  *
- * `personId === participantId` is NOT a skip signal. Some importers (IONSPORT →
- * BOBOCA/HTS/CTS) reuse the real provider personId AS the participantId, so a
+ * `personId === participantId` is NOT a skip signal. Some importers (provider
+ * ingests) reuse the real provider personId AS the participantId, so a
  * non-UUID id equal to the participantId is still a real person and MUST resolve.
  * The ONLY synthetic marker is the factory-UUID shape. (`participantId` stays in
  * the signature for call-site symmetry but no longer gates.) courthive-ingest

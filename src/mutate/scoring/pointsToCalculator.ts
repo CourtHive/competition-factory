@@ -13,7 +13,11 @@
  */
 
 import type { MatchUp, FormatStructure, SetFormatStructure, SetScore } from '@Types/scoring/types';
+import { isAggregateFormat, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { checkStandardGameWon, checkTiebreakWon } from './gameWon';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
+import { aggregateTotals } from './matchCompletion';
 
 export interface PointsToDecoration {
   pointsToGame: [number, number];
@@ -68,8 +72,8 @@ export function calculatePointsTo(
   // Calculate pointsToSet
   const pointsToSet = calcPointsToSet(pointsToGame, gamesToSet, activeSetFormat, setType);
 
-  // Calculate pointsToMatch
-  const pointsToMatch = calcPointsToMatch(pointsToSet, setsWon, setsToWin, formatStructure);
+  // Calculate pointsToMatch, by the match's completion rule (§ 11.2)
+  const pointsToMatch = calcPointsToMatch(pointsToSet, setsWon, setsToWin, formatStructure, matchUp);
 
   // Breakpoint detection
   const isBreakpoint = detectBreakpoint(pointsToGame, server);
@@ -145,20 +149,10 @@ function calcPointsToGame(
   }
 
   // Standard set: detect if currently in tiebreak
-  if (currentSet) {
-    const s1Games = currentSet.side1Score || 0;
-    const s2Games = currentSet.side2Score || 0;
-    const setTo = activeSetFormat.setTo || 6;
-    const tiebreakAt =
-      (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-    const noTiebreak = activeSetFormat.noTiebreak || false;
-
-    if (!noTiebreak && s1Games === tiebreakAt && s2Games === tiebreakAt) {
-      // We're in a tiebreak within a standard set
-      const tbTo = activeSetFormat.tiebreakFormat?.tiebreakTo || 7;
-      const isNoAD = activeSetFormat.tiebreakFormat?.NoAD || false;
-      return calcTiebreakPointsTo(side1Points, side2Points, tbTo, isNoAD);
-    }
+  if (currentSet && isStandardSetTiebreak(activeSetFormat, currentSet.side1Score || 0, currentSet.side2Score || 0)) {
+    const tbTo = activeSetFormat.tiebreakFormat?.tiebreakTo || 7;
+    const isNoAD = activeSetFormat.tiebreakFormat?.NoAD || false;
+    return calcTiebreakPointsTo(side1Points, side2Points, tbTo, isNoAD);
   }
 
   // Consecutive game format: return count as minimum-to-win
@@ -172,7 +166,7 @@ function calcPointsToGame(
 }
 
 /**
- * Standard game: 4 points, win by 2 (or NoAD: win by 1 at deuce)
+ * Standard game: 4 points, win by 2 (NoAD and deuceAfter: the next point decides at deuce)
  */
 function calcStandardGamePointsTo(
   p1: number,
@@ -180,77 +174,46 @@ function calcStandardGamePointsTo(
   setFormat: SetFormatStructure,
   formatStructure?: FormatStructure,
 ): [number, number] {
-  const isNoAD = setFormat.gameFormat?.NoAD || setFormat.NoAD || false;
-  const deuceAfter = formatStructure?.gameFormat?.deuceAfter;
-  const pointsTo = 4;
-
-  return [
-    calcSidePointsToGame(p1, p2, pointsTo, isNoAD, deuceAfter),
-    calcSidePointsToGame(p2, p1, pointsTo, isNoAD, deuceAfter),
-  ];
-}
-
-function calcSidePointsToGame(
-  myPoints: number,
-  oppPoints: number,
-  pointsTo: number,
-  isNoAD: boolean,
-  deuceAfter?: number,
-): number {
-  if (myPoints >= pointsTo - 1 && oppPoints >= pointsTo - 1) {
-    // Deuce/advantage territory
-    if (isNoAD) {
-      // Golden point: whoever wins next point wins game
-      if (myPoints > oppPoints) return 0;
-      if (myPoints === oppPoints) return 1;
-      return 2;
-    }
-
-    // deuceAfter: once both sides reach (2 + deuceAfter), it's golden point
-    if (deuceAfter && myPoints >= 2 + deuceAfter && oppPoints >= 2 + deuceAfter) {
-      if (myPoints > oppPoints) return 0;
-      if (myPoints === oppPoints) return 1;
-      return 2;
-    }
-
-    // Standard deuce: need 2-point lead
-    const diff = myPoints - oppPoints;
-    if (diff >= 2) return 0; // Already won
-    if (diff === 1) return 1; // At advantage
-    if (diff === 0) return 2; // At deuce
-    return 2; // Behind: need to equalize + win 2
-  }
-
-  if (myPoints >= pointsTo) return 0; // Already won
-  return pointsTo - myPoints;
+  return pointsUntilWon(p1, p2, (s1, s2) => checkStandardGameWon(s1, s2, setFormat, false, formatStructure));
 }
 
 /**
  * Tiebreak: play to tiebreakTo, win by 2 (or NoAD: win by 1)
  */
 function calcTiebreakPointsTo(p1: number, p2: number, tiebreakTo: number, isNoAD: boolean): [number, number] {
-  return [calcSideTiebreakPointsTo(p1, p2, tiebreakTo, isNoAD), calcSideTiebreakPointsTo(p2, p1, tiebreakTo, isNoAD)];
+  return pointsUntilWon(p1, p2, (s1, s2) => checkTiebreakWon(s1, s2, tiebreakTo, isNoAD));
 }
 
-function calcSideTiebreakPointsTo(myPoints: number, oppPoints: number, tiebreakTo: number, isNoAD: boolean): number {
-  if (myPoints >= tiebreakTo && (myPoints - oppPoints >= 2 || (isNoAD && myPoints > oppPoints))) {
-    return 0; // Already won
+/**
+ * The minimum points each side needs: how many points in a row it must win, the opponent scoring none, before
+ * `gameWon` names it the winner. A trailing side must first take away the opponent's lead, so at 5-6 in a
+ * tiebreak to 7 the trailing side needs 3 (6-6, 7-6, 8-6), and at 15-40 it needs 4 (30-40, deuce, ad, game).
+ * Counting against the predicate addPoint completes games with keeps NoAD, deuceAfter and margins in agreement.
+ */
+function pointsUntilWon(
+  p1: number,
+  p2: number,
+  gameWon: (side1Points: number, side2Points: number) => number | undefined,
+): [number, number] {
+  // a decided game has nothing left to win in it (the engine opens the next game at 0-0 before asking)
+  if (gameWon(p1, p2) !== undefined) return [0, 0];
+  return [sidePointsUntilWon(p1, p2, 0, gameWon), sidePointsUntilWon(p2, p1, 1, gameWon)];
+}
+
+function sidePointsUntilWon(
+  myPoints: number,
+  oppPoints: number,
+  sideIndex: 0 | 1,
+  gameWon: (side1Points: number, side2Points: number) => number | undefined,
+): number {
+  // Winning every point, a side wins once it leads by the margin past the target: the bound only guards a
+  // malformed format from looping.
+  for (let needed = 1; needed <= oppPoints + 1000; needed++) {
+    const mine = myPoints + needed;
+    const winner = sideIndex === 0 ? gameWon(mine, oppPoints) : gameWon(oppPoints, mine);
+    if (winner === sideIndex) return needed;
   }
-  if (myPoints >= tiebreakTo - 1 && oppPoints >= tiebreakTo - 1) {
-    // Extended play territory
-    if (isNoAD) {
-      if (myPoints > oppPoints) return 0;
-      if (myPoints === oppPoints) return 1;
-      return 2;
-    }
-    const diff = myPoints - oppPoints;
-    if (diff >= 2) return 0;
-    if (diff === 1) return 1;
-    if (diff === 0) return 2;
-    return 2;
-  }
-  if (myPoints >= tiebreakTo) return 0;
-  return tiebreakTo - myPoints;
+  return 0;
 }
 
 /**
@@ -354,14 +317,30 @@ function calcSidePointsToSet(pointsToCurrentGame: number, gamesNeeded: number, m
 }
 
 /**
- * Calculate minimum points each side needs to win the match
+ * The `pointsToMatch` of a side that cannot win the match however many points in a row it wins: in an exactly
+ * or aggregate format, where every set (or segment) is played and the count (or total) decides, a side too
+ * far behind is not reached by winning every remaining point.
+ */
+export const NO_POINTS_TO_MATCH = -1;
+
+/**
+ * Calculate minimum points each side needs to win the match, by the match's completion rule (spec § 9,
+ * § 11.2; CA 2026-10-18): the sets to win in a best of N; all N sets in an exactly format, the side
+ * then needing more sets than the other; and in an aggregate of tiebreak-only segments, every segment, the
+ * side then needing the greater total (or a level one and the declared decider).
  */
 function calcPointsToMatch(
   pointsToSet: [number, number],
   setsWon: [number, number],
   setsToWin: number,
   formatStructure: FormatStructure,
+  matchUp: MatchUp,
 ): [number, number] {
+  if (isAggregateFormat(formatStructure) && formatStructure.setFormat?.tiebreakSet)
+    return aggregatePointsToMatch(pointsToSet, formatStructure, matchUp);
+  if (formatStructure.exactly && !isAggregateFormat(formatStructure))
+    return exactlyPointsToMatch(pointsToSet, setsWon, formatStructure, matchUp);
+
   // Calculate minimum points per set for remaining sets
   const sf = formatStructure.setFormat;
   const minPointsPerSet = getMinPointsPerSet(sf, formatStructure);
@@ -370,6 +349,77 @@ function calcPointsToMatch(
     calcSidePointsToMatch(pointsToSet[0], setsWon[0], setsToWin, minPointsPerSet),
     calcSidePointsToMatch(pointsToSet[1], setsWon[1], setsToWin, minPointsPerSet),
   ];
+}
+
+/** A set that is over: won, or a timed segment closed with or without a winner. */
+function isClosedSet(set: SetScore): boolean {
+  return set.winningSide !== undefined || !!(set as SetScore & { segmentComplete?: boolean }).segmentComplete;
+}
+
+/** The set numbers still to be played after the one in play, up to `lastSetNumber`. */
+function setNumbersAfterInPlay(matchUp: MatchUp, lastSetNumber: number): number[] {
+  const inPlaySetNumber = matchUp.score.sets.filter(isClosedSet).length + 1;
+  const remaining: number[] = [];
+  for (let setNumber = inPlaySetNumber + 1; setNumber <= lastSetNumber; setNumber++) remaining.push(setNumber);
+  return remaining;
+}
+
+/** The fewest points that win set `setNumber` from love, by the format governing it (§ 3.2). */
+function minPointsForSet(formatStructure: FormatStructure, setNumber: number): number {
+  const governing = finalSetGoverns(formatStructure, setNumber, false) ? formatStructure.finalSetFormat : undefined;
+  return getMinPointsPerSet(governing ?? formatStructure.setFormat, formatStructure);
+}
+
+/** Exactly N, not aggregate (§ 9.2): every set is played, and the side with more sets wins. */
+function exactlyPointsToMatch(
+  pointsToSet: [number, number],
+  setsWon: [number, number],
+  formatStructure: FormatStructure,
+  matchUp: MatchUp,
+): [number, number] {
+  const remaining = setNumbersAfterInPlay(matchUp, formatStructure.exactly!);
+  const remainingPoints = remaining.reduce((sum, setNumber) => sum + minPointsForSet(formatStructure, setNumber), 0);
+  const side = (index: 0 | 1): number => {
+    // winning every point from here, the side wins the set in play and every set after it
+    const setsAtTheEnd = setsWon[index] + 1 + remaining.length;
+    if (setsAtTheEnd <= setsWon[1 - index]) return NO_POINTS_TO_MATCH;
+    return pointsToSet[index] + remainingPoints;
+  };
+  return [side(0), side(1)];
+}
+
+/**
+ * Aggregate of tiebreak-only segments (§ 9.3, § 9.4): every one of the N is played and the total decides; a
+ * level total is settled by the declared decider of an exactly-N aggregate (set N + 1), and is otherwise a
+ * tie. In the decider itself, the decider is the match.
+ */
+function aggregatePointsToMatch(
+  pointsToSet: [number, number],
+  formatStructure: FormatStructure,
+  matchUp: MatchUp,
+): [number, number] {
+  const setCount = formatStructure.exactly || formatStructure.bestOf || 3;
+  const sets = matchUp.score.sets;
+  const closed = sets.filter(isClosedSet);
+  if (closed.length >= setCount) return [...pointsToSet] as [number, number];
+
+  const totals = aggregateTotals(closed);
+  const inPlay = sets.at(-1) && !isClosedSet(sets.at(-1)!) ? sets.at(-1) : undefined;
+  totals[0] += inPlay?.side1GameScores?.[0] ?? 0;
+  totals[1] += inPlay?.side2GameScores?.[0] ?? 0;
+
+  const remaining = setNumbersAfterInPlay(matchUp, setCount);
+  const remainingPoints = remaining.reduce((sum, setNumber) => sum + minPointsForSet(formatStructure, setNumber), 0);
+  const decider = formatStructure.exactly ? formatStructure.finalSetFormat : undefined;
+  const side = (index: 0 | 1): number => {
+    const gained = pointsToSet[index] + remainingPoints;
+    const total = totals[index] + gained;
+    const opponent = totals[1 - index];
+    if (total > opponent) return gained;
+    if (total === opponent && decider) return gained + getMinPointsPerSet(decider, formatStructure);
+    return NO_POINTS_TO_MATCH;
+  };
+  return [side(0), side(1)];
 }
 
 function getMinPointsPerSet(sf: SetFormatStructure | undefined, formatStructure: FormatStructure): number {

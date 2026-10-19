@@ -1,12 +1,14 @@
 import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
+import { refreshArrivalsFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDownstreamStructureIds } from '@Query/matchUps/getDownstreamStructureIds';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { reverseScore } from '@Generators/score/reverseScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import {
@@ -299,6 +301,31 @@ export function swapWinnerLoser(params) {
   // apply new winningSide and any score updates
   const scoreResult: any = modifyMatchUpScore({ ...params, context: stack });
   if (scoreResult?.error) return scoreResult;
+
+  /**
+   * The arrival this matchUp left onward now names the NEW winner's result.
+   *
+   * The relabel above puts the new winner in the old winner's seat, keyed by the same side, and the arrival entry there
+   * still names this matchUp as its source: who arrived changed, and so did how, but nothing rewrote
+   * `previousMatchUpStatus`. A WALKOVER won by side 2 corrected to a RETIRED won by side 1 read WALKOVER onward (census
+   * intgate, flag ON: SINGLE_ELIMINATION 16/16 9100138 `Main|2|1`). The same rewrite the same-winner re-score makes
+   * (`refreshArrivals`); a carried exit naming this source is the loser's, and `relabelWithoutDirection` settles it.
+   */
+  const refreshed = refreshArrivalsFrom({
+    matchUps: (params.matchUpsMap ?? getMatchUpsMap({ drawDefinition }))?.drawMatchUps,
+    matchUpStatus: matchUp?.matchUpStatus,
+    matchUpId: matchUp?.matchUpId,
+  });
+  // rewritten in place, so nothing else announces them
+  for (const arrival of refreshed)
+    modifyMatchUpNotice({
+      tournamentId: tournamentRecord?.tournamentId,
+      context: 'refreshArrivalsFrom',
+      eventId: event?.eventId,
+      matchUp: arrival,
+      drawDefinition,
+      event,
+    });
 
   /**
    * Reconciled AFTER the result is applied, deliberately.

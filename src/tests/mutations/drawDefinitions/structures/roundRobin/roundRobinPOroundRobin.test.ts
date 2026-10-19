@@ -14,12 +14,16 @@ it('will generate single elimination playoff for ROUND_ROBIN when drawSize: 2', 
       {
         drawType: ROUND_ROBIN_WITH_PLAYOFF,
         drawSize: 8,
-        playoffGroups: [
-          {
-            drawType: ROUND_ROBIN,
-            finishingPositions: [1],
-          },
-        ],
+        // under structureOptions: a drawProfile `playoffGroups` key was never read, so the playoff was the
+        // default elimination of group winners
+        structureOptions: {
+          playoffGroups: [
+            {
+              drawType: ROUND_ROBIN,
+              finishingPositions: [1],
+            },
+          ],
+        },
       },
     ],
   });

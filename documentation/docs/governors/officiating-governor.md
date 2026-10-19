@@ -2,6 +2,12 @@
 title: Officiating Governor
 ---
 
+:::warning Governor API transition at 8.0.0
+
+Some methods on this page are candidates for removal from production engine exports at the 8.0.0 boundary. Their implementation references have moved: [`queryOfficialRecord`](/docs/implementation/records/queryOfficialRecord). Existing 7.x routes remain available; final decisions and external-integrator confirmations are tracked in the [transition index](/docs/implementation/engine-api-transition-8).
+
+:::
+
 ```js
 import { officiatingGovernor } from 'tods-competition-factory';
 ```
@@ -207,15 +213,7 @@ Attaches an evaluation template (sections, criteria, scoring method) to the offi
 
 ### queryOfficialRecord
 
-```ts
-{
-  officialRecord;
-}
-```
-
-**Returns:** `{ success, officialRecord }` — the full record structure.
-
----
+**8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`queryOfficialRecord`](/docs/implementation/records/queryOfficialRecord). Package-export status is a separate decision.
 
 ### getOfficialCertifications
 
