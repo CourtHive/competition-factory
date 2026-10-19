@@ -1,5 +1,6 @@
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import { notifySubscribersAsync } from '@Global/state/notifySubscribers';
+import { useQuietCaughtErrors } from '@Tests/testHarness/engineCatch';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import syncGlobalState from '@Global/state/syncGlobalState';
 import asyncEngine from '@Engines/asyncEngine';
@@ -331,6 +332,7 @@ describe('state provider installation', () => {
 });
 
 describe('dispatch', () => {
+  useQuietCaughtErrors(); // the thrower is caught on purpose; its ERROR line is expected
   it('the async dispatch does not deliver an empty payload list', async () => {
     deleteNotices();
     await notifySubscribersAsync();
