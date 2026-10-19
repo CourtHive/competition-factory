@@ -702,6 +702,20 @@ decided that matchUp for whoever arrived next (census run 18, FEED_IN_CHAMPIONSH
 MODIFIED_FEED_IN_CHAMPIONSHIP 16/14: a result refused after it had written, and two positions sent on
 by one matchUp).
 
+**A converging exit's carrier leaves with the carry only where nothing was played.** When the exit
+that sent a carrier over its loser link converges, the carrier is taken back out of the loser seat.
+If they went on from the seat, they are released carry and all, and an award the carry made does not
+make their position active, where every one of these holds: the seat's matchUp has no score and is a
+BYE or an exit, and every matchUp they went on to has no score and is a BYE, undecided, or decided by
+an exit carried into it. Otherwise, where they went on or where the seat's matchUp was decided by
+anything but exits, the position is cleared, and the clear still refuses an active position
+(`ERR_ACTIVE_DRAW_POSITION`). A carrier who went no further from a seat that only exits decided is
+released in place: they leave the seat, and the seat's award to them goes. No entry reaches the
+clear's refusal today. The release is reached only where the converging exit met a carried one, and
+a carried exit decides every matchUp its carrier reaches and is changed only at its origin, so the
+carrier goes on only past BYEs (census A1 wave 5, COMPASS 32/27 21155795 and 32/30 21063079:
+`aCarrierPastAByeIsReleasedWhenItsExitConverges`, `aCarrierWhoWentOnOnlyAsACarrierIsReleasedWithTheCarry`).
+
 **A seat emptied for the winner holds no carry.** When a played win is re-entered as a walkover or
 default the other way, the old winner is taken out of the rounds they reached, and the seat each removal
 empties is the one the new winner takes next. A single exit decides nothing there: the exit is the new
