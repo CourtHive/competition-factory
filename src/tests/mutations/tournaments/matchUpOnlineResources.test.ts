@@ -3,6 +3,7 @@ import schema from '@Global/schema/tournament.schema.json';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import addFormats from 'ajv-formats';
 import Ajv from 'ajv';
 
 // constants
@@ -114,7 +115,7 @@ describe('MatchUp.onlineResources', () => {
   it('validates against the closed schema, which still refuses anything undeclared', () => {
     const { drawId, matchUpId } = singlesDraw();
     tournamentEngine.addOnlineResource({ drawId, matchUpId, onlineResource: matchVideo });
-    const validate = new Ajv({ allowUnionTypes: true, strict: false }).compile({
+    const validate = addFormats(new Ajv({ allowUnionTypes: true, strict: false })).compile({
       $ref: '#/definitions/MatchUp',
       definitions: schema.definitions,
     });

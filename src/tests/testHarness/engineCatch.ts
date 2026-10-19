@@ -1,6 +1,6 @@
 import { getProvider, setStateProvider } from '@Global/state/globalState';
 import syncGlobalState from '@Global/state/syncGlobalState';
-import { afterAll, beforeAll } from 'vitest';
+import { afterAll, beforeAll, vi } from 'vitest';
 
 /**
  * A TEST SEES EVERY THROW.
@@ -26,14 +26,23 @@ export const rethrowingStateProvider = {
 /**
  * For a test of the catch path itself: run the enclosing `describe` (or file) under the default
  * sync provider, which catches, logs and returns `{ error }`, and put the provider back afterwards.
+ *
+ * Such a test expects the catch, so the provider's `ERROR {…}` log line is the expected outcome, not
+ * a finding; it is dropped while the provider is installed. Any other console output still prints.
  */
 export function useEngineCatch(): void {
   let previous: any;
+  let logSpy: ReturnType<typeof vi.spyOn> | undefined;
   beforeAll(() => {
     previous = getProvider();
     setStateProvider(syncGlobalState);
+    const log = console.log.bind(console);
+    logSpy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+      if (args[0] !== 'ERROR') log(...args);
+    });
   });
   afterAll(() => {
+    logSpy?.mockRestore();
     setStateProvider(previous);
   });
 }

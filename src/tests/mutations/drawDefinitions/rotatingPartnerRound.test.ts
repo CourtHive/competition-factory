@@ -7,6 +7,7 @@ import schema from '@Global/schema/tournament.schema.json';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it, vi } from 'vitest';
+import addFormats from 'ajv-formats';
 import Ajv from 'ajv';
 
 // constants and types
@@ -199,7 +200,7 @@ it('round provenance passes the closed schema and survives serialized reload', (
   const context = setup();
   const args = request(context);
   generateRotatingPartnerRound(args);
-  const validate = new Ajv({ allowUnionTypes: true }).compile({
+  const validate = addFormats(new Ajv({ allowUnionTypes: true })).compile({
     $ref: '#/definitions/RotatingPartnerRoundRecord',
     definitions: schema.definitions,
   });
