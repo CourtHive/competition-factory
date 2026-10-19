@@ -508,6 +508,30 @@ Get the parsed format structure for advanced consumers. Returns `undefined` if t
 
 ---
 
+### getSetInPlayFormat
+
+```ts
+getSetInPlayFormat(): SetFormatStructure | undefined
+```
+
+The format governing the set in play: the final-set format (`-F:`) in the live deciding set, the ordinary set
+format otherwise. It is the format the engine judges the next point, game or set total by, so a scorer that
+offers inputs (hiding a game control in a tiebreak-only segment, posting a winning set total) reads it here
+rather than re-deriving which set is the decider. The rule covers best-of formats (the deciding set is reached
+when both sides are one set from winning), exactly formats (set N) and aggregate formats with a declared decider
+(set N + 1). Returns `undefined` if the format string is invalid. Once the match is complete it is the format a
+further set would take; the engine records no further input.
+
+```js
+const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7-F:TB10' });
+engine.getSetInPlayFormat(); // { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } }
+engine.addSet({ side1Score: 6, side2Score: 3 });
+engine.addSet({ side1Score: 3, side2Score: 6 });
+engine.getSetInPlayFormat(); // { tiebreakSet: { tiebreakTo: 10 } }: the match tiebreak
+```
+
+---
+
 ### getInputLevels
 
 ```ts

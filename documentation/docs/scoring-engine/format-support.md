@@ -218,6 +218,7 @@ engine.getSetsToWin(); // 2 — best of 3
 engine.getTiebreakAt(); // 6 — tiebreak at 6-6
 engine.hasFinalSetTiebreak(); // true — final set is a match tiebreak
 engine.getFormatStructure(); // Full parsed structure for advanced use
+engine.getSetInPlayFormat(); // The set format in play: -F:TB10 once the match reaches its deciding set
 ```
 
 ## Mixed-Mode Input

@@ -15,13 +15,6 @@
  *   const matchUp = engine.getState();
  */
 
-import {
-  inputLevels,
-  resolveSetType,
-  inputLevelError,
-  isAggregateFormat,
-  isLiveDecidingSet,
-} from '@Tools/scoring/scoringUtilities';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
@@ -37,6 +30,13 @@ import { getWinner } from '@Query/scoring/getWinner';
 import { getScore } from '@Query/scoring/getScore';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
+import {
+  inputLevels,
+  resolveSetType,
+  inputLevelError,
+  isAggregateFormat,
+  isLiveDecidingSet,
+} from '@Tools/scoring/scoringUtilities';
 import {
   addPoint,
   deriveServer,
@@ -1179,6 +1179,18 @@ export class ScoringEngine {
    */
   getFormatStructure(): FormatStructure | undefined {
     return this.cachedFormatStructure;
+  }
+
+  /**
+   * The format governing the set in play: the final-set format in the live deciding set, the ordinary
+   * set format otherwise (scoring spec § 3.2). It is the format the engine judges the next point, game or
+   * set total by, so a consumer offering inputs reads it here instead of re-deriving the deciding-set rule.
+   * Once the match is complete it is the format a further set would take; the engine records no input then.
+   *
+   * @returns The set format in play, or undefined if the format string is invalid
+   */
+  getSetInPlayFormat(): SetFormatStructure | undefined {
+    return this.activeSetFormat();
   }
 
   /**
