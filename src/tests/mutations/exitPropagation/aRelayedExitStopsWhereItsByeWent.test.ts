@@ -1,5 +1,5 @@
+import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
-import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';

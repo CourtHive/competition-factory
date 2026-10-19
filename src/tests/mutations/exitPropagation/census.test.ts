@@ -4,6 +4,11 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, test } from 'vitest';
 import fs from 'fs';
+import {
+  addReplayCounts,
+  emptyReplayCounts,
+  scenarioPreparationFailure,
+} from '@Tests/testHarness/exitPropagation/replayTypes';
 
 /**
  * Seed-level CENSUS of the exit-propagation pipeline. INERT unless `CENSUS=1`.
@@ -77,7 +82,7 @@ function generateScenarios(): Scenario[] {
     const config = randomConfig(seed);
     const drawId = `sweep-${seed}`;
     try {
-      prepareDraw(config, drawId, policyDefinitions);
+      if (!prepareDraw(config, drawId, policyDefinitions)) throw new Error(`could not prepare ${drawId}`);
       const steps = generateSchedule(config, drawId, maxSteps);
       scenarios.push({ seed, config, steps, ...(policyDefinitions ? { policyDefinitions } : {}) });
     } catch (err: any) {
@@ -112,34 +117,38 @@ test.skipIf(!enabled)(
     const byIssue: Record<string, number> = {};
     // what the relational phase actually executed across the run: a count of schedules says nothing about it
     const coverage = emptyCoverage();
+    const counts = emptyReplayCounts();
+    const verdicts = { clean: 0, failed: 0, 'build-failed': 0 };
+    let incompleteScenarios = 0;
     let failing = 0;
 
     for (const scenario of scenarios) {
       const { seed, config } = scenario;
       setSubscriptions({});
 
-      if (scenario.generationThrow) {
-        failing++;
-        byIssue.GENERATION_THROW = (byIssue.GENERATION_THROW ?? 0) + 1;
-        fs.appendFileSync(
-          outPath,
-          JSON.stringify({ seed, property: 'GENERATION_THROW', detail: scenario.generationThrow, config }) + '\n',
-        );
-        continue;
-      }
-
-      let failure;
-      try {
-        failure = replay(
-          config,
-          scenario.steps ?? [],
-          `sweep-${seed}`,
-          scenario.policyDefinitions ?? policyDefinitions,
-          coverage,
-        );
-      } catch (err: any) {
-        failure = { property: 'NO_EXCEPTION_ESCAPES', matchUpId: '-', detail: String(err?.message ?? err) };
-      }
+      const result = replay(
+        config,
+        scenario.steps ?? [],
+        `sweep-${seed}`,
+        scenario.policyDefinitions ?? policyDefinitions,
+        coverage,
+        { preparationFailure: scenarioPreparationFailure(scenario) },
+      );
+      addReplayCounts(counts, result.counts);
+      verdicts[result.verdict] += 1;
+      if (!result.complete) incompleteScenarios += 1;
+      fs.appendFileSync(
+        outPath,
+        JSON.stringify({
+          kind: 'REPLAY',
+          seed,
+          verdict: result.verdict,
+          complete: result.complete,
+          counts: result.counts,
+          coverage: result.coverage,
+        }) + '\n',
+      );
+      const failure = result.findings[0];
       if (!failure) continue;
 
       failing++;
@@ -171,6 +180,9 @@ test.skipIf(!enabled)(
         failing,
         byIssue,
         coverage,
+        counts,
+        verdicts,
+        incompleteScenarios,
       }) + '\n',
     );
 

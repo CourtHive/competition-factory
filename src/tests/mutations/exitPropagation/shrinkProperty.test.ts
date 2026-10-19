@@ -1,4 +1,4 @@
-import { prepareDraw, replay, type Step } from '@Tests/testHarness/exitPropagation/sweep';
+import { prepareDraw, replayFailure as replay, type Step } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, test } from 'vitest';
 import fs from 'fs';

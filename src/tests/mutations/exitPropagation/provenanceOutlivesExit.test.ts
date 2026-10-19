@@ -1,7 +1,12 @@
-import { generateSchedule, prepareDraw, randomConfig, replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
+import {
+  generateSchedule,
+  prepareDraw,
+  randomConfig,
+  replayFailure as replay,
+} from '@Tests/testHarness/exitPropagation/sweep';
 
 // constants
 import { DOUBLE_WALKOVER, DOUBLE_DEFAULT, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';

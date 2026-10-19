@@ -1,14 +1,14 @@
 import { checkArrivalsTrue, emptyCoverage } from '@Tests/testHarness/exitPropagation/properties';
+import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { clearOutcome } from '@Tests/testHarness/exitPropagation/transitions';
-import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import { afterEach, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
+import { BYE, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { BYE, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * CENSUS REPLAY EXECUTES THE ROUND TRIPS IT CLAIMS, AND POLICES EVERY WRITE THEY MAKE (assessment 2026-10-17,

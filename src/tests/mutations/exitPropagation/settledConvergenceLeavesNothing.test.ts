@@ -1,5 +1,5 @@
 import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { expect, it } from 'vitest';
 
 // constants

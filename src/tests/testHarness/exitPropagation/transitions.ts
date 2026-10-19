@@ -1,15 +1,16 @@
-import { getInvariantViolations, describeViolations } from './invariants';
-import type { InvariantViolation } from './invariants';
-
+import { getInvariantViolations, describeViolations, type InvariantViolation } from './invariants';
+import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
+import { auditAcceptedRecord, type ProjectionAudit } from './projectionAudit';
+import { captureRecord, compareRecord } from '@Tools/recordDiff';
+import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { getTournamentRecord } from '@Global/state/globalState';
+import tournamentEngine from '@Engines/syncEngine';
+import { isAnyExit } from '@Validators/isExit';
 import {
   deriveStatusCodes,
   exitOutcomeCode,
   getSideExitProvenance,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
-import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { isAnyExit } from '@Validators/isExit';
-import tournamentEngine from '@Engines/syncEngine';
 
 // constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -87,18 +88,18 @@ const canonicalDrawPositions = (drawPositions: any): any => {
 };
 
 /**
- * The mutable surface of a draw: everything a `setMatchUpStatus` can legitimately change.
+ * The outcome fields used by accepted-transition properties.
  *
  * Hashing the whole drawDefinition on both sides of every mutation was the dominant cost in the
  * matrix — a drawSize-16 feed-in draw serializes to a few hundred KB and it happened twice per
- * step. The projection is ~2% of that and covers every field the propagation pipeline writes:
+ * step. The projection is ~2% of that and covers the principal propagation fields:
  * per-matchUp status/winner/score/codes/positions, plus each structure's positionAssignments,
  * which is where BYE and participant placement lives.
  *
- * Anything outside the projection (extensions, timeStamps, notes) is either volatile or not
- * something an outcome mutation is entitled to touch, so excluding it removes noise rather than
- * signal. If a future defect writes outside this set it will still surface through the
- * structural invariants and the repo's integrity checker, which read the real draw.
+ * This is an accepted-transition projection, not a complete mutation detector. Refused and thrown
+ * calls are compared against the full stored tournament record in observeMutation, including
+ * timestamps and fields the invariants and integrity checker do not police. Accepted-call drift
+ * sampling remains a separate A3 follow-up.
  */
 export function projectDraw(drawDefinition: any): any {
   return projectStructures(drawDefinition, (matchUp: any) => [
@@ -210,6 +211,9 @@ export function decidedMatchUpIds(matchUps: any[]): Set<string> {
 
 export type Observation = {
   mutated: boolean;
+  /** Refused/thrown calls only: exact full-record comparison, with no timestamp exemption. */
+  recordMutated?: boolean;
+  firstRecordDifference?: string;
   thrown?: string;
   error?: any;
   result?: any;
@@ -218,6 +222,11 @@ export type Observation = {
   invariantViolations: InvariantViolation[];
   /** inContext matchUps as of AFTER the mutation — reusable by a driver, saving a re-query */
   matchUps: any[];
+};
+
+export type MutationObserver = {
+  attempted: () => void;
+  checked: (observation: Observation, matchUpId: string) => void;
 };
 
 /**
@@ -238,7 +247,7 @@ export type Observation = {
  * Emit with it OFF. `generateSchedule` calls this function too, so emitting under the flag would
  * produce a different schedule set and confound the comparison it exists to make.
  */
-const allowChangePropagation = () =>
+const changePropagationFromEnvironment = () =>
   process.env.ALLOW_CHANGE_PROPAGATION === '1' ? { allowChangePropagation: true } : {};
 
 /**
@@ -248,12 +257,18 @@ const allowChangePropagation = () =>
  */
 export function observeMutation({
   propagateExitStatus,
+  allowChangePropagation,
+  projectionAudit,
+  observer,
   matchUpId,
   priorHash,
   outcome,
   drawId,
 }: {
   propagateExitStatus?: boolean;
+  allowChangePropagation?: boolean;
+  projectionAudit?: ProjectionAudit;
+  observer?: MutationObserver;
   priorHash?: string;
   matchUpId: string;
   drawId: string;
@@ -262,16 +277,19 @@ export function observeMutation({
   // `priorHash` lets a driver carry the previous step's `after` forward as this step's `before`,
   // halving the number of full-draw reads in a play-forward loop.
   const before = priorHash ?? hash(getDrawDefinition(drawId));
+  // Read canonical stored state, not getTournament()'s outward copy (whose copy policy may omit fields).
+  const recordBefore = captureRecord(getTournamentRecord(tournamentEngine.getTournamentId()));
 
   let result: any;
   let thrown: string | undefined;
+  observer?.attempted();
   try {
     result = tournamentEngine.setMatchUpStatus({
       propagateExitStatus,
       matchUpId,
       drawId,
       outcome,
-      ...allowChangePropagation(),
+      ...(allowChangePropagation === undefined ? changePropagationFromEnvironment() : { allowChangePropagation }),
     });
   } catch (err: any) {
     thrown = String(err?.message ?? err);
@@ -279,11 +297,25 @@ export function observeMutation({
 
   const drawDefinition = getDrawDefinition(drawId);
   const after = hash(drawDefinition);
+  const recordComparison =
+    result?.error || thrown !== undefined
+      ? compareRecord(recordBefore, getTournamentRecord(tournamentEngine.getTournamentId()))
+      : undefined;
+  if (projectionAudit && !result?.error && thrown === undefined)
+    auditAcceptedRecord({
+      audit: projectionAudit,
+      before: recordBefore,
+      record: getTournamentRecord(tournamentEngine.getTournamentId()),
+      drawId,
+      projectionChanged: before !== after,
+    });
   const matchUps = getDrawMatchUps(drawId);
   const invariantViolations = getInvariantViolations({ matchUps, drawDefinition });
 
-  return {
+  const observation: Observation = {
     mutated: before !== after,
+    recordMutated: recordComparison ? !recordComparison.equal : undefined,
+    firstRecordDifference: recordComparison?.firstDifference?.path,
     error: result?.error,
     invariantViolations,
     matchUps,
@@ -292,6 +324,8 @@ export function observeMutation({
     before,
     after,
   };
+  observer?.checked(observation, matchUpId);
+  return observation;
 }
 
 /**
@@ -414,18 +448,23 @@ function structureNameOf(structure: any, coordinates: Map<string, string>): stri
  */
 export function checkErrorAtomicity(observation: Observation, matchUpId: string): PropertyFailure[] {
   const failures: PropertyFailure[] = [];
-  if (observation.thrown) {
+  const mutated = observation.recordMutated ?? observation.mutated;
+  const at = observation.firstRecordDifference;
+  const location = at === undefined ? '' : ` at ${at || '/'}`;
+  if (observation.thrown !== undefined) {
+    const mutation = mutated ? ` (state was mutated before the throw${location})` : '';
     failures.push({
       property: 'NO_EXCEPTION_ESCAPES',
       matchUpId,
-      detail: `${observation.thrown}${observation.mutated ? ' (state was mutated before the throw)' : ''}`,
+      detail: observation.thrown + mutation,
     });
   }
-  if (observation.error && observation.mutated) {
+  if ((observation.error || observation.thrown !== undefined) && mutated) {
+    const action = observation.thrown !== undefined ? 'threw' : `returned ${JSON.stringify(observation.error)}`;
     failures.push({
       property: 'ERROR_IMPLIES_NO_MUTATION',
       matchUpId,
-      detail: `returned ${JSON.stringify(observation.error)} after mutating the draw`,
+      detail: `${action} after mutating the tournament record${location}`,
     });
   }
   return failures;

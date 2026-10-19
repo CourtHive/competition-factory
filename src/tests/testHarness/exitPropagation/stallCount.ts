@@ -1,11 +1,18 @@
 import { getDrawDefinition, getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
-import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
+import { replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
-import tournamentEngine from '@Engines/syncEngine';
+import { scenarioPreparationFailure } from './replayTypes';
+import type { ReplayResult } from './replayTypes';
 
-export type StallScenario = { seed: number; config: any; steps: any[]; policyDefinitions?: any };
+export type StallScenario = {
+  seed: number;
+  config: any;
+  steps?: any[];
+  generationThrow?: string;
+  policyDefinitions?: any;
+};
 
 type StallReplay = {
   allowChangePropagation?: boolean;
@@ -31,36 +38,40 @@ const key = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|$
  * ratchets leave it off, so a step that throws fails them.
  */
 export function stallsAfterSchedule(params: StallReplay): string[] | undefined {
+  const result = replayStalls(params);
+  if (
+    !params.catchThrows &&
+    (result.replay.counts.thrown ||
+      result.replay.findings.some((finding) => finding.property === 'ERROR_IMPLIES_NO_MUTATION'))
+  )
+    throw new Error(result.replay.findings[0]?.detail ?? 'stall replay mutation failed');
+  return result.stalls;
+}
+
+/** Structured instrument result: failed builds and skipped work are never counted as completed draws. */
+export function replayStalls(params: StallReplay): { stalls?: string[]; replay: ReplayResult } {
   const { allowChangePropagation, scenario, catchThrows, drawId } = params;
   const { config, steps } = scenario;
   setSubscriptions({});
-  if (!prepareDraw(config, drawId, scenario.policyDefinitions ?? params.policyDefinitions)) return undefined;
-
-  for (const step of steps) {
-    const target = getDrawMatchUps(drawId).find((matchUp: any) => key(matchUp) === key(step));
-    if ((target?.sides ?? []).filter((side: any) => side?.participantId).length !== 2) continue;
-    const setStatus = () =>
-      tournamentEngine.setMatchUpStatus({
-        ...(allowChangePropagation ? { allowChangePropagation: true } : {}),
-        propagateExitStatus: config.propagateExitStatus,
-        matchUpId: target.matchUpId,
-        outcome: step.outcome,
-        drawId,
-      });
-    if (!catchThrows) {
-      setStatus();
-      continue;
-    }
-    try {
-      setStatus();
-    } catch {
-      // the census reports the exception; the end state is still asked
-    }
-  }
+  const result = replay(
+    config,
+    steps ?? [],
+    drawId,
+    scenario.policyDefinitions ?? params.policyDefinitions,
+    undefined,
+    {
+      preparationFailure: scenarioPreparationFailure(scenario),
+      relational: false,
+      stopOnFailure: !catchThrows,
+      allowChangePropagation: allowChangePropagation ?? false,
+    },
+  );
+  if (result.verdict === 'build-failed') return { replay: result };
 
   const inconsistencies = getDrawInconsistencies({ drawDefinition: getDrawDefinition(drawId) }).inconsistencies ?? [];
   const matchUps = getDrawMatchUps(drawId);
-  return inconsistencies
+  const stalls = inconsistencies
     .filter((inconsistency: any) => inconsistency.issueType === STALLED_POSITION)
     .map((stall: any) => key(matchUps.find((matchUp: any) => matchUp.matchUpId === stall.matchUpId) ?? {}));
+  return { stalls, replay: result };
 }

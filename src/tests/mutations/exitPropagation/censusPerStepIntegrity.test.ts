@@ -1,6 +1,6 @@
-import { observeMutation, getDrawMatchUps, getDrawDefinition } from '@Tests/testHarness/exitPropagation/transitions';
-import { prepareDraw, type ScenarioConfig, type Step } from '@Tests/testHarness/exitPropagation/sweep';
-import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
+import { addReplayCounts, emptyReplayCounts } from '@Tests/testHarness/exitPropagation/replayTypes';
+import { replayPerStepIntegrity } from '@Tests/testHarness/exitPropagation/perStepIntegrity';
+import type { ScenarioConfig, Step } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, test } from 'vitest';
 import fs from 'fs';
@@ -60,7 +60,13 @@ const watchOnly = process.env.WATCH_SEED ? Number(process.env.WATCH_SEED) : unde
 /** the same coordinate key `replay` resolves a frozen step by — `sweep.ts` keeps it private */
 const structuralKey = (m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}`;
 
-type Scenario = { seed: number; config: ScenarioConfig; steps: Step[] };
+type Scenario = {
+  seed: number;
+  config: ScenarioConfig;
+  steps: Step[];
+  policyDefinitions?: any;
+  generationThrow?: string;
+};
 
 const readWindow = (path: string): Scenario[] =>
   fs
@@ -70,12 +76,6 @@ const readWindow = (path: string): Scenario[] =>
     .map((line) => JSON.parse(line))
     .filter((s: Scenario) => watchOnly === undefined || s.seed === watchOnly);
 
-const inconsistenciesNow = (drawId: string) => {
-  const drawDefinition = getDrawDefinition(drawId);
-  const integrity: any = getDrawInconsistencies({ drawDefinition, drawId });
-  return integrity?.valid === false ? (integrity.inconsistencies ?? []) : [];
-};
-
 test.skipIf(!enabled)(
   'per-step draw integrity over a frozen window',
   () => {
@@ -83,6 +83,9 @@ test.skipIf(!enabled)(
     const scenarios = readWindow(schedulesIn as string);
     fs.writeFileSync(outPath, '');
 
+    const counts = emptyReplayCounts();
+    const verdicts = { clean: 0, failed: 0, 'build-failed': 0 };
+    let incompleteScenarios = 0;
     let stepsReplayed = 0;
     let seedsWithAnyFinding = 0;
     let transientSeeds = 0;
@@ -93,30 +96,13 @@ test.skipIf(!enabled)(
       const { seed, config, steps } = scenario;
       setSubscriptions({});
       const drawId = `perstep-${seed}`;
-      if (!prepareDraw(config, drawId)) continue;
-
-      const perStep: { step: number; key: string; issueTypes: string[] }[] = [];
-
-      for (const [index, step] of steps.entries()) {
-        const matchUps = getDrawMatchUps(drawId);
-        const target = matchUps.find((matchUp: any) => structuralKey(matchUp) === structuralKey(step));
-        if (!target) continue;
-        // the generator's own scoreability predicate, character for character — see `replay`
-        if ((target.sides ?? []).filter((side: any) => side?.participantId).length !== 2) continue;
-
-        observeMutation({
-          propagateExitStatus: config.propagateExitStatus,
-          matchUpId: target.matchUpId,
-          outcome: step.outcome,
-          drawId,
-        });
-        stepsReplayed += 1;
-
-        const found = inconsistenciesNow(drawId);
-        if (found.length) {
-          const issueTypes = found.map((i: any) => i.issueType);
-          for (const issueType of issueTypes) bump(issueTypesSeen, issueType);
-          perStep.push({ step: index + 1, key: structuralKey(step), issueTypes });
+      const result = replayPerStepIntegrity({
+        config,
+        steps,
+        drawId,
+        policyDefinitions: scenario.policyDefinitions,
+        generationThrow: scenario.generationThrow,
+        onFinding: ({ index, step, inconsistencies: found }) => {
           fs.appendFileSync(
             outPath,
             JSON.stringify({
@@ -127,18 +113,38 @@ test.skipIf(!enabled)(
               participantsCount: config.participantsCount,
               propagateExitStatus: config.propagateExitStatus,
               step: index + 1,
-              of: steps.length,
+              of: steps?.length,
               scored: structuralKey(step),
               outcome: step.outcome,
               inconsistencies: found,
             }) + '\n',
           );
-        }
-      }
+        },
+      });
+      addReplayCounts(counts, result.replay.counts);
+      verdicts[result.replay.verdict] += 1;
+      if (!result.replay.complete) incompleteScenarios += 1;
+      stepsReplayed += result.replay.counts.scheduleAttempted;
+      fs.appendFileSync(
+        outPath,
+        JSON.stringify({
+          kind: 'REPLAY',
+          seed,
+          verdict: result.replay.verdict,
+          complete: result.replay.complete,
+          counts: result.replay.counts,
+        }) + '\n',
+      );
+      const perStep = result.perStep.map(({ index, step, inconsistencies }) => ({
+        step: index + 1,
+        key: structuralKey(step),
+        issueTypes: inconsistencies.map((issue) => issue.issueType),
+      }));
+      for (const step of perStep) for (const issueType of step.issueTypes) bump(issueTypesSeen, issueType);
 
       if (!perStep.length) continue;
       seedsWithAnyFinding += 1;
-      const stillDirtyAtEnd = inconsistenciesNow(drawId).length > 0;
+      const stillDirtyAtEnd = result.finalInconsistencies.length > 0;
       if (stillDirtyAtEnd) persistentSeeds += 1;
       else transientSeeds += 1;
 
@@ -156,6 +162,22 @@ test.skipIf(!enabled)(
         }) + '\n',
       );
     }
+
+    fs.appendFileSync(
+      outPath,
+      JSON.stringify({
+        kind: 'SUMMARY',
+        scenarios: scenarios.length,
+        counts,
+        verdicts,
+        incompleteScenarios,
+        stepsReplayed,
+        seedsWithAnyFinding,
+        transientSeeds,
+        persistentSeeds,
+        issueTypesSeen,
+      }) + '\n',
+    );
 
     process.stdout.write(
       `\nscenarios=${scenarios.length} stepsReplayed=${stepsReplayed}\n` +
