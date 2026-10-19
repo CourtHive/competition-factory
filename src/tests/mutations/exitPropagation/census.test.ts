@@ -1,3 +1,4 @@
+import { findingLocation, findingProvenance, harnessRevision } from '@Tests/testHarness/exitPropagation/findingRecord';
 import { generateSchedule, prepareDraw, randomConfig, replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { emptyCoverage } from '@Tests/testHarness/exitPropagation/properties';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
@@ -72,11 +73,20 @@ const policyDefinitions =
     ? { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: propagateByeEnv === '1' } }
     : undefined;
 
-type Scenario = { seed: number; config: any; steps?: any[]; generationThrow?: string; policyDefinitions?: any };
+/** `revision` is the checkout that generated the schedule, so a frozen replay can name its source (census plan A6) */
+type Scenario = {
+  seed: number;
+  config: any;
+  steps?: any[];
+  generationThrow?: string;
+  policyDefinitions?: any;
+  revision?: string;
+};
 
 /** Generate each seed's schedule against a fresh draw. */
 function generateScenarios(): Scenario[] {
   const scenarios: Scenario[] = [];
+  const revision = harnessRevision() ?? undefined;
   for (let seed = seedStart; seed < seedStart + seedCount; seed++) {
     setSubscriptions({});
     const config = randomConfig(seed);
@@ -84,9 +94,9 @@ function generateScenarios(): Scenario[] {
     try {
       if (!prepareDraw(config, drawId, policyDefinitions)) throw new Error(`could not prepare ${drawId}`);
       const steps = generateSchedule(config, drawId, maxSteps);
-      scenarios.push({ seed, config, steps, ...(policyDefinitions ? { policyDefinitions } : {}) });
+      scenarios.push({ seed, config, steps, ...(policyDefinitions ? { policyDefinitions } : {}), revision });
     } catch (err: any) {
-      scenarios.push({ seed, config, generationThrow: String(err?.message ?? err) });
+      scenarios.push({ seed, config, generationThrow: String(err?.message ?? err), revision });
     }
   }
   return scenarios;
@@ -126,14 +136,10 @@ test.skipIf(!enabled)(
       const { seed, config } = scenario;
       setSubscriptions({});
 
-      const result = replay(
-        config,
-        scenario.steps ?? [],
-        `sweep-${seed}`,
-        scenario.policyDefinitions ?? policyDefinitions,
-        coverage,
-        { preparationFailure: scenarioPreparationFailure(scenario) },
-      );
+      const scenarioPolicy = scenario.policyDefinitions ?? policyDefinitions;
+      const result = replay(config, scenario.steps ?? [], `sweep-${seed}`, scenarioPolicy, coverage, {
+        preparationFailure: scenarioPreparationFailure(scenario),
+      });
       addReplayCounts(counts, result.counts);
       verdicts[result.verdict] += 1;
       if (!result.complete) incompleteScenarios += 1;
@@ -164,6 +170,8 @@ test.skipIf(!enabled)(
           // the relational probe completes the reproduction, and `changes` names what a round trip left behind
           ...(failure.probe ? { probe: failure.probe } : {}),
           ...(failure.changes ? { changes: failure.changes } : {}),
+          ...findingLocation(failure),
+          ...findingProvenance({ policyDefinitions: scenarioPolicy, sourceRevision: scenario.revision }),
           stepCount: scenario.steps?.length,
           config,
         }) + '\n',

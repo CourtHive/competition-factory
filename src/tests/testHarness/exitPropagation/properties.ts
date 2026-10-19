@@ -243,6 +243,7 @@ export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[]
     matchUpId,
     drawId,
     outcome,
+    stage: 'forward',
   });
   countForward(coverage, applied);
   // a refused forward call leaves nothing to undo, but it must not have written
@@ -257,6 +258,7 @@ export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[]
     matchUpId,
     drawId,
     outcome: clearOutcome,
+    stage: 'clear',
   });
   if (coverage) coverage.clear += 1;
   // a refused clear is legitimate: the engine may decline to unwind a propagated exit. A refused clear that WROTE
@@ -270,7 +272,7 @@ export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[]
   const after = stableHash(afterProjection);
   // what the round trip may leave out it must not leave false: a released position's arrival entry naming an
   // origin the clear made undecided is a residue (A1 triage case 25)
-  if (after === before) return checkArrivalsTrue(drawId);
+  if (after === before) return checkArrivalsTrue(drawId).map((failure) => ({ ...failure, stage: 'clear' as const }));
 
   const coordinates = new Map(
     getDrawMatchUps(drawId).map((matchUp: any) => [
@@ -278,12 +280,15 @@ export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[]
       `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`,
     ]),
   );
+  const changes = projectionChanges(beforeProjection, afterProjection, coordinates, ROUND_TRIP_FIELDS);
   return [
     {
       property: 'DO_UNDO_IDENTITY',
       matchUpId,
       detail: `clear succeeded but the draw did not return to its prior state\n  ${firstDifference(before, after)}`,
-      changes: projectionChanges(beforeProjection, afterProjection, coordinates, ROUND_TRIP_FIELDS),
+      changes,
+      stage: 'clear',
+      ...(changes[0] ? { firstDivergence: `${changes[0].at} ${changes[0].field}` } : {}),
     },
   ];
 }
@@ -313,6 +318,7 @@ export function checkIdempotence(params: RelationalParams): PropertyFailure[] {
     matchUpId,
     drawId,
     outcome,
+    stage: 'forward',
   });
   countForward(coverage, first);
   if (first.error || first.thrown !== undefined) return checkErrorAtomicity(first, matchUpId);
@@ -327,6 +333,7 @@ export function checkIdempotence(params: RelationalParams): PropertyFailure[] {
     drawId,
     outcome,
     priorHash: first.after,
+    stage: 'second-apply',
   });
   if (coverage) coverage.secondApply += 1;
   // a second apply may be refused (nothing to do), but it must not throw
@@ -337,6 +344,7 @@ export function checkIdempotence(params: RelationalParams): PropertyFailure[] {
     {
       property: 'IDEMPOTENT_REAPPLY',
       matchUpId,
+      stage: 'second-apply',
       detail: `re-applying ${JSON.stringify(outcome)} mutated the draw a second time${
         second.error ? ` and returned ${JSON.stringify(second.error)}` : ''
       }`,
@@ -429,6 +437,7 @@ export function checkMonotonicity(params: RelationalParams): PropertyFailure[] {
     matchUpId,
     drawId,
     outcome,
+    stage: 'forward',
   });
   countForward(coverage, applied);
   if (applied.error || applied.thrown !== undefined) return checkErrorAtomicity(applied, matchUpId);
@@ -493,6 +502,7 @@ export function checkMonotonicity(params: RelationalParams): PropertyFailure[] {
     {
       property: 'MONOTONIC_DECISION',
       matchUpId,
+      stage: 'forward',
       detail:
         `scoring this matchUp un-decided ${real.length}: ${real.map((id) => id.slice(0, 8)).join(', ')}` +
         (provisional ? ` (${provisional} further provisional, allowed)` : ''),

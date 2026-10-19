@@ -214,6 +214,8 @@ export type Observation = {
   /** Refused/thrown calls only: exact full-record comparison, with no timestamp exemption. */
   recordMutated?: boolean;
   firstRecordDifference?: string;
+  /** which call of a scenario this was, carried onto any finding it produces */
+  stage?: FindingStage;
   thrown?: string;
   error?: any;
   result?: any;
@@ -264,11 +266,13 @@ export function observeMutation({
   priorHash,
   outcome,
   drawId,
+  stage,
 }: {
   propagateExitStatus?: boolean;
   allowChangePropagation?: boolean;
   projectionAudit?: ProjectionAudit;
   observer?: MutationObserver;
+  stage?: FindingStage;
   priorHash?: string;
   matchUpId: string;
   drawId: string;
@@ -317,6 +321,7 @@ export function observeMutation({
     recordMutated: recordComparison ? !recordComparison.equal : undefined,
     firstRecordDifference: recordComparison?.firstDifference?.path,
     error: result?.error,
+    stage,
     invariantViolations,
     matchUps,
     thrown,
@@ -368,7 +373,24 @@ export type PropertyFailure = {
   probe?: { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
   /** for DO_UNDO_IDENTITY: every projected field the round trip left changed, by coordinate */
   changes?: ProjectionChange[];
+  /** the call that produced the finding; see {@link FindingStage} */
+  stage?: FindingStage;
+  /** for a `schedule` finding, the index of the scheduled step that produced it */
+  step?: number;
+  /**
+   * The first field that differed: a JSON Pointer into the tournament record for a refusal or throw that wrote, or
+   * `<structure|round|position> <field>` for a round trip that did not restore the draw.
+   */
+  firstDivergence?: string;
 };
+
+/**
+ * Where in a scenario a finding arose, so a reader can tell which call to reproduce (census plan A6).
+ *
+ * `build` is draw preparation or a missing schedule; `schedule` a scheduled step (with `step`); `final` the checks run
+ * on the draw the schedule produced; `forward`, `second-apply` and `clear` the calls of a relational probe.
+ */
+export type FindingStage = 'build' | 'schedule' | 'final' | 'forward' | 'second-apply' | 'clear';
 
 export type ProjectionChange = { at: string; field: string; before: any; after: any };
 
@@ -451,12 +473,18 @@ export function checkErrorAtomicity(observation: Observation, matchUpId: string)
   const mutated = observation.recordMutated ?? observation.mutated;
   const at = observation.firstRecordDifference;
   const location = at === undefined ? '' : ` at ${at || '/'}`;
+  // the stage and pointer are what a reader needs to reproduce the call; absent on an unobserved write
+  const provenance = {
+    ...(observation.stage ? { stage: observation.stage } : {}),
+    ...(mutated && at !== undefined ? { firstDivergence: at || '/' } : {}),
+  };
   if (observation.thrown !== undefined) {
     const mutation = mutated ? ` (state was mutated before the throw${location})` : '';
     failures.push({
       property: 'NO_EXCEPTION_ESCAPES',
       matchUpId,
       detail: observation.thrown + mutation,
+      ...provenance,
     });
   }
   if ((observation.error || observation.thrown !== undefined) && mutated) {
@@ -465,6 +493,7 @@ export function checkErrorAtomicity(observation: Observation, matchUpId: string)
       property: 'ERROR_IMPLIES_NO_MUTATION',
       matchUpId,
       detail: `${action} after mutating the tournament record${location}`,
+      ...provenance,
     });
   }
   return failures;
@@ -477,6 +506,7 @@ export function checkInvariants(observation: Observation, matchUpId: string): Pr
       property: 'STRUCTURAL_INVARIANT',
       matchUpId,
       detail: describeViolations(observation.invariantViolations),
+      ...(observation.stage ? { stage: observation.stage } : {}),
     },
   ];
 }

@@ -308,6 +308,27 @@ generation failures are build failures, including in stall counting; input recor
 filtered out. Per-step integrity shares the policy-aware schedule executor, skips relational probes,
 and reports transient inconsistencies as failed even if the final draw is clean.
 
+### Finding records
+
+Each finding names the call that produced it and where it first diverged, so a row reproduces on its
+own:
+
+- `stage`: `build`, `schedule` (with the zero-based `step` index), `final` (checks on the draw the
+  schedule produced), or the relational probe's `forward`, `second-apply` or `clear` call.
+- `probe`: every finding a relational probe raises carries the probe, not only the first one.
+- `firstDivergence`: for a refusal or throw that wrote, the JSON Pointer of the first changed field in
+  the tournament record. For `DO_UNDO_IDENTITY` it is `<structure|round|position> <field>`, the first
+  projected field the round trip left changed.
+
+Census, policy, per-step and stall finding rows also record the arm (from the workers'
+`ALLOW_CHANGE_PROPAGATION`/`PROPAGATE_BYE`, overridable with `CENSUS_ARM`), the policy definitions
+the scenario replayed under (`null` for none), and `revisions: { source, harness }`. `source` is the
+revision that generated the schedule; generated schedules now record it as `revision`, and older
+frozen inputs have `null`. `harness` is the replaying checkout's commit, suffixed `-dirty` when its
+tracked files differ. Policy rows deliberately omit `probe`, because the runners key findings on it
+and a baseline replayed at an older revision has none. The shrinker is unchanged: it still matches
+on the property name alone, and keeps only the minimized witness.
+
 These structured outputs require verdict-aware runners. The older DONE/seed-grep runners must not
 be used as acceptance evidence for this instrument until the Phase 0 runner repair is complete.
 

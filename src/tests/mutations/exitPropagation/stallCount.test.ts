@@ -1,4 +1,5 @@
 import { addReplayCounts, emptyReplayCounts } from '@Tests/testHarness/exitPropagation/replayTypes';
+import { findingProvenance } from '@Tests/testHarness/exitPropagation/findingRecord';
 import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { expect, test } from 'vitest';
@@ -87,7 +88,11 @@ test.skipIf(!enabled)(
       out.push(
         JSON.stringify({
           seed: scenario.seed,
-          ...(scenario.arm ? { arm: scenario.arm } : {}),
+          ...findingProvenance({
+            policyDefinitions: scenario.policyDefinitions ?? policyDefinitions,
+            sourceRevision: scenario.revision,
+            arm: scenario.arm,
+          }),
           size: `${drawSize}/${participantsCount}`,
           stalls,
           drawType,

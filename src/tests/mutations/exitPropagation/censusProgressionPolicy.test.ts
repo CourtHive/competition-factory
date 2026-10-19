@@ -1,3 +1,4 @@
+import { findingLocation, findingProvenance } from '@Tests/testHarness/exitPropagation/findingRecord';
 import { replay, type ScenarioConfig, type Step } from '@Tests/testHarness/exitPropagation/sweep';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -77,6 +78,7 @@ type Scenario = {
   steps: Step[];
   policyDefinitions?: any;
   generationThrow?: string;
+  revision?: string;
 };
 
 /** attached exactly as `doubleExitPropagateBye.test.ts` attaches it — a consumer's own route */
@@ -106,14 +108,10 @@ test.skipIf(!enabled)(
     for (const scenario of scenarios) {
       const { seed, config, steps } = scenario;
       setSubscriptions({});
-      const result = replay(
-        config,
-        steps ?? [],
-        `policy-${seed}`,
-        scenario.policyDefinitions ?? policyDefinitions,
-        undefined,
-        { preparationFailure: scenarioPreparationFailure(scenario) },
-      );
+      const scenarioPolicy = scenario.policyDefinitions ?? policyDefinitions;
+      const result = replay(config, steps ?? [], `policy-${seed}`, scenarioPolicy, undefined, {
+        preparationFailure: scenarioPreparationFailure(scenario),
+      });
       addReplayCounts(counts, result.counts);
       verdicts[result.verdict] += 1;
       if (!result.complete) incompleteScenarios += 1;
@@ -135,7 +133,15 @@ test.skipIf(!enabled)(
       byIssue[failure.property] = (byIssue[failure.property] ?? 0) + 1;
       fs.appendFileSync(
         outPath,
-        JSON.stringify({ seed, drawType: config.drawType, property: failure.property, detail: failure.detail }) + '\n',
+        // no `probe`: the runners key a finding by it, and a baseline replayed at an older revision has none
+        JSON.stringify({
+          seed,
+          drawType: config.drawType,
+          property: failure.property,
+          detail: failure.detail,
+          ...findingLocation(failure),
+          ...findingProvenance({ policyDefinitions: scenarioPolicy, sourceRevision: scenario.revision }),
+        }) + '\n',
       );
     }
 

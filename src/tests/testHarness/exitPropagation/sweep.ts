@@ -252,9 +252,16 @@ type ReplayContext = {
   observer: MutationObserver;
   phase: 'schedule' | 'relational';
   built: boolean;
+  /** the scheduled step being applied, so a `schedule` finding names it */
+  step?: number;
+  /** the relational probe being run, so every finding it raises carries it (census plan A6) */
+  probe?: PropertyFailure['probe'];
 };
 
 function addFinding(context: ReplayContext, finding: PropertyFailure): void {
+  if (finding.stage === 'schedule' && finding.step === undefined && context.step !== undefined)
+    finding.step = context.step;
+  if (context.phase === 'relational' && !finding.probe && context.probe) finding.probe = context.probe;
   const existing = context.findings.find(
     (entry) =>
       entry.property === finding.property && entry.matchUpId === finding.matchUpId && entry.detail === finding.detail,
@@ -262,6 +269,9 @@ function addFinding(context: ReplayContext, finding: PropertyFailure): void {
   if (existing) {
     existing.probe ??= finding.probe;
     existing.changes ??= finding.changes;
+    existing.stage ??= finding.stage;
+    existing.step ??= finding.step;
+    existing.firstDivergence ??= finding.firstDivergence;
   } else context.findings.push(finding);
 }
 
@@ -303,7 +313,7 @@ export function replay(
     },
   };
   try {
-    if (options.preparationFailure) addFinding(context, options.preparationFailure);
+    if (options.preparationFailure) addFinding(context, { ...options.preparationFailure, stage: 'build' });
     else {
       const failure = replayWithContext(config, steps, drawId, policyDefinitions, context);
       if (failure) addFinding(context, failure);
@@ -313,6 +323,7 @@ export function replay(
       property: context.built ? 'NO_EXCEPTION_ESCAPES' : 'GENERATION_THROW',
       matchUpId: '-',
       detail: String(error instanceof Error ? error.message : error),
+      ...(context.built ? {} : { stage: 'build' as const }),
     });
   }
   if (!context.built) context.counts.buildFailed = 1;
@@ -367,6 +378,7 @@ function replayWithContext(
       property: 'DRAW_BUILD_FAILED',
       matchUpId: '-',
       detail: `could not prepare ${config.drawType} ${config.drawSize}/${config.participantsCount}`,
+      stage: 'build',
     };
   context.built = true;
 
@@ -402,6 +414,7 @@ function replayWithContext(
       continue;
     }
 
+    context.step = index;
     const observation = observeMutation({
       propagateExitStatus: config.propagateExitStatus,
       projectionAudit,
@@ -409,6 +422,7 @@ function replayWithContext(
       allowChangePropagation: options.allowChangePropagation,
       matchUpId: target.matchUpId,
       outcome: step.outcome,
+      stage: 'schedule',
       drawId,
     });
     const failures = [
@@ -420,10 +434,11 @@ function replayWithContext(
     if (failures.length && options.stopOnFailure !== false) return failures[0];
   }
 
+  context.step = undefined;
   const integrity = checkIntegrity(drawId, '-');
-  if (integrity.length) return integrity[0];
+  if (integrity.length) return { ...integrity[0], stage: 'final' };
   const arrivals = checkArrivalsTrue(drawId);
-  if (arrivals.length) return arrivals[0];
+  if (arrivals.length) return { ...arrivals[0], stage: 'final' };
   if (coverage) {
     const inconsistent = checkCodesConsistent(drawId, '-');
     coverage.codesInconsistentMatchUps += inconsistent.length;
@@ -477,6 +492,13 @@ function replayWithContext(
   const properties = [checkMonotonicity, checkIdempotence, checkDoUndoIdentity];
 
   for (const { candidate, outcome } of probes) {
+    const probe = {
+      structureName: String(candidate.structureName),
+      roundNumber: candidate.roundNumber,
+      roundPosition: candidate.roundPosition,
+      outcome,
+    };
+    context.probe = probe;
     const params = {
       propagateExitStatus: config.propagateExitStatus,
       matchUpId: candidate.matchUpId,
@@ -508,15 +530,7 @@ function replayWithContext(
        * reproduce. `steps` are the setup and `probe` completes it; a reader applies steps, then
        * probe.
        */
-      return {
-        ...relational[0],
-        probe: {
-          structureName: String(candidate.structureName),
-          roundNumber: candidate.roundNumber,
-          roundPosition: candidate.roundPosition,
-          outcome,
-        },
-      };
+      return { ...relational[0], probe };
     }
   }
   return null;

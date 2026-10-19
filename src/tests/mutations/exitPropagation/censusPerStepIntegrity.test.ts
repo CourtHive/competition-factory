@@ -1,6 +1,7 @@
 import { addReplayCounts, emptyReplayCounts } from '@Tests/testHarness/exitPropagation/replayTypes';
 import { replayPerStepIntegrity } from '@Tests/testHarness/exitPropagation/perStepIntegrity';
 import type { ScenarioConfig, Step } from '@Tests/testHarness/exitPropagation/sweep';
+import { findingProvenance } from '@Tests/testHarness/exitPropagation/findingRecord';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, test } from 'vitest';
 import fs from 'fs';
@@ -66,6 +67,7 @@ type Scenario = {
   steps: Step[];
   policyDefinitions?: any;
   generationThrow?: string;
+  revision?: string;
 };
 
 const readWindow = (path: string): Scenario[] =>
@@ -112,11 +114,16 @@ test.skipIf(!enabled)(
               drawSize: config.drawSize,
               participantsCount: config.participantsCount,
               propagateExitStatus: config.propagateExitStatus,
+              stage: 'schedule',
               step: index + 1,
               of: steps?.length,
               scored: structuralKey(step),
               outcome: step.outcome,
               inconsistencies: found,
+              ...findingProvenance({
+                policyDefinitions: scenario.policyDefinitions,
+                sourceRevision: scenario.revision,
+              }),
             }) + '\n',
           );
         },

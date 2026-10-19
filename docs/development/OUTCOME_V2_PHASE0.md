@@ -1,8 +1,10 @@
 # Outcome v2 Phase 0 progress
 
-Status: A3 and A4 implemented locally; A5, the immutable instrument baseline and calibration remain open.
+Status: A3 and A4 committed locally (`efd9836d`); A5 runners committed on the Mentat task branch (`1715a9a0`);
+A6 finding-record fields implemented on top. The shrinker half of A6, merges and the immutable baseline remain open.
 Branch: `feat/outcome-v2-phase0`, from `origin/dev` at `7afc4399a194a0c1ed0399d3f07e19390d787b94`.
-Verified: 2026-10-19. No push, merge, release, deployment or Button run.
+Verified: 2026-10-19. No push, merge, release or deployment. A candidate Phase B census runs on Button at
+`efd9836d` (launched 22:50Z, `~/censuses/outcome-v2-phase0-20261019/phase-b`); its rows predate the A6 fields.
 
 ## Orientation and sequence
 
@@ -53,6 +55,23 @@ ambiguous build-failure/null result, per-step policy omission and unconditional 
   Missing histories and recorded generation failures are build failures; the stall instrument no longer
   filters them out. The current Mentat runners have not yet been adapted to these new rows.
 
+## A6: finding records that reproduce (fields only)
+
+- `PropertyFailure` gains `stage` (`build`, `schedule`, `final`, `forward`, `second-apply`, `clear`), `step` for a
+  scheduled call, and `firstDivergence`: the full-record JSON Pointer for a refusal/throw that wrote, or
+  `<coordinate> <field>` for a round-trip residue. Observations carry their stage, so findings raised through the
+  replay observer are tagged as well as those the properties return. Every relational finding carries its probe.
+- `findingRecord.ts` adds the arm, effective policy definitions and `revisions: { source, harness }` to census,
+  policy, per-step and stall finding rows. Generated schedules record their `revision`; older frozen inputs read
+  `source: null`. The harness revision carries `-dirty` for a modified checkout.
+- Runner finding keys (`seed`, `property`, probe coordinates) are unchanged. Policy rows still omit `probe`, so a
+  baseline replayed at an older revision keys identically.
+- Not done, per the executor plan's recommendation: the shrinker still matches on property name only, takes no
+  explicit policy, and keeps only the minimized witness. Take it if Phase B adjudication needs it.
+- 13 focused tests plant writes on relational calls 1, 3 and 5, on a scheduled step, and a round-trip residue,
+  and pin the arm mapping and provenance. A live two-scenario policy-off emit/replay smoke recorded the generating
+  revision and policy on each emitted schedule and replayed both clean and complete.
+
 ## Validation
 
 - Initial baseline: 13 focused tests, lint and production types passed. An intentionally interrupted
@@ -71,18 +90,18 @@ ambiguous build-failure/null result, per-step policy omission and unconditional 
   all 131 committed scenario hashes unchanged, including authored, grammar and scoring controls.
 - Final lint, production types, test-type ratchet, generated-source checks, attribute audit, isolated
   build, formatting, import order and markdown checks passed. Canonical factory remains clean on dev.
+- A6 (on top of `efd9836d`): full default suite 1,832 files / 18,615 tests passed (20 files / 1,549 opt-in tests
+  skipped), 289 seconds; final-tree focused replay/atomicity/projection/finding-record run 41/41; lint, types and
+  formatting green. Logs: `/tmp/outcome-v2-phase0/a6-*`.
 - Logs and smoke outputs: `/tmp/outcome-v2-phase0/a4-*`. No whole-suite or Button attestation.
 
 ## Remaining
 
-1. A5 is partially implemented in Mentat branch `feat/outcome-v2-phase0-runners`:
-   shared manifest/verdict writer and replay/generation workers, with 12 local failure-injection tests
-   passing. Real replay (two scenarios) and generation/replay (one scenario) worker smokes both produced
-   complete passing verdicts. Integration into launchers and comparative gates, dynamic gate-list
-   derivation, comparison semantics and broader runner failure injection remain open. Old seed-grep/DONE runners
-   must not gate the new receipt format. No Button acceptance claim until this is complete.
+1. A5 is committed on Mentat branch `feat/outcome-v2-phase0-runners` (`3d829464`, `1715a9a0`): verdicts from
+   manifests and receipts, comparative gates and launchers, 48 failure-injection tests passing locally and on
+   Button. `1715a9a0` fixed wrappers that put Button's fnm node ahead of injected stubs. Not yet merged.
 2. Rebaseline at one immutable revision and calibrate cost. Adjudicate newly exposed v1 findings separately
-   from instrument changes. A6 finding metadata/shrinking improvements are optional if cheap.
+   from instrument changes. The A6 shrinker change remains optional.
 3. S0/S1, then v1 closure (Phases B/C), then the v2 write slices. No production default change.
 
-Changes remain local and uncommitted. No complete Phase 0, full-suite or Button attestation is claimed.
+Nothing is pushed or merged. No complete Phase 0 attestation is claimed.
