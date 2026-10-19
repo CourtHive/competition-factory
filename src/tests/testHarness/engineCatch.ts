@@ -24,18 +24,13 @@ export const rethrowingStateProvider = {
 };
 
 /**
- * For a test of the catch path itself: run the enclosing `describe` (or file) under the default
- * sync provider, which catches, logs and returns `{ error }`, and put the provider back afterwards.
- *
- * Such a test expects the catch, so the provider's `ERROR {…}` log line is the expected outcome, not
- * a finding; it is dropped while the provider is installed. Any other console output still prints.
+ * A test of the catch path expects the provider's `ERROR {…}` log line: it is the outcome under test, not a
+ * finding. While the enclosing `describe` (or file) runs, `console.log` calls tagged `'ERROR'` are dropped;
+ * every other console output still prints. Use it beside any provider that catches (sync or async).
  */
-export function useEngineCatch(): void {
-  let previous: any;
+export function useQuietCaughtErrors(): void {
   let logSpy: ReturnType<typeof vi.spyOn> | undefined;
   beforeAll(() => {
-    previous = getProvider();
-    setStateProvider(syncGlobalState);
     const log = console.log.bind(console);
     logSpy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
       if (args[0] !== 'ERROR') log(...args);
@@ -43,6 +38,22 @@ export function useEngineCatch(): void {
   });
   afterAll(() => {
     logSpy?.mockRestore();
+  });
+}
+
+/**
+ * For a test of the catch path itself: run the enclosing `describe` (or file) under the default
+ * sync provider, which catches, logs and returns `{ error }`, and put the provider back afterwards.
+ * Its expected `ERROR {…}` log lines are dropped (see `useQuietCaughtErrors`).
+ */
+export function useEngineCatch(): void {
+  let previous: any;
+  useQuietCaughtErrors();
+  beforeAll(() => {
+    previous = getProvider();
+    setStateProvider(syncGlobalState);
+  });
+  afterAll(() => {
     setStateProvider(previous);
   });
 }
