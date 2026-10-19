@@ -18,7 +18,7 @@ self-reported results, `RANK` or `RATING` ordering, and eighteen new engine meth
 - **Upgrade mechanics** in detail: the [6.x to 7.0.0 migration guide](./migration-7.0.0.md).
 - **Every commit**: [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
 - **Measured gains**: [performance across 7.x](#performance-across-7x).
-- **After 7.15**: [unreleased adoption notes](#after-715-unreleased-adoption-notes).
+- **New in 7.16.0**: [adoption notes](#adoption-notes-7160).
 - **Where it led**: [7.0.0 began a journey](#700-began-a-journey) that the 7.x releases continued.
 
 ## 7.0.0 began a journey
@@ -48,7 +48,7 @@ measurements cover different workloads, not a single factory-wide speedup.
 | 7.10.0                 | Readiness/rest with large supplied matchUp arrays | Avoid unnecessary copies of unused logging parameters; gains depend on array size |
 | 7.15.0                 | Bare syncEngine consumer                          | 27.1 → 15.7 KB gzip: **42% smaller** for this import scenario                     |
 | 7.15.0                 | FMLC128 bare-ID lookup                            | **223 → 1** hydration; work count, not a latency multiplier                       |
-| After 7.15, unreleased | Standalone SE512 tally                            | Historical paired timing 546 → 6.9 ms (**79×**)                                   |
+| 7.16.0                 | Standalone SE512 tally                            | Historical paired timing 546 → 6.9 ms (**79×**)                                   |
 
 The same tally change recorded public projection at 413 → 72 ms (**5.7×**) at its revision. A later
 change stopped tallying elimination structures in public projections entirely; 72 ms is not a current
@@ -67,10 +67,10 @@ seed range, settings and replay disposition; an exception count from an older ru
 The [pipeline](./concepts/outcome-pipeline.md#71-two-implementations-s2) still uses v1 for accepted
 writes. Future v2 work is not independent proof of v1 correctness.
 
-## After 7.15: unreleased adoption notes
+## 7.16.0 adoption notes {#adoption-notes-7160}
 
-These notes describe `dev` through `97ad4dbe` (2026-10-17), beyond tag 7.15.0. They become release
-claims only when a later tag contains the changes.
+These notes cover what 7.16.0 (2026-10-19) changed for callers since 7.15.0. Every change listed
+is in the 7.16.0 tag.
 
 | Area                                                 | Caller action                                                                                                                                                                                                      |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

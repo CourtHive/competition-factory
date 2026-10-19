@@ -299,7 +299,7 @@ under it by design; they pass in the ordinary run.
 
 ## Scoring format conformance
 
-Post-7.15 work (#5523/#5524/#5526 and follow-ups) adds independently authored rule cases alongside
+Work released in 7.16.0 (#5523/#5524/#5526 and follow-ups) adds independently authored rule cases alongside
 replay/round-trip checks. At revision `97ad4dbe` (2026-10-17), the harvest contained 263 format codes
 in 79 cells: 75 conformance-backed, four deliberately refused input-level cells, none classified as
 missing. This is a revision-bound inventory, not a universal zero-defect proof.
@@ -317,7 +317,7 @@ set totals. Unharvested formats, arbitrary new combinations, host clocks, non-sc
 doubles participant rotation and external roster enforcement are outside this inventory's proof.
 Scoring conformance does not prove tournament exit propagation. See
 [format support](../scoring-engine/format-support.md) and
-[adoption notes](../whats-new-7.0.0.md#after-715-unreleased-adoption-notes).
+[adoption notes](../whats-new-7.0.0.md#adoption-notes-7160).
 
 ## Checking documentation contracts
 

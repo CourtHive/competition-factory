@@ -270,4 +270,4 @@ Individual standings and separate deciding-phase records are subsequent work.
 
 ## Later 7.x adoption
 
-See the [dated post-7.15 adoption notes](../whats-new-7.0.0.md#after-715-unreleased-adoption-notes) for input levels, validation errors, replay/configuration, service metadata, substitution results and refreshed tallies. These dev changes remain labeled unreleased until a tag contains them.
+See the [7.16.0 adoption notes](../whats-new-7.0.0.md#adoption-notes-7160) for input levels, validation errors, replay/configuration, service metadata, substitution results and refreshed tallies. These changes shipped in 7.16.0.
