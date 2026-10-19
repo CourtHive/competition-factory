@@ -2,6 +2,7 @@ import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import addFormats from 'ajv-formats';
 import { expect, it } from 'vitest';
 import Ajv from 'ajv';
 import fs from 'fs';
@@ -9,8 +10,8 @@ import fs from 'fs';
 // constants and types
 import type { DrawDefinition, Event } from '@Types/tournamentTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
-import { RATING } from '@Constants/scaleConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import { RATING } from '@Constants/scaleConstants';
 import { NTRP } from '@Constants/ratingConstants';
 
 /**
@@ -25,7 +26,7 @@ import { NTRP } from '@Constants/ratingConstants';
  * without entries left its flight with no `drawEntries`, which `getEvents` maps over.
  */
 const schema = JSON.parse(fs.readFileSync('./src/global/schema/tournament.schema.json', 'utf8'));
-const ajv = new Ajv({ allErrors: true, strict: false });
+const ajv = addFormats(new Ajv({ allErrors: true, strict: false }));
 ajv.addSchema(schema, 'tournament');
 const validateRecord = ajv.compile({ $ref: 'tournament' });
 const validateFlightProfile = ajv.compile({ $ref: 'tournament#/definitions/FlightProfile' });

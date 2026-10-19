@@ -325,7 +325,7 @@ it('resolves whole policies through tournament/event/draw/structure and exposes 
 });
 
 it('keeps runtime and closed JSON-schema tally validation in agreement', () => {
-  const ajv = new Ajv({ strict: false });
+  const ajv = addFormats(new Ajv({ strict: false }));
   ajv.addSchema(schema, 'tournament');
   const validate = ajv.compile({ $ref: 'tournament#/definitions/RotatingPartnerTallyPolicy' });
   for (const value of [
