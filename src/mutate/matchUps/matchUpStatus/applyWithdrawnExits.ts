@@ -2,7 +2,10 @@ import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import {
   releaseAdvancedDrawPositionAcrossLinks,
@@ -320,10 +323,43 @@ export function withdrawByeSeats({
         const drawPosition = getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber });
         const assignment = positionAssignmentsOf(structure)?.find((entry) => entry.drawPosition === drawPosition);
         if (!assignment?.bye || !assignment.byeFromPropagation) continue;
+        // a BYE matchUp's loser is a BYE: the seat it feeds keeps its BYE when the last claim goes (`removeDoubleExit`)
+        if (seatFeederHoldsBye({ drawDefinition, matchUpsMap, matchUpId: matchUp.matchUpId, drawPosition })) continue;
         clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
       }
     }
   }
+}
+
+/**
+ * Whether the matchUp feeding this loser seat across a link holds a BYE. Its loser is then a BYE, so the seat's BYE
+ * stands for that structural reason whatever claims come and go (census A1 wave 4, `aByeMatchUpsLoserSeatKeepsItsBye`).
+ * Census Phase B, COMPASS 32/32 policy-off 30007402: `Southeast|1|1` dp 1 held a BYE claimed by `West|1|2`'s double
+ * walkover; `East|1|3`'s double default then made `South|1|1`, the seat's feeder, a BYE matchUp; correcting `East|1|4`
+ * to a played result dissolved `West|1|2`, its claim went, and the BYE went with it, where every entry order of the
+ * standing results leaves it. The claim ledger records who claims a BYE, not why it stands (P58), so the structural
+ * reason is read off the draw here.
+ */
+function seatFeederHoldsBye({
+  drawDefinition,
+  matchUpsMap,
+  drawPosition,
+  matchUpId,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  drawPosition?: number;
+  matchUpId: string;
+}): boolean {
+  if (!drawPosition) return false;
+  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+  return inContextDrawMatchUps.some((feeder) => {
+    if (feeder.loserMatchUpId !== matchUpId) return false;
+    const { loserTargetDrawPosition } =
+      positionTargets({ matchUpId: feeder.matchUpId, inContextDrawMatchUps, inContextMatchUp: feeder, drawDefinition })
+        ?.targetMatchUps ?? {};
+    return loserTargetDrawPosition === drawPosition && matchUpHoldsBye({ drawDefinition, matchUp: feeder });
+  });
 }
 
 /** withdraw a claimant's BYE claims only where another claim still holds the BYE */

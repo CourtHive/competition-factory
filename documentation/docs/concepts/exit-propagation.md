@@ -1071,6 +1071,15 @@ named test that fails without it.
   produced exit is sent on from there (COMPASS 32/27 20521366: `theWholeDrawIsTheSameInEveryOrder`). Pinned by
   `aCarryPastAnEarlierRoundByeIsRecordedInEitherOrder`.
 
+### Rules settled by census Phase B (2026-10-20)
+
+- **A seat fed by a BYE matchUp keeps its BYE when its last claim goes.** A BYE matchUp's loser is a BYE, so the seat
+  it feeds across a link holds a BYE for that reason. Such a seat's BYE can also carry a double exit's claim, placed
+  before the feeder became a BYE matchUp. When that double exit dissolved and its claim was withdrawn, the BYE was cleared
+  with it, though the feeder still held its BYE. Withdrawing a claim now keeps the BYE while the seat's feeder holds one,
+  as unwinding a double exit already did (COMPASS 32/32 30007402 under `doubleExitPropagateBye: false`:
+  `aSeatFedByAByeMatchUpKeepsItsByeWhenItsLastClaimGoes`).
+
 ### Nothing to do is success, not failure
 
 Several situations look like a failure to place a participant but are simply an absence of one. The
