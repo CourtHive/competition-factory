@@ -1,3 +1,4 @@
+import { oweDissolvedConvergencesTheirByes } from '@Mutate/matchUps/matchUpStatus/oweDissolvedConvergencesTheirByes';
 import { reconcileConsolationReservations } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
 import { reconcileMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
 import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
@@ -135,16 +136,24 @@ function settleExitOrigins({
   // awards stayed where they stood (census policy-off 20177818, CURTIS_CONSOLATION 16/11: `Consolation 1|3|2`,
   // WINNER_NOT_ADVANCED). Those matchUps, and only those, are settled again on the draw the reconciliation left.
   const rederivedNow = new Set((reconciled?.rederived ?? []).filter((id) => doubleExitsBefore.has(id)));
-  if (!rederivedNow.size) return undefined;
-  const resettled = settleRederivedDoubleExits({
+  if (rederivedNow.size) {
+    const resettled = settleRederivedDoubleExits({
+      tournamentRecord: params.tournamentRecord,
+      drawDefinition: params.drawDefinition,
+      doubleExitsBefore: rederivedNow,
+      targetMatchUpId: matchUpId,
+      propagateExitStatus,
+      event: params.event,
+    });
+    if (resettled?.error) return resettled;
+  }
+  // a convergence the call dissolved is owed the BYE it took back, on the draw as it now stands
+  return oweDissolvedConvergencesTheirByes({
     tournamentRecord: params.tournamentRecord,
     drawDefinition: params.drawDefinition,
-    doubleExitsBefore: rederivedNow,
-    targetMatchUpId: matchUpId,
-    propagateExitStatus,
     event: params.event,
+    doubleExitsBefore,
   });
-  return resettled?.error ? resettled : undefined;
 }
 
 /**
