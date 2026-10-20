@@ -10,6 +10,7 @@ import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleF
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { reconcileByeAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileByeAdvancements';
 import { reconcileCarriesPastByes } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
+import { reconcileProvenanceSides } from '@Mutate/matchUps/matchUpStatus/reconcileProvenanceSides';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { announceGoesTo, setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
@@ -196,6 +197,9 @@ function settleDraw({
   // DOUBLE_ELIMINATION 8/5 21037067: a double walkover at `Main|2|1` sent the Backdraw's held exit into the final,
   // which its champion won and was not seated in the decider until the same outcome was entered again)
   reconcileMissedLinkAdvancements({ tournamentRecord, drawDefinition, event });
+
+  // a provenance entry follows its feeder's side as the seats settle (CA ruling (1), 2026-10-20)
+  reconcileProvenanceSides({ tournamentRecord, drawDefinition, event });
 
   // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
   return reconcileDeciders({
