@@ -1,10 +1,23 @@
-import { clearOutcome, getDrawDefinition, getDrawMatchUps, hash, observeMutation, stableHash } from './transitions';
-import { checkErrorAtomicity, decidedMatchUpIds, projectionChanges, projectRoundTrip } from './transitions';
-import { ROUND_TRIP_FIELDS } from './transitions';
-import type { Observation, PropertyFailure } from './transitions';
+import { emptyProjectionAuditCounts, type ProjectionAudit, type ProjectionAuditCounts } from './projectionAudit';
 import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { isDoubleExit } from '@Validators/isExit';
 import { BYE } from '@Constants/matchUpStatusConstants';
+import { isDoubleExit } from '@Validators/isExit';
+import {
+  clearOutcome,
+  getDrawDefinition,
+  getDrawMatchUps,
+  hash,
+  observeMutation,
+  stableHash,
+  checkErrorAtomicity,
+  decidedMatchUpIds,
+  projectionChanges,
+  projectRoundTrip,
+  ROUND_TRIP_FIELDS,
+  type MutationObserver,
+  type Observation,
+  type PropertyFailure,
+} from './transitions';
 
 /**
  * Relational properties — statements about a mutation and its inverse, which no single-state
@@ -30,6 +43,7 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  * 2026-10-17, finding 1). A caller passes an accumulator to tell the two apart.
  */
 export type RelationalCoverage = {
+  projectionAudit: ProjectionAuditCounts;
   /** forward applies attempted, and those that wrote */
   forward: number;
   forwardMutated: number;
@@ -50,6 +64,7 @@ export type RelationalCoverage = {
 };
 
 export const emptyCoverage = (): RelationalCoverage => ({
+  projectionAudit: emptyProjectionAuditCounts(),
   forward: 0,
   forwardMutated: 0,
   forwardRefused: 0,
@@ -61,6 +76,9 @@ export const emptyCoverage = (): RelationalCoverage => ({
 });
 
 type RelationalParams = {
+  observer?: MutationObserver;
+  allowChangePropagation?: boolean;
+  projectionAudit?: ProjectionAudit;
   coverage?: RelationalCoverage;
   propagateExitStatus?: boolean;
   matchUpId: string;
@@ -72,7 +90,7 @@ function countForward(coverage: RelationalCoverage | undefined, applied: Observa
   if (!coverage) return;
   coverage.forward += 1;
   if (applied.mutated) coverage.forwardMutated += 1;
-  if (applied.error || applied.thrown) coverage.forwardRefused += 1;
+  if (applied.error || applied.thrown !== undefined) coverage.forwardRefused += 1;
 }
 
 /**
@@ -204,24 +222,48 @@ function byeOriginFalse(matchUp: any, side: number, entry: any, byId: Map<string
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
 
 export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[] {
-  const { propagateExitStatus, matchUpId, drawId, outcome, coverage } = params;
+  const {
+    propagateExitStatus,
+    matchUpId,
+    drawId,
+    outcome,
+    coverage,
+    projectionAudit,
+    observer,
+    allowChangePropagation,
+  } = params;
   const beforeProjection = projectForRoundTrip(getDrawDefinition(drawId));
   const before = stableHash(beforeProjection);
 
-  const applied = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome });
+  const applied = observeMutation({
+    propagateExitStatus,
+    projectionAudit,
+    observer,
+    allowChangePropagation,
+    matchUpId,
+    drawId,
+    outcome,
+    stage: 'forward',
+  });
   countForward(coverage, applied);
   // a refused forward call leaves nothing to undo, but it must not have written
-  if (applied.error || applied.thrown) return checkErrorAtomicity(applied, matchUpId);
+  if (applied.error || applied.thrown !== undefined) return checkErrorAtomicity(applied, matchUpId);
   if (!applied.mutated) return [];
 
-  const cleared = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome: clearOutcome });
+  const cleared = observeMutation({
+    propagateExitStatus,
+    projectionAudit,
+    observer,
+    allowChangePropagation,
+    matchUpId,
+    drawId,
+    outcome: clearOutcome,
+    stage: 'clear',
+  });
   if (coverage) coverage.clear += 1;
-  if (cleared.thrown) {
-    return [{ property: 'DO_UNDO_IDENTITY', matchUpId, detail: `clear threw: ${cleared.thrown}` }];
-  }
   // a refused clear is legitimate: the engine may decline to unwind a propagated exit. A refused clear that WROTE
   // is not.
-  if (cleared.error) {
+  if (cleared.error || cleared.thrown !== undefined) {
     if (coverage) coverage.clearRefused += 1;
     return checkErrorAtomicity(cleared, matchUpId);
   }
@@ -230,7 +272,7 @@ export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[]
   const after = stableHash(afterProjection);
   // what the round trip may leave out it must not leave false: a released position's arrival entry naming an
   // origin the clear made undecided is a residue (A1 triage case 25)
-  if (after === before) return checkArrivalsTrue(drawId);
+  if (after === before) return checkArrivalsTrue(drawId).map((failure) => ({ ...failure, stage: 'clear' as const }));
 
   const coordinates = new Map(
     getDrawMatchUps(drawId).map((matchUp: any) => [
@@ -238,12 +280,15 @@ export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[]
       `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`,
     ]),
   );
+  const changes = projectionChanges(beforeProjection, afterProjection, coordinates, ROUND_TRIP_FIELDS);
   return [
     {
       property: 'DO_UNDO_IDENTITY',
       matchUpId,
       detail: `clear succeeded but the draw did not return to its prior state\n  ${firstDifference(before, after)}`,
-      changes: projectionChanges(beforeProjection, afterProjection, coordinates, ROUND_TRIP_FIELDS),
+      changes,
+      stage: 'clear',
+      ...(changes[0] ? { firstDivergence: `${changes[0].at} ${changes[0].field}` } : {}),
     },
   ];
 }
@@ -255,22 +300,51 @@ export function checkDoUndoIdentity(params: RelationalParams): PropertyFailure[]
  * is exactly what the DOUBLE_ELIMINATION defect does today.
  */
 export function checkIdempotence(params: RelationalParams): PropertyFailure[] {
-  const { propagateExitStatus, matchUpId, drawId, outcome, coverage } = params;
-  const first = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome });
+  const {
+    propagateExitStatus,
+    matchUpId,
+    drawId,
+    outcome,
+    coverage,
+    projectionAudit,
+    observer,
+    allowChangePropagation,
+  } = params;
+  const first = observeMutation({
+    propagateExitStatus,
+    projectionAudit,
+    observer,
+    allowChangePropagation,
+    matchUpId,
+    drawId,
+    outcome,
+    stage: 'forward',
+  });
   countForward(coverage, first);
-  if (first.error || first.thrown) return checkErrorAtomicity(first, matchUpId);
+  if (first.error || first.thrown !== undefined) return checkErrorAtomicity(first, matchUpId);
   if (!first.mutated) return [];
 
-  const second = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome, priorHash: first.after });
+  const second = observeMutation({
+    propagateExitStatus,
+    projectionAudit,
+    observer,
+    allowChangePropagation,
+    matchUpId,
+    drawId,
+    outcome,
+    priorHash: first.after,
+    stage: 'second-apply',
+  });
   if (coverage) coverage.secondApply += 1;
   // a second apply may be refused (nothing to do), but it must not throw
-  if (second.thrown) return checkErrorAtomicity(second, matchUpId);
+  if (second.error || second.thrown !== undefined) return checkErrorAtomicity(second, matchUpId);
   if (!second.mutated) return [];
 
   return [
     {
       property: 'IDEMPOTENT_REAPPLY',
       matchUpId,
+      stage: 'second-apply',
       detail: `re-applying ${JSON.stringify(outcome)} mutated the draw a second time${
         second.error ? ` and returned ${JSON.stringify(second.error)}` : ''
       }`,
@@ -343,12 +417,30 @@ export function isProvisionalDecision(matchUp: any): boolean {
  * comparable with counts taken after, which is the same caveat the 6.38.0 baseline carries.
  */
 export function checkMonotonicity(params: RelationalParams): PropertyFailure[] {
-  const { propagateExitStatus, matchUpId, drawId, outcome, coverage } = params;
+  const {
+    propagateExitStatus,
+    matchUpId,
+    drawId,
+    outcome,
+    coverage,
+    projectionAudit,
+    observer,
+    allowChangePropagation,
+  } = params;
   const beforeMatchUps = getDrawMatchUps(drawId);
   const before = decidedMatchUpIds(beforeMatchUps);
-  const applied = observeMutation({ propagateExitStatus, matchUpId, drawId, outcome });
+  const applied = observeMutation({
+    propagateExitStatus,
+    projectionAudit,
+    observer,
+    allowChangePropagation,
+    matchUpId,
+    drawId,
+    outcome,
+    stage: 'forward',
+  });
   countForward(coverage, applied);
-  if (applied.error || applied.thrown) return checkErrorAtomicity(applied, matchUpId);
+  if (applied.error || applied.thrown !== undefined) return checkErrorAtomicity(applied, matchUpId);
 
   const after = decidedMatchUpIds(applied.matchUps);
   const undecided = [...before].filter((id) => !after.has(id));
@@ -410,6 +502,7 @@ export function checkMonotonicity(params: RelationalParams): PropertyFailure[] {
     {
       property: 'MONOTONIC_DECISION',
       matchUpId,
+      stage: 'forward',
       detail:
         `scoring this matchUp un-decided ${real.length}: ${real.map((id) => id.slice(0, 8)).join(', ')}` +
         (provisional ? ` (${provisional} further provisional, allowed)` : ''),

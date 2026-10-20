@@ -1,8 +1,8 @@
 import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
-import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
-import { setSubscriptions } from '@Global/state/globalState';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { setSubscriptions } from '@Global/state/globalState';
 
 // constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';

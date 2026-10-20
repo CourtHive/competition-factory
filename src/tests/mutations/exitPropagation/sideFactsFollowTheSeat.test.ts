@@ -1,6 +1,6 @@
+import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
-import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';

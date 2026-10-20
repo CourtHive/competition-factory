@@ -1,6 +1,6 @@
 import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
-import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import { afterEach, expect, it } from 'vitest';
 

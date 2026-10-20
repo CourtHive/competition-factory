@@ -1,4 +1,6 @@
-import { stallsAfterSchedule } from '@Tests/testHarness/exitPropagation/stallCount';
+import { addReplayCounts, emptyReplayCounts } from '@Tests/testHarness/exitPropagation/replayTypes';
+import { findingProvenance } from '@Tests/testHarness/exitPropagation/findingRecord';
+import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { expect, test } from 'vitest';
 import fs from 'fs';
@@ -30,6 +32,9 @@ import fs from 'fs';
 const enabled = process.env.STALL_COUNT === '1';
 const schedulesIn = process.env.SCHEDULES_IN;
 const outPath = process.env.OUT ?? '/tmp/stalls.jsonl';
+// Large measurement batches opt into a longer budget without editing the checkout under test.
+const timeout = Number(process.env.STALL_COUNT_TIMEOUT_MS ?? 3_600_000);
+if (!Number.isSafeInteger(timeout) || timeout <= 0) throw new Error('Invalid STALL_COUNT_TIMEOUT_MS');
 const allowChangePropagation = process.env.ALLOW_CHANGE_PROPAGATION === '1';
 const propagateByeEnv = process.env.PROPAGATE_BYE;
 const policyDefinitions =
@@ -44,21 +49,36 @@ test.skipIf(!enabled)(
       .readFileSync(schedulesIn as string, 'utf8')
       .split('\n')
       .filter(Boolean)
-      .map((line) => JSON.parse(line))
-      .filter((scenario) => scenario.steps);
+      .map((line) => JSON.parse(line));
 
     const out: string[] = [];
+    const counts = emptyReplayCounts();
+    const verdicts = { clean: 0, failed: 0, 'build-failed': 0 };
+    let incompleteScenarios = 0;
     let counted = 0;
     let stalling = 0;
     let instances = 0;
     for (const scenario of scenarios) {
-      const stalls = stallsAfterSchedule({
+      const result = replayStalls({
         allowChangePropagation: allowChangePropagation || scenario.arm === 'on',
         drawId: `stall-count-${scenario.seed}`,
         catchThrows: true,
         policyDefinitions,
         scenario,
       });
+      addReplayCounts(counts, result.replay.counts);
+      verdicts[result.replay.verdict] += 1;
+      if (!result.replay.complete) incompleteScenarios += 1;
+      out.push(
+        JSON.stringify({
+          kind: 'REPLAY',
+          seed: scenario.seed,
+          verdict: result.replay.verdict,
+          complete: result.replay.complete,
+          counts: result.replay.counts,
+        }),
+      );
+      const stalls = result.stalls;
       if (!stalls) continue;
       counted += 1;
       if (!stalls.length) continue;
@@ -68,16 +88,31 @@ test.skipIf(!enabled)(
       out.push(
         JSON.stringify({
           seed: scenario.seed,
-          ...(scenario.arm ? { arm: scenario.arm } : {}),
+          ...findingProvenance({
+            policyDefinitions: scenario.policyDefinitions ?? policyDefinitions,
+            sourceRevision: scenario.revision,
+            arm: scenario.arm,
+          }),
           size: `${drawSize}/${participantsCount}`,
           stalls,
           drawType,
         }),
       );
     }
-    out.push(JSON.stringify({ kind: 'SUMMARY', scenarios: counted, stalling, instances }));
+    out.push(
+      JSON.stringify({
+        kind: 'SUMMARY',
+        scenarios: scenarios.length,
+        counted,
+        stalling,
+        instances,
+        counts,
+        verdicts,
+        incompleteScenarios,
+      }),
+    );
     fs.writeFileSync(outPath, out.join('\n') + '\n');
     expect(counted).toBeGreaterThan(0);
   },
-  3_600_000,
+  timeout,
 );

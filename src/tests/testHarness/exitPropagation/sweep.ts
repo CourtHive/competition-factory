@@ -1,11 +1,26 @@
-import { checkArrivalsTrue, checkDoUndoIdentity, checkIdempotence, checkMonotonicity } from './properties';
-import { checkCodesConsistent, checkErrorAtomicity, checkInvariants, checkIntegrity } from './transitions';
-import { clearOutcome, getDrawMatchUps, observeMutation } from './transitions';
-import type { RelationalCoverage } from './properties';
-import type { PropertyFailure } from './transitions';
-
+import { emptyReplayCounts, type ReplayCounts, type ReplayOptions, type ReplayResult } from './replayTypes';
+import { createProjectionAudit, mergeProjectionAudit, type ProjectionAudit } from './projectionAudit';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import {
+  checkCodesConsistent,
+  checkErrorAtomicity,
+  checkInvariants,
+  checkIntegrity,
+  clearOutcome,
+  getDrawMatchUps,
+  observeMutation,
+  type MutationObserver,
+  type PropertyFailure,
+} from './transitions';
+import {
+  checkArrivalsTrue,
+  checkDoUndoIdentity,
+  checkIdempotence,
+  checkMonotonicity,
+  emptyCoverage,
+  type RelationalCoverage,
+} from './properties';
 
 // constants
 import {
@@ -228,26 +243,154 @@ export type Finding = PropertyFailure & {
   fingerprint: string;
 };
 
-/**
- * Replay a schedule against a fresh draw and return the first property failure.
- *
- * Returns null when the schedule is clean, which is what the shrinker tests against.
- */
+type ReplayContext = {
+  counts: ReplayCounts;
+  coverage: RelationalCoverage;
+  projectionAudit: ProjectionAudit;
+  findings: PropertyFailure[];
+  options: ReplayOptions;
+  observer: MutationObserver;
+  phase: 'schedule' | 'relational';
+  built: boolean;
+  /** the scheduled step being applied, so a `schedule` finding names it */
+  step?: number;
+  /** the relational probe being run, so every finding it raises carries it (census plan A6) */
+  probe?: PropertyFailure['probe'];
+};
+
+function addFinding(context: ReplayContext, finding: PropertyFailure): void {
+  if (finding.stage === 'schedule' && finding.step === undefined && context.step !== undefined)
+    finding.step = context.step;
+  if (context.phase === 'relational' && !finding.probe && context.probe) finding.probe = context.probe;
+  const existing = context.findings.find(
+    (entry) =>
+      entry.property === finding.property && entry.matchUpId === finding.matchUpId && entry.detail === finding.detail,
+  );
+  if (existing) {
+    existing.probe ??= finding.probe;
+    existing.changes ??= finding.changes;
+    existing.stage ??= finding.stage;
+    existing.step ??= finding.step;
+    existing.firstDivergence ??= finding.firstDivergence;
+  } else context.findings.push(finding);
+}
+
+function mergeCoverage(total: RelationalCoverage, local: RelationalCoverage): void {
+  const { projectionAudit, ...numbers } = local;
+  for (const [key, value] of Object.entries(numbers)) total[key as keyof typeof numbers] += value;
+  mergeProjectionAudit(total.projectionAudit, projectionAudit);
+}
+
+/** Explicit replay disposition and accounting. Clean findings with lost coverage are incomplete. */
 export function replay(
   config: ScenarioConfig,
   steps: Step[],
   drawId: string,
   policyDefinitions?: any,
   coverage?: RelationalCoverage,
-): PropertyFailure | null {
-  if (!prepareDraw(config, drawId, policyDefinitions)) return null;
+  options: ReplayOptions = {},
+): ReplayResult {
+  const context: ReplayContext = {
+    counts: emptyReplayCounts(steps.length),
+    coverage: emptyCoverage(),
+    projectionAudit: options.projectionAudit ?? createProjectionAudit(config.seed),
+    findings: [],
+    options,
+    phase: 'schedule',
+    built: false,
+    observer: {
+      attempted: () => {
+        context.counts.attempted += 1;
+        if (context.phase === 'schedule') context.counts.scheduleAttempted += 1;
+      },
+      checked: (observation, matchUpId) => {
+        for (const finding of checkErrorAtomicity(observation, matchUpId)) addFinding(context, finding);
+        context.counts.checked += 1;
+        if (observation.thrown !== undefined) context.counts.thrown += 1;
+        else if (observation.error) context.counts.refused += 1;
+        else context.counts.accepted += 1;
+      },
+    },
+  };
+  try {
+    if (options.preparationFailure) addFinding(context, { ...options.preparationFailure, stage: 'build' });
+    else {
+      const failure = replayWithContext(config, steps, drawId, policyDefinitions, context);
+      if (failure) addFinding(context, failure);
+    }
+  } catch (error) {
+    addFinding(context, {
+      property: context.built ? 'NO_EXCEPTION_ESCAPES' : 'GENERATION_THROW',
+      matchUpId: '-',
+      detail: String(error instanceof Error ? error.message : error),
+      ...(context.built ? {} : { stage: 'build' as const }),
+    });
+  }
+  if (!context.built) context.counts.buildFailed = 1;
+  context.counts.unvisited = Math.max(0, steps.length - context.counts.scheduleAttempted - context.counts.skipped);
+  mergeProjectionAudit(context.coverage.projectionAudit, context.projectionAudit);
+  if (coverage) mergeCoverage(coverage, context.coverage);
+  const { counts, findings } = context;
+  let verdict: ReplayResult['verdict'] = 'clean';
+  if (!context.built) verdict = 'build-failed';
+  else if (findings.length) verdict = 'failed';
+  return {
+    verdict,
+    complete: context.built && counts.skipped === 0 && counts.unvisited === 0 && counts.checked === counts.attempted,
+    counts,
+    findings,
+    coverage: context.coverage,
+    projectionAudit: context.coverage.projectionAudit,
+  };
+}
 
-  for (const step of steps) {
+/**
+ * First-finding adapter for shrinking and historical behavioral fixtures, not verification runners.
+ * Skips remain permissive; build failure is a finding. Verification must inspect replay's complete/counts.
+ */
+export function replayFailure(
+  config: ScenarioConfig,
+  steps: Step[],
+  drawId: string,
+  policyDefinitions?: any,
+  coverage?: RelationalCoverage,
+  projectionAudit?: ProjectionAudit,
+): PropertyFailure | null {
+  return replay(config, steps, drawId, policyDefinitions, coverage, { projectionAudit }).findings[0] ?? null;
+}
+
+function skipStep(context: ReplayContext, index: number, step: Step, reason: string): void {
+  context.counts.skipped += 1;
+  context.counts.skippedWithReason[reason] = (context.counts.skippedWithReason[reason] ?? 0) + 1;
+  context.options.onStep?.({ index, step, skipped: reason });
+}
+
+function replayWithContext(
+  config: ScenarioConfig,
+  steps: Step[],
+  drawId: string,
+  policyDefinitions: any,
+  context: ReplayContext,
+): PropertyFailure | null {
+  const { coverage, projectionAudit, observer, options } = context;
+  if (!prepareDraw(config, drawId, policyDefinitions))
+    return {
+      property: 'DRAW_BUILD_FAILED',
+      matchUpId: '-',
+      detail: `could not prepare ${config.drawType} ${config.drawSize}/${config.participantsCount}`,
+      stage: 'build',
+    };
+  context.built = true;
+
+  for (const [index, step] of steps.entries()) {
     const matchUps = getDrawMatchUps(drawId);
     const target = matchUps.find((matchUp: any) => structuralKey(matchUp) === structuralKey(step));
     // a shrunk schedule can name a matchUp that no longer exists at a smaller drawSize; skipping
     // is correct — the step simply has no effect on this draw
-    if (!target) continue;
+    if (!target) {
+      skipStep(context, index, step, 'coordinate-missing');
+      continue;
+    }
 
     /**
      * AND IT MUST STILL BE SCOREABLE. `generateSchedule` only ever targets a matchUp holding TWO
@@ -266,30 +409,44 @@ export function replay(
      * The predicate is the generator's, character for character, so the two cannot drift: a second
      * spelling of "scoreable" is how this divergence arose in the first place.
      */
-    if ((target.sides ?? []).filter((side: any) => side?.participantId).length !== 2) continue;
+    if ((target.sides ?? []).filter((side: any) => side?.participantId).length !== 2) {
+      skipStep(context, index, step, 'not-scoreable');
+      continue;
+    }
 
+    context.step = index;
     const observation = observeMutation({
       propagateExitStatus: config.propagateExitStatus,
+      projectionAudit,
+      observer,
+      allowChangePropagation: options.allowChangePropagation,
       matchUpId: target.matchUpId,
       outcome: step.outcome,
+      stage: 'schedule',
       drawId,
     });
     const failures = [
       ...checkErrorAtomicity(observation, target.matchUpId),
       ...checkInvariants(observation, target.matchUpId),
     ];
-    if (failures.length) return failures[0];
+    for (const failure of failures) addFinding(context, failure);
+    options.onStep?.({ index, step, observation });
+    if (failures.length && options.stopOnFailure !== false) return failures[0];
   }
 
+  context.step = undefined;
   const integrity = checkIntegrity(drawId, '-');
-  if (integrity.length) return integrity[0];
+  if (integrity.length) return { ...integrity[0], stage: 'final' };
   const arrivals = checkArrivalsTrue(drawId);
-  if (arrivals.length) return arrivals[0];
+  if (arrivals.length) return { ...arrivals[0], stage: 'final' };
   if (coverage) {
     const inconsistent = checkCodesConsistent(drawId, '-');
     coverage.codesInconsistentMatchUps += inconsistent.length;
     if (inconsistent.length) coverage.codesInconsistentDraws += 1;
   }
+
+  if (options.relational === false) return null;
+  context.phase = 'relational';
 
   // Relational properties, each on the state the schedule produced.
   //
@@ -335,10 +492,20 @@ export function replay(
   const properties = [checkMonotonicity, checkIdempotence, checkDoUndoIdentity];
 
   for (const { candidate, outcome } of probes) {
+    const probe = {
+      structureName: String(candidate.structureName),
+      roundNumber: candidate.roundNumber,
+      roundPosition: candidate.roundPosition,
+      outcome,
+    };
+    context.probe = probe;
     const params = {
       propagateExitStatus: config.propagateExitStatus,
       matchUpId: candidate.matchUpId,
       coverage,
+      projectionAudit,
+      observer,
+      allowChangePropagation: options.allowChangePropagation,
       outcome,
       drawId,
     };
@@ -363,15 +530,7 @@ export function replay(
        * reproduce. `steps` are the setup and `probe` completes it; a reader applies steps, then
        * probe.
        */
-      return {
-        ...relational[0],
-        probe: {
-          structureName: String(candidate.structureName),
-          roundNumber: candidate.roundNumber,
-          roundPosition: candidate.roundPosition,
-          outcome,
-        },
-      };
+      return { ...relational[0], probe };
     }
   }
   return null;
@@ -391,9 +550,9 @@ export function shrink(
   drawId: string,
 ): { config: ScenarioConfig; steps: Step[] } {
   const stillFails = (candidateConfig: ScenarioConfig, candidateSteps: Step[], property: string) =>
-    replay(candidateConfig, candidateSteps, drawId)?.property === property;
+    replayFailure(candidateConfig, candidateSteps, drawId)?.property === property;
 
-  const original = replay(config, steps, drawId);
+  const original = replayFailure(config, steps, drawId);
   if (!original) return { config, steps };
   const property = original.property;
 
