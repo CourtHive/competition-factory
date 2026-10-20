@@ -1,10 +1,9 @@
 # Outcome v2 Phase 0 progress
 
-Status: A3 and A4 committed locally (`efd9836d`); A5 runners committed on the Mentat task branch (`1715a9a0`);
-A6 finding-record fields implemented on top. The shrinker half of A6, merges and the immutable baseline remain open.
-Branch: `feat/outcome-v2-phase0`, from `origin/dev` at `7afc4399a194a0c1ed0399d3f07e19390d787b94`.
-Verified: 2026-10-19. No push, merge, release or deployment. A candidate Phase B census runs on Button at
-`efd9836d` (launched 22:50Z, `~/censuses/outcome-v2-phase0-20261019/phase-b`); its rows predate the A6 fields.
+Status: A3, A4 and the A6 finding-record fields are on this branch (`efd9836d`, `de61075a`); A5 runners on Mentat
+`feat/outcome-v2-phase0-runners`. Phase B (the normal census) ran at `efd9836d`; its four engine findings have fixes on
+separate branches from `dev`. Branch: `feat/outcome-v2-phase0`, from `origin/dev` at
+`7afc4399a194a0c1ed0399d3f07e19390d787b94`. Verified: 2026-10-20.
 
 ## Orientation and sequence
 
@@ -95,13 +94,54 @@ ambiguous build-failure/null result, per-step policy omission and unconditional 
   formatting green. Logs: `/tmp/outcome-v2-phase0/a6-*`.
 - Logs and smoke outputs: `/tmp/outcome-v2-phase0/a4-*`. No whole-suite or Button attestation.
 
+## Phase B: the normal census (2026-10-19 22:50Z to 2026-10-20 08:17Z)
+
+Ran on Button at `efd9836d`, output `~/censuses/outcome-v2-phase0-20261019/phase-b`, 6 processes. Root verdict:
+`complete: false`, `pass: false` (`frozen: child incomplete`, `fresh: findings present`).
+
+| stage                                     |                  scenarios | result                                         |
+| ----------------------------------------- | -------------------------: | ---------------------------------------------- |
+| calibration (run-20 stored histories)     |          6,300 (2,100 × 3) | complete, pass, 0 failing                      |
+| frozen: 14 S8 gate sets + stored openings | 101,247 openings + 14 sets | 0 findings, 0 stalls; 20 histories incomplete  |
+| fresh: seeds 30,000,001–30,045,000        |       135,000 (45,000 × 3) | complete; 0 stalls; 4 findings, all policy-off |
+
+- **Cost.** Census replay ~11 min per 2,100 histories per process against the plan's ~2 min estimate: k ≈ 5, above the
+  2–4 budget (risk K7). The fresh stage took ~6.4 h.
+- **Projection audit** (off arm, calibration): 2,213 sampled accepted calls, 340 changed fields outside the projection,
+  chiefly `schedule` and `updatedAt`. Coverage-drift measurement, not functional failures.
+- **The 20 incomplete histories** have scheduled steps that no longer hold two participants (`not-scoreable`). 18 replay
+  complete at the S8 emitting ref `bf5553012b`; a bisect over first-parent `dev` attributes each to an exit-propagation
+  fix: #5576 (12), #5599 (4), #5510 (2). One representative per fix was read parent vs fix; in each the parent state was
+  the defective one. **CA ruled 2026-10-20 to retire the 18 in a ledger, never delete them**: Mentat
+  `retired-inputs-phase-b.json` (`b685fd9c`) records each identity; runner support and re-emission are open. The 2 gate-set
+  histories (on 20625776, on 21027128) were incomplete before S8 and are not yet adjudicated.
+- **The four findings**, re-replayed at `de61075a` for the A6 fields, all DO_UNDO_IDENTITY at the `clear` stage, all
+  engine-side (shrunk keeping property, probe and first divergence; `~/census-work/shrunk/`):
+
+| seed     | draw                   | mechanism                                                                                                  | fix (branch from `dev`)                                                                          |
+| -------- | ---------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 30004303 | COMPASS 32/30          | a convergence dissolved through `applyWithdrawnExits` never got back the BYE `reclaimSingleExitBye` took   | `fix/census-b-30004303`: owed once the call settles; plus CA ruling (b) in the round-trip oracle |
+| 30007402 | COMPASS 32/32          | `withdrawByeSeats` cleared a BYE with its last claim though the seat's feeder was a BYE matchUp            | `fix/census-b-30007402`                                                                          |
+| 30009232 | CURTIS_CONSOLATION 8/6 | a WALKOVER ⇄ DEFAULTED relabel missed the carry recorded on a BYE-held matchUp                             | `fix/census-b-30009232`                                                                          |
+| 30030527 | MFIC 32/32             | a provenance entry kept the side it was written on when its feeder's side changed (rule 3 vs feeder order) | `fix/census-b-30030527`: end-of-call re-key, CA ruling (1)                                       |
+
+- **CA rulings 2026-10-20.** (b): a BYE claim on a loser seat a BYE matchUp feeds is history-dependent by design, so the
+  round trip leaves it out and polices it (both state rules, never and always claiming, were measured and each reopened
+  a pinned fix). (1): re-key provenance by the feeder's current side; rule 3 unchanged. Design flaws recorded in Mentat
+  DESIGN_FLAWS_PUNCH_LIST: P58 (the BYE-claim ledger records who, not why), P59 (side-keyed provenance is unstable).
+- **Validation of the fix branches (local + Button standalone):** each passes the exitPropagation folder (322 files),
+  the full default suite and `pnpm verify`; each pin fails without its fix. No comparative Button gate has passed yet:
+  the A5 runners validate this branch's receipt format, which `dev` lacks, so the fixes are gated after this branch
+  merges.
+
 ## Remaining
 
-1. A5 is committed on Mentat branch `feat/outcome-v2-phase0-runners` (`3d829464`, `1715a9a0`): verdicts from
-   manifests and receipts, comparative gates and launchers, 48 failure-injection tests passing locally and on
-   Button. `1715a9a0` fixed wrappers that put Button's fnm node ahead of injected stubs. Not yet merged.
-2. Rebaseline at one immutable revision and calibrate cost. Adjudicate newly exposed v1 findings separately
-   from instrument changes. The A6 shrinker change remains optional.
-3. S0/S1, then v1 closure (Phases B/C), then the v2 write slices. No production default change.
+1. Merge this branch, then the A5 runners (Mentat `feat/outcome-v2-phase0-runners`, which also carries the gate
+   install/output isolation fix `930a93ac` and the retirement ledger).
+2. Rebase each fix branch onto the merged harness and gate it on Button (frozen arms, then openings); then its PR.
+3. Runner support for retired inputs (`RETIRED` rows, re-emission at the current revision); adjudicate the two
+   gate-set histories.
+4. Rebaseline at one immutable revision; S0/S1; v1 closure (Phase C rulings F2, F9, per-pass write reports, no
+   swallowed settle errors); then S2–S7. The A6 shrinker change remains optional.
 
-Nothing is pushed or merged. No complete Phase 0 attestation is claimed.
+No production default changes. Nothing is merged.
