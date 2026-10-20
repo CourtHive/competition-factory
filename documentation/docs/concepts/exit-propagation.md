@@ -1079,6 +1079,13 @@ named test that fails without it.
   with it, though the feeder still held its BYE. Withdrawing a claim now keeps the BYE while the seat's feeder holds one,
   as unwinding a double exit already did (COMPASS 32/32 30007402 under `doubleExitPropagateBye: false`:
   `aSeatFedByAByeMatchUpKeepsItsByeWhenItsLastClaimGoes`).
+- **A relabel reaches the carry on a BYE-held matchUp.** An exit re-entered as the other exit, the winner unchanged
+  (WALKOVER and DEFAULTED, either way), relabels its loser's carry. A carry can stop on a matchUp that reads BYE because a
+  double exit elsewhere claimed its other seat, and the relabel, which looks for the loser's standing matchUp and passes
+  over a BYE, left that entry's label as it was. When the claim later went and the BYE with it, the matchUp was decided
+  by the old label. The relabel now rewrites the label on every BYE-held matchUp where the loser's carry is recorded,
+  and only the label: the BYE is never re-derived, and the entry's BYE claims stay (CURTIS_CONSOLATION 8/6 30009232
+  under `doubleExitPropagateBye: false`: `aRelabelReachesTheCarryOnAByeHeldMatchUp`).
 
 ### Nothing to do is success, not failure
 
