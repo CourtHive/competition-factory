@@ -122,10 +122,16 @@ it('once the BYE goes, the relabelled exit decides the matchUp as the exit enter
 
 it('the shrunk schedule and its probes leave the draw they found', () => {
   setSubscriptions({});
-  expect(replay(CONFIG, SCHEDULE, 'relabel-bye-held-census', POLICY_OFF)).toBeNull();
+  expect(replay(CONFIG, SCHEDULE, 'relabel-bye-held-census', POLICY_OFF)).toMatchObject({
+    verdict: 'clean',
+    complete: true,
+  });
 });
 
 it('the full census schedule passes', () => {
   setSubscriptions({});
-  expect(replay(CONFIG, CENSUS_SCHEDULE, 'relabel-bye-held-full', POLICY_OFF)).toBeNull();
+  expect(replay(CONFIG, CENSUS_SCHEDULE, 'relabel-bye-held-full', POLICY_OFF)).toMatchObject({
+    verdict: 'clean',
+    complete: true,
+  });
 });
