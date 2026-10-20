@@ -180,6 +180,11 @@ Closing the three record-shaped definitions is **blocked rather than declined**:
 
 A producer writing CODES records should treat `additionalProperties: false` as the expected case and not rely on the four open definitions staying open.
 
+**A closed definition is only loud if something validates the record that carries the field.** Until October 2026 the schema tests validated only records that held no exits, so `MatchUp.sideExitProvenance` and `PositionAssignment.byeFromPropagation`, which the engine writes on the first double exit, were missing from the schema without a failure. Twelve closed definitions lacked typed fields. Two tests now hold the declarations together:
+
+- every field a closed definition's TypeScript type declares is listed in the schema, unless it is never stored (`Side.participant` is hydrated, `MatchUpSchedule.endDate` is a timeItem), and that exception is named in the test with its reason;
+- a record holding exit provenance and a propagated BYE validates.
+
 ## Related Documentation
 
 - **[Introduction](./introduction.mdx)** - Overview of Competition Factory architecture
