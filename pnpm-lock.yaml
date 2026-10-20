@@ -173,6 +173,7 @@ overrides:
   postcss: '>=8.5.18'
   nanoid: ^3.3.17
   smol-toml: ^1.7.1
+  markdown-it@15: ^15.0.2
 
 importers:
 
@@ -2535,8 +2536,8 @@ packages:
   magicast@0.5.5:
     resolution: {integrity: sha512-UicdXN8zQ3JHlxVq+28afMXPr1z7WNY6+7EJnzTdQWkTAlMLF5fNCCKxJHBQwGaNGR11581EiQmQzx73+MvszA==}
 
-  markdown-it@15.0.1:
-    resolution: {integrity: sha512-9/7gE95FNPkfUWrjJIoHZza2iLmuJlPD0UNMxPi7bxUrbCR525YZY0r+zyfes0dZI5ZZ/uNIXUJca0pJvtw41g==}
+  markdown-it@15.0.3:
+    resolution: {integrity: sha512-+Az7Ojz3iRGu8KYMvJ6xVhvrxP3eE+vEtJX75Ow88XBpcQNV/0lGX5ZynIIBftREo4DC2jsveAMDaeltmm8QvQ==}
     hasBin: true
 
   markdownlint-cli2-formatter-default@0.0.6:
@@ -5443,7 +5444,7 @@ snapshots:
       '@babel/types': 7.29.8
       source-map-js: 1.2.2
 
-  markdown-it@15.0.1:
+  markdown-it@15.0.3:
     dependencies:
       argparse: 3.0.3
       entities: 8.1.0
@@ -5462,7 +5463,7 @@ snapshots:
       js-yaml: 5.5.0
       jsonc-parser: 3.3.1
       jsonpointer: 5.0.1
-      markdown-it: 15.0.1
+      markdown-it: 15.0.3
       markdownlint: 0.41.1(supports-color@7.2.0)
       markdownlint-cli2-formatter-default: 0.0.6(markdownlint-cli2@0.23.3(supports-color@7.2.0))
       micromatch: 4.0.8
