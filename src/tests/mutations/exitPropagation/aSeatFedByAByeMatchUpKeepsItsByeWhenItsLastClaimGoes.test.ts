@@ -120,10 +120,13 @@ it('the seat keeps its BYE while its feeder still holds one, as forward play lea
 
 it('the shrunk schedule and its probes leave the draw they found', () => {
   setSubscriptions({});
-  expect(replay(CONFIG, SCHEDULE, 'feeder-bye-census', POLICY_OFF)).toBeNull();
+  expect(replay(CONFIG, SCHEDULE, 'feeder-bye-census', POLICY_OFF)).toMatchObject({ verdict: 'clean', complete: true });
 });
 
 it('the full census schedule passes', () => {
   setSubscriptions({});
-  expect(replay(CONFIG, CENSUS_SCHEDULE, 'feeder-bye-full', POLICY_OFF)).toBeNull();
+  expect(replay(CONFIG, CENSUS_SCHEDULE, 'feeder-bye-full', POLICY_OFF)).toMatchObject({
+    verdict: 'clean',
+    complete: true,
+  });
 });
