@@ -440,11 +440,14 @@ it('records the carried exit on its feeder side before a probe, as forward entry
 });
 
 it('the shrunk schedule and every probe return the draw they found', () => {
-  expect(replay(CONFIG, SCHEDULE, 'side-key-shrunk', POLICY_OFF)).toBeNull();
+  expect(replay(CONFIG, SCHEDULE, 'side-key-shrunk', POLICY_OFF)).toMatchObject({ verdict: 'clean', complete: true });
 });
 
 it('the full census history and every probe return the draw they found', () => {
-  expect(replay(CONFIG, FULL_SCHEDULE, 'side-key-full', POLICY_OFF)).toBeNull();
+  expect(replay(CONFIG, FULL_SCHEDULE, 'side-key-full', POLICY_OFF)).toMatchObject({
+    verdict: 'clean',
+    complete: true,
+  });
 });
 
 it('the original double-walkover probe and clear leave the side-keyed entry unchanged', () => {
