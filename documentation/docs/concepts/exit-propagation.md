@@ -1096,6 +1096,15 @@ named test that fails without it.
   (MODIFIED_FEED_IN_CHAMPIONSHIP 32/32) pins both entry orders, the shrunk and full histories, and the
   result-dependent boundaries in `aCarriedExitFollowsItsFeederSide`. This accommodates unstable side
   keys without changing draw-position rule 3; Mentat P59 remains open.
+- **A convergence a call dissolved is owed its BYE back.** Under `doubleExitPropagateBye: false`, a single exit that
+  becomes a double exit gives up the BYE its loser seat held on its account, and its loser seat takes the produced
+  exit instead. When a later call re-derives it to an awarded single exit, it again has nobody to lose, so the seat is
+  owed that BYE. Two dissolving paths already gave it back (a re-derived convergence, and an unwound double exit); a
+  convergence dissolved because an exit was withdrawn from it did not, and the seat stood empty, its matchUp decided
+  for an empty side. The BYE is now owed once the call has settled, for every matchUp that was a double exit before the
+  call and is an awarded single exit after it; a convergence that dissolves and converges again within one call is
+  owed nothing (COMPASS 32/30 30004303 under `doubleExitPropagateBye: false`:
+  `aConvergenceACallDissolvedIsOwedItsByeBack`).
 
 ### Nothing to do is success, not failure
 
