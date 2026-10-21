@@ -1,3 +1,4 @@
+import { applyRetentionAfterAging, RankingParticipantContext } from './retentionAfterAging';
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
 import { applyEligibleSourceWindow } from './eligibleSourceWindow';
 import { processBucketResults } from './processBucketResults';
@@ -45,6 +46,12 @@ type GenerateRankingListArgs = {
    * skipped; this is how a caller learns it was.
    */
   onWarning?: (warning: RankingListWarning) => void;
+  /**
+   * Per-participant facts the awards do not carry. `birthDate` drives
+   * `retentionMonthsAfterAging`; without it that rule is not applied and a
+   * warning says so.
+   */
+  participantContext?: RankingParticipantContext;
 };
 
 export function generateRankingList({
@@ -54,6 +61,7 @@ export function generateRankingList({
   asOfDate,
   pointPoolModel = 'per-category',
   onWarning,
+  participantContext,
 }: GenerateRankingListArgs): RankingListEntry[] {
   const {
     rollingPeriodDays,
@@ -81,6 +89,7 @@ export function generateRankingList({
           rollingPeriodDays,
           asOfDate,
           onWarning,
+          participantContext,
         });
 
   // Participation gating — only meaningful under 'per-category'.
@@ -169,6 +178,7 @@ function expandCarriedContributions({
   rollingPeriodDays,
   asOfDate,
   onWarning,
+  participantContext,
 }: {
   pointAwards: RankingListAward[];
   rules: CategoryAggregationRule[];
@@ -176,6 +186,7 @@ function expandCarriedContributions({
   rollingPeriodDays: number | undefined;
   asOfDate: string | undefined;
   onWarning?: (warning: RankingListWarning) => void;
+  participantContext?: RankingParticipantContext;
 }): Record<string, RankingListAward[]> {
   const carriedByPerson: Record<string, RankingListAward[]> = {};
   if (!rules.length) return carriedByPerson;
@@ -190,16 +201,28 @@ function expandCarriedContributions({
 
     // Restrict to the age groups the rule's eligibleSourceWindow admits;
     // undefined means the window could not be evaluated and the rule is skipped.
+    const targetCode = resolveTargetCode(rule.target, categoryFilter);
     const windowed = applyEligibleSourceWindow({
-      targetCode: resolveTargetCode(rule.target, categoryFilter),
+      targetCode,
       awards: sourceAwards,
       onWarning,
       rule,
     });
     if (!windowed) continue;
 
+    // Younger-category results a player brought up with them expire after
+    // the rule's retention period.
+    const retained = applyRetentionAfterAging({
+      awards: windowed,
+      participantContext,
+      targetCode,
+      onWarning,
+      asOfDate,
+      rule,
+    });
+
     // Apply rolling window before per-person grouping.
-    const inWindow = applyRollingWindow(windowed, rollingPeriodDays, asOfDate);
+    const inWindow = applyRollingWindow(retained, rollingPeriodDays, asOfDate);
 
     // Group, multiply, cap per (personId, rule).
     const perPersonForRule: Record<string, RankingListAward[]> = {};
