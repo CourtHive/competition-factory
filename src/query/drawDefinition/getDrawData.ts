@@ -1,8 +1,8 @@
 import type { ContextProfile, ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
 import { DrawDefinition, Event, Participant, PayloadProfileEnum, Tournament } from '@Types/tournamentTypes';
-import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
 import { isTalliedStructure, refreshParticipantResults } from './refreshParticipantResults';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';

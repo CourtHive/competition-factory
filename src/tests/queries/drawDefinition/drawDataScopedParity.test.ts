@@ -8,8 +8,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { COMPETITOR, OFFICIAL } from '@Constants/participantRoles';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
-import { DOUBLES, TEAM } from '@Constants/eventConstants';
 import { PayloadProfileEnum } from '@Types/tournamentTypes';
+import { DOUBLES, TEAM } from '@Constants/eventConstants';
 import {
   AD_HOC,
   COMPASS,
