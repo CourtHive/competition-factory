@@ -78,7 +78,10 @@ const CENSUS_SCHEDULE = [
 
 it('the census schedule and its probes leave the draw they found', () => {
   setSubscriptions({});
-  expect(replay(CONFIG, CENSUS_SCHEDULE, 'bye-fed-claim-census', POLICY_OFF)).toBeNull();
+  expect(replay(CONFIG, CENSUS_SCHEDULE, 'bye-fed-claim-census', POLICY_OFF)).toMatchObject({
+    verdict: 'clean',
+    complete: true,
+  });
 });
 
 /** the scheduled draw, a BYE-fed loser seat in it, and a played matchUp and a double exit to name as claimants */
