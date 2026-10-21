@@ -1,10 +1,10 @@
 import { BYE_CLAIM_REASON, byeClaimReason } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
 import { checkClaimsLive } from '@Tests/testHarness/exitPropagation/properties';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
-import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
 
 // constants
 import {

@@ -3,9 +3,9 @@ import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps
 import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import { MappedMatchUps } from '@Types/factoryTypes';
