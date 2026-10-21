@@ -44,6 +44,10 @@ export type ScoredSet = {
   side1GameScores?: number[];
   side2GameScores?: number[];
   isTiebreakOnly?: boolean;
+  /** a timed segment (§ 6.5) */
+  isTimed?: boolean;
+  /** a segment closed, with or without a winner (§ 1.2, § 6.4) */
+  segmentComplete?: boolean;
 };
 
 /** the game in play in the last set, when one has points (§ 4.1, § 5) */
@@ -51,7 +55,7 @@ export type GameInPlay = {
   /** the score of the game: points, or point values in a segment scored in units */
   score: Pair;
   /** the points played in it (its count, whatever their values) */
-  played: number;
+  pointsPlayed: number;
   /** a consecutive-points game: the side on a run and its length (§ 4.1 rule 4) */
   run?: { side: Side; length: number };
 };

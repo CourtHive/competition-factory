@@ -65,13 +65,18 @@ describe('§ 1.1, § 3 the configuration and format resolution', () => {
     expect(level.state.winningSide).toBeUndefined();
   });
 
-  it('segment kinds SE2a does not score are SE2b’s and are not reduced', () => {
-    expect(resolveFormat('SET3-S:T10')?.ordinary.kind).toEqual('timed');
-    expect(resolveFormat('SET1-S:P32')?.ordinary.kind).toEqual('combined');
+  it('every segment kind resolves (§ 3.3), in its order', () => {
+    expect(resolveFormat('SET3-S:T10')?.ordinary).toMatchObject({ kind: 'timed', buildsGames: true });
+    expect(resolveFormat('SET3-S:T10P')?.ordinary).toMatchObject({ kind: 'timed', buildsGames: false });
+    expect(resolveFormat('HAL2A-S:T45')?.ordinary).toMatchObject({ kind: 'timed', buildsGames: false });
+    expect(resolveFormat('T90')?.ordinary).toMatchObject({ kind: 'timed', buildsGames: false });
+    expect(resolveFormat('SET1-S:P32WB2')?.ordinary).toEqual({
+      kind: 'combined',
+      total: 32,
+      tie: 'WIN_BY_MARGIN',
+      margin: 2,
+    });
     expect(resolveFormat('SET1-S:O3')?.ordinary.kind).toEqual('outs');
-    expect(() => reduce({ matchUpFormat: 'SET3-S:T10' }, pts('1'))).toThrow(/does not score timed/);
-    expect(() => reduce({ matchUpFormat: 'SET1-S:O3' }, [game(0)])).toThrow(/does not score outs/);
-    expect(() => reduce({ matchUpFormat: 'SET1-S:P32' }, [total(17, 15)])).toThrow(/does not score combined/);
   });
 });
 

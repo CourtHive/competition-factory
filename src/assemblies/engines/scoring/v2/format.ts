@@ -23,10 +23,26 @@ export type StandardRule = {
 
 export type TiebreakOnlyRule = { kind: 'tiebreakOnly'; race: RaceRule; rally: boolean };
 
-/** a kind SE2a does not score yet: timed, combined total, outs (SE2b) */
-export type DeferredRule = { kind: 'timed' | 'combined' | 'outs' };
+/**
+ * A timed segment (§ 6): no target; only `endSegment` closes it. Its points build games of the match's game format
+ * in a tennis-family timed set (games-based, SET root, not aggregate, not standalone: § 6.2 rule 2); everywhere
+ * else a point is a unit of its score and adds its value (§ 6.2 rules 1, 3). `tiebreak` is the race played when it
+ * is level at time (§ 6.4 rule 2).
+ */
+export type TimedRule = { kind: 'timed'; buildsGames: boolean; game: GameRule; tiebreak?: RaceRule };
 
-export type SegmentRule = StandardRule | TiebreakOnlyRule | DeferredRule;
+/** a combined total (§ 7): one segment of rallies that ends when both sides' points total `total` */
+export type CombinedRule = {
+  kind: 'combined';
+  total: number;
+  tie: 'ALLOW' | 'DECIDING_POINT' | 'WIN_BY_MARGIN';
+  margin: number;
+};
+
+/** outs (§ 8): no point or game model; scored by set totals */
+export type OutsRule = { kind: 'outs' };
+
+export type SegmentRule = StandardRule | TiebreakOnlyRule | TimedRule | CombinedRule | OutsRule;
 
 export type MatchRule = {
   code: string;
@@ -45,6 +61,9 @@ export type MatchRule = {
 type ParsedTiebreak = { tiebreakTo: number; NoAD?: boolean; modifier?: string };
 type ParsedSetFormat = {
   combinedPointTotal?: number;
+  tieResolution?: string;
+  winningMargin?: number;
+  based?: string;
   outs?: number;
   timed?: boolean;
   tiebreakSet?: ParsedTiebreak;
@@ -74,10 +93,39 @@ function gameRule(gameFormat: ParsedGameFormat | undefined, noAd: boolean): Game
 }
 
 /** a set format's kind, recognised in the order of § 3.3 */
-function segmentRule(setFormat: ParsedSetFormat, gameFormat: ParsedGameFormat | undefined): SegmentRule {
-  if (setFormat.combinedPointTotal !== undefined) return { kind: 'combined' };
+/** what the match says about its timed sets: points build games only in a tennis-family timed set (§ 6.2) */
+type MatchContext = { tennisFamily: boolean };
+
+function combinedRule(setFormat: ParsedSetFormat): CombinedRule {
+  const tie =
+    setFormat.tieResolution === 'DECIDING_POINT' || setFormat.tieResolution === 'WIN_BY_MARGIN'
+      ? setFormat.tieResolution
+      : 'ALLOW';
+  return { kind: 'combined', total: setFormat.combinedPointTotal ?? 0, tie, margin: setFormat.winningMargin ?? 2 };
+}
+
+function timedRule(
+  setFormat: ParsedSetFormat,
+  gameFormat: ParsedGameFormat | undefined,
+  context: MatchContext,
+): TimedRule {
+  const buildsGames = context.tennisFamily && setFormat.based !== 'P';
+  return {
+    kind: 'timed',
+    buildsGames,
+    game: gameRule(gameFormat, false),
+    ...(setFormat.tiebreakFormat ? { tiebreak: raceRule(setFormat.tiebreakFormat) } : {}),
+  };
+}
+
+function segmentRule(
+  setFormat: ParsedSetFormat,
+  gameFormat: ParsedGameFormat | undefined,
+  context: MatchContext,
+): SegmentRule {
+  if (setFormat.combinedPointTotal !== undefined) return combinedRule(setFormat);
   if (setFormat.outs !== undefined) return { kind: 'outs' };
-  if (setFormat.timed) return { kind: 'timed' };
+  if (setFormat.timed) return timedRule(setFormat, gameFormat, context);
   if (setFormat.tiebreakSet)
     return {
       kind: 'tiebreakOnly',
@@ -105,8 +153,9 @@ export function resolveFormat(code: string | undefined): MatchRule | undefined {
   if (!parsed?.setFormat) return undefined;
   const exactly = parsed.exactly;
   const n: number = exactly ?? parsed.bestOf ?? 1;
-  const ordinary = segmentRule(parsed.setFormat, parsed.gameFormat);
-  const final = parsed.finalSetFormat ? segmentRule(parsed.finalSetFormat, parsed.gameFormat) : undefined;
+  const context = { tennisFamily: !parsed.matchRoot && !parsed.aggregate && !parsed.simplified };
+  const ordinary = segmentRule(parsed.setFormat, parsed.gameFormat, context);
+  const final = parsed.finalSetFormat ? segmentRule(parsed.finalSetFormat, parsed.gameFormat, context) : undefined;
   return {
     code,
     mode: exactly ? 'exactly' : 'bestOf',
@@ -150,9 +199,8 @@ export function ruleForSet(match: MatchRule, setNumber: number, setsWon: Pair): 
   return match.final && finalGoverns(match, setNumber, setsWon) ? match.final : match.ordinary;
 }
 
-/** whether every segment the format declares is a kind SE2a scores: standard and tiebreak-only */
-export function isSE2aFormat(match: MatchRule | undefined): boolean {
-  if (!match) return true;
-  const scored = new Set(['standard', 'tiebreakOnly']);
-  return scored.has(match.ordinary.kind) && (!match.final || scored.has(match.final.kind));
+/** whether `rule` is a segment kind that takes `input` (§ 3.3): outs take only set totals; a combined total no game */
+export function takesInput(rule: SegmentRule, input: 'point' | 'game'): boolean {
+  if (rule.kind === 'outs') return false;
+  return !(input === 'game' && rule.kind === 'combined');
 }

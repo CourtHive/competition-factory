@@ -141,8 +141,8 @@ describe('what the differential defers, by reason, instead of passing silently',
     return Object.keys(getScoringDifferentialTally());
   };
 
-  it('segment kinds SE2a does not score, legacy shapes, stale edits, statuses outside scoring', () => {
-    expect(deferredBy(new FakeEngine({ matchUpFormat: 'SET3-S:T10' }))).toEqual(['deferred:segment-kind']);
+  it('legacy shapes, stale edits, statuses outside scoring; every segment kind is compared', () => {
+    expect(deferredBy(new FakeEngine({ matchUpFormat: 'SET3-S:T10' }))).toEqual(['compared:probe']);
     const legacy = new FakeEngine();
     legacy.legacy = ['refusedInput'];
     expect(deferredBy(legacy)).toEqual(['deferred:legacy-shapes']);
