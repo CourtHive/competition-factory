@@ -66,6 +66,35 @@ describe('generateTournamentRecord', () => {
   });
 });
 
+describe('generateTournamentRecord through tournamentEngine', () => {
+  // the engine adds activeTournamentId and spreads tournamentRecords and the loaded tournamentRecord into
+  // every method's params. The check refused them, so from 7.16.0 every engine-routed generation failed
+  // with "unknown mocksEngine option: tournamentRecords"; 7.15.0 generated, as this does again
+  const loadEngine = () => {
+    tournamentEngine.reset();
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({});
+    tournamentEngine.setState(tournamentRecord);
+    return tournamentRecord.tournamentId;
+  };
+
+  it('generates, as before the check', () => {
+    const tournamentId = loadEngine();
+    const result: any = tournamentEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
+    expect(result.success).toEqual(true);
+    expect(result.eventIds.length).toEqual(1);
+    // 7.15.0 behaviour: the engine's record is the one the event is added to
+    const { tournamentRecord }: any = tournamentEngine.getTournament();
+    expect(tournamentRecord.tournamentId).toEqual(tournamentId);
+    expect(tournamentRecord.events.map(({ eventId }) => eventId)).toEqual(result.eventIds);
+  });
+
+  it('still refuses what the caller misspells', () => {
+    loadEngine();
+    const refused: any = tournamentEngine.generateTournamentRecord({ drawProfiles: [{ drawSzie: 4 }] });
+    expect(refusedOption(refused)).toEqual('drawProfiles[0].drawSzie');
+  });
+});
+
 describe('modifyTournamentRecord', () => {
   it('an unknown option is refused before anything is written', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });

@@ -578,7 +578,9 @@ describe('modifyEvent - Extended Coverage', () => {
     expect(result.success).toBe(true);
   });
 
-  it('handles TEAM event category validation', () => {
+  // asserted `success || error` was defined, which always holds. A TEAM event's age category is checked
+  // against its teams' members; mock members have no birthdate, so the change is refused and not applied
+  it('refuses an age category for a TEAM event whose members have no birthdate', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ eventType: TEAM, drawSize: 4 }],
     });
@@ -598,6 +600,7 @@ describe('modifyEvent - Extended Coverage', () => {
       },
     });
 
-    expect(result.success || result.error).toBeDefined();
+    expect(result.error).toEqual(MISSING_BIRTH_DATE);
+    expect(event.category?.ageCategoryCode).toBeUndefined();
   });
 });

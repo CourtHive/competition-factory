@@ -1,6 +1,6 @@
+import { checkProfileKeys, GENERATE_ENGINE_SUPPLIED_KEYS, GENERATE_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
-import { checkProfileKeys, GENERATE_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { addTournamentParticipants } from './addTournamentParticipants';
 import { addParticipants } from '@Mutate/participants/addParticipants';
@@ -55,7 +55,7 @@ const mockTournamentNames = [
 
 export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   // an option the generators do not read is refused, not ignored (phase 4c)
-  const unknownOption = checkProfileKeys(params, GENERATE_TOURNAMENT_RECORD_KEYS);
+  const unknownOption = checkProfileKeys(params, GENERATE_TOURNAMENT_RECORD_KEYS, GENERATE_ENGINE_SUPPLIED_KEYS);
   if (unknownOption) return unknownOption;
   const {
     tournamentName = randomMember(mockTournamentNames, params?.random),
