@@ -86,7 +86,7 @@ export function readSide(zeroBased: unknown, oneBased: unknown, name: string): {
 }
 
 /** the facts of a `point` (§ 2.1, refusals 2-5); the winner, when one is named */
-export function readPoint(data: EntryData | undefined): { winner?: Side; refused?: Refusal } {
+export function readPoint(data: EntryData | undefined): { winner?: Side; server?: Side; refused?: Refusal } {
   const winner = readSide(data?.winner, data?.winningSide, 'winner');
   if (winner.refused) return winner;
   const server = readSide(data?.server, data?.serverSideNumber, 'server');
@@ -97,7 +97,7 @@ export function readPoint(data: EntryData | undefined): { winner?: Side; refused
   const observed = data?.observedServeSide;
   if (observed !== undefined && observed !== 'deuce' && observed !== 'ad')
     return { refused: refusal(`Invalid observedServeSide: ${String(observed)}`) };
-  return { winner: winner.side };
+  return { winner: winner.side, server: server.side };
 }
 
 /** the facts of a `game` (§ 2.2): `winner` 0 or 1, a `tiebreakScore` two non-negative integers */

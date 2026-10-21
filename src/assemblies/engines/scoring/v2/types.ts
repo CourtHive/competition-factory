@@ -1,5 +1,6 @@
 import type { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Types/competitionFormat';
+import type { ServiceState } from './service';
 
 /**
  * ScoringEngine v2 — the types of the clean-room reducer `state = reduce(configuration, timeline)`.
@@ -17,7 +18,12 @@ export type Pair = [number, number];
 /** the configuration an engine is built from (§ 1.1) */
 export type ScoringConfiguration = {
   matchUpFormat?: string;
-  competitionFormat?: { matchUpFormat?: string; pointMultipliers?: PointMultiplier[]; [key: string]: unknown };
+  competitionFormat?: {
+    matchUpFormat?: string;
+    pointMultipliers?: PointMultiplier[];
+    serverRule?: string;
+    [key: string]: unknown;
+  };
   pointMultipliers?: PointMultiplier[];
 };
 
@@ -84,6 +90,8 @@ export type ScoringState = {
   sets: ScoredSet[];
   points: ScoredPoint[];
   game?: GameInPlay;
+  /** what the timeline has said about service (§ 10) */
+  service: ServiceState;
   /** scoring entries (point, game, set) accepted so far: a second baseline is refused once there are any (§ 2.5) */
   scoringEntries: number;
 };

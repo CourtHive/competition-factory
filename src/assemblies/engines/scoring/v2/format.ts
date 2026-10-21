@@ -29,7 +29,7 @@ export type TiebreakOnlyRule = { kind: 'tiebreakOnly'; race: RaceRule; rally: bo
  * else a point is a unit of its score and adds its value (§ 6.2 rules 1, 3). `tiebreak` is the race played when it
  * is level at time (§ 6.4 rule 2).
  */
-export type TimedRule = { kind: 'timed'; buildsGames: boolean; game: GameRule; tiebreak?: RaceRule };
+export type TimedRule = { kind: 'timed'; buildsGames: boolean; game: GameRule; tiebreak?: RaceRule; rally: boolean };
 
 /** a combined total (§ 7): one segment of rallies that ends when both sides' points total `total` */
 export type CombinedRule = {
@@ -60,6 +60,7 @@ export type MatchRule = {
 /** the parsed shapes `parse` returns (its own type leaves set formats untyped): only the fields read here */
 type ParsedTiebreak = { tiebreakTo: number; NoAD?: boolean; modifier?: string };
 type ParsedSetFormat = {
+  modifier?: string;
   combinedPointTotal?: number;
   tieResolution?: string;
   winningMargin?: number;
@@ -113,6 +114,8 @@ function timedRule(
   return {
     kind: 'timed',
     buildsGames,
+    // `@RALLY` scores nothing differently in a timed set (§ 6.3); it changes service (§ 10.4)
+    rally: setFormat.modifier === 'RALLY',
     game: gameRule(gameFormat, false),
     ...(setFormat.tiebreakFormat ? { tiebreak: raceRule(setFormat.tiebreakFormat) } : {}),
   };

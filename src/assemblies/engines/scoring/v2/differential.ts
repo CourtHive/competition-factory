@@ -1,6 +1,6 @@
+import { createContext, reduce, serverOf, step } from './reduce';
 import { getScoringEngine } from '@Global/state/globalState';
 import { configuredFormat, resolveFormat } from './format';
-import { createContext, reduce, step } from './reduce';
 
 // constants and types
 import type { EntryData, ScoringConfiguration, ScoringState, StepOutcome, TimelineEntry } from './types';
@@ -16,7 +16,8 @@ import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
  *
  * 1. the action boundary, for an offered action: whether v1 recorded it, ignored it (with which code) or refused
  *    it, against v2's `step` on the state before it;
- * 2. the state after it: v1's score, status, winner and materialized points against `reduce(config, timeline)`.
+ * 2. the state after it: v1's score, status, winner and materialized points (their service included), and the
+ *    next server (`getNextServer`, `isServerDerived`), against `reduce(config, timeline)`.
  *
  * Every segment kind is compared (SE2b widened it from SE2a's standard and tiebreak-only). Anything it cannot yet
  * compare (legacy shapes, stale edits, records with no timeline) is DEFERRED, never passed silently, and counted by
@@ -37,6 +38,8 @@ type V1Engine = {
   getSupplementaryState(): Pick<ScoringConfiguration, 'competitionFormat' | 'pointMultipliers'> | undefined;
   getLegacyShapes?(): string[];
   getFormat?(): string;
+  getNextServer?(): number;
+  isServerDerived?(): boolean;
 };
 type Method = (...args: unknown[]) => unknown;
 
@@ -158,20 +161,48 @@ const SET_FIELDS = [
   'isTimed',
   'segmentComplete',
 ];
-const POINT_FIELDS = ['index', 'pointNumber', 'winner', 'winningSide', 'set', 'game', 'number', 'score', 'scoreValue'];
+const POINT_FIELDS = [
+  'index',
+  'pointNumber',
+  'winner',
+  'winningSide',
+  'set',
+  'game',
+  'number',
+  'score',
+  'scoreValue',
+  'server',
+  'serverSideNumber',
+  'code',
+  'serveSide',
+];
 
 const pick = (source: Fields, fields: string[]): Fields =>
   Object.fromEntries(
     fields.filter((field) => source[field] !== undefined && source[field] !== false).map((f) => [f, source[f]]),
   );
 
-type Projection = { matchUpStatus: unknown; winningSide: unknown; sets: Fields[]; points: Fields[] };
+type Projection = {
+  matchUpStatus: unknown;
+  winningSide: unknown;
+  /** the side due to serve next and whether it is derived (`getNextServer`, `isServerDerived`, § 10.4) */
+  next: unknown;
+  sets: Fields[];
+  points: Fields[];
+};
 
 /** the part of a matchUp the reducer defines: status, winner, sets and each point's coordinates */
-function projection(matchUpStatus: unknown, winningSide: unknown, sets: Fields[], points: Fields[]): Projection {
+function projection(
+  matchUpStatus: unknown,
+  winningSide: unknown,
+  next: unknown,
+  sets: Fields[],
+  points: Fields[],
+): Projection {
   return {
     matchUpStatus,
     winningSide: winningSide ?? null,
+    next,
     sets: sets.map((set) => pick(set, SET_FIELDS)),
     points: points.map((point) => pick(point, POINT_FIELDS)),
   };
@@ -289,6 +320,16 @@ function pendingAtTimeScore(v1: Projection, v2: Projection): void {
   });
 }
 
+/**
+ * SE3-E1: a `setServer(side, { recordEntry: false })` with nothing on the timeline orients v1's next server and is
+ * stored nowhere, so no reduction of the timeline can see it.
+ */
+function pendingUnanchoredCorrection(v1: Projection, v2: Projection, entries: TimelineEntry[]): void {
+  if (entries.length || canonical(v1.next) === canonical(v2.next)) return;
+  v2.next = v1.next;
+  count('pending:SE3-E1');
+}
+
 function pendingDecisions(v1: Projection, v2: Projection, combined: boolean): void {
   pendingTrailingGame(v1, v2);
   pendingAtTimeScore(v1, v2);
@@ -313,10 +354,20 @@ export function compareStates(engine: V1Engine, method: string, stale = false, l
     const v2 = JSON.stringify(reduction.outcomes[index]);
     throw new ScoringEngineDivergence({ method, format, v1: `replays entry ${index} (${entries[index]?.type})`, v2 });
   }
-  const v1 = projection(state.matchUpStatus, state.winningSide, state.score?.sets ?? [], state.history?.points ?? []);
+  const next = serverOf(createContext(config), reduction.state);
+  // an engine without the service queries is compared on its score alone
+  const answers = engine.getNextServer ? { side: engine.getNextServer(), derived: engine.isServerDerived?.() } : next;
+  const v1 = projection(
+    state.matchUpStatus,
+    state.winningSide,
+    answers,
+    state.score?.sets ?? [],
+    state.history?.points ?? [],
+  );
   const v2State: ScoringState = reduction.state;
-  const v2 = projection(v2State.matchUpStatus, v2State.winningSide, v2State.sets, v2State.points);
+  const v2 = projection(v2State.matchUpStatus, v2State.winningSide, next, v2State.sets, v2State.points);
   pendingDecisions(v1, v2, resolveFormat(format)?.ordinary.kind === 'combined');
+  pendingUnanchoredCorrection(v1, v2, entries);
   const difference = firstDifference(v1, v2);
   if (difference)
     throw new ScoringEngineDivergence({

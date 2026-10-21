@@ -1,3 +1,4 @@
+import { INITIAL_SERVICE, afterPoint, corrected, nextServer, serveSide, serviceCode } from './service';
 import { configuredFormat, resolveFormat, ruleForSet, takesInput } from './format';
 import { decideMatch, isClosed, setsWon } from './decide';
 import {
@@ -35,6 +36,7 @@ import {
 // constants and types
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Types/competitionFormat';
+import type { ServicePosition, ServiceRules } from './service';
 import type { MatchRule, SegmentRule } from './format';
 import type {
   EntryData,
@@ -57,22 +59,48 @@ import type {
  * as it was. One producer per rule: format resolution in `format.ts`, each segment kind's rules in `segments/`,
  * completion in `decide.ts`, the facts of each action in `actions.ts`.
  *
- * Every segment kind is scored: standard, tiebreak-only, timed, combined total and outs (SE2a, SE2b). The engine
- * shell (undo/redo, persistence, events) is SE2c's.
+ * Every segment kind is scored: standard, tiebreak-only, timed, combined total and outs (SE2a, SE2b), and every
+ * point carries its service: server, S/R code and court half (`service.ts`, SE2b). The engine shell (undo/redo,
+ * persistence, events) is SE2c's.
  */
 
-export type ReducerContext = { match?: MatchRule; multipliers: PointMultiplier[] };
+export type ReducerContext = { match?: MatchRule; multipliers: PointMultiplier[]; rules: ServiceRules };
 
 export function createContext(config: ScoringConfiguration): ReducerContext {
   return {
     match: resolveFormat(configuredFormat(config)),
     // the option wins over the profile's (§ 1.1)
     multipliers: config.pointMultipliers ?? config.competitionFormat?.pointMultipliers ?? [],
+    // the competition's server rule (§ 10.7)
+    rules: { winnerServes: config.competitionFormat?.serverRule === 'WINNER_SERVES' },
   };
 }
 
 export function initialState(): ScoringState {
-  return { matchUpStatus: TO_BE_PLAYED, sets: [], points: [], scoringEntries: 0 };
+  return { matchUpStatus: TO_BE_PLAYED, sets: [], points: [], service: INITIAL_SERVICE, scoringEntries: 0 };
+}
+
+/**
+ * Where the next point would be played, for service (§ 10): the set in play, or the next one. A completed match, or
+ * one past its N sets, answers for the set that would come next: the rotation continues (decision SE2b-D22).
+ */
+function positionOf(match: MatchRule, state: ScoringState): ServicePosition {
+  const at = target(match, state);
+  if (at) return { match, rule: at.rule, set: at.set, game: at.game };
+  const rule = ruleForSet(match, state.sets.length + 1, setsWon(state.sets));
+  return { match, rule, set: openSet(rule, state.sets.length + 1) };
+}
+
+/** the side due to serve the next point, and whether the engine derived it (§ 10.4): `getNextServer` and `isServerDerived` */
+export function serverOf(context: ReducerContext, state: ScoringState): { side: Side; derived: boolean } {
+  const position = context.match && positionOf(context.match, state);
+  return nextServer(context.rules, state.service, state, position);
+}
+
+/** a server correction at this position on the timeline (§ 2.6, § 10.6) */
+function correct(context: ReducerContext, state: ScoringState, side: Side): ScoringState {
+  const position = context.match && positionOf(context.match, state);
+  return { ...state, service: corrected(context.rules, state.service, state, position, side) };
 }
 
 type Step = { state: ScoringState; outcome: StepOutcome };
@@ -155,12 +183,22 @@ function point(context: ReducerContext, match: MatchRule, state: ScoringState, e
 
   const winner = facts.winner;
   const value = units ? pointValue(context, entry.data) : 1;
+  const position: ServicePosition = { match, rule: at.rule, set: at.set, game: at.game };
+  const derived = nextServer(context.rules, state.service, state, position);
+  const server = facts.server ?? (derived.derived ? derived.side : undefined);
+  const half = serveSide(state, position);
+  // a combined total derives no S/R code, even from a supplied server (§ 10.4)
+  const coded = entry.data?.code === undefined && at.rule.kind !== 'combined';
+  const code = coded ? serviceCode(server, winner) : undefined;
   const played = segmentPoint(at.rule, at.set, at.game, winner, value, at.atTime);
   const index = state.points.length;
   const materialized = {
     ...pointFacts(entry.data),
     winner,
     winningSide: (winner + 1) as 1 | 2,
+    ...(server === undefined ? {} : { server, serverSideNumber: (server + 1) as 1 | 2 }),
+    ...(code ? { code } : {}),
+    ...(half ? { serveSide: half } : {}),
     ...(entry.timestamp ? { timestamp: entry.timestamp } : {}),
     index,
     pointNumber: index + 1,
@@ -171,7 +209,8 @@ function point(context: ReducerContext, match: MatchRule, state: ScoringState, e
     ...(value === 1 ? {} : { scoreValue: value }),
   };
   const next = scored(match, state, at, played);
-  return { state: { ...next, points: [...state.points, materialized] }, outcome: RECORDED };
+  const service = afterPoint(state.service, state, position, winner, facts.server);
+  return { state: { ...next, service, points: [...state.points, materialized] }, outcome: RECORDED };
 }
 
 function game(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step {
@@ -290,7 +329,13 @@ function combinedInPlay(match: MatchRule, sets: ScoredSet[], open: boolean): boo
  * decides the match), and is refused a second time once scoring entries exist. A `matchUpStatus` or `winningSide`
  * given beside the sets is checked against them; a status set outside scoring is not.
  */
-function baseline(match: MatchRule, state: ScoringState, entry: TimelineEntry, live: boolean): Step {
+function baseline(
+  context: ReducerContext,
+  match: MatchRule,
+  state: ScoringState,
+  entry: TimelineEntry,
+  live: boolean,
+): Step {
   if (live && state.scoringEntries > 0)
     return refused(state, refusal('a second baseline is refused once scoring entries exist'));
   const data = entry.data ?? {};
@@ -306,16 +351,16 @@ function baseline(match: MatchRule, state: ScoringState, entry: TimelineEntry, l
   const consistent = consistentBaseline(data, decision);
   if (consistent) return refused(state, refusal(consistent));
   const { winningSide: _w, game: _g, ...rest } = state;
-  return {
-    state: {
-      ...rest,
-      sets: inPlay.sets,
-      ...(inPlay.game ? { game: inPlay.game } : {}),
-      matchUpStatus: decision.complete ? COMPLETED : IN_PROGRESS,
-      ...(decision.winningSide ? { winningSide: decision.winningSide } : {}),
-    },
-    outcome: RECORDED,
+  const replaced: ScoringState = {
+    ...rest,
+    sets: inPlay.sets,
+    ...(inPlay.game ? { game: inPlay.game } : {}),
+    matchUpStatus: decision.complete ? COMPLETED : IN_PROGRESS,
+    ...(decision.winningSide ? { winningSide: decision.winningSide } : {}),
   };
+  // § 2.5 rule 4: a supplied server is a server correction at the baseline's position
+  const server = data.server as Side | undefined;
+  return { state: server === undefined ? replaced : correct(context, replaced, server), outcome: RECORDED };
 }
 
 /** § 2.5 rule 6: refused only when they disagree; RETIRED, DEFAULTED and the like are not checked */
@@ -344,6 +389,14 @@ function scoreless(state: ScoringState, reason?: Refusal): Step {
  * Never mutates `state` or `entry`.
  */
 export function step(context: ReducerContext, state: ScoringState, entry: TimelineEntry, live = false): Step {
+  const result = apply(context, state, entry, live);
+  // § 2.6: a correction made with `recordEntry: false` is recorded on the entry before it, and replayed with it
+  const side = entry.serverCorrection;
+  if (!result.outcome.recorded || (side !== 0 && side !== 1)) return result;
+  return { ...result, state: correct(context, result.state, side) };
+}
+
+function apply(context: ReducerContext, state: ScoringState, entry: TimelineEntry, live: boolean): Step {
   const { match } = context;
   if (!match)
     return NEEDS_A_FORMAT.has(entry.type)
@@ -357,11 +410,15 @@ export function step(context: ReducerContext, state: ScoringState, entry: Timeli
     case SET:
       return set(match, state, entry);
     case SET_INITIAL_SCORE:
-      return baseline(match, state, entry, live);
+      return baseline(context, match, state, entry, live);
     case END_SEGMENT:
       return endSegment(match, state, entry);
-    case SET_SERVER:
-      return scoreless(state, readServer(entry.data));
+    case SET_SERVER: {
+      const reason = readServer(entry.data);
+      return reason
+        ? refused(state, reason)
+        : { state: correct(context, state, entry.data?.side as Side), outcome: RECORDED };
+    }
     case CHALLENGE:
       return scoreless(state, readChallenge(entry.data));
     case SUBSTITUTION:
