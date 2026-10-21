@@ -7,17 +7,17 @@ type CompletionOptions = {
 };
 
 /**
- * Resolves the completion options for one draw. A value set on the drawProfile takes precedence over the
- * value passed for the whole generation (top-level, or eventProfile for `modifyTournamentRecord`);
- * an option the drawProfile leaves undefined falls back to that outer value.
+ * Resolves the completion options for one draw or event. A value set on the inner profile takes precedence over
+ * the outer value (drawProfile over eventProfile, eventProfile over top-level); an option the inner profile leaves
+ * undefined falls back to the outer value.
  */
 export function resolveCompletionOptions(
-  drawProfile: CompletionOptions | undefined,
+  profile: CompletionOptions | undefined,
   outer: CompletionOptions,
 ): CompletionOptions {
   return {
-    matchUpStatusProfile: drawProfile?.matchUpStatusProfile ?? outer.matchUpStatusProfile,
-    completeAllMatchUps: drawProfile?.completeAllMatchUps ?? outer.completeAllMatchUps,
-    randomWinningSide: drawProfile?.randomWinningSide ?? outer.randomWinningSide,
+    matchUpStatusProfile: profile?.matchUpStatusProfile ?? outer.matchUpStatusProfile,
+    completeAllMatchUps: profile?.completeAllMatchUps ?? outer.completeAllMatchUps,
+    randomWinningSide: profile?.randomWinningSide ?? outer.randomWinningSide,
   };
 }

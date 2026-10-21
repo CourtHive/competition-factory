@@ -262,7 +262,7 @@ const { tournamentRecord } = mocksGovernor.generateTournamentRecord({
 - Populates draws with participants
 - Assigns seeds and ratings
 - Can generate completed matchUps with outcomes
-- `completeAllMatchUps`, `randomWinningSide` and `matchUpStatusProfile` apply to every draw when passed at the top level, or to one draw when set on its `drawProfile` (the drawProfile value wins); see [Complete One Draw](../testing/mocks-engine-tournament-generation.md#complete-one-draw)
+- `completeAllMatchUps`, `randomWinningSide` and `matchUpStatusProfile` apply to every draw when passed at the top level, to the draws of one event when set on its `eventProfile`, or to one draw when set on its `drawProfile`. The innermost value wins: drawProfile, then eventProfile, then top level; see [Complete One Draw](../testing/mocks-engine-tournament-generation.md#complete-one-draw)
 - An AD_HOC drawProfile with `roundsCount` above 1 and `completeAllMatchUps` is generated round by round: each round is paired, then completed, so later rounds pair on results. Every round is paired unless the drawProfile sets `automated: false`, which leaves the rounds empty
 - A `venueProfile`'s `courtIds` is a pool the call consumes, one id per court: reusing the same profile object gives the second venue generated court ids. Pass a fresh array to each call that needs the same ids
 - See full docs for extensive configuration options

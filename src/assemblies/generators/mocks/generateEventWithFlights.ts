@@ -5,6 +5,7 @@ import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { generateEventParticipants } from './generateEventParticipants';
 import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { getParticipantId } from '@Functions/global/extractors';
@@ -157,10 +158,16 @@ export function generateEventWithFlights(params) {
     });
     if (flightResult.error) return flightResult;
 
-    const drawDefinitionResult = generateFlightDrawDefinitions({
+    // the eventProfile's own completion options take precedence over the top-level ones for its draws
+    const completion = resolveCompletionOptions(eventProfile, {
       matchUpStatusProfile,
       completeAllMatchUps,
       randomWinningSide,
+    });
+    const drawDefinitionResult = generateFlightDrawDefinitions({
+      matchUpStatusProfile: completion.matchUpStatusProfile,
+      completeAllMatchUps: completion.completeAllMatchUps,
+      randomWinningSide: completion.randomWinningSide,
       tournamentRecord,
       drawProfiles,
       random,
