@@ -2,6 +2,10 @@
 
 ## [7.17.0](https://github.com/CourtHive/competition-factory/compare/v7.16.0...v7.17.0) (2026-10-21)
 
+### ⚠ Schema validation
+
+If you validate stored tournament records against `tods-competition-factory/schema/tournament.schema.json` on load or save, update your schema with this release. Earlier schemas reject fields the engine writes, such as `MatchUp.sideExitProvenance` after a double exit. If you mirror the schema elsewhere, for example in a MongoDB `$jsonSchema`, add the newly declared properties there too. See the [7.17.0 adoption notes](https://courthive.github.io/competition-factory/docs/whats-new-7.0.0/#adoption-notes-7170). Nothing changes for consumers who do not validate records.
+
 
 ### Features
 
