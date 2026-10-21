@@ -93,6 +93,8 @@ export const policies = {
   POLICY_SEEDING_DEFAULT,
   POLICY_SEEDING_BYES,
 
+  // Bare EvaluationPolicy bodies, not policyDefinitions: pass one as `evaluationPolicy`. `attachPolicies` and the
+  // mocksEngine's `policyDefinitions` refuse them.
   POLICY_OFFICIATING_EVALUATION_CHAIR_UMPIRE,
   POLICY_OFFICIATING_EVALUATION_REFEREE,
 
@@ -111,10 +113,12 @@ export const policies = {
   POLICY_ROUND_ROBIN_TALLY_TOC,
 
   // Sanctioning policies keyed by governing body — the reference copies a consumer needs to see what
-  // a body actually requires, rather than re-deriving it.
+  // a body actually requires, rather than re-deriving it. Bare SanctioningPolicy bodies, not policyDefinitions:
+  // pass one as `sanctioningPolicy`, or attach it as `{ [POLICY_TYPE_SANCTIONING]: POLICY_SANCTIONING_USTA }`.
   POLICY_SANCTIONING_GENERIC,
   POLICY_SANCTIONING_ITF,
   POLICY_SANCTIONING_USTA,
 
+  // deprecated: refused by `attachPolicies` (a name and no values) and read by nothing; removed in 8.0.0
   POLICY_PRINT_DEFAULT,
 };

@@ -86,12 +86,22 @@ test.each(scenarios)('drawTypeCoercion can be configured to coerce all drawTypes
   }
 });
 
+// AD_HOC is never coerced, so the AD_HOC draw this test used could not tell whether the policy attached
 test('drawTypeCoercion can be configured via Draws Policy', () => {
-  mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawType: AD_HOC, drawSize: 2, drawId: 'drawId' }],
+  const drawProfiles = [{ drawType: CURTIS_CONSOLATION, drawSize: 2, drawId: 'drawId' }];
+
+  let result: any = mocksEngine.generateTournamentRecord({
+    policyDefinitions: { [POLICY_TYPE_DRAWS]: { drawTypeCoercion: false } },
+    drawProfiles,
+  });
+  expect(result.error).toEqual(INVALID_DRAW_SIZE);
+
+  result = mocksEngine.generateTournamentRecord({
     policyDefinitions: POLICY_DRAWS_DEFAULT,
+    drawProfiles,
     setState: true,
   });
+  expect(result.success).toEqual(true);
   const { drawDefinition } = tournamentEngine.getEvent({ drawId: 'drawId' });
-  expect(drawDefinition.drawType).toEqual(AD_HOC);
+  expect(drawDefinition.drawType).toEqual(SINGLE_ELIMINATION);
 });

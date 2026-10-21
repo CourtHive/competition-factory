@@ -258,7 +258,7 @@ describe('policyAttachment branches', () => {
   it('handles avoidance policy in appliedPolicies without policyDefinitions', () => {
     const drawDefinition: any = { drawId: 'd1', extensions: [] };
     const result = policyAttachment({
-      appliedPolicies: { avoidance: { policyName: 'test' } },
+      appliedPolicies: { avoidance: { policyName: 'test', roundsToSeparate: 1 } },
       policyDefinitions: undefined,
       drawDefinition,
       stack: 'test',
@@ -270,11 +270,23 @@ describe('policyAttachment branches', () => {
     const drawDefinition: any = { drawId: 'd1', extensions: [] };
     const result = policyAttachment({
       appliedPolicies: {},
-      policyDefinitions: { seeding: { policyName: 'custom' } },
+      policyDefinitions: { seeding: { policyName: 'custom', duplicateSeedNumbers: true } },
       drawDefinition,
       stack: 'test',
     });
     expect(result.error).toBeUndefined();
+  });
+
+  // a policy with a name and no values is refused by attachPolicies; the refusal was discarded here
+  it('refuses a policy that attachPolicies refuses', () => {
+    const drawDefinition: any = { drawId: 'd1', extensions: [] };
+    const result = policyAttachment({
+      appliedPolicies: {},
+      policyDefinitions: { seeding: { policyName: 'custom' } },
+      drawDefinition,
+      stack: 'test',
+    });
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 });
 
