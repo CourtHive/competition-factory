@@ -1,5 +1,5 @@
 import { emptyProjectionAuditCounts, type ProjectionAudit, type ProjectionAuditCounts } from './projectionAudit';
-import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { byeClaimReason, carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -190,6 +190,34 @@ export function byeFedLoserSeats(drawDefinition: any): Map<string, string> {
     if (side) seats.set(`${loserMatchUp.matchUpId}|${side}`, feeder.matchUpId);
   }
   return seats;
+}
+
+/**
+ * CLAIMS_LIVE — every BYE claim left on a seat names a claimant that still owes it (Mentat P58).
+ *
+ * A claim's reason is read from its claimant (`byeClaimReason`): a double exit, a BYE matchUp, or an awarded single exit
+ * whose losing side is a carried exit. A claimant that is none of these justifies nothing, so a claim it still holds is
+ * one an unwind missed, and a later survival check would count it.
+ */
+export function checkClaimsLive(drawId: string): PropertyFailure[] {
+  const matchUps = getDrawMatchUps(drawId);
+  const byId = new Map(matchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  const failures: PropertyFailure[] = [];
+  for (const matchUp of matchUps) {
+    for (const [side, entry] of Object.entries(matchUp.sideExitProvenance ?? {}) as [string, any][]) {
+      for (const claimantMatchUpId of entry?.byeClaims ?? []) {
+        const claimant = byId.get(claimantMatchUpId);
+        if (byeClaimReason(claimant)) continue;
+        const named = claimant ? `${coordinate(claimant)} (${claimant.matchUpStatus})` : `missing ${claimantMatchUpId}`;
+        failures.push({
+          property: 'CLAIMS_LIVE',
+          matchUpId: matchUp.matchUpId,
+          detail: `${coordinate(matchUp)} side ${side}: claimed by ${named}, which owes no BYE`,
+        });
+      }
+    }
+  }
+  return failures;
 }
 
 /**

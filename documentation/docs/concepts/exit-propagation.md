@@ -188,6 +188,16 @@ state is removed.
 Consumers do not normally need to read it. It is documented because it is visible in stored
 tournament records.
 
+### Why a BYE claim names its claimant and not its reason
+
+A side's `byeClaims` lists the matchUps that claim the BYE on that loser seat. Each claimant owes the BYE for one
+reason: it is a double exit whose produced exit leaves the seat's feeder nobody to lose, it is a BYE matchUp whose
+loser is a BYE, or it is an awarded single exit whose losing side is a carried exit. The engine reads that reason from
+the claimant as it stands (`byeClaimReason`) and stores only the claimant's matchUpId. A stored reason goes stale: a
+claimant awarded as a single exit can later converge into a double exit, and over the census replays 4 of 618 final
+claims had changed kind that way (CA, 2026-10-21, Mentat P58). A claim whose claimant owes no BYE is one an unwind
+missed, and the harness fails it (`CLAIMS_LIVE`).
+
 ## Guarantees
 
 These hold as of 7.0.0, or as of the release each states, and are enforced by the
