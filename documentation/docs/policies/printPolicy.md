@@ -80,6 +80,9 @@ tournamentEngine.attachPolicies({
 Once attached, the policy travels with the tournament record. Like every attached policy, it is stored in the
 tournament's `appliedPolicies` extension, under the `print` key; there is no extension named `print`.
 
+A print policy can also be attached to an event or a draw (`attachPolicies({ policyDefinitions, eventId })`, or
+`drawId`), for prints that belong to them: a draw sheet, a sign-in sheet, a player list.
+
 ---
 
 ## Reading the Policy
@@ -96,7 +99,17 @@ const printPolicy = appliedPolicies?.[POLICY_TYPE_PRINT];
 The factory does not interpret the contents beyond storage — consumers
 parse the value according to their own conventions.
 
-:::note
-pdf-factory's `resolveCompositionConfig` reads its tournament layer from an extension _named_ `print`, not from
-`appliedPolicies`, so a print policy attached with `attachPolicies` does not reach it today.
-:::
+## How pdf-factory resolves it
+
+pdf-factory's `resolveCompositionConfig` layers the composition for a print type, each layer deep-merged over the ones
+before it:
+
+1. the provider default (`providerConfigSettings.policies.printPolicies[printType]`);
+2. the tournament's own `appliedPolicies.print[printType]`;
+3. the event's, when the print belongs to an event;
+4. the drawDefinition's, when the print belongs to a draw;
+5. runtime tweaks from the print dialog.
+
+This differs from how the factory resolves other policies. `getAppliedPolicies` replaces an outer policy of a type
+with the inner one whole; print layers deep-merge, so a draw that sets only its header keeps the tournament's footer
+and page settings. Pass the full tournament record, not `getTournamentInfo()` output, which has no `extensions`.
