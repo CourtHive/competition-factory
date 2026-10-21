@@ -1,5 +1,16 @@
 # Changelog
 
+## [7.18.0](https://github.com/CourtHive/competition-factory/compare/v7.17.0...v7.18.0) (2026-10-21)
+
+
+### Features
+
+* **rankings:** apply decayFunction to ranking-list awards ([#5640](https://github.com/CourtHive/competition-factory/issues/5640)) ([a3ab419](https://github.com/CourtHive/competition-factory/commit/a3ab4194e5461a2f44adea09761c236396aa8426))
+* **rankings:** headToHead tiebreak criterion ([#5644](https://github.com/CourtHive/competition-factory/issues/5644)) ([ec77a74](https://github.com/CourtHive/competition-factory/commit/ec77a74cdfdafe15f862d19e1f5f91c14b2ed48a))
+* **rankings:** honour eligibleSourceWindow on categoryAggregation rules ([#5641](https://github.com/CourtHive/competition-factory/issues/5641)) ([a6c60ba](https://github.com/CourtHive/competition-factory/commit/a6c60badc38e914570fdc51c40ada3ed7ca4c726))
+* **rankings:** honour retentionMonthsAfterAging on categoryAggregation rules ([#5642](https://github.com/CourtHive/competition-factory/issues/5642)) ([c4ec621](https://github.com/CourtHive/competition-factory/commit/c4ec6210d4505a5bf79bda731f08ed5b3ce347b9))
+* **rankings:** quality-win matchDate snapshot and useDefaultRank ([#5643](https://github.com/CourtHive/competition-factory/issues/5643)) ([5516b5b](https://github.com/CourtHive/competition-factory/commit/5516b5b7f8b4153b36c68336a0865435d196a7b2))
+
 ## [7.17.0](https://github.com/CourtHive/competition-factory/compare/v7.16.0...v7.17.0) (2026-10-21)
 
 ### ⚠ Schema validation
