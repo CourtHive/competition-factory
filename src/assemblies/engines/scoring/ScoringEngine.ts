@@ -21,6 +21,7 @@ import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
 import { isDecisionRequired } from '@Query/scoring/decisionRequired';
 import { installScoringDifferential } from './v2/differential';
+import { getScoringEngine } from '@Global/state/globalState';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
 import { checkTiebreakWon } from '@Mutate/scoring/gameWon';
@@ -29,6 +30,7 @@ import { getEpisodes } from '@Query/scoring/getEpisodes';
 import { isComplete } from '@Query/scoring/isComplete';
 import { getWinner } from '@Query/scoring/getWinner';
 import { getScore } from '@Query/scoring/getScore';
+import { ScoringEngineV2 } from './v2/engine';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 import {
@@ -71,6 +73,7 @@ import {
 // constants and types
 import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { SCORING_ENGINE_V2 } from '@Constants/scoringEngineConstants';
 import type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
 import type { InputLevels } from '@Tools/scoring/scoringUtilities';
 import type { ClosableSet } from '@Mutate/scoring/judgeSet';
@@ -320,9 +323,9 @@ export class ScoringEngine {
   private redoStack: ScoreEntry[] = [];
   // the legacy shapes the last rebuild met (spec § 12.8)
   private legacyShapes = new Set<string>();
-  private matchUpFormat: string;
+  private matchUpFormat!: string; // assigned below, unless the constructor hands back the v2 shell
   private matchUpId?: string;
-  private isDoubles: boolean;
+  private isDoubles!: boolean;
   private state!: MatchUp; // Definite assignment - initialized in constructor
 
   /**
@@ -331,6 +334,8 @@ export class ScoringEngine {
    * @param options - Engine configuration
    */
   constructor(options: ScoringEngineOptions = {}) {
+    // with v2 selected alone, the v2 shell is the engine: the class stays the one entry point (plan § 2, SE2c)
+    if (getScoringEngine() === SCORING_ENGINE_V2) return new ScoringEngineV2(options) as unknown as ScoringEngine;
     // Extract from competitionFormat if provided
     if (options.competitionFormat) {
       this.competitionFormat = options.competitionFormat;

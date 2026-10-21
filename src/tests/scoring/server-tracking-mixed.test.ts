@@ -639,8 +639,7 @@ describe('setServer(): mid-match server correction', () => {
 
   test('setServer with no format structure is refused, changing nothing', () => {
     // a format that does not parse refuses every action that names a server (spec § 1.1, § 2; CA 2026-10-18)
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    (engine as any).cachedFormatStructure = undefined;
+    const engine = new ScoringEngine({ matchUpFormat: 'NOT-A-FORMAT' });
 
     expect(() => engine.setServer(1)).toThrow(/Invalid matchUpFormat/);
     expect(engine.getState().serverFlip).toBeUndefined();

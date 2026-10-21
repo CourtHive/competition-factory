@@ -74,22 +74,26 @@ const isNonNegativeInteger = (value: unknown): value is number => Number.isInteg
  * One side named in either spelling (§ 1.3): `zeroBased` 0 or 1, `oneBased` 1 or 2, both naming the same side when
  * both are given. Returns the side, nothing when neither is given, or the refusal.
  */
-export function readSide(zeroBased: unknown, oneBased: unknown, name: string): { side?: Side; refused?: Refusal } {
+export function readSide(
+  zeroBased: unknown,
+  oneBased: unknown,
+  [zeroName, oneName]: [string, string],
+): { side?: Side; refused?: Refusal } {
   if (zeroBased !== undefined && zeroBased !== 0 && zeroBased !== 1)
-    return { refused: refusal(`Invalid ${name}: ${String(zeroBased)}`) };
+    return { refused: refusal(`Invalid ${zeroName}: ${String(zeroBased)}`) };
   if (oneBased !== undefined && oneBased !== 1 && oneBased !== 2)
-    return { refused: refusal(`Invalid ${name} side number: ${String(oneBased)}`) };
+    return { refused: refusal(`Invalid ${oneName}: ${String(oneBased)}`) };
   const fromOne = oneBased === undefined ? undefined : ((oneBased - 1) as Side);
   if (zeroBased !== undefined && fromOne !== undefined && zeroBased !== fromOne)
-    return { refused: refusal(`the two spellings of the ${name} name different sides`) };
+    return { refused: refusal(`${zeroName} ${String(zeroBased)} and ${oneName} ${String(oneBased)} disagree`) };
   return { side: (zeroBased as Side | undefined) ?? fromOne };
 }
 
 /** the facts of a `point` (§ 2.1, refusals 2-5); the winner, when one is named */
 export function readPoint(data: EntryData | undefined): { winner?: Side; server?: Side; refused?: Refusal } {
-  const winner = readSide(data?.winner, data?.winningSide, 'winner');
+  const winner = readSide(data?.winner, data?.winningSide, ['winner', 'winningSide']);
   if (winner.refused) return winner;
-  const server = readSide(data?.server, data?.serverSideNumber, 'server');
+  const server = readSide(data?.server, data?.serverSideNumber, ['server', 'serverSideNumber']);
   if (server.refused) return server;
   const value = data?.scoreValue;
   if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value) || value < 0))
@@ -126,6 +130,15 @@ export function readSetTotal(data: EntryData | undefined): { total?: SetTotal; r
   if (winningSide !== undefined && winningSide !== 1 && winningSide !== 2)
     return { refused: refusal(`Invalid winningSide: ${String(winningSide)}`) };
   return { total: { totals: [side1Score, side2Score], tiebreakPoints, winningSide } };
+}
+
+/** `endSegment` (§ 2.4): a `setNumber` that is a positive integer, a `reason` that is a string, when given */
+export function readEndSegment(data: EntryData | undefined): Refusal | undefined {
+  const { setNumber, reason } = data ?? {};
+  if (setNumber !== undefined && !(Number.isInteger(setNumber) && (setNumber as number) > 0))
+    return refusal(`Invalid setNumber: ${String(setNumber)}`);
+  if (reason !== undefined && typeof reason !== 'string') return refusal(`Invalid reason: ${String(reason)}`);
+  return undefined;
 }
 
 /** `setServer`: a side 0 or 1 (§ 2.6) */

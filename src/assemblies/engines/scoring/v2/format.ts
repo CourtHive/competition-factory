@@ -55,6 +55,11 @@ export type MatchRule = {
   ordinary: SegmentRule;
   /** the final-segment format (`-F:`), when declared */
   final?: SegmentRule;
+  /**
+   * Replay only (§ 12.8): a stored timeline holds input v1 accepted past a completed match or past N. v1 played on:
+   * no set limit, and a side wins on more sets (or the greater total) once N segments are closed (`legacy.ts`).
+   */
+  pastClose?: boolean;
 };
 
 /** the parsed shapes `parse` returns (its own type leaves set formats untyped): only the fields read here */
