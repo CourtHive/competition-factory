@@ -191,12 +191,17 @@ tournament records.
 ### Why a BYE claim names its claimant and not its reason
 
 A side's `byeClaims` lists the matchUps that claim the BYE on that loser seat. Each claimant owes the BYE for one
-reason: it is a double exit whose produced exit leaves the seat's feeder nobody to lose, it is a BYE matchUp whose
-loser is a BYE, or it is an awarded single exit whose losing side is a carried exit. The engine reads that reason from
+reason: it is a double exit whose produced exit leaves the seat's feeder nobody to lose, or it is an awarded single
+exit whose losing side is a carried exit. The engine reads that reason from
 the claimant as it stands (`byeClaimReason`) and stores only the claimant's matchUpId. A stored reason goes stale: a
 claimant awarded as a single exit can later converge into a double exit, and over the census replays 4 of 618 final
 claims had changed kind that way (CA, 2026-10-21, Mentat P58). A claim whose claimant owes no BYE is one an unwind
 missed, and the harness fails it (`CLAIMS_LIVE`).
+
+A seat that a BYE matchUp's loser link feeds holds no claim. A BYE matchUp has no winner or loser, so nothing can come
+down that link, and the seat is a BYE because of the draw itself: the matchUp feeding it is a BYE matchUp. The BYE
+cascade places that BYE without a claim, and it stays when a claim beside it goes (golden corpus
+`authored/bye-claims/bye-matchup-fed-seat`).
 
 ## Guarantees
 
