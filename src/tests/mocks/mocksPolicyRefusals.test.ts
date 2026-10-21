@@ -7,7 +7,8 @@ import { describe, expect, it } from 'vitest';
 
 // constants
 import { POLICY_TYPE_DRAWS, POLICY_TYPE_SANCTIONING, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { EXISTING_POLICY_TYPE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { WALKOVER } from '@Constants/matchUpStatusConstants';
 
 /**
  * A policy that `attachPolicies` refuses refuses the generation, naming the policy type. The refusal was discarded:
@@ -112,5 +113,81 @@ describe('generateDrawDefinition policyDefinitions', () => {
       drawProfiles: [{ drawSize: 4, policyDefinitions: { [POLICY_TYPE_DRAWS]: {} } }],
     });
     expect(result.error).toEqual(INVALID_VALUES);
+  });
+});
+
+/**
+ * An existing event's eventProfile `policyDefinitions` were accepted by the key check and never read. They now replace
+ * the event's own policies, but only while nothing has happened under them (CA 2026-10-21): replacing a policy after
+ * results would lose the record of the policy those results were produced under.
+ */
+describe('modifyTournamentRecord: an existing event', () => {
+  const POLICY_A = { [POLICY_TYPE_SCORING]: { policyName: 'A', requireParticipantsForScoring: false } };
+  const POLICY_B = { [POLICY_TYPE_SCORING]: { policyName: 'B', requireParticipantsForScoring: true } };
+
+  function eventPolicies(tournamentRecord) {
+    const extension = tournamentRecord.events[0].extensions?.find((e) => e.name === 'appliedPolicies');
+    return extension?.value ?? {};
+  }
+
+  function generate(eventProfile = {}) {
+    return mocksEngine.generateTournamentRecord({
+      eventProfiles: [{ eventName: 'E', drawProfiles: [{ drawSize: 4 }], ...eventProfile }],
+    }).tournamentRecord;
+  }
+
+  it('attaches a policy type the event does not hold', () => {
+    const tournamentRecord = generate();
+    const result: any = mocksEngine.modifyTournamentRecord({
+      eventProfiles: [{ eventName: 'E', policyDefinitions: POLICY_A }],
+      tournamentRecord,
+    });
+    expect(result.success).toEqual(true);
+    expect(eventPolicies(tournamentRecord)[POLICY_TYPE_SCORING].policyName).toEqual('A');
+  });
+
+  it('replaces a policy the event holds while nothing has happened under it', () => {
+    const tournamentRecord = generate({ policyDefinitions: POLICY_A });
+    const result: any = mocksEngine.modifyTournamentRecord({
+      eventProfiles: [{ eventName: 'E', policyDefinitions: POLICY_B }],
+      tournamentRecord,
+    });
+    expect(result.success).toEqual(true);
+    expect(eventPolicies(tournamentRecord)[POLICY_TYPE_SCORING].policyName).toEqual('B');
+  });
+
+  it('refuses to replace a policy once the event has results, and changes nothing', () => {
+    const tournamentRecord = generate({ policyDefinitions: POLICY_A, completeAllMatchUps: true });
+    const result: any = mocksEngine.modifyTournamentRecord({
+      eventProfiles: [{ eventName: 'E', policyDefinitions: POLICY_B, drawProfiles: [{ drawSize: 4 }] }],
+      tournamentRecord,
+    });
+    expect(result.error).toEqual(EXISTING_POLICY_TYPE);
+    expect(result.context.option).toEqual('eventProfiles[0].policyDefinitions.scoring');
+    expect(eventPolicies(tournamentRecord)[POLICY_TYPE_SCORING].policyName).toEqual('A');
+    expect(tournamentRecord.events[0].drawDefinitions.length).toEqual(1);
+  });
+
+  it('counts a walkover as a result', () => {
+    const tournamentRecord = generate({
+      matchUpStatusProfile: { [WALKOVER]: 100 },
+      policyDefinitions: POLICY_A,
+      completeAllMatchUps: true,
+    });
+    const result: any = mocksEngine.modifyTournamentRecord({
+      eventProfiles: [{ eventName: 'E', policyDefinitions: POLICY_B }],
+      tournamentRecord,
+    });
+    expect(result.error).toEqual(EXISTING_POLICY_TYPE);
+  });
+
+  it('attaches a new policy type to an event with results', () => {
+    const tournamentRecord = generate({ policyDefinitions: POLICY_A, completeAllMatchUps: true });
+    const result: any = mocksEngine.modifyTournamentRecord({
+      eventProfiles: [{ eventName: 'E', policyDefinitions: POLICY_DRAWS_DEFAULT }],
+      tournamentRecord,
+    });
+    expect(result.success).toEqual(true);
+    expect(Object.keys(eventPolicies(tournamentRecord)).sort()).toEqual([POLICY_TYPE_DRAWS, POLICY_TYPE_SCORING]);
   });
 });

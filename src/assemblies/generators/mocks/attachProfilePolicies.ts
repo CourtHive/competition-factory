@@ -13,12 +13,14 @@ import { ResultType } from '@Types/factoryTypes';
  * whose value is undefined or null is absent.
  */
 export function attachProfilePolicies({
+  allowReplacement,
   policyDefinitions,
   tournamentRecord,
   option,
   event,
 }: {
   tournamentRecord?: Tournament;
+  allowReplacement?: boolean;
   policyDefinitions?: any;
   option: string;
   event?: Event;
@@ -30,7 +32,12 @@ export function attachProfilePolicies({
 
   for (const [policyType, policy] of Object.entries(policyDefinitions)) {
     if (policy === undefined || policy === null) continue;
-    const result = attachPolicies({ policyDefinitions: { [policyType]: policy }, tournamentRecord, event });
+    const result = attachPolicies({
+      policyDefinitions: { [policyType]: policy },
+      allowReplacement,
+      tournamentRecord,
+      event,
+    });
     if (result.error) {
       const refused = `${option}.${policyType}`;
       return { error: result.error, info: `policy refused: ${refused}`, context: { option: refused } };
