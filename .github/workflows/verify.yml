@@ -101,9 +101,9 @@ jobs:
       matrix:
         # PRs verify on Node 24 only for fast feedback; pushes to master and
         # manual (workflow_dispatch) runs verify the full supported matrix
-        # ([22, 24]) before anything lands — so a Node-22 regression is still
-        # caught pre-merge-to-master while `engines: ">=22"` holds.
-        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+        # ([24, 26]) before anything lands: 24 is the `engines: ">=24"` floor,
+        # and 26 is the next LTS line (and what the deploy hosts run).
+        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[24, 26]') }}
     name: gates (node ${{ matrix.node-version }})
 
     steps:
