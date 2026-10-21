@@ -623,20 +623,19 @@ function hydrateSideParticipant({
 }) {
   if (!side.participantId) return;
 
-  const participant = makeDeepCopy(
-    getMappedParticipant(side.participantId) ||
-      (tournamentParticipants
-        ? findParticipant({
-            policyDefinitions: appliedPolicies,
-            participantId: side.participantId,
-            tournamentParticipants,
-            internalUse: true,
-            contextProfile,
-          })
-        : undefined),
-    undefined,
-    true,
-  );
+  // One copy per side. A `participantMap` hit is shared by every matchUp of the read, so it is copied here;
+  // `findParticipant` already returns a fresh copy, and copying that again doubled the cost of every side.
+  const mappedParticipant = getMappedParticipant(side.participantId);
+  const participant = mappedParticipant
+    ? makeDeepCopy(mappedParticipant, undefined, true)
+    : tournamentParticipants &&
+      findParticipant({
+        policyDefinitions: appliedPolicies,
+        participantId: side.participantId,
+        tournamentParticipants,
+        internalUse: true,
+        contextProfile,
+      });
 
   if (!participant) return;
 
