@@ -57,6 +57,7 @@ import {
   SCORING_PAST_LEVEL_CLOSE,
 } from '@Mutate/scoring/matchCompletion';
 import {
+  markSet,
   setFormatFor,
   judgeSetTotal,
   buildJudgedSet,
@@ -1055,10 +1056,11 @@ export class ScoringEngine {
   /**
    * Whether `getNextServer()` is the engine's derivation (spec § 10.4, CA 2026-10-18). False where no server
    * is derived: in a combined total `P{n}`, and in a tiebreak-only format (`S:TB{n}`) until each sport's own
-   * service rule is added. `getNextServer()` still answers 0 or 1 there, for API compatibility, but the
-   * answer is only a placeholder: the side a `setServer` named, or side 1.
+   * service rule is added; and once the match is complete, which has no next point (CA 2026-10-21).
+   * `getNextServer()` still answers 0 or 1 there, for API compatibility, but the answer is only a placeholder.
    */
   isServerDerived(): boolean {
+    if (this.state.matchUpStatus === COMPLETED) return false;
     if (this.competitionFormat?.serverRule === 'WINNER_SERVES') return true;
     return liveServiceRule(this.state, this.cachedFormatStructure) !== 'none';
   }
@@ -1778,6 +1780,7 @@ export class ScoringEngine {
         side1Score: 0,
         side2Score: 0,
       };
+      markSet(currentSet, setFormatFor(this.cachedFormatStructure, this.state.score.sets, currentSet.setNumber));
       this.state.score.sets.push(currentSet);
     }
 
@@ -2214,6 +2217,7 @@ export class ScoringEngine {
         side1GameScores: [options.currentGameScore?.side1Points ?? 0],
         side2GameScores: [options.currentGameScore?.side2Points ?? 0],
       };
+      markSet(currentSet, setFormatFor(formatStructure, sets, currentSet.setNumber));
       sets.push(currentSet);
     }
 

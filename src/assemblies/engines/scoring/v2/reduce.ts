@@ -1,6 +1,6 @@
 import { INITIAL_SERVICE, afterPoint, corrected, nextServer, serveSide, serviceCode } from './service';
 import { configuredFormat, resolveFormat, ruleForSet, takesInput } from './format';
-import { isBreakpoint, pointsTo, type ViewReadings } from './view';
+import { isBreakpoint, pointsTo } from './view';
 import { decideMatch, isClosed, setsWon } from './decide';
 import {
   decidedInPlay,
@@ -69,13 +69,10 @@ export type ReducerContext = {
   match?: MatchRule;
   multipliers: PointMultiplier[];
   rules: ServiceRules;
-  /** the differential's switch for v1's readings of three views (view.ts); never set by scoring itself */
-  readings: ViewReadings;
 };
 
-export function createContext(config: ScoringConfiguration, readings: ViewReadings = {}): ReducerContext {
+export function createContext(config: ScoringConfiguration): ReducerContext {
   return {
-    readings,
     match: resolveFormat(configuredFormat(config)),
     // the option wins over the profile's (§ 1.1)
     multipliers: config.pointMultipliers ?? config.competitionFormat?.pointMultipliers ?? [],
@@ -90,7 +87,7 @@ export function initialState(): ScoringState {
 
 /**
  * Where the next point would be played, for service (§ 10): the set in play, or the next one. A completed match, or
- * one past its N sets, answers for the set that would come next: the rotation continues (decision SE2b-D22).
+ * one past its N sets, answers for the set that would come next, a placeholder only (`serverOf`, SE2b-D22).
  */
 function positionOf(match: MatchRule, state: ScoringState): ServicePosition {
   const at = target(match, state);
@@ -102,7 +99,9 @@ function positionOf(match: MatchRule, state: ScoringState): ServicePosition {
 /** the side due to serve the next point, and whether the engine derived it (§ 10.4): `getNextServer` and `isServerDerived` */
 export function serverOf(context: ReducerContext, state: ScoringState): { side: Side; derived: boolean } {
   const position = context.match && positionOf(context.match, state);
-  return nextServer(context.rules, state.service, state, position);
+  const next = nextServer(context.rules, state.service, state, position);
+  // a completed match has no next point, so no server is derived; the side stays a placeholder (CA 2026-10-21, D22)
+  return state.matchUpStatus === COMPLETED ? { ...next, derived: false } : next;
 }
 
 /** a server correction at this position on the timeline (§ 2.6, § 10.6) */
@@ -195,7 +194,7 @@ function point(context: ReducerContext, match: MatchRule, state: ScoringState, e
   const derived = nextServer(context.rules, state.service, state, position);
   const server = facts.server ?? (derived.derived ? derived.side : undefined);
   const half = serveSide(state, position);
-  const view = pointsTo(state, position, context.readings);
+  const view = pointsTo(state, position);
   const breakpoint = isBreakpoint(view, server);
   // a combined total derives no S/R code, even from a supplied server (§ 10.4)
   const coded = entry.data?.code === undefined && at.rule.kind !== 'combined';
@@ -449,12 +448,8 @@ export type Reduction = {
 };
 
 /** `state = reduce(configuration, timeline)` (§ 12.1): a fresh score, every entry replayed in order */
-export function reduce(
-  config: ScoringConfiguration,
-  timeline: TimelineEntry[],
-  readings: ViewReadings = {},
-): Reduction {
-  const context = createContext(config, readings);
+export function reduce(config: ScoringConfiguration, timeline: TimelineEntry[]): Reduction {
+  const context = createContext(config);
   const outcomes: StepOutcome[] = [];
   const legacy: number[] = [];
   let state = initialState();

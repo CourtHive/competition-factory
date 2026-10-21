@@ -455,7 +455,8 @@ function handleMatchTiebreak(
   const tiebreakTo = formatStructure.finalSetFormat?.tiebreakSet?.tiebreakTo || 10;
   const isNoAD = formatStructure.finalSetFormat?.tiebreakSet?.NoAD || false;
 
-  const currentSet = getOrCreateSet(matchUp, false, false);
+  // a match tiebreak is a set scored by a tiebreak-only rule, and is marked as one (§ 1.2, CA 2026-10-21)
+  const currentSet = getOrCreateSet(matchUp, true, false);
   const currentSetIndex = matchUp.score.sets.indexOf(currentSet);
 
   // Initialize game scores if needed
@@ -661,6 +662,8 @@ function handleTimedTiebreakPoint(
   point.score = `${tb1}-${tb2}`;
   if (won === undefined) return;
 
+  // the point that completes the tiebreak completes a game, so it shows the next game's 0-0 (§ 11.1, CA 2026-10-21)
+  point.score = '0-0';
   if (won === 0) currentSet.side1Score = games[0] + 1;
   else currentSet.side2Score = games[1] + 1;
   currentSet.winningSide = won + 1;
@@ -683,13 +686,10 @@ function getOrCreateSet(matchUp: MatchUp, isTiebreakOnly: boolean, isTimed: bool
   }
 
   // Need new set
-  const newSet: SetScore = {
-    setNumber: matchUp.score.sets.length + 1,
-    side1Score: 0,
-    side2Score: 0,
-    side1GameScores: [],
-    side2GameScores: [],
-  };
+  const newSet: SetScore = { setNumber: matchUp.score.sets.length + 1, side1Score: 0, side2Score: 0 };
+  // a timed set scored in units plays no game point by point, so it has no per-game counts; one whose points build
+  // games opens them with its first point (CA 2026-10-21)
+  if (!isTimed) Object.assign(newSet, { side1GameScores: [], side2GameScores: [] });
   if (isTiebreakOnly) newSet.isTiebreakOnly = true;
   if (isTimed) newSet.isTimed = true;
 

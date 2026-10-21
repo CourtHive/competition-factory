@@ -635,7 +635,8 @@ isServerDerived(): boolean
 ```
 
 Whether `getNextServer()` is the engine's derivation (`true`) or only a placeholder (`false`: a
-combined total, or a tiebreak-only format until each sport's own service rule is added). The score
+combined total, a tiebreak-only format until each sport's own service rule is added, and a completed
+match, which has no next point). The score
 situation carries the same answer as `serverDerived`; where it is `false`, no game point or break
 point is reported and no server-based statistic is produced.
 

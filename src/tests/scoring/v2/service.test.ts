@@ -86,9 +86,10 @@ describe('§ 10.6 orientation', () => {
     expect(run('SET3-S:6/TB7', [baseline, ...pts('1')]).servers).toEqual([1]);
   });
 
-  it('after the match the rotation continues (decision SE2b-D22)', () => {
-    expect(run('SET1-S:TB10', pts('1'.repeat(10))).next).toEqual({ side: 0, derived: false });
-    expect(run('SET1-S:6/TB7', pts(love('1', 6))).next).toEqual({ side: 0, derived: true });
+  it('after the match no server is derived; the side is a placeholder (CA 2026-10-21, SE2b-D22)', () => {
+    expect(run('SET1-S:TB10', pts('1'.repeat(10))).next.derived).toEqual(false);
+    expect(run('SET1-S:6/TB7', pts(love('1', 5))).next).toEqual({ side: 1, derived: true });
+    expect(run('SET1-S:6/TB7', pts(love('1', 6))).next.derived).toEqual(false);
   });
 });
 
