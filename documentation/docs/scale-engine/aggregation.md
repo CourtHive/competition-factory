@@ -278,6 +278,35 @@ Age groups are ordered by the maximum age each junior code admits (`14U` → 14,
 
 A window that cannot be evaluated is never applied silently. If the target category, or a source category the rule names, cannot be ordered (`OPEN`, `35O`, an unparseable code), or the target names several codes and the `categoryFilter` does not pick one, the **rule is skipped** and a `RankingListWarning` with code `UNORDERABLE_AGE_CATEGORY` is reported through `onWarning`. Under a source scope that names no categories, an individual award whose category cannot be ordered is not carried, and is reported the same way.
 
+### retentionMonthsAfterAging
+
+When a player ages up, results they earned in their previous (younger) age group can stay eligible on their new group's list for a limited time:
+
+```js
+{
+  source: { ageCategoryCodes: ['12U', '14U'] },
+  target: { ageCategoryCodes: ['14U'] },
+  retentionMonthsAfterAging: 12,
+}
+```
+
+A carried result from an age group **younger** than the target stays eligible until the player's aging-up date plus the retention period, measured at `asOfDate`. The aging-up date is the day the player became too old for that group: birth date + (the group's maximum age + 1) years — a player born 2012-03-01 leaves 12U on 2025-03-01, so 12 months' retention keeps their 12U results through 2026-03-01. Results from the same or an older group (playing up) are not affected.
+
+The birth date comes from the caller:
+
+```js
+generateRankingList({
+  pointAwards,
+  aggregationRules,
+  categoryFilter: { ageCategoryCodes: ['14U'] },
+  asOfDate: '2026-06-01',
+  participantContext: { birthDate: (personId) => birthDates[personId] }, // ISO YYYY-MM-DD or undefined
+  onWarning,
+});
+```
+
+Without `participantContext.birthDate` (or without `asOfDate`) the rule cannot be applied: younger-category results are carried as they were before the rule was honoured, and one `MISSING_PARTICIPANT_CONTEXT` warning is reported. A player whose birth date is unknown or unparseable is treated the same way, counted in one `MISSING_BIRTH_DATE` warning per rule.
+
 ### Warnings
 
 ```js

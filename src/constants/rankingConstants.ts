@@ -24,6 +24,8 @@ export const STEPPED_DECAY = 'stepped';
 
 // RankingListWarning codes (generateRankingList onWarning)
 export const UNORDERABLE_AGE_CATEGORY = 'UNORDERABLE_AGE_CATEGORY';
+export const MISSING_PARTICIPANT_CONTEXT = 'MISSING_PARTICIPANT_CONTEXT';
+export const MISSING_BIRTH_DATE = 'MISSING_BIRTH_DATE';
 
 // Category scope field names (for specificity scoring)
 export const CATEGORY_SCOPE_FIELDS = [
@@ -65,6 +67,8 @@ export const rankingConstants = {
   LINEAR_DECAY,
   STEPPED_DECAY,
   UNORDERABLE_AGE_CATEGORY,
+  MISSING_PARTICIPANT_CONTEXT,
+  MISSING_BIRTH_DATE,
   CATEGORY_SCOPE_FIELDS,
   PROFILE_SCOPE_FIELDS,
 } as const;

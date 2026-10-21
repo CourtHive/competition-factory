@@ -222,6 +222,7 @@ generateRankingList(params: {
   asOfDate?: string;
   pointPoolModel?: 'per-category' | 'shared';
   onWarning?: (warning: RankingListWarning) => void; // a rule that could not be applied as written
+  participantContext?: { birthDate?: (personId: string) => string | undefined }; // for retentionMonthsAfterAging
 }): RankingListEntry[]
 ```
 
