@@ -262,11 +262,31 @@ const { tournamentRecord } = mocksGovernor.generateTournamentRecord({
 - Populates draws with participants
 - Assigns seeds and ratings
 - Can generate completed matchUps with outcomes
-- `completeAllMatchUps`, `randomWinningSide` and `matchUpStatusProfile` apply to every draw when passed at the top level, or to one draw when set on its `drawProfile` (the drawProfile value wins); see [Complete One Draw](../testing/mocks-engine-tournament-generation.md#complete-one-draw)
+- `completeAllMatchUps`, `randomWinningSide` and `matchUpStatusProfile` apply to every draw when passed at the top level, to the draws of one event when set on its `eventProfile`, or to one draw when set on its `drawProfile`. The innermost value wins: drawProfile, then eventProfile, then top level; see [Complete One Draw](../testing/mocks-engine-tournament-generation.md#complete-one-draw)
 - An AD_HOC drawProfile with `roundsCount` above 1 and `completeAllMatchUps` is generated round by round: each round is paired, then completed, so later rounds pair on results. Every round is paired unless the drawProfile sets `automated: false`, which leaves the rounds empty
+- A `venueProfile`'s `courtIds` is a pool the call consumes, one id per court: reusing the same profile object gives the second venue generated court ids. Pass a fresh array to each call that needs the same ids
 - See full docs for extensive configuration options
 
 **Note:** This is the primary method for creating test tournaments. For comprehensive examples and all configuration options, see the [mocksEngine Getting Started](../testing/mocks-engine-getting-started.md) guide.
+
+### Unknown Options
+
+`generateTournamentRecord` and `modifyTournamentRecord` refuse an option they do not read, at the top level and
+inside `participantsProfile`, `scenarioProfile`, `leagueProfiles`, `venueProfiles`, `eventProfiles` and every
+`drawProfiles` entry (an event's own `drawProfiles` included). A misspelled or misplaced option used to be ignored
+silently; refused, it names itself, and nothing is generated or written:
+
+```js
+const result = mocksGovernor.generateTournamentRecord({
+  drawProfiles: [{ drawSize: 8 }, { drawSize: 8, mathcUpType: 'DOUBLES' }],
+});
+// result.error -> INVALID_VALUES
+// result.context.option -> 'drawProfiles[1].mathcUpType'
+```
+
+The params an engine adds to every method call (`activeTournamentId`, `tournamentRecords`, `tournamentId`, and the
+loaded `tournamentRecord`) are not the caller's options and are accepted. Objects nested inside a profile (for
+example a drawProfile's `outcomes` or a scenario's `called`) are not checked key by key.
 
 ---
 

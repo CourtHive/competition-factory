@@ -259,3 +259,80 @@ describe('completeAllMatchUps on a drawProfile (modifyTournamentRecord)', () => 
     expect(drawMatchUps('flightOpen').every((matchUp) => !matchUp.winningSide)).toEqual(true);
   });
 });
+
+/**
+ * D5: `completeAllMatchUps`, `randomWinningSide` and `matchUpStatusProfile` on an eventProfile. The unknown-key
+ * check accepted them, but a new event read only the generation-wide values, so an eventProfile that set them
+ * completed nothing; only an existing event in `modifyTournamentRecord` honoured them. Precedence is now the same
+ * everywhere: drawProfile, then eventProfile, then top-level.
+ */
+describe('completion options on an eventProfile', () => {
+  it('generateTournamentRecord completes the draws of the event that sets it', () => {
+    mocksEngine.generateTournamentRecord({
+      eventProfiles: [
+        { drawProfiles: [{ drawId: 'done', drawSize: 8 }], completeAllMatchUps: true },
+        { drawProfiles: [{ drawId: 'open', drawSize: 8 }] },
+      ],
+      setState: true,
+    });
+
+    expect(drawMatchUps('done').length).toEqual(7);
+    expect(unscored('done')).toEqual([]);
+    expect(drawMatchUps('open').every((matchUp) => !matchUp.winningSide)).toEqual(true);
+  });
+
+  it('applies the eventProfile matchUpStatusProfile and randomWinningSide', () => {
+    mocksEngine.generateTournamentRecord({
+      eventProfiles: [
+        {
+          drawProfiles: [{ drawId: 'walkovers', drawSize: 8 }],
+          matchUpStatusProfile: { [WALKOVER]: 100 },
+          completeAllMatchUps: true,
+        },
+        { drawProfiles: [{ drawId: 'random', drawSize: 32 }], completeAllMatchUps: true, randomWinningSide: true },
+      ],
+      setState: true,
+    });
+
+    expect(drawMatchUps('walkovers').every((matchUp) => matchUp.matchUpStatus === WALKOVER)).toEqual(true);
+    const winningSides = new Set(drawMatchUps('random').map((matchUp) => matchUp.winningSide));
+    expect(winningSides).toEqual(new Set([1, 2]));
+  });
+
+  it('a drawProfile overrides its eventProfile, and an eventProfile overrides the top level', () => {
+    mocksEngine.generateTournamentRecord({
+      eventProfiles: [
+        {
+          drawProfiles: [
+            { drawId: 'inherits', drawSize: 8 },
+            { drawId: 'drawOptsOut', drawSize: 8, completeAllMatchUps: false },
+          ],
+          completeAllMatchUps: true,
+        },
+        { drawProfiles: [{ drawId: 'eventOptsOut', drawSize: 8 }], completeAllMatchUps: false },
+      ],
+      completeAllMatchUps: true,
+      setState: true,
+    });
+
+    expect(unscored('inherits')).toEqual([]);
+    expect(drawMatchUps('drawOptsOut').every((matchUp) => !matchUp.winningSide)).toEqual(true);
+    expect(drawMatchUps('eventOptsOut').every((matchUp) => !matchUp.winningSide)).toEqual(true);
+  });
+
+  it('modifyTournamentRecord completes a new event that sets it', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+
+    const result = mocksEngine.modifyTournamentRecord({
+      eventProfiles: [
+        { eventName: 'New', drawProfiles: [{ drawId: 'newEvent', drawSize: 8 }], completeAllMatchUps: true },
+      ],
+      tournamentRecord,
+    });
+    expect(result.success).toEqual(true);
+    tournamentEngine.setState(tournamentRecord);
+
+    expect(drawMatchUps('newEvent').length).toEqual(7);
+    expect(unscored('newEvent')).toEqual([]);
+  });
+});
