@@ -1,5 +1,32 @@
 # Changelog
 
+## [7.17.0](https://github.com/CourtHive/competition-factory/compare/v7.16.0...v7.17.0) (2026-10-21)
+
+### ⚠ Schema validation
+
+If you validate stored tournament records against `tods-competition-factory/schema/tournament.schema.json` on load or save, update your schema with this release. Earlier schemas reject fields the engine writes, such as `MatchUp.sideExitProvenance` after a double exit. If you mirror the schema elsewhere, for example in a MongoDB `$jsonSchema`, add the newly declared properties there too. See the [7.17.0 adoption notes](https://courthive.github.io/competition-factory/docs/whats-new-7.0.0/#adoption-notes-7170). Nothing changes for consumers who do not validate records.
+
+
+### Features
+
+* **scoring:** the scoring engine reports the format of the set in play ([#5630](https://github.com/CourtHive/competition-factory/issues/5630)) ([7d19f8c](https://github.com/CourtHive/competition-factory/commit/7d19f8c590f80db64ba26cbc431b3428baf70934))
+
+
+### Bug Fixes
+
+* **deps:** override markdown-it to a patched 15.x for GHSA-r7fv-28h4-cvq7 ([#5634](https://github.com/CourtHive/competition-factory/issues/5634)) ([dedd2bf](https://github.com/CourtHive/competition-factory/commit/dedd2bf309f1f245786b4eba0147e797d3640677))
+* **deps:** update tods-competition-factory to 7.16.0 ([#5624](https://github.com/CourtHive/competition-factory/issues/5624)) ([d55740d](https://github.com/CourtHive/competition-factory/commit/d55740d8418ca099dfd347c1a33a2ae420a77a73))
+* **exitPropagation:** a carried exit follows its feeder's side ([#5638](https://github.com/CourtHive/competition-factory/issues/5638)) ([1f42f43](https://github.com/CourtHive/competition-factory/commit/1f42f433ae6121f0c8fef06400356148241fb29a))
+* **exitPropagation:** a convergence a call dissolved is owed its BYE back ([#5639](https://github.com/CourtHive/competition-factory/issues/5639)) ([d9fa44e](https://github.com/CourtHive/competition-factory/commit/d9fa44ebf98564ab94e78367ea7e6e024592bc47))
+* **exitPropagation:** a relabel reaches the carry on a BYE-held matchUp ([#5637](https://github.com/CourtHive/competition-factory/issues/5637)) ([2084719](https://github.com/CourtHive/competition-factory/commit/208471902e1910a5d6bb69ddcc86960e07b50f46))
+* **exitPropagation:** a seat fed by a BYE matchUp keeps its BYE when its last claim goes ([#5636](https://github.com/CourtHive/competition-factory/issues/5636)) ([6f79990](https://github.com/CourtHive/competition-factory/commit/6f7999047563c842faa9323946f26d21a1b6166b))
+* **schema:** declare the stored fields the types add; guard type and schema together ([#5635](https://github.com/CourtHive/competition-factory/issues/5635)) ([73b67bb](https://github.com/CourtHive/competition-factory/commit/73b67bbde46d1edc1565170cd8462d847f4f7ef9))
+
+
+### Documentation
+
+* the homepage counts 20,000+ tests, and the post-7.15 notes are labelled 7.16.0 ([#5626](https://github.com/CourtHive/competition-factory/issues/5626)) ([e1a913f](https://github.com/CourtHive/competition-factory/commit/e1a913fa7a6a7411d73bd73206727469eaf5e878))
+
 ## [7.16.0](https://github.com/CourtHive/competition-factory/compare/v7.15.0...v7.16.0) (2026-10-19)
 
 
