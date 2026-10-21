@@ -1,8 +1,10 @@
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
+import { applyEligibleSourceWindow } from './eligibleSourceWindow';
 import { processBucketResults } from './processBucketResults';
 import { applyPointDecay } from './applyPointDecay';
 import type {
   RankingListBucketBreakdown,
+  RankingListWarning,
   CategoryAggregationRule,
   TiebreakCriterion,
   AggregationRules,
@@ -37,6 +39,12 @@ type GenerateRankingListArgs = {
    *   as an eligibility filter on the same pool.
    */
   pointPoolModel?: PointPoolModel;
+  /**
+   * Receives each policy rule that could not be applied as written (e.g. an
+   * `eligibleSourceWindow` over a category that cannot be ordered). The rule is
+   * skipped; this is how a caller learns it was.
+   */
+  onWarning?: (warning: RankingListWarning) => void;
 };
 
 export function generateRankingList({
@@ -45,6 +53,7 @@ export function generateRankingList({
   categoryFilter,
   asOfDate,
   pointPoolModel = 'per-category',
+  onWarning,
 }: GenerateRankingListArgs): RankingListEntry[] {
   const {
     rollingPeriodDays,
@@ -71,6 +80,7 @@ export function generateRankingList({
           categoryFilter,
           rollingPeriodDays,
           asOfDate,
+          onWarning,
         });
 
   // Participation gating — only meaningful under 'per-category'.
@@ -158,12 +168,14 @@ function expandCarriedContributions({
   categoryFilter,
   rollingPeriodDays,
   asOfDate,
+  onWarning,
 }: {
   pointAwards: RankingListAward[];
   rules: CategoryAggregationRule[];
   categoryFilter: CategoryFilter | undefined;
   rollingPeriodDays: number | undefined;
   asOfDate: string | undefined;
+  onWarning?: (warning: RankingListWarning) => void;
 }): Record<string, RankingListAward[]> {
   const carriedByPerson: Record<string, RankingListAward[]> = {};
   if (!rules.length) return carriedByPerson;
@@ -176,8 +188,18 @@ function expandCarriedContributions({
       (a) => awardMatchesScope(a, rule.source) && !sourceFilterDisqualifies(a, rule.excludedSourceFilters),
     );
 
+    // Restrict to the age groups the rule's eligibleSourceWindow admits;
+    // undefined means the window could not be evaluated and the rule is skipped.
+    const windowed = applyEligibleSourceWindow({
+      targetCode: resolveTargetCode(rule.target, categoryFilter),
+      awards: sourceAwards,
+      onWarning,
+      rule,
+    });
+    if (!windowed) continue;
+
     // Apply rolling window before per-person grouping.
-    const inWindow = applyRollingWindow(sourceAwards, rollingPeriodDays, asOfDate);
+    const inWindow = applyRollingWindow(windowed, rollingPeriodDays, asOfDate);
 
     // Group, multiply, cap per (personId, rule).
     const perPersonForRule: Record<string, RankingListAward[]> = {};
@@ -213,6 +235,15 @@ function ruleTargetMatchesFilter(target: CategoryScope, categoryFilter: Category
     !target.genders?.length ||
     target.genders.some((g) => categoryFilter.genders!.includes(g));
   return genderOverlap;
+}
+
+// The one target category a list is being generated for: the rule's target
+// code that the categoryFilter names, or the rule's only target code.
+function resolveTargetCode(target: CategoryScope, categoryFilter: CategoryFilter | undefined): string | undefined {
+  const codes = target.ageCategoryCodes ?? [];
+  const filtered = codes.filter((code) => categoryFilter?.ageCategoryCodes?.includes(code));
+  if (filtered.length === 1) return filtered[0];
+  return codes.length === 1 ? codes[0] : undefined;
 }
 
 function awardMatchesScope(award: RankingListAward, source: CategoryScope): boolean {
