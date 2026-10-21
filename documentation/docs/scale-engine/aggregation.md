@@ -15,6 +15,8 @@ The aggregation layer combines point awards from multiple tournaments into ranki
        |
   3. Group by Person      Collect all awards per personId
        |
+     Point Decay          Scale each award by its age (decayFunction), if declared
+       |
   4. Bucket Processing    Per counting bucket:
        |                    - Filter by eventTypes + pointComponents
        +-> Sort descending  - Sort by computed value
@@ -200,6 +202,31 @@ generateRankingList({
   asOfDate: '2025-12-31', // only awards ending after 2024-12-31
 });
 ```
+
+## Point Decay
+
+A policy can make older results count for less than recent ones. Decay is applied after the rolling-period filter, to native and carried awards alike, using each award's age: the days from its `endDate` to `asOfDate`.
+
+```js
+aggregationRules: {
+  rollingPeriodDays: 365,
+  decayFunction: 'stepped', // 'none' | 'linear' | 'stepped'
+  decaySteps: [
+    { afterDays: 180, multiplier: 0.5 }, // results older than 26 weeks count half
+    { afterDays: 270, multiplier: 0.25 },
+  ],
+}
+```
+
+| `decayFunction` | Factor for an award of age `d` days                                                                                    |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `'none'`        | 1 (also the behaviour when `decayFunction` is absent)                                                                  |
+| `'linear'`      | `1 - d / rollingPeriodDays`, floored at 0. Without `rollingPeriodDays` there is no slope, so the factor is 1           |
+| `'stepped'`     | The `multiplier` of the largest `afterDays` the award has reached; 1 before the first step. Step order does not matter |
+
+The factor scales **every** point component on the award (`points`, `positionPoints`, `perWinPoints`, `bonusPoints`, `qualityWinPoints`, `linePoints`), so a bucket summing granular components and one summing `points` report the same total. Values are not rounded. A decayed award carries `decayFactor` so the list can explain why it counts for less than it was awarded; awards without an `endDate`, or a list without `asOfDate`, are not decayed. The input awards are never mutated.
+
+The constants `NO_DECAY`, `LINEAR_DECAY` and `STEPPED_DECAY` are exported from `rankingConstants`.
 
 ## Category Filter
 

@@ -1,5 +1,6 @@
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
 import { processBucketResults } from './processBucketResults';
+import { applyPointDecay } from './applyPointDecay';
 import type {
   RankingListBucketBreakdown,
   CategoryAggregationRule,
@@ -91,7 +92,9 @@ export function generateRankingList({
       maxResultsPerLevel,
       bestOfCount,
       personId,
-      awards: [...native, ...carried],
+      // Decay last, on the combined bag: a carried award ages from its own
+      // endDate exactly as a native one does.
+      awards: applyPointDecay([...native, ...carried], aggregationRules, asOfDate),
     });
     entries.push(entry);
   }

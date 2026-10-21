@@ -17,6 +17,11 @@ export const FULL_TO_EACH = 'fullToEach';
 export const SPLIT_EVEN = 'splitEven';
 export const TEAM_ONLY = 'teamOnly';
 
+// Point decay functions (AggregationRules.decayFunction)
+export const NO_DECAY = 'none';
+export const LINEAR_DECAY = 'linear';
+export const STEPPED_DECAY = 'stepped';
+
 // Category scope field names (for specificity scoring)
 export const CATEGORY_SCOPE_FIELDS = [
   'ageCategoryCodes',
@@ -53,6 +58,9 @@ export const rankingConstants = {
   FULL_TO_EACH,
   SPLIT_EVEN,
   TEAM_ONLY,
+  NO_DECAY,
+  LINEAR_DECAY,
+  STEPPED_DECAY,
   CATEGORY_SCOPE_FIELDS,
   PROFILE_SCOPE_FIELDS,
 } as const;
