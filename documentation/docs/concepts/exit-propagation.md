@@ -1086,6 +1086,16 @@ named test that fails without it.
   by the old label. The relabel now rewrites the label on every BYE-held matchUp where the loser's carry is recorded,
   and only the label: the BYE is never re-derived, and the entry's BYE claims stay (CURTIS_CONSOLATION 8/6 30009232
   under `doubleExitPropagateBye: false`: `aRelabelReachesTheCarryOnAByeHeldMatchUp`).
+- **A single carried exit follows its feeder’s current side on an unscored, undecided matchUp.**
+  Where advanced drawPosition numbering interleaves, rule 3 can assign a feeder a different side after
+  positions arrive or leave. At the end of a call, a lone carried provenance entry is re-keyed to its
+  source feeder’s current side when the target has exactly two winner feeders in the same structure.
+  This preserves the source and exit status; it does not move a position or change an outcome. Targets
+  with a winning side, any played score, or a concluded status are excluded; single walkover/default statuses
+  without a winner remain eligible because they can describe an exit pending on an empty seat. Census policy-off 30030527
+  (MODIFIED_FEED_IN_CHAMPIONSHIP 32/32) pins both entry orders, the shrunk and full histories, and the
+  result-dependent boundaries in `aCarriedExitFollowsItsFeederSide`. This accommodates unstable side
+  keys without changing draw-position rule 3; Mentat P59 remains open.
 
 ### Nothing to do is success, not failure
 
