@@ -73,7 +73,7 @@
     "contents": "."
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
