@@ -20,6 +20,7 @@ import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
 import { isDecisionRequired } from '@Query/scoring/decisionRequired';
+import { installScoringDifferential } from './v2/differential';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
 import { checkTiebreakWon } from '@Mutate/scoring/gameWon';
@@ -2242,3 +2243,6 @@ export class ScoringEngine {
     set.side2GameScores = [options.currentGameScore?.side2Points ?? 0];
   }
 }
+
+// the v1/v2 differential (scoring-engine v2 plan § 2): inert unless the ScoringEngine selector is `differential`
+installScoringDifferential(ScoringEngine);

@@ -4,6 +4,7 @@ import { isNumeric } from '@Tools/math';
 
 // constants and types
 import { OUTCOME_PIPELINE_V1, OutcomePipelineMode, outcomePipelineModes } from '@Constants/outcomePipelineConstants';
+import { SCORING_ENGINE_V1, ScoringEngineMode, runnableScoringEngineModes } from '@Constants/scoringEngineConstants';
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode, schemaWriteModes } from '@Constants/schemaWriteModeConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -59,6 +60,7 @@ type GlobalStateTypes = {
   devContext?: DevContextType; // devContext is used to control logging
   schemaWriteMode: SchemaWriteMode; // controls extension vs first-class write behavior
   outcomePipeline: OutcomePipelineMode; // which outcome pipeline decides: v1, v2, or both (differential)
+  scoringEngine: ScoringEngineMode; // which ScoringEngine decides: v1, or both (differential); v2 alone after SE2c
   saveDrawDeletions: boolean; // opt-in: persist drawDeletions audit on the record
   auditAuthorityServer: boolean; // true on server engines — suppresses local audit writes
   timers: timersType; // timers are used to track elapsed time for methods
@@ -90,6 +92,7 @@ const globalState: GlobalStateTypes = {
   globalMethods: [],
   schemaWriteMode: NATIVE,
   outcomePipeline: OUTCOME_PIPELINE_V1,
+  scoringEngine: SCORING_ENGINE_V1,
   saveDrawDeletions: false,
   auditAuthorityServer: false,
   deepCopy: true,
@@ -341,6 +344,21 @@ export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: bool
 
 export function getOutcomePipeline(): OutcomePipelineMode {
   return globalState.outcomePipeline;
+}
+
+/** `v2` alone is refused until the v2 engine shell exists (SE2c); `differential` runs v1 and checks v2 against it */
+export function setScoringEngine(mode?: ScoringEngineMode): { success?: boolean; error?: ErrorType } {
+  if (mode === undefined) {
+    globalState.scoringEngine = SCORING_ENGINE_V1;
+    return { ...SUCCESS };
+  }
+  if (!runnableScoringEngineModes.includes(mode)) return { error: INVALID_VALUES };
+  globalState.scoringEngine = mode;
+  return { ...SUCCESS };
+}
+
+export function getScoringEngine(): ScoringEngineMode {
+  return globalState.scoringEngine;
 }
 
 export function writeNativeEnabled(): boolean {
