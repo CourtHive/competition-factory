@@ -1,3 +1,4 @@
+import { captureConformanceCase } from '../corpus/scoringScenariosConformance';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { expect } from 'vitest';
 
@@ -108,6 +109,10 @@ export function conforms(format: string, spec: string, expected: Outcome): void 
     loaded.redo();
   }
   expect({ format, as: 'reloaded', outcome: outcome(loaded) }).toEqual({ format, as: 'reloaded', outcome: expected });
+
+  // the golden corpus records the case as played, when it asks (CORPUS_CONFORMANCE_OUT); a no-op otherwise
+  const actions = stream.map((winner) => ({ method: 'addPoint', params: { winner } }));
+  captureConformanceCase({ helper: 'conforms', format, spec, actions });
 }
 
 /** The server of every point, in order, as the engine recorded it (0 = side 1). */

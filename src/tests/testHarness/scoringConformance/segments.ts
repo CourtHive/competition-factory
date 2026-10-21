@@ -1,3 +1,4 @@
+import { captureConformanceCase } from '../corpus/scoringScenariosConformance';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { outcome, type Outcome, type SetOutcome } from './conformance';
 import { expect } from 'vitest';
@@ -112,4 +113,16 @@ export function segmentConforms(format: string, spec: string, expected: Outcome)
     loaded.redo();
   }
   expect({ format, as: 'reloaded', outcome: outcome(loaded) }).toEqual({ format, as: 'reloaded', outcome: expected });
+
+  // the golden corpus records the case as played, when it asks (CORPUS_CONFORMANCE_OUT); a no-op otherwise
+  captureConformanceCase({ helper: 'segmentConforms', format, spec, actions: stream.map(stepAction) });
+}
+
+/** A stream step as the corpus directive that plays it. */
+function stepAction(step: Step) {
+  if (step.kind === 'end') return { method: 'endSegment', params: {} };
+  if (step.kind === 'game') return { method: 'addGame', params: { winner: step.winner } };
+  if (step.kind === 'set')
+    return { method: 'addSet', params: { side1Score: step.scores[0], side2Score: step.scores[1] } };
+  return { method: 'addPoint', params: { winner: step.winner } };
 }
