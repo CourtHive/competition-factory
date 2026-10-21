@@ -1031,7 +1031,7 @@ an additive action, not a format change.
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | conformance matrix | 81 cells from the factory's harvested formats: 77 held by independent cases, 4 refused, none missing (`formatMatrix.test.ts`); every cell placed in § 17                               |
 | conformance cases  | about 300, written from rulebooks (ITF, USA Pickleball, World Squash, ITTF, BWF, FIVB, VALORANT) or from the format definitions, each held five ways (see the opening)                 |
-| v1/v2 differential | `SCORING_ENGINE=differential`: every v1 call checked against the v2 reducer (SE2a: standard and tiebreak-only); `pnpm verify:scoring-differential`                                     |
+| v1/v2 differential | `SCORING_ENGINE=differential`: every v1 call checked against the v2 reducer, every segment kind and service; `pnpm verify:scoring-differential`                                        |
 | engine tests       | the S1–S13 fixes (#5511–#5521), the defects the cases found (#5529, #5530, #5533) and the replay, boundary and service tests cited above                                               |
 | scoring corpus     | 72 seeded streams (8 formats × 3 biases × 3 seeds) through the pure `createMatchUp`/`addPoint`, each step's result pinned by the manifest (#5511), and one point after completion each |
 | not yet pinned     | the class timeline (undo, redo, edits, baselines, segment ends, server corrections, substitutions, save and load) as corpus scenarios: SE3                                             |

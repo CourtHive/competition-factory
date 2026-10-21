@@ -12,8 +12,8 @@
  *
  * ## Why it reads the tally
  *
- * A differential that compared nothing would pass every test: SE2a compares only standard and tiebreak-only
- * formats and DEFERS the rest by reason. So each test file appends what it compared and deferred
+ * A differential that compared nothing would pass every test, and what it cannot compare yet (legacy shapes, stale
+ * edits) it DEFERS by reason. So each test file appends what it compared and deferred
  * (`SCORING_TALLY`), and this fails when the sum compared no point, game, set, baseline, undo, redo or edit. It
  * prints the whole tally, deferrals and pending decisions included, so a reader sees what green covered.
  */
@@ -31,6 +31,7 @@ const REQUIRED = [
   'compared:undo',
   'compared:redo',
   'compared:editPoint',
+  'compared:endSegment',
   'verdict:addPoint',
 ];
 

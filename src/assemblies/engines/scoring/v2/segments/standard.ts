@@ -49,7 +49,7 @@ export function standardPoint(
   const played = tiebreak ? playRacePoint(tiebreak.race, before, winner) : playGamePoint(rule.game, before, winner);
   const gameScores = gameScoresAfter(set, game, played.game.score);
   const numeric = !!tiebreak || rule.game.kind === 'consecutive';
-  const coordinates = { game: set.side1Score + set.side2Score, number: before.played };
+  const coordinates = { game: set.side1Score + set.side2Score, number: before.pointsPlayed };
   const score = pointScore(played.game.score, played.won, numeric);
   if (!played.won) return { set: { ...set, ...gameScores }, game: played.game, coordinates, score };
 

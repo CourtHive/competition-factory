@@ -1,5 +1,6 @@
 import type { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Types/competitionFormat';
+import type { ServiceState } from './service';
 
 /**
  * ScoringEngine v2 — the types of the clean-room reducer `state = reduce(configuration, timeline)`.
@@ -17,7 +18,12 @@ export type Pair = [number, number];
 /** the configuration an engine is built from (§ 1.1) */
 export type ScoringConfiguration = {
   matchUpFormat?: string;
-  competitionFormat?: { matchUpFormat?: string; pointMultipliers?: PointMultiplier[]; [key: string]: unknown };
+  competitionFormat?: {
+    matchUpFormat?: string;
+    pointMultipliers?: PointMultiplier[];
+    serverRule?: string;
+    [key: string]: unknown;
+  };
   pointMultipliers?: PointMultiplier[];
 };
 
@@ -44,6 +50,10 @@ export type ScoredSet = {
   side1GameScores?: number[];
   side2GameScores?: number[];
   isTiebreakOnly?: boolean;
+  /** a timed segment (§ 6.5) */
+  isTimed?: boolean;
+  /** a segment closed, with or without a winner (§ 1.2, § 6.4) */
+  segmentComplete?: boolean;
 };
 
 /** the game in play in the last set, when one has points (§ 4.1, § 5) */
@@ -51,7 +61,7 @@ export type GameInPlay = {
   /** the score of the game: points, or point values in a segment scored in units */
   score: Pair;
   /** the points played in it (its count, whatever their values) */
-  played: number;
+  pointsPlayed: number;
   /** a consecutive-points game: the side on a run and its length (§ 4.1 rule 4) */
   run?: { side: Side; length: number };
 };
@@ -80,6 +90,8 @@ export type ScoringState = {
   sets: ScoredSet[];
   points: ScoredPoint[];
   game?: GameInPlay;
+  /** what the timeline has said about service (§ 10) */
+  service: ServiceState;
   /** scoring entries (point, game, set) accepted so far: a second baseline is refused once there are any (§ 2.5) */
   scoringEntries: number;
 };

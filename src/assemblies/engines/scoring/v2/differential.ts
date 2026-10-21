@@ -1,6 +1,6 @@
-import { configuredFormat, isSE2aFormat, resolveFormat } from './format';
+import { createContext, reduce, serverOf, step } from './reduce';
 import { getScoringEngine } from '@Global/state/globalState';
-import { createContext, reduce, step } from './reduce';
+import { configuredFormat, resolveFormat } from './format';
 
 // constants and types
 import type { EntryData, ScoringConfiguration, ScoringState, StepOutcome, TimelineEntry } from './types';
@@ -16,10 +16,12 @@ import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
  *
  * 1. the action boundary, for an offered action: whether v1 recorded it, ignored it (with which code) or refused
  *    it, against v2's `step` on the state before it;
- * 2. the state after it: v1's score, status, winner and materialized points against `reduce(config, timeline)`.
+ * 2. the state after it: v1's score, status, winner and materialized points (their service included), and the
+ *    next server (`getNextServer`, `isServerDerived`), against `reduce(config, timeline)`.
  *
- * SE2a compares only formats whose every segment is standard or tiebreak-only. Anything it cannot yet compare is
- * DEFERRED, never passed silently, and counted by reason, so a green run that compared nothing is visible.
+ * Every segment kind is compared (SE2b widened it from SE2a's standard and tiebreak-only). Anything it cannot yet
+ * compare (legacy shapes, stale edits, records with no timeline) is DEFERRED, never passed silently, and counted by
+ * reason, so a green run that compared nothing is visible.
  */
 
 /** the v1 surface the differential reads: only the public API */
@@ -36,6 +38,8 @@ type V1Engine = {
   getSupplementaryState(): Pick<ScoringConfiguration, 'competitionFormat' | 'pointMultipliers'> | undefined;
   getLegacyShapes?(): string[];
   getFormat?(): string;
+  getNextServer?(): number;
+  isServerDerived?(): boolean;
 };
 type Method = (...args: unknown[]) => unknown;
 
@@ -71,8 +75,8 @@ export const WRAPPED_METHODS = [
 ];
 
 /**
- * Calls that rebuild v1's score from its timeline, ending a stale stretch: one left by `recalculate: false`, or by
- * `setState`, which loads the stored score as it is and rebuilds nothing.
+ * Calls that rebuild v1's score from its timeline, ending a stale stretch: one left by `recalculate: false`, by
+ * `setPointMultipliers`, which rescores nothing, or by `setState`, which loads the stored score as it is.
  */
 const REBUILDS: ReadonlySet<string> = new Set(['undo', 'redo', 'reset', 'editPoint', 'removePoint']);
 
@@ -134,8 +138,7 @@ function configOf(engine: V1Engine, state: V1State): ScoringConfiguration {
 const SCORING_STATUSES: ReadonlySet<string> = new Set([TO_BE_PLAYED, IN_PROGRESS, COMPLETED]);
 
 /** why this state cannot be compared yet, if it cannot */
-function deferral(engine: V1Engine, state: V1State, config: ScoringConfiguration, stale: boolean): string | undefined {
-  if (!isSE2aFormat(resolveFormat(configuredFormat(config)))) return 'segment-kind';
+function deferral(engine: V1Engine, state: V1State, stale: boolean): string | undefined {
   if (engine.getLegacyShapes?.().length) return 'legacy-shapes';
   if (stale) return 'stale-edit';
   if (!SCORING_STATUSES.has(state.matchUpStatus ?? '')) return 'status-outside-scoring';
@@ -155,21 +158,63 @@ const SET_FIELDS = [
   'side1GameScores',
   'side2GameScores',
   'isTiebreakOnly',
+  'isTimed',
+  'segmentComplete',
 ];
-const POINT_FIELDS = ['index', 'pointNumber', 'winner', 'winningSide', 'set', 'game', 'number', 'score', 'scoreValue'];
+const POINT_FIELDS = [
+  'index',
+  'pointNumber',
+  'winner',
+  'winningSide',
+  'set',
+  'game',
+  'number',
+  'score',
+  'scoreValue',
+  'server',
+  'serverSideNumber',
+  'code',
+  'serveSide',
+  'pointsToGame',
+  'isBreakpoint',
+];
+
+/**
+ * Point views not compared until CA rules (SE2b-D23, D25, D26), counted on every comparison that skips them. v1's
+ * `gamesToSet` does not follow the set's rule (at 4-5 in a tiebreak set it says 2 games; at 5-6 in an advantage set
+ * 2, where 3 are needed; at 1-0 in the one-game set 1 for the side behind, where 2 are), its later sets ignore the
+ * final-set format, and in an aggregate's decider it reports 0 points to the match. `pointsToSet` and
+ * `pointsToMatch` are built on those. v2 computes all three to the spec (§ 11.2), held there by its own tests; the
+ * differential does not reverse-engineer v1's arithmetic to excuse it.
+ */
+const UNCOMPARED_VIEWS = ['gamesToSet', 'pointsToSet', 'pointsToMatch'];
 
 const pick = (source: Fields, fields: string[]): Fields =>
   Object.fromEntries(
     fields.filter((field) => source[field] !== undefined && source[field] !== false).map((f) => [f, source[f]]),
   );
 
-type Projection = { matchUpStatus: unknown; winningSide: unknown; sets: Fields[]; points: Fields[] };
+type Projection = {
+  matchUpStatus: unknown;
+  winningSide: unknown;
+  /** the side due to serve next and whether it is derived (`getNextServer`, `isServerDerived`, § 10.4) */
+  next: unknown;
+  sets: Fields[];
+  points: Fields[];
+};
 
-/** the part of a matchUp SE2a defines: status, winner, sets and each point's coordinates */
-function projection(matchUpStatus: unknown, winningSide: unknown, sets: Fields[], points: Fields[]): Projection {
+/** the part of a matchUp the reducer defines: status, winner, sets and each point's coordinates */
+function projection(
+  matchUpStatus: unknown,
+  winningSide: unknown,
+  next: unknown,
+  sets: Fields[],
+  points: Fields[],
+): Projection {
   return {
     matchUpStatus,
     winningSide: winningSide ?? null,
+    next,
     sets: sets.map((set) => pick(set, SET_FIELDS)),
     points: points.map((point) => pick(point, POINT_FIELDS)),
   };
@@ -177,9 +222,18 @@ function projection(matchUpStatus: unknown, winningSide: unknown, sets: Fields[]
 
 type Difference = { path: string; v1: string; v2: string };
 
+/** JSON with object keys sorted, so two projections compare by content, not by the order fields were added */
+function canonical(value: unknown): string {
+  return JSON.stringify(value, (_key, inner: unknown) =>
+    inner && typeof inner === 'object' && !Array.isArray(inner)
+      ? Object.fromEntries(Object.entries(inner).toSorted(([a], [b]) => a.localeCompare(b, 'en')))
+      : inner,
+  );
+}
+
 /** the first path at which two projections differ, with each side's value there */
 export function firstDifference(a: unknown, b: unknown, path = ''): Difference | undefined {
-  if (JSON.stringify(a) === JSON.stringify(b)) return undefined;
+  if (canonical(a) === canonical(b)) return undefined;
   const leaf = typeof a !== 'object' || typeof b !== 'object' || a === null || b === null;
   const [left, right] = [a as Fields, b as Fields];
   const keys = leaf ? [] : [...new Set([...Object.keys(left), ...Object.keys(right)])];
@@ -201,6 +255,16 @@ export function firstDifference(a: unknown, b: unknown, path = ''): Difference |
  * - SE2a-D3b: the per-game counts of a set closed by `addGame`. A game won short of the set opens the next game
  *   at 0-0 in both (SE2a-D3); a set closed by a point keeps no trailing entry in both; but a set closed by
  *   `addGame` keeps a trailing 0-0 in v1, a game that will never be played, and none in v2.
+ * - SE2b-D11 (D11 widened): `isTimed`, likewise: v1 does not mark a timed set opened by `addGame` or `endSegment`.
+ * - SE2b-D17: v1 gives a timed set scored in units (points-based, or another root) empty per-game counts (`[]`),
+ *   though no game is played point by point there; v2 gives it none.
+ * - SE2b-D18: a combined total's points. v1 materializes them without `index`, `set`, `game` and `number`, which
+ *   § 11.1 gives every point; v2 gives them all.
+ * - SE2b-D20: the point that wins a timed segment's tiebreak at time. § 11.1 shows `0-0` for a point that completes
+ *   a game, as both show for a set's tiebreak; v1 shows the race's final score there (`7-0`).
+ * - SE2b-D24: a consecutive game's `pointsToGame`: v1 counts the whole run whatever run is in progress, recognised by
+ *   reducing again under that reading (view.ts `ViewReadings`) and accepted only when it accounts for every
+ *   difference. (D23, D25 and D26 are views not compared at all: `UNCOMPARED_VIEWS`.)
  * - SE2a-D12: a point's `number` in a race scored in point values. § 11.1 counts the points played in its game
  *   before it; v1 counts their values (after an ace worth 3, the next point is `number` 3, not 1).
  */
@@ -231,21 +295,73 @@ function pendingNumberByValue(v1: Projection, v2: Projection): void {
   });
 }
 
-function pendingDecisions(v1: Projection, v2: Projection): void {
-  pendingTrailingGame(v1, v2);
+function pendingMarks(v1: Projection, v2: Projection): void {
   v2.sets.forEach((set, index) => {
-    if (!set.isTiebreakOnly || v1.sets[index]?.isTiebreakOnly) return;
-    delete set.isTiebreakOnly;
-    count('pending:SE2a-D11');
+    const theirs = v1.sets[index] ?? {};
+    for (const mark of ['isTiebreakOnly', 'isTimed'] as const) {
+      if (!set[mark] || theirs[mark]) continue;
+      delete set[mark];
+      count(mark === 'isTimed' ? 'pending:SE2b-D11' : 'pending:SE2a-D11');
+    }
+    const empty = (value: unknown) => Array.isArray(value) && value.length === 0;
+    const timed = set.isTimed !== undefined || !!theirs.isTimed;
+    if (timed && set.side1GameScores === undefined && empty(theirs.side1GameScores) && empty(theirs.side2GameScores)) {
+      set.side1GameScores = [];
+      set.side2GameScores = [];
+      count('pending:SE2b-D17');
+    }
   });
-  pendingNumberByValue(v1, v2);
 }
+
+/** SE2b-D18: v1's combined-total points carry no coordinates */
+function pendingCombinedPoints(v1: Projection, v2: Projection, combined: boolean): void {
+  if (!combined) return;
+  v2.points.forEach((point, index) => {
+    if (v1.points[index]?.index !== undefined) return;
+    for (const field of ['index', 'set', 'game', 'number']) delete point[field];
+    count('pending:SE2b-D18');
+  });
+}
+
+/** SE2b-D20: the point that won a tiebreak at time shows the race's final score in v1 */
+function pendingAtTimeScore(v1: Projection, v2: Projection): void {
+  v2.points.forEach((point, index) => {
+    const set = v2.sets[point.set as number];
+    const theirs = v1.points[index];
+    if (point.score !== '0-0' || !set?.isTimed || set.side1TiebreakScore === undefined || !theirs) return;
+    if (theirs.score !== `${String(set.side1TiebreakScore)}-${String(set.side2TiebreakScore)}`) return;
+    point.score = theirs.score;
+    count('pending:SE2b-D20');
+  });
+}
+
+/**
+ * SE3-E1: a `setServer(side, { recordEntry: false })` with nothing on the timeline orients v1's next server and is
+ * stored nowhere, so no reduction of the timeline can see it.
+ */
+function pendingUnanchoredCorrection(v1: Projection, v2: Projection, entries: TimelineEntry[]): void {
+  if (entries.length || canonical(v1.next) === canonical(v2.next)) return;
+  v2.next = v1.next;
+  count('pending:SE3-E1');
+}
+
+function pendingDecisions(v1: Projection, v2: Projection, combined: boolean): void {
+  pendingTrailingGame(v1, v2);
+  pendingAtTimeScore(v1, v2);
+  pendingMarks(v1, v2);
+  pendingNumberByValue(v1, v2);
+  pendingCombinedPoints(v1, v2, combined);
+}
+
+/** the point views whose v1 reading is pending (view.ts `ViewReadings`) */
+const VIEW_FIELD = /^\.points\.\d+\.(pointsToGame|isBreakpoint)\b/;
+const V1_READINGS = { runIgnored: true };
 
 /** compares v1's state after a call with v2's reduction of the same timeline; throws on a difference */
 export function compareStates(engine: V1Engine, method: string, stale = false, loaded = false): void {
   const state = engine.getState();
   const config = configOf(engine, state);
-  const deferred = deferral(engine, state, config, stale);
+  const deferred = deferral(engine, state, stale);
   if (deferred) return count(`deferred:${deferred}`);
   const entries: TimelineEntry[] = state.history?.entries ?? [];
   const reduction = reduce(config, entries);
@@ -257,11 +373,31 @@ export function compareStates(engine: V1Engine, method: string, stale = false, l
     const v2 = JSON.stringify(reduction.outcomes[index]);
     throw new ScoringEngineDivergence({ method, format, v1: `replays entry ${index} (${entries[index]?.type})`, v2 });
   }
-  const v1 = projection(state.matchUpStatus, state.winningSide, state.score?.sets ?? [], state.history?.points ?? []);
-  const v2State: ScoringState = reduction.state;
-  const v2 = projection(v2State.matchUpStatus, v2State.winningSide, v2State.sets, v2State.points);
-  pendingDecisions(v1, v2);
-  const difference = firstDifference(v1, v2);
+  const next = serverOf(createContext(config), reduction.state);
+  // an engine without the service queries is compared on its score alone
+  const answers = engine.getNextServer ? { side: engine.getNextServer(), derived: engine.isServerDerived?.() } : next;
+  const v1 = projection(
+    state.matchUpStatus,
+    state.winningSide,
+    answers,
+    state.score?.sets ?? [],
+    state.history?.points ?? [],
+  );
+  const combined = resolveFormat(format)?.ordinary.kind === 'combined';
+  const projected = (v2State: ScoringState) => {
+    const v2 = projection(v2State.matchUpStatus, v2State.winningSide, next, v2State.sets, v2State.points);
+    pendingDecisions(v1, v2, combined);
+    pendingUnanchoredCorrection(v1, v2, entries);
+    return v2;
+  };
+  let difference = firstDifference(v1, projected(reduction.state));
+  if (difference && VIEW_FIELD.test(difference.path)) {
+    // SE2b-D24: v1's reading of a consecutive game's run; accepted only when it accounts for every difference
+    const read = firstDifference(v1, projected(reduce(config, entries, V1_READINGS).state));
+    if (!read) count('pending:SE2b-D24');
+    // what remains under v1's readings is the difference to report
+    difference = read && { ...read, path: `${read.path} (under v1's readings; spec reading: ${difference.v2})` };
+  }
   if (difference)
     throw new ScoringEngineDivergence({
       method,
@@ -269,6 +405,8 @@ export function compareStates(engine: V1Engine, method: string, stale = false, l
       v1: `${difference.path} ${difference.v1}`,
       v2: `${difference.path} ${difference.v2}`,
     });
+  const skipped = reduction.state.points.some((point) => UNCOMPARED_VIEWS.some((view) => point[view] !== undefined));
+  if (skipped) count('uncompared:SE2b-D23-D25-D26');
   count(`compared:${method}`);
 }
 
@@ -276,7 +414,7 @@ export function compareStates(engine: V1Engine, method: string, stale = false, l
 function offeredVerdict(engine: V1Engine, entry: TimelineEntry): Verdict | undefined {
   const state = engine.getState();
   const config = configOf(engine, state);
-  if (deferral(engine, state, config, false)) return undefined;
+  if (deferral(engine, state, false)) return undefined;
   const context = createContext(config);
   const before = reduce(config, state.history?.entries ?? []);
   // a loaded timeline holding entries the rules now refuse is replayed as v1 replayed it: SE2c's (§ 12.8)
@@ -288,6 +426,8 @@ type Tracked = { depth: number; stale: boolean; loaded: boolean };
 const tracked = new WeakMap<object, Tracked>();
 
 function isStaleEdit(method: string, args: unknown[]): boolean {
+  // new multipliers rescore nothing until the next rebuild (the API reference, setPointMultipliers)
+  if (method === 'setPointMultipliers') return true;
   const options = { editPoint: args[2], removePoint: args[1] }[method] as { recalculate?: boolean } | undefined;
   return options?.recalculate === false;
 }

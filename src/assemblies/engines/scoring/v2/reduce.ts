@@ -1,6 +1,18 @@
-import { openSet, pointsAreUnits, segmentGame, segmentPoint, segmentTotalWinner } from './segments/segment';
-import { configuredFormat, resolveFormat, ruleForSet } from './format';
+import { INITIAL_SERVICE, afterPoint, corrected, nextServer, serveSide, serviceCode } from './service';
+import { configuredFormat, resolveFormat, ruleForSet, takesInput } from './format';
+import { isBreakpoint, pointsTo, type ViewReadings } from './view';
 import { decideMatch, isClosed, setsWon } from './decide';
+import {
+  decidedInPlay,
+  pointsAreUnits,
+  segmentPoint,
+  atTimeIn,
+  segmentTotal,
+  segmentGame,
+  segmentEnd,
+  openSet,
+  type SegmentStep,
+} from './segments/segment';
 import {
   readChallenge,
   readGame,
@@ -25,6 +37,7 @@ import {
 // constants and types
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Types/competitionFormat';
+import type { ServicePosition, ServiceRules } from './service';
 import type { MatchRule, SegmentRule } from './format';
 import type {
   EntryData,
@@ -47,22 +60,55 @@ import type {
  * as it was. One producer per rule: format resolution in `format.ts`, each segment kind's rules in `segments/`,
  * completion in `decide.ts`, the facts of each action in `actions.ts`.
  *
- * SE2a scores standard and tiebreak-only segments; timed, combined and outs segments, service and the views are
- * SE2b's, and the engine shell (undo/redo, persistence, events) is SE2c's.
+ * Every segment kind is scored: standard, tiebreak-only, timed, combined total and outs (SE2a, SE2b), and every
+ * point carries its service: server, S/R code and court half (`service.ts`, SE2b). The engine shell (undo/redo,
+ * persistence, events) is SE2c's.
  */
 
-export type ReducerContext = { match?: MatchRule; multipliers: PointMultiplier[] };
+export type ReducerContext = {
+  match?: MatchRule;
+  multipliers: PointMultiplier[];
+  rules: ServiceRules;
+  /** the differential's switch for v1's readings of three views (view.ts); never set by scoring itself */
+  readings: ViewReadings;
+};
 
-export function createContext(config: ScoringConfiguration): ReducerContext {
+export function createContext(config: ScoringConfiguration, readings: ViewReadings = {}): ReducerContext {
   return {
+    readings,
     match: resolveFormat(configuredFormat(config)),
     // the option wins over the profile's (§ 1.1)
     multipliers: config.pointMultipliers ?? config.competitionFormat?.pointMultipliers ?? [],
+    // the competition's server rule (§ 10.7)
+    rules: { winnerServes: config.competitionFormat?.serverRule === 'WINNER_SERVES' },
   };
 }
 
 export function initialState(): ScoringState {
-  return { matchUpStatus: TO_BE_PLAYED, sets: [], points: [], scoringEntries: 0 };
+  return { matchUpStatus: TO_BE_PLAYED, sets: [], points: [], service: INITIAL_SERVICE, scoringEntries: 0 };
+}
+
+/**
+ * Where the next point would be played, for service (§ 10): the set in play, or the next one. A completed match, or
+ * one past its N sets, answers for the set that would come next: the rotation continues (decision SE2b-D22).
+ */
+function positionOf(match: MatchRule, state: ScoringState): ServicePosition {
+  const at = target(match, state);
+  if (at) return { match, rule: at.rule, set: at.set, game: at.game };
+  const rule = ruleForSet(match, state.sets.length + 1, setsWon(state.sets));
+  return { match, rule, set: openSet(rule, state.sets.length + 1) };
+}
+
+/** the side due to serve the next point, and whether the engine derived it (§ 10.4): `getNextServer` and `isServerDerived` */
+export function serverOf(context: ReducerContext, state: ScoringState): { side: Side; derived: boolean } {
+  const position = context.match && positionOf(context.match, state);
+  return nextServer(context.rules, state.service, state, position);
+}
+
+/** a server correction at this position on the timeline (§ 2.6, § 10.6) */
+function correct(context: ReducerContext, state: ScoringState, side: Side): ScoringState {
+  const position = context.match && positionOf(context.match, state);
+  return { ...state, service: corrected(context.rules, state.service, state, position, side) };
 }
 
 type Step = { state: ScoringState; outcome: StepOutcome };
@@ -78,33 +124,36 @@ const refused = (state: ScoringState, reason: Refusal): Step => ({
 });
 
 /** the set an input is aimed at: the open set, or the next one (§ 2.2: a closed set opens the next) */
-type Target = { set: ScoredSet; rule: SegmentRule; game?: GameInPlay; index: number };
+type Target = { set: ScoredSet; rule: SegmentRule; game?: GameInPlay; index: number; atTime: boolean };
 
 function target(match: MatchRule, state: ScoringState): Target | undefined {
   const last = state.sets.at(-1);
   if (last && !isClosed(last)) {
     const rule = ruleForSet(match, last.setNumber, setsWon(state.sets.slice(0, -1)));
-    return { set: last, rule, game: state.game, index: state.sets.length - 1 };
+    return { set: last, rule, game: state.game, index: state.sets.length - 1, atTime: atTimeIn(rule, last) };
   }
   const setNumber = state.sets.length + 1;
   const decider = match.mode === 'exactly' && match.aggregate && match.final ? 1 : 0;
   if (setNumber > match.n + decider) return undefined;
   const rule = ruleForSet(match, setNumber, setsWon(state.sets));
-  return { set: openSet(rule, setNumber), rule, index: state.sets.length };
+  return { set: openSet(rule, setNumber), rule, index: state.sets.length, atTime: false };
 }
 
-/** the score after a scoring input: the sets, the game in play, and the match decided by § 9 */
-function scored(match: MatchRule, state: ScoringState, at: Target, set: ScoredSet, game?: GameInPlay): ScoringState {
-  const sets = [...state.sets.slice(0, at.index), set];
+/**
+ * The score after an input: the sets, the game in play, the tiebreak at time, and the match decided by § 9.
+ * `scoring` counts the input toward the scoring entries a second baseline is refused after (§ 2.5).
+ */
+function scored(match: MatchRule, state: ScoringState, at: Target, result: SegmentStep, scoring = true): ScoringState {
+  const sets = [...state.sets.slice(0, at.index), result.set];
   const decision = decideMatch(match, sets);
   const { winningSide: _previous, game: _game, ...rest } = state;
   return {
     ...rest,
     sets,
-    ...(game ? { game } : {}),
+    ...(result.game ? { game: result.game } : {}),
     matchUpStatus: decision.complete ? COMPLETED : IN_PROGRESS,
     ...(decision.winningSide ? { winningSide: decision.winningSide } : {}),
-    scoringEntries: state.scoringEntries + 1,
+    scoringEntries: state.scoringEntries + (scoring ? 1 : 0),
   };
 }
 
@@ -133,19 +182,35 @@ function point(context: ReducerContext, match: MatchRule, state: ScoringState, e
   if (facts.winner === undefined) return ignored(state, 'NO_WINNER');
   const at = aimed(match, state);
   if (typeof at === 'string') return ignored(state, at);
-  const units = pointsAreUnits(at.rule);
+  // § 2.1 refusal 6: a segment of outs takes no point input
+  if (!takesInput(at.rule, 'point')) return refused(state, refusal('the set in play takes no point input'));
+  const units = pointsAreUnits(at.rule, at.atTime);
   const given = entry.data?.scoreValue;
   if (!units && given !== undefined && given !== 1)
-    return refused(state, refusal('a scoreValue other than 1 is refused where points build games'));
+    return refused(state, refusal('a scoreValue other than 1 is refused where a point is not a unit'));
 
   const winner = facts.winner;
   const value = units ? pointValue(context, entry.data) : 1;
-  const played = segmentPoint(at.rule, at.set, at.game, winner, value);
+  const position: ServicePosition = { match, rule: at.rule, set: at.set, game: at.game };
+  const derived = nextServer(context.rules, state.service, state, position);
+  const server = facts.server ?? (derived.derived ? derived.side : undefined);
+  const half = serveSide(state, position);
+  const view = pointsTo(state, position, context.readings);
+  const breakpoint = isBreakpoint(view, server);
+  // a combined total derives no S/R code, even from a supplied server (§ 10.4)
+  const coded = entry.data?.code === undefined && at.rule.kind !== 'combined';
+  const code = coded ? serviceCode(server, winner) : undefined;
+  const played = segmentPoint(at.rule, at.set, at.game, winner, value, at.atTime);
   const index = state.points.length;
   const materialized = {
     ...pointFacts(entry.data),
     winner,
     winningSide: (winner + 1) as 1 | 2,
+    ...(server === undefined ? {} : { server, serverSideNumber: (server + 1) as 1 | 2 }),
+    ...(code ? { code } : {}),
+    ...(half ? { serveSide: half } : {}),
+    ...view,
+    ...(breakpoint === undefined ? {} : { isBreakpoint: breakpoint }),
     ...(entry.timestamp ? { timestamp: entry.timestamp } : {}),
     index,
     pointNumber: index + 1,
@@ -155,8 +220,9 @@ function point(context: ReducerContext, match: MatchRule, state: ScoringState, e
     score: played.score,
     ...(value === 1 ? {} : { scoreValue: value }),
   };
-  const next = scored(match, state, at, played.set, played.game);
-  return { state: { ...next, points: [...state.points, materialized] }, outcome: RECORDED };
+  const next = scored(match, state, at, played);
+  const service = afterPoint(state.service, state, position, winner, facts.server);
+  return { state: { ...next, service, points: [...state.points, materialized] }, outcome: RECORDED };
 }
 
 function game(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step {
@@ -164,48 +230,10 @@ function game(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step
   if (facts.refused) return refused(state, facts.refused);
   const at = aimed(match, state);
   if (typeof at === 'string') return ignored(state, at);
-  const result = segmentGame(at.rule, at.set, facts.winner as Side, facts.tiebreakScore);
+  if (!takesInput(at.rule, 'game')) return refused(state, refusal(`a ${at.rule.kind} segment takes no game input`));
+  const result = segmentGame(at.rule, at.set, facts.winner as Side, facts.tiebreakScore, at.atTime);
   if ('refused' in result) return refused(state, refusal(result.refused));
-  return { state: scored(match, state, at, result.set, result.game), outcome: RECORDED };
-}
-
-/**
- * A set total judged by its segment's rule (§ 2.3): a finished total takes the rule's winner; an explicit
- * `winningSide` that contradicts the rule, or names a side not ahead, is refused; the side ahead on an unfinished
- * total is a set-level mercy or manual end; an unfinished total with no winner is the set in play.
- */
-function judgeTotal(rule: SegmentRule, total: SetTotal): { winningSide?: 1 | 2; refused?: string } {
-  if (claimsAnUnwonRace(rule, total))
-    return { refused: 'the tiebreak-only set given as won 1-0 is not won by its points' };
-  const ruled = segmentTotalWinner(rule, total.totals, total.tiebreakPoints);
-  const given = total.winningSide;
-  if (ruled !== undefined) {
-    if (given !== undefined && given !== ruled + 1) return { refused: 'the winningSide contradicts the set rule' };
-    return { winningSide: (ruled + 1) as 1 | 2 };
-  }
-  if (given === undefined) return {};
-  const [a, b] = total.tiebreakPoints ?? total.totals;
-  const ahead = (a > b && 1) || (b > a && 2) || undefined;
-  return given === ahead ? { winningSide: given } : { refused: 'the winningSide is not ahead' };
-}
-
-/** a tiebreak-only set given as a game won (1-0) is read from its points: points that do not win the race refute it */
-function claimsAnUnwonRace(rule: SegmentRule, total: SetTotal): boolean {
-  if (rule.kind !== 'tiebreakOnly' || !total.tiebreakPoints) return false;
-  const [a, b] = total.totals;
-  const claimed = (a === 1 && b === 0) || (a === 0 && b === 1);
-  return claimed && segmentTotalWinner(rule, total.totals, total.tiebreakPoints) === undefined;
-}
-
-function totalSet(rule: SegmentRule, setNumber: number, total: SetTotal, winningSide?: 1 | 2): ScoredSet {
-  const [side1TiebreakScore, side2TiebreakScore] = total.tiebreakPoints ?? [];
-  return {
-    ...openSet(rule, setNumber),
-    side1Score: total.totals[0],
-    side2Score: total.totals[1],
-    ...(total.tiebreakPoints ? { side1TiebreakScore, side2TiebreakScore } : {}),
-    ...(winningSide ? { winningSide } : {}),
-  };
+  return { state: scored(match, state, at, result), outcome: RECORDED };
 }
 
 /** a total entered while a set is in play closes (or replaces) that set; one entered after a closed set is the next */
@@ -214,30 +242,48 @@ function set(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step 
   if (facts.refused) return refused(state, facts.refused);
   const at = aimed(match, state);
   if (typeof at === 'string') return ignored(state, at);
-  const total = facts.total as SetTotal;
-  const judged = judgeTotal(at.rule, total);
-  if (judged.refused) return refused(state, refusal(judged.refused));
-  return {
-    state: scored(match, state, at, totalSet(at.rule, at.set.setNumber, total, judged.winningSide)),
-    outcome: RECORDED,
-  };
+  const result = segmentTotal(at.rule, at.set.setNumber, facts.total as SetTotal);
+  if ('refused' in result) return refused(state, refusal(result.refused));
+  return { state: scored(match, state, at, result), outcome: RECORDED };
 }
 
-type Baseline = { sets: ScoredSet[]; game?: GameInPlay };
+/**
+ * `endSegment` (§ 2.4, § 6.4): the timed segment in play, or the one `setNumber` names, which must be it. Ignored
+ * after completion and during the tiebreak at time; refused on any other kind, a closed segment, or none in play.
+ */
+function endSegment(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step {
+  if (state.matchUpStatus === COMPLETED) return ignored(state, 'MATCH_COMPLETED');
+  const last = state.sets.at(-1);
+  const named = entry.data?.setNumber;
+  if (!last || isClosed(last)) return refused(state, refusal('there is no timed segment in play to end'));
+  if (named !== undefined && named !== last.setNumber)
+    return refused(state, refusal(`segment ${String(named)} is not in play`));
+  const at = target(match, state) as Target;
+  const result = segmentEnd(at.rule, at.set, at.atTime);
+  if ('refused' in result) return refused(state, refusal(result.refused));
+  if ('ignored' in result) return ignored(state, result.ignored);
+  return { state: scored(match, state, at, result, false), outcome: RECORDED };
+}
+
+type Baseline = { sets: ScoredSet[]; game?: GameInPlay; atTime?: boolean };
 
 /** the baseline's sets, each judged by the rule of its set as `addSet` judges a total (§ 2.5 rules 1, 3) */
-function baselineSets(match: MatchRule, given: unknown[]): { sets?: ScoredSet[]; refused?: string } {
+function baselineSets(match: MatchRule, given: unknown[]): { sets?: ScoredSet[]; atTime?: boolean; refused?: string } {
   const sets: ScoredSet[] = [];
+  let atTime = false;
   for (const [i, data] of given.entries()) {
     const facts = readSetTotal(data as EntryData | undefined);
     if (facts.refused) return { refused: facts.refused.message };
     const rule = ruleForSet(match, i + 1, setsWon(sets));
-    const judged = judgeTotal(rule, facts.total as SetTotal);
-    if (judged.refused) return { refused: judged.refused };
-    if (!judged.winningSide && i < given.length - 1) return { refused: 'only the last baseline set can be unfinished' };
-    sets.push(totalSet(rule, i + 1, facts.total as SetTotal, judged.winningSide));
+    const judged = segmentTotal(rule, i + 1, facts.total as SetTotal);
+    if ('refused' in judged) return { refused: judged.refused };
+    const atTimeSet = atTimeIn(rule, judged.set);
+    if ((atTimeSet || !isClosed(judged.set)) && i < given.length - 1)
+      return { refused: 'only the last baseline set can be unfinished' };
+    if (atTimeSet) atTime = true;
+    sets.push(judged.set);
   }
-  return { sets };
+  return { sets, atTime };
 }
 
 const isPair = (pair: Pair) => pair.every((value) => Number.isInteger(value) && value >= 0);
@@ -268,6 +314,7 @@ function baselineInPlay(match: MatchRule, sets: ScoredSet[], data: EntryData): B
   ];
   if (!isPair(games) || (given && !isPair(given)))
     return { refused: 'baseline games and points are non-negative integers' };
+  if (given && combinedInPlay(match, sets, open)) return { refused: 'a combined total has no game score' };
 
   const closed = open ? sets.slice(0, -1) : sets;
   const setNumber = closed.length + 1;
@@ -275,11 +322,18 @@ function baselineInPlay(match: MatchRule, sets: ScoredSet[], data: EntryData): B
   const raceInPlay = open && rule.kind === 'tiebreakOnly';
   const base: ScoredSet = open && !raceInPlay ? last : openSet(rule, setNumber);
   const inPlay: ScoredSet = { ...base, side1Score: base.side1Score + games[0], side2Score: base.side2Score + games[1] };
-  if (segmentTotalWinner(rule, [inPlay.side1Score, inPlay.side2Score]) !== undefined)
-    return { refused: 'the set in play is already won' };
+  if (decidedInPlay(rule, [inPlay.side1Score, inPlay.side2Score])) return { refused: 'the set in play is already won' };
+  // a combined total counts rallies, not games: its set in play has no game in play (§ 7 rule 5)
+  if (rule.kind === 'combined') return { sets: [...closed, inPlay] };
   const points: Pair = given ?? (raceInPlay ? [last.side1Score, last.side2Score] : [0, 0]);
   const withGame = { ...inPlay, side1GameScores: [points[0]], side2GameScores: [points[1]] };
-  return { sets: [...closed, withGame], game: { score: points, played: points[0] + points[1] } };
+  return { sets: [...closed, withGame], game: { score: points, pointsPlayed: points[0] + points[1] } };
+}
+
+/** whether the baseline's set in play is a combined total, which has no game score (§ 7 rule 5) */
+function combinedInPlay(match: MatchRule, sets: ScoredSet[], open: boolean): boolean {
+  const closed = open ? sets.slice(0, -1) : sets;
+  return ruleForSet(match, closed.length + 1, setsWon(closed)).kind === 'combined';
 }
 
 /**
@@ -287,7 +341,13 @@ function baselineInPlay(match: MatchRule, sets: ScoredSet[], data: EntryData): B
  * decides the match), and is refused a second time once scoring entries exist. A `matchUpStatus` or `winningSide`
  * given beside the sets is checked against them; a status set outside scoring is not.
  */
-function baseline(match: MatchRule, state: ScoringState, entry: TimelineEntry, live: boolean): Step {
+function baseline(
+  context: ReducerContext,
+  match: MatchRule,
+  state: ScoringState,
+  entry: TimelineEntry,
+  live: boolean,
+): Step {
   if (live && state.scoringEntries > 0)
     return refused(state, refusal('a second baseline is refused once scoring entries exist'));
   const data = entry.data ?? {};
@@ -295,22 +355,24 @@ function baseline(match: MatchRule, state: ScoringState, entry: TimelineEntry, l
     return refused(state, refusal(`Invalid server: ${String(data.server)}`));
   const built = baselineSets(match, Array.isArray(data.sets) ? data.sets : []);
   if (built.refused) return refused(state, refusal(built.refused));
-  const inPlay = baselineInPlay(match, built.sets as ScoredSet[], data);
+  const inPlay: Baseline | { refused: string } = built.atTime
+    ? { sets: built.sets as ScoredSet[], atTime: true }
+    : baselineInPlay(match, built.sets as ScoredSet[], data);
   if ('refused' in inPlay) return refused(state, refusal(inPlay.refused));
   const decision = decideMatch(match, inPlay.sets);
   const consistent = consistentBaseline(data, decision);
   if (consistent) return refused(state, refusal(consistent));
   const { winningSide: _w, game: _g, ...rest } = state;
-  return {
-    state: {
-      ...rest,
-      sets: inPlay.sets,
-      ...(inPlay.game ? { game: inPlay.game } : {}),
-      matchUpStatus: decision.complete ? COMPLETED : IN_PROGRESS,
-      ...(decision.winningSide ? { winningSide: decision.winningSide } : {}),
-    },
-    outcome: RECORDED,
+  const replaced: ScoringState = {
+    ...rest,
+    sets: inPlay.sets,
+    ...(inPlay.game ? { game: inPlay.game } : {}),
+    matchUpStatus: decision.complete ? COMPLETED : IN_PROGRESS,
+    ...(decision.winningSide ? { winningSide: decision.winningSide } : {}),
   };
+  // § 2.5 rule 4: a supplied server is a server correction at the baseline's position
+  const server = data.server as Side | undefined;
+  return { state: server === undefined ? replaced : correct(context, replaced, server), outcome: RECORDED };
 }
 
 /** § 2.5 rule 6: refused only when they disagree; RETIRED, DEFAULTED and the like are not checked */
@@ -339,6 +401,14 @@ function scoreless(state: ScoringState, reason?: Refusal): Step {
  * Never mutates `state` or `entry`.
  */
 export function step(context: ReducerContext, state: ScoringState, entry: TimelineEntry, live = false): Step {
+  const result = apply(context, state, entry, live);
+  // § 2.6: a correction made with `recordEntry: false` is recorded on the entry before it, and replayed with it
+  const side = entry.serverCorrection;
+  if (!result.outcome.recorded || (side !== 0 && side !== 1)) return result;
+  return { ...result, state: correct(context, result.state, side) };
+}
+
+function apply(context: ReducerContext, state: ScoringState, entry: TimelineEntry, live: boolean): Step {
   const { match } = context;
   if (!match)
     return NEEDS_A_FORMAT.has(entry.type)
@@ -352,13 +422,15 @@ export function step(context: ReducerContext, state: ScoringState, entry: Timeli
     case SET:
       return set(match, state, entry);
     case SET_INITIAL_SCORE:
-      return baseline(match, state, entry, live);
+      return baseline(context, match, state, entry, live);
     case END_SEGMENT:
-      // any input after COMPLETED is ignored (§ 9.6, the API's MATCH_COMPLETED); no segment SE2a scores is timed (§ 2.4)
-      if (state.matchUpStatus === COMPLETED) return ignored(state, 'MATCH_COMPLETED');
-      return refused(state, refusal('endSegment ends timed segments only'));
-    case SET_SERVER:
-      return scoreless(state, readServer(entry.data));
+      return endSegment(match, state, entry);
+    case SET_SERVER: {
+      const reason = readServer(entry.data);
+      return reason
+        ? refused(state, reason)
+        : { state: correct(context, state, entry.data?.side as Side), outcome: RECORDED };
+    }
     case CHALLENGE:
       return scoreless(state, readChallenge(entry.data));
     case SUBSTITUTION:
@@ -377,8 +449,12 @@ export type Reduction = {
 };
 
 /** `state = reduce(configuration, timeline)` (§ 12.1): a fresh score, every entry replayed in order */
-export function reduce(config: ScoringConfiguration, timeline: TimelineEntry[]): Reduction {
-  const context = createContext(config);
+export function reduce(
+  config: ScoringConfiguration,
+  timeline: TimelineEntry[],
+  readings: ViewReadings = {},
+): Reduction {
+  const context = createContext(config, readings);
   const outcomes: StepOutcome[] = [];
   const legacy: number[] = [];
   let state = initialState();

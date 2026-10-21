@@ -1,4 +1,4 @@
-import { NEW_GAME, playRacePoint, pointScore, raceWinner, wonRace } from './game';
+import { NEW_GAME, playRacePoint, pointScore, wonRace } from './game';
 import { gameScoresAfter } from './standard';
 
 // constants and types
@@ -24,7 +24,7 @@ export function tiebreakOnlyPoint(
   const before = game ?? NEW_GAME;
   const played = playRacePoint(rule.race, before, winner, value);
   const gameScores = gameScoresAfter(set, game, played.game.score);
-  const coordinates = { game: 0, number: before.played };
+  const coordinates = { game: 0, number: before.pointsPlayed };
   const score = pointScore(played.game.score, played.won, true);
   if (!played.won) return { set: { ...set, ...gameScores }, game: played.game, coordinates, score };
   return { set: wonSet(set, winner, played.game.score, gameScores), game: undefined, coordinates, score };
@@ -54,9 +54,4 @@ export function tiebreakOnlyGame(
   if (tiebreakScore && !wonRace(rule.race, tiebreakScore, winner))
     return { refused: `tiebreakScore ${tiebreakScore.join('-')} does not win the race to ${rule.race.to}` };
   return { set: wonSet(set, winner, tiebreakScore) };
-}
-
-/** a tiebreak-only total is read from its points (§ 2.3, § 2.5): the tiebreak points when given, else the totals */
-export function tiebreakOnlyTotalWinner(rule: TiebreakOnlyRule, totals: Pair, tiebreakPoints?: Pair): Side | undefined {
-  return raceWinner(rule.race, tiebreakPoints ?? totals);
 }

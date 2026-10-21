@@ -2,7 +2,7 @@ import type { GameInPlay, Pair, Side } from '../types';
 import type { GameRule, RaceRule } from '../format';
 
 /** the game in play before its first point */
-export const NEW_GAME: GameInPlay = { score: [0, 0], played: 0 };
+export const NEW_GAME: GameInPlay = { score: [0, 0], pointsPlayed: 0 };
 
 /** whether `side` has won a race (§ 4.3, § 5): `to` points with the race's margin */
 export function wonRace(race: RaceRule, score: Pair, side: Side): boolean {
@@ -33,12 +33,12 @@ function wonTraditional(deuceCap: number | undefined, score: Pair, side: Side): 
 export function playGamePoint(rule: GameRule, game: GameInPlay, winner: Side): { game: GameInPlay; won: boolean } {
   const score: Pair = [...game.score];
   score[winner] += 1;
-  const played = game.played + 1;
+  const played = game.pointsPlayed + 1;
   if (rule.kind === 'consecutive') {
     const length = game.run?.side === winner ? game.run.length + 1 : 1;
-    return { game: { score, played, run: { side: winner, length } }, won: length >= rule.run };
+    return { game: { score, pointsPlayed: played, run: { side: winner, length } }, won: length >= rule.run };
   }
-  return { game: { score, played }, won: wonTraditional(rule.deuceCap, score, winner) };
+  return { game: { score, pointsPlayed: played }, won: wonTraditional(rule.deuceCap, score, winner) };
 }
 
 /** a point worth `value` to `winner` in a race (§ 4.3, § 5) */
@@ -50,7 +50,7 @@ export function playRacePoint(
 ): { game: GameInPlay; won: boolean } {
   const score: Pair = [...game.score];
   score[winner] += value;
-  return { game: { score, played: game.played + 1 }, won: wonRace(race, score, winner) };
+  return { game: { score, pointsPlayed: game.pointsPlayed + 1 }, won: wonRace(race, score, winner) };
 }
 
 const CALLS = ['0', '15', '30', '40'];

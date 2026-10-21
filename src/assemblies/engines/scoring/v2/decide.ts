@@ -1,3 +1,6 @@
+import { combinedClosed } from './segments/combined';
+
+// constants and types
 import type { Pair, ScoredSet, SideNumber } from './types';
 import type { MatchRule } from './format';
 
@@ -12,9 +15,9 @@ export function setsWon(sets: ScoredSet[]): Pair {
   return won;
 }
 
-/** a set is closed once it has a winner (a timed segment closed level is SE2b's) */
+/** a set is closed once it has a winner, or once a segment closed level (§ 6.4 rule 3, § 7 rule 3) */
 export function isClosed(set: ScoredSet): boolean {
-  return set.winningSide !== undefined;
+  return set.winningSide !== undefined || !!set.segmentComplete;
 }
 
 function moreOf(pair: Pair): MatchDecision {
@@ -22,8 +25,12 @@ function moreOf(pair: Pair): MatchDecision {
   return { complete: true, winningSide: pair[0] > pair[1] ? 1 : 2 };
 }
 
-/** a segment's units toward an aggregate: a tiebreak-only segment's points (§ 9.3 rule 3) */
+/**
+ * A segment's units toward an aggregate (§ 9.3 rule 3): a tiebreak-only segment's points; a timed segment's own
+ * score, the unit a tiebreak at time added included.
+ */
 function units(set: ScoredSet): Pair {
+  if (!set.isTiebreakOnly) return [set.side1Score, set.side2Score];
   return [set.side1TiebreakScore ?? set.side1Score, set.side2TiebreakScore ?? set.side2Score];
 }
 
@@ -60,6 +67,10 @@ function decideAggregate(match: MatchRule, sets: ScoredSet[]): MatchDecision {
  */
 export function decideMatch(match: MatchRule, sets: ScoredSet[]): MatchDecision {
   if (match.aggregate) return decideAggregate(match, sets);
+  // a combined total is the one segment of a best of one (§ 7); a tie at the total completes with no winner
+  const only = sets[0];
+  if (match.ordinary.kind === 'combined' && only && combinedClosed(match.ordinary, [only.side1Score, only.side2Score]))
+    return only.winningSide ? { complete: true, winningSide: only.winningSide } : { complete: true };
   const won = setsWon(sets);
   if (match.mode === 'bestOf') {
     if (won[0] >= match.setsToWin) return { complete: true, winningSide: 1 };
