@@ -15,6 +15,12 @@
  * hash, and all 72 scoring scenarios shared one, so the gate saw a scoring change only if it
  * changed a match's point count.
  *
+ * Since SE3 (2026-10-21) the scoring source writes three kinds of file into `.corpus-out/scoring`, all
+ * read here: the seeded streams (`scoring.jsonl`), the timeline scenarios through the ScoringEngine
+ * class and the refused matrix cells (`timeline.jsonl`), and every conformance case emitted with its
+ * matrix cell (`conformance-<case file>.jsonl`). `scoringCoverage.test.ts` fails unless every action
+ * type, every correction and every matrix cell has a scenario pinned here.
+ *
  *   node scripts/verify/corpus-manifest.mjs           check `.corpus-out` against the manifest
  *   node scripts/verify/corpus-manifest.mjs --write   rewrite the manifest from `.corpus-out`
  *
