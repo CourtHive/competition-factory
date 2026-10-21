@@ -9,9 +9,10 @@ const award = (personId: string, points: number) => ({ personId, eventType: SING
 
 // beat[winner] = the persons they beat
 function recordOf(beat: Record<string, string[]>) {
+  const beaten = new Map(Object.entries(beat).map(([winner, losers]) => [winner, new Set(losers)]));
   return (a: string, b: string) => {
-    if (beat[a]?.includes(b)) return -1;
-    if (beat[b]?.includes(a)) return 1;
+    if (beaten.get(a)?.has(b)) return -1;
+    if (beaten.get(b)?.has(a)) return 1;
     return 0;
   };
 }
