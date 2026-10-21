@@ -4,7 +4,9 @@ import { createContext, reduce, step } from './reduce';
 
 // constants and types
 import type { EntryData, ScoringConfiguration, ScoringState, StepOutcome, TimelineEntry } from './types';
+import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SCORING_ENGINE_DIFFERENTIAL } from '@Constants/scoringEngineConstants';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
 /**
  * The `differential` mode of the ScoringEngine selector: v1 acts, then v2 reduces the same configuration and
@@ -24,7 +26,7 @@ import { SCORING_ENGINE_DIFFERENTIAL } from '@Constants/scoringEngineConstants';
 type Fields = Record<string, unknown>;
 type V1State = {
   matchUpFormat?: string;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   winningSide?: unknown;
   score?: { sets?: Fields[] };
   history?: { entries?: TimelineEntry[]; points?: Fields[] };
@@ -129,7 +131,7 @@ function configOf(engine: V1Engine, state: V1State): ScoringConfiguration {
   };
 }
 
-const SCORING_STATUSES: ReadonlySet<string> = new Set(['TO_BE_PLAYED', 'IN_PROGRESS', 'COMPLETED']);
+const SCORING_STATUSES: ReadonlySet<string> = new Set([TO_BE_PLAYED, IN_PROGRESS, COMPLETED]);
 
 /** why this state cannot be compared yet, if it cannot */
 function deferral(engine: V1Engine, state: V1State, config: ScoringConfiguration, stale: boolean): string | undefined {

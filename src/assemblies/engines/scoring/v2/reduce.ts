@@ -23,6 +23,7 @@ import {
 } from './actions';
 
 // constants and types
+import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Types/competitionFormat';
 import type { MatchRule, SegmentRule } from './format';
 import type {
@@ -61,7 +62,7 @@ export function createContext(config: ScoringConfiguration): ReducerContext {
 }
 
 export function initialState(): ScoringState {
-  return { matchUpStatus: 'TO_BE_PLAYED', sets: [], points: [], scoringEntries: 0 };
+  return { matchUpStatus: TO_BE_PLAYED, sets: [], points: [], scoringEntries: 0 };
 }
 
 type Step = { state: ScoringState; outcome: StepOutcome };
@@ -101,7 +102,7 @@ function scored(match: MatchRule, state: ScoringState, at: Target, set: ScoredSe
     ...rest,
     sets,
     ...(game ? { game } : {}),
-    matchUpStatus: decision.complete ? 'COMPLETED' : 'IN_PROGRESS',
+    matchUpStatus: decision.complete ? COMPLETED : IN_PROGRESS,
     ...(decision.winningSide ? { winningSide: decision.winningSide } : {}),
     scoringEntries: state.scoringEntries + 1,
   };
@@ -122,7 +123,7 @@ function pointValue(context: ReducerContext, data: EntryData | undefined): numbe
 
 /** the input guards every scoring action shares (§ 2.1 ignored 2-3, § 9.2 rule 4, § 9.6) */
 function aimed(match: MatchRule, state: ScoringState): Target | IgnoredCode {
-  if (state.matchUpStatus === 'COMPLETED') return 'MATCH_COMPLETED';
+  if (state.matchUpStatus === COMPLETED) return 'MATCH_COMPLETED';
   return target(match, state) ?? 'NO_SET_BEYOND_N';
 }
 
@@ -305,7 +306,7 @@ function baseline(match: MatchRule, state: ScoringState, entry: TimelineEntry, l
       ...rest,
       sets: inPlay.sets,
       ...(inPlay.game ? { game: inPlay.game } : {}),
-      matchUpStatus: decision.complete ? 'COMPLETED' : 'IN_PROGRESS',
+      matchUpStatus: decision.complete ? COMPLETED : IN_PROGRESS,
       ...(decision.winningSide ? { winningSide: decision.winningSide } : {}),
     },
     outcome: RECORDED,
@@ -315,13 +316,13 @@ function baseline(match: MatchRule, state: ScoringState, entry: TimelineEntry, l
 /** § 2.5 rule 6: refused only when they disagree; RETIRED, DEFAULTED and the like are not checked */
 function consistentBaseline(data: EntryData, decision: { complete: boolean; winningSide?: 1 | 2 }): string | undefined {
   const status = data.matchUpStatus;
-  if (status !== undefined && status !== 'COMPLETED' && status !== 'IN_PROGRESS' && status !== 'TO_BE_PLAYED')
+  if (status !== undefined && status !== COMPLETED && status !== IN_PROGRESS && status !== TO_BE_PLAYED)
     return undefined;
   if (data.winningSide !== undefined && data.winningSide !== decision.winningSide)
     return 'the baseline winningSide disagrees with its sets';
-  if (data.matchUpStatus === 'COMPLETED' && !decision.complete)
+  if (data.matchUpStatus === COMPLETED && !decision.complete)
     return 'the baseline is COMPLETED but its sets do not decide the match';
-  if (data.matchUpStatus === 'IN_PROGRESS' && decision.complete)
+  if (data.matchUpStatus === IN_PROGRESS && decision.complete)
     return 'the baseline is IN_PROGRESS but its sets decide the match';
   return undefined;
 }
@@ -354,7 +355,7 @@ export function step(context: ReducerContext, state: ScoringState, entry: Timeli
       return baseline(match, state, entry, live);
     case END_SEGMENT:
       // any input after COMPLETED is ignored (§ 9.6, the API's MATCH_COMPLETED); no segment SE2a scores is timed (§ 2.4)
-      if (state.matchUpStatus === 'COMPLETED') return ignored(state, 'MATCH_COMPLETED');
+      if (state.matchUpStatus === COMPLETED) return ignored(state, 'MATCH_COMPLETED');
       return refused(state, refusal('endSegment ends timed segments only'));
     case SET_SERVER:
       return scoreless(state, readServer(entry.data));

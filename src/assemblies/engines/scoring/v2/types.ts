@@ -1,3 +1,4 @@
+import type { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Types/competitionFormat';
 
 /**
@@ -70,7 +71,8 @@ export type ScoredPoint = {
   timestamp?: string;
 };
 
-export type MatchStatus = 'TO_BE_PLAYED' | 'IN_PROGRESS' | 'COMPLETED';
+/** the statuses scoring itself produces (§ 1.2); any other is set outside scoring */
+export type MatchStatus = typeof TO_BE_PLAYED | typeof IN_PROGRESS | typeof COMPLETED;
 
 export type ScoringState = {
   matchUpStatus: MatchStatus;

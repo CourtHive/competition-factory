@@ -1,4 +1,3 @@
-import { getScoringDifferentialTally } from '@Assemblies/engines/scoring/v2/differential';
 import { setScoringEngine } from '@Global/state/globalState';
 import { afterAll, beforeEach } from 'vitest';
 import { appendFileSync } from 'node:fs';
@@ -17,6 +16,10 @@ import {
  *
  * With `SCORING_TALLY=<file>`, each test file appends what the differential compared and deferred, so a run can
  * prove it compared something (`scripts/verify/scoringDifferential.mjs`).
+ *
+ * The differential module is imported only then, and lazily: a setup file that imports it loads the format parser
+ * and `definedAttributes` into every test file's module graph ahead of that file's own `vi.mock` of global state
+ * (`definedAttributesParity.test.ts` then compares against an unmocked module).
  */
 const requested = process.env.SCORING_ENGINE;
 const mode: ScoringEngineMode = runnableScoringEngineModes.includes(requested as ScoringEngineMode)
@@ -31,6 +34,7 @@ beforeEach(() => {
 
 const out = process.env.SCORING_TALLY;
 if (out)
-  afterAll(() => {
+  afterAll(async () => {
+    const { getScoringDifferentialTally } = await import('@Assemblies/engines/scoring/v2/differential');
     appendFileSync(out, JSON.stringify(getScoringDifferentialTally()) + '\n');
   });
