@@ -19,7 +19,7 @@ name: Verify
 #   coverage-shard  the coverage run split 4 ways (vitest --shard), each writing a blob report
 #   coverage        merges the 4 blobs (vitest --merge-reports --coverage): the thresholds and
 #                   coverage/coverage-summary.json are computed over the MERGED result
-#   slow-gates      route-differential and deep-corrections, one job each
+#   slow-gates      route-differential, scoring-differential and deep-corrections, one job each
 #   team-arms       verify:team-arms split 5 ways (vitest --shard), one extended-arm file per job
 #   verify          `verify (node N)`, the check master's branch protection requires: it passes only
 #                   when every job above passed (or, on a light run, was skipped as intended)
@@ -372,7 +372,7 @@ jobs:
       matrix:
         # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
         node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
-        gate: [route-differential, deep-corrections]
+        gate: [route-differential, scoring-differential, deep-corrections]
     name: ${{ matrix.gate }} (node ${{ matrix.node-version }})
 
     steps:
