@@ -241,7 +241,8 @@ function ruleTargetMatchesFilter(target: CategoryScope, categoryFilter: Category
 // code that the categoryFilter names, or the rule's only target code.
 function resolveTargetCode(target: CategoryScope, categoryFilter: CategoryFilter | undefined): string | undefined {
   const codes = target.ageCategoryCodes ?? [];
-  const filtered = codes.filter((code) => categoryFilter?.ageCategoryCodes?.includes(code));
+  const filterCodes = new Set(categoryFilter?.ageCategoryCodes ?? []);
+  const filtered = codes.filter((code) => filterCodes.has(code));
   if (filtered.length === 1) return filtered[0];
   return codes.length === 1 ? codes[0] : undefined;
 }
