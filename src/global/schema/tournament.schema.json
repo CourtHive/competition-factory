@@ -372,7 +372,7 @@
         },
         "itemDate": {
           "type": "string",
-          "format": "date-time"
+          "anyOf": [{ "format": "date" }, { "format": "date-time" }]
         },
         "itemSubTypes": {
           "type": "array",
@@ -560,7 +560,7 @@
           }
         },
         "competitionFormat": {
-          "type": "string"
+          "type": "object"
         },
         "prizeMoney": {
           "type": "array",
@@ -888,6 +888,24 @@
         "competitionRounds": {
           "type": "array",
           "items": { "$ref": "#/definitions/RotatingPartnerRoundRecord" }
+        },
+        "activeDates": {
+          "type": "array",
+          "items": {
+            "type": ["string", "object"]
+          }
+        },
+        "competitionFormat": {
+          "type": "object"
+        },
+        "drawOtherIds": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "flightNumber": {
+          "type": "number"
         }
       },
       "required": ["drawId"],
@@ -1073,6 +1091,18 @@
         },
         "structureId": {
           "type": "string"
+        },
+        "bestOf": {
+          "type": "number"
+        },
+        "qualifyingPositions": {
+          "type": "number"
+        },
+        "rankBy": {
+          "type": "string"
+        },
+        "remainder": {
+          "type": "boolean"
         }
       },
       "required": ["structureId"],
@@ -1312,6 +1342,27 @@
         },
         "winningSide": {
           "type": "number"
+        },
+        "checkIns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PresenceAttestation"
+          }
+        },
+        "matchUpStatusCode": {
+          "type": "string"
+        },
+        "sideExitProvenance": {
+          "$ref": "#/definitions/SideExitProvenance"
+        },
+        "sideStatusCodes": {
+          "type": "object",
+          "propertyNames": {
+            "enum": ["1", "2"]
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
       "required": ["matchUpId"],
@@ -1994,6 +2045,10 @@
         },
         "winCriteria": {
           "$ref": "#/definitions/WinCriteria"
+        },
+        "scoreSource": {
+          "type": "string",
+          "enum": ["DERIVED", "REPORTED"]
         }
       },
       "required": ["collectionDefinitions", "winCriteria"],
@@ -2325,7 +2380,8 @@
         },
         "tieFormatId": {
           "type": "string"
-        }
+        },
+        "competitionFormat": { "type": "object" }
       },
       "required": ["structureId"],
       "additionalProperties": false
@@ -2383,6 +2439,9 @@
         },
         "qualifier": {
           "type": "boolean"
+        },
+        "byeFromPropagation": {
+          "type": "boolean"
         }
       },
       "required": ["drawPosition"],
@@ -2425,6 +2484,10 @@
         },
         "participantId": {
           "type": "string"
+        },
+        "seedingBasis": {
+          "type": "string",
+          "enum": ["ORGANISER_DISCRETION", "PROTECTED_RANKING", "RANKING", "RATING"]
         }
       },
       "required": ["seedNumber", "seedValue"],
@@ -2899,6 +2962,30 @@
         },
         "useOtherName": {
           "type": "boolean"
+        },
+        "contactParticipantIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "homeVenueIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "participantOtherIds": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "presence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PresenceAttestation"
+          }
         }
       },
       "required": ["participantId"],
@@ -2950,6 +3037,10 @@
         },
         "telephone": {
           "type": "string"
+        },
+        "relationship": {
+          "type": "string",
+          "enum": ["CHAPERONE", "EMERGENCY", "GUARDIAN", "OTHER", "PARENT", "SELF"]
         }
       },
       "additionalProperties": false
@@ -4368,6 +4459,18 @@
         },
         "rowCount": {
           "type": "number"
+        },
+        "bookingId": {
+          "type": "string"
+        },
+        "capacity": {
+          "type": ["number", "null"]
+        },
+        "registrations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PracticeRegistration"
+          }
         }
       },
       "additionalProperties": false
@@ -5022,6 +5125,133 @@
           "additionalProperties": false
         }
       ]
+    },
+    "SideExitProvenanceEntry": {
+      "type": "object",
+      "description": "Why one side of a matchUp holds an exit it did not play: the status it was given, the upstream status that produced it, the matchUp that produced it, and every matchUp whose double exit claims a BYE on that side's drawPosition.",
+      "properties": {
+        "matchUpStatus": {
+          "$ref": "#/definitions/MatchUpStatusEnum"
+        },
+        "previousMatchUpStatus": {
+          "$ref": "#/definitions/MatchUpStatusEnum"
+        },
+        "sourceMatchUpId": {
+          "type": "string"
+        },
+        "byeClaims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SideExitProvenance": {
+      "type": "object",
+      "description": "Keyed by sideNumber.",
+      "propertyNames": {
+        "enum": ["1", "2"]
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/SideExitProvenanceEntry"
+      }
+    },
+    "PresenceAttestation": {
+      "type": "object",
+      "description": "One recorded presence fact: an individual participant, present or gone, at a time, attested by someone.",
+      "properties": {
+        "attestationId": {
+          "type": "string"
+        },
+        "participantId": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "occurredAt": {
+          "type": "string"
+        },
+        "recordedAt": {
+          "type": "string"
+        },
+        "attributedTo": {
+          "type": "object",
+          "properties": {
+            "attributionType": {
+              "type": "string"
+            }
+          },
+          "required": ["attributionType"]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "required": ["attestationId", "participantId", "state", "occurredAt"],
+      "additionalProperties": false
+    },
+    "PracticeRegistration": {
+      "type": "object",
+      "properties": {
+        "cancelledAt": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        },
+        "notes": {
+          "type": "string"
+        },
+        "participantId": {
+          "type": "string"
+        },
+        "registeredAt": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        },
+        "registrationId": {
+          "type": "string"
+        },
+        "startTime": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["CONFIRMED", "CANCELLED"]
+        },
+        "timeItems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TimeItem"
+          }
+        },
+        "updatedAt": {
+          "type": ["string", "object"],
+          "format": "date-time"
+        }
+      },
+      "required": ["endTime", "participantId", "registrationId", "startTime"],
+      "additionalProperties": false
     }
   },
   "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. Every definition but the four open ones is closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one — the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. Four definitions are open; each carries a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."

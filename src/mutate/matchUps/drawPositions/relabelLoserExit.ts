@@ -93,6 +93,8 @@ export function relabelLoserExit(args: RelabelArgs): ResultType & { carry?: bool
     ? []
     : byeHeldCarries(inContextDrawMatchUps, args.targetStructureId, loserParticipantId, sourceMatchUpId);
   if (!carriedHere) clearByeHeldCarries(args, byeHeld, loserParticipantId);
+  // an exit re-entered as the other exit relabels the carry it left on a BYE-held matchUp, where the walk does not look
+  if (args.validExitToPropagate) relabelByeHeldCarries(args, inContextDrawMatchUps, loserParticipantId);
   if (!standing) return {};
 
   // a walk that cannot read the draw's links refuses the relabel rather than reading as "not played on"
@@ -345,6 +347,50 @@ function clearByeHeldCarry(args: RelabelArgs, byeHeld: HydratedMatchUp, loserPar
     event: args.event,
     matchUp: stored,
   });
+}
+
+/**
+ * AN EXIT RE-ENTERED AS THE OTHER EXIT RELABELS THE CARRY IT LEFT ON A BYE-HELD MATCHUP (census Phase B, CURTIS_CONSOLATION
+ * 8/6 policy-off 30009232).
+ *
+ * `standingMatchUp` passes over a BYE, so a carry that stopped on a matchUp a double exit elsewhere had made a BYE
+ * (`byeHeldCarries`) is never the standing matchUp, and a WALKOVER <-> DEFAULTED re-entry found nothing to relabel:
+ * `Main|2|1` walked over and then re-entered as a default left its loser's carry on `Play Off|1|1` reading WALKOVER,
+ * and when `Main|1|3`'s double default was corrected to a played result, the BYE went and `Play Off|1|1` was decided by
+ * the stale label, where every entry order of the standing results reaches DEFAULTED. A BYE-held matchUp is never
+ * re-derived and its loser has already been through it, so only the entry's label changes: a direct carry's status and
+ * the source status it records, both the label entered. Its BYE claims stay.
+ */
+function relabelByeHeldCarries(args: RelabelArgs, matchUps: HydratedMatchUp[] | undefined, loserParticipantId: string) {
+  const entered = args.sourceMatchUpStatus;
+  if (entered !== WALKOVER && entered !== DEFAULTED) return;
+  const byeHeld = byeHeldCarries(matchUps, args.targetStructureId, loserParticipantId, args.sourceMatchUpId as string);
+  for (const matchUp of byeHeld) {
+    const stored = args.matchUpsMap?.drawMatchUps?.find(
+      (candidate: MatchUp) => candidate.matchUpId === matchUp.matchUpId,
+    );
+    const side = matchUp.sides?.find((candidate) => candidate?.participantId === loserParticipantId)?.sideNumber;
+    const entry = (side === 1 || side === 2) && stored?.sideExitProvenance?.[side];
+    // a direct carry records the source's own status twice; anything else (a produced exit) is not this relabel's
+    if (!stored || !entry || entry.matchUpStatus === entered) continue;
+    if (entry.previousMatchUpStatus !== entry.matchUpStatus) continue;
+    if (entry.matchUpStatus !== WALKOVER && entry.matchUpStatus !== DEFAULTED) continue;
+    setSideExitProvenance({
+      provenance: {
+        ...stored.sideExitProvenance,
+        [side]: { ...entry, matchUpStatus: entered, previousMatchUpStatus: entered },
+      },
+      matchUp: stored,
+    });
+    modifyMatchUpNotice({
+      tournamentId: args.tournamentRecord?.tournamentId,
+      drawDefinition: args.drawDefinition,
+      context: 'relabelLoserExit',
+      eventId: args.event?.eventId,
+      event: args.event,
+      matchUp: stored,
+    });
+  }
 }
 
 /** a result of its own: a score, or a decided status other than an exit this cascade can still move */

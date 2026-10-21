@@ -7,6 +7,7 @@ import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
 import schema from '@Global/schema/tournament.schema.json';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
+import addFormats from 'ajv-formats';
 import Ajv from 'ajv';
 import {
   setCompetitionProfile,
@@ -19,8 +20,8 @@ import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 
 import type { CompetitionProfile, MexicanoCompetitionProfile } from '@Types/competitionProfile';
-import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { AD_HOC, LADDER, CONTAINER } from '@Constants/drawDefinitionConstants';
+import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { MODIFY_DRAW_DEFINITION } from '@Constants/topicConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import {
@@ -57,7 +58,7 @@ const draw = (): DrawDefinition => ({
   structures: [],
 });
 
-const validateSchema = new Ajv({ allowUnionTypes: true }).compile({
+const validateSchema = addFormats(new Ajv({ allowUnionTypes: true })).compile({
   $ref: '#/definitions/CompetitionProfile',
   definitions: schema.definitions,
 });

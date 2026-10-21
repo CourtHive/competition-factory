@@ -1,6 +1,6 @@
 import { getProvider, setStateProvider } from '@Global/state/globalState';
 import syncGlobalState from '@Global/state/syncGlobalState';
-import { afterAll, beforeAll } from 'vitest';
+import { afterAll, beforeAll, vi } from 'vitest';
 
 /**
  * A TEST SEES EVERY THROW.
@@ -24,11 +24,31 @@ export const rethrowingStateProvider = {
 };
 
 /**
+ * A test of the catch path expects the provider's `ERROR {…}` log line: it is the outcome under test, not a
+ * finding. While the enclosing `describe` (or file) runs, `console.log` calls tagged `'ERROR'` are dropped;
+ * every other console output still prints. Use it beside any provider that catches (sync or async).
+ */
+export function useQuietCaughtErrors(): void {
+  let logSpy: ReturnType<typeof vi.spyOn> | undefined;
+  beforeAll(() => {
+    const log = console.log.bind(console);
+    logSpy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+      if (args[0] !== 'ERROR') log(...args);
+    });
+  });
+  afterAll(() => {
+    logSpy?.mockRestore();
+  });
+}
+
+/**
  * For a test of the catch path itself: run the enclosing `describe` (or file) under the default
  * sync provider, which catches, logs and returns `{ error }`, and put the provider back afterwards.
+ * Its expected `ERROR {…}` log lines are dropped (see `useQuietCaughtErrors`).
  */
 export function useEngineCatch(): void {
   let previous: any;
+  useQuietCaughtErrors();
   beforeAll(() => {
     previous = getProvider();
     setStateProvider(syncGlobalState);

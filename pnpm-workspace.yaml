@@ -66,6 +66,11 @@ verifyDepsBeforeRun: false
 #   tool, and the package ships files:[dist] so it cannot reach a consumer.
 #   Caret-bounded to the 1.x line for the same reason as nanoid: an unbounded
 #   floor would be free to float onto a future major.
+# - markdown-it: GHSA-r7fv-28h4-cvq7 (quadratic complexity in smartquotes with unmatched
+#   closing quotes); vulnerable >=15.0.0 <15.0.2, patched 15.0.2 (published 2026-10-20).
+#   Reached only via markdownlint-cli2 0.23.3, a dev-only lint tool that pins 15.0.1
+#   exactly. Scoped `@15` and caret-bounded, so it neither touches a 14.x consumer nor
+#   floats onto a future major.
 overrides:
   typescript: 6.0.3 # block native TS7 (no classic JS API — crashes tsc/nest/sonarjs); pairs with renovate TS-major block
   qs: '^6.15.2'
@@ -81,3 +86,4 @@ overrides:
   postcss: '>=8.5.18'
   nanoid: '^3.3.17'
   smol-toml: '^1.7.1'
+  markdown-it@15: '^15.0.2'

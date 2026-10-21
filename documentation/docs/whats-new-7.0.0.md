@@ -18,7 +18,8 @@ self-reported results, `RANK` or `RATING` ordering, and eighteen new engine meth
 - **Upgrade mechanics** in detail: the [6.x to 7.0.0 migration guide](./migration-7.0.0.md).
 - **Every commit**: [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
 - **Measured gains**: [performance across 7.x](#performance-across-7x).
-- **After 7.15**: [unreleased adoption notes](#after-715-unreleased-adoption-notes).
+- **New in 7.17.0**: [the published schema declares every stored field](#adoption-notes-7170). Act on it if you validate stored records against your own schema.
+- **New in 7.16.0**: [adoption notes](#adoption-notes-7160).
 - **Where it led**: [7.0.0 began a journey](#700-began-a-journey) that the 7.x releases continued.
 
 ## 7.0.0 began a journey
@@ -48,7 +49,7 @@ measurements cover different workloads, not a single factory-wide speedup.
 | 7.10.0                 | Readiness/rest with large supplied matchUp arrays | Avoid unnecessary copies of unused logging parameters; gains depend on array size |
 | 7.15.0                 | Bare syncEngine consumer                          | 27.1 → 15.7 KB gzip: **42% smaller** for this import scenario                     |
 | 7.15.0                 | FMLC128 bare-ID lookup                            | **223 → 1** hydration; work count, not a latency multiplier                       |
-| After 7.15, unreleased | Standalone SE512 tally                            | Historical paired timing 546 → 6.9 ms (**79×**)                                   |
+| 7.16.0                 | Standalone SE512 tally                            | Historical paired timing 546 → 6.9 ms (**79×**)                                   |
 
 The same tally change recorded public projection at 413 → 72 ms (**5.7×**) at its revision. A later
 change stopped tallying elimination structures in public projections entirely; 72 ms is not a current
@@ -67,10 +68,61 @@ seed range, settings and replay disposition; an exception count from an older ru
 The [pipeline](./concepts/outcome-pipeline.md#71-two-implementations-s2) still uses v1 for accepted
 writes. Future v2 work is not independent proof of v1 correctness.
 
-## After 7.15: unreleased adoption notes
+## 7.17.0 adoption notes: the published schema {#adoption-notes-7170}
 
-These notes describe `dev` through `97ad4dbe` (2026-10-17), beyond tag 7.15.0. They become release
-claims only when a later tag contains the changes.
+`tods-competition-factory/schema/tournament.schema.json` now declares every field the engine stores.
+Before 7.17.0 it lacked fields the engine already wrote. Most of its definitions reject properties
+they do not list (`additionalProperties: false`), so a record holding any of these fields failed
+strict validation. A record failed after its first double exit, for example, because the engine
+writes `sideExitProvenance` and `byeFromPropagation`. **The records did not change. The schema
+caught up with them.**
+
+**Who must act:** anyone who stores CODES records and validates them against their own copy of the
+schema. That includes a server of your own in place of competition-factory-server, a document store
+with schema validation (for example a MongoDB `$jsonSchema` validator), and an ingestion pipeline
+that rejects unknown properties. Records written by recent 7.x releases may already hold these
+fields. If your validator rejects them, it is rejecting valid records today.
+
+| Definition           | Newly declared properties                                                  |
+| -------------------- | -------------------------------------------------------------------------- |
+| `MatchUp`            | `sideExitProvenance`, `sideStatusCodes`, `matchUpStatusCode`, `checkIns`   |
+| `PositionAssignment` | `byeFromPropagation`                                                       |
+| `Participant`        | `presence`, `participantOtherIds`, `contactParticipantIds`, `homeVenueIds` |
+| `DrawDefinition`     | `drawOtherIds`, `flightNumber`, `activeDates`, `competitionFormat`         |
+| `Structure`          | `competitionFormat`                                                        |
+| `SeedAssignment`     | `seedingBasis`                                                             |
+| `TieFormat`          | `scoreSource`                                                              |
+| `Booking`            | `bookingId`, `capacity`, `registrations`                                   |
+| `DrawLinkSource`     | `bestOf`, `qualifyingPositions`, `rankBy`, `remainder`                     |
+| `Contact`            | `relationship`                                                             |
+
+**New definitions:** `SideExitProvenance` and `SideExitProvenanceEntry`, `PresenceAttestation`
+(`checkIns` and `presence`), and `PracticeRegistration` (`Booking.registrations`).
+
+**Two existing definitions were wrong and are corrected:**
+
+- `TimeItem.itemDate` accepts a date (`2026-06-15`) as well as a date-time. Scale items, such as a
+  ranking or a seeding as of a date, store a date only.
+- `Event.competitionFormat` is an object, as the type always said. The schema had declared a string.
+
+**What to do:**
+
+1. Take the schema from the package you deploy, `tods-competition-factory/schema/tournament.schema.json`,
+   rather than keeping a hand copy. The factory's tests now fail when a stored field is missing from
+   the schema, so the published file is the declaration to follow.
+2. If your validator cannot read the schema as published, translate it, and translate the new
+   definitions too. MongoDB's `$jsonSchema`, for example, supports neither `$ref` nor `format`.
+   - Inline each `$ref`.
+   - Map date formats to `bsonType: "string"`.
+   - Allow the side-keyed maps: `sideExitProvenance` and `sideStatusCodes` are objects keyed `"1"`
+     and `"2"`.
+3. Validate a record _after_ results are entered, not only a freshly created one. A new record
+   holds none of the exit fields, so a check on it alone passes and proves nothing.
+
+## 7.16.0 adoption notes {#adoption-notes-7160}
+
+These notes cover what 7.16.0 (2026-10-19) changed for callers since 7.15.0. Every change listed
+is in the 7.16.0 tag.
 
 | Area                                                 | Caller action                                                                                                                                                                                                      |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

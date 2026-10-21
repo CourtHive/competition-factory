@@ -55,7 +55,7 @@ function serialize(value: unknown, path: string): string {
   }
 
   if (Array.isArray(value)) {
-    const items = value.map((item, index) =>
+    const items = Array.from(value, (item, index) =>
       item === undefined || typeof item === 'function' || typeof item === 'symbol'
         ? 'null'
         : serialize(item, `${path}/${index}`),

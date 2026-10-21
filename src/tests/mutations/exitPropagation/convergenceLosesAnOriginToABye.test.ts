@@ -1,4 +1,4 @@
-import { replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 

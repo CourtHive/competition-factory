@@ -1,4 +1,4 @@
-import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';

@@ -1,10 +1,11 @@
 import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
-import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
 // constants
+import { OLYMPIC } from '@Constants/drawDefinitionConstants';
 import {
   BYE,
   DEFAULTED,
@@ -13,7 +14,6 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import { OLYMPIC } from '@Constants/drawDefinitionConstants';
 
 /**
  * A PENDING EXIT AWAITING AN ARRIVAL CAN STILL DELIVER (census S8 policy-off, MONOTONIC_DECISION, OLYMPIC 32/30:

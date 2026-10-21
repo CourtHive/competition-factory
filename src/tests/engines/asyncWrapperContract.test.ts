@@ -1,9 +1,10 @@
+import { addNotice, setDevContext, setStateProvider, setSubscriptions } from '@Global/state/globalState';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
+import { useQuietCaughtErrors } from '@Tests/testHarness/engineCatch';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import syncGlobalState from '@Global/state/syncGlobalState';
 import * as governors from '@Assemblies/governors';
 import asyncEngine from '@Engines/asyncEngine';
-import { addNotice, setDevContext, setStateProvider, setSubscriptions } from '@Global/state/globalState';
 
 // constants
 import { METHOD_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -75,6 +76,7 @@ const nameOf = async (tournamentId: string) =>
   (await asyncEngine.getTournament({ tournamentId })).tournamentRecord?.tournamentName;
 
 describe('async wrapper contract', () => {
+  useQuietCaughtErrors(); // contracts 4 and 5 throw on purpose; the provider's ERROR line is expected
   beforeAll(() => {
     setStateProvider(asyncGlobalState);
   });

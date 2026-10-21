@@ -1,9 +1,14 @@
-import { generateSchedule, prepareDraw, randomConfig, replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Assemblies/engines/sync';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
+import {
+  generateSchedule,
+  prepareDraw,
+  randomConfig,
+  replayFailure as replay,
+} from '@Tests/testHarness/exitPropagation/sweep';
 
 // constants
 import { FEED_IN_CHAMPIONSHIP, MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';

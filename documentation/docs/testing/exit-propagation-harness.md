@@ -248,15 +248,89 @@ Each of these cost real time and produced confident, wholly incorrect results.
 
 ## Measurement limits
 
-As inspected on 2026-10-17, the census replay invokes its relational properties sequentially against
-the same generated draw. The fresh-draw rule above is a requirement for isolated evidence, not a
-claim that this runner already satisfies it. Later properties can inherit earlier mutations.
+The census replay restores the scheduled record before each relational probe/property pair, so
+later properties do not inherit earlier probes' mutations. Relational coverage counts forward,
+second-apply and clear calls separately.
 
-The census comparison observes `projectDraw`, not every byte of engine/global/subscriber state.
-A clean refusal projection is therefore narrower than full-state refusal atomicity. Empty/absent
-normalization also limits which differences are observable. Record the revision, settings, mode,
+Refused and thrown calls compare the entire stored tournament record using canonical JSON, including
+timestamps, event entries, nested TEAM lines, notes, schedule and extensions. No timestamp is exempt,
+including `updatedAt`; a refusal must preserve its exact value. A changed record reports
+`ERROR_IMPLIES_NO_MUTATION` with the first divergent JSON Pointer. A throw also reports
+`NO_EXCEPTION_ESCAPES`. Object key order and undefined object properties follow JSON semantics.
+The snapshot reads stored state rather than the engine's outward-copy query.
+
+Accepted-call transition comparisons still observe `projectDraw`. Replay also samples one in 32
+accepted calls against the full record, with an offset derived from the scenario seed and an
+independent accepted-call ordinal. It consumes neither generation randomness nor generated ids.
+The census SUMMARY's `coverage.projectionAudit` reports attempted samples, full/projection change
+counts, omitted-field writes and bounded examples with JSON Pointers. It records omitted fields
+even when the projected outcome also changed. A test can request an interval of one explicitly.
+This is a coverage ledger: successful writes to omitted fields may be legitimate, so the ledger
+does not turn them into outcome failures or claim semantic preservation.
+
+Every omitted field has exact refusal/throw coverage and the accepted-call sample. Additional
+accepted-call gates are listed below and in `fieldProjections.ts`'s `PROJECT_DRAW_OMISSIONS`.
+
+| Omitted field or representation                                                | Additional accepted-call coverage                                                            |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Timestamps, including normalized positionAssignment timestamps                 | Sample only; cross-executor `updatedAt` value agreement waits for Phase C                    |
+| `schedule`                                                                     | Schedule differential arm                                                                    |
+| `notes`, formats, types and other matchUp metadata                             | No general preservation gate                                                                 |
+| `sideStatusCodes`, `matchUpStatusCode`                                         | Round-trip projection                                                                        |
+| Nested `tieMatchUps`, `lineUp`                                                 | TEAM matrices test outcome semantics; field projections compare populated lineUps            |
+| Event/draw entries, seeds, extensions outside positionAssignments              | Field projections compare paths when exercised; empty fixtures establish no coverage         |
+| Tournament/event/draw metadata, links, structure metadata, root factory stamps | No general preservation gate                                                                 |
+| Empty/absent and padded drawPosition representation                            | Sampled full-record/projection verdict mismatch; accepted calls have no raw identity promise |
+| Every other stored field, including future fields and other draws              | Sample only; no dedicated semantic gate                                                      |
+
+The full-record check does not cover global or subscriber state.
+Empty/absent normalization also limits accepted-transition differences. Record the revision, settings, mode,
 seed range, replay disposition and projection when reporting a zero. Native-mode evidence does not
 establish LEGACY/BRIDGE behavior. A frozen zero describes those fixtures; new seeds can find failures.
+
+### Replay dispositions and receipts
+
+`replay` returns `{ verdict, complete, counts, findings, coverage, projectionAudit }`. Its functional
+verdict is `build-failed`, `failed` or `clean`. Completeness is separate: a clean functional result
+with a missing coordinate or a matchUp that is not scoreable has `complete: false`. Verification
+must require completeness as well as the absence of findings. A refused call is counted as refused,
+never accepted; a throw has its own count. A build failure cannot become an empty clean replay.
+
+`counts` reports planned schedule steps, scheduled calls attempted, all calls attempted/accepted/
+refused/thrown, observations checked for atomicity, skips by reason, unvisited steps and build failures.
+All-call totals include the relational forward, second-apply and clear calls; `coverage` retains their
+separate stage counts. Shrinking and historical first-finding behavior fixtures use `replayFailure`,
+which permits skips and returns the first finding. That adapter is not a verification verdict.
+
+Census, policy, per-step integrity and stall instruments write a `REPLAY` receipt for each input
+scenario and aggregate execution counts/dispositions in `SUMMARY`. Missing histories and recorded
+generation failures are build failures, including in stall counting; input records are not silently
+filtered out. Per-step integrity shares the policy-aware schedule executor, skips relational probes,
+and reports transient inconsistencies as failed even if the final draw is clean.
+
+### Finding records
+
+Each finding names the call that produced it and where it first diverged, so a row reproduces on its
+own:
+
+- `stage`: `build`, `schedule` (with the zero-based `step` index), `final` (checks on the draw the
+  schedule produced), or the relational probe's `forward`, `second-apply` or `clear` call.
+- `probe`: every finding a relational probe raises carries the probe, not only the first one.
+- `firstDivergence`: for a refusal or throw that wrote, the JSON Pointer of the first changed field in
+  the tournament record. For `DO_UNDO_IDENTITY` it is `<structure|round|position> <field>`, the first
+  projected field the round trip left changed.
+
+Census, policy, per-step and stall finding rows also record the arm (from the workers'
+`ALLOW_CHANGE_PROPAGATION`/`PROPAGATE_BYE`, overridable with `CENSUS_ARM`), the policy definitions
+the scenario replayed under (`null` for none), and `revisions: { source, harness }`. `source` is the
+revision that generated the schedule; generated schedules now record it as `revision`, and older
+frozen inputs have `null`. `harness` is the replaying checkout's commit, suffixed `-dirty` when its
+tracked files differ. Policy rows deliberately omit `probe`, because the runners key findings on it
+and a baseline replayed at an older revision has none. The shrinker is unchanged: it still matches
+on the property name alone, and keeps only the minimized witness.
+
+These structured outputs require verdict-aware runners. The older DONE/seed-grep runners must not
+be used as acceptance evidence for this instrument until the Phase 0 runner repair is complete.
 
 The original v1 write pipeline remains the acceptance target. The v2 preparation/differential work
 still delegates accepted writes to v1; it is not an independent write implementation proving v1

@@ -51,6 +51,12 @@ it('drops undefined properties, nulls undefined array elements, honours toJSON',
   );
 });
 
+it('nulls sparse array slots so positional records remain valid canonical JSON', () => {
+  const positions = new Array(2);
+  positions[1] = 4;
+  expect(canonicalJson({ positions })).toEqual('{"positions":[null,4]}');
+});
+
 it('refuses what JSON cannot carry instead of writing null for it', () => {
   expect(() => canonicalJson({ n: Number.NaN })).toThrow(NonCanonicalValueError);
   expect(() => canonicalJson({ n: Number.POSITIVE_INFINITY })).toThrow(/non-finite number at \/n/);

@@ -1,3 +1,4 @@
+import { oweDissolvedConvergencesTheirByes } from '@Mutate/matchUps/matchUpStatus/oweDissolvedConvergencesTheirByes';
 import { reconcileConsolationReservations } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
 import { reconcileMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
 import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
@@ -10,6 +11,7 @@ import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleF
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { reconcileByeAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileByeAdvancements';
 import { reconcileCarriesPastByes } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
+import { reconcileProvenanceSides } from '@Mutate/matchUps/matchUpStatus/reconcileProvenanceSides';
 import { checkMatchUpFormatApplication } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
 import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { announceGoesTo, setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
@@ -134,16 +136,24 @@ function settleExitOrigins({
   // awards stayed where they stood (census policy-off 20177818, CURTIS_CONSOLATION 16/11: `Consolation 1|3|2`,
   // WINNER_NOT_ADVANCED). Those matchUps, and only those, are settled again on the draw the reconciliation left.
   const rederivedNow = new Set((reconciled?.rederived ?? []).filter((id) => doubleExitsBefore.has(id)));
-  if (!rederivedNow.size) return undefined;
-  const resettled = settleRederivedDoubleExits({
+  if (rederivedNow.size) {
+    const resettled = settleRederivedDoubleExits({
+      tournamentRecord: params.tournamentRecord,
+      drawDefinition: params.drawDefinition,
+      doubleExitsBefore: rederivedNow,
+      targetMatchUpId: matchUpId,
+      propagateExitStatus,
+      event: params.event,
+    });
+    if (resettled?.error) return resettled;
+  }
+  // a convergence the call dissolved is owed the BYE it took back, on the draw as it now stands
+  return oweDissolvedConvergencesTheirByes({
     tournamentRecord: params.tournamentRecord,
     drawDefinition: params.drawDefinition,
-    doubleExitsBefore: rederivedNow,
-    targetMatchUpId: matchUpId,
-    propagateExitStatus,
     event: params.event,
+    doubleExitsBefore,
   });
-  return resettled?.error ? resettled : undefined;
 }
 
 /**
@@ -196,6 +206,9 @@ function settleDraw({
   // DOUBLE_ELIMINATION 8/5 21037067: a double walkover at `Main|2|1` sent the Backdraw's held exit into the final,
   // which its champion won and was not seated in the decider until the same outcome was entered again)
   reconcileMissedLinkAdvancements({ tournamentRecord, drawDefinition, event });
+
+  // a provenance entry follows its feeder's side as the seats settle (CA ruling (1), 2026-10-20)
+  reconcileProvenanceSides({ tournamentRecord, drawDefinition, event });
 
   // a final that feeds a decider settles whether the decider is needed — see `reconcileDecider`
   return reconcileDeciders({

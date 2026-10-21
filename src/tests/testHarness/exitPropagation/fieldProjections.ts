@@ -30,8 +30,8 @@ import tournamentEngine from '@Engines/syncEngine';
  * 2,348 refused writes): the stamps moved on ONE refusal, census w2 9100023, the DOUBLE_ELIMINATION
  * `ERR_EXISTING_POSITION_ASSIGNMENT` already caught as `ERROR_IMPLIES_NO_MUTATION` because `hash`
  * moved with them. No refusal stamped the draw without also changing what `hash` sees, so the stamps
- * are not wired into that property yet. Stamps are millisecond strings, so a write and its read inside
- * one millisecond would hide; the count is a floor.
+ * were not wired into that property at the time. A3 now compares every refused/thrown call's entire
+ * stored tournament exactly; it does not strip stamps or use this cross-draw projection.
  *
  * ## A zero is only as good as its input
  *
@@ -45,6 +45,48 @@ export const FIELD_NAMES = ['entries', 'seedAssignments', 'extensions', 'lineUp'
 export type FieldName = (typeof FIELD_NAMES)[number];
 export type FieldProjection = Record<FieldName, Record<string, string>>;
 export type FieldDivergence = { field: FieldName; key: string; a: string; b: string };
+
+/**
+ * A3 omitted-field ledger. All rows have exact full-record refusal/throw coverage. Accepted calls
+ * have a seeded 1-in-32 full-record sample, reported as projectionAudit, not as a semantic verdict.
+ * The wildcard row is deliberate: future fields are omitted until projectDraw explicitly adds them.
+ * Additional gates below establish only their named comparison/semantic contract, not raw equality.
+ */
+export const PROJECT_DRAW_OMISSIONS = [
+  {
+    fields: 'timestamps at every unprojected location; normalized positionAssignment timestamps',
+    acceptedGate: 'projectionAudit only; cross-executor updatedAt value agreement waits for Phase C',
+  },
+  { fields: 'schedule', acceptedGate: 'projectionAudit; schedule differential arm' },
+  {
+    fields: 'notes, matchUpFormat, matchUpType and other matchUp metadata',
+    acceptedGate: 'projectionAudit; no general preservation gate',
+  },
+  {
+    fields: 'sideStatusCodes and matchUpStatusCode',
+    acceptedGate: 'projectionAudit; projectRoundTrip includes these two fields',
+  },
+  {
+    fields: 'tieMatchUps and lineUp',
+    acceptedGate: 'projectionAudit; TEAM matrices test outcome semantics; field projections compare populated lineUps',
+  },
+  {
+    fields: 'event/draw entries, seedAssignments, extensions outside positionAssignments',
+    acceptedGate: 'projectionAudit; projectFieldsOf cross-path comparison when exercised',
+  },
+  {
+    fields: 'tournament/event/draw metadata, links, structure metadata, root factory stamps',
+    acceptedGate: 'projectionAudit only; no general preservation gate',
+  },
+  {
+    fields: 'empty/absent and padded drawPosition representation normalized by projectDraw',
+    acceptedGate: 'sampled full-record/projection verdict mismatch; no raw identity promise on accepted calls',
+  },
+  {
+    fields: 'every other stored field, including unknown future fields and other draws',
+    acceptedGate: 'projectionAudit only; no dedicated semantic gate',
+  },
+] as const;
 
 const VOLATILE_KEY = /(createdAt|updatedAt|timeStamp|TimeStamp)$/;
 

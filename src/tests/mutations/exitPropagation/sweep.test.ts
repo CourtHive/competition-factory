@@ -59,7 +59,7 @@ test.skipIf(!enabled)(
 
       let failure;
       try {
-        failure = replay(config, steps, drawId);
+        failure = replay(config, steps, drawId).findings[0];
       } catch (err: any) {
         failure = { property: 'NO_EXCEPTION_ESCAPES', matchUpId: '-', detail: String(err?.message ?? err) };
       }
@@ -68,7 +68,7 @@ test.skipIf(!enabled)(
       const shrunk = shrink(config, steps, drawId);
       let shrunkFailure: any;
       try {
-        shrunkFailure = replay(shrunk.config, shrunk.steps, drawId);
+        shrunkFailure = replay(shrunk.config, shrunk.steps, drawId).findings[0];
       } catch {
         shrunkFailure = undefined;
       }

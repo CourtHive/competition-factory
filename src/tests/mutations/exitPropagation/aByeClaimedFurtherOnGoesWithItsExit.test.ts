@@ -1,5 +1,5 @@
+import { replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
-import { replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';

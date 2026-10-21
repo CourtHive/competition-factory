@@ -1,12 +1,12 @@
+import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
-import { prepareDraw, replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DEFAULTED, DOUBLE_DEFAULT } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * A PARTICIPANT WHO STOPS WINNING A LINK'S SOURCE ROUND COMES BACK OUT OF ITS TARGET.
