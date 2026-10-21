@@ -14,6 +14,7 @@ import {
   type PropertyFailure,
 } from './transitions';
 import {
+  checkClaimsLive,
   checkArrivalsTrue,
   checkDoUndoIdentity,
   checkIdempotence,
@@ -439,6 +440,8 @@ function replayWithContext(
   if (integrity.length) return { ...integrity[0], stage: 'final' };
   const arrivals = checkArrivalsTrue(drawId);
   if (arrivals.length) return { ...arrivals[0], stage: 'final' };
+  const claims = checkClaimsLive(drawId);
+  if (claims.length) return { ...claims[0], stage: 'final' };
   if (coverage) {
     const inconsistent = checkCodesConsistent(drawId, '-');
     coverage.codesInconsistentMatchUps += inconsistent.length;
