@@ -51,20 +51,11 @@ sub-blocks per print type.
 
 ---
 
-## Default Fixture
+## Default Fixture (deprecated)
 
-`POLICY_PRINT_DEFAULT` (in `src/fixtures/policies/POLICY_PRINT_DEFAULT.ts`)
-is intentionally minimal — just the `policyName` envelope with no
-per-print-type entries. Consumers attach this as a baseline before
-layering in tournament-specific entries.
-
-```ts
-import { fixtures } from 'tods-competition-factory';
-const { POLICY_PRINT_DEFAULT } = fixtures.policies;
-
-POLICY_PRINT_DEFAULT;
-// → { print: { policyName: 'Default Print Configuration' } }
-```
+`POLICY_PRINT_DEFAULT` is deprecated and will be removed in 8.0.0. It holds only a `policyName`, and
+`attachPolicies` refuses a policy with no values (`INVALID_VALUES`), so it could never be attached. Attach a print
+policy with at least one print-type entry, as below.
 
 ---
 
@@ -86,9 +77,8 @@ tournamentEngine.attachPolicies({
 });
 ```
 
-Once attached, the policy travels with the tournament record. It
-serializes/deserializes intact and is available to any consumer that
-reads the tournament's `extensions` for `POLICY_TYPE_PRINT`.
+Once attached, the policy travels with the tournament record. Like every attached policy, it is stored in the
+tournament's `appliedPolicies` extension, under the `print` key; there is no extension named `print`.
 
 ---
 
@@ -98,11 +88,15 @@ reads the tournament's `extensions` for `POLICY_TYPE_PRINT`.
 import { policyConstants, tournamentEngine } from 'tods-competition-factory';
 const { POLICY_TYPE_PRINT } = policyConstants;
 
-const { tournamentRecord } = tournamentEngine.getState();
-const printExtension = tournamentRecord.extensions?.find((e) => e.name === POLICY_TYPE_PRINT);
-const printPolicy = printExtension?.value;
+const { appliedPolicies } = tournamentEngine.getAppliedPolicies();
+const printPolicy = appliedPolicies?.[POLICY_TYPE_PRINT];
 // printPolicy is the opaque blob that was attached.
 ```
 
 The factory does not interpret the contents beyond storage — consumers
 parse the value according to their own conventions.
+
+:::note
+pdf-factory's `resolveCompositionConfig` reads its tournament layer from an extension _named_ `print`, not from
+`appliedPolicies`, so a print policy attached with `attachPolicies` does not reach it today.
+:::

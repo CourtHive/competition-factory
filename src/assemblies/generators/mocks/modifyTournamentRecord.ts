@@ -145,6 +145,7 @@ function handleNewEvent({
   drawIds,
   params,
   eventIndex,
+  profileIndex,
 }) {
   const result: any = generateEventWithFlights({
     startDate: tournamentRecord.startDate,
@@ -157,6 +158,7 @@ function handleNewEvent({
     ratingsParameters: eventProfile.ratingsParameters,
     tournamentRecord,
     eventProfile,
+    profileIndex,
     eventIndex,
     uuids: params.uuids,
   });
@@ -175,7 +177,7 @@ function handleNewEvent({
 function processEventProfiles({ eventProfiles, tournamentRecord, allUniqueParticipantIds, eventIds, drawIds, params }) {
   let eventIndex = tournamentRecord.events?.length || 0;
 
-  for (const eventProfile of eventProfiles) {
+  for (const [profileIndex, eventProfile] of eventProfiles.entries()) {
     const event = findEventByProfile(tournamentRecord.events, eventProfile);
 
     if (event) {
@@ -197,6 +199,7 @@ function processEventProfiles({ eventProfiles, tournamentRecord, allUniquePartic
         drawIds,
         params,
         eventIndex,
+        profileIndex,
       });
       if (result?.error) return result;
       eventIndex += result?.eventIndexIncrement || 1;

@@ -6,6 +6,10 @@ import { POLICY_TYPE_PRINT } from '@Constants/policyConstants';
 // provider-scoped policy from the server takes effect unchanged.
 //
 // See Mentat/planning/PRINT_COMPOSITION_POLICY_PLAN.md for the architecture.
+/**
+ * @deprecated Retired; removed in 8.0.0. `attachPolicies` refuses it (a policy name and no values), and pdf-factory
+ * never reads `appliedPolicies.print`: it resolves print composition from its own `print` extension.
+ */
 export const POLICY_PRINT_DEFAULT = {
   [POLICY_TYPE_PRINT]: {
     policyName: 'Default Print Configuration',

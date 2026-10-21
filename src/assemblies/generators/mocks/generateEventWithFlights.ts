@@ -2,12 +2,12 @@ import { getStageParticipantsCount } from '@Query/drawDefinition/getStagePartici
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
-import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
 import { generateEventParticipants } from './generateEventParticipants';
 import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
+import { attachProfilePolicies } from './attachProfilePolicies';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { publishEvent } from '@Mutate/publishing/publishEvent';
@@ -33,6 +33,7 @@ export function generateEventWithFlights(params) {
     ratingsParameters,
     tournamentRecord,
     eventProfile,
+    profileIndex,
     eventIndex,
     publish,
     random,
@@ -106,7 +107,8 @@ export function generateEventWithFlights(params) {
   const categoryName = category?.categoryName || category?.ageCategoryCode || category?.ratingType;
   eventName = eventName || categoryName || 'Generated Event';
 
-  const newEvent = buildEventObject({
+  const built: any = buildEventObject({
+    profileIndex: profileIndex ?? eventIndex,
     eventProfile,
     surfaceCategory,
     processCodes,
@@ -124,6 +126,8 @@ export function generateEventWithFlights(params) {
     gender,
     categoryName,
   });
+  if (built.error) return built;
+  const newEvent = built.event;
 
   let drawIds;
   const eventResult: any = addEvent({
@@ -210,6 +214,7 @@ export function generateEventWithFlights(params) {
 }
 
 function buildEventObject({
+  profileIndex,
   eventProfile,
   surfaceCategory,
   processCodes,
@@ -254,16 +259,11 @@ function buildEventObject({
     timeItems.forEach((timeItem) => addEventTimeItem({ event: newEvent, timeItem }));
   }
 
-  if (typeof policyDefinitions === 'object') {
-    for (const policyType of Object.keys(policyDefinitions)) {
-      attachPolicies({
-        policyDefinitions: { [policyType]: policyDefinitions[policyType] },
-        event: newEvent,
-      });
-    }
-  }
+  const option = `eventProfiles[${profileIndex}].policyDefinitions`;
+  const policyRefusal = attachProfilePolicies({ policyDefinitions, event: newEvent as any, option });
+  if (policyRefusal) return policyRefusal;
 
   if (newEvent.category) newEvent.category.categoryName = categoryName;
 
-  return newEvent;
+  return { event: newEvent };
 }
