@@ -731,7 +731,8 @@ without `@RALLY` (§ 10.2).
 returning 0 or 1 for API compatibility (epixodic computes `1 - getNextServer()`); `isServerDerived()`,
 and `serverDerived` in the score situation (§ 11.2), say whether that answer is the engine's
 derivation or only a placeholder. The placeholder is the side the last `setServer` named, and side 1
-without one. Under `@RALLY` a `setServer` names the server of the next point only, and the rule resumes
+without one. **A completed match derives no server** (CA 2026-10-21): it has no next point, so
+`isServerDerived()` is `false`, and `getNextServer()` still answers the side the rotation would give. Under `@RALLY` a `setServer` names the server of the next point only, and the rule resumes
 after it, as a supplied server does under `WINNER_SERVES`. v1 derives no server under `@RALLY` and answers a side anyway
 (`SET3-S:TB11@RALLY` after two points: 1), with no indicator: a v1 defect (§ 16, 15).
 
@@ -1042,6 +1043,11 @@ an additive action, not a format change.
 > these decisions on 2026-10-18, so most "v1 defect" notes below describe v1 before them; they stay as the
 > record of each decision. The v1/v2 differential (§ 15) finds no difference on standard and tiebreak-only
 > formats beyond three shape questions recorded for CA in the scoring-engine v2 plan (SE2a-D3b, D11, D12).
+> On 2026-10-21 CA ruled five of its questions for the rule, and v1 was brought to them: every set carries
+> `isTiebreakOnly` or `isTimed` by the format governing it, however it was entered (D11); a timed set scored
+> in units has no per-game counts (D17); a combined total's points carry `index`, `set`, `game` and `number`
+> (D18, § 11.1); the point that wins a tiebreak at time shows `0-0` (D20, § 11.1); and a consecutive game's
+> `pointsToGame` counts the run in progress (D24, § 11.2). A completed match derives no server (D22, § 10.4).
 
 The first version of this page left 21 questions to CA. CA decided all of them on 2026-10-18; each
 rule now stands in the section named, and the v1 behaviour beside it is **a v1 defect to fix before

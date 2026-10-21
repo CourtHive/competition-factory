@@ -1,9 +1,9 @@
 import { createContext, reduce, serverOf, step } from './reduce';
 import { getScoringEngine } from '@Global/state/globalState';
-import { configuredFormat, resolveFormat } from './format';
+import { configuredFormat } from './format';
 
 // constants and types
-import type { EntryData, ScoringConfiguration, ScoringState, StepOutcome, TimelineEntry } from './types';
+import type { EntryData, ScoringConfiguration, StepOutcome, TimelineEntry } from './types';
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SCORING_ENGINE_DIFFERENTIAL } from '@Constants/scoringEngineConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
@@ -247,26 +247,16 @@ export function firstDifference(a: unknown, b: unknown, path = ''): Difference |
 /**
  * Differences surfaced by the differential and awaiting CA's decision (rule versus v1), each named by its decision
  * id in the SE2a hand-off. Each is narrowed to one field and one direction, and counted, so it can neither hide
- * another difference nor pass unnoticed. A decided one is removed here when v1 (or v2) is changed.
+ * another difference nor pass unnoticed. A decided one is removed here when v1 (or v2) is changed: D11, D17, D18,
+ * D20 and D24 were (CA 2026-10-21), with v1 brought to the rule.
  *
- * - SE2a-D11: `isTiebreakOnly`. v2 marks every set scored by a tiebreak-only rule; v1 marks only a set a point
- *   opened under the ordinary format, not a `-F:TB{n}` match tiebreak (scored as one all the same), nor a set
- *   entered by `addGame`, `addSet` or a baseline (§ 1.2 names the mark; § 3.2: every view reads the governing format).
  * - SE2a-D3b: the per-game counts of a set closed by `addGame`. A game won short of the set opens the next game
  *   at 0-0 in both (SE2a-D3); a set closed by a point keeps no trailing entry in both; but a set closed by
  *   `addGame` keeps a trailing 0-0 in v1, a game that will never be played, and none in v2.
- * - SE2b-D11 (D11 widened): `isTimed`, likewise: v1 does not mark a timed set opened by `addGame` or `endSegment`.
- * - SE2b-D17: v1 gives a timed set scored in units (points-based, or another root) empty per-game counts (`[]`),
- *   though no game is played point by point there; v2 gives it none.
- * - SE2b-D18: a combined total's points. v1 materializes them without `index`, `set`, `game` and `number`, which
- *   § 11.1 gives every point; v2 gives them all.
- * - SE2b-D20: the point that wins a timed segment's tiebreak at time. § 11.1 shows `0-0` for a point that completes
- *   a game, as both show for a set's tiebreak; v1 shows the race's final score there (`7-0`).
- * - SE2b-D24: a consecutive game's `pointsToGame`: v1 counts the whole run whatever run is in progress, recognised by
- *   reducing again under that reading (view.ts `ViewReadings`) and accepted only when it accounts for every
- *   difference. (D23, D25 and D26 are views not compared at all: `UNCOMPARED_VIEWS`.)
  * - SE2a-D12: a point's `number` in a race scored in point values. § 11.1 counts the points played in its game
  *   before it; v1 counts their values (after an ace worth 3, the next point is `number` 3, not 1).
+ *
+ * D23, D25 and D26 are views not compared at all: `UNCOMPARED_VIEWS`.
  */
 function pendingTrailingGame(v1: Projection, v2: Projection): void {
   v2.sets.forEach((set, index) => {
@@ -295,46 +285,6 @@ function pendingNumberByValue(v1: Projection, v2: Projection): void {
   });
 }
 
-function pendingMarks(v1: Projection, v2: Projection): void {
-  v2.sets.forEach((set, index) => {
-    const theirs = v1.sets[index] ?? {};
-    for (const mark of ['isTiebreakOnly', 'isTimed'] as const) {
-      if (!set[mark] || theirs[mark]) continue;
-      delete set[mark];
-      count(mark === 'isTimed' ? 'pending:SE2b-D11' : 'pending:SE2a-D11');
-    }
-    const empty = (value: unknown) => Array.isArray(value) && value.length === 0;
-    const timed = set.isTimed !== undefined || !!theirs.isTimed;
-    if (timed && set.side1GameScores === undefined && empty(theirs.side1GameScores) && empty(theirs.side2GameScores)) {
-      set.side1GameScores = [];
-      set.side2GameScores = [];
-      count('pending:SE2b-D17');
-    }
-  });
-}
-
-/** SE2b-D18: v1's combined-total points carry no coordinates */
-function pendingCombinedPoints(v1: Projection, v2: Projection, combined: boolean): void {
-  if (!combined) return;
-  v2.points.forEach((point, index) => {
-    if (v1.points[index]?.index !== undefined) return;
-    for (const field of ['index', 'set', 'game', 'number']) delete point[field];
-    count('pending:SE2b-D18');
-  });
-}
-
-/** SE2b-D20: the point that won a tiebreak at time shows the race's final score in v1 */
-function pendingAtTimeScore(v1: Projection, v2: Projection): void {
-  v2.points.forEach((point, index) => {
-    const set = v2.sets[point.set as number];
-    const theirs = v1.points[index];
-    if (point.score !== '0-0' || !set?.isTimed || set.side1TiebreakScore === undefined || !theirs) return;
-    if (theirs.score !== `${String(set.side1TiebreakScore)}-${String(set.side2TiebreakScore)}`) return;
-    point.score = theirs.score;
-    count('pending:SE2b-D20');
-  });
-}
-
 /**
  * SE3-E1: a `setServer(side, { recordEntry: false })` with nothing on the timeline orients v1's next server and is
  * stored nowhere, so no reduction of the timeline can see it.
@@ -345,17 +295,10 @@ function pendingUnanchoredCorrection(v1: Projection, v2: Projection, entries: Ti
   count('pending:SE3-E1');
 }
 
-function pendingDecisions(v1: Projection, v2: Projection, combined: boolean): void {
+function pendingDecisions(v1: Projection, v2: Projection): void {
   pendingTrailingGame(v1, v2);
-  pendingAtTimeScore(v1, v2);
-  pendingMarks(v1, v2);
   pendingNumberByValue(v1, v2);
-  pendingCombinedPoints(v1, v2, combined);
 }
-
-/** the point views whose v1 reading is pending (view.ts `ViewReadings`) */
-const VIEW_FIELD = /^\.points\.\d+\.(pointsToGame|isBreakpoint)\b/;
-const V1_READINGS = { runIgnored: true };
 
 /** compares v1's state after a call with v2's reduction of the same timeline; throws on a difference */
 export function compareStates(engine: V1Engine, method: string, stale = false, loaded = false): void {
@@ -383,21 +326,11 @@ export function compareStates(engine: V1Engine, method: string, stale = false, l
     state.score?.sets ?? [],
     state.history?.points ?? [],
   );
-  const combined = resolveFormat(format)?.ordinary.kind === 'combined';
-  const projected = (v2State: ScoringState) => {
-    const v2 = projection(v2State.matchUpStatus, v2State.winningSide, next, v2State.sets, v2State.points);
-    pendingDecisions(v1, v2, combined);
-    pendingUnanchoredCorrection(v1, v2, entries);
-    return v2;
-  };
-  let difference = firstDifference(v1, projected(reduction.state));
-  if (difference && VIEW_FIELD.test(difference.path)) {
-    // SE2b-D24: v1's reading of a consecutive game's run; accepted only when it accounts for every difference
-    const read = firstDifference(v1, projected(reduce(config, entries, V1_READINGS).state));
-    if (!read) count('pending:SE2b-D24');
-    // what remains under v1's readings is the difference to report
-    difference = read && { ...read, path: `${read.path} (under v1's readings; spec reading: ${difference.v2})` };
-  }
+  const v2State = reduction.state;
+  const v2 = projection(v2State.matchUpStatus, v2State.winningSide, next, v2State.sets, v2State.points);
+  pendingDecisions(v1, v2);
+  pendingUnanchoredCorrection(v1, v2, entries);
+  const difference = firstDifference(v1, v2);
   if (difference)
     throw new ScoringEngineDivergence({
       method,
