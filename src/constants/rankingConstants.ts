@@ -12,6 +12,15 @@ export const DEFAULT_POINT_COMPONENTS: PointComponent[] = ['points', 'qualityWin
 // Bonus type identifiers
 export const QUALITY_WIN = 'QUALITY_WIN';
 
+// QualityWinProfile.rankingSnapshot — when an opponent's ranking is read
+export const TOURNAMENT_START = 'tournamentStart';
+export const MATCH_DATE = 'matchDate';
+export const LATEST_AVAILABLE = 'latestAvailable';
+
+// QualityWinProfile.unrankedOpponentBehavior
+export const NO_BONUS = 'noBonus';
+export const USE_DEFAULT_RANK = 'useDefaultRank';
+
 // Doubles attribution modes
 export const FULL_TO_EACH = 'fullToEach';
 export const SPLIT_EVEN = 'splitEven';
@@ -60,6 +69,11 @@ export const rankingConstants = {
   DEFAULT_POINT_COMPONENTS,
   RANKING_POINTS,
   QUALITY_WIN,
+  TOURNAMENT_START,
+  MATCH_DATE,
+  LATEST_AVAILABLE,
+  NO_BONUS,
+  USE_DEFAULT_RANK,
   FULL_TO_EACH,
   SPLIT_EVEN,
   TEAM_ONLY,

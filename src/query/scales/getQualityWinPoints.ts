@@ -1,6 +1,7 @@
 import { getTargetElement } from '@Query/scales/getTargetElement';
 
 // constants
+import { LATEST_AVAILABLE, MATCH_DATE, TOURNAMENT_START, USE_DEFAULT_RANK } from '@Constants/rankingConstants';
 import { WALKOVER, DEFAULTED } from '@Constants/matchUpStatusConstants';
 import { SCALE, RANKING } from '@Constants/scaleConstants';
 import type { Participant } from '@Types/tournamentTypes';
@@ -44,7 +45,9 @@ export function getQualityWinPoints({
   for (const profile of qualityWinProfiles) {
     const {
       rankingScaleName,
-      rankingSnapshot = 'latestAvailable',
+      rankingSnapshot = LATEST_AVAILABLE,
+      unrankedOpponentBehavior,
+      defaultRank,
       includeWalkovers = false,
       rankingRanges = [],
       maxBonusPerTournament,
@@ -62,6 +65,7 @@ export function getQualityWinPoints({
         rankingScaleName,
         rankingSnapshot,
         tournamentStartDate,
+        unrankedRank: unrankedOpponentBehavior === USE_DEFAULT_RANK ? defaultRank : undefined,
         rankingRanges,
         level,
       });
@@ -83,16 +87,36 @@ export function getQualityWinPoints({
   return { qualityWinPoints: totalQualityWinPoints, qualityWins };
 }
 
+/**
+ * The date an opponent's ranking is read as of, or undefined for the latest.
+ *
+ * `matchDate` uses the match's `endDate`, else its scheduled date; a match
+ * carrying neither falls back to the tournament start rather than to the
+ * latest ranking, so a missing date never reads a rank from after the match.
+ */
+export function getRankingCutoffDate({
+  rankingSnapshot,
+  tournamentStartDate,
+  matchUp,
+}: {
+  rankingSnapshot: string;
+  tournamentStartDate?: string;
+  matchUp?: { endDate?: string; schedule?: { scheduledDate?: string } };
+}): string | undefined {
+  if (rankingSnapshot === TOURNAMENT_START) return tournamentStartDate;
+  if (rankingSnapshot === MATCH_DATE)
+    return matchUp?.endDate ?? matchUp?.schedule?.scheduledDate ?? tournamentStartDate;
+  return undefined;
+}
+
 function resolveRanking({
   participant,
   rankingScaleName,
-  rankingSnapshot,
-  tournamentStartDate,
+  cutoffDate,
 }: {
   participant: Participant;
   rankingScaleName: string;
-  rankingSnapshot: string;
-  tournamentStartDate?: string;
+  cutoffDate?: string;
 }): number | undefined {
   const timeItems = participant.timeItems ?? [];
 
@@ -108,14 +132,13 @@ function resolveRanking({
 
   let filteredItems = rankingItems;
 
-  if (rankingSnapshot === 'tournamentStart' && tournamentStartDate) {
-    const cutoff = new Date(tournamentStartDate).getTime();
+  if (cutoffDate) {
+    const cutoff = new Date(cutoffDate).getTime();
     filteredItems = rankingItems.filter((ti) => {
       const itemDate = ti.itemDate ? new Date(ti.itemDate).getTime() : 0;
       return itemDate <= cutoff;
     });
   }
-  // 'latestAvailable' and 'matchDate' (future) just use all items
 
   if (!filteredItems.length) return undefined;
 
@@ -130,6 +153,22 @@ function resolveRanking({
   return typeof value === 'number' ? value : undefined;
 }
 
+type EvaluateMatchUpArgs = {
+  matchUpId: string;
+  mappedMatchUps: Record<string, any>;
+  participantSideMap: Record<string, number>;
+  participantById: Record<string, any>;
+  includeWalkovers: boolean;
+  rankingScaleName: string;
+  rankingSnapshot: string;
+  tournamentStartDate?: string;
+  /** The rank an opponent with no ranking is treated as holding (useDefaultRank). */
+  unrankedRank?: number;
+  /** `value` is a number, or a level-keyed lookup resolved with getTargetElement. */
+  rankingRanges: { rankRange: number[]; value: number | Record<string, any> }[];
+  level?: number;
+};
+
 function evaluateMatchUpForQualityWin({
   matchUpId,
   mappedMatchUps,
@@ -139,9 +178,10 @@ function evaluateMatchUpForQualityWin({
   rankingScaleName,
   rankingSnapshot,
   tournamentStartDate,
+  unrankedRank,
   rankingRanges,
   level,
-}): QualityWin | undefined {
+}: EvaluateMatchUpArgs): QualityWin | undefined {
   const matchUp = mappedMatchUps[matchUpId];
   if (!matchUp) return undefined;
 
@@ -159,12 +199,12 @@ function evaluateMatchUpForQualityWin({
   const opponent = participantById[opponentParticipantId];
   if (!opponent) return undefined;
 
-  const opponentRank = resolveRanking({
-    participant: opponent,
-    rankingScaleName,
-    rankingSnapshot,
-    tournamentStartDate,
-  });
+  const opponentRank =
+    resolveRanking({
+      cutoffDate: getRankingCutoffDate({ rankingSnapshot, tournamentStartDate, matchUp }),
+      participant: opponent,
+      rankingScaleName,
+    }) ?? unrankedRank;
 
   if (!opponentRank) return undefined;
 
