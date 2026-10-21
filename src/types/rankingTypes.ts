@@ -698,6 +698,18 @@ export interface PointAward {
  */
 export type RankingListAward = Record<string, any>;
 
+/**
+ * A policy rule `generateRankingList` could not apply as written, reported
+ * through its optional `onWarning` callback rather than silently ignored.
+ */
+export interface RankingListWarning {
+  /** e.g. `UNORDERABLE_AGE_CATEGORY` (rankingConstants) */
+  code: string;
+  ruleName?: string;
+  ageCategoryCode?: string;
+  message: string;
+}
+
 /** Per-bucket detail for one participant, when the policy defines countingBuckets. */
 export interface RankingListBucketBreakdown {
   /** The bucket's `bucketName`, or `bucket-<index>` when the policy left it unnamed. */

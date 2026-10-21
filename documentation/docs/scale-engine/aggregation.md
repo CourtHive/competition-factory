@@ -255,6 +255,45 @@ aggregationRules: {
 
 Entries below the threshold have `meetsMinimum: false` but are still included in the output with their points and rank.
 
+## Cross-Category Aggregation
+
+`categoryAggregation` rules carry results earned in one category into another category's list (e.g. USTA's 20% next-older carry, or a combined-ranking pool). Each rule names a `source` and a `target` `CategoryScope`; awards matching the source are carried when the list being generated matches the target.
+
+### eligibleSourceWindow
+
+Limits which age groups a rule may carry from, counted in **age groups**, not years:
+
+```js
+categoryAggregation: [
+  {
+    ruleName: '12U Combined Ranking pool',
+    source: { ageCategoryCodes: ['12U', '14U', '16U', '18U'] },
+    target: { ageCategoryCodes: ['12U'] },
+    eligibleSourceWindow: { olderBy: 2 }, // 14U and 16U, not 18U
+  },
+];
+```
+
+Age groups are ordered by the maximum age each junior code admits (`14U` → 14, `U18` → 17). The ladder is the distinct groups named by the rule's source and target, plus any carried by the awards. `olderBy` and `youngerBy` each limit one side; a side the rule leaves undeclared is not limited.
+
+A window that cannot be evaluated is never applied silently. If the target category, or a source category the rule names, cannot be ordered (`OPEN`, `35O`, an unparseable code), or the target names several codes and the `categoryFilter` does not pick one, the **rule is skipped** and a `RankingListWarning` with code `UNORDERABLE_AGE_CATEGORY` is reported through `onWarning`. Under a source scope that names no categories, an individual award whose category cannot be ordered is not carried, and is reported the same way.
+
+### Warnings
+
+```js
+const warnings = [];
+const list = generateRankingList({
+  pointAwards,
+  aggregationRules,
+  categoryFilter,
+  asOfDate,
+  onWarning: (w) => warnings.push(w),
+});
+// warnings: [{ code: 'UNORDERABLE_AGE_CATEGORY', ruleName, ageCategoryCode, message }]
+```
+
+`onWarning` is optional; without it a skipped rule is still skipped.
+
 ## Tiebreakers
 
 When two entries have the same `totalPoints`, tiebreak criteria are applied in order:
