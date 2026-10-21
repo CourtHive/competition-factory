@@ -1,5 +1,9 @@
 import { emptyProjectionAuditCounts, type ProjectionAudit, type ProjectionAuditCounts } from './projectionAudit';
 import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { isDoubleExit } from '@Validators/isExit';
 import {
@@ -127,10 +131,13 @@ const PROVENANCE = 6;
  * Promote it back into the round trip once a settle step derives it.
  */
 function projectForRoundTrip(drawDefinition: any): any[] {
+  const byeFed = byeFedLoserSeats(drawDefinition);
   // an exit-bearing entry is kept whole; of an arrival only its BYE claims, if any
-  const roundTripEntry = (entry: any) => {
+  const roundTripEntry = (entry: any, seat: string) => {
     // a BYE origin (`{ BYE, BYE }`) is arrival-class too: "may record", policed by checkArrivalsTrue (F5)
     if (entry?.matchUpStatus && !isByeOrigin(entry)) return entry;
+    // a claim on a BYE-matchUp-fed loser seat is history-dependent by design: left out, policed (CA ruling (b))
+    if (byeFed.has(seat)) return undefined;
     return entry?.byeClaims?.length ? { byeClaims: entry.byeClaims } : undefined;
   };
   return projectRoundTrip(drawDefinition).map((structure: any) => ({
@@ -140,7 +147,7 @@ function projectForRoundTrip(drawDefinition: any): any[] {
       if (!provenance) return row;
       const kept = Object.fromEntries(
         Object.entries(provenance)
-          .map(([side, entry]) => [side, roundTripEntry(entry)])
+          .map(([side, entry]) => [side, roundTripEntry(entry, `${row[0]}|${side}`)])
           .filter(([, entry]) => entry),
       );
       const next = [...row];
@@ -148,6 +155,41 @@ function projectForRoundTrip(drawDefinition: any): any[] {
       return next;
     }),
   }));
+}
+
+/**
+ * The loser seats a BYE matchUp feeds across a link that hold a BYE, keyed `matchUpId|side`, mapped to the feeder.
+ *
+ * WHETHER SUCH A SEAT'S BYE CARRIES A CLAIM IS HISTORY-DEPENDENT BY DESIGN (CA ruling (b), 2026-10-20). The seat's BYE has
+ * two possible reasons: the feeder is a BYE matchUp, and a double exit whose produced exit the feeder relays makes the
+ * feeder's loser nobody. The claim ledger records WHO claims a BYE, not WHY it was placed, so the engine keeps or omits
+ * the claim by which reason came first, and two fixes depend on each outcome: `aClearedSeatKeepsTheByeALiveDoubleExitClaims`
+ * (#5576) needs the claim where the double exit's BYE came first, and `aByeMatchUpsLoserSeatKeepsItsBye` (A1 wave 4) needs
+ * its absence where the feeder's structural BYE came first. A state rule either way reopened one of them (measured on
+ * census Phase B, COMPASS 32/30 policy-off 30004303, 2026-10-20). So the round trip leaves these claims out, as it leaves
+ * out arrival entries (F4) and BYE origins (F5), and {@link checkArrivalsTrue} polices the ones present. The lasting fix
+ * is a ledger that records why each BYE was placed (DESIGN_FLAWS_PUNCH_LIST: the BYE-claim ledger records no reason).
+ */
+export function byeFedLoserSeats(drawDefinition: any): Map<string, string> {
+  const seats = new Map<string, string>();
+  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition })?.matchUps ?? [];
+  for (const feeder of inContextDrawMatchUps) {
+    if (feeder.matchUpStatus !== BYE) continue;
+    const { loserMatchUp, loserTargetDrawPosition } =
+      positionTargets({ matchUpId: feeder.matchUpId, inContextDrawMatchUps, inContextMatchUp: feeder, drawDefinition })
+        ?.targetMatchUps ?? {};
+    if (!loserMatchUp || !loserTargetDrawPosition || loserMatchUp.structureId === feeder.structureId) continue;
+    const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId });
+    if (!positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition)?.bye) continue;
+    const side = getDrawPositionSideNumber({
+      matchUp: { ...loserMatchUp, sides: undefined },
+      structureId: loserMatchUp.structureId,
+      drawPosition: loserTargetDrawPosition,
+      drawDefinition,
+    });
+    if (side) seats.set(`${loserMatchUp.matchUpId}|${side}`, feeder.matchUpId);
+  }
+  return seats;
 }
 
 /**
@@ -161,9 +203,18 @@ function projectForRoundTrip(drawDefinition: any): any[] {
 export function checkArrivalsTrue(drawId: string): PropertyFailure[] {
   const matchUps = getDrawMatchUps(drawId);
   const byId = new Map(matchUps.map((matchUp: any) => [matchUp.matchUpId, matchUp]));
+  const byeFed = byeFedLoserSeats(getDrawDefinition(drawId));
   const failures: PropertyFailure[] = [];
   for (const matchUp of matchUps) {
     for (const [side, entry] of Object.entries(matchUp.sideExitProvenance ?? {}) as [string, any][]) {
+      const feeder = byeFed.get(`${matchUp.matchUpId}|${side}`);
+      const falseClaim = feeder && byeFedClaimFalse(entry, feeder, byId);
+      if (falseClaim)
+        failures.push({
+          property: 'ARRIVAL_TRUE',
+          matchUpId: matchUp.matchUpId,
+          detail: `${coordinate(matchUp)} side ${side}: a BYE claim on a BYE-matchUp-fed seat ${falseClaim}`,
+        });
       if (isByeOrigin(entry)) {
         const failure = byeOriginFalse(matchUp, Number(side), entry, byId);
         if (failure) failures.push({ property: 'ARRIVAL_TRUE', matchUpId: matchUp.matchUpId, detail: failure });
@@ -198,6 +249,21 @@ const isByeOrigin = (entry: any) => entry?.matchUpStatus === BYE && entry?.previ
  * A BYE origin that is present tells the truth (census F5, 2026-10-18): it names a BYE matchUp in the draw whose winner comes
  * here, the side's position (if it holds one) is that matchUp's, and the exit it was written opposite still stands.
  */
+/**
+ * A claim left out of the round trip on a BYE-matchUp-fed seat ({@link byeFedLoserSeats}) must still be true: it names
+ * the BYE matchUp feeding the seat (its own propagated BYE, `propagateUnfillableLoserBye`) or a matchUp that is still a
+ * double exit (`keepByeOnItsOriginsAccount`, `doubleExitAdvancement`'s claim at the attempt).
+ */
+function byeFedClaimFalse(entry: any, feederMatchUpId: string, byId: Map<string, any>): string | undefined {
+  for (const claimant of entry?.byeClaims ?? []) {
+    if (claimant === feederMatchUpId) continue;
+    const source: any = byId.get(claimant);
+    if (!source) return `names no matchUp in the draw`;
+    if (!isDoubleExit(source.matchUpStatus)) return `names ${coordinate(source)}, which is ${source.matchUpStatus}`;
+  }
+  return undefined;
+}
+
 function byeOriginFalse(matchUp: any, side: number, entry: any, byId: Map<string, any>): string | undefined {
   const source: any = entry.sourceMatchUpId && byId.get(entry.sourceMatchUpId);
   const held = matchUp.sides?.find((s: any) => s?.sideNumber === side);
