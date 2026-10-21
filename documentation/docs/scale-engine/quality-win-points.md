@@ -44,15 +44,17 @@ qualityWinProfiles: [
 
 The `rankingSnapshot` field controls which point-in-time ranking value is used for the opponent:
 
-| Strategy            | Behavior                                                              |
-| ------------------- | --------------------------------------------------------------------- |
-| `'tournamentStart'` | Most recent scale item with `scaleDate <= tournamentRecord.startDate` |
-| `'latestAvailable'` | Most recent scale item regardless of date                             |
-| `'matchDate'`       | Most recent scale item with `scaleDate <= matchUp.endDate`            |
+| Strategy            | Behavior                                                                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `'tournamentStart'` | Most recent scale item with `itemDate <= tournamentRecord.startDate`                                                                 |
+| `'latestAvailable'` | Most recent scale item regardless of date (the default when `rankingSnapshot` is omitted)                                            |
+| `'matchDate'`       | Most recent scale item with `itemDate <=` the matchUp's `endDate`, else its `schedule.scheduledDate`, else the tournament start date |
 
 :::tip
-Use `'tournamentStart'` (the default) for consistency — all opponents are evaluated against the rankings published before the tournament began. This prevents a player from earning quality win points based on rankings that changed mid-tournament.
+Use `'tournamentStart'` for consistency — all opponents are evaluated against the rankings published before the tournament began. This prevents a player from earning quality win points based on rankings that changed mid-tournament.
 :::
+
+A `matchDate` matchUp that carries neither an `endDate` nor a scheduled date falls back to the tournament start, never to the latest ranking, so a missing date cannot read a ranking published after the match. The constants `TOURNAMENT_START`, `MATCH_DATE` and `LATEST_AVAILABLE` are exported from `rankingConstants`.
 
 ## Ranking Source
 
@@ -65,12 +67,12 @@ The `rankingScaleName` in the quality win profile must match the `scaleName` use
 
 ## Unranked Opponents
 
-When an opponent has no ranking for the specified `rankingScaleName`:
+When an opponent has no ranking for the specified `rankingScaleName` — none at all, or none dated on or before the `rankingSnapshot` cutoff:
 
-| Setting            | Behavior                                                                    |
-| ------------------ | --------------------------------------------------------------------------- |
-| `'noBonus'`        | No quality win points awarded (default)                                     |
-| `'useDefaultRank'` | Use `defaultRank` value from the profile, then match against ranking ranges |
+| Setting            | Behavior                                                                                                        |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `'noBonus'`        | No quality win points awarded (default)                                                                         |
+| `'useDefaultRank'` | Use `defaultRank` value from the profile, then match against ranking ranges; without a `defaultRank`, no points |
 
 ## Walkovers and Defaults
 
