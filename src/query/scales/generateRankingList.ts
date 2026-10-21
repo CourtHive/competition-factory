@@ -1,7 +1,11 @@
+import { applyRetentionAfterAging, RankingParticipantContext } from './retentionAfterAging';
 import { DEFAULT_POINT_COMPONENTS } from '@Constants/rankingConstants';
+import { applyEligibleSourceWindow } from './eligibleSourceWindow';
 import { processBucketResults } from './processBucketResults';
+import { applyPointDecay } from './applyPointDecay';
 import type {
   RankingListBucketBreakdown,
+  RankingListWarning,
   CategoryAggregationRule,
   TiebreakCriterion,
   AggregationRules,
@@ -36,6 +40,25 @@ type GenerateRankingListArgs = {
    *   as an eligibility filter on the same pool.
    */
   pointPoolModel?: PointPoolModel;
+  /**
+   * Receives each policy rule that could not be applied as written (e.g. an
+   * `eligibleSourceWindow` over a category that cannot be ordered). The rule is
+   * skipped; this is how a caller learns it was.
+   */
+  onWarning?: (warning: RankingListWarning) => void;
+  /**
+   * Per-participant facts the awards do not carry. `birthDate` drives
+   * `retentionMonthsAfterAging`; without it that rule is not applied and a
+   * warning says so.
+   */
+  participantContext?: RankingParticipantContext;
+  /**
+   * Head-to-head record between two persons, for the `headToHead` tiebreak
+   * criterion: negative when `personIdA` should rank ahead of `personIdB`,
+   * positive when behind, 0 when level or unknown. Without it the criterion
+   * resolves nothing.
+   */
+  headToHead?: (personIdA: string, personIdB: string) => number;
 };
 
 export function generateRankingList({
@@ -44,6 +67,9 @@ export function generateRankingList({
   categoryFilter,
   asOfDate,
   pointPoolModel = 'per-category',
+  onWarning,
+  participantContext,
+  headToHead,
 }: GenerateRankingListArgs): RankingListEntry[] {
   const {
     rollingPeriodDays,
@@ -70,6 +96,8 @@ export function generateRankingList({
           categoryFilter,
           rollingPeriodDays,
           asOfDate,
+          onWarning,
+          participantContext,
         });
 
   // Participation gating — only meaningful under 'per-category'.
@@ -91,12 +119,14 @@ export function generateRankingList({
       maxResultsPerLevel,
       bestOfCount,
       personId,
-      awards: [...native, ...carried],
+      // Decay last, on the combined bag: a carried award ages from its own
+      // endDate exactly as a native one does.
+      awards: applyPointDecay([...native, ...carried], aggregationRules, asOfDate),
     });
     entries.push(entry);
   }
 
-  sortAndRankEntries(entries, tiebreakCriteria);
+  sortAndRankEntries(entries, tiebreakCriteria, headToHead);
 
   return entries;
 }
@@ -155,12 +185,16 @@ function expandCarriedContributions({
   categoryFilter,
   rollingPeriodDays,
   asOfDate,
+  onWarning,
+  participantContext,
 }: {
   pointAwards: RankingListAward[];
   rules: CategoryAggregationRule[];
   categoryFilter: CategoryFilter | undefined;
   rollingPeriodDays: number | undefined;
   asOfDate: string | undefined;
+  onWarning?: (warning: RankingListWarning) => void;
+  participantContext?: RankingParticipantContext;
 }): Record<string, RankingListAward[]> {
   const carriedByPerson: Record<string, RankingListAward[]> = {};
   if (!rules.length) return carriedByPerson;
@@ -173,8 +207,30 @@ function expandCarriedContributions({
       (a) => awardMatchesScope(a, rule.source) && !sourceFilterDisqualifies(a, rule.excludedSourceFilters),
     );
 
+    // Restrict to the age groups the rule's eligibleSourceWindow admits;
+    // undefined means the window could not be evaluated and the rule is skipped.
+    const targetCode = resolveTargetCode(rule.target, categoryFilter);
+    const windowed = applyEligibleSourceWindow({
+      targetCode,
+      awards: sourceAwards,
+      onWarning,
+      rule,
+    });
+    if (!windowed) continue;
+
+    // Younger-category results a player brought up with them expire after
+    // the rule's retention period.
+    const retained = applyRetentionAfterAging({
+      awards: windowed,
+      participantContext,
+      targetCode,
+      onWarning,
+      asOfDate,
+      rule,
+    });
+
     // Apply rolling window before per-person grouping.
-    const inWindow = applyRollingWindow(sourceAwards, rollingPeriodDays, asOfDate);
+    const inWindow = applyRollingWindow(retained, rollingPeriodDays, asOfDate);
 
     // Group, multiply, cap per (personId, rule).
     const perPersonForRule: Record<string, RankingListAward[]> = {};
@@ -210,6 +266,16 @@ function ruleTargetMatchesFilter(target: CategoryScope, categoryFilter: Category
     !target.genders?.length ||
     target.genders.some((g) => categoryFilter.genders!.includes(g));
   return genderOverlap;
+}
+
+// The one target category a list is being generated for: the rule's target
+// code that the categoryFilter names, or the rule's only target code.
+function resolveTargetCode(target: CategoryScope, categoryFilter: CategoryFilter | undefined): string | undefined {
+  const codes = target.ageCategoryCodes ?? [];
+  const filterCodes = new Set(categoryFilter?.ageCategoryCodes ?? []);
+  const filtered = codes.filter((code) => filterCodes.has(code));
+  if (filtered.length === 1) return filtered[0];
+  return codes.length === 1 ? codes[0] : undefined;
 }
 
 function awardMatchesScope(award: RankingListAward, source: CategoryScope): boolean {
@@ -424,14 +490,28 @@ function computePersonEntry({
   return entry;
 }
 
-function sortAndRankEntries(entries: RankingListEntry[], tiebreakCriteria: TiebreakCriterion[] | string[]) {
+type TiebreakContext = {
+  headToHead?: (personIdA: string, personIdB: string) => number;
+  /** How many entries share each totalPoints value. */
+  tiedCount: Map<number, number>;
+};
+
+function sortAndRankEntries(
+  entries: RankingListEntry[],
+  tiebreakCriteria: TiebreakCriterion[] | string[],
+  headToHead?: (personIdA: string, personIdB: string) => number,
+) {
   entries.sort((a, b) => b.totalPoints - a.totalPoints);
+
+  const tiedCount = new Map<number, number>();
+  for (const entry of entries) tiedCount.set(entry.totalPoints, (tiedCount.get(entry.totalPoints) ?? 0) + 1);
+  const context: TiebreakContext = { headToHead, tiedCount };
 
   if (tiebreakCriteria.length) {
     entries.sort((a, b) => {
       if (a.totalPoints !== b.totalPoints) return b.totalPoints - a.totalPoints;
       for (const criterion of tiebreakCriteria) {
-        const result = applyTiebreaker(criterion, a, b);
+        const result = applyTiebreaker(criterion, a, b, context);
         if (result !== 0) return result;
       }
       return 0;
@@ -441,7 +521,7 @@ function sortAndRankEntries(entries: RankingListEntry[], tiebreakCriteria: Tiebr
   let currentRank = 1;
   for (let i = 0; i < entries.length; i++) {
     if (i > 0 && entries[i].totalPoints === entries[i - 1].totalPoints) {
-      const tieResolved = tiebreakCriteria.some((c) => applyTiebreaker(c, entries[i - 1], entries[i]) !== 0);
+      const tieResolved = tiebreakCriteria.some((c) => applyTiebreaker(c, entries[i - 1], entries[i], context) !== 0);
 
       entries[i].rank = tieResolved ? currentRank : entries[i - 1].rank;
     } else {
@@ -451,8 +531,20 @@ function sortAndRankEntries(entries: RankingListEntry[], tiebreakCriteria: Tiebr
   }
 }
 
-function applyTiebreaker(criterion: string, a: RankingListEntry, b: RankingListEntry): number {
+function applyTiebreaker(
+  criterion: string,
+  a: RankingListEntry,
+  b: RankingListEntry,
+  context: TiebreakContext,
+): number {
   switch (criterion) {
+    case 'headToHead': {
+      // Only between exactly two tied entries: across three or more, pairwise
+      // results can be circular (A beat B, B beat C, C beat A), which gives no
+      // consistent order, so a larger tie is left to the remaining criteria.
+      if (!context.headToHead || context.tiedCount.get(a.totalPoints) !== 2) return 0;
+      return Math.sign(context.headToHead(a.personId, b.personId));
+    }
     case 'highestSingleResult': {
       const aMax = Math.max(0, ...a.countingResults.map((r) => r.points || 0));
       const bMax = Math.max(0, ...b.countingResults.map((r) => r.points || 0));

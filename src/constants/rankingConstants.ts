@@ -12,10 +12,29 @@ export const DEFAULT_POINT_COMPONENTS: PointComponent[] = ['points', 'qualityWin
 // Bonus type identifiers
 export const QUALITY_WIN = 'QUALITY_WIN';
 
+// QualityWinProfile.rankingSnapshot — when an opponent's ranking is read
+export const TOURNAMENT_START = 'tournamentStart';
+export const MATCH_DATE = 'matchDate';
+export const LATEST_AVAILABLE = 'latestAvailable';
+
+// QualityWinProfile.unrankedOpponentBehavior
+export const NO_BONUS = 'noBonus';
+export const USE_DEFAULT_RANK = 'useDefaultRank';
+
 // Doubles attribution modes
 export const FULL_TO_EACH = 'fullToEach';
 export const SPLIT_EVEN = 'splitEven';
 export const TEAM_ONLY = 'teamOnly';
+
+// Point decay functions (AggregationRules.decayFunction)
+export const NO_DECAY = 'none';
+export const LINEAR_DECAY = 'linear';
+export const STEPPED_DECAY = 'stepped';
+
+// RankingListWarning codes (generateRankingList onWarning)
+export const UNORDERABLE_AGE_CATEGORY = 'UNORDERABLE_AGE_CATEGORY';
+export const MISSING_PARTICIPANT_CONTEXT = 'MISSING_PARTICIPANT_CONTEXT';
+export const MISSING_BIRTH_DATE = 'MISSING_BIRTH_DATE';
 
 // Category scope field names (for specificity scoring)
 export const CATEGORY_SCOPE_FIELDS = [
@@ -50,9 +69,20 @@ export const rankingConstants = {
   DEFAULT_POINT_COMPONENTS,
   RANKING_POINTS,
   QUALITY_WIN,
+  TOURNAMENT_START,
+  MATCH_DATE,
+  LATEST_AVAILABLE,
+  NO_BONUS,
+  USE_DEFAULT_RANK,
   FULL_TO_EACH,
   SPLIT_EVEN,
   TEAM_ONLY,
+  NO_DECAY,
+  LINEAR_DECAY,
+  STEPPED_DECAY,
+  UNORDERABLE_AGE_CATEGORY,
+  MISSING_PARTICIPANT_CONTEXT,
+  MISSING_BIRTH_DATE,
   CATEGORY_SCOPE_FIELDS,
   PROFILE_SCOPE_FIELDS,
 } as const;

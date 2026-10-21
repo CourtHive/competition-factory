@@ -1105,6 +1105,17 @@ named test that fails without it.
   call and is an awarded single exit after it; a convergence that dissolves and converges again within one call is
   owed nothing (COMPASS 32/30 30004303 under `doubleExitPropagateBye: false`:
   `aConvergenceACallDissolvedIsOwedItsByeBack`).
+- **Known limitation: whether a BYE matchUp's loser-seat BYE carries a double exit's claim depends on entry order.** That
+  BYE can have two reasons: the matchUp feeding the seat is a BYE matchUp, and a double exit whose produced exit it
+  relays makes its loser nobody. The claim ledger (`byeClaims`) records WHO claims a BYE, not WHY it was placed, so the
+  engine keeps or omits the double exit's claim by which reason came first, and both outcomes are load-bearing: where
+  the double exit's BYE came first, the claim is what keeps the seat's BYE when a later clear takes the BYE out of the
+  feeder (`aClearedSeatKeepsTheByeALiveDoubleExitClaims`); where the feeder's structural BYE came first, the absence of a
+  claim is what stops the double exit's unwind from taking a BYE the feeder still justifies
+  (`aByeMatchUpsLoserSeatKeepsItsBye`). Both state rules, never claiming and always claiming, were measured on
+  2026-10-20 and each reopened one of those cases, so neither shipped. A claim there that is present names the feeder
+  itself or a matchUp that is still a double exit. The lasting fix is a ledger that records the reason a BYE was placed.
+  Testing treats it like an arrival entry: see the harness's round trip (`aByeFedSeatClaimIsLeftOutAndPoliced`).
 
 ### Nothing to do is success, not failure
 
