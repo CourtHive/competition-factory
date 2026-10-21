@@ -223,6 +223,7 @@ generateRankingList(params: {
   pointPoolModel?: 'per-category' | 'shared';
   onWarning?: (warning: RankingListWarning) => void; // a rule that could not be applied as written
   participantContext?: { birthDate?: (personId: string) => string | undefined }; // for retentionMonthsAfterAging
+  headToHead?: (personIdA: string, personIdB: string) => number; // for the 'headToHead' tiebreak
 }): RankingListEntry[]
 ```
 

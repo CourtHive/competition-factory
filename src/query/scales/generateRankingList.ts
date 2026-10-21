@@ -52,6 +52,13 @@ type GenerateRankingListArgs = {
    * warning says so.
    */
   participantContext?: RankingParticipantContext;
+  /**
+   * Head-to-head record between two persons, for the `headToHead` tiebreak
+   * criterion: negative when `personIdA` should rank ahead of `personIdB`,
+   * positive when behind, 0 when level or unknown. Without it the criterion
+   * resolves nothing.
+   */
+  headToHead?: (personIdA: string, personIdB: string) => number;
 };
 
 export function generateRankingList({
@@ -62,6 +69,7 @@ export function generateRankingList({
   pointPoolModel = 'per-category',
   onWarning,
   participantContext,
+  headToHead,
 }: GenerateRankingListArgs): RankingListEntry[] {
   const {
     rollingPeriodDays,
@@ -118,7 +126,7 @@ export function generateRankingList({
     entries.push(entry);
   }
 
-  sortAndRankEntries(entries, tiebreakCriteria);
+  sortAndRankEntries(entries, tiebreakCriteria, headToHead);
 
   return entries;
 }
@@ -482,14 +490,28 @@ function computePersonEntry({
   return entry;
 }
 
-function sortAndRankEntries(entries: RankingListEntry[], tiebreakCriteria: TiebreakCriterion[] | string[]) {
+type TiebreakContext = {
+  headToHead?: (personIdA: string, personIdB: string) => number;
+  /** How many entries share each totalPoints value. */
+  tiedCount: Map<number, number>;
+};
+
+function sortAndRankEntries(
+  entries: RankingListEntry[],
+  tiebreakCriteria: TiebreakCriterion[] | string[],
+  headToHead?: (personIdA: string, personIdB: string) => number,
+) {
   entries.sort((a, b) => b.totalPoints - a.totalPoints);
+
+  const tiedCount = new Map<number, number>();
+  for (const entry of entries) tiedCount.set(entry.totalPoints, (tiedCount.get(entry.totalPoints) ?? 0) + 1);
+  const context: TiebreakContext = { headToHead, tiedCount };
 
   if (tiebreakCriteria.length) {
     entries.sort((a, b) => {
       if (a.totalPoints !== b.totalPoints) return b.totalPoints - a.totalPoints;
       for (const criterion of tiebreakCriteria) {
-        const result = applyTiebreaker(criterion, a, b);
+        const result = applyTiebreaker(criterion, a, b, context);
         if (result !== 0) return result;
       }
       return 0;
@@ -499,7 +521,7 @@ function sortAndRankEntries(entries: RankingListEntry[], tiebreakCriteria: Tiebr
   let currentRank = 1;
   for (let i = 0; i < entries.length; i++) {
     if (i > 0 && entries[i].totalPoints === entries[i - 1].totalPoints) {
-      const tieResolved = tiebreakCriteria.some((c) => applyTiebreaker(c, entries[i - 1], entries[i]) !== 0);
+      const tieResolved = tiebreakCriteria.some((c) => applyTiebreaker(c, entries[i - 1], entries[i], context) !== 0);
 
       entries[i].rank = tieResolved ? currentRank : entries[i - 1].rank;
     } else {
@@ -509,8 +531,20 @@ function sortAndRankEntries(entries: RankingListEntry[], tiebreakCriteria: Tiebr
   }
 }
 
-function applyTiebreaker(criterion: string, a: RankingListEntry, b: RankingListEntry): number {
+function applyTiebreaker(
+  criterion: string,
+  a: RankingListEntry,
+  b: RankingListEntry,
+  context: TiebreakContext,
+): number {
   switch (criterion) {
+    case 'headToHead': {
+      // Only between exactly two tied entries: across three or more, pairwise
+      // results can be circular (A beat B, B beat C, C beat A), which gives no
+      // consistent order, so a larger tie is left to the remaining criteria.
+      if (!context.headToHead || context.tiedCount.get(a.totalPoints) !== 2) return 0;
+      return Math.sign(context.headToHead(a.personId, b.personId));
+    }
     case 'highestSingleResult': {
       const aMax = Math.max(0, ...a.countingResults.map((r) => r.points || 0));
       const bMax = Math.max(0, ...b.countingResults.map((r) => r.points || 0));

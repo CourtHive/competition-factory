@@ -333,13 +333,29 @@ aggregationRules: {
 }
 ```
 
-| Criterion               | Resolution                                               |
-| ----------------------- | -------------------------------------------------------- |
-| `'highestSingleResult'` | Highest individual `points` value among counting results |
-| `'mostCountingResults'` | More counting results wins                               |
-| `'mostWins'`            | More total `winCount` across counting results wins       |
+| Criterion               | Resolution                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| `'highestSingleResult'` | Highest individual `points` value among counting results                                    |
+| `'mostCountingResults'` | More counting results wins                                                                  |
+| `'mostWins'`            | More total `winCount` across counting results wins                                          |
+| `'headToHead'`          | The winner of the two players' head-to-head record, from the caller's `headToHead` function |
 
 Tied entries that remain unresolved after all criteria share the same rank.
+
+### headToHead
+
+Awards carry no opponents, so the head-to-head record comes from the caller:
+
+```js
+generateRankingList({
+  pointAwards,
+  aggregationRules: { tiebreakCriteria: ['headToHead', 'highestSingleResult'] },
+  // negative: personIdA ranks ahead; positive: behind; 0: level or never met
+  headToHead: (personIdA, personIdB) => (beat(personIdA, personIdB) ? -1 : beat(personIdB, personIdA) ? 1 : 0),
+});
+```
+
+Only the sign of the returned value is used, and the function should be antisymmetric (`headToHead(a, b) === -headToHead(b, a)`). The criterion applies **only when exactly two entries share a points total**: across three or more, pairwise results can be circular (A beat B, B beat C, C beat A) and give no consistent order, so a larger tie falls through to the remaining criteria. Without a `headToHead` function the criterion resolves nothing.
 
 ## RankingListEntry Output
 
