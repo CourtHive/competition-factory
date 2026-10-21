@@ -1,5 +1,6 @@
 import type { ContextProfile, ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
 import { DrawDefinition, Event, Participant, PayloadProfileEnum, Tournament } from '@Types/tournamentTypes';
+import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
 import { isTalliedStructure, refreshParticipantResults } from './refreshParticipantResults';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -433,6 +434,10 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
  * Draw-wide inputs that getAllStructureMatchUps used to build again for every structure of a draw: the
  * matchUps map and exit profiles always cover the whole draw, and the participants were hydrated with the
  * same arguments each time (the arguments getAllStructureMatchUps would use). One read, one build.
+ *
+ * The draw's matchUps read only the participants the draw references and their groupings, so only those are
+ * hydrated (as findMatchUp does): hydrating the whole pool made every drawData linear in the tournament's
+ * participants, not in the draw's.
  */
 function buildDrawFacts({
   participantsProfile,
@@ -452,6 +457,10 @@ function buildDrawFacts({
   const participants =
     hydrate && tournamentRecord
       ? hydrateParticipants({
+          participants: getReferencedParticipants({
+            participants: tournamentRecord.participants ?? [],
+            record: drawDefinition,
+          }),
           participantsProfile,
           policyDefinitions,
           tournamentRecord,
