@@ -175,7 +175,19 @@ const POINT_FIELDS = [
   'serverSideNumber',
   'code',
   'serveSide',
+  'pointsToGame',
+  'isBreakpoint',
 ];
+
+/**
+ * Point views not compared until CA rules (SE2b-D23, D25, D26), counted on every comparison that skips them. v1's
+ * `gamesToSet` does not follow the set's rule (at 4-5 in a tiebreak set it says 2 games; at 5-6 in an advantage set
+ * 2, where 3 are needed; at 1-0 in the one-game set 1 for the side behind, where 2 are), its later sets ignore the
+ * final-set format, and in an aggregate's decider it reports 0 points to the match. `pointsToSet` and
+ * `pointsToMatch` are built on those. v2 computes all three to the spec (§ 11.2), held there by its own tests; the
+ * differential does not reverse-engineer v1's arithmetic to excuse it.
+ */
+const UNCOMPARED_VIEWS = ['gamesToSet', 'pointsToSet', 'pointsToMatch'];
 
 const pick = (source: Fields, fields: string[]): Fields =>
   Object.fromEntries(
@@ -250,6 +262,9 @@ export function firstDifference(a: unknown, b: unknown, path = ''): Difference |
  *   § 11.1 gives every point; v2 gives them all.
  * - SE2b-D20: the point that wins a timed segment's tiebreak at time. § 11.1 shows `0-0` for a point that completes
  *   a game, as both show for a set's tiebreak; v1 shows the race's final score there (`7-0`).
+ * - SE2b-D24: a consecutive game's `pointsToGame`: v1 counts the whole run whatever run is in progress, recognised by
+ *   reducing again under that reading (view.ts `ViewReadings`) and accepted only when it accounts for every
+ *   difference. (D23, D25 and D26 are views not compared at all: `UNCOMPARED_VIEWS`.)
  * - SE2a-D12: a point's `number` in a race scored in point values. § 11.1 counts the points played in its game
  *   before it; v1 counts their values (after an ace worth 3, the next point is `number` 3, not 1).
  */
@@ -338,6 +353,10 @@ function pendingDecisions(v1: Projection, v2: Projection, combined: boolean): vo
   pendingCombinedPoints(v1, v2, combined);
 }
 
+/** the point views whose v1 reading is pending (view.ts `ViewReadings`) */
+const VIEW_FIELD = /^\.points\.\d+\.(pointsToGame|isBreakpoint)\b/;
+const V1_READINGS = { runIgnored: true };
+
 /** compares v1's state after a call with v2's reduction of the same timeline; throws on a difference */
 export function compareStates(engine: V1Engine, method: string, stale = false, loaded = false): void {
   const state = engine.getState();
@@ -364,11 +383,21 @@ export function compareStates(engine: V1Engine, method: string, stale = false, l
     state.score?.sets ?? [],
     state.history?.points ?? [],
   );
-  const v2State: ScoringState = reduction.state;
-  const v2 = projection(v2State.matchUpStatus, v2State.winningSide, next, v2State.sets, v2State.points);
-  pendingDecisions(v1, v2, resolveFormat(format)?.ordinary.kind === 'combined');
-  pendingUnanchoredCorrection(v1, v2, entries);
-  const difference = firstDifference(v1, v2);
+  const combined = resolveFormat(format)?.ordinary.kind === 'combined';
+  const projected = (v2State: ScoringState) => {
+    const v2 = projection(v2State.matchUpStatus, v2State.winningSide, next, v2State.sets, v2State.points);
+    pendingDecisions(v1, v2, combined);
+    pendingUnanchoredCorrection(v1, v2, entries);
+    return v2;
+  };
+  let difference = firstDifference(v1, projected(reduction.state));
+  if (difference && VIEW_FIELD.test(difference.path)) {
+    // SE2b-D24: v1's reading of a consecutive game's run; accepted only when it accounts for every difference
+    const read = firstDifference(v1, projected(reduce(config, entries, V1_READINGS).state));
+    if (!read) count('pending:SE2b-D24');
+    // what remains under v1's readings is the difference to report
+    difference = read && { ...read, path: `${read.path} (under v1's readings; spec reading: ${difference.v2})` };
+  }
   if (difference)
     throw new ScoringEngineDivergence({
       method,
@@ -376,6 +405,8 @@ export function compareStates(engine: V1Engine, method: string, stale = false, l
       v1: `${difference.path} ${difference.v1}`,
       v2: `${difference.path} ${difference.v2}`,
     });
+  const skipped = reduction.state.points.some((point) => UNCOMPARED_VIEWS.some((view) => point[view] !== undefined));
+  if (skipped) count('uncompared:SE2b-D23-D25-D26');
   count(`compared:${method}`);
 }
 

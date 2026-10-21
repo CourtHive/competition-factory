@@ -1,5 +1,6 @@
 import { INITIAL_SERVICE, afterPoint, corrected, nextServer, serveSide, serviceCode } from './service';
 import { configuredFormat, resolveFormat, ruleForSet, takesInput } from './format';
+import { isBreakpoint, pointsTo, type ViewReadings } from './view';
 import { decideMatch, isClosed, setsWon } from './decide';
 import {
   decidedInPlay,
@@ -64,10 +65,17 @@ import type {
  * persistence, events) is SE2c's.
  */
 
-export type ReducerContext = { match?: MatchRule; multipliers: PointMultiplier[]; rules: ServiceRules };
+export type ReducerContext = {
+  match?: MatchRule;
+  multipliers: PointMultiplier[];
+  rules: ServiceRules;
+  /** the differential's switch for v1's readings of three views (view.ts); never set by scoring itself */
+  readings: ViewReadings;
+};
 
-export function createContext(config: ScoringConfiguration): ReducerContext {
+export function createContext(config: ScoringConfiguration, readings: ViewReadings = {}): ReducerContext {
   return {
+    readings,
     match: resolveFormat(configuredFormat(config)),
     // the option wins over the profile's (§ 1.1)
     multipliers: config.pointMultipliers ?? config.competitionFormat?.pointMultipliers ?? [],
@@ -187,6 +195,8 @@ function point(context: ReducerContext, match: MatchRule, state: ScoringState, e
   const derived = nextServer(context.rules, state.service, state, position);
   const server = facts.server ?? (derived.derived ? derived.side : undefined);
   const half = serveSide(state, position);
+  const view = pointsTo(state, position, context.readings);
+  const breakpoint = isBreakpoint(view, server);
   // a combined total derives no S/R code, even from a supplied server (§ 10.4)
   const coded = entry.data?.code === undefined && at.rule.kind !== 'combined';
   const code = coded ? serviceCode(server, winner) : undefined;
@@ -199,6 +209,8 @@ function point(context: ReducerContext, match: MatchRule, state: ScoringState, e
     ...(server === undefined ? {} : { server, serverSideNumber: (server + 1) as 1 | 2 }),
     ...(code ? { code } : {}),
     ...(half ? { serveSide: half } : {}),
+    ...view,
+    ...(breakpoint === undefined ? {} : { isBreakpoint: breakpoint }),
     ...(entry.timestamp ? { timestamp: entry.timestamp } : {}),
     index,
     pointNumber: index + 1,
@@ -437,8 +449,12 @@ export type Reduction = {
 };
 
 /** `state = reduce(configuration, timeline)` (§ 12.1): a fresh score, every entry replayed in order */
-export function reduce(config: ScoringConfiguration, timeline: TimelineEntry[]): Reduction {
-  const context = createContext(config);
+export function reduce(
+  config: ScoringConfiguration,
+  timeline: TimelineEntry[],
+  readings: ViewReadings = {},
+): Reduction {
+  const context = createContext(config, readings);
   const outcomes: StepOutcome[] = [];
   const legacy: number[] = [];
   let state = initialState();
