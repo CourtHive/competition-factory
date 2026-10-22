@@ -2,6 +2,7 @@ import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/prop
 import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/removeDoubleExit';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { producedStraightInto } from './oweDissolvedConvergencesTheirByes';
 import { applyWithdrawnExits, withdrawByeSeats } from './applyWithdrawnExits';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
@@ -230,8 +231,17 @@ export function settleRederivedDoubleExit({
     // re-derived single exit, whose losing side is the produced exit, can never send it a loser (census S8, COMPASS 8/8
     // policy-off 20853116: `South|1|1` dp 1 after `East|1|2` went from a walkover back to a played result).
     if (overLoserLink) {
+      // claimed by the double exit only where it produced straight into this matchUp, as forward play claims it; an exit
+      // relayed past a BYE is claimed by the matchUp it decides (`producingDoubleExit`)
+      const direct = producedStraightInto({
+        inContextDrawMatchUps: inContextMatchUps,
+        originMatchUpId: origin.matchUpId,
+        drawDefinition,
+        matchUpsMap,
+        matchUpId,
+      });
       const owed = propagateUnfillableLoserBye({
-        claimantMatchUpId: origin.matchUpId,
+        claimantMatchUpId: direct ? origin.matchUpId : undefined,
         tournamentRecord,
         drawDefinition,
         matchUpsMap,

@@ -816,7 +816,7 @@ export function conditionallyRemoveDrawPosition(params) {
   // with it (census A1 wave 4, COMPASS 32/27 21034527: `aDissolvedConvergenceSendsItsSingleExitsBye`).
   if (unwound.winningSide && isExit(unwound.matchUpStatus)) {
     const propagated = propagateUnfillableLoserBye({
-      claimantMatchUpId: producingDoubleExit({ matchUp: noContextTargetMatchUp, matchUpsMap }),
+      claimantMatchUpId: producingDoubleExit({ matchUp: noContextTargetMatchUp, drawDefinition, matchUpsMap }),
       tournamentRecord: params.tournamentRecord,
       matchUpId: targetMatchUp.matchUpId,
       event: params.event,

@@ -643,9 +643,13 @@ A BYE claimed further on goes the same way. A double exit's produced exit can de
 on, and the BYE claimed for that matchUp's loser stands on the double exit's account. When the double
 exit is re-derived to a single exit, the exit it produced is withdrawn and so is that BYE. The
 re-derived matchUp's own loser seat, which showed the produced exit while it was a double exit, is owed its
-BYE again, whether the single exit is awarded or still pending, because its losing side is still the produced
-exit; the BYE is claimed by the double exit that produced the kept exit, as every entry order claims it (census
-run-17 baseline, COMPASS 16/13 and 16/14 under `doubleExitPropagateBye: false`).
+BYE again when the single exit is awarded, because its losing side is still the produced exit (census run-17
+baseline, COMPASS 16/13 and 16/14 under `doubleExitPropagateBye: false`). A single exit still pending is owed
+it only where forward play gives a pending exit one: where a double exit produced the exit straight into the
+matchUp. An exit relayed past a BYE leaves its matchUp's loser seat empty until it is awarded, in every order
+(census openings policy-off, COMPASS 16/13 21078668: `West|2|2`). The BYE is claimed as every entry order claims
+it: by the double exit that produced the kept exit straight into the matchUp, and otherwise by the matchUp the
+exit decides (COMPASS 16/11 21146979: a walkover relayed past `West|1|3`'s BYE).
 
 A seat that becomes a BYE keeps nothing it was awarded. When a correction takes a fed loser back out and the seat they
 held becomes the BYE nobody can fill, an advancement a produced exit gave that seat is taken back first, and the BYE
