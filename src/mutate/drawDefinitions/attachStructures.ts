@@ -4,6 +4,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { structuresOf } from '@Acquire/structureMembers';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { xa } from '@Tools/extractAttributes';
 
 // constants and types
@@ -95,21 +96,30 @@ export function attachStructures({
       });
   }
 
-  if (links.length) drawDefinition.links?.push(...links);
-
   const generatedStructureIds = new Set(structures.map(({ structureId }) => structureId));
   const existingStructureIds = drawDefinition.structures?.map(({ structureId }) => structureId);
 
   // replace any existing structures with newly generated structures
   // this is done because it is possible that a structure exists without matchUps
-  drawDefinition.structures = (drawDefinition.structures ?? []).map((structure) => {
+  const nextStructures = (drawDefinition.structures ?? []).map((structure) => {
     return generatedStructureIds.has(structure.structureId)
       ? structures.find(({ structureId }) => structureId === structure.structureId)
       : structure;
   }) as Structure[];
 
   const newStructures = structures?.filter(({ structureId }) => !existingStructureIds?.includes(structureId));
-  if (newStructures.length) drawDefinition.structures.push(...newStructures);
+  if (newStructures.length) nextStructures.push(...newStructures);
+
+  const nextLinks = drawDefinition.links && (links.length ? [...drawDefinition.links, ...links] : drawDefinition.links);
+
+  // Refuse before writing: the edges are derived on a copy of the draw as it would be, so a malformed link is an
+  // error before any link, structure or edge is written (the same trial `storeGoesTo` makes).
+  const candidate = { ...drawDefinition, structures: nextStructures, links: nextLinks };
+  const trial = addGoesTo({ drawDefinition: makeDeepCopy(candidate, false, true) });
+  if (trial.error) return decorateResult({ result: trial, stack });
+
+  if (links.length) drawDefinition.links?.push(...links);
+  drawDefinition.structures = nextStructures;
 
   // addGoesTo writes the stored edges (and loser finishing ranges) of the matchUps that feed the new
   // structures: those matchUps changed, and each is announced below unless a modification covers it
