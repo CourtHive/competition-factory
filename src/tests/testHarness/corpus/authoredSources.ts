@@ -14,6 +14,8 @@ import fs from 'fs';
 
 // constants
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { TEAM } from '@Constants/eventConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   DOUBLE_ELIMINATION,
@@ -21,8 +23,6 @@ import {
   COMPASS,
   MAIN,
 } from '@Constants/drawDefinitionConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { TEAM } from '@Constants/eventConstants';
 import {
   BYE,
   CANCELLED,
