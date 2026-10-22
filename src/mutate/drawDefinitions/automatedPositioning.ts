@@ -2,7 +2,6 @@ import { getSeedsCountAndStageEntries, seeding, SeededParticipant } from '@Mutat
 import { positionUnseededParticipants } from '@Mutate/matchUps/drawPositions/positionUnseededParticipants';
 import { positionQualifiers, getQualifiersData } from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { getSeedPattern, getValidSeedBlocks, SeedBlockInfo } from '@Query/drawDefinition/seedGetter';
-import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { disableNotifications, enableNotifications } from '@Global/state/globalState';
 import { positionSeedBlocks } from '@Mutate/matchUps/drawPositions/positionSeeds';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -11,7 +10,7 @@ import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { composeThenWrite, isStoredDraw } from '@Tools/composeThenWrite';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -22,16 +21,11 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { PolicyDefinitions, SeedBlock, SeedingProfile, MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { QUALIFYING, WATERFALL } from '@Constants/drawDefinitionConstants';
+import { STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
-import { ROUND_TARGET } from '@Constants/extensionConstants';
+import { WATERFALL } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import {
-  NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS,
-  INSUFFICIENT_DRAW_POSITIONS,
-  STRUCTURE_NOT_FOUND,
-} from '@Constants/errorConditionConstants';
 
 import {
   DrawDefinition,
@@ -439,90 +433,48 @@ function seedUnpositionedStructure(params: AutomatedPositioningArgs & { structur
   }
 }
 
-/**
- * The capacity refusals automated positioning would otherwise meet part-way, asked of the structure as
- * it stands. Both are necessary conditions — positioning only ever fills seats — so a structure this
- * passes is not refused for capacity by anything it does not also see.
- *
- * - `NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS`: the unplaced first-round qualifiers outnumber the
- *   open first-round seats (`positionQualifiers`).
- * - `INSUFFICIENT_DRAW_POSITIONS`: the unplaced unseeded entries and qualifiers together outnumber the
- *   open seats (`positionUnseededParticipants`, which waives it for `multipleStructures`).
- *
- * Not caught here, so still met part-way: seeds seated by `positionSeedBlocks` leaving too few seats for
- * the unseeded, and later-round qualifiers finding no BYE-advanced seat. Both depend on what this
- * positioning places first.
- */
-function positioningCapacityRefusal(params: {
-  provisionalPositioning?: boolean;
-  multipleStructures?: boolean;
-  drawDefinition: DrawDefinition;
-  qualifiersCount?: number;
-  structure: Structure;
-  seedsOnly?: boolean;
-}): ResultType | undefined {
-  const { provisionalPositioning, multipleStructures, drawDefinition, qualifiersCount, structure, seedsOnly } = params;
-  if (seedsOnly) return undefined;
-
-  const { unplacedRoundQualifierCounts, positionAssignments, roundDrawPositions } = getQualifiersData({
-    drawDefinition,
-    qualifiersCount,
-    structure,
-  });
-  const isOpen = (assignment) => !assignment.participantId && !assignment.qualifier && !assignment.bye;
-  const openSeats = positionAssignments.filter(isOpen);
-
-  // Only first-round qualifiers are asked: a later round's seats are those BYEs advance into it, and
-  // the BYEs are placed by the positioning this precedes.
-  const { 1: firstRoundSeats } = roundDrawPositions;
-  const firstRoundOpenSeats = openSeats.filter(({ drawPosition }) => firstRoundSeats?.includes(drawPosition));
-  if (firstRoundSeats && unplacedRoundQualifierCounts['1'] > firstRoundOpenSeats.length)
-    return { error: NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS };
-
-  if (multipleStructures) return undefined;
-
-  // the entries positionUnseededParticipants seats
-  const { stage, stageSequence } = structure;
-  const roundTarget =
-    stage === QUALIFYING
-      ? firstClassOrExtension({ element: structure, attribute: 'roundTarget', name: ROUND_TARGET })
-      : undefined;
-  const entries = getStageEntries({
-    entryStatuses: DIRECT_ENTRY_STATUSES,
-    structureId: structure.structureId,
-    provisionalPositioning,
-    drawDefinition,
-    stageSequence,
-    roundTarget,
-    stage,
-  });
-  // the unseeded entries, as positionUnseededParticipants counts them: seeds are seated by positionSeedBlocks
-  // first and only ever reduce the seats left, so leaving them out keeps this a necessary condition
-  const seeded = new Set(
-    (getStructureSeedAssignments({ provisionalPositioning, drawDefinition, structure }).seedAssignments ?? []).map(
-      ({ participantId }) => participantId,
-    ),
-  );
-  const placedParticipantIds = new Set(positionAssignments.map(({ participantId }) => participantId).filter(Boolean));
-  const unplacedEntries = entries.filter(
-    ({ participantId }) => !placedParticipantIds.has(participantId) && !seeded.has(participantId),
-  ).length;
-  const unplacedQualifiers = Object.values(unplacedRoundQualifierCounts).reduce(
-    (total: number, count) => total + Math.max(0, Number(count)),
-    0,
-  );
-
-  if (unplacedEntries + unplacedQualifiers > openSeats.length) return { error: INSUFFICIENT_DRAW_POSITIONS };
-  return undefined;
-}
-
-export function automatedPositioning(params: AutomatedPositioningArgs): ResultType & {
+type AutomatedPositioningResult = ResultType & {
   positionAssignments?: PositionAssignment[];
   seedAssignments?: SeedAssignment[];
   positioningReport?: { [key: string]: any }[];
   success?: boolean;
   conflicts?: any[];
-} {
+};
+
+/**
+ * Positions a structure: seeds, BYEs, qualifiers and the unseeded, in the order the seeding profile asks.
+ *
+ * COMPOSE, THEN WRITE. Each step places on the draw the next step reads, and a later step can refuse
+ * (the unseeded find too few seats once the seeds and BYEs are placed; a qualifier finds no seat). So the
+ * whole positioning is first composed on a working copy of the draw; a refusal there is returned with the
+ * stored record untouched, and only a positioning that composed is written — making the same choices
+ * (`composeThenWrite`). `applyPositioning: false` is the composition alone: the copy's positioning is
+ * returned and the stored draw is not written.
+ */
+export function automatedPositioning(params: AutomatedPositioningArgs): AutomatedPositioningResult {
+  // a preview, or a draw still being generated (a refusal discards it whole)
+  if (params.applyPositioning === false || !isStoredDraw(params)) return positionStructure(params);
+
+  return composeThenWrite({
+    // the working copy is the draw's; a map or hydration the caller built from the stored draw is not
+    compose: (random) =>
+      positionStructure({
+        ...params,
+        inContextDrawMatchUps: undefined,
+        applyPositioning: false,
+        matchUpsMap: undefined,
+        random,
+      }),
+    write: (random) => positionStructure({ ...params, random }),
+    random: params.random,
+  });
+}
+
+/**
+ * One structure's positioning, against `drawDefinition` as given — or, with `applyPositioning: false`,
+ * against a copy of it with notifications held. Not atomic on its own: callers compose first.
+ */
+export function positionStructure(params: AutomatedPositioningArgs): AutomatedPositioningResult {
   let { drawDefinition } = params;
   const {
     applyPositioning = true,
@@ -557,11 +509,6 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
   if (initialError) return handleErrorCondition({ error: initialError }, applyPositioning);
 
   if (!entries?.length && !qualifiersCount) return handleSuccessCondition({ ...SUCCESS }, applyPositioning);
-
-  // Seeds, BYEs and qualifiers are placed before the unseeded entries; a structure that cannot hold
-  // everyone is refused BEFORE any of them is written, not after.
-  const capacityRefusal = positioningCapacityRefusal({ ...params, drawDefinition, structure, qualifiersCount });
-  if (capacityRefusal) return handleErrorCondition(capacityRefusal, applyPositioning);
 
   seedUnpositionedStructure({ ...params, appliedPolicies, drawDefinition, structure });
 
