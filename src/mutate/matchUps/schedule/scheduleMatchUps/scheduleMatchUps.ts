@@ -55,7 +55,7 @@ import {
 export function scheduleMatchUps(params) {
   const {
     tournamentRecords,
-    allDateMatchUpIds = [],
+    allDateMatchUpIds: statedAllDateMatchUpIds,
 
     averageMatchUpMinutes: statedAverageMinutes,
     recoveryMinutes: statedRecoveryMinutes,
@@ -156,6 +156,10 @@ export function scheduleMatchUps(params) {
     periodLength,
     venueIds,
   });
+  // a source outside this set is not waited for (checkDependenciesScheduled). With none stated it is the matchUps being
+  // scheduled and those already on the date: the empty default waited for nobody, so a final took the first free slot
+  // before both its semifinals (C2, SCHEDULING_PIPELINE_VNEXT.md § 5)
+  const allDateMatchUpIds: string[] = statedAllDateMatchUpIds ?? [...matchUpIds, ...(dateScheduledMatchUpIds ?? [])];
   const requestConflicts = {};
   const skippedScheduleTimes: string[] = [];
   const matchUpScheduleTimes = {};
@@ -339,6 +343,7 @@ export function scheduleMatchUps(params) {
   });
 
   const scheduledMatchUpIds: string[] = [];
+  const refusedMatchUpIds: string[] = [];
   Object.keys(matchUpMap).forEach((tournamentId) => {
     const tournamentRecord = tournamentRecords[tournamentId];
     if (tournamentRecord) {
@@ -364,7 +369,12 @@ export function scheduleMatchUps(params) {
                   matchUpId,
                   scheduledTime,
                 });
-                if (result.success) scheduledMatchUpIds.push(matchUpId);
+                // a refused write (a played matchUp it depends on is later) leaves the matchUp unscheduled, and no venue
+                if (!result.success) {
+                  refusedMatchUpIds.push(matchUpId);
+                  return;
+                }
+                scheduledMatchUpIds.push(matchUpId);
 
                 if (venueId) {
                   assignMatchUpVenue({
@@ -383,7 +393,7 @@ export function scheduleMatchUps(params) {
     }
   });
 
-  const noTimeMatchUpIds = getMatchUpIds(matchUpsToSchedule);
+  const noTimeMatchUpIds = [...getMatchUpIds(matchUpsToSchedule), ...refusedMatchUpIds];
 
   return {
     ...SUCCESS,
