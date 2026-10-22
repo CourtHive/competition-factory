@@ -200,6 +200,44 @@ describe('what it compares now that v2 has a shell, and the little it does not',
     expect(Object.keys(tally).filter((key) => key.startsWith('pending:SE2c'))).toEqual([]);
   });
 
+  it('the whole record is compared, beyond the projection, every field but the clock’s', () => {
+    // a v1 that writes one field more into the record than v2 does
+    class Annotating extends ScoringEngine {
+      getState() {
+        return { ...super.getState(), annotated: true } as ReturnType<ScoringEngine['getState']>;
+      }
+    }
+    const engine = new Annotating({ matchUpFormat: 'SET3-S:6/TB7' });
+    expect(() => engine.addPoint({ winner: 0 })).toThrow(/record\.annotated true/);
+  });
+
+  it('sets aside, and counts, the encodings and the differences awaiting a ruling', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.setServer(1);
+    engine.addPoint({ winner: 0 });
+    const timed = new ScoringEngine({ matchUpFormat: 'SET3-S:T10' });
+    timed.addPoint({ winner: 0 });
+    timed.endSegment();
+    const tally = getScoringDifferentialTally();
+    expect(tally['encoding:server-flip']).toBeGreaterThan(0);
+    expect(tally['pending:entry-set-number']).toBeGreaterThan(0);
+  });
+
+  it('v1 reading the record v2 wrote must name the next server a fresh v2 names', () => {
+    // a v1 that loses the initial server on load, as v1 did before it read history.initialServer
+    class Forgetful extends ScoringEngine {
+      setState(state: Parameters<ScoringEngine['setState']>[0]) {
+        const { initialServer: _initialServer, ...history } = state.history ?? { points: [] };
+        super.setState({ ...state, ...(state.history ? { history } : {}) });
+      }
+    }
+    const engine = new Forgetful({ matchUpFormat: 'SET3-S:6/TB7' });
+    expect(() => engine.setServer(1, { recordEntry: false })).toThrow(/v1 reading v2's record/);
+    const real = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    real.setServer(1, { recordEntry: false });
+    expect(getScoringDifferentialTally()['compared:v1-reads-v2']).toBeGreaterThan(0);
+  });
+
   it('a status set outside scoring is not scoring’s to compare, and is counted', () => {
     const fake = new FakeEngine({ matchUpStatus: 'RETIRED' });
     fake.editPoint(0, { winner: 1 });

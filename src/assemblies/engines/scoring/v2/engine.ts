@@ -224,7 +224,6 @@ export class ScoringEngineV2 {
   }
 
   private write(entries: ScoreEntry[]): void {
-    const stored = this.stale ? (this.record.history?.points ?? []) : [];
     this.record = materialize({
       base: this.record,
       state: this.state,
@@ -233,11 +232,10 @@ export class ScoringEngineV2 {
       lineUps: { initial: this.initialLineUps, current: this.lineUps, doubles: this.doubles },
       timeline: !!this.entries,
       initialServer: this.initialServer,
+      // a record as loaded, or as a non-recalculating correction left it, keeps its points until the next rebuild
+      // (§ 12.4, § 12.6 shape 3)
+      stored: this.stale ? (this.record.history?.points ?? []) : [],
     });
-    // a record as loaded, or as a non-recalculating correction left it, keeps its points until the next rebuild:
-    // new input is added to it, as calculated servers are re-derived only then (§ 12.4, § 12.6 shape 3)
-    if (stored.length && this.record.history)
-      this.record.history.points = [...stored, ...this.record.history.points.slice(stored.length)];
   }
 
   /** a legacy point-only record builds its timeline from its points on its first recorded action (§ 12.6) */
@@ -260,7 +258,9 @@ export class ScoringEngineV2 {
       return { recorded: false, ignored: result.outcome.ignored } as ScoringActionResult;
     }
     const entries = this.entries as ScoreEntry[];
-    const pointIndex = result.state.points.length > before.points.length ? before.points.length : undefined;
+    // the point's position in the record, which a non-recalculating removal has made shorter than the score counts
+    const position = this.stale ? (this.record.history?.points?.length ?? 0) : before.points.length;
+    const pointIndex = result.state.points.length > before.points.length ? position : undefined;
     entries.push(pointIndex === undefined ? judged(entry, result.state) : { ...entry, pointIndex });
     if (before.matchUpStatus !== COMPLETED && result.state.matchUpStatus === COMPLETED)
       this.completedBy = entries.length - 1;
