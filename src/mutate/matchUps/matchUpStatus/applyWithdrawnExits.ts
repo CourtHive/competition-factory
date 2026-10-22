@@ -1,4 +1,4 @@
-import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
@@ -14,7 +14,7 @@ import {
 
 // constants and types
 import { WithdrawnExit, withdrawProducedExits, withdrawByeClaim } from './sideExitProvenance';
-import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
 
@@ -303,47 +303,39 @@ export function withdrawByeSeats({
   const claimant = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === claimantMatchUpId);
   const claimantIsBye = claimant?.matchUpStatus === BYE;
   const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, event, drawDefinition });
-  // the seats this matchUp is the reason for, read from the draw before anything is withdrawn. A BYE that was KEPT
-  // (`byeSeatStands`) rather than cleared and placed again carries no claim, so the ledger alone cannot find it: census
-  // step 3b, COMPASS 16/13 21048963 policy off: `East|1|2` re-scored from a double walkover made `West|1|1` a BYE matchUp
-  // no longer, `West|2|1`'s award over `West|1|2`'s produced walkover kept `Southwest|1|1` dp 1's BYE unclaimed, and
-  // re-scoring `East|1|4` dissolved `West|1|2`, took the award back and left that BYE standing opposite a seat
-  // `West|2|1`'s loser will reach (`anUnclaimedByeGoesWithTheAwardThatKeptIt`)
+  // the seats this matchUp is the reason for, read from the draw before anything is withdrawn
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
   const owed = byeSeatPositionsOwedTo({ inContextDrawMatchUps, drawDefinition, matchUpId: claimantMatchUpId });
-  const withdrawn = new Set([claimantMatchUpId]);
-  const releaseUnlessItStands = (structureId: string, drawPosition?: number) => {
-    const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
-    const assignment = positionAssignmentsOf(structure)?.find((entry) => entry.drawPosition === drawPosition);
-    if (!assignment?.bye || !assignment.byeFromPropagation) return;
-    // the BYE stays while its seat's feeder, read from the draw, still sends nobody (`byeSeatStands`); the claimant is
-    // judged as its withdrawal leaves it
-    if (byeSeatStands({ withdrawn, appliedPolicies, drawDefinition, drawPosition, matchUpsMap, structureId })) return;
-    clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
-  };
-  for (const [structureId, mapped] of Object.entries(matchUpsMap.mappedMatchUps)) {
-    for (const matchUp of mapped.matchUps as MatchUp[]) {
-      for (const sideNumber of [1, 2]) {
-        const claims = matchUp.sideExitProvenance?.[sideNumber]?.byeClaims ?? [];
-        if (!claims.includes(claimantMatchUpId) || matchUp.matchUpId === keepAt) continue;
-        withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
-        // the claim was the matchUp's own record; a BYE the withdrawal clears below is announced again by that clear
-        modifyMatchUpNotice({
-          tournamentId: tournamentRecord?.tournamentId,
-          context: 'withdrawByeSeats',
-          eventId: event?.eventId,
-          drawDefinition,
-          matchUp,
-          event,
-        });
-        if (claimantIsBye) continue;
-        releaseUnlessItStands(structureId, getSideDrawPosition({ drawDefinition, structureId, matchUp, sideNumber }));
-      }
+
+  // the ledger's record of the claims goes too, until claims are no longer written
+  for (const matchUp of matchUpsMap.drawMatchUps) {
+    if (matchUp.matchUpId === keepAt) continue;
+    for (const sideNumber of [1, 2]) {
+      if (!matchUp.sideExitProvenance?.[sideNumber]?.byeClaims?.includes(claimantMatchUpId)) continue;
+      withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
+      // the claim was the matchUp's own record; a BYE cleared below is announced again by that clear
+      modifyMatchUpNotice({
+        tournamentId: tournamentRecord?.tournamentId,
+        context: 'withdrawByeSeats',
+        eventId: event?.eventId,
+        drawDefinition,
+        matchUp,
+        event,
+      });
     }
   }
   if (claimantIsBye) return;
+
+  const withdrawn = new Set([claimantMatchUpId]);
   for (const { matchUp, structureId, drawPosition } of owed) {
-    if (matchUp.matchUpId !== keepAt) releaseUnlessItStands(structureId, drawPosition);
+    if (matchUp.matchUpId === keepAt) continue;
+    const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
+    const assignment = positionAssignmentsOf(structure)?.find((entry) => entry.drawPosition === drawPosition);
+    if (!assignment?.bye || !assignment.byeFromPropagation) continue;
+    // the BYE stays while its seat's feeder, read from the draw, still sends nobody (`byeSeatStands`); the claimant is
+    // judged as its withdrawal leaves it
+    if (byeSeatStands({ withdrawn, appliedPolicies, drawDefinition, drawPosition, matchUpsMap, structureId })) continue;
+    clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
   }
 }
 
