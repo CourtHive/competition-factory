@@ -127,6 +127,19 @@ function arrivedByWinning(
 }
 
 /**
+ * Did `sourceMatchUpId` place a BYE this holder holds? It did when it feeds one of the holder's BYE seats across its
+ * loser link: read from the draw, not from the `byeClaims` ledger the double exit used to record there (Mentat P58).
+ */
+function placedTheHoldersBye(matchUp: HydratedMatchUp, sourceMatchUpId: string, draw: DrawContext): boolean {
+  const byeSeats = (matchUp.sides ?? []).filter((side) => side?.bye).map((side) => side?.drawPosition);
+  const source = draw.inContextDrawMatchUps.find((candidate) => candidate.matchUpId === sourceMatchUpId);
+  if (!source?.loserMatchUpId || !byeSeats.length) return false;
+  const { loserMatchUp, loserTargetDrawPosition } =
+    positionTargets({ ...draw, matchUpId: sourceMatchUpId })?.targetMatchUps ?? {};
+  return loserMatchUp?.structureId === matchUp.structureId && byeSeats.includes(loserTargetDrawPosition);
+}
+
+/**
  * The exit an occupant of a BYE-held seat carries, written where they LANDED: since #5331 a carry follows its carrier
  * to their furthest round. When this request withdraws the BYE its double exit placed on the loser target, v1 brings
  * the occupant back and their exit with them (`reconcileCarriesPastByes` re-carries from the origin record), and the
@@ -136,7 +149,7 @@ function arrivedByWinning(
  *
  * Since F2 (census A1, 2026-10-17) v1 also records the carry on the holder itself, beside the BYE, in every round and
  * in either entry order (`recordCarryBesideBye`), so `carriedStatuses` reads it there. A holder the carrier passed
- * before that, BYE first and outside the last round, records only the BYE claim, and for it the carry is still read
+ * before that, BYE first and outside the last round, records only the BYE it placed, and for it the carry is still read
  * where the carrier landed. One carry is one exit: an onward entry from an origin the holder already records is not
  * read twice.
  */
@@ -147,7 +160,7 @@ function carriedOnwardFromHolder(
 ): MatchUpStatusUnion[] {
   if (!draw || !matchUp || !sourceMatchUpId || matchUp.matchUpStatus !== BYE) return [];
   const provenance = getSideExitProvenance({ matchUp }) ?? {};
-  if (!Object.values(provenance).some((entry) => entry?.byeClaims?.includes(sourceMatchUpId))) return [];
+  if (!placedTheHoldersBye(matchUp, sourceMatchUpId, draw)) return [];
   const recordedHere = new Set(
     Object.values(provenance)
       .filter((entry) => !!entry?.sourceMatchUpId && !!carriedExitStatus(entry))
