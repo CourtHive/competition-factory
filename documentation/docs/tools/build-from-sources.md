@@ -148,8 +148,13 @@ sides, with the side's team attached too. The assembled record is therefore pass
 as the factory stores them: a tie's sides hold its `lineUp`, a collection matchUp's sides hold only their
 `sideNumber`, and every participant is read back from `positionAssignments` and the lineUps.
 
-Measured on a USTA playtennis TEAM tournament (121 teams, 2,467 collection matchUps): 19.7 MB without this step,
-5.5 MB with it.
+The sources carry a `tieFormat` only on each tie (`getEventData` has none at the event or draw level), so the
+assembler also gives each draw the `tieFormat` most of its ties share, and an event whose draws all share one keeps
+it on the event instead, as a factory-built TEAM event does. Dehydration then drops every tie's copy that equals
+what it inherits; a tie whose format really differs keeps its own.
+
+Measured on a USTA playtennis TEAM tournament (121 teams, 127 ties, 2,467 collection matchUps): 19.7 MB without these
+steps, 4.3 MB with them, with every matchUp reading the same through the engine.
 
 ## buildTournamentRecord
 
