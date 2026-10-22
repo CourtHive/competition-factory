@@ -33,9 +33,9 @@ function reasonFor(drawId: string, key: string, withdrawn?: Set<string>) {
   return feederSendsNobody({ inContextDrawMatchUps, loserTargetLink, drawDefinition, withdrawn, feeder });
 }
 
-function draw(drawId: string, config: any, steps: [string, any][] = []) {
+function draw(drawId: string, config: any, steps: [string, any][] = [], policyDefinitions?: any) {
   setSubscriptions({});
-  expect(prepareDraw({ propagateExitStatus: true, seed: 1, ...config }, drawId)).toEqual(true);
+  expect(prepareDraw({ propagateExitStatus: true, seed: 1, ...config }, drawId, policyDefinitions)).toEqual(true);
   for (const [key, outcome] of steps) {
     const target = getDrawMatchUps(drawId).find((matchUp: any) => coordinate(matchUp) === key);
     expect(
@@ -73,6 +73,29 @@ describe('feederSendsNobody reads the feeder as it stands', () => {
     expect(reasonFor('derived-won', 'East|2|1')).toEqual('NOBODY_LOST');
   });
 
+  it('an exit that came over a loser link waits for the award: it is not the winner path a double exit owes at once', () => {
+    const drawDefinition: any = { drawId: 'synthetic', structures: [] };
+    const doubleExit = (structureId: string): any => ({
+      matchUpId: 'origin',
+      structureId,
+      matchUpStatus: DOUBLE_WALKOVER,
+    });
+    const pending = (structureId: string): any => ({
+      matchUpId: 'feeder',
+      structureId,
+      matchUpStatus: WALKOVER,
+      sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
+      sideExitProvenance: {
+        1: { matchUpStatus: WALKOVER, previousMatchUpStatus: DOUBLE_WALKOVER, sourceMatchUpId: 'origin' },
+      },
+    });
+    const reason = (feeder: any, origin: any) =>
+      feederSendsNobody({ inContextDrawMatchUps: [feeder, origin], drawDefinition, feeder });
+    // the double exit's own structure: its produced exit came along the winner path, and its loser is nobody
+    expect(reason(pending('East'), doubleExit('East'))).toEqual('EXIT_PENDING');
+    // another structure: it came over a loser link, and only the award (P39) owes the seat a BYE
+    expect(reason(pending('West'), doubleExit('East'))).toBeUndefined();
+  });
   it('a first-match-loser link that carries none of the matchUp’s possible losers', () => {
     draw('derived-link', { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, participantsCount: 8 }, [
       ['Main|1|1', played],

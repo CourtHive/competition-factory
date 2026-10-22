@@ -58,6 +58,7 @@ export function oweDissolvedConvergencesTheirByes({
     const owed = propagateUnfillableLoserBye({
       claimantMatchUpId,
       pendingExit,
+      claimStandingBye: true,
       tournamentRecord,
       drawDefinition,
       matchUpsMap,

@@ -4,10 +4,12 @@ import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/d
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
-import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { bringCarryHome, carriedEntryAt } from '@Mutate/matchUps/drawPositions/carryHome';
+import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -31,7 +33,6 @@ import {
   retainByeClaimsOnly,
   getSideExitProvenance,
   carriedExitStatus,
-  byeClaimSurvives,
   recordByeClaim,
   sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
@@ -574,7 +575,6 @@ function removeDrawPosition({
     })
   ) {
     const result = handleLoserMatchUpRemoval({
-      sourceMatchUpId: targetMatchUp.matchUpId,
       loserMatchUpDrawPositionIndex,
       inContextDrawMatchUps,
       tournamentRecord,
@@ -1298,45 +1298,39 @@ function keepByeOnItsOriginsAccount({
 }
 
 /**
- * A BYE survives the removal while ANOTHER live claim still names it — the rule `removeDoubleExit` keeps at its own
- * loser target (`byeClaimSurvives`). The matchUp being cleared no longer claims it; a double exit that does still owes
- * it, and taking it back leaves that claimant's loser seat open to an opponent who can never arrive. Reached when the
+ * A BYE survives the removal while the seat's feeder still sends nobody (`byeSeatStands`, read from the draw): a double
+ * exit still owes it, and taking it back leaves that seat open to an opponent who can never arrive. Reached when the
  * matchUp re-derives undecided, so `reDerivedLoserStands` has no result to serve the link from: a BYE sent on beside a
- * double exit's produced walkover is withdrawn, and the BYE at the loser seat stands on that double exit's claim
- * (COMPASS 16, built by hand: `aClearedSeatKeepsTheByeALiveDoubleExitClaims`).
+ * double exit's produced walkover is withdrawn, and the BYE at the loser seat stands for that double exit (COMPASS 16,
+ * built by hand: `aClearedSeatKeepsTheByeALiveDoubleExitClaims`). The cleared matchUp has already re-derived, so it is
+ * read as it stands.
  */
 function aLiveClaimHoldsTheBye({
-  sourceMatchUpId,
+  tournamentRecord,
   drawDefinition,
   drawPosition,
   loserMatchUp,
   matchUpsMap,
+  event,
 }: {
+  tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   loserMatchUp: HydratedMatchUp;
-  sourceMatchUpId?: string;
   matchUpsMap?: MatchUpsMap;
   drawPosition: number;
+  event?: Event;
 }): boolean {
   const structureId = loserMatchUp.structureId;
   const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId });
   if (!positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition)?.bye) return false;
-  const drawMatchUps = matchUpsMap?.drawMatchUps ?? getMatchUpsMap({ drawDefinition }).drawMatchUps;
-  const stored = drawMatchUps.find((matchUp) => matchUp.matchUpId === loserMatchUp.matchUpId);
-  return byeClaimSurvives({
-    sideNumber: getDrawPositionSideNumber({ matchUp: stored, drawPosition, structureId, drawDefinition }),
-    isStillDoubleExit: (claimantMatchUpId) =>
-      isDoubleExit(drawMatchUps.find((matchUp) => matchUp.matchUpId === claimantMatchUpId)?.matchUpStatus),
-    withdrawnSourceIds: sourceMatchUpId ? new Set([sourceMatchUpId]) : undefined,
-    matchUp: stored,
-  });
+  const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, event, drawDefinition });
+  return byeSeatStands({ appliedPolicies, drawDefinition, drawPosition, matchUpsMap, structureId });
 }
 
 function handleLoserMatchUpRemoval({
   loserMatchUpDrawPositionIndex,
   inContextDrawMatchUps,
   tournamentRecord,
-  sourceMatchUpId,
   drawDefinition,
   loserMatchUp,
   matchUpsMap,
@@ -1345,7 +1339,7 @@ function handleLoserMatchUpRemoval({
 }): ResultType | void {
   const { drawPositions, roundNumber } = loserMatchUp;
   const claimed = (drawPosition: number) =>
-    aLiveClaimHoldsTheBye({ sourceMatchUpId, drawDefinition, drawPosition, loserMatchUp, matchUpsMap });
+    aLiveClaimHoldsTheBye({ tournamentRecord, drawDefinition, drawPosition, loserMatchUp, matchUpsMap, event });
 
   if (roundNumber === 1) {
     // the side's position, read structurally: index 0 is side 1

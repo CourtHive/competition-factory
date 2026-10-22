@@ -107,6 +107,7 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  */
 export function propagateUnfillableLoserBye({
   claimantMatchUpId,
+  claimStandingBye,
   tournamentRecord,
   drawDefinition,
   pendingExit,
@@ -117,6 +118,7 @@ export function propagateUnfillableLoserBye({
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   claimantMatchUpId?: string;
+  claimStandingBye?: boolean;
   matchUpsMap?: MatchUpsMap;
   pendingExit?: boolean;
   matchUpId?: string;
@@ -216,7 +218,14 @@ export function propagateUnfillableLoserBye({
   const targetAssignment = positionAssignments?.find(
     (assignment) => assignment.drawPosition === loserTargetDrawPosition,
   );
-  if (targetAssignment?.participantId || targetAssignment?.bye) return undefined;
+  // a caller may ask for the claim on a propagated BYE the seat already holds: the BYE was kept, read from the draw
+  // (`byeSeatStands`), where it was once cleared and placed again, and the claim is all that placement would add
+  const standingBye =
+    !!claimStandingBye &&
+    !!targetAssignment?.bye &&
+    !!targetAssignment.byeFromPropagation &&
+    !targetAssignment.participantId;
+  if (!standingBye && (targetAssignment?.participantId || targetAssignment?.bye)) return undefined;
 
   /**
    * The SAME dispatch the ordinary BYE cascade makes in `advanceDrawPosition`: round 1 assigns directly,
@@ -226,7 +235,7 @@ export function propagateUnfillableLoserBye({
    * TRIGGERS it (a provenance-attested dead seat, rather than a BYE that lost), never in where the BYE
    * may land.
    */
-  const result =
+  const place = () =>
     loserMatchUp.roundNumber === 1
       ? assignDrawPositionBye({
           structureId: loserMatchUp.structureId,
@@ -247,6 +256,7 @@ export function propagateUnfillableLoserBye({
           matchUpsMap,
           event,
         });
+  const result = standingBye ? undefined : place();
   if (result?.error) return result;
 
   /**

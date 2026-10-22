@@ -625,33 +625,6 @@ export function sideRecordOf(matchUp?: MatchUp): string {
   ]);
 }
 
-/**
- * Does any claim on this side survive the withdrawal in progress?
- *
- * A claim survives when its claimant is neither being withdrawn nor has stopped being a double
- * exit. Both halves are needed: `withdrawnSourceIds` is added to on ENTRY to `removeDoubleExit`, so
- * it means "visited", and a visited matchUp whose status has not yet been rewritten still reads as a
- * double exit.
- */
-export function byeClaimSurvives({
-  withdrawnSourceIds,
-  isStillDoubleExit,
-  sideNumber,
-  matchUp,
-}: {
-  withdrawnSourceIds?: Set<string>;
-  isStillDoubleExit: (matchUpId: string) => boolean;
-  sideNumber?: number;
-  matchUp?: MatchUp;
-}): boolean {
-  if (!matchUp || (sideNumber !== 1 && sideNumber !== 2)) return false;
-  const claims = matchUp.sideExitProvenance?.[sideNumber]?.byeClaims ?? [];
-  return claims.some((claimantMatchUpId) => {
-    if (withdrawnSourceIds?.has(claimantMatchUpId)) return false;
-    return isStillDoubleExit(claimantMatchUpId);
-  });
-}
-
 /** Why a claimant holds a BYE claim (Mentat P58): read from the claimant as it stands, never stored. */
 export type ByeClaimReason = 'DOUBLE_EXIT_PRODUCED' | 'UNFILLABLE_LOSER' | 'BYE_MATCHUP_LOSER';
 
