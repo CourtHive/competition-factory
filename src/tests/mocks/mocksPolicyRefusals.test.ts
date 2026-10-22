@@ -188,6 +188,9 @@ describe('modifyTournamentRecord: an existing event', () => {
       tournamentRecord,
     });
     expect(result.success).toEqual(true);
-    expect(Object.keys(eventPolicies(tournamentRecord)).sort()).toEqual([POLICY_TYPE_DRAWS, POLICY_TYPE_SCORING]);
+    expect(Object.keys(eventPolicies(tournamentRecord)).sort((a, b) => a.localeCompare(b))).toEqual([
+      POLICY_TYPE_DRAWS,
+      POLICY_TYPE_SCORING,
+    ]);
   });
 });

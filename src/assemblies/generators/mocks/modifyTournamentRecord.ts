@@ -22,12 +22,14 @@ import { isObject } from '@Tools/objects';
 // constants and types
 import { EXISTING_POLICY_TYPE, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import type { MockEventProfile, ModifyTournamentRecordArgs } from '@Types/mocksTypes';
-import type { Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
+import type { Event, Tournament } from '@Types/tournamentTypes';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+
+const COMPLETED_STATUSES = new Set<string | undefined>(completedMatchUpStatuses);
 
 type EventPolicyArgs = {
   eventProfile: MockEventProfile;
@@ -68,10 +70,7 @@ function replaceEventPolicies({ tournamentRecord, eventProfile, profileIndex, ev
 function eventHasResults(event: Event) {
   return (event.drawDefinitions ?? []).some((drawDefinition) =>
     allDrawMatchUps({ event, drawDefinition }).matchUps?.some(
-      (matchUp) =>
-        !!matchUp.winningSide ||
-        completedMatchUpStatuses.includes(matchUp.matchUpStatus as MatchUpStatusUnion) ||
-        isActiveMatchUp(matchUp),
+      (matchUp) => !!matchUp.winningSide || COMPLETED_STATUSES.has(matchUp.matchUpStatus) || isActiveMatchUp(matchUp),
     ),
   );
 }
