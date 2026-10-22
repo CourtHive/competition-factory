@@ -619,7 +619,7 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
     expect(placed.length).toBe(4);
   });
 
-  test('handles target structure not found gracefully (logs warning, does not fail)', () => {
+  test('refuses a LOSER link to a non-existent structure before advancing anyone', () => {
     const { drawDefinition } = buildCompletedRound1Draw();
 
     // Link points to a non-existent structure
@@ -631,13 +631,15 @@ describe('luckyDrawAdvancement — placeDiscardedLosers branches', () => {
       },
     ];
 
-    // Should succeed (console.warn is called but no error returned)
-    const result = luckyDrawAdvancement({
+    // CA, 2026-10-22: refused before any write — no longer advanced-and-logged
+    const before = makeDeepCopy(drawDefinition, false, true);
+    const result: any = luckyDrawAdvancement({
       drawDefinition,
       participantId: 'pid-1',
       roundNumber: 1,
     });
-    expect(result.success).toBe(true);
+    expect(result.error).toBe(INVALID_VALUES);
+    expect(makeDeepCopy(drawDefinition, false, true)).toEqual(before);
   });
 
   test('creates virtual drawPositions when target matchUps have empty drawPositions', () => {
