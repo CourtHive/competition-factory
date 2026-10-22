@@ -80,7 +80,7 @@ See [Date and Time Handling](/docs/concepts/date-time-handling) for usage patter
 - **checkScoreHasValue** - Verify scores contain values
 - **matchUpSort** - Sort matchUps by various criteria
 - **matchUpChronologicalSort** - Sort matchUps by `(scheduledDate, scheduledTime)`, no-op when either side lacks the field
-- **dehydrateMatchUps** - Remove computed attributes from matchUps
+- **dehydrateMatchUps** - Return a record's matchUps (TEAM ties and their collections included) to their stored shape
 - **visualizeScheduledMatchUps** - Color-coded console display of schedules
 
 ### Extensions & Metadata

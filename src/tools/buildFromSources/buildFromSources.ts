@@ -21,6 +21,8 @@
 
 import { deriveSourceLinks, DerivedLink, SourceDraw, SourceStructure } from './deriveSourceLinks';
 import { inferDrawLinks, InferredLink } from '@Mutate/drawDefinitions/links/inferDrawLinks';
+import { dehydrateRecordMatchUps } from '@Mutate/tournaments/dehydrate';
+import { Tournament } from '@Types/tournamentTypes';
 
 // ------------------------------------------------------------------- types
 //
@@ -986,6 +988,10 @@ export function buildTournamentRecord({
   if (participants.length > 0) record.participants = participants;
   if (venues.length > 0) record.venues = venues;
   if (events.length > 0) record.events = events;
+  // Every source matchUp is query output, so hydrated — and a TEAM event is hydrated inside every tie, once per
+  // collection matchUp per side. The cleaning above is per source matchUp and never reaches a tie's collections;
+  // dehydrating the assembled record does, with the same rules any stored record is held to.
+  dehydrateRecordMatchUps(record as Tournament, true);
   return dropEmpty(record);
 }
 
