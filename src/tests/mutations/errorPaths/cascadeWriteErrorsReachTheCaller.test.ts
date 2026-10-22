@@ -24,8 +24,8 @@ import {
  * `setMatchUpStatus` reaches the draw through `modifyMatchUpScore` from a dozen sites: the result
  * itself, the exits a double exit produces downstream, the BYEs and exits a correction withdraws,
  * the decider a final reconciles, the lines and dual of a TEAM matchUp. Each site is named by the
- * `context` it passes. This file forces the FIRST write at each named site to fail and asserts one
- * thing: the error is what `setMatchUpStatus` returns. A caller told "success" over a write that did
+ * `context` it passes. This file forces the FIRST write at each named site to fail and asserts that
+ * the error is what `setMatchUpStatus` returns (and, where it is the call's first write, that nothing changed). A caller told "success" over a write that did
  * not happen is the defect class `reconcileDeciderReturnsItsError.test.ts` pinned for one site; this
  * pins it for all of them.
  *
@@ -35,9 +35,22 @@ import {
  * directly. Over the 1,000 matrix cells and the 1,600 deep-correction cells the engine returns no
  * error from any of these sites. So this file says nothing about what the engine does in play.
  *
- * It does NOT assert the draw is unchanged. CA's standing ruling (2026-09-30): nothing in this
- * cascade snapshots or restores; a consumer that needs atomicity passes `rollbackOnError`, which
- * `executionQueue` does. Asserting partial state here would assert the opposite of the design.
+ * ## What it pins, and what it does not
+ *
+ * The rule (CA, 2026-10-22, clarifying 2026-09-30): a method that returns an error leaves the record
+ * unchanged on a DIRECT call, and the cascade must deliver that by itself. It builds in no snapshot
+ * or restore, and `rollbackOnError` is never the answer to it. So each case is one of two kinds:
+ *
+ * - **the call's first write** (`firstWrite: true`): nothing was written before the forced failure,
+ *   and the case asserts the record is exactly as it was. That is the rule, held.
+ * - **a KNOWN V1 RESIDUAL**: the forced write comes after earlier writes of the same call, so v1
+ *   leaves those writes behind. That is a refusal-after-write the rule forbids, NOT the design. Each
+ *   such site is on the outcome v2 executor plan's "v1 errors handed to v2" list (Mentat
+ *   `planning/OUTCOME_V2_EXECUTOR_PLAN.md`): it can arise only from a cascade write whose failure
+ *   depends on the draw the cascade has left, so v1 cannot ask it before its first write, and v2 must
+ *   plan it as a refusal. These cases do not assert the record, because v1 cannot yet provide it; they
+ *   pin only that the error is never swallowed behind a success. When v2 plans a site, its case gains
+ *   the record assertion.
  *
  * ## How each site is reached
  *
@@ -76,21 +89,24 @@ const matchUps = (drawId: string): any[] =>
 /**
  * Drive a matrix cell as the matrix does — the exit on the first playable matchUp, then play forward
  * with the exit every third step — with the forced context armed from the start. Returns the first
- * result that carries an error, or undefined if the play ran to exhaustion without one.
+ * result that carries an error and the record as it stood before that call, or undefined if the play
+ * ran to exhaustion without one.
  */
 function driveUntilError(drawId: string, exitOutcome: any, propagateExitStatus: boolean): any {
+  let before: any;
   const skip = new Set<string>();
   for (let taken = 0; taken < 200; taken++) {
     const target = nextPlayable(drawId, skip);
     if (!target) return undefined;
     const outcome = taken === 0 || taken % 3 === 2 ? exitOutcome : played;
+    before = recordNow();
     const result: any = tournamentEngine.setMatchUpStatus({
       matchUpId: target.matchUpId,
       propagateExitStatus,
       outcome,
       drawId,
     });
-    if (result.error) return result;
+    if (result.error) return { result, before };
     if (!result.success) skip.add(target.matchUpId);
   }
   return undefined;
@@ -98,38 +114,47 @@ function driveUntilError(drawId: string, exitOutcome: any, propagateExitStatus: 
 
 const FORWARD_SITES = [
   // the primary write of an ordinary result
-  { context: 'attemptToModifyScore', seed: 1, policy: undefined },
-  // a double exit's produced exit, written on the winner target
-  { context: 'conditionallyAdvanceDrawPosition', seed: 7, policy: undefined },
+  { context: 'attemptToModifyScore', seed: 1, policy: undefined, firstWrite: true },
+  // v1 residual, handed to v2: a double exit's produced exit, written on the winner target after the result
+  { context: 'conditionallyAdvanceDrawPosition', seed: 7, policy: undefined, firstWrite: false },
   // the re-score path for a result that changes nothing downstream
-  { context: 'scoreModification', seed: 7, policy: undefined },
-  // the exit carried onward through a BYE-held target, policy off
-  { context: 'doubleExitAdvancement', seed: 77, policy: PRODUCED_EXIT_POLICY },
-  // the settle pass at the end of a call, policy off
-  { context: 'settleHeldExits', seed: 77, policy: PRODUCED_EXIT_POLICY },
+  { context: 'scoreModification', seed: 7, policy: undefined, firstWrite: true },
+  // v1 residual, handed to v2: the exit carried onward through a BYE-held target, policy off
+  { context: 'doubleExitAdvancement', seed: 77, policy: PRODUCED_EXIT_POLICY, firstWrite: false },
+  // v1 residual, handed to v2: the settle pass at the end of a call, policy off
+  { context: 'settleHeldExits', seed: 77, policy: PRODUCED_EXIT_POLICY, firstWrite: false },
 ];
 
-it.each(FORWARD_SITES)('a failed write at $context fails the call (matrix seed $seed)', ({ context, seed, policy }) => {
-  const cell = MATRIX_CELLS.find((candidate) => candidate.seed === seed);
-  expect(cell).toBeDefined();
-  setSubscriptions({});
-  const drawId = `fault-${context}`;
-  mocksEngine.generateTournamentRecord({
-    ...(policy ? { policyDefinitions: policy } : {}),
-    drawProfiles: [
-      { drawId, drawType: cell!.drawType, drawSize: cell!.drawSize, participantsCount: cell!.participantsCount },
-    ],
-    nonRandom: cell!.seed,
-    setState: true,
-  });
+const recordNow = () => structuredClone(tournamentEngine.getTournament().tournamentRecord);
+const residual = (firstWrite: boolean) => (firstWrite ? 'leaves the record unchanged' : 'is returned (v1 residual)');
 
-  forced.context = context;
-  const result = driveUntilError(drawId, cellExitOutcome(cell!.exitStatus), cell!.propagateExitStatus);
+it.each(FORWARD_SITES.map((site) => ({ ...site, kind: residual(site.firstWrite) })))(
+  'a failed write at $context fails the call and $kind (matrix seed $seed)',
+  ({ context, seed, policy, firstWrite }) => {
+    const cell = MATRIX_CELLS.find((candidate) => candidate.seed === seed);
+    expect(cell).toBeDefined();
+    setSubscriptions({});
+    const drawId = `fault-${context}`;
+    mocksEngine.generateTournamentRecord({
+      ...(policy ? { policyDefinitions: policy } : {}),
+      drawProfiles: [
+        { drawId, drawType: cell!.drawType, drawSize: cell!.drawSize, participantsCount: cell!.participantsCount },
+      ],
+      nonRandom: cell!.seed,
+      setState: true,
+    });
 
-  // CONTROL: the play reached the site, once — the first forced write ends the call
-  expect(forced.hits, `${context} was reached`).toEqual(1);
-  expect(result?.error?.code, "the error is the caller's result").toEqual(FORCED_ERROR.code);
-});
+    forced.context = context;
+    const failed = driveUntilError(drawId, cellExitOutcome(cell!.exitStatus), cell!.propagateExitStatus);
+
+    // CONTROL: the play reached the site, once — the first forced write ends the call
+    expect(forced.hits, `${context} was reached`).toEqual(1);
+    expect(failed?.result?.error?.code, "the error is the caller's result").toEqual(FORCED_ERROR.code);
+    // the call's first write: nothing was written before it, so nothing changed. A residual site is not asserted here:
+    // v1 leaves its earlier writes behind, which the rule forbids and v2 is to plan away (see the docblock)
+    if (firstWrite) expect(recordNow(), 'a failed first write changes nothing').toEqual(failed?.before);
+  },
+);
 
 const alternative = (outcome: any): any => {
   switch (outcome?.matchUpStatus) {
@@ -157,9 +182,10 @@ const alternative = (outcome: any): any => {
 
 /** The deep oracle's corrected route: a played prefix, the mistake, the correction. */
 const CORRECTION_SITES = [
-  // a correction withdrawing a double exit's advancement
+  // v1 residual, handed to v2: a correction withdrawing a double exit's advancement, after the unwind began
   {
     context: 'conditionallyRemoveDrawPosition',
+    firstWrite: false,
     config: {
       drawType: SINGLE_ELIMINATION,
       drawSize: 8,
@@ -172,6 +198,7 @@ const CORRECTION_SITES = [
   // the main write of the correcting outcome itself
   {
     context: 'sms',
+    firstWrite: true,
     config: {
       drawType: FIRST_MATCH_LOSER_CONSOLATION,
       drawSize: 8,
@@ -181,9 +208,10 @@ const CORRECTION_SITES = [
     },
     cellExit: { matchUpStatus: DEFAULTED, winningSide: 2 },
   },
-  // an exit withdrawn back along a chain of BYE-held matchUps, policy off
+  // v1 residual, handed to v2: an exit withdrawn back along a chain of BYE-held matchUps, policy off
   {
     context: 'withdrawExitFromByeChain',
+    firstWrite: false,
     config: {
       drawType: DOUBLE_ELIMINATION,
       drawSize: 8,
@@ -196,9 +224,9 @@ const CORRECTION_SITES = [
   },
 ];
 
-it.each(CORRECTION_SITES)(
-  'a failed write at $context fails the correction (deep seed $config.seed)',
-  ({ context, config, cellExit }) => {
+it.each(CORRECTION_SITES.map((site) => ({ ...site, kind: residual(site.firstWrite) })))(
+  'a failed write at $context fails the correction and $kind (deep seed $config.seed)',
+  ({ context, config, cellExit, firstWrite }) => {
     setSubscriptions({});
     const scenario = deepCorrectionScenario({ config: config as any, cellExit, alternative });
     expect(scenario, 'the scenario composes').toBeDefined();
@@ -237,6 +265,7 @@ it.each(CORRECTION_SITES)(
     }
 
     forced.context = context;
+    const before = recordNow();
     const target = matchUps(drawId).find(
       (m) =>
         m.structureName === correction.structureName &&
@@ -251,6 +280,8 @@ it.each(CORRECTION_SITES)(
 
     expect(forced.hits, `${context} was reached by the correction`).toEqual(1);
     expect(result?.error?.code).toEqual(FORCED_ERROR.code);
+    // as above: asserted only where the forced write is the call's first
+    if (firstWrite) expect(recordNow(), 'a failed first write changes nothing').toEqual(before);
   },
 );
 
@@ -259,8 +290,11 @@ it.each(CORRECTION_SITES)(
  * `modifyMatchUpScore`, and discarded the result: a failed write of the dual's status left the line
  * scored and the dual stale while the caller reported success. Found by this file (2026-10-01),
  * when the site turned out to have no context to inject on.
+ *
+ * A KNOWN V1 RESIDUAL, handed to v2: the line's own score is written before the dual's, so v1 leaves it
+ * behind when the dual's write fails. The record is not asserted, because v1 cannot yet provide it.
  */
-it("a failed write of a TEAM dual's status fails the line score that caused it", () => {
+it("a failed write of a TEAM dual's status fails the line score that caused it (v1 residual)", () => {
   setSubscriptions({});
   const drawId = 'fault-dual';
   mocksEngine.generateTournamentRecord({
