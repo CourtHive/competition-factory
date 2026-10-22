@@ -5,8 +5,8 @@ import { carriedExitStatus } from './sideExitProvenance';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 /** why the matchUp feeding a loser seat will never send anyone across the link */
