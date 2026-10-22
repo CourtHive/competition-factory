@@ -4,8 +4,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { INSUFFICIENT_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
 import { MAIN, PLAY_OFF, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { INSUFFICIENT_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
 
 // A refused mutation must leave the record exactly as it found it, on a DIRECT call: no rollbackOnError,
 // no snapshot/restore. The record is copied before the call and compared after it.
