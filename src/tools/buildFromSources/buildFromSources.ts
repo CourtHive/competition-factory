@@ -21,8 +21,9 @@
 
 import { deriveSourceLinks, DerivedLink, SourceDraw, SourceStructure } from './deriveSourceLinks';
 import { inferDrawLinks, InferredLink } from '@Mutate/drawDefinitions/links/inferDrawLinks';
+import { Event, MatchUp, Structure, TieFormat, Tournament } from '@Types/tournamentTypes';
 import { dehydrateRecordMatchUps } from '@Mutate/tournaments/dehydrate';
-import { Tournament } from '@Types/tournamentTypes';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 
 // ------------------------------------------------------------------- types
 //
@@ -969,6 +970,64 @@ export function repairDrawLinks(record: Record<string, any>): BuildFromSourcesRe
 }
 
 // ----------------------------------------------------------------- public
+// ------------------------------------------------ TEAM: one tieFormat where the record keeps it
+// The sources carry no event- or draw-level tieFormat (getEventData's eventInfo and drawsData have none): the only
+// copies are on each tie, so a rebuilt TEAM event stored the whole format once per tie (about 2 KB each; 0.25 MB on a
+// 127-tie USTA record). Each draw takes the format most of its ties share, and an event whose draws all share one
+// takes it instead, the way a factory-built TEAM event stores it. dehydrateRecordMatchUps then drops every tie's copy
+// that equals what it inherits; a tie whose format really differs is not equal, so it keeps its own.
+const sortedKeys = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(sortedKeys);
+  if (!value || typeof value !== 'object') return value;
+  const object = value as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.keys(object)
+      .sort((a, b) => a.localeCompare(b))
+      .map((key) => [key, sortedKeys(object[key])]),
+  );
+};
+const tieFormatKey = (tieFormat: TieFormat): string => JSON.stringify(sortedKeys(tieFormat));
+
+function tiesOf(structures: Structure[] = []): MatchUp[] {
+  return structures.flatMap((structure) => [
+    ...(matchUpsOf(structure) ?? []).filter((matchUp) => Array.isArray(matchUp.tieMatchUps)),
+    ...tiesOf(structuresOf(structure)),
+  ]);
+}
+
+// the tieFormat most of these ties carry, or undefined when none carries one
+function mostCommonTieFormat(ties: MatchUp[]): TieFormat | undefined {
+  const counts = new Map<string, { tieFormat: TieFormat; count: number }>();
+  for (const { tieFormat } of ties) {
+    if (!tieFormat || typeof tieFormat !== 'object') continue;
+    const key = tieFormatKey(tieFormat);
+    const entry = counts.get(key) ?? { tieFormat, count: 0 };
+    entry.count += 1;
+    counts.set(key, entry);
+  }
+  let best: { tieFormat: TieFormat; count: number } | undefined;
+  for (const entry of counts.values()) if (!best || entry.count > best.count) best = entry;
+  return best?.tieFormat;
+}
+
+function liftSharedTieFormats(events: Event[]) {
+  for (const event of events) {
+    if (event.tieFormat) continue;
+    const drawDefinitions = event.drawDefinitions ?? [];
+    const drawFormats: TieFormat[] = [];
+    for (const drawDefinition of drawDefinitions) {
+      const tieFormat = drawDefinition.tieFormat ?? mostCommonTieFormat(tiesOf(drawDefinition.structures));
+      if (!tieFormat) continue;
+      drawDefinition.tieFormat = tieFormat;
+      drawFormats.push(tieFormat);
+    }
+    const shared = drawFormats.length === drawDefinitions.length && new Set(drawFormats.map(tieFormatKey)).size === 1;
+    if (!shared) continue;
+    event.tieFormat = drawFormats[0];
+    for (const drawDefinition of drawDefinitions) delete drawDefinition.tieFormat;
+  }
+}
+
 export function buildTournamentRecord({
   eventDataDocs = [],
   matchUpDocs = [],
@@ -988,6 +1047,7 @@ export function buildTournamentRecord({
   if (participants.length > 0) record.participants = participants;
   if (venues.length > 0) record.venues = venues;
   if (events.length > 0) record.events = events;
+  liftSharedTieFormats(events as Event[]);
   // Every source matchUp is query output, so hydrated — and a TEAM event is hydrated inside every tie, once per
   // collection matchUp per side. The cleaning above is per source matchUp and never reaches a tie's collections;
   // dehydrating the assembled record does, with the same rules any stored record is held to.

@@ -197,6 +197,32 @@ describe.each(SHAPES.filter(({ drawProfile }) => drawProfile.eventType === TEAM_
       const size = (r: any) => JSON.stringify(r).length;
       expect(size(rebuilt) / size(record)).toBeLessThan(1.5);
     });
+
+    // The sources carry the tieFormat only on each tie; the record keeps it once, where the factory keeps it.
+    it('stores the shared tieFormat once, on the event, and no tie keeps a copy of it', () => {
+      const event = rebuilt.events[0];
+      expect(canonical(event.tieFormat)).toEqual(canonical(record.events[0].tieFormat));
+      const ties = storedMatchUpsOf(rebuilt).filter((m) => Array.isArray(m.tieMatchUps));
+      expect(ties.length).toBeGreaterThan(0);
+      expect(ties.filter((m) => m.tieFormat)).toEqual([]);
+    });
+
+    it('lets a tie whose tieFormat really differs keep its own', () => {
+      const source = structuredClone(eventData);
+      const roundMatchUps: any = source.eventData.drawsData[0].structures[0].roundMatchUps;
+      const sourceTies = (Object.values(roundMatchUps).flat() as any[]).filter((m) => m.tieFormat);
+      const different = sourceTies[0];
+      different.tieFormat = { ...different.tieFormat, winCriteria: { valueGoal: 99 } };
+      const rebuiltWithOneDifferent = buildFromSources([source, participants]).record;
+      const tieFormatsByTie = Object.fromEntries(
+        storedMatchUpsOf(rebuiltWithOneDifferent)
+          .filter((m) => Array.isArray(m.tieMatchUps))
+          .map((m) => [m.matchUpId, m.tieFormat?.winCriteria?.valueGoal]),
+      );
+      expect(tieFormatsByTie[different.matchUpId]).toEqual(99);
+      const others = Object.entries(tieFormatsByTie).filter(([id]) => id !== different.matchUpId);
+      expect(others.every(([, valueGoal]) => valueGoal === undefined)).toBe(true);
+    });
   },
 );
 
