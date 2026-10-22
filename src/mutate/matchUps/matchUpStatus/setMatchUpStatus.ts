@@ -34,13 +34,14 @@ import { holdGoesTo } from '@Query/matchUps/addGoesTo';
 import { isDoubleExit } from '@Validators/isExit';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
+import { isString } from '@Tools/objects';
 
 // constants and types
 import { PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
+import { INVALID_VALUES, INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
-import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { SCHEDULE_PRESERVED_ON_EXIT } from '@Constants/scheduleConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 
@@ -289,6 +290,14 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // a winningSide is 1 or 2, or it is absent: 0 is refused, never read as absent (CA, 2026-10-01)
   if (outcome?.winningSide != null && ![1, 2].includes(outcome.winningSide)) {
     return { error: INVALID_WINNING_SIDE };
+  }
+
+  // NOTES ARE VALIDATED BEFORE THE FIRST WRITE. They are written last, onto the matchUp, after `modifyMatchUpScore` has
+  // already written its score and status, and `addNotes` refused `notes: 123` there: an error over a result that had
+  // landed (CA, 2026-10-22: an error leaves the record unchanged, and no mutation relies on rollback). Asked here with
+  // `addNotes`' own rule, so that write cannot fail (`refusedBeforeTheFirstWrite.test.ts`).
+  if (notes && !isString(notes) && !(notes as { testing?: boolean })?.testing) {
+    return decorateResult({ result: { error: INVALID_VALUES }, info: 'notes must be a string', stack });
   }
 
   // DECISION: VALIDATE the matchUpFormat here; do not WRITE it here.
