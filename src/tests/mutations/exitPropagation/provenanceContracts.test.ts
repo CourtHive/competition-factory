@@ -1,5 +1,6 @@
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { reconcileDecider } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
+import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
@@ -11,7 +12,6 @@ import {
   mergeSideExitProvenance,
   withdrawByeClaim,
   policyCodeString,
-  byeClaimSurvives,
   recordByeClaim,
   exitCarriedFrom,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
@@ -80,10 +80,11 @@ describe('withdrawing a claim keeps what else the side records', () => {
 });
 
 describe('a provenance read with nothing to read answers no', () => {
-  it('byeClaimSurvives', () => {
-    const isStillDoubleExit = () => true;
-    expect(byeClaimSurvives({ matchUp: undefined, sideNumber: 1, isStillDoubleExit })).toEqual(false);
-    expect(byeClaimSurvives({ matchUp: { matchUpId: 'm' } as any, sideNumber: 3, isStillDoubleExit })).toEqual(false);
+  it('byeSeatStands', () => {
+    const drawDefinition: any = { drawId: 'd', structures: [] };
+    expect(byeSeatStands({ drawDefinition, structureId: undefined, drawPosition: 1 })).toEqual(false);
+    expect(byeSeatStands({ drawDefinition, structureId: 's', drawPosition: undefined })).toEqual(false);
+    expect(byeSeatStands({ drawDefinition, structureId: 's', drawPosition: 1 })).toEqual(false);
   });
 
   it('deriveExitStateFromProvenance', () => {

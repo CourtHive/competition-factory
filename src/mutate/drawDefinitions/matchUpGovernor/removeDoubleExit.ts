@@ -5,9 +5,9 @@ import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propag
 import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
+import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -22,7 +22,6 @@ import {
 } from '@Query/matchUps/getDrawPositionSides';
 import {
   withdrawByeClaimsFrom,
-  byeClaimSurvives,
   withdrawByeClaim,
   sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
@@ -238,25 +237,24 @@ export function removeDoubleExit(params) {
      * reached the same count but OVER-RETAINED, because round-1 pairing is not how a backdraw feeds
      * and it cannot see a claimant that is a cascade continuation.
      */
-    const anotherClaimSurvives = byeClaimSurvives({
-      isStillDoubleExit: (claimantMatchUpId) =>
-        isDoubleExit(inContextDrawMatchUps.find(({ matchUpId: id }) => id === claimantMatchUpId)?.matchUpStatus),
-      matchUp: rawLoserMatchUp,
-      sideNumber: claimSideNumber,
-      withdrawnSourceIds,
-    });
-    // ...and while the matchUp being unwound still holds a BYE of its own. A BYE matchUp's loser is a BYE, so the BYE
-    // cascade gave its loser seat one that no double exit claims; this unwind leaves that BYE where it found it
-    // (census A1 wave 4, COMPASS 16/15 21036395: `aByeMatchUpsLoserSeatKeepsItsBye`).
-    const unwound = inContextDrawMatchUps.find((candidate: HydratedMatchUp) => candidate.matchUpId === matchUpId);
-    const stillHoldsBye =
-      byePropagatedToLoserMatchUp &&
-      !!unwound?.structureId &&
-      matchUpHoldsBye({
+    // read from the draw (`byeSeatStands`): its feeder, judged as the unwind will leave it, still sends nobody and the
+    // policy shows that with a BYE. A BYE matchUp's loser seat keeps its BYE this way too (census A1 wave 4, COMPASS
+    // 16/15 21036395: `aByeMatchUpsLoserSeatKeepsItsBye`).
+    const seat = (positionAssignmentsOf(loserStructure) ?? []).find(
+      (assignment) => assignment.drawPosition === loserTargetDrawPosition,
+    );
+    const byeStands =
+      !!seat?.bye &&
+      !!seat.byeFromPropagation &&
+      byeSeatStands({
+        structureId: inContextLoserMatchUp.structureId,
+        drawPosition: loserTargetDrawPosition,
+        withdrawn: withdrawnSourceIds,
+        appliedPolicies,
         drawDefinition,
-        matchUp: { drawPositions: unwound.drawPositions, structureId: unwound.structureId },
+        matchUpsMap,
       });
-    if (anotherClaimSurvives || stillHoldsBye) {
+    if (byeStands) {
       return decorateResult({ result: { ...SUCCESS }, stack });
     }
 
