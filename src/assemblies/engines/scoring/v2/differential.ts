@@ -160,18 +160,12 @@ const POINT_FIELDS = [
   'code',
   'serveSide',
   'pointsToGame',
+  // compared since v1 counts them by § 11.2 (SE2b-D23, D25, D26; CA 2026-10-21)
+  'gamesToSet',
+  'pointsToSet',
+  'pointsToMatch',
   'isBreakpoint',
 ];
-
-/**
- * Point views not compared until CA rules (SE2b-D23, D25, D26), counted on every comparison that skips them. v1's
- * `gamesToSet` does not follow the set's rule (at 4-5 in a tiebreak set it says 2 games; at 5-6 in an advantage set
- * 2, where 3 are needed; at 1-0 in the one-game set 1 for the side behind, where 2 are), its later sets ignore the
- * final-set format, and in an aggregate's decider it reports 0 points to the match. `pointsToSet` and
- * `pointsToMatch` are built on those. v2 computes all three to the spec (§ 11.2), held there by its own tests; the
- * differential does not reverse-engineer v1's arithmetic to excuse it.
- */
-const UNCOMPARED_VIEWS = ['gamesToSet', 'pointsToSet', 'pointsToMatch'];
 
 const pick = (source: Fields, fields: string[]): Fields =>
   Object.fromEntries(
@@ -281,9 +275,6 @@ export function compareEngines(v1Engine: Engine, v2Engine: Engine, method: strin
       v1: `${difference.path} ${difference.v1}`,
       v2: `${difference.path} ${difference.v2}`,
     });
-  const points = (v2State.history?.points ?? []) as Fields[];
-  if (points.some((point) => UNCOMPARED_VIEWS.some((view) => point[view] !== undefined)))
-    count('uncompared:SE2b-D23-D25-D26');
   count(`compared:${method}`);
 }
 
