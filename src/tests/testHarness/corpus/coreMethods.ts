@@ -2,8 +2,9 @@ import fs from 'fs';
 
 /**
  * The core method set the corpus harvests (plan § 6, draft pending CA's decision § 9.3): the
- * mutation and generation exports of the scoring, matchUp, draws and entries governors, plus the
- * generation and matchUpFormat governors. Queries are excluded by construction: only `mutate` and
+ * mutation and generation exports of the scoring, matchUp, draws, entries and schedule governors,
+ * plus the generation and matchUpFormat governors. The schedule governor joined for the scheduling
+ * pipeline's corpus (CA 2026-10-22, `SCHEDULING_PIPELINE_VNEXT.md` § 5). Queries are excluded by construction: only `mutate` and
  * `generate` barrels are read, and the two governors read whole export nothing but mutations and
  * a pure grammar.
  *
@@ -20,6 +21,7 @@ const SOURCES = [
   'src/assemblies/governors/drawsGovernor/mutate.ts',
   'src/assemblies/governors/drawsGovernor/generate.ts',
   'src/assemblies/governors/entriesGovernor/mutate.ts',
+  'src/assemblies/governors/scheduleGovernor/mutate.ts',
   'src/assemblies/governors/generationGovernor/index.ts',
   'src/assemblies/governors/matchUpFormatGovernor/index.ts',
 ];
