@@ -91,6 +91,7 @@ import { CONSOLATION, CONTAINER, MAIN, PLAY_OFF, QUALIFYING, FIRST_MATCHUP } fro
 
 import {
   DRAW_POSITION_ASSIGNED,
+  DRAW_POSITION_NOT_FOUND,
   STRUCTURE_NOT_FOUND,
   INVALID_DRAW_POSITION,
   EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
@@ -1286,14 +1287,28 @@ function directWinnerViaLink({
     .map((assignment) => assignment.drawPosition);
   const targetDrawPositionIsUnfilled =
     !!targetMatchUpDrawPosition && unfilledTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
+  /**
+   * THE WINNER ALREADY HOLDS A SEAT IN THE TARGET MATCHUP: nothing to place. A direction can arrive a second time in
+   * one call — the Decider of a DOUBLE_ELIMINATION is seated from the Main final, and a correction below re-advances
+   * the same winner across the same link — and placing them again would put one participant in both seats. That
+   * attempt used to be made and refused (`ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`) and the refusal dropped,
+   * so the draw was right by accident. Measured 2026-10-22 (factory `dev` `01ce40e544`): the only two refusals these
+   * placements returned over the suite and the frozen census windows w1, w2 and de (both BYE arms) were this case, census
+   * de 9304558 under `doubleExitPropagateBye: false` and census F2 20477784 (`censusF2RefusalRegression20261011`).
+   */
+  const winnerSeatedInTarget =
+    !!winnerExistingDrawPosition && targetMatchUpDrawPositions.includes(winnerExistingDrawPosition);
 
-  if (
+  if (winnerParticipantId && winnerSeatedInTarget && unfilledTargetMatchUpDrawPositions?.length) {
+    // already placed; see above
+  } else if (
     winnerParticipantId &&
     winnerTargetLink.target.roundNumber === 1 &&
     targetMatchUpDrawPosition &&
     targetDrawPositionIsUnfilled
   ) {
-    assignDrawPosition({
+    // AN ERROR IS THE CALL'S RESULT: a placement refused here left the winner unplaced while the call reported success
+    const assignResult = assignDrawPosition({
       drawPosition: targetMatchUpDrawPosition,
       participantId: winnerParticipantId,
       structureId: targetStructureId,
@@ -1304,20 +1319,23 @@ function directWinnerViaLink({
       matchUpsMap,
       event,
     });
+    if (assignResult.error) return decorateResult({ result: assignResult, stack });
   } else if (winnerParticipantId && unfilledTargetMatchUpDrawPositions?.length) {
     const drawPosition = unfilledTargetMatchUpDrawPositions.pop();
-    drawPosition &&
-      assignDrawPosition({
-        participantId: winnerParticipantId,
-        structureId: targetStructureId,
-        inContextDrawMatchUps,
-        sourceMatchUpStatus,
-        tournamentRecord,
-        drawDefinition,
-        drawPosition,
-        matchUpsMap,
-        event,
-      });
+    const assignResult = drawPosition
+      ? assignDrawPosition({
+          participantId: winnerParticipantId,
+          structureId: targetStructureId,
+          inContextDrawMatchUps,
+          sourceMatchUpStatus,
+          tournamentRecord,
+          drawDefinition,
+          drawPosition,
+          matchUpsMap,
+          event,
+        })
+      : undefined;
+    if (assignResult?.error) return decorateResult({ result: assignResult, stack });
   } else if (winnerExistingDrawPosition) {
     const assignResult = assignMatchUpDrawPosition({
       drawPosition: winnerExistingDrawPosition,
@@ -1332,9 +1350,16 @@ function directWinnerViaLink({
     });
     if (assignResult.error) return decorateResult({ result: assignResult, stack });
   } else if (structure?.stage !== QUALIFYING) {
-    const error = 'winner target position unavaiallble';
-    pushGlobalLog({ method: 'directWinner', error });
-    decorateResult({ stack, result: { error } });
+    // NOWHERE TO PUT THE WINNER is a refusal, not a log line: it used to be built and dropped, and the call succeeded
+    // with the winner unplaced. Measured unreached over the suite and the frozen census windows (2026-10-22).
+    const info = 'winner target position unavailable';
+    pushGlobalLog({ method: 'directWinner', error: info });
+    return decorateResult({
+      context: { winnerParticipantId, targetStructureId },
+      result: { error: DRAW_POSITION_NOT_FOUND },
+      stack,
+      info,
+    });
   }
 
   if (structure?.seedAssignments && structure.structureId !== targetStructureId) {
