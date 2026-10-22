@@ -1,4 +1,5 @@
 import { getInvariantViolations } from '../exitPropagation/invariants';
+import { schedulingReport } from '../scheduling/schedulingReport';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { randomSource, type SeededRandom } from '@Tools/prng';
 import { generatePatch } from '../../../forge/jsonPatch';
@@ -329,9 +330,10 @@ export class CorpusRecorder {
       return;
     }
     const next = canonicalObject<any>(record);
+    const report = schedulingReport(event.methodName, event.result);
     const result = event.result?.error
       ? { error: event.result.error.code ?? String(event.result.error) }
-      : { success: true };
+      : { success: true, ...(report ? { value: canonicalObject(report) } : {}) };
     for (const rule of [...open.invariantsHeld]) if (this.violates(next, rule)) open.invariantsHeld.delete(rule);
     open.steps.push({
       directive: pending.directive,
