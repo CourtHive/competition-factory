@@ -4,13 +4,17 @@ import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDraw
 import { addPositionActionTelemetry } from './positionGovernor/addPositionActionTelemetry';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
+import { groupEntryDestructionError } from '@Mutate/entries/destroyGroupEntry';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyEntriesStatus } from '@Mutate/entries/modifyEntriesStatus';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
+import { ErrorType, LUCKY_DRAW_BYE_LIMIT } from '@Constants/errorConditionConstants';
 import { ALTERNATE, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -28,6 +32,11 @@ export function removeDrawPositionAssignment(params): ResultType & { participant
   } = params;
 
   const stack = 'removeDrawPositionAssignment';
+
+  // Everything the removal can refuse AFTER emptying the seat is asked BEFORE it: a refusal must
+  // leave the record as it found it, and nothing here snapshots or restores.
+  const refusal = removalRefusal(params);
+  if (refusal) return decorateResult({ result: refusal, stack });
 
   const result = clearDrawPosition(params);
   if (result.error) return decorateResult({ result, stack });
@@ -115,4 +124,46 @@ export function removeDrawPositionAssignment(params): ResultType & { participant
   addPositionActionTelemetry({ appliedPolicies, drawDefinition, positionAction });
 
   return result;
+}
+
+/**
+ * The refusals `removeDrawPositionAssignment` would otherwise meet only after `clearDrawPosition`
+ * had emptied the seat and the entry status had been rewritten.
+ *
+ * - a LUCKY_DRAW holds at most one BYE: replacing a participant with a second is refused by
+ *   `assignDrawPositionBye` (`LUCKY_DRAW_BYE_LIMIT`) — asked here of the seat as it stands.
+ * - a PAIR dissolved on withdrawal (`destroyPair`) must be destroyable: `destroyGroupEntry`'s own
+ *   refusals, with the seat being emptied excused from its "still assigned" check.
+ */
+function removalRefusal(params): { error?: ErrorType } | undefined {
+  const { tournamentRecord, replaceWithBye, drawDefinition, destroyPair, entryStatus, structureId, event } = params;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  if (!structure) return undefined; // clearDrawPosition reports a missing structure as it always has
+
+  const positionAssignments = getPositionAssignments({ structure }).positionAssignments ?? [];
+  // found as clearDrawPosition finds it
+  const seat = positionAssignments.find(
+    (assignment) =>
+      (params.participantId && assignment.participantId === params.participantId) ||
+      (params.drawPosition && assignment.drawPosition === params.drawPosition),
+  );
+  if (!seat) return undefined;
+
+  if (replaceWithBye && !seat.bye && isLuckyBasedDraw(drawDefinition.drawType)) {
+    const otherByes = positionAssignments.filter((assignment) => assignment.bye && assignment !== seat);
+    if (otherByes.length) return { error: LUCKY_DRAW_BYE_LIMIT };
+  }
+
+  const participantId = params.participantId ?? seat.participantId;
+  if (!destroyPair || !participantId || ![ALTERNATE, WITHDRAWN].includes(entryStatus)) return undefined;
+
+  const { participant } = findTournamentParticipant({ tournamentRecord, participantId });
+  if (participant?.participantType !== PAIR) return undefined;
+
+  return groupEntryDestructionError({
+    releasedSeat: { drawId: drawDefinition.drawId, structureId, drawPosition: seat.drawPosition },
+    tournamentRecord,
+    participantId,
+    event,
+  });
 }
