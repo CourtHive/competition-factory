@@ -15,6 +15,7 @@ import {
 } from './segments/segment';
 import {
   readChallenge,
+  readEndSegment,
   readGame,
   readPoint,
   readServer,
@@ -89,7 +90,7 @@ export function initialState(): ScoringState {
  * Where the next point would be played, for service (§ 10): the set in play, or the next one. A completed match, or
  * one past its N sets, answers for the set that would come next, a placeholder only (`serverOf`, SE2b-D22).
  */
-function positionOf(match: MatchRule, state: ScoringState): ServicePosition {
+export function positionOf(match: MatchRule, state: ScoringState): ServicePosition {
   const at = target(match, state);
   if (at) return { match, rule: at.rule, set: at.set, game: at.game };
   const rule = ruleForSet(match, state.sets.length + 1, setsWon(state.sets));
@@ -133,7 +134,7 @@ function target(match: MatchRule, state: ScoringState): Target | undefined {
   }
   const setNumber = state.sets.length + 1;
   const decider = match.mode === 'exactly' && match.aggregate && match.final ? 1 : 0;
-  if (setNumber > match.n + decider) return undefined;
+  if (setNumber > match.n + decider && !match.pastClose) return undefined;
   const rule = ruleForSet(match, setNumber, setsWon(state.sets));
   return { set: openSet(rule, setNumber), rule, index: state.sets.length, atTime: false };
 }
@@ -169,6 +170,14 @@ function pointValue(context: ReducerContext, data: EntryData | undefined): numbe
   return multiplier?.value ?? 1;
 }
 
+export const INVALID_FORMAT = 'Invalid matchUpFormat: the format does not parse';
+
+/** why the set in play refuses an input level (§ 3.3): outs take set totals only; a combined total takes no game */
+function noInput(rule: SegmentRule, input: 'point' | 'game'): string {
+  if (rule.kind === 'outs') return `a segment of outs takes set totals only, not a ${input}`;
+  return `a ${rule.kind} segment takes no ${input} input`;
+}
+
 /** the input guards every scoring action shares (§ 2.1 ignored 2-3, § 9.2 rule 4, § 9.6) */
 function aimed(match: MatchRule, state: ScoringState): Target | IgnoredCode {
   if (state.matchUpStatus === COMPLETED) return 'MATCH_COMPLETED';
@@ -182,7 +191,7 @@ function point(context: ReducerContext, match: MatchRule, state: ScoringState, e
   const at = aimed(match, state);
   if (typeof at === 'string') return ignored(state, at);
   // § 2.1 refusal 6: a segment of outs takes no point input
-  if (!takesInput(at.rule, 'point')) return refused(state, refusal('the set in play takes no point input'));
+  if (!takesInput(at.rule, 'point')) return refused(state, refusal(noInput(at.rule, 'point')));
   const units = pointsAreUnits(at.rule, at.atTime);
   const given = entry.data?.scoreValue;
   if (!units && given !== undefined && given !== 1)
@@ -229,7 +238,7 @@ function game(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step
   if (facts.refused) return refused(state, facts.refused);
   const at = aimed(match, state);
   if (typeof at === 'string') return ignored(state, at);
-  if (!takesInput(at.rule, 'game')) return refused(state, refusal(`a ${at.rule.kind} segment takes no game input`));
+  if (!takesInput(at.rule, 'game')) return refused(state, refusal(noInput(at.rule, 'game')));
   const result = segmentGame(at.rule, at.set, facts.winner as Side, facts.tiebreakScore, at.atTime);
   if ('refused' in result) return refused(state, refusal(result.refused));
   return { state: scored(match, state, at, result), outcome: RECORDED };
@@ -251,13 +260,19 @@ function set(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step 
  * after completion and during the tiebreak at time; refused on any other kind, a closed segment, or none in play.
  */
 function endSegment(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step {
+  const invalid = readEndSegment(entry.data);
+  if (invalid) return refused(state, invalid);
   if (state.matchUpStatus === COMPLETED) return ignored(state, 'MATCH_COMPLETED');
   const last = state.sets.at(-1);
-  const named = entry.data?.setNumber;
-  if (!last || isClosed(last)) return refused(state, refusal('there is no timed segment in play to end'));
-  if (named !== undefined && named !== last.setNumber)
-    return refused(state, refusal(`segment ${String(named)} is not in play`));
-  const at = target(match, state) as Target;
+  const named = entry.data?.setNumber as number | undefined;
+  const closedOne = named === undefined ? last : state.sets[named - 1];
+  if (closedOne && isClosed(closedOne) && (named !== undefined || closedOne.isTimed))
+    return refused(state, refusal(`segment ${closedOne.setNumber} is closed`));
+  if (named !== undefined && named !== last?.setNumber)
+    return refused(state, refusal(`there is no timed segment to end at set ${String(named)}`));
+  const at = target(match, state);
+  if (!at || at.rule.kind !== 'timed') return refused(state, refusal('endSegment ends timed segments only'));
+  if (!last || isClosed(last)) return refused(state, refusal('there is no timed segment to end'));
   const result = segmentEnd(at.rule, at.set, at.atTime);
   if ('refused' in result) return refused(state, refusal(result.refused));
   if ('ignored' in result) return ignored(state, result.ignored);
@@ -278,7 +293,7 @@ function baselineSets(match: MatchRule, given: unknown[]): { sets?: ScoredSet[];
     if ('refused' in judged) return { refused: judged.refused };
     const atTimeSet = atTimeIn(rule, judged.set);
     if ((atTimeSet || !isClosed(judged.set)) && i < given.length - 1)
-      return { refused: 'only the last baseline set can be unfinished' };
+      return { refused: `Set ${i + 1} is not finished and is not the last set` };
     if (atTimeSet) atTime = true;
     sets.push(judged.set);
   }
@@ -352,7 +367,8 @@ function baseline(
   const data = entry.data ?? {};
   if (data.server !== undefined && data.server !== 0 && data.server !== 1)
     return refused(state, refusal(`Invalid server: ${String(data.server)}`));
-  const built = baselineSets(match, Array.isArray(data.sets) ? data.sets : []);
+  if (!Array.isArray(data.sets)) return refused(state, refusal('a baseline gives its sets, an array (none: [])'));
+  const built = baselineSets(match, data.sets);
   if (built.refused) return refused(state, refusal(built.refused));
   const inPlay: Baseline | { refused: string } = built.atTime
     ? { sets: built.sets as ScoredSet[], atTime: true }
@@ -382,9 +398,9 @@ function consistentBaseline(data: EntryData, decision: { complete: boolean; winn
   if (data.winningSide !== undefined && data.winningSide !== decision.winningSide)
     return 'the baseline winningSide disagrees with its sets';
   if (data.matchUpStatus === COMPLETED && !decision.complete)
-    return 'the baseline is COMPLETED but its sets do not decide the match';
+    return 'the baseline matchUpStatus COMPLETED disagrees with its sets, which do not decide the match';
   if (data.matchUpStatus === IN_PROGRESS && decision.complete)
-    return 'the baseline is IN_PROGRESS but its sets decide the match';
+    return 'the baseline matchUpStatus IN_PROGRESS disagrees with its sets, which decide the match';
   return undefined;
 }
 
@@ -409,10 +425,7 @@ export function step(context: ReducerContext, state: ScoringState, entry: Timeli
 
 function apply(context: ReducerContext, state: ScoringState, entry: TimelineEntry, live: boolean): Step {
   const { match } = context;
-  if (!match)
-    return NEEDS_A_FORMAT.has(entry.type)
-      ? refused(state, refusal('the matchUpFormat does not parse'))
-      : scoreless(state);
+  if (!match) return NEEDS_A_FORMAT.has(entry.type) ? refused(state, refusal(INVALID_FORMAT)) : scoreless(state);
   switch (entry.type) {
     case POINT:
       return point(context, match, state, entry);

@@ -41,10 +41,10 @@ describe('pointsToGame: the fewest points in a row, against the predicate that c
     expect(viewAfter('SET3-S:TB11NOAD', pts('1'.repeat(10) + '2'.repeat(10))).pointsToGame).toEqual([1, 1]);
   });
 
-  it('a break point is the receiver one point from the game, where the server is known', () => {
+  it('a break point is the receiver one point from the game; none where the server is not known', () => {
     expect(viewAfter('SET3-S:6/TB7', pts('222')).isBreakpoint).toEqual(true);
     expect(viewAfter('SET3-S:6/TB7', pts('111')).isBreakpoint).toEqual(false);
-    expect(viewAfter('SET5-S:TB11', pts('2'.repeat(10))).isBreakpoint).toBeUndefined();
+    expect(viewAfter('SET5-S:TB11', pts('2'.repeat(10))).isBreakpoint).toEqual(false);
   });
 });
 

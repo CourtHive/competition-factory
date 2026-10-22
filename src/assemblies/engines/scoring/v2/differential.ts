@@ -1,58 +1,63 @@
-import { createContext, reduce, serverOf, step } from './reduce';
 import { getScoringEngine } from '@Global/state/globalState';
-import { configuredFormat } from './format';
+import { ScoringEngineV2 } from './engine';
 
 // constants and types
-import type { EntryData, ScoringConfiguration, StepOutcome, TimelineEntry } from './types';
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SCORING_ENGINE_DIFFERENTIAL } from '@Constants/scoringEngineConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
+import type { ScoringEngineOptions, ScoringEngineSupplementaryState } from '../ScoringEngine';
+import type { MatchUp } from '@Types/scoring/types';
+import type { ScoringConfiguration } from './types';
 
 /**
- * The `differential` mode of the ScoringEngine selector: v1 acts, then v2 reduces the same configuration and
- * timeline, and any difference throws (plan § 2; the outcome pipeline's differential is the model).
+ * The `differential` mode of the ScoringEngine selector: v1 and v2 both run every call, and any difference throws
+ * (plan § 2; the outcome pipeline's differential is the model).
  *
- * Two things are compared on every public call v1 completes:
+ * Each v1 engine gets a v2 engine shell beside it (`engine.ts`, SE2c), built from v1's public surface at the first
+ * call the differential sees, and every state-changing public call v1 takes is made on the shell too, with its own
+ * copy of the arguments. After each call two things are compared:
  *
- * 1. the action boundary, for an offered action: whether v1 recorded it, ignored it (with which code) or refused
- *    it, against v2's `step` on the state before it;
- * 2. the state after it: v1's score, status, winner and materialized points (their service included), and the
- *    next server (`getNextServer`, `isServerDerived`), against `reduce(config, timeline)`.
+ * 1. what the call did: refused (thrown), recorded, or ignored with which code; `undo`/`redo`'s answer; a
+ *    substitution's result;
+ * 2. the state after it: status, winner, sets and materialized points (their service included), the next server
+ *    (`getNextServer`, `isServerDerived`) and the legacy shapes the last rebuild met (§ 12.8).
  *
- * Every segment kind is compared (SE2b widened it from SE2a's standard and tiebreak-only). Anything it cannot yet
- * compare (legacy shapes, stale edits, records with no timeline) is DEFERRED, never passed silently, and counted by
- * reason, so a green run that compared nothing is visible.
+ * Because the shell keeps its own record, nothing is deferred for being loaded, stale, legacy or without a
+ * timeline: a stored record, a `recalculate: false` edit and a legacy replay are all compared as they stand. A
+ * status set outside scoring (`RETIRED` and the like) is not scoring's to compare, and is counted as deferred.
  */
 
-/** the v1 surface the differential reads: only the public API */
+/** the engine surface the differential reads and drives: only the public API */
 type Fields = Record<string, unknown>;
 type V1State = {
+  matchUpId?: string;
+  matchUpType?: string;
   matchUpFormat?: string;
   matchUpStatus?: MatchUpStatusUnion;
   winningSide?: unknown;
   score?: { sets?: Fields[] };
-  history?: { entries?: TimelineEntry[]; points?: Fields[] };
+  history?: { entries?: Fields[]; points?: Fields[] };
 };
-type V1Engine = {
+type Engine = {
   getState(): V1State;
   getSupplementaryState(): Pick<ScoringConfiguration, 'competitionFormat' | 'pointMultipliers'> | undefined;
   getLegacyShapes?(): string[];
   getFormat?(): string;
   getNextServer?(): number;
   isServerDerived?(): boolean;
+  setState?(state: V1State): void;
+  loadSupplementaryState?(state: unknown): void;
 };
 type Method = (...args: unknown[]) => unknown;
 
-const offer =
-  (type: string) =>
-  ([data]: unknown[]): TimelineEntry => ({ type, data: (data ?? {}) as EntryData });
-const OFFERED: Partial<Record<string, (args: unknown[]) => TimelineEntry>> = {
-  addPoint: offer('point'),
-  addGame: offer('game'),
-  addSet: offer('set'),
-  endSegment: offer('endSegment'),
-  setInitialScore: offer('setInitialScore'),
-  addChallenge: offer('challenge'),
+/** the actions offered at the boundary, whose result says whether they were recorded or ignored (§ 2) */
+const OFFERED: Readonly<Record<string, true>> = {
+  addPoint: true,
+  addGame: true,
+  addSet: true,
+  endSegment: true,
+  setInitialScore: true,
+  addChallenge: true,
 };
 
 /** the public methods that change state, from the API reference */
@@ -73,12 +78,6 @@ export const WRAPPED_METHODS = [
   'setPointMultipliers',
   'markHardBoundary',
 ];
-
-/**
- * Calls that rebuild v1's score from its timeline, ending a stale stretch: one left by `recalculate: false`, by
- * `setPointMultipliers`, which rescores nothing, or by `setState`, which loads the stored score as it is.
- */
-const REBUILDS: ReadonlySet<string> = new Set(['undo', 'redo', 'reset', 'editPoint', 'removePoint']);
 
 export class ScoringEngineDivergence extends Error {
   readonly method: string;
@@ -115,38 +114,12 @@ export function resetScoringDifferentialTally(): void {
 
 type Verdict = 'recorded' | `ignored:${string}` | 'refused';
 
-function v2Verdict(outcome: StepOutcome): Verdict {
-  if (outcome.recorded) return 'recorded';
-  return 'ignored' in outcome ? `ignored:${outcome.ignored}` : 'refused';
-}
-
 function v1Verdict(result: unknown): Verdict {
   const { recorded, ignored } = (result ?? {}) as { recorded?: boolean; ignored?: string };
   return recorded === false && ignored ? `ignored:${ignored}` : 'recorded';
 }
 
-function configOf(engine: V1Engine, state: V1State): ScoringConfiguration {
-  const supplementary = engine.getSupplementaryState() ?? {};
-  const multipliers = supplementary.pointMultipliers;
-  return {
-    matchUpFormat: state.matchUpFormat ?? engine.getFormat?.(),
-    competitionFormat: supplementary.competitionFormat,
-    ...(multipliers?.length ? { pointMultipliers: multipliers } : {}),
-  };
-}
-
 const SCORING_STATUSES: ReadonlySet<string> = new Set([TO_BE_PLAYED, IN_PROGRESS, COMPLETED]);
-
-/** why this state cannot be compared yet, if it cannot */
-function deferral(engine: V1Engine, state: V1State, stale: boolean): string | undefined {
-  if (engine.getLegacyShapes?.().length) return 'legacy-shapes';
-  if (stale) return 'stale-edit';
-  if (!SCORING_STATUSES.has(state.matchUpStatus ?? '')) return 'status-outside-scoring';
-  const entries = state.history?.entries;
-  if (!entries) return state.score?.sets?.length || state.history?.points?.length ? 'no-timeline' : undefined;
-  if (!entries.length && state.score?.sets?.length) return 'stored-score';
-  return undefined;
-}
 
 const SET_FIELDS = [
   'setNumber',
@@ -195,6 +168,8 @@ const pick = (source: Fields, fields: string[]): Fields =>
   );
 
 type Projection = {
+  /** the legacy shapes the last rebuild met (§ 12.8), sorted */
+  legacy?: string[];
   matchUpStatus: unknown;
   winningSide: unknown;
   /** the side due to serve next and whether it is derived (`getNextServer`, `isServerDerived`, § 10.4) */
@@ -285,51 +260,87 @@ function pendingNumberByValue(v1: Projection, v2: Projection): void {
   });
 }
 
-/**
- * SE3-E1: a `setServer(side, { recordEntry: false })` with nothing on the timeline orients v1's next server and is
- * stored nowhere, so no reduction of the timeline can see it.
- */
-function pendingUnanchoredCorrection(v1: Projection, v2: Projection, entries: TimelineEntry[]): void {
-  if (entries.length || canonical(v1.next) === canonical(v2.next)) return;
-  v2.next = v1.next;
-  count('pending:SE3-E1');
-}
-
 function pendingDecisions(v1: Projection, v2: Projection): void {
   pendingTrailingGame(v1, v2);
   pendingNumberByValue(v1, v2);
 }
 
-/** compares v1's state after a call with v2's reduction of the same timeline; throws on a difference */
-export function compareStates(engine: V1Engine, method: string, stale = false, loaded = false): void {
-  const state = engine.getState();
-  const config = configOf(engine, state);
-  const deferred = deferral(engine, state, stale);
-  if (deferred) return count(`deferred:${deferred}`);
-  const entries: TimelineEntry[] = state.history?.entries ?? [];
-  const reduction = reduce(config, entries);
-  const format = configuredFormat(config);
-  // a timeline loaded by setState may hold entries an earlier engine accepted: replaying them is SE2c's (§ 12.8)
-  if (reduction.legacy.length && loaded) return count('deferred:legacy-replay');
-  if (reduction.legacy.length) {
-    const index = reduction.legacy[0];
-    const v2 = JSON.stringify(reduction.outcomes[index]);
-    throw new ScoringEngineDivergence({ method, format, v1: `replays entry ${index} (${entries[index]?.type})`, v2 });
+/** what a call did: its result, or that it threw; a crash (not a refusal) is kept apart, with its message */
+type Outcome = { threw: boolean; result?: unknown; crash?: string };
+
+const CRASHES = [TypeError, ReferenceError, RangeError];
+
+/** the calls whose result the API defines beyond the offered actions': undo and redo's answer, a substitution's */
+const ANSWERING: ReadonlySet<string> = new Set(['undo', 'redo', 'substitute']);
+
+/** what a call did, as the API reports it: refused (thrown), or its result (§ 2, § 12.3) */
+function outcomeVerdict(method: string, outcome: Outcome): string {
+  if (outcome.threw) return 'refused';
+  if (OFFERED[method]) return v1Verdict(outcome.result);
+  return ANSWERING.has(method) ? canonical(outcome.result ?? null) : 'done';
+}
+
+/** calls after which v1's record is rebuilt from its timeline, no longer as it was loaded */
+const REBUILDS: ReadonlySet<string> = new Set(['undo', 'redo', 'reset', 'editPoint', 'removePoint']);
+
+function rebuilds(method: string, args: unknown[]): boolean {
+  const options = { editPoint: args[2], removePoint: args[1] }[method] as { recalculate?: boolean } | undefined;
+  return REBUILDS.has(method) && options?.recalculate !== false;
+}
+
+/**
+ * SE2c-D3: a loaded record whose stored score disagrees with its own timeline. Until its next rebuild, v1 goes on
+ * from the stored score (input scored on it, the next server derived from it) and v2 from the timeline, which is
+ * authoritative (§ 12.2). Recognised only for a record the differential found inconsistent when it was loaded, and
+ * only until a rebuild; for a consistent record, only the next server is excused, and only while it is as stored.
+ */
+function pendingStoredScore(v1: Projection, v2: Projection, loaded: Loaded | undefined): Projection {
+  if (!loaded) return v2;
+  if (loaded.inconsistent && canonical(v1) !== canonical(v2)) {
+    count('pending:SE2c-D3');
+    return v1;
   }
-  const next = serverOf(createContext(config), reduction.state);
+  if (canonical(v1.next) === canonical(v2.next)) return v2;
+  count('pending:SE2c-D3');
+  return { ...v2, next: v1.next };
+}
+
+function stateProjection(engine: Engine, state: V1State): Projection {
   // an engine without the service queries is compared on its score alone
-  const answers = engine.getNextServer ? { side: engine.getNextServer(), derived: engine.isServerDerived?.() } : next;
-  const v1 = projection(
-    state.matchUpStatus,
-    state.winningSide,
-    answers,
-    state.score?.sets ?? [],
-    state.history?.points ?? [],
-  );
-  const v2State = reduction.state;
-  const v2 = projection(v2State.matchUpStatus, v2State.winningSide, next, v2State.sets, v2State.points);
-  pendingDecisions(v1, v2);
-  pendingUnanchoredCorrection(v1, v2, entries);
+  const next = engine.getNextServer ? { side: engine.getNextServer(), derived: engine.isServerDerived?.() } : null;
+  const shapes = [...(engine.getLegacyShapes?.() ?? [])].sort((a, b) => a.localeCompare(b, 'en'));
+  return {
+    ...projection(state.matchUpStatus, state.winningSide, next, state.score?.sets ?? [], state.history?.points ?? []),
+    legacy: shapes,
+  };
+}
+
+/**
+ * Compares v1 with its v2 shell after a call: what the call did, then the state (status, winner, sets, points and
+ * their service) and the next server; throws on a difference.
+ */
+export function compareEngines(
+  v1Engine: Engine,
+  v2Engine: Engine,
+  method: string,
+  outcomes: [Outcome, Outcome],
+  loaded?: Loaded,
+): void {
+  const format = v1Engine.getFormat?.();
+  const crash = outcomes[1].crash;
+  if (crash) throw new ScoringEngineDivergence({ method, format, v1: 'ran', v2: `crashed: ${crash}` });
+  const [mine, theirs] = outcomes.map((outcome) => outcomeVerdict(method, outcome));
+  if (mine !== theirs) throw new ScoringEngineDivergence({ method, format, v1: mine, v2: theirs });
+  if (OFFERED[method]) count(`verdict:${method}`);
+  const v1State = v1Engine.getState();
+  if (!SCORING_STATUSES.has(v1State.matchUpStatus ?? '')) return count('deferred:status-outside-scoring');
+  const v1 = stateProjection(v1Engine, v1State);
+  const v2State = v2Engine.getState();
+  const projected = stateProjection(v2Engine, v2State);
+  // an engine without the service queries is compared on its score alone
+  if (!v1Engine.getNextServer) projected.next = null;
+  pendingDecisions(v1, projected);
+  const v2 = pendingStoredScore(v1, projected, loaded);
   const difference = firstDifference(v1, v2);
   if (difference)
     throw new ScoringEngineDivergence({
@@ -338,70 +349,93 @@ export function compareStates(engine: V1Engine, method: string, stale = false, l
       v1: `${difference.path} ${difference.v1}`,
       v2: `${difference.path} ${difference.v2}`,
     });
-  const skipped = reduction.state.points.some((point) => UNCOMPARED_VIEWS.some((view) => point[view] !== undefined));
-  if (skipped) count('uncompared:SE2b-D23-D25-D26');
+  const points = (v2State.history?.points ?? []) as Fields[];
+  if (points.some((point) => UNCOMPARED_VIEWS.some((view) => point[view] !== undefined)))
+    count('uncompared:SE2b-D23-D25-D26');
   count(`compared:${method}`);
 }
 
-/** v2's verdict on an action offered to v1, from the state before it */
-function offeredVerdict(engine: V1Engine, entry: TimelineEntry): Verdict | undefined {
+/**
+ * The v2 shell beside a v1 engine, from v1's public surface at the first call the differential sees: its format,
+ * its saved configuration, its identity and, when it holds a score, its record.
+ */
+function companionOf(engine: Engine): Engine {
+  const existing = companions.get(engine);
+  if (existing) return existing;
   const state = engine.getState();
-  const config = configOf(engine, state);
-  if (deferral(engine, state, false)) return undefined;
-  const context = createContext(config);
-  const before = reduce(config, state.history?.entries ?? []);
-  // a loaded timeline holding entries the rules now refuse is replayed as v1 replayed it: SE2c's (§ 12.8)
-  if (before.legacy.length) return undefined;
-  return v2Verdict(step(context, before.state, entry, true).outcome);
+  const supplementary = engine.getSupplementaryState() ?? {};
+  const companion = new ScoringEngineV2({
+    matchUpFormat: engine.getFormat?.() ?? state.matchUpFormat,
+    competitionFormat: supplementary.competitionFormat as ScoringEngineOptions['competitionFormat'],
+    pointMultipliers: supplementary.pointMultipliers,
+    isDoubles: state.matchUpType === 'DOUBLES',
+    matchUpId: state.matchUpId,
+  }) as unknown as Engine;
+  if (state.history || state.score?.sets?.length) {
+    companion.setState?.(state);
+    companion.loadSupplementaryState?.(supplementary);
+  }
+  companions.set(engine, companion);
+  return companion;
 }
 
-type Tracked = { depth: number; stale: boolean; loaded: boolean };
-const tracked = new WeakMap<object, Tracked>();
-
-function isStaleEdit(method: string, args: unknown[]): boolean {
-  // new multipliers rescore nothing until the next rebuild (the API reference, setPointMultipliers)
-  if (method === 'setPointMultipliers') return true;
-  const options = { editPoint: args[2], removePoint: args[1] }[method] as { recalculate?: boolean } | undefined;
-  return options?.recalculate === false;
+/** the same call on the v2 shell, with its own copy of the arguments */
+function mirror(companion: Engine, method: string, args: unknown[]): Outcome {
+  const call = (companion as unknown as Record<string, Method>)[method];
+  // a JSON round trip, as the engines copy at their boundary: neither engine shares the caller's objects
+  // eslint-disable-next-line no-restricted-syntax
+  const copied = args.map((arg) => (arg === undefined ? arg : JSON.parse(JSON.stringify(arg))));
+  try {
+    return { threw: false, result: call.apply(companion, copied) };
+  } catch (error) {
+    const crashed = CRASHES.some((kind) => error instanceof kind);
+    return { threw: true, ...(crashed ? { crash: String(error) } : {}) };
+  }
 }
 
-function afterCall(engine: V1Engine, method: string, args: unknown[], track: Tracked): void {
-  if (isStaleEdit(method, args) || method === 'setState') track.stale = true;
-  else if (REBUILDS.has(method)) track.stale = false;
-  if (method === 'setState') track.loaded = true;
-  if (method === 'reset') track.loaded = false;
-  compareStates(engine, method, track.stale, track.loaded);
+const depths = new WeakMap<object, number>();
+const companions = new WeakMap<object, Engine>();
+/** a record as loaded, until a rebuild: whether it disagreed with its own timeline when it was loaded */
+type Loaded = { inconsistent: boolean };
+const loadedRecords = new WeakMap<object, Loaded>();
+
+/** whether a loaded record's score is the one its timeline rebuilds to (§ 12.2) */
+function consistent(engine: Engine): boolean {
+  const state = engine.getState() as unknown as MatchUp;
+  if (!state.history?.entries) return true;
+  const supplementary = engine.getSupplementaryState() as ScoringEngineSupplementaryState | undefined;
+  const rebuilt = ScoringEngineV2.rebuiltFrom(state, supplementary);
+  const sets = (record: MatchUp) => (record.score?.sets ?? []).map((set) => pick({ ...set }, SET_FIELDS));
+  return canonical(sets(state)) === canonical(sets(rebuilt));
 }
 
-function checkVerdict(engine: V1Engine, method: string, expected: Verdict | undefined, actual: Verdict): void {
-  if (!expected) return;
-  if (expected !== actual)
-    throw new ScoringEngineDivergence({ method, format: engine.getFormat?.(), v1: actual, v2: expected });
-  count(`verdict:${method}`);
+function track(engine: Engine, method: string, args: unknown[]): Loaded | undefined {
+  if (method === 'setState') loadedRecords.set(engine, { inconsistent: !consistent(engine) });
+  else if (rebuilds(method, args)) loadedRecords.delete(engine);
+  return loadedRecords.get(engine);
 }
 
 function wrap(method: string, original: Method): Method {
-  return function differential(this: V1Engine, ...args: unknown[]) {
+  return function differential(this: Engine, ...args: unknown[]) {
     if (getScoringEngine() !== SCORING_ENGINE_DIFFERENTIAL) return original.apply(this, args);
-    const track = tracked.get(this) ?? { depth: 0, stale: false, loaded: false };
-    tracked.set(this, track);
     // only the outermost call compares: v1 may call its own public methods while it rebuilds
-    if (track.depth > 0) return original.apply(this, args);
-    const offered = OFFERED[method];
-    const expected = offered && !track.stale ? offeredVerdict(this, offered(args)) : undefined;
-    track.depth += 1;
-    let result: unknown;
+    const depth = depths.get(this) ?? 0;
+    if (depth > 0) return original.apply(this, args);
+    const companion = companionOf(this);
+    depths.set(this, 1);
+    let v1: Outcome;
     try {
-      result = original.apply(this, args);
+      v1 = { threw: false, result: original.apply(this, args) };
     } catch (error) {
-      track.depth -= 1;
-      checkVerdict(this, method, expected, 'refused');
+      depths.set(this, 0);
+      const loaded = loadedRecords.get(this);
+      compareEngines(this, companion, method, [{ threw: true }, mirror(companion, method, args)], loaded);
       throw error;
     }
-    track.depth -= 1;
-    checkVerdict(this, method, expected, v1Verdict(result));
-    afterCall(this, method, args, track);
-    return result;
+    depths.set(this, 0);
+    const loaded = track(this, method, args);
+    compareEngines(this, companion, method, [v1, mirror(companion, method, args)], loaded);
+    return v1.result;
   };
 }
 

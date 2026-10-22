@@ -57,6 +57,24 @@ function decideAggregate(match: MatchRule, sets: ScoredSet[]): MatchDecision {
 }
 
 /**
+ * v1's decision for a timeline it scored past a close (§ 12.8): nothing ends level; once at least N segments are
+ * closed and none is in play, the side with more sets (an aggregate: the greater total) wins.
+ */
+function decidePastClose(match: MatchRule, sets: ScoredSet[]): MatchDecision {
+  if (sets.length < match.n || !sets.every(isClosed)) return IN_PLAY;
+  const score = match.aggregate
+    ? sets.reduce<Pair>(
+        (sum, set) => {
+          const [a, b] = units(set);
+          return [sum[0] + a, sum[1] + b];
+        },
+        [0, 0],
+      )
+    : setsWon(sets);
+  return score[0] === score[1] ? IN_PLAY : moreOf(score);
+}
+
+/**
  * Whether the match is decided, and by whom (§ 9).
  *
  * - best of N: the first side to the majority of sets wins (§ 9.1); no set beyond N is played, so once all N
@@ -66,6 +84,7 @@ function decideAggregate(match: MatchRule, sets: ScoredSet[]): MatchDecision {
  * - aggregate: § 9.3, § 9.4.
  */
 export function decideMatch(match: MatchRule, sets: ScoredSet[]): MatchDecision {
+  if (match.pastClose) return decidePastClose(match, sets);
   if (match.aggregate) return decideAggregate(match, sets);
   // a combined total is the one segment of a best of one (§ 7); a tie at the total completes with no winner
   const only = sets[0];

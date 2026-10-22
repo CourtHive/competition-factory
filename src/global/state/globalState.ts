@@ -60,7 +60,7 @@ type GlobalStateTypes = {
   devContext?: DevContextType; // devContext is used to control logging
   schemaWriteMode: SchemaWriteMode; // controls extension vs first-class write behavior
   outcomePipeline: OutcomePipelineMode; // which outcome pipeline decides: v1, v2, or both (differential)
-  scoringEngine: ScoringEngineMode; // which ScoringEngine decides: v1, or both (differential); v2 alone after SE2c
+  scoringEngine: ScoringEngineMode; // which ScoringEngine decides: v1, v2 (the SE2c shell), or both (differential)
   saveDrawDeletions: boolean; // opt-in: persist drawDeletions audit on the record
   auditAuthorityServer: boolean; // true on server engines — suppresses local audit writes
   timers: timersType; // timers are used to track elapsed time for methods
