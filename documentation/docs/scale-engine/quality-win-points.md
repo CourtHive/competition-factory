@@ -80,10 +80,17 @@ By default, walkovers (`WALKOVER`) and defaults (`DEFAULTED`) are excluded from 
 
 ## Quality Win Output
 
-Quality win awards are stored separately in `personPoints`:
+Quality win points ride on the award for the draw they were earned in, as the `qualityWinPoints` and `qualityWins`
+fields beside that award's position, per-win and bonus points. The award keeps its category, dates and authority, so
+the bonus survives an age-category ranking list's `categoryFilter` and carries with `categoryAggregation` like any
+other component. `points` stays position + per-win + bonus; the quality win is never folded into it.
 
 ```js
 {
+  points: 400,               // position + per-win + bonus, unchanged
+  positionPoints: 400,
+  perWinPoints: 0,
+  bonusPoints: 0,
   qualityWinPoints: 394,     // total quality win bonus for this draw
   qualityWins: [
     {
@@ -100,10 +107,17 @@ Quality win awards are stored separately in `personPoints`:
     },
     // ...additional entries capped at maxBonusPerTournament
   ],
+  category: { ageCategoryCode: 'U16', gender: 'MALE' },
   eventType: 'SINGLES',
   drawId: 'draw-abc',
+  startDate: '2026-06-01',
+  endDate: '2026-06-03',
 }
 ```
+
+A draw whose only points are a quality win still produces one award, with `points: 0` and the bonus in
+`qualityWinPoints`. Quality wins are singles only: a doubles draw is scored through the pair, which has no single
+opponent rank.
 
 ## Integration with Aggregation
 
