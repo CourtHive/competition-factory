@@ -13,7 +13,7 @@ import {
 } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 
 // constants and types
-import { WithdrawnExit, withdrawProducedExits, withdrawByeClaim } from './sideExitProvenance';
+import { WithdrawnExit, withdrawProducedExits } from './sideExitProvenance';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
@@ -118,17 +118,6 @@ export function applyWithdrawnExits({
      * The one exception is the reconciliation's own: a re-derived exit whose winning seat is a BYE still relays.
      */
     if (withdrawnExit.rederived && !isDoubleExit(withdrawnMatchUp.matchUpStatus)) {
-      // A single exit records no claim on a BYE others already hold (`propagateUnfillableLoserBye` claims only a seat it
-      // fills), so the claim the convergence shared there goes and the BYE stays theirs (census A1 wave 4, COMPASS 32/31
-      // 21055187: `aDissolvedConvergenceLeavesASharedByeClaim`)
-      if (matchUpsMap)
-        withdrawSharedByeClaims({
-          claimantMatchUpId: withdrawnMatchUp.matchUpId,
-          tournamentRecord,
-          drawDefinition,
-          matchUpsMap,
-          event,
-        });
       const winnerDrawPosition = getWinningSideDrawPosition({
         structureId: withdrawnExit.structureId,
         matchUp: withdrawnMatchUp,
@@ -307,23 +296,6 @@ export function withdrawByeSeats({
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
   const owed = byeSeatPositionsOwedTo({ inContextDrawMatchUps, drawDefinition, matchUpId: claimantMatchUpId });
 
-  // the ledger's record of the claims goes too, until claims are no longer written
-  for (const matchUp of matchUpsMap.drawMatchUps) {
-    if (matchUp.matchUpId === keepAt) continue;
-    for (const sideNumber of [1, 2]) {
-      if (!matchUp.sideExitProvenance?.[sideNumber]?.byeClaims?.includes(claimantMatchUpId)) continue;
-      withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
-      // the claim was the matchUp's own record; a BYE cleared below is announced again by that clear
-      modifyMatchUpNotice({
-        tournamentId: tournamentRecord?.tournamentId,
-        context: 'withdrawByeSeats',
-        eventId: event?.eventId,
-        drawDefinition,
-        matchUp,
-        event,
-      });
-    }
-  }
   if (claimantIsBye) return;
 
   const withdrawn = new Set([claimantMatchUpId]);
@@ -336,41 +308,5 @@ export function withdrawByeSeats({
     // judged as its withdrawal leaves it
     if (byeSeatStands({ withdrawn, appliedPolicies, drawDefinition, drawPosition, matchUpsMap, structureId })) continue;
     clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
-  }
-}
-
-/** withdraw a claimant's BYE claims only where another claim still holds the BYE */
-function withdrawSharedByeClaims({
-  claimantMatchUpId,
-  tournamentRecord,
-  drawDefinition,
-  matchUpsMap,
-  event,
-}: {
-  tournamentRecord?: Tournament;
-  drawDefinition?: DrawDefinition;
-  claimantMatchUpId: string;
-  matchUpsMap: MatchUpsMap;
-  event?: Event;
-}) {
-  for (const matchUp of matchUpsMap.drawMatchUps) {
-    let withdrawn = false;
-    for (const sideNumber of [1, 2]) {
-      const claims = matchUp.sideExitProvenance?.[sideNumber]?.byeClaims ?? [];
-      if (claims.includes(claimantMatchUpId) && claims.length > 1) {
-        withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
-        withdrawn = true;
-      }
-    }
-    // the claim is the matchUp's own record, and nothing else rewrites it in this pass: announced here
-    if (withdrawn)
-      modifyMatchUpNotice({
-        tournamentId: tournamentRecord?.tournamentId,
-        context: 'withdrawSharedByeClaims',
-        eventId: event?.eventId,
-        drawDefinition,
-        matchUp,
-        event,
-      });
   }
 }

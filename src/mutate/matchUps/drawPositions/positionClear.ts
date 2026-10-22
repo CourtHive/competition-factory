@@ -31,9 +31,7 @@ import {
   clearSideExitProvenance,
   withoutWinnersOrigins,
   retainByeClaimsOnly,
-  getSideExitProvenance,
   carriedExitStatus,
-  recordByeClaim,
   sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -566,12 +564,9 @@ function removeDrawPosition({
     !reDerivedLoserStands({
       matchUpId: targetMatchUp.matchUpId,
       structureId: structure.structureId,
-      loserMatchUpDrawPositionIndex,
-      tournamentRecord,
       drawDefinition,
       loserMatchUp,
       matchUpsMap,
-      event,
     })
   ) {
     const result = handleLoserMatchUpRemoval({
@@ -1186,19 +1181,13 @@ function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: numb
  * Otherwise, undecided or with a different loser, the removal proceeds as before.
  */
 function reDerivedLoserStands({
-  loserMatchUpDrawPositionIndex,
-  tournamentRecord,
   drawDefinition,
   loserMatchUp,
   structureId,
   matchUpsMap,
   matchUpId,
-  event,
 }: {
-  loserMatchUpDrawPositionIndex?: number;
-  tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
-  event?: Event;
   loserMatchUp: HydratedMatchUp;
   matchUpsMap: MatchUpsMap;
   structureId: string;
@@ -1217,18 +1206,8 @@ function reDerivedLoserStands({
     (assignment) => loserDrawPosition && assignment.drawPosition === loserDrawPosition,
   )?.participantId;
   if (!loserParticipantId) {
-    if (!isExit(reDerived.matchUpStatus)) return false;
-    const origin = getSideExitProvenance({ matchUp: reDerived })?.[3 - reDerived.winningSide]?.sourceMatchUpId;
-    keepByeOnItsOriginsAccount({
-      loserMatchUpDrawPositionIndex,
-      tournamentRecord,
-      drawDefinition,
-      loserMatchUp,
-      matchUpsMap,
-      origin,
-      event,
-    });
-    return true;
+    // won against an exit, the re-derived matchUp has nobody to lose: its loser seat's BYE stands, read from the draw
+    return isExit(reDerived.matchUpStatus);
   }
 
   const targetDrawPositions = (loserMatchUp.drawPositions ?? []).filter(Boolean);
@@ -1240,61 +1219,6 @@ function reDerivedLoserStands({
     (assignment) =>
       assignment.participantId === loserParticipantId && targetDrawPositions.includes(assignment.drawPosition),
   );
-}
-
-/** the seat `handleLoserMatchUpRemoval` reads: a first-round target's side by index, a fed round's fed position */
-function loserSeatOf({ loserMatchUp, loserMatchUpDrawPositionIndex, drawDefinition }): number | undefined {
-  if (loserMatchUp.roundNumber === 1)
-    return getSideDrawPosition({
-      sideNumber: (loserMatchUpDrawPositionIndex ?? 0) + 1,
-      structureId: loserMatchUp.structureId,
-      matchUp: loserMatchUp,
-      drawDefinition,
-    });
-  const held = (loserMatchUp.drawPositions ?? []).filter(Boolean);
-  return held.length ? Math.min(...held) : undefined;
-}
-
-function keepByeOnItsOriginsAccount({
-  loserMatchUpDrawPositionIndex,
-  tournamentRecord,
-  drawDefinition,
-  loserMatchUp,
-  matchUpsMap,
-  origin,
-  event,
-}: {
-  loserMatchUpDrawPositionIndex?: number;
-  tournamentRecord?: Tournament;
-  drawDefinition: DrawDefinition;
-  loserMatchUp: HydratedMatchUp;
-  matchUpsMap: MatchUpsMap;
-  origin?: string;
-  event?: Event;
-}): void {
-  const claimant = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === origin);
-  if (!claimant || !isDoubleExit(claimant.matchUpStatus)) return;
-  const seat = loserSeatOf({ loserMatchUp, loserMatchUpDrawPositionIndex, drawDefinition });
-  const structureId = loserMatchUp.structureId;
-  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId });
-  if (!seat || !positionAssignments?.find((assignment) => assignment.drawPosition === seat)?.bye) return;
-  const stored = matchUpsMap.drawMatchUps.find((matchUp) => matchUp.matchUpId === loserMatchUp.matchUpId);
-  const record = sideRecordOf(stored);
-  recordByeClaim({
-    sideNumber: getDrawPositionSideNumber({ matchUp: stored, drawPosition: seat, structureId, drawDefinition }),
-    claimantMatchUpId: claimant.matchUpId,
-    matchUp: stored,
-  });
-  // the BYE stays, so nothing else rewrites the matchUp the claim is recorded on: announced here
-  if (stored && record !== sideRecordOf(stored))
-    modifyMatchUpNotice({
-      tournamentId: tournamentRecord?.tournamentId,
-      context: 'keepByeOnItsOriginsAccount',
-      eventId: event?.eventId,
-      matchUp: stored,
-      drawDefinition,
-      event,
-    });
 }
 
 /**

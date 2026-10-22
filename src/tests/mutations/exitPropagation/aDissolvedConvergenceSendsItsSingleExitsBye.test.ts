@@ -1,5 +1,7 @@
-import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { byeSeatsOwedTo, feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
@@ -12,14 +14,32 @@ import { expect, it } from 'vitest';
  * and took its loser-seat BYE away with the convergence's claim. The re-derived exit now sends its BYE over its loser
  * link as forward play does (`propagateUnfillableLoserBye`), and the BYE-vs-BYE matchUp there and the rounds after it
  * stand as they did.
+ *
+ * The scheduled draw once recorded `East|1|8`'s claim on that BYE (`byeClaims`); the ledger is retired (Mentat P58, CA
+ * 2026-10-21), so the seat carries no provenance, and what the claim stood for is read from the draw: the seat's feeder
+ * `West|1|4` sends nobody across its loser link (`feederSendsNobody`: `NOBODY_LOST`), and the seat is among those
+ * `East|1|8` is the reason for (`byeSeatsOwedTo`), before the probe and after its clear alike.
  */
 
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
 const CLEAR = { matchUpStatus: 'TO_BE_PLAYED', score: { scoreStringSide1: '', scoreStringSide2: '' } };
 
 /** a BYE origin is a may-record fact (exit-propagation.md), so the view leaves it out, as the census round trip does */
-const isByeOrigin = (entry: any) =>
-  entry?.matchUpStatus === 'BYE' && entry?.previousMatchUpStatus === 'BYE' && !entry?.byeClaims;
+const isByeOrigin = (entry: any) => entry?.matchUpStatus === 'BYE' && entry?.previousMatchUpStatus === 'BYE';
+
+/** why `feeder` sends nobody across its loser link, and the seats `owner` is the reason for, as the draw stands */
+function reading(drawId: string, { feeder: feederKey, owner }: { feeder: string; owner: string }) {
+  const drawDefinition = getDrawDefinition(drawId);
+  const inContextDrawMatchUps = getDrawMatchUps(drawId);
+  const find = (key: string) => inContextDrawMatchUps.find((matchUp: any) => coordinate(matchUp) === key);
+  const feeder = find(feederKey);
+  const loserTargetLink = positionTargets({ matchUpId: feeder.matchUpId, inContextDrawMatchUps, drawDefinition })
+    ?.targetLinks?.loserTargetLink;
+  return {
+    reason: feederSendsNobody({ inContextDrawMatchUps, loserTargetLink, drawDefinition, feeder }),
+    owed: byeSeatsOwedTo({ inContextDrawMatchUps, drawDefinition, matchUpId: find(owner).matchUpId }).map(coordinate),
+  };
+}
 
 function occupant(side: any) {
   if (side.bye) return 'BYE';
@@ -61,6 +81,7 @@ function roundTrip(row: any, drawId: string) {
     observeMutation({ propagateExitStatus, matchUpId: target.matchUpId, outcome: step.outcome, drawId });
   }
   const before = view(drawId, row.watch);
+  const readBefore = reading(drawId, row.derived);
   const probe = getDrawMatchUps(drawId).find((matchUp: any) => coordinate(matchUp) === coordinate(row.probe));
   const applied = observeMutation({
     propagateExitStatus,
@@ -72,7 +93,7 @@ function roundTrip(row: any, drawId: string) {
   const forward = view(drawId, row.watch);
   const cleared = observeMutation({ propagateExitStatus, matchUpId: probe.matchUpId, outcome: CLEAR, drawId });
   expect(cleared.error).toBeUndefined();
-  return { before, forward, after: view(drawId, row.watch) };
+  return { before, forward, after: view(drawId, row.watch), readBefore, readAfter: reading(drawId, row.derived) };
 }
 
 const ADISSOLVEDCONVERGENCESENDSITSSINGLEEXITSBYE = {
@@ -80,6 +101,7 @@ const ADISSOLVEDCONVERGENCESENDSITSSINGLEEXITSBYE = {
   policyDefinitions: { progression: { doubleExitPropagateBye: false } },
   probe: { structureName: 'East', roundNumber: 1, roundPosition: 7, outcome: { matchUpStatus: 'DOUBLE_WALKOVER' } },
   watch: ['South|1|2', 'South|2|1', 'South|3|1', 'West|1|4'],
+  derived: { feeder: 'West|1|4', owner: 'East|1|8' },
   steps: [
     { structureName: 'East', roundNumber: 1, roundPosition: 11, outcome: { winningSide: 1 } },
     { structureName: 'East', roundNumber: 1, roundPosition: 4, outcome: { winningSide: 2 } },
@@ -150,7 +172,7 @@ const ADISSOLVEDCONVERGENCESENDSITSSINGLEEXITSBYE = {
 };
 
 it('an unwound convergence re-derived to an awarded single exit keeps its loser seat a BYE', () => {
-  const { before, forward, after } = roundTrip(
+  const { before, forward, after, readBefore, readAfter } = roundTrip(
     ADISSOLVEDCONVERGENCESENDSITSSINGLEEXITSBYE,
     'aDissolvedConvergenceSendsItsSingleExitsBye',
   );
@@ -159,12 +181,11 @@ it('an unwound convergence re-derived to an awarded single exit keeps its loser 
     matchUpStatus: 'BYE',
     winningSide: null,
     sides: ['BYE', 'BYE'],
-    provenance: {
-      '2': {
-        byeClaims: ['East|1|8'],
-      },
-    },
+    provenance: null,
   });
+  // its side 2 BYE is owed to East|1|8: the seat's feeder West|1|4 has nobody for a loser
+  expect(readBefore.reason).toEqual('NOBODY_LOST');
+  expect(readBefore.owed).toContain('South|1|2');
   // what the probe changed there
   expect(forward['South|1|2']).toEqual({
     matchUpStatus: 'BYE',
@@ -180,4 +201,5 @@ it('an unwound convergence re-derived to an awarded single exit keeps its loser 
   });
   // and the clear puts it back
   expect(after).toEqual(before);
+  expect(readAfter).toEqual(readBefore);
 });

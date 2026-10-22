@@ -1,7 +1,6 @@
 import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { releaseHoldersByeFromTarget } from '@Mutate/drawDefinitions/positionGovernor/releaseHoldersByeFromTarget';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
-import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
@@ -10,6 +9,7 @@ import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assign
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { removeDirectedBye } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
+import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -31,8 +31,6 @@ import {
   deriveExitStateFromProvenance,
   buildCarriedExitProvenance,
   carriedExitStatus,
-  recordByeClaim,
-  sideRecordOf,
   collapseDoubleExitStatus,
   retainPolicyCodes,
   buildSideExitProvenance,
@@ -3268,67 +3266,10 @@ function advanceByeToLoserMatchUp(params) {
   const { structure } = findStructure({ drawDefinition, structureId });
   if (!structure) return { error: MISSING_STRUCTURE };
 
-  /**
-   * Claim the BYE before placing it, because placing it may be a NO-OP.
-   *
-   * `assignDrawPositionBye` returns early when the drawPosition already holds a BYE, above the
-   * point where it marks the assignment. So the SECOND double exit to claim a position writes
-   * nothing — and it is precisely that second claim which decides whether the BYE survives a
-   * correction of the first. Recording here, at the attempt, is what makes the ledger see it.
-   *
-   * Writes go to the RAW matchUp: the in-context copy is detached from `drawDefinition.structures`
-   * and a write to it is invisible to every later read (#4816).
-   */
+  // writes go to the RAW matchUp: the in-context copy is detached from `drawDefinition.structures` (#4816)
   const noContextLoserMatchUp = (matchUpsMap?.drawMatchUps ?? []).find(
     (candidate) => candidate.matchUpId === loserMatchUp?.matchUpId,
   );
-  if (noContextLoserMatchUp) {
-    // the claim's side, read structurally; where the position is not yet present it is recorded on side 1, as before
-    const claimSide = getDrawPositionSideNumber({
-      matchUp: { ...noContextLoserMatchUp, sides: undefined },
-      structureId: loserMatchUp?.structureId,
-      drawPosition: loserTargetDrawPosition,
-      drawDefinition,
-    });
-    // ...except on a BYE that already stands there unclaimed because the matchUp feeding the seat is a BYE matchUp: the
-    // BYE cascade put it there (a BYE matchUp's loser is a BYE), not a double exit, and a claim would let this cascade's
-    // unwind take it away (census A1 wave 4, COMPASS 32/27 21060039: `aByeMatchUpsLoserSeatKeepsItsBye`).
-    // An unclaimed BYE fed by a matchUp WITHOUT a BYE stands for a reason that can lapse, such as FIRST_MATCH_LOSER's
-    // BYE for a loser who has already won a match; the exit's claim is then the BYE's only lasting reason, and skipping
-    // it let the exit's unwind clear the seat while another exit still made its loser nobody (census A1 9000230,
-    // FIRST_MATCH_LOSER_CONSOLATION 8/8: `aFirstMatchLoserByeIsClaimedByTheExitThatOwesIt`).
-    const standing = getPositionAssignments({ structure }).positionAssignments?.find(
-      (assignment) => assignment.drawPosition === loserTargetDrawPosition,
-    );
-    const feeder = params.loserSourceMatchUp;
-    const feederHoldsBye =
-      !!feeder &&
-      matchUpHoldsBye({
-        matchUp: { drawPositions: feeder.drawPositions, structureId: loserTargetLink?.source?.structureId },
-        drawDefinition,
-      });
-    const unclaimedBye =
-      feederHoldsBye &&
-      !!standing?.bye &&
-      !noContextLoserMatchUp.sideExitProvenance?.[claimSide ?? 1]?.byeClaims?.length;
-    const record = sideRecordOf(noContextLoserMatchUp);
-    if (!unclaimedBye)
-      recordByeClaim({
-        sideNumber: claimSide ?? 1,
-        claimantMatchUpId: params.sourceMatchUp?.matchUpId,
-        matchUp: noContextLoserMatchUp,
-      });
-    // the claim is the loser matchUp's own record, and placing the BYE can write nothing (see above): announced here
-    if (record !== sideRecordOf(noContextLoserMatchUp))
-      modifyMatchUpNotice({
-        tournamentId: tournamentRecord?.tournamentId,
-        context: 'advanceByeToLoserMatchUp',
-        matchUp: noContextLoserMatchUp,
-        eventId: event?.eventId,
-        drawDefinition,
-        event,
-      });
-  }
 
   /**
    * A SEAT THAT BECOMES A BYE KEEPS NOTHING IT WAS AWARDED. A BYE is never won (CA, 2026-09-27), yet a seat its occupant

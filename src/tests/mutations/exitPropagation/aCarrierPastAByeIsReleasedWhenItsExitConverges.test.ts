@@ -1,5 +1,7 @@
-import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
@@ -15,9 +17,23 @@ import { expect, it } from 'vitest';
  * ERR_ACTIVE_DRAW_POSITION — after the draw had moved. Nothing was played anywhere the carrier went: they went on only
  * as a carrier, so the release takes the whole carry back, and the seat is served as a double exit's loser seat is.
  * Every entry order of the standing results leaves the carrier out of `Southwest`.
+ *
+ * The seat once recorded the convergence's claim on its BYE (`byeClaims`); the ledger is retired (Mentat P58, CA
+ * 2026-10-21), so the seat holds no provenance, and what the claim stood for is read from the draw: the convergence at
+ * `West|2|4` is a double exit and sends nobody across its loser link (`feederSendsNobody`: `DOUBLE_EXIT`).
  */
 
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
+
+/** why the matchUp at `key` sends nobody across its loser link, read from the draw as it stands */
+function feederReason(drawId: string, key: string) {
+  const drawDefinition = getDrawDefinition(drawId);
+  const inContextDrawMatchUps = getDrawMatchUps(drawId);
+  const feeder = inContextDrawMatchUps.find((matchUp: any) => coordinate(matchUp) === key);
+  const loserTargetLink = positionTargets({ matchUpId: feeder.matchUpId, inContextDrawMatchUps, drawDefinition })
+    ?.targetLinks?.loserTargetLink;
+  return feederSendsNobody({ inContextDrawMatchUps, loserTargetLink, drawDefinition, feeder });
+}
 
 function occupant(side: any) {
   if (side.bye) return 'BYE';
@@ -122,13 +138,14 @@ it('a carrier who went past a BYE only as a carrier is released, carry and all, 
   expect(entered.error).toBeUndefined();
   const after = view(drawId, watch);
   expect(after['West|2|4']).toMatchObject({ matchUpStatus: 'DOUBLE_WALKOVER', winningSide: null, sides: ['P', 'P'] });
-  // the loser seat is served as a double exit's: a BYE, claimed by the convergence
+  // the loser seat is served as a double exit's: a BYE, which the convergence sends because it has no loser
   expect(after['Southwest|1|2']).toEqual({
     matchUpStatus: 'BYE',
     winningSide: null,
     sides: ['BYE', 'BYE'],
-    provenance: { '2': { byeClaims: ['West|2|4'] } },
+    provenance: null,
   });
+  expect(feederReason(drawId, 'West|2|4')).toEqual('DOUBLE_EXIT');
   // and the carrier is nowhere in Southwest: what waits in the final is the exit produced from `Southwest|1|1`
   expect(after['Southwest|2|1']).toEqual({
     matchUpStatus: 'BYE',

@@ -1,13 +1,12 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
-import { producingDoubleExit } from '@Mutate/matchUps/matchUpStatus/oweDissolvedConvergencesTheirByes';
+import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
 import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -15,16 +14,6 @@ import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { intersection, overlap } from '@Tools/arrays';
-import {
-  getDrawPositionSideNumber,
-  getSideDrawPosition,
-  getWinningSideDrawPosition,
-} from '@Query/matchUps/getDrawPositionSides';
-import {
-  withdrawByeClaimsFrom,
-  withdrawByeClaim,
-  sideRecordOf,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   deriveExitStateFromProvenance,
   getSideExitProvenance,
@@ -155,43 +144,6 @@ export function removeDoubleExit(params) {
 
   const byePropagatedToLoserMatchUp =
     loserMatchUp?.matchUpStatus === BYE && !!byeProvenance && !reservationStands({ params, loserTargetLink });
-
-  /**
-   * This cascade is being unwound, so its own BYE claim goes — on EVERY path.
-   *
-   * Withdrawal used to sit inside the branch that removes the BYE, so the branch handling a loser
-   * target that already holds a draw BYE (visited "to WITHDRAW, and only that") left the claim
-   * behind. A ledger written on every attempt and withdrawn on only some paths accumulates claims
-   * describing nothing, and a stale claim reads as a live one — which would make the retain test
-   * answer "another cascade still owes this" forever.
-   */
-  const rawLoserMatchUp = (matchUpsMap?.drawMatchUps ?? []).find(
-    (candidate) => candidate.matchUpId === loserMatchUp?.matchUpId,
-  );
-  // the claim's side, read structurally: a lone position's side is not its index
-  const claimSideNumber =
-    getDrawPositionSideNumber({
-      matchUp: rawLoserMatchUp && { ...rawLoserMatchUp, sides: undefined },
-      structureId: loserMatchUp?.structureId,
-      drawPosition: loserTargetDrawPosition,
-      drawDefinition,
-    }) || 1;
-  const loserRecord = sideRecordOf(rawLoserMatchUp);
-  withdrawByeClaim({ matchUp: rawLoserMatchUp, sideNumber: claimSideNumber, claimantMatchUpId: matchUpId });
-  // ...and wherever else this cascade claimed one: a BYE that WALKS is claimed on a downstream
-  // matchUp the unwind never revisits at this coordinate
-  const claimsWithdrawn = withdrawByeClaimsFrom({ matchUps: matchUpsMap?.drawMatchUps, claimantMatchUpId: matchUpId });
-  // a claim is the matchUp's own record, and the unwind below need not rewrite the matchUp it leaves: each is announced
-  if (rawLoserMatchUp && loserRecord !== sideRecordOf(rawLoserMatchUp)) claimsWithdrawn.push(rawLoserMatchUp);
-  for (const withdrawnFrom of new Set(claimsWithdrawn))
-    modifyMatchUpNotice({
-      tournamentId: params.tournamentRecord?.tournamentId,
-      eventId: params.event?.eventId,
-      context: 'removeDoubleExit',
-      matchUp: withdrawnFrom,
-      event: params.event,
-      drawDefinition,
-    });
 
   /**
    * THE FMLC "PAIRED ROUND-1 DOUBLE EXIT" TEST THAT STOOD HERE IS GONE. It asked whether the BYE on
@@ -814,7 +766,6 @@ export function conditionallyRemoveDrawPosition(params) {
   // with it (census A1 wave 4, COMPASS 32/27 21034527: `aDissolvedConvergenceSendsItsSingleExitsBye`).
   if (unwound.winningSide && isExit(unwound.matchUpStatus)) {
     const propagated = propagateUnfillableLoserBye({
-      claimantMatchUpId: producingDoubleExit({ matchUp: noContextTargetMatchUp, drawDefinition, matchUpsMap }),
       tournamentRecord: params.tournamentRecord,
       matchUpId: targetMatchUp.matchUpId,
       event: params.event,

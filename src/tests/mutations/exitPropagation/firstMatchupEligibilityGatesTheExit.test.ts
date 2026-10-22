@@ -1,8 +1,10 @@
+import { getDrawDefinition, getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
+import { byeSeatsOwedTo } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
-import { DOUBLE_WALKOVER, TO_BE_PLAYED, COMPLETED } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, TO_BE_PLAYED, COMPLETED, BYE } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -70,8 +72,8 @@ it('a double exit whose players have both already won does NOT feed the consolat
   expect(inconsistencies ?? []).toEqual([]);
 });
 
-it("CONTROL: a ROUND 1 double exit still carries onward through the BYE — CA's 2026-09-20 ruling", () => {
-  const { put } = draw(20324524);
+it("CONTROL: a ROUND 1 double exit still reaches the consolation as BYEs on its seats — CA's 2026-09-20 ruling", () => {
+  const { find, put } = draw(20324524);
 
   /**
    * The case CA certified in TMX: *"the missing WALKOVER is not advanced past the [...] BYE in
@@ -80,13 +82,28 @@ it("CONTROL: a ROUND 1 double exit still carries onward through the BYE — CA's
    * A ROUND 1 double walkover's players have zero prior wins, so they ARE first-match losers and the
    * exit belongs in the consolation. The eligibility gate must leave this untouched — it narrows
    * only the case the rule was never true of.
+   *
+   * This control once counted the consolation matchUps carrying any `sideExitProvenance`; with exit
+   * status not propagated here, the only entries were the double walkover's `byeClaims` on the BYE it
+   * sent over. The ledger is retired (Mentat P58, CA 2026-10-21), so what reached the consolation is
+   * asserted from the draw instead: the seat the double walkover's loser link feeds holds a BYE, so
+   * does the seat fed by the second-round matchUp its produced walkover went on into, and those two
+   * seats are the BYEs the double walkover is the reason for (`byeSeatsOwedTo`), as its claims were.
    */
   expect(put('Main', 1, 1, { matchUpStatus: DOUBLE_WALKOVER }).success).toEqual(true);
 
-  const fed = tournamentEngine
-    .allTournamentMatchUps()
-    .matchUps.filter((m: any) => m.stage === 'CONSOLATION' && m.sideExitProvenance);
-
-  // the exit reached the consolation, which is what the ruling requires
-  expect(fed.length).toBeGreaterThan(0);
+  // the exit reached the consolation, which is what the ruling requires: the seats it feeds hold BYEs
+  for (const roundNumber of [1, 2]) {
+    const seat = find('Consolation', roundNumber, 1);
+    expect(seat.matchUpStatus).toEqual(BYE);
+    expect(seat.sides[0].bye).toEqual(true);
+  }
+  const owed = byeSeatsOwedTo({
+    inContextDrawMatchUps: getDrawMatchUps('A'),
+    drawDefinition: getDrawDefinition('A'),
+    matchUpId: find('Main', 1, 1).matchUpId,
+  });
+  expect(
+    owed.map((matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`),
+  ).toEqual(['Consolation|1|1', 'Consolation|2|1']);
 });
