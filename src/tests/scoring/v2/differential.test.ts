@@ -183,19 +183,21 @@ describe('what it compares now that v2 has a shell, and the little it does not',
     expect([tally['compared:setState'], tally['compared:undo']]).toEqual([1, 1]);
   });
 
-  it('SE2c-D3: a record whose stored score disagrees with its timeline is excused until its next rebuild', () => {
+  it('SE2c-D3: a record whose stored score disagrees with its timeline is compared: both go on from the timeline', () => {
     const source = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     source.addPoint({ winner: 0 });
     const state = source.getState();
     state.score.sets[0].side2Score = 3;
     const engine = loadedFrom(state);
+    expect(engine.getState().score.sets[0].side2Score).toEqual(3);
     resetScoringDifferentialTally();
     engine.addPoint({ winner: 0 });
-    expect(getScoringDifferentialTally()['pending:SE2c-D3']).toEqual(1);
+    expect(engine.getState().score.sets[0]).toMatchObject({ side1Score: 0, side2Score: 0 });
     engine.undo();
     engine.addPoint({ winner: 0 });
-    expect(getScoringDifferentialTally()['pending:SE2c-D3']).toEqual(1);
-    expect(getScoringDifferentialTally()['compared:addPoint']).toEqual(2);
+    const tally = getScoringDifferentialTally();
+    expect(tally['compared:addPoint']).toEqual(2);
+    expect(Object.keys(tally).filter((key) => key.startsWith('pending:SE2c'))).toEqual([]);
   });
 
   it('a status set outside scoring is not scoring’s to compare, and is counted', () => {

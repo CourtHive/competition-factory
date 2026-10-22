@@ -178,7 +178,8 @@ the result says it was ignored):
 
 Adds one game (or unit) to the open set for the side `winner` names, creating the next set when the
 last one has a winner. A game in progress point by point is abandoned: its points stay on the
-history, and the set's next point opens a new game at 0-0 (`getEpisodesInterruptedGames.test.ts`,
+history, and the set's next point opens a new game at 0-0 (a game that wins the set opens none, as a
+point that wins it opens none: SE2a-D3b, CA 2026-10-21) (`getEpisodesInterruptedGames.test.ts`,
 "credits an interrupted game to no point"). A `tiebreakScore` is stored as the set's tiebreak points.
 The set is then judged by its segment's rule (§ 4.2) and the match by § 9. In a timed segment a game
 is a unit of its score (§ 6.2).
@@ -205,7 +206,9 @@ already closed level, and counts a game in a tiebreak-only segment as one of its
    manual end (§ 2.4);
 3. a total the rule does not call finished, given with no winner, is recorded as the set in play, open
    (3-1 in a set to six), not refused: the courthive-components inline scorer ignores refusals, so a
-   refusal would lose the input;
+   refusal would lose the input. In a tiebreak-only segment that total is the race's running points,
+   the game in play (§ 5 rule 1), as a baseline reads it: `SET3-S:TB11` 11-10 is `[0, 0]` with the game
+   in play at 11-10, and the next point plays on from it (SE2a-D13, CA 2026-10-21);
 4. a timed segment's total is a finished segment: the side with more wins it, and a level one follows
    § 9.7 (or its declared tiebreak, § 6.4).
 
@@ -252,7 +255,10 @@ is part of the timeline").
    final set is the one the deciding-set rule of § 3.2 names, read from the score; a tiebreak-only set
    is read from its points (1-0 with 11-9 is won).
 2. A baseline that decides the match completes it (6-0 6-0 in a best of three is `COMPLETED`).
-3. An unfinished last set is the set in play.
+3. An unfinished last set is the set in play. In a tiebreak-only segment its total is the race in play,
+   so a `currentGameScore` given beside it names that race's points twice and is refused (SE2a-D14, CA
+   2026-10-21: the cleaner rule). A stored baseline v1 took so replays as v1 replayed it, from the
+   total, flagged as a legacy shape (§ 12.8).
 4. A supplied `server` is honoured: it is recorded as a `setServer` at the baseline's position
    (§ 10.6).
 5. A second baseline is refused once the timeline holds scoring entries; a correction uses
@@ -321,7 +327,8 @@ it without replaying it, and `undo` pops it, which is already the rule.
 
 ### 3.1 The match
 
-- **Best of N** (`SET3`, `MAP5`, …): the first side to win ⌈N/2⌉ sets wins. `SET1X` and `SET1XA` read as
+- **Best of N** (`SET3`, `MAP5`, …): the first side to win a majority of N sets, ⌊N/2⌋ + 1, wins (for odd N
+  that is ⌈N/2⌉; an even N can end level, § 9.7; SE2a-D7, CA 2026-10-21). `SET1X` and `SET1XA` read as
   best of one (exactly one set is best of one).
 - **Exactly N** (`X`): all N sets are played; a lead is not a win (§ 9.2).
 - **Aggregate** (`A`): every set is played and the total across them decides; sets won are not
@@ -576,16 +583,17 @@ format is parsed and not enforced (§ 3.4).
 
 ### 9.1 Best of N
 
-The match is won by the first side to win ⌈N/2⌉ sets (Rule 7; `standardSets`, "Rule 7"). A set without
+The match is won by the first side to win a majority of the N sets, ⌊N/2⌋ + 1 (Rule 7; `standardSets`,
+"Rule 7"; SE2a-D7: ⌈N/2⌉ read for an even N would be half, which § 9.7 rule 4 contradicts). A set without
 a winner (a timed segment closed level) is played and counts for neither side. **No set beyond N is
-played**: when all N sets are played and neither side has ⌈N/2⌉, the side with more sets wins, and a
+played**: when all N sets are played and neither side has a majority, the side with more sets wins, and a
 level count ends the match by § 9.7 (CA 2026-10-18). v1 opens another set after a level timed segment,
 so `SET1-S:T10P` level at time takes a second set and a `SET3-S:T10` can need a fourth: a v1 defect
 (§ 16, 3).
 
 ### 9.2 Exactly N, not aggregate
 
-1. Reaching ⌈N/2⌉ sets before all N are played is a lead, not a win (`tiebreakSets`, "in HAL3X a
+1. Reaching a majority of sets before all N are played is a lead, not a win (`tiebreakSets`, "in HAL3X a
    two-halves lead is not a win"; `timedSegments`, "exactly | timed").
 2. Once all N sets are played, the side with more sets wins, however many it took; a sweep is a win
    (`tiebreakSets`, "a sweep included").
@@ -934,7 +942,11 @@ timeline undone.
 ### 12.6 Every persisted shape v2 must read
 
 1. **An entries-based record** (`history.entries` present): rebuilt from its entries. Its point entries
-   may predate S1 (#5515) and hold fewer fields; the entry is still authoritative.
+   may predate S1 (#5515) and hold fewer fields; the entry is still authoritative. **Its timeline is
+   authoritative over its stored score** (SE2c-D3, CA 2026-10-21): loaded, the record is returned as
+   stored, but the next action, and every view, are taken on the score its timeline rebuilds to (with
+   the configuration then loaded; `loadSupplementaryState` prepares it again). That action writes the
+   timeline's score and keeps the stored points until the next rebuild.
 2. **A legacy point-only record** (points, no `entries`): loaded as stored. Without a timeline,
    `undo` pops points (the redo stack holds each point's replay input), `redo` re-adds them through the
    scorer, and a correction rebuilds from the points. A point's replay input is every field except the
