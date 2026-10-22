@@ -2,7 +2,7 @@
 title: Scoring Engine Overview
 ---
 
-The **ScoringEngine** is a stateful mutation engine for point-by-point match scoring. It wraps the direct scoring functions provided by `scoreGovernor` into a convenient, stateful facade with built-in undo/redo, event handlers, and multi-sport format support.
+The **ScoringEngine** is a stateful engine for point-by-point match scoring: a pure reducer over a typed timeline behind a stateful facade, with built-in undo/redo, event handlers, and multi-sport format support. Its rules are specified in the [scoring engine spec](./scoring-engine-spec.md).
 
 ## When to Use ScoringEngine vs scoreGovernor
 
@@ -62,23 +62,22 @@ engine.getWinner(); // undefined
 
 ## Architecture
 
-The ScoringEngine follows the Competition Factory's architecture pattern where **governors** provide direct functions and **engines** provide stateful facades:
+The score is a pure function of the configuration and the timeline: `state = reduce(config, timeline)`.
 
 ```text
 ┌──────────────────────────┐
-│      ScoringEngine       │  Stateful facade
-│  (undo/redo, events,     │
+│      ScoringEngine       │  Stateful facade: the timeline, the redo stack,
+│  (undo/redo, events,     │  lineUps, events and the record's identity
 │   format introspection)  │
 ├──────────────────────────┤
-│    scoreGovernor         │  Direct scoring functions
-│  (addPoint, getScore,    │
-│   isComplete, ...)       │
+│   reducer (step/reduce)  │  One rule module per segment kind, service,
+│                          │  completion and the views
 ├──────────────────────────┤
-│   CODES MatchUp State    │  Standard data model
+│   CODES MatchUp record   │  Written from the reduced state
 └──────────────────────────┘
 ```
 
-The engine holds a CODES `MatchUp` object as internal state. All mutations (adding points, games, sets) update this state and record entries in a unified history timeline. The undo/redo system replays this timeline to reconstruct state.
+Every action is offered to the reducer, which refuses, ignores or records it; recorded actions go on the timeline in `history.entries`. Undo, redo and the corrections are timeline operations followed by a replay, so a saved record always replays to the same score. The direct functions on `scoreGovernor` (`addPoint`, `getScore`, …) are a separate, older surface: the engine does not score through them.
 
 ## Constructor Options
 

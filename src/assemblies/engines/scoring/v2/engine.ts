@@ -55,14 +55,15 @@ import type {
 } from '../ScoringEngine';
 
 /**
- * ScoringEngine v2 (SE2c): the public `ScoringEngine` API as a thin shell over the reducer (plan § 2).
+ * The `ScoringEngine` (v2 since SE4): the public API as a thin shell over the reducer (plan § 2).
  *
  * The score is a pure function of the configuration and the timeline (§ 12.1): every action is offered to the
  * reducer's `step`, which refuses, ignores or records it; undo, redo and the corrections are timeline operations
  * followed by a rebuild (`reduce`). The shell owns only what is not score: the timeline and the redo stack, the
  * lineUps, the event handlers and the record's identity.
  *
- * Written from the spec (`scoring-engine-spec.md`, § 2, § 11, § 12) and the API reference, not from v1's code.
+ * Written from the spec (`scoring-engine-spec.md`, § 2, § 11, § 12) and the API reference, not from v1's code. v1, the
+ * class it replaced, is gone; records v1 wrote replay as v1 replayed them (§ 12.8).
  */
 
 const SUPPLEMENTARY_STATE_VERSION = 1;
@@ -88,7 +89,7 @@ function recordedInput(options: Record<string, unknown>): Record<string, unknown
 
 /** the replay input of a point saved without a timeline (§ 12.6 shape 2): every field but the calculated ones */
 function replayInput(point: Point): Record<string, unknown> {
-  // its recorded players stay with it: a record without a timeline has no substitutions to replay (§ 12.6)
+  // the players it recorded stand on replay (§ 12.6)
   const { winningSide: _w, serverSideNumber: _s, ...rest } = point;
   return recordedInput(rest);
 }
@@ -107,7 +108,7 @@ function refusedWith(outcome: StepOutcome): never {
 
 type Rebuilt = { state: ScoringState; entries: ScoreEntry[]; completedBy?: number; legacy: string[] };
 
-export class ScoringEngineV2 {
+export class ScoringEngine {
   private matchUpFormat: string;
   private competitionFormat?: CompetitionFormat;
   private pointMultipliers: PointMultiplier[];
@@ -778,9 +779,10 @@ export class ScoringEngineV2 {
     inParticipantId: string;
     timestamp?: string;
   }): SubstitutionResult {
-    const { timestamp, ...facts } = options;
+    const { timestamp } = options;
     const setNumber = this.setNumberInPlay();
-    const event: SubstitutionEvent = { ...facts, beforePointIndex: this.getPointCount(), setNumber };
+    // the caller's time stays on the event as well as the entry: the substitution list is read on its own (§ 2.7)
+    const event: SubstitutionEvent = { ...options, beforePointIndex: this.getPointCount(), setNumber };
     const error = substitutionError(this.lineUps, event);
     if (error) return { success: false, error };
     this.lineUps = substituted(this.lineUps as LineUps, event);

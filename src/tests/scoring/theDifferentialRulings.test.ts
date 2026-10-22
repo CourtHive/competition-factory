@@ -1,12 +1,11 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { ScoringEngineV2 } from '@Assemblies/engines/scoring/v2/engine';
 import { describe, expect, it } from 'vitest';
 
 /*
- * v1 brought to the rule where the v1/v2 differential found it short (CA 2026-10-21; scoring-engine v2 plan § 9,
- * SE2a-D11, SE2b-D11, D17, D18, D20, D22, D24; then SE3-E1, E2, E3, SE2c-D6; then SE2a-D3b, D12, D13, D14, SE2c-D3; then SE2b-D23, D25, D26).
- * The differential holds v1 to v2 on every one of these under
- * `SCORING_ENGINE=differential`; these cases hold v1 to the spec directly, whatever engine is selected.
+ * The rulings the v1/v2 differential raised (CA 2026-10-21 and 2026-10-22; scoring-engine v2 plan § 9: SE2a-D11,
+ * SE2b-D11, D17, D18, D20, D22, D24; SE3-E1, E2, E3, SE2c-D6; SE2a-D3b, D12, D13, D14, SE2c-D3; SE2b-D23, D25,
+ * D26; then the record shapes). The differential held v1 and v2 to each until v1 was retired (SE4); these cases hold
+ * the ScoringEngine to the spec directly.
  */
 
 // read as plain records: the coordinates and marks under test are not all on the public types
@@ -320,28 +319,42 @@ describe('a set tiebreak keeps no streak, whatever the game format (§ 1.2, § 4
   });
 });
 
-describe('v1 reads the record v2 writes: at a cutover, and on a rollback (§ 12.5)', () => {
-  const readByV1 = (written: ScoringEngineV2) => {
+describe('a saved record reads back as written (§ 12.5)', () => {
+  const readBack = (written: ScoringEngine) => {
     const reader = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     reader.setState(written.getState());
     return reader;
   };
 
-  it('a match whose initial server is all it holds: v2 writes no serverFlip', () => {
-    const written = new ScoringEngineV2({ matchUpFormat: 'SET3-S:6/TB7' });
+  it('a match whose initial server is all it holds: no serverFlip is written, the history names it', () => {
+    const written = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     written.setServer(1, { recordEntry: false });
     expect(written.getState().serverFlip).toBeUndefined();
-    expect(readByV1(written).getNextServer()).toEqual(1);
+    expect(readBack(written).getNextServer()).toEqual(1);
   });
 
-  it('a baseline that names its server: v2 keeps the server in the baseline’s data alone', () => {
-    const written = new ScoringEngineV2({ matchUpFormat: 'SET3-S:6/TB7' });
+  it('a baseline that names its server: the server is kept in the baseline’s data alone', () => {
+    const written = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     written.setInitialScore({ sets: [{ side1Score: 2, side2Score: 1 }], server: 0 });
-    const reader = readByV1(written);
+    const reader = readBack(written);
     expect(reader.getNextServer()).toEqual(written.getNextServer());
     reader.addPoint({ winner: 0 });
     reader.undo();
     expect(reader.getNextServer()).toEqual(0);
+  });
+
+  it('a substitution keeps the time its caller gave, on the event as well as the entry (§ 2.7)', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7', isDoubles: true });
+    engine.setLineUp(1, [{ participantId: 'A' }, { participantId: 'B' }]);
+    engine.substitute({
+      sideNumber: 1,
+      outParticipantId: 'A',
+      inParticipantId: 'E',
+      timestamp: '2026-10-01T12:30:00Z',
+    });
+    const { substitutions, entries } = readBack(engine).getState().history!;
+    expect(substitutions![0].timestamp).toEqual('2026-10-01T12:30:00Z');
+    expect(entries!.at(-1)!.timestamp).toEqual('2026-10-01T12:30:00Z');
   });
 
   it('a loaded substitution list is shown as stored until the next action writes (SE2c-D3)', () => {
