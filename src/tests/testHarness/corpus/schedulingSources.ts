@@ -207,10 +207,9 @@ export function schedulingScenarios(): Authored[] {
   }
 
   {
-    // FOUND building this corpus (2026-10-22): once main R1 (08:00) is COMPLETED, a second profile run places
-    // consolation R1, whose players are R1's losers, at 09:30: R1's 90 minutes and no recovery. A completed matchUp
-    // stops holding its participants. Whether it should (it has no endTime; it ended at some point before now) is a
-    // ruling for the spec; until then the scenario claims the rule as the properties state it and is not graded
+    // C1 (found building this corpus, 2026-10-22; CA: recovery is calculated): a COMPLETED matchUp still holds its
+    // participants. Main R1 at 08:00 is completed, and a second profile run places consolation R1, whose players are
+    // R1's losers, only once R1's 90 minutes and 60 of recovery are over
     const { tournamentRecord, round, matchUpsOf, drawId } = generate({
       drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP_TO_QF },
       courtsCount: 17,
@@ -218,8 +217,7 @@ export function schedulingScenarios(): Authored[] {
     const outcome = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
     out.push({
       scenarioId: 'authored/scheduling/completed-feeder-recovery',
-      ref: 'scheduling § recovery: a completed matchUp earlier the same day still holds its participants (OPEN)',
-      knownFailure: 'SCHEDULING_PIPELINE_VNEXT.md § 5 found-while-building C1 (ruling pending)',
+      ref: 'scheduling § recovery: a completed matchUp earlier the same day still holds its participants',
       initialRecord: tournamentRecord,
       directives: [
         { method: 'setMatchUpDailyLimits', params: { dailyLimits: { [SINGLES]: 2, [TOTAL]: 3 } } },

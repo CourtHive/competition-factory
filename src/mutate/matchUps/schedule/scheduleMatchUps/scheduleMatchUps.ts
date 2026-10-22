@@ -5,6 +5,7 @@ import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { resolveScheduleMatchUpsTiming } from './resolveScheduleMatchUpsTiming';
 import { getParticipantReachability } from './getParticipantReachability';
 import { checkDependenciesScheduled } from './checkDependenciesScheduled';
 import { modifyParticipantDayMatchUps } from './participantDayLoad';
@@ -45,6 +46,7 @@ import {
  * @param {number} periodLength - granularity of time blocks to consider, in minutes
  * @param {number} averageMatchUpMinutes - how long the expected matchUps are expected to last, in minutes, on average
  * @param {number} recoveryMinutes - time in minutes that should be alloted for participants to recover between matches
+ *   (when neither is stated, a timing in the tournament or the event decides; with none, 90 and 0)
  * @param {object} matchUpDailyLimits - { SINGLES, DOUBLES, TOTAL } - maximum number of matches allowed per participant
  * @param {boolean} checkPotentialRequestConflicts - check personRequests when person is only potentially in matchUp being scheduled
  *
@@ -55,9 +57,9 @@ export function scheduleMatchUps(params) {
     tournamentRecords,
     allDateMatchUpIds = [],
 
-    averageMatchUpMinutes = 90,
-    recoveryMinutes = 0,
-    recoveryMinutesMap, // for matchUpIds batched by averageMatchUpMinutes this enables varying recoveryMinutes
+    averageMatchUpMinutes: statedAverageMinutes,
+    recoveryMinutes: statedRecoveryMinutes,
+    recoveryMinutesMap: statedRecoveryMinutesMap, // for matchUpIds batched by averageMatchUpMinutes: varying recovery
 
     matchUpPotentialParticipantIds = {},
     individualParticipantProfiles = {},
@@ -129,6 +131,17 @@ export function scheduleMatchUps(params) {
   const targetMatchUps = matchUpIds
     .map((matchUpId) => competitionMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId))
     .filter(Boolean);
+
+  const dateMatchUps = competitionMatchUps.filter(
+    (matchUp) => matchUp.schedule?.scheduledDate && sameDay(scheduleDate, extractDate(matchUp.schedule.scheduledDate)),
+  );
+  const { averageMatchUpMinutes, recoveryMinutes, recoveryMinutesMap } = resolveScheduleMatchUpsTiming({
+    matchUps: [...targetMatchUps, ...dateMatchUps],
+    averageMatchUpMinutes: statedAverageMinutes,
+    recoveryMinutesMap: statedRecoveryMinutesMap,
+    recoveryMinutes: statedRecoveryMinutes,
+    tournamentRecords,
+  });
 
   // determines court availability taking into account already scheduled matchUps on the scheduleDate
   // optimization to pass already retrieved competitionMatchUps to avoid refetch (requires refactor)

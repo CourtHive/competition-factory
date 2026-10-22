@@ -261,8 +261,8 @@ engine.scheduleMatchUps({
 
   // Scheduling parameters
   periodLength, // optional - scheduling block size in minutes (default: 30)
-  averageMatchUpMinutes, // optional - average match duration (default: 90)
-  recoveryMinutes, // optional - recovery time between matches (default: 0)
+  averageMatchUpMinutes, // optional - average match duration (see "Timing" below)
+  recoveryMinutes, // optional - recovery time between matches (see "Timing" below)
 
   // Time constraints
   startTime, // optional - schedule start time (HH:mm)
@@ -276,6 +276,14 @@ engine.scheduleMatchUps({
   dryRun, // optional boolean - preview without changes
 });
 ```
+
+#### Timing: where the minutes come from
+
+Minutes stated in the call (`averageMatchUpMinutes`, `recoveryMinutes`, `recoveryMinutesMap`) always win. When the call
+states none, `scheduleMatchUps` looks for a timing in the tournament or the matchUp's event: an attached scheduling
+policy, the tournament's `scheduling.timing`, or the event's schedule timing. Each matchUp's recovery then comes from its
+own format and event (as `getMatchUpFormatTiming` resolves it), and the time slots are sized by the greatest average
+among the matchUps. With no timing stated anywhere, the defaults are 90 minutes and no recovery, as before.
 
 #### Period Length: Scheduling Block Size
 
