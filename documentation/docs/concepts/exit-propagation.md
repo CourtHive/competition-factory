@@ -489,7 +489,10 @@ decided, so the same results left a pending exit in one order and a TO_BE_PLAYED
 behind a BYE in another (census s14, COMPASS 32/27, 20521366: `North|2|1`; across every order of the results
 that pin these shapes, three end states became one). Under `doubleExitPropagateBye: false` a double exit's
 loser seat receives the produced exit and never a BYE, in either order of the two exits that converged there;
-the BYE opposite stays, and the exit travels on. An entry left on a side that is itself a BYE is no held
+the BYE opposite stays, and the exit travels on. That holds for a double exit two exits converged into as for one
+entered directly, and a propagated BYE already on the seat gives way to the produced exit (CA ruling (A),
+2026-10-21; before it, the seat kept that BYE in some orders and showed the produced exit in others). A fed-in seat
+takes a BYE whatever the policy, and a BYE the draw placed at generation stays. An entry left on a side that is itself a BYE is no held
 exit: its carrier went home when the BYE took the seat (census run-17 Class B, COMPASS 32/27, 20641116:
 entered last, the probe left `Southwest|2|1` TO_BE_PLAYED with the exit held back; entered first, the loser
 seat became a BYE; both now leave the pending walkover).
@@ -638,9 +641,11 @@ BYE goes unless another exit still claims it (census run-17 baseline, COMPASS 16
 
 A BYE claimed further on goes the same way. A double exit's produced exit can decide a matchUp a round
 on, and the BYE claimed for that matchUp's loser stands on the double exit's account. When the double
-exit is re-derived to a single exit, the exit it produced is withdrawn and so is that BYE. Only the
-BYE at the re-derived matchUp's own loser seat stays, because its losing side is still the produced
-exit (census run-17 baseline, COMPASS 16/13 and 16/14 under `doubleExitPropagateBye: false`).
+exit is re-derived to a single exit, the exit it produced is withdrawn and so is that BYE. The
+re-derived matchUp's own loser seat, which showed the produced exit while it was a double exit, is owed its
+BYE again, whether the single exit is awarded or still pending, because its losing side is still the produced
+exit; the BYE is claimed by the double exit that produced the kept exit, as every entry order claims it (census
+run-17 baseline, COMPASS 16/13 and 16/14 under `doubleExitPropagateBye: false`).
 
 A seat that becomes a BYE keeps nothing it was awarded. When a correction takes a fed loser back out and the seat they
 held becomes the BYE nobody can fill, an advancement a produced exit gave that seat is taken back first, and the BYE

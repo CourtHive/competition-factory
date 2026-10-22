@@ -128,7 +128,7 @@ it('an exit carried through a BYE is pending on both routes', () => {
   expect(rescored).toEqual(direct);
 });
 
-it('a convergence does not walk its own loser link, whose seat the first exit already resolved', () => {
+it('a convergence serves its own loser link once, the same draw on either route', () => {
   const direct = signatures(COMPASS, 16, [at('East', 1, asDouble), at('East', 2, asDouble)], 'direct');
   const rescored = signatures(
     COMPASS,
@@ -137,11 +137,13 @@ it('a convergence does not walk its own loser link, whose seat the first exit al
     'rescored',
   );
 
-  // CONTROL: the convergence is in West, and South is what its loser link feeds
+  // CONTROL: the convergence is in West, and South is what its loser link feeds. Under the policy off its loser seat
+  // shows the walkover it produced, not the BYE its first exit left there (CA ruling (A), 2026-10-21); that walkover
+  // awaits whoever West|1|2 sends, and goes no further
   expect(direct['West|1|1']).toMatch(/^DOUBLE_WALKOVER /);
-  expect(direct['South|1|1']).toMatch(/^BYE /);
+  expect(direct['South|1|1']).toEqual('WALKOVER ws=2 dp=1.2 prov=1:DOUBLE_WALKOVER->WALKOVER');
 
-  // South|2|1 side 1 is the seat the loser of West|1|2 arrives into: nobody delivered an exit there
+  // South|2|1 side 1 is the seat the winner of South|1|1 arrives into: nobody delivered an exit there
   expect(rescored['South|2|1']).toMatch(/^TO_BE_PLAYED .*prov=-$/);
   expect(rescored).toEqual(direct);
 });

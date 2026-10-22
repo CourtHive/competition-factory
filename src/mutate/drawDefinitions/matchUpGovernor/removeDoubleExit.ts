@@ -1,5 +1,6 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
+import { producingDoubleExit } from '@Mutate/matchUps/matchUpStatus/oweDissolvedConvergencesTheirByes';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
@@ -815,6 +816,7 @@ export function conditionallyRemoveDrawPosition(params) {
   // with it (census A1 wave 4, COMPASS 32/27 21034527: `aDissolvedConvergenceSendsItsSingleExitsBye`).
   if (unwound.winningSide && isExit(unwound.matchUpStatus)) {
     const propagated = propagateUnfillableLoserBye({
+      claimantMatchUpId: producingDoubleExit({ matchUp: noContextTargetMatchUp, matchUpsMap }),
       tournamentRecord: params.tournamentRecord,
       matchUpId: targetMatchUp.matchUpId,
       event: params.event,

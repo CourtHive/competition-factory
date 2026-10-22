@@ -106,15 +106,19 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  * the exits withdrawn beside it (census S7, 20964176: `aByeClaimSurvivesTheExitWithdrawnBesideIt.test.ts`).
  */
 export function propagateUnfillableLoserBye({
+  claimantMatchUpId,
   tournamentRecord,
   drawDefinition,
+  pendingExit,
   matchUpsMap,
   matchUpId,
   event,
 }: {
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
+  claimantMatchUpId?: string;
   matchUpsMap?: MatchUpsMap;
+  pendingExit?: boolean;
   matchUpId?: string;
   event?: Event;
 }): ResultType | undefined {
@@ -147,7 +151,10 @@ export function propagateUnfillableLoserBye({
   if (matchUp?.matchUpStatus === BYE) {
     if (!holdsPropagatedBye({ drawDefinition, matchUp })) return undefined;
   } else {
-    if (!matchUp?.winningSide || !isExit(matchUp.matchUpStatus)) return undefined;
+    // a caller re-owing a dissolved convergence's seat may name a PENDING exit: undecided, one side holding the exit
+    // that side will lose, so its loser is nobody as surely as an awarded one's (`feederSendsNobody` EXIT_PENDING)
+    const pending = !!pendingExit && !matchUp?.winningSide;
+    if (!pending && (!matchUp?.winningSide || !isExit(matchUp.matchUpStatus))) return undefined;
 
     const provenance = getSideExitProvenance({ matchUp }) ?? {};
     const exitingSides = ([1, 2] as const).filter((sideNumber) => carriedExitStatus(provenance[sideNumber]));
@@ -160,7 +167,7 @@ export function propagateUnfillableLoserBye({
      */
     if (exitingSides.length !== 1) return undefined;
     // and the exited side must be the side that LOST, or this matchUp's loser is a real participant
-    if (matchUp.winningSide === exitingSides[0]) return undefined;
+    if (!pending && matchUp?.winningSide === exitingSides[0]) return undefined;
   }
 
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
@@ -260,7 +267,11 @@ export function propagateUnfillableLoserBye({
       (candidate) => candidate.matchUpId === loserMatchUp.matchUpId,
     );
     const record = sideRecordOf(rawLoserMatchUp);
-    recordByeClaim({ claimantMatchUpId: matchUpId, sideNumber: claimSideNumber, matchUp: rawLoserMatchUp });
+    recordByeClaim({
+      claimantMatchUpId: claimantMatchUpId ?? matchUpId,
+      sideNumber: claimSideNumber,
+      matchUp: rawLoserMatchUp,
+    });
     // recorded after the BYE is placed, so the placement's notice does not carry it: announced here
     if (rawLoserMatchUp && record !== sideRecordOf(rawLoserMatchUp))
       modifyMatchUpNotice({

@@ -230,7 +230,14 @@ export function settleRederivedDoubleExit({
     // re-derived single exit, whose losing side is the produced exit, can never send it a loser (census S8, COMPASS 8/8
     // policy-off 20853116: `South|1|1` dp 1 after `East|1|2` went from a walkover back to a played result).
     if (overLoserLink) {
-      const owed = propagateUnfillableLoserBye({ matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
+      const owed = propagateUnfillableLoserBye({
+        claimantMatchUpId: origin.matchUpId,
+        tournamentRecord,
+        drawDefinition,
+        matchUpsMap,
+        matchUpId,
+        event,
+      });
       if (owed?.error) return owed;
     }
     return advanceStandingWinner({

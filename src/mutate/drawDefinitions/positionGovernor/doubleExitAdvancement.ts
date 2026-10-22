@@ -4,12 +4,13 @@ import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/dra
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
-import { applyWithdrawnExits, withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { clearDrawPosition, drawPositionRemovals } from '@Mutate/matchUps/drawPositions/positionClear';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
+import { removeDirectedBye } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
+import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
@@ -64,45 +65,53 @@ import type {
   DrawDefinition,
   Structure,
   Tournament,
+  DrawLink,
   MatchUp,
   Event,
 } from '@Types/tournamentTypes';
 
 /**
- * A SINGLE EXIT'S BYE CLAIM DOES NOT SURVIVE ITS BECOMING A DOUBLE EXIT under `doubleExitPropagateBye: false`.
+ * A DOUBLE EXIT'S LOSER SEAT SHOWS THE EXIT IT PRODUCED under `doubleExitPropagateBye: false`, never a BYE (CA ruling (A),
+ * 2026-10-21), whether the double exit was entered or two exits converged into it.
  *
  * A matchUp won over a produced exit has nobody to lose, so its loser seat in the connected structure becomes a BYE
- * nobody can fill, claimed by that matchUp (`propagateUnfillableLoserBye`). When a correction then sends a loser
- * carrying an exit onto its winner's seat, the matchUp converges: a double exit, whose loser target receives a produced
- * exit under the policy off, never a BYE (`progressionPolicy`). The BYE stood, the seat's matchUp read BYE, and the
- * produced exit the other order writes there was never recorded (census S6 Class B 20694910, COMPASS 32/30 policy-off:
- * `East|1|11` re-scored as a walkover converged `West|1|6`, and `South|1|3` kept `West|1|6`'s BYE on dp 6).
- *
- * Only a BYE this matchUp alone claims, on a seat that is not a reserved feed (whose BYE a double exit places anyway).
+ * nobody can fill (`propagateUnfillableLoserBye`). When it then becomes a double exit, its loser target receives a
+ * produced exit under the policy off, so that BYE is taken back here before the exit is produced (census S6 Class B
+ * 20694910, COMPASS 32/30 policy-off: `East|1|11` re-scored as a walkover converged `West|1|6`, and `South|1|3` kept its
+ * BYE on dp 6). This used to take back only a BYE the matchUp alone claimed, and a seat that already held a BYE was
+ * otherwise settled, so the same double exit left a BYE or a produced exit there depending on the order the results
+ * were entered. It now asks the draw: a propagated BYE on this matchUp's own loser seat. A fed-in seat keeps its BYE,
+ * which a double exit places there whatever the policy, and so does a BYE the draw placed at generation.
  */
 function reclaimSingleExitBye({
+  loserTargetDrawPosition,
   tournamentRecord,
+  loserTargetLink,
   drawDefinition,
   sourceMatchUp,
   loserMatchUp,
   matchUpsMap,
   event,
 }: {
+  loserTargetDrawPosition?: number;
   loserMatchUp?: HydratedMatchUp;
   sourceMatchUp?: HydratedMatchUp;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
+  loserTargetLink?: DrawLink;
   matchUpsMap: MatchUpsMap;
   event?: Event;
 }): boolean {
   if (!sourceMatchUp?.matchUpId || !loserMatchUp?.matchUpId || loserMatchUp.hasFedDrawPosition) return false;
-  const stored = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === loserMatchUp.matchUpId);
-  const claimedAlone = Object.values(getSideExitProvenance({ matchUp: stored }) ?? {}).some(
-    (entry) => entry?.byeClaims?.length === 1 && entry.byeClaims[0] === sourceMatchUp.matchUpId,
-  );
-  if (!claimedAlone) return false;
-  withdrawByeSeats({
-    claimantMatchUpId: sourceMatchUp.matchUpId,
+  if (!loserTargetDrawPosition || !loserTargetLink) return false;
+  const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId });
+  const seat = positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition);
+  if (!seat?.bye || !seat.byeFromPropagation) return false;
+  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+  removeDirectedBye({
+    drawPosition: loserTargetDrawPosition,
+    targetLink: loserTargetLink,
+    inContextDrawMatchUps,
     tournamentRecord,
     drawDefinition,
     matchUpsMap,
@@ -127,7 +136,16 @@ export function doubleExitAdvancement(params) {
   // the BYE this matchUp claimed while it was a single exit is not what a double exit leaves under the policy off
   if (
     !propagatesByeOnDoubleExit(appliedPolicies) &&
-    reclaimSingleExitBye({ tournamentRecord, drawDefinition, matchUpsMap, sourceMatchUp, loserMatchUp, event })
+    reclaimSingleExitBye({
+      loserTargetLink: targetLinks?.loserTargetLink,
+      loserTargetDrawPosition,
+      tournamentRecord,
+      drawDefinition,
+      sourceMatchUp,
+      loserMatchUp,
+      matchUpsMap,
+      event,
+    })
   ) {
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
     const refreshed = positionTargets({ matchUpId: sourceMatchUp.matchUpId, inContextDrawMatchUps, drawDefinition });
@@ -457,19 +475,18 @@ function handleLoserMatchUp({
   }
 
   /**
-   * A LOSER SEAT THAT ALREADY HOLDS A BYE IS SETTLED, and the BYE is its record: nothing is produced onto it. A produced
-   * walkover awarded to an empty seat claims the BYE its loser would have taken (P39); when a carrier later converges
-   * that matchUp, the double exit's own loser seat is that BYE. Forward entry leaves it so in every order; the
-   * correction route recorded the produced exit on the BYE's own seat and sent it on, and the matchUp beyond read a
-   * pending walkover in that order alone (census S6 Class B 20694910, COMPASS 32/30 policy-off: `South|1|2` dp 3,
-   * `South|2|1`). Two opposed debate agents measured keeping the BYE against owing the seat the produced exit; both
-   * concluded the BYE stays.
+   * A LOSER SEAT THAT STILL HOLDS A BYE HERE IS SETTLED: nothing is produced onto it. Under the policy off, a BYE this
+   * matchUp's own cascade propagated there has already given way to the produced exit by now (`reclaimSingleExitBye`
+   * for a double exit entered, `serveConvergedLoserLink` for one converged; CA ruling (A), 2026-10-21), so what stays is
+   * a BYE the draw placed at generation, or one a fed-in seat takes whatever the policy.
+   *
+   * Before (A) a propagated BYE was settled here too: two opposed debate agents had concluded it stays (census S6 Class B
+   * 20694910, COMPASS 32/30 policy-off: `South|1|2` dp 3), and the same double exit then left a BYE or the produced exit
+   * on its seat depending on the order the results were entered (COMPASS 8/8 20853116, `South|1|1`).
    *
    * It is asked BEFORE the empty-exit branch. A seat can become a BYE while its matchUp holds only a pending exit from
-   * the other side: a convergence of two carriers loses one to a double exit upstream, is re-derived and withdrawn from
-   * the seat, and is owed a BYE there instead. Re-converging, it found a pending walkover with nobody in it and made it
-   * a double walkover over the BYE; entered with the BYE first, the matchUp is a BYE relaying the other exit (census
-   * policy-off 20551581, COMPASS 32/31: `South|1|4`'s loser seat in `Southeast|1|2`).
+   * the other side; re-converging, a matchUp that found such a pending walkover with nobody in it made it a double
+   * walkover over the BYE (census policy-off 20551581, COMPASS 32/31: `South|1|4`'s loser seat in `Southeast|1|2`).
    */
   const { positionAssignments } = getPositionAssignments({ structureId: loserMatchUp.structureId, drawDefinition });
   if (positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition)?.bye) {
@@ -738,6 +755,19 @@ function handleEmptyExitLoser({
       stack,
     });
     if (onward?.error) return onward;
+
+    // ...and under the policy off its loser seat shows the exit it produced, not a BYE placed there while it was a single
+    // exit (CA ruling (A), 2026-10-21; census S8 COMPASS 8/8 20853116: `South|1|1` kept `West|1|1`'s BYE when its two
+    // produced exits converged, where the re-scored order left the produced walkover)
+    if (!propagatesByeOnDoubleExit(params.appliedPolicies)) {
+      const converged = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps?.find(
+        (candidate) => candidate.matchUpId === loserMatchUp.matchUpId,
+      );
+      const served =
+        converged &&
+        serveConvergedLoserLink({ convergedMatchUp: converged, drawDefinition, matchUpsMap, params, stack });
+      if (served?.error) return served;
+    }
 
     return result;
   }
@@ -1463,6 +1493,45 @@ function inferSourceSideNumber({
   return sourceSideNumber;
 }
 
+/**
+ * A convergence written by the merge produces onward, and under the policy off its loser seat shows the exit it produced,
+ * as one written by `handleEmptyExitLoser` does (CA ruling (A), 2026-10-21; census RUN16-ASSIGNMENT policyoff 20586104,
+ * COMPASS 16/14: `West|1|2` converged by `East|1|4`'s walkover produced into `West|2|1`, which converged there and kept
+ * the BYE `Southwest|1|1` dp 1 was given while it held a single exit).
+ */
+function advanceMergedConvergence({
+  drawDefinition,
+  targetMatchUp,
+  DOUBLE_EXIT,
+  matchUpsMap,
+  params,
+  stack,
+}: {
+  params: CascadeParams;
+  DOUBLE_EXIT: MatchUpStatusUnion;
+  drawDefinition: DrawDefinition;
+  targetMatchUp: HydratedMatchUp;
+  matchUpsMap: MatchUpsMap;
+  stack: string;
+}) {
+  const onward = advanceConvergedWinner({
+    convergedMatchUp: targetMatchUp,
+    drawDefinition,
+    matchUpsMap,
+    DOUBLE_EXIT,
+    params,
+    stack,
+  });
+  if (onward?.error || propagatesByeOnDoubleExit(params.appliedPolicies)) return onward;
+  const converged = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps?.find(
+    (candidate) => candidate.matchUpId === targetMatchUp.matchUpId,
+  );
+  const served =
+    converged && serveConvergedLoserLink({ convergedMatchUp: converged, drawDefinition, matchUpsMap, params, stack });
+  if (served?.error) return decorateResult({ result: served, stack });
+  return onward;
+}
+
 function advanceFromTarget({
   pairedPreviousMatchUpIsDoubleExit,
   targetMatchUpDrawPositions,
@@ -1486,14 +1555,7 @@ function advanceFromTarget({
   // when there is an existing 'Double Exit", the created "Exit" is replaced
   // with a "Double Exit" and move on to advancing from this position
   if (convergedAfterMerge && !existingExit) {
-    return advanceConvergedWinner({
-      convergedMatchUp: targetMatchUp,
-      drawDefinition,
-      matchUpsMap,
-      DOUBLE_EXIT,
-      params,
-      stack,
-    });
+    return advanceMergedConvergence({ targetMatchUp, drawDefinition, matchUpsMap, DOUBLE_EXIT, params, stack });
   }
 
   if (existingExit) {
@@ -2936,6 +2998,18 @@ function convergeCarriedExit({
   return decorateResult({ result: { ...SUCCESS }, stack });
 }
 
+/** what a convergence's loser-link serving reads from the cascade that converged it */
+type CascadeParams = {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  matchUpStatus?: MatchUpStatusUnion;
+  appliedPolicies?: PolicyDefinitions;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  structure?: Structure;
+  event?: Event;
+};
+
 /** a convergence's loser target, where its seat holds nothing yet, is given what a double exit's loser target gets */
 function serveConvergedLoserLink({
   convergedMatchUp,
@@ -2947,16 +3021,7 @@ function serveConvergedLoserLink({
   convergedMatchUp: HydratedMatchUp;
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
-  params: {
-    inContextDrawMatchUps: HydratedMatchUp[];
-    matchUpStatus?: MatchUpStatusUnion;
-    appliedPolicies?: PolicyDefinitions;
-    tournamentRecord?: Tournament;
-    drawDefinition: DrawDefinition;
-    matchUpsMap: MatchUpsMap;
-    structure?: Structure;
-    event?: Event;
-  };
+  params: CascadeParams;
   stack: string;
 }): ResultType | undefined {
   const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
@@ -2969,6 +3034,8 @@ function serveConvergedLoserLink({
   const { loserMatchUp, loserTargetDrawPosition } = targetData.targetMatchUps ?? {};
   const { loserTargetLink } = targetData.targetLinks ?? {};
   if (!loserMatchUp || loserTargetDrawPosition === undefined || !loserTargetLink) return undefined;
+  // a decider is fed by the final's winner link too, which has served it; `reconcileDecider` owns its seats (census R11)
+  if (targetData.targetMatchUps?.winnerMatchUp?.matchUpId === loserMatchUp.matchUpId) return undefined;
   const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId });
   const seat = positionAssignments?.find((a) => a.drawPosition === loserTargetDrawPosition);
   /**
@@ -2978,6 +3045,26 @@ function serveConvergedLoserLink({
    * policy off: `East|1|2`'s walkover then `East|1|4`'s double walkover left d4e82f in `Southwest|1|1`, where the other
    * order leaves the convergence's produced exit).
    */
+  // under the policy off a double exit's loser seat shows the exit it produced, so a propagated BYE there gives way to it,
+  // as it does for a double exit entered directly (`reclaimSingleExitBye`; CA ruling (A), 2026-10-21). A fed-in seat
+  // keeps its BYE, and a BYE the draw placed at generation is settled.
+  const byeGivesWay =
+    !!seat?.bye &&
+    !!seat.byeFromPropagation &&
+    !loserMatchUp.hasFedDrawPosition &&
+    !propagatesByeOnDoubleExit(params.appliedPolicies);
+  if (byeGivesWay) {
+    removeDirectedBye({
+      tournamentRecord: params.tournamentRecord,
+      drawPosition: loserTargetDrawPosition,
+      targetLink: loserTargetLink,
+      inContextDrawMatchUps: refreshed,
+      event: params.event,
+      drawDefinition,
+      matchUpsMap,
+    });
+    return serveConvergedLoserLink({ convergedMatchUp, drawDefinition, matchUpsMap, params, stack });
+  }
   const carrier = seat?.participantId;
   const convergedSides = convergedMatchUp.sides ?? [];
   if (carrier && convergedSides.some((side) => side?.participantId === carrier)) {

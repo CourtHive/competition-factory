@@ -161,7 +161,7 @@ it('an unwound convergence re-derived to an awarded single exit keeps its loser 
     sides: ['BYE', 'BYE'],
     provenance: {
       '2': {
-        byeClaims: ['West|1|4'],
+        byeClaims: ['East|1|8'],
       },
     },
   });
@@ -169,10 +169,12 @@ it('an unwound convergence re-derived to an awarded single exit keeps its loser 
   expect(forward['South|1|2']).toEqual({
     matchUpStatus: 'BYE',
     winningSide: null,
-    sides: ['BYE', 'BYE'],
+    sides: ['BYE', '-'],
     provenance: {
       '2': {
-        byeClaims: ['West|1|4'],
+        matchUpStatus: 'WALKOVER',
+        previousMatchUpStatus: 'DOUBLE_WALKOVER',
+        sourceMatchUpId: 'West|1|4',
       },
     },
   });

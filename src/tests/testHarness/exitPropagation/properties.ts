@@ -1,11 +1,13 @@
 import { emptyProjectionAuditCounts, type ProjectionAudit, type ProjectionAuditCounts } from './projectionAudit';
 import { byeClaimReason, carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
+import { feederSendsNobody, seatShowsBye } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { BYE } from '@Constants/matchUpStatusConstants';
+import tournamentEngine from '@Engines/syncEngine';
 import { isDoubleExit } from '@Validators/isExit';
 import {
   clearOutcome,
@@ -241,6 +243,9 @@ export function checkClaimsLive(drawId: string): PropertyFailure[] {
 export function checkLoserSeatsDerived(drawId: string): PropertyFailure[] {
   const drawDefinition = getDrawDefinition(drawId);
   if (!drawDefinition) return [];
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  const { event } = tournamentEngine.getEvent({ drawId });
+  const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, event, drawDefinition });
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition })?.matchUps ?? [];
   const failures: PropertyFailure[] = [];
   for (const feeder of inContextDrawMatchUps) {
@@ -259,8 +264,13 @@ export function checkLoserSeatsDerived(drawId: string): PropertyFailure[] {
     if (!holdsPropagatedBye && !seat?.participantId) continue;
     const loserTargetLink = targetData?.targetLinks?.loserTargetLink;
     const reason = feederSendsNobody({ feeder, loserTargetLink, inContextDrawMatchUps, drawDefinition });
+    const showsBye = seatShowsBye({ reason, appliedPolicies, seatMatchUp: loserMatchUp });
     const wrong =
       (holdsPropagatedBye && !reason && 'holds a propagated BYE though its feeder sends somebody') ||
+      (holdsPropagatedBye &&
+        reason &&
+        !showsBye &&
+        `holds a BYE where its feeder's ${reason} shows the produced exit`) ||
       (seat?.participantId && reason && `holds a participant though its feeder sends nobody (${reason})`);
     if (wrong)
       failures.push({
