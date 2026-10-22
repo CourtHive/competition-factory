@@ -4,12 +4,13 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants
-import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, LOSER, LUCKY_DRAW, MAIN } from '@Constants/drawDefinitionConstants';
 import { WITHDRAWN } from '@Constants/entryStatusConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 import {
   EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
   LUCKY_DRAW_BYE_LIMIT,
+  INVALID_VALUES,
 } from '@Constants/errorConditionConstants';
 
 // A refused mutation must leave the record exactly as it found it, on a DIRECT call: no rollbackOnError,
@@ -83,4 +84,24 @@ test('withdrawing a PAIR with destroyPair is refused before the seat is cleared 
 
   result = tournamentEngine.removeDrawPositionAssignment({ drawPosition: 1, structureId, drawId });
   expect(result.success).toEqual(true);
+});
+
+test('a draw with a malformed LOSER link refuses the removal before the seat is cleared', () => {
+  // FMLC, generated well-formed; then its LOSER link loses the round it directs from
+  const {
+    tournamentRecord,
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
+  });
+  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const { structureId } = drawDefinition.structures.find(({ stage }) => stage === MAIN);
+  const link = drawDefinition.links.find((candidate) => candidate.linkType === LOSER);
+  Reflect.deleteProperty(link.source, 'roundNumber');
+  tournamentEngine.setState(tournamentRecord);
+
+  const before = recordCopy();
+  const result: any = tournamentEngine.removeDrawPositionAssignment({ drawId, structureId, drawPosition: 1 });
+  expect(result.error?.code).toEqual(INVALID_VALUES.code);
+  expect(recordCopy()).toEqual(before);
 });

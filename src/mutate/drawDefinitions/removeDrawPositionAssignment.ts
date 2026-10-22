@@ -9,6 +9,7 @@ import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyEntriesStatus } from '@Mutate/entries/modifyEntriesStatus';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findStructure } from '@Acquire/findStructure';
@@ -139,6 +140,11 @@ function removalRefusal(params): { error?: ErrorType } | undefined {
   const { tournamentRecord, replaceWithBye, drawDefinition, destroyPair, entryStatus, structureId, event } = params;
   const { structure } = findStructure({ drawDefinition, structureId });
   if (!structure) return undefined; // clearDrawPosition reports a missing structure as it always has
+
+  // the removal directs the seat's matchUps along the draw's links; a link that cannot say which round it
+  // directs is refused there — after the seat was cleared — so a malformed draw is refused here, unchanged
+  const malformed = getMalformedRoundLink(drawDefinition);
+  if (malformed) return malformed;
 
   const positionAssignments = getPositionAssignments({ structure }).positionAssignments ?? [];
   // found as clearDrawPosition finds it
