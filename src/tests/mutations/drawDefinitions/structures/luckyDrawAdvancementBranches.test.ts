@@ -1,4 +1,5 @@
 import { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { expect, test, describe } from 'vitest';
 
 // constants
@@ -386,6 +387,29 @@ describe('luckyDrawAdvancement — next round validation', () => {
       roundNumber: 1,
     });
     expect(result.error).toBe(INVALID_VALUES);
+  });
+
+  test('refuses an assigned later next-round matchUp before clearing earlier matchUps or stale assignments', () => {
+    const { drawDefinition } = buildCompletedRound1Draw();
+
+    const struct = drawDefinition.structures[0];
+    // r2-m1 carries stale drawPositions (empty assignments) that a successful advancement would clear...
+    const r2m1 = struct.matchUps.find((m: any) => m.matchUpId === 'r2-m1');
+    r2m1.drawPositions = [11, 12];
+    r2m1.matchUpStatus = COMPLETED;
+    struct.positionAssignments.push({ drawPosition: 11 }, { drawPosition: 12 });
+    // ...but r2-m3, checked later, already has participants assigned
+    const r2m3 = struct.matchUps.find((m: any) => m.matchUpId === 'r2-m3');
+    r2m3.drawPositions = [15, 16];
+    struct.positionAssignments.push(
+      { drawPosition: 15, participantId: 'existing-pid' },
+      { drawPosition: 16, participantId: 'another-pid' },
+    );
+
+    const before = makeDeepCopy(drawDefinition, false, true);
+    const result: any = luckyDrawAdvancement({ drawDefinition, participantId: 'pid-1', roundNumber: 1 });
+    expect(result.error).toBe(INVALID_VALUES);
+    expect(makeDeepCopy(drawDefinition, false, true)).toEqual(before);
   });
 });
 

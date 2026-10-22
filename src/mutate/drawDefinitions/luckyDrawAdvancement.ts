@@ -150,10 +150,13 @@ export function luckyDrawAdvancement({
     structure,
     roundNumber,
   });
-  structure.positionAssignments = positionAssignments;
 
-  const prepError = prepareNextRoundMatchUps({ nextRoundMatchUps, positionAssignments });
-  if (prepError) return prepError;
+  // Refuse before writing: every next-round matchUp is checked before any assignment or matchUp is touched.
+  const assignedError = checkNextRoundUnassigned({ nextRoundMatchUps, positionAssignments });
+  if (assignedError) return assignedError;
+
+  structure.positionAssignments = positionAssignments;
+  prepareNextRoundMatchUps({ nextRoundMatchUps });
 
   const tournamentId = tournamentRecord?.tournamentId;
 
@@ -346,22 +349,25 @@ function handleDiscardedLosers({
   }
 }
 
-function prepareNextRoundMatchUps({ nextRoundMatchUps, positionAssignments }): ResultType | undefined {
+// pure: an error when any next-round matchUp already has a participant assigned to one of its drawPositions
+function checkNextRoundUnassigned({ nextRoundMatchUps, positionAssignments }): ResultType | undefined {
+  const alreadyAssigned = nextRoundMatchUps.some((matchUp) =>
+    (matchUp.drawPositions ?? []).some(
+      (dp) => dp && positionAssignments.some((a) => a.drawPosition === dp && a.participantId),
+    ),
+  );
+  if (alreadyAssigned)
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      info: 'Next round already has participants assigned',
+    });
+  return undefined;
+}
+
+function prepareNextRoundMatchUps({ nextRoundMatchUps }) {
   for (const matchUp of nextRoundMatchUps) {
     const dps = matchUp.drawPositions;
     if (!dps?.length) continue;
-
-    const assignedPositions = dps.filter((dp) => {
-      if (!dp) return false;
-      return positionAssignments.some((a) => a.drawPosition === dp && a.participantId);
-    });
-
-    if (assignedPositions.length) {
-      return decorateResult({
-        result: { error: INVALID_VALUES },
-        info: 'Next round already has participants assigned',
-      });
-    }
 
     if (dps.some(Boolean)) {
       matchUp.drawPositions = [];
@@ -372,8 +378,6 @@ function prepareNextRoundMatchUps({ nextRoundMatchUps, positionAssignments }): R
       matchUp.score = undefined;
     }
   }
-
-  return undefined;
 }
 
 /**
