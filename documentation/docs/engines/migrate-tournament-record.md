@@ -57,7 +57,7 @@ It also rewrites every legacy `participant.penalties[].penaltyType` to its `Pena
 It also gives a draw that does not store its progression edges the ones the factory stores on every draw it generates, counted as `promoted.goesTo` (one per draw changed). A record converted from another system may hold no `winnerMatchUpId` / `loserMatchUpId` on its matchUps, and a lone structure from one may carry no `finishingPositionRange`. The migration writes what the draw's links and positions derive: the edges, the loser ranges widened over the loser target, and a lone foreign structure's finishing rounds. This does not depend on `clearLegacy`. Three kinds of draw are left as they are:
 
 - an AD_HOC draw, whose rounds are paired rather than linked;
-- a draw with a malformed round link, which is never half given its edges;
+- a draw with a malformed link (a `WINNER`/`LOSER` link with no `source.roundNumber`, an entry of `links` that is not an object, a link to an absent structure), which is never half given its edges. It is reported in `warnings` as `GOES_TO_NOT_STORED`, with its `drawId`, `eventId` and the error the derivation met: a warning, not an error, because every other promotion has been made and the draw itself is unchanged. Repair it with [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks) and migrate again;
 - a draw whose edges cannot be derived, for example one structure with no links and nothing to follow.
 
 Readers never write these edges themselves: a query derives what it needs on a copy, so a record keeps whatever it was stored with until it is migrated.
@@ -102,6 +102,8 @@ type MigrationResult = {
     courts: number;
   };
   totalPromoted: number; // sum across all categories
+  // present only when a draw was left without its edges because of a malformed link
+  warnings?: { code: 'GOES_TO_NOT_STORED'; drawId: string; eventId?: string; error?: ErrorType; info?: unknown }[];
   success: true;
   // ResultType base — error?: ErrorType if input was invalid
 };

@@ -1,3 +1,4 @@
+import { isLinkObject } from '@Query/drawDefinition/malformedLinks';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getMappedStructureMatchUps } from './getMatchUpsMap';
 import { reduceGroupedOrder } from './reduceGroupedOrder';
@@ -19,7 +20,7 @@ export function getSourceDrawPositionRanges({ drawDefinition, structureId, match
   if (structure?.stage !== CONSOLATION) return { error: INVALID_STAGE, info: 'Structure is not CONSOLATION stage' };
 
   const { links } = drawDefinition;
-  const relevantLinks = links?.filter((link) => link.target.structureId === structureId) ?? [];
+  const relevantLinks = links?.filter((link) => isLinkObject(link) && link.target?.structureId === structureId) ?? [];
 
   const sourceStructureIds =
     relevantLinks?.reduce((sourceStructureIds, link) => {

@@ -1,9 +1,10 @@
-import { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
+import { GOES_TO_NOT_STORED, migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import {
   AD_HOC,
@@ -110,4 +111,30 @@ it('leaves a draw with a malformed round link untouched', () => {
   expect(result.success).toEqual(true);
   expect(result.promoted.goesTo).toEqual(0);
   expect(record).toEqual(before);
+  // and SAID to be left: the error the derivation met is reported, not swallowed
+  const { drawId } = record.events[0].drawDefinitions[0];
+  expect(result.warnings).toEqual([
+    expect.objectContaining({
+      code: GOES_TO_NOT_STORED,
+      eventId: record.events[0].eventId,
+      error: INVALID_VALUES,
+      drawId,
+    }),
+  ]);
+});
+
+// an entry that is not a link makes the derivation throw: reported the same way, and the run completes
+it('reports, rather than throws on, a draw whose links hold an entry that is not a link', () => {
+  const record = stripped(generate({ drawType: FEED_IN_CHAMPIONSHIP, drawSize: 16 }), { ranges: false });
+  record.events[0].drawDefinitions[0].links.push(null);
+  const before = structuredClone(record);
+
+  const result: any = migrateTournamentRecord({ tournamentRecord: record });
+  expect(result.success).toEqual(true);
+  expect(result.promoted.goesTo).toEqual(0);
+  expect(record).toEqual(before);
+  expect(result.warnings).toEqual([
+    expect.objectContaining({ code: GOES_TO_NOT_STORED, drawId: record.events[0].drawDefinitions[0].drawId }),
+  ]);
+  expect(typeof result.warnings[0].info).toEqual('string');
 });
